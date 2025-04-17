@@ -3,10 +3,7 @@
 import { useState } from "react"
 import { ArtistBubble } from "./artist-bubble"
 import { PerkViewer } from "./perk-viewer"
-import { useArtistPerks } from "@/hooks/use-artist-perks"
-import { useEngagement } from "@/hooks/use-engagement"
-import { useCollectorInfluence } from "@/hooks/use-collector-influence"
-import { supabase } from "@/lib/supabase/client"
+import { mockArtist, mockPerks, mockInfluence, mockContributors, mockIdeas } from "@/lib/mock-data"
 
 interface CertificatePerksProps {
   artistId: string
@@ -16,75 +13,67 @@ interface CertificatePerksProps {
 
 export function CertificatePerks({ artistId, certificateId, collectorId }: CertificatePerksProps) {
   const [isViewerOpen, setIsViewerOpen] = useState(false)
-  const { perks, loading, error, hasNewContent, markAsViewed } = useArtistPerks(artistId, certificateId, collectorId)
-  const { streak, expiryTime, showScarcity, hasUnclaimedRewards, recordView } = useEngagement(
-    artistId,
-    certificateId,
-    collectorId,
-  )
-  const { influence, recordAction, submitIdea, recentContributors, topContributors, implementedIdeas } =
-    useCollectorInfluence(artistId, collectorId)
+  const [streak, setStreak] = useState(3)
+  const [hasNewContent] = useState(true)
+  const [hasUnclaimedRewards] = useState(true)
 
   // Record a view when the bubble is clicked
   const handleOpenViewer = () => {
     setIsViewerOpen(true)
-    recordView()
-    recordAction("view_content")
   }
 
   // Handle claiming a streak reward
   const handleClaimReward = async () => {
-    try {
-      // Mark rewards as claimed
-      await supabase
-        .from("streak_rewards")
-        .update({ claimed: true })
-        .eq("collector_id", collectorId)
-        .eq("claimed", false)
-
-      // Record the action for influence points
-      await recordAction("streak_milestone")
-
-      // In a real app, you might also unlock special content here
-    } catch (error) {
-      console.error("Error claiming reward:", error)
-    }
+    // In a real app, this would update the database
+    console.log("Reward claimed")
   }
 
-  if (loading || error || !perks) {
-    return null // Don't show anything while loading or if there's an error
+  // Mock function to mark a perk as viewed
+  const markAsViewed = (perkId: string) => {
+    console.log("Marked perk as viewed:", perkId)
+  }
+
+  // Mock function to record an action
+  const recordAction = async (action: string) => {
+    console.log("Action recorded:", action)
+  }
+
+  // Mock function to submit an idea
+  const submitIdea = async (title: string, description: string) => {
+    console.log("Idea submitted:", { title, description })
+    return { id: "new-idea", title, description }
   }
 
   return (
     <>
       <ArtistBubble
         artist={{
-          id: perks.artist.id,
-          name: perks.artist.name,
-          profileImageUrl: perks.artist.profile_image_url,
+          id: mockArtist.id,
+          name: mockArtist.name,
+          profileImageUrl: mockArtist.profile_image_url,
         }}
         onOpen={handleOpenViewer}
         hasNewContent={hasNewContent}
-        expiryTime={expiryTime}
+        expiryTime={new Date(Date.now() + 2 * 60 * 60 * 1000)} // 2 hours from now
         streak={streak}
-        showScarcity={showScarcity}
+        showScarcity={true}
         hasUnclaimedRewards={hasUnclaimedRewards}
       />
 
       <PerkViewer
-        artist={perks.artist}
-        perks={perks.perks}
+        artist={mockArtist}
+        perks={mockPerks}
         isOpen={isViewerOpen}
         onClose={() => setIsViewerOpen(false)}
         onPerkViewed={markAsViewed}
         streak={streak}
-        expiryTime={expiryTime}
+        expiryTime={new Date(Date.now() + 2 * 60 * 60 * 1000)} // 2 hours from now
         hasUnclaimedRewards={hasUnclaimedRewards}
         onClaimReward={handleClaimReward}
-        influence={influence}
-        recentContributors={recentContributors}
-        topContributors={topContributors}
-        implementedIdeas={implementedIdeas}
+        influence={mockInfluence}
+        recentContributors={mockContributors}
+        topContributors={mockContributors}
+        implementedIdeas={mockIdeas}
         onSubmitIdea={submitIdea}
         onRecordAction={recordAction}
       />

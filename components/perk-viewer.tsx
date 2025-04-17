@@ -117,25 +117,6 @@ export function PerkViewer({
       const nextMilestone = Math.ceil(streak / 5) * 5
       setNextStreakMilestone(nextMilestone)
       setStreakProgress((streak % 5) * 20) // 0-100%
-
-      // Show streak milestone celebration if we just hit a milestone
-      if (streak % 5 === 0) {
-        setShowStreakMilestone(true)
-
-        // Trigger confetti effect
-        if (typeof window !== "undefined") {
-          confetti({
-            particleCount: 100,
-            spread: 70,
-            origin: { y: 0.6 },
-          })
-        }
-
-        // Hide after 3 seconds
-        setTimeout(() => {
-          setShowStreakMilestone(false)
-        }, 3000)
-      }
     }
   }, [streak])
 
@@ -197,7 +178,7 @@ export function PerkViewer({
 
     window.addEventListener("keydown", handleKeyDown)
     return () => window.removeEventListener("keydown", handleKeyDown)
-  }, [isOpen, currentIndex, perks.length])
+  }, [isOpen, currentIndex, perks.length, onClose])
 
   // Mark perk as viewed and handle media playback
   useEffect(() => {
@@ -340,9 +321,43 @@ export function PerkViewer({
             </div>
           </div>
         )
+      case "image":
+        return (
+          <div className="w-full h-full flex items-center justify-center bg-black">
+            <img
+              src={perk.src || "/placeholder.svg"}
+              alt={perk.title || "Image"}
+              className="max-h-full max-w-full object-contain"
+            />
+            {perk.content && (
+              <div className="absolute bottom-0 left-0 right-0 bg-black/50 p-4 text-white text-center">
+                <p>{perk.content}</p>
+              </div>
+            )}
+          </div>
+        )
       default:
         return null
     }
+  }
+
+  // Show streak milestone celebration for demo purposes
+  const showStreakMilestoneDemo = () => {
+    setShowStreakMilestone(true)
+
+    // Trigger confetti effect
+    if (typeof window !== "undefined") {
+      confetti({
+        particleCount: 100,
+        spread: 70,
+        origin: { y: 0.6 },
+      })
+    }
+
+    // Hide after 3 seconds
+    setTimeout(() => {
+      setShowStreakMilestone(false)
+    }, 3000)
   }
 
   return (
@@ -638,6 +653,18 @@ export function PerkViewer({
               </motion.div>
             )}
           </AnimatePresence>
+
+          {/* Demo controls - for testing features */}
+          <div className="absolute bottom-20 right-4 z-10">
+            <Button
+              size="sm"
+              variant="outline"
+              className="bg-black/30 text-white border-white/20"
+              onClick={showStreakMilestoneDemo}
+            >
+              Demo Streak Milestone
+            </Button>
+          </div>
 
           {/* Expiry warning */}
           {timeLeft && timeLeft.includes("1h") && (
