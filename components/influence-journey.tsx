@@ -33,7 +33,7 @@ export function InfluenceJourney({
   implementedIdeas,
   onSubmitIdea,
 }: InfluenceJourneyProps) {
-  const [expanded, setExpanded] = useState(false)
+  const [expanded, setExpanded] = useState(true)
 
   const levelIcons = {
     Collector: <Star className="w-4 h-4" />,
@@ -203,14 +203,7 @@ export function InfluenceJourney({
                       </Avatar>
                       <span>
                         <span className="font-medium">{contrib.collectors.name}</span>
-                        <span className="text-gray-500">
-                          {" "}
-                          {contrib.contribution_type === "provide_feedback"
-                            ? "provided feedback"
-                            : contrib.contribution_type === "submit_idea"
-                              ? "submitted an idea"
-                              : "shared content"}
-                        </span>
+                        <span className="text-gray-500"> provided feedback</span>
                       </span>
                     </div>
                   ))}
@@ -221,16 +214,10 @@ export function InfluenceJourney({
 
           {/* Action buttons */}
           <div className="mt-6 flex flex-col gap-2">
-            <Button onClick={onSubmitIdea} className="w-full" disabled={influence.currentLevel === "Collector"}>
+            <Button onClick={onSubmitIdea} className="w-full">
               <Lightbulb className="w-4 h-4 mr-2" />
               Submit Idea to Artist
             </Button>
-
-            {influence.currentLevel === "Collector" && (
-              <p className="text-xs text-center text-gray-500 mt-1">
-                Reach "Supporter" level to unlock idea submission
-              </p>
-            )}
           </div>
         </div>
       )}

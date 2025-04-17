@@ -1,182 +1,124 @@
 "use client"
 
-import { CertificatePerks } from "@/components/certificate-perks"
-import { useEffect, useState } from "react"
-import { supabase } from "@/lib/supabase/client"
+import { useState } from "react"
+import { ArtistInsight } from "@/components/artist-insight"
+import { ConnectionContext } from "@/components/connection-context"
+import Image from "next/image"
 
 export default function CertificateDemo() {
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
+  const [showInsight, setShowInsight] = useState(false)
 
-  // In a real implementation, these IDs would come from your authentication system
-  // For demo purposes, we're using fixed IDs
+  // In a real implementation, these would come from your authentication and database
   const artistId = "artist123"
   const certificateId = "cert456"
   const collectorId = "collector789"
 
-  // Ensure we have sample data in the database
-  useEffect(() => {
-    const setupSampleData = async () => {
-      try {
-        setLoading(true)
-
-        // Check if artists table exists and create sample artist if needed
-        try {
-          const { data: existingArtist, error: artistError } = await supabase
-            .from("artists")
-            .select("id")
-            .eq("id", artistId)
-            .single()
-
-          if (artistError && artistError.code !== "PGRST116") {
-            console.error("Error checking for artist:", artistError)
-          }
-
-          // If artist doesn't exist and table exists, create one
-          if (!existingArtist && !artistError) {
-            await supabase.from("artists").insert({
-              id: artistId,
-              name: "Chanchal Banga",
-              profile_image_url: "/creative-portrait.png",
-              bio: "Digital artist exploring the intersection of technology and creativity",
-            })
-          }
-        } catch (error) {
-          console.log("Artists table might not exist yet:", error)
-        }
-
-        // Check if collectors table exists and create sample collector if needed
-        try {
-          const { data: existingCollector, error: collectorError } = await supabase
-            .from("collectors")
-            .select("id")
-            .eq("id", collectorId)
-            .single()
-
-          if (collectorError && collectorError.code !== "PGRST116") {
-            console.error("Error checking for collector:", collectorError)
-          }
-
-          // If collector doesn't exist and table exists, create one
-          if (!existingCollector && !collectorError) {
-            await supabase.from("collectors").insert({
-              id: collectorId,
-              name: "Art Enthusiast",
-              email: "collector@example.com",
-            })
-          }
-        } catch (error) {
-          console.log("Collectors table might not exist yet:", error)
-        }
-
-        // Check if perks table exists and create sample perks if needed
-        try {
-          const { data: existingPerks, error: perksError } = await supabase
-            .from("perks")
-            .select("id")
-            .eq("artist_id", artistId)
-            .limit(1)
-
-          if (perksError && perksError.code !== "PGRST116") {
-            console.error("Error checking for perks:", perksError)
-          }
-
-          // If no perks exist and table exists, create some sample perks
-          if ((!existingPerks || existingPerks.length === 0) && !perksError) {
-            await supabase.from("perks").insert([
-              {
-                artist_id: artistId,
-                type: "text",
-                title: "Welcome Message",
-                content: "Thank you for collecting my artwork! I'm excited to share exclusive content with you.",
-                is_active: true,
-              },
-              {
-                artist_id: artistId,
-                type: "image",
-                title: "Behind the Scenes",
-                src: "/cluttered-creative-space.png",
-                content: "A glimpse into my creative process and workspace.",
-                is_active: true,
-              },
-            ])
-          }
-        } catch (error) {
-          console.log("Perks table might not exist yet:", error)
-        }
-      } catch (error) {
-        console.error("Error setting up sample data:", error)
-        setError("Failed to set up sample data. Please check your Supabase connection.")
-      } finally {
-        setLoading(false)
-      }
-    }
-
-    setupSampleData()
-  }, [])
-
-  if (error) {
-    return (
-      <div className="min-h-screen bg-gray-100 p-4 flex items-center justify-center">
-        <div className="bg-white rounded-lg shadow-lg p-6 max-w-md">
-          <h1 className="text-xl font-bold text-red-600 mb-4">Error</h1>
-          <p className="text-gray-700">{error}</p>
-          <p className="text-gray-500 mt-4">Please check your Supabase connection and database setup.</p>
-        </div>
-      </div>
-    )
-  }
-
   return (
-    <div className="min-h-screen bg-gray-100 p-4">
-      <div className="max-w-4xl mx-auto bg-white rounded-lg shadow-lg p-6 min-h-[80vh] relative">
-        {loading ? (
-          <div className="flex items-center justify-center h-64">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900"></div>
-          </div>
-        ) : (
-          <>
-            <h1 className="text-2xl font-bold mb-4">Certificate of Authenticity</h1>
+    <div className="min-h-screen bg-gray-50 p-4 md:p-8">
+      <div className="max-w-4xl mx-auto bg-white rounded-lg shadow-sm p-6 md:p-8 min-h-[80vh] relative">
+        <h1 className="text-2xl font-medium mb-6">Certificate of Authenticity</h1>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+          <div>
+            <div className="aspect-square bg-gray-100 rounded-lg mb-4 overflow-hidden relative group">
+              <Image
+                src="/chromatic-flow.png"
+                alt="Artwork"
+                width={500}
+                height={500}
+                className="w-full h-full object-cover transition-all duration-700 ease-in-out group-hover:scale-[1.03]"
+              />
+
+              {/* Subtle indicator that there's more to discover */}
+              <button
+                onClick={() => setShowInsight(true)}
+                className="absolute bottom-4 right-4 bg-black/10 hover:bg-black/20 backdrop-blur-sm text-white rounded-full w-10 h-10 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+                aria-label="View artist insight"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="20"
+                  height="20"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <circle cx="12" cy="12" r="10"></circle>
+                  <path d="M12 16v-4"></path>
+                  <path d="M12 8h.01"></path>
+                </svg>
+              </button>
+            </div>
+          </div>
+
+          <div>
+            <h2 className="text-xl font-medium">Chromatic Flow #42</h2>
+            <p className="text-gray-600 mb-6">By Chanchal Banga</p>
+
+            <div className="space-y-6">
               <div>
-                <div className="aspect-square bg-gray-200 rounded-lg mb-4">
-                  <img src="/chromatic-flow.png" alt="Artwork" className="w-full h-full object-cover rounded-lg" />
-                </div>
+                <h3 className="text-sm font-medium text-gray-500">Edition</h3>
+                <p>1 of 10</p>
               </div>
 
               <div>
-                <h2 className="text-xl font-semibold">Untitled #42</h2>
-                <p className="text-gray-600 mb-4">By Chanchal Banga</p>
+                <h3 className="text-sm font-medium text-gray-500">Created</h3>
+                <p>April 2023</p>
+              </div>
 
-                <div className="space-y-4">
-                  <div>
-                    <h3 className="font-medium">Edition</h3>
-                    <p>1 of 10</p>
-                  </div>
+              <div>
+                <h3 className="text-sm font-medium text-gray-500">Medium</h3>
+                <p>Digital Art, Giclée print on archival paper</p>
+              </div>
 
-                  <div>
-                    <h3 className="font-medium">Created</h3>
-                    <p>April 2023</p>
-                  </div>
+              <div>
+                <h3 className="text-sm font-medium text-gray-500">Dimensions</h3>
+                <p>24 × 36 inches</p>
+              </div>
 
-                  <div>
-                    <h3 className="font-medium">Medium</h3>
-                    <p>Digital Art, Giclée print on archival paper</p>
-                  </div>
-
-                  <div>
-                    <h3 className="font-medium">Dimensions</h3>
-                    <p>24 × 36 inches</p>
-                  </div>
-                </div>
+              <div className="pt-4">
+                <button
+                  onClick={() => setShowInsight(true)}
+                  className="text-sm text-gray-600 hover:text-gray-900 flex items-center gap-2 group"
+                >
+                  <span className="border-b border-dashed border-gray-300 group-hover:border-gray-600 transition-colors">
+                    View artist's insight
+                  </span>
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    className="opacity-60 group-hover:translate-x-0.5 transition-transform"
+                  >
+                    <path d="M5 12h14"></path>
+                    <path d="m12 5 7 7-7 7"></path>
+                  </svg>
+                </button>
               </div>
             </div>
+          </div>
+        </div>
 
-            {/* This is where the enhanced perks experience is integrated */}
-            <CertificatePerks artistId={artistId} certificateId={certificateId} collectorId={collectorId} />
-          </>
-        )}
+        {/* This is where the connection context is integrated */}
+        <ConnectionContext artistId={artistId} certificateId={certificateId} collectorId={collectorId} />
+
+        {/* Artist insight modal */}
+        <ArtistInsight
+          isOpen={showInsight}
+          onClose={() => setShowInsight(false)}
+          artistId={artistId}
+          certificateId={certificateId}
+          collectorId={collectorId}
+        />
       </div>
     </div>
   )
