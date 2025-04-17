@@ -1,17 +1,35 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { ArtistInsight } from "@/components/artist-insight"
-import { ConnectionContext } from "@/components/connection-context"
+import { ArtworkPresenceIndicator } from "@/components/artwork-presence-indicator"
+import { EnvironmentalContext } from "@/components/environmental-context"
 import Image from "next/image"
+import { useArtworkPresence } from "@/hooks/use-artwork-presence"
 
 export default function CertificateDemo() {
   const [showInsight, setShowInsight] = useState(false)
+  const [showPresence, setShowPresence] = useState(false)
+  const [imageLoaded, setImageLoaded] = useState(false)
 
   // In a real implementation, these would come from your authentication and database
   const artistId = "artist123"
   const certificateId = "cert456"
   const collectorId = "collector789"
+  const artworkTitle = "Chromatic Flow #42"
+
+  // Get the artwork's presence information
+  const { presence, reflection, loading } = useArtworkPresence(artistId, certificateId, collectorId, artworkTitle)
+
+  // Simulate the artwork "settling in" to the collector's space
+  useEffect(() => {
+    if (imageLoaded) {
+      const timer = setTimeout(() => {
+        setShowPresence(true)
+      }, 2000)
+      return () => clearTimeout(timer)
+    }
+  }, [imageLoaded])
 
   return (
     <div className="min-h-screen bg-gray-50 p-4 md:p-8">
@@ -27,7 +45,13 @@ export default function CertificateDemo() {
                 width={500}
                 height={500}
                 className="w-full h-full object-cover transition-all duration-700 ease-in-out group-hover:scale-[1.03]"
+                onLoad={() => setImageLoaded(true)}
               />
+
+              {/* The artwork's "presence" in the collector's space */}
+              {showPresence && !loading && presence && (
+                <ArtworkPresenceIndicator presenceType={presence.type} onClick={() => setShowInsight(true)} />
+              )}
 
               {/* Subtle indicator that there's more to discover */}
               <button
@@ -55,7 +79,7 @@ export default function CertificateDemo() {
           </div>
 
           <div>
-            <h2 className="text-xl font-medium">Chromatic Flow #42</h2>
+            <h2 className="text-xl font-medium">{artworkTitle}</h2>
             <p className="text-gray-600 mb-6">By Chanchal Banga</p>
 
             <div className="space-y-6">
@@ -78,6 +102,14 @@ export default function CertificateDemo() {
                 <h3 className="text-sm font-medium text-gray-500">Dimensions</h3>
                 <p>24 × 36 inches</p>
               </div>
+
+              {/* Artwork presence reflection */}
+              {showPresence && reflection && (
+                <div className="pt-4 border-t border-gray-100">
+                  <h3 className="text-sm font-medium text-gray-500 mb-2">Artwork Presence</h3>
+                  <p className="text-sm text-gray-600 italic">{reflection}</p>
+                </div>
+              )}
 
               <div className="pt-4">
                 <button
@@ -108,8 +140,8 @@ export default function CertificateDemo() {
           </div>
         </div>
 
-        {/* This is where the connection context is integrated */}
-        <ConnectionContext artistId={artistId} certificateId={certificateId} collectorId={collectorId} />
+        {/* This is where the environmental context is integrated */}
+        <EnvironmentalContext artistId={artistId} certificateId={certificateId} collectorId={collectorId} />
 
         {/* Artist insight modal */}
         <ArtistInsight

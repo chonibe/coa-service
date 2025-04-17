@@ -35,6 +35,7 @@ export function ArtistInsight({ isOpen, onClose, artistId, certificateId, collec
   const [response, setResponse] = useState("")
   const [submitting, setSubmitting] = useState(false)
   const [submitted, setSubmitted] = useState(false)
+  const [activeTab, setActiveTab] = useState("insight")
 
   // Find the active insight
   const activeInsight = insights?.find((insight) => insight.id === activeInsightId) || null
@@ -105,10 +106,10 @@ export function ArtistInsight({ isOpen, onClose, artistId, certificateId, collec
           <DialogDescription>Exclusive thoughts and process from the artist</DialogDescription>
         </DialogHeader>
 
-        <Tabs defaultValue="insight" className="mt-4">
+        <Tabs defaultValue="insight" value={activeTab} onValueChange={setActiveTab} className="mt-4">
           <TabsList>
             <TabsTrigger value="insight">Insight</TabsTrigger>
-            <TabsTrigger value="connection">Connection</TabsTrigger>
+            <TabsTrigger value="territory">Territory</TabsTrigger>
             <TabsTrigger value="archive">Archive</TabsTrigger>
           </TabsList>
 
@@ -171,31 +172,62 @@ export function ArtistInsight({ isOpen, onClose, artistId, certificateId, collec
             )}
           </TabsContent>
 
-          <TabsContent value="connection" className="pt-4">
+          <TabsContent value="territory" className="pt-4">
             <div className="space-y-6">
               <div className="bg-amber-50 border border-amber-100 rounded-lg p-4">
-                <h3 className="text-amber-800 font-medium mb-2">Your Connection: {connectionInfo.stage}</h3>
-                <p className="text-amber-700 text-sm">{connectionInfo.description}</p>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="border rounded-lg p-4">
-                  <h4 className="text-sm font-medium mb-2">Artist's Perspective</h4>
-                  <p className="text-sm text-gray-600">{connectionInfo.artistPerspective}</p>
-                </div>
-
-                <div className="border rounded-lg p-4">
-                  <h4 className="text-sm font-medium mb-2">Collector's Perspective</h4>
-                  <p className="text-sm text-gray-600">{connectionInfo.collectorPerspective}</p>
-                </div>
-              </div>
-
-              <div className="text-sm text-gray-500">
-                <p>
-                  The connection between artist and collector evolves naturally through meaningful exchanges. This is
-                  not a game or achievement system, but a reflection of the authentic relationship that develops over
-                  time.
+                <h3 className="text-amber-800 font-medium mb-2">Artwork Territory</h3>
+                <p className="text-amber-700 text-sm">
+                  Like street art that claims and transforms public space, this artwork has established a territory in
+                  your environment.
                 </p>
+              </div>
+
+              <div className="grid grid-cols-1 gap-4">
+                <div className="border rounded-lg p-4">
+                  <h4 className="text-sm font-medium mb-2">Artist's Territory</h4>
+                  <p className="text-sm text-gray-600">
+                    "I create work that extends beyond its physical boundaries, claiming space in the viewer's
+                    environment and consciousness. The piece continues to speak and evolve in your space, creating a
+                    dialogue that changes with light, perspective, and time."
+                  </p>
+                </div>
+
+                <div className="border rounded-lg p-4">
+                  <h4 className="text-sm font-medium mb-2">Your Environment</h4>
+                  <div className="space-y-3">
+                    <div className="flex justify-between text-sm">
+                      <span className="text-gray-500">Placement</span>
+                      <span>Living room, north wall</span>
+                    </div>
+                    <div className="flex justify-between text-sm">
+                      <span className="text-gray-500">Lighting</span>
+                      <span>Natural light, morning</span>
+                    </div>
+                    <div className="flex justify-between text-sm">
+                      <span className="text-gray-500">Surroundings</span>
+                      <span>Urban view, plants nearby</span>
+                    </div>
+                    <div className="flex justify-between text-sm">
+                      <span className="text-gray-500">Viewing Frequency</span>
+                      <span>Daily</span>
+                    </div>
+                    <div className="flex justify-between text-sm">
+                      <span className="text-gray-500">Reported Mood</span>
+                      <span>Contemplative, energizing</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="border rounded-lg p-4">
+                <h4 className="text-sm font-medium mb-2">Record Your Observation</h4>
+                <p className="text-sm text-gray-600 mb-3">
+                  How does this artwork interact with and transform your space? Share your observations with the artist.
+                </p>
+                <Textarea placeholder="The colors seem to shift with the morning light..." rows={3} className="mb-3" />
+                <div className="flex justify-end">
+                  <Button>Share Observation</Button>
+                </div>
               </div>
             </div>
           </TabsContent>
@@ -212,7 +244,10 @@ export function ArtistInsight({ isOpen, onClose, artistId, certificateId, collec
                         "border rounded-lg p-4 cursor-pointer hover:border-gray-300 transition-colors",
                         activeInsightId === insight.id && "border-gray-400 bg-gray-50",
                       )}
-                      onClick={() => setActiveInsightId(insight.id)}
+                      onClick={() => {
+                        setActiveInsightId(insight.id)
+                        setActiveTab("insight")
+                      }}
                     >
                       <div className="flex justify-between items-start">
                         <div>
