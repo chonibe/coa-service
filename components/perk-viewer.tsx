@@ -14,13 +14,21 @@ import {
   Lock,
   Trophy,
   AlertTriangle,
+  Users,
+  Heart,
+  Share2,
 } from "lucide-react"
 import Image from "next/image"
 import { cn } from "@/lib/utils"
 import type { Perk, Artist } from "@/types/perks"
 import { Button } from "@/components/ui/button"
 import { Progress } from "@/components/ui/progress"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { InfluenceJourney } from "./influence-journey"
+import { IdeaSubmission } from "./idea-submission"
+import { FeedbackForm } from "./feedback-form"
 import confetti from "canvas-confetti"
+import type { InfluenceProgress } from "@/lib/engagement/influence-system"
 
 interface PerkViewerProps {
   artist: Artist
@@ -32,6 +40,12 @@ interface PerkViewerProps {
   expiryTime?: Date | null
   hasUnclaimedRewards?: boolean
   onClaimReward?: () => void
+  influence?: InfluenceProgress
+  recentContributors?: any[]
+  topContributors?: any[]
+  implementedIdeas?: any[]
+  onSubmitIdea?: (title: string, description: string) => Promise<any>
+  onRecordAction?: (action: string) => Promise<void>
 }
 
 export function PerkViewer({
@@ -44,6 +58,12 @@ export function PerkViewer({
   expiryTime = null,
   hasUnclaimedRewards = false,
   onClaimReward = () => {},
+  influence,
+  recentContributors = [],
+  topContributors = [],
+  implementedIdeas = [],
+  onSubmitIdea = async () => null,
+  onRecordAction = async () => {},
 }: PerkViewerProps) {
   const [currentIndex, setCurrentIndex] = useState(0)
   const [direction, setDirection] = useState(0)
@@ -52,6 +72,10 @@ export function PerkViewer({
   const [showStreakMilestone, setShowStreakMilestone] = useState(false)
   const [nextStreakMilestone, setNextStreakMilestone] = useState(5)
   const [streakProgress, setStreakProgress] = useState(0)
+  const [showIdeaSubmission, setShowIdeaSubmission] = useState(false)
+  const [showFeedbackForm, setShowFeedbackForm] = useState(false)
+  const [showSocialProof, setShowSocialProof] = useState(false)
+  const [likedPerks, setLikedPerks] = useState<string[]>([])
 
   const containerRef = useRef<HTMLDivElement>(null)
   const videoRefs = useRef<Record<string, HTMLVideoElement>>({})
@@ -218,6 +242,20 @@ export function PerkViewer({
         origin: { y: 0.5 },
       })
     }
+  }
+
+  // Handle like action
+  const handleLike = async (perkId: string) => {
+    if (likedPerks.includes(perkId)) return
+
+    setLikedPerks((prev) => [...prev, perkId])
+    await onRecordAction("like_content")
+  }
+
+  // Handle share action
+  const handleShare = async () => {
+    // In a real app, this would open a share dialog
+    await onRecordAction("share_content")
   }
 
   // Render different perk content based on type
@@ -401,6 +439,45 @@ export function PerkViewer({
             </AnimatePresence>
           </motion.div>
 
+          {/* Social actions */}
+          {currentPerk && (
+            <div className="absolute bottom-4 left-0 right-0 z-10 flex justify-center gap-4">
+              <button
+                onClick={() => handleLike(currentPerk.id)}
+                className={cn(
+                  "w-10 h-10 rounded-full flex items-center justify-center backdrop-blur-sm",
+                  likedPerks.includes(currentPerk.id) ? "bg-pink-500 text-white" : "bg-white/10 text-white",
+                )}
+              >
+                <Heart className="w-5 h-5" />
+              </button>
+
+              <button
+                onClick={() => setShowFeedbackForm(true)}
+                className="w-10 h-10 rounded-full flex items-center justify-center bg-white/10 backdrop-blur-sm text-white"
+              >
+                <MessageSquare className="w-5 h-5" />
+              </button>
+
+              <button
+                onClick={handleShare}
+                className="w-10 h-10 rounded-full flex items-center justify-center bg-white/10 backdrop-blur-sm text-white"
+              >
+                <Share2 className="w-5 h-5" />
+              </button>
+
+              <button
+                onClick={() => setShowSocialProof(!showSocialProof)}
+                className={cn(
+                  "w-10 h-10 rounded-full flex items-center justify-center backdrop-blur-sm",
+                  showSocialProof ? "bg-blue-500 text-white" : "bg-white/10 text-white",
+                )}
+              >
+                <Users className="w-5 h-5" />
+              </button>
+            </div>
+          )}
+
           {/* Navigation buttons */}
           <div className="absolute inset-y-0 left-0 z-10 flex items-center">
             {currentIndex > 0 && (
@@ -432,6 +509,32 @@ export function PerkViewer({
             className="absolute top-20 bottom-0 right-0 w-1/3 z-5"
             onClick={currentIndex < perks.length - 1 ? goToNext : undefined}
           />
+
+          {/* Social proof panel */}
+          <AnimatePresence>
+            {showSocialProof && influence && (
+              <motion.div
+                initial={{ x: "100%" }}
+                animate={{ x: 0 }}
+                exit={{ x: "100%" }}
+                transition={{ type: "spring", damping: 30 }}
+                className="absolute top-20 bottom-0 right-0 w-full max-w-xs bg-white z-20 overflow-y-auto"
+              >
+                <div className="p-4">
+                  <InfluenceJourney
+                    influence={influence}
+                    recentContributors={recentContributors}
+                    topContributors={topContributors}
+                    implementedIdeas={implementedIdeas}
+                    onSubmitIdea={() => {
+                      setShowSocialProof(false)
+                      setShowIdeaSubmission(true)
+                    }}
+                  />
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
 
           {/* Streak milestone celebration */}
           <AnimatePresence>
@@ -490,9 +593,55 @@ export function PerkViewer({
             )}
           </AnimatePresence>
 
+          {/* Idea submission form */}
+          <AnimatePresence>
+            {showIdeaSubmission && (
+              <IdeaSubmission
+                onSubmit={async (title, description) => {
+                  const result = await onSubmitIdea(title, description)
+                  if (result) {
+                    await onRecordAction("submit_idea")
+                  }
+                  return result
+                }}
+                onClose={() => setShowIdeaSubmission(false)}
+                artistName={artist.name}
+              />
+            )}
+          </AnimatePresence>
+
+          {/* Feedback form */}
+          <AnimatePresence>
+            {showFeedbackForm && (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-4"
+              >
+                <motion.div
+                  initial={{ scale: 0.9, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  exit={{ scale: 0.9, opacity: 0 }}
+                  className="bg-white rounded-xl shadow-xl max-w-md w-full overflow-hidden"
+                >
+                  <FeedbackForm
+                    artistId={artist.id}
+                    certificateId="cert456" // This would come from props in a real app
+                    collectorId="collector789" // This would come from props in a real app
+                    onClose={() => {
+                      setShowFeedbackForm(false)
+                      onRecordAction("provide_feedback")
+                    }}
+                  />
+                </motion.div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
           {/* Expiry warning */}
           {timeLeft && timeLeft.includes("1h") && (
-            <div className="absolute bottom-4 left-0 right-0 flex justify-center">
+            <div className="absolute bottom-20 left-0 right-0 flex justify-center">
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -506,7 +655,7 @@ export function PerkViewer({
 
           {/* Coming soon teaser */}
           {streak > 0 && streak < 5 && (
-            <div className="absolute bottom-4 left-4">
+            <div className="absolute bottom-20 left-4">
               <motion.div
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
@@ -514,6 +663,28 @@ export function PerkViewer({
               >
                 <Lock className="w-3 h-3" />
                 <span>Unlock special content at 5 day streak!</span>
+              </motion.div>
+            </div>
+          )}
+
+          {/* Social proof teaser */}
+          {!showSocialProof && topContributors.length > 0 && (
+            <div className="absolute top-24 right-4">
+              <motion.div
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                className="bg-white/10 backdrop-blur-sm rounded-lg p-2 flex items-center gap-2"
+                onClick={() => setShowSocialProof(true)}
+              >
+                <div className="flex -space-x-2">
+                  {topContributors.slice(0, 3).map((contributor, i) => (
+                    <Avatar key={i} className="w-6 h-6 border border-black">
+                      <AvatarImage src={contributor.collectors.profile_image_url || "/placeholder.svg"} />
+                      <AvatarFallback>{contributor.collectors.name.charAt(0)}</AvatarFallback>
+                    </Avatar>
+                  ))}
+                </div>
+                <span className="text-xs text-white">{topContributors.length} collectors contributing</span>
               </motion.div>
             </div>
           )}
