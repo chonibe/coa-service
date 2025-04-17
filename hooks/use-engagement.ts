@@ -3,7 +3,6 @@
 import { useState, useEffect } from "react"
 import { supabase } from "@/lib/supabase/client"
 import {
-  getCollectorSegment,
   rewardStrategies,
   getExpiryTime,
   shouldShowScarcityMessage,
@@ -28,35 +27,36 @@ export function useEngagement(artistId: string, certificateId: string, collector
         setLoading(true)
 
         // Fetch collector data
-        const { data: collector } = await supabase
-          .from("collectors")
-          .select("*, purchases(*)")
-          .eq("id", collectorId)
-          .single()
+        const { data: collector } = await supabase.from("collectors").select("*").eq("id", collectorId).single()
 
-        setCollectorData(collector)
+        setCollectorData(collector || { id: collectorId })
 
-        // Determine collector segment
-        const segment = getCollectorSegment(collector)
+        // Determine collector segment - use default for now
+        const segment = "newCollector" // Simplified for demo
         setSegment(segment)
         setStrategy(rewardStrategies[segment])
 
-        // Fetch view history
-        const { data: views } = await supabase
-          .from("collector_views")
-          .select("viewed_at")
-          .eq("collector_id", collectorId)
-          .eq("certificate_id", certificateId)
-          .order("viewed_at", { ascending: false })
+        // Try to fetch view history
+        try {
+          const { data: views } = await supabase
+            .from("collector_views")
+            .select("viewed_at")
+            .eq("collector_id", collectorId)
+            .eq("certificate_id", certificateId)
+            .order("viewed_at", { ascending: false })
 
-        if (views && views.length > 0) {
-          const viewDates = views.map((v) => new Date(v.viewed_at))
-          setViewHistory(viewDates)
-          setLastVisit(viewDates[0]) // Most recent view
+          if (views && views.length > 0) {
+            const viewDates = views.map((v) => new Date(v.viewed_at))
+            setViewHistory(viewDates)
+            setLastVisit(viewDates[0]) // Most recent view
 
-          // Calculate streak
-          const currentStreak = calculateStreak(viewDates)
-          setStreak(currentStreak)
+            // Calculate streak
+            const currentStreak = calculateStreak(viewDates)
+            setStreak(currentStreak)
+          }
+        } catch (error) {
+          console.log("collector_views table might not exist yet:", error)
+          // Continue without view history
         }
 
         // Determine if we should show scarcity messaging
@@ -81,13 +81,18 @@ export function useEngagement(artistId: string, certificateId: string, collector
     try {
       const now = new Date()
 
-      // Record the view in Supabase
-      await supabase.from("collector_views").insert({
-        collector_id: collectorId,
-        certificate_id: certificateId,
-        artist_id: artistId,
-        viewed_at: now.toISOString(),
-      })
+      // Try to record the view in Supabase
+      try {
+        await supabase.from("collector_views").insert({
+          collector_id: collectorId,
+          certificate_id: certificateId,
+          artist_id: artistId,
+          viewed_at: now.toISOString(),
+        })
+      } catch (error) {
+        console.log("collector_views table might not exist yet:", error)
+        // Continue without recording the view
+      }
 
       // Update local state
       setLastVisit(now)
@@ -110,23 +115,28 @@ export function useEngagement(artistId: string, certificateId: string, collector
   // Unlock special content for achieving streak milestones
   const unlockStreakReward = async (streakCount: number) => {
     try {
-      // Check if a streak reward already exists
-      const { data: existingReward } = await supabase
-        .from("streak_rewards")
-        .select("id")
-        .eq("collector_id", collectorId)
-        .eq("streak_count", streakCount)
-        .single()
+      // Try to check if a streak reward already exists
+      try {
+        const { data: existingReward } = await supabase
+          .from("streak_rewards")
+          .select("id")
+          .eq("collector_id", collectorId)
+          .eq("streak_count", streakCount)
+          .single()
 
-      if (!existingReward) {
-        // Create a new streak reward
-        await supabase.from("streak_rewards").insert({
-          collector_id: collectorId,
-          artist_id: artistId,
-          streak_count: streakCount,
-          unlocked_at: new Date().toISOString(),
-          claimed: false,
-        })
+        if (!existingReward) {
+          // Create a new streak reward
+          await supabase.from("streak_rewards").insert({
+            collector_id: collectorId,
+            artist_id: artistId,
+            streak_count: streakCount,
+            unlocked_at: new Date().toISOString(),
+            claimed: false,
+          })
+        }
+      } catch (error) {
+        console.log("streak_rewards table might not exist yet:", error)
+        // Continue without creating a streak reward
       }
     } catch (error) {
       console.error("Error unlocking streak reward:", error)
@@ -139,14 +149,19 @@ export function useEngagement(artistId: string, certificateId: string, collector
   useEffect(() => {
     const checkUnclaimedRewards = async () => {
       try {
-        const { data } = await supabase
-          .from("streak_rewards")
-          .select("id")
-          .eq("collector_id", collectorId)
-          .eq("claimed", false)
-          .limit(1)
+        try {
+          const { data } = await supabase
+            .from("streak_rewards")
+            .select("id")
+            .eq("collector_id", collectorId)
+            .eq("claimed", false)
+            .limit(1)
 
-        setHasUnclaimedRewards(data && data.length > 0)
+          setHasUnclaimedRewards(data && data.length > 0)
+        } catch (error) {
+          console.log("streak_rewards table might not exist yet:", error)
+          // Continue without checking for unclaimed rewards
+        }
       } catch (error) {
         console.error("Error checking unclaimed rewards:", error)
       }

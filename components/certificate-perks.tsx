@@ -5,6 +5,7 @@ import { ArtistBubble } from "./artist-bubble"
 import { PerkViewer } from "./perk-viewer"
 import { useArtistPerks } from "@/hooks/use-artist-perks"
 import { useEngagement } from "@/hooks/use-engagement"
+import { useCollectorInfluence } from "@/hooks/use-collector-influence"
 import { supabase } from "@/lib/supabase/client"
 
 interface CertificatePerksProps {
@@ -21,11 +22,14 @@ export function CertificatePerks({ artistId, certificateId, collectorId }: Certi
     certificateId,
     collectorId,
   )
+  const { influence, recordAction, submitIdea, recentContributors, topContributors, implementedIdeas } =
+    useCollectorInfluence(artistId, collectorId)
 
   // Record a view when the bubble is clicked
   const handleOpenViewer = () => {
     setIsViewerOpen(true)
     recordView()
+    recordAction("view_content")
   }
 
   // Handle claiming a streak reward
@@ -37,6 +41,9 @@ export function CertificatePerks({ artistId, certificateId, collectorId }: Certi
         .update({ claimed: true })
         .eq("collector_id", collectorId)
         .eq("claimed", false)
+
+      // Record the action for influence points
+      await recordAction("streak_milestone")
 
       // In a real app, you might also unlock special content here
     } catch (error) {
@@ -74,6 +81,12 @@ export function CertificatePerks({ artistId, certificateId, collectorId }: Certi
         expiryTime={expiryTime}
         hasUnclaimedRewards={hasUnclaimedRewards}
         onClaimReward={handleClaimReward}
+        influence={influence}
+        recentContributors={recentContributors}
+        topContributors={topContributors}
+        implementedIdeas={implementedIdeas}
+        onSubmitIdea={submitIdea}
+        onRecordAction={recordAction}
       />
     </>
   )
