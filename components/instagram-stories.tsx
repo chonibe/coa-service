@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useRef } from "react"
+import { useState, useRef, useEffect } from "react"
 import Image from "next/image"
 import { motion, AnimatePresence } from "framer-motion"
 import { ChevronLeft, ChevronRight, X, Instagram } from "lucide-react"
@@ -13,6 +13,7 @@ interface InstagramStoriesProps {
   stories: any[]
   isOpen: boolean
   onClose: () => void
+  onStoryView?: (storyId: string) => void
 }
 
 export function InstagramStories({
@@ -22,10 +23,12 @@ export function InstagramStories({
   stories,
   isOpen,
   onClose,
+  onStoryView,
 }: InstagramStoriesProps) {
   const [currentIndex, setCurrentIndex] = useState(0)
   const [progress, setProgress] = useState(0)
   const progressInterval = useRef<NodeJS.Timeout | null>(null)
+  const [viewedStories, setViewedStories] = useState<Set<string>>(new Set())
 
   // Start progress timer when story is shown
   const startProgress = () => {
@@ -36,6 +39,19 @@ export function InstagramStories({
 
     // Reset progress
     setProgress(0)
+
+    // Mark current story as viewed
+    if (stories[currentIndex] && !viewedStories.has(stories[currentIndex].id)) {
+      setViewedStories((prev) => {
+        const newSet = new Set(prev)
+        newSet.add(stories[currentIndex].id)
+        return newSet
+      })
+
+      if (onStoryView) {
+        onStoryView(stories[currentIndex].id)
+      }
+    }
 
     // Set up new interval - stories typically last 15 seconds
     progressInterval.current = setInterval(() => {
@@ -66,7 +82,7 @@ export function InstagramStories({
   }
 
   // Start progress when component mounts or story changes
-  useState(() => {
+  useEffect(() => {
     if (isOpen && stories.length > 0) {
       startProgress()
     }
@@ -76,7 +92,7 @@ export function InstagramStories({
         clearInterval(progressInterval.current)
       }
     }
-  })
+  }, [currentIndex, isOpen, stories.length])
 
   // Handle navigation
   const goToNext = () => {
@@ -149,9 +165,9 @@ export function InstagramStories({
 
             {/* Story content */}
             <div className="w-full h-full flex items-center justify-center">
-              {currentStory.mediaType === "IMAGE" ? (
+              {currentStory.media_type === "IMAGE" || currentStory.media_type === "CAROUSEL_ALBUM" ? (
                 <Image
-                  src={currentStory.mediaUrl || "/placeholder.svg"}
+                  src={currentStory.media_url || "/placeholder.svg"}
                   alt="Instagram Story"
                   width={1080}
                   height={1920}
@@ -159,7 +175,7 @@ export function InstagramStories({
                 />
               ) : (
                 <video
-                  src={currentStory.mediaUrl}
+                  src={currentStory.media_url}
                   className="w-full h-full object-contain"
                   autoPlay
                   playsInline

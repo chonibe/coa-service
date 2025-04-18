@@ -40,7 +40,7 @@ export function ArtworkPortal({
   const [showInstagramIndicator, setShowInstagramIndicator] = useState(false)
 
   // Get Instagram data
-  const { stories, profile, isConnected } = useArtistInstagram(artistId)
+  const { stories, profile, isConnected, viewStory } = useArtistInstagram(artistId)
 
   // References for animation timing
   const shimmerTimerRef = useRef<NodeJS.Timeout | null>(null)
@@ -183,6 +183,11 @@ export function ArtworkPortal({
         }, 3000)
       }
     }
+  }
+
+  // Handle story view
+  const handleStoryView = (storyId: string) => {
+    viewStory(storyId, collectorId)
   }
 
   // Render the portal event content
@@ -340,13 +345,14 @@ export function ArtworkPortal({
       </div>
 
       {/* Instagram Stories Indicator */}
-      {showInstagramIndicator && profile && stories.length > 0 && (
+      {showInstagramIndicator && profile && stories && stories.length > 0 && (
         <div className="absolute top-3 right-3">
           <InstagramStoriesPreview
             artistName={artistName}
-            username={profile.username}
-            profilePicture={profile.profilePictureUrl}
+            username={profile.username || "streetcollector_"}
+            profilePicture={profile.profile_picture_url || "/creative-portrait.png"}
             stories={stories}
+            onStoryView={handleStoryView}
           />
         </div>
       )}

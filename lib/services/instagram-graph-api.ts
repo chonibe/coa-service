@@ -83,6 +83,25 @@ export async function getInstagramMedia(
   }
 }
 
+// Get Instagram stories
+export async function getInstagramStories(igBusinessId: string, accessToken: string): Promise<InstagramMedia[]> {
+  try {
+    const response = await fetch(
+      `${GRAPH_API_BASE}/${igBusinessId}/stories?fields=id,media_type,media_url,permalink,timestamp&access_token=${accessToken}`,
+    )
+
+    if (!response.ok) {
+      throw new Error(`Instagram API error: ${response.status}`)
+    }
+
+    const data = await response.json()
+    return data.data || []
+  } catch (error) {
+    console.error("Error getting Instagram stories:", error)
+    return []
+  }
+}
+
 // Store Instagram credentials in Supabase
 export async function storeInstagramCredentials(
   artistId: string,
@@ -93,22 +112,6 @@ export async function storeInstagramCredentials(
 ): Promise<boolean> {
   try {
     // In a real implementation, you would store this in Supabase
-    // For example:
-    /*
-    const { error } = await supabase
-      .from('instagram_credentials')
-      .upsert({
-        artist_id: artistId,
-        page_id: pageId,
-        instagram_business_id: igBusinessId,
-        access_token: accessToken,
-        token_expiry: tokenExpiry.toISOString(),
-        updated_at: new Date().toISOString()
-      })
-    
-    if (error) throw error
-    */
-
     console.log(`Stored Instagram credentials for artist ${artistId}`)
     return true
   } catch (error) {
@@ -120,25 +123,12 @@ export async function storeInstagramCredentials(
 // Get Instagram credentials from Supabase
 export async function getInstagramCredentials(artistId: string): Promise<any | null> {
   try {
-    // In a real implementation, you would fetch this from Supabase
-    // For example:
-    /*
-    const { data, error } = await supabase
-      .from('instagram_credentials')
-      .select('*')
-      .eq('artist_id', artistId)
-      .single()
-    
-    if (error) throw error
-    return data
-    */
-
-    // For demo purposes, return mock data
+    // For now, return hardcoded credentials for streetcollector_
     return {
       artist_id: artistId,
-      page_id: "mock_page_id",
-      instagram_business_id: "mock_ig_business_id",
-      access_token: "mock_access_token",
+      page_id: process.env.FACEBOOK_PAGE_ID || "mock_page_id",
+      instagram_business_id: process.env.INSTAGRAM_BUSINESS_ID || "mock_ig_business_id",
+      access_token: process.env.INSTAGRAM_ACCESS_TOKEN || "mock_access_token",
       token_expiry: new Date(Date.now() + 60 * 24 * 60 * 60 * 1000).toISOString(), // 60 days from now
       updated_at: new Date().toISOString(),
     }
