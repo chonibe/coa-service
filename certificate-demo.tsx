@@ -1,184 +1,214 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import Image from "next/image"
-import { ArtworkFrame } from "@/components/artwork-frame"
-import { CollectionGallery } from "@/components/collection-gallery"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { GalleryThumbnailsIcon as Gallery, Home, User } from "lucide-react"
+import { ArtworkPortal } from "@/components/artwork-portal"
+import { ExclusiveDrops } from "@/components/exclusive-drops"
+import { useArtworkPortal } from "@/hooks/use-artwork-portal"
+import { Button } from "@/components/ui/button"
+import { MessageCircle } from "lucide-react"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
+import { motion, AnimatePresence } from "framer-motion"
+import { cn } from "@/lib/utils"
 
 export default function CertificateDemo() {
-  const [imageLoaded, setImageLoaded] = useState(false)
+  const [showVisitDialog, setShowVisitDialog] = useState(false)
+  const [visitToShow, setVisitToShow] = useState<any | null>(null)
+  const [showingHint, setShowingHint] = useState(false)
 
-  // Mock data for the demo
+  // In a real implementation, these would come from your auth and database
   const artistId = "artist123"
-  const certificateId = "cert456"
+  const artworkId = "artwork456"
   const collectorId = "collector789"
-  const artworkTitle = "Chromatic Flow #42"
 
-  // Mock artwork collection
-  const artworkCollection = [
-    {
-      id: certificateId,
-      title: artworkTitle,
-      imageUrl: "/chromatic-flow.png",
-      artist: {
-        id: artistId,
-        name: "Chanchal Banga",
-        profileImageUrl: "/creative-portrait.png",
-      },
-      themes: ["abstract", "color theory", "digital"],
-    },
-    {
-      id: "cert789",
-      title: "Urban Fragments #3",
-      imageUrl: "/cluttered-creative-space.png",
-      artist: {
-        id: "artist456",
-        name: "Maya Lin",
-        profileImageUrl: "/diverse-professional-profiles.png",
-      },
-      themes: ["urban", "collage", "photography"],
-    },
-    {
-      id: "cert101",
-      title: "Ethereal Landscape",
-      imageUrl: "/diverse-group-city.png",
-      artist: {
-        id: "artist789",
-        name: "Takashi Murakami",
-        profileImageUrl: "/mystical-forest-spirit.png",
-      },
-      themes: ["landscape", "surreal", "digital"],
-    },
-  ]
+  const artist = {
+    id: artistId,
+    name: "Chanchal Banga",
+    profileImageUrl: "/creative-portrait.png",
+  }
+
+  const artwork = {
+    id: artworkId,
+    title: "Chromatic Flow #42",
+    imageUrl: "/chromatic-flow.png",
+    createdAt: "April 2023",
+    edition: "1 of 10",
+    medium: "Digital Art, Giclée print on archival paper",
+    dimensions: "24 × 36 inches",
+  }
+
+  const { pendingVisits, upcomingDrops, activeVisit, hasActivity, handlePortalEvent, triggerVisit } = useArtworkPortal(
+    artworkId,
+    artistId,
+    collectorId,
+  )
+
+  // Show hint about interaction after a delay
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setShowingHint(true)
+
+      // Hide hint after 5 seconds
+      const hideTimer = setTimeout(() => {
+        setShowingHint(false)
+      }, 5000)
+
+      return () => clearTimeout(hideTimer)
+    }, 10000)
+
+    return () => clearTimeout(timer)
+  }, [])
+
+  // Handle showing a visit dialog
+  const handleShowVisit = (visit: any) => {
+    setVisitToShow(visit)
+    setShowVisitDialog(true)
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 p-4 md:p-8">
-      <div className="max-w-6xl mx-auto">
-        <Tabs defaultValue="certificate">
-          <div className="bg-white rounded-lg shadow-sm mb-4">
-            <TabsList className="p-2 gap-1 w-full">
-              <TabsTrigger value="certificate" className="gap-1.5">
-                <Home className="w-4 h-4" />
-                <span>Certificate</span>
-              </TabsTrigger>
-              <TabsTrigger value="collection" className="gap-1.5">
-                <Gallery className="w-4 h-4" />
-                <span>Collection</span>
-              </TabsTrigger>
-              <TabsTrigger value="artist" className="gap-1.5">
-                <User className="w-4 h-4" />
-                <span>Artist</span>
-              </TabsTrigger>
-            </TabsList>
+      <div className="max-w-4xl mx-auto">
+        <div className="bg-white rounded-lg shadow-sm p-6 md:p-8">
+          <h1 className="text-2xl font-medium mb-6">Certificate of Authenticity</h1>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div>
+              {/* The artwork as a portal */}
+              <div className="rounded-lg overflow-hidden mb-4 relative">
+                <ArtworkPortal
+                  artistId={artistId}
+                  artworkId={artworkId}
+                  collectorId={collectorId}
+                  artworkImageUrl={artwork.imageUrl}
+                  artworkTitle={artwork.title}
+                  artistName={artist.name}
+                  artistImageUrl={artist.profileImageUrl}
+                  onPortalEvent={handlePortalEvent}
+                />
+
+                {/* Interaction hint */}
+                <AnimatePresence>
+                  {showingHint && (
+                    <motion.div
+                      className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-black/70 text-white text-sm rounded-full px-3 py-1.5"
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: 5 }}
+                    >
+                      Try interacting with your artwork...
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+
+                {/* Badge for pending visits */}
+                <AnimatePresence>
+                  {pendingVisits.length > 0 && (
+                    <motion.div
+                      initial={{ scale: 0.8, opacity: 0 }}
+                      animate={{ scale: 1, opacity: 1 }}
+                      className="absolute top-3 right-3 bg-indigo-500 text-white rounded-full px-2 py-1 flex items-center text-xs shadow-md cursor-pointer"
+                      onClick={() => handleShowVisit(pendingVisits[0])}
+                    >
+                      <MessageCircle className="w-3.5 h-3.5 mr-1" />
+                      <span>{pendingVisits.length} new from artist</span>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+
+              {/* Upcoming drops panel */}
+              {upcomingDrops.length > 0 && (
+                <div className="mt-4">
+                  <ExclusiveDrops upcomingDrops={upcomingDrops} />
+                </div>
+              )}
+            </div>
+
+            <div>
+              <h2 className="text-xl font-medium">{artwork.title}</h2>
+              <p className="text-gray-600 mb-6">By {artist.name}</p>
+
+              <div className="space-y-6">
+                <div>
+                  <h3 className="text-sm font-medium text-gray-500">Edition</h3>
+                  <p>{artwork.edition}</p>
+                </div>
+
+                <div>
+                  <h3 className="text-sm font-medium text-gray-500">Created</h3>
+                  <p>{artwork.createdAt}</p>
+                </div>
+
+                <div>
+                  <h3 className="text-sm font-medium text-gray-500">Medium</h3>
+                  <p>{artwork.medium}</p>
+                </div>
+
+                <div>
+                  <h3 className="text-sm font-medium text-gray-500">Dimensions</h3>
+                  <p>{artwork.dimensions}</p>
+                </div>
+
+                {/* Portal concept explainer */}
+                <div className="pt-4 border-t border-gray-100">
+                  <h3 className="text-sm font-medium text-gray-500 mb-2">About Your Artist Connection</h3>
+                  <p className="text-sm text-gray-600">
+                    This artwork is more than just a static piece - it's a living connection to the artist. Like a
+                    magical portrait, the artist may occasionally visit, leave messages, or share exclusive content
+                    through your artwork.
+                  </p>
+                  <p className="text-sm text-gray-600 mt-2">
+                    Keep an eye on your piece, as it might reveal special moments and insights that are meant just for
+                    you as the collector.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Artist Visit Dialog */}
+      <Dialog open={showVisitDialog} onOpenChange={setShowVisitDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Message from {artist.name}</DialogTitle>
+            <DialogDescription>The artist has left a message through your artwork</DialogDescription>
+          </DialogHeader>
+
+          <div className="flex items-start gap-4 my-4">
+            <div className="w-10 h-10 rounded-full overflow-hidden shrink-0">
+              <Image
+                src={artist.profileImageUrl || "/placeholder.svg"}
+                alt={artist.name}
+                width={40}
+                height={40}
+                className="w-full h-full object-cover"
+              />
+            </div>
+
+            <div
+              className={cn(
+                "bg-gray-50 p-4 rounded-lg relative",
+                "after:absolute after:top-4 after:-left-2 after:w-2 after:h-2 after:rotate-45 after:bg-gray-50",
+              )}
+            >
+              <p className="text-gray-800">
+                {visitToShow?.content ||
+                  "I wanted to connect with you about this piece. The colors were inspired by a sunset I witnessed last summer..."}
+              </p>
+              <p className="text-right text-sm text-gray-500 mt-2">{new Date().toLocaleDateString()}</p>
+            </div>
           </div>
 
-          <TabsContent value="certificate">
-            <div className="bg-white rounded-lg shadow-sm p-6 md:p-8">
-              <h1 className="text-2xl font-medium mb-6">Certificate of Authenticity</h1>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                <div>
-                  <ArtworkFrame
-                    artwork={{
-                      id: certificateId,
-                      title: artworkTitle,
-                      imageUrl: "/chromatic-flow.png",
-                      artist: {
-                        id: artistId,
-                        name: "Chanchal Banga",
-                        profileImageUrl: "/creative-portrait.png",
-                      },
-                    }}
-                    presenceType="whisper"
-                    hasVisitation={true}
-                    className="aspect-square"
-                  />
-                </div>
-
-                <div>
-                  <h2 className="text-xl font-medium">{artworkTitle}</h2>
-                  <p className="text-gray-600 mb-6">By Chanchal Banga</p>
-
-                  <div className="space-y-6">
-                    <div>
-                      <h3 className="text-sm font-medium text-gray-500">Edition</h3>
-                      <p>1 of 10</p>
-                    </div>
-
-                    <div>
-                      <h3 className="text-sm font-medium text-gray-500">Created</h3>
-                      <p>April 2023</p>
-                    </div>
-
-                    <div>
-                      <h3 className="text-sm font-medium text-gray-500">Medium</h3>
-                      <p>Digital Art, Giclée print on archival paper</p>
-                    </div>
-
-                    <div>
-                      <h3 className="text-sm font-medium text-gray-500">Dimensions</h3>
-                      <p>24 × 36 inches</p>
-                    </div>
-
-                    <div className="pt-4 border-t border-gray-100">
-                      <h3 className="text-sm font-medium text-gray-500 mb-2">Artist Note</h3>
-                      <p className="text-sm text-gray-600 italic">
-                        "This piece explores the relationship between color and emotion. The flowing forms represent the
-                        way our feelings shift and blend into one another, never static but always in motion."
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </TabsContent>
-
-          <TabsContent value="collection">
-            <div className="bg-white rounded-lg shadow-sm p-6 md:p-8">
-              <CollectionGallery collectorId={collectorId} artworks={artworkCollection} />
-            </div>
-          </TabsContent>
-
-          <TabsContent value="artist">
-            <div className="bg-white rounded-lg shadow-sm p-6 md:p-8">
-              <div className="flex items-center gap-4 mb-6">
-                <div className="w-16 h-16 rounded-full overflow-hidden">
-                  <Image
-                    src="/creative-portrait.png"
-                    alt="Chanchal Banga"
-                    width={64}
-                    height={64}
-                    className="w-full h-full object-cover"
-                  />
-                </div>
-                <div>
-                  <h2 className="text-xl font-medium">Chanchal Banga</h2>
-                  <p className="text-gray-600">Digital Artist</p>
-                </div>
-              </div>
-
-              <div className="prose max-w-none">
-                <p>
-                  Chanchal Banga is a digital artist exploring the intersection of technology and consciousness through
-                  abstract forms and vibrant color relationships. Their work examines how perception shapes our
-                  understanding of reality.
-                </p>
-                <p>
-                  Based in Chicago, Banga has exhibited internationally and is known for creating immersive digital
-                  experiences that blur the line between the physical and digital worlds.
-                </p>
-                <p>
-                  As a collector of Banga's work, you'll occasionally receive exclusive glimpses into their creative
-                  process, thoughts, and inspirations directly through your collected pieces - as if the artist
-                  occasionally visits the artwork in your collection.
-                </p>
-              </div>
-            </div>
-          </TabsContent>
-        </Tabs>
-      </div>
+          <div className="flex justify-end gap-2">
+            <Button variant="outline" onClick={() => setShowVisitDialog(false)}>
+              Close
+            </Button>
+            <Button>Respond</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
