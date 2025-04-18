@@ -25,6 +25,10 @@ const GRAPH_API_BASE = "https://graph.facebook.com/v19.0"
 
 // Validate and clean access token
 function validateToken(token: string): string {
+  if (!token) {
+    throw new Error("Empty access token")
+  }
+
   // Remove any whitespace that might have been accidentally included
   const cleanToken = token.trim()
 
@@ -33,11 +37,20 @@ function validateToken(token: string): string {
     throw new Error("Empty access token")
   }
 
+  // Check if token has the expected format (usually starts with EAA)
+  if (!cleanToken.startsWith("EAA")) {
+    console.warn("Access token doesn't have the expected format (should start with EAA)")
+  }
+
   return cleanToken
 }
 
 // Validate Instagram Business ID
 function validateBusinessId(id: string): string {
+  if (!id) {
+    throw new Error("Empty Instagram Business ID")
+  }
+
   const cleanId = id.trim()
 
   if (!cleanId) {
@@ -275,9 +288,45 @@ export async function testInstagramCredentials(igBusinessId: string, accessToken
       cache: "no-store",
     })
 
+    if (!response.ok) {
+      const errorText = await response.text()
+      console.error(`Error testing Instagram credentials: ${response.status}`, errorText)
+    }
+
     return response.ok
   } catch (error) {
     console.error("Error testing Instagram credentials:", error)
     return false
+  }
+}
+
+// Debug token information
+export async function debugToken(accessToken: string): Promise<any> {
+  try {
+    if (!accessToken) {
+      return { error: "No access token provided" }
+    }
+
+    const validToken = validateToken(accessToken)
+
+    // Use the debug_token endpoint to get information about the token
+    const response = await fetch(`${GRAPH_API_BASE}/debug_token?input_token=${validToken}&access_token=${validToken}`, {
+      headers: {
+        Accept: "application/json",
+      },
+      cache: "no-store",
+    })
+
+    if (!response.ok) {
+      const errorText = await response.text()
+      console.error(`Error debugging token: ${response.status}`, errorText)
+      return { error: `API error: ${response.status}` }
+    }
+
+    const data = await response.json()
+    return data
+  } catch (error) {
+    console.error("Error debugging token:", error)
+    return { error: error.message }
   }
 }

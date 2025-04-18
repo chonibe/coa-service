@@ -6,6 +6,7 @@ import {
   getInstagramMedia,
   getInstagramStories,
   testInstagramCredentials,
+  debugToken,
 } from "@/lib/services/instagram-graph-api"
 import { supabaseAdmin } from "@/lib/supabase/client"
 
@@ -40,6 +41,13 @@ export async function fetchInstagramProfile(artistId: string) {
     if (!credentials || !credentials.instagram_business_id || !credentials.access_token) {
       console.warn("Missing Instagram credentials for profile fetch")
       return { error: "No Instagram credentials found", fallback: true, profile: getFallbackProfile() }
+    }
+
+    // Debug token to check its status
+    const tokenInfo = await debugToken(credentials.access_token)
+    if (tokenInfo.error || (tokenInfo.data && !tokenInfo.data.is_valid)) {
+      console.error("Invalid access token:", tokenInfo)
+      return { error: "Invalid access token", fallback: true, profile: getFallbackProfile() }
     }
 
     // Test credentials before making the actual API call
@@ -125,6 +133,13 @@ export async function fetchInstagramMedia(artistId: string, limit = 6) {
       return { error: "Invalid Instagram credentials", fallback: true, media: getFallbackMedia() }
     }
 
+    // Debug token to check its status
+    const tokenInfo = await debugToken(credentials.access_token)
+    if (tokenInfo.error || (tokenInfo.data && !tokenInfo.data.is_valid)) {
+      console.error("Invalid access token:", tokenInfo)
+      return { error: "Invalid access token", fallback: true, media: getFallbackMedia() }
+    }
+
     // Test credentials before making the actual API call
     const credentialsValid = await testInstagramCredentials(credentials.instagram_business_id, credentials.access_token)
 
@@ -208,6 +223,13 @@ export async function fetchInstagramStories(artistId: string) {
     if (!credentials || !credentials.instagram_business_id || !credentials.access_token) {
       console.warn("Missing Instagram credentials for stories fetch")
       return { error: "No Instagram credentials found", fallback: true, stories: getFallbackStories() }
+    }
+
+    // Debug token to check its status
+    const tokenInfo = await debugToken(credentials.access_token)
+    if (tokenInfo.error || (tokenInfo.data && !tokenInfo.data.is_valid)) {
+      console.error("Invalid access token:", tokenInfo)
+      return { error: "Invalid access token", fallback: true, stories: getFallbackStories() }
     }
 
     // Test credentials before making the actual API call

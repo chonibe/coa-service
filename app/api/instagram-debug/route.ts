@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server"
-import { getInstagramCredentials, testInstagramCredentials } from "@/lib/services/instagram-graph-api"
+import { getInstagramCredentials, testInstagramCredentials, debugToken } from "@/lib/services/instagram-graph-api"
 import { supabaseAdmin } from "@/lib/supabase/client"
 
 export async function GET() {
@@ -21,6 +21,12 @@ export async function GET() {
     let credentialsValid = false
     if (credentials.instagram_business_id && credentials.access_token) {
       credentialsValid = await testInstagramCredentials(credentials.instagram_business_id, credentials.access_token)
+    }
+
+    // Debug token
+    let tokenInfo = null
+    if (credentials.access_token) {
+      tokenInfo = await debugToken(credentials.access_token)
     }
 
     // Check cache tables
@@ -62,6 +68,39 @@ export async function GET() {
       }
     }
 
+    // Test a simple API call
+    let apiTestResult = null
+    try {
+      if (credentials.instagram_business_id && credentials.access_token) {
+        const response = await fetch(
+          `https://graph.facebook.com/v19.0/${credentials.instagram_business_id}?fields=username&access_token=${credentials.access_token}`,
+          {
+            headers: {
+              Accept: "application/json",
+            },
+            cache: "no-store",
+          },
+        )
+
+        if (response.ok) {
+          apiTestResult = {
+            status: response.status,
+            data: await response.json(),
+          }
+        } else {
+          const errorText = await response.text()
+          apiTestResult = {
+            status: response.status,
+            error: errorText,
+          }
+        }
+      }
+    } catch (error) {
+      apiTestResult = {
+        error: error.message,
+      }
+    }
+
     return NextResponse.json({
       environment_variables: {
         FACEBOOK_PAGE_ID: process.env.FACEBOOK_PAGE_ID ? "Set" : "Not set",
@@ -70,6 +109,8 @@ export async function GET() {
       },
       credentials: safeCredentials,
       credentials_valid: credentialsValid,
+      token_info: tokenInfo,
+      api_test: apiTestResult,
       cache_tables: cacheTablesStatus,
       timestamp: new Date().toISOString(),
     })
