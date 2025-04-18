@@ -23,19 +23,63 @@ interface InstagramProfile {
 // Base URL for Graph API
 const GRAPH_API_BASE = "https://graph.facebook.com/v19.0"
 
+// Validate and clean access token
+function validateToken(token: string): string {
+  // Remove any whitespace that might have been accidentally included
+  const cleanToken = token.trim()
+
+  // Basic validation - tokens should be non-empty strings
+  if (!cleanToken) {
+    throw new Error("Empty access token")
+  }
+
+  return cleanToken
+}
+
+// Validate Instagram Business ID
+function validateBusinessId(id: string): string {
+  const cleanId = id.trim()
+
+  if (!cleanId) {
+    throw new Error("Empty Instagram Business ID")
+  }
+
+  return cleanId
+}
+
 // Get Instagram business account ID from Facebook Page ID
 export async function getInstagramBusinessAccountId(pageId: string, accessToken: string): Promise<string | null> {
   try {
+    const validToken = validateToken(accessToken)
+    const validPageId = validateBusinessId(pageId)
+
+    console.log(`Fetching Instagram Business ID for Page ID: ${validPageId}`)
+
     const response = await fetch(
-      `${GRAPH_API_BASE}/${pageId}?fields=instagram_business_account&access_token=${accessToken}`,
+      `${GRAPH_API_BASE}/${validPageId}?fields=instagram_business_account&access_token=${validToken}`,
+      {
+        headers: {
+          Accept: "application/json",
+        },
+        cache: "no-store",
+      },
     )
 
     if (!response.ok) {
+      const errorText = await response.text()
+      console.error(`Facebook API error: ${response.status}`, errorText)
       throw new Error(`Facebook API error: ${response.status}`)
     }
 
     const data = await response.json()
-    return data.instagram_business_account?.id || null
+
+    if (!data.instagram_business_account?.id) {
+      console.error("No Instagram Business Account found for this Page ID")
+      return null
+    }
+
+    console.log(`Successfully retrieved Instagram Business ID: ${data.instagram_business_account.id}`)
+    return data.instagram_business_account.id
   } catch (error) {
     console.error("Error getting Instagram business account ID:", error)
     return null
@@ -45,15 +89,39 @@ export async function getInstagramBusinessAccountId(pageId: string, accessToken:
 // Get Instagram profile information
 export async function getInstagramProfile(igBusinessId: string, accessToken: string): Promise<InstagramProfile | null> {
   try {
-    const response = await fetch(
-      `${GRAPH_API_BASE}/${igBusinessId}?fields=username,profile_picture_url,followers_count,media_count,biography,name,website&access_token=${accessToken}`,
-    )
+    if (!igBusinessId || !accessToken) {
+      console.error("Missing required parameters for getInstagramProfile")
+      return null
+    }
+
+    const validToken = validateToken(accessToken)
+    const validBusinessId = validateBusinessId(igBusinessId)
+
+    console.log(`Fetching Instagram profile for Business ID: ${validBusinessId}`)
+
+    const url = `${GRAPH_API_BASE}/${validBusinessId}?fields=username,profile_picture_url,followers_count,media_count,biography,name,website&access_token=${validToken}`
+
+    const response = await fetch(url, {
+      headers: {
+        Accept: "application/json",
+      },
+      cache: "no-store",
+    })
 
     if (!response.ok) {
+      const errorText = await response.text()
+      console.error(`Instagram API error: ${response.status}`, errorText)
+
+      // Log more details about the request (without exposing the full token)
+      console.error(`Request details: Business ID: ${validBusinessId}, Token length: ${validToken.length}`)
+
       throw new Error(`Instagram API error: ${response.status}`)
     }
 
-    return await response.json()
+    const data = await response.json()
+    console.log(`Successfully fetched Instagram profile for: ${data.username || "unknown"}`)
+
+    return data
   } catch (error) {
     console.error("Error getting Instagram profile:", error)
     return null
@@ -67,15 +135,34 @@ export async function getInstagramMedia(
   limit = 10,
 ): Promise<InstagramMedia[]> {
   try {
-    const response = await fetch(
-      `${GRAPH_API_BASE}/${igBusinessId}/media?fields=id,caption,media_type,media_url,permalink,thumbnail_url,timestamp&limit=${limit}&access_token=${accessToken}`,
-    )
+    if (!igBusinessId || !accessToken) {
+      console.error("Missing required parameters for getInstagramMedia")
+      return []
+    }
+
+    const validToken = validateToken(accessToken)
+    const validBusinessId = validateBusinessId(igBusinessId)
+
+    console.log(`Fetching Instagram media for Business ID: ${validBusinessId}`)
+
+    const url = `${GRAPH_API_BASE}/${validBusinessId}/media?fields=id,caption,media_type,media_url,permalink,thumbnail_url,timestamp&limit=${limit}&access_token=${validToken}`
+
+    const response = await fetch(url, {
+      headers: {
+        Accept: "application/json",
+      },
+      cache: "no-store",
+    })
 
     if (!response.ok) {
+      const errorText = await response.text()
+      console.error(`Instagram API error: ${response.status}`, errorText)
       throw new Error(`Instagram API error: ${response.status}`)
     }
 
     const data = await response.json()
+    console.log(`Fetched ${data.data?.length || 0} Instagram media items`)
+
     return data.data || []
   } catch (error) {
     console.error("Error getting Instagram media:", error)
@@ -86,15 +173,34 @@ export async function getInstagramMedia(
 // Get Instagram stories
 export async function getInstagramStories(igBusinessId: string, accessToken: string): Promise<InstagramMedia[]> {
   try {
-    const response = await fetch(
-      `${GRAPH_API_BASE}/${igBusinessId}/stories?fields=id,media_type,media_url,permalink,timestamp&access_token=${accessToken}`,
-    )
+    if (!igBusinessId || !accessToken) {
+      console.error("Missing required parameters for getInstagramStories")
+      return []
+    }
+
+    const validToken = validateToken(accessToken)
+    const validBusinessId = validateBusinessId(igBusinessId)
+
+    console.log(`Fetching Instagram stories for Business ID: ${validBusinessId}`)
+
+    const url = `${GRAPH_API_BASE}/${validBusinessId}/stories?fields=id,media_type,media_url,permalink,timestamp&access_token=${validToken}`
+
+    const response = await fetch(url, {
+      headers: {
+        Accept: "application/json",
+      },
+      cache: "no-store",
+    })
 
     if (!response.ok) {
+      const errorText = await response.text()
+      console.error(`Instagram API error: ${response.status}`, errorText)
       throw new Error(`Instagram API error: ${response.status}`)
     }
 
     const data = await response.json()
+    console.log(`Fetched ${data.data?.length || 0} Instagram stories`)
+
     return data.data || []
   } catch (error) {
     console.error("Error getting Instagram stories:", error)
@@ -123,17 +229,55 @@ export async function storeInstagramCredentials(
 // Get Instagram credentials from Supabase
 export async function getInstagramCredentials(artistId: string): Promise<any | null> {
   try {
-    // For now, return hardcoded credentials for streetcollector_
+    // Log the environment variables (without revealing the full token)
+    const pageId = process.env.FACEBOOK_PAGE_ID || ""
+    const igBusinessId = process.env.INSTAGRAM_BUSINESS_ID || ""
+    const accessToken = process.env.INSTAGRAM_ACCESS_TOKEN || ""
+
+    console.log("Environment variables check:")
+    console.log(`- FACEBOOK_PAGE_ID: ${pageId ? "Set" : "Not set"}`)
+    console.log(`- INSTAGRAM_BUSINESS_ID: ${igBusinessId ? "Set" : "Not set"}`)
+    console.log(`- INSTAGRAM_ACCESS_TOKEN: ${accessToken ? "Set (length: " + accessToken.length + ")" : "Not set"}`)
+
+    if (!pageId || !igBusinessId || !accessToken) {
+      console.warn("Missing one or more required Instagram credentials in environment variables")
+    }
+
     return {
       artist_id: artistId,
-      page_id: process.env.FACEBOOK_PAGE_ID || "mock_page_id",
-      instagram_business_id: process.env.INSTAGRAM_BUSINESS_ID || "mock_ig_business_id",
-      access_token: process.env.INSTAGRAM_ACCESS_TOKEN || "mock_access_token",
+      page_id: pageId,
+      instagram_business_id: igBusinessId,
+      access_token: accessToken,
       token_expiry: new Date(Date.now() + 60 * 24 * 60 * 60 * 1000).toISOString(), // 60 days from now
       updated_at: new Date().toISOString(),
     }
   } catch (error) {
     console.error("Error getting Instagram credentials:", error)
     return null
+  }
+}
+
+// Test Instagram credentials
+export async function testInstagramCredentials(igBusinessId: string, accessToken: string): Promise<boolean> {
+  try {
+    if (!igBusinessId || !accessToken) {
+      return false
+    }
+
+    const validToken = validateToken(accessToken)
+    const validBusinessId = validateBusinessId(igBusinessId)
+
+    // Make a simple API call to test the credentials
+    const response = await fetch(`${GRAPH_API_BASE}/${validBusinessId}?fields=username&access_token=${validToken}`, {
+      headers: {
+        Accept: "application/json",
+      },
+      cache: "no-store",
+    })
+
+    return response.ok
+  } catch (error) {
+    console.error("Error testing Instagram credentials:", error)
+    return false
   }
 }
