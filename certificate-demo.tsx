@@ -1,43 +1,57 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import Image from "next/image"
-import { useCollectorCircle } from "@/hooks/use-collector-circle"
-import { CollectorCircleEntry } from "@/components/collector-circle-entry"
-import { CollectorSocialSignals } from "@/components/collector-social-signals"
-import { ConnectionOpportunities } from "@/components/connection-opportunities"
+import { ArtworkFrame } from "@/components/artwork-frame"
+import { CollectionGallery } from "@/components/collection-gallery"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Button } from "@/components/ui/button"
-import { Users, FileText, Lightbulb } from "lucide-react"
+import { GalleryThumbnailsIcon as Gallery, Home, User } from "lucide-react"
 
 export default function CertificateDemo() {
-  const [showConnections, setShowConnections] = useState(false)
   const [imageLoaded, setImageLoaded] = useState(false)
 
-  // In a real implementation, these would come from your auth and database
+  // Mock data for the demo
   const artistId = "artist123"
   const certificateId = "cert456"
   const collectorId = "collector789"
   const artworkTitle = "Chromatic Flow #42"
 
-  const { collectorProfile, mutualConnections, interactions, opportunities, recommendedActions, loading, takeAction } =
-    useCollectorCircle(artistId, collectorId)
-
-  // Handle when an action is selected
-  const handleActionSelected = async (action: string) => {
-    await takeAction(action, "personal-touch")
-    // In a real app, you might show a success message or update UI
-  }
-
-  // Show connections tab after image loads with a slight delay
-  useEffect(() => {
-    if (imageLoaded) {
-      const timer = setTimeout(() => {
-        setShowConnections(true)
-      }, 1500)
-      return () => clearTimeout(timer)
-    }
-  }, [imageLoaded])
+  // Mock artwork collection
+  const artworkCollection = [
+    {
+      id: certificateId,
+      title: artworkTitle,
+      imageUrl: "/chromatic-flow.png",
+      artist: {
+        id: artistId,
+        name: "Chanchal Banga",
+        profileImageUrl: "/creative-portrait.png",
+      },
+      themes: ["abstract", "color theory", "digital"],
+    },
+    {
+      id: "cert789",
+      title: "Urban Fragments #3",
+      imageUrl: "/cluttered-creative-space.png",
+      artist: {
+        id: "artist456",
+        name: "Maya Lin",
+        profileImageUrl: "/diverse-professional-profiles.png",
+      },
+      themes: ["urban", "collage", "photography"],
+    },
+    {
+      id: "cert101",
+      title: "Ethereal Landscape",
+      imageUrl: "/diverse-group-city.png",
+      artist: {
+        id: "artist789",
+        name: "Takashi Murakami",
+        profileImageUrl: "/mystical-forest-spirit.png",
+      },
+      themes: ["landscape", "surreal", "digital"],
+    },
+  ]
 
   return (
     <div className="min-h-screen bg-gray-50 p-4 md:p-8">
@@ -46,16 +60,16 @@ export default function CertificateDemo() {
           <div className="bg-white rounded-lg shadow-sm mb-4">
             <TabsList className="p-2 gap-1 w-full">
               <TabsTrigger value="certificate" className="gap-1.5">
-                <FileText className="w-4 h-4" />
+                <Home className="w-4 h-4" />
                 <span>Certificate</span>
               </TabsTrigger>
-              <TabsTrigger value="collector" disabled={!showConnections} className="gap-1.5">
-                <Users className="w-4 h-4" />
-                <span>Collector Circle</span>
+              <TabsTrigger value="collection" className="gap-1.5">
+                <Gallery className="w-4 h-4" />
+                <span>Collection</span>
               </TabsTrigger>
-              <TabsTrigger value="opportunities" disabled={!showConnections} className="gap-1.5">
-                <Lightbulb className="w-4 h-4" />
-                <span>Opportunities</span>
+              <TabsTrigger value="artist" className="gap-1.5">
+                <User className="w-4 h-4" />
+                <span>Artist</span>
               </TabsTrigger>
             </TabsList>
           </div>
@@ -66,29 +80,21 @@ export default function CertificateDemo() {
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                 <div>
-                  <div className="aspect-square bg-gray-100 rounded-lg mb-4 overflow-hidden relative group">
-                    <Image
-                      src="/chromatic-flow.png"
-                      alt="Artwork"
-                      width={500}
-                      height={500}
-                      className="w-full h-full object-cover transition-all duration-700 ease-in-out group-hover:scale-[1.03]"
-                      onLoad={() => setImageLoaded(true)}
-                    />
-
-                    {/* Entry point to collector circle */}
-                    {showConnections && (
-                      <div className="absolute bottom-4 right-4 transition-opacity duration-300 group-hover:opacity-100 opacity-0">
-                        <Button
-                          onClick={() => document.querySelector('[data-value="collector"]')?.click()}
-                          className="gap-2"
-                        >
-                          <Users className="w-4 h-4" />
-                          <span>Collector Circle</span>
-                        </Button>
-                      </div>
-                    )}
-                  </div>
+                  <ArtworkFrame
+                    artwork={{
+                      id: certificateId,
+                      title: artworkTitle,
+                      imageUrl: "/chromatic-flow.png",
+                      artist: {
+                        id: artistId,
+                        name: "Chanchal Banga",
+                        profileImageUrl: "/creative-portrait.png",
+                      },
+                    }}
+                    presenceType="whisper"
+                    hasVisitation={true}
+                    className="aspect-square"
+                  />
                 </div>
 
                 <div>
@@ -116,58 +122,60 @@ export default function CertificateDemo() {
                       <p>24 × 36 inches</p>
                     </div>
 
-                    {/* Collector connection prompt */}
-                    {showConnections && (
-                      <div className="pt-4 border-t border-gray-100">
-                        <h3 className="text-sm font-medium text-gray-500 mb-2">Collector Insight</h3>
-                        <p className="text-sm text-gray-600">
-                          <span className="font-medium">Alex Mercer</span> has collected your work. Discover ways to
-                          build a meaningful connection and enter their collector circle.
-                        </p>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="mt-3 gap-2"
-                          onClick={() => document.querySelector('[data-value="collector"]')?.click()}
-                        >
-                          <Users className="w-4 h-4" />
-                          <span>View Collector Profile</span>
-                        </Button>
-                      </div>
-                    )}
+                    <div className="pt-4 border-t border-gray-100">
+                      <h3 className="text-sm font-medium text-gray-500 mb-2">Artist Note</h3>
+                      <p className="text-sm text-gray-600 italic">
+                        "This piece explores the relationship between color and emotion. The flowing forms represent the
+                        way our feelings shift and blend into one another, never static but always in motion."
+                      </p>
+                    </div>
                   </div>
                 </div>
               </div>
             </div>
           </TabsContent>
 
-          <TabsContent value="collector">
-            {!loading && collectorProfile && (
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-                <div className="lg:col-span-1">
-                  <CollectorSocialSignals collectorId={collectorId} collectorProfile={collectorProfile} />
-                </div>
-                <div className="lg:col-span-2">
-                  <CollectorCircleEntry
-                    artistId={artistId}
-                    collectorId={collectorId}
-                    collectorProfile={collectorProfile}
-                    onActionSelected={handleActionSelected}
-                  />
-                </div>
-              </div>
-            )}
+          <TabsContent value="collection">
+            <div className="bg-white rounded-lg shadow-sm p-6 md:p-8">
+              <CollectionGallery collectorId={collectorId} artworks={artworkCollection} />
+            </div>
           </TabsContent>
 
-          <TabsContent value="opportunities">
-            {!loading && collectorProfile && (
-              <ConnectionOpportunities
-                artistId={artistId}
-                collectorId={collectorId}
-                opportunities={opportunities || []}
-                mutualConnections={mutualConnections || []}
-              />
-            )}
+          <TabsContent value="artist">
+            <div className="bg-white rounded-lg shadow-sm p-6 md:p-8">
+              <div className="flex items-center gap-4 mb-6">
+                <div className="w-16 h-16 rounded-full overflow-hidden">
+                  <Image
+                    src="/creative-portrait.png"
+                    alt="Chanchal Banga"
+                    width={64}
+                    height={64}
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+                <div>
+                  <h2 className="text-xl font-medium">Chanchal Banga</h2>
+                  <p className="text-gray-600">Digital Artist</p>
+                </div>
+              </div>
+
+              <div className="prose max-w-none">
+                <p>
+                  Chanchal Banga is a digital artist exploring the intersection of technology and consciousness through
+                  abstract forms and vibrant color relationships. Their work examines how perception shapes our
+                  understanding of reality.
+                </p>
+                <p>
+                  Based in Chicago, Banga has exhibited internationally and is known for creating immersive digital
+                  experiences that blur the line between the physical and digital worlds.
+                </p>
+                <p>
+                  As a collector of Banga's work, you'll occasionally receive exclusive glimpses into their creative
+                  process, thoughts, and inspirations directly through your collected pieces - as if the artist
+                  occasionally visits the artwork in your collection.
+                </p>
+              </div>
+            </div>
           </TabsContent>
         </Tabs>
       </div>
