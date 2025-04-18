@@ -1,35 +1,42 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { ArtistInsight } from "@/components/artist-insight"
-import { ArtworkPresenceIndicator } from "@/components/artwork-presence-indicator"
-import { EnvironmentalContext } from "@/components/environmental-context"
 import Image from "next/image"
-import { useArtworkPresence } from "@/hooks/use-artwork-presence"
+import { ArtistNote } from "@/components/artist-note"
+import { usePersonalExchanges } from "@/hooks/use-personal-exchanges"
 
 export default function CertificateDemo() {
   const [showInsight, setShowInsight] = useState(false)
-  const [showPresence, setShowPresence] = useState(false)
-  const [imageLoaded, setImageLoaded] = useState(false)
 
   // In a real implementation, these would come from your authentication and database
   const artistId = "artist123"
+  const artistName = "Chanchal Banga"
+  const artistInitials = "CB"
   const certificateId = "cert456"
   const collectorId = "collector789"
   const artworkTitle = "Chromatic Flow #42"
 
-  // Get the artwork's presence information
-  const { presence, reflection, loading } = useArtworkPresence(artistId, certificateId, collectorId, artworkTitle)
+  // Get personal exchanges from the artist
+  const { currentExchange, markAsRead, respondToExchange, closeCurrentExchange } = usePersonalExchanges(
+    artistId,
+    artistName,
+    artworkTitle,
+    collectorId,
+  )
 
-  // Simulate the artwork "settling in" to the collector's space
+  // Mark exchange as read when it's opened
   useEffect(() => {
-    if (imageLoaded) {
-      const timer = setTimeout(() => {
-        setShowPresence(true)
-      }, 2000)
-      return () => clearTimeout(timer)
+    if (currentExchange && !currentExchange.readAt) {
+      markAsRead(currentExchange)
     }
-  }, [imageLoaded])
+  }, [currentExchange, markAsRead])
+
+  // Handle response to artist
+  const handleRespond = async (response: string) => {
+    if (currentExchange) {
+      await respondToExchange(currentExchange, response)
+    }
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 p-4 md:p-8">
@@ -45,42 +52,13 @@ export default function CertificateDemo() {
                 width={500}
                 height={500}
                 className="w-full h-full object-cover transition-all duration-700 ease-in-out group-hover:scale-[1.03]"
-                onLoad={() => setImageLoaded(true)}
               />
-
-              {/* The artwork's "presence" in the collector's space */}
-              {showPresence && !loading && presence && (
-                <ArtworkPresenceIndicator presenceType={presence.type} onClick={() => setShowInsight(true)} />
-              )}
-
-              {/* Subtle indicator that there's more to discover */}
-              <button
-                onClick={() => setShowInsight(true)}
-                className="absolute bottom-4 right-4 bg-black/10 hover:bg-black/20 backdrop-blur-sm text-white rounded-full w-10 h-10 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300"
-                aria-label="View artist insight"
-              >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="20"
-                  height="20"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <circle cx="12" cy="12" r="10"></circle>
-                  <path d="M12 16v-4"></path>
-                  <path d="M12 8h.01"></path>
-                </svg>
-              </button>
             </div>
           </div>
 
           <div>
             <h2 className="text-xl font-medium">{artworkTitle}</h2>
-            <p className="text-gray-600 mb-6">By Chanchal Banga</p>
+            <p className="text-gray-600 mb-6">By {artistName}</p>
 
             <div className="space-y-6">
               <div>
@@ -103,54 +81,29 @@ export default function CertificateDemo() {
                 <p>24 × 36 inches</p>
               </div>
 
-              {/* Artwork presence reflection */}
-              {showPresence && reflection && (
-                <div className="pt-4 border-t border-gray-100">
-                  <h3 className="text-sm font-medium text-gray-500 mb-2">Artwork Presence</h3>
-                  <p className="text-sm text-gray-600 italic">{reflection}</p>
-                </div>
-              )}
-
               <div className="pt-4">
-                <button
-                  onClick={() => setShowInsight(true)}
-                  className="text-sm text-gray-600 hover:text-gray-900 flex items-center gap-2 group"
-                >
-                  <span className="border-b border-dashed border-gray-300 group-hover:border-gray-600 transition-colors">
-                    View artist's insight
-                  </span>
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    width="16"
-                    height="16"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    className="opacity-60 group-hover:translate-x-0.5 transition-transform"
-                  >
-                    <path d="M5 12h14"></path>
-                    <path d="m12 5 7 7-7 7"></path>
-                  </svg>
-                </button>
+                <p className="text-sm text-gray-500">
+                  This certificate verifies the authenticity of your artwork. The artist may occasionally share personal
+                  notes about the work directly with you.
+                </p>
               </div>
             </div>
           </div>
         </div>
 
-        {/* This is where the environmental context is integrated */}
-        <EnvironmentalContext artistId={artistId} certificateId={certificateId} collectorId={collectorId} />
-
-        {/* Artist insight modal */}
-        <ArtistInsight
-          isOpen={showInsight}
-          onClose={() => setShowInsight(false)}
-          artistId={artistId}
-          certificateId={certificateId}
-          collectorId={collectorId}
-        />
+        {/* Personal note from the artist */}
+        {currentExchange && (
+          <ArtistNote
+            artistName={artistName}
+            artistInitials={artistInitials}
+            message={currentExchange.content}
+            sentAt={currentExchange.sentAt}
+            onClose={closeCurrentExchange}
+            onRespond={handleRespond}
+            exchangeType={currentExchange.type}
+            hasUnread={!currentExchange.readAt}
+          />
+        )}
       </div>
     </div>
   )
