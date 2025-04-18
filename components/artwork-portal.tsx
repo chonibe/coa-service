@@ -7,6 +7,8 @@ import { portalStates, portalEvents, type PortalState, type PortalEvent } from "
 import { MessageCircle, ImageIcon, Calendar, Sparkles } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
+import { InstagramStoriesPreview } from "./instagram-stories-preview"
+import { useArtistInstagram } from "@/hooks/use-artist-instagram"
 
 interface ArtworkPortalProps {
   artistId: string
@@ -35,6 +37,10 @@ export function ArtworkPortal({
   const [interactionCount, setInteractionCount] = useState(0)
   const [hasVisited, setHasVisited] = useState(false)
   const [shimmering, setShimmering] = useState(false)
+  const [showInstagramIndicator, setShowInstagramIndicator] = useState(false)
+
+  // Get Instagram data
+  const { stories, profile, isConnected } = useArtistInstagram(artistId)
 
   // References for animation timing
   const shimmerTimerRef = useRef<NodeJS.Timeout | null>(null)
@@ -43,6 +49,13 @@ export function ArtworkPortal({
 
   // Collection age - in real app would be fetched from DB
   const collectionAge = 14 // days
+
+  // Show Instagram indicator if connected and has stories
+  useEffect(() => {
+    if (isConnected && stories && stories.length > 0) {
+      setShowInstagramIndicator(true)
+    }
+  }, [isConnected, stories])
 
   // For demo purposes, we'll randomly trigger events
   useEffect(() => {
@@ -325,6 +338,18 @@ export function ArtworkPortal({
           )}
         </AnimatePresence>
       </div>
+
+      {/* Instagram Stories Indicator */}
+      {showInstagramIndicator && profile && stories.length > 0 && (
+        <div className="absolute top-3 right-3">
+          <InstagramStoriesPreview
+            artistName={artistName}
+            username={profile.username}
+            profilePicture={profile.profilePictureUrl}
+            stories={stories}
+          />
+        </div>
+      )}
 
       {/* Status indicator (subtle) */}
       <div

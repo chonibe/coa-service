@@ -4,17 +4,21 @@ import { useState, useEffect } from "react"
 import Image from "next/image"
 import { ArtworkPortal } from "@/components/artwork-portal"
 import { ExclusiveDrops } from "@/components/exclusive-drops"
+import { InstagramFeed } from "@/components/instagram-feed"
 import { useArtworkPortal } from "@/hooks/use-artwork-portal"
+import { useArtistInstagram } from "@/hooks/use-artist-instagram"
 import { Button } from "@/components/ui/button"
-import { MessageCircle } from "lucide-react"
+import { MessageCircle, Instagram } from "lucide-react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
 import { motion, AnimatePresence } from "framer-motion"
 import { cn } from "@/lib/utils"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 
 export default function CertificateDemo() {
   const [showVisitDialog, setShowVisitDialog] = useState(false)
   const [visitToShow, setVisitToShow] = useState<any | null>(null)
   const [showingHint, setShowingHint] = useState(false)
+  const [activeTab, setActiveTab] = useState("artwork")
 
   // In a real implementation, these would come from your auth and database
   const artistId = "artist123"
@@ -23,7 +27,7 @@ export default function CertificateDemo() {
 
   const artist = {
     id: artistId,
-    name: "Chanchal Banga",
+    name: "Street Collector",
     profileImageUrl: "/creative-portrait.png",
   }
 
@@ -42,6 +46,8 @@ export default function CertificateDemo() {
     artistId,
     collectorId,
   )
+
+  const { profile, posts, stories, isConnected } = useArtistInstagram(artistId)
 
   // Show hint about interaction after a delay
   useEffect(() => {
@@ -73,48 +79,74 @@ export default function CertificateDemo() {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             <div>
-              {/* The artwork as a portal */}
-              <div className="rounded-lg overflow-hidden mb-4 relative">
-                <ArtworkPortal
-                  artistId={artistId}
-                  artworkId={artworkId}
-                  collectorId={collectorId}
-                  artworkImageUrl={artwork.imageUrl}
-                  artworkTitle={artwork.title}
-                  artistName={artist.name}
-                  artistImageUrl={artist.profileImageUrl}
-                  onPortalEvent={handlePortalEvent}
-                />
+              <Tabs value={activeTab} onValueChange={setActiveTab} className="mb-4">
+                <TabsList className="grid w-full grid-cols-2">
+                  <TabsTrigger value="artwork">Artwork</TabsTrigger>
+                  <TabsTrigger value="instagram" className="flex items-center gap-1">
+                    <Instagram size={14} />
+                    <span>Instagram</span>
+                  </TabsTrigger>
+                </TabsList>
+                <TabsContent value="artwork" className="pt-4">
+                  {/* The artwork as a portal */}
+                  <div className="rounded-lg overflow-hidden mb-4 relative">
+                    <ArtworkPortal
+                      artistId={artistId}
+                      artworkId={artworkId}
+                      collectorId={collectorId}
+                      artworkImageUrl={artwork.imageUrl}
+                      artworkTitle={artwork.title}
+                      artistName={artist.name}
+                      artistImageUrl={artist.profileImageUrl}
+                      onPortalEvent={handlePortalEvent}
+                    />
 
-                {/* Interaction hint */}
-                <AnimatePresence>
-                  {showingHint && (
-                    <motion.div
-                      className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-black/70 text-white text-sm rounded-full px-3 py-1.5"
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: 5 }}
-                    >
-                      Try interacting with your artwork...
-                    </motion.div>
-                  )}
-                </AnimatePresence>
+                    {/* Interaction hint */}
+                    <AnimatePresence>
+                      {showingHint && (
+                        <motion.div
+                          className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-black/70 text-white text-sm rounded-full px-3 py-1.5"
+                          initial={{ opacity: 0, y: 10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={{ opacity: 0, y: 5 }}
+                        >
+                          Try interacting with your artwork...
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
 
-                {/* Badge for pending visits */}
-                <AnimatePresence>
-                  {pendingVisits.length > 0 && (
-                    <motion.div
-                      initial={{ scale: 0.8, opacity: 0 }}
-                      animate={{ scale: 1, opacity: 1 }}
-                      className="absolute top-3 right-3 bg-indigo-500 text-white rounded-full px-2 py-1 flex items-center text-xs shadow-md cursor-pointer"
-                      onClick={() => handleShowVisit(pendingVisits[0])}
-                    >
-                      <MessageCircle className="w-3.5 h-3.5 mr-1" />
-                      <span>{pendingVisits.length} new from artist</span>
-                    </motion.div>
+                    {/* Badge for pending visits */}
+                    <AnimatePresence>
+                      {pendingVisits.length > 0 && (
+                        <motion.div
+                          initial={{ scale: 0.8, opacity: 0 }}
+                          animate={{ scale: 1, opacity: 1 }}
+                          className="absolute top-3 right-3 bg-indigo-500 text-white rounded-full px-2 py-1 flex items-center text-xs shadow-md cursor-pointer"
+                          onClick={() => handleShowVisit(pendingVisits[0])}
+                        >
+                          <MessageCircle className="w-3.5 h-3.5 mr-1" />
+                          <span>{pendingVisits.length} new from artist</span>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </div>
+                </TabsContent>
+                <TabsContent value="instagram" className="pt-4">
+                  {isConnected && profile && posts ? (
+                    <InstagramFeed
+                      artistName={artist.name}
+                      username={profile.username}
+                      posts={posts}
+                      profileUrl={`https://instagram.com/${profile.username}`}
+                    />
+                  ) : (
+                    <div className="flex flex-col items-center justify-center p-8 text-center">
+                      <Instagram size={32} className="text-gray-400 mb-2" />
+                      <p className="text-gray-500">Instagram feed not available</p>
+                    </div>
                   )}
-                </AnimatePresence>
-              </div>
+                </TabsContent>
+              </Tabs>
 
               {/* Upcoming drops panel */}
               {upcomingDrops.length > 0 && (
@@ -162,6 +194,38 @@ export default function CertificateDemo() {
                     you as the collector.
                   </p>
                 </div>
+
+                {/* Instagram connection */}
+                {isConnected && profile && (
+                  <div className="pt-4 border-t border-gray-100">
+                    <h3 className="text-sm font-medium text-gray-500 mb-2 flex items-center gap-1">
+                      <Instagram size={14} className="text-pink-500" />
+                      <span>Instagram Connection</span>
+                    </h3>
+                    <p className="text-sm text-gray-600">
+                      Follow {artist.name} on Instagram to see their latest street art discoveries, festival coverage,
+                      and urban art insights.
+                    </p>
+                    <div className="flex items-center gap-2 mt-2">
+                      <div className="w-8 h-8 rounded-full overflow-hidden">
+                        <Image
+                          src={profile.profilePictureUrl || "/placeholder.svg"}
+                          alt={artist.name}
+                          width={32}
+                          height={32}
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                      <div>
+                        <div className="text-sm font-medium">@{profile.username}</div>
+                        <div className="text-xs text-gray-500">{profile.followersCount.toLocaleString()} followers</div>
+                      </div>
+                      <Button size="sm" variant="outline" className="ml-auto" onClick={() => setActiveTab("instagram")}>
+                        View Feed
+                      </Button>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           </div>
