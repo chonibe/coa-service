@@ -262,8 +262,15 @@ export function ArtworkPortal({
       <div
         className={cn(
           "w-full h-full rounded-lg overflow-hidden relative",
-          (portalState !== "dormant" || shimmering) && "shadow-glow",
+          (portalState !== "dormant" || shimmering) && "shadow-glow animate-glow",
         )}
+        style={
+          portalState !== "dormant" || shimmering
+            ? {
+                boxShadow: "0 0 15px rgba(99, 102, 241, 0.4), 0 0 30px rgba(99, 102, 241, 0.2)",
+              }
+            : undefined
+        }
       >
         <Image
           src={artworkImageUrl || "/placeholder.svg"}
