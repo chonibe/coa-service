@@ -11,6 +11,7 @@ interface InstagramStoriesPreviewProps {
   username: string
   profilePicture: string
   stories: any[]
+  onStoryView?: (storyId: string) => void
 }
 
 export function InstagramStoriesPreview({
@@ -18,11 +19,18 @@ export function InstagramStoriesPreview({
   username,
   profilePicture,
   stories,
+  onStoryView,
 }: InstagramStoriesPreviewProps) {
   const [isOpen, setIsOpen] = useState(false)
 
   if (!stories || stories.length === 0) {
     return null
+  }
+
+  const handleStoryView = (storyId: string) => {
+    if (onStoryView) {
+      onStoryView(storyId)
+    }
   }
 
   return (
@@ -57,6 +65,7 @@ export function InstagramStoriesPreview({
         stories={stories}
         isOpen={isOpen}
         onClose={() => setIsOpen(false)}
+        onStoryView={handleStoryView}
       />
     </>
   )

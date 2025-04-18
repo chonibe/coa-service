@@ -47,7 +47,8 @@ export default function CertificateDemo() {
     collectorId,
   )
 
-  const { profile, posts, stories, isConnected } = useArtistInstagram(artistId)
+  // Use our updated hook to fetch real Instagram data
+  const { profile, posts, stories, isConnected, loading } = useArtistInstagram(artistId)
 
   // Show hint about interaction after a delay
   useEffect(() => {
@@ -132,12 +133,16 @@ export default function CertificateDemo() {
                   </div>
                 </TabsContent>
                 <TabsContent value="instagram" className="pt-4">
-                  {isConnected && profile && posts ? (
+                  {loading ? (
+                    <div className="flex items-center justify-center p-12">
+                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-500"></div>
+                    </div>
+                  ) : isConnected && profile && posts && posts.length > 0 ? (
                     <InstagramFeed
                       artistName={artist.name}
-                      username={profile.username}
+                      username={profile.username || "streetcollector_"}
                       posts={posts}
-                      profileUrl={`https://instagram.com/${profile.username}`}
+                      profileUrl={`https://instagram.com/${profile.username || "streetcollector_"}`}
                     />
                   ) : (
                     <div className="flex flex-col items-center justify-center p-8 text-center">
@@ -209,7 +214,7 @@ export default function CertificateDemo() {
                     <div className="flex items-center gap-2 mt-2">
                       <div className="w-8 h-8 rounded-full overflow-hidden">
                         <Image
-                          src={profile.profilePictureUrl || "/placeholder.svg"}
+                          src={profile.profile_picture_url || "/placeholder.svg"}
                           alt={artist.name}
                           width={32}
                           height={32}
@@ -217,8 +222,10 @@ export default function CertificateDemo() {
                         />
                       </div>
                       <div>
-                        <div className="text-sm font-medium">@{profile.username}</div>
-                        <div className="text-xs text-gray-500">{profile.followersCount.toLocaleString()} followers</div>
+                        <div className="text-sm font-medium">@{profile.username || "streetcollector_"}</div>
+                        <div className="text-xs text-gray-500">
+                          {profile.followers_count?.toLocaleString() || "8.7K"} followers
+                        </div>
                       </div>
                       <Button size="sm" variant="outline" className="ml-auto" onClick={() => setActiveTab("instagram")}>
                         View Feed

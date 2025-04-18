@@ -2,11 +2,11 @@
 
 import { useState, useEffect } from "react"
 import {
-  getArtistInstagramProfile,
-  getArtistInstagramStories,
-  getArtistRecentPosts,
-  hasConnectedInstagram,
-} from "@/lib/services/instagram-service"
+  fetchInstagramProfile,
+  fetchInstagramMedia,
+  fetchInstagramStories,
+  markStoryViewed,
+} from "@/app/actions/instagram"
 
 export function useArtistInstagram(artistId: string) {
   const [profile, setProfile] = useState<any>(null)
@@ -21,21 +21,24 @@ export function useArtistInstagram(artistId: string) {
       try {
         setLoading(true)
 
-        // Check if Instagram is connected
-        const connected = await hasConnectedInstagram(artistId)
-        setIsConnected(connected)
+        // Load profile, stories, and posts in parallel
+        const [profileResult, storiesResult, postsResult] = await Promise.all([
+          fetchInstagramProfile(artistId),
+          fetchInstagramStories(artistId),
+          fetchInstagramMedia(artistId, 6),
+        ])
 
-        if (connected) {
-          // Load profile, stories, and posts in parallel
-          const [profileData, storiesData, postsData] = await Promise.all([
-            getArtistInstagramProfile(artistId),
-            getArtistInstagramStories(artistId),
-            getArtistRecentPosts(artistId, 6),
-          ])
+        if (profileResult.profile) {
+          setProfile(profileResult.profile)
+          setIsConnected(true)
+        }
 
-          setProfile(profileData)
-          setStories(storiesData)
-          setPosts(postsData)
+        if (storiesResult.stories) {
+          setStories(storiesResult.stories)
+        }
+
+        if (postsResult.media) {
+          setPosts(postsResult.media)
         }
       } catch (err) {
         console.error("Error loading Instagram data:", err)
@@ -50,6 +53,15 @@ export function useArtistInstagram(artistId: string) {
     }
   }, [artistId])
 
+  // Mark a story as viewed
+  const viewStory = async (storyId: string, collectorId: string) => {
+    try {
+      await markStoryViewed(storyId, collectorId)
+    } catch (error) {
+      console.error("Error marking story as viewed:", error)
+    }
+  }
+
   return {
     profile,
     stories,
@@ -57,5 +69,6 @@ export function useArtistInstagram(artistId: string) {
     isConnected,
     loading,
     error,
+    viewStory,
   }
 }
