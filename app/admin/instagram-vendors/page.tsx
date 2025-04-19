@@ -19,140 +19,56 @@ import {
 import { AlertCircle, Instagram, Loader2, PlusCircle, RefreshCw, Save, Trash2 } from "lucide-react"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { toast } from "@/hooks/use-toast"
+import { supabase } from "@/lib/supabase"
 
 interface InstagramVendor {
-  id?: string
   vendor_id: string
-  vendor_name: string
   instagram_username: string
-  instagram_account_id: string
-  is_active: boolean
   created_at?: string
   updated_at?: string
 }
 
+interface ShopifyVendor {
+  id: number
+  name: string
+}
+
 export default function InstagramVendorsPage() {
   const [vendors, setVendors] = useState<InstagramVendor[]>([])
+  const [shopifyVendors, setShopifyVendors] = useState<ShopifyVendor[]>([])
   const [isLoading, setIsLoading] = useState(true)
+  const [isFetchingShopifyVendors, setIsFetchingShopifyVendors] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
   const [currentVendor, setCurrentVendor] = useState<InstagramVendor | null>(null)
   const [isRefreshing, setIsRefreshing] = useState<Record<string, boolean>>({})
-  const [isTableCreated, setIsTableCreated] = useState(true)
 
   // Form state
   const [formData, setFormData] = useState<InstagramVendor>({
     vendor_id: "",
-    vendor_name: "",
     instagram_username: "",
-    instagram_account_id: "",
-    is_active: true,
   })
 
   // Fetch vendors on component mount
   useEffect(() => {
-    checkTableExists()
+    fetchVendors()
+    fetchShopifyVendors()
   }, [])
-
-  const checkTableExists = async () => {
-    setIsLoading(true)
-    setError(null)
-
-    try {
-      // Use the server-side API to check if the table exists and has the correct schema
-      const response = await fetch("/api/supabase-proxy", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          action: "checkTableExists",
-          params: { tableName: "instagram_vendors" },
-        }),
-      })
-
-      const data = await response.json()
-
-      if (!response.ok) {
-        throw new Error(data.error || "Failed to check if table exists")
-      }
-
-      if (data.exists) {
-        fetchVendors()
-      } else {
-        setIsTableCreated(false)
-        setError("The Instagram vendors table does not exist. Please create it first.")
-        setIsLoading(false)
-      }
-    } catch (err: any) {
-      console.error("Error checking if table exists:", err)
-      setError(err.message || "Failed to check if table exists")
-      setIsLoading(false)
-    }
-  }
-
-  const createTable = async () => {
-    setIsLoading(true)
-    setError(null)
-
-    try {
-      // Use the server-side API to create the table
-      const response = await fetch("/api/supabase-proxy", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          action: "createInstagramVendorsTable",
-          params: {},
-        }),
-      })
-
-      const data = await response.json()
-
-      if (!response.ok) {
-        throw new Error(data.error || "Failed to create table")
-      }
-
-      toast({
-        title: "Success",
-        description: "Instagram vendors table created successfully",
-      })
-
-      setIsTableCreated(true)
-      fetchVendors()
-    } catch (err: any) {
-      console.error("Error creating table:", err)
-      setError(err.message || "Failed to create table")
-      setIsLoading(false)
-    }
-  }
 
   const fetchVendors = async () => {
     setIsLoading(true)
     setError(null)
 
     try {
-      // Use the server-side API to fetch vendors
-      const response = await fetch("/api/supabase-proxy", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          action: "getInstagramVendors",
-          params: {},
-        }),
-      })
+      const { data, error } = await supabase
+        .from("instagram_vendors")
+        .select("*")
+        .order("vendor_id", { ascending: true })
 
-      const data = await response.json()
+      if (error) throw error
 
-      if (!response.ok) {
-        throw new Error(data.error || "Failed to fetch Instagram vendors")
-      }
-
-      setVendors(data.vendors || [])
+      setVendors(data || [])
     } catch (err: any) {
       console.error("Error fetching Instagram vendors:", err)
       setError(err.message || "Failed to fetch Instagram vendors")
@@ -161,21 +77,39 @@ export default function InstagramVendorsPage() {
     }
   }
 
+  const fetchShopifyVendors = async () => {
+    setIsFetchingShopifyVendors(true)
+    setError(null)
+
+    try {
+      const response = await fetch("/api/get-all-vendors")
+
+      if (!response.ok) {
+        throw new Error(`Failed to fetch Shopify vendors: ${response.statusText}`)
+      }
+
+      const data = await response.json()
+      setShopifyVendors(data.vendors || [])
+    } catch (err: any) {
+      console.error("Error fetching Shopify vendors:", err)
+      setError(err.message || "Failed to fetch Shopify vendors")
+    } finally {
+      setIsFetchingShopifyVendors(false)
+    }
+  }
+
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value, type, checked } = e.target
+    const { name, value } = e.target
     setFormData({
       ...formData,
-      [name]: type === "checkbox" ? checked : value,
+      [name]: value,
     })
   }
 
   const handleAddVendor = () => {
     setFormData({
       vendor_id: "",
-      vendor_name: "",
       instagram_username: "",
-      instagram_account_id: "",
-      is_active: true,
     })
     setCurrentVendor(null)
     setIsDialogOpen(true)
@@ -189,10 +123,10 @@ export default function InstagramVendorsPage() {
 
   const handleSaveVendor = async () => {
     // Validate form data
-    if (!formData.vendor_id || !formData.vendor_name) {
+    if (!formData.vendor_id || !formData.instagram_username) {
       toast({
         title: "Validation Error",
-        description: "Vendor ID and Vendor Name are required fields",
+        description: "Vendor ID and Instagram Username are required fields",
         variant: "destructive",
       })
       return
@@ -201,35 +135,37 @@ export default function InstagramVendorsPage() {
     setIsSaving(true)
 
     try {
-      // Use the server-side API to save the vendor
-      const response = await fetch("/api/supabase-proxy", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          action: currentVendor?.id ? "updateInstagramVendor" : "createInstagramVendor",
-          params: {
-            id: currentVendor?.id,
-            vendor_id: formData.vendor_id,
-            vendor_name: formData.vendor_name,
+      // If we have a current vendor, update it, otherwise insert a new one
+      if (currentVendor) {
+        const { error } = await supabase
+          .from("instagram_vendors")
+          .update({
             instagram_username: formData.instagram_username,
-            instagram_account_id: formData.instagram_account_id,
-            is_active: formData.is_active,
-          },
-        }),
-      })
+            updated_at: new Date().toISOString(),
+          })
+          .eq("vendor_id", currentVendor.vendor_id)
 
-      const data = await response.json()
+        if (error) throw error
 
-      if (!response.ok) {
-        throw new Error(data.error || "Failed to save Instagram vendor")
+        toast({
+          title: "Success",
+          description: "Vendor updated successfully",
+        })
+      } else {
+        const { error } = await supabase.from("instagram_vendors").insert({
+          vendor_id: formData.vendor_id,
+          instagram_username: formData.instagram_username,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        })
+
+        if (error) throw error
+
+        toast({
+          title: "Success",
+          description: "Vendor added successfully",
+        })
       }
-
-      toast({
-        title: "Success",
-        description: currentVendor?.id ? "Vendor updated successfully" : "Vendor added successfully",
-      })
 
       // Refresh the vendor list
       fetchVendors()
@@ -247,28 +183,14 @@ export default function InstagramVendorsPage() {
   }
 
   const handleDeleteVendor = async (vendor: InstagramVendor) => {
-    if (!confirm(`Are you sure you want to delete ${vendor.vendor_name}?`)) {
+    if (!confirm(`Are you sure you want to delete vendor ${vendor.vendor_id}?`)) {
       return
     }
 
     try {
-      // Use the server-side API to delete the vendor
-      const response = await fetch("/api/supabase-proxy", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          action: "deleteInstagramVendor",
-          params: { id: vendor.id },
-        }),
-      })
+      const { error } = await supabase.from("instagram_vendors").delete().eq("vendor_id", vendor.vendor_id)
 
-      const data = await response.json()
-
-      if (!response.ok) {
-        throw new Error(data.error || "Failed to delete Instagram vendor")
-      }
+      if (error) throw error
 
       toast({
         title: "Success",
@@ -288,22 +210,20 @@ export default function InstagramVendorsPage() {
   }
 
   const refreshInstagramData = async (vendor: InstagramVendor) => {
-    if (!vendor.instagram_account_id) {
+    if (!vendor.instagram_username) {
       toast({
         title: "Error",
-        description: "Instagram Account ID is required to refresh data",
+        description: "Instagram Username is required to refresh data",
         variant: "destructive",
       })
       return
     }
 
-    setIsRefreshing({ ...isRefreshing, [vendor.id!]: true })
+    setIsRefreshing({ ...isRefreshing, [vendor.vendor_id]: true })
 
     try {
       // Fetch profile data
-      const profileResponse = await fetch(
-        `/api/instagram/profile?vendorId=${vendor.vendor_id}&accountId=${vendor.instagram_account_id}`,
-      )
+      const profileResponse = await fetch(`/api/instagram/profile?username=${vendor.instagram_username}`)
 
       if (!profileResponse.ok) {
         throw new Error(`Failed to fetch Instagram profile: ${profileResponse.statusText}`)
@@ -312,9 +232,7 @@ export default function InstagramVendorsPage() {
       const profileData = await profileResponse.json()
 
       // Fetch media data
-      const mediaResponse = await fetch(
-        `/api/instagram/media?vendorId=${vendor.vendor_id}&accountId=${vendor.instagram_account_id}`,
-      )
+      const mediaResponse = await fetch(`/api/instagram/media?username=${vendor.instagram_username}`)
 
       if (!mediaResponse.ok) {
         throw new Error(`Failed to fetch Instagram media: ${mediaResponse.statusText}`)
@@ -324,7 +242,7 @@ export default function InstagramVendorsPage() {
 
       toast({
         title: "Success",
-        description: `Refreshed Instagram data for ${vendor.vendor_name}. Found ${mediaData.media?.length || 0} media items.`,
+        description: `Refreshed Instagram data for @${vendor.instagram_username}. Found ${mediaData.media?.length || 0} media items.`,
       })
     } catch (err: any) {
       console.error("Error refreshing Instagram data:", err)
@@ -334,7 +252,7 @@ export default function InstagramVendorsPage() {
         variant: "destructive",
       })
     } finally {
-      setIsRefreshing({ ...isRefreshing, [vendor.id!]: false })
+      setIsRefreshing({ ...isRefreshing, [vendor.vendor_id]: false })
     }
   }
 
@@ -346,12 +264,10 @@ export default function InstagramVendorsPage() {
             <h1 className="text-3xl font-bold tracking-tight">Instagram Vendors</h1>
             <p className="text-muted-foreground mt-2">Manage Instagram connections for your vendors</p>
           </div>
-          {isTableCreated && (
-            <Button onClick={handleAddVendor}>
-              <PlusCircle className="mr-2 h-4 w-4" />
-              Add Vendor
-            </Button>
-          )}
+          <Button onClick={handleAddVendor}>
+            <PlusCircle className="mr-2 h-4 w-4" />
+            Add Vendor
+          </Button>
         </div>
 
         <Card>
@@ -367,11 +283,6 @@ export default function InstagramVendorsPage() {
                 <AlertCircle className="h-4 w-4" />
                 <AlertTitle>Error</AlertTitle>
                 <AlertDescription>{error}</AlertDescription>
-                {!isTableCreated && (
-                  <Button onClick={createTable} className="mt-4" variant="outline">
-                    Create Table
-                  </Button>
-                )}
               </Alert>
             )}
 
@@ -379,18 +290,7 @@ export default function InstagramVendorsPage() {
               <div className="flex justify-center py-8">
                 <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
               </div>
-            ) : !isTableCreated ? (
-              <div className="text-center py-8">
-                <AlertCircle className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                <h3 className="text-lg font-medium">Database table not found</h3>
-                <p className="text-muted-foreground mt-2">
-                  The Instagram vendors table does not exist in your database.
-                </p>
-                <Button onClick={createTable} className="mt-4">
-                  Create Table
-                </Button>
-              </div>
-            ) : vendors.length === 0 ? (
+            ) : vendors.length === 0 && shopifyVendors.length === 0 ? (
               <div className="text-center py-8">
                 <Instagram className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
                 <h3 className="text-lg font-medium">No Instagram vendors found</h3>
@@ -407,19 +307,16 @@ export default function InstagramVendorsPage() {
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>Vendor Name</TableHead>
                       <TableHead>Vendor ID</TableHead>
                       <TableHead>Instagram Username</TableHead>
-                      <TableHead>Account ID</TableHead>
-                      <TableHead>Status</TableHead>
+                      <TableHead>Last Updated</TableHead>
                       <TableHead className="text-right">Actions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {vendors.map((vendor) => (
-                      <TableRow key={vendor.id}>
-                        <TableCell className="font-medium">{vendor.vendor_name}</TableCell>
-                        <TableCell>{vendor.vendor_id}</TableCell>
+                      <TableRow key={vendor.vendor_id}>
+                        <TableCell className="font-medium">{vendor.vendor_id}</TableCell>
                         <TableCell>
                           {vendor.instagram_username ? (
                             <a
@@ -436,16 +333,7 @@ export default function InstagramVendorsPage() {
                           )}
                         </TableCell>
                         <TableCell>
-                          {vendor.instagram_account_id || <span className="text-muted-foreground">Not set</span>}
-                        </TableCell>
-                        <TableCell>
-                          <span
-                            className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                              vendor.is_active ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-800"
-                            }`}
-                          >
-                            {vendor.is_active ? "Active" : "Inactive"}
-                          </span>
+                          {vendor.updated_at ? new Date(vendor.updated_at).toLocaleString() : "N/A"}
                         </TableCell>
                         <TableCell className="text-right">
                           <div className="flex justify-end space-x-2">
@@ -453,9 +341,9 @@ export default function InstagramVendorsPage() {
                               variant="outline"
                               size="sm"
                               onClick={() => refreshInstagramData(vendor)}
-                              disabled={!vendor.instagram_account_id || isRefreshing[vendor.id!]}
+                              disabled={!vendor.instagram_username || isRefreshing[vendor.vendor_id]}
                             >
-                              {isRefreshing[vendor.id!] ? (
+                              {isRefreshing[vendor.vendor_id] ? (
                                 <Loader2 className="h-3 w-3 animate-spin" />
                               ) : (
                                 <RefreshCw className="h-3 w-3" />
@@ -504,24 +392,12 @@ export default function InstagramVendorsPage() {
                 onChange={handleInputChange}
                 className="col-span-3"
                 required
-              />
-            </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="vendor_name" className="text-right">
-                Vendor Name*
-              </Label>
-              <Input
-                id="vendor_name"
-                name="vendor_name"
-                value={formData.vendor_name}
-                onChange={handleInputChange}
-                className="col-span-3"
-                required
+                disabled={!!currentVendor} // Disable editing vendor_id for existing vendors
               />
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="instagram_username" className="text-right">
-                Instagram Username
+                Instagram Username*
               </Label>
               <Input
                 id="instagram_username"
@@ -530,38 +406,8 @@ export default function InstagramVendorsPage() {
                 onChange={handleInputChange}
                 className="col-span-3"
                 placeholder="without @ symbol"
+                required
               />
-            </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="instagram_account_id" className="text-right">
-                Account ID
-              </Label>
-              <Input
-                id="instagram_account_id"
-                name="instagram_account_id"
-                value={formData.instagram_account_id}
-                onChange={handleInputChange}
-                className="col-span-3"
-                placeholder="Instagram Business Account ID"
-              />
-            </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="is_active" className="text-right">
-                Active
-              </Label>
-              <div className="col-span-3 flex items-center space-x-2">
-                <input
-                  type="checkbox"
-                  id="is_active"
-                  name="is_active"
-                  checked={formData.is_active}
-                  onChange={handleInputChange}
-                  className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
-                />
-                <Label htmlFor="is_active" className="text-sm font-normal">
-                  Show this vendor's Instagram content on the store
-                </Label>
-              </div>
             </div>
           </div>
           <DialogFooter>
