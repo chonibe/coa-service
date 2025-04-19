@@ -4,43 +4,180 @@ import { getSupabaseAdmin } from "@/lib/supabase"
 
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json()
-    const { action, params } = body
+    const { action, params } = await request.json()
+    const supabase = getSupabaseAdmin()
 
-    // Get the admin Supabase client
-    const supabaseAdmin = getSupabaseAdmin()
-    if (!supabaseAdmin) {
-      return NextResponse.json({ error: "Supabase admin client not available" }, { status: 500 })
+    if (!supabase) {
+      return NextResponse.json({ error: "Supabase client not initialized" }, { status: 500 })
     }
 
-    // Handle different actions
     switch (action) {
+      case "checkTableExists":
+        return await checkTableExists(supabase, params.tableName)
+
+      case "createInstagramVendorsTable":
+        return await createInstagramVendorsTable(supabase)
+
+      case "getInstagramVendors":
+        return await getInstagramVendors(supabase)
+
+      case "createInstagramVendor":
+        return await createInstagramVendor(supabase, params)
+
+      case "updateInstagramVendor":
+        return await updateInstagramVendor(supabase, params)
+
+      case "deleteInstagramVendor":
+        return await deleteInstagramVendor(supabase, params.id)
+
       case "getEditionInfo":
-        return await getEditionInfo(supabaseAdmin, params)
+        return await getEditionInfo(supabase, params)
       case "updateLineItemStatus":
-        return await updateLineItemStatus(supabaseAdmin, params)
+        return await updateLineItemStatus(supabase, params)
       case "resequenceEditionNumbers":
-        return await resequenceEditionNumbers(supabaseAdmin, params)
+        return await resequenceEditionNumbers(supabase, params)
       case "fetchOrderLineItems":
-        return await fetchOrderLineItems(supabaseAdmin, params)
+        return await fetchOrderLineItems(supabase, params)
+
       default:
         return NextResponse.json({ error: "Invalid action" }, { status: 400 })
     }
   } catch (error: any) {
     console.error("Error in Supabase proxy:", error)
+    return NextResponse.json({ error: error.message || "An error occurred" }, { status: 500 })
+  }
+}
+
+async function checkTableExists(supabase: any, tableName: string) {
+  try {
+    // Check if the table exists by querying the information schema
+    const { data, error } = await supabase.rpc("check_table_exists", { table_name: tableName })
+
+    if (error) throw error
+
+    return NextResponse.json({ exists: data }, { status: 200 })
+  } catch (error: any) {
+    console.error("Error checking if table exists:", error)
+    return NextResponse.json({ error: error.message, exists: false }, { status: 500 })
+  }
+}
+
+async function createInstagramVendorsTable(supabase: any) {
+  try {
+    // SQL to create the instagram_vendors table
+    const sql = `
+      CREATE TABLE IF NOT EXISTS instagram_vendors (
+        id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+        vendor_id TEXT NOT NULL,
+        vendor_name TEXT NOT NULL,
+        instagram_username TEXT,
+        instagram_account_id TEXT,
+        is_active BOOLEAN DEFAULT TRUE,
+        created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+        updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+        UNIQUE(vendor_id)
+      );
+      
+      CREATE INDEX IF NOT EXISTS idx_instagram_vendors_vendor_id ON instagram_vendors(vendor_id);
+    `
+
+    const { error } = await supabase.rpc("run_sql", { sql })
+
+    if (error) throw error
+
+    return NextResponse.json({ success: true }, { status: 200 })
+  } catch (error: any) {
+    console.error("Error creating instagram_vendors table:", error)
+    return NextResponse.json({ error: error.message }, { status: 500 })
+  }
+}
+
+async function getInstagramVendors(supabase: any) {
+  try {
+    const { data, error } = await supabase
+      .from("instagram_vendors")
+      .select("*")
+      .order("vendor_name", { ascending: true })
+
+    if (error) throw error
+
+    return NextResponse.json({ vendors: data }, { status: 200 })
+  } catch (error: any) {
+    console.error("Error fetching Instagram vendors:", error)
+    return NextResponse.json({ error: error.message }, { status: 500 })
+  }
+}
+
+async function createInstagramVendor(supabase: any, vendor: any) {
+  try {
+    const { data, error } = await supabase
+      .from("instagram_vendors")
+      .insert({
+        vendor_id: vendor.vendor_id,
+        vendor_name: vendor.vendor_name,
+        instagram_username: vendor.instagram_username,
+        instagram_account_id: vendor.instagram_account_id,
+        is_active: vendor.is_active,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      })
+      .select()
+
+    if (error) throw error
+
+    return NextResponse.json({ vendor: data[0] }, { status: 200 })
+  } catch (error: any) {
+    console.error("Error creating Instagram vendor:", error)
+    return NextResponse.json({ error: error.message }, { status: 500 })
+  }
+}
+
+async function updateInstagramVendor(supabase: any, vendor: any) {
+  try {
+    const { data, error } = await supabase
+      .from("instagram_vendors")
+      .update({
+        vendor_id: vendor.vendor_id,
+        vendor_name: vendor.vendor_name,
+        instagram_username: vendor.instagram_username,
+        instagram_account_id: vendor.instagram_account_id,
+        is_active: vendor.is_active,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", vendor.id)
+      .select()
+
+    if (error) throw error
+
+    return NextResponse.json({ vendor: data[0] }, { status: 200 })
+  } catch (error: any) {
+    console.error("Error updating Instagram vendor:", error)
+    return NextResponse.json({ error: error.message }, { status: 500 })
+  }
+}
+
+async function deleteInstagramVendor(supabase: any, id: string) {
+  try {
+    const { error } = await supabase.from("instagram_vendors").delete().eq("id", id)
+
+    if (error) throw error
+
+    return NextResponse.json({ success: true }, { status: 200 })
+  } catch (error: any) {
+    console.error("Error deleting Instagram vendor:", error)
     return NextResponse.json({ error: error.message }, { status: 500 })
   }
 }
 
 // Get edition info for a line item
-async function getEditionInfo(supabaseAdmin: any, params: any) {
+async function getEditionInfo(supabase: any, params: any) {
   const { orderId, lineItemId } = params
 
   if (!orderId || !lineItemId) {
     return NextResponse.json({ error: "Order ID and Line Item ID are required" }, { status: 400 })
   }
 
-  const { data, error } = await supabaseAdmin
+  const { data, error } = await supabase
     .from("order_line_items")
     .select("*")
     .eq("order_id", orderId)
@@ -55,7 +192,7 @@ async function getEditionInfo(supabaseAdmin: any, params: any) {
 }
 
 // Update line item status
-async function updateLineItemStatus(supabaseAdmin: any, params: any) {
+async function updateLineItemStatus(supabase: any, params: any) {
   const { lineItemId, orderId, status, reason } = params
 
   if (!lineItemId || !orderId || !status) {
@@ -83,7 +220,7 @@ async function updateLineItemStatus(supabaseAdmin: any, params: any) {
   }
 
   // Update the line item
-  const { error, data } = await supabaseAdmin
+  const { error, data } = await supabase
     .from("order_line_items")
     .update(updateData)
     .eq("line_item_id", lineItemId)
@@ -96,7 +233,7 @@ async function updateLineItemStatus(supabaseAdmin: any, params: any) {
   // If we're marking an item as removed, resequence the edition numbers
   if (status === "removed") {
     // Get the product ID for this line item
-    const { data: lineItemData, error: lineItemError } = await supabaseAdmin
+    const { data: lineItemData, error: lineItemError } = await supabase
       .from("order_line_items")
       .select("product_id")
       .eq("line_item_id", lineItemId)
@@ -105,7 +242,7 @@ async function updateLineItemStatus(supabaseAdmin: any, params: any) {
 
     if (!lineItemError && lineItemData && lineItemData.product_id) {
       // Resequence edition numbers for this product
-      await resequenceEditionNumbers(supabaseAdmin, { productId: lineItemData.product_id })
+      await resequenceEditionNumbers(supabase, { productId: lineItemData.product_id })
     }
   }
 
@@ -113,7 +250,7 @@ async function updateLineItemStatus(supabaseAdmin: any, params: any) {
 }
 
 // Resequence edition numbers for a product
-async function resequenceEditionNumbers(supabaseAdmin: any, params: any) {
+async function resequenceEditionNumbers(supabase: any, params: any) {
   const { productId } = params
 
   if (!productId) {
@@ -121,7 +258,7 @@ async function resequenceEditionNumbers(supabaseAdmin: any, params: any) {
   }
 
   // Get all active line items for this product, ordered by creation date
-  const { data: activeItems, error } = await supabaseAdmin
+  const { data: activeItems, error } = await supabase
     .from("order_line_items")
     .select("*")
     .eq("product_id", productId)
@@ -146,7 +283,7 @@ async function resequenceEditionNumbers(supabaseAdmin: any, params: any) {
   let updatedCount = 0
 
   for (const item of activeItems) {
-    const { error: updateError } = await supabaseAdmin
+    const { error: updateError } = await supabase
       .from("order_line_items")
       .update({
         edition_number: editionCounter,
@@ -162,7 +299,7 @@ async function resequenceEditionNumbers(supabaseAdmin: any, params: any) {
   }
 
   // Get count of removed items
-  const { count: removedCount } = await supabaseAdmin
+  const { count: removedCount } = await supabase
     .from("order_line_items")
     .select("*", { count: "exact" })
     .eq("product_id", productId)
@@ -178,10 +315,10 @@ async function resequenceEditionNumbers(supabaseAdmin: any, params: any) {
 }
 
 // Fetch order line items
-async function fetchOrderLineItems(supabaseAdmin: any, params: any) {
+async function fetchOrderLineItems(supabase: any, params: any) {
   const { limit = 20 } = params
 
-  const { data, error, count } = await supabaseAdmin
+  const { data, error, count } = await supabase
     .from("order_line_items")
     .select("*", { count: "exact" })
     .order("created_at", { ascending: false })
