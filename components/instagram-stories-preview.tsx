@@ -1,10 +1,13 @@
 "use client"
 
+import { Button } from "@/components/ui/button"
+
 import { useState } from "react"
 import Image from "next/image"
 import { motion } from "framer-motion"
 import { Instagram } from "lucide-react"
 import { InstagramStories } from "./instagram-stories"
+import { InstagramViewButton } from "./instagram-view-button"
 import { cn } from "@/lib/utils"
 
 interface InstagramStoriesPreviewProps {
@@ -13,6 +16,7 @@ interface InstagramStoriesPreviewProps {
   profilePicture: string
   stories: any[]
   onStoryView?: (storyId: string) => void
+  permissionError?: boolean
 }
 
 export function InstagramStoriesPreview({
@@ -21,8 +25,10 @@ export function InstagramStoriesPreview({
   profilePicture,
   stories,
   onStoryView,
+  permissionError = false,
 }: InstagramStoriesPreviewProps) {
   const [isOpen, setIsOpen] = useState(false)
+  const [showFallbackDialog, setShowFallbackDialog] = useState(false)
 
   const hasStories = stories && stories.length > 0
 
@@ -32,20 +38,25 @@ export function InstagramStoriesPreview({
     }
   }
 
+  const handleClick = () => {
+    if (hasStories) {
+      setIsOpen(true)
+    } else if (permissionError) {
+      // Show a dialog with the Instagram button
+      setShowFallbackDialog(true)
+    } else {
+      // No stories available
+      setIsOpen(true) // Still open our viewer to show the "no stories" message
+    }
+  }
+
   return (
     <>
       <motion.div
         whileHover={{ scale: 1.05 }}
         whileTap={{ scale: 0.95 }}
         className="flex flex-col items-center cursor-pointer"
-        onClick={() => {
-          if (hasStories) {
-            setIsOpen(true)
-          } else {
-            // Open Instagram stories in a new tab
-            window.open(`https://www.instagram.com/stories/${username}/`, "_blank")
-          }
-        }}
+        onClick={handleClick}
       >
         <div
           className={cn(
@@ -69,6 +80,7 @@ export function InstagramStoriesPreview({
         </div>
       </motion.div>
 
+      {/* Our custom stories viewer */}
       <InstagramStories
         artistName={artistName}
         artistUsername={username}
@@ -77,7 +89,26 @@ export function InstagramStoriesPreview({
         isOpen={isOpen}
         onClose={() => setIsOpen(false)}
         onStoryView={handleStoryView}
+        permissionError={permissionError}
       />
+
+      {/* Fallback dialog when we have permission errors */}
+      {showFallbackDialog && (
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-sm w-full">
+            <h3 className="text-lg font-medium mb-2">View Instagram Stories</h3>
+            <p className="text-gray-600 mb-4">
+              To view {artistName}'s Instagram stories, you'll need to open them directly on Instagram.
+            </p>
+            <div className="flex flex-col gap-3">
+              <InstagramViewButton username={username} type="stories" />
+              <Button variant="outline" onClick={() => setShowFallbackDialog(false)}>
+                Cancel
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   )
 }

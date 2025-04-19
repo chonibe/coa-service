@@ -6,6 +6,7 @@ import { motion, AnimatePresence } from "framer-motion"
 import { ChevronLeft, ChevronRight, X, Instagram, Clock } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
+import { InstagramViewButton } from "./instagram-view-button"
 
 interface InstagramStoriesProps {
   artistName: string
@@ -15,6 +16,7 @@ interface InstagramStoriesProps {
   isOpen: boolean
   onClose: () => void
   onStoryView?: (storyId: string) => void
+  permissionError?: boolean
 }
 
 // Key for storing last story in localStorage
@@ -28,6 +30,7 @@ export function InstagramStories({
   isOpen,
   onClose,
   onStoryView,
+  permissionError,
 }: InstagramStoriesProps) {
   const [currentIndex, setCurrentIndex] = useState(0)
   const [progress, setProgress] = useState(0)
@@ -210,7 +213,30 @@ export function InstagramStories({
 
             {/* Story content */}
             <div className="w-full h-full flex items-center justify-center">
-              {storyToShow ? (
+              {!storyToShow && permissionError ? (
+                <div className="text-center p-8">
+                  <Instagram size={48} className="text-white/50 mx-auto mb-4" />
+                  <h3 className="text-white text-xl font-medium mb-2">Stories Not Available</h3>
+                  <p className="text-white/70 mb-6">
+                    We don't have permission to display {artistName}'s stories directly in this app.
+                  </p>
+                  <div className="flex flex-col gap-3 max-w-xs mx-auto">
+                    <InstagramViewButton
+                      username={artistUsername}
+                      type="stories"
+                      variant="secondary"
+                      className="text-white border-white/20 hover:bg-white/10"
+                    />
+                    <Button
+                      variant="outline"
+                      className="text-white border-white/20 hover:bg-white/10"
+                      onClick={onClose}
+                    >
+                      Close
+                    </Button>
+                  </div>
+                </div>
+              ) : storyToShow ? (
                 // Show either current story or last saved story
                 <>
                   {storyToShow.media_type === "IMAGE" || storyToShow.media_type === "CAROUSEL_ALBUM" ? (
