@@ -8,7 +8,17 @@ export const CERTIFICATE_METAFIELD_ID = process.env.CERTIFICATE_METAFIELD_ID || 
 // Admin password
 export const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "changeme" // Default password, change in production
 
+// Instagram API credentials
+export const INSTAGRAM_APP_ID = process.env.INSTAGRAM_APP_ID || ""
+export const INSTAGRAM_APP_SECRET = process.env.INSTAGRAM_APP_SECRET || ""
+export const INSTAGRAM_ACCESS_TOKEN = process.env.INSTAGRAM_ACCESS_TOKEN || ""
+
 // Validate required environment variables
 if (!SHOPIFY_SHOP || !SHOPIFY_ACCESS_TOKEN) {
   console.error("Missing required environment variables for Shopify API")
+}
+
+// Validate required environment variables for Instagram API
+if (!INSTAGRAM_APP_ID || !INSTAGRAM_APP_SECRET || !INSTAGRAM_ACCESS_TOKEN) {
+  console.error("Missing required environment variables for Instagram API")
 }
