@@ -38,7 +38,14 @@ export function InstagramStoriesPreview({
         whileHover={{ scale: 1.05 }}
         whileTap={{ scale: 0.95 }}
         className="flex flex-col items-center cursor-pointer"
-        onClick={() => setIsOpen(true)} // Always allow opening the viewer
+        onClick={() => {
+          if (hasStories) {
+            setIsOpen(true)
+          } else {
+            // Open Instagram stories in a new tab
+            window.open(`https://www.instagram.com/stories/${username}/`, "_blank")
+          }
+        }}
       >
         <div
           className={cn(
