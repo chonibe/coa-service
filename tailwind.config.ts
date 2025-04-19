@@ -1,16 +1,10 @@
 import type { Config } from "tailwindcss"
 
-const config = {
+import { fontFamily } from "tailwindcss/defaultTheme"
+
+const config: Config = {
   darkMode: ["class"],
-  content: [
-    "./pages/**/*.{ts,tsx}",
-    "./components/**/*.{ts,tsx}",
-    "./app/**/*.{ts,tsx}",
-    "./src/**/*.{ts,tsx}",
-    "./*.{ts,tsx}",
-    "*.{js,ts,jsx,tsx,mdx}",
-  ],
-  prefix: "",
+  content: ["./components/**/*.{ts,tsx}", "./app/**/*.{ts,tsx}", "*.{js,ts,jsx,tsx,mdx}"],
   theme: {
     container: {
       center: true,
@@ -54,11 +48,18 @@ const config = {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
         },
+        success: {
+          DEFAULT: "hsl(var(--success))",
+          foreground: "hsl(var(--success-foreground))",
+        },
       },
       borderRadius: {
         lg: "var(--radius)",
         md: "calc(var(--radius) - 2px)",
         sm: "calc(var(--radius) - 4px)",
+      },
+      fontFamily: {
+        sans: ["var(--font-sans)", ...fontFamily.sans],
       },
       keyframes: {
         "accordion-down": {
@@ -69,42 +70,13 @@ const config = {
           from: { height: "var(--radix-accordion-content-height)" },
           to: { height: "0" },
         },
-        "fade-in": {
-          from: { opacity: "0" },
-          to: { opacity: "1" },
-        },
-        "pulse-slow": {
-          "0%": { opacity: "0.4" },
-          "50%": { opacity: "0.7" },
-          "100%": { opacity: "0.4" },
-        },
-        shimmer: {
-          "0%": { transform: "translateX(-100%)" },
-          "100%": { transform: "translateX(100%)" },
-        },
-        glow: {
-          "0%": {
-            boxShadow: "0 0 5px rgba(99, 102, 241, 0.3), 0 0 10px rgba(99, 102, 241, 0.1)",
-          },
-          "50%": {
-            boxShadow: "0 0 15px rgba(99, 102, 241, 0.5), 0 0 30px rgba(99, 102, 241, 0.3)",
-          },
-          "100%": {
-            boxShadow: "0 0 5px rgba(99, 102, 241, 0.3), 0 0 10px rgba(99, 102, 241, 0.1)",
-          },
-        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
-        "fade-in": "fade-in 1s ease-out forwards",
-        "pulse-slow": "pulse-slow 4s infinite",
-        shimmer: "shimmer 2s infinite",
-        glow: "glow 3s infinite",
       },
     },
   },
-  plugins: [require("tailwindcss-animate")],
-} satisfies Config
-
+  plugins: [require("tailwindcss-animate"), require("@tailwindcss/typography")],
+}
 export default config
