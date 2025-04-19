@@ -61,8 +61,6 @@
     "uuid": "latest",
     "crypto": "latest",
     "@supabase/supabase-js": "latest",
-    "tailwindcss": "latest",
-    "@tailwindcss/typography": "latest",
     "@neondatabase/serverless": "latest"
   },
   "devDependencies": {
