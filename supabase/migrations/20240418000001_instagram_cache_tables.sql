@@ -25,6 +25,7 @@ CREATE TABLE IF NOT EXISTS instagram_media_cache (
   permalink TEXT NOT NULL,
   caption TEXT,
   timestamp TIMESTAMP WITH TIME ZONE NOT NULL,
+  children TEXT, -- JSON string for carousel albums
   created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
   UNIQUE(username, instagram_media_id)
@@ -38,6 +39,7 @@ CREATE TABLE IF NOT EXISTS instagram_stories_cache (
   media_type TEXT NOT NULL,
   media_url TEXT NOT NULL,
   permalink TEXT NOT NULL,
+  thumbnail_url TEXT,
   timestamp TIMESTAMP WITH TIME ZONE NOT NULL,
   created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),

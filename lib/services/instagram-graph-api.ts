@@ -8,6 +8,14 @@ interface InstagramMedia {
   permalink: string
   thumbnail_url?: string
   timestamp: string
+  children?: {
+    data: Array<{
+      id: string
+      media_type: string
+      media_url: string
+      thumbnail_url?: string
+    }>
+  }
 }
 
 interface InstagramProfile {
@@ -158,7 +166,8 @@ export async function getInstagramMedia(
 
     console.log(`Fetching Instagram media for Business ID: ${validBusinessId}`)
 
-    const url = `${GRAPH_API_BASE}/${validBusinessId}/media?fields=id,caption,media_type,media_url,permalink,thumbnail_url,timestamp&limit=${limit}&access_token=${validToken}`
+    // Include children field to get carousel items
+    const url = `${GRAPH_API_BASE}/${validBusinessId}/media?fields=id,caption,media_type,media_url,permalink,thumbnail_url,timestamp,children{media_type,media_url,thumbnail_url}&limit=${limit}&access_token=${validToken}`
 
     const response = await fetch(url, {
       headers: {
@@ -176,7 +185,29 @@ export async function getInstagramMedia(
     const data = await response.json()
     console.log(`Fetched ${data.data?.length || 0} Instagram media items`)
 
-    return data.data || []
+    // Process each media item to ensure it has the correct URLs
+    const processedMedia = (data.data || []).map((item: InstagramMedia) => {
+      // For VIDEO type, ensure we have a thumbnail_url
+      if (item.media_type === "VIDEO" && !item.thumbnail_url) {
+        console.log(`Video without thumbnail: ${item.id}`)
+        // Use a placeholder if no thumbnail is available
+        item.thumbnail_url = "/abstract-thumbnail.png"
+      }
+
+      // For CAROUSEL_ALBUM, ensure each child has proper URLs
+      if (item.media_type === "CAROUSEL_ALBUM" && item.children && item.children.data) {
+        item.children.data = item.children.data.map((child) => {
+          if (child.media_type === "VIDEO" && !child.thumbnail_url) {
+            child.thumbnail_url = "/abstract-thumbnail.png"
+          }
+          return child
+        })
+      }
+
+      return item
+    })
+
+    return processedMedia
   } catch (error) {
     console.error("Error getting Instagram media:", error)
     return []
@@ -199,7 +230,7 @@ export async function getInstagramStories(igBusinessId: string, accessToken: str
     // Try to fetch stories - note that this might fail if there are no active stories
     // or if the account doesn't have permission to access stories
     try {
-      const url = `${GRAPH_API_BASE}/${validBusinessId}/stories?fields=id,media_type,media_url,permalink,timestamp&access_token=${validToken}`
+      const url = `${GRAPH_API_BASE}/${validBusinessId}/stories?fields=id,media_type,media_url,permalink,timestamp,thumbnail_url&access_token=${validToken}`
 
       const response = await fetch(url, {
         headers: {
@@ -221,7 +252,15 @@ export async function getInstagramStories(igBusinessId: string, accessToken: str
       const data = await response.json()
       console.log(`Fetched ${data.data?.length || 0} Instagram stories`)
 
-      return data.data || []
+      // Process stories to ensure they have proper URLs
+      const processedStories = (data.data || []).map((story: InstagramMedia) => {
+        if (story.media_type === "VIDEO" && !story.thumbnail_url) {
+          story.thumbnail_url = "/abstract-thumbnail.png"
+        }
+        return story
+      })
+
+      return processedStories
     } catch (error) {
       console.warn("Error in stories API call, returning empty array:", error)
       return []
