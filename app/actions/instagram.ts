@@ -117,7 +117,20 @@ export async function fetchInstagramMedia(artistId: string, limit = 6) {
         const oldestAllowed = new Date(Date.now() - 24 * 60 * 60 * 1000)
         if (new Date(cachedMedia[0].updated_at) > oldestAllowed) {
           console.log("Using cached Instagram media")
-          return { media: cachedMedia, fromCache: true }
+
+          // For cached media, we need to parse the children field if it exists
+          const processedMedia = cachedMedia.map((item) => {
+            if (item.children && typeof item.children === "string") {
+              try {
+                item.children = JSON.parse(item.children)
+              } catch (e) {
+                console.error("Error parsing children JSON:", e)
+              }
+            }
+            return item
+          })
+
+          return { media: processedMedia, fromCache: true }
         }
       }
     } catch (error) {
@@ -159,6 +172,12 @@ export async function fetchInstagramMedia(artistId: string, limit = 6) {
     // Cache the media
     try {
       for (const item of media) {
+        // For carousel albums, we need to stringify the children field
+        const itemToCache = { ...item }
+        if (itemToCache.children) {
+          itemToCache.children = JSON.stringify(itemToCache.children)
+        }
+
         await supabaseAdmin.from("instagram_media_cache").upsert({
           instagram_media_id: item.id,
           username,
@@ -168,6 +187,7 @@ export async function fetchInstagramMedia(artistId: string, limit = 6) {
           permalink: item.permalink,
           caption: item.caption,
           timestamp: item.timestamp,
+          children: itemToCache.children,
           updated_at: new Date().toISOString(),
         })
       }
@@ -256,6 +276,7 @@ export async function fetchInstagramStories(artistId: string) {
               media_url: story.media_url,
               permalink: story.permalink,
               timestamp: story.timestamp,
+              thumbnail_url: story.thumbnail_url,
               updated_at: new Date().toISOString(),
             })
           }
@@ -327,8 +348,9 @@ function getFallbackMedia() {
     {
       id: "post2",
       caption: "Behind the scenes at the street art festival. So many talented artists bringing walls to life.",
-      media_type: "IMAGE",
-      media_url: "/cluttered-creative-space.png",
+      media_type: "VIDEO",
+      media_url: "/cluttered-creative-space.png", // This would be a video URL in real implementation
+      thumbnail_url: "/cluttered-creative-space.png",
       permalink: "https://instagram.com/p/streetcollector_2",
       timestamp: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
     },
@@ -336,10 +358,24 @@ function getFallbackMedia() {
       id: "post3",
       caption:
         "This piece won't last long - the ephemeral nature of street art is what makes it so special. Catch it while you can at 5th and Main.",
-      media_type: "IMAGE",
+      media_type: "CAROUSEL_ALBUM",
       media_url: "/thoughtful-gaze.png",
       permalink: "https://instagram.com/p/streetcollector_3",
       timestamp: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
+      children: {
+        data: [
+          {
+            id: "carousel1",
+            media_type: "IMAGE",
+            media_url: "/thoughtful-gaze.png",
+          },
+          {
+            id: "carousel2",
+            media_type: "IMAGE",
+            media_url: "/diverse-group-city.png",
+          },
+        ],
+      },
     },
     {
       id: "post4",
@@ -364,8 +400,9 @@ function getFallbackStories() {
     },
     {
       id: "story2",
-      media_type: "IMAGE",
-      media_url: "/chromatic-flow.png",
+      media_type: "VIDEO",
+      media_url: "/chromatic-flow.png", // This would be a video URL in real implementation
+      thumbnail_url: "/chromatic-flow.png",
       permalink: "https://instagram.com/stories/streetcollector_/2",
       timestamp: new Date(Date.now() - 4 * 60 * 60 * 1000).toISOString(),
     },
