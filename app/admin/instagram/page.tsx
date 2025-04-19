@@ -1,14 +1,50 @@
 "use client"
 
 import { useState } from "react"
+import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { AlertCircle, ArrowLeft } from "lucide-react"
 import Link from "next/link"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+
+interface VendorInstagramUrls {
+  [vendor: string]: string
+}
 
 export default function InstagramAdminPage() {
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [vendorInstagramUrls, setVendorInstagramUrls] = useState<VendorInstagramUrls>({})
+  const [newVendor, setNewVendor] = useState("")
+  const [newInstagramUrl, setNewInstagramUrl] = useState("")
+
+  const handleAddVendorInstagramUrl = async () => {
+    if (newVendor && newInstagramUrl) {
+      try {
+        const response = await fetch("/api/settings/instagram-urls", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ vendor: newVendor, instagramUrl: newInstagramUrl }),
+        })
+
+        if (!response.ok) {
+          const errorData = await response.json()
+          throw new Error(errorData.message || "Failed to add vendor Instagram URL")
+        }
+
+        setVendorInstagramUrls((prev) => ({ ...prev, [newVendor]: newInstagramUrl }))
+        setNewVendor("")
+        setNewInstagramUrl("")
+      } catch (error: any) {
+        console.error("Error adding vendor Instagram URL:", error)
+        setError(error.message || "Failed to add vendor Instagram URL")
+      }
+    }
+  }
 
   return (
     <div className="container mx-auto py-10 max-w-5xl">
@@ -32,11 +68,32 @@ export default function InstagramAdminPage() {
 
         <Card>
           <CardHeader>
-            <CardTitle>Instagram API Configuration</CardTitle>
-            <CardDescription>Configure your Instagram API credentials</CardDescription>
+            <CardTitle>Add Vendor Instagram URLs</CardTitle>
+            <CardDescription>Manually add Instagram URLs for each vendor</CardDescription>
           </CardHeader>
-          <CardContent>
-            <p>Settings coming soon!</p>
+          <CardContent className="space-y-6">
+            <div className="space-y-2">
+              <Label htmlFor="new-vendor">New Vendor</Label>
+              <Input
+                id="new-vendor"
+                placeholder="Enter vendor name"
+                value={newVendor}
+                onChange={(e) => setNewVendor(e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="new-instagram-url">Instagram URL</Label>
+              <Input
+                id="new-instagram-url"
+                type="url"
+                placeholder="Enter Instagram URL"
+                value={newInstagramUrl}
+                onChange={(e) => setNewInstagramUrl(e.target.value)}
+              />
+            </div>
+            <Button onClick={handleAddVendorInstagramUrl} disabled={!newVendor || !newInstagramUrl}>
+              Add Vendor URL
+            </Button>
           </CardContent>
         </Card>
       </div>
