@@ -32,7 +32,7 @@ export function useInstagram({ vendorId, accountId }: UseInstagramProps): UseIns
         // Fetch profile data
         const profileResponse = await fetch(`/api/instagram/profile?vendorId=${vendorId}&accountId=${accountId}`)
         if (!profileResponse.ok) {
-          throw new Error(`Failed to fetch Instagram profile: ${profileResponse.status} ${profileResponse.statusText}`)
+          throw new Error(`Failed to fetch Instagram profile: ${profileResponse.statusText}`)
         }
         const { profile: profileData } = await profileResponse.json()
         setProfile(profileData)
