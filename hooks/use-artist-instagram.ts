@@ -17,6 +17,7 @@ export function useArtistInstagram(artistId: string) {
   const [error, setError] = useState<Error | null>(null)
   const [usingFallback, setUsingFallback] = useState(false)
   const [fromCache, setFromCache] = useState(false)
+  const [permissionError, setPermissionError] = useState(false)
 
   useEffect(() => {
     const loadInstagramData = async () => {
@@ -25,6 +26,7 @@ export function useArtistInstagram(artistId: string) {
         setError(null)
         setUsingFallback(false)
         setFromCache(false)
+        setPermissionError(false)
 
         // Load profile, stories, and posts in parallel
         const [profileResult, storiesResult, postsResult] = await Promise.all([
@@ -44,6 +46,12 @@ export function useArtistInstagram(artistId: string) {
         if (profileResult.profile) {
           setProfile(profileResult.profile)
           setIsConnected(true)
+        }
+
+        // Check for permission error in stories
+        if (storiesResult.error && storiesResult.error.includes("permission")) {
+          setPermissionError(true)
+          console.log("Permission error for Instagram stories:", storiesResult.error)
         }
 
         if (storiesResult.stories) {
@@ -76,6 +84,14 @@ export function useArtistInstagram(artistId: string) {
   const viewStory = async (storyId: string, collectorId: string) => {
     try {
       await markStoryViewed(storyId, collectorId)
+
+      // Also save the story to localStorage
+      if (stories && stories.length > 0) {
+        const storyToSave = stories.find((story) => story.id === storyId)
+        if (storyToSave && typeof window !== "undefined") {
+          localStorage.setItem("last_instagram_story", JSON.stringify(storyToSave))
+        }
+      }
     } catch (error) {
       console.error("Error marking story as viewed:", error)
     }
@@ -90,6 +106,7 @@ export function useArtistInstagram(artistId: string) {
     error,
     usingFallback,
     fromCache,
+    permissionError,
     viewStory,
   }
 }
