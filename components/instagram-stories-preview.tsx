@@ -23,6 +23,7 @@ export function InstagramStoriesPreview({
 }: InstagramStoriesPreviewProps) {
   const [isOpen, setIsOpen] = useState(false)
 
+  // Don't render anything if there are no stories
   if (!stories || stories.length === 0) {
     return null
   }
