@@ -291,6 +291,17 @@ export async function fetchInstagramStories(artistId: string) {
 
       return { stories }
     } catch (error) {
+      // Check if this is a permission error
+      const errorMessage = error instanceof Error ? error.message : String(error)
+      if (errorMessage.includes("permission") || errorMessage.includes("400")) {
+        console.warn("Permission error fetching Instagram stories:", errorMessage)
+        return {
+          error: "Application does not have permission for stories",
+          permissionError: true,
+          stories: [],
+        }
+      }
+
       console.warn("Error fetching Instagram stories, using fallback:", error)
       return { error: "Failed to fetch Instagram stories", fallback: true, stories: getFallbackStories() }
     }

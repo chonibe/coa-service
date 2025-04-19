@@ -345,13 +345,13 @@ export function ArtworkPortal({
       </div>
 
       {/* Instagram Stories Indicator */}
-      {showInstagramIndicator && profile && stories && stories.length > 0 && (
+      {showInstagramIndicator && profile && (
         <div className="absolute top-3 right-3">
           <InstagramStoriesPreview
             artistName={artistName}
             username={profile.username || "streetcollector_"}
             profilePicture={profile.profile_picture_url || "/creative-portrait.png"}
-            stories={stories}
+            stories={stories || []}
             onStoryView={handleStoryView}
           />
         </div>
