@@ -1,4 +1,3 @@
-import { neon } from "@neondatabase/serverless"
 import { type NextRequest, NextResponse } from "next/server"
 
 export async function GET(request: NextRequest) {
@@ -11,16 +10,37 @@ export async function GET(request: NextRequest) {
           error: "Database connection not configured",
           urls: [],
         },
-        { status: 500 },
+        { status: 200 }, // Return 200 with empty array instead of error
+      )
+    }
+
+    // Try to import neon dynamically to avoid issues
+    let neon
+    try {
+      const { neon: importedNeon } = await import("@neondatabase/serverless")
+      neon = importedNeon
+    } catch (importError) {
+      console.error("Error importing neon:", importError)
+      return NextResponse.json(
+        {
+          error: "Database driver not available",
+          urls: [],
+        },
+        { status: 200 }, // Return 200 with empty array
       )
     }
 
     // Initialize database connection with better error handling
     const sql = neon(process.env.SUPABASE_CONNECTION_STRING)
 
-    // Test the connection
+    // Test the connection with a timeout
     try {
-      await sql`SELECT 1`
+      const testResult = await Promise.race([
+        sql`SELECT 1 as test`,
+        new Promise((_, reject) => setTimeout(() => reject(new Error("Database connection timeout")), 5000)),
+      ])
+
+      console.log("Database connection test successful:", testResult)
     } catch (dbError) {
       console.error("Database connection test failed:", dbError)
       return NextResponse.json(
@@ -28,7 +48,7 @@ export async function GET(request: NextRequest) {
           error: "Database connection failed",
           urls: [],
         },
-        { status: 500 },
+        { status: 200 }, // Return 200 with empty array
       )
     }
 
@@ -52,7 +72,7 @@ export async function GET(request: NextRequest) {
         error: "Failed to fetch Instagram URLs",
         urls: [],
       },
-      { status: 500 },
+      { status: 200 }, // Return 200 with empty array
     )
   }
 }

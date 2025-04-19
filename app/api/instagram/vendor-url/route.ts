@@ -1,7 +1,4 @@
-import { neon } from "@neondatabase/serverless"
 import { type NextRequest, NextResponse } from "next/server"
-
-const sql = neon(process.env.SUPABASE_CONNECTION_STRING!)
 
 export async function GET(request: NextRequest) {
   try {
@@ -10,6 +7,32 @@ export async function GET(request: NextRequest) {
 
     if (!vendor) {
       return NextResponse.json({ error: "Vendor parameter is required" }, { status: 400 })
+    }
+
+    // Check if database connection string is available
+    if (!process.env.SUPABASE_CONNECTION_STRING) {
+      console.error("SUPABASE_CONNECTION_STRING environment variable is not set")
+      return NextResponse.json({ instagram_url: null }, { status: 200 })
+    }
+
+    // Try to import neon dynamically
+    let neon
+    try {
+      const { neon: importedNeon } = await import("@neondatabase/serverless")
+      neon = importedNeon
+    } catch (importError) {
+      console.error("Error importing neon:", importError)
+      return NextResponse.json({ instagram_url: null }, { status: 200 })
+    }
+
+    const sql = neon(process.env.SUPABASE_CONNECTION_STRING)
+
+    // Test connection before query
+    try {
+      await sql`SELECT 1 as test`
+    } catch (dbError) {
+      console.error("Database connection test failed:", dbError)
+      return NextResponse.json({ instagram_url: null }, { status: 200 })
     }
 
     const result = await sql`
@@ -22,7 +45,7 @@ export async function GET(request: NextRequest) {
     })
   } catch (error) {
     console.error("Error fetching vendor Instagram URL:", error)
-    return NextResponse.json({ error: "Failed to fetch Instagram URL" }, { status: 500 })
+    return NextResponse.json({ instagram_url: null }, { status: 200 })
   }
 }
 
@@ -32,6 +55,32 @@ export async function POST(request: NextRequest) {
 
     if (!vendor) {
       return NextResponse.json({ error: "Vendor parameter is required" }, { status: 400 })
+    }
+
+    // Check if database connection string is available
+    if (!process.env.SUPABASE_CONNECTION_STRING) {
+      console.error("SUPABASE_CONNECTION_STRING environment variable is not set")
+      return NextResponse.json({ error: "Database not configured", success: false }, { status: 200 })
+    }
+
+    // Try to import neon dynamically
+    let neon
+    try {
+      const { neon: importedNeon } = await import("@neondatabase/serverless")
+      neon = importedNeon
+    } catch (importError) {
+      console.error("Error importing neon:", importError)
+      return NextResponse.json({ error: "Database driver not available", success: false }, { status: 200 })
+    }
+
+    const sql = neon(process.env.SUPABASE_CONNECTION_STRING)
+
+    // Test connection before query
+    try {
+      await sql`SELECT 1 as test`
+    } catch (dbError) {
+      console.error("Database connection test failed:", dbError)
+      return NextResponse.json({ error: "Database connection failed", success: false }, { status: 200 })
     }
 
     // Upsert the Instagram URL
@@ -47,6 +96,6 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ success: true })
   } catch (error) {
     console.error("Error saving vendor Instagram URL:", error)
-    return NextResponse.json({ error: "Failed to save Instagram URL" }, { status: 500 })
+    return NextResponse.json({ error: "Failed to save Instagram URL", success: false }, { status: 200 })
   }
 }
