@@ -1,58 +1,52 @@
 "use client"
 
-import { useEffect, useState } from "react"
-import { useParams } from "next/navigation"
+import { Suspense } from "react"
 import Image from "next/image"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
-import { Skeleton } from "@/components/ui/skeleton"
-import {
-  AlertCircle,
-  CheckCircle,
-  Download,
-  Share2,
-  Clock,
-  ShoppingBag,
-  User,
-  BadgeIcon as Certificate,
-} from "lucide-react"
-import InstagramFeed from "@/components/instagram-feed"
+import { CheckCircle, Download, Share2, Clock, ShoppingBag, User, BadgeIcon as Certificate } from "lucide-react"
+import CertificateInstagramFeed from "@/components/certificate-instagram-feed"
 
-export default function CertificatePage() {
-  const params = useParams()
-  const lineItemId = params.lineItemId as string
+// This is a simplified example - your actual certificate page will be more complex
+export default function CertificatePage({ params }: { params: { id: string } }) {
+  // Note: Using id consistently
+  const id = params.id
 
-  const [certificate, setCertificate] = useState<any>(null)
-  const [isLoading, setIsLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-
-  useEffect(() => {
-    const fetchCertificate = async () => {
-      try {
-        setIsLoading(true)
-        setError(null)
-
-        const response = await fetch(`/api/certificate/${lineItemId}`)
-
-        if (!response.ok) {
-          throw new Error(`Error ${response.status}: Certificate not found`)
-        }
-
-        const data = await response.json()
-        setCertificate(data.certificate)
-      } catch (err: any) {
-        console.error("Error fetching certificate:", err)
-        setError(err.message || "Failed to load certificate")
-      } finally {
-        setIsLoading(false)
-      }
-    }
-
-    if (lineItemId) {
-      fetchCertificate()
-    }
-  }, [lineItemId])
+  // Fetch certificate data (mock implementation)
+  const certificate = {
+    id,
+    product: {
+      id: "prod123",
+      title: "Limited Edition Artwork",
+      vendor: "Example Artist",
+      description: "<p>This is a beautiful limited edition artwork.</p>",
+      images: [
+        {
+          src: "/abstract-expression.png",
+          alt: "Limited Edition Artwork",
+        },
+      ],
+    },
+    lineItem: {
+      id: id,
+      editionNumber: 42,
+      editionTotal: 100,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      certificateGeneratedAt: new Date().toISOString(),
+      accessToken: "abc123def456ghi789",
+    },
+    order: {
+      orderName: "#1001",
+      createdAt: new Date().toISOString(),
+      processedAt: new Date().toISOString(),
+      customer: {
+        firstName: "John",
+        lastName: "Doe",
+      },
+    },
+    verificationUrl: `https://example.com/verify/${id}`,
+  }
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString("en-US", {
@@ -74,66 +68,6 @@ export default function CertificatePage() {
       navigator.clipboard.writeText(window.location.href)
       alert("Certificate URL copied to clipboard!")
     }
-  }
-
-  if (isLoading) {
-    return (
-      <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-3xl mx-auto">
-          <div className="text-center mb-8">
-            <h1 className="text-3xl font-extrabold">Loading Certificate...</h1>
-            <p className="mt-2 text-lg text-gray-600">Please wait while we verify your edition</p>
-          </div>
-          <Card>
-            <CardContent className="p-8">
-              <div className="space-y-6">
-                <div className="aspect-video relative bg-gray-100 rounded-lg overflow-hidden">
-                  <Skeleton className="absolute inset-0" />
-                </div>
-                <div className="space-y-4">
-                  <Skeleton className="h-8 w-3/4" />
-                  <Skeleton className="h-4 w-1/2" />
-                  <Skeleton className="h-4 w-5/6" />
-                  <Skeleton className="h-4 w-2/3" />
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <Skeleton className="h-20" />
-                  <Skeleton className="h-20" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      </div>
-    )
-  }
-
-  if (error || !certificate) {
-    return (
-      <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-3xl mx-auto">
-          <Alert variant="destructive" className="mb-8">
-            <AlertCircle className="h-4 w-4" />
-            <AlertTitle>Certificate Error</AlertTitle>
-            <AlertDescription>
-              {error || "Certificate not found. The provided edition ID may be invalid."}
-            </AlertDescription>
-          </Alert>
-          <Card>
-            <CardContent className="p-8 text-center">
-              <AlertCircle className="h-12 w-12 mx-auto text-destructive mb-4" />
-              <h2 className="text-xl font-bold mb-2">Certificate Verification Failed</h2>
-              <p className="text-gray-600 mb-6">
-                We couldn't verify this certificate. Please check the URL and try again.
-              </p>
-              <Button variant="outline" onClick={() => window.history.back()}>
-                Go Back
-              </Button>
-            </CardContent>
-          </Card>
-        </div>
-      </div>
-    )
   }
 
   return (
@@ -288,7 +222,9 @@ export default function CertificatePage() {
         </Card>
 
         {/* Instagram Feed Integration */}
-        <InstagramFeed vendor={certificate.product.vendor} />
+        <Suspense fallback={<div>Loading Instagram feed...</div>}>
+          <CertificateInstagramFeed vendor={certificate.product.vendor} />
+        </Suspense>
 
         <div className="text-center">
           <p className="text-sm text-gray-500 mb-4">

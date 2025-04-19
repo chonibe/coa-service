@@ -16,21 +16,52 @@ export default function CertificateInstagramFeed({ vendor }: { vendor: string })
   const [isLoading, setIsLoading] = useState<boolean>(true)
   const [error, setError] = useState<string | null>(null)
   const [posts, setPosts] = useState<InstagramPost[]>([])
+  const [instagramUrl, setInstagramUrl] = useState<string | null>(null)
 
   useEffect(() => {
-    const fetchInstagramPosts = async () => {
+    const fetchInstagramData = async () => {
       setIsLoading(true)
       setError(null)
 
       try {
-        const response = await fetch(`/api/instagram/posts?vendor=${encodeURIComponent(vendor)}`)
+        // First, fetch the vendor's Instagram URL
+        const urlResponse = await fetch(`/api/instagram/vendor-url?vendor=${encodeURIComponent(vendor)}`)
 
-        if (!response.ok) {
-          throw new Error("Failed to fetch Instagram posts")
+        if (!urlResponse.ok) {
+          throw new Error("Failed to fetch Instagram URL")
         }
 
-        const data = await response.json()
-        setPosts(data.posts || [])
+        const urlData = await urlResponse.json()
+        setInstagramUrl(urlData.instagram_url)
+
+        // If there's an Instagram URL, fetch posts
+        if (urlData.instagram_url) {
+          // For demonstration, we'll use placeholder posts
+          // In a real implementation, you would fetch actual Instagram posts
+          setPosts([
+            {
+              id: "1",
+              media_url: `/placeholder.svg?height=400&width=400&query=Instagram post by ${vendor}`,
+              permalink: urlData.instagram_url,
+              caption: "Follow us on Instagram for more updates",
+              timestamp: new Date().toISOString(),
+            },
+            {
+              id: "2",
+              media_url: `/placeholder.svg?height=400&width=400&query=Another Instagram post by ${vendor}`,
+              permalink: urlData.instagram_url,
+              caption: "Check out our latest products",
+              timestamp: new Date(Date.now() - 86400000).toISOString(),
+            },
+            {
+              id: "3",
+              media_url: `/placeholder.svg?height=400&width=400&query=Third Instagram post by ${vendor}`,
+              permalink: urlData.instagram_url,
+              caption: "Behind the scenes",
+              timestamp: new Date(Date.now() - 172800000).toISOString(),
+            },
+          ])
+        }
       } catch (err) {
         setError(err instanceof Error ? err.message : "An unknown error occurred")
         console.error(err)
@@ -40,7 +71,7 @@ export default function CertificateInstagramFeed({ vendor }: { vendor: string })
     }
 
     if (vendor) {
-      fetchInstagramPosts()
+      fetchInstagramData()
     }
   }, [vendor])
 
@@ -54,8 +85,8 @@ export default function CertificateInstagramFeed({ vendor }: { vendor: string })
     )
   }
 
-  if (error || posts.length === 0) {
-    return null // Don't show anything if there's an error or no posts
+  if (error || !instagramUrl || posts.length === 0) {
+    return null // Don't show anything if there's an error or no Instagram URL
   }
 
   return (
