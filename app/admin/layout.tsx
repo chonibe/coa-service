@@ -1,6 +1,6 @@
 import type { ReactNode } from "react"
 import Link from "next/link"
-import { Layers, Settings, BarChart3, RefreshCw, Clock, AlertTriangle, Zap, BadgeIcon } from "lucide-react"
+import { Layers, Settings, BarChart3, RefreshCw, Clock, AlertTriangle, Zap, BadgeIcon, Instagram } from "lucide-react"
 import { LogoutButton } from "./logout-button"
 
 interface AdminLayoutProps {
@@ -67,6 +67,13 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
           >
             <BadgeIcon className="mr-2 h-4 w-4" />
             <span>Certificates</span>
+          </Link>
+          <Link
+            href="/admin/instagram-vendors"
+            className="flex items-center rounded-md px-3 py-2 text-sm font-medium hover:bg-accent hover:text-accent-foreground"
+          >
+            <Instagram className="mr-2 h-4 w-4" />
+            <span>Instagram Vendors</span>
           </Link>
         </nav>
         <div className="p-2 border-t">
