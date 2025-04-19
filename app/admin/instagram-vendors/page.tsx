@@ -1,24 +1,18 @@
 "use client"
 
-import type React from "react"
+import { DialogFooter } from "@/components/ui/dialog"
 
+import type React from "react"
 import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog"
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { AlertCircle, Instagram, Loader2, PlusCircle, RefreshCw, Save, Trash2 } from "lucide-react"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
-import { toast } from "@/hooks/use-toast"
+import { useToast } from "@/hooks/use-toast"
 import { supabase } from "@/lib/supabase"
 
 interface InstagramVendor {
@@ -50,6 +44,8 @@ export default function InstagramVendorsPage() {
     instagram_username: "",
   })
 
+  const { toast } = useToast()
+
   // Fetch vendors on component mount
   useEffect(() => {
     fetchVendors()
@@ -64,7 +60,7 @@ export default function InstagramVendorsPage() {
       const { data, error } = await supabase
         .from("instagram_vendors")
         .select("*")
-        .order("vendor_id", { ascending: true })
+        .order("vendor_name", { ascending: true })
 
       if (error) throw error
 
@@ -154,6 +150,7 @@ export default function InstagramVendorsPage() {
       } else {
         const { error } = await supabase.from("instagram_vendors").insert({
           vendor_id: formData.vendor_id,
+          vendor_name: formData.vendor_name,
           instagram_username: formData.instagram_username,
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
