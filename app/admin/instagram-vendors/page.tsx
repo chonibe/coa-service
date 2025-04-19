@@ -18,7 +18,6 @@ import {
 } from "@/components/ui/dialog"
 import { AlertCircle, Instagram, Loader2, PlusCircle, RefreshCw, Save, Trash2 } from "lucide-react"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
-import { supabase } from "@/lib/supabase"
 import { toast } from "@/hooks/use-toast"
 
 interface InstagramVendor {
@@ -40,6 +39,7 @@ export default function InstagramVendorsPage() {
   const [isSaving, setIsSaving] = useState(false)
   const [currentVendor, setCurrentVendor] = useState<InstagramVendor | null>(null)
   const [isRefreshing, setIsRefreshing] = useState<Record<string, boolean>>({})
+  const [isTableCreated, setIsTableCreated] = useState(true)
 
   // Form state
   const [formData, setFormData] = useState<InstagramVendor>({
@@ -52,22 +52,107 @@ export default function InstagramVendorsPage() {
 
   // Fetch vendors on component mount
   useEffect(() => {
-    fetchVendors()
+    checkTableExists()
   }, [])
+
+  const checkTableExists = async () => {
+    setIsLoading(true)
+    setError(null)
+
+    try {
+      // Use the server-side API to check if the table exists and has the correct schema
+      const response = await fetch("/api/supabase-proxy", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          action: "checkTableExists",
+          params: { tableName: "instagram_vendors" },
+        }),
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.error || "Failed to check if table exists")
+      }
+
+      if (data.exists) {
+        fetchVendors()
+      } else {
+        setIsTableCreated(false)
+        setError("The Instagram vendors table does not exist. Please create it first.")
+        setIsLoading(false)
+      }
+    } catch (err: any) {
+      console.error("Error checking if table exists:", err)
+      setError(err.message || "Failed to check if table exists")
+      setIsLoading(false)
+    }
+  }
+
+  const createTable = async () => {
+    setIsLoading(true)
+    setError(null)
+
+    try {
+      // Use the server-side API to create the table
+      const response = await fetch("/api/supabase-proxy", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          action: "createInstagramVendorsTable",
+          params: {},
+        }),
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.error || "Failed to create table")
+      }
+
+      toast({
+        title: "Success",
+        description: "Instagram vendors table created successfully",
+      })
+
+      setIsTableCreated(true)
+      fetchVendors()
+    } catch (err: any) {
+      console.error("Error creating table:", err)
+      setError(err.message || "Failed to create table")
+      setIsLoading(false)
+    }
+  }
 
   const fetchVendors = async () => {
     setIsLoading(true)
     setError(null)
 
     try {
-      const { data, error } = await supabase
-        .from("instagram_vendors")
-        .select("*")
-        .order("vendor_name", { ascending: true })
+      // Use the server-side API to fetch vendors
+      const response = await fetch("/api/supabase-proxy", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          action: "getInstagramVendors",
+          params: {},
+        }),
+      })
 
-      if (error) throw error
+      const data = await response.json()
 
-      setVendors(data || [])
+      if (!response.ok) {
+        throw new Error(data.error || "Failed to fetch Instagram vendors")
+      }
+
+      setVendors(data.vendors || [])
     } catch (err: any) {
       console.error("Error fetching Instagram vendors:", err)
       setError(err.message || "Failed to fetch Instagram vendors")
@@ -116,34 +201,30 @@ export default function InstagramVendorsPage() {
     setIsSaving(true)
 
     try {
-      // If we have an ID, update the existing record, otherwise insert a new one
-      const { data, error } = currentVendor?.id
-        ? await supabase
-            .from("instagram_vendors")
-            .update({
-              vendor_id: formData.vendor_id,
-              vendor_name: formData.vendor_name,
-              instagram_username: formData.instagram_username,
-              instagram_account_id: formData.instagram_account_id,
-              is_active: formData.is_active,
-              updated_at: new Date().toISOString(),
-            })
-            .eq("id", currentVendor.id)
-            .select()
-        : await supabase
-            .from("instagram_vendors")
-            .insert({
-              vendor_id: formData.vendor_id,
-              vendor_name: formData.vendor_name,
-              instagram_username: formData.instagram_username,
-              instagram_account_id: formData.instagram_account_id,
-              is_active: formData.is_active,
-              created_at: new Date().toISOString(),
-              updated_at: new Date().toISOString(),
-            })
-            .select()
+      // Use the server-side API to save the vendor
+      const response = await fetch("/api/supabase-proxy", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          action: currentVendor?.id ? "updateInstagramVendor" : "createInstagramVendor",
+          params: {
+            id: currentVendor?.id,
+            vendor_id: formData.vendor_id,
+            vendor_name: formData.vendor_name,
+            instagram_username: formData.instagram_username,
+            instagram_account_id: formData.instagram_account_id,
+            is_active: formData.is_active,
+          },
+        }),
+      })
 
-      if (error) throw error
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.error || "Failed to save Instagram vendor")
+      }
 
       toast({
         title: "Success",
@@ -171,9 +252,23 @@ export default function InstagramVendorsPage() {
     }
 
     try {
-      const { error } = await supabase.from("instagram_vendors").delete().eq("id", vendor.id)
+      // Use the server-side API to delete the vendor
+      const response = await fetch("/api/supabase-proxy", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          action: "deleteInstagramVendor",
+          params: { id: vendor.id },
+        }),
+      })
 
-      if (error) throw error
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.error || "Failed to delete Instagram vendor")
+      }
 
       toast({
         title: "Success",
@@ -251,10 +346,12 @@ export default function InstagramVendorsPage() {
             <h1 className="text-3xl font-bold tracking-tight">Instagram Vendors</h1>
             <p className="text-muted-foreground mt-2">Manage Instagram connections for your vendors</p>
           </div>
-          <Button onClick={handleAddVendor}>
-            <PlusCircle className="mr-2 h-4 w-4" />
-            Add Vendor
-          </Button>
+          {isTableCreated && (
+            <Button onClick={handleAddVendor}>
+              <PlusCircle className="mr-2 h-4 w-4" />
+              Add Vendor
+            </Button>
+          )}
         </div>
 
         <Card>
@@ -270,12 +367,28 @@ export default function InstagramVendorsPage() {
                 <AlertCircle className="h-4 w-4" />
                 <AlertTitle>Error</AlertTitle>
                 <AlertDescription>{error}</AlertDescription>
+                {!isTableCreated && (
+                  <Button onClick={createTable} className="mt-4" variant="outline">
+                    Create Table
+                  </Button>
+                )}
               </Alert>
             )}
 
             {isLoading ? (
               <div className="flex justify-center py-8">
                 <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+              </div>
+            ) : !isTableCreated ? (
+              <div className="text-center py-8">
+                <AlertCircle className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+                <h3 className="text-lg font-medium">Database table not found</h3>
+                <p className="text-muted-foreground mt-2">
+                  The Instagram vendors table does not exist in your database.
+                </p>
+                <Button onClick={createTable} className="mt-4">
+                  Create Table
+                </Button>
               </div>
             ) : vendors.length === 0 ? (
               <div className="text-center py-8">
