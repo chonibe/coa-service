@@ -1,8 +1,0 @@
-{
-  "crons": [
-    {
-      "path": "/api/admin/run-cron?secret=${CRON_SECRET}",
-      "schedule": "0 */6 * * *"
-    }
-  ]
-}
