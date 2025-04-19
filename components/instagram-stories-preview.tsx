@@ -23,16 +23,13 @@ export function InstagramStoriesPreview({
 }: InstagramStoriesPreviewProps) {
   const [isOpen, setIsOpen] = useState(false)
 
-  // Don't render anything if there are no stories
-  if (!stories || stories.length === 0) {
-    return null
-  }
-
   const handleStoryView = (storyId: string) => {
     if (onStoryView) {
       onStoryView(storyId)
     }
   }
+
+  const hasStories = stories && stories.length > 0
 
   return (
     <>
@@ -40,12 +37,15 @@ export function InstagramStoriesPreview({
         whileHover={{ scale: 1.05 }}
         whileTap={{ scale: 0.95 }}
         className="flex flex-col items-center cursor-pointer"
-        onClick={() => setIsOpen(true)}
+        onClick={() => hasStories && setIsOpen(true)}
       >
-        <div className="w-16 h-16 rounded-full p-[2px] bg-gradient-to-tr from-yellow-400 via-red-500 to-purple-600">
+        {/* Always show the profile picture, but only add the gradient border if there are stories */}
+        <div
+          className={`w-16 h-16 rounded-full ${hasStories ? "p-[2px] bg-gradient-to-tr from-yellow-400 via-red-500 to-purple-600" : ""}`}
+        >
           <div className="w-full h-full rounded-full border-2 border-white overflow-hidden">
             <Image
-              src={profilePicture || "/placeholder.svg"}
+              src={profilePicture || "/placeholder.svg?height=64&width=64&query=instagram profile"}
               alt={artistName}
               width={64}
               height={64}
@@ -55,19 +55,21 @@ export function InstagramStoriesPreview({
         </div>
         <div className="mt-1 text-xs text-center flex items-center gap-1">
           <Instagram size={10} />
-          <span>Stories</span>
+          <span>{hasStories ? "Stories" : username}</span>
         </div>
       </motion.div>
 
-      <InstagramStories
-        artistName={artistName}
-        artistUsername={username}
-        artistProfilePicture={profilePicture}
-        stories={stories}
-        isOpen={isOpen}
-        onClose={() => setIsOpen(false)}
-        onStoryView={handleStoryView}
-      />
+      {hasStories && (
+        <InstagramStories
+          artistName={artistName}
+          artistUsername={username}
+          artistProfilePicture={profilePicture}
+          stories={stories}
+          isOpen={isOpen}
+          onClose={() => setIsOpen(false)}
+          onStoryView={handleStoryView}
+        />
+      )}
     </>
   )
 }
