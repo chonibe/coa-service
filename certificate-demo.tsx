@@ -142,6 +142,8 @@ export default function CertificateDemo() {
                       artistName={artist.name}
                       username={profile.username || "streetcollector_"}
                       posts={posts}
+                      stories={stories}
+                      profilePicture={profile.profile_picture_url || "/creative-portrait.png"}
                       profileUrl={`https://instagram.com/${profile.username || "streetcollector_"}`}
                     />
                   ) : (

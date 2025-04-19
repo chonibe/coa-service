@@ -145,14 +145,16 @@ export function InstagramStories({
 
             {/* Artist info */}
             <div className="absolute top-8 left-4 right-4 z-10 flex items-center">
-              <div className="w-8 h-8 rounded-full overflow-hidden border border-white">
-                <Image
-                  src={artistProfilePicture || "/placeholder.svg"}
-                  alt={artistName}
-                  width={32}
-                  height={32}
-                  className="w-full h-full object-cover"
-                />
+              <div className="w-8 h-8 rounded-full overflow-hidden p-[1px] bg-gradient-to-tr from-yellow-400 via-red-500 to-purple-600">
+                <div className="w-full h-full rounded-full border border-white overflow-hidden">
+                  <Image
+                    src={artistProfilePicture || "/placeholder.svg?height=32&width=32&query=instagram profile"}
+                    alt={artistName}
+                    width={32}
+                    height={32}
+                    className="w-full h-full object-cover"
+                  />
+                </div>
               </div>
               <div className="ml-2 text-white">
                 <div className="text-sm font-medium">{artistName}</div>

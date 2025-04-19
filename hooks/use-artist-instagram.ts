@@ -83,7 +83,7 @@ export function useArtistInstagram(artistId: string) {
 
   return {
     profile,
-    stories,
+    stories: stories || [],
     posts,
     isConnected,
     loading,

@@ -2,25 +2,32 @@
 
 import { useState } from "react"
 import Image from "next/image"
-import { Instagram, ExternalLink, Play, ChevronLeft, ChevronRight } from "lucide-react"
+import { Instagram, ExternalLink } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { InstagramStoriesPreview } from "./instagram-stories-preview"
 import { cn } from "@/lib/utils"
+import { ChevronLeft, ChevronRight } from "lucide-react"
 
 interface InstagramFeedProps {
   artistName: string
   username: string
   posts: any[]
+  stories?: any[]
+  profilePicture?: string
   profileUrl?: string
 }
 
-export function InstagramFeed({ artistName, username, posts, profileUrl }: InstagramFeedProps) {
+export function InstagramFeed({
+  artistName,
+  username,
+  posts,
+  stories = [],
+  profilePicture = "/creative-portrait.png",
+  profileUrl,
+}: InstagramFeedProps) {
   const [selectedPost, setSelectedPost] = useState<any | null>(null)
   const [currentCarouselIndex, setCurrentCarouselIndex] = useState(0)
-
-  if (!posts || posts.length === 0) {
-    return null
-  }
 
   // Function to get the appropriate media URL for display
   const getMediaUrl = (post: any) => {
@@ -145,84 +152,112 @@ export function InstagramFeed({ artistName, username, posts, profileUrl }: Insta
     )
   }
 
+  // Always show profile and stories section, even if there are no posts
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h3 className="text-lg font-medium flex items-center gap-2">
-          <Instagram size={18} className="text-pink-500" />
-          <span>Instagram</span>
-        </h3>
-        <a
-          href={profileUrl || `https://instagram.com/${username}`}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="text-sm text-indigo-600 hover:text-indigo-800 flex items-center gap-1"
-        >
-          @{username}
-          <ExternalLink size={14} />
-        </a>
-      </div>
-
-      <div className="grid grid-cols-3 gap-1">
-        {posts.map((post) => (
-          <div
-            key={post.id}
-            className="aspect-square relative cursor-pointer overflow-hidden group"
-            onClick={() => {
-              setSelectedPost(post)
-              setCurrentCarouselIndex(0) // Reset carousel index when opening a new post
-            }}
-          >
-            <Image
-              src={getMediaUrl(post) || "/placeholder.svg"}
-              alt={post.caption || "Instagram post"}
-              width={300}
-              height={300}
-              className="w-full h-full object-cover transition-transform group-hover:scale-105"
+        <div className="flex items-center gap-3">
+          <div className="relative">
+            <InstagramStoriesPreview
+              artistName={artistName}
+              username={username}
+              profilePicture={profilePicture}
+              stories={stories}
             />
-
-            {/* Video indicator */}
-            {post.media_type === "VIDEO" && (
-              <div className="absolute inset-0 flex items-center justify-center">
-                <div className="bg-black/50 rounded-full p-2">
-                  <Play size={20} className="text-white" />
-                </div>
-              </div>
-            )}
-
-            {/* Carousel indicator */}
-            {post.media_type === "CAROUSEL_ALBUM" && (
-              <div className="absolute top-2 right-2">
-                <div className="bg-black/50 rounded-full p-1 text-white text-xs">
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    width="16"
-                    height="16"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  >
-                    <rect x="2" y="6" width="18" height="12" rx="2" />
-                    <rect x="6" y="10" width="12" height="8" rx="1" />
-                  </svg>
-                </div>
-              </div>
-            )}
           </div>
-        ))}
+          <div>
+            <h3 className="text-sm font-medium">{artistName}</h3>
+            <a
+              href={profileUrl || `https://instagram.com/${username}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-xs text-indigo-600 hover:text-indigo-800 flex items-center gap-1"
+            >
+              @{username}
+              <ExternalLink size={12} />
+            </a>
+          </div>
+        </div>
       </div>
 
-      <Button
-        variant="outline"
-        size="sm"
-        className="w-full"
-        onClick={() => window.open(`https://instagram.com/${username}`, "_blank")}
-      >
-        View More on Instagram
-      </Button>
+      {posts && posts.length > 0 ? (
+        <>
+          <div className="grid grid-cols-3 gap-1">
+            {posts.map((post) => (
+              <div
+                key={post.id}
+                className="aspect-square relative cursor-pointer overflow-hidden"
+                onClick={() => {
+                  setSelectedPost(post)
+                  setCurrentCarouselIndex(0) // Reset carousel index when opening a new post
+                }}
+              >
+                {post.media_type === "VIDEO" ? (
+                  <div className="relative w-full h-full">
+                    <Image
+                      src={
+                        post.thumbnail_url ||
+                        post.media_url ||
+                        "/placeholder.svg?height=300&width=300&query=instagram post"
+                      }
+                      alt={post.caption || "Instagram post"}
+                      width={300}
+                      height={300}
+                      className="w-full h-full object-cover transition-transform hover:scale-105"
+                    />
+                    <div className="absolute top-1 right-1 bg-black/70 text-white text-xs rounded-full px-1.5 py-0.5">
+                      Video
+                    </div>
+                  </div>
+                ) : post.media_type === "CAROUSEL_ALBUM" ? (
+                  <div className="relative w-full h-full">
+                    <Image
+                      src={post.media_url || "/placeholder.svg?height=300&width=300&query=instagram post"}
+                      alt={post.caption || "Instagram post"}
+                      width={300}
+                      height={300}
+                      className="w-full h-full object-cover transition-transform hover:scale-105"
+                    />
+                    <div className="absolute top-1 right-1 bg-black/70 text-white text-xs rounded-full px-1.5 py-0.5">
+                      Album
+                    </div>
+                  </div>
+                ) : (
+                  <Image
+                    src={post.media_url || "/placeholder.svg?height=300&width=300&query=instagram post"}
+                    alt={post.caption || "Instagram post"}
+                    width={300}
+                    height={300}
+                    className="w-full h-full object-cover transition-transform hover:scale-105"
+                  />
+                )}
+              </div>
+            ))}
+          </div>
+
+          <Button
+            variant="outline"
+            size="sm"
+            className="w-full"
+            onClick={() => window.open(`https://instagram.com/${username}`, "_blank")}
+          >
+            View More on Instagram
+          </Button>
+        </>
+      ) : (
+        <div className="flex flex-col items-center justify-center p-8 text-center">
+          <Instagram size={32} className="text-gray-400 mb-2" />
+          <p className="text-gray-500">No posts available</p>
+          <Button
+            variant="outline"
+            size="sm"
+            className="mt-4"
+            onClick={() => window.open(`https://instagram.com/${username}`, "_blank")}
+          >
+            View Profile on Instagram
+          </Button>
+        </div>
+      )}
 
       {/* Post detail dialog */}
       <Dialog open={!!selectedPost} onOpenChange={() => setSelectedPost(null)}>
@@ -236,7 +271,28 @@ export function InstagramFeed({ artistName, username, posts, profileUrl }: Insta
 
           {selectedPost && (
             <div className="space-y-4">
-              <div className="rounded-md overflow-hidden">{renderPostMedia()}</div>
+              <div className="rounded-md overflow-hidden">
+                {selectedPost.media_type === "VIDEO" ? (
+                  <video src={selectedPost.media_url} controls autoPlay playsInline className="w-full h-auto" />
+                ) : selectedPost.media_type === "CAROUSEL_ALBUM" ? (
+                  // For simplicity, just show the first image of the carousel
+                  <Image
+                    src={selectedPost.media_url || "/placeholder.svg?height=500&width=500&query=instagram post"}
+                    alt={selectedPost.caption || "Instagram post"}
+                    width={500}
+                    height={500}
+                    className="w-full object-cover"
+                  />
+                ) : (
+                  <Image
+                    src={selectedPost.media_url || "/placeholder.svg?height=500&width=500&query=instagram post"}
+                    alt={selectedPost.caption || "Instagram post"}
+                    width={500}
+                    height={500}
+                    className="w-full object-cover"
+                  />
+                )}
+              </div>
 
               <p className="text-sm">{selectedPost.caption}</p>
 
