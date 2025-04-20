@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Label } from "@/components/ui/label"
@@ -9,6 +9,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Separator } from "@/components/ui/separator"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Save } from "lucide-react"
+import { supabase } from "@/lib/supabase"
+import { SHOPIFY_SHOP, SHOPIFY_ACCESS_TOKEN } from "@/lib/env"
 
 export default function SettingsPage() {
   const [settings, setSettings] = useState({
@@ -17,6 +19,53 @@ export default function SettingsPage() {
     updateShopify: true,
     syncOnWebhook: true,
   })
+
+  const [vendors, setVendors] = useState<any[]>([])
+  const [selectedVendor, setSelectedVendor] = useState<string | null>(null)
+
+  useEffect(() => {
+    fetchVendors()
+  }, [])
+
+  const fetchVendors = async () => {
+    try {
+      // Fetch vendors from Shopify
+      const shopifyResponse = await fetch(`https://${SHOPIFY_SHOP}/admin/api/2023-10/vendors.json`, {
+        method: "GET",
+        headers: {
+          "X-Shopify-Access-Token": SHOPIFY_ACCESS_TOKEN,
+          "Content-Type": "application/json",
+        },
+      })
+
+      if (!shopifyResponse.ok) {
+        throw new Error(`Failed to fetch vendors from Shopify: ${shopifyResponse.status}`)
+      }
+
+      const shopifyData = await shopifyResponse.json()
+      const shopifyVendors = shopifyData.vendors || []
+
+      // Fetch vendors from Supabase
+      const { data: supabaseVendors, error: supabaseError } = await supabase
+        .from("instagram_profiles")
+        .select("vendor_id")
+
+      if (supabaseError) {
+        throw new Error(`Failed to fetch vendors from Supabase: ${supabaseError.message}`)
+      }
+
+      // Combine and deduplicate vendors
+      const allVendors = [
+        ...new Set([
+          ...shopifyVendors.map((v: any) => v.name),
+          ...(supabaseVendors?.map((v: any) => v.vendor_id) || []),
+        ]),
+      ]
+      setVendors(allVendors)
+    } catch (error: any) {
+      console.error("Error fetching vendors:", error)
+    }
+  }
 
   const handleSaveSettings = () => {
     // In a real app, this would save to your backend
