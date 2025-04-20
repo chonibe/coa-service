@@ -37,7 +37,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
     { href: "/admin/missing-orders", label: "Missing Orders", icon: AlertTriangle },
     { href: "/admin/test-connections", label: "Test Connections", icon: Zap },
     { href: "/admin/certificates", label: "Certificates", icon: Certificate },
-    { href: "/admin/instagram-management", label: "Instagram Management", icon: Instagram },
+    { href: "/admin/instagram/profiles", label: "Instagram Management", icon: Instagram },
   ]
 
   return (
