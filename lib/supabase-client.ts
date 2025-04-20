@@ -1,7 +1,13 @@
-/**
- * Client-side Supabase helpers that use the API proxy
- * Use these functions in client components instead of direct Supabase access
- */
+"use client"
+
+import { createClient } from "@supabase/supabase-js"
+
+// Environment variables
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || ""
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ""
+
+// Create and export the client instance
+export const supabase = createClient(supabaseUrl, supabaseAnonKey)
 
 export async function getEditionInfo(orderId: string, lineItemId: string) {
   try {
