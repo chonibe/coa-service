@@ -3,41 +3,12 @@
 import { useEffect, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
-import {
-  User,
-  LogIn,
-  ImageIcon,
-  AlertCircle,
-  RefreshCcw,
-  MoreVertical,
-  Check,
-  X,
-  FolderSyncIcon as Sync,
-  BadgeIcon as Certificate,
-} from "lucide-react"
+import { User, ImageIcon, AlertCircle, RefreshCcw, FolderSyncIcon as Sync } from "lucide-react"
 import { useEditionInfo } from "@/hooks/use-edition-info"
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog"
-import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
-import { Input } from "@/components/ui/input"
 import { mockResponseData } from "@/lib/mock-data"
 import { getCustomerOrders } from "@/lib/data-access"
-import { updateLineItemStatus, resequenceEditionNumbers } from "@/lib/supabase-client"
+import { useRouter } from "next/navigation"
+import { supabase } from "@/lib/supabase"
 
 interface OrderItem {
   id: string
@@ -118,14 +89,36 @@ export default function OrderLookup() {
   const [currentOrder, setCurrentOrder] = useState("all")
   const [currentStatus, setCurrentStatus] = useState("fulfillable")
 
+  const router = useRouter()
+
   useEffect(() => {
     // In a real implementation, this would not be needed as Shopify would handle authentication
     // For demo purposes, we'll simulate a logged-in user
-    const checkLoginStatus = () => {
-      // Simulate checking login status
+    const checkLoginStatus = async () => {
+      let initialCustomerId = null
+
+      // Try to fetch a customer ID from Supabase
+      try {
+        const { data, error } = await supabase
+          .from("instagram_profiles") // Replace with your customer table
+          .select("vendor_id") // Replace with your customer ID column
+          .limit(1)
+
+        if (error) {
+          console.error("Error fetching customer ID from Supabase:", error)
+        } else if (data && data.length > 0) {
+          initialCustomerId = data[0].vendor_id // Replace with the correct column name
+        }
+      } catch (supabaseError) {
+        console.error("Error fetching customer ID from Supabase:", supabaseError)
+      }
+
+      // If no customer ID was found, use a mock ID
+      const customerIdToUse = initialCustomerId || "12345678"
+
       setTimeout(() => {
         setIsLoggedIn(true)
-        setCustomerId("12345678")
+        setCustomerId(customerIdToUse)
       }, 1000)
     }
 
@@ -470,127 +463,12 @@ export default function OrderLookup() {
     }
   }
 
-  // Handle opening the remove dialog
-  const handleRemoveClick = (item: OrderItem) => {
-    setSelectedItem(item)
-    setRemoveReason("")
-    setIsRemoveDialogOpen(true)
-  }
-
-  // Handle confirming removal
-  const handleConfirmRemove = async () => {
-    if (!selectedItem) return
-
-    setIsUpdatingStatus(true)
-
-    try {
-      // Update the status using our helper function
-      const result = await updateLineItemStatus(
-        selectedItem.line_item_id,
-        selectedItem.order_info.order_id,
-        "removed",
-        removeReason,
-      )
-
-      if (!result.success) {
-        throw new Error(result.error || "Failed to update item status")
-      }
-
-      // Wait a moment to allow the resequencing to complete
-      await new Promise((resolve) => setTimeout(resolve, 1000))
-
-      // Refresh the data to get updated edition numbers
-      await fetchOrdersByCustomerId(customerId!, null, false)
-
-      // Close the dialog
-      setIsRemoveDialogOpen(false)
-      setSelectedItem(null)
-    } catch (error) {
-      console.error("Error removing item:", error)
-      setError("Failed to update item status. Please try again.")
-    } finally {
-      setIsUpdatingStatus(false)
-    }
-  }
-
-  // Handle opening the sync dialog
-  const handleSyncClick = () => {
-    setSyncProductId("")
-    setSyncResult(null)
+  // Handler for the sync button click
+  const handleSyncClick = async () => {
     setIsSyncDialogOpen(true)
   }
 
-  // Handle confirming sync
-  const handleConfirmSync = async () => {
-    if (!syncProductId) {
-      setError("Product ID is required for syncing")
-      return
-    }
-
-    setIsSyncing(true)
-    setSyncResult(null)
-
-    try {
-      // Use our helper function
-      const result = await resequenceEditionNumbers(syncProductId)
-
-      if (!result.success) {
-        throw new Error(result.error || "Failed to sync edition data")
-      }
-
-      setSyncResult({
-        productTitle: `Product ${syncProductId}`,
-        totalEditions: result.activeItems || 0,
-        editionTotal: "Not specified",
-        lineItemsProcessed: result.updatedCount || 0,
-        activeItems: result.activeItems || 0,
-        removedItems: result.removedItems || 0,
-      })
-
-      // Refresh line items data to reflect the new sync status
-      fetchOrdersByCustomerId(customerId!, null, false)
-    } catch (error: any) {
-      console.error("Error syncing edition data:", error)
-      setError(error.message || "Failed to sync edition data. Please try again.")
-    } finally {
-      setIsSyncing(false)
-    }
-  }
-
-  // Render loading state
-  if (isLoggedIn === null) {
-    return (
-      <div className="w-full max-w-6xl mx-auto p-4">
-        <div className="flex flex-col items-center justify-center py-12">
-          <div className="h-10 w-10 border-4 border-t-primary rounded-full animate-spin mb-4"></div>
-          <p className="text-muted-foreground">Checking your account...</p>
-        </div>
-      </div>
-    )
-  }
-
-  // Render login required view
-  if (isLoggedIn === false) {
-    return (
-      <div className="w-full max-w-6xl mx-auto p-4">
-        <div className="flex flex-col items-center justify-center py-12 px-4 bg-muted rounded-lg">
-          <div className="w-16 h-16 flex items-center justify-center rounded-full bg-background mb-6 text-primary">
-            <LogIn size={28} />
-          </div>
-          <h2 className="text-2xl font-bold mb-2">Login Required</h2>
-          <p className="text-muted-foreground mb-6 text-center max-w-md">
-            You need to be logged in to view your purchase history.
-          </p>
-          <div className="flex gap-4">
-            <Button>Log In</Button>
-            <Button variant="outline">Create Account</Button>
-          </div>
-        </div>
-      </div>
-    )
-  }
-
-  // Filter the items for display
+  // Apply filters to line items
   const filteredItems = filterLineItems(lineItems)
 
   return (
@@ -763,7 +641,6 @@ export default function OrderLookup() {
               item={item}
               formatMoney={formatMoney}
               formatStatus={formatStatus}
-              onRemoveClick={handleRemoveClick}
             />
           ))}
         </div>
@@ -789,102 +666,6 @@ export default function OrderLookup() {
           <p className="text-sm text-muted-foreground">You've reached the end of your purchase history</p>
         </div>
       )}
-
-      {/* Load more button */}
-      {!noMoreOrders && !isLoading && lineItems.length > 0 && (
-        <div className="flex justify-center mb-6">
-          <Button variant="outline" onClick={() => fetchOrdersByCustomerId(customerId!, nextCursor, true)}>
-            Load More
-          </Button>
-        </div>
-      )}
-
-      {/* Remove Item Dialog */}
-      <Dialog open={isRemoveDialogOpen} onOpenChange={setIsRemoveDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Remove Item</DialogTitle>
-            <DialogDescription>
-              Are you sure you want to remove this item? This will mark it as removed in the database.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="py-4">
-            <Label htmlFor="reason" className="text-right">
-              Reason for removal (optional)
-            </Label>
-            <Textarea
-              id="reason"
-              value={removeReason}
-              onChange={(e) => setRemoveReason(e.target.value)}
-              placeholder="Enter a reason for removal"
-              className="mt-2"
-            />
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsRemoveDialogOpen(false)} disabled={isUpdatingStatus}>
-              Cancel
-            </Button>
-            <Button
-              onClick={handleConfirmRemove}
-              disabled={isUpdatingStatus}
-              className="bg-destructive hover:bg-destructive/90 text-white"
-            >
-              {isUpdatingStatus ? "Removing..." : "Remove Item"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Sync Edition Data Dialog */}
-      <Dialog open={isSyncDialogOpen} onOpenChange={setIsSyncDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Sync Edition Data</DialogTitle>
-            <DialogDescription>
-              Enter a product ID to sync edition data for that product. This will update all edition numbers in the
-              database.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="py-4">
-            <Label htmlFor="productId" className="text-right">
-              Product ID
-            </Label>
-            <Input
-              id="productId"
-              value={syncProductId}
-              onChange={(e) => setSyncProductId(e.target.value)}
-              placeholder="Enter product ID"
-              className="mt-2"
-            />
-          </div>
-
-          {syncResult && (
-            <div className="bg-muted p-4 rounded-md text-sm">
-              <h4 className="font-semibold mb-2">Sync Results:</h4>
-              <div className="space-y-1">
-                <p>Product: {syncResult.productTitle}</p>
-                <p>Total Editions: {syncResult.totalEditions}</p>
-                <p>Edition Total: {syncResult.editionTotal || "Not specified"}</p>
-                <p>Active Items: {syncResult.activeItems}</p>
-                <p>Removed Items: {syncResult.removedItems}</p>
-              </div>
-            </div>
-          )}
-
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsSyncDialogOpen(false)} disabled={isSyncing}>
-              Close
-            </Button>
-            <Button
-              onClick={handleConfirmSync}
-              disabled={isSyncing || !syncProductId}
-              className="bg-primary hover:bg-primary/90 text-white"
-            >
-              {isSyncing ? "Syncing..." : "Sync Edition Data"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </div>
   )
 }
@@ -893,11 +674,11 @@ interface ItemCardProps {
   item: OrderItem
   formatMoney: (amount: string | number, currency?: string) => string
   formatStatus: (status: string) => string
-  onRemoveClick: (item: OrderItem) => void
 }
 
 // Update the ItemCard component to display the edition size from the editionInfo
-function ItemCard({ item, formatMoney, formatStatus, onRemoveClick }: ItemCardProps) {
+function ItemCard({ item, formatMoney, formatStatus }: ItemCardProps) {
+  const router = useRouter()
   const { editionInfo, isLoading, refreshEditionInfo } = useEditionInfo(item)
 
   const orderDate = new Date(item.order_info.processed_at).toLocaleDateString("en-US", {
@@ -917,7 +698,10 @@ function ItemCard({ item, formatMoney, formatStatus, onRemoveClick }: ItemCardPr
   }
 
   return (
-    <Card className={`overflow-hidden ${!isFulfillable ? "opacity-80" : ""}`}>
+    <Card
+      className={`overflow-hidden ${!isFulfillable ? "opacity-80" : ""}`}
+      onClick={() => router.push(`/certificate/${item.line_item_id}`)}
+    >
       {/* Item image */}
       <div className="relative h-60 bg-muted">
         {!isFulfillable && (
@@ -961,46 +745,11 @@ ${
         {item.inventory_quantity !== undefined && (
           <div
             className={`absolute top-2 left-2 px-3 py-1 rounded-full text-xs font-medium bg-background/90 z-10
-            ${item.inventory_quantity > 0 ? "text-green-600" : "text-destructive"}`}
+           ${item.inventory_quantity > 0 ? "text-green-600" : "text-destructive"}`}
           >
             {item.inventory_quantity > 0 ? `${item.inventory_quantity} available` : "Sold out"}
           </div>
         )}
-
-        {/* Actions menu */}
-        <div className="absolute top-2 right-2 z-20">
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon" className="h-8 w-8 bg-background/80 hover:bg-background">
-                <MoreVertical size={16} />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuLabel>Actions</DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={() => refreshEditionInfo()}>
-                <RefreshCcw size={16} className="mr-2" />
-                Refresh Edition Info
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => window.open(`/certificate/${item.line_item_id}`, "_blank")}>
-                <Certificate size={16} className="mr-2" />
-                View Certificate
-              </DropdownMenuItem>
-              {item.status !== "removed" && (
-                <DropdownMenuItem onClick={() => onRemoveClick(item)} className="text-destructive">
-                  <X size={16} className="mr-2" />
-                  Remove Item
-                </DropdownMenuItem>
-              )}
-              {item.status === "removed" && (
-                <DropdownMenuItem className="text-muted-foreground cursor-not-allowed opacity-50">
-                  <Check size={16} className="mr-2" />
-                  Item Removed
-                </DropdownMenuItem>
-              )}
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
 
         {item.image ? (
           <img
@@ -1120,45 +869,45 @@ ${
         <div className="flex flex-wrap gap-2">
           <span
             className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium
-            ${
-              item.order_info.fulfillment_status === "fulfilled"
-                ? "bg-green-100 text-green-800"
-                : item.order_info.fulfillment_status === "partially_fulfilled"
-                  ? "bg-blue-100 text-blue-800"
-                  : "bg-amber-100 text-amber-800"
-            }`}
+           ${
+             item.order_info.fulfillment_status === "fulfilled"
+               ? "bg-green-100 text-green-800"
+               : item.order_info.fulfillment_status === "partially_fulfilled"
+                 ? "bg-blue-100 text-blue-800"
+                 : "bg-amber-100 text-amber-800"
+           }`}
           >
             <span
               className={`w-1.5 h-1.5 rounded-full mr-1 
-              ${
-                item.order_info.fulfillment_status === "fulfilled"
-                  ? "bg-green-800"
-                  : item.order_info.fulfillment_status === "partially_fulfilled"
-                    ? "bg-blue-800"
-                    : "bg-amber-800"
-              }`}
+             ${
+               item.order_info.fulfillment_status === "fulfilled"
+                 ? "bg-green-800"
+                 : item.order_info.fulfillment_status === "partially_fulfilled"
+                   ? "bg-blue-800"
+                   : "bg-amber-800"
+             }`}
             ></span>
             {formatStatus(item.order_info.fulfillment_status)}
           </span>
           <span
             className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium
-            ${
-              item.order_info.financial_status === "paid"
-                ? "bg-green-100 text-green-800"
-                : item.order_info.financial_status === "refunded"
-                  ? "bg-red-100 text-red-800"
-                  : "bg-gray-100 text-gray-800"
-            }`}
+           ${
+             item.order_info.financial_status === "paid"
+               ? "bg-green-100 text-green-800"
+               : item.order_info.financial_status === "refunded"
+                 ? "bg-red-100 text-red-800"
+                 : "bg-gray-100 text-gray-800"
+           }`}
           >
             <span
               className={`w-1.5 h-1.5 rounded-full mr-1 
-              ${
-                item.order_info.financial_status === "paid"
-                  ? "bg-green-800"
-                  : item.order_info.financial_status === "refunded"
-                    ? "bg-red-800"
-                    : "bg-gray-800"
-              }`}
+             ${
+               item.order_info.financial_status === "paid"
+                 ? "bg-green-800"
+                 : item.order_info.financial_status === "refunded"
+                   ? "bg-red-800"
+                   : "bg-gray-800"
+             }`}
             ></span>
             {formatStatus(item.order_info.financial_status)}
           </span>

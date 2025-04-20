@@ -20,6 +20,7 @@ import {
 import { useInstagram } from "@/hooks/use-instagram"
 import { InstagramFeed } from "@/components/instagram-feed"
 import { InstagramStories } from "@/components/instagram-stories"
+import { supabase } from "@/lib/supabase"
 
 export default function CertificatePage() {
   const params = useParams()
@@ -29,20 +30,8 @@ export default function CertificatePage() {
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
-  // Mock vendor instagram username
-  const vendorInstagramUsername = "woizoner"
-
-  // Fetch Instagram data
-  const {
-    profile,
-    posts,
-    stories,
-    isLoading: isInstagramLoading,
-    error: instagramError,
-  } = useInstagram({
-    vendorId: vendorInstagramUsername,
-    accountId: vendorInstagramUsername,
-  })
+  // State to store the vendor's Instagram account ID
+  const [vendorInstagramAccountId, setVendorInstagramAccountId] = useState<string | null>(null)
 
   useEffect(() => {
     const fetchCertificate = async () => {
@@ -58,6 +47,19 @@ export default function CertificatePage() {
 
         const data = await response.json()
         setCertificate(data.certificate)
+
+        // Fetch the vendor's Instagram account ID from Supabase
+        const { data: vendorData, error: vendorError } = await supabase
+          .from("instagram_profiles")
+          .select("account_id")
+          .eq("vendor_id", data.certificate.product.vendor)
+          .single()
+
+        if (vendorError) {
+          console.error("Error fetching vendor Instagram account ID:", vendorError)
+        } else if (vendorData) {
+          setVendorInstagramAccountId(vendorData.account_id)
+        }
       } catch (err: any) {
         console.error("Error fetching certificate:", err)
         setError(err.message || "Failed to load certificate")
@@ -70,6 +72,18 @@ export default function CertificatePage() {
       fetchCertificate()
     }
   }, [lineItemId])
+
+  // Fetch Instagram data
+  const {
+    profile,
+    posts,
+    stories,
+    isLoading: isInstagramLoading,
+    error: instagramError,
+  } = useInstagram({
+    vendorId: vendorInstagramAccountId || "woizoner", // Use the fetched account ID or a default
+    accountId: vendorInstagramAccountId || "woizoner",
+  })
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString("en-US", {
