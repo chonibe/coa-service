@@ -60,6 +60,13 @@ export async function GET(request: NextRequest) {
 
     const data = await response.json()
 
+    // Enhance product data with price and amountSold
+    const enhancedProducts = data.products.map((product: any) => ({
+      ...product,
+      price: product.variants && product.variants[0] ? product.variants[0].price : 0, // Assuming the first variant has the price
+      amountSold: 10, // Replace with your actual logic to fetch amount sold
+    }))
+
     // Get pagination info from Link header
     const linkHeader = response.headers.get("Link")
     let nextCursor = null
@@ -85,7 +92,7 @@ export async function GET(request: NextRequest) {
     }
 
     return NextResponse.json({
-      products: data.products,
+      products: enhancedProducts,
       pagination: {
         nextCursor,
         prevCursor,
@@ -155,7 +162,15 @@ async function fetchAllProducts(query = "", field = "title") {
       }
 
       const data = await response.json()
-      allProducts = [...allProducts, ...data.products]
+
+      // Enhance product data with price and amountSold
+      const enhancedProducts = data.products.map((product: any) => ({
+        ...product,
+        price: product.variants && product.variants[0] ? product.variants[0].price : 0, // Assuming the first variant has the price
+        amountSold: 10, // Replace with your actual logic to fetch amount sold
+      }))
+
+      allProducts = [...allProducts, ...enhancedProducts]
 
       // Check for next page
       nextCursor = null
