@@ -35,9 +35,38 @@ export default function VendorsPage() {
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc")
   const [selectedVendor, setSelectedVendor] = useState<any>(null)
   const [dialogOpen, setDialogOpen] = useState(false)
+  const [isTableInitialized, setIsTableInitialized] = useState(false)
+
+  // Initialize the vendors table
+  const initializeVendorsTable = async () => {
+    try {
+      const response = await fetch("/api/vendors/create-table", {
+        method: "POST",
+      })
+
+      if (!response.ok) {
+        const error = await response.json()
+        console.error("Error initializing vendors table:", error)
+      } else {
+        console.log("Vendors table initialized successfully")
+        setIsTableInitialized(true)
+      }
+    } catch (error) {
+      console.error("Error initializing vendors table:", error)
+    }
+  }
+
+  // Initialize table on first load
+  useEffect(() => {
+    initializeVendorsTable()
+  }, [])
 
   // Fetch vendors directly from Shopify
   const fetchVendors = async (refresh = false) => {
+    if (!isTableInitialized) {
+      await initializeVendorsTable()
+    }
+
     if (refresh) {
       setIsRefreshing(true)
     } else {
@@ -83,8 +112,10 @@ export default function VendorsPage() {
 
   // Initial fetch
   useEffect(() => {
-    fetchVendors()
-  }, [])
+    if (isTableInitialized) {
+      fetchVendors()
+    }
+  }, [isTableInitialized])
 
   // Handle search
   const handleSearch = () => {

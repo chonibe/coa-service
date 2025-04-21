@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import {
   Dialog,
   DialogContent,
@@ -28,17 +28,17 @@ interface VendorDialogProps {
 }
 
 export function VendorDialog({ vendor, open, onOpenChange, onSave }: VendorDialogProps) {
-  const [instagramUrl, setInstagramUrl] = useState(vendor?.instagram_url || "")
-  const [notes, setNotes] = useState(vendor?.notes || "")
+  const [instagramUrl, setInstagramUrl] = useState("")
+  const [notes, setNotes] = useState("")
   const [isLoading, setIsLoading] = useState(false)
 
-  // Reset form when vendor changes
-  useState(() => {
-    if (vendor) {
+  // Reset form when vendor changes or dialog opens
+  useEffect(() => {
+    if (vendor && open) {
       setInstagramUrl(vendor.instagram_url || "")
       setNotes(vendor.notes || "")
     }
-  })
+  }, [vendor, open])
 
   const handleSave = async () => {
     if (!vendor) return
@@ -56,6 +56,8 @@ export function VendorDialog({ vendor, open, onOpenChange, onSave }: VendorDialo
           formattedUrl = `https://instagram.com/${formattedUrl}`
         }
       }
+
+      console.log("Saving vendor:", vendor.name, "with Instagram URL:", formattedUrl)
 
       const response = await fetch("/api/vendors/custom-data", {
         method: "POST",

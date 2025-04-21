@@ -39,8 +39,19 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Vendor name is required" }, { status: 400 })
     }
 
+    console.log("Updating vendor:", vendorName, "with Instagram URL:", instagramUrl)
+
     // Check if vendor already exists
-    const { data: existingVendor } = await supabase.from("vendors").select("id").eq("vendor_name", vendorName).single()
+    const { data: existingVendor, error: checkError } = await supabase
+      .from("vendors")
+      .select("id")
+      .eq("vendor_name", vendorName)
+      .maybeSingle()
+
+    if (checkError) {
+      console.error("Error checking if vendor exists:", checkError)
+      return NextResponse.json({ error: checkError.message }, { status: 500 })
+    }
 
     const now = new Date().toISOString()
 
@@ -61,6 +72,7 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: error.message }, { status: 500 })
       }
 
+      console.log("Updated vendor:", data)
       return NextResponse.json({ data, success: true })
     } else {
       // Insert new vendor
@@ -70,6 +82,7 @@ export async function POST(request: NextRequest) {
           vendor_name: vendorName,
           instagram_url: instagramUrl,
           notes: notes,
+          created_at: now,
           updated_at: now,
         })
         .select()
@@ -79,6 +92,7 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: error.message }, { status: 500 })
       }
 
+      console.log("Inserted vendor:", data)
       return NextResponse.json({ data, success: true })
     }
   } catch (error) {
