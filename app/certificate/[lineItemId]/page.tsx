@@ -17,9 +17,6 @@ import {
   User,
   BadgeIcon as Certificate,
 } from "lucide-react"
-import { useInstagram } from "@/hooks/use-instagram"
-import { InstagramFeed } from "@/components/instagram-feed"
-import { InstagramStories } from "@/components/instagram-stories"
 
 export default function CertificatePage() {
   const params = useParams()
@@ -28,21 +25,6 @@ export default function CertificatePage() {
   const [certificate, setCertificate] = useState<any>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-
-  // Mock vendor instagram username
-  const vendorInstagramUsername = "woizoner"
-
-  // Fetch Instagram data
-  const {
-    profile,
-    posts,
-    stories,
-    isLoading: isInstagramLoading,
-    error: instagramError,
-  } = useInstagram({
-    vendorId: vendorInstagramUsername,
-    accountId: vendorInstagramUsername,
-  })
 
   useEffect(() => {
     const fetchCertificate = async () => {
@@ -274,39 +256,6 @@ export default function CertificatePage() {
                       <p>{certificate.product.title}</p>
                     )}
                   </div>
-                </div>
-
-                {/* Instagram Section */}
-                <div className="mb-8">
-                  <h3 className="font-semibold text-gray-900 mb-2">Instagram Feed</h3>
-                  {instagramError && (
-                    <Alert variant="destructive">
-                      <AlertCircle className="h-4 w-4" />
-                      <AlertTitle>Instagram Error</AlertTitle>
-                      <AlertDescription>{instagramError}</AlertDescription>
-                    </Alert>
-                  )}
-                  {isInstagramLoading ? (
-                    <p>Loading Instagram feed...</p>
-                  ) : (
-                    <>
-                      {profile && (
-                        <div className="flex items-center mb-4">
-                          <img
-                            src={profile.profile_picture_url || "/placeholder.svg"}
-                            alt="Instagram Profile"
-                            className="w-12 h-12 rounded-full mr-4"
-                          />
-                          <div>
-                            <h4 className="font-medium">{profile.username}</h4>
-                            <p className="text-sm text-gray-500">{profile.biography}</p>
-                          </div>
-                        </div>
-                      )}
-                      {stories && <InstagramStories stories={stories} />}
-                      {posts && <InstagramFeed posts={posts} />}
-                    </>
-                  )}
                 </div>
 
                 {/* Verification Information */}
