@@ -13,12 +13,17 @@ export async function POST(request: NextRequest) {
   try {
     const { vendorName, password } = await request.json()
 
+    console.log("Login attempt for vendor:", vendorName)
+
     if (!vendorName || !password) {
+      console.log("Missing credentials")
       return NextResponse.json({ message: "Vendor name and password are required" }, { status: 400 })
     }
 
     // Create Supabase client
     const supabase = createClient(supabaseUrl, supabaseServiceKey)
+
+    console.log("Searching for vendor:", vendorName)
 
     // Find vendor by name
     const { data: vendor, error } = await supabase
@@ -27,16 +32,33 @@ export async function POST(request: NextRequest) {
       .eq("vendor_name", vendorName)
       .single()
 
-    if (error || !vendor) {
+    if (error) {
+      console.log("Supabase error:", error.message)
       return NextResponse.json({ message: "Invalid vendor name or password" }, { status: 401 })
+    }
+
+    if (!vendor) {
+      console.log("Vendor not found")
+      return NextResponse.json({ message: "Invalid vendor name or password" }, { status: 401 })
+    }
+
+    console.log("Vendor found:", vendor.id)
+
+    if (!vendor.password_hash) {
+      console.log("Vendor has no password hash")
+      return NextResponse.json({ message: "Account not properly set up" }, { status: 401 })
     }
 
     // Verify password
+    console.log("Verifying password")
     const passwordMatch = await bcrypt.compare(password, vendor.password_hash)
 
     if (!passwordMatch) {
+      console.log("Password does not match")
       return NextResponse.json({ message: "Invalid vendor name or password" }, { status: 401 })
     }
+
+    console.log("Password verified, creating token")
 
     // Create JWT token
     const token = jwt.sign(
@@ -59,6 +81,7 @@ export async function POST(request: NextRequest) {
       maxAge: 7 * 24 * 60 * 60, // 7 days
     })
 
+    console.log("Login successful for vendor:", vendor.id)
     return NextResponse.json({ success: true })
   } catch (error) {
     console.error("Login error:", error)
