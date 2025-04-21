@@ -14,6 +14,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { MoreHorizontal } from "lucide-react"
+import { SHOPIFY_SHOP, SHOPIFY_ACCESS_TOKEN } from "@/lib/env"
 
 interface Profile {
   vendor_id: string
@@ -40,16 +41,37 @@ const InstagramProfilesPage = () => {
     setIsLoading(true)
     setError(null)
     try {
-      let url = `/api/instagram/profiles?search=${searchTerm}`
-      if (sortField) {
-        url += `&sortField=${sortField}&sortDirection=${sortDirection}`
+      // Fetch vendors from Shopify
+      const shopifyResponse = await fetch(`https://${SHOPIFY_SHOP}/admin/api/2023-10/vendors.json`, {
+        method: "GET",
+        headers: {
+          "X-Shopify-Access-Token": SHOPIFY_ACCESS_TOKEN,
+          "Content-Type": "application/json",
+        },
+      })
+
+      if (!shopifyResponse.ok) {
+        throw new Error(`Failed to fetch vendors from Shopify: ${shopifyResponse.status} ${shopifyResponse.statusText}`)
       }
-      const response = await fetch(url)
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`)
-      }
-      const data = await response.json()
-      setProfiles(data)
+
+      const shopifyData = await shopifyResponse.json()
+      const shopifyVendors = shopifyData.vendors || []
+
+      // Transform Shopify vendors to match the Profile interface
+      const transformedProfiles = shopifyVendors.map((vendor: any) => ({
+        vendor_id: vendor.name,
+        account_id: "", // You'll need to add a field to store the Instagram account ID
+        username: "", // You'll need to add a field to store the Instagram username
+        profile_picture_url: "", // You'll need to add a field to store the Instagram profile picture URL
+        biography: "", // You'll need to add a field to store the Instagram biography
+        followers_count: 0, // You'll need to add a field to store the Instagram followers count
+        follows_count: 0, // You'll need to add a field to store the Instagram follows count
+        media_count: 0, // You'll need to add a field to store the Instagram media count
+        created_at: new Date().toISOString(), // You'll need to add a field to store the creation date
+        updated_at: new Date().toISOString(), // You'll need to add a field to store the update date
+      }))
+
+      setProfiles(transformedProfiles)
     } catch (error) {
       console.error("Could not fetch profiles:", error)
       setError("Could not fetch profiles. Please check your connection and try again.")
@@ -104,12 +126,12 @@ const InstagramProfilesPage = () => {
             <TableRow>
               <TableHead className="w-[100px]">
                 <Button variant="ghost" onClick={() => handleSort("username")}>
-                  Username
+                  Vendor
                 </Button>
               </TableHead>
               <TableHead>
                 <Button variant="ghost" onClick={() => handleSort("fullName")}>
-                  Full Name
+                  Instagram URL
                 </Button>
               </TableHead>
               <TableHead>
@@ -128,7 +150,7 @@ const InstagramProfilesPage = () => {
           <TableBody>
             {profiles.map((profile) => (
               <TableRow key={profile.vendor_id}>
-                <TableCell className="font-medium">{profile.username}</TableCell>
+                <TableCell className="font-medium">{profile.vendor_id}</TableCell>
                 <TableCell>{profile.biography}</TableCell>
                 <TableCell>{profile.followers_count}</TableCell>
                 <TableCell>{profile.follows_count}</TableCell>
