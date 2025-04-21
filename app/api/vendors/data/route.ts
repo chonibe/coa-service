@@ -34,10 +34,24 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "Failed to fetch product data" }, { status: 500 })
     }
 
+    // Fetch sales data (replace with actual sales data retrieval logic)
+    const salesData = {
+      totalSales: 1000,
+      ordersProcessed: 50,
+    }
+
+    // Fetch inventory data (replace with actual inventory data retrieval logic)
+    const inventoryData = {
+      totalProducts: 10,
+      itemsSold: 500,
+    }
+
     // Combine vendor and product data
     const combinedData = {
       vendor: vendorData,
       products: productData,
+      sales: salesData,
+      inventory: inventoryData,
     }
 
     return NextResponse.json({ success: true, data: combinedData })
