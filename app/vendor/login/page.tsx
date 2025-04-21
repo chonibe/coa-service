@@ -85,6 +85,40 @@ export default function VendorLoginPage() {
             <Button type="submit" className="w-full" disabled={isLoading}>
               {isLoading ? "Logging in..." : "Login"}
             </Button>
+            <Button
+              type="button"
+              variant="outline"
+              className="w-full mt-2"
+              onClick={async () => {
+                setError("")
+                setIsLoading(true)
+
+                try {
+                  const response = await fetch("/api/vendor/simple-login", {
+                    method: "POST",
+                    headers: {
+                      "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({ vendorName }),
+                  })
+
+                  const data = await response.json()
+
+                  if (!response.ok) {
+                    throw new Error(data.message || "Login failed")
+                  }
+
+                  // Redirect to vendor dashboard on successful login
+                  router.push("/vendor/dashboard")
+                } catch (err: any) {
+                  setError(err.message || "An error occurred during login")
+                } finally {
+                  setIsLoading(false)
+                }
+              }}
+            >
+              Simple Login (Skip Password)
+            </Button>
           </form>
         </CardContent>
         <CardFooter className="flex justify-center">

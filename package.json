@@ -60,8 +60,8 @@
     "zod": "^3.24.1",
     "@supabase/supabase-js": "latest",
     "bcryptjs": "latest",
-    "jsonwebtoken": "latest",
-    "jose": "latest"
+    "jose": "latest",
+    "jsonwebtoken": "latest"
   },
   "devDependencies": {
     "@types/node": "^22",
