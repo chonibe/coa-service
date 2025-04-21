@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Loader2, ArrowLeft, Save } from "lucide-react"
+import { Loader2, ArrowLeft, Save, AlertCircle } from "lucide-react"
 import Link from "next/link"
 
 export default function VendorProductsPage() {
@@ -18,37 +18,50 @@ export default function VendorProductsPage() {
   const [error, setError] = useState<string | null>(null)
   const [payoutType, setPayoutType] = useState<"$" | "%">("$") // "$" or "%"
   const [payoutValue, setPayoutValue] = useState<number>(0)
+  // Add state variables for product price and amount sold
+  const [productPrices, setProductPrices] = useState<{ [productId: string]: number }>({})
+  const [productAmountsSold, setProductAmountsSold] = useState<{ [productId: string]: number }>({})
+
+  const fetchData = async () => {
+    setIsLoading(true)
+    setError(null)
+
+    try {
+      // Fetch vendors (replace with your actual API endpoint)
+      const vendorsResponse = await fetch("/api/vendors/list")
+      if (!vendorsResponse.ok) {
+        throw new Error("Failed to fetch vendors")
+      }
+      const vendorsData = await vendorsResponse.json()
+      setVendors(vendorsData.vendors || [])
+
+      // Fetch products (replace with your actual API endpoint)
+      const productsResponse = await fetch("/api/get-all-products?fetchAll=true")
+      if (!productsResponse.ok) {
+        throw new Error("Failed to fetch products")
+      }
+      const productsData = await productsResponse.json()
+      setProducts(productsData.products || [])
+
+      // Initialize product prices and amounts sold
+      const initialProductPrices: { [productId: string]: number } = {}
+      const initialProductAmountsSold: { [productId: string]: number } = {}
+      productsData.products.forEach((product: any) => {
+        initialProductPrices[product.id] = product.price || 0 // Assuming product has a price property
+        initialProductAmountsSold[product.id] = product.amountSold || 0 // Assuming product has an amountSold property
+      })
+      setProductPrices(initialProductPrices)
+      setProductAmountsSold(initialProductAmountsSold)
+    } catch (err: any) {
+      console.error("Error fetching data:", err)
+      setError(err.message || "Failed to load data")
+    } finally {
+      setIsLoading(false)
+    }
+  }
 
   useEffect(() => {
     // Fetch vendors and products on initial load
-    const fetchData = async () => {
-      setIsLoading(true)
-      setError(null)
-
-      try {
-        // Fetch vendors (replace with your actual API endpoint)
-        const vendorsResponse = await fetch("/api/vendors/list")
-        if (!vendorsResponse.ok) {
-          throw new Error("Failed to fetch vendors")
-        }
-        const vendorsData = await vendorsResponse.json()
-        setVendors(vendorsData.vendors || [])
-
-        // Fetch products (replace with your actual API endpoint)
-        const productsResponse = await fetch("/api/get-all-products?fetchAll=true")
-        if (!productsResponse.ok) {
-          throw new Error("Failed to fetch products")
-        }
-        const productsData = await productsResponse.json()
-        setProducts(productsData.products || [])
-      } catch (err: any) {
-        console.error("Error fetching data:", err)
-        setError(err.message || "Failed to load data")
-      } finally {
-        setIsLoading(false)
-      }
-    }
-
     fetchData()
   }, [])
 
@@ -151,6 +164,9 @@ export default function VendorProductsPage() {
                       <div>
                         <h3 className="font-medium">{product.title}</h3>
                         <p className="text-sm text-muted-foreground">Product ID: {product.id}</p>
+                        {/* Display product price and amount sold */}
+                        <p className="text-sm">Price: ${productPrices[product.id]}</p>
+                        <p className="text-sm">Amount Sold: {productAmountsSold[product.id]}</p>
                       </div>
                       <div className="flex items-center space-x-4">
                         <Label htmlFor={`payout-${product.id}`}>Payout Price</Label>
