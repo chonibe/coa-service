@@ -15,6 +15,8 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { MoreHorizontal } from "lucide-react"
 import { SHOPIFY_SHOP, SHOPIFY_ACCESS_TOKEN } from "@/lib/env"
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
+import { AlertCircle } from "lucide-react"
 
 interface Profile {
   vendor_id: string
@@ -41,8 +43,17 @@ const InstagramProfilesPage = () => {
     setIsLoading(true)
     setError(null)
     try {
+      // Check if Shopify credentials are set
+      if (!SHOPIFY_SHOP || !SHOPIFY_ACCESS_TOKEN) {
+        setError("Shopify credentials are not set. Please check your environment variables.")
+        return
+      }
+
       // Fetch vendors from Shopify
-      const shopifyResponse = await fetch(`https://${SHOPIFY_SHOP}/admin/api/2023-10/vendors.json`, {
+      const shopifyUrl = `https://${SHOPIFY_SHOP}/admin/api/2023-10/vendors.json`
+      console.log(`Fetching vendors from Shopify: ${shopifyUrl}`)
+
+      const shopifyResponse = await fetch(shopifyUrl, {
         method: "GET",
         headers: {
           "X-Shopify-Access-Token": SHOPIFY_ACCESS_TOKEN,
@@ -51,7 +62,9 @@ const InstagramProfilesPage = () => {
       })
 
       if (!shopifyResponse.ok) {
-        throw new Error(`Failed to fetch vendors from Shopify: ${shopifyResponse.status} ${shopifyResponse.statusText}`)
+        const errorText = await shopifyResponse.text()
+        console.error(`Failed to fetch vendors from Shopify: ${shopifyResponse.status} ${errorText}`)
+        throw new Error(`Failed to fetch vendors from Shopify: ${shopifyResponse.status} ${errorText}`)
       }
 
       const shopifyData = await shopifyResponse.json()
@@ -72,9 +85,9 @@ const InstagramProfilesPage = () => {
       }))
 
       setProfiles(transformedProfiles)
-    } catch (error) {
+    } catch (error: any) {
       console.error("Could not fetch profiles:", error)
-      setError("Could not fetch profiles. Please check your connection and try again.")
+      setError(error.message || "Could not fetch profiles. Please check your connection and try again.")
     } finally {
       setIsLoading(false)
     }
@@ -112,6 +125,15 @@ const InstagramProfilesPage = () => {
   return (
     <div className="container mx-auto py-10">
       <h1 className="text-3xl font-semibold mb-5">Instagram Profiles</h1>
+
+      {error && (
+        <Alert variant="destructive" className="mb-4">
+          <AlertCircle className="h-4 w-4" />
+          <AlertTitle>Error</AlertTitle>
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
+      )}
+
       <div className="mb-5 flex items-center space-x-4">
         <Input
           type="text"
