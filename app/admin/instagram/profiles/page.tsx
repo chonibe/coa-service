@@ -16,14 +16,16 @@ import {
 import { MoreHorizontal } from "lucide-react"
 
 interface Profile {
-  id: string
+  vendor_id: string
+  account_id: string
   username: string
-  fullName: string
-  followers: number
-  following: number
-  profilePictureUrl: string
-  isPrivate: boolean
-  isVerified: boolean
+  profile_picture_url: string
+  biography: string
+  followers_count: number
+  follows_count: number
+  media_count: number
+  created_at: string
+  updated_at: string
 }
 
 const InstagramProfilesPage = () => {
@@ -31,8 +33,12 @@ const InstagramProfilesPage = () => {
   const [searchTerm, setSearchTerm] = useState("")
   const [sortField, setSortField] = useState<string | null>(null)
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc")
+  const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   const fetchProfiles = async () => {
+    setIsLoading(true)
+    setError(null)
     try {
       let url = `/api/instagram/profiles?search=${searchTerm}`
       if (sortField) {
@@ -46,6 +52,9 @@ const InstagramProfilesPage = () => {
       setProfiles(data)
     } catch (error) {
       console.error("Could not fetch profiles:", error)
+      setError("Could not fetch profiles. Please check your connection and try again.")
+    } finally {
+      setIsLoading(false)
     }
   }
 
@@ -118,11 +127,11 @@ const InstagramProfilesPage = () => {
           </TableHeader>
           <TableBody>
             {profiles.map((profile) => (
-              <TableRow key={profile.id}>
+              <TableRow key={profile.vendor_id}>
                 <TableCell className="font-medium">{profile.username}</TableCell>
-                <TableCell>{profile.fullName}</TableCell>
-                <TableCell>{profile.followers}</TableCell>
-                <TableCell>{profile.following}</TableCell>
+                <TableCell>{profile.biography}</TableCell>
+                <TableCell>{profile.followers_count}</TableCell>
+                <TableCell>{profile.follows_count}</TableCell>
                 <TableCell className="text-right">
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
