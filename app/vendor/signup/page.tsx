@@ -1,7 +1,6 @@
 "use client"
 
 import type React from "react"
-import { DEFAULT_VENDOR_NAME, DEFAULT_VENDOR_PASSWORD } from "@/lib/env"
 
 import { useState } from "react"
 import { useRouter } from "next/navigation"
@@ -10,23 +9,29 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
-import Link from "next/link"
-import { AlertCircle, Lock } from "lucide-react"
+import { AlertCircle } from "lucide-react"
 
-export default function VendorLoginPage() {
+export default function VendorSignupPage() {
   const [vendorName, setVendorName] = useState("")
   const [password, setPassword] = useState("")
+  const [confirmPassword, setConfirmPassword] = useState("")
   const [error, setError] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const router = useRouter()
 
-  const handleLogin = async (e: React.FormEvent) => {
+  const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsLoading(true)
     setError(null)
 
+    if (password !== confirmPassword) {
+      setError("Passwords do not match")
+      setIsLoading(false)
+      return
+    }
+
     try {
-      const response = await fetch("/api/auth/vendor/login", {
+      const response = await fetch("/api/auth/vendor/signup", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -36,13 +41,13 @@ export default function VendorLoginPage() {
 
       if (!response.ok) {
         const data = await response.json()
-        throw new Error(data.message || "Invalid credentials")
+        throw new Error(data.message || "Failed to create account")
       }
 
-      // Redirect to vendor dashboard
-      router.push("/vendor")
+      // Redirect to login page after successful signup
+      router.push("/vendor/login")
     } catch (err: any) {
-      setError(err.message || "An error occurred during login")
+      setError(err.message || "An error occurred during signup")
     } finally {
       setIsLoading(false)
     }
@@ -52,15 +57,8 @@ export default function VendorLoginPage() {
     <div className="flex min-h-screen items-center justify-center bg-gray-50">
       <Card className="w-full max-w-md">
         <CardHeader>
-          <div className="flex items-center justify-center mb-4">
-            <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center">
-              <Lock className="h-6 w-6 text-primary" />
-            </div>
-          </div>
-          <CardTitle className="text-center">Vendor Login</CardTitle>
-          <CardDescription className="text-center">
-            Enter your credentials to access the vendor dashboard
-          </CardDescription>
+          <CardTitle className="text-center">Vendor Signup</CardTitle>
+          <CardDescription className="text-center">Create a new vendor account</CardDescription>
         </CardHeader>
         <CardContent>
           {error && (
@@ -71,7 +69,7 @@ export default function VendorLoginPage() {
             </Alert>
           )}
 
-          <form onSubmit={handleLogin}>
+          <form onSubmit={handleSignup}>
             <div className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="vendorName">Vendor Name</Label>
@@ -95,23 +93,24 @@ export default function VendorLoginPage() {
                   required
                 />
               </div>
+              <div className="space-y-2">
+                <Label htmlFor="confirmPassword">Confirm Password</Label>
+                <Input
+                  id="confirmPassword"
+                  type="password"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  placeholder="Confirm password"
+                  required
+                />
+              </div>
             </div>
           </form>
         </CardContent>
         <CardFooter>
-          <Button className="w-full" onClick={handleLogin} disabled={isLoading}>
-            {isLoading ? "Logging in..." : "Login"}
+          <Button className="w-full" onClick={handleSignup} disabled={isLoading}>
+            {isLoading ? "Creating account..." : "Create Account"}
           </Button>
-        </CardFooter>
-        <CardFooter className="text-center">
-          <p className="text-sm text-muted-foreground">
-            Default login: {DEFAULT_VENDOR_NAME} / {DEFAULT_VENDOR_PASSWORD}
-          </p>
-        </CardFooter>
-        <CardFooter className="text-center">
-          <Link href="/vendor/signup" className="text-sm text-muted-foreground hover:underline">
-            Create Account
-          </Link>
         </CardFooter>
       </Card>
     </div>

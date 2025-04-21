@@ -1,4 +1,3 @@
-// Shopify API credentials
 export const SHOPIFY_SHOP = process.env.SHOPIFY_SHOP || ""
 export const SHOPIFY_ACCESS_TOKEN = process.env.SHOPIFY_ACCESS_TOKEN || ""
 export const SHOPIFY_WEBHOOK_SECRET = process.env.SHOPIFY_WEBHOOK_SECRET || ""
@@ -7,6 +6,10 @@ export const CERTIFICATE_METAFIELD_ID = process.env.CERTIFICATE_METAFIELD_ID || 
 
 // Admin password
 export const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "changeme" // Default password, change in production
+
+// Vendor default login
+export const DEFAULT_VENDOR_NAME = process.env.DEFAULT_VENDOR_NAME || "vendor"
+export const DEFAULT_VENDOR_PASSWORD = process.env.DEFAULT_VENDOR_PASSWORD || "password"
 
 // Validate required environment variables
 if (!SHOPIFY_SHOP || !SHOPIFY_ACCESS_TOKEN) {
