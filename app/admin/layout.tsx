@@ -71,6 +71,19 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       title: "Vendors",
       href: "/admin/vendors",
       icon: <Truck className="h-5 w-5" />,
+      submenu: [
+        {
+          title: "Vendors List",
+          href: "/admin/vendors",
+          icon: <Truck className="h-4 w-4" />,
+        },
+        {
+          title: "Vendor Products",
+          href: "/admin/vendors/products",
+          icon: <Package className="h-4 w-4" />,
+        },
+      ],
+      expanded: false,
     },
     {
       title: "Certificates",

@@ -16,6 +16,8 @@ export default function VendorProductsPage() {
   const [products, setProducts] = useState<any[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [payoutType, setPayoutType] = useState<"$" | "%">("$") // "$" or "%"
+  const [payoutValue, setPayoutValue] = useState<number>(0)
 
   useEffect(() => {
     // Fetch vendors and products on initial load
@@ -152,13 +154,24 @@ export default function VendorProductsPage() {
                       </div>
                       <div className="flex items-center space-x-4">
                         <Label htmlFor={`payout-${product.id}`}>Payout Price</Label>
+                        <Select value={payoutType} onValueChange={(value) => setPayoutType(value as "$" | "%")}>
+                          <SelectTrigger id={`payout-type-${product.id}`} className="w-[80px]">
+                            <SelectValue placeholder="$" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="$">$</SelectItem>
+                            <SelectItem value="%">%</SelectItem>
+                          </SelectContent>
+                        </Select>
                         <Input
                           type="number"
                           id={`payout-${product.id}`}
                           placeholder="Enter payout price"
                           className="w-32"
+                          value={payoutValue}
+                          onChange={(e) => setPayoutValue(Number(e.target.value))}
                         />
-                        <Button variant="outline" size="sm" onClick={() => handleSavePayout(product.id, 0)}>
+                        <Button variant="outline" size="sm" onClick={() => handleSavePayout(product.id, payoutValue)}>
                           <Save className="h-4 w-4 mr-2" />
                           Save
                         </Button>
