@@ -6,8 +6,19 @@ import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
-import { Loader2, Search, AlertCircle, RefreshCw, Package, ArrowDownUp } from "lucide-react"
+import {
+  Loader2,
+  Search,
+  AlertCircle,
+  RefreshCw,
+  Package,
+  ArrowDownUp,
+  Instagram,
+  Pencil,
+  ExternalLink,
+} from "lucide-react"
 import { Badge } from "@/components/ui/badge"
+import { VendorDialog } from "./vendor-dialog"
 
 export default function VendorsPage() {
   const [vendors, setVendors] = useState<any[]>([])
@@ -22,6 +33,8 @@ export default function VendorsPage() {
     hasMore: false,
   })
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc")
+  const [selectedVendor, setSelectedVendor] = useState<any>(null)
+  const [dialogOpen, setDialogOpen] = useState(false)
 
   // Fetch vendors directly from Shopify
   const fetchVendors = async (refresh = false) => {
@@ -104,6 +117,25 @@ export default function VendorsPage() {
     setVendors(sortedVendors)
   }
 
+  // Open edit dialog
+  const handleEditVendor = (vendor: any) => {
+    setSelectedVendor(vendor)
+    setDialogOpen(true)
+  }
+
+  // Format Instagram URL for display
+  const formatInstagramUrl = (url: string | null) => {
+    if (!url) return null
+
+    try {
+      const urlObj = new URL(url)
+      const path = urlObj.pathname.replace(/^\//, "")
+      return path || urlObj.hostname
+    } catch (e) {
+      return url
+    }
+  }
+
   return (
     <div className="container mx-auto py-10 max-w-6xl">
       <div className="flex flex-col space-y-8">
@@ -177,20 +209,49 @@ export default function VendorsPage() {
                             <ArrowDownUp className="h-4 w-4 ml-2" />
                           </Button>
                         </TableHead>
+                        <TableHead className="hidden md:table-cell">Instagram</TableHead>
                         <TableHead className="text-right">
                           <div className="flex items-center justify-end">
                             <Package className="h-4 w-4 mr-1" />
                             Products
                           </div>
                         </TableHead>
+                        <TableHead className="w-[100px]">Actions</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
                       {vendors.map((vendor, index) => (
                         <TableRow key={`${vendor.id}-${index}`}>
                           <TableCell className="font-medium">{vendor.name}</TableCell>
+                          <TableCell className="hidden md:table-cell">
+                            {vendor.instagram_url ? (
+                              <a
+                                href={vendor.instagram_url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="flex items-center text-pink-500 hover:underline"
+                              >
+                                <Instagram className="h-4 w-4 mr-1" />
+                                {formatInstagramUrl(vendor.instagram_url)}
+                                <ExternalLink className="h-3 w-3 ml-1" />
+                              </a>
+                            ) : (
+                              <span className="text-muted-foreground text-sm">Not set</span>
+                            )}
+                          </TableCell>
                           <TableCell className="text-right">
                             <Badge variant="secondary">{vendor.product_count || 0}</Badge>
+                          </TableCell>
+                          <TableCell>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleEditVendor(vendor)}
+                              className="h-8 w-8 p-0"
+                            >
+                              <span className="sr-only">Edit</span>
+                              <Pencil className="h-4 w-4" />
+                            </Button>
                           </TableCell>
                         </TableRow>
                       ))}
@@ -221,6 +282,8 @@ export default function VendorsPage() {
           </CardContent>
         </Card>
       </div>
+
+      <VendorDialog vendor={selectedVendor} open={dialogOpen} onOpenChange={setDialogOpen} onSave={handleRefresh} />
     </div>
   )
 }

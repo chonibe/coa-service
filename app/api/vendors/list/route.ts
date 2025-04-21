@@ -1,5 +1,6 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { shopifyFetch, safeJsonParse } from "@/lib/shopify-api"
+import { supabase } from "@/lib/supabase"
 
 export async function GET(request: NextRequest) {
   try {
@@ -11,6 +12,29 @@ export async function GET(request: NextRequest) {
 
     // Fetch vendors from Shopify products
     const { vendors, nextCursor, totalCount } = await fetchVendorsFromProducts(query, limit, cursor)
+
+    // Fetch custom data for these vendors
+    if (vendors.length > 0) {
+      const vendorNames = vendors.map((v) => v.name)
+
+      const { data: customData, error } = await supabase.from("vendors").select("*").in("vendor_name", vendorNames)
+
+      if (error) {
+        console.error("Error fetching vendor custom data:", error)
+      } else if (customData) {
+        // Create a map of vendor name to custom data
+        const customDataMap = new Map(customData.map((item) => [item.vendor_name, item]))
+
+        // Merge custom data with vendor data
+        vendors.forEach((vendor) => {
+          const custom = customDataMap.get(vendor.name)
+          if (custom) {
+            vendor.instagram_url = custom.instagram_url
+            vendor.notes = custom.notes
+          }
+        })
+      }
+    }
 
     return NextResponse.json({
       vendors,
@@ -101,6 +125,8 @@ async function fetchVendorsFromProducts(query = "", limit = 100, cursor = null) 
       name,
       product_count: data.productCount,
       last_updated: data.lastUpdated,
+      instagram_url: null, // Will be populated later if available
+      notes: null, // Will be populated later if available
     }))
 
     // Sort vendors by name (case-insensitive)
