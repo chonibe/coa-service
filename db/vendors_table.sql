@@ -14,30 +14,27 @@ CREATE TABLE IF NOT EXISTS vendors (
   instagram_url TEXT,
   notes TEXT,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  paypal_email TEXT,
+  payout_method VARCHAR(50) DEFAULT 'paypal',
+  password_hash TEXT
 );
 
 -- Create index on vendor_name for faster lookups
 CREATE INDEX IF NOT EXISTS vendors_vendor_name_idx ON vendors (vendor_name);
 
--- Add payout information to vendors table
-ALTER TABLE vendors
-ADD COLUMN IF NOT EXISTS paypal_email TEXT,
-ADD COLUMN IF NOT EXISTS payout_method VARCHAR(50) DEFAULT 'paypal';
-
--- Add payout information to order_line_items table
-ALTER TABLE order_line_items
-ADD COLUMN IF NOT EXISTS payout_amount NUMERIC,
-ADD COLUMN IF NOT EXISTS payout_type VARCHAR(50) DEFAULT 'percentage';
-
--- Add password_hash column to vendors table
-ALTER TABLE vendors ADD COLUMN IF NOT EXISTS password_hash TEXT;
-
 -- Update vendors with a default password hash
 -- This is a hash for the password 'password' - replace with your own if needed
-UPDATE vendors SET password_hash = '$2a$10$JwZPb5xQlRdT7CQxTu4Z8.Ec.xzQQMJ2hJAuQwMKfZcBGBNW4gBse';
-INSERT INTO vendors (vendor_name) 
-VALUES ('test_vendor');
+UPDATE vendors SET password_hash = '$2a$10$JwZPb5xQlRdT7CQxTu4Z8.Ec.xzQQMJ2hJAuQwMKfZcBGBNW4gBse' WHERE password_hash IS NULL;
+
+-- Insert a test vendor if it doesn't already exist
+INSERT INTO vendors (vendor_name)
+SELECT 'test_vendor'
+WHERE NOT EXISTS (
+  SELECT 1
+  FROM vendors
+  WHERE vendor_name = 'test_vendor'
+);
 
 -- Make sure to update the password hash for this vendor
 UPDATE vendors 
