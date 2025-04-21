@@ -1,53 +1,119 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { supabase } from "@/lib/supabase"
+import { shopifyFetch, safeJsonParse } from "@/lib/shopify-api"
 
 export async function GET(request: NextRequest) {
   try {
     // Get query parameters
     const searchParams = request.nextUrl.searchParams
     const query = searchParams.get("query") || ""
-    const limit = Number.parseInt(searchParams.get("limit") || "50", 10)
-    const offset = Number.parseInt(searchParams.get("offset") || "0", 10)
-    const sortBy = searchParams.get("sortBy") || "name"
-    const sortOrder = searchParams.get("sortOrder") || "asc"
+    const limit = Number.parseInt(searchParams.get("limit") || "100", 10)
+    const cursor = searchParams.get("cursor") || null
 
-    // Build the query
-    let queryBuilder = supabase.from("vendors").select("*", { count: "exact" })
+    // Fetch vendors from Shopify products
+    const { vendors, nextCursor, totalCount } = await fetchVendorsFromProducts(query, limit, cursor)
 
-    // Add search filter if provided
-    if (query) {
-      queryBuilder = queryBuilder.ilike("name", `%${query}%`)
-    }
-
-    // Add sorting
-    queryBuilder = queryBuilder.order(sortBy, { ascending: sortOrder === "asc" })
-
-    // Add pagination
-    queryBuilder = queryBuilder.range(offset, offset + limit - 1)
-
-    // Execute the query
-    const { data: vendors, error, count } = await queryBuilder
-
-    if (error) {
-      console.error("Error fetching vendors:", error)
-      return NextResponse.json({ error: error.message }, { status: 500 })
-    }
-
-    // Format the response
     return NextResponse.json({
       vendors,
       pagination: {
-        total: count || 0,
+        total: totalCount,
         limit,
-        offset,
-        hasMore: offset + (vendors?.length || 0) < (count || 0),
+        cursor: nextCursor,
+        hasMore: !!nextCursor,
       },
     })
   } catch (error) {
-    console.error("Unexpected error in vendors list API:", error)
+    console.error("Error fetching vendors:", error)
     return NextResponse.json(
       { error: error instanceof Error ? error.message : "An unexpected error occurred" },
       { status: 500 },
     )
+  }
+}
+
+async function fetchVendorsFromProducts(query = "", limit = 100, cursor = null) {
+  try {
+    // Build the GraphQL query to fetch products and extract vendor information
+    const graphqlQuery = `
+      {
+        products(
+          first: 250
+          ${cursor ? `after: "${cursor}"` : ""}
+          ${query ? `query: "vendor:*${query}*"` : ""}
+        ) {
+          pageInfo {
+            hasNextPage
+            endCursor
+          }
+          edges {
+            node {
+              id
+              title
+              vendor
+              productType
+              totalInventory
+              createdAt
+              updatedAt
+            }
+          }
+        }
+      }
+    `
+
+    // Make the request to Shopify
+    const response = await shopifyFetch("graphql.json", {
+      method: "POST",
+      body: JSON.stringify({ query: graphqlQuery }),
+    })
+
+    const data = await safeJsonParse(response)
+
+    if (!data || !data.data || !data.data.products) {
+      console.error("Invalid response from Shopify GraphQL API:", data)
+      throw new Error("Invalid response from Shopify GraphQL API")
+    }
+
+    // Extract products
+    const products = data.data.products.edges.map((edge: any) => edge.node)
+
+    // Extract and count unique vendors
+    const vendorMap = new Map()
+
+    for (const product of products) {
+      if (product.vendor) {
+        // If we already have this vendor, update the product count
+        if (vendorMap.has(product.vendor)) {
+          const vendorData = vendorMap.get(product.vendor)
+          vendorData.productCount++
+        } else {
+          // Otherwise, add a new vendor
+          vendorMap.set(product.vendor, {
+            name: product.vendor,
+            productCount: 1,
+            lastUpdated: product.updatedAt,
+          })
+        }
+      }
+    }
+
+    // Convert the map to an array and sort by vendor name
+    const vendors = Array.from(vendorMap.entries()).map(([name, data]) => ({
+      id: name.toLowerCase().replace(/[^a-z0-9]/g, "-"),
+      name,
+      product_count: data.productCount,
+      last_updated: data.lastUpdated,
+    }))
+
+    // Sort vendors by name (case-insensitive)
+    vendors.sort((a, b) => a.name.toLowerCase().localeCompare(b.name.toLowerCase()))
+
+    // Return the vendors, pagination info, and total count
+    return {
+      vendors,
+      nextCursor: data.data.products.pageInfo.hasNextPage ? data.data.products.pageInfo.endCursor : null,
+      totalCount: vendors.length, // This is just the count of vendors on this page
+    }
+  } catch (error) {
+    console.error("Error fetching vendors from Shopify products:", error)
+    throw error
   }
 }
