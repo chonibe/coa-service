@@ -1,62 +1,45 @@
-import { NextResponse } from "next/server"
-import type { NextRequest } from "next/server"
-import { verifyJWT } from "@/lib/jwt"
+import { type NextRequest, NextResponse } from "next/server"
+import { jwtVerify } from "jose"
+
+// Define the routes that should be protected
+const VENDOR_PROTECTED_ROUTES = ["/vendor/dashboard"]
 
 export async function middleware(request: NextRequest) {
-  // Check if the request is for an admin page (except the login page)
-  if (request.nextUrl.pathname.startsWith("/admin") && !request.nextUrl.pathname.startsWith("/admin/login")) {
-    // Check if the user is authenticated
-    const isAuthenticated = request.cookies.has("admin_session")
+  const { pathname } = request.nextUrl
 
-    if (!isAuthenticated) {
-      // Redirect to the login page
-      const loginUrl = new URL("/admin/login", request.url)
-      return NextResponse.redirect(loginUrl)
-    }
-  }
+  // Check if the route should be protected
+  const isVendorProtectedRoute = VENDOR_PROTECTED_ROUTES.some((route) => pathname.startsWith(route))
 
-  // Check if the request is for a vendor dashboard page
-  if (request.nextUrl.pathname.startsWith("/vendor") && !request.nextUrl.pathname.startsWith("/vendor/login")) {
+  if (isVendorProtectedRoute) {
     const token = request.cookies.get("vendor_token")?.value
 
     if (!token) {
-      // Redirect to the vendor login page
-      const loginUrl = new URL("/vendor/login", request.url)
-      return NextResponse.redirect(loginUrl)
+      // Redirect to login if no token is found
+      return NextResponse.redirect(new URL("/vendor/login", request.url))
     }
 
-    // Verify the JWT token
-    const verified = await verifyJWT(token)
+    try {
+      // Verify the token
+      const jwtSecret = new TextEncoder().encode(process.env.JWT_SECRET || "your-jwt-secret-key")
 
-    if (!verified) {
-      // Redirect to the vendor login page
-      const loginUrl = new URL("/vendor/login", request.url)
-      return NextResponse.redirect(loginUrl)
-    }
-  }
+      const { payload } = await jwtVerify(token, jwtSecret)
 
-  // Check if the request is for an admin payouts page
-  if (request.nextUrl.pathname.startsWith("/admin/vendors/payouts")) {
-    // Check if the user is authenticated
-    const isAuthenticated = request.cookies.has("admin_session")
+      // Check if the token is for a vendor
+      if (payload.role !== "vendor") {
+        return NextResponse.redirect(new URL("/vendor/login", request.url))
+      }
 
-    if (!isAuthenticated) {
-      // Redirect to the admin login page
-      const loginUrl = new URL("/admin/login", request.url)
-      return NextResponse.redirect(loginUrl)
+      // Continue to the protected route
+      return NextResponse.next()
+    } catch (error) {
+      // Token is invalid or expired
+      return NextResponse.redirect(new URL("/vendor/login", request.url))
     }
   }
 
   return NextResponse.next()
 }
 
-// Update the matcher to explicitly exclude ALL API routes and certificate routes
 export const config = {
-  matcher: [
-    "/admin/:path*",
-    "/vendor/:path*",
-    "/admin/vendors/payouts",
-    // Exclude all API routes and certificate routes from middleware processing
-    "/((?!api|certificate|_next/static|_next/image|favicon.ico).*)",
-  ],
+  matcher: ["/vendor/:path*"],
 }
