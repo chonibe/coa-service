@@ -17,11 +17,16 @@ export async function GET(request: NextRequest) {
     if (vendors.length > 0) {
       const vendorNames = vendors.map((v) => v.name)
 
+      console.log("Fetching custom data for vendors:", vendorNames)
+
+      // Fetch all vendor data from the database
       const { data: customData, error } = await supabase.from("vendors").select("*").in("vendor_name", vendorNames)
 
       if (error) {
         console.error("Error fetching vendor custom data:", error)
-      } else if (customData) {
+      } else if (customData && customData.length > 0) {
+        console.log("Found custom data for vendors:", customData.length)
+
         // Create a map of vendor name to custom data
         const customDataMap = new Map(customData.map((item) => [item.vendor_name, item]))
 
@@ -31,8 +36,11 @@ export async function GET(request: NextRequest) {
           if (custom) {
             vendor.instagram_url = custom.instagram_url
             vendor.notes = custom.notes
+            console.log("Merged custom data for vendor:", vendor.name, vendor.instagram_url)
           }
         })
+      } else {
+        console.log("No custom data found for vendors")
       }
     }
 

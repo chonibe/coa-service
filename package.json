@@ -60,7 +60,11 @@
     "zod": "^3.24.1",
     "uuid": "latest",
     "crypto": "latest",
-    "@supabase/supabase-js": "latest"
+    "@supabase/supabase-js": "latest",
+    "fs": "latest",
+    "path": "latest",
+    "jose": "latest",
+    "bcryptjs": "latest"
   },
   "devDependencies": {
     "@types/node": "^22",

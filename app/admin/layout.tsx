@@ -5,7 +5,20 @@ import type React from "react"
 import { useState, useEffect } from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { BarChart, Settings, Package, ShoppingCart, Award, Tag, Menu, X, Home, Store, Truck } from "lucide-react"
+import {
+  BarChart,
+  Settings,
+  Package,
+  ShoppingCart,
+  Award,
+  Tag,
+  Menu,
+  X,
+  Home,
+  Store,
+  Truck,
+  DollarSign,
+} from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
@@ -71,6 +84,19 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       title: "Vendors",
       href: "/admin/vendors",
       icon: <Truck className="h-5 w-5" />,
+      submenu: [
+        {
+          title: "Vendors",
+          href: "/admin/vendors",
+          icon: <Truck className="h-4 w-4" />,
+        },
+        {
+          title: "Payouts",
+          href: "/admin/vendors/payouts",
+          icon: <DollarSign className="h-4 w-4" />,
+        },
+      ],
+      expanded: false,
     },
     {
       title: "Certificates",
