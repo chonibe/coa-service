@@ -1,32 +1,30 @@
 "use client"
 
 import type React from "react"
-import { DEFAULT_VENDOR_NAME, DEFAULT_VENDOR_PASSWORD } from "@/lib/env"
 
 import { useState } from "react"
 import { useRouter } from "next/navigation"
-import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
-import Link from "next/link"
-import { AlertCircle, Lock } from "lucide-react"
+import { Alert, AlertDescription } from "@/components/ui/alert"
+import { AlertCircle } from "lucide-react"
 
 export default function VendorLoginPage() {
   const [vendorName, setVendorName] = useState("")
   const [password, setPassword] = useState("")
-  const [error, setError] = useState<string | null>(null)
+  const [error, setError] = useState("")
   const [isLoading, setIsLoading] = useState(false)
   const router = useRouter()
 
-  const handleLogin = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    setError("")
     setIsLoading(true)
-    setError(null)
 
     try {
-      const response = await fetch("/api/auth/vendor/login", {
+      const response = await fetch("/api/vendor/login", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -34,13 +32,14 @@ export default function VendorLoginPage() {
         body: JSON.stringify({ vendorName, password }),
       })
 
+      const data = await response.json()
+
       if (!response.ok) {
-        const data = await response.json()
-        throw new Error(data.message || "Invalid credentials")
+        throw new Error(data.message || "Login failed")
       }
 
-      // Redirect to vendor dashboard
-      router.push("/vendor")
+      // Redirect to vendor dashboard on successful login
+      router.push("/vendor/dashboard")
     } catch (err: any) {
       setError(err.message || "An error occurred during login")
     } finally {
@@ -49,69 +48,47 @@ export default function VendorLoginPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gray-50">
+    <div className="flex min-h-screen items-center justify-center bg-gray-50 px-4 py-12 sm:px-6 lg:px-8">
       <Card className="w-full max-w-md">
-        <CardHeader>
-          <div className="flex items-center justify-center mb-4">
-            <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center">
-              <Lock className="h-6 w-6 text-primary" />
-            </div>
-          </div>
-          <CardTitle className="text-center">Vendor Login</CardTitle>
-          <CardDescription className="text-center">
-            Enter your credentials to access the vendor dashboard
-          </CardDescription>
+        <CardHeader className="space-y-1">
+          <CardTitle className="text-2xl font-bold">Vendor Login</CardTitle>
+          <CardDescription>Enter your credentials to access your vendor dashboard</CardDescription>
         </CardHeader>
         <CardContent>
           {error && (
             <Alert variant="destructive" className="mb-4">
               <AlertCircle className="h-4 w-4" />
-              <AlertTitle>Error</AlertTitle>
               <AlertDescription>{error}</AlertDescription>
             </Alert>
           )}
-
-          <form onSubmit={handleLogin}>
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="vendorName">Vendor Name</Label>
-                <Input
-                  id="vendorName"
-                  type="text"
-                  value={vendorName}
-                  onChange={(e) => setVendorName(e.target.value)}
-                  placeholder="Enter vendor name"
-                  required
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="password">Password</Label>
-                <Input
-                  id="password"
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Enter password"
-                  required
-                />
-              </div>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="vendorName">Vendor Name</Label>
+              <Input
+                id="vendorName"
+                type="text"
+                value={vendorName}
+                onChange={(e) => setVendorName(e.target.value)}
+                required
+              />
             </div>
+            <div className="space-y-2">
+              <Label htmlFor="password">Password</Label>
+              <Input
+                id="password"
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+              />
+            </div>
+            <Button type="submit" className="w-full" disabled={isLoading}>
+              {isLoading ? "Logging in..." : "Login"}
+            </Button>
           </form>
         </CardContent>
-        <CardFooter>
-          <Button className="w-full" onClick={handleLogin} disabled={isLoading}>
-            {isLoading ? "Logging in..." : "Login"}
-          </Button>
-        </CardFooter>
-        <CardFooter className="text-center">
-          <p className="text-sm text-muted-foreground">
-            Default login: {DEFAULT_VENDOR_NAME} / {DEFAULT_VENDOR_PASSWORD}
-          </p>
-        </CardFooter>
-        <CardFooter className="text-center">
-          <Link href="/vendor/signup" className="text-sm text-muted-foreground hover:underline">
-            Create Account
-          </Link>
+        <CardFooter className="flex justify-center">
+          <p className="text-sm text-gray-500">Contact the administrator if you need help with your account</p>
         </CardFooter>
       </Card>
     </div>
