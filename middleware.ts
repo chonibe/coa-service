@@ -1,45 +1,27 @@
-import { type NextRequest, NextResponse } from "next/server"
-import { jwtVerify } from "jose"
+import { NextResponse } from "next/server"
+import type { NextRequest } from "next/server"
 
-// Define the routes that should be protected
-const VENDOR_PROTECTED_ROUTES = ["/vendor/dashboard"]
+export function middleware(request: NextRequest) {
+  // Check if the request is for an admin page (except the login page)
+  if (request.nextUrl.pathname.startsWith("/admin") && !request.nextUrl.pathname.startsWith("/admin/login")) {
+    // Check if the user is authenticated
+    const isAuthenticated = request.cookies.has("admin_session")
 
-export async function middleware(request: NextRequest) {
-  const { pathname } = request.nextUrl
-
-  // Check if the route should be protected
-  const isVendorProtectedRoute = VENDOR_PROTECTED_ROUTES.some((route) => pathname.startsWith(route))
-
-  if (isVendorProtectedRoute) {
-    const token = request.cookies.get("vendor_token")?.value
-
-    if (!token) {
-      // Redirect to login if no token is found
-      return NextResponse.redirect(new URL("/vendor/login", request.url))
-    }
-
-    try {
-      // Verify the token
-      const jwtSecret = new TextEncoder().encode(process.env.JWT_SECRET || "your-jwt-secret-key")
-
-      const { payload } = await jwtVerify(token, jwtSecret)
-
-      // Check if the token is for a vendor
-      if (payload.role !== "vendor") {
-        return NextResponse.redirect(new URL("/vendor/login", request.url))
-      }
-
-      // Continue to the protected route
-      return NextResponse.next()
-    } catch (error) {
-      // Token is invalid or expired
-      return NextResponse.redirect(new URL("/vendor/login", request.url))
+    if (!isAuthenticated) {
+      // Redirect to the login page
+      const loginUrl = new URL("/admin/login", request.url)
+      return NextResponse.redirect(loginUrl)
     }
   }
 
   return NextResponse.next()
 }
 
+// Update the matcher to explicitly exclude ALL API routes and certificate routes
 export const config = {
-  matcher: ["/vendor/:path*"],
+  matcher: [
+    "/admin/:path*",
+    // Exclude all API routes and certificate routes from middleware processing
+    "/((?!api|certificate|_next/static|_next/image|favicon.ico).*)",
+  ],
 }
