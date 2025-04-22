@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
 import { SHOPIFY_SHOP, SHOPIFY_ACCESS_TOKEN } from "@/lib/env"
-import { supabase } from "@/lib/supabase"
 
 export async function GET(request: NextRequest) {
   try {
@@ -61,18 +60,6 @@ export async function GET(request: NextRequest) {
 
     const data = await response.json()
 
-    // Enhance product data with price and amountSold
-    const enhancedProducts = await Promise.all(
-      data.products.map(async (product: any) => {
-        const amountSold = await getAmountSoldForProduct(product.id)
-        return {
-          ...product,
-          price: product.variants && product.variants[0] ? product.variants[0].price : 0, // Assuming the first variant has the price
-          amountSold,
-        }
-      }),
-    )
-
     // Get pagination info from Link header
     const linkHeader = response.headers.get("Link")
     let nextCursor = null
@@ -98,7 +85,7 @@ export async function GET(request: NextRequest) {
     }
 
     return NextResponse.json({
-      products: enhancedProducts,
+      products: data.products,
       pagination: {
         nextCursor,
         prevCursor,
@@ -168,20 +155,7 @@ async function fetchAllProducts(query = "", field = "title") {
       }
 
       const data = await response.json()
-
-      // Enhance product data with price and amountSold
-      const enhancedProducts = await Promise.all(
-        data.products.map(async (product: any) => {
-          const amountSold = await getAmountSoldForProduct(product.id)
-          return {
-            ...product,
-            price: product.variants && product.variants[0] ? product.variants[0].price : 0, // Assuming the first variant has the price
-            amountSold,
-          }
-        }),
-      )
-
-      allProducts = [...allProducts, ...enhancedProducts]
+      allProducts = [...allProducts, ...data.products]
 
       // Check for next page
       nextCursor = null
@@ -214,26 +188,5 @@ async function fetchAllProducts(query = "", field = "title") {
   } catch (error) {
     console.error("Error fetching all products:", error)
     throw error
-  }
-}
-
-// Helper function to get the amount sold for a product
-async function getAmountSoldForProduct(productId: string): Promise<number> {
-  try {
-    const { data, error } = await supabase
-      .from("order_line_items")
-      .select("*")
-      .eq("product_id", productId)
-      .eq("status", "active")
-
-    if (error) {
-      console.error("Error fetching amount sold:", error)
-      return 0
-    }
-
-    return data?.length || 0
-  } catch (error) {
-    console.error("Error getting amount sold:", error)
-    return 0
   }
 }

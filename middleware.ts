@@ -14,17 +14,6 @@ export function middleware(request: NextRequest) {
     }
   }
 
-  // Check if the request is for a vendor dashboard page (except the login page)
-  if (request.nextUrl.pathname.startsWith("/vendors/dashboard")) {
-    // Check if the vendor is authenticated (has a vendorName in local storage)
-    const vendorName = request.cookies.get("vendorName")
-    if (!vendorName) {
-      // Redirect to the vendor login page
-      const loginUrl = new URL("/vendors/login", request.url)
-      return NextResponse.redirect(loginUrl)
-    }
-  }
-
   return NextResponse.next()
 }
 
@@ -32,7 +21,6 @@ export function middleware(request: NextRequest) {
 export const config = {
   matcher: [
     "/admin/:path*",
-    "/vendors/:path*",
     // Exclude all API routes and certificate routes from middleware processing
     "/((?!api|certificate|_next/static|_next/image|favicon.ico).*)",
   ],
