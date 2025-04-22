@@ -5,7 +5,6 @@ import { Card, CardContent } from "@/components/ui/card"
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts"
 import { Loader2 } from "lucide-react"
 import { supabase } from "@/lib/supabase"
-import { cookies } from "next/headers"
 
 interface SalesData {
   date: string
@@ -19,7 +18,7 @@ interface SalesChartProps {
 
 export function SalesChart({ vendorName }: SalesChartProps) {
   const [salesData, setSalesData] = useState<SalesData[]>([])
-  const [isLoading, setIsLoading] = useState(true)
+  const [isLoading, setIsLoading] = useState<boolean>(true)
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
@@ -28,39 +27,11 @@ export function SalesChart({ vendorName }: SalesChartProps) {
       setError(null)
 
       try {
-        // Get the vendor name from the cookie
-        const cookieStore = cookies()
-        const vendorName = cookieStore.get("vendor_session")?.value
-
-        if (!vendorName) {
-          setError("Not authenticated")
-          return
-        }
-
-        // Fetch product IDs for the vendor
-        const { data: productIdsData, error: productIdsError } = await supabase
-          .from("vendors")
-          .select("product_id")
-          .eq("vendor_name", vendorName)
-
-        if (productIdsError) {
-          throw new Error(`Failed to fetch product IDs: ${productIdsError.message}`)
-        }
-
-        // Extract product IDs from the result
-        const productIds = productIdsData.map((item) => item.product_id)
-
-        if (productIds.length === 0) {
-          setSalesData([])
-          setIsLoading(false)
-          return
-        }
-
-        // Fetch sales data from Supabase, filtering by product IDs
+        // Fetch sales data from Supabase
         const { data, error } = await supabase
           .from("product_edition_counters")
-          .select("updated_at, current_edition_number, product_id")
-          .in("product_id", productIds)
+          .select("created_at, total_sales, total_revenue")
+          .eq("vendor_name", vendorName)
 
         if (error) {
           throw new Error(`Failed to fetch sales data: ${error.message}`)
@@ -68,9 +39,9 @@ export function SalesChart({ vendorName }: SalesChartProps) {
 
         // Transform the data to match the expected format
         const transformedData: SalesData[] = data.map((item) => ({
-          date: item.updated_at.substring(0, 10), // Extract date part
-          sales: item.current_edition_number, // Use current_edition_number as sales
-          revenue: item.current_edition_number * 50, // Assuming an average price of $50
+          date: item.created_at.substring(0, 10), // Extract date part
+          sales: item.total_sales || 0,
+          revenue: item.total_revenue || 0,
         }))
 
         setSalesData(transformedData)

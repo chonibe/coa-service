@@ -2,6 +2,7 @@ import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
 import { cookies } from "next/headers"
 import { shopifyFetch, safeJsonParse } from "@/lib/shopify-api"
+import { supabase } from "@/lib/supabase"
 
 export async function GET(request: NextRequest) {
   try {
@@ -19,10 +20,21 @@ export async function GET(request: NextRequest) {
     // Calculate stats
     const totalProducts = productsData.products.length
 
-    // For now, we'll return placeholder data for sales and revenue
-    // In a real implementation, you would calculate these from actual order data
-    const totalSales = 0
-    const totalRevenue = 0
+    // Fetch sales data from Supabase
+    const { data: salesData, error: salesError } = await supabase
+      .from("product_edition_counters")
+      .select("total_sales, total_revenue")
+      .eq("vendor_name", vendorName)
+      .single()
+
+    if (salesError) {
+      console.error("Error fetching sales data:", salesError)
+      throw new Error("Failed to fetch sales data")
+    }
+
+    // Use the fetched sales data, or default to 0 if no data found
+    const totalSales = salesData?.total_sales || 0
+    const totalRevenue = salesData?.total_revenue || 0
     const pendingPayout = 0
 
     return NextResponse.json({
@@ -41,42 +53,42 @@ async function fetchProductsByVendor(vendorName: string) {
   try {
     // Build the GraphQL query to fetch products for this vendor
     const graphqlQuery = `
-      {
-        products(
-          first: 250
-          query: "vendor:${vendorName}"
-        ) {
-          edges {
-            node {
-              id
-              title
-              handle
-              vendor
-              productType
-              totalInventory
-              priceRangeV2 {
-                minVariantPrice {
-                  amount
-                  currencyCode
-                }
-                maxVariantPrice {
-                  amount
-                  currencyCode
-                }
-              }
-              images(first: 1) {
-                edges {
-                  node {
-                    url
-                    altText
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-    `
+     {
+       products(
+         first: 250
+         query: "vendor:${vendorName}"
+       ) {
+         edges {
+           node {
+             id
+             title
+             handle
+             vendor
+             productType
+             totalInventory
+             priceRangeV2 {
+               minVariantPrice {
+                 amount
+                 currencyCode
+               }
+               maxVariantPrice {
+                 amount
+                 currencyCode
+               }
+             }
+             images(first: 1) {
+               edges {
+                 node {
+                   url
+                   altText
+                 }
+               }
+             }
+           }
+         }
+       }
+     }
+   `
 
     // Make the request to Shopify
     const response = await shopifyFetch("graphql.json", {
