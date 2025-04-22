@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
-import { cookies } from "next/headers"
+import { cookies } from "@/lib/utils"
 import { shopifyFetch, safeJsonParse } from "@/lib/shopify-api"
 
 export async function GET(request: NextRequest) {
@@ -94,7 +94,7 @@ async function fetchProductsByVendor(vendorName: string) {
 
     if (!data || !data.data || !data.data.products) {
       console.error("Invalid response from Shopify GraphQL API:", data)
-      throw new Error("Invalid response from Shopify GraphQL API")
+      throw new Error("Invalid response from Shopify response from Shopify GraphQL API")
     }
 
     // Extract products
@@ -130,7 +130,12 @@ async function fetchProductSalesFromShopify(productId: string) {
     const graphqlQuery = `
       {
         product(id: "gid://shopify/Product/${productId}") {
-          totalSales: totalInventory
+          ordersCount
+          priceRangeV2 {
+            minVariantPrice {
+              amount
+            }
+          }
         }
       }
     `
@@ -149,8 +154,8 @@ async function fetchProductSalesFromShopify(productId: string) {
     }
 
     const product = data.data.product
-    const totalSales = product.totalSales || 0
-    const productPrice = 100 //product.priceRangeV2.minVariantPrice.amount || 0
+    const totalSales = product.ordersCount || 0
+    const productPrice = product.priceRangeV2.minVariantPrice.amount || 0
     const totalRevenue = totalSales * productPrice
 
     return { totalSales, totalRevenue }
