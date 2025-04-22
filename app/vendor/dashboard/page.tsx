@@ -8,9 +8,29 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { AlertCircle, Loader2, Package, DollarSign, BarChart, ShoppingCart, LogOut, Save } from "lucide-react"
-import { ProductTable } from "./components/product-table"
+import {
+  AlertCircle,
+  Loader2,
+  Package,
+  DollarSign,
+  BarChart,
+  ShoppingCart,
+  LogOut,
+  Save,
+  ChevronLeft,
+  ChevronRight,
+} from "lucide-react"
 import { SalesChart } from "./components/sales-chart"
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { ProductTable } from "./components/product-table"
+
+interface Order {
+  id: string
+  order_number: number
+  processed_at: string
+  fulfillment_status: string
+  financial_status: string
+}
 
 export default function VendorDashboardPage() {
   const [vendor, setVendor] = useState<any>(null)
@@ -26,6 +46,10 @@ export default function VendorDashboardPage() {
   const [isSaving, setIsSaving] = useState(false)
   const [saveSuccess, setSaveSuccess] = useState(false)
   const router = useRouter()
+  const [orders, setOrders] = useState<Order[]>([])
+  const [currentPage, setCurrentPage] = useState(1)
+  const [nextCursor, setNextCursor] = useState<string | null>(null)
+  const [pageSize, setPageSize] = useState(10)
 
   // Fetch vendor data
   useEffect(() => {
@@ -52,6 +76,9 @@ export default function VendorDashboardPage() {
           const statsData = await statsResponse.json()
           setStats(statsData)
         }
+
+        // Fetch vendor orders
+        await fetchOrders()
       } catch (err: any) {
         console.error("Error fetching vendor data:", err)
         setError(err.message || "Failed to load vendor data")
@@ -62,6 +89,28 @@ export default function VendorDashboardPage() {
 
     fetchVendorData()
   }, [router])
+
+  const fetchOrders = async () => {
+    setIsLoading(true)
+    setError(null)
+
+    try {
+      const response = await fetch(
+        `/api/vendor/orders?page=${currentPage}&pageSize=${pageSize}${nextCursor ? `&cursor=${nextCursor}` : ""}`,
+      )
+      if (!response.ok) {
+        throw new Error("Failed to fetch orders")
+      }
+      const data = await response.json()
+      setOrders(data.orders || [])
+      setNextCursor(data.pagination?.nextCursor || null)
+    } catch (error: any) {
+      console.error("Error fetching orders:", error)
+      setError(error.message || "Failed to load orders")
+    } finally {
+      setIsLoading(false)
+    }
+  }
 
   const handleLogout = async () => {
     try {
@@ -215,6 +264,7 @@ export default function VendorDashboardPage() {
               <TabsTrigger value="products">Products</TabsTrigger>
               <TabsTrigger value="sales">Sales</TabsTrigger>
               <TabsTrigger value="payouts">Payouts</TabsTrigger>
+              <TabsTrigger value="orders">Orders</TabsTrigger>
             </TabsList>
 
             <TabsContent value="products">
@@ -294,6 +344,68 @@ export default function VendorDashboardPage() {
                       </div>
                     </div>
                   </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            {/* Orders List */}
+            <TabsContent value="orders">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Recent Orders</CardTitle>
+                  <CardDescription>View recent orders associated with your products</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  {isLoading ? (
+                    <div className="flex justify-center py-8">
+                      <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                    </div>
+                  ) : orders.length === 0 ? (
+                    <div className="text-center py-8 text-muted-foreground">No orders found.</div>
+                  ) : (
+                    <>
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>Order Number</TableHead>
+                            <TableHead>Processed At</TableHead>
+                            <TableHead>Fulfillment Status</TableHead>
+                            <TableHead>Financial Status</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {orders.map((order) => (
+                            <TableRow key={order.id}>
+                              <TableCell>{order.order_number}</TableCell>
+                              <TableCell>{new Date(order.processed_at).toLocaleDateString()}</TableCell>
+                              <TableCell>{order.fulfillment_status}</TableCell>
+                              <TableCell>{order.financial_status}</TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                      <div className="flex justify-between items-center mt-4">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setCurrentPage(currentPage - 1)}
+                          disabled={currentPage === 1}
+                        >
+                          <ChevronLeft className="h-4 w-4 mr-2" />
+                          Previous
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setCurrentPage(currentPage + 1)}
+                          disabled={orders.length < pageSize}
+                        >
+                          Next
+                          <ChevronRight className="h-4 w-4 ml-2" />
+                        </Button>
+                      </div>
+                    </>
+                  )}
                 </CardContent>
               </Card>
             </TabsContent>
