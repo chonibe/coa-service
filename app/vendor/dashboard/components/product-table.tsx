@@ -4,6 +4,7 @@ import { useState, useEffect } from "react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Loader2, Package } from "lucide-react"
+import { shopifyFetch, safeJsonParse } from "@/lib/shopify-api"
 
 interface Product {
   id: string
@@ -11,6 +12,7 @@ interface Product {
   image: string | null
   price: string
   currency: string
+  inventory: number
 }
 
 interface ProductTableProps {
@@ -28,14 +30,79 @@ export function ProductTable({ vendorName }: ProductTableProps) {
       setError(null)
 
       try {
-        const response = await fetch(`/api/vendors/products?vendor=${encodeURIComponent(vendorName)}`)
+        // Build the GraphQL query to fetch products for this vendor
+        const graphqlQuery = `
+          {
+            products(
+              first: 250
+              query: "vendor:${vendorName}"
+            ) {
+              edges {
+                node {
+                  id
+                  title
+                  handle
+                  vendor
+                  productType
+                  totalInventory
+                  priceRangeV2 {
+                    minVariantPrice {
+                      amount
+                      currencyCode
+                    }
+                    maxVariantPrice {
+                      amount
+                      currencyCode
+                    }
+                  }
+                  images(first: 1) {
+                    edges {
+                      node {
+                        url
+                        altText
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        `
 
-        if (!response.ok) {
-          throw new Error("Failed to fetch products")
+        // Make the request to Shopify
+        const response = await shopifyFetch("graphql.json", {
+          method: "POST",
+          body: JSON.stringify({ query: graphqlQuery }),
+        })
+
+        const data = await safeJsonParse(response)
+
+        if (!data || !data.data || !data.data.products) {
+          console.error("Invalid response from Shopify GraphQL API:", data)
+          throw new Error("Invalid response from Shopify GraphQL API")
         }
 
-        const data = await response.json()
-        setProducts(data.products || [])
+        // Extract products
+        const products = data.data.products.edges.map((edge: any) => {
+          const product = edge.node
+
+          // Extract the first image if available
+          const image = product.images.edges.length > 0 ? product.images.edges[0].node.url : null
+
+          return {
+            id: product.id.split("/").pop(),
+            title: product.title,
+            handle: product.handle,
+            vendor: product.vendor,
+            productType: product.productType,
+            inventory: product.totalInventory,
+            price: product.priceRangeV2.minVariantPrice.amount,
+            currency: product.priceRangeV2.minVariantPrice.currencyCode,
+            image,
+          }
+        })
+
+        setProducts(products)
       } catch (err: any) {
         console.error("Error fetching products:", err)
         setError(err.message || "Failed to load products")
