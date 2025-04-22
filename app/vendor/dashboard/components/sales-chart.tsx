@@ -5,6 +5,7 @@ import { Card, CardContent } from "@/components/ui/card"
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts"
 import { Loader2 } from "lucide-react"
 import { supabase } from "@/lib/supabase"
+import { cookies } from "next/headers"
 
 interface SalesData {
   date: string
@@ -27,11 +28,39 @@ export function SalesChart({ vendorName }: SalesChartProps) {
       setError(null)
 
       try {
-        // Fetch sales data from Supabase
+        // Get the vendor name from the cookie
+        const cookieStore = cookies()
+        const vendorName = cookieStore.get("vendor_session")?.value
+
+        if (!vendorName) {
+          setError("Not authenticated")
+          return
+        }
+
+        // Fetch product IDs for the vendor
+        const { data: productIdsData, error: productIdsError } = await supabase
+          .from("vendors")
+          .select("product_id")
+          .eq("vendor_name", vendorName)
+
+        if (productIdsError) {
+          throw new Error(`Failed to fetch product IDs: ${productIdsError.message}`)
+        }
+
+        // Extract product IDs from the result
+        const productIds = productIdsData.map((item) => item.product_id)
+
+        if (productIds.length === 0) {
+          setSalesData([])
+          setIsLoading(false)
+          return
+        }
+
+        // Fetch sales data from Supabase, filtering by product IDs
         const { data, error } = await supabase
           .from("product_edition_counters")
           .select("updated_at, current_edition_number, product_id")
-          .eq("vendor_name", vendorName)
+          .in("product_id", productIds)
 
         if (error) {
           throw new Error(`Failed to fetch sales data: ${error.message}`)
