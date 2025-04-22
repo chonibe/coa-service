@@ -30,7 +30,7 @@ export function SalesChart({ vendorName }: SalesChartProps) {
         // Fetch sales data from Supabase
         const { data, error } = await supabase
           .from("product_edition_counters")
-          .select("created_at, current_edition_number, product_id")
+          .select("updated_at, current_edition_number, product_id")
           .eq("vendor_name", vendorName)
 
         if (error) {
@@ -39,7 +39,7 @@ export function SalesChart({ vendorName }: SalesChartProps) {
 
         // Transform the data to match the expected format
         const transformedData: SalesData[] = data.map((item) => ({
-          date: item.created_at.substring(0, 10), // Extract date part
+          date: item.updated_at.substring(0, 10), // Extract date part
           sales: item.current_edition_number, // Use current_edition_number as sales
           revenue: item.current_edition_number * 50, // Assuming an average price of $50
         }))
