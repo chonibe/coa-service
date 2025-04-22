@@ -9,6 +9,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { AlertCircle, Loader2, Package, DollarSign, BarChart, ShoppingCart, LogOut, Save } from "lucide-react"
+import { ProductTable } from "./components/product-table"
+import { SalesChart } from "./components/sales-chart"
 
 export default function VendorDashboardPage() {
   const [vendor, setVendor] = useState<any>(null)
@@ -222,14 +224,7 @@ export default function VendorDashboardPage() {
                   <CardDescription>View all your products and their current status</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-center py-8">
-                    <Package className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                    <h3 className="text-lg font-medium mb-2">Product data will appear here</h3>
-                    <p className="text-muted-foreground max-w-md mx-auto">
-                      Once your products are added to the system, you'll be able to see their details, edition numbers,
-                      and sales information here.
-                    </p>
-                  </div>
+                  <ProductTable vendorName={vendor.vendor_name} />
                 </CardContent>
               </Card>
             </TabsContent>
@@ -241,14 +236,7 @@ export default function VendorDashboardPage() {
                   <CardDescription>Track your sales and revenue over time</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-center py-8">
-                    <ShoppingCart className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                    <h3 className="text-lg font-medium mb-2">Sales data will appear here</h3>
-                    <p className="text-muted-foreground max-w-md mx-auto">
-                      As your products sell, you'll be able to track sales history, revenue, and other important metrics
-                      here.
-                    </p>
-                  </div>
+                  <SalesChart vendorName={vendor.vendor_name} />
                 </CardContent>
               </Card>
             </TabsContent>
