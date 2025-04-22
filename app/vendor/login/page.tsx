@@ -7,9 +7,12 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
-import { AlertCircle, Loader2, Store } from "lucide-react"
+import { AlertCircle, Loader2, Store, Instagram } from "lucide-react"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { supabase } from "@/lib/supabase"
+
+const INSTAGRAM_APP_ID = process.env.INSTAGRAM_APP_ID
+const REDIRECT_URI = process.env.NEXT_PUBLIC_APP_URL + "/api/auth/instagram/callback"
 
 export default function VendorLoginPage() {
   const [vendorName, setVendorName] = useState("")
@@ -70,6 +73,11 @@ export default function VendorLoginPage() {
     }
   }
 
+  const handleInstagramLogin = () => {
+    const authUrl = `https://api.instagram.com/oauth/authorize?client_id=${INSTAGRAM_APP_ID}&redirect_uri=${REDIRECT_URI}&scope=user_profile,user_media&response_type=code`
+    window.location.href = authUrl
+  }
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
       <Card className="w-full max-w-md">
@@ -118,6 +126,10 @@ export default function VendorLoginPage() {
               </Button>
             </div>
           </form>
+          <Button variant="outline" onClick={handleInstagramLogin} className="mt-4">
+            <Instagram className="mr-2 h-4 w-4" />
+            Log In with Instagram
+          </Button>
         </CardContent>
         <CardFooter className="flex justify-center">
           <p className="text-sm text-muted-foreground">Contact the administrator if you need assistance.</p>
