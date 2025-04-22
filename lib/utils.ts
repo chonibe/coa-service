@@ -1,9 +1,6 @@
-import { cookies as nextCookies } from "next/headers"
+import { clsx, type ClassValue } from "clsx"
+import { twMerge } from "tailwind-merge"
 
-export function cn(...inputs: any[]) {
-  return inputs.filter(Boolean).join(" ")
-}
-
-export const cookies = () => {
-  return nextCookies()
+export function cn(...inputs: ClassValue[]) {
+  return twMerge(clsx(inputs))
 }
