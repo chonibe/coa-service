@@ -30,7 +30,7 @@ export function SalesChart({ vendorName }: SalesChartProps) {
         // Fetch sales data from Supabase
         const { data, error } = await supabase
           .from("product_edition_counters")
-          .select("created_at, current_edition_number")
+          .select("created_at, current_edition_number, product_id")
           .eq("vendor_name", vendorName)
 
         if (error) {
