@@ -2,13 +2,13 @@ import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
 
 export function middleware(request: NextRequest) {
-  // Skip the login page and the Instagram authentication callback
-  if (request.nextUrl.pathname === "/vendor/login" || request.nextUrl.pathname.startsWith("/api/auth/instagram")) {
+  // Skip the login page
+  if (request.nextUrl.pathname === "/vendor/login") {
     return NextResponse.next()
   }
 
   // Check if the vendor is authenticated
-  const isAuthenticated = request.cookies.has("vendor_session") || request.cookies.has("instagram_session")
+  const isAuthenticated = request.cookies.has("vendor_session")
 
   if (!isAuthenticated) {
     // Redirect to the login page

@@ -1,45 +1,41 @@
 "use client"
 
+import { CardFooter } from "@/components/ui/card"
+
 import type React from "react"
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Label } from "@/components/ui/label"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
-import { AlertCircle, Loader2, Store, Instagram } from "lucide-react"
+import { AlertCircle, Loader2, Store } from "lucide-react"
+import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { supabase } from "@/lib/supabase"
-
-const INSTAGRAM_APP_ID = process.env.INSTAGRAM_APP_ID
-const REDIRECT_URI = process.env.NEXT_PUBLIC_APP_URL + "/api/auth/instagram/callback"
 
 export default function VendorLoginPage() {
   const [vendorName, setVendorName] = useState("")
-  const [isLoading, setIsLoading] = useState(false)
+  const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [routerLoading, setRouterLoading] = useState(false)
-  const [availableVendors, setAvailableVendors] = useState<string[]>([])
+  const [vendors, setVendors] = useState<string[]>([])
   const router = useRouter()
 
   useEffect(() => {
     const fetchVendors = async () => {
       setIsLoading(true)
       setError(null)
-      try {
-        const { data, error } = await supabase
-          .from("vendors")
-          .select("vendor_name")
-          .order("vendor_name", { ascending: true })
 
-        if (error) {
-          throw new Error(error.message || "Failed to fetch vendors")
+      try {
+        const response = await fetch("/api/vendors/names")
+
+        if (!response.ok) {
+          throw new Error("Failed to fetch vendors")
         }
 
-        setAvailableVendors(data.map((vendor) => vendor.vendor_name))
+        const data = await response.json()
+        setVendors(data.vendors)
       } catch (err: any) {
         console.error("Error fetching vendors:", err)
-        setError(err.message || "Failed to fetch available vendors")
+        setError(err.message || "Failed to fetch vendors")
       } finally {
         setIsLoading(false)
       }
@@ -56,26 +52,32 @@ export default function VendorLoginPage() {
       return
     }
 
-    setRouterLoading(true)
+    setIsLoading(true)
     setError(null)
 
     try {
-      // Simulate login process
-      await new Promise((resolve) => setTimeout(resolve, 1000))
+      const response = await fetch("/api/vendor/login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ vendorName }),
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.message || "Login failed")
+      }
 
       // Redirect to vendor dashboard
-      router.push(`/vendor/dashboard?vendorName=${vendorName}`)
+      router.push("/vendor/dashboard")
     } catch (err: any) {
       console.error("Login error:", err)
       setError(err.message || "Failed to log in. Please check your vendor name and try again.")
     } finally {
-      setRouterLoading(false)
+      setIsLoading(false)
     }
-  }
-
-  const handleInstagramLogin = () => {
-    const authUrl = `https://api.instagram.com/oauth/authorize?client_id=${INSTAGRAM_APP_ID}&redirect_uri=${REDIRECT_URI}&scope=user_profile,user_media&response_type=code`
-    window.location.href = authUrl
   }
 
   return (
@@ -106,7 +108,7 @@ export default function VendorLoginPage() {
                     <SelectValue placeholder="Select your vendor name" />
                   </SelectTrigger>
                   <SelectContent>
-                    {availableVendors.map((vendor) => (
+                    {vendors.map((vendor) => (
                       <SelectItem key={vendor} value={vendor}>
                         {vendor}
                       </SelectItem>
@@ -114,8 +116,8 @@ export default function VendorLoginPage() {
                   </SelectContent>
                 </Select>
               </div>
-              <Button type="submit" disabled={routerLoading || isLoading}>
-                {routerLoading ? (
+              <Button type="submit" disabled={isLoading}>
+                {isLoading ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                     Logging in...
@@ -126,10 +128,6 @@ export default function VendorLoginPage() {
               </Button>
             </div>
           </form>
-          <Button variant="outline" onClick={handleInstagramLogin} className="mt-4">
-            <Instagram className="mr-2 h-4 w-4" />
-            Log In with Instagram
-          </Button>
         </CardContent>
         <CardFooter className="flex justify-center">
           <p className="text-sm text-muted-foreground">Contact the administrator if you need assistance.</p>
