@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
-import { cookies } from "@/lib/utils"
+import { cookies } from "next/headers"
 import { shopifyFetch, safeJsonParse } from "@/lib/shopify-api"
 
 export async function GET(request: NextRequest) {
@@ -94,28 +94,11 @@ async function fetchProductsByVendor(vendorName: string) {
 
     if (!data || !data.data || !data.data.products) {
       console.error("Invalid response from Shopify GraphQL API:", data)
-      throw new Error("Invalid response from Shopify response from Shopify GraphQL API")
+      throw new Error("Invalid response from Shopify GraphQL API")
     }
 
     // Extract products
-    const products = data.data.products.edges.map((edge: any) => {
-      const product = edge.node
-
-      // Extract the first image if available
-      const image = product.images.edges.length > 0 ? product.images.edges[0].node.url : null
-
-      return {
-        id: product.id.split("/").pop(),
-        title: product.title,
-        handle: product.handle,
-        vendor: product.vendor,
-        productType: product.productType,
-        inventory: product.totalInventory,
-        price: product.priceRangeV2.minVariantPrice.amount,
-        currency: product.priceRangeV2.minVariantPrice.currencyCode,
-        image,
-      }
-    })
+    const products = data.data.products.edges.map((edge: any) => edge.node)
 
     return { products }
   } catch (error) {
@@ -130,12 +113,7 @@ async function fetchProductSalesFromShopify(productId: string) {
     const graphqlQuery = `
       {
         product(id: "gid://shopify/Product/${productId}") {
-          ordersCount
-          priceRangeV2 {
-            minVariantPrice {
-              amount
-            }
-          }
+          totalSales: totalInventory
         }
       }
     `
@@ -154,8 +132,8 @@ async function fetchProductSalesFromShopify(productId: string) {
     }
 
     const product = data.data.product
-    const totalSales = product.ordersCount || 0
-    const productPrice = product.priceRangeV2.minVariantPrice.amount || 0
+    const totalSales = product.totalSales || 0
+    const productPrice = 100 //product.priceRangeV2.minVariantPrice.amount || 0
     const totalRevenue = totalSales * productPrice
 
     return { totalSales, totalRevenue }
