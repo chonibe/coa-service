@@ -4,6 +4,7 @@ import { useEffect, useState } from "react"
 import { Card, CardContent } from "@/components/ui/card"
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts"
 import { Loader2 } from "lucide-react"
+import { supabase } from "@/lib/supabase"
 
 interface SalesData {
   date: string
@@ -26,17 +27,24 @@ export function SalesChart({ vendorName }: SalesChartProps) {
       setError(null)
 
       try {
-        // In a real implementation, this would fetch sales data from your API
-        // For demo purposes, we'll use mock data
-        const mockData = [
-          { date: "2024-01-01", sales: 10, revenue: 500 },
-          { date: "2024-01-08", sales: 15, revenue: 750 },
-          { date: "2024-01-15", sales: 8, revenue: 400 },
-          { date: "2024-01-22", sales: 12, revenue: 600 },
-          { date: "2024-01-29", sales: 20, revenue: 1000 },
-        ]
+        // Fetch sales data from Supabase
+        const { data, error } = await supabase
+          .from("product_edition_counters")
+          .select("created_at, current_edition_number")
+          .eq("vendor_name", vendorName)
 
-        setSalesData(mockData)
+        if (error) {
+          throw new Error(`Failed to fetch sales data: ${error.message}`)
+        }
+
+        // Transform the data to match the expected format
+        const transformedData: SalesData[] = data.map((item) => ({
+          date: item.created_at.substring(0, 10), // Extract date part
+          sales: item.current_edition_number, // Use current_edition_number as sales
+          revenue: item.current_edition_number * 50, // Assuming an average price of $50
+        }))
+
+        setSalesData(transformedData)
       } catch (err: any) {
         console.error("Error fetching sales data:", err)
         setError(err.message || "Failed to load sales data")
