@@ -21,20 +21,28 @@ export async function GET(request: NextRequest) {
     const totalProducts = productsData.products.length
 
     // Fetch sales data from Supabase
-    const { data: salesData, error: salesError } = await supabase
-      .from("product_edition_counters")
-      .select("total_sales, total_revenue")
-      .eq("vendor_name", vendorName)
-      .single()
+    let totalSales = 0
+    let totalRevenue = 0
 
-    if (salesError) {
-      console.error("Error fetching sales data:", salesError)
-      throw new Error("Failed to fetch sales data")
+    for (const product of productsData.products) {
+      const { data: salesData, error: salesError } = await supabase
+        .from("product_edition_counters")
+        .select("current_edition_number")
+        .eq("product_id", product.id)
+        .eq("vendor_name", vendorName)
+        .single()
+
+      if (salesError) {
+        console.error(`Error fetching sales data for product ${product.id}:`, salesError)
+        continue // Skip to the next product
+      }
+
+      // Use the fetched edition number, or default to 0 if no data found
+      const currentEditionNumber = salesData?.current_edition_number || 0
+      totalSales += currentEditionNumber
+      totalRevenue += currentEditionNumber * Number.parseFloat(product.price) // Assuming product.price is the price per item
     }
 
-    // Use the fetched sales data, or default to 0 if no data found
-    const totalSales = salesData?.total_sales || 0
-    const totalRevenue = salesData?.total_revenue || 0
     const pendingPayout = 0
 
     return NextResponse.json({
