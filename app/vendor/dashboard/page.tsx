@@ -1,15 +1,15 @@
 "use client"
 
+import { CardFooter } from "@/components/ui/card"
+
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import {
-  AlertCircle,
   Loader2,
   Package,
   DollarSign,
@@ -23,6 +23,7 @@ import {
 import { SalesChart } from "./components/sales-chart"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { ProductTable } from "./components/product-table"
+import Link from "next/link"
 
 interface Order {
   id: string
@@ -146,48 +147,6 @@ export default function VendorDashboardPage() {
     } finally {
       setIsSaving(false)
     }
-  }
-
-  if (isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="flex flex-col items-center justify-center p-8">
-          <Loader2 className="h-12 w-12 animate-spin text-primary mb-4" />
-          <h2 className="text-xl font-semibold mb-2">Loading your dashboard...</h2>
-          <p className="text-muted-foreground">Please wait while we fetch your data</p>
-        </div>
-      </div>
-    )
-  }
-
-  if (error) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
-        <Alert variant="destructive" className="max-w-md">
-          <AlertCircle className="h-4 w-4" />
-          <AlertTitle>Error</AlertTitle>
-          <AlertDescription>{error}</AlertDescription>
-          <Button variant="outline" className="mt-4" onClick={() => router.push("/vendor/login")}>
-            Return to Login
-          </Button>
-        </Alert>
-      </div>
-    )
-  }
-
-  if (!vendor) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
-        <Alert variant="destructive" className="max-w-md">
-          <AlertCircle className="h-4 w-4" />
-          <AlertTitle>Session Expired</AlertTitle>
-          <AlertDescription>Your session has expired. Please log in again.</AlertDescription>
-          <Button variant="outline" className="mt-4" onClick={() => router.push("/vendor/login")}>
-            Return to Login
-          </Button>
-        </Alert>
-      </div>
-    )
   }
 
   return (
@@ -363,50 +322,56 @@ export default function VendorDashboardPage() {
                   ) : orders.length === 0 ? (
                     <div className="text-center py-8 text-muted-foreground">No orders found.</div>
                   ) : (
-                    <>
-                      <Table>
-                        <TableHeader>
-                          <TableRow>
-                            <TableHead>Order Number</TableHead>
-                            <TableHead>Processed At</TableHead>
-                            <TableHead>Fulfillment Status</TableHead>
-                            <TableHead>Financial Status</TableHead>
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Order Number</TableHead>
+                          <TableHead>Processed At</TableHead>
+                          <TableHead>Fulfillment Status</TableHead>
+                          <TableHead>Financial Status</TableHead>
+                          <TableHead className="w-[150px]">Actions</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {orders.map((order) => (
+                          <TableRow key={order.id}>
+                            <TableCell>{order.order_number}</TableCell>
+                            <TableCell>{new Date(order.processed_at).toLocaleDateString()}</TableCell>
+                            <TableCell>{order.fulfillment_status}</TableCell>
+                            <TableCell>{order.financial_status}</TableCell>
+                            <TableCell>
+                              <Link href={`/vendor/orders/${order.id}`}>
+                                <Button variant="outline" size="sm">
+                                  View Details
+                                </Button>
+                              </Link>
+                            </TableCell>
                           </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                          {orders.map((order) => (
-                            <TableRow key={order.id}>
-                              <TableCell>{order.order_number}</TableCell>
-                              <TableCell>{new Date(order.processed_at).toLocaleDateString()}</TableCell>
-                              <TableCell>{order.fulfillment_status}</TableCell>
-                              <TableCell>{order.financial_status}</TableCell>
-                            </TableRow>
-                          ))}
-                        </TableBody>
-                      </Table>
-                      <div className="flex justify-between items-center mt-4">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => setCurrentPage(currentPage - 1)}
-                          disabled={currentPage === 1}
-                        >
-                          <ChevronLeft className="h-4 w-4 mr-2" />
-                          Previous
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => setCurrentPage(currentPage + 1)}
-                          disabled={orders.length < pageSize}
-                        >
-                          Next
-                          <ChevronRight className="h-4 w-4 ml-2" />
-                        </Button>
-                      </div>
-                    </>
+                        ))}
+                      </TableBody>
+                    </Table>
                   )}
                 </CardContent>
+                <CardFooter className="flex justify-between items-center">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setCurrentPage(currentPage - 1)}
+                    disabled={currentPage === 1}
+                  >
+                    <ChevronLeft className="h-4 w-4 mr-2" />
+                    Previous
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setCurrentPage(currentPage + 1)}
+                    disabled={orders.length < pageSize}
+                  >
+                    Next
+                    <ChevronRight className="h-4 w-4 ml-2" />
+                  </Button>
+                </CardFooter>
               </Card>
             </TabsContent>
           </Tabs>
