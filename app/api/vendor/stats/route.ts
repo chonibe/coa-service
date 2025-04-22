@@ -2,7 +2,6 @@ import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
 import { cookies } from "next/headers"
 import { shopifyFetch, safeJsonParse } from "@/lib/shopify-api"
-import { supabase } from "@/lib/supabase"
 
 export async function GET(request: NextRequest) {
   try {
@@ -20,27 +19,14 @@ export async function GET(request: NextRequest) {
     // Calculate stats
     const totalProducts = productsData.products.length
 
-    // Fetch sales data from Supabase
     let totalSales = 0
     let totalRevenue = 0
 
     for (const product of productsData.products) {
-      const { data: salesData, error: salesError } = await supabase
-        .from("product_edition_counters")
-        .select("current_edition_number")
-        .eq("product_id", product.id)
-        .eq("vendor_name", vendorName)
-        .single()
-
-      if (salesError) {
-        console.error(`Error fetching sales data for product ${product.id}:`, salesError)
-        continue // Skip to the next product
-      }
-
-      // Use the fetched edition number, or default to 0 if no data found
-      const currentEditionNumber = salesData?.current_edition_number || 0
-      totalSales += currentEditionNumber
-      totalRevenue += currentEditionNumber * Number.parseFloat(product.price) // Assuming product.price is the price per item
+      // Fetch sales data for each product from Shopify
+      const productSalesData = await fetchProductSalesFromShopify(product.id)
+      totalSales += productSalesData.totalSales
+      totalRevenue += productSalesData.totalRevenue
     }
 
     const pendingPayout = 0
@@ -135,5 +121,41 @@ async function fetchProductsByVendor(vendorName: string) {
   } catch (error) {
     console.error("Error fetching products by vendor:", error)
     throw error
+  }
+}
+
+async function fetchProductSalesFromShopify(productId: string) {
+  try {
+    // Build the GraphQL query to fetch product sales data
+    const graphqlQuery = `
+      {
+        product(id: "gid://shopify/Product/${productId}") {
+          totalSales: totalInventory
+        }
+      }
+    `
+
+    // Make the request to Shopify
+    const response = await shopifyFetch("graphql.json", {
+      method: "POST",
+      body: JSON.stringify({ query: graphqlQuery }),
+    })
+
+    const data = await safeJsonParse(response)
+
+    if (!data || !data.data || !data.data.product) {
+      console.error("Invalid response from Shopify GraphQL API:", data)
+      throw new Error("Invalid response from Shopify GraphQL API")
+    }
+
+    const product = data.data.product
+    const totalSales = product.totalSales || 0
+    const productPrice = 100 //product.priceRangeV2.minVariantPrice.amount || 0
+    const totalRevenue = totalSales * productPrice
+
+    return { totalSales, totalRevenue }
+  } catch (error) {
+    console.error("Error fetching product sales from Shopify:", error)
+    return { totalSales: 0, totalRevenue: 0 }
   }
 }
