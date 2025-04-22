@@ -15,13 +15,19 @@ import {
   Check,
   ChevronLeft,
   ChevronRight,
+  Download,
+  Layers,
   Loader2,
   MoreHorizontal,
+  Plus,
+  Search,
   Settings,
   Tag,
   Trash2,
+  Upload,
   Wifi,
-  Clipboard,
+  BadgeIcon as Certificate,
+  Clock,
 } from "lucide-react"
 import Link from "next/link"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
@@ -42,6 +48,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Textarea } from "@/components/ui/textarea"
+import { Checkbox } from "@/components/ui/checkbox"
 import { Separator } from "@/components/ui/separator"
 
 export default function NFCManagementPage() {
@@ -82,10 +89,12 @@ export default function NFCManagementPage() {
   const [statusNotes, setStatusNotes] = useState("")
   const [programmingData, setProgrammingData] = useState<any>(null)
 
+  // Fetch NFC tags on initial render and when filters change
   useEffect(() => {
     fetchNfcTags()
   }, [currentPage, pageSize, activeTab, sortField, sortDirection])
 
+  // Apply search filter with debounce
   useEffect(() => {
     const timer = setTimeout(() => {
       fetchNfcTags()
@@ -94,11 +103,23 @@ export default function NFCManagementPage() {
     return () => clearTimeout(timer)
   }, [searchTerm])
 
+  // Clear success message after 5 seconds
+  useEffect(() => {
+    if (actionSuccess) {
+      const timer = setTimeout(() => {
+        setActionSuccess(null)
+      }, 5000)
+
+      return () => clearTimeout(timer)
+    }
+  }, [actionSuccess])
+
   const fetchNfcTags = async () => {
     try {
       setIsLoading(true)
       setError(null)
 
+      // Build the URL with query parameters
       let url = `/api/nfc-tags/list?page=${currentPage}&pageSize=${pageSize}&sortField=${sortField}&sortDirection=${sortDirection}`
 
       if (searchTerm) {
@@ -116,6 +137,10 @@ export default function NFCManagementPage() {
       }
 
       const data = await response.json()
+
+      if (!data.success) {
+        throw new Error(data.message || "Failed to fetch NFC tags")
+      }
 
       setNfcTags(data.nfcTags || [])
       setTotalCount(data.totalCount || 0)
@@ -176,6 +201,7 @@ export default function NFCManagementPage() {
       let requestBody: any = {}
 
       if (bulkCreateMethod === "list") {
+        // Split the input by commas, newlines, or spaces and filter out empty strings
         const tagIds = bulkTagIds
           .split(/[\s,]+/)
           .map((tag) => tag.trim())
@@ -185,6 +211,7 @@ export default function NFCManagementPage() {
           tagIds,
         }
       } else {
+        // Use prefix, startNumber, and count
         requestBody = {
           prefix: bulkPrefix,
           startNumber: bulkStartNumber,
@@ -445,9 +472,11 @@ export default function NFCManagementPage() {
       tag.programmed_at || "",
     ])
 
-    const csvContent = [headers.join(","), ...rows.map((row) => row.join(","))].join("\n")
+    const csvContent = [headers.join(","), ...rows.map((row) => row.map((cell) => `"${cell || ""}"`).join(","))].join(
+      "\n",
+    )
 
-    // Create a blob and download link
+    // Create download link
     const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" })
     const url = URL.createObjectURL(blob)
     const link = document.createElement("a")
@@ -509,6 +538,33 @@ export default function NFCManagementPage() {
     }
   }
 
+  // Toggle selection of a single tag
+  const toggleTagSelection = (tagId: string) => {
+    const newSelectedTags = new Set(selectedTags)
+    if (newSelectedTags.has(tagId)) {
+      newSelectedTags.delete(tagId)
+    } else {
+      newSelectedTags.add(tagId)
+    }
+    setSelectedTags(newSelectedTags)
+  }
+
+  // Toggle selection of all visible tags
+  const toggleSelectAll = () => {
+    if (selectedTags.size > 0) {
+      // If any are selected, clear selection
+      setSelectedTags(new Set())
+    } else {
+      // Otherwise select all visible tags
+      const newSelectedTags = new Set<string>()
+      nfcTags.forEach((tag) => {
+        newSelectedTags.add(tag.tag_id)
+      })
+      setSelectedTags(newSelectedTags)
+    }
+  }
+
+  // Calculate total pages
   const totalPages = Math.ceil(totalCount / pageSize)
 
   return (
@@ -521,6 +577,33 @@ export default function NFCManagementPage() {
           </Link>
           <h1 className="text-3xl font-bold tracking-tight">NFC Tag Management</h1>
           <p className="text-muted-foreground mt-2">Manage NFC tags for certificate URLs</p>
+
+          <div className="flex flex-wrap gap-2 mt-4">
+            <Button variant="outline" asChild>
+              <Link href="/admin">
+                <Layers className="mr-2 h-4 w-4" />
+                Dashboard
+              </Link>
+            </Button>
+            <Button variant="outline" asChild>
+              <Link href="/admin/certificates">
+                <Certificate className="mr-2 h-4 w-4" />
+                Certificates
+              </Link>
+            </Button>
+            <Button variant="outline" asChild>
+              <Link href="/admin/certificates/management">
+                <Settings className="mr-2 h-4 w-4" />
+                Certificate Management
+              </Link>
+            </Button>
+            <Button variant="outline" asChild>
+              <Link href="/admin/certificates/logs">
+                <Clock className="mr-2 h-4 w-4" />
+                Access Logs
+              </Link>
+            </Button>
+          </div>
         </div>
 
         {error && (
@@ -555,6 +638,68 @@ export default function NFCManagementPage() {
             </Tabs>
           </CardHeader>
           <CardContent>
+            <div className="flex flex-col space-y-4">
+              <div className="flex flex-col space-y-2 sm:flex-row sm:space-y-0 sm:space-x-2">
+                <div className="flex-1">
+                  <Input
+                    placeholder="Search by tag ID, line item ID, or order ID..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    onKeyDown={(e) => e.key === "Enter" && fetchNfcTags()}
+                  />
+                </div>
+                <div className="flex space-x-2">
+                  <Button onClick={fetchNfcTags} disabled={isLoading}>
+                    <Search className="h-4 w-4 mr-2" />
+                    Search
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      setSearchTerm("")
+                      setActiveTab("all")
+                      setSortField("created_at")
+                      setSortDirection("desc")
+                      setCurrentPage(1)
+                      fetchNfcTags()
+                    }}
+                  >
+                    Clear
+                  </Button>
+                </div>
+              </div>
+
+              <div className="flex flex-col space-y-2 sm:flex-row sm:space-y-0 sm:space-x-2 sm:justify-between">
+                <div className="flex space-x-2">
+                  <Button onClick={() => setIsCreateDialogOpen(true)}>
+                    <Plus className="h-4 w-4 mr-2" />
+                    Add Tag
+                  </Button>
+                  <Button variant="outline" onClick={() => setIsBulkCreateDialogOpen(true)}>
+                    <Upload className="h-4 w-4 mr-2" />
+                    Bulk Create
+                  </Button>
+                </div>
+                <div className="flex space-x-2">
+                  <Select value={pageSize.toString()} onValueChange={(value) => setPageSize(Number.parseInt(value))}>
+                    <SelectTrigger className="w-[120px]">
+                      <SelectValue placeholder="Items per page" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="10">10 per page</SelectItem>
+                      <SelectItem value="20">20 per page</SelectItem>
+                      <SelectItem value="50">50 per page</SelectItem>
+                      <SelectItem value="100">100 per page</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <Button variant="outline" onClick={handleExportTags}>
+                    <Download className="h-4 w-4 mr-2" />
+                    Export CSV
+                  </Button>
+                </div>
+              </div>
+            </div>
+
             {isLoading ? (
               <div className="flex justify-center py-8">
                 <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
@@ -562,133 +707,196 @@ export default function NFCManagementPage() {
             ) : nfcTags.length === 0 ? (
               <div className="text-center py-8 text-muted-foreground">No NFC tags found matching your criteria</div>
             ) : (
-              <div className="rounded-md border">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Tag ID</TableHead>
-                      <TableHead>Certificate</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead>Created</TableHead>
-                      <TableHead>Programmed</TableHead>
-                      <TableHead className="text-right">Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {nfcTags.map((tag) => (
-                      <TableRow key={tag.tag_id}>
-                        <TableCell className="font-medium">{tag.tag_id}</TableCell>
-                        <TableCell>
-                          {tag.certificate_url ? (
-                            <div className="flex flex-col">
-                              <div className="truncate max-w-[200px] text-primary">
-                                <a href={tag.certificate_url} target="_blank" rel="noopener noreferrer">
-                                  {tag.certificate_url}
-                                </a>
-                              </div>
-                              <div className="text-xs text-muted-foreground">
-                                {tag.line_item_id ? `Line Item: ${tag.line_item_id}` : "No line item assigned"}
-                              </div>
-                            </div>
-                          ) : (
-                            <span className="text-muted-foreground">Not assigned</span>
-                          )}
-                        </TableCell>
-                        <TableCell>{getStatusBadge(tag.status)}</TableCell>
-                        <TableCell>{formatDate(tag.created_at)}</TableCell>
-                        <TableCell>{tag.programmed_at ? formatDate(tag.programmed_at) : "Not programmed"}</TableCell>
-                        <TableCell className="text-right">
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button variant="ghost" size="sm">
-                                <MoreHorizontal className="h-4 w-4" />
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
-                              <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                              <DropdownMenuSeparator />
-                              {tag.status === "unassigned" && (
-                                <DropdownMenuItem
-                                  onClick={() => {
-                                    setSelectedTagId(tag.tag_id)
-                                    setIsAssignDialogOpen(true)
-                                  }}
-                                >
-                                  <Tag className="h-4 w-4 mr-2" />
-                                  Assign to Certificate
-                                </DropdownMenuItem>
-                              )}
-                              {tag.status === "assigned" && (
-                                <DropdownMenuItem
-                                  onClick={() => {
-                                    setSelectedTagId(tag.tag_id)
-                                    setIsProgramDialogOpen(true)
-                                    handleGetProgrammingData()
-                                  }}
-                                >
-                                  <Wifi className="h-4 w-4 mr-2" />
-                                  Program NFC Tag
-                                </DropdownMenuItem>
-                              )}
-                              <DropdownMenuItem
-                                onClick={() => {
-                                  setSelectedTagId(tag.tag_id)
-                                  setSelectedStatus(tag.status)
-                                  setStatusNotes(tag.notes || "")
-                                  setIsStatusDialogOpen(true)
-                                }}
-                              >
-                                <Settings className="h-4 w-4 mr-2" />
-                                Update Status
-                              </DropdownMenuItem>
-                              <DropdownMenuSeparator />
-                              <DropdownMenuItem
-                                onClick={() => {
-                                  setSelectedTagId(tag.tag_id)
-                                  setIsDeleteDialogOpen(true)
-                                }}
-                                className="text-destructive"
-                              >
-                                <Trash2 className="h-4 w-4 mr-2" />
-                                Delete Tag
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
-            )}
+              <>
+                {/* Selected tags actions */}
+                {selectedTags.size > 0 && (
+                  <div className="mb-4 p-4 bg-muted rounded-lg">
+                    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                      <div>
+                        <span className="font-medium">{selectedTags.size}</span> tags selected
+                      </div>
+                      <div className="flex flex-wrap gap-2">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => {
+                            // Open assign dialog with first selected tag
+                            const tagId = Array.from(selectedTags)[0]
+                            setSelectedTagId(tagId)
+                            setIsAssignDialogOpen(true)
+                          }}
+                        >
+                          Assign
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => {
+                            // Open status dialog with first selected tag
+                            const tagId = Array.from(selectedTags)[0]
+                            setSelectedTagId(tagId)
+                            setIsStatusDialogOpen(true)
+                          }}
+                        >
+                          Update Status
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="destructive"
+                          onClick={() => {
+                            // Open delete dialog with first selected tag
+                            const tagId = Array.from(selectedTags)[0]
+                            setSelectedTagId(tagId)
+                            setIsDeleteDialogOpen(true)
+                          }}
+                        >
+                          Delete
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                )}
 
-            {/* Pagination */}
-            {totalPages > 1 && (
-              <div className="flex items-center justify-between mt-4">
-                <div className="text-sm text-muted-foreground">
-                  Page {currentPage} of {totalPages}
+                <div className="rounded-md border">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead className="w-[40px]">
+                          <Checkbox
+                            checked={selectedTags.size > 0 && selectedTags.size === nfcTags.length}
+                            onCheckedChange={toggleSelectAll}
+                          />
+                        </TableHead>
+                        <TableHead>Tag ID</TableHead>
+                        <TableHead>Certificate</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead>Created</TableHead>
+                        <TableHead>Programmed</TableHead>
+                        <TableHead className="text-right">Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {nfcTags.map((tag) => (
+                        <TableRow key={tag.tag_id}>
+                          <TableCell>
+                            <Checkbox
+                              checked={selectedTags.has(tag.tag_id)}
+                              onCheckedChange={() => toggleTagSelection(tag.tag_id)}
+                            />
+                          </TableCell>
+                          <TableCell className="font-medium">{tag.tag_id}</TableCell>
+                          <TableCell>
+                            {tag.certificate_url ? (
+                              <div className="flex flex-col">
+                                <div className="truncate max-w-[200px] text-primary">
+                                  <a href={tag.certificate_url} target="_blank" rel="noopener noreferrer">
+                                    {tag.certificate_url}
+                                  </a>
+                                </div>
+                                <div className="text-xs text-muted-foreground">
+                                  {tag.line_item_id ? `Line Item: ${tag.line_item_id}` : "No line item assigned"}
+                                </div>
+                              </div>
+                            ) : (
+                              <span className="text-muted-foreground">Not assigned</span>
+                            )}
+                          </TableCell>
+                          <TableCell>{getStatusBadge(tag.status)}</TableCell>
+                          <TableCell>{formatDate(tag.created_at)}</TableCell>
+                          <TableCell>{tag.programmed_at ? formatDate(tag.programmed_at) : "Not programmed"}</TableCell>
+                          <TableCell className="text-right">
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" size="sm">
+                                  <MoreHorizontal className="h-4 w-4" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end">
+                                <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                                <DropdownMenuSeparator />
+                                {tag.status === "unassigned" && (
+                                  <DropdownMenuItem
+                                    onClick={() => {
+                                      setSelectedTagId(tag.tag_id)
+                                      setIsAssignDialogOpen(true)
+                                    }}
+                                  >
+                                    <Tag className="h-4 w-4 mr-2" />
+                                    Assign to Certificate
+                                  </DropdownMenuItem>
+                                )}
+                                {tag.status === "assigned" && (
+                                  <DropdownMenuItem
+                                    onClick={() => {
+                                      setSelectedTagId(tag.tag_id)
+                                      setIsProgramDialogOpen(true)
+                                      handleGetProgrammingData()
+                                    }}
+                                  >
+                                    <Wifi className="h-4 w-4 mr-2" />
+                                    Program NFC Tag
+                                  </DropdownMenuItem>
+                                )}
+                                <DropdownMenuItem
+                                  onClick={() => {
+                                    setSelectedTagId(tag.tag_id)
+                                    setSelectedStatus(tag.status)
+                                    setStatusNotes(tag.notes || "")
+                                    setIsStatusDialogOpen(true)
+                                  }}
+                                >
+                                  <Settings className="h-4 w-4 mr-2" />
+                                  Update Status
+                                </DropdownMenuItem>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem
+                                  onClick={() => {
+                                    setSelectedTagId(tag.tag_id)
+                                    setIsDeleteDialogOpen(true)
+                                  }}
+                                  className="text-destructive"
+                                >
+                                  <Trash2 className="h-4 w-4 mr-2" />
+                                  Delete Tag
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
                 </div>
-                <div className="flex space-x-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
-                    disabled={currentPage === 1 || isLoading}
-                  >
-                    <ChevronLeft className="h-4 w-4 mr-1" />
-                    Previous
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
-                    disabled={currentPage === totalPages || isLoading}
-                  >
-                    Next
-                    <ChevronRight className="h-4 w-4 ml-1" />
-                  </Button>
-                </div>
-              </div>
+
+                {/* Pagination */}
+                {totalPages > 1 && (
+                  <div className="flex items-center justify-between mt-4">
+                    <div className="text-sm text-muted-foreground">
+                      Page {currentPage} of {totalPages}
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setCurrentPage((page) => Math.max(page - 1, 1))}
+                        disabled={currentPage <= 1}
+                      >
+                        <ChevronLeft className="h-4 w-4" />
+                        Previous
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setCurrentPage((page) => Math.min(page + 1, totalPages))}
+                        disabled={currentPage >= totalPages}
+                      >
+                        Next
+                        <ChevronRight className="h-4 w-4 ml-1" />
+                      </Button>
+                    </div>
+                  </div>
+                )}
+              </>
             )}
           </CardContent>
         </Card>
@@ -713,6 +921,9 @@ export default function NFCManagementPage() {
                   value={newTagId}
                   onChange={(e) => setNewTagId(e.target.value)}
                 />
+                <p className="text-xs text-muted-foreground">
+                  This is the unique identifier for the NFC tag. It could be a serial number or custom ID.
+                </p>
               </div>
               <div className="space-y-2">
                 <Label htmlFor="tag-notes">Notes (Optional)</Label>
@@ -1054,8 +1265,8 @@ export default function NFCManagementPage() {
             )}
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setIsProgramDialogOpen(false)} disabled={isActionLoading}>
-              Cancel
+            <Button variant="outline" onClick={() => setIsProgramDialogOpen(false)}>
+              Close
             </Button>
             {programmingData && (
               <Button onClick={handleMarkAsProgrammed} disabled={isActionLoading}>

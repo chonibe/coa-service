@@ -2,7 +2,6 @@ import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
 import { cookies } from "next/headers"
 import { shopifyFetch, safeJsonParse } from "@/lib/shopify-api"
-import { supabase } from "@/lib/supabase"
 
 export async function GET(request: NextRequest) {
   try {
@@ -16,25 +15,15 @@ export async function GET(request: NextRequest) {
 
     // Fetch products by vendor from Shopify
     const productsData = await fetchProductsByVendor(vendorName)
-    const productIds = productsData.products.map((p) => p.id)
-
-    // Fetch sales data from Supabase
-    const { data: salesData, error: salesError } = await supabase
-      .from("order_line_items")
-      .select("product_id, quantity, price")
-      .eq("status", "active")
-      .in("product_id", productIds)
-
-    if (salesError) {
-      console.error("Error fetching sales data from Supabase:", salesError)
-      throw new Error("Failed to fetch sales data")
-    }
 
     // Calculate stats
     const totalProducts = productsData.products.length
-    const totalSales = salesData.reduce((acc, item) => acc + item.quantity, 0)
-    const totalRevenue = salesData.reduce((acc, item) => acc + item.quantity * Number.parseFloat(item.price), 0)
-    const pendingPayout = 0 // Implement logic to calculate pending payout
+
+    // For now, we'll return placeholder data for sales and revenue
+    // In a real implementation, you would calculate these from actual order data
+    const totalSales = 0
+    const totalRevenue = 0
+    const pendingPayout = 0
 
     return NextResponse.json({
       totalProducts,
