@@ -7,8 +7,8 @@ import { supabase } from "@/lib/supabase"
 export async function GET(request: NextRequest) {
   try {
     // Get the vendor name from the cookie
-    const cookieStore = cookies()
-    const vendorName = cookieStore.get("vendor_session")?.value
+    const cookieStore = cookies().get("vendor_session")
+    const vendorName = cookieStore?.value
 
     if (!vendorName) {
       return NextResponse.json({ message: "Not authenticated" }, { status: 401 })
@@ -21,7 +21,7 @@ export async function GET(request: NextRequest) {
     // Fetch sales data from Supabase
     const { data: salesData, error: salesError } = await supabase
       .from("order_line_items")
-      .select("product_id, quantity, price")
+      .select("product_id, line_item_id, price")
       .eq("status", "active")
       .in("product_id", productIds)
 
@@ -32,8 +32,8 @@ export async function GET(request: NextRequest) {
 
     // Calculate stats
     const totalProducts = productsData.products.length
-    const totalSales = salesData.reduce((acc, item) => acc + item.quantity, 0)
-    const totalRevenue = salesData.reduce((acc, item) => acc + item.quantity * Number.parseFloat(item.price), 0)
+    const totalSales = salesData.length
+    const totalRevenue = salesData.reduce((acc, item) => acc + Number.parseFloat(item.price), 0)
     const pendingPayout = 0 // Implement logic to calculate pending payout
 
     return NextResponse.json({
@@ -52,42 +52,42 @@ async function fetchProductsByVendor(vendorName: string) {
   try {
     // Build the GraphQL query to fetch products for this vendor
     const graphqlQuery = `
-      {
-        products(
-          first: 250
-          query: "vendor:${vendorName}"
-        ) {
-          edges {
-            node {
-              id
-              title
-              handle
-              vendor
-              productType
-              totalInventory
-              priceRangeV2 {
-                minVariantPrice {
-                  amount
-                  currencyCode
-                }
-                maxVariantPrice {
-                  amount
-                  currencyCode
-                }
-              }
-              images(first: 1) {
-                edges {
-                  node {
-                    url
-                    altText
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-    `
+     {
+       products(
+         first: 250
+         query: "vendor:${vendorName}"
+       ) {
+         edges {
+           node {
+             id
+             title
+             handle
+             vendor
+             productType
+             totalInventory
+             priceRangeV2 {
+               minVariantPrice {
+                 amount
+                 currencyCode
+               }
+               maxVariantPrice {
+                 amount
+                 currencyCode
+               }
+             }
+             images(first: 1) {
+               edges {
+                 node {
+                   url
+                   altText
+                 }
+               }
+             }
+           }
+         }
+       }
+     }
+   `
 
     // Make the request to Shopify
     const response = await shopifyFetch("graphql.json", {
