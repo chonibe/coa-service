@@ -32,7 +32,7 @@ export default function VendorLoginPage() {
         }
 
         const data = await response.json()
-        setVendors(data.vendors || [])
+        setVendors(data.vendors)
       } catch (err: any) {
         console.error("Error fetching vendors:", err)
         setError(err.message || "Failed to fetch vendors")
