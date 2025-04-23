@@ -1,16 +1,32 @@
 "use client"
 
+import { TableCell } from "@/components/ui/table"
+
+import { TableBody } from "@/components/ui/table"
+
+import { TableHead } from "@/components/ui/table"
+
+import { TableRow } from "@/components/ui/table"
+
+import { TableHeader } from "@/components/ui/table"
+
+import { Table } from "@/components/ui/table"
+
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { AlertCircle, Loader2, Package, DollarSign, BarChart, ShoppingCart, LogOut, Save } from "lucide-react"
+import { AlertCircle, Loader2, Package, DollarSign, BarChart, ShoppingCart, LogOut, Percent } from "lucide-react"
 import { ProductTable } from "./components/product-table"
 import { SalesChart } from "./components/sales-chart"
+
+interface PayoutSetting {
+  product_id: string
+  payout_amount: number
+  is_percentage: boolean
+}
 
 export default function VendorDashboardPage() {
   const [vendor, setVendor] = useState<any>(null)
@@ -26,6 +42,7 @@ export default function VendorDashboardPage() {
   const [isSaving, setIsSaving] = useState(false)
   const [saveSuccess, setSaveSuccess] = useState(false)
   const router = useRouter()
+  const [payoutSettings, setPayoutSettings] = useState<PayoutSetting[]>([])
 
   // Fetch vendor data
   useEffect(() => {
@@ -62,6 +79,40 @@ export default function VendorDashboardPage() {
 
     fetchVendorData()
   }, [router])
+
+  // Fetch payout settings
+  useEffect(() => {
+    const fetchPayoutSettings = async () => {
+      if (!vendor) return
+
+      try {
+        const response = await fetch(`/api/vendors/payouts?vendorName=${vendor.vendor_name}`)
+        if (!response.ok) {
+          throw new Error("Failed to fetch payout settings")
+        }
+        const data = await response.json()
+        setPayoutSettings(data.payouts || [])
+      } catch (error: any) {
+        console.error("Error fetching payout settings:", error)
+        setError(error.message || "Failed to load payout settings")
+      }
+    }
+
+    if (vendor) {
+      fetchPayoutSettings()
+    }
+  }, [vendor])
+
+  // Calculate total revenue based on payout amounts
+  const calculateTotalRevenue = () => {
+    let total = 0
+    payoutSettings.forEach((payout) => {
+      total += payout.payout_amount
+    })
+    return total
+  }
+
+  const totalPayoutRevenue = calculateTotalRevenue()
 
   const handleLogout = async () => {
     try {
@@ -245,55 +296,55 @@ export default function VendorDashboardPage() {
               <Card>
                 <CardHeader>
                   <CardTitle>Payout Settings</CardTitle>
-                  <CardDescription>Manage your payout preferences</CardDescription>
+                  <CardDescription>View your payout settings for each product</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <div className="space-y-6">
+                  {payoutSettings.length === 0 ? (
+                    <Alert>
+                      <AlertCircle className="h-4 w-4" />
+                      <AlertTitle>No Payout Settings</AlertTitle>
+                      <AlertDescription>
+                        No payout settings have been defined for your products. Contact the administrator to set up
+                        payouts.
+                      </AlertDescription>
+                    </Alert>
+                  ) : (
                     <div className="space-y-4">
-                      <h3 className="text-lg font-medium">PayPal Information</h3>
-                      <p className="text-sm text-muted-foreground">
-                        Enter your PayPal email address to receive payments for your sales.
-                      </p>
-
-                      <div className="grid gap-2">
-                        <Label htmlFor="paypal-email">PayPal Email</Label>
-                        <div className="flex gap-2">
-                          <Input
-                            id="paypal-email"
-                            type="email"
-                            placeholder="your-email@example.com"
-                            value={paypalEmail}
-                            onChange={(e) => setPaypalEmail(e.target.value)}
-                          />
-                          <Button onClick={handleSavePayPal} disabled={isSaving}>
-                            {isSaving ? (
-                              <>
-                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                Saving...
-                              </>
-                            ) : (
-                              <>
-                                <Save className="mr-2 h-4 w-4" />
-                                Save
-                              </>
-                            )}
-                          </Button>
-                        </div>
-                        {saveSuccess && <p className="text-sm text-green-600">PayPal email updated successfully!</p>}
+                      <h3 className="text-lg font-medium">Product Payouts</h3>
+                      <div className="rounded-md border">
+                        <Table>
+                          <TableHeader>
+                            <TableRow>
+                              <TableHead>Product</TableHead>
+                              <TableHead>Payout Amount</TableHead>
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody>
+                            {payoutSettings.map((payout) => (
+                              <TableRow key={payout.product_id}>
+                                <TableCell>{payout.product_id}</TableCell>
+                                <TableCell>
+                                  {payout.is_percentage ? (
+                                    <>
+                                      {payout.payout_amount}% <Percent className="inline-block h-4 w-4 ml-1" />
+                                    </>
+                                  ) : (
+                                    <>
+                                      ${payout.payout_amount.toFixed(2)}{" "}
+                                      <DollarSign className="inline-block h-4 w-4 ml-1" />
+                                    </>
+                                  )}
+                                </TableCell>
+                              </TableRow>
+                            ))}
+                          </TableBody>
+                        </Table>
+                      </div>
+                      <div className="text-right">
+                        <h4 className="text-sm font-medium">Total Revenue: ${totalPayoutRevenue.toFixed(2)}</h4>
                       </div>
                     </div>
-
-                    <div className="space-y-4">
-                      <h3 className="text-lg font-medium">Payout History</h3>
-                      <div className="text-center py-8 border rounded-md bg-gray-50">
-                        <DollarSign className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                        <h3 className="text-lg font-medium mb-2">No payouts yet</h3>
-                        <p className="text-muted-foreground max-w-md mx-auto">
-                          Your payout history will appear here once payments have been processed.
-                        </p>
-                      </div>
-                    </div>
-                  </div>
+                  )}
                 </CardContent>
               </Card>
             </TabsContent>
