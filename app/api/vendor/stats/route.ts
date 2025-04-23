@@ -110,10 +110,9 @@ async function fetchProductsByVendor(vendorName: string) {
 async function fetchProductSalesFromShopify(productId: string) {
   try {
     // Build the GraphQL query to fetch product sales data
-    // Ensure the productId is correctly formatted as a gid
     const graphqlQuery = `
       {
-        product(id: "${productId}") {
+        product(id: "gid://shopify/Product/${productId}") {
           totalSales: totalInventory
         }
       }
