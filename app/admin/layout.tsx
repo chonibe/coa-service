@@ -60,6 +60,11 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           href: "/admin/product-editions",
           icon: <Award className="h-4 w-4" />,
         },
+        {
+          title: "Sync Vendor Names",
+          href: "/admin/sync-vendor-names",
+          icon: <RefreshCw className="h-4 w-4" />,
+        },
       ],
       expanded: false,
     },
@@ -243,13 +248,6 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                         )}
                       </div>
                     ))}
-                    <Link
-                      href="/admin/sync-vendor-names"
-                      className="flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary"
-                    >
-                      <RefreshCw className="h-4 w-4" />
-                      Sync Vendor Names
-                    </Link>
                   </nav>
                 </div>
               </ScrollArea>
@@ -337,13 +335,6 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                     )}
                   </div>
                 ))}
-                <Link
-                  href="/admin/sync-vendor-names"
-                  className="flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary"
-                >
-                  <RefreshCw className="h-4 w-4" />
-                  Sync Vendor Names
-                </Link>
               </nav>
             </div>
           </ScrollArea>
