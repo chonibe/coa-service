@@ -27,14 +27,14 @@ export async function GET(request: NextRequest) {
         id,
         line_item_id,
         order_id,
+        order_name,
         product_id,
-        title,
         variant_id,
-        variant_title,
         price,
         quantity,
         edition_number,
-        created_at
+        created_at,
+        status
       `)
       .eq("vendor_name", vendorName)
       .eq("status", "active")
@@ -42,13 +42,19 @@ export async function GET(request: NextRequest) {
 
     if (lineItemsError) {
       console.error("Error fetching line items:", lineItemsError)
-      throw new Error("Failed to fetch line items")
+      return NextResponse.json(
+        {
+          message: "Failed to fetch line items",
+          error: lineItemsError,
+        },
+        { status: 500 },
+      )
     }
 
     // Count sales and calculate revenue
     const totalSales = lineItems.length
     const totalRevenue = lineItems.reduce((sum, item) => {
-      const price = typeof item.price === "string" ? Number.parseFloat(item.price) : item.price
+      const price = typeof item.price === "string" ? Number.parseFloat(item.price || "0") : item.price || 0
       return sum + price
     }, 0)
 
@@ -62,7 +68,13 @@ export async function GET(request: NextRequest) {
 
     if (payoutsError) {
       console.error("Error fetching vendor payouts:", payoutsError)
-      throw new Error("Failed to fetch vendor payouts")
+      return NextResponse.json(
+        {
+          message: "Failed to fetch vendor payouts",
+          error: payoutsError,
+        },
+        { status: 500 },
+      )
     }
 
     // Calculate pending payout based on line items
@@ -70,7 +82,7 @@ export async function GET(request: NextRequest) {
 
     for (const item of lineItems) {
       const productId = item.product_id
-      const price = typeof item.price === "string" ? Number.parseFloat(item.price) : item.price
+      const price = typeof item.price === "string" ? Number.parseFloat(item.price || "0") : item.price || 0
       const payout = payouts?.find((p) => p.product_id === productId)
 
       if (payout) {
@@ -90,7 +102,13 @@ export async function GET(request: NextRequest) {
     })
   } catch (error: any) {
     console.error("Error in vendor stats API:", error)
-    return NextResponse.json({ message: error.message || "An error occurred" }, { status: 500 })
+    return NextResponse.json(
+      {
+        message: error.message || "An error occurred",
+        stack: error.stack,
+      },
+      { status: 500 },
+    )
   }
 }
 

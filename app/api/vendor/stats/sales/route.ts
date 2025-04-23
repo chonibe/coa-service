@@ -20,15 +20,15 @@ export async function GET(request: NextRequest) {
         id,
         line_item_id,
         order_id,
+        order_name,
         product_id,
-        title,
         variant_id,
-        variant_title,
         price,
         quantity,
         edition_number,
         created_at,
-        vendor_name
+        vendor_name,
+        status
       `)
       .eq("vendor_name", vendorName)
       .eq("status", "active")
@@ -37,7 +37,13 @@ export async function GET(request: NextRequest) {
 
     if (lineItemsError) {
       console.error("Error fetching line items:", lineItemsError)
-      return NextResponse.json({ message: "Failed to fetch line items" }, { status: 500 })
+      return NextResponse.json(
+        {
+          message: "Failed to fetch line items",
+          error: lineItemsError,
+        },
+        { status: 500 },
+      )
     }
 
     // Group items by date (YYYY-MM-DD)
@@ -50,7 +56,7 @@ export async function GET(request: NextRequest) {
       const dateStr = new Date(item.created_at).toISOString().split("T")[0]
 
       // Convert price to number if it's a string
-      const price = typeof item.price === "string" ? Number.parseFloat(item.price) : item.price
+      const price = typeof item.price === "string" ? Number.parseFloat(item.price || "0") : item.price || 0
 
       // Initialize the date entry if it doesn't exist
       if (!salesByDate[dateStr]) {
@@ -86,6 +92,12 @@ export async function GET(request: NextRequest) {
     })
   } catch (error: any) {
     console.error("Error in vendor sales stats API:", error)
-    return NextResponse.json({ message: error.message || "An error occurred" }, { status: 500 })
+    return NextResponse.json(
+      {
+        message: error.message || "An error occurred",
+        stack: error.stack,
+      },
+      { status: 500 },
+    )
   }
 }
