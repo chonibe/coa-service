@@ -20,62 +20,64 @@ export async function GET(request: NextRequest) {
     // Calculate stats
     const totalProducts = productsData.products.length
 
-    // Fetch sales data from Supabase
-    const { data: salesData, error: salesError } = await supabaseAdmin
-      .from("product_edition_counters")
-      .select("product_id, current_edition_number, edition_total")
+    // Fetch line items with active certificates for this vendor
+    const { data: lineItems, error: lineItemsError } = await supabaseAdmin
+      .from("order_line_items")
+      .select(`
+        id,
+        line_item_id,
+        order_id,
+        product_id,
+        product_title,
+        variant_id,
+        variant_title,
+        price,
+        quantity,
+        edition_number,
+        created_at
+      `)
+      .eq("vendor_name", vendorName)
+      .eq("status", "active")
+      .not("edition_number", "is", null)
 
-    if (salesError) {
-      console.error("Error fetching sales data from Supabase:", salesError)
-      throw new Error("Failed to fetch sales data from Supabase")
+    if (lineItemsError) {
+      console.error("Error fetching line items:", lineItemsError)
+      throw new Error("Failed to fetch line items")
     }
 
-    // Filter sales data for the current vendor's products
-    const vendorProductIds = productsData.products.map((product) => product.id)
-    const vendorSalesData = salesData.filter((item) => vendorProductIds.includes(item.product_id))
-
-    // Calculate total sales and total revenue
-    let totalSales = 0
-    let totalRevenue = 0
-
-    for (const item of vendorSalesData) {
-      // Assuming each unit sold is 1 sale
-      const unitsSold = item.current_edition_number ? item.current_edition_number - 1 : 0
-      totalSales += unitsSold
-
-      // Find the product price
-      const product = productsData.products.find((p) => p.id === item.product_id)
-      if (product) {
-        totalRevenue += unitsSold * Number.parseFloat(product.price)
-      }
-    }
+    // Count sales and calculate revenue
+    const totalSales = lineItems.length
+    const totalRevenue = lineItems.reduce((sum, item) => {
+      const price = typeof item.price === "string" ? Number.parseFloat(item.price) : item.price
+      return sum + price
+    }, 0)
 
     // Fetch payout settings for these products
+    const productIds = productsData.products.map((product) => product.id)
     const { data: payouts, error: payoutsError } = await supabaseAdmin
       .from("product_vendor_payouts")
       .select("product_id, payout_amount, is_percentage")
       .eq("vendor_name", vendorName)
-      .in("product_id", vendorProductIds)
+      .in("product_id", productIds)
 
     if (payoutsError) {
       console.error("Error fetching vendor payouts:", payoutsError)
       throw new Error("Failed to fetch vendor payouts")
     }
 
-    // Calculate pending payout
+    // Calculate pending payout based on line items
     let pendingPayout = 0
-    for (const item of vendorSalesData) {
-      const product = productsData.products.find((p) => p.id === item.product_id)
-      const payout = payouts?.find((p) => p.product_id === item.product_id)
 
-      if (product && payout) {
-        const unitsSold = item.current_edition_number ? item.current_edition_number - 1 : 0
-        const productPrice = Number.parseFloat(product.price)
+    for (const item of lineItems) {
+      const productId = item.product_id
+      const price = typeof item.price === "string" ? Number.parseFloat(item.price) : item.price
+      const payout = payouts?.find((p) => p.product_id === productId)
 
+      if (payout) {
         if (payout.is_percentage) {
-          pendingPayout += (productPrice * payout.payout_amount * unitsSold) / 100
+          pendingPayout += (price * payout.payout_amount) / 100
         } else {
-          pendingPayout += payout.payout_amount * unitsSold
+          pendingPayout += payout.payout_amount
         }
       }
     }

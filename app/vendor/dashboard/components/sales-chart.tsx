@@ -1,9 +1,10 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { Card, CardContent } from "@/components/ui/card"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts"
 import { Loader2 } from "lucide-react"
+import { formatCurrency } from "@/lib/utils" // Assuming this exists, if not we'll create it
 
 interface SalesData {
   date: string
@@ -19,6 +20,8 @@ export function SalesChart({ vendorName }: SalesChartProps) {
   const [salesData, setSalesData] = useState<SalesData[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [totalSales, setTotalSales] = useState(0)
+  const [totalRevenue, setTotalRevenue] = useState(0)
 
   useEffect(() => {
     const fetchSalesData = async () => {
@@ -26,17 +29,22 @@ export function SalesChart({ vendorName }: SalesChartProps) {
       setError(null)
 
       try {
-        // In a real implementation, this would fetch sales data from your API
-        // For demo purposes, we'll use mock data
-        const mockData = [
-          { date: "2024-01-01", sales: 10, revenue: 500 },
-          { date: "2024-01-08", sales: 15, revenue: 750 },
-          { date: "2024-01-15", sales: 8, revenue: 400 },
-          { date: "2024-01-22", sales: 12, revenue: 600 },
-          { date: "2024-01-29", sales: 20, revenue: 1000 },
-        ]
+        // Fetch sales data from the vendor stats API
+        const response = await fetch("/api/vendor/stats/sales")
 
-        setSalesData(mockData)
+        if (!response.ok) {
+          throw new Error(`Failed to fetch sales data: ${response.status} ${response.statusText}`)
+        }
+
+        const data = await response.json()
+
+        if (data.salesByDate && Array.isArray(data.salesByDate)) {
+          setSalesData(data.salesByDate)
+          setTotalSales(data.totalSales || 0)
+          setTotalRevenue(data.totalRevenue || 0)
+        } else {
+          throw new Error("Invalid data format received from the server")
+        }
       } catch (err: any) {
         console.error("Error fetching sales data:", err)
         setError(err.message || "Failed to load sales data")
@@ -45,12 +53,36 @@ export function SalesChart({ vendorName }: SalesChartProps) {
       }
     }
 
-    fetchSalesData()
+    if (vendorName) {
+      fetchSalesData()
+    }
   }, [vendorName])
 
+  // Format the date for display
+  const formatDate = (date: string) => {
+    return new Date(date).toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+    })
+  }
+
   return (
-    <Card>
+    <Card className="col-span-2">
+      <CardHeader>
+        <CardTitle>Sales Overview</CardTitle>
+      </CardHeader>
       <CardContent>
+        <div className="flex flex-col md:flex-row justify-between mb-6 gap-4">
+          <div className="bg-muted p-4 rounded-lg text-center flex-1">
+            <h3 className="text-sm font-medium text-muted-foreground mb-2">Total Sales</h3>
+            <p className="text-2xl font-bold">{totalSales}</p>
+          </div>
+          <div className="bg-muted p-4 rounded-lg text-center flex-1">
+            <h3 className="text-sm font-medium text-muted-foreground mb-2">Total Revenue</h3>
+            <p className="text-2xl font-bold">{formatCurrency(totalRevenue)}</p>
+          </div>
+        </div>
+
         {isLoading ? (
           <div className="flex justify-center py-8">
             <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
@@ -58,17 +90,37 @@ export function SalesChart({ vendorName }: SalesChartProps) {
         ) : error ? (
           <div className="text-center py-8 text-muted-foreground">{error}</div>
         ) : salesData.length === 0 ? (
-          <div className="text-center py-8 text-muted-foreground">No sales data available.</div>
+          <div className="text-center py-8 text-muted-foreground">
+            No sales data available. Once you make your first sale, data will appear here.
+          </div>
         ) : (
           <ResponsiveContainer width="100%" height={300}>
             <BarChart data={salesData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
               <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="date" />
-              <YAxis />
-              <Tooltip />
+              <XAxis dataKey="date" tickFormatter={formatDate} tick={{ fontSize: 12 }} />
+              <YAxis
+                yAxisId="left"
+                orientation="left"
+                tick={{ fontSize: 12 }}
+                label={{ value: "Items Sold", angle: -90, position: "insideLeft", style: { textAnchor: "middle" } }}
+              />
+              <YAxis
+                yAxisId="right"
+                orientation="right"
+                tick={{ fontSize: 12 }}
+                tickFormatter={(value) => `$${value}`}
+                label={{ value: "Revenue ($)", angle: 90, position: "insideRight", style: { textAnchor: "middle" } }}
+              />
+              <Tooltip
+                formatter={(value, name) => {
+                  if (name === "Revenue") return [`$${value}`, name]
+                  return [value, name]
+                }}
+                labelFormatter={(label) => formatDate(label)}
+              />
               <Legend />
-              <Bar dataKey="sales" fill="#8884d8" name="Sales" />
-              <Bar dataKey="revenue" fill="#82ca9d" name="Revenue" />
+              <Bar dataKey="sales" name="Items Sold" fill="#8884d8" yAxisId="left" />
+              <Bar dataKey="revenue" name="Revenue" fill="#82ca9d" yAxisId="right" />
             </BarChart>
           </ResponsiveContainer>
         )}
