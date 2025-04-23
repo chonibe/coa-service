@@ -1,98 +1,80 @@
 import { NextResponse } from "next/server"
-import type { NextRequest } from "next/server"
 import { cookies } from "next/headers"
-import { shopifyFetch, safeJsonParse } from "@/lib/shopify-api"
 import { supabaseAdmin } from "@/lib/supabase"
+import { shopifyFetch, safeJsonParse } from "@/lib/shopify-api"
 
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
-    // Get the vendor name from the cookie
+    // Get vendor name from cookie
     const cookieStore = cookies()
     const vendorName = cookieStore.get("vendor_session")?.value
 
     if (!vendorName) {
-      return NextResponse.json({ message: "Not authenticated" }, { status: 401 })
+      return NextResponse.json({ error: "Not authenticated" }, { status: 401 })
     }
 
-    // Fetch products by vendor from Shopify
+    console.log(`Fetching stats for vendor: ${vendorName}`)
+
+    // Fetch products from Shopify
     const productsData = await fetchProductsByVendor(vendorName)
-
-    // Calculate stats
     const totalProducts = productsData.products.length
+    console.log(`Found ${totalProducts} products for vendor ${vendorName}`)
 
-    // Fetch line items with active certificates for this vendor
-    const { data: lineItems, error: lineItemsError } = await supabaseAdmin
+    // Simple direct query to get all active line items for this vendor
+    const { data: lineItems, error } = await supabaseAdmin
       .from("order_line_items")
-      .select(`
-        id,
-        line_item_id,
-        order_id,
-        order_name,
-        product_id,
-        variant_id,
-        price,
-        quantity,
-        edition_number,
-        created_at,
-        status
-      `)
+      .select("*")
       .eq("vendor_name", vendorName)
       .eq("status", "active")
-      .not("edition_number", "is", null)
 
-    if (lineItemsError) {
-      console.error("Error fetching line items:", lineItemsError)
-      return NextResponse.json(
-        {
-          message: "Failed to fetch line items",
-          error: lineItemsError,
-        },
-        { status: 500 },
-      )
+    if (error) {
+      console.error("Database error:", error)
+      return NextResponse.json({ error: error.message }, { status: 500 })
     }
 
-    // Count sales and calculate revenue
-    const totalSales = lineItems.length
-    const totalRevenue = lineItems.reduce((sum, item) => {
-      const price = typeof item.price === "string" ? Number.parseFloat(item.price || "0") : item.price || 0
-      return sum + price
-    }, 0)
+    // Count certified items and calculate revenue
+    const certifiedItems = lineItems.filter((item) => item.edition_number)
+    const totalSales = certifiedItems.length
 
-    // Fetch payout settings for these products
-    const productIds = productsData.products.map((product) => product.id)
+    let totalRevenue = 0
+    certifiedItems.forEach((item) => {
+      if (item.price) {
+        const price = typeof item.price === "string" ? Number.parseFloat(item.price) : item.price
+        totalRevenue += price
+      }
+    })
+
+    console.log(`Found ${totalSales} certified items with total revenue $${totalRevenue.toFixed(2)}`)
+
+    // Fetch payout settings
+    const productIds = productsData.products.map((p) => p.id)
     const { data: payouts, error: payoutsError } = await supabaseAdmin
       .from("product_vendor_payouts")
-      .select("product_id, payout_amount, is_percentage")
+      .select("*")
       .eq("vendor_name", vendorName)
       .in("product_id", productIds)
 
     if (payoutsError) {
-      console.error("Error fetching vendor payouts:", payoutsError)
-      return NextResponse.json(
-        {
-          message: "Failed to fetch vendor payouts",
-          error: payoutsError,
-        },
-        { status: 500 },
-      )
+      console.error("Error fetching payouts:", payoutsError)
+      return NextResponse.json({ error: payoutsError.message }, { status: 500 })
     }
 
-    // Calculate pending payout based on line items
+    // Calculate pending payout
     let pendingPayout = 0
-
-    for (const item of lineItems) {
-      const productId = item.product_id
-      const price = typeof item.price === "string" ? Number.parseFloat(item.price || "0") : item.price || 0
-      const payout = payouts?.find((p) => p.product_id === productId)
-
+    certifiedItems.forEach((item) => {
+      const payout = payouts?.find((p) => p.product_id === item.product_id)
       if (payout) {
+        const price = typeof item.price === "string" ? Number.parseFloat(item.price || "0") : item.price || 0
+
         if (payout.is_percentage) {
           pendingPayout += (price * payout.payout_amount) / 100
         } else {
           pendingPayout += payout.payout_amount
         }
       }
-    }
+    })
+
+    console.log(`Calculated pending payout: $${pendingPayout.toFixed(2)}`)
 
     return NextResponse.json({
       totalProducts,
@@ -100,15 +82,9 @@ export async function GET(request: NextRequest) {
       totalRevenue,
       pendingPayout,
     })
-  } catch (error: any) {
-    console.error("Error in vendor stats API:", error)
-    return NextResponse.json(
-      {
-        message: error.message || "An error occurred",
-        stack: error.stack,
-      },
-      { status: 500 },
-    )
+  } catch (error) {
+    console.error("Unexpected error in vendor stats API:", error)
+    return NextResponse.json({ error: "An unexpected error occurred" }, { status: 500 })
   }
 }
 
