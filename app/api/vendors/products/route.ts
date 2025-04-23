@@ -19,7 +19,7 @@ export async function GET(request: NextRequest) {
     // Fetch payout settings for these products
     const productIds = products.map((p) => p.id)
     const { data: payouts, error: payoutsError } = await supabaseAdmin
-      .from("vendor_payouts")
+      .from("product_vendor_payouts")
       .select("product_id, payout_amount, is_percentage")
       .eq("vendor_name", vendor)
       .in("product_id", productIds)
@@ -52,42 +52,42 @@ async function fetchProductsByVendor(vendorName: string) {
   try {
     // Build the GraphQL query to fetch products for this vendor
     const graphqlQuery = `
-      {
-        products(
-          first: 250
-          query: "vendor:${vendorName}"
-        ) {
-          edges {
-            node {
-              id
-              title
-              handle
-              vendor
-              productType
-              totalInventory
-              priceRangeV2 {
-                minVariantPrice {
-                  amount
-                  currencyCode
-                }
-                maxVariantPrice {
-                  amount
-                  currencyCode
-                }
-              }
-              images(first: 1) {
-                edges {
-                  node {
-                    url
-                    altText
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-    `
+     {
+       products(
+         first: 250
+         query: "vendor:${vendorName}"
+       ) {
+         edges {
+           node {
+             id
+             title
+             handle
+             vendor
+             productType
+             totalInventory
+             priceRangeV2 {
+               minVariantPrice {
+                 amount
+                 currencyCode
+               }
+               maxVariantPrice {
+                 amount
+                 currencyCode
+               }
+             }
+             images(first: 1) {
+               edges {
+                 node {
+                   url
+                   altText
+                 }
+               }
+             }
+           }
+         }
+       }
+     }
+   `
 
     // Make the request to Shopify
     const response = await shopifyFetch("graphql.json", {

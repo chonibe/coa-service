@@ -21,7 +21,7 @@ export async function POST(request: NextRequest) {
 
       // Check if this payout setting already exists
       const { data: existingPayout, error: checkError } = await supabaseAdmin
-        .from("vendor_payouts")
+        .from("product_vendor_payouts")
         .select("id")
         .eq("product_id", product_id)
         .eq("vendor_name", vendor_name)
@@ -37,7 +37,7 @@ export async function POST(request: NextRequest) {
       if (existingPayout) {
         // Update existing payout
         const { error } = await supabaseAdmin
-          .from("vendor_payouts")
+          .from("product_vendor_payouts")
           .update({
             payout_amount,
             is_percentage,
@@ -51,7 +51,7 @@ export async function POST(request: NextRequest) {
         }
       } else {
         // Insert new payout
-        const { error } = await supabaseAdmin.from("vendor_payouts").insert({
+        const { error } = await supabaseAdmin.from("product_vendor_payouts").insert({
           product_id,
           vendor_name,
           payout_amount,
