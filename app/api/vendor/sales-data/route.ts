@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
-import { cookies } from "next/headers"
+import { cookies } from "@/lib/headers"
 import { supabaseAdmin } from "@/lib/supabase"
 
 export async function GET(request: NextRequest) {
@@ -19,9 +19,11 @@ export async function GET(request: NextRequest) {
       .select(`
         product_id,
         created_at,
-        order_name
+        order_name,
+        vendors (vendor_name)
       `)
-      .eq("product_vendor", vendorName)
+      .eq("vendors.vendor_name", vendorName)
+      .order("created_at", { ascending: false })
 
     if (salesError) {
       console.error("Error fetching sales data from Supabase:", salesError)
