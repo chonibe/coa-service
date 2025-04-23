@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
 import { shopifyFetch, safeJsonParse } from "@/lib/shopify-api"
+import { supabaseAdmin } from "@/lib/supabase"
 
 export async function GET(request: NextRequest) {
   try {
@@ -15,7 +16,29 @@ export async function GET(request: NextRequest) {
     // Fetch products for this vendor
     const { products } = await fetchProductsByVendor(vendor)
 
-    return NextResponse.json({ products })
+    // Fetch payout settings for these products
+    const productIds = products.map((p) => p.id)
+    const { data: payouts, error: payoutsError } = await supabaseAdmin
+      .from("vendor_payouts")
+      .select("product_id, payout_amount, is_percentage")
+      .eq("vendor_name", vendor)
+      .in("product_id", productIds)
+
+    if (payoutsError) {
+      console.error("Error fetching vendor payouts:", payoutsError)
+    }
+
+    // Merge payout settings with product data
+    const productsWithPayouts = products.map((product) => {
+      const payout = payouts?.find((p) => p.product_id === product.id)
+      return {
+        ...product,
+        payout_amount: payout ? payout.payout_amount : 0,
+        is_percentage: payout ? payout.is_percentage : false,
+      }
+    })
+
+    return NextResponse.json({ products: productsWithPayouts })
   } catch (error) {
     console.error("Error fetching vendor products:", error)
     return NextResponse.json(
@@ -29,42 +52,42 @@ async function fetchProductsByVendor(vendorName: string) {
   try {
     // Build the GraphQL query to fetch products for this vendor
     const graphqlQuery = `
-      {
-        products(
-          first: 250
-          query: "vendor:${vendorName}"
-        ) {
-          edges {
-            node {
-              id
-              title
-              handle
-              vendor
-              productType
-              totalInventory
-              priceRangeV2 {
-                minVariantPrice {
-                  amount
-                  currencyCode
-                }
-                maxVariantPrice {
-                  amount
-                  currencyCode
-                }
-              }
-              images(first: 1) {
-                edges {
-                  node {
-                    url
-                    altText
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-    `
+     {
+       products(
+         first: 250
+         query: "vendor:${vendorName}"
+       ) {
+         edges {
+           node {
+             id
+             title
+             handle
+             vendor
+             productType
+             totalInventory
+             priceRangeV2 {
+               minVariantPrice {
+                 amount
+                 currencyCode
+               }
+               maxVariantPrice {
+                 amount
+                 currencyCode
+               }
+             }
+             images(first: 1) {
+               edges {
+                 node {
+                   url
+                   altText
+                 }
+               }
+             }
+           }
+         }
+       }
+     }
+   `
 
     // Make the request to Shopify
     const response = await shopifyFetch("graphql.json", {

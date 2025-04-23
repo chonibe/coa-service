@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Loader2, Package, DollarSign, Percent } from "lucide-react"
 
@@ -58,10 +58,6 @@ export function PayoutProducts({ vendorName }: PayoutProductsProps) {
 
   return (
     <Card>
-      <CardHeader>
-        <CardTitle>Payout Products</CardTitle>
-        <CardDescription>Products and their payout amounts</CardDescription>
-      </CardHeader>
       <CardContent>
         {isLoading ? (
           <div className="flex justify-center py-8">
