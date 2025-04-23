@@ -20,7 +20,7 @@ export function PayoutSummary({
     <div>
       <h3>{productName}</h3>
       <p>Price: ${productPrice}</p>
-      <p>Payout: {isPercentage ? `${payoutAmount}%` : `$${payoutAmount}`}</p>
+      <p>Payout: {isPercentage ? `${payoutAmount}%` : `${payoutAmount}`}</p>
       <p>Total Sales: {totalSales}</p>
       <p>Total Payout: ${totalPayout.toFixed(2)}</p>
       <ul>
