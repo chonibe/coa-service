@@ -50,7 +50,35 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    const pendingPayout = 0
+    // Fetch payout settings for these products
+    const { data: payouts, error: payoutsError } = await supabaseAdmin
+      .from("product_vendor_payouts")
+      .select("product_id, payout_amount, is_percentage")
+      .eq("vendor_name", vendorName)
+      .in("product_id", vendorProductIds)
+
+    if (payoutsError) {
+      console.error("Error fetching vendor payouts:", payoutsError)
+      throw new Error("Failed to fetch vendor payouts")
+    }
+
+    // Calculate pending payout
+    let pendingPayout = 0
+    for (const item of vendorSalesData) {
+      const product = productsData.products.find((p) => p.id === item.product_id)
+      const payout = payouts?.find((p) => p.product_id === item.product_id)
+
+      if (product && payout) {
+        const unitsSold = item.current_edition_number ? item.current_edition_number - 1 : 0
+        const productPrice = Number.parseFloat(product.price)
+
+        if (payout.is_percentage) {
+          pendingPayout += (productPrice * payout.payout_amount * unitsSold) / 100
+        } else {
+          pendingPayout += payout.payout_amount * unitsSold
+        }
+      }
+    }
 
     return NextResponse.json({
       totalProducts,
