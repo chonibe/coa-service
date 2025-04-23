@@ -18,6 +18,7 @@ import {
   Store,
   Truck,
   DollarSign,
+  RefreshCw,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { ScrollArea } from "@/components/ui/scroll-area"
@@ -242,6 +243,13 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                         )}
                       </div>
                     ))}
+                    <Link
+                      href="/admin/sync-vendor-names"
+                      className="flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary"
+                    >
+                      <RefreshCw className="h-4 w-4" />
+                      Sync Vendor Names
+                    </Link>
                   </nav>
                 </div>
               </ScrollArea>
@@ -329,6 +337,13 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                     )}
                   </div>
                 ))}
+                <Link
+                  href="/admin/sync-vendor-names"
+                  className="flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary"
+                >
+                  <RefreshCw className="h-4 w-4" />
+                  Sync Vendor Names
+                </Link>
               </nav>
             </div>
           </ScrollArea>
