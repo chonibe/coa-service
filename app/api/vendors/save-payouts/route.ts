@@ -43,7 +43,8 @@ export async function POST(request: NextRequest) {
             is_percentage,
             updated_at: now,
           })
-          .eq("id", existingPayout.id)
+          .eq("product_id", product_id)
+          .eq("vendor_name", vendor_name)
 
         if (error) {
           console.error("Error updating payout:", error)

@@ -48,6 +48,7 @@ export default function VendorPayoutsPage() {
       fetchProducts()
     } else {
       setProducts([])
+      setPayoutSettings({}) // Clear payout settings when vendor is unselected
     }
   }, [selectedVendor])
 
