@@ -42,10 +42,6 @@ async function fetchLineItemDetails(lineItems: any[]) {
   return details
 }
 
-// Shopify API credentials (replace with your actual credentials)
-const SHOPIFY_SHOP = process.env.SHOPIFY_SHOP
-const SHOPIFY_ACCESS_TOKEN = process.env.SHOPIFY_ACCESS_TOKEN
-
 export async function POST(request: NextRequest) {
   console.log("==== SYNC ALL PRODUCTS API CALLED ====")
   console.log("Received sync request to /api/sync-all-products")
@@ -478,32 +474,9 @@ async function updateDatabaseWithEditionNumbers(editionAssignments, forceSync) {
       const certificateToken = crypto.randomUUID()
       const now = new Date().toISOString()
 
-      // Extract vendor name from assignment or try to fetch it
-      let vendorName = assignment.vendor_name || null
-
-      // If vendor name is not in the assignment, try to fetch it from the product
-      if (!vendorName && assignment.product_id) {
-        try {
-          const productUrl = `https://${SHOPIFY_SHOP}/admin/api/2023-10/products/${assignment.product_id}.json`
-          const productResponse = await fetch(productUrl, {
-            method: "GET",
-            headers: {
-              "X-Shopify-Access-Token": SHOPIFY_ACCESS_TOKEN,
-              "Content-Type": "application/json",
-            },
-          })
-
-          if (productResponse.ok) {
-            const productData = await productResponse.json()
-            if (productData.product && productData.product.vendor) {
-              vendorName = productData.product.vendor
-              console.log(`Fetched vendor name "${vendorName}" from product data`)
-            }
-          }
-        } catch (productError) {
-          console.error(`Error fetching product data for vendor name:`, productError)
-        }
-      }
+      // Extract vendor_name from assignment or existing item
+      const vendorName =
+        assignment.vendor_name || (existingItems && existingItems.length > 0 ? existingItems[0].vendor_name : null)
 
       if (existingItems && existingItems.length > 0) {
         console.log(`Line item exists in database with status ${existingItems[0].status}`)
@@ -516,10 +489,9 @@ async function updateDatabaseWithEditionNumbers(editionAssignments, forceSync) {
             updated_at: now,
           }
 
-          // If we have a vendor name and the existing record doesn't, add it
-          if (vendorName && !existingItems[0].vendor_name) {
+          // Preserve vendor_name if it exists
+          if (vendorName) {
             updateData.vendor_name = vendorName
-            console.log(`Adding vendor name "${vendorName}" to existing record`)
           }
 
           // Only set edition_number for active items
@@ -573,7 +545,7 @@ async function updateDatabaseWithEditionNumbers(editionAssignments, forceSync) {
           line_item_id: assignment.line_item_id,
           product_id: assignment.product_id,
           variant_id: assignment.variant_id,
-          vendor_name: vendorName, // Add the vendor name to the database record
+          vendor_name: vendorName, // Include vendor_name in insert
           // Don't set edition_number here, we'll do it during resequencing
           edition_number: null,
           created_at: assignment.created_at,
@@ -589,7 +561,7 @@ async function updateDatabaseWithEditionNumbers(editionAssignments, forceSync) {
           continue
         }
 
-        console.log(`Successfully inserted new line item into database`)
+        console.log(`Successfully inserted new line item into database with vendor ${vendorName || "Unknown"}`)
         activeItems++
       }
 

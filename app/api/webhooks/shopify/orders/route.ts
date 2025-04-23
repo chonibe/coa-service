@@ -152,68 +152,24 @@ async function getProductMetafields(productId: string) {
   }
 }
 
-// Update the processLineItem function to extract and store vendor_name
+// Update the processLineItem function to include vendor_name from line items
 
 async function processLineItem(order: any, lineItem: any) {
   try {
     const orderId = order.id.toString()
     const lineItemId = lineItem.id.toString()
     const productId = lineItem.product_id.toString()
+    // Extract vendor name from line item properties or vendor field
+    const vendorName =
+      lineItem.vendor ||
+      (lineItem.properties && lineItem.properties.find((p: any) => p.name === "vendor")?.value) ||
+      null
 
-    console.log(`Processing line item ${lineItemId} for product ${productId}`)
+    console.log(`Processing line item ${lineItemId} for product ${productId}, vendor: ${vendorName || "Unknown"}`)
 
     // Fetch product metafields to get edition size
     const { editionSize } = await getProductMetafields(productId)
     console.log(`Edition size for product ${productId}: ${editionSize || "Not set"}`)
-
-    // Extract vendor name from line item properties or product vendor field
-    let vendorName = null
-
-    // First check if vendor is in line item properties
-    if (lineItem.properties) {
-      const vendorProp = lineItem.properties.find(
-        (prop: any) =>
-          prop.name?.toLowerCase() === "vendor" ||
-          prop.name?.toLowerCase() === "artist" ||
-          prop.name?.toLowerCase() === "creator",
-      )
-      if (vendorProp && vendorProp.value) {
-        vendorName = vendorProp.value
-        console.log(`Found vendor name "${vendorName}" in line item properties`)
-      }
-    }
-
-    // If not found in properties, try to get it from the product vendor field
-    if (!vendorName && lineItem.vendor) {
-      vendorName = lineItem.vendor
-      console.log(`Using product vendor field: "${vendorName}"`)
-    }
-
-    // If still not found, try to fetch the product to get the vendor
-    if (!vendorName && productId) {
-      try {
-        const productUrl = `https://${SHOPIFY_SHOP}/admin/api/2023-10/products/${productId}.json`
-        const productResponse = await fetch(productUrl, {
-          method: "GET",
-          headers: {
-            "X-Shopify-Access-Token": SHOPIFY_ACCESS_TOKEN,
-            "Content-Type": "application/json",
-          },
-        })
-
-        if (productResponse.ok) {
-          const productData = await productResponse.json()
-          if (productData.product && productData.product.vendor) {
-            vendorName = productData.product.vendor
-            console.log(`Fetched vendor name "${vendorName}" from product data`)
-          }
-        }
-      } catch (productError) {
-        console.error(`Error fetching product data for vendor name:`, productError)
-      }
-    }
-
-    console.log(`Vendor name for line item ${lineItemId}: ${vendorName || "Not found"}`)
 
     // Check if this line item already exists in the database
     const { data: existingItems, error: queryError } = await supabase
@@ -230,7 +186,7 @@ async function processLineItem(order: any, lineItem: any) {
     if (existingItems && existingItems.length > 0) {
       console.log(`Line item ${lineItemId} already exists in database, skipping`)
 
-      // If the existing item doesn't have a vendor_name but we found one, update it
+      // Update vendor_name if it's available and not set previously
       if (vendorName && !existingItems[0].vendor_name) {
         const { error: updateError } = await supabase
           .from("order_line_items")
@@ -242,9 +198,9 @@ async function processLineItem(order: any, lineItem: any) {
           .eq("order_id", orderId)
 
         if (updateError) {
-          console.error(`Error updating vendor name for existing line item:`, updateError)
+          console.error(`Error updating vendor name:`, updateError)
         } else {
-          console.log(`Updated vendor name for existing line item ${lineItemId}`)
+          console.log(`Updated vendor name to ${vendorName} for line item ${lineItemId}`)
         }
       }
 
@@ -263,14 +219,14 @@ async function processLineItem(order: any, lineItem: any) {
     const certificateToken = crypto.randomUUID()
     const now = new Date().toISOString()
 
-    // Insert the new line item with certificate information
+    // Insert the new line item with certificate information and vendor_name
     const { error: insertError } = await supabase.from("order_line_items").insert({
       order_id: orderId,
       order_name: order.name,
       line_item_id: lineItemId,
       product_id: productId,
       variant_id: lineItem.variant_id?.toString(),
-      vendor_name: vendorName, // Add the vendor name to the database record
+      vendor_name: vendorName, // Add vendor name to the insert
       // Don't set edition_number here, it will be assigned during resequencing
       edition_total: editionSize, // Add the edition_total from the metafield
       created_at: new Date(order.created_at).toISOString(),
@@ -286,7 +242,9 @@ async function processLineItem(order: any, lineItem: any) {
       throw insertError
     }
 
-    console.log(`Successfully inserted line item ${lineItemId} with certificate URL`)
+    console.log(
+      `Successfully inserted line item ${lineItemId} with certificate URL and vendor ${vendorName || "Unknown"}`,
+    )
 
     // Resequence edition numbers for this product
     await resequenceEditionNumbers(productId)
