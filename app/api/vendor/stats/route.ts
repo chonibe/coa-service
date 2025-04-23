@@ -28,7 +28,7 @@ export async function GET(request: NextRequest) {
         line_item_id,
         order_id,
         product_id,
-        product_title,
+        title,
         variant_id,
         variant_title,
         price,
