@@ -1,9 +1,11 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import Link from "next/link"
 import { Card, CardContent } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Loader2, Package } from "lucide-react"
+import { Loader2, Package, ArrowRight } from "lucide-react"
+import { Button } from "@/components/ui/button"
 
 interface Product {
   id: string
@@ -65,6 +67,7 @@ export function ProductTable({ vendorName }: ProductTableProps) {
                 <TableHead>Product</TableHead>
                 <TableHead>Price</TableHead>
                 <TableHead>Inventory</TableHead>
+                <TableHead></TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -93,6 +96,14 @@ export function ProductTable({ vendorName }: ProductTableProps) {
                     {product.price} {product.currency}
                   </TableCell>
                   <TableCell>{product.inventory}</TableCell>
+                  <TableCell className="text-right">
+                    <Button asChild variant="link" size="sm">
+                      <Link href={`/vendor/dashboard/benefits?product=${product.id}`}>
+                        Manage Benefits
+                        <ArrowRight className="h-4 w-4 ml-2" />
+                      </Link>
+                    </Button>
+                  </TableCell>
                 </TableRow>
               ))}
             </TableBody>
