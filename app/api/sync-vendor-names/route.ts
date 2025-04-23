@@ -3,6 +3,9 @@ import type { NextRequest } from "next/server"
 import { SHOPIFY_SHOP, SHOPIFY_ACCESS_TOKEN } from "@/lib/env"
 import { supabase } from "@/lib/supabase"
 
+// Set a reasonable timeout for the API route
+export const maxDuration = 60 // 60 seconds max duration
+
 export async function POST(request: NextRequest) {
   try {
     // Check for admin authentication
@@ -25,7 +28,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Invalid request body" }, { status: 400 })
     }
 
-    const { batchSize = 50, startAfter = 0, limit = 1000 } = body
+    // Use smaller default batch size to avoid timeouts
+    const { batchSize = 10, startAfter = 0, limit = 50 } = body
 
     console.log(`Starting vendor name sync with batchSize=${batchSize}, startAfter=${startAfter}, limit=${limit}`)
 
@@ -43,13 +47,14 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Failed to fetch line items", details: error.message }, { status: 500 })
     }
 
-    console.log(`Found ${lineItems.length} line items without vendor name`)
+    console.log(`Found ${lineItems?.length || 0} line items without vendor name`)
 
-    if (lineItems.length === 0) {
+    if (!lineItems || lineItems.length === 0) {
       return NextResponse.json({
         success: true,
         message: "No line items found that need vendor name updates",
         processed: 0,
+        updated: 0,
         lastId: startAfter,
         hasMore: false,
       })
@@ -72,7 +77,10 @@ export async function POST(request: NextRequest) {
     let lastProcessedId = startAfter
     let hasMore = false
 
-    for (const orderId of Object.keys(orderGroups)) {
+    // Process only a limited number of orders per request to avoid timeouts
+    const orderIds = Object.keys(orderGroups).slice(0, Math.min(5, Object.keys(orderGroups).length))
+
+    for (const orderId of orderIds) {
       try {
         // Fetch order from Shopify
         const order = await fetchOrderFromShopify(orderId)
@@ -127,13 +135,10 @@ export async function POST(request: NextRequest) {
         console.error(`Error processing order ${orderId}:`, orderError)
         continue
       }
-
-      // Check if we've reached the batch size limit
-      if (processedItems >= batchSize) {
-        hasMore = lineItems.length >= batchSize
-        break
-      }
     }
+
+    // Check if there are more items to process
+    hasMore = lineItems.length > processedItems || lineItems.length >= limit
 
     return NextResponse.json({
       success: true,
@@ -149,7 +154,6 @@ export async function POST(request: NextRequest) {
       {
         error: "Failed to sync vendor names",
         message: error.message || "Unknown error",
-        stack: process.env.NODE_ENV === "development" ? error.stack : undefined,
       },
       { status: 500 },
     )
