@@ -38,11 +38,18 @@ export default function SyncVendorNamesPage() {
 
   const processBatch = async () => {
     try {
+      // Get admin password from environment or localStorage
+      const adminPassword = process.env.NEXT_PUBLIC_ADMIN_PASSWORD || localStorage.getItem("admin_password") || ""
+
+      if (!adminPassword) {
+        throw new Error("Admin password not found. Please ensure NEXT_PUBLIC_ADMIN_PASSWORD is set.")
+      }
+
       const response = await fetch("/api/sync-vendor-names", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${process.env.NEXT_PUBLIC_ADMIN_PASSWORD || localStorage.getItem("admin_password") || ""}`,
+          Authorization: `Bearer ${adminPassword}`,
         },
         body: JSON.stringify({
           batchSize,
@@ -51,12 +58,20 @@ export default function SyncVendorNamesPage() {
         }),
       })
 
-      if (!response.ok) {
-        const errorData = await response.json()
-        throw new Error(errorData.error || "Failed to sync vendor names")
+      let data
+      try {
+        data = await response.json()
+      } catch (jsonError) {
+        console.error("Error parsing response:", jsonError)
+
+        // Try to get the response text
+        const responseText = await response.text()
+        throw new Error(`Invalid response from server: ${responseText.substring(0, 100)}...`)
       }
 
-      const data = await response.json()
+      if (!response.ok) {
+        throw new Error(data.error || data.message || `Server error: ${response.status}`)
+      }
 
       // Update stats
       const newStats = {
@@ -101,6 +116,14 @@ export default function SyncVendorNamesPage() {
       setProgress(estimatedProgress)
     }
   }, [stats, status])
+
+  // Check for admin password on component mount
+  useEffect(() => {
+    const adminPassword = process.env.NEXT_PUBLIC_ADMIN_PASSWORD || localStorage.getItem("admin_password")
+    if (!adminPassword) {
+      setError("Admin password not found. Please ensure NEXT_PUBLIC_ADMIN_PASSWORD is set or log in again.")
+    }
+  }, [])
 
   return (
     <div className="container mx-auto py-8">
@@ -177,7 +200,7 @@ export default function SyncVendorNamesPage() {
           )}
         </CardContent>
         <CardFooter>
-          <Button onClick={startSync} disabled={isRunning} className="mr-2">
+          <Button onClick={startSync} disabled={isRunning || !!error} className="mr-2">
             {isRunning ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -215,6 +238,12 @@ export default function SyncVendorNamesPage() {
               The sync processes items in batches to avoid timeouts and rate limits. You can adjust the batch size as
               needed.
             </p>
+            <h3>Troubleshooting:</h3>
+            <ul>
+              <li>If you encounter errors, try reducing the batch size</li>
+              <li>Make sure your NEXT_PUBLIC_ADMIN_PASSWORD environment variable is set correctly</li>
+              <li>Check the browser console for detailed error messages</li>
+            </ul>
           </div>
         </CardContent>
       </Card>

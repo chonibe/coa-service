@@ -6,7 +6,6 @@ import { supabase } from "@/lib/supabase"
 export async function POST(request: NextRequest) {
   try {
     // Check for admin authentication
-    // This is a potentially long-running operation, so we should restrict access
     const authHeader = request.headers.get("authorization")
     if (!authHeader || !authHeader.startsWith("Bearer ")) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
@@ -18,7 +17,14 @@ export async function POST(request: NextRequest) {
     }
 
     // Get parameters from request body
-    const body = await request.json()
+    let body
+    try {
+      body = await request.json()
+    } catch (parseError) {
+      console.error("Error parsing request body:", parseError)
+      return NextResponse.json({ error: "Invalid request body" }, { status: 400 })
+    }
+
     const { batchSize = 50, startAfter = 0, limit = 1000 } = body
 
     console.log(`Starting vendor name sync with batchSize=${batchSize}, startAfter=${startAfter}, limit=${limit}`)
@@ -34,7 +40,7 @@ export async function POST(request: NextRequest) {
 
     if (error) {
       console.error("Error fetching line items:", error)
-      return NextResponse.json({ error: "Failed to fetch line items" }, { status: 500 })
+      return NextResponse.json({ error: "Failed to fetch line items", details: error.message }, { status: 500 })
     }
 
     console.log(`Found ${lineItems.length} line items without vendor name`)
@@ -45,6 +51,7 @@ export async function POST(request: NextRequest) {
         message: "No line items found that need vendor name updates",
         processed: 0,
         lastId: startAfter,
+        hasMore: false,
       })
     }
 
@@ -138,7 +145,14 @@ export async function POST(request: NextRequest) {
     })
   } catch (error) {
     console.error("Error syncing vendor names:", error)
-    return NextResponse.json({ error: "Failed to sync vendor names" }, { status: 500 })
+    return NextResponse.json(
+      {
+        error: "Failed to sync vendor names",
+        message: error.message || "Unknown error",
+        stack: process.env.NODE_ENV === "development" ? error.stack : undefined,
+      },
+      { status: 500 },
+    )
   }
 }
 
@@ -163,7 +177,14 @@ async function fetchOrderFromShopify(orderId: string) {
         console.log(`Order ${orderId} not found in Shopify`)
         return null
       }
-      const errorText = await response.text()
+
+      let errorText
+      try {
+        errorText = await response.text()
+      } catch (e) {
+        errorText = `Status: ${response.status}`
+      }
+
       throw new Error(`Failed to fetch order: ${response.status} ${errorText}`)
     }
 
