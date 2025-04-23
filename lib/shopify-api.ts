@@ -15,6 +15,7 @@ export async function shopifyFetch(url: string, options: RequestInit = {}, retri
   }
 
   try {
+    console.log(`Attempting to fetch from Shopify: ${fullUrl}`)
     const response = await fetch(fullUrl, {
       ...options,
       headers,
@@ -79,11 +80,8 @@ export async function safeJsonParse(response: Response) {
       console.error("Raw response text:", text.substring(0, 200))
       throw new Error(`Invalid JSON response: ${text.substring(0, 200)}${text.length > 200 ? "..." : ""}`)
     }
-  } catch (error) {
-    if (error instanceof SyntaxError) {
-      // JSON parse error - already handled above
-      throw error
-    }
+  } catch (error: any) {
+    console.error("Error in safeJsonParse:", error.message)
     throw error
   }
 }
