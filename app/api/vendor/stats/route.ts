@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
-import { cookies } from "next/headers"
+import { cookies } from "@/lib/shopify-api"
 import { shopifyFetch, safeJsonParse } from "@/lib/shopify-api"
 
 export async function GET(request: NextRequest) {
@@ -113,7 +113,7 @@ async function fetchProductSalesFromShopify(productId: string) {
     // Ensure the productId is correctly formatted as a gid
     const graphqlQuery = `
       {
-        product(id: "gid://shopify/Product/${productId}") {
+        product(id: "${productId}") {
           totalSales: totalInventory
         }
       }

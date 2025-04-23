@@ -87,3 +87,27 @@ export async function safeJsonParse(response: Response) {
     throw error
   }
 }
+
+export const cookies = {
+  get: (name: string) => {
+    if (typeof document === "undefined") return undefined
+    const value = `; ${document.cookie}`
+    const parts = value.split(`; ${name}=`)
+    if (parts.length === 2) return parts.pop()?.split(";").shift()
+    return undefined
+  },
+  set: (name: string, value: string, options: any) => {
+    if (typeof document === "undefined") return
+    let cookieString = `${name}=${value};`
+    if (options.path) cookieString += `path=${options.path};`
+    if (options.maxAge) cookieString += `max-age=${options.maxAge};`
+    if (options.httpOnly) cookieString += `httpOnly;`
+    if (options.secure) cookieString += `secure;`
+    if (options.sameSite) cookieString += `sameSite=${options.sameSite};`
+    document.cookie = cookieString
+  },
+  delete: (name: string) => {
+    if (typeof document === "undefined") return
+    document.cookie = `${name}=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT;`
+  },
+}
