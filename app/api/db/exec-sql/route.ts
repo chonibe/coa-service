@@ -1,4 +1,5 @@
-import { type NextRequest, NextResponse } from "next/server"
+import { NextResponse } from "next/server"
+import type { NextRequest } from "next/server"
 import { supabase } from "@/lib/supabase"
 import fs from "fs"
 import path from "path"
@@ -34,6 +35,21 @@ export async function POST(request: NextRequest) {
     if (error) {
       console.error("Error creating vendors table:", error)
       return NextResponse.json({ error: error.message }, { status: 500 })
+    }
+
+    // Now create the product_vendor_payouts table
+    const productVendorPayoutsTableSql = fs.readFileSync(
+      path.join(process.cwd(), "db", "product_vendor_payouts_table.sql"),
+      "utf8",
+    )
+
+    const { error: productVendorPayoutsError } = await supabase.rpc("exec_sql", {
+      sql_query: productVendorPayoutsTableSql,
+    })
+
+    if (productVendorPayoutsError) {
+      console.error("Error creating product_vendor_payouts table:", productVendorPayoutsError)
+      return NextResponse.json({ error: productVendorPayoutsError.message }, { status: 500 })
     }
 
     return NextResponse.json({ success: true, message: "Database initialized successfully" })

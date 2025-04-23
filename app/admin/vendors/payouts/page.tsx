@@ -287,7 +287,11 @@ export default function VendorPayoutsPage() {
                               <Select
                                 value={payout.isPercentage ? "percentage" : "fixed"}
                                 onValueChange={(value) =>
-                                  updatePayoutSetting(product.id, payout.amount, value === "percentage")
+                                  updatePayoutSetting(
+                                    product.id,
+                                    Number.parseFloat(payout.amount.toString()),
+                                    value === "percentage",
+                                  )
                                 }
                               >
                                 <SelectTrigger className="w-[120px]">
