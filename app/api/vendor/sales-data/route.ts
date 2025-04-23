@@ -17,12 +17,11 @@ export async function GET(request: NextRequest) {
     const { data: salesData, error: salesError } = await supabaseAdmin
       .from("order_line_items")
       .select(`
-       product_id,
-       created_at,
-       order_name,
-       product_vendor (name)
-     `)
-      .eq("product_vendor.name", vendorName)
+        product_id,
+        created_at,
+        order_name
+      `)
+      .eq("product_vendor", vendorName)
 
     if (salesError) {
       console.error("Error fetching sales data from Supabase:", salesError)
