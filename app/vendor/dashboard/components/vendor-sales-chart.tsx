@@ -1,7 +1,6 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts"
 import { Loader2 } from "lucide-react"
 
@@ -58,6 +57,13 @@ export function VendorSalesChart({ vendorName }: { vendorName: string }) {
     return date.toLocaleDateString("en-US", { month: "short", year: "numeric" })
   }
 
+  // Format month for mobile display (e.g., "2023-01" to "Jan")
+  const formatMonthMobile = (month: string) => {
+    const [year, monthNum] = month.split("-")
+    const date = new Date(Number.parseInt(year), Number.parseInt(monthNum) - 1, 1)
+    return date.toLocaleDateString("en-US", { month: "short" })
+  }
+
   // Format currency
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat("en-US", {
@@ -69,85 +75,80 @@ export function VendorSalesChart({ vendorName }: { vendorName: string }) {
 
   if (isLoading) {
     return (
-      <Card>
-        <CardHeader>
-          <CardTitle>Sales Overview</CardTitle>
-        </CardHeader>
-        <CardContent className="flex justify-center items-center min-h-[300px]">
-          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-        </CardContent>
-      </Card>
+      <div className="flex justify-center items-center min-h-[200px] sm:min-h-[300px]">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
     )
   }
 
   if (error) {
     return (
-      <Card>
-        <CardHeader>
-          <CardTitle>Sales Overview</CardTitle>
-        </CardHeader>
-        <CardContent className="min-h-[300px]">
-          <div className="flex flex-col items-center justify-center h-full text-center p-4">
-            <p className="text-muted-foreground mb-2">Error loading sales data</p>
-            <p className="text-sm text-destructive">{error}</p>
-          </div>
-        </CardContent>
-      </Card>
+      <div className="flex flex-col items-center justify-center min-h-[200px] sm:min-h-[300px] text-center p-4">
+        <p className="text-muted-foreground mb-2">Error loading sales data</p>
+        <p className="text-xs sm:text-sm text-destructive">{error}</p>
+      </div>
     )
   }
 
   if (!data || !data.monthlySales || data.monthlySales.length === 0) {
     return (
-      <Card>
-        <CardHeader>
-          <CardTitle>Sales Overview</CardTitle>
-        </CardHeader>
-        <CardContent className="min-h-[300px]">
-          <div className="flex flex-col items-center justify-center h-full text-center p-4">
-            <p className="text-muted-foreground">No sales data available yet</p>
-            <p className="text-sm mt-2">Once you make your first sale, data will appear here.</p>
-          </div>
-        </CardContent>
-      </Card>
+      <div className="flex flex-col items-center justify-center min-h-[200px] sm:min-h-[300px] text-center p-4">
+        <p className="text-muted-foreground">No sales data available yet</p>
+        <p className="text-xs sm:text-sm mt-2">Once you make your first sale, data will appear here.</p>
+      </div>
     )
   }
 
   return (
-    <Card className="col-span-2">
-      <CardHeader>
-        <CardTitle>Sales Overview</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <div className="flex flex-col md:flex-row justify-between mb-6 gap-4">
-          <div className="bg-muted p-4 rounded-lg text-center flex-1">
-            <h3 className="text-sm font-medium text-muted-foreground mb-2">Total Sales</h3>
-            <p className="text-2xl font-bold">{data.totalSales}</p>
-          </div>
-          <div className="bg-muted p-4 rounded-lg text-center flex-1">
-            <h3 className="text-sm font-medium text-muted-foreground mb-2">Total Revenue</h3>
-            <p className="text-2xl font-bold">{formatCurrency(data.totalRevenue)}</p>
-          </div>
+    <div className="space-y-4">
+      <div className="grid grid-cols-2 gap-2 sm:gap-4">
+        <div className="bg-muted p-3 sm:p-4 rounded-lg text-center">
+          <h3 className="text-xs sm:text-sm font-medium text-muted-foreground mb-1 sm:mb-2">Total Sales</h3>
+          <p className="text-lg sm:text-2xl font-bold">{data.totalSales}</p>
         </div>
+        <div className="bg-muted p-3 sm:p-4 rounded-lg text-center">
+          <h3 className="text-xs sm:text-sm font-medium text-muted-foreground mb-1 sm:mb-2">Total Revenue</h3>
+          <p className="text-lg sm:text-2xl font-bold">{formatCurrency(data.totalRevenue)}</p>
+        </div>
+      </div>
 
-        <ResponsiveContainer width="100%" height={300}>
-          <BarChart data={data.monthlySales} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+      <div className="h-[250px] sm:h-[300px] w-full">
+        <ResponsiveContainer width="100%" height="100%">
+          <BarChart data={data.monthlySales} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
             <CartesianGrid strokeDasharray="3 3" />
-            <XAxis dataKey="month" tickFormatter={formatMonth} tick={{ fontSize: 12 }} />
-            <YAxis yAxisId="left" orientation="left" tick={{ fontSize: 12 }} />
-            <YAxis yAxisId="right" orientation="right" tick={{ fontSize: 12 }} tickFormatter={(value) => `$${value}`} />
+            <XAxis
+              dataKey="month"
+              tickFormatter={(value) => (window.innerWidth < 640 ? formatMonthMobile(value) : formatMonth(value))}
+              tick={{ fontSize: window.innerWidth < 640 ? 10 : 12 }}
+              interval={window.innerWidth < 640 ? 1 : 0}
+            />
+            <YAxis
+              yAxisId="left"
+              orientation="left"
+              tick={{ fontSize: window.innerWidth < 640 ? 10 : 12 }}
+              width={window.innerWidth < 640 ? 25 : 35}
+            />
+            <YAxis
+              yAxisId="right"
+              orientation="right"
+              tick={{ fontSize: window.innerWidth < 640 ? 10 : 12 }}
+              tickFormatter={(value) => `$${value}`}
+              width={window.innerWidth < 640 ? 35 : 45}
+            />
             <Tooltip
               formatter={(value, name) => {
                 if (name === "revenue") return [formatCurrency(value as number), "Revenue"]
                 return [value, "Items Sold"]
               }}
               labelFormatter={formatMonth}
+              contentStyle={{ fontSize: window.innerWidth < 640 ? "12px" : "14px" }}
             />
-            <Legend />
+            <Legend wrapperStyle={{ fontSize: window.innerWidth < 640 ? "12px" : "14px" }} />
             <Bar dataKey="sales" name="Items Sold" fill="#8884d8" yAxisId="left" />
             <Bar dataKey="revenue" name="Revenue" fill="#82ca9d" yAxisId="right" />
           </BarChart>
         </ResponsiveContainer>
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   )
 }
