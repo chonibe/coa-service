@@ -1,7 +1,7 @@
 -- Create table for benefit types
 CREATE TABLE IF NOT EXISTS benefit_types (
     id SERIAL PRIMARY KEY,
-    name TEXT NOT NULL,
+    name TEXT NOT NULL UNIQUE,
     description TEXT,
     icon TEXT,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
