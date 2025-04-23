@@ -26,17 +26,30 @@ export function SalesChart({ vendorName }: SalesChartProps) {
       setError(null)
 
       try {
-        // In a real implementation, this would fetch sales data from your API
-        // For demo purposes, we'll use mock data
-        const mockData = [
-          { date: "2024-01-01", sales: 10, revenue: 500 },
-          { date: "2024-01-08", sales: 15, revenue: 750 },
-          { date: "2024-01-15", sales: 8, revenue: 400 },
-          { date: "2024-01-22", sales: 12, revenue: 600 },
-          { date: "2024-01-29", sales: 20, revenue: 1000 },
-        ]
+        const response = await fetch(`/api/vendor/sales-data`)
 
-        setSalesData(mockData)
+        if (!response.ok) {
+          throw new Error("Failed to fetch sales data")
+        }
+
+        const data = await response.json()
+
+        // Group sales data by date
+        const groupedData = data.salesData.reduce((acc: any, item: any) => {
+          const date = item.date
+          if (!acc[date]) {
+            acc[date] = { date, sales: 0, revenue: 0 }
+          }
+          acc[date].sales++
+          // Assuming each product has the same price for simplicity
+          acc[date].revenue += 50 // Replace with actual price if available
+          return acc
+        }, {})
+
+        // Convert grouped data to array
+        const salesArray = Object.values(groupedData)
+
+        setSalesData(salesArray)
       } catch (err: any) {
         console.error("Error fetching sales data:", err)
         setError(err.message || "Failed to load sales data")
