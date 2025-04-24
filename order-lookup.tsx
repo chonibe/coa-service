@@ -12,6 +12,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Search, Grid, List } from "lucide-react"
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { shopifyFetch } from "@/lib/shopify-api"
 
 const supabase = createClientComponentClient()
 
@@ -95,11 +96,7 @@ export default function OrderLookup() {
   const [syncResult, setSyncResult] = useState<any>(null)
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid")
   const [activeTab, setActiveTab] = useState<"all" | "verified" | "unverified">("all")
-  const [availableCustomerIds, setAvailableCustomerIds] = useState<string[]>([
-    "customer-22845350150530",
-    "customer-1234567890",
-    "customer-0987654321",
-  ])
+  const [availableCustomerIds, setAvailableCustomerIds] = useState<string[]>([])
 
   // Filter state
   const [allVendors, setAllVendors] = useState<Set<string>>(new Set())
@@ -114,22 +111,58 @@ export default function OrderLookup() {
   useEffect(() => {
     // In a real implementation, this would not be needed as Shopify would handle authentication
     // For demo purposes, we'll simulate a logged-in user
-    const checkLoginStatus = () => {
-      // Simulate checking login status
-      setTimeout(() => {
-        setIsLoggedIn(true)
-        setCustomerId("customer-22845350150530")
-      }, 1000)
+    const checkLoginStatus = async () => {
+      setIsLoading(true)
+      try {
+        // Fetch customer IDs from Shopify using GraphQL
+        const query = `
+          {
+            customers(first: 10) {
+              edges {
+                node {
+                  id
+                }
+              }
+            }
+          }
+        `
+        const response = await shopifyFetch("graphql.json", {
+          method: "POST",
+          body: JSON.stringify({ query }),
+        })
+
+        const data = await response.json()
+
+        if (data?.data?.customers?.edges) {
+          const customerIds = data.data.customers.edges.map((edge: any) => edge.node.id)
+          setAvailableCustomerIds(customerIds)
+          if (customerIds.length > 0) {
+            setIsLoggedIn(true)
+            setCustomerId(customerIds[0]) // Select the first customer by default
+          } else {
+            setIsLoggedIn(false)
+          }
+        } else {
+          setIsLoggedIn(false)
+          setError("Could not fetch customer IDs from Shopify")
+        }
+      } catch (error: any) {
+        console.error("Error fetching customer IDs:", error)
+        setError(error.message || "Failed to fetch customer IDs")
+        setIsLoggedIn(false)
+      } finally {
+        setIsLoading(false)
+      }
     }
 
     checkLoginStatus()
   }, [])
 
   useEffect(() => {
-    if (isLoggedIn) {
+    if (isLoggedIn && customerId) {
       // Wrap in a try-catch to prevent unhandled errors
       try {
-        fetchOrdersByCustomerId(customerId!)
+        fetchOrdersByCustomerId(customerId)
       } catch (error) {
         console.error("Error in initial data fetch:", error)
         // Ensure we're using mock data as fallback
