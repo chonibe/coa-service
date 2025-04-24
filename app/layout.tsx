@@ -1,11 +1,10 @@
 import type React from "react"
 import type { Metadata } from "next"
 import "./globals.css"
-import { Inter } from "@/next/font/google"
+import { Inter } from "next/font/google"
 import { cn } from "@/lib/utils"
 import { ThemeProvider } from "@/components/theme-provider"
 import { MobileNav } from "@/components/mobile-nav"
-import Link from "next/link"
 
 const inter = Inter({ subsets: ["latin"] })
 
@@ -21,8 +20,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body className={cn("min-h-screen bg-background font-sans antialiased", inter.className)}>
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
           <div className="flex flex-col min-h-screen">
-            <header className="px-4 lg:px-6 h-16 flex items-center gap-4 border-b bg-background">
-              <Link href="/" className="flex items-center justify-center">
+            <header className="px-4 lg:px-6 h-16 flex items-center border-b">
+              <a className="flex items-center justify-center" href="/">
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
                   width="24"
@@ -42,16 +41,16 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                   <path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.554C21.965 6.012 17.461 2 12 2z" />
                 </svg>
                 <span className="font-bold">Art Certificates</span>
-              </Link>
+              </a>
               <nav className="ml-auto flex gap-4 sm:gap-6">
-                <a className="text-sm font-medium hover:underline underline-offset-4" href="/vendor/login">
-                  Vendor Login
-                </a>
                 <a className="text-sm font-medium hover:underline underline-offset-4" href="/admin">
                   Admin
                 </a>
                 <a className="text-sm font-medium hover:underline underline-offset-4 font-bold" href="/collection">
                   My Collection
+                </a>
+                <a className="text-sm font-medium hover:underline underline-offset-4" href="/vendor/login">
+                  Vendor Login
                 </a>
               </nav>
             </header>
