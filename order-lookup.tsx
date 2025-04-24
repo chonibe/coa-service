@@ -1,14 +1,41 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { Button } from "@/components/ui/button"
-import { Card } from "@/components/ui/card"
+import {
+  Box,
+  Button,
+  Card,
+  CardBody,
+  Flex,
+  Heading,
+  Input,
+  Select,
+  Text,
+  Badge,
+  Spinner,
+  useDisclosure,
+  Modal,
+  ModalOverlay,
+  ModalContent,
+  ModalHeader,
+  ModalFooter,
+  ModalBody,
+  ModalCloseButton,
+  Textarea,
+  FormLabel,
+  Menu,
+  MenuButton,
+  MenuList,
+  MenuItem,
+  MenuDivider,
+  Image,
+  Stack,
+} from "@chakra-ui/react"
 import {
   User,
   LogIn,
-  ImageIcon,
   AlertCircle,
-  RefreshCcw,
+  RefreshCw,
   MoreVertical,
   Check,
   X,
@@ -16,25 +43,6 @@ import {
   BadgeIcon as Certificate,
 } from "lucide-react"
 import { useEditionInfo } from "@/hooks/use-edition-info"
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog"
-import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
-import { Input } from "@/components/ui/input"
 import { mockResponseData } from "@/lib/mock-data"
 import { getCustomerOrders } from "@/lib/data-access"
 import { updateLineItemStatus, resequenceEditionNumbers } from "@/lib/supabase-client"
@@ -100,14 +108,16 @@ export default function OrderLookup() {
   const [totalItemsLoaded, setTotalItemsLoaded] = useState(0)
   const [usingMockData, setUsingMockData] = useState(isPreviewEnvironment())
   const [apiAttempted, setApiAttempted] = useState(false)
-  const [isRemoveDialogOpen, setIsRemoveDialogOpen] = useState(false)
-  const [isSyncDialogOpen, setIsSyncDialogOpen] = useState(false)
   const [selectedItem, setSelectedItem] = useState<OrderItem | null>(null)
   const [removeReason, setRemoveReason] = useState("")
   const [isUpdatingStatus, setIsUpdatingStatus] = useState(false)
   const [isSyncing, setIsSyncing] = useState(false)
   const [syncProductId, setSyncProductId] = useState("")
   const [syncResult, setSyncResult] = useState<any>(null)
+
+  // Modal states
+  const { isOpen: isRemoveDialogOpen, onOpen: onRemoveDialogOpen, onClose: onRemoveDialogClose } = useDisclosure()
+  const { isOpen: isSyncDialogOpen, onOpen: onSyncDialogOpen, onClose: onSyncDialogClose } = useDisclosure()
 
   // Filter state
   const [allVendors, setAllVendors] = useState<Set<string>>(new Set())
@@ -474,7 +484,7 @@ export default function OrderLookup() {
   const handleRemoveClick = (item: OrderItem) => {
     setSelectedItem(item)
     setRemoveReason("")
-    setIsRemoveDialogOpen(true)
+    onRemoveDialogOpen()
   }
 
   // Handle confirming removal
@@ -503,7 +513,7 @@ export default function OrderLookup() {
       await fetchOrdersByCustomerId(customerId!, null, false)
 
       // Close the dialog
-      setIsRemoveDialogOpen(false)
+      onRemoveDialogClose()
       setSelectedItem(null)
     } catch (error) {
       console.error("Error removing item:", error)
@@ -517,7 +527,7 @@ export default function OrderLookup() {
   const handleSyncClick = () => {
     setSyncProductId("")
     setSyncResult(null)
-    setIsSyncDialogOpen(true)
+    onSyncDialogOpen()
   }
 
   // Handle confirming sync
@@ -560,33 +570,44 @@ export default function OrderLookup() {
   // Render loading state
   if (isLoggedIn === null) {
     return (
-      <div className="w-full max-w-6xl mx-auto p-4">
-        <div className="flex flex-col items-center justify-center py-12">
-          <div className="h-10 w-10 border-4 border-t-primary rounded-full animate-spin mb-4"></div>
-          <p className="text-muted-foreground">Checking your account...</p>
-        </div>
-      </div>
+      <Box w="full" maxW="6xl" mx="auto" p={4}>
+        <Flex flexDir="column" alignItems="center" justifyContent="center" py={12}>
+          <Spinner size="lg" color="primary" mb={4} />
+          <Text color="gray.500">Checking your account...</Text>
+        </Flex>
+      </Box>
     )
   }
 
   // Render login required view
   if (isLoggedIn === false) {
     return (
-      <div className="w-full max-w-6xl mx-auto p-4">
-        <div className="flex flex-col items-center justify-center py-12 px-4 bg-muted rounded-lg">
-          <div className="w-16 h-16 flex items-center justify-center rounded-full bg-background mb-6 text-primary">
+      <Box w="full" maxW="6xl" mx="auto" p={4}>
+        <Flex flexDir="column" alignItems="center" justifyContent="center" py={12} px={4} bg="gray.100" rounded="lg">
+          <Flex
+            w={16}
+            h={16}
+            alignItems="center"
+            justifyContent="center"
+            rounded="full"
+            bg="white"
+            mb={6}
+            color="primary.500"
+          >
             <LogIn size={28} />
-          </div>
-          <h2 className="text-2xl font-bold mb-2">Login Required</h2>
-          <p className="text-muted-foreground mb-6 text-center max-w-md">
+          </Flex>
+          <Heading as="h2" size="lg" mb={2}>
+            Login Required
+          </Heading>
+          <Text color="gray.500" mb={6} textAlign="center" maxW="md">
             You need to be logged in to view your purchase history.
-          </p>
-          <div className="flex gap-4">
+          </Text>
+          <Flex gap={4}>
             <Button>Log In</Button>
             <Button variant="outline">Create Account</Button>
-          </div>
-        </div>
-      </div>
+          </Flex>
+        </Flex>
+      </Box>
     )
   }
 
@@ -594,75 +615,112 @@ export default function OrderLookup() {
   const filteredItems = filterLineItems(lineItems)
 
   return (
-    <div className="w-full max-w-6xl mx-auto p-4">
+    <Box w="full" maxW="6xl" mx="auto" p={4}>
       {error && (
-        <div className="flex items-center gap-2 p-4 mb-6 bg-destructive/10 text-destructive rounded-lg border border-destructive/20">
+        <Flex
+          alignItems="center"
+          gap={2}
+          p={4}
+          mb={6}
+          bg="red.50"
+          color="red.500"
+          rounded="lg"
+          border="1px"
+          borderColor="red.200"
+        >
           <AlertCircle size={20} />
-          <div className="flex-1">
-            <p>{error}</p>
-            <div className="flex items-center gap-2 mt-2">
+          <Box flex="1">
+            <Text>{error}</Text>
+            <Flex alignItems="center" gap={2} mt={2}>
               <Button
                 variant="outline"
                 size="sm"
-                className="bg-white text-destructive border-destructive/30 hover:bg-destructive/10"
+                bg="white"
+                color="red.500"
+                borderColor="red.300"
+                _hover={{ bg: "red.50" }}
                 onClick={() => fetchOrdersByCustomerId(customerId!)}
               >
-                <RefreshCcw size={14} className="mr-1" />
+                <RefreshCw size={14} style={{ marginRight: "4px" }} />
                 Retry Connection
               </Button>
-            </div>
-          </div>
-        </div>
+            </Flex>
+          </Box>
+        </Flex>
       )}
 
-      <div className="flex items-start gap-4 p-4 bg-muted rounded-lg mb-6">
-        <div className="w-10 h-10 flex items-center justify-center rounded-full bg-background text-primary">
+      <Flex alignItems="flex-start" gap={4} p={4} bg="gray.100" rounded="lg" mb={6}>
+        <Flex w={10} h={10} alignItems="center" justifyContent="center" rounded="full" bg="white" color="primary.500">
           <User size={20} />
-        </div>
-        <div>
-          <h2 className="text-lg font-semibold">Welcome back!</h2>
-          <p className="text-muted-foreground text-sm">We're fetching your purchase history.</p>
-        </div>
-      </div>
+        </Flex>
+        <Box>
+          <Heading as="h2" size="md" fontWeight="semibold">
+            Welcome back!
+          </Heading>
+          <Text color="gray.500" fontSize="sm">
+            We're fetching your purchase history.
+          </Text>
+        </Box>
+      </Flex>
 
       {/* Customer info */}
-      <Card className="p-4 mb-6">
-        <div className="flex flex-col md:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-4">
-            <div className="w-12 h-12 flex items-center justify-center rounded-full bg-muted text-primary">
-              <User size={24} />
-            </div>
-            <div className="text-center md:text-left">
-              <h3 className="text-lg font-semibold">Your Purchase History</h3>
-              <div className="flex gap-4 mt-2">
-                <div className="bg-background p-2 rounded-md min-w-20 text-center">
-                  <div className="text-xl font-semibold text-primary">{totalItemsLoaded}</div>
-                  <div className="text-xs text-muted-foreground">Items Purchased</div>
-                </div>
-                <div className="bg-background p-2 rounded-md min-w-20 text-center">
-                  <div className="text-xl font-semibold text-primary">{allOrderNumbers.size}</div>
-                  <div className="text-xs text-muted-foreground">Orders</div>
-                </div>
-              </div>
-            </div>
-          </div>
-          <Button variant="outline" size="sm" onClick={handleSyncClick} className="flex items-center gap-1">
-            <Sync size={14} />
-            Sync Edition Data
-          </Button>
-        </div>
+      <Card mb={6}>
+        <CardBody p={4}>
+          <Flex flexDir={{ base: "column", md: "row" }} alignItems="center" justifyContent="space-between" gap={4}>
+            <Flex alignItems="center" gap={4}>
+              <Flex
+                w={12}
+                h={12}
+                alignItems="center"
+                justifyContent="center"
+                rounded="full"
+                bg="gray.100"
+                color="primary.500"
+              >
+                <User size={24} />
+              </Flex>
+              <Box textAlign={{ base: "center", md: "left" }}>
+                <Heading as="h3" size="md" fontWeight="semibold">
+                  Your Purchase History
+                </Heading>
+                <Flex gap={4} mt={2}>
+                  <Box bg="white" p={2} rounded="md" minW="20" textAlign="center">
+                    <Text fontSize="xl" fontWeight="semibold" color="primary.500">
+                      {totalItemsLoaded}
+                    </Text>
+                    <Text fontSize="xs" color="gray.500">
+                      Items Purchased
+                    </Text>
+                  </Box>
+                  <Box bg="white" p={2} rounded="md" minW="20" textAlign="center">
+                    <Text fontSize="xl" fontWeight="semibold" color="primary.500">
+                      {allOrderNumbers.size}
+                    </Text>
+                    <Text fontSize="xs" color="gray.500">
+                      Orders
+                    </Text>
+                  </Box>
+                </Flex>
+              </Box>
+            </Flex>
+            <Button variant="outline" size="sm" onClick={handleSyncClick} display="flex" alignItems="center" gap={1}>
+              <Sync size={14} />
+              Sync Edition Data
+            </Button>
+          </Flex>
+        </CardBody>
       </Card>
 
       {/* Filter controls */}
       {(allVendors.size > 0 || allTags.size > 0 || allOrderNumbers.size > 0) && (
-        <div className="flex flex-wrap gap-3 p-4 bg-muted rounded-lg mb-6">
-          <div className="flex flex-col min-w-[160px] flex-1">
-            <label htmlFor="vendor-filter" className="text-xs mb-1 text-muted-foreground">
+        <Flex flexWrap="wrap" gap={3} p={4} bg="gray.100" rounded="lg" mb={6}>
+          <Box display="flex" flexDir="column" minW="160px" flex="1">
+            <Text as="label" htmlFor="vendor-filter" fontSize="xs" mb={1} color="gray.500">
               Filter by Vendor:
-            </label>
-            <select
+            </Text>
+            <Select
               id="vendor-filter"
-              className="p-2 rounded-md border text-sm"
+              size="sm"
               value={currentVendor}
               onChange={(e) => setCurrentVendor(e.target.value)}
             >
@@ -674,19 +732,14 @@ export default function OrderLookup() {
                     {vendor}
                   </option>
                 ))}
-            </select>
-          </div>
+            </Select>
+          </Box>
 
-          <div className="flex flex-col min-w-[160px] flex-1">
-            <label htmlFor="tag-filter" className="text-xs mb-1 text-muted-foreground">
+          <Box display="flex" flexDir="column" minW="160px" flex="1">
+            <Text as="label" htmlFor="tag-filter" fontSize="xs" mb={1} color="gray.500">
               Filter by Tag:
-            </label>
-            <select
-              id="tag-filter"
-              className="p-2 rounded-md border text-sm"
-              value={currentTag}
-              onChange={(e) => setCurrentTag(e.target.value)}
-            >
+            </Text>
+            <Select id="tag-filter" size="sm" value={currentTag} onChange={(e) => setCurrentTag(e.target.value)}>
               <option value="all">All Tags</option>
               {Array.from(allTags)
                 .sort()
@@ -695,19 +748,14 @@ export default function OrderLookup() {
                     {tag}
                   </option>
                 ))}
-            </select>
-          </div>
+            </Select>
+          </Box>
 
-          <div className="flex flex-col min-w-[160px] flex-1">
-            <label htmlFor="order-filter" className="text-xs mb-1 text-muted-foreground">
+          <Box display="flex" flexDir="column" minW="160px" flex="1">
+            <Text as="label" htmlFor="order-filter" fontSize="xs" mb={1} color="gray.500">
               Filter by Order:
-            </label>
-            <select
-              id="order-filter"
-              className="p-2 rounded-md border text-sm"
-              value={currentOrder}
-              onChange={(e) => setCurrentOrder(e.target.value)}
-            >
+            </Text>
+            <Select id="order-filter" size="sm" value={currentOrder} onChange={(e) => setCurrentOrder(e.target.value)}>
               <option value="all">All Orders</option>
               {Array.from(allOrderNumbers)
                 .sort((a, b) => Number(b) - Number(a))
@@ -716,16 +764,16 @@ export default function OrderLookup() {
                     Order #{orderNum}
                   </option>
                 ))}
-            </select>
-          </div>
+            </Select>
+          </Box>
 
-          <div className="flex flex-col min-w-[160px] flex-1">
-            <label htmlFor="status-filter" className="text-xs mb-1 text-muted-foreground">
+          <Box display="flex" flexDir="column" minW="160px" flex="1">
+            <Text as="label" htmlFor="status-filter" fontSize="xs" mb={1} color="gray.500">
               Filter by Status:
-            </label>
-            <select
+            </Text>
+            <Select
               id="status-filter"
-              className="p-2 rounded-md border text-sm"
+              size="sm"
               value={currentStatus}
               onChange={(e) => setCurrentStatus(e.target.value)}
             >
@@ -735,28 +783,33 @@ export default function OrderLookup() {
               <option value="unfulfilled">Processing</option>
               <option value="paid">Paid</option>
               <option value="pending">Pending</option>
-            </select>
-          </div>
+            </Select>
+          </Box>
 
-          <div className="flex items-end">
-            <Button variant="outline" size="sm" onClick={resetFilters} className="whitespace-nowrap">
+          <Flex alignItems="flex-end">
+            <Button variant="outline" size="sm" onClick={resetFilters} whiteSpace="nowrap">
               Reset Filters
             </Button>
-          </div>
-        </div>
+          </Flex>
+        </Flex>
       )}
 
       {/* Loading indicator */}
       {isLoading && lineItems.length === 0 && (
-        <div className="flex flex-col items-center justify-center py-12">
-          <div className="h-10 w-10 border-4 border-t-primary rounded-full animate-spin mb-4"></div>
-          <p className="text-muted-foreground">Looking up your purchases...</p>
-        </div>
+        <Flex flexDir="column" alignItems="center" justifyContent="center" py={12}>
+          <Spinner size="lg" color="primary.500" mb={4} />
+          <Text color="gray.500">Looking up your purchases...</Text>
+        </Flex>
       )}
 
       {/* Items gallery */}
       {filteredItems.length > 0 ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-6">
+        <Box
+          display="grid"
+          gridTemplateColumns={{ base: "1fr", md: "repeat(2, 1fr)", lg: "repeat(3, 1fr)" }}
+          gap={6}
+          mb={6}
+        >
           {filteredItems.map((item) => (
             <ItemCard
               key={`${item.order_info.order_id}-${item.line_item_id}`}
@@ -766,126 +819,121 @@ export default function OrderLookup() {
               onRemoveClick={handleRemoveClick}
             />
           ))}
-        </div>
+        </Box>
       ) : (
         !isLoading && (
-          <div className="text-center p-12 border border-dashed rounded-lg bg-muted">
-            <p className="text-muted-foreground">No items match your filter criteria.</p>
-          </div>
+          <Box textAlign="center" p={12} border="1px dashed" borderColor="gray.300" rounded="lg" bg="gray.50">
+            <Text color="gray.500">No items match your filter criteria.</Text>
+          </Box>
         )
       )}
 
       {/* Scroll loader */}
       {isLoading && lineItems.length > 0 && (
-        <div className="flex flex-col items-center justify-center py-6">
-          <div className="h-8 w-8 border-4 border-t-primary rounded-full animate-spin mb-2"></div>
-          <p className="text-sm text-muted-foreground">Loading more items...</p>
-        </div>
+        <Flex flexDir="column" alignItems="center" justifyContent="center" py={6}>
+          <Spinner size="md" color="primary.500" mb={2} />
+          <Text fontSize="sm" color="gray.500">
+            Loading more items...
+          </Text>
+        </Flex>
       )}
 
       {/* End of orders message */}
       {noMoreOrders && lineItems.length > 0 && (
-        <div className="text-center p-4 border border-dashed rounded-lg bg-muted mb-6">
-          <p className="text-sm text-muted-foreground">You've reached the end of your purchase history</p>
-        </div>
+        <Box textAlign="center" p={4} border="1px dashed" borderColor="gray.300" rounded="lg" bg="gray.50" mb={6}>
+          <Text fontSize="sm" color="gray.500">
+            You've reached the end of your purchase history
+          </Text>
+        </Box>
       )}
 
       {/* Load more button */}
       {!noMoreOrders && !isLoading && lineItems.length > 0 && (
-        <div className="flex justify-center mb-6">
+        <Flex justify="center" mb={6}>
           <Button variant="outline" onClick={() => fetchOrdersByCustomerId(customerId!, nextCursor, true)}>
             Load More
           </Button>
-        </div>
+        </Flex>
       )}
 
       {/* Remove Item Dialog */}
-      <Dialog open={isRemoveDialogOpen} onOpenChange={setIsRemoveDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Remove Item</DialogTitle>
-            <DialogDescription>
-              Are you sure you want to remove this item? This will mark it as removed in the database.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="py-4">
-            <Label htmlFor="reason" className="text-right">
-              Reason for removal (optional)
-            </Label>
-            <Textarea
-              id="reason"
-              value={removeReason}
-              onChange={(e) => setRemoveReason(e.target.value)}
-              placeholder="Enter a reason for removal"
-              className="mt-2"
-            />
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsRemoveDialogOpen(false)} disabled={isUpdatingStatus}>
+      <Modal isOpen={isRemoveDialogOpen} onClose={onRemoveDialogClose}>
+        <ModalOverlay />
+        <ModalContent>
+          <ModalHeader>Remove Item</ModalHeader>
+          <ModalCloseButton />
+          <ModalBody>
+            <Text mb={4}>Are you sure you want to remove this item? This will mark it as removed in the database.</Text>
+            <Box py={4}>
+              <FormLabel htmlFor="reason">Reason for removal (optional)</FormLabel>
+              <Textarea
+                id="reason"
+                value={removeReason}
+                onChange={(e) => setRemoveReason(e.target.value)}
+                placeholder="Enter a reason for removal"
+                mt={2}
+              />
+            </Box>
+          </ModalBody>
+          <ModalFooter>
+            <Button variant="outline" mr={3} onClick={onRemoveDialogClose} isDisabled={isUpdatingStatus}>
               Cancel
             </Button>
-            <Button
-              onClick={handleConfirmRemove}
-              disabled={isUpdatingStatus}
-              className="bg-destructive hover:bg-destructive/90 text-white"
-            >
+            <Button onClick={handleConfirmRemove} isDisabled={isUpdatingStatus} colorScheme="red">
               {isUpdatingStatus ? "Removing..." : "Remove Item"}
             </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
 
       {/* Sync Edition Data Dialog */}
-      <Dialog open={isSyncDialogOpen} onOpenChange={setIsSyncDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Sync Edition Data</DialogTitle>
-            <DialogDescription>
+      <Modal isOpen={isSyncDialogOpen} onClose={onSyncDialogClose}>
+        <ModalOverlay />
+        <ModalContent>
+          <ModalHeader>Sync Edition Data</ModalHeader>
+          <ModalCloseButton />
+          <ModalBody>
+            <Text mb={4}>
               Enter a product ID to sync edition data for that product. This will update all edition numbers in the
               database.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="py-4">
-            <Label htmlFor="productId" className="text-right">
-              Product ID
-            </Label>
-            <Input
-              id="productId"
-              value={syncProductId}
-              onChange={(e) => setSyncProductId(e.target.value)}
-              placeholder="Enter product ID"
-              className="mt-2"
-            />
-          </div>
+            </Text>
+            <Box py={4}>
+              <FormLabel htmlFor="productId">Product ID</FormLabel>
+              <Input
+                id="productId"
+                value={syncProductId}
+                onChange={(e) => setSyncProductId(e.target.value)}
+                placeholder="Enter product ID"
+                mt={2}
+              />
+            </Box>
 
-          {syncResult && (
-            <div className="bg-muted p-4 rounded-md text-sm">
-              <h4 className="font-semibold mb-2">Sync Results:</h4>
-              <div className="space-y-1">
-                <p>Product: {syncResult.productTitle}</p>
-                <p>Total Editions: {syncResult.totalEditions}</p>
-                <p>Edition Total: {syncResult.editionTotal || "Not specified"}</p>
-                <p>Active Items: {syncResult.activeItems}</p>
-                <p>Removed Items: {syncResult.removedItems}</p>
-              </div>
-            </div>
-          )}
-
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsSyncDialogOpen(false)} disabled={isSyncing}>
+            {syncResult && (
+              <Box bg="gray.100" p={4} rounded="md" fontSize="sm">
+                <Heading as="h4" size="sm" mb={2}>
+                  Sync Results:
+                </Heading>
+                <Stack spacing={1}>
+                  <Text>Product: {syncResult.productTitle}</Text>
+                  <Text>Total Editions: {syncResult.totalEditions}</Text>
+                  <Text>Edition Total: {syncResult.editionTotal || "Not specified"}</Text>
+                  <Text>Active Items: {syncResult.activeItems}</Text>
+                  <Text>Removed Items: {syncResult.removedItems}</Text>
+                </Stack>
+              </Box>
+            )}
+          </ModalBody>
+          <ModalFooter>
+            <Button variant="outline" mr={3} onClick={onSyncDialogClose} isDisabled={isSyncing}>
               Close
             </Button>
-            <Button
-              onClick={handleConfirmSync}
-              disabled={isSyncing || !syncProductId}
-              className="bg-primary hover:bg-primary/90 text-white"
-            >
+            <Button onClick={handleConfirmSync} isDisabled={isSyncing || !syncProductId} colorScheme="blue">
               {isSyncing ? "Syncing..." : "Sync Edition Data"}
             </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-    </div>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
+    </Box>
   )
 }
 
@@ -917,29 +965,62 @@ function ItemCard({ item, formatMoney, formatStatus, onRemoveClick }: ItemCardPr
   }
 
   return (
-    <Card className={`overflow-hidden ${!isFulfillable ? "opacity-80" : ""}`}>
+    <Card overflow="hidden" opacity={!isFulfillable ? 0.8 : 1}>
       {/* Item image */}
-      <div className="relative h-60 bg-muted">
+      <Box position="relative" h="60">
         {!isFulfillable && (
-          <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 -rotate-12 bg-destructive/90 text-white px-3 py-1 font-semibold text-sm uppercase tracking-wider rounded z-10">
+          <Box
+            position="absolute"
+            top="50%"
+            left="50%"
+            transform="translate(-50%, -50%) rotate(-12deg)"
+            bg="red.500"
+            color="white"
+            px={3}
+            py={1}
+            fontWeight="semibold"
+            fontSize="sm"
+            textTransform="uppercase"
+            letterSpacing="wider"
+            rounded="md"
+            zIndex={10}
+          >
             {nonFulfillableReason}
-          </div>
+          </Box>
         )}
 
         {/* Edition badge */}
         {editionInfo && (
-          <div
-            className={`absolute top-2 right-2 px-3 py-1 rounded-full text-xs font-medium bg-background/90 z-10 
-${
-  editionInfo.source === "supabase"
-    ? "text-green-600 border border-green-300"
-    : editionInfo.source === "sequential_uuid"
-      ? "text-primary border border-primary/30"
-      : "text-primary"
-}`}
+          <Box
+            position="absolute"
+            top={2}
+            right={2}
+            px={3}
+            py={1}
+            rounded="full"
+            fontSize="xs"
+            fontWeight="medium"
+            bg="white"
+            opacity={0.9}
+            zIndex={10}
+            borderWidth={1}
+            borderColor={
+              editionInfo.source === "supabase"
+                ? "green.300"
+                : editionInfo.source === "sequential_uuid"
+                  ? "blue.300"
+                  : "gray.300"
+            }
+            color={
+              editionInfo.source === "supabase"
+                ? "green.600"
+                : editionInfo.source === "sequential_uuid"
+                  ? "blue.600"
+                  : "gray.600"
+            }
           >
             {editionInfo.total && editionInfo.number ? (
-              <span>
+              <Text>
                 #{editionInfo.number}/{editionInfo.total} Edition
                 {editionInfo.source === "supabase"
                   ? " ✓✓✓"
@@ -948,101 +1029,133 @@ ${
                     : editionInfo.source === "sequential_order"
                       ? " ✓"
                       : " *"}
-              </span>
+              </Text>
             ) : item.is_limited_edition ? (
-              <span>Limited Edition</span>
+              <Text>Limited Edition</Text>
             ) : (
-              <span>Open Edition</span>
+              <Text>Open Edition</Text>
             )}
-          </div>
+          </Box>
         )}
 
         {/* Inventory status */}
         {item.inventory_quantity !== undefined && (
-          <div
-            className={`absolute top-2 left-2 px-3 py-1 rounded-full text-xs font-medium bg-background/90 z-10
-            ${item.inventory_quantity > 0 ? "text-green-600" : "text-destructive"}`}
+          <Box
+            position="absolute"
+            top={2}
+            left={2}
+            px={3}
+            py={1}
+            rounded="full"
+            fontSize="xs"
+            fontWeight="medium"
+            bg="white"
+            opacity={0.9}
+            zIndex={10}
+            color={item.inventory_quantity > 0 ? "green.600" : "red.600"}
           >
             {item.inventory_quantity > 0 ? `${item.inventory_quantity} available` : "Sold out"}
-          </div>
+          </Box>
         )}
 
         {/* Actions menu */}
-        <div className="absolute top-2 right-2 z-20">
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon" className="h-8 w-8 bg-background/80 hover:bg-background">
-                <MoreVertical size={16} />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuLabel>Actions</DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={() => refreshEditionInfo()}>
-                <RefreshCcw size={16} className="mr-2" />
+        <Box position="absolute" top={2} right={2} zIndex={20}>
+          <Menu>
+            <MenuButton
+              as={Button}
+              variant="ghost"
+              size="sm"
+              h={8}
+              w={8}
+              minW={8}
+              p={0}
+              bg="white"
+              opacity={0.8}
+              _hover={{ bg: "white", opacity: 1 }}
+            >
+              <MoreVertical size={16} />
+            </MenuButton>
+            <MenuList>
+              <MenuDivider />
+              <MenuItem onClick={() => refreshEditionInfo()}>
+                <RefreshCw size={16} style={{ marginRight: "8px" }} />
                 Refresh Edition Info
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => window.open(`/certificate/${item.line_item_id}`, "_blank")}>
-                <Certificate size={16} className="mr-2" />
+              </MenuItem>
+              <MenuItem onClick={() => window.open(`/certificate/${item.line_item_id}`, "_blank")}>
+                <Certificate size={16} style={{ marginRight: "8px" }} />
                 View Certificate
-              </DropdownMenuItem>
+              </MenuItem>
               {item.status !== "removed" && (
-                <DropdownMenuItem onClick={() => onRemoveClick(item)} className="text-destructive">
-                  <X size={16} className="mr-2" />
+                <MenuItem onClick={() => onRemoveClick(item)} color="red.500">
+                  <X size={16} style={{ marginRight: "8px" }} />
                   Remove Item
-                </DropdownMenuItem>
+                </MenuItem>
               )}
               {item.status === "removed" && (
-                <DropdownMenuItem className="text-muted-foreground cursor-not-allowed opacity-50">
-                  <Check size={16} className="mr-2" />
+                <MenuItem isDisabled color="gray.400" opacity={0.5} cursor="not-allowed">
+                  <Check size={16} style={{ marginRight: "8px" }} />
                   Item Removed
-                </DropdownMenuItem>
+                </MenuItem>
               )}
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
+            </MenuList>
+          </Menu>
+        </Box>
 
         {item.image ? (
-          <img
+          <Image
             src={item.image || "/placeholder.svg"}
             alt={item.imageAlt || item.title}
-            className="w-full h-full object-cover"
+            objectFit="cover"
+            w="full"
+            h="full"
           />
         ) : (
-          <div className="w-full h-full flex items-center justify-center text-muted-foreground">
-            <ImageIcon size={40} />
-          </div>
+          <Flex w="full" h="full" alignItems="center" justifyContent="center" color="gray.400">
+            <Box as="svg" width="40" height="40" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <rect x="3" y="3" width="18" height="18" rx="2" stroke="currentColor" strokeWidth="2" />
+              <circle cx="8.5" cy="8.5" r="1.5" fill="currentColor" />
+              <path
+                d="M21 15L16 10L5 21"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </Box>
+          </Flex>
         )}
-      </div>
+      </Box>
 
       {/* Item content */}
-      <div className="p-4">
-        <h3 className="font-semibold text-lg mb-1 line-clamp-1">{item.title}</h3>
-        <div className="text-sm text-muted-foreground mb-4 flex items-center">
-          <span className="w-1.5 h-1.5 rounded-full bg-muted-foreground mr-1.5"></span>
+      <CardBody p={4}>
+        <Heading as="h3" size="md" fontWeight="semibold" mb={1} noOfLines={1}>
+          {item.title}
+        </Heading>
+        <Flex alignItems="center" mb={4} fontSize="sm" color="gray.500">
+          <Box w="1.5px" h="1.5px" rounded="full" bg="gray.500" mr="1.5px"></Box>
           {item.vendor}
-        </div>
+        </Flex>
 
-        <div className="space-y-2 text-sm">
-          <div className="flex justify-between">
-            <span className="text-muted-foreground">Price:</span>
-            <span>{formatMoney(item.price)}</span>
-          </div>
-          <div className="flex justify-between">
-            <span className="text-muted-foreground">Quantity:</span>
-            <span>{item.quantity}</span>
-          </div>
-          <div className="flex justify-between">
-            <span className="text-muted-foreground">Total:</span>
-            <span>{formatMoney(item.total)}</span>
-          </div>
+        <Stack spacing={2} fontSize="sm">
+          <Flex justify="space-between">
+            <Text color="gray.500">Price:</Text>
+            <Text>{formatMoney(item.price)}</Text>
+          </Flex>
+          <Flex justify="space-between">
+            <Text color="gray.500">Quantity:</Text>
+            <Text>{item.quantity}</Text>
+          </Flex>
+          <Flex justify="space-between">
+            <Text color="gray.500">Total:</Text>
+            <Text>{formatMoney(item.total)}</Text>
+          </Flex>
 
           {/* Edition info */}
           {editionInfo && (
-            <div className="bg-muted p-2 rounded mt-2">
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Edition:</span>
-                <span>
+            <Box bg="gray.100" p={2} rounded="md" mt={2}>
+              <Flex justify="space-between">
+                <Text color="gray.500">Edition:</Text>
+                <Text>
                   {editionInfo.total && editionInfo.number
                     ? `#${editionInfo.number} of ${editionInfo.total} (Limited)`
                     : editionInfo.total && item.is_limited_edition
@@ -1057,113 +1170,159 @@ ${
                       : editionInfo.source === "sequential_order"
                         ? " ✓"
                         : ""}
-                </span>
-              </div>
+                </Text>
+              </Flex>
               {editionInfo.source === "supabase" && (
-                <div className="text-xs text-green-600 font-medium mt-1">
+                <Text fontSize="xs" color="green.600" fontWeight="medium" mt={1}>
                   {editionInfo.status === "removed"
                     ? "This item has been marked as removed"
                     : "Verified edition number from database"}
                   {editionInfo.updated_at && ` (Updated: ${new Date(editionInfo.updated_at).toLocaleDateString()})`}
-                </div>
+                </Text>
               )}
               {editionInfo.source === "sequential_uuid" && (
-                <div className="text-xs text-primary font-medium mt-1">Guaranteed sequential number with UUID</div>
+                <Text fontSize="xs" color="blue.600" fontWeight="medium" mt={1}>
+                  Guaranteed sequential number with UUID
+                </Text>
               )}
               {editionInfo.source === "sequential_order" && (
-                <div className="text-xs text-green-600 mt-1">Accurate edition number based on order date</div>
+                <Text fontSize="xs" color="green.600" mt={1}>
+                  Accurate edition number based on order date
+                </Text>
               )}
               {(editionInfo.source === "order_sequence" || editionInfo.source === "random") && editionInfo.note && (
-                <div className="text-xs text-muted-foreground italic mt-1">{editionInfo.note}</div>
+                <Text fontSize="xs" color="gray.500" fontStyle="italic" mt={1}>
+                  {editionInfo.note}
+                </Text>
               )}
               {editionInfo.note && editionInfo.source === "supabase" && (
-                <div className="text-xs text-muted-foreground italic mt-1">{editionInfo.note}</div>
+                <Text fontSize="xs" color="gray.500" fontStyle="italic" mt={1}>
+                  {editionInfo.note}
+                </Text>
               )}
-            </div>
+            </Box>
           )}
 
           {/* Removal reason if item is removed */}
           {(item.status === "removed" || editionInfo?.status === "removed") && (
-            <div className="bg-destructive/10 p-2 rounded mt-2">
-              <div className="flex justify-between">
-                <span className="text-destructive font-medium">Status:</span>
-                <span className="text-destructive font-medium">Removed</span>
-              </div>
+            <Box bg="red.50" p={2} rounded="md" mt={2}>
+              <Flex justify="space-between">
+                <Text fontWeight="medium" color="red.600">
+                  Status:
+                </Text>
+                <Text fontWeight="medium" color="red.600">
+                  Removed
+                </Text>
+              </Flex>
               {(item.removed_reason || editionInfo?.removed_reason) && (
-                <div className="text-xs text-destructive/80 mt-1">
+                <Text fontSize="xs" color="red.500" mt={1}>
                   Reason: {item.removed_reason || editionInfo?.removed_reason}
-                </div>
+                </Text>
               )}
-            </div>
+            </Box>
           )}
-        </div>
+        </Stack>
 
         {/* Tags */}
         {item.tags && item.tags.length > 0 && (
-          <div className="flex flex-wrap gap-1.5 mt-4">
+          <Flex flexWrap="wrap" gap="1.5" mt={4}>
             {item.tags.map((tag) => (
-              <span key={tag} className="inline-block px-2 py-0.5 bg-muted text-xs rounded-full text-primary">
+              <Badge key={tag} px={2} py="0.5" bg="gray.100" fontSize="xs" rounded="full" color="primary.500">
                 {tag}
-              </span>
+              </Badge>
             ))}
-          </div>
+          </Flex>
         )}
-      </div>
+      </CardBody>
 
       {/* Order info */}
-      <div className="p-4 bg-muted border-t">
-        <div className="flex items-center text-primary font-medium mb-1">
-          <span className="w-1.5 h-1.5 rounded-full bg-primary mr-1.5"></span>
+      <Box p={4} bg="gray.100" borderTop="1px" borderColor="gray.200">
+        <Flex alignItems="center" color="primary.500" fontWeight="medium" mb={1}>
+          <Box w="1.5px" h="1.5px" rounded="full" bg="primary.500" mr="1.5px"></Box>
           Order #{item.order_info.order_number}
-        </div>
-        <div className="text-xs text-muted-foreground mb-2">{orderDate}</div>
-        <div className="flex flex-wrap gap-2">
-          <span
-            className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium
-            ${
+        </Flex>
+        <Text fontSize="xs" color="gray.500" mb={2}>
+          {orderDate}
+        </Text>
+        <Flex flexWrap="wrap" gap={2}>
+          <Badge
+            display="inline-flex"
+            alignItems="center"
+            px={2}
+            py="0.5"
+            rounded="full"
+            fontSize="xs"
+            fontWeight="medium"
+            bg={
               item.order_info.fulfillment_status === "fulfilled"
-                ? "bg-green-100 text-green-800"
+                ? "green.100"
                 : item.order_info.fulfillment_status === "partially_fulfilled"
-                  ? "bg-blue-100 text-blue-800"
-                  : "bg-amber-100 text-amber-800"
-            }`}
+                  ? "blue.100"
+                  : "yellow.100"
+            }
+            color={
+              item.order_info.fulfillment_status === "fulfilled"
+                ? "green.800"
+                : item.order_info.fulfillment_status === "partially_fulfilled"
+                  ? "blue.800"
+                  : "yellow.800"
+            }
           >
-            <span
-              className={`w-1.5 h-1.5 rounded-full mr-1 
-              ${
+            <Box
+              w="1.5px"
+              h="1.5px"
+              rounded="full"
+              bg={
                 item.order_info.fulfillment_status === "fulfilled"
-                  ? "bg-green-800"
+                  ? "green.800"
                   : item.order_info.fulfillment_status === "partially_fulfilled"
-                    ? "bg-blue-800"
-                    : "bg-amber-800"
-              }`}
-            ></span>
+                    ? "blue.800"
+                    : "yellow.800"
+              }
+              mr={1}
+            ></Box>
             {formatStatus(item.order_info.fulfillment_status)}
-          </span>
-          <span
-            className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium
-            ${
+          </Badge>
+          <Badge
+            display="inline-flex"
+            alignItems="center"
+            px={2}
+            py="0.5"
+            rounded="full"
+            fontSize="xs"
+            fontWeight="medium"
+            bg={
               item.order_info.financial_status === "paid"
-                ? "bg-green-100 text-green-800"
+                ? "green.100"
                 : item.order_info.financial_status === "refunded"
-                  ? "bg-red-100 text-red-800"
-                  : "bg-gray-100 text-gray-800"
-            }`}
+                  ? "red.100"
+                  : "gray.100"
+            }
+            color={
+              item.order_info.financial_status === "paid"
+                ? "green.800"
+                : item.order_info.financial_status === "refunded"
+                  ? "red.800"
+                  : "gray.800"
+            }
           >
-            <span
-              className={`w-1.5 h-1.5 rounded-full mr-1 
-              ${
+            <Box
+              w="1.5px"
+              h="1.5px"
+              rounded="full"
+              bg={
                 item.order_info.financial_status === "paid"
-                  ? "bg-green-800"
+                  ? "green.800"
                   : item.order_info.financial_status === "refunded"
-                    ? "bg-red-800"
-                    : "bg-gray-800"
-              }`}
-            ></span>
+                    ? "red.800"
+                    : "gray.800"
+              }
+              mr={1}
+            ></Box>
             {formatStatus(item.order_info.financial_status)}
-          </span>
-        </div>
-      </div>
+          </Badge>
+        </Flex>
+      </Box>
     </Card>
   )
 }
