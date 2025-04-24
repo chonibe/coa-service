@@ -1,39 +1,29 @@
 "use client"
 
+import React from "react"
 import { useEffect, useState } from "react"
 import {
   Box,
-  Button,
-  Card,
-  CardBody,
   Flex,
   Heading,
   Input,
-  Select,
-  Text,
-  Badge,
+  Select as ChakraSelect,
   Spinner,
+  Stack,
+  Text,
+  Button,
   useDisclosure,
-  Modal,
-  ModalOverlay,
-  ModalContent,
-  ModalHeader,
-  ModalFooter,
-  ModalBody,
-  ModalCloseButton,
-  Textarea,
   FormLabel,
   Menu,
   MenuButton,
   MenuList,
   MenuItem,
   MenuDivider,
-  Image,
-  Stack,
+  Card,
+  CardBody,
 } from "@chakra-ui/react"
 import {
   User,
-  LogIn,
   AlertCircle,
   RefreshCw,
   MoreVertical,
@@ -41,11 +31,23 @@ import {
   X,
   FolderSyncIcon as Sync,
   BadgeIcon as Certificate,
+  LogIn,
 } from "lucide-react"
-import { useEditionInfo } from "@/hooks/use-edition-info"
 import { mockResponseData } from "@/lib/mock-data"
-import { getCustomerOrders } from "@/lib/data-access"
-import { updateLineItemStatus, resequenceEditionNumbers } from "@/lib/supabase-client"
+import { getCustomerOrders, updateLineItemStatus, resequenceEditionNumbers } from "@/lib/api"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
+import { useForm } from "react-hook-form"
+import { z } from "zod"
 
 interface OrderItem {
   id: string
@@ -94,6 +96,138 @@ const isPreviewEnvironment = () => {
     return isVercelPreview || isLocalhost
   }
   return false
+}
+
+interface ItemCardProps {
+  item: OrderItem
+  formatMoney: (amount: string | number, currency?: string) => string
+  formatStatus: (status: string) => string
+  onRemoveClick: (item: OrderItem) => void
+}
+
+const ItemCard: React.FC<ItemCardProps> = ({ item, formatMoney, formatStatus, onRemoveClick }) => {
+  return (
+    <Card overflow="hidden" opacity={!item.fulfillable ? 0.8 : 1}>
+      {/* Item image */}
+      <Box position="relative" h="60">
+        {!item.fulfillable && (
+          <Box
+            position="absolute"
+            top="50%"
+            left="50%"
+            transform="translate(-50%, -50%) rotate(-12deg)"
+            bg="red.500"
+            color="white"
+            px={3}
+            py={1}
+            fontWeight="semibold"
+            fontSize="sm"
+            textTransform="uppercase"
+            letterSpacing="wider"
+            rounded="md"
+            zIndex={10}
+          >
+            {item.refunded ? "Refunded" : item.restocked ? "Restocked" : "Not Fulfillable"}
+          </Box>
+        )}
+
+        {/* Edition badge */}
+        {/* Actions menu */}
+        <Box position="absolute" top={2} right={2} zIndex={20}>
+          <Menu>
+            <MenuButton
+              as={Button}
+              variant="ghost"
+              size="sm"
+              h={8}
+              w={8}
+              minW={8}
+              p={0}
+              bg="white"
+              opacity={0.8}
+              _hover={{ bg: "white", opacity: 1 }}
+            >
+              <MoreVertical size={16} />
+            </MenuButton>
+            <MenuList>
+              <MenuDivider />
+              <MenuItem>
+                <RefreshCw size={16} style={{ marginRight: "8px" }} />
+                Refresh Edition Info
+              </MenuItem>
+              <MenuItem>
+                <Certificate size={16} style={{ marginRight: "8px" }} />
+                View Certificate
+              </MenuItem>
+              {item.status !== "removed" && (
+                <MenuItem onClick={() => onRemoveClick(item)} color="red.500">
+                  <X size={16} style={{ marginRight: "8px" }} />
+                  Remove Item
+                </MenuItem>
+              )}
+              {item.status === "removed" && (
+                <MenuItem isDisabled color="gray.400" opacity={0.5} cursor="not-allowed">
+                  <Check size={16} style={{ marginRight: "8px" }} />
+                  Item Removed
+                </MenuItem>
+              )}
+            </MenuList>
+          </Menu>
+        </Box>
+
+        {item.image ? (
+          <Box
+            as="img"
+            src={item.image || "/placeholder.svg"}
+            alt={item.imageAlt || item.title}
+            objectFit="cover"
+            w="full"
+            h="full"
+          />
+        ) : (
+          <Flex w="full" h="full" alignItems="center" justifyContent="center" color="gray.400">
+            <Box as="svg" width="40" height="40" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <rect x="3" y="3" width="18" height="18" rx="2" stroke="currentColor" strokeWidth="2" />
+              <circle cx="8.5" cy="8.5" r="1.5" fill="currentColor" />
+              <path
+                d="M21 15L16 10L5 21"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </Box>
+          </Flex>
+        )}
+      </Box>
+
+      {/* Item content */}
+      <CardBody p={4}>
+        <Heading as="h3" size="md" fontWeight="semibold" mb={1} noOfLines={1}>
+          {item.title}
+        </Heading>
+        <Flex alignItems="center" mb={4} fontSize="sm" color="gray.500">
+          <Box w="1.5px" h="1.5px" rounded="full" bg="gray.500" mr="1.5px"></Box>
+          {item.vendor}
+        </Flex>
+
+        <Stack spacing={2} fontSize="sm">
+          <Flex justify="space-between">
+            <Text color="gray.500">Price:</Text>
+            <Text>{formatMoney(item.price)}</Text>
+          </Flex>
+          <Flex justify="space-between">
+            <Text color="gray.500">Quantity:</Text>
+            <Text>{item.quantity}</Text>
+          </Flex>
+          <Flex justify="space-between">
+            <Text color="gray.500">Total:</Text>
+            <Text>{formatMoney(item.total)}</Text>
+          </Flex>
+        </Stack>
+      </CardBody>
+    </Card>
+  )
 }
 
 export default function OrderLookup() {
@@ -237,56 +371,6 @@ export default function OrderLookup() {
     } finally {
       setIsLoading(false)
     }
-  }
-
-  // Transform Supabase data to match the expected orders format
-  const transformSupabaseDataToOrders = (supabaseData: any[]) => {
-    // Group line items by order_id
-    const orderMap = new Map()
-
-    supabaseData.forEach((item) => {
-      if (!orderMap.has(item.order_id)) {
-        orderMap.set(item.order_id, {
-          id: item.order_id,
-          order_number: item.order_name?.replace("#", "") || item.order_id,
-          processed_at: item.created_at,
-          fulfillment_status: "fulfilled", // Default value
-          financial_status: "paid", // Default value
-          line_items: [],
-        })
-      }
-
-      // Add this line item to the order
-      const order = orderMap.get(item.order_id)
-      order.line_items.push({
-        id: item.line_item_id,
-        line_item_id: item.line_item_id,
-        product_id: item.product_id,
-        title: `Product ${item.product_id}`, // Default title
-        quantity: 1,
-        price: "0.00", // Default price
-        total: "0.00", // Default total
-        vendor: "Unknown Vendor",
-        image: "/placeholder.svg?height=400&width=400",
-        tags: [],
-        fulfillable: item.status === "active",
-        is_limited_edition: true,
-        total_inventory: item.edition_total?.toString() || "100",
-        inventory_quantity: 0,
-        status: item.status,
-        removed_reason: item.removed_reason,
-        order_info: {
-          order_id: item.order_id,
-          order_number: item.order_name?.replace("#", "") || item.order_id,
-          processed_at: item.created_at,
-          fulfillment_status: "fulfilled", // Default value
-          financial_status: "paid", // Default value
-        },
-      })
-    })
-
-    // Convert the map to an array of orders
-    return Array.from(orderMap.values())
   }
 
   const processOrderLineItems = (order: any, itemsArray: OrderItem[]) => {
@@ -567,12 +651,24 @@ export default function OrderLookup() {
     }
   }
 
+  const formSchema = z.object({
+    reason: z.string().optional(),
+  })
+
+  const form = useForm<z.infer<typeof formSchema>>({
+    defaultValues: {
+      reason: "",
+    },
+  })
+
+  const [open, setOpen] = React.useState(false)
+
   // Render loading state
   if (isLoggedIn === null) {
     return (
       <Box w="full" maxW="6xl" mx="auto" p={4}>
         <Flex flexDir="column" alignItems="center" justifyContent="center" py={12}>
-          <Spinner size="lg" color="primary" mb={4} />
+          <Spinner size="lg" color="primary.500" mb={4} />
           <Text color="gray.500">Checking your account...</Text>
         </Flex>
       </Box>
@@ -718,7 +814,7 @@ export default function OrderLookup() {
             <Text as="label" htmlFor="vendor-filter" fontSize="xs" mb={1} color="gray.500">
               Filter by Vendor:
             </Text>
-            <Select
+            <ChakraSelect
               id="vendor-filter"
               size="sm"
               value={currentVendor}
@@ -732,14 +828,14 @@ export default function OrderLookup() {
                     {vendor}
                   </option>
                 ))}
-            </Select>
+            </ChakraSelect>
           </Box>
 
           <Box display="flex" flexDir="column" minW="160px" flex="1">
             <Text as="label" htmlFor="tag-filter" fontSize="xs" mb={1} color="gray.500">
               Filter by Tag:
             </Text>
-            <Select id="tag-filter" size="sm" value={currentTag} onChange={(e) => setCurrentTag(e.target.value)}>
+            <ChakraSelect id="tag-filter" size="sm" value={currentTag} onChange={(e) => setCurrentTag(e.target.value)}>
               <option value="all">All Tags</option>
               {Array.from(allTags)
                 .sort()
@@ -748,14 +844,19 @@ export default function OrderLookup() {
                     {tag}
                   </option>
                 ))}
-            </Select>
+            </ChakraSelect>
           </Box>
 
           <Box display="flex" flexDir="column" minW="160px" flex="1">
             <Text as="label" htmlFor="order-filter" fontSize="xs" mb={1} color="gray.500">
               Filter by Order:
             </Text>
-            <Select id="order-filter" size="sm" value={currentOrder} onChange={(e) => setCurrentOrder(e.target.value)}>
+            <ChakraSelect
+              id="order-filter"
+              size="sm"
+              value={currentOrder}
+              onChange={(e) => setCurrentOrder(e.target.value)}
+            >
               <option value="all">All Orders</option>
               {Array.from(allOrderNumbers)
                 .sort((a, b) => Number(b) - Number(a))
@@ -764,14 +865,14 @@ export default function OrderLookup() {
                     Order #{orderNum}
                   </option>
                 ))}
-            </Select>
+            </ChakraSelect>
           </Box>
 
           <Box display="flex" flexDir="column" minW="160px" flex="1">
             <Text as="label" htmlFor="status-filter" fontSize="xs" mb={1} color="gray.500">
               Filter by Status:
             </Text>
-            <Select
+            <ChakraSelect
               id="status-filter"
               size="sm"
               value={currentStatus}
@@ -783,7 +884,7 @@ export default function OrderLookup() {
               <option value="unfulfilled">Processing</option>
               <option value="paid">Paid</option>
               <option value="pending">Pending</option>
-            </Select>
+            </ChakraSelect>
           </Box>
 
           <Flex alignItems="flex-end">
@@ -857,472 +958,71 @@ export default function OrderLookup() {
       )}
 
       {/* Remove Item Dialog */}
-      <Modal isOpen={isRemoveDialogOpen} onClose={onRemoveDialogClose}>
-        <ModalOverlay />
-        <ModalContent>
-          <ModalHeader>Remove Item</ModalHeader>
-          <ModalCloseButton />
-          <ModalBody>
-            <Text mb={4}>Are you sure you want to remove this item? This will mark it as removed in the database.</Text>
-            <Box py={4}>
-              <FormLabel htmlFor="reason">Reason for removal (optional)</FormLabel>
-              <Textarea
-                id="reason"
-                value={removeReason}
-                onChange={(e) => setRemoveReason(e.target.value)}
-                placeholder="Enter a reason for removal"
-                mt={2}
-              />
-            </Box>
-          </ModalBody>
-          <ModalFooter>
-            <Button variant="outline" mr={3} onClick={onRemoveDialogClose} isDisabled={isUpdatingStatus}>
-              Cancel
-            </Button>
-            <Button onClick={handleConfirmRemove} isDisabled={isUpdatingStatus} colorScheme="red">
-              {isUpdatingStatus ? "Removing..." : "Remove Item"}
-            </Button>
-          </ModalFooter>
-        </ModalContent>
-      </Modal>
+      <AlertDialog>
+        <AlertDialogTrigger asChild>
+          <Button variant="outline">Edit Profile</Button>
+        </AlertDialogTrigger>
+        <AlertDialogContent className="sm:max-w-[425px]">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Remove Item</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to remove this item? This will mark it as removed in the database.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction>Continue</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* Sync Edition Data Dialog */}
-      <Modal isOpen={isSyncDialogOpen} onClose={onSyncDialogClose}>
-        <ModalOverlay />
-        <ModalContent>
-          <ModalHeader>Sync Edition Data</ModalHeader>
-          <ModalCloseButton />
-          <ModalBody>
-            <Text mb={4}>
+      <AlertDialog>
+        <AlertDialogTrigger asChild>
+          <Button variant="outline" size="sm" onClick={handleSyncClick} display="flex" alignItems="center" gap={1}>
+            <Sync size={14} />
+            Sync Edition Data
+          </Button>
+        </AlertDialogTrigger>
+        <AlertDialogContent className="sm:max-w-[425px]">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Sync Edition Data</AlertDialogTitle>
+            <AlertDialogDescription>
               Enter a product ID to sync edition data for that product. This will update all edition numbers in the
               database.
-            </Text>
-            <Box py={4}>
-              <FormLabel htmlFor="productId">Product ID</FormLabel>
-              <Input
-                id="productId"
-                value={syncProductId}
-                onChange={(e) => setSyncProductId(e.target.value)}
-                placeholder="Enter product ID"
-                mt={2}
-              />
-            </Box>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <Box py={4}>
+            <FormLabel htmlFor="productId" textAlign="right">
+              Product ID
+            </FormLabel>
+            <Input
+              id="productId"
+              value={syncProductId}
+              onChange={(e) => setSyncProductId(e.target.value)}
+              className="col-span-3"
+            />
+          </Box>
 
-            {syncResult && (
-              <Box bg="gray.100" p={4} rounded="md" fontSize="sm">
-                <Heading as="h4" size="sm" mb={2}>
-                  Sync Results:
-                </Heading>
-                <Stack spacing={1}>
-                  <Text>Product: {syncResult.productTitle}</Text>
-                  <Text>Total Editions: {syncResult.totalEditions}</Text>
-                  <Text>Edition Total: {syncResult.editionTotal || "Not specified"}</Text>
-                  <Text>Active Items: {syncResult.activeItems}</Text>
-                  <Text>Removed Items: {syncResult.removedItems}</Text>
-                </Stack>
-              </Box>
-            )}
-          </ModalBody>
-          <ModalFooter>
-            <Button variant="outline" mr={3} onClick={onSyncDialogClose} isDisabled={isSyncing}>
-              Close
-            </Button>
-            <Button onClick={handleConfirmSync} isDisabled={isSyncing || !syncProductId} colorScheme="blue">
-              {isSyncing ? "Syncing..." : "Sync Edition Data"}
-            </Button>
-          </ModalFooter>
-        </ModalContent>
-      </Modal>
+          {syncResult && (
+            <Box bg="gray.100" p={4} rounded="md" fontSize="sm">
+              <Heading as="h4" size="sm" mb={2}>
+                Sync Results:
+              </Heading>
+              <Stack spacing={1}>
+                <Text>Product: {syncResult.productTitle}</Text>
+                <Text>Total Editions: {syncResult.totalEditions}</Text>
+                <Text>Edition Total: {syncResult.editionTotal || "Not specified"}</Text>
+                <Text>Active Items: {syncResult.activeItems}</Text>
+                <Text>Removed Items: {syncResult.removedItems}</Text>
+              </Stack>
+            </Box>
+          )}
+          <AlertDialogFooter>
+            <Button type="submit">Sync Edition Data</Button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Box>
-  )
-}
-
-interface ItemCardProps {
-  item: OrderItem
-  formatMoney: (amount: string | number, currency?: string) => string
-  formatStatus: (status: string) => string
-  onRemoveClick: (item: OrderItem) => void
-}
-
-// Update the ItemCard component to display the edition size from the editionInfo
-function ItemCard({ item, formatMoney, formatStatus, onRemoveClick }: ItemCardProps) {
-  const { editionInfo, isLoading, refreshEditionInfo } = useEditionInfo(item)
-
-  const orderDate = new Date(item.order_info.processed_at).toLocaleDateString("en-US", {
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-  })
-
-  const isFulfillable = item.fulfillable !== false
-  let nonFulfillableReason = ""
-
-  if (!isFulfillable) {
-    if (item.refunded) nonFulfillableReason = "Refunded"
-    else if (item.restocked) nonFulfillableReason = "Restocked"
-    else if (item.status === "removed") nonFulfillableReason = "Removed"
-    else nonFulfillableReason = "Not Fulfillable"
-  }
-
-  return (
-    <Card overflow="hidden" opacity={!isFulfillable ? 0.8 : 1}>
-      {/* Item image */}
-      <Box position="relative" h="60">
-        {!isFulfillable && (
-          <Box
-            position="absolute"
-            top="50%"
-            left="50%"
-            transform="translate(-50%, -50%) rotate(-12deg)"
-            bg="red.500"
-            color="white"
-            px={3}
-            py={1}
-            fontWeight="semibold"
-            fontSize="sm"
-            textTransform="uppercase"
-            letterSpacing="wider"
-            rounded="md"
-            zIndex={10}
-          >
-            {nonFulfillableReason}
-          </Box>
-        )}
-
-        {/* Edition badge */}
-        {editionInfo && (
-          <Box
-            position="absolute"
-            top={2}
-            right={2}
-            px={3}
-            py={1}
-            rounded="full"
-            fontSize="xs"
-            fontWeight="medium"
-            bg="white"
-            opacity={0.9}
-            zIndex={10}
-            borderWidth={1}
-            borderColor={
-              editionInfo.source === "supabase"
-                ? "green.300"
-                : editionInfo.source === "sequential_uuid"
-                  ? "blue.300"
-                  : "gray.300"
-            }
-            color={
-              editionInfo.source === "supabase"
-                ? "green.600"
-                : editionInfo.source === "sequential_uuid"
-                  ? "blue.600"
-                  : "gray.600"
-            }
-          >
-            {editionInfo.total && editionInfo.number ? (
-              <Text>
-                #{editionInfo.number}/{editionInfo.total} Edition
-                {editionInfo.source === "supabase"
-                  ? " ✓✓✓"
-                  : editionInfo.source === "sequential_uuid"
-                    ? " ✓✓"
-                    : editionInfo.source === "sequential_order"
-                      ? " ✓"
-                      : " *"}
-              </Text>
-            ) : item.is_limited_edition ? (
-              <Text>Limited Edition</Text>
-            ) : (
-              <Text>Open Edition</Text>
-            )}
-          </Box>
-        )}
-
-        {/* Inventory status */}
-        {item.inventory_quantity !== undefined && (
-          <Box
-            position="absolute"
-            top={2}
-            left={2}
-            px={3}
-            py={1}
-            rounded="full"
-            fontSize="xs"
-            fontWeight="medium"
-            bg="white"
-            opacity={0.9}
-            zIndex={10}
-            color={item.inventory_quantity > 0 ? "green.600" : "red.600"}
-          >
-            {item.inventory_quantity > 0 ? `${item.inventory_quantity} available` : "Sold out"}
-          </Box>
-        )}
-
-        {/* Actions menu */}
-        <Box position="absolute" top={2} right={2} zIndex={20}>
-          <Menu>
-            <MenuButton
-              as={Button}
-              variant="ghost"
-              size="sm"
-              h={8}
-              w={8}
-              minW={8}
-              p={0}
-              bg="white"
-              opacity={0.8}
-              _hover={{ bg: "white", opacity: 1 }}
-            >
-              <MoreVertical size={16} />
-            </MenuButton>
-            <MenuList>
-              <MenuDivider />
-              <MenuItem onClick={() => refreshEditionInfo()}>
-                <RefreshCw size={16} style={{ marginRight: "8px" }} />
-                Refresh Edition Info
-              </MenuItem>
-              <MenuItem onClick={() => window.open(`/certificate/${item.line_item_id}`, "_blank")}>
-                <Certificate size={16} style={{ marginRight: "8px" }} />
-                View Certificate
-              </MenuItem>
-              {item.status !== "removed" && (
-                <MenuItem onClick={() => onRemoveClick(item)} color="red.500">
-                  <X size={16} style={{ marginRight: "8px" }} />
-                  Remove Item
-                </MenuItem>
-              )}
-              {item.status === "removed" && (
-                <MenuItem isDisabled color="gray.400" opacity={0.5} cursor="not-allowed">
-                  <Check size={16} style={{ marginRight: "8px" }} />
-                  Item Removed
-                </MenuItem>
-              )}
-            </MenuList>
-          </Menu>
-        </Box>
-
-        {item.image ? (
-          <Image
-            src={item.image || "/placeholder.svg"}
-            alt={item.imageAlt || item.title}
-            objectFit="cover"
-            w="full"
-            h="full"
-          />
-        ) : (
-          <Flex w="full" h="full" alignItems="center" justifyContent="center" color="gray.400">
-            <Box as="svg" width="40" height="40" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <rect x="3" y="3" width="18" height="18" rx="2" stroke="currentColor" strokeWidth="2" />
-              <circle cx="8.5" cy="8.5" r="1.5" fill="currentColor" />
-              <path
-                d="M21 15L16 10L5 21"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-            </Box>
-          </Flex>
-        )}
-      </Box>
-
-      {/* Item content */}
-      <CardBody p={4}>
-        <Heading as="h3" size="md" fontWeight="semibold" mb={1} noOfLines={1}>
-          {item.title}
-        </Heading>
-        <Flex alignItems="center" mb={4} fontSize="sm" color="gray.500">
-          <Box w="1.5px" h="1.5px" rounded="full" bg="gray.500" mr="1.5px"></Box>
-          {item.vendor}
-        </Flex>
-
-        <Stack spacing={2} fontSize="sm">
-          <Flex justify="space-between">
-            <Text color="gray.500">Price:</Text>
-            <Text>{formatMoney(item.price)}</Text>
-          </Flex>
-          <Flex justify="space-between">
-            <Text color="gray.500">Quantity:</Text>
-            <Text>{item.quantity}</Text>
-          </Flex>
-          <Flex justify="space-between">
-            <Text color="gray.500">Total:</Text>
-            <Text>{formatMoney(item.total)}</Text>
-          </Flex>
-
-          {/* Edition info */}
-          {editionInfo && (
-            <Box bg="gray.100" p={2} rounded="md" mt={2}>
-              <Flex justify="space-between">
-                <Text color="gray.500">Edition:</Text>
-                <Text>
-                  {editionInfo.total && editionInfo.number
-                    ? `#${editionInfo.number} of ${editionInfo.total} (Limited)`
-                    : editionInfo.total && item.is_limited_edition
-                      ? `Limited Edition of ${editionInfo.total}`
-                      : item.is_limited_edition
-                        ? "Limited Edition"
-                        : "Open Edition"}
-                  {editionInfo.source === "supabase"
-                    ? " ✓✓✓"
-                    : editionInfo.source === "sequential_uuid"
-                      ? " ✓✓"
-                      : editionInfo.source === "sequential_order"
-                        ? " ✓"
-                        : ""}
-                </Text>
-              </Flex>
-              {editionInfo.source === "supabase" && (
-                <Text fontSize="xs" color="green.600" fontWeight="medium" mt={1}>
-                  {editionInfo.status === "removed"
-                    ? "This item has been marked as removed"
-                    : "Verified edition number from database"}
-                  {editionInfo.updated_at && ` (Updated: ${new Date(editionInfo.updated_at).toLocaleDateString()})`}
-                </Text>
-              )}
-              {editionInfo.source === "sequential_uuid" && (
-                <Text fontSize="xs" color="blue.600" fontWeight="medium" mt={1}>
-                  Guaranteed sequential number with UUID
-                </Text>
-              )}
-              {editionInfo.source === "sequential_order" && (
-                <Text fontSize="xs" color="green.600" mt={1}>
-                  Accurate edition number based on order date
-                </Text>
-              )}
-              {(editionInfo.source === "order_sequence" || editionInfo.source === "random") && editionInfo.note && (
-                <Text fontSize="xs" color="gray.500" fontStyle="italic" mt={1}>
-                  {editionInfo.note}
-                </Text>
-              )}
-              {editionInfo.note && editionInfo.source === "supabase" && (
-                <Text fontSize="xs" color="gray.500" fontStyle="italic" mt={1}>
-                  {editionInfo.note}
-                </Text>
-              )}
-            </Box>
-          )}
-
-          {/* Removal reason if item is removed */}
-          {(item.status === "removed" || editionInfo?.status === "removed") && (
-            <Box bg="red.50" p={2} rounded="md" mt={2}>
-              <Flex justify="space-between">
-                <Text fontWeight="medium" color="red.600">
-                  Status:
-                </Text>
-                <Text fontWeight="medium" color="red.600">
-                  Removed
-                </Text>
-              </Flex>
-              {(item.removed_reason || editionInfo?.removed_reason) && (
-                <Text fontSize="xs" color="red.500" mt={1}>
-                  Reason: {item.removed_reason || editionInfo?.removed_reason}
-                </Text>
-              )}
-            </Box>
-          )}
-        </Stack>
-
-        {/* Tags */}
-        {item.tags && item.tags.length > 0 && (
-          <Flex flexWrap="wrap" gap="1.5" mt={4}>
-            {item.tags.map((tag) => (
-              <Badge key={tag} px={2} py="0.5" bg="gray.100" fontSize="xs" rounded="full" color="primary.500">
-                {tag}
-              </Badge>
-            ))}
-          </Flex>
-        )}
-      </CardBody>
-
-      {/* Order info */}
-      <Box p={4} bg="gray.100" borderTop="1px" borderColor="gray.200">
-        <Flex alignItems="center" color="primary.500" fontWeight="medium" mb={1}>
-          <Box w="1.5px" h="1.5px" rounded="full" bg="primary.500" mr="1.5px"></Box>
-          Order #{item.order_info.order_number}
-        </Flex>
-        <Text fontSize="xs" color="gray.500" mb={2}>
-          {orderDate}
-        </Text>
-        <Flex flexWrap="wrap" gap={2}>
-          <Badge
-            display="inline-flex"
-            alignItems="center"
-            px={2}
-            py="0.5"
-            rounded="full"
-            fontSize="xs"
-            fontWeight="medium"
-            bg={
-              item.order_info.fulfillment_status === "fulfilled"
-                ? "green.100"
-                : item.order_info.fulfillment_status === "partially_fulfilled"
-                  ? "blue.100"
-                  : "yellow.100"
-            }
-            color={
-              item.order_info.fulfillment_status === "fulfilled"
-                ? "green.800"
-                : item.order_info.fulfillment_status === "partially_fulfilled"
-                  ? "blue.800"
-                  : "yellow.800"
-            }
-          >
-            <Box
-              w="1.5px"
-              h="1.5px"
-              rounded="full"
-              bg={
-                item.order_info.fulfillment_status === "fulfilled"
-                  ? "green.800"
-                  : item.order_info.fulfillment_status === "partially_fulfilled"
-                    ? "blue.800"
-                    : "yellow.800"
-              }
-              mr={1}
-            ></Box>
-            {formatStatus(item.order_info.fulfillment_status)}
-          </Badge>
-          <Badge
-            display="inline-flex"
-            alignItems="center"
-            px={2}
-            py="0.5"
-            rounded="full"
-            fontSize="xs"
-            fontWeight="medium"
-            bg={
-              item.order_info.financial_status === "paid"
-                ? "green.100"
-                : item.order_info.financial_status === "refunded"
-                  ? "red.100"
-                  : "gray.100"
-            }
-            color={
-              item.order_info.financial_status === "paid"
-                ? "green.800"
-                : item.order_info.financial_status === "refunded"
-                  ? "red.800"
-                  : "gray.800"
-            }
-          >
-            <Box
-              w="1.5px"
-              h="1.5px"
-              rounded="full"
-              bg={
-                item.order_info.financial_status === "paid"
-                  ? "green.800"
-                  : item.order_info.financial_status === "refunded"
-                    ? "red.800"
-                    : "gray.800"
-              }
-              mr={1}
-            ></Box>
-            {formatStatus(item.order_info.financial_status)}
-          </Badge>
-        </Flex>
-      </Box>
-    </Card>
   )
 }
