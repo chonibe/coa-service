@@ -1,0 +1,124 @@
+/* Apple-inspired styles */
+
+/* Smooth transitions */
+.apple-transition {
+  transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+/* Card hover effect */
+.apple-card {
+  transition: transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94), box-shadow 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+.apple-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.08);
+}
+
+/* Button press effect */
+.apple-button {
+  transition: transform 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94), box-shadow 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+.apple-button:active {
+  transform: scale(0.97);
+}
+
+/* Smooth image loading */
+.apple-image {
+  transition: opacity 0.5s ease;
+}
+
+.apple-image-loading {
+  opacity: 0;
+}
+
+.apple-image-loaded {
+  opacity: 1;
+}
+
+/* Fluid animations */
+@keyframes apple-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes apple-slide-up {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes apple-scale-in {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.apple-fade-in {
+  animation: apple-fade-in 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+}
+
+.apple-slide-up {
+  animation: apple-slide-up 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+}
+
+.apple-scale-in {
+  animation: apple-scale-in 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+}
+
+/* Staggered animations */
+.apple-stagger-children > * {
+  opacity: 0;
+}
+
+.apple-stagger-children > *:nth-child(1) {
+  animation: apple-fade-in 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94) 0.1s forwards;
+}
+
+.apple-stagger-children > *:nth-child(2) {
+  animation: apple-fade-in 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94) 0.2s forwards;
+}
+
+.apple-stagger-children > *:nth-child(3) {
+  animation: apple-fade-in 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94) 0.3s forwards;
+}
+
+.apple-stagger-children > *:nth-child(4) {
+  animation: apple-fade-in 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94) 0.4s forwards;
+}
+
+.apple-stagger-children > *:nth-child(5) {
+  animation: apple-fade-in 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94) 0.5s forwards;
+}
+
+/* Smooth scrolling */
+.apple-smooth-scroll {
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Glassmorphism effect */
+.apple-glass {
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+.dark .apple-glass {
+  background: rgba(28, 28, 30, 0.7);
+}
