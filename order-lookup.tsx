@@ -6,11 +6,12 @@ import { getCustomerOrders } from "@/lib/data-access"
 import { CollectionCard } from "@/components/collection-card"
 import { CollectionListItem } from "@/components/collection-list-item"
 import { Button } from "@/components/ui/button"
-import { AlertCircle, RefreshCcw, Loader2 } from "lucide-react"
+import { AlertCircle, RefreshCw, Loader2 } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Search, Grid, List } from "lucide-react"
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 
 const supabase = createClientComponentClient()
 
@@ -94,6 +95,11 @@ export default function OrderLookup() {
   const [syncResult, setSyncResult] = useState<any>(null)
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid")
   const [activeTab, setActiveTab] = useState<"all" | "verified" | "unverified">("all")
+  const [availableCustomerIds, setAvailableCustomerIds] = useState<string[]>([
+    "customer-22845350150530",
+    "customer-1234567890",
+    "customer-0987654321",
+  ])
 
   // Filter state
   const [allVendors, setAllVendors] = useState<Set<string>>(new Set())
@@ -120,10 +126,10 @@ export default function OrderLookup() {
   }, [])
 
   useEffect(() => {
-    if (isLoggedIn && customerId) {
+    if (isLoggedIn) {
       // Wrap in a try-catch to prevent unhandled errors
       try {
-        fetchOrdersByCustomerId(customerId)
+        fetchOrdersByCustomerId(customerId!)
       } catch (error) {
         console.error("Error in initial data fetch:", error)
         // Ensure we're using mock data as fallback
@@ -500,8 +506,24 @@ export default function OrderLookup() {
     }
   }
 
-  // Filter the items for display
-  const filteredItems = filterLineItems(lineItems)
+  const filteredItems = filterLineItems(lineItems).filter(
+    (item) =>
+      item.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (item.customAttributes &&
+        item.customAttributes.some(
+          (attr) =>
+            attr.value &&
+            typeof attr.value === "string" &&
+            attr.value.toLowerCase().includes(searchQuery.toLowerCase()),
+        )) ||
+      (item.properties &&
+        item.properties.some(
+          (prop) =>
+            prop.value &&
+            typeof prop.value === "string" &&
+            prop.value.toLowerCase().includes(searchQuery.toLowerCase()),
+        )),
+  )
 
   return (
     <div className="w-full max-w-6xl mx-auto p-4">
@@ -517,7 +539,7 @@ export default function OrderLookup() {
                 className="bg-white text-destructive border-destructive/30 hover:bg-destructive/10"
                 onClick={() => fetchOrdersByCustomerId(customerId!)}
               >
-                <RefreshCcw size={14} className="mr-1" />
+                <RefreshCw size={14} className="mr-1" />
                 Retry Connection
               </Button>
             </div>
@@ -546,6 +568,18 @@ export default function OrderLookup() {
               <List className="h-4 w-4" />
             </Button>
           </div>
+          <Select value={customerId || ""} onValueChange={setCustomerId}>
+            <SelectTrigger className="w-[180px]">
+              <SelectValue placeholder="Select Customer" />
+            </SelectTrigger>
+            <SelectContent>
+              {availableCustomerIds.map((id) => (
+                <SelectItem key={id} value={id}>
+                  {id}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
       </div>
 
