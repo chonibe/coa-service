@@ -3,51 +3,105 @@
  * Use these functions in client components instead of direct Supabase access
  */
 
-import { getSupabaseClient } from "@/lib/supabase"
-
 export async function getEditionInfo(orderId: string, lineItemId: string) {
   try {
-    const supabase = getSupabaseClient()
-    if (!supabase) {
-      throw new Error("Supabase client not available")
+    const response = await fetch("/api/supabase-proxy", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        action: "getEditionInfo",
+        params: { orderId, lineItemId },
+      }),
+    })
+
+    if (!response.ok) {
+      const errorData = await response.json()
+      throw new Error(errorData.error || "Failed to fetch edition information")
     }
 
-    const { data, error } = await supabase
-      .from("order_line_items")
-      .select("*")
-      .eq("order_id", orderId)
-      .eq("line_item_id", lineItemId)
-      .single()
-
-    if (error) {
-      throw new Error(error.message || "Failed to fetch edition information")
-    }
-
-    return { success: true, data }
+    return await response.json()
   } catch (error: any) {
     console.error("Error fetching edition info:", error)
     throw error
   }
 }
 
+export async function updateLineItemStatus(
+  lineItemId: string,
+  orderId: string,
+  status: "active" | "removed",
+  reason?: string,
+) {
+  try {
+    const response = await fetch("/api/supabase-proxy", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        action: "updateLineItemStatus",
+        params: { lineItemId, orderId, status, reason },
+      }),
+    })
+
+    if (!response.ok) {
+      const errorData = await response.json()
+      throw new Error(errorData.error || "Failed to update item status")
+    }
+
+    return await response.json()
+  } catch (error: any) {
+    console.error("Error updating line item status:", error)
+    throw error
+  }
+}
+
+export async function resequenceEditionNumbers(productId: string) {
+  try {
+    const response = await fetch("/api/supabase-proxy", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        action: "resequenceEditionNumbers",
+        params: { productId },
+      }),
+    })
+
+    if (!response.ok) {
+      const errorData = await response.json()
+      throw new Error(errorData.error || "Failed to resequence edition numbers")
+    }
+
+    return await response.json()
+  } catch (error: any) {
+    console.error("Error resequencing edition numbers:", error)
+    throw error
+  }
+}
+
 export async function fetchOrderLineItems(limit = 20) {
   try {
-    const supabase = getSupabaseClient()
-    if (!supabase) {
-      throw new Error("Supabase client not available")
+    const response = await fetch("/api/supabase-proxy", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        action: "fetchOrderLineItems",
+        params: { limit },
+      }),
+    })
+
+    if (!response.ok) {
+      const errorData = await response.json()
+      throw new Error(errorData.error || "Failed to fetch order line items")
     }
 
-    const { data, error, count } = await supabase
-      .from("order_line_items")
-      .select("*", { count: "exact" })
-      .order("created_at", { ascending: false })
-      .limit(limit)
-
-    if (error) {
-      throw new Error(error.message || "Failed to fetch order line items")
-    }
-
-    return { success: true, data, pagination: { total: count || 0, limit } }
+    return await response.json()
   } catch (error: any) {
     console.error("Error fetching order line items:", error)
     throw error
