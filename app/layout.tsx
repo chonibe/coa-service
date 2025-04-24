@@ -3,6 +3,7 @@ import type { Metadata } from "next"
 import "./globals.css"
 import { AppHeader } from "@/components/app-header"
 import { ThemeProvider } from "@/components/theme-provider"
+import { DesignSystem } from "@/components/design-system"
 
 export const metadata: Metadata = {
   title: "v0 App",
@@ -18,10 +19,12 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body>
-        <AppHeader />
-        <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
-          {children}
-        </ThemeProvider>
+        <DesignSystem>
+          <AppHeader />
+          <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+            {children}
+          </ThemeProvider>
+        </DesignSystem>
       </body>
     </html>
   )
