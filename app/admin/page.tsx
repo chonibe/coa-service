@@ -3,7 +3,7 @@
 import { Container, Title, Text, Paper, Grid, Card, Stack, Group } from "@mantine/core"
 import { IconUsers, IconFileCertificate, IconCurrencyDollar, IconReceipt } from "@tabler/icons-react"
 import { useEffect, useState } from "react"
-import { supabase } from "@/lib/supabase"
+import { supabaseAdmin } from "@/lib/supabase"
 
 interface AdminStats {
   totalUsers: number
@@ -28,17 +28,17 @@ export default function AdminDashboard() {
   const fetchStats = async () => {
     try {
       // Fetch users count
-      const { count: usersCount } = await supabase
+      const { count: usersCount } = await supabaseAdmin
         .from('users')
         .select('*', { count: 'exact', head: true })
 
       // Fetch certificates count
-      const { count: certificatesCount } = await supabase
+      const { count: certificatesCount } = await supabaseAdmin
         .from('certificates')
         .select('*', { count: 'exact', head: true })
 
       // Fetch orders and calculate revenue
-      const { data: ordersData } = await supabase
+      const { data: ordersData } = await supabaseAdmin
         .from('orders')
         .select('amount')
 
@@ -51,7 +51,7 @@ export default function AdminDashboard() {
         totalRevenue
       })
     } catch (error) {
-      console.error('Failed to fetch admin stats:', error)
+      console.error('Failed to fetch stats:', error)
     } finally {
       setLoading(false)
     }

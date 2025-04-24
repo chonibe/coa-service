@@ -3,7 +3,7 @@
 import { Container, Title, Text, Paper, Table, Group, Button, TextInput, Select, Box, Badge, Stack, Modal, ActionIcon, Code } from "@mantine/core"
 import { IconSearch, IconEye, IconEdit, IconTrash, IconPlus } from "@tabler/icons-react"
 import { useEffect, useState } from "react"
-import { supabase } from "@/lib/supabase"
+import { supabaseAdmin } from "@/lib/supabase"
 import { useDisclosure } from "@mantine/hooks"
 
 interface Order {
@@ -40,7 +40,7 @@ export default function OrdersPage() {
   const fetchOrders = async () => {
     try {
       setLoading(true)
-      let query = supabase
+      let query = supabaseAdmin
         .from('orders')
         .select(`
           *,
@@ -70,7 +70,7 @@ export default function OrdersPage() {
 
   const handleDelete = async (id: string) => {
     try {
-      const { error } = await supabase
+      const { error } = await supabaseAdmin
         .from('orders')
         .delete()
         .eq('id', id)
