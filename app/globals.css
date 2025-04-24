@@ -1,3 +1,9 @@
+//
+Import the Apple styles at the top of the file
+@import 
+'./apple-styles.css'
+;
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
