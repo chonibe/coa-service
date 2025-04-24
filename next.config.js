@@ -37,6 +37,9 @@ const nextConfig = {
       },
     ]
   },
+  experimental: {
+    optimizePackageImports: ["@chakra-ui/react"],
+  },
 }
 
 module.exports = nextConfig
