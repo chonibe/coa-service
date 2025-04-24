@@ -1,164 +1,143 @@
 "use client"
 
-import { SelectContent } from "@/components/ui/select"
-
 import { useState } from "react"
-import {
-  Box,
-  Card,
-  CardContent,
-  CardFooter,
-  CardHeader,
-  Heading,
-  Text,
-  Switch,
-  HStack,
-  VStack,
-  Select,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-  Button,
-  FormControl,
-  FormLabel,
-  FormHelperText,
-  Divider,
-} from "@/components/ui/chakra"
-import { Save } from "lucide-react"
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
+import { Switch } from "@/components/ui/switch"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { useForm } from "react-hook-form"
+import { zodResolver } from "@hookform/resolvers/zod"
+import * as z from "zod"
+
+const formSchema = z.object({
+  autoAssignEditions: z.boolean().default(true),
+  editionFormat: z.enum(["number", "number-of-total", "custom"]).default("number"),
+  updateShopify: z.boolean().default(true),
+  syncOnWebhook: z.boolean().default(true),
+})
 
 export default function SettingsPage() {
-  const [settings, setSettings] = useState({
-    autoAssignEditions: true,
-    editionFormat: "number",
-    updateShopify: true,
-    syncOnWebhook: true,
+  const form = useForm<z.infer<typeof formSchema>>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      autoAssignEditions: true,
+      editionFormat: "number",
+      updateShopify: true,
+      syncOnWebhook: true,
+    },
   })
 
-  const handleSaveSettings = () => {
+  const [isSaving, setIsSaving] = useState(false)
+
+  const handleSaveSettings = async (values: z.infer<typeof formSchema>) => {
+    setIsSaving(true)
     // In a real app, this would save to your backend
-    console.log("Saving settings:", settings)
+    console.log("Saving settings:", values)
     // Show a toast or notification
+    setIsSaving(false)
   }
 
   return (
-    <Box className="container mx-auto py-10 max-w-5xl">
-      <VStack spacing={8} align="stretch">
-        <Box>
-          <Heading as="h1" size="2xl" fontWeight="bold" tracking="tight">
-            Settings
-          </Heading>
-          <Text color="gray.500" mt={2}>
-            Configure your edition numbering system
-          </Text>
-        </Box>
+    <div className="container mx-auto py-10 max-w-5xl">
+      <div className="space-y-8">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">Settings</h1>
+          <p className="text-muted-foreground mt-2">Configure your edition numbering system</p>
+        </div>
 
-        <HStack spacing={4} width="100%">
-          <Card flex="1">
-            <CardHeader>
-              <Heading as="h2" size="lg">
-                Edition Numbering
-              </Heading>
-              <Text color="gray.500">Configure how edition numbers are assigned and displayed</Text>
-            </CardHeader>
-            <CardContent>
-              <VStack spacing={4} align="start">
-                <FormControl display="flex" alignItems="center" justifyContent="space-between">
-                  <Box>
-                    <FormLabel htmlFor="auto-assign" fontWeight="semibold">
-                      Auto-assign edition numbers
-                    </FormLabel>
-                    <FormHelperText color="gray.500">Automatically assign edition numbers to new orders</FormHelperText>
-                  </Box>
-                  <Switch
-                    id="auto-assign"
-                    isChecked={settings.autoAssignEditions}
-                    onChange={(e) => setSettings({ ...settings, autoAssignEditions: e.target.checked })}
-                  />
-                </FormControl>
-                <Divider />
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(handleSaveSettings)} className="space-y-8">
+            <Card>
+              <CardHeader>
+                <CardTitle>Edition Numbering</CardTitle>
+                <CardDescription>Configure how edition numbers are assigned and displayed</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <FormField
+                  control={form.control}
+                  name="autoAssignEditions"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                      <FormLabel className="text-right">Auto-assign edition numbers</FormLabel>
+                      <FormControl>
+                        <Switch checked={field.value} onCheckedChange={field.onChange} />
+                      </FormControl>
+                    </FormItem>
+                  )}
+                />
 
-                <FormControl>
-                  <FormLabel htmlFor="edition-format" fontWeight="semibold">
-                    Edition number format
-                  </FormLabel>
-                  <Select
-                    id="edition-format"
-                    value={settings.editionFormat}
-                    onChange={(e) => setSettings({ ...settings, editionFormat: e.target.value })}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select a format" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="number">Number only (e.g., 42)</SelectItem>
-                      <SelectItem value="number-of-total">Number of total (e.g., 42/100)</SelectItem>
-                      <SelectItem value="custom">Custom format</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <FormHelperText color="gray.500">
-                    How edition numbers should be formatted when displayed
-                  </FormHelperText>
-                </FormControl>
-              </VStack>
-            </CardContent>
-            <CardFooter>
-              <Button onClick={handleSaveSettings} leftIcon={<Save />}>
-                Save Settings
-              </Button>
-            </CardFooter>
-          </Card>
-        </HStack>
+                <FormField
+                  control={form.control}
+                  name="editionFormat"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Edition number format</FormLabel>
+                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select a format" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="number">Number only (e.g., 42)</SelectItem>
+                          <SelectItem value="number-of-total">Number of total (e.g., 42/100)</SelectItem>
+                          <SelectItem value="custom">Custom format</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </CardContent>
+              <CardFooter>
+                <Button type="submit" disabled={isSaving}>
+                  Save Settings
+                </Button>
+              </CardFooter>
+            </Card>
 
-        <HStack spacing={4} width="100%">
-          <Card flex="1">
-            <CardHeader>
-              <Heading as="h2" size="lg">
-                Advanced Settings
-              </Heading>
-              <Text color="gray.500">Configure advanced options for the edition numbering system</Text>
-            </CardHeader>
-            <CardContent>
-              <VStack spacing={4} align="start">
-                <FormControl display="flex" alignItems="center" justifyContent="space-between">
-                  <Box>
-                    <FormLabel htmlFor="update-shopify" fontWeight="semibold">
-                      Update Shopify line items
-                    </FormLabel>
-                    <FormHelperText color="gray.500">
-                      Update Shopify line item properties with edition numbers
-                    </FormHelperText>
-                  </Box>
-                  <Switch
-                    id="update-shopify"
-                    isChecked={settings.updateShopify}
-                    onChange={(e) => setSettings({ ...settings, updateShopify: e.target.checked })}
-                  />
-                </FormControl>
-                <Divider />
+            <Card>
+              <CardHeader>
+                <CardTitle>Advanced Settings</CardTitle>
+                <CardDescription>Configure advanced options for the edition numbering system</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <FormField
+                  control={form.control}
+                  name="updateShopify"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                      <FormLabel className="text-right">Update Shopify line items</FormLabel>
+                      <FormControl>
+                        <Switch checked={field.value} onCheckedChange={field.onChange} />
+                      </FormControl>
+                    </FormItem>
+                  )}
+                />
 
-                <FormControl display="flex" alignItems="center" justifyContent="space-between">
-                  <Box>
-                    <FormLabel htmlFor="sync-webhook" fontWeight="semibold">
-                      Sync on webhook
-                    </FormLabel>
-                    <Text color="gray.500">Process edition numbers when order webhooks are received</Text>
-                  </Box>
-                  <Switch
-                    id="sync-webhook"
-                    isChecked={settings.syncOnWebhook}
-                    onChange={(e) => setSettings({ ...settings, syncOnWebhook: e.target.checked })}
-                  />
-                </FormControl>
-              </VStack>
-            </CardContent>
-            <CardFooter>
-              <Button onClick={handleSaveSettings} leftIcon={<Save />}>
-                Save Settings
-              </Button>
-            </CardFooter>
-          </Card>
-        </HStack>
-      </VStack>
-    </Box>
+                <FormField
+                  control={form.control}
+                  name="syncOnWebhook"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                      <FormLabel className="text-right">Sync on webhook</FormLabel>
+                      <FormControl>
+                        <Switch checked={field.value} onCheckedChange={field.onChange} />
+                      </FormControl>
+                    </FormItem>
+                  )}
+                />
+              </CardContent>
+              <CardFooter>
+                <Button type="submit" disabled={isSaving}>
+                  Save Settings
+                </Button>
+              </CardFooter>
+            </Card>
+          </form>
+        </Form>
+      </div>
+    </div>
   )
 }
