@@ -1,11 +1,12 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
-import { Badge } from "@/components/ui/badge"
-import { Loader2, AlertCircle, RefreshCw, ArrowLeft } from "lucide-react"
+import { Button } from "@chakra-ui/react"
+import { Card, CardBody, CardHeader, CardTitle, CardFooter } from "@chakra-ui/react"
+import { Alert, AlertIcon, AlertTitle, AlertDescription } from "@chakra-ui/react"
+import { Badge } from "@chakra-ui/react"
+import { Loader2, RefreshCw, ArrowLeft } from "lucide-react"
+
 import Link from "next/link"
 
 export default function TestConnectionsPage() {
@@ -65,8 +66,8 @@ export default function TestConnectionsPage() {
         </div>
 
         {error && (
-          <Alert variant="destructive">
-            <AlertCircle className="h-4 w-4" />
+          <Alert status="error">
+            <AlertIcon />
             <AlertTitle>Error</AlertTitle>
             <AlertDescription>{error}</AlertDescription>
           </Alert>
@@ -75,9 +76,8 @@ export default function TestConnectionsPage() {
         <Card>
           <CardHeader>
             <CardTitle>Environment Variables</CardTitle>
-            <CardDescription>Check if required environment variables are set</CardDescription>
           </CardHeader>
-          <CardContent>
+          <CardBody>
             {testResults?.environment && (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {Object.entries(testResults.environment).map(([key, value]: [string, any]) => (
@@ -88,15 +88,14 @@ export default function TestConnectionsPage() {
                 ))}
               </div>
             )}
-          </CardContent>
+          </CardBody>
         </Card>
 
         <Card>
           <CardHeader>
             <CardTitle>Shopify API Connection</CardTitle>
-            <CardDescription>Test connection to Shopify API</CardDescription>
           </CardHeader>
-          <CardContent>
+          <CardBody>
             {testResults?.shopify_api && (
               <div className="space-y-4">
                 <div className="flex items-center">
@@ -118,15 +117,14 @@ export default function TestConnectionsPage() {
                 )}
               </div>
             )}
-          </CardContent>
+          </CardBody>
         </Card>
 
         <Card>
           <CardHeader>
             <CardTitle>Supabase Connection</CardTitle>
-            <CardDescription>Test connection to Supabase database</CardDescription>
           </CardHeader>
-          <CardContent>
+          <CardBody>
             {testResults?.supabase && (
               <div className="space-y-4">
                 <div className="flex items-center">
@@ -148,15 +146,14 @@ export default function TestConnectionsPage() {
                 )}
               </div>
             )}
-          </CardContent>
+          </CardBody>
         </Card>
 
         <Card>
           <CardHeader>
             <CardTitle>Cron Endpoint</CardTitle>
-            <CardDescription>Test connection to cron job endpoint</CardDescription>
           </CardHeader>
-          <CardContent>
+          <CardBody>
             {testResults?.cron_endpoint && (
               <div className="space-y-4">
                 <div className="flex items-center">
@@ -178,7 +175,7 @@ export default function TestConnectionsPage() {
                 )}
               </div>
             )}
-          </CardContent>
+          </CardBody>
           <CardFooter>
             <Button onClick={runTests} disabled={isTesting}>
               {isTesting ? (
@@ -199,9 +196,8 @@ export default function TestConnectionsPage() {
         <Card>
           <CardHeader>
             <CardTitle>Troubleshooting Steps</CardTitle>
-            <CardDescription>Common issues and how to fix them</CardDescription>
           </CardHeader>
-          <CardContent>
+          <CardBody>
             <div className="space-y-4">
               <div>
                 <h3 className="font-medium mb-2">Missing Environment Variables</h3>
@@ -249,7 +245,7 @@ export default function TestConnectionsPage() {
                 </ul>
               </div>
             </div>
-          </CardContent>
+          </CardBody>
         </Card>
       </div>
     </div>

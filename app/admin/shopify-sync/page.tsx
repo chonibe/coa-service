@@ -1,13 +1,13 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
-import { Badge } from "@/components/ui/badge"
+import { Button } from "@chakra-ui/react"
+import { Card, CardBody, CardHeader, CardTitle, CardFooter } from "@chakra-ui/react"
+import { Alert, AlertTitle, AlertDescription } from "@chakra-ui/react"
+import { Badge } from "@chakra-ui/react"
 import { Loader2, AlertCircle, CheckCircle, RefreshCw, Clock } from "lucide-react"
-import { Switch } from "@/components/ui/switch"
-import { Label } from "@/components/ui/label"
+import { Switch } from "@chakra-ui/react"
+import { FormControl, FormLabel } from "@chakra-ui/react"
 import { Input } from "@/components/ui/input"
 import Link from "next/link"
 
@@ -164,9 +164,9 @@ export default function ShopifySyncPage() {
         <Card>
           <CardHeader>
             <CardTitle>Sync Status</CardTitle>
-            <CardDescription>Current status of Shopify synchronization</CardDescription>
+            {/* <CardDescription>Current status of Shopify synchronization</CardDescription> */}
           </CardHeader>
-          <CardContent>
+          <CardBody>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="space-y-1">
                 <p className="text-sm text-muted-foreground">Last Sync</p>
@@ -265,15 +265,15 @@ export default function ShopifySyncPage() {
                 This will manually trigger a sync with Shopify to fetch the latest orders.
               </p>
             </div>
-          </CardContent>
+          </CardBody>
         </Card>
 
         <Card>
           <CardHeader>
             <CardTitle>Webhook Status</CardTitle>
-            <CardDescription>Status of Shopify order webhooks</CardDescription>
+            {/* <CardDescription>Status of Shopify order webhooks</CardDescription> */}
           </CardHeader>
-          <CardContent>
+          <CardBody>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="space-y-1">
                 <p className="text-sm text-muted-foreground">Webhook URL</p>
@@ -331,26 +331,30 @@ export default function ShopifySyncPage() {
                 <li>7. Click "Save webhook"</li>
               </ol>
             </div>
-          </CardContent>
+          </CardBody>
         </Card>
 
         <Card>
           <CardHeader>
             <CardTitle>Sync Settings</CardTitle>
-            <CardDescription>Configure automatic synchronization with Shopify</CardDescription>
+            {/* <CardDescription>Configure automatic synchronization with Shopify</CardDescription> */}
           </CardHeader>
-          <CardContent>
+          <CardBody>
             <div className="space-y-6">
               <div className="flex items-center justify-between">
                 <div className="space-y-0.5">
-                  <Label htmlFor="auto-sync">Automatic Sync</Label>
+                  <FormControl>
+                    <FormLabel htmlFor="auto-sync">Automatic Sync</FormLabel>
+                  </FormControl>
                   <p className="text-sm text-muted-foreground">Automatically sync with Shopify on a regular schedule</p>
                 </div>
                 <Switch id="auto-sync" checked={autoSync} onCheckedChange={setAutoSync} />
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="sync-interval">Sync Interval (minutes)</Label>
+                <FormControl>
+                  <FormLabel htmlFor="sync-interval">Sync Interval (minutes)</FormLabel>
+                </FormControl>
                 <div className="flex items-center gap-2">
                   <Input
                     id="sync-interval"
@@ -372,7 +376,7 @@ export default function ShopifySyncPage() {
                 <p className="text-xs text-muted-foreground">How often to check for new orders (minimum 5 minutes)</p>
               </div>
             </div>
-          </CardContent>
+          </CardBody>
           <CardFooter>
             <Button onClick={handleSaveSettings}>Save Settings</Button>
           </CardFooter>
@@ -381,9 +385,9 @@ export default function ShopifySyncPage() {
         <Card>
           <CardHeader>
             <CardTitle>Sync History</CardTitle>
-            <CardDescription>Recent synchronization activity</CardDescription>
+            {/* <CardDescription>Recent synchronization activity</CardDescription> */}
           </CardHeader>
-          <CardContent>
+          <CardBody>
             {syncHistory.length > 0 ? (
               <div className="border rounded-md">
                 <div className="grid grid-cols-12 gap-4 p-4 font-medium border-b">
@@ -416,7 +420,7 @@ export default function ShopifySyncPage() {
             ) : (
               <div className="text-center p-4 text-muted-foreground">No sync history available</div>
             )}
-          </CardContent>
+          </CardBody>
         </Card>
 
         <div className="flex justify-between">

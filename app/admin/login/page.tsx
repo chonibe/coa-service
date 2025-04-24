@@ -1,15 +1,17 @@
 "use client"
 
+import { CardDescription } from "@/components/ui/card"
+
 import type React from "react"
 
 import { useState } from "react"
 import { useRouter } from "next/navigation"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
+import { Button } from "@chakra-ui/react"
+import { Card, CardBody, CardHeader, CardTitle, CardFooter } from "@chakra-ui/react"
 import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
-import { AlertCircle, Lock } from "lucide-react"
+import { FormControl, FormLabel } from "@chakra-ui/react"
+import { Alert, AlertIcon, AlertTitle, AlertDescription } from "@chakra-ui/react"
+import { Lock } from "lucide-react"
 
 export default function AdminLoginPage() {
   const [password, setPassword] = useState("")
@@ -60,10 +62,10 @@ export default function AdminLoginPage() {
           <CardTitle className="text-center">Admin Login</CardTitle>
           <CardDescription className="text-center">Enter your password to access the admin area</CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardBody>
           {error && (
-            <Alert variant="destructive" className="mb-4">
-              <AlertCircle className="h-4 w-4" />
+            <Alert status="error" className="mb-4">
+              <AlertIcon />
               <AlertTitle>Error</AlertTitle>
               <AlertDescription>{error}</AlertDescription>
             </Alert>
@@ -72,19 +74,21 @@ export default function AdminLoginPage() {
           <form onSubmit={handleLogin}>
             <div className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="password">Password</Label>
-                <Input
-                  id="password"
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Enter admin password"
-                  required
-                />
+                <FormControl>
+                  <FormLabel htmlFor="password">Password</FormLabel>
+                  <Input
+                    id="password"
+                    type="password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="Enter admin password"
+                    required
+                  />
+                </FormControl>
               </div>
             </div>
           </form>
-        </CardContent>
+        </CardBody>
         <CardFooter>
           <Button className="w-full" onClick={handleLogin} disabled={isLoading}>
             {isLoading ? "Logging in..." : "Login"}
