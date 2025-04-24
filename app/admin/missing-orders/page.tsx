@@ -1,13 +1,14 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
-import { Badge } from "@/components/ui/badge"
-import { Loader2, AlertCircle, CheckCircle, RefreshCw, ArrowLeft } from "lucide-react"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Label } from "@/components/ui/label"
+import { Button } from "@chakra-ui/react"
+import { Card, CardBody, CardHeader, CardTitle } from "@chakra-ui/react"
+import { Alert, AlertIcon, AlertTitle, AlertDescription } from "@chakra-ui/react"
+import { Badge } from "@chakra-ui/react"
+import { Loader2, CheckCircle, RefreshCw, ArrowLeft } from "lucide-react"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@chakra-ui/react"
+import { FormControl, FormLabel } from "@chakra-ui/react"
+
 import Link from "next/link"
 
 export default function MissingOrdersPage() {
@@ -155,8 +156,8 @@ export default function MissingOrdersPage() {
         </div>
 
         {error && (
-          <Alert variant="destructive">
-            <AlertCircle className="h-4 w-4" />
+          <Alert status="error">
+            <AlertIcon />
             <AlertTitle>Error</AlertTitle>
             <AlertDescription>{error}</AlertDescription>
           </Alert>
@@ -165,29 +166,28 @@ export default function MissingOrdersPage() {
         <Card>
           <CardHeader>
             <CardTitle>Check for Missing Orders</CardTitle>
-            <CardDescription>
-              Compare orders in Shopify with those in your database to find any that were missed
-            </CardDescription>
           </CardHeader>
-          <CardContent>
+          <CardBody>
             <div className="flex items-end gap-4 mb-6">
               <div className="space-y-2">
-                <Label htmlFor="days">Time Period</Label>
-                <Select value={days} onValueChange={setDays}>
-                  <SelectTrigger id="days" className="w-[180px]">
-                    <SelectValue placeholder="Select days" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="1">Last 24 hours</SelectItem>
-                    <SelectItem value="3">Last 3 days</SelectItem>
-                    <SelectItem value="7">Last 7 days</SelectItem>
-                    <SelectItem value="14">Last 14 days</SelectItem>
-                    <SelectItem value="30">Last 30 days</SelectItem>
-                  </SelectContent>
-                </Select>
+                <FormControl>
+                  <FormLabel htmlFor="days">Time Period</FormLabel>
+                  <Select value={days} onValueChange={setDays}>
+                    <SelectTrigger id="days" className="w-[180px]">
+                      <SelectValue placeholder="Select days" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="1">Last 24 hours</SelectItem>
+                      <SelectItem value="3">Last 3 days</SelectItem>
+                      <SelectItem value="7">Last 7 days</SelectItem>
+                      <SelectItem value="14">Last 14 days</SelectItem>
+                      <SelectItem value="30">Last 30 days</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </FormControl>
               </div>
 
-              <Button onClick={checkMissingOrders} disabled={isChecking} className="flex items-center gap-2">
+              <Button onClick={checkMissingOrders} isLoading={isChecking} className="flex items-center gap-2">
                 {isChecking ? (
                   <>
                     <Loader2 className="h-4 w-4 animate-spin" />
@@ -225,7 +225,8 @@ export default function MissingOrdersPage() {
                       <h3 className="text-lg font-medium">Missing Orders with Limited Editions</h3>
                       <Button
                         onClick={handleSyncAll}
-                        disabled={isSyncing || checkResults.missing_orders.length === 0}
+                        isLoading={isSyncing}
+                        isDisabled={checkResults.missing_orders.length === 0}
                         size="sm"
                       >
                         {isSyncing ? (
@@ -279,7 +280,7 @@ export default function MissingOrdersPage() {
                               ) : (
                                 <Button
                                   onClick={() => handleSyncOrder(order.id)}
-                                  disabled={isSyncing}
+                                  isLoading={isSyncing && syncingOrderId === order.id}
                                   size="sm"
                                   variant="outline"
                                 >
@@ -300,8 +301,8 @@ export default function MissingOrdersPage() {
                     </div>
                   </div>
                 ) : (
-                  <Alert className="mt-6">
-                    <CheckCircle className="h-4 w-4" />
+                  <Alert status="success" className="mt-6">
+                    <AlertIcon />
                     <AlertTitle>All Orders Synced</AlertTitle>
                     <AlertDescription>
                       No missing orders with limited editions were found. Your database is up to date!
@@ -310,7 +311,7 @@ export default function MissingOrdersPage() {
                 )}
               </div>
             )}
-          </CardContent>
+          </CardBody>
         </Card>
       </div>
     </div>

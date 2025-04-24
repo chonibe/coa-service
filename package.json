@@ -60,11 +60,11 @@
     "zod": "latest",
     "@emotion/react": "latest",
     "uuid": "latest",
-    "@supabase/supabase-js": "latest",
-    "crypto": "latest",
     "fs": "latest",
     "path": "latest",
-    "@chakra-ui/react": "latest"
+    "crypto": "latest",
+    "@chakra-ui/react": "latest",
+    "@supabase/supabase-js": "latest"
   },
   "devDependencies": {
     "@types/node": "^22",
