@@ -1,6 +1,5 @@
 import type React from "react"
 import { Provider } from "@/components/ui/provider"
-import { system } from "@/theme"
 import "./globals.css"
 
 export default function RootLayout({
@@ -11,7 +10,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body>
-        <Provider value={system}>{children}</Provider>
+        <Provider>{children}</Provider>
       </body>
     </html>
   )
