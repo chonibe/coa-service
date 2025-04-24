@@ -1,5 +1,5 @@
 import { mockResponseData } from "@/lib/mock-data"
-import { fetchOrderLineItems } from "@/lib/supabase-client"
+import { supabase } from "@/lib/supabase"
 
 /**
  * Client-side data access helper that either uses API calls to the proxy
@@ -18,26 +18,45 @@ const isPreviewEnvironment = () => {
   return false
 }
 
-export async function getCustomerOrders(customerId: string) {
+export async function getCustomerOrders(customerId: string): Promise<any> {
   if (isPreviewEnvironment()) {
     console.log("Using mock data for orders in preview environment")
     return mockResponseData
   }
 
   try {
-    // In a real app, this would call your backend API to fetch customer orders
-    // For now, we'll just access the transformed Supabase data
-    const result = await fetchOrderLineItems(20)
+    console.log(`Fetching orders for customer ID: ${customerId} from Supabase`)
 
-    if (result.success && result.data) {
-      // Transform the data to match the expected format
-      return transformSupabaseDataToOrders(result.data)
+    // Fetch line items from Supabase for the given customer ID
+    const { data: lineItems, error } = await supabase
+      .from("order_line_items")
+      .select("*")
+      .eq("customer_id", customerId)
+      .order("created_at", { ascending: false })
+      .limit(20)
+
+    if (error) {
+      console.error("Error fetching orders from Supabase:", error)
+      throw new Error("Failed to fetch orders from Supabase")
     }
 
-    throw new Error("Failed to fetch orders")
-  } catch (error) {
-    console.error("Error fetching orders, falling back to mock data:", error)
-    return mockResponseData
+    if (!lineItems || lineItems.length === 0) {
+      console.log(`No orders found for customer ID: ${customerId}`)
+      return {
+        orders: [],
+        pagination: {
+          nextCursor: null,
+          hasNextPage: false,
+        },
+      }
+    }
+
+    // Transform the data to match the expected format
+    const transformedData = transformSupabaseDataToOrders(lineItems)
+    return transformedData
+  } catch (error: any) {
+    console.error("Error fetching orders:", error.name, error.message)
+    throw error // Rethrow the error instead of falling back to mock data
   }
 }
 

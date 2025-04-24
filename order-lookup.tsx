@@ -3,6 +3,16 @@
 import { useEffect, useState } from "react"
 import { mockResponseData } from "@/lib/mock-data"
 import { getCustomerOrders } from "@/lib/data-access"
+import { CollectionCard } from "@/components/collection-card"
+import { CollectionListItem } from "@/components/collection-list-item"
+import { Button } from "@/components/ui/button"
+import { AlertCircle, RefreshCcw, Loader2 } from "lucide-react"
+import { Input } from "@/components/ui/input"
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
+import { Search, Grid, List } from "lucide-react"
+import { createClientComponentClient } from "@supabase/auth-helpers-nextjs"
+
+const supabase = createClientComponentClient()
 
 export interface OrderItem {
   id: string
@@ -102,7 +112,7 @@ export default function OrderLookup() {
       // Simulate checking login status
       setTimeout(() => {
         setIsLoggedIn(true)
-        setCustomerId("12345678")
+        setCustomerId("customer-22845350150530")
       }, 1000)
     }
 
@@ -490,5 +500,107 @@ export default function OrderLookup() {
     }
   }
 
-  return null
+  // Filter the items for display
+  const filteredItems = filterLineItems(lineItems)
+
+  return (
+    <div className="w-full max-w-6xl mx-auto p-4">
+      {error && (
+        <div className="flex items-center gap-2 p-4 mb-6 bg-destructive/10 text-destructive rounded-lg border border-destructive/20">
+          <AlertCircle size={20} />
+          <div className="flex-1">
+            <p>{error}</p>
+            <div className="flex items-center gap-2 mt-2">
+              <Button
+                variant="outline"
+                size="sm"
+                className="bg-white text-destructive border-destructive/30 hover:bg-destructive/10"
+                onClick={() => fetchOrdersByCustomerId(customerId!)}
+              >
+                <RefreshCcw size={14} className="mr-1" />
+                Retry Connection
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <div className="flex justify-between items-center mb-8">
+        <h1 className="text-3xl font-bold">My Collection</h1>
+        <div className="flex gap-2">
+          <div className="flex border border-gray-200 rounded-md">
+            <Button
+              variant="ghost"
+              size="icon"
+              className={`h-10 w-10 rounded-none ${viewMode === "grid" ? "bg-gray-100" : ""}`}
+              onClick={() => setViewMode("grid")}
+            >
+              <Grid className="h-4 w-4" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              className={`h-10 w-10 rounded-none ${viewMode === "list" ? "bg-gray-100" : ""}`}
+              onClick={() => setViewMode("list")}
+            >
+              <List className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
+      </div>
+
+      <div className="mb-6">
+        <div className="relative max-w-md">
+          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
+          <Input
+            className="pl-8"
+            placeholder="Search by title or artist..."
+            type="search"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
+        </div>
+      </div>
+
+      <div className="flex items-center justify-center">
+        {isLoading ? (
+          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+        ) : (
+          <>
+            {filteredItems.length === 0 ? (
+              <Alert>
+                <AlertCircle className="h-4 w-4" />
+                <AlertTitle>No items found</AlertTitle>
+                <AlertDescription>No items match your filter criteria.</AlertDescription>
+              </Alert>
+            ) : (
+              <>
+                {viewMode === "grid" ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {filteredItems.map((item) => (
+                      <CollectionCard
+                        key={`${item.order_info.order_id}-${item.line_item_id}`}
+                        item={item}
+                        onRemoveClick={handleRemoveClick}
+                      />
+                    ))}
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {filteredItems.map((item) => (
+                      <CollectionListItem
+                        key={`${item.order_info.order_id}-${item.line_item_id}`}
+                        item={item}
+                        onRemoveClick={handleRemoveClick}
+                      />
+                    ))}
+                  </div>
+                )}
+              </>
+            )}
+          </>
+        )}
+      </div>
+    </div>
+  )
 }
