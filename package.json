@@ -59,8 +59,9 @@
     "vaul": "^0.9.6",
     "zod": "^3.24.1",
     "@emotion/react": "latest",
-    "@supabase/supabase-js": "latest",
-    "@chakra-ui/react": "latest"
+    "@chakra-ui/react": "latest",
+    "cookie": "latest",
+    "@supabase/supabase-js": "latest"
   },
   "devDependencies": {
     "@types/node": "^22",
