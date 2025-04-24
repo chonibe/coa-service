@@ -1,11 +1,5 @@
-import OrderLookup from "@/order-lookup"
+import Loading from "./admin/certificates/logs/loading"
 
-export default function Home() {
-  return (
-    <main className="min-h-screen py-8">
-      <div className="container mx-auto">
-        <OrderLookup />
-      </div>
-    </main>
-  )
+export default function Page() {
+  return <Loading />
 }
