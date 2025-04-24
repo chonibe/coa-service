@@ -1,9 +1,8 @@
 "use client"
 
-import { Box, Heading, Text, Button, Container } from "@chakra-ui/react"
 import { useEffect } from "react"
 
-export default function ErrorPage({
+export default function Error({
   error,
   reset,
 }: {
@@ -16,18 +15,59 @@ export default function ErrorPage({
   }, [error])
 
   return (
-    <Container maxW="container.md" py={20}>
-      <Box textAlign="center" p={8} borderWidth="1px" borderRadius="lg" boxShadow="md" bg="white">
-        <Heading as="h2" size="xl" mb={4} color="red.500">
+    <div
+      style={{
+        display: "flex",
+        justifyContent: "center",
+        alignItems: "center",
+        minHeight: "50vh",
+        padding: "2rem 1rem",
+      }}
+    >
+      <div
+        style={{
+          maxWidth: "500px",
+          padding: "2rem",
+          borderRadius: "8px",
+          boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)",
+          backgroundColor: "white",
+          textAlign: "center",
+        }}
+      >
+        <h2
+          style={{
+            fontSize: "2rem",
+            marginBottom: "1rem",
+            color: "#e53e3e",
+          }}
+        >
           Something went wrong!
-        </Heading>
-        <Text fontSize="lg" mb={6}>
+        </h2>
+        <p
+          style={{
+            fontSize: "1.1rem",
+            marginBottom: "1.5rem",
+            color: "#666",
+          }}
+        >
           {error.message || "An unexpected error occurred"}
-        </Text>
-        <Button colorScheme="blue" onClick={reset}>
+        </p>
+        <button
+          onClick={reset}
+          style={{
+            padding: "0.75rem 1.5rem",
+            backgroundColor: "#3182ce",
+            color: "white",
+            border: "none",
+            borderRadius: "4px",
+            fontSize: "1rem",
+            fontWeight: "bold",
+            cursor: "pointer",
+          }}
+        >
           Try again
-        </Button>
-      </Box>
-    </Container>
+        </button>
+      </div>
+    </div>
   )
 }
