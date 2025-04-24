@@ -11,6 +11,20 @@ const theme = createTheme({
   headings: {
     fontFamily: 'Inter, sans-serif',
   },
+  components: {
+    Button: {
+      defaultProps: {
+        size: 'md',
+        radius: 'md',
+      },
+    },
+    Paper: {
+      defaultProps: {
+        shadow: 'sm',
+        radius: 'md',
+      },
+    },
+  },
 })
 
 export function Providers({ children }: { children: React.ReactNode }) {
