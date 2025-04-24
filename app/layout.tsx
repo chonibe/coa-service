@@ -1,20 +1,22 @@
 import type React from "react"
-import type { Metadata } from "next"
-import RootLayout from "./page"
+import { Provider } from "@/components/ui/provider"
+import { system } from "@/theme"
+import "./globals.css"
 
-export const metadata: Metadata = {
-  title: "v0 App",
-  description: "Created with v0",
-  generator: "v0.dev",
-}
-
-export default function Layout({
+export default function RootLayout({
   children,
-}: Readonly<{
+}: {
   children: React.ReactNode
-}>) {
-  return <RootLayout children={children} />
+}) {
+  return (
+    <html lang="en">
+      <body>
+        <Provider value={system}>{children}</Provider>
+      </body>
+    </html>
+  )
 }
 
-
-import './globals.css'
+export const metadata = {
+      generator: 'v0.dev'
+    };
