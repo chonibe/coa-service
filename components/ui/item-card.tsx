@@ -1,17 +1,23 @@
 "use client"
-import { Card } from "@/components/ui/card"
-import { MoreVertical, Check, X, ImageIcon, RefreshCcw, BadgeIcon as Certificate } from "lucide-react"
+
+import type React from "react"
+
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-import { Button } from "@/components/ui/button"
-import { useEditionInfo } from "@/hooks/use-edition-info"
-import Image from "next/image"
+  Box,
+  Flex,
+  Heading,
+  Text,
+  Button,
+  Menu,
+  MenuButton,
+  MenuList,
+  MenuItem,
+  MenuDivider,
+  Card,
+  CardBody,
+  Stack,
+} from "@chakra-ui/react"
+import { RefreshCw, MoreVertical, Check, X, BadgeIcon as Certificate } from "lucide-react"
 
 interface OrderItem {
   id: string
@@ -57,274 +63,127 @@ interface ItemCardProps {
   onRemoveClick: (item: OrderItem) => void
 }
 
-export function ItemCard({ item, formatMoney, formatStatus, onRemoveClick }: ItemCardProps) {
-  const { editionInfo, isLoading, refreshEditionInfo } = useEditionInfo(item)
-
-  const orderDate = new Date(item.order_info.processed_at).toLocaleDateString("en-US", {
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-  })
-
-  const isFulfillable = item.fulfillable !== false
-  let nonFulfillableReason = ""
-
-  if (!isFulfillable) {
-    if (item.refunded) nonFulfillableReason = "Refunded"
-    else if (item.restocked) nonFulfillableReason = "Restocked"
-    else if (item.status === "removed") nonFulfillableReason = "Removed"
-    else nonFulfillableReason = "Not Fulfillable"
-  }
-
+const ItemCard: React.FC<ItemCardProps> = ({ item, formatMoney, formatStatus, onRemoveClick }) => {
   return (
-    <Card className={`overflow-hidden ${!isFulfillable ? "opacity-80" : ""}`}>
+    <Card overflow="hidden" opacity={!item.fulfillable ? 0.8 : 1}>
       {/* Item image */}
-      <div className="relative h-60 bg-muted">
-        {!isFulfillable && (
-          <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 -rotate-12 bg-destructive/90 text-white px-3 py-1 font-semibold text-sm uppercase tracking-wider rounded z-10">
-            {nonFulfillableReason}
-          </div>
+      <Box position="relative" h="60">
+        {!item.fulfillable && (
+          <Box
+            position="absolute"
+            top="50%"
+            left="50%"
+            transform="translate(-50%, -50%) rotate(-12deg)"
+            bg="red.500"
+            color="white"
+            px={3}
+            py={1}
+            fontWeight="semibold"
+            fontSize="sm"
+            textTransform="uppercase"
+            letterSpacing="wider"
+            rounded="md"
+            zIndex={10}
+          >
+            {item.refunded ? "Refunded" : item.restocked ? "Restocked" : "Not Fulfillable"}
+          </Box>
         )}
 
         {/* Edition badge */}
-        {editionInfo && (
-          <div
-            className={`absolute top-2 right-2 px-3 py-1 rounded-full text-xs font-medium bg-background/90 z-10 
-${
-  editionInfo.source === "supabase"
-    ? "text-green-600 border border-green-300"
-    : editionInfo.source === "sequential_uuid"
-      ? "text-primary border border-primary/30"
-      : "text-primary"
-}`}
-          >
-            {editionInfo.total && editionInfo.number ? (
-              <span>
-                #{editionInfo.number}/{editionInfo.total} Edition
-                {editionInfo.source === "supabase"
-                  ? " ✓✓✓"
-                  : editionInfo.source === "sequential_uuid"
-                    ? " ✓✓"
-                    : editionInfo.source === "sequential_order"
-                      ? " ✓"
-                      : " *"}
-              </span>
-            ) : item.is_limited_edition ? (
-              <span>Limited Edition</span>
-            ) : (
-              <span>Open Edition</span>
-            )}
-          </div>
-        )}
-
-        {/* Inventory status */}
-        {item.inventory_quantity !== undefined && (
-          <div
-            className={`absolute top-2 left-2 px-3 py-1 rounded-full text-xs font-medium bg-background/90 z-10
-           ${item.inventory_quantity > 0 ? "text-green-600" : "text-destructive"}`}
-          >
-            {item.inventory_quantity > 0 ? `${item.inventory_quantity} available` : "Sold out"}
-          </div>
-        )}
-
         {/* Actions menu */}
-        <div className="absolute top-2 right-2 z-20">
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon" className="h-8 w-8 bg-background/80 hover:bg-background">
-                <MoreVertical className="h-4 w-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuLabel>Actions</DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={() => refreshEditionInfo()}>
-                <RefreshCcw className="h-4 w-4 mr-2" />
+        <Box position="absolute" top={2} right={2} zIndex={20}>
+          <Menu>
+            <MenuButton
+              as={Button}
+              variant="ghost"
+              size="sm"
+              h={8}
+              w={8}
+              minW={8}
+              p={0}
+              bg="white"
+              opacity={0.8}
+              _hover={{ bg: "white", opacity: 1 }}
+            >
+              <MoreVertical size={16} />
+            </MenuButton>
+            <MenuList>
+              <MenuDivider />
+              <MenuItem>
+                <RefreshCw size={16} style={{ marginRight: "8px" }} />
                 Refresh Edition Info
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => window.open(`/certificate/${item.line_item_id}`, "_blank")}>
-                <Certificate className="h-4 w-4 mr-2" />
+              </MenuItem>
+              <MenuItem>
+                <Certificate size={16} style={{ marginRight: "8px" }} />
                 View Certificate
-              </DropdownMenuItem>
+              </MenuItem>
               {item.status !== "removed" && (
-                <DropdownMenuItem onClick={() => onRemoveClick(item)} className="text-destructive">
-                  <X className="h-4 w-4 mr-2" />
+                <MenuItem onClick={() => onRemoveClick(item)} color="red.500">
+                  <X size={16} style={{ marginRight: "8px" }} />
                   Remove Item
-                </DropdownMenuItem>
+                </MenuItem>
               )}
               {item.status === "removed" && (
-                <DropdownMenuItem className="text-muted-foreground cursor-not-allowed opacity-50">
-                  <Check className="h-4 w-4 mr-2" />
+                <MenuItem isDisabled color="gray.400" opacity={0.5} cursor="not-allowed">
+                  <Check size={16} style={{ marginRight: "8px" }} />
                   Item Removed
-                </DropdownMenuItem>
+                </MenuItem>
               )}
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
+            </MenuList>
+          </Menu>
+        </Box>
 
         {item.image ? (
-          <Image
+          <Box
+            as="img"
             src={item.image || "/placeholder.svg"}
             alt={item.imageAlt || item.title}
-            fill
-            className="w-full h-full object-cover"
+            objectFit="cover"
+            w="full"
+            h="full"
           />
         ) : (
-          <div className="w-full h-full flex items-center justify-center text-muted-foreground">
-            <ImageIcon size={40} />
-          </div>
+          <Flex w="full" h="full" alignItems="center" justifyContent="center" color="gray.400">
+            <Box as="svg" width="40" height="40" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <rect x="3" y="3" width="18" height="18" rx="2" stroke="currentColor" strokeWidth="2" />
+              <circle cx="8.5" cy="8.5" r="1.5" fill="currentColor" />
+              <path
+                d="M21 15L16 10L5 21"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </Box>
+          </Flex>
         )}
-      </div>
+      </Box>
 
       {/* Item content */}
-      <div className="p-4">
-        <h3 className="font-semibold text-lg mb-1 line-clamp-1">{item.title}</h3>
-        <div className="text-sm text-muted-foreground mb-4 flex items-center">
-          <span className="w-1.5 h-1.5 rounded-full bg-muted-foreground mr-1.5"></span>
+      <CardBody p={4}>
+        <Heading as="h3" size="md" fontWeight="semibold" mb={1} noOfLines={1}>
+          {item.title}
+        </Heading>
+        <Flex alignItems="center" mb={4} fontSize="sm" color="gray.500">
+          <Box w="1.5px" h="1.5px" rounded="full" bg="gray.500" mr="1.5px"></Box>
           {item.vendor}
-        </div>
+        </Flex>
 
-        <div className="space-y-2 text-sm">
-          <div className="flex justify-between">
-            <span className="text-muted-foreground">Price:</span>
-            <span>{formatMoney(item.price)}</span>
-          </div>
-          <div className="flex justify-between">
-            <span className="text-muted-foreground">Quantity:</span>
-            <span>{item.quantity}</span>
-          </div>
-          <div className="flex justify-between">
-            <span className="text-muted-foreground">Total:</span>
-            <span>{formatMoney(item.total)}</span>
-          </div>
-
-          {/* Edition info */}
-          {editionInfo && (
-            <div className="bg-muted p-2 rounded mt-2">
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Edition:</span>
-                <span>
-                  {editionInfo.total && editionInfo.number
-                    ? `#${editionInfo.number} of ${editionInfo.total} (Limited)`
-                    : editionInfo.total && item.is_limited_edition
-                      ? `Limited Edition of ${editionInfo.total}`
-                      : item.is_limited_edition
-                        ? "Limited Edition"
-                        : "Open Edition"}
-                  {editionInfo.source === "supabase"
-                    ? " ✓✓✓"
-                    : editionInfo.source === "sequential_uuid"
-                      ? " ✓✓"
-                      : editionInfo.source === "sequential_order"
-                        ? " ✓"
-                        : ""}
-                </span>
-              </div>
-              {editionInfo.source === "supabase" && (
-                <div className="text-xs text-green-600 font-medium mt-1">
-                  {editionInfo.status === "removed"
-                    ? "This item has been marked as removed"
-                    : "Verified edition number from database"}
-                  {editionInfo.updated_at && ` (Updated: ${new Date(editionInfo.updated_at).toLocaleDateString()})`}
-                </div>
-              )}
-              {editionInfo.source === "sequential_uuid" && (
-                <div className="text-xs text-primary font-medium mt-1">Guaranteed sequential number with UUID</div>
-              )}
-              {editionInfo.source === "sequential_order" && (
-                <div className="text-xs text-green-600 mt-1">Accurate edition number based on order date</div>
-              )}
-              {(editionInfo.source === "order_sequence" || editionInfo.source === "random") && editionInfo.note && (
-                <div className="text-xs text-muted-foreground italic mt-1">{editionInfo.note}</div>
-              )}
-              {editionInfo.note && editionInfo.source === "supabase" && (
-                <div className="text-xs text-muted-foreground italic mt-1">{editionInfo.note}</div>
-              )}
-            </div>
-          )}
-
-          {/* Removal reason if item is removed */}
-          {(item.status === "removed" || editionInfo?.status === "removed") && (
-            <div className="bg-destructive/10 p-2 rounded mt-2">
-              <div className="flex justify-between">
-                <span className="text-destructive font-medium">Status:</span>
-                <span className="text-destructive font-medium">Removed</span>
-              </div>
-              {(item.removed_reason || editionInfo?.removed_reason) && (
-                <div className="text-xs text-destructive/80 mt-1">
-                  Reason: {item.removed_reason || editionInfo?.removed_reason}
-                </div>
-              )}
-            </div>
-          )}
-        </div>
-
-        {/* Tags */}
-        {item.tags && item.tags.length > 0 && (
-          <div className="flex flex-wrap gap-1.5 mt-4">
-            {item.tags.map((tag) => (
-              <span key={tag} className="inline-block px-2 py-0.5 bg-muted text-xs rounded-full text-primary">
-                {tag}
-              </span>
-            ))}
-          </div>
-        )}
-      </div>
-
-      {/* Order info */}
-      <div className="p-4 bg-muted border-t">
-        <div className="flex items-center text-primary font-medium mb-1">
-          <span className="w-1.5 h-1.5 rounded-full bg-primary mr-1.5"></span>
-          Order #{item.order_info.order_number}
-        </div>
-        <div className="text-xs text-muted-foreground mb-2">{orderDate}</div>
-        <div className="flex flex-wrap gap-2">
-          <span
-            className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium
-            ${
-              item.order_info.fulfillment_status === "fulfilled"
-                ? "bg-green-100 text-green-800"
-                : item.order_info.fulfillment_status === "partially_fulfilled"
-                  ? "bg-blue-100 text-blue-800"
-                  : "bg-amber-100 text-amber-800"
-            }`}
-          >
-            <span
-              className={`w-1.5 h-1.5 rounded-full mr-1 
-            ${
-              item.order_info.fulfillment_status === "fulfilled"
-                ? "bg-green-800"
-                : item.order_info.fulfillment_status === "partially_fulfilled"
-                  ? "bg-blue-800"
-                  : "bg-amber-800"
-            }`}
-            ></span>
-            {formatStatus(item.order_info.fulfillment_status)}
-          </span>
-          <span
-            className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium
-            ${
-              item.order_info.financial_status === "paid"
-                ? "bg-green-100 text-green-800"
-                : item.order_info.financial_status === "refunded"
-                  ? "bg-red-100 text-red-800"
-                  : "bg-gray-100 text-gray-800"
-            }`}
-          >
-            <span
-              className={`w-1.5 h-1.5 rounded-full mr-1 
-            ${
-              item.order_info.financial_status === "paid"
-                ? "bg-green-800"
-                : item.order_info.financial_status === "refunded"
-                  ? "bg-red-800"
-                  : "bg-gray-800"
-            }`}
-            ></span>
-            {formatStatus(item.order_info.financial_status)}
-          </span>
-        </div>
-      </div>
+        <Stack spacing={2} fontSize="sm">
+          <Flex justify="space-between">
+            <Text color="gray.500">Price:</Text>
+            <Text>{formatMoney(item.price)}</Text>
+          </Flex>
+          <Flex justify="space-between">
+            <Text color="gray.500">Quantity:</Text>
+            <Text>{item.quantity}</Text>
+          </Flex>
+          <Flex justify="space-between">
+            <Text color="gray.500">Total:</Text>
+            <Text>{formatMoney(item.total)}</Text>
+          </Flex>
+        </Stack>
+      </CardBody>
     </Card>
   )
 }

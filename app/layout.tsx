@@ -1,6 +1,5 @@
 import type React from "react"
 import { Provider } from "@/components/ui/provider"
-import "./globals.css"
 
 export default function RootLayout({
   children,
@@ -15,6 +14,9 @@ export default function RootLayout({
     </html>
   )
 }
+
+
+import './globals.css'
 
 export const metadata = {
       generator: 'v0.dev'
