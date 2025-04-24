@@ -1,20 +1,19 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { motion, AnimatePresence } from "framer-motion"
-import { AppleButton } from "@/components/apple-button"
-import { AppleCard } from "@/components/apple-card"
+import { Button } from "@/components/ui/button"
+import { Card } from "@/components/ui/card"
 import {
-  AlertCircle,
   User,
-  BadgeIcon as Certificate,
   LogIn,
   ImageIcon,
+  AlertCircle,
   RefreshCcw,
   MoreVertical,
   Check,
   X,
   FolderSyncIcon as Sync,
+  BadgeIcon as Certificate,
 } from "lucide-react"
 import { useEditionInfo } from "@/hooks/use-edition-info"
 import {
@@ -39,8 +38,6 @@ import { Input } from "@/components/ui/input"
 import { mockResponseData } from "@/lib/mock-data"
 import { getCustomerOrders } from "@/lib/data-access"
 import { updateLineItemStatus, resequenceEditionNumbers } from "@/lib/supabase-client"
-import { fadeIn, slideUp, staggerContainer, slideInFromRight } from "@/lib/motion-variants"
-import { useMobile } from "@/hooks/use-mobile"
 
 interface OrderItem {
   id: string
@@ -79,13 +76,6 @@ interface OrderItem {
   properties?: any[]
 }
 
-interface ItemCardProps {
-  item: OrderItem
-  formatMoney: (amount: string | number, currency?: string) => string
-  formatStatus: (status: string) => string
-  onRemoveClick: (item: OrderItem) => void
-}
-
 // Determine if we're in a preview environment
 const isPreviewEnvironment = () => {
   // Check if we're in a Vercel preview deployment
@@ -98,7 +88,6 @@ const isPreviewEnvironment = () => {
   return false
 }
 
-// Update the OrderLookup component to use Framer Motion animations
 export default function OrderLookup() {
   const [isLoggedIn, setIsLoggedIn] = useState<boolean | null>(null)
   const [customerId, setCustomerId] = useState<string | null>(null)
@@ -128,9 +117,6 @@ export default function OrderLookup() {
   const [currentTag, setCurrentTag] = useState("all")
   const [currentOrder, setCurrentOrder] = useState("all")
   const [currentStatus, setCurrentStatus] = useState("fulfillable")
-
-  // Add this line to get the isMobile value
-  const isMobile = useMobile()
 
   useEffect(() => {
     // In a real implementation, this would not be needed as Shopify would handle authentication
@@ -571,49 +557,36 @@ export default function OrderLookup() {
     }
   }
 
-  // Render loading state with animations
+  // Render loading state
   if (isLoggedIn === null) {
     return (
-      <motion.div className="w-full max-w-6xl mx-auto p-4" initial="hidden" animate="visible" variants={fadeIn}>
+      <div className="w-full max-w-6xl mx-auto p-4">
         <div className="flex flex-col items-center justify-center py-12">
-          <motion.div
-            className="h-10 w-10 border-4 border-t-primary rounded-full animate-spin mb-4"
-            animate={{ rotate: 360 }}
-            transition={{ duration: 1, repeat: Number.POSITIVE_INFINITY, ease: "linear" }}
-          ></motion.div>
-          <motion.p className="text-muted-foreground" variants={slideUp}>
-            Checking your account...
-          </motion.p>
+          <div className="h-10 w-10 border-4 border-t-primary rounded-full animate-spin mb-4"></div>
+          <p className="text-muted-foreground">Checking your account...</p>
         </div>
-      </motion.div>
+      </div>
     )
   }
 
-  // Render login required view with animations
+  // Render login required view
   if (isLoggedIn === false) {
     return (
-      <motion.div className="w-full max-w-6xl mx-auto p-4" initial="hidden" animate="visible" variants={fadeIn}>
-        <motion.div
-          className="flex flex-col items-center justify-center py-12 px-4 bg-muted rounded-lg"
-          variants={slideUp}
-        >
-          <motion.div
-            className="w-16 h-16 flex items-center justify-center rounded-full bg-background mb-6 text-primary"
-            whileHover={{ scale: 1.05, rotate: 5 }}
-            transition={{ type: "spring", stiffness: 400, damping: 10 }}
-          >
+      <div className="w-full max-w-6xl mx-auto p-4">
+        <div className="flex flex-col items-center justify-center py-12 px-4 bg-muted rounded-lg">
+          <div className="w-16 h-16 flex items-center justify-center rounded-full bg-background mb-6 text-primary">
             <LogIn size={28} />
-          </motion.div>
+          </div>
           <h2 className="text-2xl font-bold mb-2">Login Required</h2>
           <p className="text-muted-foreground mb-6 text-center max-w-md">
             You need to be logged in to view your purchase history.
           </p>
           <div className="flex gap-4">
-            <AppleButton>Log In</AppleButton>
-            <AppleButton variant="outline">Create Account</AppleButton>
+            <Button>Log In</Button>
+            <Button variant="outline">Create Account</Button>
           </div>
-        </motion.div>
-      </motion.div>
+        </div>
+      </div>
     )
   }
 
@@ -621,36 +594,28 @@ export default function OrderLookup() {
   const filteredItems = filterLineItems(lineItems)
 
   return (
-    <motion.div className="w-full max-w-6xl mx-auto p-4" initial="hidden" animate="visible" variants={fadeIn}>
-      <AnimatePresence>
-        {error && (
-          <motion.div
-            className="flex items-center gap-2 p-4 mb-6 bg-destructive/10 text-destructive rounded-lg border border-destructive/20"
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-            transition={{ duration: 0.3 }}
-          >
-            <AlertCircle size={20} />
-            <div className="flex-1">
-              <p>{error}</p>
-              <div className="flex items-center gap-2 mt-2">
-                <AppleButton
-                  variant="outline"
-                  size="sm"
-                  className="bg-white text-destructive border-destructive/30 hover:bg-destructive/10"
-                  onClick={() => fetchOrdersByCustomerId(customerId!)}
-                >
-                  <RefreshCcw size={14} className="mr-1" />
-                  Retry Connection
-                </AppleButton>
-              </div>
+    <div className="w-full max-w-6xl mx-auto p-4">
+      {error && (
+        <div className="flex items-center gap-2 p-4 mb-6 bg-destructive/10 text-destructive rounded-lg border border-destructive/20">
+          <AlertCircle size={20} />
+          <div className="flex-1">
+            <p>{error}</p>
+            <div className="flex items-center gap-2 mt-2">
+              <Button
+                variant="outline"
+                size="sm"
+                className="bg-white text-destructive border-destructive/30 hover:bg-destructive/10"
+                onClick={() => fetchOrdersByCustomerId(customerId!)}
+              >
+                <RefreshCcw size={14} className="mr-1" />
+                Retry Connection
+              </Button>
             </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+          </div>
+        </div>
+      )}
 
-      <motion.div className="flex items-start gap-4 p-4 bg-muted rounded-lg mb-6" variants={slideUp}>
+      <div className="flex items-start gap-4 p-4 bg-muted rounded-lg mb-6">
         <div className="w-10 h-10 flex items-center justify-center rounded-full bg-background text-primary">
           <User size={20} />
         </div>
@@ -658,41 +623,39 @@ export default function OrderLookup() {
           <h2 className="text-lg font-semibold">Welcome back!</h2>
           <p className="text-muted-foreground text-sm">We're fetching your purchase history.</p>
         </div>
-      </motion.div>
+      </div>
 
       {/* Customer info */}
-      <motion.div variants={slideUp}>
-        <AppleCard className="p-4 mb-6">
-          <div className="flex flex-col md:flex-row items-center justify-between gap-4">
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 flex items-center justify-center rounded-full bg-muted text-primary">
-                <User size={24} />
-              </div>
-              <div className="text-center md:text-left">
-                <h3 className="text-lg font-semibold">Your Purchase History</h3>
-                <div className="flex gap-4 mt-2">
-                  <div className="bg-background p-2 rounded-md min-w-20 text-center">
-                    <div className="text-xl font-semibold text-primary">{totalItemsLoaded}</div>
-                    <div className="text-xs text-muted-foreground">Items Purchased</div>
-                  </div>
-                  <div className="bg-background p-2 rounded-md min-w-20 text-center">
-                    <div className="text-xl font-semibold text-primary">{allOrderNumbers.size}</div>
-                    <div className="text-xs text-muted-foreground">Orders</div>
-                  </div>
+      <Card className="p-4 mb-6">
+        <div className="flex flex-col md:flex-row items-center justify-between gap-4">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 flex items-center justify-center rounded-full bg-muted text-primary">
+              <User size={24} />
+            </div>
+            <div className="text-center md:text-left">
+              <h3 className="text-lg font-semibold">Your Purchase History</h3>
+              <div className="flex gap-4 mt-2">
+                <div className="bg-background p-2 rounded-md min-w-20 text-center">
+                  <div className="text-xl font-semibold text-primary">{totalItemsLoaded}</div>
+                  <div className="text-xs text-muted-foreground">Items Purchased</div>
+                </div>
+                <div className="bg-background p-2 rounded-md min-w-20 text-center">
+                  <div className="text-xl font-semibold text-primary">{allOrderNumbers.size}</div>
+                  <div className="text-xs text-muted-foreground">Orders</div>
                 </div>
               </div>
             </div>
-            <AppleButton variant="outline" size="sm" onClick={handleSyncClick} className="flex items-center gap-1">
-              <Sync size={14} />
-              Sync Edition Data
-            </AppleButton>
           </div>
-        </AppleCard>
-      </motion.div>
+          <Button variant="outline" size="sm" onClick={handleSyncClick} className="flex items-center gap-1">
+            <Sync size={14} />
+            Sync Edition Data
+          </Button>
+        </div>
+      </Card>
 
       {/* Filter controls */}
       {(allVendors.size > 0 || allTags.size > 0 || allOrderNumbers.size > 0) && (
-        <motion.div className="flex flex-wrap gap-3 p-4 bg-muted rounded-lg mb-6" variants={slideUp}>
+        <div className="flex flex-wrap gap-3 p-4 bg-muted rounded-lg mb-6">
           <div className="flex flex-col min-w-[160px] flex-1">
             <label htmlFor="vendor-filter" className="text-xs mb-1 text-muted-foreground">
               Filter by Vendor:
@@ -776,97 +739,69 @@ export default function OrderLookup() {
           </div>
 
           <div className="flex items-end">
-            <AppleButton variant="outline" size="sm" onClick={resetFilters} className="whitespace-nowrap">
+            <Button variant="outline" size="sm" onClick={resetFilters} className="whitespace-nowrap">
               Reset Filters
-            </AppleButton>
+            </Button>
           </div>
-        </motion.div>
+        </div>
       )}
 
       {/* Loading indicator */}
-      <AnimatePresence>
-        {isLoading && lineItems.length === 0 && (
-          <motion.div
-            className="flex flex-col items-center justify-center py-12"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-          >
-            <motion.div
-              className="h-10 w-10 border-4 border-t-primary rounded-full mb-4"
-              animate={{ rotate: 360 }}
-              transition={{ duration: 1, repeat: Number.POSITIVE_INFINITY, ease: "linear" }}
-            ></motion.div>
-            <p className="text-muted-foreground">Looking up your purchases...</p>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      {isLoading && lineItems.length === 0 && (
+        <div className="flex flex-col items-center justify-center py-12">
+          <div className="h-10 w-10 border-4 border-t-primary rounded-full animate-spin mb-4"></div>
+          <p className="text-muted-foreground">Looking up your purchases...</p>
+        </div>
+      )}
 
       {/* Items gallery */}
       {filteredItems.length > 0 ? (
-        <motion.div
-          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-6"
-          variants={staggerContainer}
-          initial="hidden"
-          animate="visible"
-        >
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-6">
           {filteredItems.map((item) => (
-            <motion.div key={`${item.order_info.order_id}-${item.line_item_id}`} variants={slideInFromRight}>
-              <ItemCard
-                item={item}
-                formatMoney={formatMoney}
-                formatStatus={formatStatus}
-                onRemoveClick={handleRemoveClick}
-              />
-            </motion.div>
+            <ItemCard
+              key={`${item.order_info.order_id}-${item.line_item_id}`}
+              item={item}
+              formatMoney={formatMoney}
+              formatStatus={formatStatus}
+              onRemoveClick={handleRemoveClick}
+            />
           ))}
-        </motion.div>
+        </div>
       ) : (
         !isLoading && (
-          <motion.div className="text-center p-12 border border-dashed rounded-lg bg-muted" variants={slideUp}>
+          <div className="text-center p-12 border border-dashed rounded-lg bg-muted">
             <p className="text-muted-foreground">No items match your filter criteria.</p>
-          </motion.div>
+          </div>
         )
       )}
 
       {/* Scroll loader */}
-      <AnimatePresence>
-        {isLoading && lineItems.length > 0 && (
-          <motion.div
-            className="flex flex-col items-center justify-center py-6"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-          >
-            <motion.div
-              className="h-8 w-8 border-4 border-t-primary rounded-full mb-2"
-              animate={{ rotate: 360 }}
-              transition={{ duration: 1, repeat: Number.POSITIVE_INFINITY, ease: "linear" }}
-            ></motion.div>
-            <p className="text-sm text-muted-foreground">Loading more items...</p>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      {isLoading && lineItems.length > 0 && (
+        <div className="flex flex-col items-center justify-center py-6">
+          <div className="h-8 w-8 border-4 border-t-primary rounded-full animate-spin mb-2"></div>
+          <p className="text-sm text-muted-foreground">Loading more items...</p>
+        </div>
+      )}
 
       {/* End of orders message */}
       {noMoreOrders && lineItems.length > 0 && (
-        <motion.div className="text-center p-4 border border-dashed rounded-lg bg-muted mb-6" variants={slideUp}>
+        <div className="text-center p-4 border border-dashed rounded-lg bg-muted mb-6">
           <p className="text-sm text-muted-foreground">You've reached the end of your purchase history</p>
-        </motion.div>
+        </div>
       )}
 
       {/* Load more button */}
       {!noMoreOrders && !isLoading && lineItems.length > 0 && (
-        <motion.div className="flex justify-center mb-6" variants={slideUp}>
-          <AppleButton variant="outline" onClick={() => fetchOrdersByCustomerId(customerId!, nextCursor, true)}>
+        <div className="flex justify-center mb-6">
+          <Button variant="outline" onClick={() => fetchOrdersByCustomerId(customerId!, nextCursor, true)}>
             Load More
-          </AppleButton>
-        </motion.div>
+          </Button>
+        </div>
       )}
 
       {/* Remove Item Dialog */}
       <Dialog open={isRemoveDialogOpen} onOpenChange={setIsRemoveDialogOpen}>
-        <DialogContent className="rounded-xl">
+        <DialogContent>
           <DialogHeader>
             <DialogTitle>Remove Item</DialogTitle>
             <DialogDescription>
@@ -886,23 +821,23 @@ export default function OrderLookup() {
             />
           </div>
           <DialogFooter>
-            <AppleButton variant="outline" onClick={() => setIsRemoveDialogOpen(false)} disabled={isUpdatingStatus}>
+            <Button variant="outline" onClick={() => setIsRemoveDialogOpen(false)} disabled={isUpdatingStatus}>
               Cancel
-            </AppleButton>
-            <AppleButton
+            </Button>
+            <Button
               onClick={handleConfirmRemove}
               disabled={isUpdatingStatus}
               className="bg-destructive hover:bg-destructive/90 text-white"
             >
               {isUpdatingStatus ? "Removing..." : "Remove Item"}
-            </AppleButton>
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
       {/* Sync Edition Data Dialog */}
       <Dialog open={isSyncDialogOpen} onOpenChange={setIsSyncDialogOpen}>
-        <DialogContent className="rounded-xl">
+        <DialogContent>
           <DialogHeader>
             <DialogTitle>Sync Edition Data</DialogTitle>
             <DialogDescription>
@@ -923,48 +858,47 @@ export default function OrderLookup() {
             />
           </div>
 
-          <AnimatePresence>
-            {syncResult && (
-              <motion.div
-                className="bg-muted p-4 rounded-md text-sm"
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: 10 }}
-              >
-                <h4 className="font-semibold mb-2">Sync Results:</h4>
-                <div className="space-y-1">
-                  <p>Product: {syncResult.productTitle}</p>
-                  <p>Total Editions: {syncResult.totalEditions}</p>
-                  <p>Edition Total: {syncResult.editionTotal || "Not specified"}</p>
-                  <p>Active Items: {syncResult.activeItems}</p>
-                  <p>Removed Items: {syncResult.removedItems}</p>
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
+          {syncResult && (
+            <div className="bg-muted p-4 rounded-md text-sm">
+              <h4 className="font-semibold mb-2">Sync Results:</h4>
+              <div className="space-y-1">
+                <p>Product: {syncResult.productTitle}</p>
+                <p>Total Editions: {syncResult.totalEditions}</p>
+                <p>Edition Total: {syncResult.editionTotal || "Not specified"}</p>
+                <p>Active Items: {syncResult.activeItems}</p>
+                <p>Removed Items: {syncResult.removedItems}</p>
+              </div>
+            </div>
+          )}
 
           <DialogFooter>
-            <AppleButton variant="outline" onClick={() => setIsSyncDialogOpen(false)} disabled={isSyncing}>
+            <Button variant="outline" onClick={() => setIsSyncDialogOpen(false)} disabled={isSyncing}>
               Close
-            </AppleButton>
-            <AppleButton
+            </Button>
+            <Button
               onClick={handleConfirmSync}
               disabled={isSyncing || !syncProductId}
               className="bg-primary hover:bg-primary/90 text-white"
             >
               {isSyncing ? "Syncing..." : "Sync Edition Data"}
-            </AppleButton>
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </motion.div>
+    </div>
   )
 }
 
-// Update the ItemCard component to use our Apple-inspired components
+interface ItemCardProps {
+  item: OrderItem
+  formatMoney: (amount: string | number, currency?: string) => string
+  formatStatus: (status: string) => string
+  onRemoveClick: (item: OrderItem) => void
+}
+
+// Update the ItemCard component to display the edition size from the editionInfo
 function ItemCard({ item, formatMoney, formatStatus, onRemoveClick }: ItemCardProps) {
   const { editionInfo, isLoading, refreshEditionInfo } = useEditionInfo(item)
-  const isMobile = useMobile()
 
   const orderDate = new Date(item.order_info.processed_at).toLocaleDateString("en-US", {
     year: "numeric",
@@ -983,23 +917,18 @@ function ItemCard({ item, formatMoney, formatStatus, onRemoveClick }: ItemCardPr
   }
 
   return (
-    <AppleCard className={`overflow-hidden ${!isFulfillable ? "opacity-80" : ""}`}>
+    <Card className={`overflow-hidden ${!isFulfillable ? "opacity-80" : ""}`}>
       {/* Item image */}
       <div className="relative h-60 bg-muted">
         {!isFulfillable && (
-          <motion.div
-            className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 -rotate-12 bg-destructive/90 text-white px-3 py-1 font-semibold text-sm uppercase tracking-wider rounded z-10"
-            initial={{ opacity: 0, scale: 0.8 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.3 }}
-          >
+          <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 -rotate-12 bg-destructive/90 text-white px-3 py-1 font-semibold text-sm uppercase tracking-wider rounded z-10">
             {nonFulfillableReason}
-          </motion.div>
+          </div>
         )}
 
         {/* Edition badge */}
         {editionInfo && (
-          <motion.div
+          <div
             className={`absolute top-2 right-2 px-3 py-1 rounded-full text-xs font-medium bg-background/90 z-10 
 ${
   editionInfo.source === "supabase"
@@ -1008,9 +937,6 @@ ${
       ? "text-primary border border-primary/30"
       : "text-primary"
 }`}
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2, duration: 0.3 }}
           >
             {editionInfo.total && editionInfo.number ? (
               <span>
@@ -1028,35 +954,28 @@ ${
             ) : (
               <span>Open Edition</span>
             )}
-          </motion.div>
+          </div>
         )}
 
         {/* Inventory status */}
         {item.inventory_quantity !== undefined && (
-          <motion.div
+          <div
             className={`absolute top-2 left-2 px-3 py-1 rounded-full text-xs font-medium bg-background/90 z-10
             ${item.inventory_quantity > 0 ? "text-green-600" : "text-destructive"}`}
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.1, duration: 0.3 }}
           >
             {item.inventory_quantity > 0 ? `${item.inventory_quantity} available` : "Sold out"}
-          </motion.div>
+          </div>
         )}
 
         {/* Actions menu */}
         <div className="absolute top-2 right-2 z-20">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <motion.button
-                className="h-8 w-8 bg-background/80 hover:bg-background rounded-full flex items-center justify-center"
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-              >
+              <Button variant="ghost" size="icon" className="h-8 w-8 bg-background/80 hover:bg-background">
                 <MoreVertical size={16} />
-              </motion.button>
+              </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="rounded-xl">
+            <DropdownMenuContent align="end">
               <DropdownMenuLabel>Actions</DropdownMenuLabel>
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={() => refreshEditionInfo()}>
@@ -1084,13 +1003,10 @@ ${
         </div>
 
         {item.image ? (
-          <motion.img
+          <img
             src={item.image || "/placeholder.svg"}
             alt={item.imageAlt || item.title}
             className="w-full h-full object-cover"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.5 }}
           />
         ) : (
           <div className="w-full h-full flex items-center justify-center text-muted-foreground">
@@ -1100,12 +1016,7 @@ ${
       </div>
 
       {/* Item content */}
-      <motion.div
-        className="p-4"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 0.2, duration: 0.3 }}
-      >
+      <div className="p-4">
         <h3 className="font-semibold text-lg mb-1 line-clamp-1">{item.title}</h3>
         <div className="text-sm text-muted-foreground mb-4 flex items-center">
           <span className="w-1.5 h-1.5 rounded-full bg-muted-foreground mr-1.5"></span>
@@ -1128,12 +1039,7 @@ ${
 
           {/* Edition info */}
           {editionInfo && (
-            <motion.div
-              className="bg-muted p-2 rounded mt-2"
-              initial={{ opacity: 0, y: 5 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.3, duration: 0.3 }}
-            >
+            <div className="bg-muted p-2 rounded mt-2">
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Edition:</span>
                 <span>
@@ -1173,17 +1079,12 @@ ${
               {editionInfo.note && editionInfo.source === "supabase" && (
                 <div className="text-xs text-muted-foreground italic mt-1">{editionInfo.note}</div>
               )}
-            </motion.div>
+            </div>
           )}
 
           {/* Removal reason if item is removed */}
           {(item.status === "removed" || editionInfo?.status === "removed") && (
-            <motion.div
-              className="bg-destructive/10 p-2 rounded mt-2"
-              initial={{ opacity: 0, y: 5 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.3, duration: 0.3 }}
-            >
+            <div className="bg-destructive/10 p-2 rounded mt-2">
               <div className="flex justify-between">
                 <span className="text-destructive font-medium">Status:</span>
                 <span className="text-destructive font-medium">Removed</span>
@@ -1193,7 +1094,7 @@ ${
                   Reason: {item.removed_reason || editionInfo?.removed_reason}
                 </div>
               )}
-            </motion.div>
+            </div>
           )}
         </div>
 
@@ -1201,34 +1102,23 @@ ${
         {item.tags && item.tags.length > 0 && (
           <div className="flex flex-wrap gap-1.5 mt-4">
             {item.tags.map((tag) => (
-              <motion.span
-                key={tag}
-                className="inline-block px-2 py-0.5 bg-muted text-xs rounded-full text-primary"
-                initial={{ opacity: 0, scale: 0.8 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ delay: 0.4, duration: 0.3 }}
-              >
+              <span key={tag} className="inline-block px-2 py-0.5 bg-muted text-xs rounded-full text-primary">
                 {tag}
-              </motion.span>
+              </span>
             ))}
           </div>
         )}
-      </motion.div>
+      </div>
 
       {/* Order info */}
-      <motion.div
-        className="p-4 bg-muted border-t"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 0.3, duration: 0.3 }}
-      >
+      <div className="p-4 bg-muted border-t">
         <div className="flex items-center text-primary font-medium mb-1">
           <span className="w-1.5 h-1.5 rounded-full bg-primary mr-1.5"></span>
           Order #{item.order_info.order_number}
         </div>
         <div className="text-xs text-muted-foreground mb-2">{orderDate}</div>
         <div className="flex flex-wrap gap-2">
-          <motion.span
+          <span
             className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium
             ${
               item.order_info.fulfillment_status === "fulfilled"
@@ -1237,9 +1127,6 @@ ${
                   ? "bg-blue-100 text-blue-800"
                   : "bg-amber-100 text-amber-800"
             }`}
-            initial={{ opacity: 0, x: -5 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.4, duration: 0.3 }}
           >
             <span
               className={`w-1.5 h-1.5 rounded-full mr-1 
@@ -1252,8 +1139,8 @@ ${
               }`}
             ></span>
             {formatStatus(item.order_info.fulfillment_status)}
-          </motion.span>
-          <motion.span
+          </span>
+          <span
             className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium
             ${
               item.order_info.financial_status === "paid"
@@ -1262,9 +1149,6 @@ ${
                   ? "bg-red-100 text-red-800"
                   : "bg-gray-100 text-gray-800"
             }`}
-            initial={{ opacity: 0, x: -5 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.5, duration: 0.3 }}
           >
             <span
               className={`w-1.5 h-1.5 rounded-full mr-1 
@@ -1277,9 +1161,9 @@ ${
               }`}
             ></span>
             {formatStatus(item.order_info.financial_status)}
-          </motion.span>
+          </span>
         </div>
-      </motion.div>
-    </AppleCard>
+      </div>
+    </Card>
   )
 }
