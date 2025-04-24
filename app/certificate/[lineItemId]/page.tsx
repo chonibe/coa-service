@@ -136,25 +136,25 @@ export default function CertificatePage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 py-12 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-3xl mx-auto">
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center p-2 bg-green-100 dark:bg-green-900 rounded-full mb-4">
-            <CheckCircle className="h-8 w-8 text-green-600 dark:text-green-400" />
+          <div className="inline-flex items-center justify-center p-2 bg-green-100 rounded-full mb-4">
+            <CheckCircle className="h-8 w-8 text-green-600" />
           </div>
           <h1 className="text-3xl font-extrabold">Certificate of Authenticity</h1>
-          <p className="mt-2 text-lg text-gray-600 dark:text-gray-400">
+          <p className="mt-2 text-lg text-gray-600">
             Edition #{certificate.lineItem.editionNumber} of {certificate.lineItem.editionTotal}
           </p>
         </div>
 
         <Card className="mb-8 overflow-hidden border-none shadow-lg">
-          <div className="bg-gradient-to-r from-primary to-purple-600 p-1">
+          <div className="bg-gradient-to-r from-indigo-600 to-purple-600 p-1">
             <CardContent className="p-0">
-              <div className="bg-white dark:bg-gray-950 p-8">
+              <div className="bg-white p-8">
                 {/* Product Image */}
                 {certificate.product.images && certificate.product.images.length > 0 && (
-                  <div className="mb-8 aspect-video relative bg-gray-100 dark:bg-gray-800 rounded-lg overflow-hidden">
+                  <div className="mb-8 aspect-video relative bg-gray-100 rounded-lg overflow-hidden">
                     <Image
                       src={certificate.product.images[0].src || "/placeholder.svg"}
                       alt={certificate.product.images[0].alt || certificate.product.title}
@@ -167,63 +167,63 @@ export default function CertificatePage() {
                 {/* Certificate Header */}
                 <div className="mb-8 text-center">
                   <h2 className="text-2xl font-bold">{certificate.product.title}</h2>
-                  <p className="text-gray-500 dark:text-gray-400">{certificate.product.vendor}</p>
+                  <p className="text-gray-500">{certificate.product.vendor}</p>
                 </div>
 
                 {/* Certificate Details */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-                  <div className="border dark:border-gray-800 rounded-lg p-4">
+                  <div className="border rounded-lg p-4">
                     <div className="flex items-start">
-                      <Certificate className="h-5 w-5 text-primary mt-0.5 mr-2" />
+                      <Certificate className="h-5 w-5 text-indigo-600 mt-0.5 mr-2" />
                       <div>
-                        <h3 className="font-semibold text-gray-900 dark:text-gray-100">Edition Details</h3>
-                        <p className="text-primary font-bold text-lg">
+                        <h3 className="font-semibold text-gray-900">Edition Details</h3>
+                        <p className="text-indigo-600 font-bold text-lg">
                           #{certificate.lineItem.editionNumber} of {certificate.lineItem.editionTotal}
                         </p>
-                        <p className="text-sm text-gray-500 dark:text-gray-400">Limited Edition</p>
+                        <p className="text-sm text-gray-500">Limited Edition</p>
                       </div>
                     </div>
                   </div>
 
-                  <div className="border dark:border-gray-800 rounded-lg p-4">
+                  <div className="border rounded-lg p-4">
                     <div className="flex items-start">
-                      <Clock className="h-5 w-5 text-primary mt-0.5 mr-2" />
+                      <Clock className="h-5 w-5 text-indigo-600 mt-0.5 mr-2" />
                       <div>
-                        <h3 className="font-semibold text-gray-900 dark:text-gray-100">Authentication Date</h3>
-                        <p className="text-gray-600 dark:text-gray-300">
+                        <h3 className="font-semibold text-gray-900">Authentication Date</h3>
+                        <p className="text-gray-600">
                           {formatDate(certificate.lineItem.updatedAt || certificate.lineItem.createdAt)}
                         </p>
-                        <p className="text-sm text-gray-500 dark:text-gray-400">Last verified edition number</p>
+                        <p className="text-sm text-gray-500">Last verified edition number</p>
                       </div>
                     </div>
                   </div>
 
-                  <div className="border dark:border-gray-800 rounded-lg p-4">
+                  <div className="border rounded-lg p-4">
                     <div className="flex items-start">
-                      <ShoppingBag className="h-5 w-5 text-primary mt-0.5 mr-2" />
+                      <ShoppingBag className="h-5 w-5 text-indigo-600 mt-0.5 mr-2" />
                       <div>
-                        <h3 className="font-semibold text-gray-900 dark:text-gray-100">Purchase Information</h3>
-                        <p className="text-gray-600 dark:text-gray-300">{certificate.order.orderName}</p>
-                        <p className="text-sm text-gray-500 dark:text-gray-400">
+                        <h3 className="font-semibold text-gray-900">Purchase Information</h3>
+                        <p className="text-gray-600">{certificate.order.orderName}</p>
+                        <p className="text-sm text-gray-500">
                           {formatDate(certificate.order.processedAt || certificate.order.createdAt)}
                         </p>
                       </div>
                     </div>
                   </div>
 
-                  <div className="border dark:border-gray-800 rounded-lg p-4">
+                  <div className="border rounded-lg p-4">
                     <div className="flex items-start">
-                      <User className="h-5 w-5 text-primary mt-0.5 mr-2" />
+                      <User className="h-5 w-5 text-indigo-600 mt-0.5 mr-2" />
                       <div>
-                        <h3 className="font-semibold text-gray-900 dark:text-gray-100">Ownership</h3>
+                        <h3 className="font-semibold text-gray-900">Ownership</h3>
                         {certificate.order.customer ? (
-                          <p className="text-gray-600 dark:text-gray-300">
+                          <p className="text-gray-600">
                             {certificate.order.customer.firstName} {certificate.order.customer.lastName}
                           </p>
                         ) : (
-                          <p className="text-gray-600 dark:text-gray-300">Verified Owner</p>
+                          <p className="text-gray-600">Verified Owner</p>
                         )}
-                        <p className="text-sm text-gray-500 dark:text-gray-400">Original Purchaser</p>
+                        <p className="text-sm text-gray-500">Original Purchaser</p>
                       </div>
                     </div>
                   </div>
