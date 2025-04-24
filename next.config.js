@@ -9,6 +9,9 @@ const nextConfig = {
     skipMiddlewareUrlNormalize: true,
     // Skip trailing slash redirect
     skipTrailingSlashRedirect: true,
+    // Disable not-found generation
+    disableNotFoundGenerationForPages: true,
+    disableNotFoundGenerationForAppDir: true,
   },
   eslint: {
     // Disable ESLint during build
@@ -23,6 +26,8 @@ const nextConfig = {
   },
   // Use separate build directories for dev and prod
   distDir: process.env.NODE_ENV === "production" ? ".next" : ".next-dev",
+  // Completely disable static optimization for not-found
+  pageExtensions: ["tsx", "ts", "jsx", "js"].filter((ext) => ext !== "not-found.tsx"),
 }
 
 module.exports = nextConfig
