@@ -1,4 +1,4 @@
-import '@mantine/core/styles.layer.css'
+import '@mantine/core/styles.css'
 import '@mantine/notifications/styles.css'
 import '@mantine/dates/styles.css'
 import '@mantine/modals/styles.css'
