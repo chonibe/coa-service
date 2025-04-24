@@ -7,7 +7,6 @@ import {
   AppShell,
   Text,
   Button,
-  Stack,
   Group,
   UnstyledButton,
   Box,

@@ -3,27 +3,28 @@
 import { Container, Title, Text, Paper, Table, Group, Button, TextInput, Select, Box } from "@mantine/core"
 import { IconSearch, IconPlus } from "@tabler/icons-react"
 
-export default function CertificateManagement() {
+export default function Orders() {
   return (
     <Container size="xl" py="xl">
       <Group justify="space-between" mb="xl">
-        <Title order={1}>Certificate Management</Title>
-        <Button leftSection={<IconPlus size={16} />}>Add Certificate</Button>
+        <Title order={1}>Orders</Title>
+        <Button leftSection={<IconPlus size={16} />}>Add Order</Button>
       </Group>
 
       <Paper p="md" radius="md" withBorder mb="xl">
         <Box className="flex flex-col">
           <Group grow>
             <TextInput
-              placeholder="Search certificates..."
+              placeholder="Search orders..."
               leftSection={<IconSearch size={16} />}
             />
             <Select
               placeholder="Filter by status"
               data={[
-                { value: 'active', label: 'Active' },
                 { value: 'pending', label: 'Pending' },
-                { value: 'expired', label: 'Expired' },
+                { value: 'processing', label: 'Processing' },
+                { value: 'completed', label: 'Completed' },
+                { value: 'cancelled', label: 'Cancelled' },
               ]}
             />
           </Group>
@@ -34,21 +35,23 @@ export default function CertificateManagement() {
         <Table>
           <thead>
             <tr>
-              <th>Certificate ID</th>
-              <th>Owner</th>
+              <th>Order ID</th>
+              <th>Customer</th>
               <th>Status</th>
-              <th>Created</th>
+              <th>Date</th>
+              <th>Total</th>
               <th>Actions</th>
             </tr>
           </thead>
           <tbody>
             <tr>
-              <td>CERT-001</td>
+              <td>#1234</td>
               <td>John Doe</td>
               <td>
-                <Text c="green">Active</Text>
+                <Text c="green">Completed</Text>
               </td>
-              <td>2024-01-15</td>
+              <td>2024-03-15</td>
+              <td>$99.99</td>
               <td>
                 <Group gap="xs">
                   <Button variant="subtle" size="xs">View</Button>
@@ -57,12 +60,13 @@ export default function CertificateManagement() {
               </td>
             </tr>
             <tr>
-              <td>CERT-002</td>
+              <td>#1235</td>
               <td>Jane Smith</td>
               <td>
-                <Text c="yellow">Pending</Text>
+                <Text c="yellow">Processing</Text>
               </td>
-              <td>2024-02-20</td>
+              <td>2024-03-16</td>
+              <td>$149.99</td>
               <td>
                 <Group gap="xs">
                   <Button variant="subtle" size="xs">View</Button>

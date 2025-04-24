@@ -2,6 +2,7 @@
 
 import { Sidebar, SidebarItem } from "@/components/ui/sidebar-mantine"
 import { IconHome, IconCertificate, IconList, IconSettings } from "@tabler/icons-react"
+import { Box } from "@mantine/core"
 import Link from "next/link"
 
 export default function AdminLayout({
@@ -11,7 +12,7 @@ export default function AdminLayout({
 }) {
   return (
     <Sidebar>
-      <Stack p="md" gap="xs">
+      <Box className="flex flex-col gap-2 p-4">
         <SidebarItem
           icon={<IconHome size={20} />}
           label="Dashboard"
@@ -32,7 +33,7 @@ export default function AdminLayout({
           label="Settings"
           href="/admin/settings"
         />
-      </Stack>
+      </Box>
       {children}
     </Sidebar>
   )

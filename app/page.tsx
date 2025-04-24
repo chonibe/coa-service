@@ -1,10 +1,10 @@
-import { Container, Title, Text, Button, Stack, SimpleGrid, Paper } from "@mantine/core"
+import { Container, Title, Text, Button, Box, SimpleGrid, Paper } from "@mantine/core"
 import Link from "next/link"
 
 export default function Page() {
   return (
     <Container size="xl" py="xl">
-      <Stack spacing="xl">
+      <Box className="flex flex-col gap-8">
         <Paper p="xl" radius="md" withBorder>
           <Title order={1} ta="center" mb="md">
             Collector Benefits System
@@ -57,7 +57,7 @@ export default function Page() {
             </Link>
           </Paper>
         </SimpleGrid>
-      </Stack>
+      </Box>
     </Container>
   )
 }

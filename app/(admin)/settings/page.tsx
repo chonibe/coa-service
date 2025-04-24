@@ -1,4 +1,6 @@
-import { Container, Title, Text, Paper, Stack, Group, Switch, TextInput, Button, Divider } from "@mantine/core"
+"use client"
+
+import { Container, Title, Text, Paper, Group, Switch, TextInput, Button, Divider, Box } from "@mantine/core"
 import { IconMail, IconLock, IconBell } from "@tabler/icons-react"
 
 export default function Settings() {
@@ -6,10 +8,10 @@ export default function Settings() {
     <Container size="xl" py="xl">
       <Title order={1} mb="xl">Settings</Title>
 
-      <Stack gap="xl">
+      <Box className="flex flex-col gap-8">
         <Paper p="md" radius="md" withBorder>
           <Title order={2} size="h3" mb="md">Account Settings</Title>
-          <Stack gap="md">
+          <Box className="flex flex-col gap-4">
             <TextInput
               label="Email"
               placeholder="your@email.com"
@@ -24,12 +26,12 @@ export default function Settings() {
             <Group justify="flex-end">
               <Button>Save Changes</Button>
             </Group>
-          </Stack>
+          </Box>
         </Paper>
 
         <Paper p="md" radius="md" withBorder>
           <Title order={2} size="h3" mb="md">Notification Settings</Title>
-          <Stack gap="md">
+          <Box className="flex flex-col gap-4">
             <Group justify="space-between">
               <Group gap="xs">
                 <IconBell size={16} />
@@ -51,12 +53,12 @@ export default function Settings() {
               </Group>
               <Switch defaultChecked />
             </Group>
-          </Stack>
+          </Box>
         </Paper>
 
         <Paper p="md" radius="md" withBorder>
           <Title order={2} size="h3" mb="md">System Settings</Title>
-          <Stack gap="md">
+          <Box className="flex flex-col gap-4">
             <Group justify="space-between">
               <Text>Maintenance Mode</Text>
               <Switch />
@@ -71,9 +73,9 @@ export default function Settings() {
               <Text>Auto-backup Database</Text>
               <Switch defaultChecked />
             </Group>
-          </Stack>
+          </Box>
         </Paper>
-      </Stack>
+      </Box>
     </Container>
   )
 } 

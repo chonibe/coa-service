@@ -1,4 +1,6 @@
-import { Container, Title, Text, Paper, Table, Group, TextInput, Select, Stack, Badge } from "@mantine/core"
+"use client"
+
+import { Container, Title, Text, Paper, Table, Group, TextInput, Select, Badge, Box } from "@mantine/core"
 import { IconSearch, IconClock } from "@tabler/icons-react"
 
 export default function AccessLogs() {
@@ -7,7 +9,7 @@ export default function AccessLogs() {
       <Title order={1} mb="xl">Access Logs</Title>
 
       <Paper p="md" radius="md" withBorder mb="xl">
-        <Stack>
+        <Box className="flex flex-col">
           <Group grow>
             <TextInput
               placeholder="Search logs..."
@@ -22,7 +24,7 @@ export default function AccessLogs() {
               ]}
             />
           </Group>
-        </Stack>
+        </Box>
       </Paper>
 
       <Paper p="md" radius="md" withBorder>
