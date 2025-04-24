@@ -1,26 +1,20 @@
-import type { ReactNode } from "react"
-import { Inter } from "next/font/google"
-import { Providers } from "./providers"
+import type { Metadata } from 'next'
+import './globals.css'
 
-const inter = Inter({ subsets: ["latin"] })
+export const metadata: Metadata = {
+  title: 'v0 App',
+  description: 'Created with v0',
+  generator: 'v0.dev',
+}
 
 export default function RootLayout({
   children,
-}: {
-  children: ReactNode
-}) {
+}: Readonly<{
+  children: React.ReactNode
+}>) {
   return (
     <html lang="en">
-      <body className={inter.className}>
-        <Providers>{children}</Providers>
-      </body>
+      <body>{children}</body>
     </html>
   )
 }
-
-
-import './globals.css'
-
-export const metadata = {
-      generator: 'v0.dev'
-    };
