@@ -1,9 +1,25 @@
 "use client"
 
-import type React from "react"
+import { MantineProvider, createTheme } from '@mantine/core'
+import { Notifications } from '@mantine/notifications'
+import { ModalsProvider } from '@mantine/modals'
 
-import { ChakraProvider } from "@chakra-ui/react"
+const theme = createTheme({
+  primaryColor: 'blue',
+  defaultRadius: 'md',
+  fontFamily: 'Inter, sans-serif',
+  headings: {
+    fontFamily: 'Inter, sans-serif',
+  },
+})
 
 export function Providers({ children }: { children: React.ReactNode }) {
-  return <ChakraProvider>{children}</ChakraProvider>
+  return (
+    <MantineProvider theme={theme} defaultColorScheme="light">
+      <ModalsProvider>
+        <Notifications />
+        {children}
+      </ModalsProvider>
+    </MantineProvider>
+  )
 }
