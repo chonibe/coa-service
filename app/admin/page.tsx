@@ -1,18 +1,38 @@
 "use client"
 
+import { TabsTrigger } from "@/components/ui/tabs"
+
+import { TabsList } from "@/components/ui/tabs"
+
+import { CardContent } from "@/components/ui/card"
+
+import { CardDescription } from "@/components/ui/card"
+
+import { CardTitle } from "@/components/ui/card"
+
 import { useState, useEffect } from "react"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-import { Checkbox } from "@/components/ui/checkbox"
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
-import { Badge } from "@/components/ui/badge"
-import { Input } from "@/components/ui/input"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import {
+  Button,
+  Card,
+  CardHeader,
+  CardFooter,
+  Checkbox,
+  Tabs,
+  Alert,
+  AlertTitle,
+  AlertDescription,
+  Badge,
+  Input,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+  Progress,
+  Image,
+  Link,
+} from "@chakra-ui/react"
 import { Loader2, CheckCircle, AlertCircle, RefreshCw, Search, ChevronLeft, ChevronRight } from "lucide-react"
-import { Progress } from "@/components/ui/progress"
-import Image from "next/image"
-import Link from "next/link"
 
 export default function AdminDashboard() {
   const [isLoading, setIsLoading] = useState(false)
@@ -24,10 +44,8 @@ export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState("all")
   const [progress, setProgress] = useState(0)
   const [currentProduct, setCurrentProduct] = useState<string | null>(null)
-  // Add a state for sync progress messages
   const [progressMessages, setProgressMessages] = useState<string[]>([])
 
-  // Product selection state
   const [products, setProducts] = useState<any[]>([])
   const [selectedProductIds, setSelectedProductIds] = useState<string[]>([])
   const [searchQuery, setSearchQuery] = useState("")
@@ -40,17 +58,17 @@ export default function AdminDashboard() {
   })
   const [totalProductCount, setTotalProductCount] = useState(0)
 
-  // Add state for Supabase connection test
   const [isTestingConnection, setIsTestingConnection] = useState(false)
   const [connectionTestResult, setConnectionTestResult] = useState<any>(null)
 
-  // Fetch products for selection
   const fetchProducts = async (cursor = "", query = "", field = searchField) => {
     setIsFetchingProducts(true)
     setError(null)
 
     try {
-      const url = `/api/get-all-products?limit=10&query=${encodeURIComponent(query)}&field=${field}${cursor ? `&cursor=${cursor}` : ""}`
+      const url = `/api/get-all-products?limit=10&query=${encodeURIComponent(
+        query,
+      )}&field=${field}${cursor ? `&cursor=${cursor}` : ""}`
       const response = await fetch(url)
 
       if (!response.ok) {
@@ -59,7 +77,14 @@ export default function AdminDashboard() {
 
       const data = await response.json()
       setProducts(data.products || [])
-      setPagination(data.pagination || { nextCursor: null, prevCursor: null, hasNext: false, hasPrev: false })
+      setPagination(
+        data.pagination || {
+          nextCursor: null,
+          prevCursor: null,
+          hasNext: false,
+          hasPrev: false,
+        },
+      )
     } catch (err: any) {
       console.error("Error fetching products:", err)
       setError(err.message || "Failed to fetch products")
@@ -68,7 +93,6 @@ export default function AdminDashboard() {
     }
   }
 
-  // Fetch all products for "Select All" functionality
   const fetchAllProducts = async () => {
     setIsSelectingAll(true)
     setError(null)
@@ -84,7 +108,6 @@ export default function AdminDashboard() {
       const data = await response.json()
       setTotalProductCount(data.totalCount || 0)
 
-      // Select all product IDs
       if (data.products && data.products.length > 0) {
         setSelectedProductIds(data.products.map((product: any) => product.id))
       }
@@ -96,7 +119,6 @@ export default function AdminDashboard() {
     }
   }
 
-  // Add function to test Supabase connection
   const testSupabaseConnection = async () => {
     setIsTestingConnection(true)
     setConnectionTestResult(null)
@@ -119,46 +141,37 @@ export default function AdminDashboard() {
     }
   }
 
-  // Initial fetch
   useEffect(() => {
     fetchProducts()
   }, [])
 
-  // Handle search
   const handleSearch = () => {
     fetchProducts("", searchQuery, searchField)
   }
 
-  // Handle product selection
   const toggleProductSelection = (productId: string) => {
     setSelectedProductIds((prev) =>
       prev.includes(productId) ? prev.filter((id) => id !== productId) : [...prev, productId],
     )
   }
 
-  // Select/deselect all products
   const toggleSelectAll = () => {
     if (selectedProductIds.length === products.length) {
       setSelectedProductIds([])
     } else {
-      // If we're just selecting the current page
       setSelectedProductIds(products.map((product) => product.id))
     }
   }
 
-  // Select all products across all pages
   const handleSelectAllPages = async () => {
-    // If we already have all products selected, deselect them
     if (totalProductCount > 0 && selectedProductIds.length === totalProductCount) {
       setSelectedProductIds([])
       return
     }
 
-    // Otherwise, fetch and select all products
     await fetchAllProducts()
   }
 
-  // Update the handleSync function to include progress messages
   const handleSync = async () => {
     if (selectedProductIds.length === 0) {
       setError("Please select at least one product to sync")
@@ -496,39 +509,6 @@ export default function AdminDashboard() {
                 <AlertDescription>Successfully processed {syncResults.totalProducts} products.</AlertDescription>
               </Alert>
             )}
-
-            <div className="mt-4 border-t pt-4">
-              <div className="flex items-center justify-between mb-2">
-                <h4 className="text-sm font-medium">Database Connection</h4>
-                <Button variant="outline" size="sm" onClick={testSupabaseConnection} disabled={isTestingConnection}>
-                  {isTestingConnection ? (
-                    <>
-                      <Loader2 className="mr-2 h-3 w-3 animate-spin" />
-                      Testing...
-                    </>
-                  ) : (
-                    "Test Database Connection"
-                  )}
-                </Button>
-              </div>
-
-              {connectionTestResult && (
-                <Alert variant={connectionTestResult.success ? "default" : "destructive"} className="mt-2">
-                  <AlertTitle>
-                    {connectionTestResult.success ? "Connection Successful" : "Connection Failed"}
-                  </AlertTitle>
-                  <AlertDescription className="text-xs">
-                    {connectionTestResult.message}
-                    {connectionTestResult.error && (
-                      <div className="mt-1 text-xs">
-                        Error: {connectionTestResult.error}
-                        {connectionTestResult.code && ` (Code: ${connectionTestResult.code})`}
-                      </div>
-                    )}
-                  </AlertDescription>
-                </Alert>
-              )}
-            </div>
           </CardContent>
           <CardFooter>
             <Button

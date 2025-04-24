@@ -1,8 +1,16 @@
 "use client"
 
+import {
+  Alert,
+  AlertIcon,
+  AlertTitle,
+  AlertDescription,
+  Box,
+  Button,
+  Center,
+  useColorModeValue,
+} from "@chakra-ui/react"
 import { AlertCircle, RefreshCw } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 
 interface ErrorFallbackProps {
   error: string
@@ -11,16 +19,21 @@ interface ErrorFallbackProps {
 }
 
 export function ErrorFallback({ error, resetErrorBoundary, isRetrying = false }: ErrorFallbackProps) {
+  const bgColor = useColorModeValue("gray.50", "gray.700")
+  const borderColor = useColorModeValue("gray.200", "gray.600")
+
   return (
-    <div className="p-4 rounded-lg border bg-background">
-      <Alert variant="destructive" className="mb-4">
-        <AlertCircle className="h-4 w-4" />
-        <AlertTitle>Error</AlertTitle>
-        <AlertDescription>{error}</AlertDescription>
+    <Box p={4} rounded="lg" border="1px" bg={bgColor} borderColor={borderColor}>
+      <Alert status="error" mb={4}>
+        <AlertIcon as={AlertCircle} />
+        <Box>
+          <AlertTitle>Error</AlertTitle>
+          <AlertDescription>{error}</AlertDescription>
+        </Box>
       </Alert>
 
-      <div className="flex justify-center">
-        <Button onClick={resetErrorBoundary} disabled={isRetrying}>
+      <Center>
+        <Button onClick={resetErrorBoundary} isDisabled={isRetrying}>
           {isRetrying ? (
             <>
               <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
@@ -33,7 +46,7 @@ export function ErrorFallback({ error, resetErrorBoundary, isRetrying = false }:
             </>
           )}
         </Button>
-      </div>
-    </div>
+      </Center>
+    </Box>
   )
 }
