@@ -115,7 +115,6 @@ async function resequenceEditionNumbers(productId: string) {
           // Only set certificate fields if they don't exist yet
           certificate_url: item.certificate_url || certificateUrl,
           certificate_token: item.certificate_token || certificateToken,
-          certificate_generated_at: item.certificate_generated_at || new Date().toISOString(),
         })
         .eq("line_item_id", item.line_item_id)
         .eq("order_id", item.order_id)
