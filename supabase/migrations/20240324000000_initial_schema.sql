@@ -49,6 +49,35 @@ ALTER TABLE certificates ENABLE ROW LEVEL SECURITY;
 ALTER TABLE orders ENABLE ROW LEVEL SECURITY;
 ALTER TABLE payouts ENABLE ROW LEVEL SECURITY;
 
+-- Admin policies
+CREATE POLICY "Admins can do everything"
+  ON users FOR ALL
+  USING (EXISTS (
+    SELECT 1 FROM users
+    WHERE id = auth.uid() AND role = 'admin'
+  ));
+
+CREATE POLICY "Admins can do everything"
+  ON certificates FOR ALL
+  USING (EXISTS (
+    SELECT 1 FROM users
+    WHERE id = auth.uid() AND role = 'admin'
+  ));
+
+CREATE POLICY "Admins can do everything"
+  ON orders FOR ALL
+  USING (EXISTS (
+    SELECT 1 FROM users
+    WHERE id = auth.uid() AND role = 'admin'
+  ));
+
+CREATE POLICY "Admins can do everything"
+  ON payouts FOR ALL
+  USING (EXISTS (
+    SELECT 1 FROM users
+    WHERE id = auth.uid() AND role = 'admin'
+  ));
+
 -- Users policies
 CREATE POLICY "Users can view their own data"
   ON users FOR SELECT

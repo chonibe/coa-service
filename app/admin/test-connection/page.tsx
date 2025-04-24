@@ -1,72 +1,69 @@
 "use client"
 
-import { Container, Title, Text, Paper, Button, Stack } from "@mantine/core"
-import { IconTestPipe } from "@tabler/icons-react"
-import { useState } from "react"
-import { supabase } from "@/lib/supabase"
+import { Container, Title, Text, Paper, Button, Code } from "@mantine/core"
+import { useEffect, useState } from "react"
+import { supabase, supabaseAdmin } from "@/lib/supabase"
 
-export default function TestConnectionPage() {
-  const [loading, setLoading] = useState(false)
-  const [result, setResult] = useState<{
-    success: boolean
-    message: string
-  } | null>(null)
+export default function TestConnection() {
+  const [testResult, setTestResult] = useState<any>(null)
+  const [error, setError] = useState<string | null>(null)
 
   const testConnection = async () => {
     try {
-      setLoading(true)
-      setResult(null)
+      setError(null)
+      setTestResult(null)
 
-      const { data, error } = await supabase
+      // Test regular client
+      const { data: publicData, error: publicError } = await supabase
         .from('users')
         .select('count')
-        .single()
+        .limit(1)
 
-      if (error) throw error
+      if (publicError) throw publicError
 
-      setResult({
-        success: true,
-        message: `Successfully connected to Supabase! Found ${data.count} users.`
+      // Test admin client
+      const { data: adminData, error: adminError } = await supabaseAdmin
+        .from('users')
+        .select('count')
+        .limit(1)
+
+      if (adminError) throw adminError
+
+      setTestResult({
+        publicClient: publicData,
+        adminClient: adminData,
+        env: {
+          NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL,
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ? '***' : null,
+          SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY ? '***' : null
+        }
       })
-    } catch (error: any) {
-      console.error('Connection test failed:', error)
-      setResult({
-        success: false,
-        message: `Connection failed: ${error.message}`
-      })
-    } finally {
-      setLoading(false)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Unknown error')
     }
   }
 
   return (
     <Container size="xl" py="xl">
-      <Stack>
-        <Title order={1}>Test Connection</Title>
-        <Paper p="md" radius="md" withBorder>
-          <Stack>
-            <Text>Click the button below to test the connection to Supabase.</Text>
-            <Button
-              leftSection={<IconTestPipe size={20} />}
-              onClick={testConnection}
-              loading={loading}
-            >
-              Test Connection
-            </Button>
-            {result && (
-              <Paper
-                p="md"
-                radius="md"
-                bg={result.success ? 'green.1' : 'red.1'}
-              >
-                <Text c={result.success ? 'green' : 'red'}>
-                  {result.message}
-                </Text>
-              </Paper>
-            )}
-          </Stack>
-        </Paper>
-      </Stack>
+      <Title order={1} mb="xl">Test Supabase Connection</Title>
+      
+      <Paper p="md" radius="md" withBorder mb="xl">
+        <Button onClick={testConnection} mb="md">
+          Test Connection
+        </Button>
+
+        {error && (
+          <Text c="red" mb="md">
+            Error: {error}
+          </Text>
+        )}
+
+        {testResult && (
+          <Code block>
+            {JSON.stringify(testResult, null, 2)}
+          </Code>
+        )}
+      </Paper>
     </Container>
   )
 } 
