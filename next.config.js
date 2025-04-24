@@ -21,9 +21,7 @@ const nextConfig = {
   images: {
     unoptimized: true,
   },
-  // Disable static generation for all pages
-  output: "export",
-  // Disable static generation for not-found page
+  // Use separate build directories for dev and prod
   distDir: process.env.NODE_ENV === "production" ? ".next" : ".next-dev",
 }
 
