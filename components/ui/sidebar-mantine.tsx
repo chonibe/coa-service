@@ -13,10 +13,6 @@ import {
   Box,
   Burger,
   ScrollArea,
-  Divider,
-  TextInput,
-  Skeleton,
-  Drawer,
 } from "@mantine/core"
 import { IconLayoutSidebar } from "@tabler/icons-react"
 
@@ -79,41 +75,28 @@ export function Sidebar({ children, defaultExpanded = true }: SidebarProps) {
           breakpoint: "sm",
         }}
       >
-        {isMobile ? (
-          <Drawer
-            opened={opened}
-            onClose={toggleOpened}
-            size={SIDEBAR_WIDTH_MOBILE}
-            position="left"
-            withCloseButton={false}
-          >
-            <ScrollArea h="calc(100vh - 60px)">
-              {children}
-            </ScrollArea>
-          </Drawer>
-        ) : (
-          <Box
-            w={expanded ? SIDEBAR_WIDTH : SIDEBAR_WIDTH_ICON}
-            style={{
-              position: "fixed",
-              top: 0,
-              left: 0,
-              bottom: 0,
-              backgroundColor: "var(--mantine-color-body)",
-              borderRight: "1px solid var(--mantine-color-gray-3)",
-            }}
-          >
-            <Box p="md">
-              <Group justify="space-between">
-                {expanded && <Text size="lg" fw={500}>Menu</Text>}
-                <Burger opened={expanded} onClick={toggleExpanded} />
-              </Group>
-            </Box>
-            <ScrollArea h="calc(100vh - 60px)">
-              {children}
-            </ScrollArea>
+        <Box
+          w={isMobile ? SIDEBAR_WIDTH_MOBILE : expanded ? SIDEBAR_WIDTH : SIDEBAR_WIDTH_ICON}
+          hidden={!isMobile && !expanded}
+          style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            bottom: 0,
+            backgroundColor: "var(--mantine-color-body)",
+            borderRight: "1px solid var(--mantine-color-gray-3)",
+          }}
+        >
+          <Box p="md">
+            <Group justify="space-between">
+              {expanded && <Text size="lg" fw={500}>Menu</Text>}
+              <Burger opened={isMobile ? opened : expanded} onClick={isMobile ? toggleOpened : toggleExpanded} />
+            </Group>
           </Box>
-        )}
+          <ScrollArea h="calc(100vh - 60px)">
+            {children}
+          </ScrollArea>
+        </Box>
         <Box
           style={{
             marginLeft: isMobile ? 0 : expanded ? SIDEBAR_WIDTH : SIDEBAR_WIDTH_ICON,
@@ -161,4 +144,4 @@ export function SidebarItem({ icon, label, href, onClick }: SidebarItemProps) {
       </Group>
     </UnstyledButton>
   )
-}
+} 

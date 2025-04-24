@@ -8,8 +8,8 @@ import { ColorSchemeScript } from '@mantine/core'
 import { Providers } from "./providers"
 
 export const metadata = {
-  title: 'My App',
-  description: 'My App Description',
+  title: 'Certificate of Authenticity',
+  description: 'Manage your certificates and verify their authenticity',
 }
 
 export default function RootLayout({

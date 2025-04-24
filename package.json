@@ -9,14 +9,19 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@emotion/react": "latest",
+    "@emotion/styled": "latest",
     "@hookform/resolvers": "^3.9.1",
     "@mantine/core": "^7.3.2",
-    "@mantine/hooks": "^7.3.2",
-    "@mantine/notifications": "^7.3.2",
     "@mantine/dates": "^7.3.2",
     "@mantine/form": "^7.3.2",
+    "@mantine/hooks": "^7.3.2",
     "@mantine/modals": "^7.3.2",
+    "@mantine/notifications": "^7.3.2",
+    "@supabase/supabase-js": "latest",
+    "@tabler/icons-react": "^3.31.0",
     "autoprefixer": "^10.4.20",
+    "cookie": "latest",
     "date-fns": "4.1.0",
     "next": "14.1.0",
     "next-themes": "^0.4.4",
@@ -24,11 +29,7 @@
     "react-dom": "^18.2.0",
     "react-hook-form": "^7.54.1",
     "recharts": "2.15.0",
-    "zod": "^3.24.1",
-    "@emotion/react": "latest",
-    "@emotion/styled": "latest",
-    "cookie": "latest",
-    "@supabase/supabase-js": "latest"
+    "zod": "^3.24.1"
   },
   "devDependencies": {
     "@types/node": "^20",

@@ -1,67 +1,47 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { Button } from "@/components/ui/button"
-import { Card } from "@/components/ui/card"
+import { Button, Card, Text, TextInput, Textarea, Menu, Modal, Stack, Group, Badge, Image, ActionIcon, Loader } from "@mantine/core"
 import { User, LogIn, ImageIcon, AlertCircle, RefreshCcw, MoreVertical, Check, X, FolderSyncIcon as Sync, BadgeIcon as Certificate } from 'lucide-react'
 import { useEditionInfo } from "@/hooks/use-edition-info"
 import { supabase } from "@/lib/supabase"
-import {
-DropdownMenu,
-DropdownMenuContent,
-DropdownMenuItem,
-DropdownMenuLabel,
-DropdownMenuSeparator,
-DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-import {
-Dialog,
-DialogContent,
-DialogDescription,
-DialogFooter,
-DialogHeader,
-DialogTitle,
-} from "@/components/ui/dialog"
-import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
-import { Input } from "@/components/ui/input"
 import { mockOrders, mockResponseData } from "@/lib/mock-data"
 
 interface OrderItem {
-id: string
-line_item_id: string
-product_id: string
-title: string
-quantity: number
-price: string
-total: string
-vendor: string
-image?: string
-imageAlt?: string
-tags: string[]
-fulfillable: boolean
-refunded: boolean
-restocked: boolean
-removed?: boolean
-inventory_quantity?: number
-is_limited_edition?: boolean
-total_inventory?: string
-rarity?: string
-commitment_number?: string
-status?: "active" | "removed"
-removed_reason?: string
-variant?: {
-  position: number
-}
-order_info: {
-  order_id: string
-  order_number: string
-  processed_at: string
-  fulfillment_status: string
-  financial_status: string
-}
-customAttributes?: any[]
-properties?: any[]
+  id: string
+  line_item_id: string
+  product_id: string
+  title: string
+  quantity: number
+  price: string
+  total: string
+  vendor: string
+  image?: string
+  imageAlt?: string
+  tags: string[]
+  fulfillable: boolean
+  refunded: boolean
+  restocked: boolean
+  removed?: boolean
+  inventory_quantity?: number
+  is_limited_edition?: boolean
+  total_inventory?: string
+  rarity?: string
+  commitment_number?: string
+  status?: "active" | "removed"
+  removed_reason?: string
+  variant?: {
+    position: number
+  }
+  order_info: {
+    order_id: string
+    order_number: string
+    processed_at: string
+    fulfillment_status: string
+    financial_status: string
+  }
+  customAttributes?: any[]
+  properties?: any[]
 }
 
 // Determine if we're in a preview environment
@@ -632,329 +612,170 @@ if (isLoggedIn === false) {
 const filteredItems = filterLineItems(lineItems)
 
 return (
-  <Box w="full" maxW="6xl" mx="auto" p={4}>
-    {error && (
-      <Flex
-        alignItems="center"
-        gap={2}
-        p={4}
-        mb={6}
-        bg="red.50"
-        color="red.500"
-        rounded="lg"
-        border="1px"
-        borderColor="red.200"
-      >
-        <AlertCircle size={20} />
-        <Box flex="1">
-          <Text>{error}</Text>
-          <Flex alignItems="center" gap={2} mt={2}>
-            <Button
-              variant="outline"
-              size="sm"
-              bg="white"
-              color="red.500"
-              borderColor="red.300"
-              _hover={{ bg: "red.50" }}
-              onClick={() => fetchOrdersByCustomerId(customerId!)}
-            >
-              <RefreshCw size={14} style={{ marginRight: "4px" }} />
-              Retry Connection
-            </Button>
-          </Flex>
-        </Box>
-      </Flex>
-    )}
-
-    <Flex alignItems="flex-start" gap={4} p={4} bg="gray.100" rounded="lg" mb={6}>
-      <Flex w={10} h={10} alignItems="center" justifyContent="center" rounded="full" bg="white" color="primary.500">
-        <User size={20} />
-      </Flex>
-      <Box>
-        <Heading as="h2" size="md" fontWeight="semibold">
-          Welcome back!
-        </Heading>
-        <Text color="gray.500" fontSize="sm">
-          We're fetching your purchase history.
-        </Text>
-      </Box>
-    </Flex>
-
-    {/* Customer info */}
-    <Card mb={6}>
-      <CardBody p={4}>
-        <Flex flexDir={{ base: "column", md: "row" }} alignItems="center" justifyContent="space-between" gap={4}>
-          <Flex alignItems="center" gap={4}>
-            <Flex
-              w={12}
-              h={12}
-              alignItems="center"
-              justifyContent="center"
-              rounded="full"
-              bg="gray.100"
-              color="primary.500"
-            >
-              <User size={24} />
-            </Flex>
-            <Box textAlign={{ base: "center", md: "left" }}>
-              <Heading as="h3" size="md" fontWeight="semibold">
-                Your Purchase History
-              </Heading>
-              <Flex gap={4} mt={2}>
-                <Box bg="white" p={2} rounded="md" minW="20" textAlign="center">
-                  <Text fontSize="xl" fontWeight="semibold" color="primary.500">
-                    {totalItemsLoaded}
-                  </Text>
-                  <Text fontSize="xs" color="gray.500">
-                    Items Purchased
-                  </Text>
-                </Box>
-                <Box bg="white" p={2} rounded="md" minW="20" textAlign="center">
-                  <Text fontSize="xl" fontWeight="semibold" color="primary.500">
-                    {allOrderNumbers.size}
-                  </Text>
-                  <Text fontSize="xs" color="gray.500">
-                    Orders
-                  </Text>
-                </Box>
-              </Flex>
-            </Box>
-          </Flex>
-          <Button variant="outline" size="sm" onClick={handleSyncClick} display="flex" alignItems="center" gap={1}>
-            <Sync size={14} />
-            Sync Edition Data
+  <Card p="md" radius="md" withBorder>
+    <Stack spacing="md">
+      <Group position="apart">
+        <Text size="xl" weight={500}>Order Lookup</Text>
+        <Group>
+          <Button
+            leftIcon={<Sync size={16} />}
+            onClick={() => setIsSyncDialogOpen(true)}
+            loading={isSyncing}
+          >
+            Sync
           </Button>
-        </Flex>
-      </CardBody>
-    </Card>
+          <Menu>
+            <Menu.Target>
+              <ActionIcon>
+                <MoreVertical size={16} />
+              </ActionIcon>
+            </Menu.Target>
+            <Menu.Dropdown>
+              <Menu.Label>Actions</Menu.Label>
+              <Menu.Item
+                icon={<AlertCircle size={16} />}
+                onClick={() => setIsRemoveDialogOpen(true)}
+                disabled={!selectedItem}
+              >
+                Remove Item
+              </Menu.Item>
+            </Menu.Dropdown>
+          </Menu>
+        </Group>
+      </Group>
 
-    {/* Filter controls */}
-    {(allVendors.size > 0 || allTags.size > 0 || allOrderNumbers.size > 0) && (
-      <Flex flexWrap="wrap" gap={3} p={4} bg="gray.100" rounded="lg" mb={6}>
-        <Box display="flex" flexDir="column" minW="160px" flex="1">
-          <Text as="label" htmlFor="vendor-filter" fontSize="xs" mb={1} color="gray.500">
-            Filter by Vendor:
-          </Text>
-          <ChakraSelect
-            id="vendor-filter"
-            size="sm"
-            value={currentVendor}
-            onChange={(e) => setCurrentVendor(e.target.value)}
-          >
-            <option value="all">All Vendors</option>
-            {Array.from(allVendors)
-              .sort()
-              .map((vendor) => (
-                <option key={vendor} value={vendor}>
-                  {vendor}
-                </option>
-              ))}
-          </ChakraSelect>
-        </Box>
+      <Group grow>
+        <TextInput
+          placeholder="Search orders..."
+          icon={<User size={16} />}
+        />
+        <TextInput
+          placeholder="Filter by vendor..."
+          icon={<ImageIcon size={16} />}
+        />
+      </Group>
 
-        <Box display="flex" flexDir="column" minW="160px" flex="1">
-          <Text as="label" htmlFor="tag-filter" fontSize="xs" mb={1} color="gray.500">
-            Filter by Tag:
-          </Text>
-          <ChakraSelect id="tag-filter" size="sm" value={currentTag} onChange={(e) => setCurrentTag(e.target.value)}>
-            <option value="all">All Tags</option>
-            {Array.from(allTags)
-              .sort()
-              .map((tag) => (
-                <option key={tag} value={tag}>
-                  {tag}
-                </option>
-              ))}
-          </ChakraSelect>
-        </Box>
+      {isLoading ? (
+        <Group position="center" p="xl">
+          <Loader size="xl" />
+        </Group>
+      ) : error ? (
+        <Group position="center" p="xl">
+          <AlertCircle size={24} color="red" />
+          <Text color="red">{error}</Text>
+        </Group>
+      ) : (
+        <Stack spacing="md">
+          {filteredItems.map((item) => (
+            <Card key={item.id} p="md" radius="md" withBorder>
+              <Group position="apart">
+                <Group>
+                  {item.image && (
+                    <Image
+                      src={item.image}
+                      alt={item.imageAlt || item.title}
+                      width={60}
+                      height={60}
+                      radius="sm"
+                    />
+                  )}
+                  <Stack spacing={0}>
+                    <Text weight={500}>{item.title}</Text>
+                    <Text size="sm" color="dimmed">
+                      Order #{item.order_info.order_number}
+                    </Text>
+                    <Group spacing="xs">
+                      <Badge color={item.fulfillable ? "green" : "red"}>
+                        {item.fulfillable ? "Fulfillable" : "Not Fulfillable"}
+                      </Badge>
+                      {item.is_limited_edition && (
+                        <Badge color="blue">Limited Edition</Badge>
+                      )}
+                    </Group>
+                  </Stack>
+                </Group>
+                <Group>
+                  <Text weight={500}>${item.total}</Text>
+                  <ActionIcon
+                    onClick={() => setSelectedItem(item)}
+                    color={selectedItem?.id === item.id ? "blue" : "gray"}
+                  >
+                    <MoreVertical size={16} />
+                  </ActionIcon>
+                </Group>
+              </Group>
+            </Card>
+          ))}
+        </Stack>
+      )}
 
-        <Box display="flex" flexDir="column" minW="160px" flex="1">
-          <Text as="label" htmlFor="order-filter" fontSize="xs" mb={1} color="gray.500">
-            Filter by Order:
-          </Text>
-          <ChakraSelect
-            id="order-filter"
-            size="sm"
-            value={currentOrder}
-            onChange={(e) => setCurrentOrder(e.target.value)}
-          >
-            <option value="all">All Orders</option>
-            {Array.from(allOrderNumbers)
-              .sort((a, b) => Number(b) - Number(a))
-              .map((orderNum) => (
-                <option key={orderNum} value={orderNum}>
-                  Order #{orderNum}
-                </option>
-              ))}
-          </ChakraSelect>
-        </Box>
-
-        <Box display="flex" flexDir="column" minW="160px" flex="1">
-          <Text as="label" htmlFor="status-filter" fontSize="xs" mb={1} color="gray.500">
-            Filter by Status:
-          </Text>
-          <ChakraSelect
-            id="status-filter"
-            size="sm"
-            value={currentStatus}
-            onChange={(e) => setCurrentStatus(e.target.value)}
-          >
-            <option value="all">All Statuses</option>
-            <option value="fulfillable">Fulfillable Only</option>
-            <option value="fulfilled">Shipped</option>
-            <option value="unfulfilled">Processing</option>
-            <option value="paid">Paid</option>
-            <option value="pending">Pending</option>
-          </ChakraSelect>
-        </Box>
-
-        <Flex alignItems="flex-end">
-          <Button variant="outline" size="sm" onClick={resetFilters} whiteSpace="nowrap">
-            Reset Filters
-          </Button>
-        </Flex>
-      </Flex>
-    )}
-
-    {/* Loading indicator */}
-    {isLoading && lineItems.length === 0 && (
-      <Flex flexDir="column" alignItems="center" justifyContent="center" py={12}>
-        <Spinner size="lg" color="primary.500" mb={4} />
-        <Text color="gray.500">Looking up your purchases...</Text>
-      </Flex>
-    )}
-
-    {/* Items gallery */}
-    {filteredItems.length > 0 ? (
-      <Box
-        display="grid"
-        gridTemplateColumns={{ base: "1fr", md: "repeat(2, 1fr)", lg: "repeat(3, 1fr)" }}
-        gap={6}
-        mb={6}
+      <Modal
+        opened={isRemoveDialogOpen}
+        onClose={() => setIsRemoveDialogOpen(false)}
+        title="Remove Item"
       >
-        {filteredItems.map((item) => (
-          <ItemCard
-            key={`${item.order_info.order_id}-${item.line_item_id}`}
-            item={item}
-            formatMoney={formatMoney}
-            formatStatus={formatStatus}
-            onRemoveClick={handleRemoveClick}
-          />
-        ))}
-      </Box>
-    ) : (
-      !isLoading && (
-        <Box textAlign="center" p={12} border="1px dashed" borderColor="gray.300" rounded="lg" bg="gray.50">
-          <Text color="gray.500">No items match your filter criteria.</Text>
-        </Box>
-      )
-    )}
-
-    {/* Scroll loader */}
-    {isLoading && lineItems.length > 0 && (
-      <Flex flexDir="column" alignItems="center" justifyContent="center" py={6}>
-        <Spinner size="md" color="primary.500" mb={2} />
-        <Text fontSize="sm" color="gray.500">
-          Loading more items...
-        </Text>
-      </Flex>
-    )}
-
-    {/* End of orders message */}
-    {noMoreOrders && lineItems.length > 0 && (
-      <Box textAlign="center" p={4} border="1px dashed" borderColor="gray.300" rounded="lg" bg="gray.50" mb={6}>
-        <Text fontSize="sm" color="gray.500">
-          You've reached the end of your purchase history
-        </Text>
-      </Box>
-    )}
-
-    {/* Load more button */}
-    {!noMoreOrders && !isLoading && lineItems.length > 0 && (
-      <Flex justify="center" mb={6}>
-        <Button variant="outline" onClick={() => fetchOrdersByCustomerId(customerId!, nextCursor, true)}>
-          Load More
-        </Button>
-      </Flex>
-    )}
-
-    {/* Remove Item Dialog */}
-    <AlertDialog open={isRemoveDialogOpen} onClose={onRemoveDialogClose}>
-      <AlertDialogContent>
-        <AlertDialogHeader>
-          <AlertDialogTitle>Remove Item</AlertDialogTitle>
-          <AlertDialogDescription>
-            Are you sure you want to remove this item? This will mark it as removed in the database.
-          </AlertDialogDescription>
-        </AlertDialogHeader>
-        <Box py={4}>
-          <FormLabel htmlFor="reason" textAlign="right">
-            Reason for removal (optional)
-          </FormLabel>
+        <Stack spacing="md">
+          <Text>
+            Are you sure you want to remove this item? This action cannot be undone.
+          </Text>
           <Textarea
-            id="reason"
+            label="Reason for removal"
+            placeholder="Enter the reason for removing this item..."
             value={removeReason}
             onChange={(e) => setRemoveReason(e.target.value)}
-            placeholder="Enter a reason for removal"
-            mt={2}
           />
-        </Box>
-        <AlertDialogFooter>
-          <AlertDialogCancel>Cancel</AlertDialogCancel>
-          <AlertDialogAction onClick={handleConfirmRemove} isLoading={isUpdatingStatus}>
-            Remove
-          </AlertDialogAction>
-        </AlertDialogFooter>
-      </AlertDialogContent>
-    </AlertDialog>
+          <Group position="right">
+            <Button
+              variant="default"
+              onClick={() => setIsRemoveDialogOpen(false)}
+            >
+              Cancel
+            </Button>
+            <Button
+              color="red"
+              onClick={handleConfirmRemove}
+              loading={isUpdatingStatus}
+            >
+              Remove
+            </Button>
+          </Group>
+        </Stack>
+      </Modal>
 
-    {/* Sync Edition Data Dialog */}
-    <AlertDialog open={isSyncDialogOpen} onClose={onSyncDialogClose}>
-      <AlertDialogContent>
-        <AlertDialogHeader>
-          <AlertDialogTitle>Sync Edition Data</AlertDialogTitle>
-          <AlertDialogDescription>
-            Enter a product ID to sync edition data for that product. This will update all edition numbers in the
-            database.
-          </AlertDialogDescription>
-        </AlertDialogHeader>
-        <Box py={4}>
-          <FormLabel htmlFor="productId" textAlign="right">
-            Product ID
-          </FormLabel>
-          <Input
-            id="productId"
+      <Modal
+        opened={isSyncDialogOpen}
+        onClose={() => setIsSyncDialogOpen(false)}
+        title="Sync Product"
+      >
+        <Stack spacing="md">
+          <TextInput
+            label="Product ID"
+            placeholder="Enter the product ID to sync..."
             value={syncProductId}
             onChange={(e) => setSyncProductId(e.target.value)}
-            placeholder="Enter product ID"
-            className="col-span-3"
           />
-        </Box>
-
-        {syncResult && (
-          <Box bg="gray.100" p={4} rounded="md" fontSize="sm">
-            <Heading as="h4" size="sm" mb={2}>
-              Sync Results:
-            </Heading>
-            <Stack spacing={1}>
-              <Text>Product: {syncResult.productTitle}</Text>
-              <Text>Total Editions: {syncResult.totalEditions}</Text>
-              <Text>Edition Total: {syncResult.editionTotal || "Not specified"}</Text>
-              <Text>Active Items: {syncResult.activeItems}</Text>
-              <Text>Removed Items: {syncResult.removedItems}</Text>
-            </Stack>
-          </Box>
-        )}
-        <AlertDialogFooter>
-          <Button type="button" variant="outline" onClick={onSyncDialogClose}>
-            Cancel
-          </Button>
-          <Button type="submit" onClick={handleConfirmSync} isLoading={isSyncing}>
-            Sync Edition Data
-          </Button>
-        </AlertDialogFooter>
-      </AlertDialogContent>
-    </AlertDialog>
-  </Box>
+          {syncResult && (
+            <Card p="md" radius="md" withBorder>
+              <Text>{syncResult.message}</Text>
+            </Card>
+          )}
+          <Group position="right">
+            <Button
+              variant="default"
+              onClick={() => setIsSyncDialogOpen(false)}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleConfirmSync}
+              loading={isSyncing}
+            >
+              Sync
+            </Button>
+          </Group>
+        </Stack>
+      </Modal>
+    </Stack>
+  </Card>
 )
 }
