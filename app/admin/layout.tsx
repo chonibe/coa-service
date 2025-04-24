@@ -5,7 +5,6 @@ import type React from "react"
 import { useState, useEffect } from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { motion, AnimatePresence } from "framer-motion"
 import {
   BarChart,
   Settings,
@@ -21,12 +20,12 @@ import {
   DollarSign,
   RefreshCw,
 } from "lucide-react"
+import { Button } from "@/components/ui/button"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
 import { Toaster } from "@/components/ui/toaster"
 import LogoutButton from "./logout-button"
 import { useMobile } from "@/hooks/use-mobile"
-import { fadeIn, slideUp, slideInFromRight } from "@/lib/motion-variants"
 
 interface NavItem {
   title: string
@@ -34,16 +33,6 @@ interface NavItem {
   icon: React.ReactNode
   submenu?: NavItem[]
   expanded?: boolean
-}
-
-const staggerContainer = {
-  hidden: { opacity: 0 },
-  visible: {
-    opacity: 1,
-    transition: {
-      staggerChildren: 0.1,
-    },
-  },
 }
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
@@ -170,58 +159,47 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   }, [pathname])
 
   return (
-    <motion.div className="flex min-h-screen flex-col" initial="hidden" animate="visible" variants={fadeIn}>
-      <header className="sticky top-0 z-30 flex h-16 items-center gap-4 border-b bg-background px-4 sm:px-6 backdrop-blur-md bg-background/90">
+    <div className="flex min-h-screen flex-col">
+      <header className="sticky top-0 z-30 flex h-16 items-center gap-4 border-b bg-background px-4 sm:px-6">
         <Sheet open={open} onOpenChange={setOpen}>
           <SheetTrigger asChild>
-            <motion.button
-              className="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-input bg-background hover:bg-accent hover:text-accent-foreground h-10 w-10 md:hidden"
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-            >
+            <Button variant="outline" size="icon" className="md:hidden">
               <Menu className="h-6 w-6" />
               <span className="sr-only">Toggle menu</span>
-            </motion.button>
+            </Button>
           </SheetTrigger>
-          <SheetContent side="left" className="w-[300px] sm:w-[400px] pr-0 rounded-r-2xl">
+          <SheetContent side="left" className="w-[300px] sm:w-[400px] pr-0">
             <div className="flex flex-col h-full">
               <div className="flex items-center border-b h-16 px-6">
                 <Link href="/admin" className="flex items-center gap-2 font-semibold">
                   <Award className="h-6 w-6" />
                   <span>Admin Dashboard</span>
                 </Link>
-                <motion.button
-                  className="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 hover:bg-accent hover:text-accent-foreground h-10 w-10 ml-auto"
-                  onClick={() => setOpen(false)}
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                >
+                <Button variant="ghost" size="icon" className="ml-auto" onClick={() => setOpen(false)}>
                   <X className="h-5 w-5" />
                   <span className="sr-only">Close</span>
-                </motion.button>
+                </Button>
               </div>
               <ScrollArea className="flex-1">
-                <motion.div className="px-2 py-4" variants={staggerContainer} initial="hidden" animate="visible">
+                <div className="px-2 py-4">
                   <nav className="flex flex-col gap-2">
                     {navItems.map((item, index) => (
-                      <motion.div key={item.href} className="flex flex-col" variants={slideInFromRight}>
+                      <div key={item.href} className="flex flex-col">
                         {item.submenu ? (
                           <>
-                            <motion.button
+                            <button
                               onClick={() => toggleSubmenu(index)}
                               className={`flex items-center justify-between rounded-md px-3 py-2 text-sm font-medium ${
                                 isActive(item)
                                   ? "bg-accent text-accent-foreground"
                                   : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
                               }`}
-                              whileHover={{ scale: 1.02 }}
-                              whileTap={{ scale: 0.98 }}
                             >
                               <div className="flex items-center gap-3">
                                 {item.icon}
                                 <span>{item.title}</span>
                               </div>
-                              <motion.svg
+                              <svg
                                 xmlns="http://www.w3.org/2000/svg"
                                 width="24"
                                 height="24"
@@ -231,60 +209,47 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                                 strokeWidth="2"
                                 strokeLinecap="round"
                                 strokeLinejoin="round"
-                                className="h-4 w-4"
-                                animate={{ rotate: item.expanded ? 180 : 0 }}
-                                transition={{ duration: 0.3 }}
+                                className={`h-4 w-4 transition-transform ${item.expanded ? "rotate-180" : ""}`}
                               >
                                 <polyline points="6 9 12 15 18 9"></polyline>
-                              </motion.svg>
-                            </motion.button>
-                            <AnimatePresence>
-                              {item.expanded && (
-                                <motion.div
-                                  className="mt-1 pl-6 space-y-1"
-                                  initial={{ opacity: 0, height: 0 }}
-                                  animate={{ opacity: 1, height: "auto" }}
-                                  exit={{ opacity: 0, height: 0 }}
-                                  transition={{ duration: 0.3 }}
-                                >
-                                  {item.submenu.map((subItem) => (
-                                    <motion.div key={subItem.href} variants={slideUp}>
-                                      <Link
-                                        href={subItem.href}
-                                        className={`flex items-center gap-3 rounded-md px-3 py-2 text-sm ${
-                                          pathname === subItem.href
-                                            ? "bg-accent text-accent-foreground font-medium"
-                                            : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
-                                        }`}
-                                      >
-                                        {subItem.icon}
-                                        <span>{subItem.title}</span>
-                                      </Link>
-                                    </motion.div>
-                                  ))}
-                                </motion.div>
-                              )}
-                            </AnimatePresence>
+                              </svg>
+                            </button>
+                            {item.expanded && (
+                              <div className="mt-1 pl-6 space-y-1">
+                                {item.submenu.map((subItem) => (
+                                  <Link
+                                    key={subItem.href}
+                                    href={subItem.href}
+                                    className={`flex items-center gap-3 rounded-md px-3 py-2 text-sm ${
+                                      pathname === subItem.href
+                                        ? "bg-accent text-accent-foreground font-medium"
+                                        : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+                                    }`}
+                                  >
+                                    {subItem.icon}
+                                    <span>{subItem.title}</span>
+                                  </Link>
+                                ))}
+                              </div>
+                            )}
                           </>
                         ) : (
-                          <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
-                            <Link
-                              href={item.href}
-                              className={`flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium ${
-                                pathname === item.href
-                                  ? "bg-accent text-accent-foreground"
-                                  : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
-                              }`}
-                            >
-                              {item.icon}
-                              <span>{item.title}</span>
-                            </Link>
-                          </motion.div>
+                          <Link
+                            href={item.href}
+                            className={`flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium ${
+                              pathname === item.href
+                                ? "bg-accent text-accent-foreground"
+                                : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+                            }`}
+                          >
+                            {item.icon}
+                            <span>{item.title}</span>
+                          </Link>
                         )}
-                      </motion.div>
+                      </div>
                     ))}
                   </nav>
-                </motion.div>
+                </div>
               </ScrollArea>
               <div className="border-t p-4">
                 <LogoutButton className="w-full" />
@@ -303,32 +268,25 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       <div className="flex flex-1">
         <aside className="hidden w-[250px] flex-col border-r md:flex">
           <ScrollArea className="flex-1">
-            <motion.div
-              className="flex flex-col gap-2 p-4"
-              variants={staggerContainer}
-              initial="hidden"
-              animate="visible"
-            >
+            <div className="flex flex-col gap-2 p-4">
               <nav className="grid gap-2">
                 {navItems.map((item, index) => (
-                  <motion.div key={item.href} className="flex flex-col" variants={slideInFromRight}>
+                  <div key={item.href} className="flex flex-col">
                     {item.submenu ? (
                       <>
-                        <motion.button
+                        <button
                           onClick={() => toggleSubmenu(index)}
                           className={`flex items-center justify-between rounded-md px-3 py-2 text-sm font-medium ${
                             isActive(item)
                               ? "bg-accent text-accent-foreground"
                               : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
                           }`}
-                          whileHover={{ scale: 1.02 }}
-                          whileTap={{ scale: 0.98 }}
                         >
                           <div className="flex items-center gap-3">
                             {item.icon}
                             <span>{item.title}</span>
                           </div>
-                          <motion.svg
+                          <svg
                             xmlns="http://www.w3.org/2000/svg"
                             width="24"
                             height="24"
@@ -338,78 +296,52 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                             strokeWidth="2"
                             strokeLinecap="round"
                             strokeLinejoin="round"
-                            className="h-4 w-4"
-                            animate={{ rotate: item.expanded ? 180 : 0 }}
-                            transition={{ duration: 0.3 }}
+                            className={`h-4 w-4 transition-transform ${item.expanded ? "rotate-180" : ""}`}
                           >
                             <polyline points="6 9 12 15 18 9"></polyline>
-                          </motion.svg>
-                        </motion.button>
-                        <AnimatePresence>
-                          {item.expanded && (
-                            <motion.div
-                              className="mt-1 pl-6 space-y-1"
-                              initial={{ opacity: 0, height: 0 }}
-                              animate={{ opacity: 1, height: "auto" }}
-                              exit={{ opacity: 0, height: 0 }}
-                              transition={{ duration: 0.3 }}
-                            >
-                              {item.submenu.map((subItem) => (
-                                <motion.div key={subItem.href} variants={slideUp}>
-                                  <Link
-                                    href={subItem.href}
-                                    className={`flex items-center gap-3 rounded-md px-3 py-2 text-sm ${
-                                      pathname === subItem.href
-                                        ? "bg-accent text-accent-foreground font-medium"
-                                        : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
-                                    }`}
-                                  >
-                                    {subItem.icon}
-                                    <span>{subItem.title}</span>
-                                  </Link>
-                                </motion.div>
-                              ))}
-                            </motion.div>
-                          )}
-                        </AnimatePresence>
+                          </svg>
+                        </button>
+                        {item.expanded && (
+                          <div className="mt-1 pl-6 space-y-1">
+                            {item.submenu.map((subItem) => (
+                              <Link
+                                key={subItem.href}
+                                href={subItem.href}
+                                className={`flex items-center gap-3 rounded-md px-3 py-2 text-sm ${
+                                  pathname === subItem.href
+                                    ? "bg-accent text-accent-foreground font-medium"
+                                    : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+                                }`}
+                              >
+                                {subItem.icon}
+                                <span>{subItem.title}</span>
+                              </Link>
+                            ))}
+                          </div>
+                        )}
                       </>
                     ) : (
-                      <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
-                        <Link
-                          href={item.href}
-                          className={`flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium ${
-                            pathname === item.href
-                              ? "bg-accent text-accent-foreground"
-                              : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
-                          }`}
-                        >
-                          {item.icon}
-                          <span>{item.title}</span>
-                        </Link>
-                      </motion.div>
+                      <Link
+                        href={item.href}
+                        className={`flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium ${
+                          pathname === item.href
+                            ? "bg-accent text-accent-foreground"
+                            : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+                        }`}
+                      >
+                        {item.icon}
+                        <span>{item.title}</span>
+                      </Link>
                     )}
-                  </motion.div>
+                  </div>
                 ))}
               </nav>
-            </motion.div>
+            </div>
           </ScrollArea>
         </aside>
-        <main className="flex-1">
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={pathname}
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
-              transition={{ duration: 0.3 }}
-              className="h-full"
-            >
-              {children}
-            </motion.div>
-          </AnimatePresence>
-        </main>
+        <main className="flex-1">{children}</main>
       </div>
       <Toaster />
-    </motion.div>
+    </div>
   )
 }
