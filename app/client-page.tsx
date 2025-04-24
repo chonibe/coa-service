@@ -1,65 +1,65 @@
 "use client"
 
-import { Box, Container, Heading, Text, Button, VStack, SimpleGrid } from "@chakra-ui/react"
+import { Container, Title, Text, Button, Stack, SimpleGrid, Paper } from "@mantine/core"
 import Link from "next/link"
 
 export default function ClientPage() {
   return (
-    <Container maxW="container.xl" py={10}>
-      <VStack spacing={8} align="stretch">
-        <Box textAlign="center" py={10}>
-          <Heading as="h1" size="2xl" mb={4}>
+    <Container size="xl" py="xl">
+      <Stack spacing="xl">
+        <Paper p="xl" radius="md" withBorder>
+          <Title order={1} ta="center" mb="md">
             Collector Benefits System
-          </Heading>
-          <Text fontSize="xl" color="gray.600">
+          </Title>
+          <Text size="xl" c="dimmed" ta="center">
             Manage your limited editions and certificates
           </Text>
-        </Box>
+        </Paper>
 
-        <SimpleGrid columns={{ base: 1, md: 2, lg: 3 }} spacing={6}>
-          <Box p={6} borderWidth="1px" borderRadius="lg" boxShadow="md" bg="white">
-            <Heading as="h3" size="md" mb={4}>
+        <SimpleGrid cols={{ base: 1, sm: 2, lg: 3 }} spacing="md">
+          <Paper p="xl" radius="md" withBorder>
+            <Title order={3} mb="md">
               Certificate Management
-            </Heading>
-            <Text mb={4} color="gray.600">
+            </Title>
+            <Text mb="md" c="dimmed">
               Manage and view certificate details
             </Text>
             <Link href="/admin/certificates/management" passHref>
-              <Button as="a" colorScheme="blue" width="full">
+              <Button component="a" fullWidth>
                 Go to Certificate Management
               </Button>
             </Link>
-          </Box>
+          </Paper>
 
-          <Box p={6} borderWidth="1px" borderRadius="lg" boxShadow="md" bg="white">
-            <Heading as="h3" size="md" mb={4}>
+          <Paper p="xl" radius="md" withBorder>
+            <Title order={3} mb="md">
               Certificate Access Logs
-            </Heading>
-            <Text mb={4} color="gray.600">
+            </Title>
+            <Text mb="md" c="dimmed">
               View certificate access history
             </Text>
             <Link href="/admin/certificates/logs" passHref>
-              <Button as="a" colorScheme="teal" width="full">
+              <Button component="a" fullWidth variant="light">
                 View Access Logs
               </Button>
             </Link>
-          </Box>
+          </Paper>
 
-          <Box p={6} borderWidth="1px" borderRadius="lg" boxShadow="md" bg="white">
-            <Heading as="h3" size="md" mb={4}>
+          <Paper p="xl" radius="md" withBorder>
+            <Title order={3} mb="md">
               Missing Orders
-            </Heading>
-            <Text mb={4} color="gray.600">
+            </Title>
+            <Text mb="md" c="dimmed">
               Check for missing orders in the system
             </Text>
             <Link href="/admin/missing-orders" passHref>
-              <Button as="a" colorScheme="purple" width="full">
+              <Button component="a" fullWidth variant="outline">
                 Check Missing Orders
               </Button>
             </Link>
-          </Box>
+          </Paper>
         </SimpleGrid>
-      </VStack>
+      </Stack>
     </Container>
   )
 }
