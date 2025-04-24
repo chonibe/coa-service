@@ -23,8 +23,6 @@
     "@mantine/next": "^6.0.22",
     "@mantine/notifications": "^7.17.5",
     "@mantine/nprogress": "^7.17.5",
-    "@mantine/prism": "^6.0.22",
-    "@mantine/rte": "^5.10.5",
     "@mantine/spotlight": "^7.17.5",
     "@mantine/tiptap": "^7.17.5",
     "@supabase/supabase-js": "latest",
