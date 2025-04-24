@@ -11,6 +11,10 @@ const nextConfig = {
   images: {
     unoptimized: true,
   },
+  transpilePackages: ['@mantine/core', '@mantine/hooks', '@mantine/notifications', '@mantine/modals'],
+  experimental: {
+    optimizePackageImports: ['@mantine/core', '@mantine/hooks'],
+  },
 }
 
 module.exports = nextConfig
