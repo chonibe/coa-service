@@ -1,26 +1,60 @@
-"use client"
-
 import Link from "next/link"
-import { Box, Heading, Text, Button, Container, VStack } from "@chakra-ui/react"
 
 export default function NotFound() {
   return (
-    <Container maxW="container.md" py={20}>
-      <VStack spacing={8} align="stretch">
-        <Box textAlign="center" p={8} borderWidth="1px" borderRadius="lg" boxShadow="md" bg="white">
-          <Heading as="h1" size="2xl" mb={4}>
-            404 - Page Not Found
-          </Heading>
-          <Text fontSize="xl" mb={8} color="gray.600">
-            The page you are looking for does not exist.
-          </Text>
-          <Link href="/" passHref>
-            <Button as="a" colorScheme="blue" size="lg">
-              Return to Home
-            </Button>
-          </Link>
-        </Box>
-      </VStack>
-    </Container>
+    <div
+      style={{
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        justifyContent: "center",
+        height: "100vh",
+        textAlign: "center",
+        padding: "0 1rem",
+      }}
+    >
+      <div
+        style={{
+          maxWidth: "500px",
+          padding: "2rem",
+          borderRadius: "8px",
+          boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)",
+          backgroundColor: "white",
+        }}
+      >
+        <h1
+          style={{
+            fontSize: "2.5rem",
+            marginBottom: "1rem",
+            color: "#333",
+          }}
+        >
+          404 - Page Not Found
+        </h1>
+        <p
+          style={{
+            fontSize: "1.2rem",
+            marginBottom: "2rem",
+            color: "#666",
+          }}
+        >
+          The page you are looking for does not exist.
+        </p>
+        <Link
+          href="/"
+          style={{
+            display: "inline-block",
+            padding: "0.75rem 1.5rem",
+            backgroundColor: "#3182ce",
+            color: "white",
+            borderRadius: "4px",
+            textDecoration: "none",
+            fontWeight: "bold",
+          }}
+        >
+          Return to Home
+        </Link>
+      </div>
+    </div>
   )
 }
