@@ -1,12 +1,8 @@
 "use client"
 
-import { DialogFooter } from "@/components/ui/dialog"
-
-import type React from "react"
-
-import { useState, useEffect, useRef } from "react"
+import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import {
@@ -22,20 +18,13 @@ import {
   Trash2,
   Edit,
   ArrowLeft,
-  Calendar,
-  LinkIcon,
-  Code,
-  Upload,
-  Check,
-  X,
-  ExternalLink,
-  PointerIcon as PreviewIcon,
 } from "lucide-react"
 import Link from "next/link"
 import {
   Dialog,
   DialogContent,
   DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
@@ -47,99 +36,25 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge"
 import { format } from "date-fns"
 import { toast } from "@/components/ui/use-toast"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Switch } from "@/components/ui/switch"
 
-// Replace the getBenefitIcon function with this enhanced version
+// Get icon based on benefit type
 const getBenefitIcon = (type: string) => {
   switch (type?.toLowerCase()) {
     case "digital content":
-      return <FileText className="h-5 w-5 text-blue-500" />
+      return <FileText className="h-4 w-4" />
     case "exclusive access":
-      return <Key className="h-5 w-5 text-purple-500" />
+      return <Key className="h-4 w-4" />
     case "virtual event":
-      return <Video className="h-5 w-5 text-red-500" />
+      return <Video className="h-4 w-4" />
     case "physical item":
-      return <Package className="h-5 w-5 text-amber-500" />
+      return <Package className="h-4 w-4" />
     case "discount":
-      return <Percent className="h-5 w-5 text-green-500" />
+      return <Percent className="h-4 w-4" />
     case "behind the scenes":
-      return <Eye className="h-5 w-5 text-indigo-500" />
+      return <Eye className="h-4 w-4" />
     default:
-      return <FileText className="h-5 w-5 text-gray-500" />
+      return <FileText className="h-4 w-4" />
   }
-}
-
-// Add this new component for the benefit preview
-const BenefitPreview = ({ benefit, benefitType }: { benefit: any; benefitType: any }) => {
-  return (
-    <div className="border rounded-lg overflow-hidden bg-white shadow-sm">
-      <div className="p-4 border-b">
-        <h3 className="text-lg font-semibold">Collector Preview</h3>
-        <p className="text-sm text-muted-foreground">How collectors will see this benefit</p>
-      </div>
-      <div className="p-6 bg-gray-50">
-        <div className="max-w-md mx-auto bg-white border rounded-lg overflow-hidden shadow-md">
-          <div className="p-4 border-b bg-gradient-to-r from-gray-50 to-gray-100 flex items-center">
-            <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center mr-3">
-              {getBenefitIcon(benefitType?.name)}
-            </div>
-            <div>
-              <h4 className="font-medium">{benefit.title || "Benefit Title"}</h4>
-              <p className="text-xs text-muted-foreground">{benefitType?.name || "Benefit Type"}</p>
-            </div>
-          </div>
-          <div className="p-4">
-            {benefit.description && <p className="text-sm mb-4">{benefit.description}</p>}
-
-            {benefit.contentUrl && (
-              <div className="flex items-center text-sm mb-3 p-2 bg-gray-50 rounded border">
-                <LinkIcon className="h-4 w-4 mr-2 text-blue-500" />
-                <a
-                  href={benefit.contentUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-blue-600 hover:underline truncate"
-                >
-                  {benefit.contentUrl}
-                </a>
-                <ExternalLink className="h-4 w-4 ml-auto text-gray-400" />
-              </div>
-            )}
-
-            {benefit.accessCode && (
-              <div className="flex items-center text-sm mb-3 p-2 bg-gray-50 rounded border">
-                <Code className="h-4 w-4 mr-2 text-purple-500" />
-                <span className="font-mono">{benefit.accessCode}</span>
-              </div>
-            )}
-
-            {(benefit.startsAt || benefit.expiresAt) && (
-              <div className="mt-4 pt-3 border-t text-xs text-muted-foreground">
-                {benefit.startsAt && (
-                  <div className="flex items-center mb-1">
-                    <Calendar className="h-3 w-3 mr-1" />
-                    <span>Available from: {format(new Date(benefit.startsAt), "MMM d, yyyy")}</span>
-                  </div>
-                )}
-                {benefit.expiresAt && (
-                  <div className="flex items-center">
-                    <Calendar className="h-3 w-3 mr-1" />
-                    <span>Expires: {format(new Date(benefit.expiresAt), "MMM d, yyyy")}</span>
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
-          <div className="p-3 bg-gray-50 border-t">
-            <Button size="sm" className="w-full">
-              Claim Benefit
-            </Button>
-          </div>
-        </div>
-      </div>
-    </div>
-  )
 }
 
 export default function BenefitsPage() {
@@ -162,12 +77,6 @@ export default function BenefitsPage() {
     expiresAt: "",
   })
   const [isSubmitting, setIsSubmitting] = useState(false)
-  // Add these new state variables to the component
-  const [editingBenefitId, setEditingBenefitId] = useState<number | null>(null)
-  const [isPreviewOpen, setIsPreviewOpen] = useState(false)
-  const [previewBenefit, setPreviewBenefit] = useState<any>(null)
-  const [activeTab, setActiveTab] = useState("details")
-  const fileInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     const fetchVendorData = async () => {
@@ -254,11 +163,9 @@ export default function BenefitsPage() {
         startsAt: "",
         expiresAt: "",
       })
-      setEditingBenefitId(null)
     }
   }
 
-  // Replace the existing handleSubmit function with this enhanced version
   const handleSubmit = async () => {
     if (!formData.title || !formData.benefitTypeId || !selectedProduct) {
       toast({
@@ -293,8 +200,6 @@ export default function BenefitsPage() {
         throw new Error("Failed to create benefit")
       }
 
-      const result = await response.json()
-
       toast({
         title: "Success",
         description: "Benefit created successfully",
@@ -313,100 +218,6 @@ export default function BenefitsPage() {
     } finally {
       setIsSubmitting(false)
     }
-  }
-
-  // Add this new function for handling file uploads
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (file) {
-      // In a real implementation, you would upload the file to a storage service
-      // and then set the URL in the form data
-      toast({
-        title: "File selected",
-        description: `${file.name} (${Math.round(file.size / 1024)}KB)`,
-      })
-
-      // For demo purposes, we'll just set a placeholder URL
-      setFormData({
-        ...formData,
-        contentUrl: `https://storage.example.com/${file.name}`,
-      })
-    }
-  }
-
-  // Add this new function for editing benefits
-  const handleEditBenefit = (benefit: any) => {
-    setFormData({
-      title: benefit.title,
-      benefitTypeId: benefit.benefit_type_id.toString(),
-      description: benefit.description || "",
-      contentUrl: benefit.content_url || "",
-      accessCode: benefit.access_code || "",
-      startsAt: benefit.starts_at ? new Date(benefit.starts_at).toISOString().slice(0, 16) : "",
-      expiresAt: benefit.expires_at ? new Date(benefit.expires_at).toISOString().slice(0, 16) : "",
-    })
-    setEditingBenefitId(benefit.id)
-    setIsDialogOpen(true)
-  }
-
-  // Add this new function for updating benefits
-  const handleUpdateBenefit = async () => {
-    if (!formData.title || !formData.benefitTypeId) {
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: "Please fill in all required fields",
-      })
-      return
-    }
-
-    try {
-      setIsSubmitting(true)
-      const response = await fetch("/api/benefits/update", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          id: editingBenefitId,
-          benefit_type_id: Number.parseInt(formData.benefitTypeId),
-          title: formData.title,
-          description: formData.description,
-          content_url: formData.contentUrl,
-          access_code: formData.accessCode,
-          starts_at: formData.startsAt || null,
-          expires_at: formData.expiresAt || null,
-        }),
-      })
-
-      if (!response.ok) {
-        throw new Error("Failed to update benefit")
-      }
-
-      toast({
-        title: "Success",
-        description: "Benefit updated successfully",
-      })
-
-      // Close dialog and refresh benefits
-      handleDialogOpen(false)
-      await fetchBenefits(selectedProduct.id)
-    } catch (err: any) {
-      console.error("Error updating benefit:", err)
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: err.message || "Failed to update benefit",
-      })
-    } finally {
-      setIsSubmitting(false)
-    }
-  }
-
-  // Add this new function for previewing a benefit
-  const handlePreviewBenefit = (benefit: any) => {
-    setPreviewBenefit(benefit)
-    setIsPreviewOpen(true)
   }
 
   const handleDeleteBenefit = async (id: number) => {
@@ -507,179 +318,116 @@ export default function BenefitsPage() {
                     Add New Benefit
                   </Button>
                 </DialogTrigger>
-                <DialogContent className="sm:max-w-[650px]">
+                <DialogContent className="sm:max-w-[550px]">
                   <DialogHeader>
-                    <DialogTitle>{editingBenefitId ? "Edit Benefit" : "Add New Collector Benefit"}</DialogTitle>
+                    <DialogTitle>Add New Collector Benefit</DialogTitle>
                     <DialogDescription>
-                      {editingBenefitId
-                        ? `Update this benefit for collectors of ${selectedProduct?.title}`
-                        : `Create a new benefit for collectors of ${selectedProduct?.title}`}
+                      Create a new benefit for collectors of {selectedProduct?.title}
                     </DialogDescription>
                   </DialogHeader>
 
-                  <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-                    <TabsList className="grid w-full grid-cols-2">
-                      <TabsTrigger value="details">Benefit Details</TabsTrigger>
-                      <TabsTrigger value="preview">Preview</TabsTrigger>
-                    </TabsList>
-
-                    <TabsContent value="details" className="space-y-4 py-4">
-                      <div className="grid gap-4">
-                        <div className="grid gap-2">
-                          <Label htmlFor="benefit-type">Benefit Type *</Label>
-                          <Select
-                            value={formData.benefitTypeId}
-                            onValueChange={(value) => setFormData({ ...formData, benefitTypeId: value })}
-                          >
-                            <SelectTrigger id="benefit-type">
-                              <SelectValue placeholder="Select a benefit type" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {benefitTypes.map((type) => (
-                                <SelectItem key={type.id} value={type.id.toString()}>
-                                  <div className="flex items-center">
-                                    {getBenefitIcon(type.name)}
-                                    <span className="ml-2">{type.name}</span>
-                                  </div>
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </div>
-
-                        <div className="grid gap-2">
-                          <Label htmlFor="title">Title *</Label>
-                          <Input
-                            id="title"
-                            placeholder="Enter benefit title"
-                            value={formData.title}
-                            onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                          />
-                        </div>
-
-                        <div className="grid gap-2">
-                          <Label htmlFor="description">Description</Label>
-                          <Textarea
-                            id="description"
-                            placeholder="Enter benefit description"
-                            value={formData.description}
-                            onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                            className="min-h-[100px]"
-                          />
-                        </div>
-
-                        <div className="grid gap-2">
-                          <Label>Content</Label>
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div>
-                              <div className="flex items-center justify-between mb-2">
-                                <Label htmlFor="content-url" className="text-sm">
-                                  URL
-                                </Label>
-                                <div className="flex items-center">
-                                  <Switch
-                                    id="use-file"
-                                    checked={!formData.contentUrl.startsWith("http")}
-                                    onCheckedChange={(checked) => {
-                                      if (checked) {
-                                        fileInputRef.current?.click()
-                                      }
-                                    }}
-                                    size="sm"
-                                  />
-                                  <Label htmlFor="use-file" className="ml-2 text-xs">
-                                    Upload File
-                                  </Label>
-                                </div>
+                  <div className="grid gap-4 py-4">
+                    <div className="grid gap-2">
+                      <Label htmlFor="benefit-type">Benefit Type *</Label>
+                      <Select
+                        value={formData.benefitTypeId}
+                        onValueChange={(value) => setFormData({ ...formData, benefitTypeId: value })}
+                      >
+                        <SelectTrigger id="benefit-type">
+                          <SelectValue placeholder="Select a benefit type" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {benefitTypes.map((type) => (
+                            <SelectItem key={type.id} value={type.id.toString()}>
+                              <div className="flex items-center">
+                                {getBenefitIcon(type.name)}
+                                <span className="ml-2">{type.name}</span>
                               </div>
-                              <div className="flex">
-                                <Input
-                                  id="content-url"
-                                  placeholder="https://example.com/content"
-                                  value={formData.contentUrl}
-                                  onChange={(e) => setFormData({ ...formData, contentUrl: e.target.value })}
-                                  className="rounded-r-none"
-                                />
-                                <Button
-                                  type="button"
-                                  variant="outline"
-                                  className="rounded-l-none border-l-0"
-                                  onClick={() => fileInputRef.current?.click()}
-                                >
-                                  <Upload className="h-4 w-4" />
-                                </Button>
-                                <input type="file" ref={fileInputRef} className="hidden" onChange={handleFileUpload} />
-                              </div>
-                              <p className="text-xs text-muted-foreground mt-1">
-                                Link to digital content, event page, or related resource
-                              </p>
-                            </div>
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
 
-                            <div>
-                              <Label htmlFor="access-code" className="text-sm mb-2 block">
-                                Access Code
-                              </Label>
-                              <Input
-                                id="access-code"
-                                placeholder="Optional access code"
-                                value={formData.accessCode}
-                                onChange={(e) => setFormData({ ...formData, accessCode: e.target.value })}
-                              />
-                              <p className="text-xs text-muted-foreground mt-1">
-                                Optional code collectors will need to access this benefit
-                              </p>
-                            </div>
-                          </div>
-                        </div>
-
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          <div className="grid gap-2">
-                            <Label htmlFor="starts-at">Starts At</Label>
-                            <Input
-                              id="starts-at"
-                              type="datetime-local"
-                              value={formData.startsAt}
-                              onChange={(e) => setFormData({ ...formData, startsAt: e.target.value })}
-                            />
-                          </div>
-
-                          <div className="grid gap-2">
-                            <Label htmlFor="expires-at">Expires At</Label>
-                            <Input
-                              id="expires-at"
-                              type="datetime-local"
-                              value={formData.expiresAt}
-                              onChange={(e) => setFormData({ ...formData, expiresAt: e.target.value })}
-                            />
-                          </div>
-                        </div>
-                      </div>
-                    </TabsContent>
-
-                    <TabsContent value="preview">
-                      <BenefitPreview
-                        benefit={formData}
-                        benefitType={benefitTypes.find((t) => t.id.toString() === formData.benefitTypeId)}
+                    <div className="grid gap-2">
+                      <Label htmlFor="title">Title *</Label>
+                      <Input
+                        id="title"
+                        placeholder="Enter benefit title"
+                        value={formData.title}
+                        onChange={(e) => setFormData({ ...formData, title: e.target.value })}
                       />
-                    </TabsContent>
-                  </Tabs>
+                    </div>
+
+                    <div className="grid gap-2">
+                      <Label htmlFor="description">Description</Label>
+                      <Textarea
+                        id="description"
+                        placeholder="Enter benefit description"
+                        value={formData.description}
+                        onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                      />
+                    </div>
+
+                    <div className="grid gap-2">
+                      <Label htmlFor="content-url">Content URL</Label>
+                      <Input
+                        id="content-url"
+                        placeholder="https://example.com/content"
+                        value={formData.contentUrl}
+                        onChange={(e) => setFormData({ ...formData, contentUrl: e.target.value })}
+                      />
+                      <p className="text-sm text-muted-foreground">
+                        Link to digital content, event page, or related resource
+                      </p>
+                    </div>
+
+                    <div className="grid gap-2">
+                      <Label htmlFor="access-code">Access Code</Label>
+                      <Input
+                        id="access-code"
+                        placeholder="Optional access code"
+                        value={formData.accessCode}
+                        onChange={(e) => setFormData({ ...formData, accessCode: e.target.value })}
+                      />
+                      <p className="text-sm text-muted-foreground">
+                        Optional code collectors will need to access this benefit
+                      </p>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="grid gap-2">
+                        <Label htmlFor="starts-at">Starts At</Label>
+                        <Input
+                          id="starts-at"
+                          type="datetime-local"
+                          value={formData.startsAt}
+                          onChange={(e) => setFormData({ ...formData, startsAt: e.target.value })}
+                        />
+                      </div>
+
+                      <div className="grid gap-2">
+                        <Label htmlFor="expires-at">Expires At</Label>
+                        <Input
+                          id="expires-at"
+                          type="datetime-local"
+                          value={formData.expiresAt}
+                          onChange={(e) => setFormData({ ...formData, expiresAt: e.target.value })}
+                        />
+                      </div>
+                    </div>
+                  </div>
 
                   <DialogFooter>
                     <Button type="button" variant="outline" onClick={() => handleDialogOpen(false)}>
                       Cancel
                     </Button>
-                    <Button
-                      type="button"
-                      onClick={editingBenefitId ? handleUpdateBenefit : handleSubmit}
-                      disabled={isSubmitting}
-                    >
+                    <Button type="button" onClick={handleSubmit} disabled={isSubmitting}>
                       {isSubmitting ? (
                         <>
                           <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                          {editingBenefitId ? "Updating..." : "Creating..."}
+                          Creating...
                         </>
-                      ) : editingBenefitId ? (
-                        "Update Benefit"
                       ) : (
                         "Create Benefit"
                       )}
@@ -703,7 +451,6 @@ export default function BenefitsPage() {
               </p>
             </div>
           ) : (
-            // Replace the benefits grid with this enhanced version
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {benefits.map((benefit) => (
                 <Card key={benefit.id} className="overflow-hidden">
@@ -714,29 +461,11 @@ export default function BenefitsPage() {
                         <Badge variant="outline" className="ml-2">
                           {benefit.benefit_types.name}
                         </Badge>
-                        {!benefit.is_active && (
-                          <Badge variant="secondary" className="ml-2">
-                            Inactive
-                          </Badge>
-                        )}
                       </div>
                       <CardTitle className="text-base">{benefit.title}</CardTitle>
                     </div>
                     <div className="flex space-x-1">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-8 w-8 text-blue-600"
-                        onClick={() => handlePreviewBenefit(benefit)}
-                      >
-                        <PreviewIcon className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-8 w-8"
-                        onClick={() => handleEditBenefit(benefit)}
-                      >
+                      <Button variant="ghost" size="icon" className="h-8 w-8">
                         <Edit className="h-4 w-4" />
                       </Button>
                       <Button
@@ -751,86 +480,39 @@ export default function BenefitsPage() {
                   </CardHeader>
                   <CardContent className="p-4 pt-2">
                     {benefit.description && <p className="text-sm text-muted-foreground mb-3">{benefit.description}</p>}
-
-                    <div className="space-y-2">
-                      {benefit.content_url && (
-                        <div className="flex items-center text-sm">
-                          <LinkIcon className="h-4 w-4 mr-2 text-blue-500" />
-                          <a
-                            href={benefit.content_url}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-blue-600 hover:underline truncate"
-                          >
-                            {benefit.content_url.substring(0, 30)}
-                            {benefit.content_url.length > 30 ? "..." : ""}
-                          </a>
-                        </div>
-                      )}
-
-                      {benefit.access_code && (
-                        <div className="flex items-center text-sm">
-                          <Code className="h-4 w-4 mr-2 text-purple-500" />
-                          <span className="font-mono">{benefit.access_code}</span>
-                        </div>
-                      )}
-                    </div>
-
+                    {benefit.content_url && (
+                      <div className="text-sm mb-1">
+                        <span className="font-medium">URL:</span>{" "}
+                        <a
+                          href={benefit.content_url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-blue-600 hover:underline"
+                        >
+                          {benefit.content_url.substring(0, 30)}
+                          {benefit.content_url.length > 30 ? "..." : ""}
+                        </a>
+                      </div>
+                    )}
+                    {benefit.access_code && (
+                      <div className="text-sm mb-1">
+                        <span className="font-medium">Access Code:</span> {benefit.access_code}
+                      </div>
+                    )}
                     {(benefit.starts_at || benefit.expires_at) && (
-                      <div className="text-xs text-muted-foreground mt-3 pt-3 border-t">
+                      <div className="text-xs text-muted-foreground mt-3">
                         {benefit.starts_at && (
-                          <div className="flex items-center mb-1">
-                            <Calendar className="h-3 w-3 mr-1" />
-                            <span>Starts: {format(new Date(benefit.starts_at), "MMM d, yyyy h:mm a")}</span>
-                          </div>
+                          <div>Starts: {format(new Date(benefit.starts_at), "MMM d, yyyy h:mm a")}</div>
                         )}
                         {benefit.expires_at && (
-                          <div className="flex items-center">
-                            <Calendar className="h-3 w-3 mr-1" />
-                            <span>Expires: {format(new Date(benefit.expires_at), "MMM d, yyyy h:mm a")}</span>
-                          </div>
+                          <div>Expires: {format(new Date(benefit.expires_at), "MMM d, yyyy h:mm a")}</div>
                         )}
                       </div>
                     )}
                   </CardContent>
-                  <CardFooter className="px-4 py-3 bg-gray-50 border-t">
-                    <div className="w-full flex justify-between items-center">
-                      <span className="text-xs text-muted-foreground">
-                        Created {format(new Date(benefit.created_at), "MMM d, yyyy")}
-                      </span>
-                      <Badge variant={benefit.is_active ? "success" : "secondary"} className="text-xs">
-                        {benefit.is_active ? (
-                          <>
-                            <Check className="h-3 w-3 mr-1" /> Active
-                          </>
-                        ) : (
-                          <>
-                            <X className="h-3 w-3 mr-1" /> Inactive
-                          </>
-                        )}
-                      </Badge>
-                    </div>
-                  </CardFooter>
                 </Card>
               ))}
             </div>
-          )}
-        </CardContent>
-      </Card>
-
-      <Card className="mb-6">
-        <CardHeader>
-          <CardTitle>Benefit Preview</CardTitle>
-          <CardDescription>Preview how collectors will see the benefit</CardDescription>
-        </CardHeader>
-        <CardContent>
-          {selectedProduct && benefitTypes.length > 0 ? (
-            <BenefitPreview
-              benefit={formData}
-              benefitType={benefitTypes.find((type) => type.id === Number(formData.benefitTypeId))}
-            />
-          ) : (
-            <p className="text-muted-foreground">Select a product and benefit type to see a preview.</p>
           )}
         </CardContent>
       </Card>
@@ -890,5 +572,3 @@ export default function BenefitsPage() {
     </div>
   )
 }
-
-// Add this preview dialog after the main dialog
