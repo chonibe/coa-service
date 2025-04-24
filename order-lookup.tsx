@@ -126,10 +126,17 @@ export default function OrderLookup() {
             }
           }
         `
+        console.log("Fetching customer IDs from Shopify...")
         const response = await shopifyFetch("graphql.json", {
           method: "POST",
           body: JSON.stringify({ query }),
         })
+
+        if (!response.ok) {
+          const errorText = await response.text()
+          console.error("Shopify API error:", errorText)
+          throw new Error(`Shopify API error: ${response.status} - ${errorText}`)
+        }
 
         const data = await response.json()
 
@@ -144,7 +151,7 @@ export default function OrderLookup() {
           }
         } else {
           setIsLoggedIn(false)
-          setError("Could not fetch customer IDs from Shopify")
+          setError("Could not fetch customer IDs from Shopify: Invalid data format")
         }
       } catch (error: any) {
         console.error("Error fetching customer IDs:", error)
