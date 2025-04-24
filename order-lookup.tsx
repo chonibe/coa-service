@@ -3,18 +3,11 @@
 import { useEffect, useState } from "react"
 import { mockResponseData } from "@/lib/mock-data"
 import { getCustomerOrders } from "@/lib/data-access"
-import { CollectionCard } from "@/components/collection-card"
-import { CollectionListItem } from "@/components/collection-list-item"
-import { Button } from "@/components/ui/button"
-import { AlertCircle, RefreshCw, Loader2 } from "lucide-react"
-import { Input } from "@/components/ui/input"
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
-import { Search, Grid, List } from "lucide-react"
-import { createClientComponentClient } from "@supabase/auth-helpers-nextjs"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { shopifyFetch } from "@/lib/shopify-api"
+import { createClient } from "@supabase/supabase-js"
 
-const supabase = createClientComponentClient()
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || ""
+const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ""
+const supabase = createClient(supabaseUrl, supabaseKey)
 
 export interface OrderItem {
   id: string
@@ -96,7 +89,6 @@ export default function OrderLookup() {
   const [syncResult, setSyncResult] = useState<any>(null)
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid")
   const [activeTab, setActiveTab] = useState<"all" | "verified" | "unverified">("all")
-  const [availableCustomerIds, setAvailableCustomerIds] = useState<string[]>([])
 
   // Filter state
   const [allVendors, setAllVendors] = useState<Set<string>>(new Set())
@@ -111,55 +103,12 @@ export default function OrderLookup() {
   useEffect(() => {
     // In a real implementation, this would not be needed as Shopify would handle authentication
     // For demo purposes, we'll simulate a logged-in user
-    const checkLoginStatus = async () => {
-      setIsLoading(true)
-      try {
-        // Fetch customer IDs from Shopify using GraphQL
-        const query = `
-          {
-            customers(first: 10) {
-              edges {
-                node {
-                  id
-                }
-              }
-            }
-          }
-        `
-        console.log("Fetching customer IDs from Shopify...")
-        const response = await shopifyFetch("graphql.json", {
-          method: "POST",
-          body: JSON.stringify({ query }),
-        })
-
-        if (!response.ok) {
-          const errorText = await response.text()
-          console.error("Shopify API error:", errorText)
-          throw new Error(`Shopify API error: ${response.status} - ${errorText}`)
-        }
-
-        const data = await response.json()
-
-        if (data?.data?.customers?.edges) {
-          const customerIds = data.data.customers.edges.map((edge: any) => edge.node.id)
-          setAvailableCustomerIds(customerIds)
-          if (customerIds.length > 0) {
-            setIsLoggedIn(true)
-            setCustomerId(customerIds[0]) // Select the first customer by default
-          } else {
-            setIsLoggedIn(false)
-          }
-        } else {
-          setIsLoggedIn(false)
-          setError("Could not fetch customer IDs from Shopify: Invalid data format")
-        }
-      } catch (error: any) {
-        console.error("Error fetching customer IDs:", error)
-        setError(error.message || "Failed to fetch customer IDs")
-        setIsLoggedIn(false)
-      } finally {
-        setIsLoading(false)
-      }
+    const checkLoginStatus = () => {
+      // Simulate checking login status
+      setTimeout(() => {
+        setIsLoggedIn(true)
+        setCustomerId("6614004752698")
+      }, 1000)
     }
 
     checkLoginStatus()
@@ -546,135 +495,5 @@ export default function OrderLookup() {
     }
   }
 
-  const filteredItems = filterLineItems(lineItems).filter(
-    (item) =>
-      item.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (item.customAttributes &&
-        item.customAttributes.some(
-          (attr) =>
-            attr.value &&
-            typeof attr.value === "string" &&
-            attr.value.toLowerCase().includes(searchQuery.toLowerCase()),
-        )) ||
-      (item.properties &&
-        item.properties.some(
-          (prop) =>
-            prop.value &&
-            typeof prop.value === "string" &&
-            prop.value.toLowerCase().includes(searchQuery.toLowerCase()),
-        )),
-  )
-
-  return (
-    <div className="w-full max-w-6xl mx-auto p-4">
-      {error && (
-        <div className="flex items-center gap-2 p-4 mb-6 bg-destructive/10 text-destructive rounded-lg border border-destructive/20">
-          <AlertCircle size={20} />
-          <div className="flex-1">
-            <p>{error}</p>
-            <div className="flex items-center gap-2 mt-2">
-              <Button
-                variant="outline"
-                size="sm"
-                className="bg-white text-destructive border-destructive/30 hover:bg-destructive/10"
-                onClick={() => fetchOrdersByCustomerId(customerId!)}
-              >
-                <RefreshCw size={14} className="mr-1" />
-                Retry Connection
-              </Button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      <div className="flex justify-between items-center mb-8">
-        <h1 className="text-3xl font-bold">My Collection</h1>
-        <div className="flex gap-2">
-          <div className="flex border border-gray-200 rounded-md">
-            <Button
-              variant="ghost"
-              size="icon"
-              className={`h-10 w-10 rounded-none ${viewMode === "grid" ? "bg-gray-100" : ""}`}
-              onClick={() => setViewMode("grid")}
-            >
-              <Grid className="h-4 w-4" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              className={`h-10 w-10 rounded-none ${viewMode === "list" ? "bg-gray-100" : ""}`}
-              onClick={() => setViewMode("list")}
-            >
-              <List className="h-4 w-4" />
-            </Button>
-          </div>
-          <Select value={customerId || ""} onValueChange={setCustomerId}>
-            <SelectTrigger className="w-[180px]">
-              <SelectValue placeholder="Select Customer" />
-            </SelectTrigger>
-            <SelectContent>
-              {availableCustomerIds.map((id) => (
-                <SelectItem key={id} value={id}>
-                  {id}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-      </div>
-
-      <div className="mb-6">
-        <div className="relative max-w-md">
-          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
-          <Input
-            className="pl-8"
-            placeholder="Search by title or artist..."
-            type="search"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-          />
-        </div>
-      </div>
-
-      <div className="flex items-center justify-center">
-        {isLoading ? (
-          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-        ) : (
-          <>
-            {filteredItems.length === 0 ? (
-              <Alert>
-                <AlertCircle className="h-4 w-4" />
-                <AlertTitle>No items found</AlertTitle>
-                <AlertDescription>No items match your filter criteria.</AlertDescription>
-              </Alert>
-            ) : (
-              <>
-                {viewMode === "grid" ? (
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {filteredItems.map((item) => (
-                      <CollectionCard
-                        key={`${item.order_info.order_id}-${item.line_item_id}`}
-                        item={item}
-                        onRemoveClick={handleRemoveClick}
-                      />
-                    ))}
-                  </div>
-                ) : (
-                  <div className="space-y-4">
-                    {filteredItems.map((item) => (
-                      <CollectionListItem
-                        key={`${item.order_info.order_id}-${item.line_item_id}`}
-                        item={item}
-                        onRemoveClick={handleRemoveClick}
-                      />
-                    ))}
-                  </div>
-                )}
-              </>
-            )}
-          </>
-        )}
-      </div>
-    </div>
-  )
+  return null
 }
