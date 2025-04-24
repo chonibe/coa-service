@@ -15,6 +15,7 @@ export async function shopifyFetch(url: string, options: RequestInit = {}, retri
   }
 
   try {
+    console.log(`Fetching ${fullUrl} with options:`, options)
     const response = await fetch(fullUrl, {
       ...options,
       headers,
@@ -34,6 +35,13 @@ export async function shopifyFetch(url: string, options: RequestInit = {}, retri
       if (retries > 0) {
         return shopifyFetch(url, options, retries - 1)
       }
+    }
+
+    // Check if the response is ok
+    if (!response.ok) {
+      const errorText = await response.text()
+      console.error(`Shopify API error (${response.status}):`, errorText)
+      throw new Error(`Shopify API error (${response.status}): ${errorText}`)
     }
 
     return response
