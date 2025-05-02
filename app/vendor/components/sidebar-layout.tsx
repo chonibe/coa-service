@@ -19,22 +19,13 @@ type NavItem = {
   isTab?: boolean
 }
 
-type NotificationCounts = {
-  [key: string]: number
-}
-
 export function SidebarLayout({ children }: { children: React.ReactNode }) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false)
-  const [openSubmenus, setOpenSubmenus] = useState<Record<string, boolean>>({})
-  const [vendor, setVendor] = useState<any>(null)
-  const [notifications, setNotifications] = useState<NotificationCounts>({
-    Messages: 3,
-    Benefits: 1,
-    Settings: 0,
-    Analytics: 0,
-    Dashboard: 0,
-  })
   const pathname = usePathname()
+  const [openSubmenus, setOpenSubmenus] = useState<Record<string, boolean>>({
+    Dashboard: pathname === "/vendor/dashboard",
+  })
+  const [vendor, setVendor] = useState<any>(null)
   const searchParams = useSearchParams()
   const router = useRouter()
   const { theme, setTheme } = useTheme()
@@ -64,69 +55,6 @@ export function SidebarLayout({ children }: { children: React.ReactNode }) {
       setIsSidebarOpen(false)
     }
   }, [pathname, isMobile])
-
-  // Auto-open submenu for active items
-  useEffect(() => {
-    const navItems = getNavItems()
-    navItems.forEach((item) => {
-      if (item.submenu) {
-        const hasActiveChild = item.submenu.some((subItem) =>
-          isActive(subItem.href, subItem.isTab ? subItem.title.toLowerCase() : null),
-        )
-        if (hasActiveChild) {
-          setOpenSubmenus((prev) => ({ ...prev, [item.title]: true }))
-        }
-      }
-    })
-  }, [pathname, currentTab])
-
-  // Fetch notifications (in a real app, this would come from an API)
-  useEffect(() => {
-    const fetchNotifications = async () => {
-      try {
-        // This would be replaced with an actual API call in production
-        // const response = await fetch("/api/vendor/notifications")
-        // if (response.ok) {
-        //   const data = await response.json()
-        //   setNotifications(data.notifications)
-        // }
-        // For demo purposes, we'll use the hardcoded values
-        // You would replace this with the actual API call
-      } catch (error) {
-        console.error("Error fetching notifications:", error)
-      }
-    }
-
-    fetchNotifications()
-
-    // Set up a polling interval to check for new notifications
-    const interval = setInterval(fetchNotifications, 60000) // Check every minute
-
-    return () => clearInterval(interval)
-  }, [])
-
-  const toggleSubmenu = (title: string) => {
-    setOpenSubmenus((prev) => ({
-      ...prev,
-      [title]: !prev[title],
-    }))
-  }
-
-  const isActive = (itemPath: string, tabName: string | null = null) => {
-    if (tabName && itemPath === pathname) {
-      return currentTab === tabName
-    }
-    return pathname === itemPath
-  }
-
-  const handleLogout = async () => {
-    try {
-      await fetch("/api/vendor/logout", { method: "POST" })
-      router.push("/vendor/login")
-    } catch (err) {
-      console.error("Logout error:", err)
-    }
-  }
 
   const getNavItems = (): NavItem[] => [
     {
@@ -289,17 +217,59 @@ export function SidebarLayout({ children }: { children: React.ReactNode }) {
     },
   ]
 
-  const navItems = getNavItems()
+  // Auto-open submenu for active items
+  useEffect(() => {
+    const navItems = getNavItems()
+    const newOpenSubmenus = { ...openSubmenus }
 
-  const NotificationBadge = ({ count }: { count: number }) => {
-    if (count <= 0) return null
+    navItems.forEach((item) => {
+      if (item.submenu) {
+        // Check if this is the dashboard page
+        if (pathname === "/vendor/dashboard" && item.href === "/vendor/dashboard") {
+          newOpenSubmenus[item.title] = true
+        } else {
+          const hasActiveChild = item.submenu.some((subItem) =>
+            isActive(subItem.href, subItem.isTab ? subItem.title.toLowerCase() : null),
+          )
+          if (hasActiveChild) {
+            newOpenSubmenus[item.title] = true
+          }
+        }
+      }
+    })
 
-    return (
-      <span className="flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-[10px] font-medium text-white">
-        {count > 99 ? "99+" : count}
-      </span>
-    )
+    setOpenSubmenus(newOpenSubmenus)
+  }, [pathname, currentTab])
+
+  const toggleSubmenu = (title: string) => {
+    setOpenSubmenus((prev) => ({
+      ...prev,
+      [title]: !prev[title],
+    }))
   }
+
+  const isActive = (itemPath: string, tabName: string | null = null) => {
+    // Special case for dashboard with no tab specified
+    if (pathname === "/vendor/dashboard" && itemPath === "/vendor/dashboard" && !currentTab && tabName === "overview") {
+      return true
+    }
+
+    if (tabName && itemPath === pathname) {
+      return currentTab === tabName || (!currentTab && tabName === "overview")
+    }
+    return pathname === itemPath
+  }
+
+  const handleLogout = async () => {
+    try {
+      await fetch("/api/vendor/logout", { method: "POST" })
+      router.push("/vendor/login")
+    } catch (err) {
+      console.error("Logout error:", err)
+    }
+  }
+
+  const navItems = getNavItems()
 
   const renderNavItem = (item: NavItem) => {
     const isItemActive = item.submenu
@@ -307,14 +277,8 @@ export function SidebarLayout({ children }: { children: React.ReactNode }) {
       : isActive(item.href)
 
     const isSubmenuOpen = openSubmenus[item.title] || false
-    const notificationCount = notifications[item.title] || 0
 
     if (item.submenu) {
-      // Calculate total notifications for all subitems
-      const submenuNotifications = item.submenu.reduce((total, subItem) => {
-        return total + (notifications[subItem.title] || 0)
-      }, 0)
-
       return (
         <div key={item.title} className="flex flex-col">
           <button
@@ -327,29 +291,25 @@ export function SidebarLayout({ children }: { children: React.ReactNode }) {
               {item.icon}
               <span>{item.title}</span>
             </div>
-            <div className="flex items-center gap-2">
-              {submenuNotifications > 0 && <NotificationBadge count={submenuNotifications} />}
-              {isSubmenuOpen ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
-            </div>
+            {isSubmenuOpen ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
           </button>
 
           {isSubmenuOpen && (
             <div className="ml-6 mt-1 flex flex-col gap-1">
               {item.submenu.map((subItem) => {
                 const href = subItem.isTab ? `${subItem.href}?tab=${subItem.title.toLowerCase()}` : subItem.href
+
                 const isSubItemActive = isActive(subItem.href, subItem.isTab ? subItem.title.toLowerCase() : null)
-                const subItemNotificationCount = notifications[subItem.title] || 0
 
                 return (
                   <Link
                     key={subItem.title}
                     href={href}
-                    className={`flex items-center justify-between rounded-md px-3 py-2 text-sm transition-colors hover:bg-accent hover:text-accent-foreground ${
+                    className={`rounded-md px-3 py-2 text-sm transition-colors hover:bg-accent hover:text-accent-foreground ${
                       isSubItemActive ? "bg-accent text-accent-foreground" : "text-foreground"
                     }`}
                   >
-                    <span>{subItem.title}</span>
-                    {subItemNotificationCount > 0 && <NotificationBadge count={subItemNotificationCount} />}
+                    {subItem.title}
                   </Link>
                 )
               })}
@@ -363,15 +323,12 @@ export function SidebarLayout({ children }: { children: React.ReactNode }) {
       <Link
         key={item.title}
         href={item.href}
-        className={`flex items-center justify-between rounded-md px-3 py-2 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground ${
+        className={`flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground ${
           isItemActive ? "bg-accent text-accent-foreground" : "text-foreground"
         }`}
       >
-        <div className="flex items-center gap-3">
-          {item.icon}
-          <span>{item.title}</span>
-        </div>
-        {notificationCount > 0 && <NotificationBadge count={notificationCount} />}
+        {item.icon}
+        <span>{item.title}</span>
       </Link>
     )
   }
