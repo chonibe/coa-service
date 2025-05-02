@@ -97,6 +97,7 @@ export default function VendorPayoutsPage() {
       const productsData = await productsResponse.json()
       const products = productsData.products || []
 
+      console.log("Fetched products:", products.length)
       setAllProducts(products)
       setFilteredProducts(products)
 
@@ -105,6 +106,7 @@ export default function VendorPayoutsPage() {
       const vendorNames = [...new Set(products.map((p: Product) => p.vendor))]
 
       if (productIds.length > 0) {
+        console.log("Fetching payout settings for", productIds.length, "products")
         const payoutsResponse = await fetch("/api/vendors/all-payouts", {
           method: "POST",
           headers: {
@@ -115,6 +117,7 @@ export default function VendorPayoutsPage() {
 
         if (payoutsResponse.ok) {
           const payoutsData = await payoutsResponse.json()
+          console.log("Fetched payout settings:", payoutsData.payouts?.length || 0)
 
           // Convert to a map for easier access
           const payoutsMap: Record<string, PayoutSetting> = {}
@@ -126,6 +129,10 @@ export default function VendorPayoutsPage() {
           })
 
           setPayoutSettings(payoutsMap)
+        } else {
+          console.error("Failed to fetch payout settings")
+          const errorData = await payoutsResponse.json()
+          throw new Error(errorData.message || "Failed to fetch payout settings")
         }
       }
     } catch (err: any) {
@@ -243,8 +250,11 @@ export default function VendorPayoutsPage() {
       const data = await response.json()
 
       if (!response.ok) {
+        console.error("Failed to save payout setting:", data)
         throw new Error(data.message || "Failed to save payout setting")
       }
+
+      console.log("Save response:", data)
 
       // Mark as saved
       setSavedStatus((prev) => ({
@@ -429,6 +439,14 @@ export default function VendorPayoutsPage() {
             <Button variant="outline" onClick={handleRefresh} disabled={isRefreshing}>
               <RefreshCw className={`h-4 w-4 mr-2 ${isRefreshing ? "animate-spin" : ""}`} />
               Refresh
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => console.log("Current payout settings:", payoutSettings)}
+              className="ml-2"
+            >
+              <span className="sr-only">Debug</span>
+              <span className="hidden sm:inline">Debug</span>
             </Button>
           </div>
         </div>
