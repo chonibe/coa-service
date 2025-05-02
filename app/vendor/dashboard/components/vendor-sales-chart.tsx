@@ -3,10 +3,8 @@
 import { useEffect, useState } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts"
-import { Loader2, Package, Calendar, DollarSign, Search } from "lucide-react"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Input } from "@/components/ui/input"
-import { formatCurrency } from "@/lib/utils"
+import { Loader2 } from "lucide-react"
+import { formatCurrency } from "@/lib/utils" // Assuming this exists, if not we'll create it
 
 interface SalesData {
   date: string
@@ -14,15 +12,13 @@ interface SalesData {
   revenue: number
 }
 
-interface SoldProduct {
+interface SaleItem {
   id: string
-  title: string
+  product_title: string
   price: number
-  currency: string
-  date: string
-  order_id: string
+  created_at: string
+  order_name: string
   line_item_id: string
-  edition_number?: number
 }
 
 interface VendorSalesChartProps {
@@ -31,13 +27,11 @@ interface VendorSalesChartProps {
 
 export function VendorSalesChart({ vendorName }: VendorSalesChartProps) {
   const [salesData, setSalesData] = useState<SalesData[]>([])
-  const [soldProducts, setSoldProducts] = useState<SoldProduct[]>([])
-  const [filteredProducts, setFilteredProducts] = useState<SoldProduct[]>([])
+  const [salesItems, setSalesItems] = useState<SaleItem[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [totalSales, setTotalSales] = useState(0)
   const [totalRevenue, setTotalRevenue] = useState(0)
-  const [searchTerm, setSearchTerm] = useState("")
 
   useEffect(() => {
     const fetchSalesData = async () => {
@@ -58,22 +52,13 @@ export function VendorSalesChart({ vendorName }: VendorSalesChartProps) {
           setSalesData(data.salesByDate)
           setTotalSales(data.totalSales || 0)
           setTotalRevenue(data.totalRevenue || 0)
+
+          // Set the individual sales items
+          if (data.salesItems && Array.isArray(data.salesItems)) {
+            setSalesItems(data.salesItems)
+          }
         } else {
           throw new Error("Invalid data format received from the server")
-        }
-
-        // Fetch sold products list
-        const productsResponse = await fetch("/api/vendor/sales")
-
-        if (!productsResponse.ok) {
-          throw new Error(`Failed to fetch sold products: ${productsResponse.status} ${productsResponse.statusText}`)
-        }
-
-        const productsData = await productsResponse.json()
-
-        if (productsData && Array.isArray(productsData.lineItems)) {
-          setSoldProducts(productsData.lineItems)
-          setFilteredProducts(productsData.lineItems)
         }
       } catch (err: any) {
         console.error("Error fetching sales data:", err)
@@ -88,39 +73,26 @@ export function VendorSalesChart({ vendorName }: VendorSalesChartProps) {
     }
   }, [vendorName])
 
-  // Filter products when search term changes
-  useEffect(() => {
-    if (searchTerm.trim() === "") {
-      setFilteredProducts(soldProducts)
-    } else {
-      const term = searchTerm.toLowerCase()
-      const filtered = soldProducts.filter(
-        (product) => product.title.toLowerCase().includes(term) || product.order_id.toLowerCase().includes(term),
-      )
-      setFilteredProducts(filtered)
-    }
-  }, [searchTerm, soldProducts])
-
   // Format the date for display
   const formatDate = (date: string) => {
     return new Date(date).toLocaleDateString("en-US", {
       month: "short",
       day: "numeric",
+      year: "numeric",
     })
   }
 
-  // Format the full date for the table
-  const formatFullDate = (date: string) => {
-    return new Date(date).toLocaleDateString("en-US", {
-      year: "numeric",
-      month: "long",
-      day: "numeric",
+  // Format the time for display
+  const formatTime = (date: string) => {
+    return new Date(date).toLocaleTimeString("en-US", {
+      hour: "2-digit",
+      minute: "2-digit",
     })
   }
 
   return (
     <div className="space-y-6">
-      <Card className="col-span-2">
+      <Card>
         <CardHeader>
           <CardTitle>Sales Overview</CardTitle>
         </CardHeader>
@@ -180,78 +152,47 @@ export function VendorSalesChart({ vendorName }: VendorSalesChartProps) {
         </CardContent>
       </Card>
 
+      {/* Sales History List */}
       <Card>
         <CardHeader>
           <CardTitle>Sales History</CardTitle>
-          <div className="relative mt-2">
-            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-            <Input
-              type="search"
-              placeholder="Search products or order IDs..."
-              className="pl-8"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
-          </div>
         </CardHeader>
-        <CardContent className="p-0">
+        <CardContent>
           {isLoading ? (
             <div className="flex justify-center py-8">
               <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
             </div>
           ) : error ? (
             <div className="text-center py-8 text-muted-foreground">{error}</div>
-          ) : filteredProducts.length === 0 ? (
+          ) : salesItems.length === 0 ? (
             <div className="text-center py-8 text-muted-foreground">
-              {searchTerm ? "No products match your search." : "No sales history available."}
+              No sales history available. Once you make your first sale, data will appear here.
             </div>
           ) : (
-            <div className="border-t">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Product</TableHead>
-                    <TableHead>Order ID</TableHead>
-                    <TableHead>Date</TableHead>
-                    <TableHead>Edition</TableHead>
-                    <TableHead className="text-right">Price</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredProducts.map((product) => (
-                    <TableRow key={product.line_item_id}>
-                      <TableCell>
-                        <div className="flex items-center gap-2">
-                          <div className="h-8 w-8 rounded bg-muted flex items-center justify-center">
-                            <Package className="h-4 w-4 text-muted-foreground" />
-                          </div>
-                          <span className="font-medium">{product.title}</span>
-                        </div>
-                      </TableCell>
-                      <TableCell className="font-mono text-xs">{product.order_id}</TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-2">
-                          <Calendar className="h-4 w-4 text-muted-foreground" />
-                          <span>{formatFullDate(product.date)}</span>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        {product.edition_number ? (
-                          <span className="font-medium">{product.edition_number}</span>
-                        ) : (
-                          <span className="text-muted-foreground">—</span>
-                        )}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <div className="flex items-center justify-end gap-2">
-                          <DollarSign className="h-4 w-4 text-muted-foreground" />
-                          <span className="font-medium">{formatCurrency(product.price)}</span>
-                        </div>
-                      </TableCell>
-                    </TableRow>
+            <div className="border rounded-md overflow-hidden">
+              <table className="w-full">
+                <thead>
+                  <tr className="bg-muted border-b">
+                    <th className="text-left py-2 px-4 font-medium text-sm">Date</th>
+                    <th className="text-left py-2 px-4 font-medium text-sm">Order</th>
+                    <th className="text-left py-2 px-4 font-medium text-sm">Product</th>
+                    <th className="text-right py-2 px-4 font-medium text-sm">Price</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {salesItems.map((item) => (
+                    <tr key={item.line_item_id} className="border-b last:border-0 hover:bg-muted/50">
+                      <td className="py-3 px-4">
+                        <div className="font-medium">{formatDate(item.created_at)}</div>
+                        <div className="text-xs text-muted-foreground">{formatTime(item.created_at)}</div>
+                      </td>
+                      <td className="py-3 px-4 text-sm">{item.order_name}</td>
+                      <td className="py-3 px-4 text-sm">{item.product_title}</td>
+                      <td className="py-3 px-4 text-sm text-right font-medium">{formatCurrency(item.price)}</td>
+                    </tr>
                   ))}
-                </TableBody>
-              </Table>
+                </tbody>
+              </table>
             </div>
           )}
         </CardContent>
