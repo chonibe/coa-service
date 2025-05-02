@@ -1,109 +1,146 @@
 "use client"
 
-import { Container, Title, Text, Paper, Stack, TextInput, Button, Switch, Group, Divider } from "@mantine/core"
-import { IconDeviceFloppy } from "@tabler/icons-react"
 import { useState } from "react"
-import { supabase } from "@/lib/supabase"
-
-interface Settings {
-  site_name: string
-  site_description: string
-  contact_email: string
-  enable_registration: boolean
-  enable_vendor_registration: boolean
-  maintenance_mode: boolean
-}
+import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
+import { Label } from "@/components/ui/label"
+import { Switch } from "@/components/ui/switch"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Separator } from "@/components/ui/separator"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Save } from "lucide-react"
 
 export default function SettingsPage() {
-  const [settings, setSettings] = useState<Settings>({
-    site_name: '',
-    site_description: '',
-    contact_email: '',
-    enable_registration: true,
-    enable_vendor_registration: true,
-    maintenance_mode: false,
+  const [settings, setSettings] = useState({
+    autoAssignEditions: true,
+    editionFormat: "number",
+    updateShopify: true,
+    syncOnWebhook: true,
   })
-  const [loading, setLoading] = useState(false)
 
-  const handleSave = async () => {
-    try {
-      setLoading(true)
-      const { error } = await supabase
-        .from('settings')
-        .upsert(settings)
-
-      if (error) throw error
-    } catch (error) {
-      console.error('Failed to save settings:', error)
-    } finally {
-      setLoading(false)
-    }
+  const handleSaveSettings = () => {
+    // In a real app, this would save to your backend
+    console.log("Saving settings:", settings)
+    // Show a toast or notification
   }
 
   return (
-    <Container size="xl" py="xl">
-      <Stack>
-        <Title order={1}>Settings</Title>
-        <Paper p="md" radius="md" withBorder>
-          <Stack>
-            <TextInput
-              label="Site Name"
-              placeholder="My Site"
-              value={settings.site_name}
-              onChange={(e) => setSettings({ ...settings, site_name: e.target.value })}
-            />
-            <TextInput
-              label="Site Description"
-              placeholder="A brief description of your site"
-              value={settings.site_description}
-              onChange={(e) => setSettings({ ...settings, site_description: e.target.value })}
-            />
-            <TextInput
-              label="Contact Email"
-              placeholder="contact@example.com"
-              value={settings.contact_email}
-              onChange={(e) => setSettings({ ...settings, contact_email: e.target.value })}
-            />
-          </Stack>
-        </Paper>
+    <div className="container mx-auto py-10 max-w-5xl">
+      <div className="flex flex-col space-y-8">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">Settings</h1>
+          <p className="text-muted-foreground mt-2">Configure your edition numbering system</p>
+        </div>
 
-        <Paper p="md" radius="md" withBorder>
-          <Stack>
-            <Title order={2} size="h4">Registration Settings</Title>
-            <Switch
-              label="Enable User Registration"
-              checked={settings.enable_registration}
-              onChange={(e) => setSettings({ ...settings, enable_registration: e.currentTarget.checked })}
-            />
-            <Switch
-              label="Enable Vendor Registration"
-              checked={settings.enable_vendor_registration}
-              onChange={(e) => setSettings({ ...settings, enable_vendor_registration: e.currentTarget.checked })}
-            />
-          </Stack>
-        </Paper>
+        <Tabs defaultValue="general" className="w-full">
+          <TabsList className="grid w-full grid-cols-2 mb-4">
+            <TabsTrigger value="general">General Settings</TabsTrigger>
+            <TabsTrigger value="advanced">Advanced Settings</TabsTrigger>
+          </TabsList>
 
-        <Paper p="md" radius="md" withBorder>
-          <Stack>
-            <Title order={2} size="h4">System Settings</Title>
-            <Switch
-              label="Maintenance Mode"
-              checked={settings.maintenance_mode}
-              onChange={(e) => setSettings({ ...settings, maintenance_mode: e.currentTarget.checked })}
-            />
-          </Stack>
-        </Paper>
+          <TabsContent value="general">
+            <Card>
+              <CardHeader>
+                <CardTitle>Edition Numbering</CardTitle>
+                <CardDescription>Configure how edition numbers are assigned and displayed</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-0.5">
+                      <Label htmlFor="auto-assign">Auto-assign edition numbers</Label>
+                      <p className="text-sm text-muted-foreground">
+                        Automatically assign edition numbers to new orders
+                      </p>
+                    </div>
+                    <Switch
+                      id="auto-assign"
+                      checked={settings.autoAssignEditions}
+                      onCheckedChange={(checked) => setSettings({ ...settings, autoAssignEditions: checked })}
+                    />
+                  </div>
 
-        <Group justify="flex-end">
-          <Button
-            leftSection={<IconDeviceFloppy size={16} />}
-            onClick={handleSave}
-            loading={loading}
-          >
-            Save Settings
-          </Button>
-        </Group>
-      </Stack>
-    </Container>
+                  <Separator />
+
+                  <div className="space-y-2">
+                    <Label htmlFor="edition-format">Edition number format</Label>
+                    <Select
+                      value={settings.editionFormat}
+                      onValueChange={(value) => setSettings({ ...settings, editionFormat: value })}
+                    >
+                      <SelectTrigger id="edition-format">
+                        <SelectValue placeholder="Select format" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="number">Number only (e.g., 42)</SelectItem>
+                        <SelectItem value="number-of-total">Number of total (e.g., 42/100)</SelectItem>
+                        <SelectItem value="custom">Custom format</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <p className="text-sm text-muted-foreground">
+                      How edition numbers should be formatted when displayed
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+              <CardFooter>
+                <Button onClick={handleSaveSettings}>
+                  <Save className="mr-2 h-4 w-4" />
+                  Save Settings
+                </Button>
+              </CardFooter>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="advanced">
+            <Card>
+              <CardHeader>
+                <CardTitle>Advanced Settings</CardTitle>
+                <CardDescription>Configure advanced options for the edition numbering system</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-0.5">
+                      <Label htmlFor="update-shopify">Update Shopify line items</Label>
+                      <p className="text-sm text-muted-foreground">
+                        Update Shopify line item properties with edition numbers
+                      </p>
+                    </div>
+                    <Switch
+                      id="update-shopify"
+                      checked={settings.updateShopify}
+                      onCheckedChange={(checked) => setSettings({ ...settings, updateShopify: checked })}
+                    />
+                  </div>
+
+                  <Separator />
+
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-0.5">
+                      <Label htmlFor="sync-webhook">Sync on webhook</Label>
+                      <p className="text-sm text-muted-foreground">
+                        Process edition numbers when order webhooks are received
+                      </p>
+                    </div>
+                    <Switch
+                      id="sync-webhook"
+                      checked={settings.syncOnWebhook}
+                      onCheckedChange={(checked) => setSettings({ ...settings, syncOnWebhook: checked })}
+                    />
+                  </div>
+                </div>
+              </CardContent>
+              <CardFooter>
+                <Button onClick={handleSaveSettings}>
+                  <Save className="mr-2 h-4 w-4" />
+                  Save Settings
+                </Button>
+              </CardFooter>
+            </Card>
+          </TabsContent>
+        </Tabs>
+      </div>
+    </div>
   )
-} 
+}

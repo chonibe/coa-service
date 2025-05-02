@@ -1,14 +1,8 @@
 {
-  "version": 2,
-  "builds": [
+  "crons": [
     {
-      "src": "package.json",
-      "use": "@vercel/next"
+      "path": "/api/admin/run-cron?secret=${CRON_SECRET}",
+      "schedule": "0 */6 * * *"
     }
-  ],
-  "env": {
-    "NEXT_PUBLIC_SUPABASE_URL": "NEXT_PUBLIC_SUPABASE_URL",
-    "NEXT_PUBLIC_SUPABASE_ANON_KEY": "NEXT_PUBLIC_SUPABASE_ANON_KEY",
-    "NEXT_PUBLIC_APP_URL": "NEXT_PUBLIC_APP_URL"
-  }
-} 
+  ]
+}

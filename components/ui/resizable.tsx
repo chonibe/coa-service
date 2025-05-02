@@ -2,7 +2,6 @@
 
 import { GripVertical } from "lucide-react"
 import * as ResizablePrimitive from "react-resizable-panels"
-import { Resizable as MantineResizable, ResizableProps } from "@mantine/core"
 
 import { cn } from "@/lib/utils"
 
@@ -44,5 +43,3 @@ const ResizableHandle = ({
 )
 
 export { ResizablePanelGroup, ResizablePanel, ResizableHandle }
-export { MantineResizable as Resizable }
-export type { ResizableProps }

@@ -2,23 +2,26 @@ import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
 
 export function middleware(request: NextRequest) {
-  // Check if the path is for admin routes and enforce authentication
-  const path = request.nextUrl.pathname
+  // Check if the request is for an admin page (except the login page)
+  if (request.nextUrl.pathname.startsWith("/admin") && !request.nextUrl.pathname.startsWith("/admin/login")) {
+    // Check if the user is authenticated
+    const isAuthenticated = request.cookies.has("admin_session")
 
-  if (path.startsWith("/admin/") && path !== "/admin/login") {
-    // Get the token from the cookies
-    const token = request.cookies.get("admin_token")?.value
-
-    // If there's no token, redirect to the login page
-    if (!token) {
-      return NextResponse.redirect(new URL("/admin/login", request.url))
+    if (!isAuthenticated) {
+      // Redirect to the login page
+      const loginUrl = new URL("/admin/login", request.url)
+      return NextResponse.redirect(loginUrl)
     }
   }
 
   return NextResponse.next()
 }
 
-// Configure the middleware to run on specific paths
+// Update the matcher to explicitly exclude ALL API routes and certificate routes
 export const config = {
-  matcher: ["/admin/:path*"],
+  matcher: [
+    "/admin/:path*",
+    // Exclude all API routes and certificate routes from middleware processing
+    "/((?!api|certificate|_next/static|_next/image|favicon.ico).*)",
+  ],
 }
