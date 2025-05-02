@@ -48,6 +48,11 @@ export default function VendorPayoutsPage() {
     payoutType: "" as "" | "fixed" | "percentage",
   })
 
+  const [selectedProducts, setSelectedProducts] = useState<string[]>([])
+  const [bulkEditMode, setBulkEditMode] = useState<boolean>(false)
+  const [bulkEditValue, setBulkEditValue] = useState<number>(0)
+  const [bulkEditType, setBulkEditType] = useState<"fixed" | "percentage">("fixed")
+
   // Initialize tables and fetch all data on load
   useEffect(() => {
     const initializeAndFetchData = async () => {
@@ -322,6 +327,48 @@ export default function VendorPayoutsPage() {
     return Object.values(savedStatus).filter((status) => status === false).length
   }, [savedStatus])
 
+  // Handle product selection
+  const toggleProductSelection = (productId: string) => {
+    setSelectedProducts((prev) =>
+      prev.includes(productId) ? prev.filter((id) => id !== productId) : [...prev, productId],
+    )
+  }
+
+  // Select/deselect all products
+  const toggleSelectAll = () => {
+    if (selectedProducts.length === filteredProducts.length) {
+      setSelectedProducts([])
+    } else {
+      setSelectedProducts(filteredProducts.map((product) => product.id))
+    }
+  }
+
+  // Apply bulk edit to selected products
+  const applyBulkEdit = () => {
+    const updatedSettings = { ...payoutSettings }
+
+    selectedProducts.forEach((productId) => {
+      updatedSettings[productId] = {
+        amount: bulkEditValue,
+        isPercentage: bulkEditType === "percentage",
+      }
+
+      // Mark as unsaved
+      setSavedStatus((prev) => ({
+        ...prev,
+        [productId]: false,
+      }))
+    })
+
+    setPayoutSettings(updatedSettings)
+    setBulkEditMode(false)
+  }
+
+  // Cancel bulk edit
+  const cancelBulkEdit = () => {
+    setBulkEditMode(false)
+  }
+
   // Get unique vendor names for filter
   const uniqueVendors = useMemo(() => {
     return [...new Set(allProducts.map((product) => product.vendor))].sort()
@@ -462,6 +509,77 @@ export default function VendorPayoutsPage() {
                 </div>
               </div>
 
+              {/* Bulk Edit Panel */}
+              {selectedProducts.length > 0 && (
+                <div className="bg-muted/50 border rounded-md p-4 mb-4">
+                  <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                    <div>
+                      <h3 className="font-medium">Bulk Edit {selectedProducts.length} Selected Products</h3>
+                      <p className="text-sm text-muted-foreground">
+                        Apply the same payout settings to all selected products
+                      </p>
+                    </div>
+
+                    {bulkEditMode ? (
+                      <div className="flex flex-wrap items-center gap-3">
+                        <Select
+                          value={bulkEditType}
+                          onValueChange={(value: "fixed" | "percentage") => setBulkEditType(value)}
+                        >
+                          <SelectTrigger className="w-[120px]">
+                            <SelectValue placeholder="Select type" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="fixed">
+                              <div className="flex items-center">
+                                <DollarSign className="h-4 w-4 mr-1" />
+                                Fixed
+                              </div>
+                            </SelectItem>
+                            <SelectItem value="percentage">
+                              <div className="flex items-center">
+                                <Percent className="h-4 w-4 mr-1" />
+                                Percentage
+                              </div>
+                            </SelectItem>
+                          </SelectContent>
+                        </Select>
+
+                        <div className="flex items-center">
+                          {bulkEditType === "percentage" ? (
+                            <Percent className="h-4 w-4 mr-1 text-muted-foreground" />
+                          ) : (
+                            <DollarSign className="h-4 w-4 mr-1 text-muted-foreground" />
+                          )}
+                          <Input
+                            type="number"
+                            value={bulkEditValue}
+                            onChange={(e) => setBulkEditValue(Number(e.target.value) || 0)}
+                            className="w-[100px]"
+                            min={0}
+                            step={bulkEditType === "percentage" ? 1 : 0.01}
+                          />
+                        </div>
+
+                        <div className="flex gap-2">
+                          <Button onClick={applyBulkEdit}>Apply to Selected</Button>
+                          <Button variant="outline" onClick={cancelBulkEdit}>
+                            Cancel
+                          </Button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="flex gap-2">
+                        <Button onClick={() => setBulkEditMode(true)}>Edit Selected</Button>
+                        <Button variant="outline" onClick={() => setSelectedProducts([])}>
+                          Clear Selection
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
               {error && (
                 <Alert variant="destructive">
                   <AlertCircle className="h-4 w-4" />
@@ -490,6 +608,18 @@ export default function VendorPayoutsPage() {
                     <Table>
                       <TableHeader>
                         <TableRow>
+                          <TableHead className="w-[50px]">
+                            <div className="flex items-center justify-center">
+                              <input
+                                type="checkbox"
+                                checked={
+                                  selectedProducts.length === filteredProducts.length && filteredProducts.length > 0
+                                }
+                                onChange={toggleSelectAll}
+                                className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
+                              />
+                            </div>
+                          </TableHead>
                           <TableHead>Vendor</TableHead>
                           <TableHead>Product</TableHead>
                           <TableHead>Price</TableHead>
@@ -511,6 +641,16 @@ export default function VendorPayoutsPage() {
 
                           return (
                             <TableRow key={product.id}>
+                              <TableCell>
+                                <div className="flex items-center justify-center">
+                                  <input
+                                    type="checkbox"
+                                    checked={selectedProducts.includes(product.id)}
+                                    onChange={() => toggleProductSelection(product.id)}
+                                    className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
+                                  />
+                                </div>
+                              </TableCell>
                               <TableCell>{product.vendor}</TableCell>
                               <TableCell>
                                 <div className="flex items-center gap-3">
