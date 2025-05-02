@@ -1,103 +1,125 @@
 import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
-import { cookies } from "next/headers"
 import { supabaseAdmin } from "@/lib/supabase"
 
 export async function GET(request: NextRequest) {
   try {
-    // Get the vendor name from the cookie
-    const cookieStore = cookies()
-    const vendorName = cookieStore.get("vendor_session")?.value
+    const { searchParams } = new URL(request.url)
+    const vendorName = searchParams.get("vendor")
+    const period = searchParams.get("period") || "month" // Default to month
 
     if (!vendorName) {
-      return NextResponse.json({ message: "Not authenticated" }, { status: 401 })
+      return NextResponse.json({ error: "Vendor name is required" }, { status: 400 })
     }
 
-    // Query database for line items with active certificates for this vendor
-    const { data: lineItems, error: lineItemsError } = await supabaseAdmin
+    // Calculate date range based on period
+    const now = new Date()
+    let startDate: Date
+
+    switch (period) {
+      case "week":
+        startDate = new Date(now)
+        startDate.setDate(now.getDate() - 7)
+        break
+      case "month":
+        startDate = new Date(now)
+        startDate.setMonth(now.getMonth() - 1)
+        break
+      case "year":
+        startDate = new Date(now)
+        startDate.setFullYear(now.getFullYear() - 1)
+        break
+      default:
+        startDate = new Date(now)
+        startDate.setMonth(now.getMonth() - 1) // Default to month
+    }
+
+    const startDateStr = startDate.toISOString()
+    const endDateStr = now.toISOString()
+
+    // Get sales data for this vendor within the date range
+    const { data: salesData, error: salesError } = await supabaseAdmin
       .from("order_line_items")
-      .select(`
-        id,
-        line_item_id,
-        order_id,
-        order_name,
-        product_id,
-        variant_id,
-        price,
-        quantity,
-        edition_number,
-        created_at,
-        vendor_name,
-        status
-      `)
+      .select("created_at")
       .eq("vendor_name", vendorName)
       .eq("status", "active")
-      .not("edition_number", "is", null)
-      .order("created_at", { ascending: false })
+      // Only count line items that are Unfulfilled or Fulfilled
+      .in("fulfillment_status", ["Unfulfilled", "Fulfilled"])
+      .is("deleted_at", null)
+      .gte("created_at", startDateStr)
+      .lte("created_at", endDateStr)
+      .order("created_at", { ascending: true })
 
-    if (lineItemsError) {
-      console.error("Error fetching line items:", lineItemsError)
-      return NextResponse.json(
-        {
-          message: "Failed to fetch line items",
-          error: lineItemsError,
-        },
-        { status: 500 },
-      )
+    if (salesError) {
+      console.error("Error fetching vendor sales data:", salesError)
+      return NextResponse.json({ error: "Failed to fetch vendor sales data" }, { status: 500 })
     }
 
-    // Group items by date (YYYY-MM-DD)
-    const salesByDate: Record<string, { sales: number; revenue: number }> = {}
-    let totalSales = 0
-    let totalRevenue = 0
+    // Group sales by date
+    const salesByDate: Record<string, number> = {}
 
-    lineItems.forEach((item) => {
-      // Format created_at date to YYYY-MM-DD
-      const dateStr = new Date(item.created_at).toISOString().split("T")[0]
-
-      // Convert price to number if it's a string
-      const price = typeof item.price === "string" ? Number.parseFloat(item.price || "0") : item.price || 0
-
-      // Initialize the date entry if it doesn't exist
-      if (!salesByDate[dateStr]) {
-        salesByDate[dateStr] = { sales: 0, revenue: 0 }
-      }
-
-      // Add the line item to the totals
-      salesByDate[dateStr].sales += 1
-      salesByDate[dateStr].revenue += price
-
-      // Update overall totals
-      totalSales += 1
-      totalRevenue += price
+    // Initialize all dates in the range with 0 sales
+    const dateRange = getDateRange(startDate, now, period)
+    dateRange.forEach((date) => {
+      salesByDate[date] = 0
     })
 
-    // Convert the salesByDate object to an array for the chart
-    const salesData = Object.entries(salesByDate).map(([date, stats]) => ({
+    // Count sales for each date
+    salesData?.forEach((item) => {
+      const date = formatDate(new Date(item.created_at), period)
+      salesByDate[date] = (salesByDate[date] || 0) + 1
+    })
+
+    // Convert to array format for chart
+    const chartData = Object.entries(salesByDate).map(([date, count]) => ({
       date,
-      sales: stats.sales,
-      revenue: stats.revenue,
+      sales: count,
     }))
 
-    // Sort by date (oldest to newest)
-    salesData.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
-
-    // Only return the last 30 days for the chart
-    const last30Days = salesData.slice(-30)
-
-    return NextResponse.json({
-      salesByDate: last30Days,
-      totalSales,
-      totalRevenue,
-    })
-  } catch (error: any) {
+    return NextResponse.json({ data: chartData })
+  } catch (error) {
     console.error("Error in vendor sales stats API:", error)
     return NextResponse.json(
-      {
-        message: error.message || "An error occurred",
-        stack: error.stack,
-      },
+      { error: error instanceof Error ? error.message : "An unexpected error occurred" },
       { status: 500 },
     )
   }
+}
+
+// Helper function to format date based on period
+function formatDate(date: Date, period: string): string {
+  switch (period) {
+    case "week":
+      return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`
+    case "month":
+      return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`
+    case "year":
+      return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`
+    default:
+      return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`
+  }
+}
+
+// Helper function to get all dates in a range
+function getDateRange(start: Date, end: Date, period: string): string[] {
+  const dates: string[] = []
+  const current = new Date(start)
+
+  while (current <= end) {
+    dates.push(formatDate(current, period))
+
+    switch (period) {
+      case "week":
+      case "month":
+        current.setDate(current.getDate() + 1)
+        break
+      case "year":
+        current.setMonth(current.getMonth() + 1)
+        break
+      default:
+        current.setDate(current.getDate() + 1)
+    }
+  }
+
+  return dates
 }
