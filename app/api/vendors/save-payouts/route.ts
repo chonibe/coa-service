@@ -8,108 +8,111 @@ export async function POST(request: NextRequest) {
     const { payouts } = body
 
     if (!payouts || !Array.isArray(payouts) || payouts.length === 0) {
-      return NextResponse.json({ message: "Payouts data is required" }, { status: 400 })
+      return NextResponse.json({ message: "Valid payouts array is required" }, { status: 400 })
     }
 
-    console.log("Saving payouts:", payouts)
+    console.log(`Saving ${payouts.length} payout settings to Supabase`)
 
     // Process each payout setting
-    const results = []
-    for (const payout of payouts) {
-      const { product_id, vendor_name, payout_amount, is_percentage } = payout
+    const results = await Promise.all(
+      payouts.map(async (payout) => {
+        try {
+          const { product_id, vendor_name, payout_amount, is_percentage } = payout
 
-      if (!product_id || !vendor_name) {
-        results.push({ product_id, status: "skipped", reason: "Missing product_id or vendor_name" })
-        continue // Skip invalid entries
-      }
+          if (!product_id || !vendor_name) {
+            return {
+              status: "error",
+              message: "Product ID and vendor name are required",
+              payout,
+            }
+          }
 
-      // Ensure payout_amount is a valid number
-      const amount = typeof payout_amount === "string" ? Number.parseFloat(payout_amount) : Number(payout_amount)
+          // Ensure payout_amount is a valid number
+          const amount = Number(payout_amount)
+          if (isNaN(amount)) {
+            return {
+              status: "error",
+              message: "Payout amount must be a valid number",
+              payout,
+            }
+          }
 
-      if (isNaN(amount)) {
-        results.push({ product_id, status: "error", reason: "Invalid payout amount" })
-        continue
-      }
+          // Check if a record already exists
+          const { data: existingData, error: checkError } = await supabaseAdmin
+            .from("vendor_payouts")
+            .select("*")
+            .eq("product_id", product_id)
+            .eq("vendor_name", vendor_name)
+            .maybeSingle()
 
-      // Check if this payout setting already exists
-      const { data: existingPayout, error: checkError } = await supabaseAdmin
-        .from("product_vendor_payouts")
-        .select("id")
-        .eq("product_id", product_id)
-        .eq("vendor_name", vendor_name)
-        .maybeSingle()
+          if (checkError) {
+            console.error("Error checking existing payout:", checkError)
+            return {
+              status: "error",
+              message: checkError.message,
+              payout,
+            }
+          }
 
-      if (checkError) {
-        console.error("Error checking if payout exists:", checkError)
-        results.push({
-          product_id,
-          status: "error",
-          reason: `Error checking if payout exists: ${checkError.message}`,
-        })
-        continue
-      }
+          let result
+          if (existingData) {
+            // Update existing record
+            console.log(`Updating existing payout for product ${product_id}`)
+            result = await supabaseAdmin
+              .from("vendor_payouts")
+              .update({
+                payout_amount: amount,
+                is_percentage: is_percentage === true,
+                updated_at: new Date().toISOString(),
+              })
+              .eq("id", existingData.id)
+          } else {
+            // Insert new record
+            console.log(`Creating new payout for product ${product_id}`)
+            result = await supabaseAdmin.from("vendor_payouts").insert({
+              product_id,
+              vendor_name,
+              payout_amount: amount,
+              is_percentage: is_percentage === true,
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString(),
+            })
+          }
 
-      const now = new Date().toISOString()
+          if (result.error) {
+            console.error("Error saving payout:", result.error)
+            return {
+              status: "error",
+              message: result.error.message,
+              payout,
+            }
+          }
 
-      if (existingPayout) {
-        // Update existing payout
-        const { error } = await supabaseAdmin
-          .from("product_vendor_payouts")
-          .update({
-            payout_amount: amount,
-            is_percentage,
-            updated_at: now,
-          })
-          .eq("id", existingPayout.id)
-
-        if (error) {
-          console.error("Error updating payout:", error)
-          results.push({
-            product_id,
+          return { status: "success", payout }
+        } catch (err: any) {
+          console.error("Error processing payout:", err)
+          return {
             status: "error",
-            reason: `Error updating payout: ${error.message}`,
-          })
-        } else {
-          results.push({ product_id, status: "updated" })
+            message: err.message || "Unknown error",
+            payout,
+          }
         }
-      } else {
-        // Insert new payout
-        const { error } = await supabaseAdmin.from("product_vendor_payouts").insert({
-          product_id,
-          vendor_name,
-          payout_amount: amount,
-          is_percentage,
-          created_at: now,
-          updated_at: now,
-        })
-
-        if (error) {
-          console.error("Error inserting payout:", error)
-          results.push({
-            product_id,
-            status: "error",
-            reason: `Error inserting payout: ${error.message}`,
-          })
-        } else {
-          results.push({ product_id, status: "inserted" })
-        }
-      }
-    }
+      }),
+    )
 
     // Check if any operations failed
     const failures = results.filter((r) => r.status === "error")
     if (failures.length > 0) {
-      return NextResponse.json(
-        {
-          success: false,
-          message: "Some payouts failed to save",
-          results,
-        },
-        { status: 207 },
-      ) // 207 Multi-Status
+      console.warn(`${failures.length} out of ${payouts.length} payouts failed to save`)
     }
 
-    return NextResponse.json({ success: true, results })
+    return NextResponse.json({
+      message:
+        failures.length > 0
+          ? `${payouts.length - failures.length} of ${payouts.length} payouts saved successfully`
+          : "All payouts saved successfully",
+      results,
+    })
   } catch (error: any) {
     console.error("Error in save payouts API:", error)
     return NextResponse.json({ message: error.message || "An error occurred" }, { status: 500 })
