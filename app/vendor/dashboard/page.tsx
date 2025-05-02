@@ -5,13 +5,10 @@ import { useRouter, useSearchParams } from "next/navigation"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
 import { Button } from "@/components/ui/button"
-import { AlertCircle, Loader2, Package, DollarSign, BarChart, ShoppingCart, Save } from "lucide-react"
+import { AlertCircle, Loader2, Package, DollarSign, BarChart, ShoppingCart } from "lucide-react"
 import { ProductTable } from "./components/product-table"
 import { VendorSalesChart } from "./components/vendor-sales-chart"
-import { PayoutProducts } from "./components/payout-products"
 import { SidebarLayout } from "../components/sidebar-layout"
 
 export default function VendorDashboardPage() {
@@ -215,12 +212,10 @@ export default function VendorDashboardPage() {
             }}
             className="w-full"
           >
-            <TabsList className="grid grid-cols-5 mb-6 w-full">
+            <TabsList className="grid grid-cols-3 mb-6 w-full">
               <TabsTrigger value="dashboard">Overview</TabsTrigger>
               <TabsTrigger value="products">Products</TabsTrigger>
               <TabsTrigger value="sales">Sales</TabsTrigger>
-              <TabsTrigger value="analytics">Analytics</TabsTrigger>
-              <TabsTrigger value="payouts">Payouts</TabsTrigger>
             </TabsList>
 
             <TabsContent value="dashboard" className="mt-0 space-y-6">
@@ -255,93 +250,6 @@ export default function VendorDashboardPage() {
                 </CardHeader>
                 <CardContent>
                   <VendorSalesChart vendorName={vendor.vendor_name} />
-                </CardContent>
-              </Card>
-            </TabsContent>
-
-            <TabsContent value="analytics" className="mt-0">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Analytics</CardTitle>
-                  <CardDescription>Detailed analytics for your products</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-center py-8">
-                    <BarChart className="h-16 w-16 mx-auto text-muted-foreground mb-4" />
-                    <h3 className="text-lg font-medium mb-2">Analytics Coming Soon</h3>
-                    <p className="text-muted-foreground max-w-md mx-auto">
-                      We're working on detailed analytics for your products. Check back soon for insights on your sales
-                      and customer behavior.
-                    </p>
-                  </div>
-                </CardContent>
-              </Card>
-            </TabsContent>
-
-            <TabsContent value="payouts" className="mt-0 space-y-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Payout Products</CardTitle>
-                  <CardDescription>View your products and their payout settings</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <PayoutProducts vendorName={vendor.vendor_name} />
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader>
-                  <CardTitle>Payout Settings</CardTitle>
-                  <CardDescription>Manage your payout preferences</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-6">
-                    <div className="space-y-4">
-                      <h3 className="text-lg font-medium">PayPal Information</h3>
-                      <p className="text-sm text-muted-foreground">
-                        Enter your PayPal email address to receive payments for your sales.
-                      </p>
-
-                      <div className="grid gap-2">
-                        <Label htmlFor="paypal-email">PayPal Email</Label>
-                        <div className="flex flex-col sm:flex-row gap-2">
-                          <Input
-                            id="paypal-email"
-                            type="email"
-                            placeholder="your-email@example.com"
-                            value={paypalEmail}
-                            onChange={(e) => setPaypalEmail(e.target.value)}
-                            className="w-full"
-                          />
-                          <Button onClick={handleSavePayPal} disabled={isSaving} className="w-full sm:w-auto">
-                            {isSaving ? (
-                              <>
-                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                Saving...
-                              </>
-                            ) : (
-                              <>
-                                <Save className="mr-2 h-4 w-4" />
-                                Save
-                              </>
-                            )}
-                          </Button>
-                        </div>
-                        {saveSuccess && <p className="text-sm text-green-600">PayPal email updated successfully!</p>}
-                      </div>
-                    </div>
-
-                    <div className="space-y-4">
-                      <h3 className="text-lg font-medium">Payout History</h3>
-                      <div className="text-center py-6 border rounded-md bg-gray-50">
-                        <DollarSign className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                        <h3 className="text-lg font-medium mb-2">No payouts yet</h3>
-                        <p className="text-sm text-muted-foreground max-w-md mx-auto px-4">
-                          Your payout history will appear here once payments have been processed.
-                        </p>
-                      </div>
-                    </div>
-                  </div>
                 </CardContent>
               </Card>
             </TabsContent>
