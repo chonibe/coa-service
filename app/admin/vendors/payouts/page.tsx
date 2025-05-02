@@ -230,6 +230,8 @@ export default function VendorPayoutsPage() {
         is_percentage: setting.isPercentage,
       }
 
+      console.log("Saving payout setting:", payoutToSave)
+
       const response = await fetch("/api/vendors/save-payouts", {
         method: "POST",
         headers: {
@@ -238,8 +240,10 @@ export default function VendorPayoutsPage() {
         body: JSON.stringify({ payouts: [payoutToSave] }),
       })
 
+      const data = await response.json()
+
       if (!response.ok) {
-        throw new Error("Failed to save payout setting")
+        throw new Error(data.message || "Failed to save payout setting")
       }
 
       // Mark as saved
@@ -264,6 +268,9 @@ export default function VendorPayoutsPage() {
         ...prev,
         [productId]: false,
       }))
+
+      // Show error in UI
+      setError(err.message || "Failed to save payout setting")
     }
   }
 
@@ -291,6 +298,8 @@ export default function VendorPayoutsPage() {
         return
       }
 
+      console.log("Saving all payout settings:", payoutsToSave)
+
       const response = await fetch("/api/vendors/save-payouts", {
         method: "POST",
         headers: {
@@ -299,20 +308,39 @@ export default function VendorPayoutsPage() {
         body: JSON.stringify({ payouts: payoutsToSave }),
       })
 
+      const data = await response.json()
+
       if (!response.ok) {
-        throw new Error("Failed to save payout settings")
+        throw new Error(data.message || "Failed to save payout settings")
       }
 
-      // Mark all as saved
+      // Check for partial success
+      if (data.results) {
+        const failures = data.results.filter((r: any) => r.status === "error")
+        if (failures.length > 0) {
+          setError(`${failures.length} out of ${payoutsToSave.length} payouts failed to save`)
+        }
+      }
+
+      // Mark successful saves
       const newSavedStatus = { ...savedStatus }
-      payoutsToSave.forEach((payout) => {
-        newSavedStatus[payout.product_id] = true
+      payoutsToSave.forEach((payout, index) => {
+        const result = data.results?.[index]
+        if (!result || result.status !== "error") {
+          newSavedStatus[payout.product_id] = true
+        }
       })
       setSavedStatus(newSavedStatus)
 
       // Clear saved status after 3 seconds
       setTimeout(() => {
-        setSavedStatus({})
+        setSavedStatus((prev) => {
+          const newState = { ...prev }
+          Object.keys(newState).forEach((key) => {
+            if (newState[key] === true) delete newState[key]
+          })
+          return newState
+        })
       }, 3000)
     } catch (err: any) {
       console.error("Error saving payout settings:", err)

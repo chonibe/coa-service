@@ -5,14 +5,14 @@ import { supabaseAdmin } from "@/lib/supabase"
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { productIds, vendorNames } = body
+    const { productIds } = body
 
     if (!productIds || !productIds.length) {
       return NextResponse.json({ message: "Product IDs are required" }, { status: 400 })
     }
 
     // Fetch all payout settings
-    const { data, error } = await supabaseAdmin.from("vendor_payouts").select("*").in("product_id", productIds)
+    const { data, error } = await supabaseAdmin.from("product_vendor_payouts").select("*").in("product_id", productIds)
 
     if (error) {
       console.error("Error fetching vendor payouts:", error)
