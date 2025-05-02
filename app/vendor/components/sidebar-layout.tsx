@@ -217,6 +217,29 @@ export function SidebarLayout({ children }: { children: React.ReactNode }) {
     },
   ]
 
+  // Get current section title based on pathname and tab
+  const getCurrentSectionTitle = () => {
+    const navItems = getNavItems()
+    const currentNavItem = navItems.find(
+      (item) => pathname === item.href || (item.submenu && item.submenu.some((subItem) => pathname === subItem.href)),
+    )
+
+    if (currentNavItem) {
+      // If we're on a submenu page with tabs, show the tab name
+      if (currentTab && currentNavItem.submenu) {
+        const currentSubItem = currentNavItem.submenu.find(
+          (subItem) => subItem.isTab && subItem.title.toLowerCase() === currentTab,
+        )
+        if (currentSubItem) {
+          return `${currentNavItem.title} / ${currentSubItem.title}`
+        }
+      }
+      return currentNavItem.title
+    }
+
+    return "Dashboard"
+  }
+
   // Auto-open submenu for active items
   useEffect(() => {
     const navItems = getNavItems()
@@ -406,19 +429,115 @@ export function SidebarLayout({ children }: { children: React.ReactNode }) {
           >
             <Menu className="h-5 w-5" />
           </button>
-          <h1 className="ml-4 text-lg font-medium">Vendor Portal</h1>
+          <h1 className="ml-4 text-lg font-medium">{getCurrentSectionTitle()}</h1>
         </header>
 
         {/* Page content */}
-        <main className="flex-1 overflow-auto bg-background p-4 md:p-6">{children}</main>
+        <main className={`flex-1 overflow-auto bg-background p-4 md:p-6 ${isMobile ? "pb-20" : ""}`}>{children}</main>
       </div>
 
       {/* Overlay for mobile sidebar */}
-      {isSidebarOpen && (
-        <div
-          className="fixed inset-0 z-40 bg-background/80 backdrop-blur-sm md:hidden"
-          onClick={() => setIsSidebarOpen(false)}
-        />
+      {isMobile && (
+        <div className="fixed bottom-0 left-0 z-40 w-full border-t bg-background">
+          <div className="flex h-16 items-center justify-around">
+            <Link
+              href="/vendor/dashboard"
+              className={`flex flex-col items-center justify-center flex-1 h-full ${
+                pathname === "/vendor/dashboard" ? "text-primary" : "text-muted-foreground"
+              }`}
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="24"
+                height="24"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className="h-5 w-5"
+              >
+                <rect width="7" height="9" x="3" y="3" rx="1" />
+                <rect width="7" height="5" x="14" y="3" rx="1" />
+                <rect width="7" height="9" x="14" y="12" rx="1" />
+                <rect width="7" height="5" x="3" y="16" rx="1" />
+              </svg>
+              <span className="text-xs mt-1">Dashboard</span>
+            </Link>
+            <Link
+              href="/vendor/dashboard/analytics"
+              className={`flex flex-col items-center justify-center flex-1 h-full ${
+                pathname === "/vendor/dashboard/analytics" ? "text-primary" : "text-muted-foreground"
+              }`}
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="24"
+                height="24"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className="h-5 w-5"
+              >
+                <path d="M3 3v18h18" />
+                <path d="m19 9-5 5-4-4-3 3" />
+              </svg>
+              <span className="text-xs mt-1">Analytics</span>
+            </Link>
+            <Link
+              href="/vendor/dashboard/benefits"
+              className={`flex flex-col items-center justify-center flex-1 h-full ${
+                pathname === "/vendor/dashboard/benefits" ? "text-primary" : "text-muted-foreground"
+              }`}
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="24"
+                height="24"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className="h-5 w-5"
+              >
+                <path d="M12 8c-2.8 0-5 2.2-5 5s2.2 5 5 5 5-2.2 5-5-2.2-5-5-5Z" />
+                <path d="m3 3 18 18" />
+                <path d="M10.5 13.5 3 21" />
+                <path d="m21 3-7.5 7.5" />
+              </svg>
+              <span className="text-xs mt-1">Benefits</span>
+            </Link>
+            <Link
+              href="/vendor/dashboard/settings"
+              className={`flex flex-col items-center justify-center flex-1 h-full ${
+                pathname === "/vendor/dashboard/settings" ? "text-primary" : "text-muted-foreground"
+              }`}
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="24"
+                height="24"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className="h-5 w-5"
+              >
+                <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z" />
+                <circle cx="12" cy="12" r="3" />
+              </svg>
+              <span className="text-xs mt-1">Settings</span>
+            </Link>
+          </div>
+        </div>
       )}
     </div>
   )

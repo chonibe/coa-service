@@ -26,6 +26,8 @@ import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
 import { Toaster } from "@/components/ui/toaster"
 import LogoutButton from "./logout-button"
 import { useMobile } from "@/hooks/use-mobile"
+import { BottomNav } from "./components/bottom-nav"
+import { Breadcrumb } from "./components/breadcrumb"
 
 interface NavItem {
   title: string
@@ -39,6 +41,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const pathname = usePathname()
   const isMobile = useMobile()
   const [open, setOpen] = useState(false)
+  const [currentSection, setCurrentSection] = useState("Dashboard")
   const [navItems, setNavItems] = useState<NavItem[]>([
     {
       title: "Dashboard",
@@ -158,6 +161,29 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     setOpen(false)
   }, [pathname])
 
+  // Update current section title based on pathname
+  useEffect(() => {
+    const currentNavItem = navItems.find(
+      (item) => pathname === item.href || (item.submenu && item.submenu.some((subItem) => pathname === subItem.href)),
+    )
+
+    if (currentNavItem) {
+      // If we're on a submenu page, find which one
+      if (currentNavItem.submenu) {
+        const currentSubItem = currentNavItem.submenu.find((subItem) => pathname === subItem.href)
+        if (currentSubItem) {
+          setCurrentSection(`${currentNavItem.title} / ${currentSubItem.title}`)
+        } else {
+          setCurrentSection(currentNavItem.title)
+        }
+      } else {
+        setCurrentSection(currentNavItem.title)
+      }
+    } else {
+      setCurrentSection("Dashboard")
+    }
+  }, [pathname, navItems])
+
   return (
     <div className="flex min-h-screen flex-col">
       <header className="sticky top-0 z-30 flex h-16 items-center gap-4 border-b bg-background px-4 sm:px-6">
@@ -173,7 +199,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               <div className="flex items-center border-b h-16 px-6">
                 <Link href="/admin" className="flex items-center gap-2 font-semibold">
                   <Award className="h-6 w-6" />
-                  <span>Admin Dashboard</span>
+                  {isMobile ? <span className="font-medium">{currentSection}</span> : <span>Admin Dashboard</span>}
                 </Link>
                 <Button variant="ghost" size="icon" className="ml-auto" onClick={() => setOpen(false)}>
                   <X className="h-5 w-5" />
@@ -259,7 +285,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         </Sheet>
         <Link href="/admin" className="flex items-center gap-2 font-semibold">
           <Award className="h-6 w-6" />
-          <span className="hidden md:inline-block">Admin Dashboard</span>
+          <span className={isMobile ? "sr-only" : "inline-block"}>Admin Dashboard</span>
         </Link>
         <div className="ml-auto flex items-center gap-2">
           <LogoutButton className="hidden md:flex" />
@@ -339,8 +365,14 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             </div>
           </ScrollArea>
         </aside>
-        <main className="flex-1">{children}</main>
+        <main className="flex-1 pb-16 md:pb-0">
+          <div className="px-4 py-2 md:px-6 md:py-4">
+            <Breadcrumb className="hidden md:flex" />
+          </div>
+          {children}
+        </main>
       </div>
+      <BottomNav />
       <Toaster />
     </div>
   )
