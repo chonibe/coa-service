@@ -28,34 +28,13 @@ export async function GET(request: NextRequest) {
       console.error("Error fetching vendor payouts:", payoutsError)
     }
 
-    // Fetch sold counts for each product (only counting Unfulfilled or Fulfilled items)
-    const soldCounts: Record<string, number> = {}
-
-    for (const productId of productIds) {
-      const { count, error: countError } = await supabaseAdmin
-        .from("order_line_items")
-        .select("*", { count: "exact" })
-        .eq("product_id", productId)
-        .eq("vendor_name", vendor)
-        .eq("status", "active")
-        .in("fulfillment_status", ["Unfulfilled", "Fulfilled"])
-        .is("deleted_at", null)
-
-      if (countError) {
-        console.error(`Error fetching sold count for product ${productId}:`, countError)
-      } else {
-        soldCounts[productId] = count || 0
-      }
-    }
-
-    // Merge payout settings and sold counts with product data
+    // Merge payout settings with product data
     const productsWithPayouts = products.map((product) => {
       const payout = payouts?.find((p) => p.product_id === product.id)
       return {
         ...product,
         payout_amount: payout?.payout_amount || 0,
         is_percentage: payout?.is_percentage || false,
-        sold_count: soldCounts[product.id] || 0,
       }
     })
 

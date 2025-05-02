@@ -13,7 +13,6 @@ interface Product {
   currency: string
   payout_amount: number
   is_percentage: boolean
-  sold_count?: number
 }
 
 interface PayoutProductsProps {
@@ -75,7 +74,6 @@ export function PayoutProducts({ vendorName }: PayoutProductsProps) {
                 <TableHead>Product</TableHead>
                 <TableHead>Price</TableHead>
                 <TableHead>Payout Amount</TableHead>
-                <TableHead>Sold</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -113,7 +111,6 @@ export function PayoutProducts({ vendorName }: PayoutProductsProps) {
                       </>
                     )}
                   </TableCell>
-                  <TableCell>{product.sold_count || 0}</TableCell>
                 </TableRow>
               ))}
             </TableBody>
