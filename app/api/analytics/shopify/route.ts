@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
 import { cookies } from "next/headers"
-import { createClient } from "@/lib/supabase-server"
+import { shopifyFetch, safeJsonParse } from "@/lib/shopify-api"
+import { supabaseAdmin } from "@/lib/supabase"
 
 export async function GET(request: Request) {
   try {
@@ -12,193 +13,289 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: "Not authenticated" }, { status: 401 })
     }
 
-    // Parse query parameters
-    const url = new URL(request.url)
-    const days = Number.parseInt(url.searchParams.get("days") || "30", 10)
+    // Get time range from query params
+    const { searchParams } = new URL(request.url)
+    const timeRange = searchParams.get("timeRange") || "30days"
 
-    // Create Supabase client
-    const supabase = createClient()
-
-    // Calculate date range
+    // Calculate date range based on timeRange
     const endDate = new Date()
     const startDate = new Date()
-    startDate.setDate(startDate.getDate() - days)
 
-    // Format dates for SQL query
-    const startDateStr = startDate.toISOString().split("T")[0]
-    const endDateStr = endDate.toISOString().split("T")[0]
-
-    // Get sales data for this vendor
-    const { data: salesData, error: salesError } = await supabase
-      .from("product_vendor_payouts")
-      .select(`
-        product_id,
-        product_title,
-        vendor_name,
-        line_items:line_item_id(
-          id,
-          order_id,
-          price,
-          quantity,
-          created_at
-        )
-      `)
-      .eq("vendor_name", vendorName)
-      .gte("created_at", startDateStr)
-      .lte("created_at", endDateStr)
-
-    if (salesError) {
-      console.error("Error fetching sales data:", salesError)
-      return NextResponse.json({ error: "Failed to fetch sales data" }, { status: 500 })
+    switch (timeRange) {
+      case "7days":
+        startDate.setDate(endDate.getDate() - 7)
+        break
+      case "30days":
+        startDate.setDate(endDate.getDate() - 30)
+        break
+      case "90days":
+        startDate.setDate(endDate.getDate() - 90)
+        break
+      case "year":
+        startDate.setDate(endDate.getDate() - 365)
+        break
+      default:
+        startDate.setDate(endDate.getDate() - 30)
     }
 
-    // Calculate previous period for comparison
-    const previousStartDate = new Date(startDate)
-    previousStartDate.setDate(previousStartDate.getDate() - days)
-    const previousEndDate = new Date(startDate)
-    previousEndDate.setDate(previousEndDate.getDate() - 1)
+    // Format dates for GraphQL query
+    const formattedStartDate = startDate.toISOString().split("T")[0]
+    const formattedEndDate = endDate.toISOString().split("T")[0]
 
-    // Format dates for previous period
-    const prevStartDateStr = previousStartDate.toISOString().split("T")[0]
-    const prevEndDateStr = previousEndDate.toISOString().split("T")[0]
+    // Get vendor's products
+    const productsData = await fetchProductsByVendor(vendorName)
+    const productIds = productsData.products.map((p: any) => p.id)
 
-    // Get previous period sales data
-    const { data: prevSalesData, error: prevSalesError } = await supabase
-      .from("product_vendor_payouts")
-      .select(`
-        line_items:line_item_id(
-          id,
-          price,
-          quantity,
-          created_at
-        )
-      `)
+    // Get sales data from Shopify Analytics
+    const analyticsData = await fetchShopifyAnalytics(formattedStartDate, formattedEndDate, productIds)
+
+    // Get sales data from database for this vendor
+    const { data: lineItems, error } = await supabaseAdmin
+      .from("order_line_items")
+      .select("*")
       .eq("vendor_name", vendorName)
-      .gte("created_at", prevStartDateStr)
-      .lte("created_at", prevEndDateStr)
+      .eq("status", "active")
+      .gte("created_at", formattedStartDate)
+      .lte("created_at", formattedEndDate)
 
-    if (prevSalesError) {
-      console.error("Error fetching previous sales data:", prevSalesError)
-      // Continue anyway, we'll just not have comparison data
+    if (error) {
+      console.error("Database error:", error)
+      return NextResponse.json({ error: error.message }, { status: 500 })
     }
 
-    // Process the data
-    const processedData = processShopifyData(salesData, prevSalesData, days)
+    // Process line items to get sales by date
+    const salesByDate: Record<string, { sales: number; revenue: number }> = {}
 
-    return NextResponse.json(processedData)
+    lineItems.forEach((item) => {
+      const dateStr = new Date(item.created_at).toISOString().split("T")[0]
+      const price = typeof item.price === "string" ? Number.parseFloat(item.price || "0") : item.price || 0
+
+      if (!salesByDate[dateStr]) {
+        salesByDate[dateStr] = { sales: 0, revenue: 0 }
+      }
+
+      salesByDate[dateStr].sales += 1
+      salesByDate[dateStr].revenue += price
+    })
+
+    // Convert to array and sort by date
+    const salesData = Object.entries(salesByDate)
+      .map(([date, stats]) => ({
+        date,
+        sales: stats.sales,
+        revenue: stats.revenue,
+      }))
+      .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
+
+    // Calculate totals
+    const totalSales = lineItems.length
+    const totalRevenue = lineItems.reduce((sum, item) => {
+      const price = typeof item.price === "string" ? Number.parseFloat(item.price || "0") : item.price || 0
+      return sum + price
+    }, 0)
+
+    // Get top selling products
+    const productSales: Record<string, { sales: number; revenue: number; title: string }> = {}
+
+    for (const item of lineItems) {
+      if (!productSales[item.product_id]) {
+        // Find product title from Shopify data
+        const product = productsData.products.find((p: any) => p.id === item.product_id)
+        productSales[item.product_id] = {
+          sales: 0,
+          revenue: 0,
+          title: product?.title || `Product ${item.product_id}`,
+        }
+      }
+
+      const price = typeof item.price === "string" ? Number.parseFloat(item.price || "0") : item.price || 0
+      productSales[item.product_id].sales += 1
+      productSales[item.product_id].revenue += price
+    }
+
+    // Convert to array and sort by sales
+    const topProducts = Object.entries(productSales)
+      .map(([id, data]) => ({
+        id,
+        title: data.title,
+        sales: data.sales,
+        revenue: data.revenue,
+      }))
+      .sort((a, b) => b.sales - a.sales)
+      .slice(0, 5)
+
+    // Combine all data
+    return NextResponse.json({
+      salesData,
+      totalSales,
+      totalRevenue,
+      topProducts,
+      analyticsData,
+      timeRange,
+    })
   } catch (error: any) {
-    console.error("Error in Shopify Analytics API:", error)
+    console.error("Error in analytics API:", error)
     return NextResponse.json({ error: error.message || "An error occurred" }, { status: 500 })
   }
 }
 
-// Helper function to process the raw data into a more usable format
-function processShopifyData(salesData: any[], prevSalesData: any[] | null, days: number) {
-  // Initialize result object
-  const result: any = {
-    overview: {
-      totalRevenue: 0,
-      totalOrders: 0,
-      conversionRate: 0,
-      revenueChange: 0,
-      ordersChange: 0,
-      conversionChange: 0,
-    },
-    salesOverTime: [],
-    topProducts: [],
-  }
-
-  // Process current period data
-  const orderIds = new Set()
-  const productMap: Record<string, { id: string; title: string; revenue: number; unitsSold: number }> = {}
-  const dailySales: Record<string, { date: string; revenue: number; orders: number }> = {}
-
-  // Generate all dates in the range
-  for (let i = 0; i < days; i++) {
-    const date = new Date()
-    date.setDate(date.getDate() - i)
-    const dateStr = date.toISOString().split("T")[0]
-    dailySales[dateStr] = { date: dateStr, revenue: 0, orders: 0 }
-  }
-
-  // Process sales data
-  salesData.forEach((item) => {
-    if (!item.line_items) return
-
-    const lineItems = Array.isArray(item.line_items) ? item.line_items : [item.line_items]
-
-    lineItems.forEach((lineItem: any) => {
-      if (!lineItem) return
-
-      // Add to total revenue
-      const revenue = Number.parseFloat(lineItem.price) * lineItem.quantity
-      result.overview.totalRevenue += revenue
-
-      // Track unique orders
-      orderIds.add(lineItem.order_id)
-
-      // Add to product map
-      if (!productMap[item.product_id]) {
-        productMap[item.product_id] = {
-          id: item.product_id,
-          title: item.product_title || `Product ${item.product_id}`,
-          revenue: 0,
-          unitsSold: 0,
+async function fetchProductsByVendor(vendorName: string) {
+  try {
+    // Build the GraphQL query to fetch products for this vendor
+    const graphqlQuery = `
+      {
+        products(
+          first: 250
+          query: "vendor:${vendorName}"
+        ) {
+          edges {
+            node {
+              id
+              title
+              handle
+              vendor
+              productType
+              totalInventory
+              priceRangeV2 {
+                minVariantPrice {
+                  amount
+                  currencyCode
+                }
+                maxVariantPrice {
+                  amount
+                  currencyCode
+                }
+              }
+              images(first: 1) {
+                edges {
+                  node {
+                    url
+                    altText
+                  }
+                }
+              }
+            }
+          }
         }
       }
-      productMap[item.product_id].revenue += revenue
-      productMap[item.product_id].unitsSold += lineItem.quantity
+    `
 
-      // Add to daily sales
-      const date = new Date(lineItem.created_at).toISOString().split("T")[0]
-      if (dailySales[date]) {
-        dailySales[date].revenue += revenue
-        dailySales[date].orders += 1
+    // Make the request to Shopify
+    const response = await shopifyFetch("graphql.json", {
+      method: "POST",
+      body: JSON.stringify({ query: graphqlQuery }),
+    })
+
+    const data = await safeJsonParse(response)
+
+    if (!data || !data.data || !data.data.products) {
+      console.error("Invalid response from Shopify GraphQL API:", data)
+      throw new Error("Invalid response from Shopify GraphQL API")
+    }
+
+    // Extract products
+    const products = data.data.products.edges.map((edge: any) => {
+      const product = edge.node
+
+      // Extract the first image if available
+      const image = product.images.edges.length > 0 ? product.images.edges[0].node.url : null
+
+      return {
+        id: product.id.split("/").pop(),
+        title: product.title,
+        handle: product.handle,
+        vendor: product.vendor,
+        productType: product.productType,
+        inventory: product.totalInventory,
+        price: product.priceRangeV2.minVariantPrice.amount,
+        currency: product.priceRangeV2.minVariantPrice.currencyCode,
+        image,
       }
     })
-  })
 
-  // Set total orders
-  result.overview.totalOrders = orderIds.size
+    return { products }
+  } catch (error) {
+    console.error("Error fetching products by vendor:", error)
+    throw error
+  }
+}
 
-  // Calculate conversion rate (placeholder - would need actual visit data)
-  result.overview.conversionRate = orderIds.size > 0 ? 2.5 : 0 // Placeholder value
+async function fetchShopifyAnalytics(startDate: string, endDate: string, productIds: string[]) {
+  try {
+    // Build the GraphQL query for analytics data
+    const graphqlQuery = `
+      {
+        shopifyAnalytics {
+          sales(
+            first: 50,
+            after: "${startDate}",
+            before: "${endDate}"
+          ) {
+            edges {
+              node {
+                date
+                netSales
+                grossSales
+                onlineStoreSessionsCount
+                returnedItemsCount
+                shippingAndHandling
+                taxes
+                totalOrders
+                totalItemsOrdered
+              }
+            }
+          }
+          onlineStoreSessions(
+            first: 50,
+            after: "${startDate}",
+            before: "${endDate}"
+          ) {
+            edges {
+              node {
+                date
+                mobileSessionsCount
+                desktopSessionsCount
+                totalSessionsCount
+                averageSessionDuration
+                bounceRate
+                conversionRate
+              }
+            }
+          }
+        }
+      }
+    `
 
-  // Process previous period data for comparison
-  if (prevSalesData) {
-    const prevOrderIds = new Set()
-    let prevRevenue = 0
-
-    prevSalesData.forEach((item) => {
-      if (!item.line_items) return
-
-      const lineItems = Array.isArray(item.line_items) ? item.line_items : [item.line_items]
-
-      lineItems.forEach((lineItem: any) => {
-        if (!lineItem) return
-
-        prevRevenue += Number.parseFloat(lineItem.price) * lineItem.quantity
-        prevOrderIds.add(lineItem.order_id)
-      })
+    // Make the request to Shopify
+    const response = await shopifyFetch("graphql.json", {
+      method: "POST",
+      body: JSON.stringify({ query: graphqlQuery }),
     })
 
-    // Calculate changes
-    const prevOrders = prevOrderIds.size
-    result.overview.revenueChange =
-      prevRevenue > 0 ? ((result.overview.totalRevenue - prevRevenue) / prevRevenue) * 100 : 0
+    const data = await safeJsonParse(response)
 
-    result.overview.ordersChange = prevOrders > 0 ? ((result.overview.totalOrders - prevOrders) / prevOrders) * 100 : 0
+    if (!data || !data.data || !data.data.shopifyAnalytics) {
+      console.error("Invalid response from Shopify Analytics API:", data)
+      return {
+        sales: [],
+        sessions: [],
+      }
+    }
 
-    result.overview.conversionChange = 0.5 // Placeholder value
+    // Extract and format analytics data
+    const sales = data.data.shopifyAnalytics.sales.edges.map((edge: any) => edge.node)
+    const sessions = data.data.shopifyAnalytics.onlineStoreSessions.edges.map((edge: any) => edge.node)
+
+    return {
+      sales,
+      sessions,
+    }
+  } catch (error) {
+    console.error("Error fetching Shopify analytics:", error)
+    // Return empty data instead of throwing to prevent the entire request from failing
+    return {
+      sales: [],
+      sessions: [],
+    }
   }
-
-  // Sort and limit top products
-  result.topProducts = Object.values(productMap)
-    .sort((a: any, b: any) => b.revenue - a.revenue)
-    .slice(0, 10)
-
-  // Format sales over time
-  result.salesOverTime = Object.values(dailySales).sort((a: any, b: any) => a.date.localeCompare(b.date))
-
-  return result
 }

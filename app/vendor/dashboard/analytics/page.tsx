@@ -1,688 +1,416 @@
 "use client"
 
-import { useState, useEffect, Suspense } from "react"
+import { useState, useEffect } from "react"
+import { useRouter, useSearchParams } from "next/navigation"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Skeleton } from "@/components/ui/skeleton"
-import { AlertCircle, BarChart3, LineChart, PieChart, TrendingUp } from "lucide-react"
+import { Label } from "@/components/ui/label"
 import {
-  Chart as ChartJS,
-  CategoryScale,
-  LinearScale,
-  PointElement,
-  LineElement,
-  BarElement,
-  ArcElement,
-  Title,
+  BarChart,
+  Bar,
+  LineChart,
+  Line,
+  PieChart,
+  Pie,
+  Cell,
+  XAxis,
+  YAxis,
+  CartesianGrid,
   Tooltip,
   Legend,
-} from "chart.js"
-import { Line, Bar, Pie } from "react-chartjs-2"
+  ResponsiveContainer,
+} from "recharts"
+import { AlertCircle, Loader2, ArrowUpRight, ArrowDownRight } from "lucide-react"
+import { SidebarLayout } from "../../components/sidebar-layout"
+import { formatCurrency } from "@/lib/utils"
 
-// Register ChartJS components
-ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, BarElement, ArcElement, Title, Tooltip, Legend)
+const COLORS = ["#8884d8", "#82ca9d", "#ffc658", "#ff8042", "#0088fe"]
 
-// Create a separate component for the analytics content
-function AnalyticsContent() {
-  const [activeTab, setActiveTab] = useState("overview")
-  const [timeRange, setTimeRange] = useState("30")
-  const [loading, setLoading] = useState(true)
+export default function AnalyticsDashboard() {
+  const router = useRouter()
+  const searchParams = useSearchParams()
+  const tab = searchParams.get("tab") || "overview"
+
+  const [timeRange, setTimeRange] = useState("30days")
+  const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [shopifyData, setShopifyData] = useState<any>(null)
-  const [googleData, setGoogleData] = useState<any>(null)
+  const [analyticsData, setAnalyticsData] = useState<any>(null)
 
   useEffect(() => {
-    async function fetchData() {
-      setLoading(true)
+    const fetchAnalyticsData = async () => {
+      setIsLoading(true)
       setError(null)
 
       try {
-        // Fetch Shopify analytics data
-        const shopifyResponse = await fetch(`/api/analytics/shopify?days=${timeRange}`)
-        const shopifyResult = await shopifyResponse.json()
+        const response = await fetch(`/api/analytics/shopify?timeRange=${timeRange}`)
 
-        if (shopifyResponse.ok) {
-          setShopifyData(shopifyResult)
-        } else {
-          setError(shopifyResult.error || "Failed to fetch Shopify analytics")
+        if (!response.ok) {
+          if (response.status === 401) {
+            router.push("/vendor/login")
+            return
+          }
+          throw new Error(`Failed to fetch analytics data: ${response.status}`)
         }
 
-        // Fetch Google analytics data
-        const googleResponse = await fetch(`/api/analytics/google?days=${timeRange}`)
-        const googleResult = await googleResponse.json()
-
-        if (googleResponse.ok) {
-          setGoogleData(googleResult)
-        } else {
-          // We don't set an error here as Google Analytics might not be configured
-          console.warn("Google Analytics data fetch issue:", googleResult.error)
-        }
-      } catch (err) {
-        setError("Failed to fetch analytics data")
-        console.error(err)
+        const data = await response.json()
+        setAnalyticsData(data)
+      } catch (err: any) {
+        console.error("Error fetching analytics data:", err)
+        setError(err.message || "Failed to load analytics data")
       } finally {
-        setLoading(false)
+        setIsLoading(false)
       }
     }
 
-    fetchData()
-  }, [timeRange])
+    fetchAnalyticsData()
+  }, [timeRange, router])
 
-  const handleTimeRangeChange = (value: string) => {
-    setTimeRange(value)
+  // Handle tab change
+  const handleTabChange = (newTab: string) => {
+    router.push(`/vendor/dashboard/analytics?tab=${newTab.toLowerCase()}`)
+  }
+
+  // Format date for display
+  const formatDate = (dateStr: string) => {
+    const date = new Date(dateStr)
+    return date.toLocaleDateString("en-US", { month: "short", day: "numeric" })
+  }
+
+  if (isLoading) {
+    return (
+      <SidebarLayout>
+        <div className="flex items-center justify-center p-8 h-[calc(100vh-64px)]">
+          <div className="flex flex-col items-center justify-center p-4 text-center">
+            <Loader2 className="h-10 w-10 animate-spin text-primary mb-4" />
+            <h2 className="text-xl font-semibold mb-2">Loading analytics...</h2>
+            <p className="text-muted-foreground">Please wait while we fetch your data</p>
+          </div>
+        </div>
+      </SidebarLayout>
+    )
   }
 
   if (error) {
     return (
-      <Alert variant="destructive" className="mb-6">
-        <AlertCircle className="h-4 w-4" />
-        <AlertTitle>Error</AlertTitle>
-        <AlertDescription>{error}</AlertDescription>
-      </Alert>
+      <SidebarLayout>
+        <div className="p-6">
+          <Alert variant="destructive">
+            <AlertCircle className="h-4 w-4" />
+            <AlertTitle>Error</AlertTitle>
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
+        </div>
+      </SidebarLayout>
     )
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <h1 className="text-3xl font-bold tracking-tight">Analytics Dashboard</h1>
-        <Select value={timeRange} onValueChange={handleTimeRangeChange}>
-          <SelectTrigger className="w-[180px]">
-            <SelectValue placeholder="Select time range" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="7">Last 7 days</SelectItem>
-            <SelectItem value="30">Last 30 days</SelectItem>
-            <SelectItem value="90">Last 90 days</SelectItem>
-            <SelectItem value="180">Last 6 months</SelectItem>
-            <SelectItem value="365">Last year</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
-
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-        <TabsList className="grid grid-cols-2 md:grid-cols-5 gap-2">
-          <TabsTrigger value="overview">Overview</TabsTrigger>
-          <TabsTrigger value="sales">Sales</TabsTrigger>
-          <TabsTrigger value="traffic">Traffic</TabsTrigger>
-          <TabsTrigger value="products">Products</TabsTrigger>
-          <TabsTrigger value="geography">Geography</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="overview" className="space-y-4">
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-            {loading ? (
-              Array(4)
-                .fill(0)
-                .map((_, i) => (
-                  <Card key={i}>
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                      <Skeleton className="h-5 w-24" />
-                      <Skeleton className="h-4 w-4" />
-                    </CardHeader>
-                    <CardContent>
-                      <Skeleton className="h-7 w-full mb-1" />
-                      <Skeleton className="h-4 w-1/2" />
-                    </CardContent>
-                  </Card>
-                ))
-            ) : (
-              <>
-                <Card>
-                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">Total Revenue</CardTitle>
-                    <TrendingUp className="h-4 w-4 text-muted-foreground" />
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-2xl font-bold">
-                      ${shopifyData?.overview?.totalRevenue?.toFixed(2) || "0.00"}
-                    </div>
-                    <p className="text-xs text-muted-foreground">
-                      {shopifyData?.overview?.revenueChange > 0 ? "+" : ""}
-                      {shopifyData?.overview?.revenueChange?.toFixed(2)}% from previous period
-                    </p>
-                  </CardContent>
-                </Card>
-                <Card>
-                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">Total Orders</CardTitle>
-                    <BarChart3 className="h-4 w-4 text-muted-foreground" />
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-2xl font-bold">{shopifyData?.overview?.totalOrders || 0}</div>
-                    <p className="text-xs text-muted-foreground">
-                      {shopifyData?.overview?.ordersChange > 0 ? "+" : ""}
-                      {shopifyData?.overview?.ordersChange?.toFixed(2)}% from previous period
-                    </p>
-                  </CardContent>
-                </Card>
-                <Card>
-                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">Page Views</CardTitle>
-                    <LineChart className="h-4 w-4 text-muted-foreground" />
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-2xl font-bold">
-                      {googleData?.isConfigured
-                        ? googleData?.traffic?.reduce((sum: number, day: any) => sum + day.pageViews, 0) || 0
-                        : "N/A"}
-                    </div>
-                    <p className="text-xs text-muted-foreground">
-                      {!googleData?.isConfigured && "Google Analytics not configured"}
-                    </p>
-                  </CardContent>
-                </Card>
-                <Card>
-                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">Conversion Rate</CardTitle>
-                    <PieChart className="h-4 w-4 text-muted-foreground" />
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-2xl font-bold">
-                      {shopifyData?.overview?.conversionRate?.toFixed(2) || "0.00"}%
-                    </div>
-                    <p className="text-xs text-muted-foreground">
-                      {shopifyData?.overview?.conversionChange > 0 ? "+" : ""}
-                      {shopifyData?.overview?.conversionChange?.toFixed(2)}% from previous period
-                    </p>
-                  </CardContent>
-                </Card>
-              </>
-            )}
+    <SidebarLayout>
+      <div className="p-6">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+          <div>
+            <h1 className="text-2xl font-bold">Analytics Dashboard</h1>
+            <p className="text-muted-foreground">Track your performance and sales insights</p>
           </div>
-
-          <div className="grid gap-4 md:grid-cols-2">
-            <Card className="col-span-1">
-              <CardHeader>
-                <CardTitle>Sales Over Time</CardTitle>
-                <CardDescription>Daily revenue for the selected period</CardDescription>
-              </CardHeader>
-              <CardContent className="h-[300px]">
-                {loading ? (
-                  <Skeleton className="h-full w-full" />
-                ) : shopifyData?.salesOverTime ? (
-                  <Line
-                    data={{
-                      labels: shopifyData.salesOverTime.map((day: any) => day.date),
-                      datasets: [
-                        {
-                          label: "Revenue",
-                          data: shopifyData.salesOverTime.map((day: any) => day.revenue),
-                          borderColor: "rgb(99, 102, 241)",
-                          backgroundColor: "rgba(99, 102, 241, 0.5)",
-                          tension: 0.2,
-                        },
-                      ],
-                    }}
-                    options={{
-                      responsive: true,
-                      maintainAspectRatio: false,
-                      scales: {
-                        y: {
-                          beginAtZero: true,
-                          ticks: {
-                            callback: (value) => `$${value}`,
-                          },
-                        },
-                      },
-                    }}
-                  />
-                ) : (
-                  <div className="flex h-full items-center justify-center">
-                    <p className="text-muted-foreground">No sales data available</p>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-
-            <Card className="col-span-1">
-              <CardHeader>
-                <CardTitle>Top Products</CardTitle>
-                <CardDescription>Best selling products by revenue</CardDescription>
-              </CardHeader>
-              <CardContent className="h-[300px]">
-                {loading ? (
-                  <Skeleton className="h-full w-full" />
-                ) : shopifyData?.topProducts && shopifyData.topProducts.length > 0 ? (
-                  <Bar
-                    data={{
-                      labels: shopifyData.topProducts.map((product: any) => product.title),
-                      datasets: [
-                        {
-                          label: "Revenue",
-                          data: shopifyData.topProducts.map((product: any) => product.revenue),
-                          backgroundColor: "rgba(99, 102, 241, 0.8)",
-                        },
-                      ],
-                    }}
-                    options={{
-                      responsive: true,
-                      maintainAspectRatio: false,
-                      indexAxis: "y",
-                      scales: {
-                        x: {
-                          beginAtZero: true,
-                          ticks: {
-                            callback: (value) => `$${value}`,
-                          },
-                        },
-                      },
-                    }}
-                  />
-                ) : (
-                  <div className="flex h-full items-center justify-center">
-                    <p className="text-muted-foreground">No product data available</p>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
+          <div className="flex items-center gap-2">
+            <Label htmlFor="time-range" className="sr-only">
+              Time Range
+            </Label>
+            <Select value={timeRange} onValueChange={setTimeRange}>
+              <SelectTrigger id="time-range" className="w-[180px]">
+                <SelectValue placeholder="Select time range" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="7days">Last 7 days</SelectItem>
+                <SelectItem value="30days">Last 30 days</SelectItem>
+                <SelectItem value="90days">Last 90 days</SelectItem>
+                <SelectItem value="year">Last year</SelectItem>
+                <SelectItem value="all">All time</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
+        </div>
 
-          {googleData?.isConfigured ? (
-            <Card>
-              <CardHeader>
-                <CardTitle>Website Traffic</CardTitle>
-                <CardDescription>Visitors and page views from Google Analytics</CardDescription>
-              </CardHeader>
-              <CardContent className="h-[300px]">
-                {loading ? (
-                  <Skeleton className="h-full w-full" />
-                ) : googleData?.traffic && googleData.traffic.length > 0 ? (
-                  <Line
-                    data={{
-                      labels: googleData.traffic.map((day: any) => day.date),
-                      datasets: [
-                        {
-                          label: "Page Views",
-                          data: googleData.traffic.map((day: any) => day.pageViews),
-                          borderColor: "rgb(99, 102, 241)",
-                          backgroundColor: "rgba(99, 102, 241, 0.5)",
-                          tension: 0.2,
-                        },
-                        {
-                          label: "Visitors",
-                          data: googleData.traffic.map((day: any) => day.users),
-                          borderColor: "rgb(14, 165, 233)",
-                          backgroundColor: "rgba(14, 165, 233, 0.5)",
-                          tension: 0.2,
-                        },
-                      ],
-                    }}
-                    options={{
-                      responsive: true,
-                      maintainAspectRatio: false,
-                    }}
-                  />
-                ) : (
-                  <div className="flex h-full items-center justify-center">
-                    <p className="text-muted-foreground">No traffic data available</p>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          ) : (
-            <Alert>
-              <AlertCircle className="h-4 w-4" />
-              <AlertTitle>Google Analytics Not Configured</AlertTitle>
-              <AlertDescription>
-                To see website traffic data, please configure Google Analytics in your environment variables.
-              </AlertDescription>
-            </Alert>
-          )}
-        </TabsContent>
-
-        <TabsContent value="sales" className="space-y-4">
-          {/* Sales tab content */}
+        {/* Summary Cards */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
           <Card>
-            <CardHeader>
-              <CardTitle>Sales Performance</CardTitle>
-              <CardDescription>Detailed sales metrics for the selected period</CardDescription>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground">Total Revenue</CardTitle>
             </CardHeader>
-            <CardContent className="h-[400px]">
-              {loading ? (
-                <Skeleton className="h-full w-full" />
-              ) : shopifyData?.salesOverTime ? (
-                <Line
-                  data={{
-                    labels: shopifyData.salesOverTime.map((day: any) => day.date),
-                    datasets: [
-                      {
-                        label: "Revenue",
-                        data: shopifyData.salesOverTime.map((day: any) => day.revenue),
-                        borderColor: "rgb(99, 102, 241)",
-                        backgroundColor: "rgba(99, 102, 241, 0.5)",
-                        tension: 0.2,
-                        yAxisID: "y",
-                      },
-                      {
-                        label: "Orders",
-                        data: shopifyData.salesOverTime.map((day: any) => day.orders),
-                        borderColor: "rgb(14, 165, 233)",
-                        backgroundColor: "rgba(14, 165, 233, 0.5)",
-                        tension: 0.2,
-                        yAxisID: "y1",
-                      },
-                    ],
-                  }}
-                  options={{
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    scales: {
-                      y: {
-                        type: "linear",
-                        display: true,
-                        position: "left",
-                        beginAtZero: true,
-                        ticks: {
-                          callback: (value) => `$${value}`,
-                        },
-                      },
-                      y1: {
-                        type: "linear",
-                        display: true,
-                        position: "right",
-                        beginAtZero: true,
-                        grid: {
-                          drawOnChartArea: false,
-                        },
-                      },
-                    },
-                  }}
-                />
-              ) : (
-                <div className="flex h-full items-center justify-center">
-                  <p className="text-muted-foreground">No sales data available</p>
+            <CardContent>
+              <div className="flex items-center justify-between">
+                <div className="text-2xl font-bold">{formatCurrency(analyticsData?.totalRevenue || 0)}</div>
+                <div className="flex items-center text-sm font-medium text-green-500">
+                  <ArrowUpRight className="h-4 w-4 mr-1" />
+                  12%
                 </div>
-              )}
+              </div>
+              <p className="text-xs text-muted-foreground mt-1">Compared to previous period</p>
             </CardContent>
           </Card>
-        </TabsContent>
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground">Total Sales</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-center justify-between">
+                <div className="text-2xl font-bold">{analyticsData?.totalSales || 0}</div>
+                <div className="flex items-center text-sm font-medium text-green-500">
+                  <ArrowUpRight className="h-4 w-4 mr-1" />
+                  8%
+                </div>
+              </div>
+              <p className="text-xs text-muted-foreground mt-1">Compared to previous period</p>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground">Conversion Rate</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-center justify-between">
+                <div className="text-2xl font-bold">
+                  {analyticsData?.analyticsData?.sessions?.[0]?.conversionRate || "3.2%"}
+                </div>
+                <div className="flex items-center text-sm font-medium text-red-500">
+                  <ArrowDownRight className="h-4 w-4 mr-1" />
+                  0.5%
+                </div>
+              </div>
+              <p className="text-xs text-muted-foreground mt-1">Compared to previous period</p>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground">Avg. Order Value</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-center justify-between">
+                <div className="text-2xl font-bold">
+                  {formatCurrency(
+                    analyticsData?.totalSales ? analyticsData.totalRevenue / analyticsData.totalSales : 0,
+                  )}
+                </div>
+                <div className="flex items-center text-sm font-medium text-green-500">
+                  <ArrowUpRight className="h-4 w-4 mr-1" />
+                  4%
+                </div>
+              </div>
+              <p className="text-xs text-muted-foreground mt-1">Compared to previous period</p>
+            </CardContent>
+          </Card>
+        </div>
 
-        <TabsContent value="traffic" className="space-y-4">
-          {/* Traffic tab content */}
-          {googleData?.isConfigured ? (
-            <>
+        {tab === "overview" && (
+          <div className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Sales Performance</CardTitle>
+                <CardDescription>Track your sales and revenue over time</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="h-[350px]">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart
+                      data={analyticsData?.salesData || []}
+                      margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+                    >
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="date" tickFormatter={formatDate} />
+                      <YAxis yAxisId="left" orientation="left" stroke="#8884d8" />
+                      <YAxis yAxisId="right" orientation="right" stroke="#82ca9d" />
+                      <Tooltip
+                        formatter={(value, name) => {
+                          if (name === "revenue") return [formatCurrency(value as number), "Revenue"]
+                          return [value, "Sales"]
+                        }}
+                        labelFormatter={formatDate}
+                      />
+                      <Legend />
+                      <Bar yAxisId="left" dataKey="sales" name="Sales" fill="#8884d8" />
+                      <Bar yAxisId="right" dataKey="revenue" name="Revenue" fill="#82ca9d" />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              </CardContent>
+            </Card>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <Card>
                 <CardHeader>
-                  <CardTitle>Website Traffic</CardTitle>
-                  <CardDescription>Visitors and page views over time</CardDescription>
+                  <CardTitle>Top Selling Products</CardTitle>
+                  <CardDescription>Your best performing products</CardDescription>
                 </CardHeader>
-                <CardContent className="h-[400px]">
-                  {loading ? (
-                    <Skeleton className="h-full w-full" />
-                  ) : googleData?.traffic && googleData.traffic.length > 0 ? (
-                    <Line
-                      data={{
-                        labels: googleData.traffic.map((day: any) => day.date),
-                        datasets: [
-                          {
-                            label: "Page Views",
-                            data: googleData.traffic.map((day: any) => day.pageViews),
-                            borderColor: "rgb(99, 102, 241)",
-                            backgroundColor: "rgba(99, 102, 241, 0.5)",
-                            tension: 0.2,
-                          },
-                          {
-                            label: "Visitors",
-                            data: googleData.traffic.map((day: any) => day.users),
-                            borderColor: "rgb(14, 165, 233)",
-                            backgroundColor: "rgba(14, 165, 233, 0.5)",
-                            tension: 0.2,
-                          },
-                          {
-                            label: "Sessions",
-                            data: googleData.traffic.map((day: any) => day.sessions),
-                            borderColor: "rgb(249, 115, 22)",
-                            backgroundColor: "rgba(249, 115, 22, 0.5)",
-                            tension: 0.2,
-                          },
-                        ],
-                      }}
-                      options={{
-                        responsive: true,
-                        maintainAspectRatio: false,
-                      }}
-                    />
-                  ) : (
-                    <div className="flex h-full items-center justify-center">
-                      <p className="text-muted-foreground">No traffic data available</p>
-                    </div>
-                  )}
+                <CardContent>
+                  <div className="space-y-4">
+                    {(analyticsData?.topProducts || []).map((product: any, i: number) => (
+                      <div key={i} className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <div className="w-2 h-2 rounded-full bg-primary" />
+                          <span className="font-medium">{product.title}</span>
+                        </div>
+                        <div className="flex items-center gap-4">
+                          <span className="text-sm text-muted-foreground">{product.sales} sales</span>
+                          <span className="font-medium">{formatCurrency(product.revenue)}</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
                 </CardContent>
               </Card>
 
               <Card>
                 <CardHeader>
-                  <CardTitle>Bounce Rate</CardTitle>
-                  <CardDescription>
-                    Percentage of visitors who navigate away after viewing only one page
-                  </CardDescription>
+                  <CardTitle>Traffic Sources</CardTitle>
+                  <CardDescription>Where your visitors are coming from</CardDescription>
                 </CardHeader>
-                <CardContent className="h-[300px]">
-                  {loading ? (
-                    <Skeleton className="h-full w-full" />
-                  ) : googleData?.traffic && googleData.traffic.length > 0 ? (
-                    <Line
-                      data={{
-                        labels: googleData.traffic.map((day: any) => day.date),
-                        datasets: [
-                          {
-                            label: "Bounce Rate",
-                            data: googleData.traffic.map((day: any) => day.bounceRate),
-                            borderColor: "rgb(239, 68, 68)",
-                            backgroundColor: "rgba(239, 68, 68, 0.5)",
-                            tension: 0.2,
-                          },
-                        ],
-                      }}
-                      options={{
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        scales: {
-                          y: {
-                            beginAtZero: true,
-                            ticks: {
-                              callback: (value: any) => `${value}%`,
-                            },
-                          },
-                        },
-                      }}
-                    />
-                  ) : (
-                    <div className="flex h-full items-center justify-center">
-                      <p className="text-muted-foreground">No bounce rate data available</p>
-                    </div>
-                  )}
+                <CardContent>
+                  <div className="h-[250px]">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <PieChart>
+                        <Pie
+                          data={[
+                            { name: "Direct", value: 55 },
+                            { name: "Social", value: 25 },
+                            { name: "Email", value: 15 },
+                            { name: "Affiliates", value: 5 },
+                          ]}
+                          cx="50%"
+                          cy="50%"
+                          labelLine={false}
+                          outerRadius={80}
+                          fill="#8884d8"
+                          dataKey="value"
+                          label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                        >
+                          {[0, 1, 2, 3].map((entry, index) => (
+                            <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                          ))}
+                        </Pie>
+                        <Tooltip formatter={(value) => [`${value}%`, "Percentage"]} />
+                        <Legend />
+                      </PieChart>
+                    </ResponsiveContainer>
+                  </div>
                 </CardContent>
               </Card>
-            </>
-          ) : (
-            <Alert>
-              <AlertCircle className="h-4 w-4" />
-              <AlertTitle>Google Analytics Not Configured</AlertTitle>
-              <AlertDescription>
-                To see website traffic data, please configure Google Analytics in your environment variables.
-              </AlertDescription>
-            </Alert>
-          )}
-        </TabsContent>
+            </div>
+          </div>
+        )}
 
-        <TabsContent value="products" className="space-y-4">
-          {/* Products tab content */}
+        {tab === "sales" && (
+          <Card>
+            <CardHeader>
+              <CardTitle>Detailed Sales Analysis</CardTitle>
+              <CardDescription>Comprehensive breakdown of your sales data</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="h-[400px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart data={analyticsData?.salesData || []} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="date" tickFormatter={formatDate} />
+                    <YAxis />
+                    <Tooltip
+                      formatter={(value, name) => {
+                        if (name === "revenue") return [formatCurrency(value as number), "Revenue"]
+                        return [value, "Sales"]
+                      }}
+                      labelFormatter={formatDate}
+                    />
+                    <Legend />
+                    <Line type="monotone" dataKey="revenue" stroke="#8884d8" activeDot={{ r: 8 }} />
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {tab === "traffic" && (
+          <Card>
+            <CardHeader>
+              <CardTitle>Traffic Analysis</CardTitle>
+              <CardDescription>Visitor traffic and engagement metrics</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="h-[400px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart
+                    data={(analyticsData?.analyticsData?.sessions || []).map((session: any) => ({
+                      date: session.date,
+                      sessions: session.totalSessionsCount,
+                      mobile: session.mobileSessionsCount,
+                      desktop: session.desktopSessionsCount,
+                    }))}
+                    margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+                  >
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="date" tickFormatter={formatDate} />
+                    <YAxis />
+                    <Tooltip labelFormatter={formatDate} />
+                    <Legend />
+                    <Line type="monotone" dataKey="sessions" stroke="#8884d8" activeDot={{ r: 8 }} />
+                    <Line type="monotone" dataKey="mobile" stroke="#82ca9d" />
+                    <Line type="monotone" dataKey="desktop" stroke="#ffc658" />
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {tab === "products" && (
           <Card>
             <CardHeader>
               <CardTitle>Product Performance</CardTitle>
-              <CardDescription>Sales and views by product</CardDescription>
+              <CardDescription>Detailed metrics for all your products</CardDescription>
             </CardHeader>
-            <CardContent className="h-[400px]">
-              {loading ? (
-                <Skeleton className="h-full w-full" />
-              ) : shopifyData?.topProducts && shopifyData.topProducts.length > 0 ? (
-                <Bar
-                  data={{
-                    labels: shopifyData.topProducts.map((product: any) => product.title),
-                    datasets: [
-                      {
-                        label: "Revenue",
-                        data: shopifyData.topProducts.map((product: any) => product.revenue),
-                        backgroundColor: "rgba(99, 102, 241, 0.8)",
-                      },
-                      {
-                        label: "Units Sold",
-                        data: shopifyData.topProducts.map((product: any) => product.unitsSold),
-                        backgroundColor: "rgba(14, 165, 233, 0.8)",
-                      },
-                    ],
-                  }}
-                  options={{
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    indexAxis: "y",
-                  }}
-                />
-              ) : (
-                <div className="flex h-full items-center justify-center">
-                  <p className="text-muted-foreground">No product data available</p>
-                </div>
-              )}
+            <CardContent>
+              <div className="h-[400px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={analyticsData?.topProducts || []}
+                      cx="50%"
+                      cy="50%"
+                      labelLine={false}
+                      outerRadius={120}
+                      fill="#8884d8"
+                      dataKey="sales"
+                      nameKey="title"
+                      label={({ title, percent }) => `${title} ${(percent * 100).toFixed(0)}%`}
+                    >
+                      {(analyticsData?.topProducts || []).map((_: any, index: number) => (
+                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                      ))}
+                    </Pie>
+                    <Tooltip formatter={(value, name, props) => [value, props.payload.title]} />
+                    <Legend />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
             </CardContent>
           </Card>
+        )}
 
-          {googleData?.isConfigured && (
-            <Card>
-              <CardHeader>
-                <CardTitle>Product Page Views</CardTitle>
-                <CardDescription>Most viewed products from Google Analytics</CardDescription>
-              </CardHeader>
-              <CardContent className="h-[400px]">
-                {loading ? (
-                  <Skeleton className="h-full w-full" />
-                ) : googleData?.productViews && googleData.productViews.length > 0 ? (
-                  <Bar
-                    data={{
-                      labels: googleData.productViews.map((product: any) =>
-                        product.pageTitle.length > 30 ? product.pageTitle.substring(0, 30) + "..." : product.pageTitle,
-                      ),
-                      datasets: [
-                        {
-                          label: "Page Views",
-                          data: googleData.productViews.map((product: any) => product.pageViews),
-                          backgroundColor: "rgba(99, 102, 241, 0.8)",
-                        },
-                        {
-                          label: "Unique Visitors",
-                          data: googleData.productViews.map((product: any) => product.users),
-                          backgroundColor: "rgba(14, 165, 233, 0.8)",
-                        },
-                      ],
-                    }}
-                    options={{
-                      responsive: true,
-                      maintainAspectRatio: false,
-                      indexAxis: "y",
-                    }}
-                  />
-                ) : (
-                  <div className="flex h-full items-center justify-center">
-                    <p className="text-muted-foreground">No product view data available</p>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          )}
-        </TabsContent>
-
-        <TabsContent value="geography" className="space-y-4">
-          {/* Geography tab content */}
-          {googleData?.isConfigured ? (
-            <Card>
-              <CardHeader>
-                <CardTitle>Visitor Geography</CardTitle>
-                <CardDescription>Visitors by country</CardDescription>
-              </CardHeader>
-              <CardContent className="h-[400px]">
-                {loading ? (
-                  <Skeleton className="h-full w-full" />
-                ) : googleData?.geography && googleData.geography.length > 0 ? (
-                  <div className="grid md:grid-cols-2 gap-4 h-full">
-                    <div>
-                      <Pie
-                        data={{
-                          labels: googleData.geography.map((geo: any) => geo.country),
-                          datasets: [
-                            {
-                              data: googleData.geography.map((geo: any) => geo.users),
-                              backgroundColor: [
-                                "rgba(99, 102, 241, 0.8)",
-                                "rgba(14, 165, 233, 0.8)",
-                                "rgba(249, 115, 22, 0.8)",
-                                "rgba(236, 72, 153, 0.8)",
-                                "rgba(16, 185, 129, 0.8)",
-                                "rgba(139, 92, 246, 0.8)",
-                                "rgba(245, 158, 11, 0.8)",
-                                "rgba(6, 182, 212, 0.8)",
-                                "rgba(168, 85, 247, 0.8)",
-                                "rgba(59, 130, 246, 0.8)",
-                              ],
-                            },
-                          ],
-                        }}
-                        options={{
-                          responsive: true,
-                          maintainAspectRatio: false,
-                        }}
-                      />
-                    </div>
-                    <div className="overflow-auto max-h-[400px]">
-                      <table className="w-full text-sm">
-                        <thead>
-                          <tr>
-                            <th className="text-left py-2">Country</th>
-                            <th className="text-right py-2">Visitors</th>
-                            <th className="text-right py-2">Sessions</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {googleData.geography.map((geo: any, index: number) => (
-                            <tr key={index} className="border-t">
-                              <td className="py-2">{geo.country}</td>
-                              <td className="text-right py-2">{geo.users}</td>
-                              <td className="text-right py-2">{geo.sessions}</td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="flex h-full items-center justify-center">
-                    <p className="text-muted-foreground">No geographic data available</p>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          ) : (
-            <Alert>
-              <AlertCircle className="h-4 w-4" />
-              <AlertTitle>Google Analytics Not Configured</AlertTitle>
-              <AlertDescription>
-                To see geographic data, please configure Google Analytics in your environment variables.
-              </AlertDescription>
-            </Alert>
-          )}
-        </TabsContent>
-      </Tabs>
-    </div>
-  )
-}
-
-// Main component with Suspense boundary
-export default function AnalyticsPage() {
-  return (
-    <Suspense fallback={<div className="p-4">Loading analytics dashboard...</div>}>
-      <AnalyticsContent />
-    </Suspense>
+        {tab === "geography" && (
+          <Card>
+            <CardHeader>
+              <CardTitle>Geographic Distribution</CardTitle>
+              <CardDescription>Where your customers are located</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="h-[400px] flex items-center justify-center">
+                <p className="text-muted-foreground">
+                  Geographic data is not available from the current analytics source.
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+      </div>
+    </SidebarLayout>
   )
 }
