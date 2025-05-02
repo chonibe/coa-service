@@ -1,77 +1,57 @@
 import { NextResponse } from "next/server"
-import { cookies } from "next/headers"
+import type { NextRequest } from "next/server"
 import { supabaseAdmin } from "@/lib/supabase"
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
-    // Get vendor name from cookie
-    const cookieStore = cookies()
-    const vendorName = cookieStore.get("vendor_session")?.value
+    const { searchParams } = new URL(request.url)
+    const vendorName = searchParams.get("vendor")
+    const page = Number.parseInt(searchParams.get("page") || "1")
+    const pageSize = Number.parseInt(searchParams.get("pageSize") || "10")
 
     if (!vendorName) {
-      console.log("Vendor not authenticated")
-      return NextResponse.json({ error: "Not authenticated" }, { status: 401 })
+      return NextResponse.json({ error: "Vendor name is required" }, { status: 400 })
     }
 
-    console.log(`Fetching sales data for vendor: ${vendorName}`)
+    // Calculate pagination
+    const from = (page - 1) * pageSize
+    const to = from + pageSize - 1
 
-    // Simple direct query to get all active line items for this vendor
-    const { data: lineItems, error } = await supabaseAdmin
+    // Get sales for this vendor with pagination
+    const {
+      data: sales,
+      error: salesError,
+      count,
+    } = await supabaseAdmin
       .from("order_line_items")
-      .select("*")
+      .select("*, order_line_items_meta!inner(*)", { count: "exact" })
       .eq("vendor_name", vendorName)
       .eq("status", "active")
+      // Only count line items that are Unfulfilled or Fulfilled
+      .in("fulfillment_status", ["Unfulfilled", "Fulfilled"])
+      .is("deleted_at", null)
+      .order("created_at", { ascending: false })
+      .range(from, to)
 
-    if (error) {
-      console.error("Database error:", error)
-      return NextResponse.json({ error: error.message }, { status: 500 })
+    if (salesError) {
+      console.error("Error fetching vendor sales:", salesError)
+      return NextResponse.json({ error: "Failed to fetch vendor sales" }, { status: 500 })
     }
 
-    console.log(`Found ${lineItems.length} line items for vendor ${vendorName}`)
-
-    // Process the data
-    const salesByMonth = {}
-    let totalSales = 0
-    let totalRevenue = 0
-
-    lineItems.forEach((item) => {
-      // Skip items without edition numbers (not certified)
-      if (!item.edition_number) return
-
-      totalSales++
-
-      // Handle price - convert to number if needed
-      let price = 0
-      if (item.price) {
-        price = typeof item.price === "string" ? Number.parseFloat(item.price) : item.price
-      }
-      totalRevenue += price
-
-      // Group by month for the chart
-      const date = new Date(item.created_at)
-      const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`
-
-      if (!salesByMonth[monthKey]) {
-        salesByMonth[monthKey] = { month: monthKey, sales: 0, revenue: 0 }
-      }
-
-      salesByMonth[monthKey].sales++
-      salesByMonth[monthKey].revenue += price
-    })
-
-    // Convert to array and sort by date
-    const monthlySales = Object.values(salesByMonth).sort((a, b) => a.month.localeCompare(b.month))
-
-    console.log(`Processed data: ${totalSales} total sales, $${totalRevenue.toFixed(2)} total revenue`)
-    console.log(`Monthly data points: ${monthlySales.length}`)
-
     return NextResponse.json({
-      totalSales,
-      totalRevenue,
-      monthlySales,
+      sales: sales || [],
+      pagination: {
+        page,
+        pageSize,
+        total: count || 0,
+        totalPages: count ? Math.ceil(count / pageSize) : 0,
+      },
     })
   } catch (error) {
-    console.error("Unexpected error in vendor sales API:", error)
-    return NextResponse.json({ error: "An unexpected error occurred" }, { status: 500 })
+    console.error("Error in vendor sales API:", error)
+    return NextResponse.json(
+      { error: error instanceof Error ? error.message : "An unexpected error occurred" },
+      { status: 500 },
+    )
   }
 }
