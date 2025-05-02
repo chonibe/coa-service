@@ -15,24 +15,12 @@ export async function GET() {
 
     console.log(`Fetching sales data for vendor: ${vendorName}`)
 
-    // Get all active line items for this vendor with the correct column names
+    // Simple direct query to get all active line items for this vendor
     const { data: lineItems, error } = await supabaseAdmin
       .from("order_line_items")
-      .select(`
-        id,
-        product_id,
-        product_title,
-        price,
-        order_id,
-        line_item_id,
-        edition_number,
-        created_at,
-        status,
-        vendor_name
-      `)
+      .select("*")
       .eq("vendor_name", vendorName)
       .eq("status", "active")
-      .order("created_at", { ascending: false })
 
     if (error) {
       console.error("Database error:", error)
@@ -46,12 +34,11 @@ export async function GET() {
     let totalSales = 0
     let totalRevenue = 0
 
-    // Format the line items for the frontend
-    const formattedLineItems = lineItems.map((item) => {
-      // Skip items without edition numbers in the count (not certified)
-      if (item.edition_number) {
-        totalSales++
-      }
+    lineItems.forEach((item) => {
+      // Skip items without edition numbers (not certified)
+      if (!item.edition_number) return
+
+      totalSales++
 
       // Handle price - convert to number if needed
       let price = 0
@@ -65,27 +52,15 @@ export async function GET() {
       const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`
 
       if (!salesByMonth[monthKey]) {
-        salesByMonth[monthKey] = { date: monthKey, sales: 0, revenue: 0 }
+        salesByMonth[monthKey] = { month: monthKey, sales: 0, revenue: 0 }
       }
 
       salesByMonth[monthKey].sales++
       salesByMonth[monthKey].revenue += price
-
-      // Return formatted line item for the list
-      return {
-        id: item.product_id,
-        title: item.product_title || "Unknown Product", // Use product_title instead of title
-        price: price,
-        currency: "USD", // Default to USD if currency is not available
-        date: item.created_at,
-        order_id: item.order_id,
-        line_item_id: item.line_item_id,
-        edition_number: item.edition_number,
-      }
     })
 
     // Convert to array and sort by date
-    const monthlySales = Object.values(salesByMonth).sort((a, b) => a.date.localeCompare(b.date))
+    const monthlySales = Object.values(salesByMonth).sort((a, b) => a.month.localeCompare(b.month))
 
     console.log(`Processed data: ${totalSales} total sales, $${totalRevenue.toFixed(2)} total revenue`)
     console.log(`Monthly data points: ${monthlySales.length}`)
@@ -93,8 +68,7 @@ export async function GET() {
     return NextResponse.json({
       totalSales,
       totalRevenue,
-      salesByDate: monthlySales,
-      lineItems: formattedLineItems,
+      monthlySales,
     })
   } catch (error) {
     console.error("Unexpected error in vendor sales API:", error)
