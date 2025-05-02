@@ -4,8 +4,8 @@ import type React from "react"
 
 import { useState, useEffect } from "react"
 import Link from "next/link"
-import { usePathname } from "next/navigation"
-import { Menu, X, ChevronDown, Sun, Moon, Laptop } from "lucide-react"
+import { usePathname, useRouter, useSearchParams } from "next/navigation"
+import { Menu, X, ChevronDown, ChevronRight, Sun, Moon, Laptop, LogOut } from "lucide-react"
 import { useTheme } from "next-themes"
 import { Button } from "@/components/ui/button"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
@@ -16,159 +16,36 @@ type NavItem = {
   href: string
   icon?: React.ReactNode
   submenu?: NavItem[]
+  isTab?: boolean
 }
-
-const navItems: NavItem[] = [
-  {
-    title: "Dashboard",
-    href: "/vendor/dashboard",
-    icon: (
-      <svg
-        xmlns="http://www.w3.org/2000/svg"
-        width="24"
-        height="24"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        className="h-5 w-5"
-      >
-        <rect width="7" height="9" x="3" y="3" rx="1" />
-        <rect width="7" height="5" x="14" y="3" rx="1" />
-        <rect width="7" height="9" x="14" y="12" rx="1" />
-        <rect width="7" height="5" x="3" y="16" rx="1" />
-      </svg>
-    ),
-  },
-  {
-    title: "Analytics",
-    href: "/vendor/dashboard/analytics",
-    icon: (
-      <svg
-        xmlns="http://www.w3.org/2000/svg"
-        width="24"
-        height="24"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        className="h-5 w-5"
-      >
-        <path d="M3 3v18h18" />
-        <path d="m19 9-5 5-4-4-3 3" />
-      </svg>
-    ),
-  },
-  {
-    title: "Products",
-    href: "/vendor/dashboard",
-    icon: (
-      <svg
-        xmlns="http://www.w3.org/2000/svg"
-        width="24"
-        height="24"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        className="h-5 w-5"
-      >
-        <path d="m7.5 4.27 9 5.15" />
-        <path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z" />
-        <path d="m3.3 7 8.7 5 8.7-5" />
-        <path d="M12 22V12" />
-      </svg>
-    ),
-    submenu: [
-      {
-        title: "All Products",
-        href: "/vendor/dashboard",
-      },
-      {
-        title: "Sales Reports",
-        href: "/vendor/dashboard/analytics",
-      },
-    ],
-  },
-  {
-    title: "Benefits",
-    href: "/vendor/dashboard/benefits",
-    icon: (
-      <svg
-        xmlns="http://www.w3.org/2000/svg"
-        width="24"
-        height="24"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        className="h-5 w-5"
-      >
-        <path d="M12 8c-2.8 0-5 2.2-5 5s2.2 5 5 5 5-2.2 5-5-2.2-5-5-5Z" />
-        <path d="m3 3 18 18" />
-        <path d="M10.5 13.5 3 21" />
-        <path d="m21 3-7.5 7.5" />
-      </svg>
-    ),
-  },
-  {
-    title: "Settings",
-    href: "/vendor/dashboard/settings",
-    icon: (
-      <svg
-        xmlns="http://www.w3.org/2000/svg"
-        width="24"
-        height="24"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        className="h-5 w-5"
-      >
-        <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z" />
-        <circle cx="12" cy="12" r="3" />
-      </svg>
-    ),
-  },
-  {
-    title: "Messages",
-    href: "/vendor/dashboard/messages",
-    icon: (
-      <svg
-        xmlns="http://www.w3.org/2000/svg"
-        width="24"
-        height="24"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        className="h-5 w-5"
-      >
-        <path d="M14 9a2 2 0 0 1-2 2H6l-4 4V4c0-1.1.9-2 2-2h8a2 2 0 0 1 2 2v5Z" />
-        <path d="M18 9h2a2 2 0 0 1 2 2v11l-4-4h-6a2 2 0 0 1-2-2v-1" />
-      </svg>
-    ),
-  },
-]
 
 export function SidebarLayout({ children }: { children: React.ReactNode }) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false)
-  const [openSubmenu, setOpenSubmenu] = useState<string | null>(null)
+  const [openSubmenus, setOpenSubmenus] = useState<Record<string, boolean>>({})
+  const [vendor, setVendor] = useState<any>(null)
   const pathname = usePathname()
+  const searchParams = useSearchParams()
+  const router = useRouter()
   const { theme, setTheme } = useTheme()
   const isMobile = useMobile()
+  const currentTab = searchParams.get("tab")
+
+  // Fetch vendor data
+  useEffect(() => {
+    const fetchVendorData = async () => {
+      try {
+        const response = await fetch("/api/vendor/profile")
+        if (response.ok) {
+          const data = await response.json()
+          setVendor(data.vendor)
+        }
+      } catch (error) {
+        console.error("Error fetching vendor data:", error)
+      }
+    }
+
+    fetchVendorData()
+  }, [])
 
   // Close sidebar when route changes on mobile
   useEffect(() => {
@@ -177,8 +54,267 @@ export function SidebarLayout({ children }: { children: React.ReactNode }) {
     }
   }, [pathname, isMobile])
 
+  // Auto-open submenu for active items
+  useEffect(() => {
+    const navItems = getNavItems()
+    navItems.forEach((item) => {
+      if (item.submenu) {
+        const hasActiveChild = item.submenu.some((subItem) =>
+          isActive(subItem.href, subItem.isTab ? subItem.title.toLowerCase() : null),
+        )
+        if (hasActiveChild) {
+          setOpenSubmenus((prev) => ({ ...prev, [item.title]: true }))
+        }
+      }
+    })
+  }, [pathname, currentTab])
+
   const toggleSubmenu = (title: string) => {
-    setOpenSubmenu(openSubmenu === title ? null : title)
+    setOpenSubmenus((prev) => ({
+      ...prev,
+      [title]: !prev[title],
+    }))
+  }
+
+  const isActive = (itemPath: string, tabName: string | null = null) => {
+    if (tabName && itemPath === pathname) {
+      return currentTab === tabName
+    }
+    return pathname === itemPath
+  }
+
+  const handleLogout = async () => {
+    try {
+      await fetch("/api/vendor/logout", { method: "POST" })
+      router.push("/vendor/login")
+    } catch (err) {
+      console.error("Logout error:", err)
+    }
+  }
+
+  const getNavItems = (): NavItem[] => [
+    {
+      title: "Dashboard",
+      href: "/vendor/dashboard",
+      icon: (
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          width="24"
+          height="24"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          className="h-5 w-5"
+        >
+          <rect width="7" height="9" x="3" y="3" rx="1" />
+          <rect width="7" height="5" x="14" y="3" rx="1" />
+          <rect width="7" height="9" x="14" y="12" rx="1" />
+          <rect width="7" height="5" x="3" y="16" rx="1" />
+        </svg>
+      ),
+      submenu: [
+        {
+          title: "Overview",
+          href: "/vendor/dashboard",
+          isTab: true,
+        },
+        {
+          title: "Products",
+          href: "/vendor/dashboard",
+          isTab: true,
+        },
+        {
+          title: "Sales",
+          href: "/vendor/dashboard",
+          isTab: true,
+        },
+        {
+          title: "Payouts",
+          href: "/vendor/dashboard",
+          isTab: true,
+        },
+      ],
+    },
+    {
+      title: "Analytics",
+      href: "/vendor/dashboard/analytics",
+      icon: (
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          width="24"
+          height="24"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          className="h-5 w-5"
+        >
+          <path d="M3 3v18h18" />
+          <path d="m19 9-5 5-4-4-3 3" />
+        </svg>
+      ),
+      submenu: [
+        {
+          title: "Overview",
+          href: "/vendor/dashboard/analytics",
+          isTab: true,
+        },
+        {
+          title: "Sales",
+          href: "/vendor/dashboard/analytics",
+          isTab: true,
+        },
+        {
+          title: "Traffic",
+          href: "/vendor/dashboard/analytics",
+          isTab: true,
+        },
+        {
+          title: "Products",
+          href: "/vendor/dashboard/analytics",
+          isTab: true,
+        },
+        {
+          title: "Geography",
+          href: "/vendor/dashboard/analytics",
+          isTab: true,
+        },
+      ],
+    },
+    {
+      title: "Benefits",
+      href: "/vendor/dashboard/benefits",
+      icon: (
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          width="24"
+          height="24"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          className="h-5 w-5"
+        >
+          <path d="M12 8c-2.8 0-5 2.2-5 5s2.2 5 5 5 5-2.2 5-5-2.2-5-5-5Z" />
+          <path d="m3 3 18 18" />
+          <path d="M10.5 13.5 3 21" />
+          <path d="m21 3-7.5 7.5" />
+        </svg>
+      ),
+    },
+    {
+      title: "Messages",
+      href: "/vendor/dashboard/messages",
+      icon: (
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          width="24"
+          height="24"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          className="h-5 w-5"
+        >
+          <path d="M14 9a2 2 0 0 1-2 2H6l-4 4V4c0-1.1.9-2 2-2h8a2 2 0 0 1 2 2v5Z" />
+          <path d="M18 9h2a2 2 0 0 1 2 2v11l-4-4h-6a2 2 0 0 1-2-2v-1" />
+        </svg>
+      ),
+    },
+    {
+      title: "Settings",
+      href: "/vendor/dashboard/settings",
+      icon: (
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          width="24"
+          height="24"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          className="h-5 w-5"
+        >
+          <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z" />
+          <circle cx="12" cy="12" r="3" />
+        </svg>
+      ),
+    },
+  ]
+
+  const navItems = getNavItems()
+
+  const renderNavItem = (item: NavItem) => {
+    const isItemActive = item.submenu
+      ? item.submenu.some((subItem) => isActive(subItem.href, subItem.isTab ? subItem.title.toLowerCase() : null))
+      : isActive(item.href)
+
+    const isSubmenuOpen = openSubmenus[item.title] || false
+
+    if (item.submenu) {
+      return (
+        <div key={item.title} className="flex flex-col">
+          <button
+            onClick={() => toggleSubmenu(item.title)}
+            className={`flex items-center justify-between rounded-md px-3 py-2 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground ${
+              isItemActive ? "bg-accent/50 text-accent-foreground" : "text-foreground"
+            }`}
+          >
+            <div className="flex items-center gap-3">
+              {item.icon}
+              <span>{item.title}</span>
+            </div>
+            {isSubmenuOpen ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+          </button>
+
+          {isSubmenuOpen && (
+            <div className="ml-6 mt-1 flex flex-col gap-1">
+              {item.submenu.map((subItem) => {
+                const href = subItem.isTab ? `${subItem.href}?tab=${subItem.title.toLowerCase()}` : subItem.href
+
+                const isSubItemActive = isActive(subItem.href, subItem.isTab ? subItem.title.toLowerCase() : null)
+
+                return (
+                  <Link
+                    key={subItem.title}
+                    href={href}
+                    className={`rounded-md px-3 py-2 text-sm transition-colors hover:bg-accent hover:text-accent-foreground ${
+                      isSubItemActive ? "bg-accent text-accent-foreground" : "text-foreground"
+                    }`}
+                  >
+                    {subItem.title}
+                  </Link>
+                )
+              })}
+            </div>
+          )}
+        </div>
+      )
+    }
+
+    return (
+      <Link
+        key={item.title}
+        href={item.href}
+        className={`flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground ${
+          isItemActive ? "bg-accent text-accent-foreground" : "text-foreground"
+        }`}
+      >
+        {item.icon}
+        <span>{item.title}</span>
+      </Link>
+    )
   }
 
   return (
@@ -198,80 +334,49 @@ export function SidebarLayout({ children }: { children: React.ReactNode }) {
             <X className="h-5 w-5" />
           </button>
         </div>
-        <nav className="flex flex-col gap-1 p-2">
-          {navItems.map((item) => (
-            <div key={item.title} className="flex flex-col">
-              {item.submenu ? (
-                <>
-                  <button
-                    onClick={() => toggleSubmenu(item.title)}
-                    className={`flex items-center justify-between rounded-md px-3 py-2 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground ${
-                      pathname === item.href ? "bg-accent text-accent-foreground" : "text-foreground"
-                    }`}
-                  >
-                    <div className="flex items-center gap-3">
-                      {item.icon}
-                      <span>{item.title}</span>
-                    </div>
-                    <ChevronDown
-                      className={`h-4 w-4 transition-transform ${openSubmenu === item.title ? "rotate-180" : ""}`}
-                    />
-                  </button>
-                  {openSubmenu === item.title && (
-                    <div className="ml-6 mt-1 flex flex-col gap-1">
-                      {item.submenu.map((subItem) => (
-                        <Link
-                          key={subItem.title}
-                          href={subItem.href}
-                          className={`rounded-md px-3 py-2 text-sm transition-colors hover:bg-accent hover:text-accent-foreground ${
-                            pathname === subItem.href ? "bg-accent text-accent-foreground" : "text-foreground"
-                          }`}
-                        >
-                          {subItem.title}
-                        </Link>
-                      ))}
-                    </div>
-                  )}
-                </>
-              ) : (
-                <Link
-                  href={item.href}
-                  className={`flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground ${
-                    pathname === item.href ? "bg-accent text-accent-foreground" : "text-foreground"
-                  }`}
-                >
-                  {item.icon}
-                  <span>{item.title}</span>
-                </Link>
-              )}
-            </div>
-          ))}
-        </nav>
-        <div className="absolute bottom-4 left-0 right-0 px-4">
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="sm" className="w-full justify-start">
-                {theme === "light" && <Sun className="mr-2 h-4 w-4" />}
-                {theme === "dark" && <Moon className="mr-2 h-4 w-4" />}
-                {theme === "system" && <Laptop className="mr-2 h-4 w-4" />}
-                <span className="capitalize">{theme || "system"} Theme</span>
+
+        <div className="flex flex-col h-[calc(100%-4rem)] overflow-hidden">
+          <nav className="flex-1 overflow-y-auto p-2">
+            <div className="flex flex-col gap-1">{navItems.map(renderNavItem)}</div>
+          </nav>
+
+          <div className="p-4 border-t border-border">
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <p className="font-medium text-sm">{vendor?.vendor_name || "Vendor"}</p>
+                <p className="text-xs text-muted-foreground">Vendor Account</p>
+              </div>
+              <Button variant="ghost" size="icon" onClick={handleLogout}>
+                <LogOut className="h-4 w-4" />
+                <span className="sr-only">Log out</span>
               </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={() => setTheme("light")}>
-                <Sun className="mr-2 h-4 w-4" />
-                <span>Light</span>
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => setTheme("dark")}>
-                <Moon className="mr-2 h-4 w-4" />
-                <span>Dark</span>
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => setTheme("system")}>
-                <Laptop className="mr-2 h-4 w-4" />
-                <span>System</span>
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+            </div>
+
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm" className="w-full justify-start">
+                  {theme === "light" && <Sun className="mr-2 h-4 w-4" />}
+                  {theme === "dark" && <Moon className="mr-2 h-4 w-4" />}
+                  {theme === "system" && <Laptop className="mr-2 h-4 w-4" />}
+                  <span className="capitalize">{theme || "system"} Theme</span>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={() => setTheme("light")}>
+                  <Sun className="mr-2 h-4 w-4" />
+                  <span>Light</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setTheme("dark")}>
+                  <Moon className="mr-2 h-4 w-4" />
+                  <span>Dark</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setTheme("system")}>
+                  <Laptop className="mr-2 h-4 w-4" />
+                  <span>System</span>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
         </div>
       </aside>
 
