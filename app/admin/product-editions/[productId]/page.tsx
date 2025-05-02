@@ -1,11 +1,12 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { useParams, useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Badge } from "@/components/ui/badge"
+import { PullToRefresh } from "@/components/pull-to-refresh"
 import {
   Loader2,
   AlertCircle,
@@ -36,12 +37,13 @@ export default function ProductEditionsPage() {
   const [activeTab, setActiveTab] = useState("all")
   const [isUpdating, setIsUpdating] = useState(false)
   const [isResequencing, setIsResequencing] = useState(false)
+  const [lastRefreshed, setLastRefreshed] = useState<Date>(new Date())
 
   // Add the following state variables after the existing state declarations
   const [selectedItems, setSelectedItems] = useState<Set<string>>(new Set())
   const [isRemovingMultiple, setIsRemovingMultiple] = useState(false)
 
-  const fetchProductEditions = async () => {
+  const fetchProductEditions = useCallback(async () => {
     setIsLoading(true)
     setError(null)
 
@@ -67,6 +69,8 @@ export default function ProductEditionsPage() {
       } else {
         throw new Error(data.message || "Failed to fetch product editions")
       }
+
+      setLastRefreshed(new Date())
     } catch (err: any) {
       console.error("Error fetching product editions:", err)
       setError(err.message || "Failed to fetch product editions")
@@ -74,7 +78,7 @@ export default function ProductEditionsPage() {
       setIsLoading(false)
       setIsRetrying(false)
     }
-  }
+  }, [productId])
 
   // Retry function
   const handleRetry = async () => {
@@ -112,7 +116,7 @@ export default function ProductEditionsPage() {
     if (productId) {
       fetchProductEditions()
     }
-  }, [productId])
+  }, [productId, fetchProductEditions])
 
   // Filter line items based on active tab
   const filteredLineItems = () => {
@@ -276,7 +280,7 @@ export default function ProductEditionsPage() {
     }
   }
 
-  if (isLoading) {
+  if (isLoading && !productData) {
     return (
       <div className="container mx-auto py-10 max-w-5xl">
         <div className="flex flex-col items-center justify-center py-20">
@@ -287,7 +291,7 @@ export default function ProductEditionsPage() {
     )
   }
 
-  if (error) {
+  if (error && !productData) {
     return (
       <div className="container mx-auto py-10 max-w-5xl">
         <Link href="/admin/sync-products" className="flex items-center text-sm mb-6">
@@ -312,312 +316,332 @@ export default function ProductEditionsPage() {
   }
 
   return (
-    <div className="container mx-auto py-10 max-w-5xl">
-      <div>
-        <Link href="/admin/sync-products" className="flex items-center text-sm mb-6">
-          <ArrowLeft className="h-4 w-4 mr-1" />
-          Back to Sync Products
-        </Link>
-        <h1 className="text-3xl font-bold tracking-tight">{productData?.productTitle || "Product Editions"}</h1>
-        <p className="text-muted-foreground mt-2">View all edition numbers for this product</p>
-
-        <div className="flex flex-wrap gap-2 mt-4">
-          <Button variant="outline" asChild>
-            <Link href="/admin">
-              <Layers className="mr-2 h-4 w-4" />
-              Dashboard
-            </Link>
-          </Button>
-          <Button variant="outline" asChild>
-            <Link href="/admin/sync-products">
-              <RefreshCw className="mr-2 h-4 w-4" />
-              Sync Products
-            </Link>
-          </Button>
-          <Button variant="outline" asChild>
-            <Link href="/admin/certificates">
-              <Certificate className="mr-2 h-4 w-4" />
-              Certificates
-            </Link>
-          </Button>
-          <Button variant="outline" asChild>
-            <Link href="/admin/settings">
-              <Settings className="mr-2 h-4 w-4" />
-              Settings
-            </Link>
-          </Button>
-        </div>
-      </div>
-
-      <div className="flex flex-col space-y-8">
+    <PullToRefresh onRefresh={fetchProductEditions}>
+      <div className="container mx-auto py-10 max-w-5xl">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">{productData?.productTitle || "Product Editions"}</h1>
-          <p className="text-muted-foreground mt-2">View all edition numbers for this product</p>
-        </div>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Product Information</CardTitle>
-            <CardDescription>Details about this product and its edition numbers</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-              <div className="space-y-1">
-                <p className="text-sm text-muted-foreground">Product ID</p>
-                <p className="font-medium">{productData?.productId || "Unknown"}</p>
-              </div>
-              <div className="space-y-1">
-                <p className="text-sm text-muted-foreground">Total Editions</p>
-                <p className="font-medium">{activeItemsCount || 0}</p>
-              </div>
-              <div className="space-y-1">
-                <p className="text-sm text-muted-foreground">Edition Size</p>
-                <p className="font-medium">{productData?.editionTotal || "Unlimited"}</p>
-              </div>
-              <div className="space-y-1">
-                <p className="text-sm text-muted-foreground">Line Items</p>
-                <p className="font-medium">
-                  {lineItems.length} Total
-                  <span className="text-sm text-muted-foreground ml-2">
-                    ({activeItemsCount} Active, {removedItemsCount} Removed)
-                  </span>
-                </p>
-              </div>
-            </div>
-
-            <div className="mt-6">
-              <Button
-                onClick={handleResequence}
-                disabled={isResequencing}
-                variant="outline"
-                className="flex items-center gap-2"
-              >
-                {isResequencing ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
-                {isResequencing ? "Resequencing..." : "Fix Edition Numbers"}
-              </Button>
-              <p className="text-xs text-muted-foreground mt-2">
-                This will reset all edition numbers, ensuring active items have sequential numbers starting from 1 and
-                removed items have no edition number.
+          <Link href="/admin/sync-products" className="flex items-center text-sm mb-6">
+            <ArrowLeft className="h-4 w-4 mr-1" />
+            Back to Sync Products
+          </Link>
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div>
+              <h1 className="text-3xl font-bold tracking-tight">{productData?.productTitle || "Product Editions"}</h1>
+              <p className="text-muted-foreground mt-2">
+                View all edition numbers for this product
+                <span className="text-xs ml-2">Last refreshed: {lastRefreshed.toLocaleTimeString()}</span>
               </p>
             </div>
-          </CardContent>
-        </Card>
+            <Button variant="outline" onClick={fetchProductEditions} disabled={isLoading}>
+              <RefreshCw className={`h-4 w-4 mr-2 ${isLoading ? "animate-spin" : ""}`} />
+              Refresh
+            </Button>
+          </div>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Edition Numbers</CardTitle>
-            <CardDescription>All line items with assigned edition numbers for this product</CardDescription>
-            <Tabs defaultValue="all" className="w-full" onValueChange={setActiveTab}>
-              <TabsList className="grid w-full grid-cols-3 mb-4">
-                <TabsTrigger value="all">
-                  All Items
-                  <Badge variant="secondary" className="ml-2">
-                    {lineItems.length}
-                  </Badge>
-                </TabsTrigger>
-                <TabsTrigger value="active">
-                  Active
-                  <Badge variant="secondary" className="ml-2">
-                    {activeItemsCount}
-                  </Badge>
-                </TabsTrigger>
-                <TabsTrigger value="removed">
-                  Removed
-                  <Badge variant="secondary" className="ml-2">
-                    {removedItemsCount}
-                  </Badge>
-                </TabsTrigger>
-              </TabsList>
-            </Tabs>
-          </CardHeader>
-          <CardContent>
-            {lineItems.length === 0 ? (
-              <Alert>
-                <AlertCircle className="h-4 w-4" />
-                <AlertTitle>No editions found</AlertTitle>
-                <AlertDescription>No edition numbers have been assigned to this product yet.</AlertDescription>
-              </Alert>
-            ) : filteredLineItems().length === 0 ? (
-              <Alert>
-                <AlertCircle className="h-4 w-4" />
-                <AlertTitle>No items match filter</AlertTitle>
-                <AlertDescription>No items match the current filter criteria.</AlertDescription>
-              </Alert>
-            ) : (
-              <>
-                {selectedItems.size > 0 && (
-                  <div className="flex items-center justify-between mb-4 p-2 bg-muted rounded-md">
-                    <div className="text-sm">
-                      <span className="font-medium">{selectedItems.size}</span> items selected
-                    </div>
-                    <div className="flex gap-2">
-                      {filteredLineItems().some(
-                        (item) =>
-                          item.status === "removed" && selectedItems.has(`${item.order_id}-${item.line_item_id}`),
-                      ) && (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={restoreSelectedItems}
-                          disabled={isRemovingMultiple}
-                          className="flex items-center gap-2"
-                        >
-                          {isRemovingMultiple ? (
-                            <Loader2 className="h-3 w-3 animate-spin" />
-                          ) : (
-                            <CheckCircle className="h-3 w-3" />
-                          )}
-                          {isRemovingMultiple ? "Restoring..." : "Restore Selected"}
-                        </Button>
-                      )}
-                      {filteredLineItems().some(
-                        (item) =>
-                          item.status !== "removed" && selectedItems.has(`${item.order_id}-${item.line_item_id}`),
-                      ) && (
-                        <Button
-                          variant="destructive"
-                          size="sm"
-                          onClick={removeSelectedItems}
-                          disabled={isRemovingMultiple}
-                          className="flex items-center gap-2"
-                        >
-                          {isRemovingMultiple ? (
-                            <Loader2 className="h-3 w-3 animate-spin" />
-                          ) : (
-                            <XCircle className="h-3 w-3" />
-                          )}
-                          {isRemovingMultiple ? "Removing..." : "Remove Selected"}
-                        </Button>
-                      )}
-                    </div>
-                  </div>
-                )}
+          <div className="flex flex-wrap gap-2 mt-4">
+            <Button variant="outline" asChild>
+              <Link href="/admin">
+                <Layers className="mr-2 h-4 w-4" />
+                Dashboard
+              </Link>
+            </Button>
+            <Button variant="outline" asChild>
+              <Link href="/admin/sync-products">
+                <RefreshCw className="mr-2 h-4 w-4" />
+                Sync Products
+              </Link>
+            </Button>
+            <Button variant="outline" asChild>
+              <Link href="/admin/certificates">
+                <Certificate className="mr-2 h-4 w-4" />
+                Certificates
+              </Link>
+            </Button>
+            <Button variant="outline" asChild>
+              <Link href="/admin/settings">
+                <Settings className="mr-2 h-4 w-4" />
+                Settings
+              </Link>
+            </Button>
+          </div>
+        </div>
 
-                <div className="border rounded-md">
-                  <div className="grid grid-cols-13 gap-4 p-4 font-medium border-b">
-                    <div className="col-span-1">
-                      <Checkbox
-                        checked={
-                          selectedItems.size > 0 &&
-                          selectedItems.size === filteredLineItems().filter((item) => item.status !== "removed").length
-                        }
-                        onCheckedChange={toggleSelectAll}
-                        disabled={filteredLineItems().filter((item) => item.status !== "removed").length === 0}
-                      />
-                    </div>
-                    <div className="col-span-1">Edition</div>
-                    <div className="col-span-2">Order</div>
-                    <div className="col-span-2">Line Item</div>
-                    <div className="col-span-2">Created At</div>
-                    <div className="col-span-2">
-                      Updated At <span className="text-xs text-muted-foreground">(Last status change)</span>
-                    </div>
-                    <div className="col-span-1">Status</div>
-                    <div className="col-span-1">Reason</div>
-                    <div className="col-span-1">Actions</div>
-                  </div>
+        <div className="flex flex-col space-y-8 mt-6">
+          {error && (
+            <Alert variant="destructive">
+              <AlertCircle className="h-4 w-4" />
+              <AlertTitle>Error</AlertTitle>
+              <AlertDescription>{error}</AlertDescription>
+            </Alert>
+          )}
 
-                  <div className="divide-y">
-                    {filteredLineItems().map((item) => {
-                      const itemKey = `${item.order_id}-${item.line_item_id}`
-                      const isSelected = selectedItems.has(itemKey)
-
-                      return (
-                        <div key={itemKey} className={`grid grid-cols-13 gap-4 p-4 ${isSelected ? "bg-muted/50" : ""}`}>
-                          <div className="col-span-1">
-                            <Checkbox checked={isSelected} onCheckedChange={() => toggleItemSelection(item)} />
-                          </div>
-                          <div className="col-span-1 font-medium">
-                            {item.edition_number ? (
-                              <>
-                                {item.edition_number}
-                                {productData?.editionTotal && (
-                                  <span className="text-muted-foreground">/{productData.editionTotal}</span>
-                                )}
-                              </>
-                            ) : (
-                              <span className="text-muted-foreground">N/A</span>
-                            )}
-                          </div>
-                          <div className="col-span-2">
-                            <div>{item.order_name || item.order_id}</div>
-                          </div>
-                          <div className="col-span-2 text-muted-foreground truncate">{item.line_item_id}</div>
-                          <div className="col-span-2 text-sm">{new Date(item.created_at).toLocaleString()}</div>
-                          <div className="col-span-2 text-sm">
-                            {item.updated_at ? (
-                              <>
-                                <span className="font-medium">{new Date(item.updated_at).toLocaleString()}</span>
-                                {item.updated_at !== item.created_at && (
-                                  <span className="block text-xs text-blue-500">Updated</span>
-                                )}
-                              </>
-                            ) : (
-                              "N/A"
-                            )}
-                          </div>
-                          <div className="col-span-1">
-                            {item.status === "removed" ? (
-                              <Badge variant="destructive" className="bg-red-100 text-red-800">
-                                Removed
-                              </Badge>
-                            ) : (
-                              <Badge variant="success" className="bg-green-100 text-green-800">
-                                Active
-                              </Badge>
-                            )}
-                          </div>
-                          <div className="col-span-1 text-sm text-muted-foreground truncate">
-                            {item.removed_reason || (item.status === "removed" ? "Unknown" : "")}
-                          </div>
-                          <div className="col-span-1">
-                            <DropdownMenu>
-                              <DropdownMenuTrigger asChild>
-                                <Button variant="ghost" size="sm" disabled={isUpdating}>
-                                  <MoreHorizontal className="h-4 w-4" />
-                                </Button>
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end">
-                                {item.status === "removed" ? (
-                                  <DropdownMenuItem
-                                    onClick={() => handleStatusUpdate(item.line_item_id, item.order_id, "active")}
-                                  >
-                                    <CheckCircle className="h-4 w-4 mr-2" />
-                                    Mark as Active
-                                  </DropdownMenuItem>
-                                ) : (
-                                  <DropdownMenuItem
-                                    onClick={() =>
-                                      handleStatusUpdate(
-                                        item.line_item_id,
-                                        item.order_id,
-                                        "removed",
-                                        "Manually removed",
-                                      )
-                                    }
-                                  >
-                                    <XCircle className="h-4 w-4 mr-2" />
-                                    Mark as Removed
-                                  </DropdownMenuItem>
-                                )}
-                              </DropdownMenuContent>
-                            </DropdownMenu>
-                          </div>
-                        </div>
-                      )
-                    })}
-                  </div>
+          <Card>
+            <CardHeader>
+              <CardTitle>Product Information</CardTitle>
+              <CardDescription>Details about this product and its edition numbers</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div className="space-y-1">
+                  <p className="text-sm text-muted-foreground">Product ID</p>
+                  <p className="font-medium">{productData?.productId || "Unknown"}</p>
                 </div>
-              </>
-            )}
-          </CardContent>
-          <CardFooter>
-            <Link href={`/admin/sync-products`}>
-              <Button variant="outline">Back to Products</Button>
-            </Link>
-          </CardFooter>
-        </Card>
+                <div className="space-y-1">
+                  <p className="text-sm text-muted-foreground">Total Editions</p>
+                  <p className="font-medium">{activeItemsCount || 0}</p>
+                </div>
+                <div className="space-y-1">
+                  <p className="text-sm text-muted-foreground">Edition Size</p>
+                  <p className="font-medium">{productData?.editionTotal || "Unlimited"}</p>
+                </div>
+                <div className="space-y-1">
+                  <p className="text-sm text-muted-foreground">Line Items</p>
+                  <p className="font-medium">
+                    {lineItems.length} Total
+                    <span className="text-sm text-muted-foreground ml-2">
+                      ({activeItemsCount} Active, {removedItemsCount} Removed)
+                    </span>
+                  </p>
+                </div>
+              </div>
+
+              <div className="mt-6">
+                <Button
+                  onClick={handleResequence}
+                  disabled={isResequencing}
+                  variant="outline"
+                  className="flex items-center gap-2"
+                >
+                  {isResequencing ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
+                  {isResequencing ? "Resequencing..." : "Fix Edition Numbers"}
+                </Button>
+                <p className="text-xs text-muted-foreground mt-2">
+                  This will reset all edition numbers, ensuring active items have sequential numbers starting from 1 and
+                  removed items have no edition number.
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Edition Numbers</CardTitle>
+              <CardDescription>All line items with assigned edition numbers for this product</CardDescription>
+              <Tabs defaultValue="all" className="w-full" onValueChange={setActiveTab}>
+                <TabsList className="grid w-full grid-cols-3 mb-4">
+                  <TabsTrigger value="all">
+                    All Items
+                    <Badge variant="secondary" className="ml-2">
+                      {lineItems.length}
+                    </Badge>
+                  </TabsTrigger>
+                  <TabsTrigger value="active">
+                    Active
+                    <Badge variant="secondary" className="ml-2">
+                      {activeItemsCount}
+                    </Badge>
+                  </TabsTrigger>
+                  <TabsTrigger value="removed">
+                    Removed
+                    <Badge variant="secondary" className="ml-2">
+                      {removedItemsCount}
+                    </Badge>
+                  </TabsTrigger>
+                </TabsList>
+              </Tabs>
+            </CardHeader>
+            <CardContent>
+              {lineItems.length === 0 ? (
+                <Alert>
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertTitle>No editions found</AlertTitle>
+                  <AlertDescription>No edition numbers have been assigned to this product yet.</AlertDescription>
+                </Alert>
+              ) : filteredLineItems().length === 0 ? (
+                <Alert>
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertTitle>No items match filter</AlertTitle>
+                  <AlertDescription>No items match the current filter criteria.</AlertDescription>
+                </Alert>
+              ) : (
+                <>
+                  {selectedItems.size > 0 && (
+                    <div className="flex items-center justify-between mb-4 p-2 bg-muted rounded-md">
+                      <div className="text-sm">
+                        <span className="font-medium">{selectedItems.size}</span> items selected
+                      </div>
+                      <div className="flex gap-2">
+                        {filteredLineItems().some(
+                          (item) =>
+                            item.status === "removed" && selectedItems.has(`${item.order_id}-${item.line_item_id}`),
+                        ) && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={restoreSelectedItems}
+                            disabled={isRemovingMultiple}
+                            className="flex items-center gap-2"
+                          >
+                            {isRemovingMultiple ? (
+                              <Loader2 className="h-3 w-3 animate-spin" />
+                            ) : (
+                              <CheckCircle className="h-3 w-3" />
+                            )}
+                            {isRemovingMultiple ? "Restoring..." : "Restore Selected"}
+                          </Button>
+                        )}
+                        {filteredLineItems().some(
+                          (item) =>
+                            item.status !== "removed" && selectedItems.has(`${item.order_id}-${item.line_item_id}`),
+                        ) && (
+                          <Button
+                            variant="destructive"
+                            size="sm"
+                            onClick={removeSelectedItems}
+                            disabled={isRemovingMultiple}
+                            className="flex items-center gap-2"
+                          >
+                            {isRemovingMultiple ? (
+                              <Loader2 className="h-3 w-3 animate-spin" />
+                            ) : (
+                              <XCircle className="h-3 w-3" />
+                            )}
+                            {isRemovingMultiple ? "Removing..." : "Remove Selected"}
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="border rounded-md">
+                    <div className="grid grid-cols-13 gap-4 p-4 font-medium border-b">
+                      <div className="col-span-1">
+                        <Checkbox
+                          checked={
+                            selectedItems.size > 0 &&
+                            selectedItems.size ===
+                              filteredLineItems().filter((item) => item.status !== "removed").length
+                          }
+                          onCheckedChange={toggleSelectAll}
+                          disabled={filteredLineItems().filter((item) => item.status !== "removed").length === 0}
+                        />
+                      </div>
+                      <div className="col-span-1">Edition</div>
+                      <div className="col-span-2">Order</div>
+                      <div className="col-span-2">Line Item</div>
+                      <div className="col-span-2">Created At</div>
+                      <div className="col-span-2">
+                        Updated At <span className="text-xs text-muted-foreground">(Last status change)</span>
+                      </div>
+                      <div className="col-span-1">Status</div>
+                      <div className="col-span-1">Reason</div>
+                      <div className="col-span-1">Actions</div>
+                    </div>
+
+                    <div className="divide-y">
+                      {filteredLineItems().map((item) => {
+                        const itemKey = `${item.order_id}-${item.line_item_id}`
+                        const isSelected = selectedItems.has(itemKey)
+
+                        return (
+                          <div
+                            key={itemKey}
+                            className={`grid grid-cols-13 gap-4 p-4 ${isSelected ? "bg-muted/50" : ""}`}
+                          >
+                            <div className="col-span-1">
+                              <Checkbox checked={isSelected} onCheckedChange={() => toggleItemSelection(item)} />
+                            </div>
+                            <div className="col-span-1 font-medium">
+                              {item.edition_number ? (
+                                <>
+                                  {item.edition_number}
+                                  {productData?.editionTotal && (
+                                    <span className="text-muted-foreground">/{productData.editionTotal}</span>
+                                  )}
+                                </>
+                              ) : (
+                                <span className="text-muted-foreground">N/A</span>
+                              )}
+                            </div>
+                            <div className="col-span-2">
+                              <div>{item.order_name || item.order_id}</div>
+                            </div>
+                            <div className="col-span-2 text-muted-foreground truncate">{item.line_item_id}</div>
+                            <div className="col-span-2 text-sm">{new Date(item.created_at).toLocaleString()}</div>
+                            <div className="col-span-2 text-sm">
+                              {item.updated_at ? (
+                                <>
+                                  <span className="font-medium">{new Date(item.updated_at).toLocaleString()}</span>
+                                  {item.updated_at !== item.created_at && (
+                                    <span className="block text-xs text-blue-500">Updated</span>
+                                  )}
+                                </>
+                              ) : (
+                                "N/A"
+                              )}
+                            </div>
+                            <div className="col-span-1">
+                              {item.status === "removed" ? (
+                                <Badge variant="destructive" className="bg-red-100 text-red-800">
+                                  Removed
+                                </Badge>
+                              ) : (
+                                <Badge variant="success" className="bg-green-100 text-green-800">
+                                  Active
+                                </Badge>
+                              )}
+                            </div>
+                            <div className="col-span-1 text-sm text-muted-foreground truncate">
+                              {item.removed_reason || (item.status === "removed" ? "Unknown" : "")}
+                            </div>
+                            <div className="col-span-1">
+                              <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                  <Button variant="ghost" size="sm" disabled={isUpdating}>
+                                    <MoreHorizontal className="h-4 w-4" />
+                                  </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end">
+                                  {item.status === "removed" ? (
+                                    <DropdownMenuItem
+                                      onClick={() => handleStatusUpdate(item.line_item_id, item.order_id, "active")}
+                                    >
+                                      <CheckCircle className="h-4 w-4 mr-2" />
+                                      Mark as Active
+                                    </DropdownMenuItem>
+                                  ) : (
+                                    <DropdownMenuItem
+                                      onClick={() =>
+                                        handleStatusUpdate(
+                                          item.line_item_id,
+                                          item.order_id,
+                                          "removed",
+                                          "Manually removed",
+                                        )
+                                      }
+                                    >
+                                      <XCircle className="h-4 w-4 mr-2" />
+                                      Mark as Removed
+                                    </DropdownMenuItem>
+                                  )}
+                                </DropdownMenuContent>
+                              </DropdownMenu>
+                            </div>
+                          </div>
+                        )
+                      })}
+                    </div>
+                  </div>
+                </>
+              )}
+            </CardContent>
+            <CardFooter>
+              <Link href={`/admin/sync-products`}>
+                <Button variant="outline">Back to Products</Button>
+              </Link>
+            </CardFooter>
+          </Card>
+        </div>
       </div>
-    </div>
+    </PullToRefresh>
   )
 }
