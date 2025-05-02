@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, Suspense } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
@@ -24,7 +24,8 @@ import { Line, Bar, Pie } from "react-chartjs-2"
 // Register ChartJS components
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, BarElement, ArcElement, Title, Tooltip, Legend)
 
-export default function AnalyticsPage() {
+// Create a separate component for the analytics content
+function AnalyticsContent() {
   const [activeTab, setActiveTab] = useState("overview")
   const [timeRange, setTimeRange] = useState("30")
   const [loading, setLoading] = useState(true)
@@ -674,5 +675,14 @@ export default function AnalyticsPage() {
         </TabsContent>
       </Tabs>
     </div>
+  )
+}
+
+// Main component with Suspense boundary
+export default function AnalyticsPage() {
+  return (
+    <Suspense fallback={<div className="p-4">Loading analytics dashboard...</div>}>
+      <AnalyticsContent />
+    </Suspense>
   )
 }
