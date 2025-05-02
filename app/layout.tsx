@@ -1,27 +1,20 @@
-import '@mantine/core/styles.css'
+import type { Metadata } from 'next'
 import './globals.css'
 
-import { ColorSchemeScript } from '@mantine/core'
-import { Providers } from "./providers"
-
-export const metadata = {
-  title: 'Certificate of Authenticity',
-  description: 'Manage your certificates and verify their authenticity',
+export const metadata: Metadata = {
+  title: 'v0 App',
+  description: 'Created with v0',
+  generator: 'v0.dev',
 }
 
 export default function RootLayout({
   children,
-}: {
+}: Readonly<{
   children: React.ReactNode
-}) {
+}>) {
   return (
     <html lang="en">
-      <head>
-        <ColorSchemeScript />
-      </head>
-      <body>
-        <Providers>{children}</Providers>
-      </body>
+      <body>{children}</body>
     </html>
   )
 }

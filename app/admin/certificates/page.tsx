@@ -1,255 +1,264 @@
 "use client"
 
-import { Container, Title, Text, Paper, Table, Group, Button, TextInput, Select, Box, Badge, Stack, Modal, ActionIcon } from "@mantine/core"
-import { IconSearch, IconEye, IconEdit, IconTrash, IconPlus } from "@tabler/icons-react"
-import { useEffect, useState } from "react"
-import { supabase } from "@/lib/supabase"
-import { useDisclosure } from "@mantine/hooks"
-
-interface Certificate {
-  id: string
-  owner_id: string
-  vendor_id: string
-  status: string
-  metadata: any
-  created_at: string
-  updated_at: string
-  owner: {
-    name: string
-    email: string
-  }
-  vendor: {
-    name: string
-    email: string
-  }
-}
+import { useState } from "react"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
+import { Label } from "@/components/ui/label"
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
+import {
+  Clipboard,
+  Check,
+  AlertCircle,
+  BadgeIcon as Certificate,
+  LinkIcon,
+  ListIcon,
+  Layers,
+  Settings,
+  Download,
+  Clock,
+  Smartphone,
+} from "lucide-react"
+import Link from "next/link"
 
 export default function CertificatesPage() {
-  const [certificates, setCertificates] = useState<Certificate[]>([])
-  const [loading, setLoading] = useState(true)
-  const [search, setSearch] = useState('')
-  const [statusFilter, setStatusFilter] = useState<string | null>(null)
-  const [selectedCertificate, setSelectedCertificate] = useState<Certificate | null>(null)
-  const [opened, { open, close }] = useDisclosure(false)
+  const [lineItemId, setLineItemId] = useState("")
+  const [generatedUrl, setGeneratedUrl] = useState<string | null>(null)
+  const [accessToken, setAccessToken] = useState<string | null>(null)
+  const [copied, setCopied] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [isLoading, setIsLoading] = useState(false)
 
-  useEffect(() => {
-    fetchCertificates()
-  }, [search, statusFilter])
+  const generateCertificateUrl = async () => {
+    if (!lineItemId) {
+      setError("Please enter a line item ID")
+      return
+    }
 
-  const fetchCertificates = async () => {
+    setIsLoading(true)
+    setError(null)
+
     try {
-      setLoading(true)
-      let query = supabase
-        .from('certificates')
-        .select(`
-          *,
-          owner:users!owner_id(name, email),
-          vendor:users!vendor_id(name, email)
-        `)
-        .order('created_at', { ascending: false })
+      // Call the API to generate and store the certificate URL
+      const response = await fetch("/api/certificate/generate", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ lineItemId }),
+      })
 
-      if (search) {
-        query = query.or(`owner.name.ilike.%${search}%,owner.email.ilike.%${search}%,vendor.name.ilike.%${search}%`)
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.message || `Error ${response.status}: Failed to generate certificate URL`)
       }
 
-      if (statusFilter) {
-        query = query.eq('status', statusFilter)
-      }
-
-      const { data, error } = await query
-
-      if (error) throw error
-      setCertificates(data || [])
-    } catch (error) {
-      console.error('Failed to fetch certificates:', error)
+      const data = await response.json()
+      setGeneratedUrl(data.certificateUrl)
+      setAccessToken(data.accessToken)
+    } catch (err: any) {
+      console.error("Error generating certificate URL:", err)
+      setError(err.message || "Failed to generate certificate URL")
     } finally {
-      setLoading(false)
+      setIsLoading(false)
     }
   }
 
-  const handleDelete = async (id: string) => {
+  const copyToClipboard = async () => {
+    if (!generatedUrl) return
+
     try {
-      const { error } = await supabase
-        .from('certificates')
-        .delete()
-        .eq('id', id)
+      await navigator.clipboard.writeText(generatedUrl)
+      setCopied(true)
 
-      if (error) throw error
-      fetchCertificates()
-    } catch (error) {
-      console.error('Failed to delete certificate:', error)
-    }
-  }
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'active':
-        return 'green'
-      case 'expired':
-        return 'red'
-      case 'pending':
-        return 'yellow'
-      default:
-        return 'gray'
+      // Reset copied state after 2 seconds
+      setTimeout(() => setCopied(false), 2000)
+    } catch (err) {
+      console.error("Failed to copy:", err)
     }
   }
 
   return (
-    <Container size="xl" py="xl">
-      <Group justify="space-between" mb="xl">
-        <Title order={1}>Certificates</Title>
-        <Button 
-          leftSection={<IconPlus size={16} />}
-          onClick={() => {
-            setSelectedCertificate(null)
-            open()
-          }}
-        >
-          New Certificate
-        </Button>
-      </Group>
+    <div className="container mx-auto py-10 max-w-3xl">
+      <div className="flex flex-col space-y-8">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">Edition Certificates</h1>
+          <p className="text-muted-foreground mt-2">Generate certificate URLs for edition ownership</p>
 
-      <Paper p="md" radius="md" withBorder mb="xl">
-        <Group>
-          <TextInput
-            placeholder="Search certificates..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            leftSection={<IconSearch size={16} />}
-            style={{ flex: 1 }}
-          />
-          <Select
-            placeholder="Filter by status"
-            value={statusFilter}
-            onChange={setStatusFilter}
-            data={[
-              { value: 'active', label: 'Active' },
-              { value: 'expired', label: 'Expired' },
-              { value: 'pending', label: 'Pending' },
-            ]}
-          />
-        </Group>
-      </Paper>
-
-      <Paper p="md" radius="md" withBorder>
-        <Table>
-          <thead>
-            <tr>
-              <th>Owner</th>
-              <th>Vendor</th>
-              <th>Status</th>
-              <th>Created</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {loading ? (
-              <tr>
-                <td colSpan={5} align="center">
-                  <Text>Loading...</Text>
-                </td>
-              </tr>
-            ) : certificates.length === 0 ? (
-              <tr>
-                <td colSpan={5} align="center">
-                  <Text>No certificates found</Text>
-                </td>
-              </tr>
-            ) : (
-              certificates.map((certificate) => (
-                <tr key={certificate.id}>
-                  <td>
-                    <Stack gap={0}>
-                      <Text>{certificate.owner?.name}</Text>
-                      <Text size="sm" c="dimmed">{certificate.owner?.email}</Text>
-                    </Stack>
-                  </td>
-                  <td>
-                    <Stack gap={0}>
-                      <Text>{certificate.vendor?.name}</Text>
-                      <Text size="sm" c="dimmed">{certificate.vendor?.email}</Text>
-                    </Stack>
-                  </td>
-                  <td>
-                    <Badge color={getStatusColor(certificate.status)}>
-                      {certificate.status}
-                    </Badge>
-                  </td>
-                  <td>{new Date(certificate.created_at).toLocaleString()}</td>
-                  <td>
-                    <Group gap="xs">
-                      <ActionIcon 
-                        variant="subtle" 
-                        color="blue"
-                        onClick={() => {
-                          setSelectedCertificate(certificate)
-                          open()
-                        }}
-                      >
-                        <IconEye size={16} />
-                      </ActionIcon>
-                      <ActionIcon 
-                        variant="subtle" 
-                        color="blue"
-                        onClick={() => {
-                          setSelectedCertificate(certificate)
-                          open()
-                        }}
-                      >
-                        <IconEdit size={16} />
-                      </ActionIcon>
-                      <ActionIcon 
-                        variant="subtle" 
-                        color="red"
-                        onClick={() => handleDelete(certificate.id)}
-                      >
-                        <IconTrash size={16} />
-                      </ActionIcon>
-                    </Group>
-                  </td>
-                </tr>
-              ))
-            )}
-          </tbody>
-        </Table>
-      </Paper>
-
-      <Modal 
-        opened={opened} 
-        onClose={close} 
-        title={selectedCertificate ? "Edit Certificate" : "New Certificate"}
-        size="lg"
-      >
-        <Stack>
-          <TextInput
-            label="Owner Email"
-            placeholder="owner@example.com"
-            value={selectedCertificate?.owner?.email || ''}
-          />
-          <TextInput
-            label="Vendor Email"
-            placeholder="vendor@example.com"
-            value={selectedCertificate?.vendor?.email || ''}
-          />
-          <Select
-            label="Status"
-            value={selectedCertificate?.status || 'pending'}
-            data={[
-              { value: 'active', label: 'Active' },
-              { value: 'expired', label: 'Expired' },
-              { value: 'pending', label: 'Pending' },
-            ]}
-          />
-          <Group justify="flex-end" mt="xl">
-            <Button variant="default" onClick={close}>
-              Cancel
+          <div className="flex flex-wrap gap-2 mt-4">
+            <Button variant="outline" asChild>
+              <Link href="/admin">
+                <Layers className="mr-2 h-4 w-4" />
+                Dashboard
+              </Link>
             </Button>
-            <Button>
-              {selectedCertificate ? 'Save Changes' : 'Create Certificate'}
+            <Button variant="outline" asChild>
+              <Link href="/admin/certificates/management">
+                <Settings className="mr-2 h-4 w-4" />
+                Certificate Management
+              </Link>
             </Button>
-          </Group>
-        </Stack>
-      </Modal>
-    </Container>
+            <Button variant="outline" asChild>
+              <Link href="/admin/certificates/bulk">
+                <Download className="mr-2 h-4 w-4" />
+                Bulk Generation
+              </Link>
+            </Button>
+            <Button variant="outline" asChild>
+              <Link href="/admin/certificates/logs">
+                <Clock className="mr-2 h-4 w-4" />
+                Access Logs
+              </Link>
+            </Button>
+            <Button variant="outline" asChild>
+              <Link href="/admin/certificates/nfc">
+                <Smartphone className="mr-2 h-4 w-4" />
+                NFC Tags
+              </Link>
+            </Button>
+          </div>
+        </div>
+
+        <div className="flex justify-between items-center">
+          <h2 className="text-xl font-semibold">Certificate Tools</h2>
+          <Button asChild variant="outline">
+            <Link href="/admin/certificates/management">
+              <ListIcon className="h-4 w-4 mr-2" />
+              Manage All Certificates
+            </Link>
+          </Button>
+        </div>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Generate Certificate URL</CardTitle>
+            <CardDescription>
+              Enter a line item ID to generate a unique certificate URL for that edition
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="line-item-id">Line Item ID</Label>
+                <Input
+                  id="line-item-id"
+                  placeholder="Enter line item ID"
+                  value={lineItemId}
+                  onChange={(e) => setLineItemId(e.target.value)}
+                />
+                <p className="text-xs text-muted-foreground">
+                  This is the unique identifier for the line item in the order
+                </p>
+              </div>
+
+              {error && (
+                <Alert variant="destructive">
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertTitle>Error</AlertTitle>
+                  <AlertDescription>{error}</AlertDescription>
+                </Alert>
+              )}
+
+              {generatedUrl && (
+                <Alert>
+                  <Certificate className="h-4 w-4" />
+                  <AlertTitle>Certificate URL Generated</AlertTitle>
+                  <AlertDescription>
+                    <div className="mt-2 flex items-center gap-2">
+                      <Input value={generatedUrl} readOnly className="flex-1" />
+                      <Button size="sm" variant="outline" onClick={copyToClipboard} className="min-w-24">
+                        {copied ? (
+                          <>
+                            <Check className="h-4 w-4 mr-1" />
+                            Copied
+                          </>
+                        ) : (
+                          <>
+                            <Clipboard className="h-4 w-4 mr-1" />
+                            Copy
+                          </>
+                        )}
+                      </Button>
+                    </div>
+                    <div className="mt-2">
+                      <Button size="sm" variant="outline" asChild>
+                        <Link href={generatedUrl} target="_blank" rel="noopener noreferrer">
+                          <LinkIcon className="h-4 w-4 mr-1" />
+                          Open Certificate
+                        </Link>
+                      </Button>
+                    </div>
+                    {accessToken && (
+                      <div className="mt-2 text-xs text-muted-foreground">
+                        <p>Access Token: {accessToken}</p>
+                        <p>This token is stored in the database for additional security verification.</p>
+                      </div>
+                    )}
+                  </AlertDescription>
+                </Alert>
+              )}
+            </div>
+          </CardContent>
+          <CardFooter>
+            <Button onClick={generateCertificateUrl} disabled={isLoading}>
+              {isLoading ? "Generating..." : "Generate Certificate URL"}
+            </Button>
+          </CardFooter>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Bulk Certificate Generation</CardTitle>
+            <CardDescription>Generate certificates for all line items of a specific product</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <p className="text-sm text-muted-foreground">
+              Enter a product ID to generate certificate URLs for all line items associated with that product. This is
+              useful for sending certificates to all customers who purchased a specific limited edition.
+            </p>
+            <div className="mt-4">
+              <Button variant="outline" asChild>
+                <Link href="/admin/certificates/bulk">Go to Bulk Generation</Link>
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>NFC Tag Management</CardTitle>
+            <CardDescription>Manage NFC tags for certificate URLs</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <p className="text-sm text-muted-foreground">
+              Create, assign, and program NFC tags with certificate URLs. This allows customers to scan physical NFC
+              tags to view their certificates.
+            </p>
+            <div className="mt-4">
+              <Button variant="outline" asChild>
+                <Link href="/admin/certificates/nfc">Manage NFC Tags</Link>
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Certificate Access Logs</CardTitle>
+            <CardDescription>View logs of certificate access</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <p className="text-sm text-muted-foreground">
+              Track when and how certificates are accessed. This helps monitor usage and detect any unusual activity.
+            </p>
+            <div className="mt-4">
+              <Button variant="outline" asChild>
+                <Link href="/admin/certificates/logs">View Access Logs</Link>
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    </div>
   )
-} 
+}
