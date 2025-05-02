@@ -11,14 +11,17 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ message: "Product IDs are required" }, { status: 400 })
     }
 
-    // Fetch all payout settings
-    const { data, error } = await supabaseAdmin.from("product_vendor_payouts").select("*").in("product_id", productIds)
+    console.log(`Fetching payouts for ${productIds.length} products from Supabase`)
+
+    // Fetch all payout settings from the vendor_payouts table
+    const { data, error } = await supabaseAdmin.from("vendor_payouts").select("*").in("product_id", productIds)
 
     if (error) {
       console.error("Error fetching vendor payouts:", error)
       return NextResponse.json({ message: error.message }, { status: 500 })
     }
 
+    console.log(`Found ${data?.length || 0} payout records`)
     return NextResponse.json({ payouts: data || [] })
   } catch (error: any) {
     console.error("Error in vendor payouts API:", error)
