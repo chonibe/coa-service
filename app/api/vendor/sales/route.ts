@@ -15,19 +15,20 @@ export async function GET() {
 
     console.log(`Fetching sales data for vendor: ${vendorName}`)
 
-    // Get all active line items for this vendor
+    // Get all active line items for this vendor with the correct column names
     const { data: lineItems, error } = await supabaseAdmin
       .from("order_line_items")
       .select(`
         id,
         product_id,
-        title,
+        product_title,
         price,
-        currency,
+        order_id,
+        line_item_id,
         edition_number,
         created_at,
-        order_id,
-        line_item_id
+        status,
+        vendor_name
       `)
       .eq("vendor_name", vendorName)
       .eq("status", "active")
@@ -73,9 +74,9 @@ export async function GET() {
       // Return formatted line item for the list
       return {
         id: item.product_id,
-        title: item.title,
+        title: item.product_title || "Unknown Product", // Use product_title instead of title
         price: price,
-        currency: item.currency || "USD",
+        currency: "USD", // Default to USD if currency is not available
         date: item.created_at,
         order_id: item.order_id,
         line_item_id: item.line_item_id,

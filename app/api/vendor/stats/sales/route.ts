@@ -15,19 +15,20 @@ export async function GET() {
 
     console.log(`Fetching sales data for vendor: ${vendorName}`)
 
-    // Get all active line items for this vendor
+    // Get all active line items for this vendor with the correct column names
     const { data: lineItems, error } = await supabaseAdmin
       .from("order_line_items")
       .select(`
         id,
         product_id,
-        title,
+        product_title,
         price,
-        currency,
+        order_id,
+        line_item_id,
         edition_number,
         created_at,
-        order_id,
-        line_item_id
+        status,
+        vendor_name
       `)
       .eq("vendor_name", vendorName)
       .eq("status", "active")
@@ -41,7 +42,7 @@ export async function GET() {
     console.log(`Found ${lineItems.length} line items for vendor ${vendorName}`)
 
     // Process the data
-    const salesByMonth = {}
+    const salesByDate = {}
     let totalSales = 0
     let totalRevenue = 0
 
@@ -58,28 +59,31 @@ export async function GET() {
       }
       totalRevenue += price
 
-      // Group by month for the chart
+      // Group by date for the chart (YYYY-MM-DD)
       const date = new Date(item.created_at)
-      const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`
+      const dateKey = date.toISOString().split("T")[0]
 
-      if (!salesByMonth[monthKey]) {
-        salesByMonth[monthKey] = { date: monthKey, sales: 0, revenue: 0 }
+      if (!salesByDate[dateKey]) {
+        salesByDate[dateKey] = { date: dateKey, sales: 0, revenue: 0 }
       }
 
-      salesByMonth[monthKey].sales++
-      salesByMonth[monthKey].revenue += price
+      salesByDate[dateKey].sales++
+      salesByDate[dateKey].revenue += price
     })
 
     // Convert to array and sort by date
-    const monthlySales = Object.values(salesByMonth).sort((a, b) => a.date.localeCompare(b.date))
+    const dailySales = Object.values(salesByDate).sort((a, b) => a.date.localeCompare(b.date))
+
+    // Only return the last 30 days for the chart
+    const last30Days = dailySales.slice(-30)
 
     console.log(`Processed data: ${totalSales} total sales, $${totalRevenue.toFixed(2)} total revenue`)
-    console.log(`Monthly data points: ${monthlySales.length}`)
+    console.log(`Daily data points: ${dailySales.length}, showing last ${last30Days.length}`)
 
     return NextResponse.json({
       totalSales,
       totalRevenue,
-      salesByDate: monthlySales,
+      salesByDate: last30Days,
     })
   } catch (error) {
     console.error("Unexpected error in vendor sales API:", error)
