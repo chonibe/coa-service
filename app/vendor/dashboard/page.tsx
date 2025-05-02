@@ -1,261 +1,200 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { useRouter, useSearchParams } from "next/navigation"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Button } from "@/components/ui/button"
-import { AlertCircle, Loader2, Package, DollarSign, BarChart, ShoppingCart } from "lucide-react"
 import { ProductTable } from "./components/product-table"
 import { VendorSalesChart } from "./components/vendor-sales-chart"
-import { SidebarLayout } from "../components/sidebar-layout"
 
-export default function VendorDashboardPage() {
-  const router = useRouter()
-  const searchParams = useSearchParams()
-  const tabParam = searchParams.get("tab")
-  const [activeTab, setActiveTab] = useState(tabParam || "dashboard")
-  const [vendor, setVendor] = useState<any>(null)
+export default function VendorDashboard() {
   const [isLoading, setIsLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-  const [stats, setStats] = useState({
-    totalProducts: 0,
-    totalSales: 0,
-    totalRevenue: 0,
-    pendingPayout: 0,
-  })
-  const [paypalEmail, setPaypalEmail] = useState("")
-  const [isSaving, setIsSaving] = useState(false)
-  const [saveSuccess, setSaveSuccess] = useState(false)
+  const [vendorData, setVendorData] = useState<any>(null)
 
-  // Fetch vendor data
   useEffect(() => {
     const fetchVendorData = async () => {
       try {
         const response = await fetch("/api/vendor/profile")
-
-        if (!response.ok) {
-          if (response.status === 401) {
-            // Unauthorized, redirect to login
-            router.push("/vendor/login")
-            return
-          }
-          throw new Error("Failed to fetch vendor data")
+        if (response.ok) {
+          const data = await response.json()
+          setVendorData(data)
         }
-
-        const data = await response.json()
-        setVendor(data.vendor)
-        setPaypalEmail(data.vendor.paypal_email || "")
-
-        // Fetch vendor stats
-        const statsResponse = await fetch("/api/vendor/stats")
-        if (statsResponse.ok) {
-          const statsData = await statsResponse.json()
-          setStats(statsData)
-        }
-      } catch (err: any) {
-        console.error("Error fetching vendor data:", err)
-        setError(err.message || "Failed to load vendor data")
+      } catch (error) {
+        console.error("Error fetching vendor data:", error)
       } finally {
         setIsLoading(false)
       }
     }
 
     fetchVendorData()
-  }, [router])
-
-  // Update tab when URL param changes
-  useEffect(() => {
-    if (tabParam) {
-      setActiveTab(tabParam)
-    }
-  }, [tabParam])
-
-  const handleSavePayPal = async () => {
-    setIsSaving(true)
-    setSaveSuccess(false)
-
-    try {
-      const response = await fetch("/api/vendor/update-paypal", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ paypalEmail }),
-      })
-
-      if (!response.ok) {
-        throw new Error("Failed to update PayPal email")
-      }
-
-      setSaveSuccess(true)
-      setTimeout(() => setSaveSuccess(false), 3000)
-    } catch (err: any) {
-      console.error("Error updating PayPal email:", err)
-      setError(err.message || "Failed to update PayPal email")
-    } finally {
-      setIsSaving(false)
-    }
-  }
+  }, [])
 
   if (isLoading) {
     return (
-      <SidebarLayout>
-        <div className="flex items-center justify-center p-8 h-[calc(100vh-64px)]">
-          <div className="flex flex-col items-center justify-center p-4 text-center">
-            <Loader2 className="h-10 w-10 animate-spin text-primary mb-4" />
-            <h2 className="text-xl font-semibold mb-2">Loading your dashboard...</h2>
-            <p className="text-muted-foreground">Please wait while we fetch your data</p>
-          </div>
+      <div className="flex items-center justify-center h-full">
+        <div className="text-center">
+          <div className="w-16 h-16 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto"></div>
+          <p className="mt-4 text-muted-foreground">Loading vendor data...</p>
         </div>
-      </SidebarLayout>
-    )
-  }
-
-  if (error) {
-    return (
-      <SidebarLayout>
-        <div className="flex items-center justify-center p-8 h-[calc(100vh-64px)]">
-          <Alert variant="destructive" className="max-w-md w-full">
-            <AlertCircle className="h-4 w-4" />
-            <AlertTitle>Error</AlertTitle>
-            <AlertDescription>{error}</AlertDescription>
-            <Button variant="outline" className="mt-4 w-full" onClick={() => router.push("/vendor/login")}>
-              Return to Login
-            </Button>
-          </Alert>
-        </div>
-      </SidebarLayout>
-    )
-  }
-
-  if (!vendor) {
-    return (
-      <SidebarLayout>
-        <div className="flex items-center justify-center p-8 h-[calc(100vh-64px)]">
-          <Alert variant="destructive" className="max-w-md w-full">
-            <AlertCircle className="h-4 w-4" />
-            <AlertTitle>Session Expired</AlertTitle>
-            <AlertDescription>Your session has expired. Please log in again.</AlertDescription>
-            <Button variant="outline" className="mt-4 w-full" onClick={() => router.push("/vendor/login")}>
-              Return to Login
-            </Button>
-          </Alert>
-        </div>
-      </SidebarLayout>
+      </div>
     )
   }
 
   return (
-    <SidebarLayout>
-      <div className="p-6">
-        <div className="mb-6">
-          <h1 className="text-2xl font-bold">Dashboard</h1>
-          <p className="text-muted-foreground">Welcome back, {vendor.vendor_name}</p>
-        </div>
-
-        <div className="grid gap-6">
-          {/* Stats cards */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium text-muted-foreground">Products</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="flex items-center">
-                  <Package className="h-4 w-4 text-primary mr-2" />
-                  <div className="text-2xl font-bold">{stats.totalProducts}</div>
-                </div>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium text-muted-foreground">Sales</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="flex items-center">
-                  <ShoppingCart className="h-4 w-4 text-primary mr-2" />
-                  <div className="text-2xl font-bold">{stats.totalSales}</div>
-                </div>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium text-muted-foreground">Revenue</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="flex items-center">
-                  <BarChart className="h-4 w-4 text-primary mr-2" />
-                  <div className="text-2xl font-bold">${stats.totalRevenue.toFixed(2)}</div>
-                </div>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium text-muted-foreground">Pending</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="flex items-center">
-                  <DollarSign className="h-4 w-4 text-primary mr-2" />
-                  <div className="text-2xl font-bold">${stats.pendingPayout.toFixed(2)}</div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-
-          <Tabs
-            defaultValue={activeTab}
-            onValueChange={(value) => {
-              setActiveTab(value)
-              router.push(`/vendor/dashboard?tab=${value}`)
-            }}
-            className="w-full"
-          >
-            <TabsList className="grid grid-cols-3 mb-6 w-full">
-              <TabsTrigger value="dashboard">Overview</TabsTrigger>
-              <TabsTrigger value="products">Products</TabsTrigger>
-              <TabsTrigger value="sales">Sales</TabsTrigger>
-            </TabsList>
-
-            <TabsContent value="dashboard" className="mt-0 space-y-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Recent Activity</CardTitle>
-                  <CardDescription>Your recent sales and activity</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <VendorSalesChart vendorName={vendor.vendor_name} />
-                </CardContent>
-              </Card>
-            </TabsContent>
-
-            <TabsContent value="products" className="mt-0">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Your Products</CardTitle>
-                  <CardDescription>View all your products and their current status</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <ProductTable vendorName={vendor.vendor_name} />
-                </CardContent>
-              </Card>
-            </TabsContent>
-
-            <TabsContent value="sales" className="mt-0">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Sales History</CardTitle>
-                  <CardDescription>Track your sales and revenue over time</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <VendorSalesChart vendorName={vendor.vendor_name} />
-                </CardContent>
-              </Card>
-            </TabsContent>
-          </Tabs>
-        </div>
+    <div className="flex flex-col space-y-6">
+      <div className="flex flex-col space-y-2">
+        <h1 className="text-3xl font-bold tracking-tight">Welcome, {vendorData?.name || "Vendor"}</h1>
+        <p className="text-muted-foreground">Here's an overview of your products and sales performance</p>
       </div>
-    </SidebarLayout>
+
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total Revenue</CardTitle>
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth="2"
+              className="h-4 w-4 text-muted-foreground"
+            >
+              <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
+            </svg>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">${vendorData?.totalRevenue || "0.00"}</div>
+            <p className="text-xs text-muted-foreground">
+              {vendorData?.revenueChange > 0 ? "+" : ""}
+              {vendorData?.revenueChange || "0"}% from last month
+            </p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Products Sold</CardTitle>
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth="2"
+              className="h-4 w-4 text-muted-foreground"
+            >
+              <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+              <circle cx="9" cy="7" r="4" />
+              <path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" />
+            </svg>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{vendorData?.productsSold || "0"}</div>
+            <p className="text-xs text-muted-foreground">
+              {vendorData?.salesChange > 0 ? "+" : ""}
+              {vendorData?.salesChange || "0"}% from last month
+            </p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Active Products</CardTitle>
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth="2"
+              className="h-4 w-4 text-muted-foreground"
+            >
+              <path d="m7.5 4.27 9 5.15" />
+              <path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z" />
+              <path d="m3.3 7 8.7 5 8.7-5" />
+              <path d="M12 22V12" />
+            </svg>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{vendorData?.activeProducts || "0"}</div>
+            <p className="text-xs text-muted-foreground">{vendorData?.newProducts || "0"} new this month</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Pending Payout</CardTitle>
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth="2"
+              className="h-4 w-4 text-muted-foreground"
+            >
+              <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
+            </svg>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">${vendorData?.pendingPayout || "0.00"}</div>
+            <p className="text-xs text-muted-foreground">Next payout: {vendorData?.nextPayoutDate || "N/A"}</p>
+          </CardContent>
+        </Card>
+      </div>
+
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
+        <Card className="col-span-4">
+          <CardHeader>
+            <CardTitle>Sales Overview</CardTitle>
+            <CardDescription>Your sales performance over time</CardDescription>
+          </CardHeader>
+          <CardContent className="pl-2">
+            <VendorSalesChart />
+          </CardContent>
+        </Card>
+        <Card className="col-span-3">
+          <CardHeader>
+            <CardTitle>Recent Activity</CardTitle>
+            <CardDescription>Latest updates and notifications</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {(vendorData?.recentActivity || []).length > 0 ? (
+                vendorData.recentActivity.map((activity: any, i: number) => (
+                  <div key={i} className="flex items-center gap-4">
+                    <div className="w-2 h-2 rounded-full bg-primary"></div>
+                    <div>
+                      <p className="text-sm">{activity.message}</p>
+                      <p className="text-xs text-muted-foreground">{activity.date}</p>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div className="text-center py-4">
+                  <p className="text-muted-foreground">No recent activity</p>
+                </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle>Your Products</CardTitle>
+              <CardDescription>Manage and monitor your product performance</CardDescription>
+            </div>
+            <Button size="sm">Add Product</Button>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <ProductTable />
+        </CardContent>
+      </Card>
+    </div>
   )
 }
