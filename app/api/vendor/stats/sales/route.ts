@@ -22,7 +22,6 @@ export async function GET(request: NextRequest) {
         order_id,
         order_name,
         product_id,
-        product_title,
         variant_id,
         price,
         quantity,
@@ -86,21 +85,10 @@ export async function GET(request: NextRequest) {
     // Only return the last 30 days for the chart
     const last30Days = salesData.slice(-30)
 
-    // Format the line items for the sales history list
-    const salesItems = lineItems.map((item) => ({
-      id: item.id,
-      line_item_id: item.line_item_id,
-      order_name: item.order_name,
-      product_title: item.product_title || "Unknown Product",
-      price: typeof item.price === "string" ? Number.parseFloat(item.price || "0") : item.price || 0,
-      created_at: item.created_at,
-    }))
-
     return NextResponse.json({
       salesByDate: last30Days,
       totalSales,
       totalRevenue,
-      salesItems,
     })
   } catch (error: any) {
     console.error("Error in vendor sales stats API:", error)
