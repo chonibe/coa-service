@@ -1,154 +1,261 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts"
-import { Loader2 } from "lucide-react"
+import { Loader2, Package, Calendar, DollarSign, Search } from "lucide-react"
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { Input } from "@/components/ui/input"
+import { formatCurrency } from "@/lib/utils"
 
 interface SalesData {
-  month: string
+  date: string
   sales: number
   revenue: number
 }
 
-interface VendorSalesData {
-  totalSales: number
-  totalRevenue: number
-  monthlySales: SalesData[]
+interface SoldProduct {
+  id: string
+  title: string
+  price: number
+  currency: string
+  date: string
+  order_id: string
+  line_item_id: string
+  edition_number?: number
 }
 
-export function VendorSalesChart({ vendorName }: { vendorName: string }) {
-  const [data, setData] = useState<VendorSalesData | null>(null)
+interface VendorSalesChartProps {
+  vendorName: string
+}
+
+export function VendorSalesChart({ vendorName }: VendorSalesChartProps) {
+  const [salesData, setSalesData] = useState<SalesData[]>([])
+  const [soldProducts, setSoldProducts] = useState<SoldProduct[]>([])
+  const [filteredProducts, setFilteredProducts] = useState<SoldProduct[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [totalSales, setTotalSales] = useState(0)
+  const [totalRevenue, setTotalRevenue] = useState(0)
+  const [searchTerm, setSearchTerm] = useState("")
 
   useEffect(() => {
-    async function fetchSalesData() {
-      try {
-        setIsLoading(true)
-        setError(null)
+    const fetchSalesData = async () => {
+      setIsLoading(true)
+      setError(null)
 
-        console.log("Fetching vendor sales data...")
-        const response = await fetch("/api/vendor/sales")
+      try {
+        // Fetch sales data from the vendor stats API
+        const response = await fetch("/api/vendor/stats/sales")
 
         if (!response.ok) {
-          const errorText = await response.text()
-          throw new Error(`API error (${response.status}): ${errorText}`)
+          throw new Error(`Failed to fetch sales data: ${response.status} ${response.statusText}`)
         }
 
-        const salesData = await response.json()
-        console.log("Sales data received:", salesData)
+        const data = await response.json()
 
-        setData(salesData)
-      } catch (err) {
+        if (data.salesByDate && Array.isArray(data.salesByDate)) {
+          setSalesData(data.salesByDate)
+          setTotalSales(data.totalSales || 0)
+          setTotalRevenue(data.totalRevenue || 0)
+        } else {
+          throw new Error("Invalid data format received from the server")
+        }
+
+        // Fetch sold products list
+        const productsResponse = await fetch("/api/vendor/sales")
+
+        if (!productsResponse.ok) {
+          throw new Error(`Failed to fetch sold products: ${productsResponse.status} ${productsResponse.statusText}`)
+        }
+
+        const productsData = await productsResponse.json()
+
+        if (productsData && Array.isArray(productsData.lineItems)) {
+          setSoldProducts(productsData.lineItems)
+          setFilteredProducts(productsData.lineItems)
+        }
+      } catch (err: any) {
         console.error("Error fetching sales data:", err)
-        setError(err instanceof Error ? err.message : "Failed to load sales data")
+        setError(err.message || "Failed to load sales data")
       } finally {
         setIsLoading(false)
       }
     }
 
-    fetchSalesData()
+    if (vendorName) {
+      fetchSalesData()
+    }
   }, [vendorName])
 
-  // Format month for display (e.g., "2023-01" to "Jan 2023")
-  const formatMonth = (month: string) => {
-    const [year, monthNum] = month.split("-")
-    const date = new Date(Number.parseInt(year), Number.parseInt(monthNum) - 1, 1)
-    return date.toLocaleDateString("en-US", { month: "short", year: "numeric" })
+  // Filter products when search term changes
+  useEffect(() => {
+    if (searchTerm.trim() === "") {
+      setFilteredProducts(soldProducts)
+    } else {
+      const term = searchTerm.toLowerCase()
+      const filtered = soldProducts.filter(
+        (product) => product.title.toLowerCase().includes(term) || product.order_id.toLowerCase().includes(term),
+      )
+      setFilteredProducts(filtered)
+    }
+  }, [searchTerm, soldProducts])
+
+  // Format the date for display
+  const formatDate = (date: string) => {
+    return new Date(date).toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+    })
   }
 
-  // Format month for mobile display (e.g., "2023-01" to "Jan")
-  const formatMonthMobile = (month: string) => {
-    const [year, monthNum] = month.split("-")
-    const date = new Date(Number.parseInt(year), Number.parseInt(monthNum) - 1, 1)
-    return date.toLocaleDateString("en-US", { month: "short" })
-  }
-
-  // Format currency
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat("en-US", {
-      style: "currency",
-      currency: "USD",
-      minimumFractionDigits: 2,
-    }).format(amount)
-  }
-
-  if (isLoading) {
-    return (
-      <div className="flex justify-center items-center min-h-[200px] sm:min-h-[300px]">
-        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-      </div>
-    )
-  }
-
-  if (error) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-[200px] sm:min-h-[300px] text-center p-4">
-        <p className="text-muted-foreground mb-2">Error loading sales data</p>
-        <p className="text-xs sm:text-sm text-destructive">{error}</p>
-      </div>
-    )
-  }
-
-  if (!data || !data.monthlySales || data.monthlySales.length === 0) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-[200px] sm:min-h-[300px] text-center p-4">
-        <p className="text-muted-foreground">No sales data available yet</p>
-        <p className="text-xs sm:text-sm mt-2">Once you make your first sale, data will appear here.</p>
-      </div>
-    )
+  // Format the full date for the table
+  const formatFullDate = (date: string) => {
+    return new Date(date).toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    })
   }
 
   return (
-    <div className="space-y-4">
-      <div className="grid grid-cols-2 gap-2 sm:gap-4">
-        <div className="bg-muted p-3 sm:p-4 rounded-lg text-center">
-          <h3 className="text-xs sm:text-sm font-medium text-muted-foreground mb-1 sm:mb-2">Total Sales</h3>
-          <p className="text-lg sm:text-2xl font-bold">{data.totalSales}</p>
-        </div>
-        <div className="bg-muted p-3 sm:p-4 rounded-lg text-center">
-          <h3 className="text-xs sm:text-sm font-medium text-muted-foreground mb-1 sm:mb-2">Total Revenue</h3>
-          <p className="text-lg sm:text-2xl font-bold">{formatCurrency(data.totalRevenue)}</p>
-        </div>
-      </div>
+    <div className="space-y-6">
+      <Card className="col-span-2">
+        <CardHeader>
+          <CardTitle>Sales Overview</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex flex-col md:flex-row justify-between mb-6 gap-4">
+            <div className="bg-muted p-4 rounded-lg text-center flex-1">
+              <h3 className="text-sm font-medium text-muted-foreground mb-2">Total Sales</h3>
+              <p className="text-2xl font-bold">{totalSales}</p>
+            </div>
+            <div className="bg-muted p-4 rounded-lg text-center flex-1">
+              <h3 className="text-sm font-medium text-muted-foreground mb-2">Total Revenue</h3>
+              <p className="text-2xl font-bold">{formatCurrency(totalRevenue)}</p>
+            </div>
+          </div>
 
-      <div className="h-[250px] sm:h-[300px] w-full">
-        <ResponsiveContainer width="100%" height="100%">
-          <BarChart data={data.monthlySales} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
-            <CartesianGrid strokeDasharray="3 3" />
-            <XAxis
-              dataKey="month"
-              tickFormatter={(value) => (window.innerWidth < 640 ? formatMonthMobile(value) : formatMonth(value))}
-              tick={{ fontSize: window.innerWidth < 640 ? 10 : 12 }}
-              interval={window.innerWidth < 640 ? 1 : 0}
+          {isLoading ? (
+            <div className="flex justify-center py-8">
+              <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+            </div>
+          ) : error ? (
+            <div className="text-center py-8 text-muted-foreground">{error}</div>
+          ) : salesData.length === 0 ? (
+            <div className="text-center py-8 text-muted-foreground">
+              No sales data available. Once you make your first sale, data will appear here.
+            </div>
+          ) : (
+            <ResponsiveContainer width="100%" height={300}>
+              <BarChart data={salesData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="date" tickFormatter={formatDate} tick={{ fontSize: 12 }} />
+                <YAxis
+                  yAxisId="left"
+                  orientation="left"
+                  tick={{ fontSize: 12 }}
+                  label={{ value: "Items Sold", angle: -90, position: "insideLeft", style: { textAnchor: "middle" } }}
+                />
+                <YAxis
+                  yAxisId="right"
+                  orientation="right"
+                  tick={{ fontSize: 12 }}
+                  tickFormatter={(value) => `$${value}`}
+                  label={{ value: "Revenue ($)", angle: 90, position: "insideRight", style: { textAnchor: "middle" } }}
+                />
+                <Tooltip
+                  formatter={(value, name) => {
+                    if (name === "Revenue") return [`$${value}`, name]
+                    return [value, name]
+                  }}
+                  labelFormatter={(label) => formatDate(label)}
+                />
+                <Legend />
+                <Bar dataKey="sales" name="Items Sold" fill="#8884d8" yAxisId="left" />
+                <Bar dataKey="revenue" name="Revenue" fill="#82ca9d" yAxisId="right" />
+              </BarChart>
+            </ResponsiveContainer>
+          )}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Sales History</CardTitle>
+          <div className="relative mt-2">
+            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+            <Input
+              type="search"
+              placeholder="Search products or order IDs..."
+              className="pl-8"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
             />
-            <YAxis
-              yAxisId="left"
-              orientation="left"
-              tick={{ fontSize: window.innerWidth < 640 ? 10 : 12 }}
-              width={window.innerWidth < 640 ? 25 : 35}
-            />
-            <YAxis
-              yAxisId="right"
-              orientation="right"
-              tick={{ fontSize: window.innerWidth < 640 ? 10 : 12 }}
-              tickFormatter={(value) => `$${value}`}
-              width={window.innerWidth < 640 ? 35 : 45}
-            />
-            <Tooltip
-              formatter={(value, name) => {
-                if (name === "revenue") return [formatCurrency(value as number), "Revenue"]
-                return [value, "Items Sold"]
-              }}
-              labelFormatter={formatMonth}
-              contentStyle={{ fontSize: window.innerWidth < 640 ? "12px" : "14px" }}
-            />
-            <Legend wrapperStyle={{ fontSize: window.innerWidth < 640 ? "12px" : "14px" }} />
-            <Bar dataKey="sales" name="Items Sold" fill="#8884d8" yAxisId="left" />
-            <Bar dataKey="revenue" name="Revenue" fill="#82ca9d" yAxisId="right" />
-          </BarChart>
-        </ResponsiveContainer>
-      </div>
+          </div>
+        </CardHeader>
+        <CardContent className="p-0">
+          {isLoading ? (
+            <div className="flex justify-center py-8">
+              <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+            </div>
+          ) : error ? (
+            <div className="text-center py-8 text-muted-foreground">{error}</div>
+          ) : filteredProducts.length === 0 ? (
+            <div className="text-center py-8 text-muted-foreground">
+              {searchTerm ? "No products match your search." : "No sales history available."}
+            </div>
+          ) : (
+            <div className="border-t">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Product</TableHead>
+                    <TableHead>Order ID</TableHead>
+                    <TableHead>Date</TableHead>
+                    <TableHead>Edition</TableHead>
+                    <TableHead className="text-right">Price</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filteredProducts.map((product) => (
+                    <TableRow key={product.line_item_id}>
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          <div className="h-8 w-8 rounded bg-muted flex items-center justify-center">
+                            <Package className="h-4 w-4 text-muted-foreground" />
+                          </div>
+                          <span className="font-medium">{product.title}</span>
+                        </div>
+                      </TableCell>
+                      <TableCell className="font-mono text-xs">{product.order_id}</TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          <Calendar className="h-4 w-4 text-muted-foreground" />
+                          <span>{formatFullDate(product.date)}</span>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        {product.edition_number ? (
+                          <span className="font-medium">{product.edition_number}</span>
+                        ) : (
+                          <span className="text-muted-foreground">—</span>
+                        )}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex items-center justify-end gap-2">
+                          <DollarSign className="h-4 w-4 text-muted-foreground" />
+                          <span className="font-medium">{formatCurrency(product.price)}</span>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          )}
+        </CardContent>
+      </Card>
     </div>
   )
 }
