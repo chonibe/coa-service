@@ -30,7 +30,7 @@ export function SidebarLayout({ children }: SidebarLayoutProps) {
       {/* Main content takes full width on mobile */}
       <div className="flex-1 w-full overflow-auto">
         <PullToRefresh onRefresh={handleRefresh}>
-          <main className="p-4 md:p-6 max-w-7xl mx-auto pb-20">{children}</main>
+          <main className="p-2 md:p-4 max-w-full mx-auto pb-20 pt-16">{children}</main>
         </PullToRefresh>
       </div>
     </div>

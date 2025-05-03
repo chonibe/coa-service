@@ -4,8 +4,9 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { useState } from "react"
-import { ChevronDown, ChevronUp, ExternalLink } from "lucide-react"
+import { ChevronDown, ChevronUp, ExternalLink, Package } from "lucide-react"
 import Link from "next/link"
+import Image from "next/image"
 
 interface Product {
   id: string
@@ -88,6 +89,7 @@ export function ProductTable({ products }: ProductTableProps) {
         <Table>
           <TableHeader>
             <TableRow>
+              <TableHead>Image</TableHead>
               <SortHeader field="title" label="Product" />
               <SortHeader field="price" label="Price" />
               <SortHeader field="status" label="Status" />
@@ -97,6 +99,23 @@ export function ProductTable({ products }: ProductTableProps) {
           <TableBody>
             {displayedProducts.map((product) => (
               <TableRow key={product.id}>
+                <TableCell>
+                  {product.image ? (
+                    <div className="relative h-12 w-12 rounded-md overflow-hidden">
+                      <Image
+                        src={product.image || "/placeholder.svg"}
+                        alt={product.title}
+                        fill
+                        className="object-cover"
+                        sizes="48px"
+                      />
+                    </div>
+                  ) : (
+                    <div className="h-12 w-12 rounded-md bg-muted flex items-center justify-center">
+                      <Package className="h-6 w-6 text-muted-foreground" />
+                    </div>
+                  )}
+                </TableCell>
                 <TableCell className="font-medium">{product.title}</TableCell>
                 <TableCell>${product.price}</TableCell>
                 <TableCell>{getStatusBadge(product.status)}</TableCell>
@@ -113,7 +132,7 @@ export function ProductTable({ products }: ProductTableProps) {
 
             {displayedProducts.length === 0 && (
               <TableRow>
-                <TableCell colSpan={4} className="text-center py-8 text-muted-foreground">
+                <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
                   No products found
                 </TableCell>
               </TableRow>
