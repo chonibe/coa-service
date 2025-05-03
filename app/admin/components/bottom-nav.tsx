@@ -2,7 +2,7 @@
 
 import { usePathname } from "next/navigation"
 import Link from "next/link"
-import { Home, Package, ShoppingCart, Award, Settings } from "lucide-react"
+import { Home, Package, ShoppingCart, Award, Settings, FileText } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 export function BottomNav() {
@@ -33,6 +33,11 @@ export function BottomNav() {
       title: "Settings",
       href: "/admin/settings",
       icon: <Settings className="h-5 w-5" />,
+    },
+    {
+      title: "Tax Reporting",
+      href: "/admin/tax-reporting",
+      icon: <FileText className="h-5 w-5" />,
     },
   ]
 
