@@ -4,7 +4,6 @@ import { useEffect, useState } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts"
 import { Loader2 } from "lucide-react"
-import { formatCurrency } from "@/lib/utils" // Assuming this exists, if not we'll create it
 
 interface SalesData {
   date: string
@@ -14,45 +13,46 @@ interface SalesData {
 
 interface SalesChartProps {
   vendorName: string
+  onRefresh?: () => Promise<void>
 }
 
-export function SalesChart({ vendorName }: SalesChartProps) {
+export function SalesChart({ vendorName, onRefresh }: SalesChartProps) {
   const [salesData, setSalesData] = useState<SalesData[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [totalSales, setTotalSales] = useState(0)
   const [totalRevenue, setTotalRevenue] = useState(0)
 
-  useEffect(() => {
-    const fetchSalesData = async () => {
-      setIsLoading(true)
-      setError(null)
+  const fetchSalesData = async () => {
+    setIsLoading(true)
+    setError(null)
 
-      try {
-        // Fetch sales data from the vendor stats API
-        const response = await fetch("/api/vendor/stats/sales")
+    try {
+      // Fetch sales data from the vendor stats API
+      const response = await fetch("/api/vendor/stats/sales")
 
-        if (!response.ok) {
-          throw new Error(`Failed to fetch sales data: ${response.status} ${response.statusText}`)
-        }
-
-        const data = await response.json()
-
-        if (data.salesByDate && Array.isArray(data.salesByDate)) {
-          setSalesData(data.salesByDate)
-          setTotalSales(data.totalSales || 0)
-          setTotalRevenue(data.totalRevenue || 0)
-        } else {
-          throw new Error("Invalid data format received from the server")
-        }
-      } catch (err: any) {
-        console.error("Error fetching sales data:", err)
-        setError(err.message || "Failed to load sales data")
-      } finally {
-        setIsLoading(false)
+      if (!response.ok) {
+        throw new Error(`Failed to fetch sales data: ${response.status} ${response.statusText}`)
       }
-    }
 
+      const data = await response.json()
+
+      if (data.salesByDate && Array.isArray(data.salesByDate)) {
+        setSalesData(data.salesByDate)
+        setTotalSales(data.totalSales || 0)
+        setTotalRevenue(data.totalRevenue || 0)
+      } else {
+        throw new Error("Invalid data format received from the server")
+      }
+    } catch (err: any) {
+      console.error("Error fetching sales data:", err)
+      setError(err.message || "Failed to load sales data")
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  useEffect(() => {
     if (vendorName) {
       fetchSalesData()
     }
@@ -66,10 +66,31 @@ export function SalesChart({ vendorName }: SalesChartProps) {
     })
   }
 
+  // Format currency
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency: "USD",
+      minimumFractionDigits: 2,
+    }).format(amount)
+  }
+
   return (
     <Card className="col-span-2">
-      <CardHeader>
+      <CardHeader className="flex flex-row items-center justify-between">
         <CardTitle>Sales Overview</CardTitle>
+        {onRefresh && (
+          <button
+            onClick={async () => {
+              setIsLoading(true)
+              await onRefresh()
+              await fetchSalesData()
+            }}
+            className="text-sm text-muted-foreground hover:text-foreground"
+          >
+            Refresh
+          </button>
+        )}
       </CardHeader>
       <CardContent>
         <div className="flex flex-col md:flex-row justify-between mb-6 gap-4">
@@ -113,8 +134,8 @@ export function SalesChart({ vendorName }: SalesChartProps) {
               />
               <Tooltip
                 formatter={(value, name) => {
-                  if (name === "Revenue") return [`$${value}`, name]
-                  return [value, name]
+                  if (name === "revenue") return [formatCurrency(value as number), "Revenue"]
+                  return [value, "Items Sold"]
                 }}
                 labelFormatter={(label) => formatDate(label)}
               />
