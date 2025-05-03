@@ -1,107 +1,81 @@
 "use client"
 
-import { useState, useEffect, useCallback } from "react"
-import { useToast } from "@/components/ui/use-toast"
+import { useState, useEffect } from "react"
 
-interface UseVendorDataOptions<T> {
-  endpoint: string
-  initialData?: T
-  onSuccess?: (data: T) => void
-  onError?: (error: Error) => void
-  refreshDependencies?: any[]
+interface VendorStats {
+  totalProducts: number
+  totalSales: number
+  totalRevenue: number
+  pendingPayout: number
+  revenueGrowth?: number
+  salesGrowth?: number
+  newProducts?: number
 }
 
-export function useVendorData<T>({
-  endpoint,
-  initialData,
-  onSuccess,
-  onError,
-  refreshDependencies = [],
-}: UseVendorDataOptions<T>) {
-  const [data, setData] = useState<T | undefined>(initialData)
+interface Product {
+  id: string
+  title: string
+  handle: string
+  price: string
+  status: string
+  vendor: string
+  image?: string
+  totalSales?: number
+  revenue?: number
+}
+
+interface UseVendorDataReturn {
+  stats: VendorStats | null
+  products: Product[] | null
+  isLoading: boolean
+  error: Error | null
+  refreshData: () => Promise<void>
+}
+
+export function useVendorData(): UseVendorDataReturn {
+  const [stats, setStats] = useState<VendorStats | null>(null)
+  const [products, setProducts] = useState<Product[] | null>(null)
   const [isLoading, setIsLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-  const [isRefreshing, setIsRefreshing] = useState(false)
-  const { toast } = useToast()
+  const [error, setError] = useState<Error | null>(null)
 
-  const fetchData = useCallback(
-    async (showToast = false) => {
-      try {
-        const controller = new AbortController()
-        const signal = controller.signal
+  const fetchData = async () => {
+    try {
+      setIsLoading(true)
+      setError(null)
 
-        setIsLoading((prev) => !isRefreshing && prev)
-        setIsRefreshing((prev) => showToast || prev)
+      const [statsResponse, productsResponse] = await Promise.all([
+        fetch("/api/vendor/stats"),
+        fetch("/api/vendors/products"),
+      ])
 
-        const response = await fetch(endpoint, { signal })
-
-        if (!response.ok) {
-          const errorText = await response.text()
-          throw new Error(`API error (${response.status}): ${errorText}`)
-        }
-
-        const result = await response.json()
-        setData(result)
-        setError(null)
-
-        if (onSuccess) {
-          onSuccess(result)
-        }
-
-        if (showToast) {
-          toast({
-            title: "Data Refreshed",
-            description: "Your data has been updated successfully.",
-          })
-        }
-
-        return result
-      } catch (err) {
-        if (err instanceof Error && err.name === "AbortError") {
-          // Request was aborted, don't update state
-          return
-        }
-
-        console.error(`Error fetching data from ${endpoint}:`, err)
-        const errorMessage = err instanceof Error ? err.message : "Failed to load data"
-        setError(errorMessage)
-
-        if (onError) {
-          onError(err instanceof Error ? err : new Error(errorMessage))
-        }
-
-        if (showToast) {
-          toast({
-            title: "Refresh Failed",
-            description: "There was a problem refreshing your data.",
-            variant: "destructive",
-          })
-        }
-      } finally {
-        setIsLoading(false)
-        setIsRefreshing(false)
+      if (!statsResponse.ok) {
+        throw new Error(`Failed to fetch vendor stats: ${statsResponse.status}`)
       }
-    },
-    [endpoint, onSuccess, onError, toast, isRefreshing, ...refreshDependencies],
-  )
 
-  const refresh = useCallback(() => {
-    return fetchData(true)
-  }, [fetchData])
+      if (!productsResponse.ok) {
+        throw new Error(`Failed to fetch vendor products: ${productsResponse.status}`)
+      }
+
+      const statsData = await statsResponse.json()
+      const productsData = await productsResponse.json()
+
+      setStats(statsData)
+      setProducts(productsData.products || [])
+    } catch (err) {
+      console.error("Error in useVendorData:", err)
+      setError(err instanceof Error ? err : new Error("Unknown error occurred"))
+    } finally {
+      setIsLoading(false)
+    }
+  }
 
   useEffect(() => {
     fetchData()
+  }, [])
 
-    return () => {
-      // This would be where we'd abort the fetch if we were using AbortController
-    }
-  }, [fetchData])
-
-  return {
-    data,
-    isLoading,
-    error,
-    isRefreshing,
-    refresh,
+  const refreshData = async () => {
+    await fetchData()
   }
+
+  return { stats, products, isLoading, error, refreshData }
 }

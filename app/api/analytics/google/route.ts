@@ -1,33 +1,50 @@
 import { NextResponse } from "next/server"
 import { cookies } from "next/headers"
+import { createClient } from "@/lib/supabase-server"
 
 export async function GET(request: Request) {
   try {
-    // Get vendor name from cookie
     const cookieStore = cookies()
-    const vendorName = cookieStore.get("vendor_session")?.value
+    const supabase = createClient(cookieStore)
 
-    if (!vendorName) {
-      return NextResponse.json({ error: "Not authenticated" }, { status: 401 })
+    // Get the current vendor's session
+    const {
+      data: { session },
+    } = await supabase.auth.getSession()
+
+    if (!session) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    // Note: This is a placeholder for Google Analytics integration
-    // In a real implementation, you would:
-    // 1. Use the Google Analytics Data API
-    // 2. Authenticate with a service account
-    // 3. Filter data for this specific vendor's products
+    const { searchParams } = new URL(request.url)
+    const timeRange = searchParams.get("timeRange") || "30days"
 
-    return NextResponse.json({
-      message: "Google Analytics integration is not yet implemented",
-      // This would be replaced with actual Google Analytics data
-      data: {
-        pageViews: [],
-        sessions: [],
-        events: [],
-      },
-    })
-  } catch (error: any) {
+    // This would normally fetch data from Google Analytics API
+    // For now, we'll return mock data
+    const mockData = {
+      timeRange,
+      pageViews: 12345,
+      uniqueVisitors: 5678,
+      bounceRate: "45.2%",
+      avgSessionDuration: "2m 34s",
+      topPages: [
+        { path: "/", views: 5432, title: "Homepage" },
+        { path: "/products", views: 2345, title: "Products" },
+        { path: "/about", views: 1234, title: "About Us" },
+        { path: "/contact", views: 987, title: "Contact" },
+        { path: "/blog", views: 876, title: "Blog" },
+      ],
+      trafficSources: [
+        { source: "Direct", percentage: 40 },
+        { source: "Organic Search", percentage: 30 },
+        { source: "Social Media", percentage: 20 },
+        { source: "Referral", percentage: 10 },
+      ],
+    }
+
+    return NextResponse.json(mockData)
+  } catch (error) {
     console.error("Error in Google Analytics API:", error)
-    return NextResponse.json({ error: error.message || "An error occurred" }, { status: 500 })
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }
 }
