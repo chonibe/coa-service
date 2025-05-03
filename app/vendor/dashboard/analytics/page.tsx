@@ -24,7 +24,6 @@ import {
 } from "recharts"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { formatCurrency } from "@/lib/utils"
 
 const COLORS = ["#0088FE", "#00C49F", "#FFBB28", "#FF8042", "#8884D8", "#82ca9d"]
 
@@ -35,7 +34,7 @@ interface SaleItem {
   date: string
   price: number
   currency: string
-  customer?: string
+  quantity?: number
 }
 
 export default function AnalyticsPage() {
@@ -86,7 +85,7 @@ export default function AnalyticsPage() {
         <div className="bg-background p-2 border rounded-md shadow-sm">
           <p className="font-medium">{data.title}</p>
           <p>Sales: {data.sales}</p>
-          <p>Revenue: ${data.revenue.toFixed(2)}</p>
+          <p>Revenue: £{data.revenue.toFixed(2)}</p>
         </div>
       )
     }
@@ -183,10 +182,22 @@ export default function AnalyticsPage() {
                 <XAxis dataKey="month" />
                 <YAxis yAxisId="left" orientation="left" stroke="#8884d8" />
                 <YAxis yAxisId="right" orientation="right" stroke="#82ca9d" />
-                <Tooltip />
-                <Legend />
+                <Tooltip
+                  formatter={(value, name) => {
+                    if (name === "Revenue ($)") {
+                      return [`£${Number(value).toFixed(2)}`, "Revenue (£)"]
+                    }
+                    return [value, name]
+                  }}
+                />
+                <Legend
+                  payload={[
+                    { value: "Sales (Units)", type: "square", color: "#8884d8" },
+                    { value: "Revenue (£)", type: "square", color: "#82ca9d" },
+                  ]}
+                />
                 <Bar yAxisId="left" dataKey="sales" fill="#8884d8" name="Sales (Units)" />
-                <Bar yAxisId="right" dataKey="revenue" fill="#82ca9d" name="Revenue ($)" />
+                <Bar yAxisId="right" dataKey="revenue" fill="#82ca9d" name="Revenue (£)" />
               </BarChart>
             </ResponsiveContainer>
           ) : (
@@ -254,7 +265,7 @@ export default function AnalyticsPage() {
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis dataKey="month" />
                   <YAxis />
-                  <Tooltip />
+                  <Tooltip formatter={(value) => [`£${Number(value).toFixed(2)}`, "Revenue"]} />
                   <Line type="monotone" dataKey="revenue" stroke="#82ca9d" activeDot={{ r: 8 }} />
                 </LineChart>
               </ResponsiveContainer>
@@ -312,7 +323,7 @@ export default function AnalyticsPage() {
                       </span>
                     </div>
                     <div className="text-sm font-medium">
-                      {product.sales} sales (${product.revenue.toFixed(2)})
+                      {product.sales} sales (£{product.revenue.toFixed(2)})
                     </div>
                   </div>
                 ))}
@@ -386,11 +397,7 @@ export default function AnalyticsPage() {
                       <TableRow key={sale.id}>
                         <TableCell>{formatDate(sale.date)}</TableCell>
                         <TableCell className="font-medium">{sale.title}</TableCell>
-                        <TableCell className="text-right">
-                          {sale.currency === "GBP"
-                            ? `£${sale.price.toFixed(2)}`
-                            : formatCurrency(sale.price, sale.currency)}
-                        </TableCell>
+                        <TableCell className="text-right">£{sale.price.toFixed(2)}</TableCell>
                       </TableRow>
                     ))}
                   </TableBody>

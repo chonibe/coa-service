@@ -1,125 +1,127 @@
 import { NextResponse } from "next/server"
+import { cookies } from "next/headers"
 import { createClient } from "@/lib/supabase-server"
 
-export async function GET(request: Request) {
+export async function GET() {
   try {
+    // Get vendor name from cookie
+    const cookieStore = cookies()
+    const vendorName = cookieStore.get("vendor_session")?.value
+
+    if (!vendorName) {
+      return NextResponse.json({ error: "Not authenticated" }, { status: 401 })
+    }
+
+    console.log(`Fetching sales analytics for vendor: ${vendorName}`)
+
+    // Create Supabase client
     const supabase = createClient()
 
-    // Get vendor ID from session
-    const {
-      data: { session },
-    } = await supabase.auth.getSession()
+    // Query for line items from this vendor
+    const { data: lineItems, error } = await supabase
+      .from("order_line_items")
+      .select("*")
+      .eq("vendor_name", vendorName)
+      .eq("status", "active")
 
-    if (!session) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    if (error) {
+      console.error("Database error when fetching line items:", error)
+      return NextResponse.json({ error: "Database error" }, { status: 500 })
     }
 
-    const { data: vendorData } = await supabase.from("vendors").select("id").eq("auth_id", session.user.id).single()
+    // Process line items to get sales by date
+    const salesByDate = processSalesByDate(lineItems || [])
 
-    if (!vendorData) {
-      return NextResponse.json({ error: "Vendor not found" }, { status: 404 })
-    }
-
-    const vendorId = vendorData.id
-
-    // Get all products for this vendor
-    const { data: products } = await supabase.from("products").select("id, title, vendor_id").eq("vendor_id", vendorId)
-
-    if (!products || products.length === 0) {
-      return NextResponse.json({
-        salesByDate: [],
-        salesByProduct: [],
-        salesHistory: [],
-        totalItems: 0,
-      })
-    }
-
-    const productIds = products.map((product) => product.id)
-
-    // Get sales data from line_items table
-    const { data: salesData } = await supabase
-      .from("line_items")
-      .select("id, product_id, price, currency, created_at, quantity")
-      .in("product_id", productIds)
-      .order("created_at", { ascending: false })
-
-    if (!salesData || salesData.length === 0) {
-      return NextResponse.json({
-        salesByDate: [],
-        salesByProduct: [],
-        salesHistory: [],
-        totalItems: 0,
-      })
-    }
-
-    // Create a map of product IDs to titles
-    const productMap = products.reduce(
-      (acc, product) => {
-        acc[product.id] = product.title
-        return acc
-      },
-      {} as Record<string, string>,
-    )
-
-    // Process sales by date (monthly)
-    const salesByDateMap = salesData.reduce(
-      (acc, item) => {
-        const date = new Date(item.created_at)
-        const month = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`
-
-        if (!acc[month]) {
-          acc[month] = { month, sales: 0, revenue: 0 }
-        }
-
-        acc[month].sales += item.quantity || 1
-        acc[month].revenue += Number.parseFloat(item.price) * (item.quantity || 1)
-
-        return acc
-      },
-      {} as Record<string, { month: string; sales: number; revenue: number }>,
-    )
-
-    // Process sales by product
-    const salesByProductMap = salesData.reduce(
-      (acc, item) => {
-        const productId = item.product_id
-
-        if (!acc[productId]) {
-          acc[productId] = {
-            product_id: productId,
-            title: productMap[productId] || `Product ${productId}`,
-            sales: 0,
-            revenue: 0,
-          }
-        }
-
-        acc[productId].sales += item.quantity || 1
-        acc[productId].revenue += Number.parseFloat(item.price) * (item.quantity || 1)
-
-        return acc
-      },
-      {} as Record<string, { product_id: string; title: string; sales: number; revenue: number }>,
-    )
+    // Get sales by product
+    const salesByProduct = processSalesByProduct(lineItems || [])
 
     // Create sales history array
-    const salesHistory = salesData.map((item) => ({
-      id: item.id,
-      product_id: item.product_id,
-      title: productMap[item.product_id] || `Product ${item.product_id}`,
-      date: item.created_at,
-      price: Number.parseFloat(item.price),
-      currency: item.currency || "USD",
+    const salesHistory = (lineItems || []).map((item) => ({
+      id: item.id || `item-${Math.random().toString(36).substring(2, 9)}`,
+      product_id: item.product_id || "",
+      title: item.title || "Unknown Product",
+      date: item.created_at || new Date().toISOString(),
+      price: typeof item.price === "string" ? Number.parseFloat(item.price) : item.price || 0,
+      currency: "GBP", // Default to GBP for all products
       quantity: item.quantity || 1,
     }))
 
     return NextResponse.json({
-      salesByDate: Object.values(salesByDateMap).sort((a, b) => a.month.localeCompare(b.month)),
-      salesByProduct: Object.values(salesByProductMap),
+      salesByDate,
+      salesByProduct,
       salesHistory,
-      totalItems: salesData.length,
+      totalItems: lineItems?.length || 0,
     })
   } catch (error) {
-    console.error("Error in sales-analytics route:", error)
-    return NextResponse.json({ error: "Failed to fetch sales analytics" }, { status: 500 })
+    console.error("Unexpected error in vendor sales analytics API:", error)
+    return NextResponse.json({ error: "An unexpected error occurred" }, { status: 500 })
   }
+}
+
+function processSalesByDate(lineItems: any[]) {
+  // Group sales by month
+  const salesByMonth: Record<string, { sales: number; revenue: number }> = {}
+
+  lineItems.forEach((item) => {
+    const date = new Date(item.created_at || item.updated_at || Date.now())
+    const monthYear = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`
+
+    if (!salesByMonth[monthYear]) {
+      salesByMonth[monthYear] = { sales: 0, revenue: 0 }
+    }
+
+    salesByMonth[monthYear].sales += 1
+
+    // Add to revenue
+    if (item.price) {
+      const price = typeof item.price === "string" ? Number.parseFloat(item.price) : item.price
+      salesByMonth[monthYear].revenue += price
+    }
+  })
+
+  // Convert to array and sort by date
+  return Object.entries(salesByMonth)
+    .map(([date, data]) => ({
+      date,
+      month: getMonthName(date),
+      sales: data.sales,
+      revenue: Number(data.revenue.toFixed(2)),
+    }))
+    .sort((a, b) => a.date.localeCompare(b.date))
+}
+
+function processSalesByProduct(lineItems: any[]) {
+  // Group sales by product
+  const salesByProduct: Record<string, { productId: string; title: string; sales: number; revenue: number }> = {}
+
+  lineItems.forEach((item) => {
+    const productId = item.product_id || "unknown"
+    const title = item.title || `Product ${productId}`
+
+    if (!salesByProduct[productId]) {
+      salesByProduct[productId] = {
+        productId,
+        title,
+        sales: 0,
+        revenue: 0,
+      }
+    }
+
+    salesByProduct[productId].sales += 1
+
+    // Add to revenue
+    if (item.price) {
+      const price = typeof item.price === "string" ? Number.parseFloat(item.price) : item.price
+      salesByProduct[productId].revenue += price
+    }
+  })
+
+  // Convert to array and sort by sales
+  return Object.values(salesByProduct).sort((a, b) => b.sales - a.sales)
+}
+
+function getMonthName(dateStr: string) {
+  const [year, month] = dateStr.split("-")
+  const date = new Date(Number.parseInt(year), Number.parseInt(month) - 1, 1)
+  return date.toLocaleString("default", { month: "short", year: "numeric" })
 }
