@@ -1,120 +1,99 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useEffect, useState } from "react"
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts"
-import { Loader2, AlertCircle } from "lucide-react"
-import { Alert, AlertDescription } from "@/components/ui/alert"
+import { Loader2, RefreshCw } from "lucide-react"
 
-interface SalesDataPoint {
-  date: string
+interface SalesData {
+  month: string
   sales: number
   revenue: number
 }
 
+interface VendorSalesData {
+  totalSales: number
+  totalRevenue: number
+  monthlySales: SalesData[]
+}
+
 interface VendorSalesChartProps {
-  vendorName?: string
+  vendorName: string
   onRefresh?: () => Promise<void>
 }
 
 export function VendorSalesChart({ vendorName, onRefresh }: VendorSalesChartProps) {
-  const [salesData, setSalesData] = useState<SalesDataPoint[]>([])
+  const [data, setData] = useState<VendorSalesData | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [currentVendor, setCurrentVendor] = useState<string | null>(null)
+  const [isRefreshing, setIsRefreshing] = useState(false)
 
-  // If vendorName is not provided, try to get it from the vendor profile
-  useEffect(() => {
-    const fetchVendorProfile = async () => {
-      if (vendorName) {
-        setCurrentVendor(vendorName)
-        return
-      }
-
-      try {
-        const response = await fetch("/api/vendor/profile")
-        if (response.ok) {
-          const data = await response.json()
-          setCurrentVendor(data.vendor?.vendor_name || null)
-        } else {
-          throw new Error("Failed to fetch vendor profile")
-        }
-      } catch (err) {
-        console.error("Error fetching vendor profile:", err)
-        setError("Could not determine vendor name")
-      }
-    }
-
-    fetchVendorProfile()
-  }, [vendorName])
-
-  // Fetch sales data when vendor name is available
-  useEffect(() => {
-    const fetchSalesData = async () => {
-      if (!currentVendor) return
-
+  const fetchSalesData = async () => {
+    try {
       setIsLoading(true)
       setError(null)
 
-      try {
-        console.log(`Fetching sales data for vendor: ${currentVendor}`)
-        const response = await fetch(`/api/vendor/stats/sales`)
+      console.log("Fetching vendor sales data...")
+      const response = await fetch("/api/vendor/sales")
 
-        if (!response.ok) {
-          throw new Error(`Failed to fetch sales data: ${response.status}`)
-        }
-
-        const data = await response.json()
-        console.log(`Received sales data with ${data.salesByDate?.length || 0} data points`)
-        setSalesData(data.salesByDate || [])
-      } catch (err: any) {
-        console.error("Error fetching sales data:", err)
-        setError(err.message || "Failed to load sales data")
-      } finally {
-        setIsLoading(false)
+      if (!response.ok) {
+        const errorText = await response.text()
+        throw new Error(`API error (${response.status}): ${errorText}`)
       }
-    }
 
-    if (currentVendor) {
-      fetchSalesData()
-    }
-  }, [currentVendor])
+      const salesData = await response.json()
+      console.log("Sales data received:", salesData)
 
-  // Format date for display
-  const formatDate = (dateStr: string) => {
-    const date = new Date(dateStr)
-    return date.toLocaleDateString("en-US", { month: "short", day: "numeric" })
+      setData(salesData)
+    } catch (err) {
+      console.error("Error fetching sales data:", err)
+      setError(err instanceof Error ? err.message : "Failed to load sales data")
+    } finally {
+      setIsLoading(false)
+    }
   }
 
-  // Format currency for tooltip
-  const formatCurrency = (value: number) => {
+  useEffect(() => {
+    fetchSalesData()
+  }, [vendorName])
+
+  const handleRefresh = async () => {
+    setIsRefreshing(true)
+    try {
+      if (onRefresh) {
+        await onRefresh()
+      }
+      await fetchSalesData()
+    } finally {
+      setIsRefreshing(false)
+    }
+  }
+
+  // Format month for display (e.g., "2023-01" to "Jan 2023")
+  const formatMonth = (month: string) => {
+    const [year, monthNum] = month.split("-")
+    const date = new Date(Number.parseInt(year), Number.parseInt(monthNum) - 1, 1)
+    return date.toLocaleDateString("en-US", { month: "short", year: "numeric" })
+  }
+
+  // Format month for mobile display (e.g., "2023-01" to "Jan")
+  const formatMonthMobile = (month: string) => {
+    const [year, monthNum] = month.split("-")
+    const date = new Date(Number.parseInt(year), Number.parseInt(monthNum) - 1, 1)
+    return date.toLocaleDateString("en-US", { month: "short" })
+  }
+
+  // Format currency
+  const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat("en-US", {
       style: "currency",
       currency: "USD",
       minimumFractionDigits: 2,
-    }).format(value)
-  }
-
-  // Custom tooltip formatter
-  const customTooltip = ({ active, payload, label }: any) => {
-    if (active && payload && payload.length) {
-      return (
-        <div className="bg-background border border-border p-3 rounded-md shadow-md">
-          <p className="font-medium">{formatDate(label)}</p>
-          <p className="text-sm">
-            <span className="text-[#8884d8]">●</span> Sales: {payload[0].value}
-          </p>
-          <p className="text-sm">
-            <span className="text-[#82ca9d]">●</span> Revenue: {formatCurrency(payload[1].value)}
-          </p>
-        </div>
-      )
-    }
-    return null
+    }).format(amount)
   }
 
   if (isLoading) {
     return (
-      <div className="flex justify-center items-center h-64">
+      <div className="flex justify-center items-center min-h-[200px] sm:min-h-[300px]">
         <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
       </div>
     )
@@ -122,35 +101,99 @@ export function VendorSalesChart({ vendorName, onRefresh }: VendorSalesChartProp
 
   if (error) {
     return (
-      <Alert variant="destructive" className="mb-4">
-        <AlertCircle className="h-4 w-4" />
-        <AlertDescription>{error}</AlertDescription>
-      </Alert>
+      <div className="flex flex-col items-center justify-center min-h-[200px] sm:min-h-[300px] text-center p-4">
+        <p className="text-muted-foreground mb-2">Error loading sales data</p>
+        <p className="text-xs sm:text-sm text-destructive">{error}</p>
+        <button
+          onClick={handleRefresh}
+          className="mt-4 flex items-center gap-2 px-3 py-1 text-sm bg-muted rounded-md hover:bg-muted/80"
+          disabled={isRefreshing}
+        >
+          <RefreshCw className={`h-4 w-4 ${isRefreshing ? "animate-spin" : ""}`} />
+          Try Again
+        </button>
+      </div>
     )
   }
 
-  if (salesData.length === 0) {
+  if (!data || !data.monthlySales || data.monthlySales.length === 0) {
     return (
-      <div className="flex justify-center items-center h-64 text-muted-foreground">
-        No sales data available for this period
+      <div className="flex flex-col items-center justify-center min-h-[200px] sm:min-h-[300px] text-center p-4">
+        <p className="text-muted-foreground">No sales data available yet</p>
+        <p className="text-xs sm:text-sm mt-2">Once you make your first sale, data will appear here.</p>
+        <button
+          onClick={handleRefresh}
+          className="mt-4 flex items-center gap-2 px-3 py-1 text-sm bg-muted rounded-md hover:bg-muted/80"
+          disabled={isRefreshing}
+        >
+          <RefreshCw className={`h-4 w-4 ${isRefreshing ? "animate-spin" : ""}`} />
+          Refresh
+        </button>
       </div>
     )
   }
 
   return (
-    <div className="h-[350px] w-full">
-      <ResponsiveContainer width="100%" height="100%">
-        <BarChart data={salesData} margin={{ top: 20, right: 30, left: 0, bottom: 5 }}>
-          <CartesianGrid strokeDasharray="3 3" />
-          <XAxis dataKey="date" tickFormatter={formatDate} />
-          <YAxis yAxisId="left" orientation="left" stroke="#8884d8" />
-          <YAxis yAxisId="right" orientation="right" stroke="#82ca9d" />
-          <Tooltip content={customTooltip} />
-          <Legend />
-          <Bar yAxisId="left" dataKey="sales" name="Sales" fill="#8884d8" />
-          <Bar yAxisId="right" dataKey="revenue" name="Revenue" fill="#82ca9d" />
-        </BarChart>
-      </ResponsiveContainer>
+    <div className="space-y-4">
+      <div className="flex justify-between items-center">
+        <div className="grid grid-cols-2 gap-2 sm:gap-4 flex-1">
+          <div className="bg-muted p-3 sm:p-4 rounded-lg text-center">
+            <h3 className="text-xs sm:text-sm font-medium text-muted-foreground mb-1 sm:mb-2">Total Sales</h3>
+            <p className="text-lg sm:text-2xl font-bold">{data.totalSales}</p>
+          </div>
+          <div className="bg-muted p-3 sm:p-4 rounded-lg text-center">
+            <h3 className="text-xs sm:text-sm font-medium text-muted-foreground mb-1 sm:mb-2">Total Revenue</h3>
+            <p className="text-lg sm:text-2xl font-bold">{formatCurrency(data.totalRevenue)}</p>
+          </div>
+        </div>
+        <button
+          onClick={handleRefresh}
+          className="ml-2 p-2 rounded-full hover:bg-muted"
+          disabled={isRefreshing}
+          title="Refresh data"
+        >
+          <RefreshCw className={`h-4 w-4 ${isRefreshing ? "animate-spin" : ""}`} />
+          <span className="sr-only">Refresh</span>
+        </button>
+      </div>
+
+      <div className="h-[250px] sm:h-[300px] w-full">
+        <ResponsiveContainer width="100%" height="100%">
+          <BarChart data={data.monthlySales} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+            <CartesianGrid strokeDasharray="3 3" />
+            <XAxis
+              dataKey="month"
+              tickFormatter={(value) => (window.innerWidth < 640 ? formatMonthMobile(value) : formatMonth(value))}
+              tick={{ fontSize: window.innerWidth < 640 ? 10 : 12 }}
+              interval={window.innerWidth < 640 ? 1 : 0}
+            />
+            <YAxis
+              yAxisId="left"
+              orientation="left"
+              tick={{ fontSize: window.innerWidth < 640 ? 10 : 12 }}
+              width={window.innerWidth < 640 ? 25 : 35}
+            />
+            <YAxis
+              yAxisId="right"
+              orientation="right"
+              tick={{ fontSize: window.innerWidth < 640 ? 10 : 12 }}
+              tickFormatter={(value) => `$${value}`}
+              width={window.innerWidth < 640 ? 35 : 45}
+            />
+            <Tooltip
+              formatter={(value, name) => {
+                if (name === "revenue") return [formatCurrency(value as number), "Revenue"]
+                return [value, "Items Sold"]
+              }}
+              labelFormatter={formatMonth}
+              contentStyle={{ fontSize: window.innerWidth < 640 ? "12px" : "14px" }}
+            />
+            <Legend wrapperStyle={{ fontSize: window.innerWidth < 640 ? "12px" : "14px" }} />
+            <Bar dataKey="sales" name="Items Sold" fill="#8884d8" yAxisId="left" />
+            <Bar dataKey="revenue" name="Revenue" fill="#82ca9d" yAxisId="right" />
+          </BarChart>
+        </ResponsiveContainer>
+      </div>
     </div>
   )
 }
