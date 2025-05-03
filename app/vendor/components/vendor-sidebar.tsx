@@ -107,7 +107,7 @@ export function VendorSidebar() {
               <span className="sr-only">Toggle menu</span>
             </Button>
           </SheetTrigger>
-          <SheetContent side="left" className="w-[300px] sm:w-[400px] pr-0">
+          <SheetContent side="left" className="w-[300px] sm:w-[400px] pr-0 z-50">
             <div className="flex flex-col h-full">
               <div className="flex items-center border-b h-16 px-6">
                 <Link href="/vendor/dashboard" className="flex items-center gap-2 font-semibold">
