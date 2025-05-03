@@ -436,7 +436,7 @@ export function SidebarLayout({ children }: { children: React.ReactNode }) {
         <main className={`flex-1 overflow-auto bg-background p-4 md:p-6 ${isMobile ? "pb-20" : ""}`}>{children}</main>
       </div>
 
-      {/* Mobile bottom navigation */}
+      {/* Overlay for mobile sidebar */}
       {isMobile && (
         <div className="fixed bottom-0 left-0 z-40 w-full border-t bg-background">
           <div className="flex h-16 items-center justify-around">
