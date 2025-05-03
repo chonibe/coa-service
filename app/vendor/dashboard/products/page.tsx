@@ -33,14 +33,14 @@ export default function ProductsPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 px-1">
       <div>
         <h1 className="text-3xl font-bold tracking-tight">Products</h1>
         <p className="text-muted-foreground">Manage your product catalog and view performance metrics</p>
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-        <Card>
+        <Card className="w-full">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Products</CardTitle>
             <Package className="h-4 w-4 text-muted-foreground" />
@@ -50,7 +50,7 @@ export default function ProductsPage() {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="w-full">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Active Products</CardTitle>
             <CheckCircle className="h-4 w-4 text-muted-foreground" />
@@ -60,7 +60,7 @@ export default function ProductsPage() {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="w-full">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Avg. Price</CardTitle>
             <DollarSign className="h-4 w-4 text-muted-foreground" />
@@ -82,14 +82,14 @@ export default function ProductsPage() {
         </Card>
       </div>
 
-      <Card className="overflow-hidden">
+      <Card className="overflow-hidden w-full">
         <CardHeader>
           <CardTitle>Product Catalog</CardTitle>
           <CardDescription>View and manage all your products</CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="p-0 sm:p-2">
           {isLoading ? (
-            <div className="space-y-2">
+            <div className="space-y-2 p-4">
               {Array(5)
                 .fill(0)
                 .map((_, i) => (

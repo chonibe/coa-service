@@ -61,8 +61,23 @@ export default function AnalyticsPage() {
     fetchAnalyticsData()
   }, [])
 
+  // Custom tooltip for the pie chart to show product titles
+  const CustomTooltip = ({ active, payload }: any) => {
+    if (active && payload && payload.length) {
+      const data = payload[0].payload
+      return (
+        <div className="bg-background p-2 border rounded-md shadow-sm">
+          <p className="font-medium">{data.title}</p>
+          <p>Sales: {data.sales}</p>
+          <p>Revenue: ${data.revenue.toFixed(2)}</p>
+        </div>
+      )
+    }
+    return null
+  }
+
   return (
-    <div className="space-y-6 pb-20">
+    <div className="space-y-6 pb-20 px-1">
       <div>
         <h1 className="text-3xl font-bold tracking-tight">Sales Analytics</h1>
         <p className="text-muted-foreground">View your sales performance over time</p>
@@ -93,7 +108,7 @@ export default function AnalyticsPage() {
         </Alert>
       )}
 
-      <Card>
+      <Card className="w-full">
         <CardHeader>
           <CardTitle>Sales Over Time</CardTitle>
           <CardDescription>Monthly sales and revenue trends</CardDescription>
@@ -131,7 +146,7 @@ export default function AnalyticsPage() {
       </Card>
 
       <div className="grid gap-4 md:grid-cols-2">
-        <Card>
+        <Card className="w-full">
           <CardHeader>
             <CardTitle>Sales Trend</CardTitle>
             <CardDescription>Monthly sales trend</CardDescription>
@@ -165,7 +180,7 @@ export default function AnalyticsPage() {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="w-full">
           <CardHeader>
             <CardTitle>Revenue Trend</CardTitle>
             <CardDescription>Monthly revenue trend</CardDescription>
@@ -200,7 +215,7 @@ export default function AnalyticsPage() {
         </Card>
       </div>
 
-      <Card>
+      <Card className="w-full">
         <CardHeader>
           <CardTitle>Sales by Product</CardTitle>
           <CardDescription>Distribution of sales across products</CardDescription>
@@ -228,7 +243,7 @@ export default function AnalyticsPage() {
                         <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                       ))}
                     </Pie>
-                    <Tooltip />
+                    <Tooltip content={<CustomTooltip />} />
                   </PieChart>
                 </ResponsiveContainer>
               </div>
@@ -240,7 +255,7 @@ export default function AnalyticsPage() {
                         className="w-3 h-3 rounded-full mr-2"
                         style={{ backgroundColor: COLORS[index % COLORS.length] }}
                       ></div>
-                      <span className="text-sm truncate max-w-[150px]" title={product.title}>
+                      <span className="text-sm truncate max-w-[200px]" title={product.title}>
                         {product.title}
                       </span>
                     </div>
