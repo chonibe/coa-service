@@ -19,6 +19,8 @@ import {
   Truck,
   DollarSign,
   RefreshCw,
+  FileText,
+  Clock,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { ScrollArea } from "@/components/ui/scroll-area"
@@ -99,10 +101,46 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           href: "/admin/vendors",
           icon: <Truck className="h-4 w-4" />,
         },
+      ],
+      expanded: false,
+    },
+    {
+      title: "Payouts",
+      href: "/admin/vendors/payouts",
+      icon: <DollarSign className="h-5 w-5" />,
+      submenu: [
         {
-          title: "Payouts",
+          title: "Payout Manager",
           href: "/admin/vendors/payouts",
           icon: <DollarSign className="h-4 w-4" />,
+        },
+        {
+          title: "Payout History",
+          href: "/admin/vendors/payouts/history",
+          icon: <Clock className="h-4 w-4" />,
+        },
+        {
+          title: "Payout Settings",
+          href: "/admin/vendors/payouts/settings",
+          icon: <Settings className="h-4 w-4" />,
+        },
+      ],
+      expanded: false,
+    },
+    {
+      title: "Reports",
+      href: "/admin/tax-reporting",
+      icon: <FileText className="h-5 w-5" />,
+      submenu: [
+        {
+          title: "Tax Reporting",
+          href: "/admin/tax-reporting",
+          icon: <FileText className="h-4 w-4" />,
+        },
+        {
+          title: "Sales Reports",
+          href: "/admin/reports/sales",
+          icon: <BarChart className="h-4 w-4" />,
         },
       ],
       expanded: false,

@@ -1,47 +1,16 @@
 import { NextResponse } from "next/server"
-import type { NextRequest } from "next/server"
-import { supabaseAdmin } from "@/lib/supabase"
+import { createClient } from "@/lib/supabase-server"
 
-export async function GET(request: NextRequest) {
+export async function GET(request: Request) {
   try {
-    // Get query parameters
-    const searchParams = request.nextUrl.searchParams
+    const { searchParams } = new URL(request.url)
     const year = searchParams.get("year") || new Date().getFullYear().toString()
-    const vendorName = searchParams.get("vendor")
 
-    // Build the query
-    let query = supabaseAdmin
-      .from("vendor_payouts")
-      .select(
-        `
-        vendor_name,
-        tax_year,
-        status,
-        payment_method,
-        tax_form_generated,
-        tax_form_number,
-        vendors!inner(tax_id, tax_country, is_company, paypal_email)
-      `,
-      )
-      .eq("tax_year", year)
+    const supabase = createClient()
 
-    // Add vendor filter if provided
-    if (vendorName) {
-      query = query.eq("vendor_name", vendorName)
-    }
-
-    // Execute the query
-    const { data: payouts, error } = await query
-
-    if (error) {
-      console.error("Error fetching tax reporting data:", error)
-      return NextResponse.json({ error: error.message }, { status: 500 })
-    }
-
-    // Get summary data
-    const { data: summary, error: summaryError } = await supabaseAdmin.rpc("get_tax_summary", {
-      tax_year: Number.parseInt(year as string),
-      vendor_filter: vendorName || null,
+    // Get tax summary for the specified year
+    const { data: summary, error: summaryError } = await supabase.rpc("get_vendor_tax_summary", {
+      tax_year: Number.parseInt(year),
     })
 
     if (summaryError) {
@@ -49,43 +18,46 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: summaryError.message }, { status: 500 })
     }
 
-    // Get list of available tax years
-    const { data: years, error: yearsError } = await supabaseAdmin
+    // Get all available years with payout data
+    const { data: yearsData, error: yearsError } = await supabase
       .from("vendor_payouts")
-      .select("tax_year")
-      .not("tax_year", "is", null)
-      .order("tax_year", { ascending: false })
-      .distinct()
+      .select("payout_date")
+      .order("payout_date", { ascending: false })
 
     if (yearsError) {
-      console.error("Error fetching tax years:", yearsError)
+      console.error("Error fetching available years:", yearsError)
       return NextResponse.json({ error: yearsError.message }, { status: 500 })
     }
 
-    // Format the years
-    const availableYears = years?.map((y) => y.tax_year) || []
+    // Extract unique years from payout dates
+    const availableYears = Array.from(
+      new Set(yearsData.filter((item) => item.payout_date).map((item) => new Date(item.payout_date).getFullYear())),
+    ).sort((a, b) => b - a) // Sort descending
 
-    // Get tax forms for the selected year
-    const { data: taxForms, error: taxFormsError } = await supabaseAdmin
-      .from("tax_forms")
+    // Get generated tax forms for the specified year
+    const { data: taxForms, error: formsError } = await supabase
+      .from("vendor_tax_forms")
       .select("*")
       .eq("tax_year", year)
       .order("generated_at", { ascending: false })
 
-    if (taxFormsError) {
-      console.error("Error fetching tax forms:", taxFormsError)
-      return NextResponse.json({ error: taxFormsError.message }, { status: 500 })
+    if (formsError) {
+      console.error("Error fetching tax forms:", formsError)
+      return NextResponse.json({ error: formsError.message }, { status: 500 })
+    }
+
+    // If no available years from data, include current year
+    if (availableYears.length === 0) {
+      availableYears.push(new Date().getFullYear())
     }
 
     return NextResponse.json({
-      payouts: payouts || [],
       summary: summary || [],
       availableYears,
       taxForms: taxForms || [],
-      selectedYear: year,
     })
-  } catch (error: any) {
-    console.error("Error in tax reporting summary API:", error)
-    return NextResponse.json({ error: error.message || "An unexpected error occurred" }, { status: 500 })
+  } catch (err) {
+    console.error("Error in tax reporting summary API:", err)
+    return NextResponse.json({ error: "Failed to fetch tax reporting data" }, { status: 500 })
   }
 }

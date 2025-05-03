@@ -8,6 +8,7 @@ import { AlertCircle, ArrowUpRight, BarChart, DollarSign, Package, RefreshCw } f
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { useToast } from "@/components/ui/use-toast"
+import { OnboardingAlert } from "./components/onboarding-alert"
 
 export default function VendorDashboard() {
   const [stats, setStats] = useState<any>(null)
@@ -52,6 +53,7 @@ export default function VendorDashboard() {
 
   return (
     <div className="space-y-6">
+      <OnboardingAlert />
       <div className="flex flex-col md:flex-row md:items-center md:justify-between">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
