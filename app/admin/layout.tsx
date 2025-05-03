@@ -106,22 +106,22 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     },
     {
       title: "Payouts",
-      href: "/admin/vendors/payouts",
+      href: "/admin/vendors/payouts/admin",
       icon: <DollarSign className="h-5 w-5" />,
       submenu: [
         {
           title: "Payout Manager",
-          href: "/admin/vendors/payouts",
+          href: "/admin/vendors/payouts/admin",
           icon: <DollarSign className="h-4 w-4" />,
         },
         {
           title: "Payout History",
-          href: "/admin/vendors/payouts/history",
+          href: "/admin/vendors/payouts/admin",
           icon: <Clock className="h-4 w-4" />,
         },
         {
           title: "Payout Settings",
-          href: "/admin/vendors/payouts/settings",
+          href: "/admin/vendors/payouts",
           icon: <Settings className="h-4 w-4" />,
         },
       ],
