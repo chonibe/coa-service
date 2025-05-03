@@ -72,5 +72,22 @@
   }
   body {
     @apply bg-background text-foreground;
+    overflow-x: hidden;
+  }
+  html,
+  body {
+    height: 100%;
+  }
+}
+
+/* Fix scrolling issues */
+.overflow-y-auto {
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Ensure proper spacing at the bottom of pages for mobile navigation */
+@media (max-width: 768px) {
+  main {
+    padding-bottom: 5rem;
   }
 }
