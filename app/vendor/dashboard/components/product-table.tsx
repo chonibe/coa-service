@@ -1,131 +1,149 @@
 "use client"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+
+import { useState, useEffect } from "react"
+import Link from "next/link"
+import { Card, CardContent } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Loader2, RefreshCw } from "lucide-react"
-import { useVendorData } from "@/hooks/use-vendor-data"
+import { Loader2, Package, ArrowRight } from "lucide-react"
+import { Button } from "@/components/ui/button"
 
 interface Product {
   id: string
   title: string
-  handle: string
-  vendor: string
-  productType: string
-  inventory: number
-  price: string
-  currency: string
   image: string | null
-  payout_amount: number
-  is_percentage: boolean
+  price: string | number
+  currency: string
+  inventory?: number
+  payout_amount?: number
+  is_percentage?: boolean
 }
 
 interface ProductTableProps {
-  vendorName: string
-  onRefresh?: () => Promise<void>
+  vendorName?: string
 }
 
-export function ProductTable({ vendorName, onRefresh }: ProductTableProps) {
-  const {
-    data: productsData,
-    isLoading,
-    error,
-    isRefreshing,
-    refresh,
-  } = useVendorData<{ products: Product[] }>({
-    endpoint: `/api/vendors/products?vendor=${encodeURIComponent(vendorName)}`,
-    initialData: { products: [] },
-    refreshDependencies: [vendorName],
-  })
+export function ProductTable({ vendorName }: ProductTableProps) {
+  const [products, setProducts] = useState<Product[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const [currentVendor, setCurrentVendor] = useState<string | null>(null)
 
-  const handleRefresh = async () => {
-    if (onRefresh) {
-      await onRefresh()
+  // If vendorName is not provided, try to get it from the vendor profile
+  useEffect(() => {
+    const fetchVendorProfile = async () => {
+      if (vendorName) {
+        setCurrentVendor(vendorName)
+        return
+      }
+
+      try {
+        const response = await fetch("/api/vendor/profile")
+        if (response.ok) {
+          const data = await response.json()
+          setCurrentVendor(data.vendor?.vendor_name || null)
+        } else {
+          throw new Error("Failed to fetch vendor profile")
+        }
+      } catch (err) {
+        console.error("Error fetching vendor profile:", err)
+        setError("Could not determine vendor name")
+      }
     }
-    await refresh()
-  }
 
-  // Format currency
-  const formatCurrency = (amount: string | number) => {
-    const value = typeof amount === "string" ? Number.parseFloat(amount) : amount
-    return new Intl.NumberFormat("en-US", {
-      style: "currency",
-      currency: "USD",
-      minimumFractionDigits: 2,
-    }).format(value)
-  }
+    fetchVendorProfile()
+  }, [vendorName])
 
-  // Format payout
-  const formatPayout = (product: Product) => {
-    if (product.is_percentage) {
-      return `${product.payout_amount}% of sale`
-    } else {
-      return formatCurrency(product.payout_amount)
+  // Fetch products when vendor name is available
+  useEffect(() => {
+    const fetchProducts = async () => {
+      if (!currentVendor) return
+
+      setIsLoading(true)
+      setError(null)
+
+      try {
+        console.log(`Fetching products for vendor: ${currentVendor}`)
+        const response = await fetch(`/api/vendors/products?vendor=${encodeURIComponent(currentVendor)}`)
+
+        if (!response.ok) {
+          throw new Error(`Failed to fetch products: ${response.status}`)
+        }
+
+        const data = await response.json()
+        console.log(`Received ${data.products?.length || 0} products`)
+        setProducts(data.products || [])
+      } catch (err: any) {
+        console.error("Error fetching products:", err)
+        setError(err.message || "Failed to load products")
+      } finally {
+        setIsLoading(false)
+      }
     }
-  }
+
+    if (currentVendor) {
+      fetchProducts()
+    }
+  }, [currentVendor])
 
   return (
     <Card>
-      <CardHeader className="flex flex-row items-center justify-between">
-        <CardTitle>Your Products</CardTitle>
-        <button
-          onClick={handleRefresh}
-          className="p-2 rounded-full hover:bg-muted"
-          disabled={isRefreshing}
-          title="Refresh products"
-        >
-          <RefreshCw className={`h-4 w-4 ${isRefreshing ? "animate-spin" : ""}`} />
-          <span className="sr-only">Refresh</span>
-        </button>
-      </CardHeader>
       <CardContent>
         {isLoading ? (
-          <div className="flex justify-center items-center py-8">
+          <div className="flex justify-center py-8">
             <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
           </div>
         ) : error ? (
-          <div className="text-center py-8 text-muted-foreground">
-            <p>Failed to load products</p>
-            <button onClick={handleRefresh} className="mt-2 text-sm underline hover:text-foreground">
-              Try again
-            </button>
-          </div>
-        ) : productsData.products.length === 0 ? (
-          <div className="text-center py-8 text-muted-foreground">
-            <p>No products found for your vendor account</p>
-          </div>
+          <div className="text-center py-8 text-muted-foreground">{error}</div>
+        ) : products.length === 0 ? (
+          <div className="text-center py-8 text-muted-foreground">No products found for this vendor.</div>
         ) : (
-          <div className="overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Product</TableHead>
-                  <TableHead>Type</TableHead>
-                  <TableHead>Price</TableHead>
-                  <TableHead>Payout</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {productsData.products.map((product) => (
-                  <TableRow key={product.id}>
-                    <TableCell className="font-medium">
-                      <div className="flex items-center gap-3">
-                        {product.image && (
-                          <img
-                            src={product.image || "/placeholder.svg"}
-                            alt={product.title}
-                            className="h-10 w-10 rounded object-cover"
-                          />
-                        )}
-                        <span className="line-clamp-2">{product.title}</span>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Product</TableHead>
+                <TableHead>Price</TableHead>
+                <TableHead>Inventory</TableHead>
+                <TableHead></TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {products.map((product) => (
+                <TableRow key={product.id}>
+                  <TableCell>
+                    <div className="flex items-center gap-3">
+                      {product.image ? (
+                        <img
+                          src={product.image || "/placeholder.svg"}
+                          alt={product.title}
+                          className="h-10 w-10 rounded-md object-cover"
+                        />
+                      ) : (
+                        <div className="h-10 w-10 rounded-md bg-muted flex items-center justify-center">
+                          <Package className="h-5 w-5 text-muted-foreground" />
+                        </div>
+                      )}
+                      <div>
+                        <div className="font-medium">{product.title}</div>
+                        <div className="text-sm text-muted-foreground">ID: {product.id}</div>
                       </div>
-                    </TableCell>
-                    <TableCell>{product.productType || "Unknown"}</TableCell>
-                    <TableCell>{formatCurrency(product.price)}</TableCell>
-                    <TableCell>{formatPayout(product)}</TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    {typeof product.price === "string" ? product.price : product.price.toFixed(2)} {product.currency}
+                  </TableCell>
+                  <TableCell>{product.inventory || "N/A"}</TableCell>
+                  <TableCell className="text-right">
+                    <Button asChild variant="link" size="sm">
+                      <Link href={`/vendor/dashboard/benefits?product=${product.id}`}>
+                        Manage Benefits
+                        <ArrowRight className="h-4 w-4 ml-2" />
+                      </Link>
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
         )}
       </CardContent>
     </Card>

@@ -1,8 +1,10 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useState, useEffect } from "react"
+import { useSearchParams, useRouter } from "next/navigation"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Button } from "@/components/ui/button"
 import { ProductTable } from "./components/product-table"
 import { VendorSalesChart } from "./components/vendor-sales-chart"
 import { Loader2, RefreshCw } from "lucide-react"
@@ -23,6 +25,9 @@ export default function VendorDashboard() {
   const [error, setError] = useState<string | null>(null)
   const [isRefreshing, setIsRefreshing] = useState(false)
   const { toast } = useToast()
+  const searchParams = useSearchParams()
+  const router = useRouter()
+  const currentTab = searchParams.get("tab") || "overview"
 
   const fetchVendorProfile = async () => {
     try {
@@ -31,10 +36,12 @@ export default function VendorDashboard() {
         throw new Error("Failed to fetch vendor profile")
       }
       const data = await response.json()
-      setVendorName(data.vendor_name || "")
+      setVendorName(data.vendor?.vendor_name || "")
+      return data.vendor?.vendor_name
     } catch (err) {
       console.error("Error fetching vendor profile:", err)
       setError("Failed to load vendor profile")
+      return null
     }
   }
 
@@ -58,8 +65,10 @@ export default function VendorDashboard() {
 
   useEffect(() => {
     const loadData = async () => {
-      await fetchVendorProfile()
-      await fetchVendorStats()
+      const vendor = await fetchVendorProfile()
+      if (vendor) {
+        await fetchVendorStats()
+      }
     }
     loadData()
   }, [])
@@ -82,6 +91,10 @@ export default function VendorDashboard() {
     } finally {
       setIsRefreshing(false)
     }
+  }
+
+  const handleTabChange = (value: string) => {
+    router.push(`/vendor/dashboard?tab=${value}`)
   }
 
   // Format currency
@@ -166,11 +179,14 @@ export default function VendorDashboard() {
               </Card>
             </div>
 
-            <Tabs defaultValue="overview" className="space-y-4">
+            <Tabs value={currentTab} onValueChange={handleTabChange} className="space-y-4">
               <TabsList>
                 <TabsTrigger value="overview">Overview</TabsTrigger>
                 <TabsTrigger value="products">Products</TabsTrigger>
+                <TabsTrigger value="sales">Sales</TabsTrigger>
+                <TabsTrigger value="payouts">Payouts</TabsTrigger>
               </TabsList>
+
               <TabsContent value="overview" className="space-y-4">
                 <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
                   <Card className="col-span-4">
@@ -178,7 +194,7 @@ export default function VendorDashboard() {
                       <CardTitle>Sales History</CardTitle>
                     </CardHeader>
                     <CardContent className="pl-2">
-                      <VendorSalesChart vendorName={vendorName} onRefresh={handleRefresh} />
+                      <VendorSalesChart vendorName={vendorName} />
                     </CardContent>
                   </Card>
                   <Card className="col-span-3">
@@ -208,9 +224,71 @@ export default function VendorDashboard() {
                     </CardContent>
                   </Card>
                 </div>
+
+                <Card>
+                  <CardHeader>
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <CardTitle>Your Products</CardTitle>
+                        <CardDescription>Manage and monitor your product performance</CardDescription>
+                      </div>
+                      <Button size="sm">Add Product</Button>
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    <ProductTable vendorName={vendorName} />
+                  </CardContent>
+                </Card>
               </TabsContent>
+
               <TabsContent value="products" className="space-y-4">
-                <ProductTable vendorName={vendorName} />
+                <Card>
+                  <CardHeader>
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <CardTitle>Your Products</CardTitle>
+                        <CardDescription>Manage and monitor your product performance</CardDescription>
+                      </div>
+                      <Button size="sm">Add Product</Button>
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    <ProductTable vendorName={vendorName} />
+                  </CardContent>
+                </Card>
+              </TabsContent>
+
+              <TabsContent value="sales" className="space-y-4">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Sales Performance</CardTitle>
+                    <CardDescription>Your sales performance over time</CardDescription>
+                  </CardHeader>
+                  <CardContent className="pl-2">
+                    <VendorSalesChart vendorName={vendorName} />
+                  </CardContent>
+                </Card>
+              </TabsContent>
+
+              <TabsContent value="payouts" className="space-y-4">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Payout History</CardTitle>
+                    <CardDescription>Your payment history and upcoming payouts</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-4">
+                      <div className="flex items-center justify-between border-b pb-2">
+                        <div>
+                          <p className="font-medium">Pending Payout</p>
+                          <p className="text-sm text-muted-foreground">Next payout date: 1st of next month</p>
+                        </div>
+                        <p className="font-medium">{formatCurrency(stats?.pendingPayout || 0)}</p>
+                      </div>
+                      <p className="text-center py-4 text-muted-foreground">No previous payout history available</p>
+                    </div>
+                  </CardContent>
+                </Card>
               </TabsContent>
             </Tabs>
           </>
