@@ -99,7 +99,8 @@ export function VendorSidebar() {
 
   return (
     <>
-      <header className="sticky top-0 z-30 flex h-16 items-center gap-4 border-b bg-background px-4 sm:px-6">
+      {/* Fixed header with hamburger menu */}
+      <header className="fixed top-0 left-0 right-0 z-40 flex h-16 items-center gap-4 border-b bg-background px-4 sm:px-6">
         <Sheet open={open} onOpenChange={setOpen}>
           <SheetTrigger asChild>
             <Button variant="outline" size="icon" className="md:hidden">
@@ -164,8 +165,9 @@ export function VendorSidebar() {
         </div>
       </header>
 
-      {/* Desktop sidebar */}
-      <aside className="hidden w-64 flex-col border-r md:flex bg-background">
+      {/* Desktop sidebar - hidden on mobile */}
+      <aside className="fixed left-0 top-0 bottom-0 hidden w-64 flex-col border-r md:flex bg-background z-30">
+        <div className="h-16"></div> {/* Spacer for header */}
         <ScrollArea className="flex-1">
           <div className="flex flex-col gap-2 p-4">
             <div className="mb-4 px-2">
