@@ -13,15 +13,13 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
-import { toast } from "@/components/ui/use-toast"
-import { Loader2, Instagram } from "lucide-react"
+import { Loader2, AlertCircle } from "lucide-react"
+import { Alert, AlertDescription } from "@/components/ui/alert"
+import { Checkbox } from "@/components/ui/checkbox"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 
 interface VendorDialogProps {
-  vendor: {
-    name: string
-    instagram_url?: string | null
-    notes?: string | null
-  } | null
+  vendor: any
   open: boolean
   onOpenChange: (open: boolean) => void
   onSave: () => void
@@ -30,66 +28,66 @@ interface VendorDialogProps {
 export function VendorDialog({ vendor, open, onOpenChange, onSave }: VendorDialogProps) {
   const [instagramUrl, setInstagramUrl] = useState("")
   const [notes, setNotes] = useState("")
+  const [paypalEmail, setPaypalEmail] = useState("")
+  const [taxId, setTaxId] = useState("")
+  const [taxCountry, setTaxCountry] = useState("GB")
+  const [isCompany, setIsCompany] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
-  // Reset form when vendor changes or dialog opens
+  // Reset form when vendor changes
   useEffect(() => {
-    if (vendor && open) {
+    if (vendor) {
       setInstagramUrl(vendor.instagram_url || "")
       setNotes(vendor.notes || "")
+      setPaypalEmail(vendor.paypal_email || "")
+      setTaxId(vendor.tax_id || "")
+      setTaxCountry(vendor.tax_country || "GB")
+      setIsCompany(vendor.is_company || false)
+    } else {
+      setInstagramUrl("")
+      setNotes("")
+      setPaypalEmail("")
+      setTaxId("")
+      setTaxCountry("GB")
+      setIsCompany(false)
     }
+    setError(null)
   }, [vendor, open])
 
   const handleSave = async () => {
     if (!vendor) return
 
     setIsLoading(true)
+    setError(null)
 
     try {
-      // Format Instagram URL if needed
-      let formattedUrl = instagramUrl.trim()
-      if (formattedUrl && !formattedUrl.startsWith("http")) {
-        // If it's just a username, convert to full URL
-        if (formattedUrl.startsWith("@")) {
-          formattedUrl = `https://instagram.com/${formattedUrl.substring(1)}`
-        } else {
-          formattedUrl = `https://instagram.com/${formattedUrl}`
-        }
-      }
-
-      console.log("Saving vendor:", vendor.name, "with Instagram URL:", formattedUrl)
-
       const response = await fetch("/api/vendors/custom-data", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          vendorName: vendor.name,
-          instagramUrl: formattedUrl,
-          notes: notes.trim(),
+          vendor_name: vendor.name,
+          instagram_url: instagramUrl,
+          notes: notes,
+          paypal_email: paypalEmail,
+          tax_id: taxId,
+          tax_country: taxCountry,
+          is_company: isCompany,
         }),
       })
 
       if (!response.ok) {
-        const error = await response.json()
-        throw new Error(error.error || "Failed to save vendor data")
+        const data = await response.json()
+        throw new Error(data.message || "Failed to save vendor data")
       }
 
-      toast({
-        title: "Vendor updated",
-        description: `Successfully updated ${vendor.name}`,
-      })
-
-      onOpenChange(false)
       onSave()
-    } catch (error) {
-      console.error("Error saving vendor:", error)
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: error instanceof Error ? error.message : "Failed to save vendor data",
-      })
+      onOpenChange(false)
+    } catch (err: any) {
+      console.error("Error saving vendor data:", err)
+      setError(err.message || "An unexpected error occurred")
     } finally {
       setIsLoading(false)
     }
@@ -97,40 +95,110 @@ export function VendorDialog({ vendor, open, onOpenChange, onSave }: VendorDialo
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
-          <DialogTitle>Edit Vendor</DialogTitle>
-          <DialogDescription>Add additional information for {vendor?.name}</DialogDescription>
+          <DialogTitle>Edit Vendor: {vendor?.name}</DialogTitle>
+          <DialogDescription>Update vendor information and settings.</DialogDescription>
         </DialogHeader>
+
+        {error && (
+          <Alert variant="destructive">
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
+        )}
+
         <div className="grid gap-4 py-4">
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="name" className="text-right">
-              Name
-            </Label>
-            <Input id="name" value={vendor?.name || ""} className="col-span-3" disabled />
-          </div>
           <div className="grid grid-cols-4 items-center gap-4">
             <Label htmlFor="instagram" className="text-right">
               Instagram
             </Label>
-            <div className="col-span-3 flex items-center gap-2">
-              <Instagram className="h-4 w-4 text-pink-500" />
-              <Input
-                id="instagram"
-                placeholder="@username or URL"
-                value={instagramUrl}
-                onChange={(e) => setInstagramUrl(e.target.value)}
-                className="flex-1"
+            <Input
+              id="instagram"
+              placeholder="https://instagram.com/username"
+              value={instagramUrl}
+              onChange={(e) => setInstagramUrl(e.target.value)}
+              className="col-span-3"
+            />
+          </div>
+
+          <div className="grid grid-cols-4 items-center gap-4">
+            <Label htmlFor="paypal" className="text-right">
+              PayPal Email
+            </Label>
+            <Input
+              id="paypal"
+              type="email"
+              placeholder="email@example.com"
+              value={paypalEmail}
+              onChange={(e) => setPaypalEmail(e.target.value)}
+              className="col-span-3"
+            />
+          </div>
+
+          <div className="grid grid-cols-4 items-center gap-4">
+            <div className="text-right">
+              <Label htmlFor="is-company">Business Type</Label>
+            </div>
+            <div className="col-span-3 flex items-center space-x-2">
+              <Checkbox
+                id="is-company"
+                checked={isCompany}
+                onCheckedChange={(checked) => setIsCompany(checked as boolean)}
               />
+              <label
+                htmlFor="is-company"
+                className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+              >
+                This vendor is a registered business/company
+              </label>
             </div>
           </div>
+
+          <div className="grid grid-cols-4 items-center gap-4">
+            <Label htmlFor="tax-id" className="text-right">
+              Tax ID
+            </Label>
+            <Input
+              id="tax-id"
+              placeholder={isCompany ? "VAT/Tax Registration Number" : "National Insurance/SSN"}
+              value={taxId}
+              onChange={(e) => setTaxId(e.target.value)}
+              className="col-span-3"
+            />
+          </div>
+
+          <div className="grid grid-cols-4 items-center gap-4">
+            <Label htmlFor="tax-country" className="text-right">
+              Tax Country
+            </Label>
+            <Select value={taxCountry} onValueChange={setTaxCountry}>
+              <SelectTrigger id="tax-country" className="col-span-3">
+                <SelectValue placeholder="Select country" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="GB">United Kingdom</SelectItem>
+                <SelectItem value="US">United States</SelectItem>
+                <SelectItem value="CA">Canada</SelectItem>
+                <SelectItem value="AU">Australia</SelectItem>
+                <SelectItem value="FR">France</SelectItem>
+                <SelectItem value="DE">Germany</SelectItem>
+                <SelectItem value="IT">Italy</SelectItem>
+                <SelectItem value="ES">Spain</SelectItem>
+                <SelectItem value="JP">Japan</SelectItem>
+                <SelectItem value="CN">China</SelectItem>
+                <SelectItem value="OTHER">Other</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
           <div className="grid grid-cols-4 items-center gap-4">
             <Label htmlFor="notes" className="text-right">
               Notes
             </Label>
             <Textarea
               id="notes"
-              placeholder="Additional notes about this vendor"
+              placeholder="Add any notes about this vendor"
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
               className="col-span-3"
@@ -138,15 +206,19 @@ export function VendorDialog({ vendor, open, onOpenChange, onSave }: VendorDialo
             />
           </div>
         </div>
+
         <DialogFooter>
-          <Button type="submit" onClick={handleSave} disabled={isLoading}>
+          <Button variant="outline" onClick={() => onOpenChange(false)}>
+            Cancel
+          </Button>
+          <Button onClick={handleSave} disabled={isLoading}>
             {isLoading ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 Saving...
               </>
             ) : (
-              "Save changes"
+              "Save Changes"
             )}
           </Button>
         </DialogFooter>
