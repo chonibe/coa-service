@@ -1,12 +1,26 @@
 "use client"
 
+import React from "react"
+
 import { useState, useEffect } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
-import { Loader2, AlertCircle, RefreshCw, Clock, Download, Send, FileText, Calendar } from "lucide-react"
+import {
+  Loader2,
+  AlertCircle,
+  RefreshCw,
+  Clock,
+  Download,
+  Send,
+  FileText,
+  Calendar,
+  ChevronDown,
+  ChevronUp,
+  Eye,
+} from "lucide-react"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -42,6 +56,18 @@ interface PendingPayout {
   last_payout_date: string | null
 }
 
+interface PendingLineItem {
+  line_item_id: string
+  order_id: string
+  order_name: string
+  product_id: string
+  product_title: string
+  price: number
+  created_at: string
+  payout_amount: number
+  is_percentage: boolean
+}
+
 interface PayoutHistory {
   id: number
   vendor_name: string
@@ -70,6 +96,9 @@ export default function AdminPayoutsPage() {
   const [paymentMethod, setPaymentMethod] = useState<string>("paypal")
   const [generateInvoices, setGenerateInvoices] = useState(true)
   const [payoutNotes, setPayoutNotes] = useState("")
+  const [expandedVendor, setExpandedVendor] = useState<string | null>(null)
+  const [vendorLineItems, setVendorLineItems] = useState<Record<string, PendingLineItem[]>>({})
+  const [loadingLineItems, setLoadingLineItems] = useState<string | null>(null)
   const { toast } = useToast()
 
   // Initialize tables and fetch data
@@ -79,6 +108,11 @@ export default function AdminPayoutsPage() {
       setError(null)
 
       try {
+        // Initialize payout functions
+        await fetch("/api/vendors/init-payout-functions", {
+          method: "POST",
+        })
+
         // Initialize payout tables
         await fetch("/api/vendors/init-payout-tables", {
           method: "POST",
@@ -235,6 +269,54 @@ export default function AdminPayoutsPage() {
     }
   }
 
+  // Fetch line items for a vendor
+  const fetchVendorLineItems = async (vendorName: string) => {
+    if (vendorLineItems[vendorName]) {
+      // Already loaded
+      return
+    }
+
+    setLoadingLineItems(vendorName)
+    try {
+      const response = await fetch("/api/vendors/payouts/pending-items", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ vendorName }),
+      })
+
+      if (!response.ok) {
+        throw new Error("Failed to fetch line items")
+      }
+
+      const data = await response.json()
+      setVendorLineItems((prev) => ({
+        ...prev,
+        [vendorName]: data.lineItems || [],
+      }))
+    } catch (err: any) {
+      console.error("Error fetching line items:", err)
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: err.message || "Failed to fetch line items",
+      })
+    } finally {
+      setLoadingLineItems(null)
+    }
+  }
+
+  // Toggle vendor expansion
+  const toggleVendorExpansion = (vendorName: string) => {
+    if (expandedVendor === vendorName) {
+      setExpandedVendor(null)
+    } else {
+      setExpandedVendor(vendorName)
+      fetchVendorLineItems(vendorName)
+    }
+  }
+
   // Filter pending payouts based on search query
   const filteredPendingPayouts = pendingPayouts.filter((payout) =>
     payout.vendor_name.toLowerCase().includes(searchQuery.toLowerCase()),
@@ -278,6 +360,14 @@ export default function AdminPayoutsPage() {
     } catch (e) {
       return "Invalid date"
     }
+  }
+
+  // Calculate payout amount for a line item
+  const calculatePayoutAmount = (item: PendingLineItem) => {
+    if (item.is_percentage) {
+      return (item.price * item.payout_amount) / 100
+    }
+    return item.payout_amount
   }
 
   return (
@@ -378,55 +468,144 @@ export default function AdminPayoutsPage() {
                         </TableHeader>
                         <TableBody>
                           {filteredPendingPayouts.map((payout) => (
-                            <TableRow key={payout.vendor_name}>
-                              <TableCell>
-                                <Checkbox
-                                  checked={selectedPayouts.includes(payout.vendor_name)}
-                                  onCheckedChange={() => togglePayoutSelection(payout.vendor_name)}
-                                  aria-label={`Select ${payout.vendor_name}`}
-                                />
-                              </TableCell>
-                              <TableCell className="font-medium">{payout.vendor_name}</TableCell>
-                              <TableCell>
-                                {payout.paypal_email ? (
-                                  <span className="text-sm">{payout.paypal_email}</span>
-                                ) : (
-                                  <Badge variant="outline" className="text-red-500 border-red-200">
-                                    Not set
-                                  </Badge>
-                                )}
-                              </TableCell>
-                              <TableCell>
-                                {payout.tax_id ? (
-                                  <div className="text-xs">
-                                    <div>{payout.tax_id}</div>
-                                    <div className="text-muted-foreground">{payout.tax_country || "Unknown"}</div>
+                            <React.Fragment key={payout.vendor_name}>
+                              <TableRow>
+                                <TableCell>
+                                  <Checkbox
+                                    checked={selectedPayouts.includes(payout.vendor_name)}
+                                    onCheckedChange={() => togglePayoutSelection(payout.vendor_name)}
+                                    aria-label={`Select ${payout.vendor_name}`}
+                                  />
+                                </TableCell>
+                                <TableCell className="font-medium">
+                                  <div className="flex items-center">
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      className="p-0 hover:bg-transparent"
+                                      onClick={() => toggleVendorExpansion(payout.vendor_name)}
+                                    >
+                                      {expandedVendor === payout.vendor_name ? (
+                                        <ChevronUp className="h-4 w-4 mr-2" />
+                                      ) : (
+                                        <ChevronDown className="h-4 w-4 mr-2" />
+                                      )}
+                                    </Button>
+                                    {payout.vendor_name}
                                   </div>
-                                ) : (
-                                  <Badge variant="outline" className="text-amber-500 border-amber-200">
-                                    No tax info
-                                  </Badge>
-                                )}
-                              </TableCell>
-                              <TableCell className="text-right font-medium">£{payout.amount.toFixed(2)}</TableCell>
-                              <TableCell>{payout.product_count}</TableCell>
-                              <TableCell>
-                                {payout.last_payout_date ? (
-                                  formatDate(payout.last_payout_date)
-                                ) : (
-                                  <span className="text-muted-foreground text-sm">Never</span>
-                                )}
-                              </TableCell>
-                              <TableCell>
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() => togglePayoutSelection(payout.vendor_name)}
-                                >
-                                  {selectedPayouts.includes(payout.vendor_name) ? "Deselect" : "Select"}
-                                </Button>
-                              </TableCell>
-                            </TableRow>
+                                </TableCell>
+                                <TableCell>
+                                  {payout.paypal_email ? (
+                                    <span className="text-sm">{payout.paypal_email}</span>
+                                  ) : (
+                                    <Badge variant="outline" className="text-red-500 border-red-200">
+                                      Not set
+                                    </Badge>
+                                  )}
+                                </TableCell>
+                                <TableCell>
+                                  {payout.tax_id ? (
+                                    <div className="text-xs">
+                                      <div>{payout.tax_id}</div>
+                                      <div className="text-muted-foreground">{payout.tax_country || "Unknown"}</div>
+                                    </div>
+                                  ) : (
+                                    <Badge variant="outline" className="text-amber-500 border-amber-200">
+                                      No tax info
+                                    </Badge>
+                                  )}
+                                </TableCell>
+                                <TableCell className="text-right font-medium">£{payout.amount.toFixed(2)}</TableCell>
+                                <TableCell>{payout.product_count}</TableCell>
+                                <TableCell>
+                                  {payout.last_payout_date ? (
+                                    formatDate(payout.last_payout_date)
+                                  ) : (
+                                    <span className="text-muted-foreground text-sm">Never</span>
+                                  )}
+                                </TableCell>
+                                <TableCell>
+                                  <div className="flex items-center gap-2">
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      onClick={() => togglePayoutSelection(payout.vendor_name)}
+                                    >
+                                      {selectedPayouts.includes(payout.vendor_name) ? "Deselect" : "Select"}
+                                    </Button>
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
+                                      onClick={() => toggleVendorExpansion(payout.vendor_name)}
+                                      title="View Details"
+                                    >
+                                      <Eye className="h-4 w-4" />
+                                    </Button>
+                                  </div>
+                                </TableCell>
+                              </TableRow>
+                              {expandedVendor === payout.vendor_name && (
+                                <TableRow>
+                                  <TableCell colSpan={8} className="p-0">
+                                    <div className="bg-muted/50 p-4">
+                                      <h4 className="font-medium mb-2">Line Items for {payout.vendor_name}</h4>
+                                      {loadingLineItems === payout.vendor_name ? (
+                                        <div className="flex justify-center py-4">
+                                          <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                                        </div>
+                                      ) : vendorLineItems[payout.vendor_name]?.length > 0 ? (
+                                        <div className="border rounded-md bg-background">
+                                          <Table>
+                                            <TableHeader>
+                                              <TableRow>
+                                                <TableHead>Order</TableHead>
+                                                <TableHead>Product</TableHead>
+                                                <TableHead>Date</TableHead>
+                                                <TableHead className="text-right">Price</TableHead>
+                                                <TableHead className="text-right">Payout</TableHead>
+                                              </TableRow>
+                                            </TableHeader>
+                                            <TableBody>
+                                              {vendorLineItems[payout.vendor_name].map((item) => (
+                                                <TableRow key={item.line_item_id}>
+                                                  <TableCell className="text-xs">{item.order_name}</TableCell>
+                                                  <TableCell>
+                                                    <div className="text-sm font-medium">
+                                                      {item.product_title || "Unknown Product"}
+                                                    </div>
+                                                    <div className="text-xs text-muted-foreground">
+                                                      {item.product_id}
+                                                    </div>
+                                                  </TableCell>
+                                                  <TableCell>{formatDate(item.created_at)}</TableCell>
+                                                  <TableCell className="text-right">£{item.price.toFixed(2)}</TableCell>
+                                                  <TableCell className="text-right">
+                                                    <div className="font-medium">
+                                                      £{calculatePayoutAmount(item).toFixed(2)}
+                                                    </div>
+                                                    <div className="text-xs text-muted-foreground">
+                                                      {item.is_percentage ? `${item.payout_amount}%` : "Fixed"}
+                                                    </div>
+                                                  </TableCell>
+                                                </TableRow>
+                                              ))}
+                                            </TableBody>
+                                          </Table>
+                                        </div>
+                                      ) : (
+                                        <Alert>
+                                          <AlertCircle className="h-4 w-4" />
+                                          <AlertTitle>No line items</AlertTitle>
+                                          <AlertDescription>
+                                            No pending line items found for this vendor.
+                                          </AlertDescription>
+                                        </Alert>
+                                      )}
+                                    </div>
+                                  </TableCell>
+                                </TableRow>
+                              )}
+                            </React.Fragment>
                           ))}
                         </TableBody>
                       </Table>

@@ -1,12 +1,10 @@
 import { NextResponse } from "next/server"
-import { createClient } from "@/lib/supabase-server"
+import { supabaseAdmin } from "@/lib/supabase"
 
 export async function GET(request: Request) {
   try {
-    const supabase = createClient()
-
     // Get all vendors with pending payouts
-    const { data: pendingPayouts, error } = await supabase.rpc("get_pending_vendor_payouts")
+    const { data: pendingPayouts, error } = await supabaseAdmin.rpc("get_pending_vendor_payouts")
 
     if (error) {
       console.error("Error fetching pending payouts:", error)
