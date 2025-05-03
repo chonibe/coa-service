@@ -14,10 +14,9 @@ BEGIN
   RETURN QUERY
   WITH paid_line_items AS (
     -- Get all line items that have already been paid
-    SELECT DISTINCT oli.line_item_id
-    FROM vendor_payout_items vpi
-    JOIN order_line_items oli ON vpi.line_item_id = oli.line_item_id
-    WHERE vpi.payout_id IS NOT NULL
+    SELECT DISTINCT line_item_id
+    FROM vendor_payout_items
+    WHERE payout_id IS NOT NULL
   ),
   pending_items AS (
     -- Get all line items that haven't been paid yet
@@ -26,8 +25,8 @@ BEGIN
       oli.line_item_id,
       oli.product_id,
       oli.price,
-      pvp.payout_amount,
-      pvp.is_percentage
+      COALESCE(pvp.payout_amount, 10) as payout_amount,
+      COALESCE(pvp.is_percentage, true) as is_percentage
     FROM order_line_items oli
     LEFT JOIN product_vendor_payouts pvp ON oli.product_id = pvp.product_id AND oli.vendor_name = pvp.vendor_name
     WHERE 
@@ -42,14 +41,8 @@ BEGIN
       COUNT(DISTINCT pi.line_item_id) as product_count,
       SUM(
         CASE 
-          WHEN pi.payout_amount IS NOT NULL THEN
-            CASE 
-              WHEN pi.is_percentage THEN (COALESCE(pi.price, 0) * pi.payout_amount / 100)
-              ELSE pi.payout_amount
-            END
-          ELSE
-            -- Default to 10% if no specific payout setting
-            COALESCE(pi.price, 0) * 0.1
+          WHEN pi.is_percentage THEN (COALESCE(pi.price, 0) * pi.payout_amount / 100)
+          ELSE pi.payout_amount
         END
       ) as amount
     FROM pending_items pi
@@ -92,10 +85,9 @@ BEGIN
   RETURN QUERY
   WITH paid_line_items AS (
     -- Get all line items that have already been paid
-    SELECT DISTINCT oli.line_item_id
-    FROM vendor_payout_items vpi
-    JOIN order_line_items oli ON vpi.line_item_id = oli.line_item_id
-    WHERE vpi.payout_id IS NOT NULL
+    SELECT DISTINCT line_item_id
+    FROM vendor_payout_items
+    WHERE payout_id IS NOT NULL
   )
   SELECT 
     oli.line_item_id,
@@ -117,19 +109,3 @@ BEGIN
   ORDER BY oli.created_at DESC;
 END;
 $$ LANGUAGE plpgsql;
-
--- Create a table to track which line items are associated with which payouts
-CREATE TABLE IF NOT EXISTS vendor_payout_items (
-  id SERIAL PRIMARY KEY,
-  payout_id INTEGER REFERENCES vendor_payouts(id),
-  line_item_id TEXT NOT NULL,
-  order_id TEXT NOT NULL,
-  product_id TEXT NOT NULL,
-  amount DECIMAL NOT NULL,
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-  UNIQUE(payout_id, line_item_id)
-);
-
--- Create index for faster lookups
-CREATE INDEX IF NOT EXISTS vendor_payout_items_line_item_idx ON vendor_payout_items(line_item_id);
-CREATE INDEX IF NOT EXISTS vendor_payout_items_payout_id_idx ON vendor_payout_items(payout_id);
