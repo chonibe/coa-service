@@ -1,125 +1,153 @@
 "use client"
 
-import { useState, useEffect } from "react"
-import { Loader2 } from "lucide-react"
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
+import { useState } from "react"
+import { ChevronDown, ChevronUp, ExternalLink } from "lucide-react"
+import Link from "next/link"
 
 interface Product {
   id: string
   title: string
-  vendor: string
-  price: number
-  totalSold: number
+  handle: string
+  price: string
   status: string
+  vendor: string
+  image?: string
+  totalSales?: number
+  revenue?: number
 }
 
 interface ProductTableProps {
-  vendorName?: string
+  products: Product[]
 }
 
-export function ProductTable({ vendorName }: ProductTableProps) {
-  const [products, setProducts] = useState<Product[]>([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-  const [currentVendor, setCurrentVendor] = useState<string>(vendorName || "")
+export function ProductTable({ products }: ProductTableProps) {
+  const [sortField, setSortField] = useState<keyof Product>("title")
+  const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc")
+  const [page, setPage] = useState(1)
+  const itemsPerPage = 10
 
-  useEffect(() => {
-    const fetchVendorProducts = async () => {
-      try {
-        setLoading(true)
+  const handleSort = (field: keyof Product) => {
+    if (field === sortField) {
+      setSortDirection(sortDirection === "asc" ? "desc" : "asc")
+    } else {
+      setSortField(field)
+      setSortDirection("asc")
+    }
+  }
 
-        // If vendorName is not provided, try to get it from the profile
-        let vendor = vendorName
-        if (!vendor) {
-          const profileResponse = await fetch("/api/vendor/profile")
-          if (profileResponse.ok) {
-            const profileData = await profileResponse.json()
-            vendor = profileData.vendor?.vendor_name
-            setCurrentVendor(vendor || "")
-          }
-        }
+  const sortedProducts = [...products].sort((a, b) => {
+    const fieldA = a[sortField]
+    const fieldB = b[sortField]
 
-        if (!vendor) {
-          throw new Error("Could not determine vendor name")
-        }
-
-        const response = await fetch(`/api/vendors/products?vendor=${encodeURIComponent(vendor)}`)
-        if (!response.ok) {
-          throw new Error("Failed to fetch products")
-        }
-
-        const data = await response.json()
-        setProducts(data.products || [])
-        setError(null)
-      } catch (err) {
-        console.error("Error fetching vendor products:", err)
-        setError("Failed to load products")
-        setProducts([])
-      } finally {
-        setLoading(false)
-      }
+    if (typeof fieldA === "string" && typeof fieldB === "string") {
+      return sortDirection === "asc" ? fieldA.localeCompare(fieldB) : fieldB.localeCompare(fieldA)
     }
 
-    fetchVendorProducts()
-  }, [vendorName])
+    if (typeof fieldA === "number" && typeof fieldB === "number") {
+      return sortDirection === "asc" ? fieldA - fieldB : fieldB - fieldA
+    }
 
-  if (loading) {
-    return (
-      <div className="flex justify-center items-center py-8">
-        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-      </div>
-    )
+    return 0
+  })
+
+  const totalPages = Math.ceil(products.length / itemsPerPage)
+  const displayedProducts = sortedProducts.slice((page - 1) * itemsPerPage, page * itemsPerPage)
+
+  const getStatusBadge = (status: string) => {
+    switch (status.toLowerCase()) {
+      case "active":
+        return <Badge className="bg-green-500">Active</Badge>
+      case "draft":
+        return <Badge variant="outline">Draft</Badge>
+      case "archived":
+        return <Badge variant="destructive">Archived</Badge>
+      default:
+        return <Badge variant="secondary">{status}</Badge>
+    }
   }
 
-  if (error) {
-    return (
-      <div className="text-center py-8">
-        <p className="text-muted-foreground">{error}</p>
+  const SortHeader = ({ field, label }: { field: keyof Product; label: string }) => (
+    <TableHead className="cursor-pointer hover:bg-muted/30 transition-colors" onClick={() => handleSort(field)}>
+      <div className="flex items-center space-x-1">
+        <span>{label}</span>
+        {sortField === field && (
+          <span className="text-xs">
+            {sortDirection === "asc" ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+          </span>
+        )}
       </div>
-    )
-  }
-
-  if (products.length === 0) {
-    return (
-      <div className="text-center py-8">
-        <p className="text-muted-foreground">No products found for {currentVendor}</p>
-      </div>
-    )
-  }
+    </TableHead>
+  )
 
   return (
-    <div className="rounded-md border">
-      <div className="overflow-x-auto">
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="border-b bg-muted/50">
-              <th className="px-4 py-3 text-left font-medium">Product</th>
-              <th className="px-4 py-3 text-left font-medium">Price</th>
-              <th className="px-4 py-3 text-left font-medium">Sold</th>
-              <th className="px-4 py-3 text-left font-medium">Status</th>
-            </tr>
-          </thead>
-          <tbody>
-            {products.map((product) => (
-              <tr key={product.id} className="border-b">
-                <td className="px-4 py-3">{product.title}</td>
-                <td className="px-4 py-3">${product.price.toFixed(2)}</td>
-                <td className="px-4 py-3">{product.totalSold}</td>
-                <td className="px-4 py-3">
-                  <span
-                    className={`inline-flex items-center rounded-full px-2 py-1 text-xs ${
-                      product.status === "active"
-                        ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
-                        : "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400"
-                    }`}
-                  >
-                    {product.status}
-                  </span>
-                </td>
-              </tr>
+    <div>
+      <div className="rounded-md border">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <SortHeader field="title" label="Product" />
+              <SortHeader field="price" label="Price" />
+              <SortHeader field="status" label="Status" />
+              <TableHead>Actions</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {displayedProducts.map((product) => (
+              <TableRow key={product.id}>
+                <TableCell className="font-medium">{product.title}</TableCell>
+                <TableCell>${product.price}</TableCell>
+                <TableCell>{getStatusBadge(product.status)}</TableCell>
+                <TableCell>
+                  <Button variant="ghost" size="sm" asChild>
+                    <Link href={`/vendor/dashboard/products/${product.handle}`}>
+                      <ExternalLink className="h-4 w-4" />
+                      <span className="sr-only">View</span>
+                    </Link>
+                  </Button>
+                </TableCell>
+              </TableRow>
             ))}
-          </tbody>
-        </table>
+
+            {displayedProducts.length === 0 && (
+              <TableRow>
+                <TableCell colSpan={4} className="text-center py-8 text-muted-foreground">
+                  No products found
+                </TableCell>
+              </TableRow>
+            )}
+          </TableBody>
+        </Table>
       </div>
+
+      {totalPages > 1 && (
+        <div className="flex items-center justify-between py-4">
+          <div className="text-sm text-muted-foreground">
+            Showing {(page - 1) * itemsPerPage + 1}-{Math.min(page * itemsPerPage, products.length)} of{" "}
+            {products.length}
+          </div>
+          <div className="flex items-center space-x-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setPage((prev) => Math.max(prev - 1, 1))}
+              disabled={page === 1}
+            >
+              Previous
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setPage((prev) => Math.min(prev + 1, totalPages))}
+              disabled={page === totalPages}
+            >
+              Next
+            </Button>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
