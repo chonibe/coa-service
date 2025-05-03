@@ -101,10 +101,11 @@ export function SidebarLayout({ children }: SidebarLayoutProps) {
     navItems[6], // Settings
   ]
 
+  // Update the return statement to ensure the sidebar properly overlays content on mobile
   return (
     <div className="flex min-h-screen bg-gray-50 dark:bg-gray-950">
       <VendorSidebar />
-      <div className="flex-1 pt-4 md:pt-0">
+      <div className="flex-1 w-full">
         <main className="p-4 md:p-6 max-w-7xl mx-auto">{children}</main>
       </div>
     </div>
