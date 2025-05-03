@@ -16,6 +16,7 @@ import {
   Instagram,
   Pencil,
   ExternalLink,
+  DollarSign,
 } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { VendorDialog } from "./vendor-dialog"
@@ -175,10 +176,16 @@ export default function VendorsPage() {
             <h1 className="text-3xl font-bold tracking-tight">Vendors</h1>
             <p className="text-muted-foreground mt-2">View all vendors from your Shopify products</p>
           </div>
-          <div>
+          <div className="flex gap-2">
             <Button variant="outline" onClick={handleRefresh} disabled={isRefreshing}>
               <RefreshCw className={`h-4 w-4 mr-2 ${isRefreshing ? "animate-spin" : ""}`} />
               Refresh
+            </Button>
+            <Button variant="default" asChild>
+              <a href="/admin/vendors/payouts/admin">
+                <DollarSign className="h-4 w-4 mr-2" />
+                Manage Payouts
+              </a>
             </Button>
           </div>
         </div>
