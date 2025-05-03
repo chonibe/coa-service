@@ -1,442 +1,421 @@
 "use client"
 
-import { useState, useEffect, useCallback } from "react"
-import { useRouter, useSearchParams } from "next/navigation"
+import { useState, useEffect } from "react"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Label } from "@/components/ui/label"
+import { AlertCircle, BarChart3, LineChart, RefreshCw } from "lucide-react"
+import { Button } from "@/components/ui/button"
+import { Skeleton } from "@/components/ui/skeleton"
+import { useToast } from "@/components/ui/use-toast"
 import {
+  ResponsiveContainer,
   BarChart,
   Bar,
-  LineChart,
-  Line,
-  PieChart,
-  Pie,
-  Cell,
   XAxis,
   YAxis,
   CartesianGrid,
   Tooltip,
   Legend,
-  ResponsiveContainer,
+  LineChart as RechartsLineChart,
+  Line,
+  PieChart as RechartsPieChart,
+  Pie,
+  Cell,
 } from "recharts"
-import { AlertCircle, Loader2, ArrowUpRight, ArrowDownRight, RefreshCw } from "lucide-react"
-import { useToast } from "@/components/ui/use-toast"
-import { Button } from "@/components/ui/button"
+import { useMobile } from "@/hooks/use-mobile"
 
-const COLORS = ["#8884d8", "#82ca9d", "#ffc658", "#ff8042", "#0088fe"]
+// Mock data for charts
+const generateMockData = () => {
+  const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+  const currentMonth = new Date().getMonth()
 
-export default function AnalyticsDashboard() {
-  const router = useRouter()
-  const searchParams = useSearchParams()
-  const tab = searchParams.get("tab") || "overview"
+  // Last 6 months
+  const recentMonths = [
+    ...months.slice(
+      currentMonth - 5 >= 0 ? currentMonth - 5 : currentMonth - 5 + 12,
+      currentMonth - 5 >= 0 ? currentMonth + 1 : 12,
+    ),
+    ...months.slice(0, currentMonth - 5 < 0 ? currentMonth + 1 : 0),
+  ]
 
-  const [timeRange, setTimeRange] = useState("30days")
+  return {
+    salesData: recentMonths.map((month, index) => ({
+      name: month,
+      sales: Math.floor(Math.random() * 50) + 10,
+      revenue: Math.floor(Math.random() * 2000) + 500,
+    })),
+    productData: [
+      { name: "Product A", value: 35 },
+      { name: "Product B", value: 25 },
+      { name: "Product C", value: 20 },
+      { name: "Product D", value: 15 },
+      { name: "Others", value: 5 },
+    ],
+    channelData: [
+      { name: "Direct", value: 45 },
+      { name: "Organic", value: 30 },
+      { name: "Social", value: 15 },
+      { name: "Referral", value: 10 },
+    ],
+  }
+}
+
+const COLORS = ["#0088FE", "#00C49F", "#FFBB28", "#FF8042", "#8884D8"]
+
+export default function AnalyticsPage() {
+  const [activeTab, setActiveTab] = useState("overview")
   const [isLoading, setIsLoading] = useState(true)
-  const [isRefreshing, setIsRefreshing] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [analyticsData, setAnalyticsData] = useState<any>(null)
+  const [isRefreshing, setIsRefreshing] = useState(false)
+  const [chartData, setChartData] = useState<any>(generateMockData())
   const { toast } = useToast()
+  const isMobile = useMobile()
 
-  const fetchAnalyticsData = useCallback(async () => {
-    setIsLoading(true)
-    setError(null)
-
+  const fetchAnalyticsData = async () => {
     try {
-      const response = await fetch(`/api/analytics/shopify?timeRange=${timeRange}`)
+      setIsLoading(true)
+      setError(null)
 
-      if (!response.ok) {
-        if (response.status === 401) {
-          router.push("/vendor/login")
-          return
-        }
-        throw new Error(`Failed to fetch analytics data: ${response.status}`)
-      }
+      // Simulate API call
+      await new Promise((resolve) => setTimeout(resolve, 1000))
 
-      const data = await response.json()
-      setAnalyticsData(data)
-    } catch (err: any) {
+      // In a real app, you would fetch data from your API
+      // const response = await fetch('/api/analytics/vendor')
+      // const data = await response.json()
+
+      // For now, we'll use mock data
+      setChartData(generateMockData())
+    } catch (err) {
       console.error("Error fetching analytics data:", err)
-      setError(err.message || "Failed to load analytics data")
+      setError(err instanceof Error ? err.message : "Failed to load analytics data")
     } finally {
       setIsLoading(false)
-    }
-  }, [timeRange, router])
-
-  // Initial data fetch
-  useEffect(() => {
-    fetchAnalyticsData()
-  }, [fetchAnalyticsData])
-
-  // Handle refresh
-  const handleRefresh = async () => {
-    setIsRefreshing(true)
-    try {
-      await fetchAnalyticsData()
-      toast({
-        title: "Refreshed",
-        description: "Analytics data has been updated",
-        duration: 2000,
-      })
-    } catch (error) {
-      console.error("Refresh error:", error)
-    } finally {
       setIsRefreshing(false)
     }
   }
 
-  // Format date for display
-  const formatDate = (dateStr: string) => {
-    const date = new Date(dateStr)
-    return date.toLocaleDateString("en-US", { month: "short", day: "numeric" })
+  const handleRefresh = async () => {
+    setIsRefreshing(true)
+    await fetchAnalyticsData()
+    toast({
+      title: "Analytics Refreshed",
+      description: "The latest data has been loaded.",
+    })
   }
 
-  // Format currency
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat("en-US", {
-      style: "currency",
-      currency: "USD",
-      minimumFractionDigits: 2,
-    }).format(amount)
-  }
-
-  if (isLoading && !analyticsData) {
-    return (
-      <div className="flex items-center justify-center p-8 h-[calc(100vh-64px)]">
-        <div className="flex flex-col items-center justify-center p-4 text-center">
-          <Loader2 className="h-10 w-10 animate-spin text-primary mb-4" />
-          <h2 className="text-xl font-semibold mb-2">Loading analytics...</h2>
-          <p className="text-muted-foreground">Please wait while we fetch your data</p>
-        </div>
-      </div>
-    )
-  }
-
-  if (error) {
-    return (
-      <div className="p-6">
-        <Alert variant="destructive">
-          <AlertCircle className="h-4 w-4" />
-          <AlertTitle>Error</AlertTitle>
-          <AlertDescription>{error}</AlertDescription>
-        </Alert>
-        <Button onClick={handleRefresh} className="mt-4">
-          <RefreshCw className="h-4 w-4 mr-2" />
-          Try Again
-        </Button>
-      </div>
-    )
-  }
-
-  // If no real data, use mock data
-  const mockData = {
-    totalRevenue: 12500,
-    totalSales: 250,
-    salesData: [
-      { date: "2023-04-01", sales: 10, revenue: 500 },
-      { date: "2023-04-02", sales: 15, revenue: 750 },
-      { date: "2023-04-03", sales: 8, revenue: 400 },
-      { date: "2023-04-04", sales: 20, revenue: 1000 },
-      { date: "2023-04-05", sales: 12, revenue: 600 },
-      { date: "2023-04-06", sales: 18, revenue: 900 },
-      { date: "2023-04-07", sales: 22, revenue: 1100 },
-    ],
-    topProducts: [
-      { title: "Product A", sales: 45, revenue: 2250 },
-      { title: "Product B", sales: 32, revenue: 1600 },
-      { title: "Product C", sales: 28, revenue: 1400 },
-      { title: "Product D", sales: 22, revenue: 1100 },
-      { title: "Product E", sales: 18, revenue: 900 },
-    ],
-    analyticsData: {
-      sessions: [
-        {
-          date: "2023-04-01",
-          totalSessionsCount: 120,
-          mobileSessionsCount: 80,
-          desktopSessionsCount: 40,
-          conversionRate: "2.5%",
-        },
-      ],
-    },
-  }
-
-  // Use real data if available, otherwise use mock data
-  const data = analyticsData || mockData
+  useEffect(() => {
+    fetchAnalyticsData()
+  }, [])
 
   return (
-    <div className="p-6">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+    <div className="space-y-6">
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between">
         <div>
-          <h1 className="text-2xl font-bold">Analytics Dashboard</h1>
-          <p className="text-muted-foreground">Track your performance and sales insights</p>
+          <h1 className="text-3xl font-bold tracking-tight">Analytics</h1>
+          <p className="text-muted-foreground">View your sales and performance metrics</p>
         </div>
-        <div className="flex items-center gap-2">
-          <Label htmlFor="time-range" className="sr-only">
-            Time Range
-          </Label>
-          <Select value={timeRange} onValueChange={setTimeRange}>
-            <SelectTrigger id="time-range" className="w-[180px]">
-              <SelectValue placeholder="Select time range" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="7days">Last 7 days</SelectItem>
-              <SelectItem value="30days">Last 30 days</SelectItem>
-              <SelectItem value="90days">Last 90 days</SelectItem>
-              <SelectItem value="year">Last year</SelectItem>
-              <SelectItem value="all">All time</SelectItem>
-            </SelectContent>
-          </Select>
-          <Button variant="outline" size="icon" onClick={handleRefresh} disabled={isRefreshing}>
+        <div className="mt-4 md:mt-0">
+          <Button variant="outline" onClick={handleRefresh} disabled={isRefreshing} className="flex items-center gap-1">
             <RefreshCw className={`h-4 w-4 ${isRefreshing ? "animate-spin" : ""}`} />
-            <span className="sr-only">Refresh data</span>
+            Refresh
           </Button>
         </div>
       </div>
 
-      {/* Summary Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Total Revenue</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center justify-between">
-              <div className="text-2xl font-bold">{formatCurrency(data.totalRevenue || 0)}</div>
-              <div className="flex items-center text-sm font-medium text-green-500">
-                <ArrowUpRight className="h-4 w-4 mr-1" />
-                12%
-              </div>
+      {error && (
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertTitle>Error</AlertTitle>
+          <AlertDescription>
+            {error}
+            <div className="mt-2">
+              <Button variant="outline" size="sm" onClick={handleRefresh}>
+                Try Again
+              </Button>
             </div>
-            <p className="text-xs text-muted-foreground mt-1">Compared to previous period</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Total Sales</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center justify-between">
-              <div className="text-2xl font-bold">{data.totalSales || 0}</div>
-              <div className="flex items-center text-sm font-medium text-green-500">
-                <ArrowUpRight className="h-4 w-4 mr-1" />
-                8%
-              </div>
-            </div>
-            <p className="text-xs text-muted-foreground mt-1">Compared to previous period</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Conversion Rate</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center justify-between">
-              <div className="text-2xl font-bold">{data.analyticsData?.sessions?.[0]?.conversionRate || "3.2%"}</div>
-              <div className="flex items-center text-sm font-medium text-red-500">
-                <ArrowDownRight className="h-4 w-4 mr-1" />
-                0.5%
-              </div>
-            </div>
-            <p className="text-xs text-muted-foreground mt-1">Compared to previous period</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Avg. Order Value</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center justify-between">
-              <div className="text-2xl font-bold">
-                {formatCurrency(data.totalSales ? data.totalRevenue / data.totalSales : 0)}
-              </div>
-              <div className="flex items-center text-sm font-medium text-green-500">
-                <ArrowUpRight className="h-4 w-4 mr-1" />
-                4%
-              </div>
-            </div>
-            <p className="text-xs text-muted-foreground mt-1">Compared to previous period</p>
-          </CardContent>
-        </Card>
-      </div>
+          </AlertDescription>
+        </Alert>
+      )}
 
-      <Tabs
-        defaultValue="overview"
-        value={tab}
-        onValueChange={(value) => router.push(`/vendor/dashboard/analytics?tab=${value}`)}
-      >
-        <TabsList className="mb-6">
+      <Tabs defaultValue="overview" value={activeTab} onValueChange={setActiveTab}>
+        <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="overview">Overview</TabsTrigger>
-          <TabsTrigger value="sales">Sales</TabsTrigger>
-          <TabsTrigger value="traffic">Traffic</TabsTrigger>
+          <TabsTrigger value="products">Products</TabsTrigger>
+          <TabsTrigger value="channels">Channels</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="overview" className="space-y-6">
+        <TabsContent value="overview" className="space-y-4">
           <Card>
             <CardHeader>
-              <CardTitle>Sales Performance</CardTitle>
-              <CardDescription>Track your sales and revenue over time</CardDescription>
+              <CardTitle>Sales Overview</CardTitle>
+              <CardDescription>Monthly sales and revenue for the past 6 months</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="h-[350px]">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={data.salesData || []} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+              {isLoading ? (
+                <Skeleton className="h-[300px] w-full" />
+              ) : (
+                <ResponsiveContainer width="100%" height={300}>
+                  <BarChart
+                    data={chartData.salesData}
+                    margin={{
+                      top: 5,
+                      right: 30,
+                      left: 20,
+                      bottom: 5,
+                    }}
+                  >
                     <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="date" tickFormatter={formatDate} />
+                    <XAxis dataKey="name" />
                     <YAxis yAxisId="left" orientation="left" stroke="#8884d8" />
                     <YAxis yAxisId="right" orientation="right" stroke="#82ca9d" />
-                    <Tooltip
-                      formatter={(value, name) => {
-                        if (name === "revenue") return [formatCurrency(value as number), "Revenue"]
-                        return [value, "Sales"]
-                      }}
-                      labelFormatter={formatDate}
-                    />
+                    <Tooltip />
                     <Legend />
-                    <Bar yAxisId="left" dataKey="sales" name="Sales" fill="#8884d8" />
-                    <Bar yAxisId="right" dataKey="revenue" name="Revenue" fill="#82ca9d" />
+                    <Bar yAxisId="left" dataKey="sales" fill="#8884d8" name="Sales (Units)" />
+                    <Bar yAxisId="right" dataKey="revenue" fill="#82ca9d" name="Revenue ($)" />
                   </BarChart>
                 </ResponsiveContainer>
-              </div>
+              )}
             </CardContent>
           </Card>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="grid gap-4 md:grid-cols-2">
             <Card>
               <CardHeader>
-                <CardTitle>Top Selling Products</CardTitle>
-                <CardDescription>Your best performing products</CardDescription>
+                <CardTitle>Sales Trend</CardTitle>
+                <CardDescription>Monthly sales trend</CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="space-y-4">
-                  {(data.topProducts || []).map((product: any, i: number) => (
-                    <div key={i} className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <div className="w-2 h-2 rounded-full bg-primary" />
-                        <span className="font-medium">{product.title}</span>
-                      </div>
-                      <div className="flex items-center gap-4">
-                        <span className="text-sm text-muted-foreground">{product.sales} sales</span>
-                        <span className="font-medium">{formatCurrency(product.revenue)}</span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
+                {isLoading ? (
+                  <Skeleton className="h-[200px] w-full" />
+                ) : (
+                  <ResponsiveContainer width="100%" height={200}>
+                    <RechartsLineChart
+                      data={chartData.salesData}
+                      margin={{
+                        top: 5,
+                        right: 30,
+                        left: 20,
+                        bottom: 5,
+                      }}
+                    >
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="name" />
+                      <YAxis />
+                      <Tooltip />
+                      <Line type="monotone" dataKey="sales" stroke="#8884d8" activeDot={{ r: 8 }} />
+                    </RechartsLineChart>
+                  </ResponsiveContainer>
+                )}
               </CardContent>
             </Card>
 
             <Card>
               <CardHeader>
-                <CardTitle>Traffic Sources</CardTitle>
-                <CardDescription>Where your visitors are coming from</CardDescription>
+                <CardTitle>Revenue Trend</CardTitle>
+                <CardDescription>Monthly revenue trend</CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="h-[250px]">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <PieChart>
-                      <Pie
-                        data={[
-                          { name: "Direct", value: 55 },
-                          { name: "Social", value: 25 },
-                          { name: "Email", value: 15 },
-                          { name: "Affiliates", value: 5 },
-                        ]}
-                        cx="50%"
-                        cy="50%"
-                        labelLine={false}
-                        outerRadius={80}
-                        fill="#8884d8"
-                        dataKey="value"
-                        label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                      >
-                        {[0, 1, 2, 3].map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                        ))}
-                      </Pie>
-                      <Tooltip formatter={(value) => [`${value}%`, "Percentage"]} />
-                      <Legend />
-                    </PieChart>
+                {isLoading ? (
+                  <Skeleton className="h-[200px] w-full" />
+                ) : (
+                  <ResponsiveContainer width="100%" height={200}>
+                    <RechartsLineChart
+                      data={chartData.salesData}
+                      margin={{
+                        top: 5,
+                        right: 30,
+                        left: 20,
+                        bottom: 5,
+                      }}
+                    >
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="name" />
+                      <YAxis />
+                      <Tooltip />
+                      <Line type="monotone" dataKey="revenue" stroke="#82ca9d" activeDot={{ r: 8 }} />
+                    </RechartsLineChart>
                   </ResponsiveContainer>
-                </div>
+                )}
               </CardContent>
             </Card>
           </div>
         </TabsContent>
 
-        <TabsContent value="sales" className="space-y-6">
+        <TabsContent value="products" className="space-y-4">
           <Card>
             <CardHeader>
-              <CardTitle>Detailed Sales Analysis</CardTitle>
-              <CardDescription>Comprehensive breakdown of your sales data</CardDescription>
+              <CardTitle>Product Distribution</CardTitle>
+              <CardDescription>Sales distribution by product</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="h-[400px]">
-                <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={data.salesData || []} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="date" tickFormatter={formatDate} />
-                    <YAxis />
-                    <Tooltip
-                      formatter={(value, name) => {
-                        if (name === "revenue") return [formatCurrency(value as number), "Revenue"]
-                        return [value, "Sales"]
-                      }}
-                      labelFormatter={formatDate}
-                    />
+              {isLoading ? (
+                <Skeleton className="h-[300px] w-full" />
+              ) : (
+                <ResponsiveContainer width="100%" height={300}>
+                  <RechartsPieChart>
+                    <Pie
+                      data={chartData.productData}
+                      cx="50%"
+                      cy="50%"
+                      labelLine={true}
+                      label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                      outerRadius={isMobile ? 80 : 100}
+                      fill="#8884d8"
+                      dataKey="value"
+                    >
+                      {chartData.productData.map((entry: any, index: number) => (
+                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                      ))}
+                    </Pie>
+                    <Tooltip />
                     <Legend />
-                    <Line type="monotone" dataKey="revenue" stroke="#8884d8" activeDot={{ r: 8 }} />
-                  </LineChart>
+                  </RechartsPieChart>
                 </ResponsiveContainer>
-              </div>
+              )}
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Top Products</CardTitle>
+              <CardDescription>Best performing products by sales</CardDescription>
+            </CardHeader>
+            <CardContent>
+              {isLoading ? (
+                <div className="space-y-2">
+                  {Array(5)
+                    .fill(0)
+                    .map((_, i) => (
+                      <Skeleton key={i} className="h-12 w-full" />
+                    ))}
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {chartData.productData.map((product: any, i: number) => (
+                    <div key={i} className="flex items-center justify-between">
+                      <div className="flex items-center">
+                        <div
+                          className="w-3 h-3 rounded-full mr-2"
+                          style={{ backgroundColor: COLORS[i % COLORS.length] }}
+                        ></div>
+                        <span>{product.name}</span>
+                      </div>
+                      <span className="font-medium">{product.value}%</span>
+                    </div>
+                  ))}
+                </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>
 
-        <TabsContent value="traffic" className="space-y-6">
+        <TabsContent value="channels" className="space-y-4">
           <Card>
             <CardHeader>
-              <CardTitle>Traffic Analysis</CardTitle>
-              <CardDescription>Visitor traffic and engagement metrics</CardDescription>
+              <CardTitle>Sales Channels</CardTitle>
+              <CardDescription>Distribution of sales by channel</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="h-[400px]">
-                <ResponsiveContainer width="100%" height="100%">
-                  <LineChart
-                    data={
-                      (data.analyticsData?.sessions || []).length > 0
-                        ? (data.analyticsData?.sessions || []).map((session: any) => ({
-                            date: session.date,
-                            sessions: session.totalSessionsCount,
-                            mobile: session.mobileSessionsCount,
-                            desktop: session.desktopSessionsCount,
-                          }))
-                        : [
-                            { date: "2023-04-01", sessions: 120, mobile: 80, desktop: 40 },
-                            { date: "2023-04-02", sessions: 132, mobile: 90, desktop: 42 },
-                            { date: "2023-04-03", sessions: 101, mobile: 70, desktop: 31 },
-                            { date: "2023-04-04", sessions: 134, mobile: 91, desktop: 43 },
-                            { date: "2023-04-05", sessions: 90, mobile: 55, desktop: 35 },
-                            { date: "2023-04-06", sessions: 110, mobile: 75, desktop: 35 },
-                            { date: "2023-04-07", sessions: 140, mobile: 94, desktop: 46 },
-                          ]
-                    }
-                    margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
-                  >
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="date" tickFormatter={formatDate} />
-                    <YAxis />
+              {isLoading ? (
+                <Skeleton className="h-[300px] w-full" />
+              ) : (
+                <ResponsiveContainer width="100%" height={300}>
+                  <RechartsPieChart>
+                    <Pie
+                      data={chartData.channelData}
+                      cx="50%"
+                      cy="50%"
+                      labelLine={true}
+                      label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                      outerRadius={isMobile ? 80 : 100}
+                      fill="#8884d8"
+                      dataKey="value"
+                    >
+                      {chartData.channelData.map((entry: any, index: number) => (
+                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                      ))}
+                    </Pie>
                     <Tooltip />
                     <Legend />
-                    <Line type="monotone" dataKey="sessions" stroke="#8884d8" name="Total Sessions" />
-                    <Line type="monotone" dataKey="mobile" stroke="#82ca9d" name="Mobile Sessions" />
-                    <Line type="monotone" dataKey="desktop" stroke="#ffc658" name="Desktop Sessions" />
-                  </LineChart>
+                  </RechartsPieChart>
                 </ResponsiveContainer>
-              </div>
+              )}
             </CardContent>
           </Card>
+
+          <div className="grid gap-4 md:grid-cols-2">
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">
+                  <div className="flex items-center">
+                    <BarChart3 className="mr-2 h-4 w-4" />
+                    Channel Performance
+                  </div>
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {isLoading ? (
+                  <div className="space-y-2">
+                    {Array(4)
+                      .fill(0)
+                      .map((_, i) => (
+                        <Skeleton key={i} className="h-12 w-full" />
+                      ))}
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {chartData.channelData.map((channel: any, i: number) => (
+                      <div key={i} className="flex items-center justify-between">
+                        <div className="flex items-center">
+                          <div
+                            className="w-3 h-3 rounded-full mr-2"
+                            style={{ backgroundColor: COLORS[i % COLORS.length] }}
+                          ></div>
+                          <span>{channel.name}</span>
+                        </div>
+                        <span className="font-medium">{channel.value}%</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">
+                  <div className="flex items-center">
+                    <LineChart className="mr-2 h-4 w-4" />
+                    Growth by Channel
+                  </div>
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {isLoading ? (
+                  <Skeleton className="h-[200px] w-full" />
+                ) : (
+                  <ResponsiveContainer width="100%" height={200}>
+                    <BarChart
+                      data={chartData.channelData}
+                      margin={{
+                        top: 5,
+                        right: 30,
+                        left: 20,
+                        bottom: 5,
+                      }}
+                    >
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="name" />
+                      <YAxis />
+                      <Tooltip />
+                      <Bar dataKey="value" fill="#8884d8" name="Growth %" />
+                    </BarChart>
+                  </ResponsiveContainer>
+                )}
+              </CardContent>
+            </Card>
+          </div>
         </TabsContent>
       </Tabs>
     </div>

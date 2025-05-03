@@ -3,45 +3,74 @@
 import { useState, useEffect } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Skeleton } from "@/components/ui/skeleton"
-import { useVendorData } from "@/hooks/use-vendor-data"
-import { ArrowUpRight, BarChart, DollarSign, Package, Inbox } from "lucide-react"
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
+import { AlertCircle, ArrowUpRight, BarChart, DollarSign, Package, Inbox, RefreshCw } from "lucide-react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { useToast } from "@/components/ui/use-toast"
 
 export default function VendorDashboard() {
-  const { stats, isLoading, error } = useVendorData()
+  const [stats, setStats] = useState<any>(null)
   const [salesData, setSalesData] = useState<any[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const [isRefreshing, setIsRefreshing] = useState(false)
   const { toast } = useToast()
 
-  useEffect(() => {
-    async function fetchSalesData() {
-      try {
-        const response = await fetch("/api/vendor/sales")
-        if (!response.ok) throw new Error("Failed to fetch sales data")
-        const data = await response.json()
-        setSalesData(data.sales || [])
-      } catch (err) {
-        console.error("Error fetching sales data:", err)
+  const fetchData = async () => {
+    try {
+      setIsLoading(true)
+      setError(null)
+
+      // Fetch vendor stats
+      const statsResponse = await fetch("/api/vendor/stats")
+      if (!statsResponse.ok) {
+        throw new Error(`Failed to fetch vendor stats: ${statsResponse.status}`)
       }
+      const statsData = await statsResponse.json()
+      setStats(statsData)
+
+      // Fetch sales data
+      const salesResponse = await fetch("/api/vendor/sales")
+      if (!salesResponse.ok) {
+        console.warn("Failed to fetch sales data, using empty array")
+        setSalesData([])
+      } else {
+        const salesResult = await salesResponse.json()
+        setSalesData(salesResult.sales || [])
+      }
+    } catch (err) {
+      console.error("Error fetching dashboard data:", err)
+      setError(err instanceof Error ? err.message : "An unexpected error occurred")
+
+      // Set default stats to prevent UI errors
+      setStats({
+        totalProducts: 0,
+        totalSales: 0,
+        totalRevenue: 0,
+        pendingPayout: 0,
+        revenueGrowth: 0,
+        salesGrowth: 0,
+        newProducts: 0,
+      })
+    } finally {
+      setIsLoading(false)
+      setIsRefreshing(false)
     }
-
-    fetchSalesData()
-  }, [])
-
-  if (error) {
-    return (
-      <Card>
-        <CardHeader>
-          <CardTitle>Error</CardTitle>
-          <CardDescription>Failed to load dashboard data</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <p className="text-red-500">{error.message}</p>
-        </CardContent>
-      </Card>
-    )
   }
+
+  const handleRefresh = async () => {
+    setIsRefreshing(true)
+    await fetchData()
+    toast({
+      title: "Dashboard Refreshed",
+      description: "The latest data has been loaded.",
+    })
+  }
+
+  useEffect(() => {
+    fetchData()
+  }, [])
 
   return (
     <div className="space-y-6">
@@ -51,14 +80,30 @@ export default function VendorDashboard() {
           <p className="text-muted-foreground">Welcome back to your vendor dashboard</p>
         </div>
         <div className="mt-4 md:mt-0 space-x-2">
-          <Button variant="outline" asChild>
-            <Link href="/vendor/dashboard/products">View Products</Link>
+          <Button variant="outline" onClick={handleRefresh} disabled={isRefreshing} className="flex items-center gap-1">
+            <RefreshCw className={`h-4 w-4 ${isRefreshing ? "animate-spin" : ""}`} />
+            Refresh
           </Button>
           <Button asChild>
             <Link href="/vendor/dashboard/analytics">View Analytics</Link>
           </Button>
         </div>
       </div>
+
+      {error && (
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertTitle>Error</AlertTitle>
+          <AlertDescription>
+            {error}
+            <div className="mt-2">
+              <Button variant="outline" size="sm" onClick={handleRefresh}>
+                Try Again
+              </Button>
+            </div>
+          </AlertDescription>
+        </Alert>
+      )}
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <Card>
@@ -71,8 +116,8 @@ export default function VendorDashboard() {
               <Skeleton className="h-7 w-20" />
             ) : (
               <>
-                <div className="text-2xl font-bold">${stats?.totalRevenue || "0.00"}</div>
-                <p className="text-xs text-muted-foreground mt-1">+{stats?.revenueGrowth || 8}% from last month</p>
+                <div className="text-2xl font-bold">${stats?.totalRevenue?.toFixed(2) || "0.00"}</div>
+                <p className="text-xs text-muted-foreground mt-1">+{stats?.revenueGrowth || 0}% from last month</p>
               </>
             )}
           </CardContent>
@@ -89,7 +134,7 @@ export default function VendorDashboard() {
             ) : (
               <>
                 <div className="text-2xl font-bold">{stats?.totalSales || 0}</div>
-                <p className="text-xs text-muted-foreground mt-1">+{stats?.salesGrowth || 12}% from last month</p>
+                <p className="text-xs text-muted-foreground mt-1">+{stats?.salesGrowth || 0}% from last month</p>
               </>
             )}
           </CardContent>
@@ -105,7 +150,7 @@ export default function VendorDashboard() {
               <Skeleton className="h-7 w-20" />
             ) : (
               <>
-                <div className="text-2xl font-bold">${stats?.pendingPayout || "0.00"}</div>
+                <div className="text-2xl font-bold">${stats?.pendingPayout?.toFixed(2) || "0.00"}</div>
                 <div className="flex items-center mt-1">
                   <ArrowUpRight className="h-3 w-3 text-green-500 mr-1" />
                   <p className="text-xs text-green-500">Next payout soon</p>
