@@ -24,6 +24,7 @@ export function VendorSidebar() {
   const isMobile = useMobile()
   const [open, setOpen] = useState(false)
   const [vendorName, setVendorName] = useState<string>("Vendor")
+  const [profileComplete, setProfileComplete] = useState<boolean>(true)
 
   const navItems: NavItem[] = [
     {
@@ -71,6 +72,19 @@ export function VendorSidebar() {
         if (response.ok) {
           const data = await response.json()
           setVendorName(data.vendor?.vendor_name || "Vendor")
+
+          // Check if profile is complete
+          const vendor = data.vendor
+          if (vendor) {
+            const isComplete = !!(
+              vendor.paypal_email &&
+              vendor.tax_id &&
+              vendor.tax_country &&
+              vendor.address &&
+              vendor.phone
+            )
+            setProfileComplete(isComplete)
+          }
         }
       } catch (error) {
         console.error("Error fetching vendor profile:", error)
@@ -136,6 +150,9 @@ export function VendorSidebar() {
                       >
                         {item.icon}
                         <span>{item.title}</span>
+                        {item.title === "Settings" && !profileComplete && (
+                          <span className="ml-auto flex h-2 w-2 rounded-full bg-red-500"></span>
+                        )}
                       </Link>
                     ))}
                   </nav>
@@ -183,6 +200,9 @@ export function VendorSidebar() {
                 >
                   {item.icon}
                   <span>{item.title}</span>
+                  {item.title === "Settings" && !profileComplete && (
+                    <span className="ml-auto flex h-2 w-2 rounded-full bg-red-500"></span>
+                  )}
                 </Link>
               ))}
             </nav>
@@ -205,10 +225,13 @@ export function VendorSidebar() {
               href={item.href}
               className={`flex flex-col items-center justify-center py-3 ${
                 pathname === item.href ? "text-primary" : "text-muted-foreground"
-              }`}
+              } relative`}
             >
               {item.icon}
               <span className="text-xs mt-1">{item.title}</span>
+              {item.title === "Settings" && !profileComplete && (
+                <span className="absolute top-2 right-1/4 flex h-2 w-2 rounded-full bg-red-500"></span>
+              )}
             </Link>
           ))}
         </div>
