@@ -1,100 +1,125 @@
 "use client"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Skeleton } from "@/components/ui/skeleton"
-import { formatCurrency } from "@/lib/utils"
-import Image from "next/image"
+
+import { useState, useEffect } from "react"
+import { Loader2 } from "lucide-react"
 
 interface Product {
   id: string
   title: string
-  image?: string
+  vendor: string
   price: number
-  quantity: number
-  totalSales: number
+  totalSold: number
+  status: string
 }
 
 interface ProductTableProps {
-  products: Product[]
-  isLoading: boolean
+  vendorName?: string
 }
 
-export function ProductTable({ products, isLoading }: ProductTableProps) {
-  // Create loading skeleton rows
-  const LoadingRows = () => (
-    <>
-      {Array(5)
-        .fill(0)
-        .map((_, i) => (
-          <TableRow key={`loading-${i}`}>
-            <TableCell>
-              <div className="flex items-center space-x-3">
-                <Skeleton className="h-10 w-10 rounded-md" />
-                <Skeleton className="h-4 w-32" />
-              </div>
-            </TableCell>
-            <TableCell>
-              <Skeleton className="h-4 w-16" />
-            </TableCell>
-            <TableCell>
-              <Skeleton className="h-4 w-16" />
-            </TableCell>
-            <TableCell>
-              <Skeleton className="h-4 w-20" />
-            </TableCell>
-          </TableRow>
-        ))}
-    </>
-  )
+export function ProductTable({ vendorName }: ProductTableProps) {
+  const [products, setProducts] = useState<Product[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const [currentVendor, setCurrentVendor] = useState<string>(vendorName || "")
+
+  useEffect(() => {
+    const fetchVendorProducts = async () => {
+      try {
+        setLoading(true)
+
+        // If vendorName is not provided, try to get it from the profile
+        let vendor = vendorName
+        if (!vendor) {
+          const profileResponse = await fetch("/api/vendor/profile")
+          if (profileResponse.ok) {
+            const profileData = await profileResponse.json()
+            vendor = profileData.vendor?.vendor_name
+            setCurrentVendor(vendor || "")
+          }
+        }
+
+        if (!vendor) {
+          throw new Error("Could not determine vendor name")
+        }
+
+        const response = await fetch(`/api/vendors/products?vendor=${encodeURIComponent(vendor)}`)
+        if (!response.ok) {
+          throw new Error("Failed to fetch products")
+        }
+
+        const data = await response.json()
+        setProducts(data.products || [])
+        setError(null)
+      } catch (err) {
+        console.error("Error fetching vendor products:", err)
+        setError("Failed to load products")
+        setProducts([])
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchVendorProducts()
+  }, [vendorName])
+
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center py-8">
+        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="text-center py-8">
+        <p className="text-muted-foreground">{error}</p>
+      </div>
+    )
+  }
+
+  if (products.length === 0) {
+    return (
+      <div className="text-center py-8">
+        <p className="text-muted-foreground">No products found for {currentVendor}</p>
+      </div>
+    )
+  }
 
   return (
-    <div className="overflow-x-auto">
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>Product</TableHead>
-            <TableHead>Price</TableHead>
-            <TableHead>Quantity</TableHead>
-            <TableHead>Total Sales</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {isLoading ? (
-            <LoadingRows />
-          ) : products.length === 0 ? (
-            <TableRow>
-              <TableCell colSpan={4} className="text-center py-6 text-muted-foreground">
-                No products found
-              </TableCell>
-            </TableRow>
-          ) : (
-            products.map((product) => (
-              <TableRow key={product.id}>
-                <TableCell>
-                  <div className="flex items-center space-x-3">
-                    {product.image ? (
-                      <Image
-                        src={product.image || "/placeholder.svg"}
-                        alt={product.title}
-                        width={40}
-                        height={40}
-                        className="rounded-md object-cover"
-                      />
-                    ) : (
-                      <div className="w-10 h-10 bg-muted rounded-md flex items-center justify-center">
-                        <span className="text-xs text-muted-foreground">No img</span>
-                      </div>
-                    )}
-                    <span className="font-medium truncate max-w-[200px]">{product.title}</span>
-                  </div>
-                </TableCell>
-                <TableCell>{formatCurrency(product.price)}</TableCell>
-                <TableCell>{product.quantity}</TableCell>
-                <TableCell>{formatCurrency(product.totalSales)}</TableCell>
-              </TableRow>
-            ))
-          )}
-        </TableBody>
-      </Table>
+    <div className="rounded-md border">
+      <div className="overflow-x-auto">
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="border-b bg-muted/50">
+              <th className="px-4 py-3 text-left font-medium">Product</th>
+              <th className="px-4 py-3 text-left font-medium">Price</th>
+              <th className="px-4 py-3 text-left font-medium">Sold</th>
+              <th className="px-4 py-3 text-left font-medium">Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            {products.map((product) => (
+              <tr key={product.id} className="border-b">
+                <td className="px-4 py-3">{product.title}</td>
+                <td className="px-4 py-3">${product.price.toFixed(2)}</td>
+                <td className="px-4 py-3">{product.totalSold}</td>
+                <td className="px-4 py-3">
+                  <span
+                    className={`inline-flex items-center rounded-full px-2 py-1 text-xs ${
+                      product.status === "active"
+                        ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
+                        : "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400"
+                    }`}
+                  >
+                    {product.status}
+                  </span>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </div>
   )
 }
