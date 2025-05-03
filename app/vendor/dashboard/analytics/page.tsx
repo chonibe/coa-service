@@ -22,15 +22,31 @@ import {
   Pie,
   Cell,
 } from "recharts"
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { formatCurrency } from "@/lib/utils"
 
 const COLORS = ["#0088FE", "#00C49F", "#FFBB28", "#FF8042", "#8884D8", "#82ca9d"]
+
+interface SaleItem {
+  id: string
+  product_id: string
+  title: string
+  date: string
+  price: number
+  currency: string
+  customer?: string
+}
 
 export default function AnalyticsPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [salesByDate, setSalesByDate] = useState<any[]>([])
   const [salesByProduct, setSalesByProduct] = useState<any[]>([])
+  const [salesHistory, setSalesHistory] = useState<SaleItem[]>([])
   const [totalItems, setTotalItems] = useState(0)
+  const [sortField, setSortField] = useState<string>("date")
+  const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc")
   const { toast } = useToast()
 
   const fetchAnalyticsData = async () => {
@@ -48,6 +64,7 @@ export default function AnalyticsPage() {
 
       setSalesByDate(data.salesByDate || [])
       setSalesByProduct(data.salesByProduct || [])
+      setSalesHistory(data.salesHistory || [])
       setTotalItems(data.totalItems || 0)
     } catch (err) {
       console.error("Error fetching analytics data:", err)
@@ -74,6 +91,41 @@ export default function AnalyticsPage() {
       )
     }
     return null
+  }
+
+  // Sort sales history
+  const sortedSalesHistory = [...(salesHistory || [])].sort((a, b) => {
+    if (sortField === "date") {
+      return sortDirection === "asc"
+        ? new Date(a.date).getTime() - new Date(b.date).getTime()
+        : new Date(b.date).getTime() - new Date(a.date).getTime()
+    }
+    if (sortField === "price") {
+      return sortDirection === "asc" ? a.price - b.price : b.price - a.price
+    }
+    if (sortField === "title") {
+      return sortDirection === "asc" ? a.title.localeCompare(b.title) : b.title.localeCompare(a.title)
+    }
+    return 0
+  })
+
+  const handleSort = (field: string) => {
+    if (sortField === field) {
+      setSortDirection(sortDirection === "asc" ? "desc" : "asc")
+    } else {
+      setSortField(field)
+      setSortDirection("asc")
+    }
+  }
+
+  // Format date for display
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString)
+    return new Intl.DateTimeFormat("en-GB", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+    }).format(date)
   }
 
   return (
@@ -269,6 +321,85 @@ export default function AnalyticsPage() {
           ) : (
             <div className="flex items-center justify-center h-[300px]">
               <p className="text-muted-foreground">No product sales data available</p>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Sales History Table */}
+      <Card className="w-full">
+        <CardHeader>
+          <CardTitle>Sales History</CardTitle>
+          <CardDescription>Detailed record of individual sales</CardDescription>
+        </CardHeader>
+        <CardContent>
+          {isLoading ? (
+            <Skeleton className="h-[300px] w-full" />
+          ) : salesHistory && salesHistory.length > 0 ? (
+            <div>
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-medium">Sort by:</span>
+                  <Select
+                    value={sortField}
+                    onValueChange={(value) => {
+                      setSortField(value)
+                      setSortDirection("desc")
+                    }}
+                  >
+                    <SelectTrigger className="w-[180px]">
+                      <SelectValue placeholder="Sort by" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="date">Date</SelectItem>
+                      <SelectItem value="title">Product</SelectItem>
+                      <SelectItem value="price">Price</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setSortDirection(sortDirection === "asc" ? "desc" : "asc")}
+                  >
+                    {sortDirection === "asc" ? "↑ Ascending" : "↓ Descending"}
+                  </Button>
+                </div>
+              </div>
+
+              <div className="rounded-md border">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="cursor-pointer" onClick={() => handleSort("date")}>
+                        Date {sortField === "date" && (sortDirection === "asc" ? "↑" : "↓")}
+                      </TableHead>
+                      <TableHead className="cursor-pointer" onClick={() => handleSort("title")}>
+                        Product {sortField === "title" && (sortDirection === "asc" ? "↑" : "↓")}
+                      </TableHead>
+                      <TableHead className="cursor-pointer text-right" onClick={() => handleSort("price")}>
+                        Price {sortField === "price" && (sortDirection === "asc" ? "↑" : "↓")}
+                      </TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {sortedSalesHistory.map((sale) => (
+                      <TableRow key={sale.id}>
+                        <TableCell>{formatDate(sale.date)}</TableCell>
+                        <TableCell className="font-medium">{sale.title}</TableCell>
+                        <TableCell className="text-right">
+                          {sale.currency === "GBP"
+                            ? `£${sale.price.toFixed(2)}`
+                            : formatCurrency(sale.price, sale.currency)}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            </div>
+          ) : (
+            <div className="flex items-center justify-center h-[100px]">
+              <p className="text-muted-foreground">No sales history available</p>
             </div>
           )}
         </CardContent>

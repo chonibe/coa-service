@@ -10,7 +10,7 @@ import { ScrollArea } from "@/components/ui/scroll-area"
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
 import { Toaster } from "@/components/ui/toaster"
 import { useMobile } from "@/hooks/use-mobile"
-import { LogOut, Menu, X, Home, BarChart, Settings, Award, Package, DollarSign, MessageSquare } from "lucide-react"
+import { LogOut, Menu, Home, BarChart, Settings, Award, Package, DollarSign, MessageSquare } from "lucide-react"
 
 interface NavItem {
   title: string
@@ -115,10 +115,6 @@ export function VendorSidebar() {
                   <Award className="h-6 w-6" />
                   <span className="font-medium">Vendor Portal</span>
                 </Link>
-                <Button variant="ghost" size="icon" className="ml-auto" onClick={() => setOpen(false)}>
-                  <X className="h-5 w-5" />
-                  <span className="sr-only">Close</span>
-                </Button>
               </div>
               <ScrollArea className="flex-1">
                 <div className="px-2 py-4">
