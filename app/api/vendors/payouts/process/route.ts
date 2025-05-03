@@ -74,6 +74,35 @@ export async function POST(request: NextRequest) {
           continue
         }
 
+        const payoutId = data[0].id
+
+        // Get all pending line items for this vendor
+        const { data: lineItems, error: lineItemsError } = await supabaseAdmin.rpc("get_vendor_pending_line_items", {
+          p_vendor_name: vendor_name,
+        })
+
+        if (lineItemsError) {
+          console.error(`Error fetching line items for ${vendor_name}:`, lineItemsError)
+          // Continue with the payout even if we can't fetch line items
+        } else if (lineItems && lineItems.length > 0) {
+          // Associate line items with this payout
+          const payoutItems = lineItems.map((item) => ({
+            payout_id: payoutId,
+            line_item_id: item.line_item_id,
+            order_id: item.order_id,
+            product_id: item.product_id,
+            amount: item.is_percentage ? (item.price * item.payout_amount) / 100 : item.payout_amount,
+            created_at: new Date().toISOString(),
+          }))
+
+          const { error: insertError } = await supabaseAdmin.from("vendor_payout_items").insert(payoutItems)
+
+          if (insertError) {
+            console.error(`Error associating line items with payout for ${vendor_name}:`, insertError)
+            // Continue with the payout even if we can't associate line items
+          }
+        }
+
         // If using PayPal, we would initiate the PayPal payout here
         // For now, we'll just simulate it
         if (payment_method === "paypal") {
@@ -90,12 +119,12 @@ export async function POST(request: NextRequest) {
                 payment_id: `PAYPAL-${crypto.randomBytes(8).toString("hex").toUpperCase()}`,
                 updated_at: new Date().toISOString(),
               })
-              .eq("id", data[0].id)
+              .eq("id", payoutId)
 
             results.push({
               vendor_name,
               success: true,
-              payout_id: data[0].id,
+              payout_id: payoutId,
               reference,
             })
 
@@ -109,7 +138,7 @@ export async function POST(request: NextRequest) {
                 notes: (notes ? notes + " | " : "") + "PayPal payout failed",
                 updated_at: new Date().toISOString(),
               })
-              .eq("id", data[0].id)
+              .eq("id", payoutId)
 
             results.push({
               vendor_name,
@@ -125,12 +154,12 @@ export async function POST(request: NextRequest) {
               status: "processing",
               updated_at: new Date().toISOString(),
             })
-            .eq("id", data[0].id)
+            .eq("id", payoutId)
 
           results.push({
             vendor_name,
             success: true,
-            payout_id: data[0].id,
+            payout_id: payoutId,
             reference,
             status: "processing",
           })
