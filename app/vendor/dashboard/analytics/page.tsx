@@ -6,7 +6,6 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { AlertCircle } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
-import { useToast } from "@/components/ui/use-toast"
 import {
   ResponsiveContainer,
   BarChart,
@@ -44,27 +43,19 @@ export default function AnalyticsPage() {
   const [salesByProduct, setSalesByProduct] = useState<any[]>([])
   const [salesHistory, setSalesHistory] = useState<SaleItem[]>([])
   const [totalItems, setTotalItems] = useState(0)
-  const [isMockData, setIsMockData] = useState(false)
   const [sortField, setSortField] = useState<string>("date")
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc")
-  const { toast } = useToast()
 
   const fetchAnalyticsData = async () => {
     try {
       setIsLoading(true)
       setError(null)
 
-      // First try the test endpoint to see if it works
-      let response
-      try {
-        response = await fetch("/api/vendor/sales-analytics")
-      } catch (err) {
-        console.error("Error with main analytics endpoint, trying test endpoint:", err)
-        response = await fetch("/api/vendor/test-analytics")
-      }
+      const response = await fetch("/api/vendor/sales-analytics")
 
       if (!response.ok) {
-        throw new Error(`Failed to fetch analytics data: ${response.status}`)
+        const errorData = await response.json()
+        throw new Error(errorData.error || `Failed to fetch analytics data: ${response.status}`)
       }
 
       const data = await response.json()
@@ -73,42 +64,9 @@ export default function AnalyticsPage() {
       setSalesByProduct(data.salesByProduct || [])
       setSalesHistory(data.salesHistory || [])
       setTotalItems(data.totalItems || 0)
-      setIsMockData(data.isMockData || false)
-
-      if (data.isMockData) {
-        toast({
-          title: "Using demo data",
-          description: "We're showing you sample data because your actual sales data isn't available yet.",
-          duration: 5000,
-        })
-      }
     } catch (err) {
       console.error("Error fetching analytics data:", err)
       setError(err instanceof Error ? err.message : "Failed to load analytics data")
-
-      // Try to load mock data as a fallback
-      try {
-        const response = await fetch("/api/vendor/test-analytics")
-        if (response.ok) {
-          const mockData = await response.json()
-          setSalesByDate(mockData.salesByDate || [])
-          setSalesByProduct(mockData.salesByProduct || [])
-          setSalesHistory(mockData.salesHistory || [])
-          setTotalItems(mockData.totalItems || 0)
-          setIsMockData(true)
-
-          toast({
-            title: "Using demo data",
-            description: "We're showing you sample data because there was an error loading your actual data.",
-            duration: 5000,
-          })
-
-          // Clear the error since we're showing mock data
-          setError(null)
-        }
-      } catch (mockErr) {
-        console.error("Error loading mock data:", mockErr)
-      }
     } finally {
       setIsLoading(false)
     }
@@ -173,15 +131,6 @@ export default function AnalyticsPage() {
       <div>
         <h1 className="text-3xl font-bold tracking-tight">Sales Analytics</h1>
         <p className="text-muted-foreground">View your sales performance over time</p>
-        {isMockData && (
-          <Alert className="mt-4">
-            <AlertCircle className="h-4 w-4" />
-            <AlertTitle>Demo Data</AlertTitle>
-            <AlertDescription>
-              You're currently viewing sample data. Real sales data will appear here once orders are processed.
-            </AlertDescription>
-          </Alert>
-        )}
       </div>
 
       {error && (
@@ -199,7 +148,7 @@ export default function AnalyticsPage() {
         </Alert>
       )}
 
-      {totalItems === 0 && !isLoading && !error && !isMockData && (
+      {totalItems === 0 && !isLoading && !error && (
         <Alert>
           <AlertCircle className="h-4 w-4" />
           <AlertTitle>No Sales Data</AlertTitle>

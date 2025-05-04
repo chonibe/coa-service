@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server"
 import { cookies } from "next/headers"
-import { createClient } from "@/lib/supabase-server"
+import { supabaseAdmin } from "@/lib/supabase"
 import { shopifyFetch, safeJsonParse } from "@/lib/shopify-api"
 
 export async function GET() {
@@ -15,52 +15,25 @@ export async function GET() {
 
     console.log(`Fetching stats for vendor: ${vendorName}`)
 
-    // Create Supabase client
-    const supabase = createClient()
+    // 1. Fetch products from Shopify to get accurate product count
+    const { products } = await fetchProductsByVendor(vendorName)
+    const totalProducts = products.length
+    console.log(`Found ${totalProducts} products for vendor ${vendorName}`)
 
-    // 1. Try to fetch products from Shopify
-    let products = []
-    try {
-      const { products: shopifyProducts } = await fetchProductsByVendor(vendorName)
-      products = shopifyProducts
-      console.log(`Found ${products.length} products for vendor ${vendorName}`)
-    } catch (error) {
-      console.error("Error fetching products from Shopify:", error)
-      // Use mock products if Shopify fetch fails
-      products = [
-        { id: "mock1", title: "Product 1", price: 99.99 },
-        { id: "mock2", title: "Product 2", price: 149.99 },
-        { id: "mock3", title: "Product 3", price: 79.99 },
-      ]
-    }
+    // 2. Query for line items from this vendor in our database
+    const { data: lineItems, error } = await supabaseAdmin
+      .from("order_line_items")
+      .select("*")
+      .eq("vendor_name", vendorName)
+      .eq("status", "active")
 
-    // 2. Try to query for line items from this vendor in our database
-    let salesData = []
-    try {
-      const { data: lineItems, error } = await supabase
-        .from("order_line_items")
-        .select("*")
-        .eq("vendor_name", vendorName)
-        .eq("status", "active")
-
-      if (error) {
-        console.error("Database error when fetching line items:", error)
-        throw error
-      }
-
-      salesData = lineItems || []
-    } catch (error) {
-      console.error("Error fetching line items from database:", error)
-      // Use mock sales data if database query fails
-      salesData = [
-        { price: 99.99, product_id: "mock1" },
-        { price: 149.99, product_id: "mock2" },
-        { price: 79.99, product_id: "mock3" },
-        { price: 99.99, product_id: "mock1" },
-      ]
+    if (error) {
+      console.error("Database error when fetching line items:", error)
+      return NextResponse.json({ error: "Database error: " + error.message }, { status: 500 })
     }
 
     // 3. Calculate sales and revenue from line items
+    const salesData = lineItems || []
     const totalSales = salesData.length
     let totalRevenue = 0
 
@@ -71,36 +44,25 @@ export async function GET() {
       }
     })
 
-    // 4. Try to fetch payout settings
-    let payouts = []
-    try {
-      const productIds = products.map((p) => p.id)
-      const { data: payoutData, error: payoutsError } = await supabase
-        .from("product_vendor_payouts")
-        .select("*")
-        .eq("vendor_name", vendorName)
-        .in("product_id", productIds)
+    console.log(`Found ${totalSales} sales with total revenue: ${totalRevenue}`)
 
-      if (payoutsError) {
-        console.error("Error fetching payouts:", payoutsError)
-        throw payoutsError
-      }
+    // 4. Fetch payout settings to calculate pending payout
+    const productIds = products.map((p) => p.id)
+    const { data: payouts, error: payoutsError } = await supabaseAdmin
+      .from("product_vendor_payouts")
+      .select("*")
+      .eq("vendor_name", vendorName)
+      .in("product_id", productIds)
 
-      payouts = payoutData || []
-    } catch (error) {
-      console.error("Error fetching payout settings:", error)
-      // Use default payout settings if query fails
-      payouts = products.map((p) => ({
-        product_id: p.id,
-        payout_amount: 10,
-        is_percentage: true,
-      }))
+    if (payoutsError) {
+      console.error("Error fetching payouts:", payoutsError)
+      return NextResponse.json({ error: "Error fetching payout settings: " + payoutsError.message }, { status: 500 })
     }
 
     // 5. Calculate pending payout based on sales and payout settings
     let pendingPayout = 0
     salesData.forEach((item) => {
-      const payout = payouts.find((p) => p.product_id === item.product_id)
+      const payout = payouts?.find((p) => p.product_id === item.product_id)
       if (payout) {
         const price = typeof item.price === "string" ? Number.parseFloat(item.price || "0") : item.price || 0
 
@@ -119,22 +81,14 @@ export async function GET() {
     console.log(`Calculated pending payout: $${pendingPayout.toFixed(2)}`)
 
     return NextResponse.json({
-      totalProducts: products.length,
+      totalProducts,
       totalSales,
       totalRevenue: Number.parseFloat(totalRevenue.toFixed(2)),
       pendingPayout: Number.parseFloat(pendingPayout.toFixed(2)),
     })
-  } catch (error) {
+  } catch (error: any) {
     console.error("Unexpected error in vendor stats API:", error)
-
-    // Return mock data if there's an error
-    return NextResponse.json({
-      totalProducts: 3,
-      totalSales: 4,
-      totalRevenue: 429.96,
-      pendingPayout: 42.99,
-      isMockData: true,
-    })
+    return NextResponse.json({ error: "An unexpected error occurred: " + error.message }, { status: 500 })
   }
 }
 
@@ -215,94 +169,6 @@ async function fetchProductsByVendor(vendorName: string) {
     return { products }
   } catch (error) {
     console.error("Error fetching products by vendor:", error)
-    throw error
-  }
-}
-
-async function fetchVendorOrdersFromShopify(vendorName: string) {
-  try {
-    console.log(`Fetching orders data from Shopify for vendor: ${vendorName}`)
-
-    // Build the GraphQL query to fetch orders containing products from this vendor
-    const graphqlQuery = `
-      {
-        orders(first: 50, query: "status:any") {
-          edges {
-            node {
-              id
-              name
-              createdAt
-              lineItems(first: 50) {
-                edges {
-                  node {
-                    id
-                    quantity
-                    vendor
-                    product {
-                      id
-                      vendor
-                    }
-                    variant {
-                      id
-                      price
-                    }
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-    `
-
-    // Make the request to Shopify
-    const response = await shopifyFetch("graphql.json", {
-      method: "POST",
-      body: JSON.stringify({ query: graphqlQuery }),
-    })
-
-    const data = await safeJsonParse(response)
-
-    if (!data || !data.data || !data.data.orders) {
-      throw new Error("Invalid response from Shopify GraphQL API")
-    }
-
-    // Process the orders to extract line items for this vendor
-    const vendorLineItems = []
-
-    for (const orderEdge of data.data.orders.edges) {
-      const order = orderEdge.node
-
-      for (const lineItemEdge of order.lineItems.edges) {
-        const lineItem = lineItemEdge.node
-
-        // Check if this line item is from our vendor
-        const isVendorItem =
-          (lineItem.vendor && lineItem.vendor.toLowerCase() === vendorName.toLowerCase()) ||
-          (lineItem.product &&
-            lineItem.product.vendor &&
-            lineItem.product.vendor.toLowerCase() === vendorName.toLowerCase())
-
-        if (isVendorItem) {
-          vendorLineItems.push({
-            line_item_id: lineItem.id.split("/").pop(),
-            order_id: order.id.split("/").pop(),
-            order_name: order.name,
-            product_id: lineItem.product?.id.split("/").pop(),
-            variant_id: lineItem.variant?.id.split("/").pop(),
-            price: lineItem.variant?.price || "0.00",
-            quantity: lineItem.quantity || 1,
-            created_at: order.createdAt,
-            vendor_name: vendorName,
-            status: "active",
-          })
-        }
-      }
-    }
-
-    return vendorLineItems
-  } catch (error) {
-    console.error("Error fetching from Shopify:", error)
     throw error
   }
 }
