@@ -6,6 +6,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { AlertCircle } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
+import { useToast } from "@/components/ui/use-toast"
 import {
   ResponsiveContainer,
   BarChart,
@@ -45,6 +46,7 @@ export default function AnalyticsPage() {
   const [totalItems, setTotalItems] = useState(0)
   const [sortField, setSortField] = useState<string>("date")
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc")
+  const { toast } = useToast()
 
   const fetchAnalyticsData = async () => {
     try {
@@ -54,8 +56,8 @@ export default function AnalyticsPage() {
       const response = await fetch("/api/vendor/sales-analytics")
 
       if (!response.ok) {
-        const errorData = await response.json()
-        throw new Error(errorData.error || `Failed to fetch analytics data: ${response.status}`)
+        const errorData = await response.json().catch(() => ({}))
+        throw new Error(`Failed to fetch analytics data: ${errorData.error || response.status}`)
       }
 
       const data = await response.json()
@@ -67,6 +69,11 @@ export default function AnalyticsPage() {
     } catch (err) {
       console.error("Error fetching analytics data:", err)
       setError(err instanceof Error ? err.message : "Failed to load analytics data")
+      toast({
+        variant: "destructive",
+        title: "Error loading analytics",
+        description: err instanceof Error ? err.message : "Failed to load analytics data",
+      })
     } finally {
       setIsLoading(false)
     }

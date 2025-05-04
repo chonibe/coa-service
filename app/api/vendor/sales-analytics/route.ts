@@ -26,28 +26,25 @@ export async function GET() {
 
     if (error) {
       console.error("Database error when fetching line items:", error)
-      return NextResponse.json({ error: "Database error: " + error.message }, { status: 500 })
+      return NextResponse.json({ error: "Database error" }, { status: 500 })
     }
 
-    console.log(`Found ${lineItems?.length || 0} line items for vendor ${vendorName}`)
-
-    // Process line items to get sales by date
+    // Process line items to get sales by date - fixed to prevent recursion
     const salesByDate = processSalesByDate(lineItems || [])
 
-    // Get sales by product
+    // Get sales by product - fixed to prevent recursion
     const salesByProduct = processSalesByProduct(lineItems || [])
 
     // Create sales history array
-    const salesHistory =
-      lineItems?.map((item) => ({
-        id: item.id || `item-${Math.random().toString(36).substring(2, 9)}`,
-        product_id: item.product_id || "",
-        title: item.title || "Unknown Product",
-        date: item.created_at || new Date().toISOString(),
-        price: typeof item.price === "string" ? Number.parseFloat(item.price) : item.price || 0,
-        currency: "GBP", // Default to GBP for all products
-        quantity: item.quantity || 1,
-      })) || []
+    const salesHistory = (lineItems || []).map((item) => ({
+      id: item.id || `item-${Math.random().toString(36).substring(2, 9)}`,
+      product_id: item.product_id || "",
+      title: item.title || "Unknown Product",
+      date: item.created_at || new Date().toISOString(),
+      price: typeof item.price === "string" ? Number.parseFloat(item.price) : item.price || 0,
+      currency: "GBP", // Default to GBP for all products
+      quantity: item.quantity || 1,
+    }))
 
     return NextResponse.json({
       salesByDate,
@@ -55,15 +52,16 @@ export async function GET() {
       salesHistory,
       totalItems: lineItems?.length || 0,
     })
-  } catch (error: any) {
+  } catch (error) {
     console.error("Unexpected error in vendor sales analytics API:", error)
-    return NextResponse.json({ error: "An unexpected error occurred: " + error.message }, { status: 500 })
+    return NextResponse.json({ error: "An unexpected error occurred" }, { status: 500 })
   }
 }
 
-function processSalesByDate(lineItems: any[]) {
+// Fixed function to prevent recursion
+function processSalesByDate(lineItems) {
   // Group sales by month
-  const salesByMonth: Record<string, { sales: number; revenue: number }> = {}
+  const salesByMonth = {}
 
   lineItems.forEach((item) => {
     const date = new Date(item.created_at || item.updated_at || Date.now())
@@ -75,10 +73,12 @@ function processSalesByDate(lineItems: any[]) {
 
     salesByMonth[monthYear].sales += 1
 
-    // Add to revenue
-    if (item.price) {
-      const price = typeof item.price === "string" ? Number.parseFloat(item.price) : item.price
-      salesByMonth[monthYear].revenue += price
+    // Add to revenue - fixed to prevent NaN and type issues
+    if (item.price !== null && item.price !== undefined) {
+      const price = typeof item.price === "string" ? Number.parseFloat(item.price) : Number(item.price)
+      if (!isNaN(price)) {
+        salesByMonth[monthYear].revenue += price
+      }
     }
   })
 
@@ -93,9 +93,10 @@ function processSalesByDate(lineItems: any[]) {
     .sort((a, b) => a.date.localeCompare(b.date))
 }
 
-function processSalesByProduct(lineItems: any[]) {
+// Fixed function to prevent recursion
+function processSalesByProduct(lineItems) {
   // Group sales by product
-  const salesByProduct: Record<string, { productId: string; title: string; sales: number; revenue: number }> = {}
+  const salesByProduct = {}
 
   lineItems.forEach((item) => {
     const productId = item.product_id || "unknown"
@@ -112,10 +113,12 @@ function processSalesByProduct(lineItems: any[]) {
 
     salesByProduct[productId].sales += 1
 
-    // Add to revenue
-    if (item.price) {
-      const price = typeof item.price === "string" ? Number.parseFloat(item.price) : item.price
-      salesByProduct[productId].revenue += price
+    // Add to revenue - fixed to prevent NaN and type issues
+    if (item.price !== null && item.price !== undefined) {
+      const price = typeof item.price === "string" ? Number.parseFloat(item.price) : Number(item.price)
+      if (!isNaN(price)) {
+        salesByProduct[productId].revenue += price
+      }
     }
   })
 
@@ -123,7 +126,7 @@ function processSalesByProduct(lineItems: any[]) {
   return Object.values(salesByProduct).sort((a, b) => b.sales - a.sales)
 }
 
-function getMonthName(dateStr: string) {
+function getMonthName(dateStr) {
   const [year, month] = dateStr.split("-")
   const date = new Date(Number.parseInt(year), Number.parseInt(month) - 1, 1)
   return date.toLocaleString("default", { month: "short", year: "numeric" })

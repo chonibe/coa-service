@@ -28,9 +28,9 @@ export function SidebarLayout({ children }: SidebarLayoutProps) {
       <VendorSidebar />
 
       {/* Main content takes full width on mobile */}
-      <div className="flex-1 w-full overflow-auto">
+      <div className="flex-1 w-full overflow-y-auto">
         <PullToRefresh onRefresh={handleRefresh}>
-          <main className="p-2 md:p-4 max-w-full mx-auto pb-20 pt-16">{children}</main>
+          <main className="p-2 md:p-6 max-w-full mx-auto pb-24 pt-16">{children}</main>
         </PullToRefresh>
       </div>
     </div>
