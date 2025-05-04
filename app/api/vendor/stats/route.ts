@@ -29,12 +29,11 @@ export async function GET() {
 
     if (error) {
       console.error("Database error when fetching line items:", error)
-      return NextResponse.json({ error: "Database error: " + error.message }, { status: 500 })
     }
 
     // 3. Calculate sales and revenue from line items
-    const salesData = lineItems || []
-    const totalSales = salesData.length
+    let salesData = lineItems || []
+    let totalSales = salesData.length
     let totalRevenue = 0
 
     salesData.forEach((item) => {
@@ -44,9 +43,32 @@ export async function GET() {
       }
     })
 
-    console.log(`Found ${totalSales} sales with total revenue: ${totalRevenue}`)
+    // 4. If no data from database, try fetching from Shopify as fallback
+    if (salesData.length === 0) {
+      console.log("No sales data in database, fetching from Shopify")
+      try {
+        const shopifyOrders = await fetchVendorOrdersFromShopify(vendorName)
+        if (shopifyOrders && shopifyOrders.length > 0) {
+          salesData = shopifyOrders
+          totalSales = shopifyOrders.length
 
-    // 4. Fetch payout settings to calculate pending payout
+          // Recalculate revenue from Shopify data
+          totalRevenue = 0
+          shopifyOrders.forEach((item) => {
+            if (item.price) {
+              const price = typeof item.price === "string" ? Number.parseFloat(item.price) : item.price
+              totalRevenue += price
+            }
+          })
+
+          console.log(`Found ${totalSales} orders from Shopify with revenue $${totalRevenue.toFixed(2)}`)
+        }
+      } catch (shopifyError) {
+        console.error("Error fetching from Shopify:", shopifyError)
+      }
+    }
+
+    // 5. Fetch payout settings to calculate pending payout
     const productIds = products.map((p) => p.id)
     const { data: payouts, error: payoutsError } = await supabaseAdmin
       .from("product_vendor_payouts")
@@ -56,10 +78,9 @@ export async function GET() {
 
     if (payoutsError) {
       console.error("Error fetching payouts:", payoutsError)
-      return NextResponse.json({ error: "Error fetching payout settings: " + payoutsError.message }, { status: 500 })
     }
 
-    // 5. Calculate pending payout based on sales and payout settings
+    // 6. Calculate pending payout based on sales and payout settings
     let pendingPayout = 0
     salesData.forEach((item) => {
       const payout = payouts?.find((p) => p.product_id === item.product_id)
@@ -86,9 +107,9 @@ export async function GET() {
       totalRevenue: Number.parseFloat(totalRevenue.toFixed(2)),
       pendingPayout: Number.parseFloat(pendingPayout.toFixed(2)),
     })
-  } catch (error: any) {
+  } catch (error) {
     console.error("Unexpected error in vendor stats API:", error)
-    return NextResponse.json({ error: "An unexpected error occurred: " + error.message }, { status: 500 })
+    return NextResponse.json({ error: "An unexpected error occurred" }, { status: 500 })
   }
 }
 
@@ -169,6 +190,94 @@ async function fetchProductsByVendor(vendorName: string) {
     return { products }
   } catch (error) {
     console.error("Error fetching products by vendor:", error)
+    throw error
+  }
+}
+
+async function fetchVendorOrdersFromShopify(vendorName: string) {
+  try {
+    console.log(`Fetching orders data from Shopify for vendor: ${vendorName}`)
+
+    // Build the GraphQL query to fetch orders containing products from this vendor
+    const graphqlQuery = `
+      {
+        orders(first: 50, query: "status:any") {
+          edges {
+            node {
+              id
+              name
+              createdAt
+              lineItems(first: 50) {
+                edges {
+                  node {
+                    id
+                    quantity
+                    vendor
+                    product {
+                      id
+                      vendor
+                    }
+                    variant {
+                      id
+                      price
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    `
+
+    // Make the request to Shopify
+    const response = await shopifyFetch("graphql.json", {
+      method: "POST",
+      body: JSON.stringify({ query: graphqlQuery }),
+    })
+
+    const data = await safeJsonParse(response)
+
+    if (!data || !data.data || !data.data.orders) {
+      throw new Error("Invalid response from Shopify GraphQL API")
+    }
+
+    // Process the orders to extract line items for this vendor
+    const vendorLineItems = []
+
+    for (const orderEdge of data.data.orders.edges) {
+      const order = orderEdge.node
+
+      for (const lineItemEdge of order.lineItems.edges) {
+        const lineItem = lineItemEdge.node
+
+        // Check if this line item is from our vendor
+        const isVendorItem =
+          (lineItem.vendor && lineItem.vendor.toLowerCase() === vendorName.toLowerCase()) ||
+          (lineItem.product &&
+            lineItem.product.vendor &&
+            lineItem.product.vendor.toLowerCase() === vendorName.toLowerCase())
+
+        if (isVendorItem) {
+          vendorLineItems.push({
+            line_item_id: lineItem.id.split("/").pop(),
+            order_id: order.id.split("/").pop(),
+            order_name: order.name,
+            product_id: lineItem.product?.id.split("/").pop(),
+            variant_id: lineItem.variant?.id.split("/").pop(),
+            price: lineItem.variant?.price || "0.00",
+            quantity: lineItem.quantity || 1,
+            created_at: order.createdAt,
+            vendor_name: vendorName,
+            status: "active",
+          })
+        }
+      }
+    }
+
+    return vendorLineItems
+  } catch (error) {
+    console.error("Error fetching from Shopify:", error)
     throw error
   }
 }
