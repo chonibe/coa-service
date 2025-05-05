@@ -3,13 +3,8 @@
 import { usePathname } from "next/navigation"
 import Link from "next/link"
 import { ChevronRight, Home } from "lucide-react"
-import { cn } from "@/lib/utils"
 
-interface BreadcrumbProps {
-  className?: string
-}
-
-export function Breadcrumb({ className }: BreadcrumbProps) {
+export function Breadcrumb() {
   const pathname = usePathname()
 
   // Skip rendering breadcrumbs on the main dashboard
@@ -17,51 +12,50 @@ export function Breadcrumb({ className }: BreadcrumbProps) {
     return null
   }
 
-  // Generate breadcrumb items from pathname
-  const generateBreadcrumbs = () => {
-    // Remove leading slash and split by slash
-    const paths = pathname.split("/").filter(Boolean)
+  // Split the pathname into segments
+  const segments = pathname.split("/").filter(Boolean)
 
-    // Create breadcrumb items
-    const breadcrumbs = paths.map((path, index) => {
-      // Build the URL for this breadcrumb
-      const href = `/${paths.slice(0, index + 1).join("/")}`
-
-      // Format the label (capitalize, replace hyphens with spaces)
-      const label = path.replace(/-/g, " ").replace(/\b\w/g, (char) => char.toUpperCase())
-
-      return { href, label }
-    })
-
-    return breadcrumbs
+  // Format a segment for display (convert kebab-case to Title Case)
+  const formatSegment = (segment: string) => {
+    return segment
+      .split("-")
+      .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(" ")
   }
 
-  const breadcrumbs = generateBreadcrumbs()
-
   return (
-    <nav className={cn("flex items-center text-sm text-muted-foreground mb-4", className)} aria-label="Breadcrumb">
-      <ol className="flex items-center space-x-2">
+    <nav aria-label="Breadcrumb" className="mb-6">
+      <ol className="flex items-center space-x-2 text-sm text-muted-foreground">
         <li>
-          <Link href="/vendor/dashboard" className="flex items-center hover:text-foreground">
+          <Link href="/vendor/dashboard" className="flex items-center hover:text-foreground transition-colors">
             <Home className="h-4 w-4" />
-            <span className="sr-only">Home</span>
+            <span className="sr-only">Dashboard</span>
           </Link>
         </li>
 
-        {breadcrumbs.map((breadcrumb, index) => (
-          <li key={breadcrumb.href} className="flex items-center">
-            <ChevronRight className="h-4 w-4 mx-1" />
-            <Link
-              href={breadcrumb.href}
-              className={cn(
-                "hover:text-foreground transition-colors",
-                index === breadcrumbs.length - 1 ? "font-medium text-foreground" : "",
+        {segments.map((segment, index) => {
+          // Skip "vendor" in the breadcrumb
+          if (segment === "vendor") return null
+
+          // Build the href for this segment
+          const href = `/${segments.slice(0, index + 1).join("/")}`
+
+          // Check if this is the last segment (current page)
+          const isLastSegment = index === segments.length - 1
+
+          return (
+            <li key={segment} className="flex items-center">
+              <ChevronRight className="h-4 w-4 mx-1" />
+              {isLastSegment ? (
+                <span className="font-medium text-foreground">{formatSegment(segment)}</span>
+              ) : (
+                <Link href={href} className="hover:text-foreground transition-colors">
+                  {formatSegment(segment)}
+                </Link>
               )}
-            >
-              {breadcrumb.label}
-            </Link>
-          </li>
-        ))}
+            </li>
+          )
+        })}
       </ol>
     </nav>
   )

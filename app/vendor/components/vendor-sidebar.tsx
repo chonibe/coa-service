@@ -1,13 +1,11 @@
 "use client"
 
 import type React from "react"
-
 import { useState, useEffect } from "react"
 import { usePathname, useRouter } from "next/navigation"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { ScrollArea } from "@/components/ui/scroll-area"
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
 import { Toaster } from "@/components/ui/toaster"
 import { useMobile } from "@/hooks/use-mobile"
 import { LogOut, Menu, Home, BarChart, Settings, Award, Package, DollarSign, MessageSquare, X } from "lucide-react"
@@ -23,7 +21,7 @@ export function VendorSidebar() {
   const pathname = usePathname()
   const router = useRouter()
   const isMobile = useMobile()
-  const [open, setOpen] = useState(false)
+  const [sidebarOpen, setSidebarOpen] = useState(false)
   const [vendorName, setVendorName] = useState<string>("Vendor")
   const [profileComplete, setProfileComplete] = useState<boolean>(true)
 
@@ -120,85 +118,35 @@ export function VendorSidebar() {
     return false
   }
 
+  // Toggle sidebar
+  const toggleSidebar = () => {
+    setSidebarOpen(!sidebarOpen)
+  }
+
+  // Close sidebar
+  const closeSidebar = () => {
+    setSidebarOpen(false)
+  }
+
   return (
     <>
-      {/* Fixed header with hamburger menu */}
+      {/* Fixed header */}
       <header className="fixed top-0 left-0 right-0 z-40 flex h-16 items-center gap-4 border-b bg-background px-4 sm:px-6">
-        <Sheet open={open} onOpenChange={setOpen}>
-          <SheetTrigger asChild>
-            <Button variant="outline" size="icon" className="flex md:flex transition-all hover:bg-primary/10">
-              <Menu className="h-6 w-6" />
-              <span className="sr-only">Toggle menu</span>
-            </Button>
-          </SheetTrigger>
-          <SheetContent
-            side="left"
-            className="w-[300px] sm:w-[400px] pr-0 z-50 border-r shadow-lg"
-            // Add animation classes
-            style={{
-              animation: open ? "slideIn 0.3s ease-out forwards" : "slideOut 0.3s ease-in forwards",
-            }}
-          >
-            <div className="flex flex-col h-full">
-              <div className="flex items-center justify-between border-b h-16 px-6">
-                <Link href="/vendor/dashboard" className="flex items-center gap-2 font-semibold">
-                  <Award className="h-6 w-6" />
-                  <span className="font-medium">Vendor Portal</span>
-                </Link>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => setOpen(false)}
-                  className="transition-all hover:rotate-90 duration-200"
-                >
-                  <X className="h-5 w-5" />
-                </Button>
-              </div>
-              <ScrollArea className="flex-1">
-                <div className="px-2 py-4">
-                  <div className="mb-4 px-4">
-                    <p className="text-sm font-medium">Logged in as</p>
-                    <h3 className="font-semibold">{vendorName}</h3>
-                  </div>
-                  <nav className="flex flex-col gap-2">
-                    {navItems.map((item) => (
-                      <Link
-                        key={item.href}
-                        href={item.href}
-                        onClick={() => setOpen(false)}
-                        className={`flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-all duration-200 hover:bg-accent hover:text-accent-foreground ${
-                          isActive(item.href)
-                            ? "bg-accent text-accent-foreground"
-                            : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
-                        }`}
-                      >
-                        {item.icon}
-                        <span>{item.title}</span>
-                        {item.title === "Settings" && !profileComplete && (
-                          <span className="ml-auto flex h-2 w-2 rounded-full bg-red-500"></span>
-                        )}
-                      </Link>
-                    ))}
-                  </nav>
-                </div>
-              </ScrollArea>
-              <div className="border-t p-4">
-                <Button
-                  variant="outline"
-                  className="w-full justify-start text-sm font-medium transition-colors hover:bg-destructive/10"
-                  onClick={handleLogout}
-                >
-                  <LogOut className="mr-2 h-4 w-4" />
-                  <span>Logout</span>
-                </Button>
-              </div>
-            </div>
-          </SheetContent>
-        </Sheet>
+        <Button
+          variant="outline"
+          size="icon"
+          className="flex transition-all hover:bg-primary/10"
+          onClick={toggleSidebar}
+        >
+          <Menu className="h-6 w-6" />
+          <span className="sr-only">Toggle menu</span>
+        </Button>
+
         <Link href="/vendor/dashboard" className="flex items-center gap-2 font-semibold">
           <Award className="h-6 w-6" />
           <span className={isMobile ? "sr-only" : "inline-block"}>Vendor Portal</span>
         </Link>
+
         <div className="ml-auto flex items-center gap-2">
           <Button
             variant="outline"
@@ -210,6 +158,77 @@ export function VendorSidebar() {
           </Button>
         </div>
       </header>
+
+      {/* Overlay sidebar - shown when sidebarOpen is true */}
+      <div
+        className={cn(
+          "fixed inset-0 z-50 bg-background/80 backdrop-blur-sm transition-all duration-300",
+          sidebarOpen ? "opacity-100" : "opacity-0 pointer-events-none",
+        )}
+        onClick={closeSidebar}
+      />
+
+      <aside
+        className={cn(
+          "fixed top-0 left-0 z-50 h-full w-[280px] bg-background border-r shadow-lg transition-transform duration-300 ease-in-out transform",
+          sidebarOpen ? "translate-x-0" : "-translate-x-full",
+        )}
+      >
+        <div className="flex items-center justify-between h-16 px-6 border-b">
+          <Link href="/vendor/dashboard" className="flex items-center gap-2 font-semibold">
+            <Award className="h-6 w-6" />
+            <span className="font-medium">Vendor Portal</span>
+          </Link>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={closeSidebar}
+            className="transition-all hover:rotate-90 duration-200"
+          >
+            <X className="h-5 w-5" />
+          </Button>
+        </div>
+
+        <ScrollArea className="h-[calc(100vh-4rem)]">
+          <div className="px-2 py-4">
+            <div className="mb-4 px-4">
+              <p className="text-sm font-medium">Logged in as</p>
+              <h3 className="font-semibold">{vendorName}</h3>
+            </div>
+            <nav className="flex flex-col gap-2">
+              {navItems.map((item) => (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  onClick={closeSidebar}
+                  className={`flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-all duration-200 hover:bg-accent hover:text-accent-foreground ${
+                    isActive(item.href)
+                      ? "bg-accent text-accent-foreground"
+                      : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+                  }`}
+                >
+                  {item.icon}
+                  <span>{item.title}</span>
+                  {item.title === "Settings" && !profileComplete && (
+                    <span className="ml-auto flex h-2 w-2 rounded-full bg-red-500"></span>
+                  )}
+                </Link>
+              ))}
+            </nav>
+          </div>
+        </ScrollArea>
+
+        <div className="absolute bottom-0 left-0 right-0 border-t p-4">
+          <Button
+            variant="outline"
+            className="w-full justify-start text-sm font-medium transition-colors hover:bg-destructive/10"
+            onClick={handleLogout}
+          >
+            <LogOut className="mr-2 h-4 w-4" />
+            <span>Logout</span>
+          </Button>
+        </div>
+      </aside>
 
       {/* Mobile bottom navigation - improved with better visual indicators */}
       <div className="fixed bottom-0 left-0 right-0 z-40 bg-background border-t md:hidden">
@@ -244,19 +263,6 @@ export function VendorSidebar() {
       </div>
 
       <Toaster />
-
-      {/* Add animation styles */}
-      <style jsx global>{`
-        @keyframes slideIn {
-          from { transform: translateX(-100%); }
-          to { transform: translateX(0); }
-        }
-        
-        @keyframes slideOut {
-          from { transform: translateX(0); }
-          to { transform: translateX(-100%); }
-        }
-      `}</style>
     </>
   )
 }
