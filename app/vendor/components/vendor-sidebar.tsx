@@ -11,6 +11,7 @@ import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
 import { Toaster } from "@/components/ui/toaster"
 import { useMobile } from "@/hooks/use-mobile"
 import { LogOut, Menu, Home, BarChart, Settings, Award, Package, DollarSign, MessageSquare, X } from "lucide-react"
+import { cn } from "@/lib/utils"
 
 interface NavItem {
   title: string
@@ -103,13 +104,21 @@ export function VendorSidebar() {
     }
   }
 
-  // Mobile bottom nav items (limited to 4 for space)
+  // Mobile bottom nav items (limited to 5 for space)
   const mobileNavItems = [
     navItems[0], // Dashboard
     navItems[1], // Products
     navItems[2], // Analytics
+    navItems[3], // Payouts
     navItems[6], // Settings
   ]
+
+  // Check if a path is active (exact match or starts with for section pages)
+  const isActive = (href: string) => {
+    if (pathname === href) return true
+    if (href !== "/vendor/dashboard" && pathname.startsWith(href)) return true
+    return false
+  }
 
   return (
     <>
@@ -117,19 +126,31 @@ export function VendorSidebar() {
       <header className="fixed top-0 left-0 right-0 z-40 flex h-16 items-center gap-4 border-b bg-background px-4 sm:px-6">
         <Sheet open={open} onOpenChange={setOpen}>
           <SheetTrigger asChild>
-            <Button variant="outline" size="icon" className="flex md:flex">
+            <Button variant="outline" size="icon" className="flex md:flex transition-all hover:bg-primary/10">
               <Menu className="h-6 w-6" />
               <span className="sr-only">Toggle menu</span>
             </Button>
           </SheetTrigger>
-          <SheetContent side="left" className="w-[300px] sm:w-[400px] pr-0 z-50">
+          <SheetContent
+            side="left"
+            className="w-[300px] sm:w-[400px] pr-0 z-50 border-r shadow-lg"
+            // Add animation classes
+            style={{
+              animation: open ? "slideIn 0.3s ease-out forwards" : "slideOut 0.3s ease-in forwards",
+            }}
+          >
             <div className="flex flex-col h-full">
               <div className="flex items-center justify-between border-b h-16 px-6">
                 <Link href="/vendor/dashboard" className="flex items-center gap-2 font-semibold">
                   <Award className="h-6 w-6" />
                   <span className="font-medium">Vendor Portal</span>
                 </Link>
-                <Button variant="ghost" size="icon" onClick={() => setOpen(false)}>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => setOpen(false)}
+                  className="transition-all hover:rotate-90 duration-200"
+                >
                   <X className="h-5 w-5" />
                 </Button>
               </div>
@@ -145,8 +166,8 @@ export function VendorSidebar() {
                         key={item.href}
                         href={item.href}
                         onClick={() => setOpen(false)}
-                        className={`flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground ${
-                          pathname === item.href
+                        className={`flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-all duration-200 hover:bg-accent hover:text-accent-foreground ${
+                          isActive(item.href)
                             ? "bg-accent text-accent-foreground"
                             : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
                         }`}
@@ -162,7 +183,11 @@ export function VendorSidebar() {
                 </div>
               </ScrollArea>
               <div className="border-t p-4">
-                <Button variant="outline" className="w-full justify-start text-sm font-medium" onClick={handleLogout}>
+                <Button
+                  variant="outline"
+                  className="w-full justify-start text-sm font-medium transition-colors hover:bg-destructive/10"
+                  onClick={handleLogout}
+                >
                   <LogOut className="mr-2 h-4 w-4" />
                   <span>Logout</span>
                 </Button>
@@ -175,27 +200,43 @@ export function VendorSidebar() {
           <span className={isMobile ? "sr-only" : "inline-block"}>Vendor Portal</span>
         </Link>
         <div className="ml-auto flex items-center gap-2">
-          <Button variant="outline" className="hidden md:flex" onClick={handleLogout}>
+          <Button
+            variant="outline"
+            className="hidden md:flex transition-colors hover:bg-destructive/10"
+            onClick={handleLogout}
+          >
+            <LogOut className="mr-2 h-4 w-4" />
             Logout
           </Button>
         </div>
       </header>
 
-      {/* Mobile bottom navigation */}
+      {/* Mobile bottom navigation - improved with better visual indicators */}
       <div className="fixed bottom-0 left-0 right-0 z-40 bg-background border-t md:hidden">
-        <div className="grid grid-cols-4">
+        <div className="grid grid-cols-5">
           {mobileNavItems.map((item) => (
             <Link
               key={item.href}
               href={item.href}
-              className={`flex flex-col items-center justify-center py-3 ${
-                pathname === item.href ? "text-primary" : "text-muted-foreground"
-              } relative`}
+              className={cn(
+                "flex flex-col items-center justify-center py-2 relative transition-colors",
+                isActive(item.href) ? "text-primary" : "text-muted-foreground hover:text-foreground",
+              )}
             >
-              {item.icon}
-              <span className="text-xs mt-1">{item.title}</span>
+              <div
+                className={cn(
+                  "flex items-center justify-center w-10 h-10 rounded-full mb-1",
+                  isActive(item.href) && "bg-primary/10",
+                )}
+              >
+                {item.icon}
+              </div>
+              <span className="text-xs font-medium">{item.title}</span>
               {item.title === "Settings" && !profileComplete && (
-                <span className="absolute top-2 right-1/4 flex h-2 w-2 rounded-full bg-red-500"></span>
+                <span className="absolute top-1 right-1/4 flex h-2 w-2 rounded-full bg-red-500"></span>
+              )}
+              {isActive(item.href) && (
+                <span className="absolute bottom-0 left-1/2 w-1/2 h-0.5 bg-primary transform -translate-x-1/2"></span>
               )}
             </Link>
           ))}
@@ -203,6 +244,19 @@ export function VendorSidebar() {
       </div>
 
       <Toaster />
+
+      {/* Add animation styles */}
+      <style jsx global>{`
+        @keyframes slideIn {
+          from { transform: translateX(-100%); }
+          to { transform: translateX(0); }
+        }
+        
+        @keyframes slideOut {
+          from { transform: translateX(0); }
+          to { transform: translateX(-100%); }
+        }
+      `}</style>
     </>
   )
 }

@@ -4,6 +4,7 @@ import { usePathname } from "next/navigation"
 import { useMobile } from "@/hooks/use-mobile"
 import { VendorSidebar } from "./vendor-sidebar"
 import { PullToRefresh } from "@/components/pull-to-refresh"
+import { Breadcrumb } from "./breadcrumb"
 
 interface SidebarLayoutProps {
   children: ReactNode
@@ -28,7 +29,11 @@ export function SidebarLayout({ children }: SidebarLayoutProps) {
       {/* Main content takes full width */}
       <div className="w-full overflow-y-auto">
         <PullToRefresh onRefresh={handleRefresh}>
-          <main className="p-4 md:p-8 max-w-7xl mx-auto pb-24 pt-20">{children}</main>
+          <main className="p-4 md:p-8 max-w-7xl mx-auto pb-24 pt-20">
+            {/* Add breadcrumbs */}
+            <Breadcrumb />
+            {children}
+          </main>
         </PullToRefresh>
       </div>
     </div>
