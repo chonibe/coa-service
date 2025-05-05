@@ -14,7 +14,8 @@ import { Textarea } from "@/components/ui/textarea"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Separator } from "@/components/ui/separator"
 import { useToast } from "@/components/ui/use-toast"
-import { Loader2, AlertCircle, CheckCircle, Save, DollarSign, FileText, User } from "lucide-react"
+import { Loader2, AlertCircle, CheckCircle, Save, DollarSign, FileText, User, CreditCard } from "lucide-react"
+import { StripeConnect } from "../components/stripe-connect"
 
 interface VendorProfile {
   id: string
@@ -218,7 +219,7 @@ export default function VendorSettingsPage() {
       <div className="grid gap-6 md:grid-cols-7">
         <div className="md:col-span-5">
           <Tabs value={activeTab} onValueChange={setActiveTab}>
-            <TabsList className="grid w-full grid-cols-3">
+            <TabsList className="grid w-full grid-cols-4">
               <TabsTrigger value="profile" className="flex items-center gap-2">
                 <User className="h-4 w-4" />
                 <span>Profile</span>
@@ -233,6 +234,10 @@ export default function VendorSettingsPage() {
                 <FileText className="h-4 w-4" />
                 <span>Tax Info</span>
                 {completionSteps.tax && <CheckCircle className="h-3 w-3 text-green-500 ml-1" />}
+              </TabsTrigger>
+              <TabsTrigger value="stripe" className="flex items-center gap-2">
+                <CreditCard className="h-4 w-4" />
+                <span>Stripe</span>
               </TabsTrigger>
             </TabsList>
 
@@ -403,21 +408,27 @@ export default function VendorSettingsPage() {
                 </Card>
               </TabsContent>
 
-              <div className="mt-6 flex justify-end">
-                <Button type="submit" disabled={isSaving} className="flex items-center gap-2">
-                  {isSaving ? (
-                    <>
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                      Saving...
-                    </>
-                  ) : (
-                    <>
-                      <Save className="h-4 w-4" />
-                      Save Changes
-                    </>
-                  )}
-                </Button>
-              </div>
+              <TabsContent value="stripe" className="space-y-4 mt-4">
+                {profile && <StripeConnect vendorName={profile.vendor_name} />}
+              </TabsContent>
+
+              {activeTab !== "stripe" && (
+                <div className="mt-6 flex justify-end">
+                  <Button type="submit" disabled={isSaving} className="flex items-center gap-2">
+                    {isSaving ? (
+                      <>
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                        Saving...
+                      </>
+                    ) : (
+                      <>
+                        <Save className="h-4 w-4" />
+                        Save Changes
+                      </>
+                    )}
+                  </Button>
+                </div>
+              )}
             </form>
           </Tabs>
         </div>
