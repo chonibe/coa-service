@@ -20,6 +20,7 @@ const defaultPeriods: PeriodOption[] = [
   { value: "last-month", label: "Last Month" },
   { value: "last-3-months", label: "Last 3 Months" },
   { value: "last-6-months", label: "Last 6 Months" },
+  { value: "custom", label: "Custom Range" },
 ]
 
 interface PeriodFilterProps {

@@ -9,10 +9,21 @@ import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
 import { VendorSalesChart } from "./components/vendor-sales-chart"
 import { PeriodFilter } from "./components/period-filter"
+import { CustomDateRange } from "./components/custom-date-range"
 import { useVendorData } from "@/hooks/use-vendor-data"
 
 export default function VendorDashboard() {
-  const { stats, isLoading, error, refreshData, period, setPeriod } = useVendorData()
+  const {
+    stats,
+    isLoading,
+    error,
+    refreshData,
+    period,
+    setPeriod,
+    customDateRange,
+    setCustomDateRange,
+    applyCustomDateRange,
+  } = useVendorData()
   const [activeTab, setActiveTab] = useState("overview")
 
   // Helper function to format date range for display
@@ -27,10 +38,17 @@ export default function VendorDashboard() {
 
   return (
     <div className="flex-1 space-y-4 p-4 md:p-8 pt-6">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-wrap gap-4">
         <h2 className="text-3xl font-bold tracking-tight">Dashboard</h2>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
           <PeriodFilter value={period} onChange={setPeriod} />
+          {period === "custom" && (
+            <CustomDateRange
+              dateRange={customDateRange}
+              onDateRangeChange={setCustomDateRange}
+              onApply={applyCustomDateRange}
+            />
+          )}
           <Button variant="outline" size="sm" onClick={refreshData} disabled={isLoading}>
             Refresh
           </Button>
