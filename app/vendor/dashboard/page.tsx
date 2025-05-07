@@ -10,11 +10,14 @@ import { OnboardingAlert } from "./components/onboarding-alert"
 import { OnboardingBanner } from "./components/onboarding-banner"
 import { VendorSalesChart } from "./components/vendor-sales-chart"
 import { useVendorData } from "@/hooks/use-vendor-data"
+import { SalesChart } from "./components/sales-chart"
+import { PeriodSelector, type Period } from "./components/period-selector"
 
 export default function VendorDashboardPage() {
   const [vendorName, setVendorName] = useState<string>("Vendor")
   const [onboardingCompleted, setOnboardingCompleted] = useState<boolean>(true)
-  const { salesData, isLoading, error } = useVendorData()
+  const [period, setPeriod] = useState<Period>("30d")
+  const { salesData, isLoading, error } = useVendorData(period)
 
   useEffect(() => {
     const fetchVendorProfile = async () => {
@@ -33,10 +36,22 @@ export default function VendorDashboardPage() {
     fetchVendorProfile()
   }, [])
 
+  if (isLoading) {
+    return <div>Loading...</div>
+  }
+
+  if (error) {
+    return <div>Error: {error.message}</div>
+  }
+
   return (
     <div className="p-6">
-      <div className="mb-6">
+      <div className="flex justify-between items-center">
         <h1 className="text-2xl font-bold">Dashboard</h1>
+        <PeriodSelector value={period} onChange={setPeriod} />
+      </div>
+
+      <div className="mb-6">
         <p className="text-muted-foreground">Welcome back to your vendor dashboard</p>
       </div>
 
@@ -66,42 +81,24 @@ export default function VendorDashboardPage() {
                 <DollarSign className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                {isLoading ? (
-                  <Skeleton className="h-8 w-[100px]" />
-                ) : (
-                  <div className="text-2xl font-bold">${salesData?.totalSales.toFixed(2) || "0.00"}</div>
-                )}
+                <div className="text-2xl font-bold">${salesData?.totalSales.toFixed(2) || "0.00"}</div>
                 <p className="text-xs text-muted-foreground">
-                  {isLoading ? (
-                    <Skeleton className="h-4 w-[160px]" />
-                  ) : salesData?.last30DaysTotal ? (
-                    `$${salesData.last30DaysTotal.revenue.toFixed(2)} this month`
-                  ) : (
-                    "No data for this month"
-                  )}
+                  {salesData?.salesGrowth > 0 ? "+" : ""}
+                  {salesData?.salesGrowth}% from last period
                 </p>
               </CardContent>
             </Card>
 
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Products Sold</CardTitle>
-                <Package className="h-4 w-4 text-muted-foreground" />
+                <CardTitle className="text-sm font-medium">Total Revenue</CardTitle>
+                <DollarSign className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                {isLoading ? (
-                  <Skeleton className="h-8 w-[100px]" />
-                ) : (
-                  <div className="text-2xl font-bold">{salesData?.productsSold || "0"}</div>
-                )}
+                <div className="text-2xl font-bold">${salesData?.totalRevenue.toFixed(2) || "0.00"}</div>
                 <p className="text-xs text-muted-foreground">
-                  {isLoading ? (
-                    <Skeleton className="h-4 w-[160px]" />
-                  ) : salesData?.last30DaysTotal ? (
-                    `${salesData.last30DaysTotal.sales} this month`
-                  ) : (
-                    "No data for this month"
-                  )}
+                  {salesData?.revenueGrowth > 0 ? "+" : ""}
+                  {salesData?.revenueGrowth}% from last period
                 </p>
               </CardContent>
             </Card>
@@ -112,13 +109,10 @@ export default function VendorDashboardPage() {
                 <TrendingUp className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                {isLoading ? (
-                  <Skeleton className="h-8 w-[100px]" />
-                ) : (
-                  <div className="text-2xl font-bold">{salesData?.conversionRate || "0"}%</div>
-                )}
+                <div className="text-2xl font-bold">{salesData?.conversionRate || "0"}%</div>
                 <p className="text-xs text-muted-foreground">
-                  {isLoading ? <Skeleton className="h-4 w-[160px]" /> : "+2.3% from last month"}
+                  {salesData?.conversionGrowth > 0 ? "+" : ""}
+                  {salesData?.conversionGrowth}% from last period
                 </p>
               </CardContent>
             </Card>
@@ -131,13 +125,7 @@ export default function VendorDashboardPage() {
                 <CardDescription>Your sales performance over time</CardDescription>
               </CardHeader>
               <CardContent className="pl-2">
-                {isLoading ? (
-                  <div className="w-full aspect-[4/3]">
-                    <Skeleton className="h-full w-full" />
-                  </div>
-                ) : (
-                  <VendorSalesChart data={salesData?.chartData || []} />
-                )}
+                <SalesChart period={period} />
               </CardContent>
             </Card>
 
@@ -147,36 +135,26 @@ export default function VendorDashboardPage() {
                 <CardDescription>Your recent sales and payouts</CardDescription>
               </CardHeader>
               <CardContent>
-                {isLoading ? (
-                  <div className="space-y-2">
-                    <Skeleton className="h-5 w-full" />
-                    <Skeleton className="h-5 w-full" />
-                    <Skeleton className="h-5 w-full" />
-                    <Skeleton className="h-5 w-full" />
-                    <Skeleton className="h-5 w-full" />
-                  </div>
-                ) : (
-                  <div className="space-y-4">
-                    {salesData?.recentActivity?.length ? (
-                      salesData.recentActivity.map((activity, index) => (
-                        <div key={index} className="flex items-center justify-between">
-                          <div className="space-y-1">
-                            <p className="text-sm font-medium leading-none">{activity.title}</p>
-                            <p className="text-sm text-muted-foreground">{activity.date}</p>
-                          </div>
-                          <div
-                            className={`font-medium ${activity.type === "sale" ? "text-green-600" : "text-blue-600"}`}
-                          >
-                            {activity.type === "sale" ? "+" : ""}
-                            {activity.amount}
-                          </div>
+                <div className="space-y-4">
+                  {salesData?.recentActivity?.length ? (
+                    salesData.recentActivity.map((activity, index) => (
+                      <div key={index} className="flex items-center justify-between">
+                        <div className="space-y-1">
+                          <p className="text-sm font-medium leading-none">{activity.title}</p>
+                          <p className="text-sm text-muted-foreground">{activity.date}</p>
                         </div>
-                      ))
-                    ) : (
-                      <p className="text-sm text-muted-foreground">No recent activity</p>
-                    )}
-                  </div>
-                )}
+                        <div
+                          className={`font-medium ${activity.type === "sale" ? "text-green-600" : "text-blue-600"}`}
+                        >
+                          {activity.type === "sale" ? "+" : ""}
+                          {activity.amount}
+                        </div>
+                      </div>
+                    ))
+                  ) : (
+                    <p className="text-sm text-muted-foreground">No recent activity</p>
+                  )}
+                </div>
               </CardContent>
             </Card>
           </div>

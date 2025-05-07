@@ -1,224 +1,163 @@
 import { NextResponse } from "next/server"
-import type { NextRequest } from "next/server"
+import { createClient } from "@/lib/supabase/server"
 import { cookies } from "next/headers"
-import { supabaseAdmin } from "@/lib/supabase"
-import { SHOPIFY_SHOP, SHOPIFY_ACCESS_TOKEN } from "@/lib/env"
 
-export async function GET(request: NextRequest) {
+export async function GET(request: Request) {
   try {
-    // Get the vendor name from the cookie
     const cookieStore = cookies()
-    const vendorName = cookieStore.get("vendor_session")?.value
+    const supabase = createClient(cookieStore)
+    const { searchParams } = new URL(request.url)
+    const period = searchParams.get("period") || "30d"
 
+    // Get vendor name from cookie
+    const vendorName = cookieStore.get("vendor_name")?.value
     if (!vendorName) {
-      return NextResponse.json({ message: "Not authenticated" }, { status: 401 })
+      return NextResponse.json({ error: "Not authenticated" }, { status: 401 })
     }
 
-    console.log(`Fetching sales data for vendor: ${vendorName}`)
-
-    // Query database for line items with active certificates for this vendor
-    const { data: lineItems, error: lineItemsError } = await supabaseAdmin
+    // Get all line items for this vendor
+    const { data: lineItems, error } = await supabase
       .from("order_line_items")
-      .select(`
-        id,
-        line_item_id,
-        order_id,
-        order_name,
-        product_id,
-        variant_id,
-        price,
-        quantity,
-        edition_number,
-        created_at,
-        vendor_name,
-        status
-      `)
-      .eq("vendor_name", vendorName)
+      .select("*")
+      .eq("vendor", vendorName)
       .eq("status", "active")
-      .order("created_at", { ascending: false })
 
-    if (lineItemsError) {
-      console.error("Error fetching line items from Supabase:", lineItemsError)
-      // We'll continue and try to fetch from Shopify instead
+    if (error) {
+      console.error("Error fetching line items:", error)
+      return NextResponse.json({ error: "Failed to fetch sales data" }, { status: 500 })
     }
 
-    // If no data from Supabase or very few items, try fetching from Shopify as fallback
-    let salesData = lineItems || []
-
-    if (!salesData || salesData.length < 5) {
-      console.log("Insufficient data from Supabase, fetching from Shopify as fallback")
-      try {
-        const shopifyData = await fetchVendorSalesFromShopify(vendorName)
-        if (shopifyData && shopifyData.length > 0) {
-          salesData = shopifyData
-          console.log(`Successfully fetched ${shopifyData.length} items from Shopify`)
-        }
-      } catch (shopifyError) {
-        console.error("Error fetching from Shopify:", shopifyError)
-        // Continue with whatever data we have
-      }
+    if (!lineItems || lineItems.length === 0) {
+      return NextResponse.json({
+        totalSales: 0,
+        totalRevenue: 0,
+        salesByDate: [],
+        salesByProduct: [],
+        last30DaysTotal: { sales: 0, revenue: 0 }
+      })
     }
 
-    // Group items by date (YYYY-MM-DD)
-    const salesByDate: Record<string, { sales: number; revenue: number }> = {}
-    let totalSales = 0
-    let totalRevenue = 0
+    // Calculate date range based on period
+    const now = new Date()
+    let startDate = new Date()
+    switch (period) {
+      case "7d":
+        startDate.setDate(now.getDate() - 7)
+        break
+      case "30d":
+        startDate.setDate(now.getDate() - 30)
+        break
+      case "90d":
+        startDate.setDate(now.getDate() - 90)
+        break
+      case "1y":
+        startDate.setFullYear(now.getFullYear() - 1)
+        break
+      case "all":
+        startDate = new Date(0) // Beginning of time
+        break
+      default:
+        startDate.setDate(now.getDate() - 30)
+    }
 
-    salesData.forEach((item) => {
-      // Format created_at date to YYYY-MM-DD
-      const dateStr = new Date(item.created_at).toISOString().split("T")[0]
-
-      // Convert price to number if it's a string
-      const price = typeof item.price === "string" ? Number.parseFloat(item.price || "0") : item.price || 0
-
-      // Initialize the date entry if it doesn't exist
-      if (!salesByDate[dateStr]) {
-        salesByDate[dateStr] = { sales: 0, revenue: 0 }
-      }
-
-      // Add the line item to the totals
-      salesByDate[dateStr].sales += 1
-      salesByDate[dateStr].revenue += price
-
-      // Update overall totals
-      totalSales += 1
-      totalRevenue += price
+    // Filter line items by date range
+    const filteredItems = lineItems.filter(item => {
+      const itemDate = new Date(item.created_at)
+      return itemDate >= startDate && itemDate <= now
     })
 
-    // Convert the salesByDate object to an array for the chart
-    const chartSalesData = Object.entries(salesByDate).map(([date, stats]) => ({
-      date,
-      sales: stats.sales,
-      revenue: stats.revenue,
-    }))
+    // Calculate totals for the selected period
+    const totalSales = filteredItems.length
+    const totalRevenue = filteredItems.reduce((sum, item) => {
+      const price = parseFloat(item.price || "0")
+      const quantity = item.quantity || 1
+      return sum + (price * quantity)
+    }, 0)
 
-    // Sort by date (oldest to newest)
-    chartSalesData.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
+    // Calculate last 30 days totals for comparison
+    const thirtyDaysAgo = new Date()
+    thirtyDaysAgo.setDate(now.getDate() - 30)
+    const last30DaysItems = lineItems.filter(item => {
+      const itemDate = new Date(item.created_at)
+      return itemDate >= thirtyDaysAgo && itemDate <= now
+    })
+    const last30DaysTotal = {
+      sales: last30DaysItems.length,
+      revenue: last30DaysItems.reduce((sum, item) => {
+        const price = parseFloat(item.price || "0")
+        const quantity = item.quantity || 1
+        return sum + (price * quantity)
+      }, 0)
+    }
 
-    // Only return the last 30 days for the chart
-    const last30Days = chartSalesData.slice(-30)
-
-    // Calculate last 30 days totals
-    const last30DaysTotal = last30Days.reduce(
-      (acc, day) => ({
-        sales: acc.sales + day.sales,
-        revenue: acc.revenue + day.revenue,
-      }),
-      { sales: 0, revenue: 0 }
-    )
+    // Process sales by date
+    const salesByDate = processSalesByDate(filteredItems)
+    const salesByProduct = processSalesByProduct(filteredItems)
 
     return NextResponse.json({
-      salesByDate: last30Days,
       totalSales,
       totalRevenue,
-      last30DaysTotal,
+      salesByDate,
+      salesByProduct,
+      last30DaysTotal
     })
-  } catch (error: any) {
-    console.error("Error in vendor sales stats API:", error)
-    return NextResponse.json(
-      {
-        message: error.message || "An error occurred",
-        stack: error.stack,
-      },
-      { status: 500 },
-    )
+  } catch (error) {
+    console.error("Error in sales analytics:", error)
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }
 }
 
-// Add a function to fetch vendor sales from Shopify as fallback
-async function fetchVendorSalesFromShopify(vendorName: string) {
-  try {
-    console.log(`Fetching sales data from Shopify for vendor: ${vendorName}`)
+function processSalesByDate(lineItems: any[]) {
+  const salesByDate = new Map()
 
-    // Build the GraphQL query to fetch orders containing products from this vendor
-    const graphqlQuery = `
-      {
-        orders(first: 50, query: "status:any") {
-          edges {
-            node {
-              id
-              name
-              createdAt
-              lineItems(first: 50) {
-                edges {
-                  node {
-                    id
-                    quantity
-                    vendor
-                    product {
-                      id
-                      vendor
-                    }
-                    variant {
-                      id
-                      price
-                    }
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-    `
+  lineItems.forEach((item) => {
+    const date = new Date(item.created_at).toISOString().split("T")[0]
+    const price = parseFloat(item.price || "0")
+    const quantity = item.quantity || 1
+    const revenue = price * quantity
 
-    // Make the request to Shopify
-    const url = `https://${SHOPIFY_SHOP}/admin/api/2023-10/graphql.json`
-    const response = await fetch(url, {
-      method: "POST",
-      headers: {
-        "X-Shopify-Access-Token": SHOPIFY_ACCESS_TOKEN,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ query: graphqlQuery }),
+    if (!salesByDate.has(date)) {
+      salesByDate.set(date, { sales: 0, revenue: 0 })
+    }
+
+    const current = salesByDate.get(date)
+    salesByDate.set(date, {
+      sales: current.sales + 1,
+      revenue: current.revenue + revenue,
     })
+  })
 
-    if (!response.ok) {
-      throw new Error(`Shopify API error: ${response.status} ${response.statusText}`)
+  return Array.from(salesByDate.entries()).map(([date, data]) => ({
+    date,
+    ...data,
+  }))
+}
+
+function processSalesByProduct(lineItems: any[]) {
+  const salesByProduct = new Map()
+
+  lineItems.forEach((item) => {
+    const productId = item.product_id
+    const price = parseFloat(item.price || "0")
+    const quantity = item.quantity || 1
+    const revenue = price * quantity
+
+    if (!salesByProduct.has(productId)) {
+      salesByProduct.set(productId, {
+        productId,
+        title: item.title || "Unknown Product",
+        sales: 0,
+        revenue: 0,
+      })
     }
 
-    const data = await response.json()
+    const current = salesByProduct.get(productId)
+    salesByProduct.set(productId, {
+      ...current,
+      sales: current.sales + 1,
+      revenue: current.revenue + revenue,
+    })
+  })
 
-    if (!data || !data.data || !data.data.orders) {
-      throw new Error("Invalid response from Shopify GraphQL API")
-    }
-
-    // Process the orders to extract line items for this vendor
-    const vendorLineItems = []
-
-    for (const orderEdge of data.data.orders.edges) {
-      const order = orderEdge.node
-
-      for (const lineItemEdge of order.lineItems.edges) {
-        const lineItem = lineItemEdge.node
-
-        // Check if this line item is from our vendor
-        const isVendorItem =
-          (lineItem.vendor && lineItem.vendor.toLowerCase() === vendorName.toLowerCase()) ||
-          (lineItem.product &&
-            lineItem.product.vendor &&
-            lineItem.product.vendor.toLowerCase() === vendorName.toLowerCase())
-
-        if (isVendorItem) {
-          vendorLineItems.push({
-            line_item_id: lineItem.id.split("/").pop(),
-            order_id: order.id.split("/").pop(),
-            order_name: order.name,
-            product_id: lineItem.product?.id.split("/").pop(),
-            variant_id: lineItem.variant?.id.split("/").pop(),
-            price: lineItem.variant?.price || "0.00",
-            quantity: lineItem.quantity || 1,
-            created_at: order.createdAt,
-            vendor_name: vendorName,
-            status: "active",
-          })
-        }
-      }
-    }
-
-    return vendorLineItems
-  } catch (error) {
-    console.error("Error fetching from Shopify:", error)
-    throw error
-  }
+  return Array.from(salesByProduct.values())
 }

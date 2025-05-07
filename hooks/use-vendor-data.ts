@@ -1,15 +1,20 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { Period } from "@/app/vendor/dashboard/components/period-selector"
 
 interface VendorStats {
-  totalProducts: number
   totalSales: number
   totalRevenue: number
-  pendingPayout: number
-  revenueGrowth?: number
-  salesGrowth?: number
-  newProducts?: number
+  salesGrowth: number
+  revenueGrowth: number
+  conversionRate: number
+  conversionGrowth: number
+  totalProducts: number
+  recentActivity: Array<{
+    title: string
+    time: string
+  }>
 }
 
 interface Product {
@@ -34,96 +39,101 @@ interface SalesData {
 }
 
 interface UseVendorDataReturn {
-  stats: VendorStats | null
-  products: Product[] | null
-  salesData: SalesData | null
+  data: VendorStats | null
   isLoading: boolean
   error: Error | null
-  refreshData: () => Promise<void>
 }
 
-export function useVendorData(): UseVendorDataReturn {
-  const [stats, setStats] = useState<VendorStats | null>(null)
-  const [products, setProducts] = useState<Product[] | null>(null)
-  const [salesData, setSalesData] = useState<SalesData | null>(null)
+export function useVendorData(period: Period = "30d"): UseVendorDataReturn {
+  const [data, setData] = useState<VendorStats | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<Error | null>(null)
 
-  const fetchData = async () => {
-    try {
-      setIsLoading(true)
-      setError(null)
-
-      const [statsResponse, productsResponse] = await Promise.all([
-        fetch("/api/vendor/stats"),
-        fetch("/api/vendors/products"),
-      ])
-
-      if (!statsResponse.ok) {
-        throw new Error(`Failed to fetch vendor stats: ${statsResponse.status}`)
-      }
-
-      if (!productsResponse.ok) {
-        throw new Error(`Failed to fetch vendor products: ${productsResponse.status}`)
-      }
-
-      const statsData = await statsResponse.json()
-      const productsData = await productsResponse.json()
-
-      // Fetch sales data
-      const salesResponse = await fetch("/api/vendor/stats/sales")
-      if (!salesResponse.ok) {
-        throw new Error(`Failed to fetch sales data: ${salesResponse.status}`)
-      }
-      const salesStats = await salesResponse.json()
-
-      setStats(statsData)
-      setProducts(productsData.products || [])
-
-      // Use real sales data
-      const salesData = {
-        totalSales: salesStats.totalRevenue || 0,
-        productsSold: salesStats.totalSales || 0,
-        conversionRate: calculateConversionRate(salesStats.totalSales, productsData.products?.length || 0),
-        chartData: salesStats.salesByDate || [],
-        recentActivity: generateRecentActivity(salesStats.salesByDate || []),
-        last30DaysTotal: salesStats.last30DaysTotal || { sales: 0, revenue: 0 }
-      }
-
-      setSalesData(salesData)
-    } catch (err) {
-      console.error("Error in useVendorData:", err)
-      setError(err instanceof Error ? err : new Error("Unknown error occurred"))
-    } finally {
-      setIsLoading(false)
-    }
-  }
-
   useEffect(() => {
+    let isMounted = true
+
+    async function fetchData() {
+      try {
+        setIsLoading(true)
+        const response = await fetch(`/api/vendor/stats/sales?period=${period}`)
+        if (!response.ok) {
+          throw new Error("Failed to fetch vendor data")
+        }
+        const currentData = await response.json()
+
+        // Calculate growth percentages
+        const previousPeriod = getPreviousPeriod(period)
+        const previousResponse = await fetch(`/api/vendor/stats/sales?period=${previousPeriod}`)
+        const previousData = await previousResponse.json()
+
+        const salesGrowth = calculateGrowth(currentData.totalSales, previousData.totalSales)
+        const revenueGrowth = calculateGrowth(currentData.totalRevenue, previousData.totalRevenue)
+
+        // Calculate conversion rate (assuming we have total views from somewhere)
+        const totalViews = 1000 // This should come from your analytics
+        const conversionRate = (currentData.totalSales / totalViews) * 100
+        const previousConversionRate = (previousData.totalSales / totalViews) * 100
+        const conversionGrowth = calculateGrowth(conversionRate, previousConversionRate)
+
+        // Generate recent activity from sales data
+        const recentActivity = currentData.salesByDate
+          .slice(-5)
+          .map((sale: any) => ({
+            title: `Sold ${sale.sales} items for $${sale.revenue.toFixed(2)}`,
+            time: new Date(sale.date).toLocaleDateString(),
+          }))
+
+        if (isMounted) {
+          setData({
+            totalSales: currentData.totalSales,
+            totalRevenue: currentData.totalRevenue,
+            salesGrowth,
+            revenueGrowth,
+            conversionRate: Math.round(conversionRate * 10) / 10,
+            conversionGrowth,
+            totalProducts: currentData.salesByProduct.length,
+            recentActivity,
+          })
+        }
+      } catch (err) {
+        if (isMounted) {
+          setError(err instanceof Error ? err : new Error("An error occurred"))
+        }
+      } finally {
+        if (isMounted) {
+          setIsLoading(false)
+        }
+      }
+    }
+
     fetchData()
-  }, [])
 
-  const refreshData = async () => {
-    await fetchData()
+    return () => {
+      isMounted = false
+    }
+  }, [period])
+
+  return { data, isLoading, error }
+}
+
+function calculateGrowth(current: number, previous: number): number {
+  if (previous === 0) return 0
+  return Math.round(((current - previous) / previous) * 100)
+}
+
+function getPreviousPeriod(period: Period): Period {
+  switch (period) {
+    case "7d":
+      return "7d"
+    case "30d":
+      return "30d"
+    case "90d":
+      return "90d"
+    case "1y":
+      return "1y"
+    case "all":
+      return "1y"
+    default:
+      return "30d"
   }
-
-  return { stats, products, salesData, isLoading, error, refreshData }
-}
-
-// Helper function to calculate conversion rate
-function calculateConversionRate(totalSales: number, totalProducts: number): number {
-  if (!totalProducts) return 0
-  return Number(((totalSales / totalProducts) * 100).toFixed(1))
-}
-
-// Helper function to generate recent activity from sales data
-function generateRecentActivity(salesData: any[]): any[] {
-  if (!salesData.length) return []
-  
-  return salesData.slice(-5).map(day => ({
-    title: `${day.sales} items sold`,
-    date: new Date(day.date).toLocaleDateString(),
-    type: 'sale',
-    amount: `$${day.revenue.toFixed(2)}`
-  }))
 }

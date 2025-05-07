@@ -4,6 +4,7 @@ import { useEffect, useState } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts"
 import { Loader2 } from "lucide-react"
+import { Period } from "./period-selector"
 
 interface SalesData {
   date: string
@@ -12,51 +13,37 @@ interface SalesData {
 }
 
 interface SalesChartProps {
-  vendorName: string
-  onRefresh?: () => Promise<void>
+  period: Period
 }
 
-export function SalesChart({ vendorName, onRefresh }: SalesChartProps) {
-  const [salesData, setSalesData] = useState<SalesData[]>([])
+export function SalesChart({ period }: SalesChartProps) {
+  const [data, setData] = useState<SalesData[]>([])
   const [isLoading, setIsLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
+  const [error, setError] = useState<Error | null>(null)
   const [totalSales, setTotalSales] = useState(0)
   const [totalRevenue, setTotalRevenue] = useState(0)
 
-  const fetchSalesData = async () => {
-    setIsLoading(true)
-    setError(null)
-
-    try {
-      // Fetch sales data from the vendor stats API
-      const response = await fetch("/api/vendor/stats/sales")
-
-      if (!response.ok) {
-        throw new Error(`Failed to fetch sales data: ${response.status} ${response.statusText}`)
-      }
-
-      const data = await response.json()
-
-      if (data.salesByDate && Array.isArray(data.salesByDate)) {
-        setSalesData(data.salesByDate)
-        setTotalSales(data.totalSales || 0)
-        setTotalRevenue(data.totalRevenue || 0)
-      } else {
-        throw new Error("Invalid data format received from the server")
-      }
-    } catch (err: any) {
-      console.error("Error fetching sales data:", err)
-      setError(err.message || "Failed to load sales data")
-    } finally {
-      setIsLoading(false)
-    }
-  }
-
   useEffect(() => {
-    if (vendorName) {
-      fetchSalesData()
+    async function fetchData() {
+      try {
+        setIsLoading(true)
+        const response = await fetch(`/api/vendor/stats/sales?period=${period}`)
+        if (!response.ok) {
+          throw new Error("Failed to fetch sales data")
+        }
+        const salesData = await response.json()
+        setData(salesData.salesByDate)
+        setTotalSales(salesData.totalSales || 0)
+        setTotalRevenue(salesData.totalRevenue || 0)
+      } catch (err) {
+        setError(err instanceof Error ? err : new Error("An error occurred"))
+      } finally {
+        setIsLoading(false)
+      }
     }
-  }, [vendorName])
+
+    fetchData()
+  }, [period])
 
   // Format the date for display
   const formatDate = (date: string) => {
@@ -75,22 +62,58 @@ export function SalesChart({ vendorName, onRefresh }: SalesChartProps) {
     }).format(amount)
   }
 
+  if (isLoading) {
+    return (
+      <div className="flex justify-center py-8">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    )
+  }
+
+  if (error) {
+    return <div className="text-center py-8 text-muted-foreground">{error.message}</div>
+  }
+
+  const chartData = {
+    labels: data.map((item) => item.date),
+    datasets: [
+      {
+        label: "Sales",
+        data: data.map((item) => item.sales),
+        borderColor: "rgb(75, 192, 192)",
+        tension: 0.1,
+      },
+      {
+        label: "Revenue",
+        data: data.map((item) => item.revenue),
+        borderColor: "rgb(255, 99, 132)",
+        tension: 0.1,
+      },
+    ],
+  }
+
+  const options = {
+    responsive: true,
+    plugins: {
+      legend: {
+        position: "top" as const,
+      },
+      title: {
+        display: true,
+        text: "Sales Overview",
+      },
+    },
+    scales: {
+      y: {
+        beginAtZero: true,
+      },
+    },
+  }
+
   return (
     <Card className="col-span-2">
       <CardHeader className="flex flex-row items-center justify-between">
         <CardTitle>Sales Overview</CardTitle>
-        {onRefresh && (
-          <button
-            onClick={async () => {
-              setIsLoading(true)
-              await onRefresh()
-              await fetchSalesData()
-            }}
-            className="text-sm text-muted-foreground hover:text-foreground"
-          >
-            Refresh
-          </button>
-        )}
       </CardHeader>
       <CardContent>
         <div className="flex flex-col md:flex-row justify-between mb-6 gap-4">
@@ -104,19 +127,13 @@ export function SalesChart({ vendorName, onRefresh }: SalesChartProps) {
           </div>
         </div>
 
-        {isLoading ? (
-          <div className="flex justify-center py-8">
-            <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-          </div>
-        ) : error ? (
-          <div className="text-center py-8 text-muted-foreground">{error}</div>
-        ) : salesData.length === 0 ? (
+        {data.length === 0 ? (
           <div className="text-center py-8 text-muted-foreground">
             No sales data available. Once you make your first sale, data will appear here.
           </div>
         ) : (
           <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={salesData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+            <BarChart data={data} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis dataKey="date" tickFormatter={formatDate} tick={{ fontSize: 12 }} />
               <YAxis
