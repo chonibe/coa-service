@@ -18,36 +18,46 @@ export async function GET() {
 
     const vendorId = session.user.id
 
-    // Get vendor sales data
-    // This would normally query your database for sales data
-    // For now, we'll return mock data
-    const mockSales = [
-      {
-        id: "1",
-        date: "2023-04-15",
-        product: "Product A",
-        amount: 125.99,
-        customer: "Customer 1",
-      },
-      {
-        id: "2",
-        date: "2023-04-16",
-        product: "Product B",
-        amount: 79.99,
-        customer: "Customer 2",
-      },
-      {
-        id: "3",
-        date: "2023-04-17",
-        product: "Product C",
-        amount: 49.99,
-        customer: "Customer 3",
-      },
-    ]
+    // Get vendor sales data from Supabase
+    const { data: sales, error: salesError } = await supabase
+      .from("order_line_items")
+      .select(`
+        id,
+        created_at,
+        product_title,
+        price,
+        quantity,
+        order_id,
+        orders (
+          customer_email
+        )
+      `)
+      .eq("vendor_id", vendorId)
+      .order("created_at", { ascending: false })
 
-    return NextResponse.json({ sales: mockSales })
+    if (salesError) {
+      console.error("Error fetching vendor sales:", salesError)
+      return NextResponse.json(
+        { error: "Failed to fetch sales data" },
+        { status: 500 }
+      )
+    }
+
+    // Transform the data to match the expected format
+    const formattedSales = sales.map(sale => ({
+      id: sale.id,
+      date: sale.created_at,
+      product: sale.product_title,
+      amount: sale.price * sale.quantity,
+      customer: sale.orders?.customer_email || "Unknown"
+    }))
+
+    return NextResponse.json({ sales: formattedSales })
   } catch (error) {
     console.error("Unexpected error in vendor sales API:", error)
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 })
+    return NextResponse.json(
+      { error: "Internal server error" },
+      { status: 500 }
+    )
   }
 }

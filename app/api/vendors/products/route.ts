@@ -17,40 +17,10 @@ export async function GET(request: NextRequest) {
     }
 
     if (!vendor) {
-      // Return mock data for development purposes
-      console.log("No vendor specified, returning mock data")
-      return NextResponse.json({
-        products: [
-          {
-            id: "123456789",
-            title: "Sample Product 1",
-            handle: "sample-product-1",
-            vendor: "Test Vendor",
-            productType: "Test",
-            inventory: 10,
-            price: "29.99",
-            currency: "USD",
-            image: "https://placehold.co/600x400",
-            status: "active",
-            payout_amount: 5,
-            is_percentage: true,
-          },
-          {
-            id: "987654321",
-            title: "Sample Product 2",
-            handle: "sample-product-2",
-            vendor: "Test Vendor",
-            productType: "Test",
-            inventory: 5,
-            price: "49.99",
-            currency: "USD",
-            image: "https://placehold.co/600x400",
-            status: "active",
-            payout_amount: 10,
-            is_percentage: false,
-          },
-        ],
-      })
+      return NextResponse.json(
+        { error: "No vendor specified" },
+        { status: 400 }
+      )
     }
 
     console.log(`Fetching products for vendor: ${vendor}`)
@@ -69,6 +39,10 @@ export async function GET(request: NextRequest) {
 
       if (payoutsError) {
         console.error("Error fetching vendor payouts:", payoutsError)
+        return NextResponse.json(
+          { error: "Failed to fetch vendor payout settings" },
+          { status: 500 }
+        )
       }
 
       // Merge payout settings with product data
@@ -84,49 +58,16 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ products: productsWithPayouts })
     } catch (shopifyError) {
       console.error("Error fetching from Shopify:", shopifyError)
-
-      // Return mock data as fallback
-      return NextResponse.json({
-        products: [
-          {
-            id: "123456789",
-            title: "Sample Product 1",
-            handle: "sample-product-1",
-            vendor: vendor,
-            productType: "Test",
-            inventory: 10,
-            price: "29.99",
-            currency: "USD",
-            image: "https://placehold.co/600x400",
-            status: "active",
-            payout_amount: 5,
-            is_percentage: true,
-          },
-          {
-            id: "987654321",
-            title: "Sample Product 2",
-            handle: "sample-product-2",
-            vendor: vendor,
-            productType: "Test",
-            inventory: 5,
-            price: "49.99",
-            currency: "USD",
-            image: "https://placehold.co/600x400",
-            status: "active",
-            payout_amount: 10,
-            is_percentage: false,
-          },
-        ],
-      })
+      return NextResponse.json(
+        { error: "Failed to fetch products from Shopify" },
+        { status: 500 }
+      )
     }
   } catch (error) {
     console.error("Error fetching vendor products:", error)
     return NextResponse.json(
-      {
-        error: error instanceof Error ? error.message : "An unexpected error occurred",
-        products: [], // Return empty array to prevent client-side errors
-      },
-      { status: 200 }, // Return 200 instead of 500 to allow client to handle gracefully
+      { error: error instanceof Error ? error.message : "An unexpected error occurred" },
+      { status: 500 }
     )
   }
 }
