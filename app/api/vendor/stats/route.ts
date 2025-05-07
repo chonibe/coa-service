@@ -77,8 +77,40 @@ export async function GET(request: Request) {
     // Get date range for the selected period
     const { start, end } = getDateRangeForPeriod(period, customStart, customEnd)
 
-    // Build query for line items from this vendor
-    let query = supabase.from("order_line_items").select("*").eq("vendor_name", vendorName).eq("status", "active")
+    // First, get all products that belong to this vendor
+    const { data: vendorProducts, error: productsError } = await supabase
+      .from("products")
+      .select("id, product_id, title, price")
+      .eq("vendor", vendorName)
+
+    if (productsError) {
+      console.error("Error fetching vendor products:", productsError)
+      return NextResponse.json({ error: "Database error" }, { status: 500 })
+    }
+
+    if (!vendorProducts || vendorProducts.length === 0) {
+      console.log(`No products found for vendor: ${vendorName}`)
+      return NextResponse.json({
+        totalProducts: 0,
+        totalSales: 0,
+        totalRevenue: 0,
+        pendingPayout: 0,
+        period: period,
+        dateRange: start
+          ? {
+              start: start.toISOString(),
+              end: end?.toISOString() || new Date().toISOString(),
+            }
+          : null,
+      })
+    }
+
+    // Extract product IDs
+    const productIds = vendorProducts.map((product) => product.product_id)
+    console.log(`Found ${productIds.length} products for vendor: ${vendorName}`)
+
+    // Build query for line items for these products
+    let query = supabase.from("order_line_items").select("*").in("product_id", productIds).eq("status", "active")
 
     // Add date filtering if applicable
     if (start) {
@@ -99,13 +131,16 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: "Database error" }, { status: 500 })
     }
 
+    console.log(`Found ${lineItems?.length || 0} line items for vendor products`)
+
     // Calculate total sales and revenue
-    let totalSales = 0
+    const totalSales = lineItems?.length || 0
     let totalRevenue = 0
 
-    lineItems?.forEach((item) => {
-      totalSales += 1
+    // Create a map to track sales by date for charting
+    const salesByDate = new Map()
 
+    lineItems?.forEach((item) => {
       // Add to revenue - handle different price formats
       if (item.price !== null && item.price !== undefined) {
         const price = typeof item.price === "string" ? Number.parseFloat(item.price) : Number(item.price)
@@ -113,18 +148,25 @@ export async function GET(request: Request) {
           totalRevenue += price
         }
       }
+
+      // Track sales by date (using date part only)
+      const saleDate = item.created_at ? item.created_at.split("T")[0] : null
+      if (saleDate) {
+        if (salesByDate.has(saleDate)) {
+          salesByDate.set(saleDate, salesByDate.get(saleDate) + 1)
+        } else {
+          salesByDate.set(saleDate, 1)
+        }
+      }
     })
 
-    // Query for products from this vendor
-    const { data: products, error: productsError } = await supabase
-      .from("products")
-      .select("*")
-      .eq("vendor", vendorName)
-
-    if (productsError) {
-      console.error("Database error when fetching products:", productsError)
-      return NextResponse.json({ error: "Database error" }, { status: 500 })
-    }
+    // Convert salesByDate map to array for the response
+    const salesTimeline = Array.from(salesByDate.entries())
+      .map(([date, count]) => ({
+        date,
+        count,
+      }))
+      .sort((a, b) => a.date.localeCompare(b.date))
 
     // Calculate pending payout (simplified version)
     // In a real app, you'd calculate this based on unpaid line items
@@ -132,10 +174,11 @@ export async function GET(request: Request) {
 
     // Return stats with period information
     return NextResponse.json({
-      totalProducts: products?.length || 0,
+      totalProducts: vendorProducts.length,
       totalSales: totalSales,
       totalRevenue: Number(totalRevenue.toFixed(2)),
       pendingPayout: Number(pendingPayout.toFixed(2)),
+      salesTimeline: salesTimeline,
       period: period,
       dateRange: start
         ? {
