@@ -31,6 +31,11 @@ export async function GET() {
       console.error("Database error when fetching line items:", error)
     }
 
+    console.log(`Found ${lineItems?.length || 0} active line items for vendor ${vendorName}`)
+    if (lineItems && lineItems.length > 0) {
+      console.log("Sample line item:", JSON.stringify(lineItems[0], null, 2))
+    }
+
     // 3. Calculate sales and revenue from line items
     let salesData = lineItems || []
     let totalSales = salesData.length

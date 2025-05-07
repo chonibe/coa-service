@@ -29,6 +29,11 @@ export async function GET() {
       return NextResponse.json({ error: "Database error" }, { status: 500 })
     }
 
+    console.log(`Found ${lineItems?.length || 0} active line items for vendor ${vendorName}`)
+    if (lineItems && lineItems.length > 0) {
+      console.log("Sample line item:", JSON.stringify(lineItems[0], null, 2))
+    }
+
     // Process line items to get sales by date - fixed to prevent recursion
     const salesByDate = processSalesByDate(lineItems || [])
 
@@ -64,7 +69,19 @@ function processSalesByDate(lineItems) {
   const salesByMonth = {}
 
   lineItems.forEach((item) => {
-    const date = new Date(item.created_at || item.updated_at || Date.now())
+    // Ensure we have a valid date
+    let date
+    try {
+      date = new Date(item.created_at || item.updated_at || Date.now())
+      if (isNaN(date.getTime())) {
+        console.warn(`Invalid date for item ${item.id}:`, item.created_at)
+        return
+      }
+    } catch (e) {
+      console.warn(`Error parsing date for item ${item.id}:`, e)
+      return
+    }
+
     const monthYear = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`
 
     if (!salesByMonth[monthYear]) {
