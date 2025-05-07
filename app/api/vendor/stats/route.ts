@@ -3,71 +3,53 @@ import { cookies } from "next/headers"
 import { createClient } from "@/lib/supabase-server"
 
 // Helper function to get date range based on period
-function getDateRangeForPeriod(
-  period: string,
-  customStart?: string,
-  customEnd?: string,
-): { start: Date | null; end: Date | null } {
-  // Handle custom date range
-  if (period === "custom" && customStart && customEnd) {
-    return {
-      start: new Date(customStart),
-      end: new Date(customEnd),
-    }
-  }
-
+function getDateRange(period: string) {
   const now = new Date()
-  let endDate = new Date(now)
-  let startDate: Date | null = null
+  const startDate = new Date()
 
   switch (period) {
     case "this-month":
-      startDate = new Date(now.getFullYear(), now.getMonth(), 1)
-      break
+      startDate.setDate(1)
+      startDate.setHours(0, 0, 0, 0)
+      return { startDate, endDate: now }
+
     case "last-month":
-      startDate = new Date(now.getFullYear(), now.getMonth() - 1, 1)
-      endDate = new Date(now.getFullYear(), now.getMonth(), 0) // Last day of previous month
-      break
-    case "last-3-months":
-      startDate = new Date(now.getFullYear(), now.getMonth() - 3, 1)
-      break
-    case "last-6-months":
-      startDate = new Date(now.getFullYear(), now.getMonth() - 6, 1)
-      break
+      startDate.setMonth(startDate.getMonth() - 1)
+      startDate.setDate(1)
+      startDate.setHours(0, 0, 0, 0)
+      const endDate = new Date(startDate)
+      endDate.setMonth(endDate.getMonth() + 1)
+      endDate.setDate(0)
+      endDate.setHours(23, 59, 59, 999)
+      return { startDate, endDate }
+
     case "this-year":
-      startDate = new Date(now.getFullYear(), 0, 1)
-      break
+      startDate.setMonth(0, 1)
+      startDate.setHours(0, 0, 0, 0)
+      return { startDate, endDate: now }
+
     case "last-year":
-      startDate = new Date(now.getFullYear() - 1, 0, 1)
-      endDate = new Date(now.getFullYear(), 0, 0) // Last day of previous year
-      break
+      startDate.setFullYear(startDate.getFullYear() - 1)
+      startDate.setMonth(0, 1)
+      startDate.setHours(0, 0, 0, 0)
+      const lastYearEnd = new Date(startDate)
+      lastYearEnd.setFullYear(lastYearEnd.getFullYear() + 1)
+      lastYearEnd.setDate(0)
+      lastYearEnd.setHours(23, 59, 59, 999)
+      return { startDate, endDate: lastYearEnd }
+
+    case "last-3-months":
+      startDate.setMonth(startDate.getMonth() - 3)
+      return { startDate, endDate: now }
+
+    case "last-6-months":
+      startDate.setMonth(startDate.getMonth() - 6)
+      return { startDate, endDate: now }
+
     case "all-time":
     default:
-      // No date filtering for all-time
-      return { start: null, end: null }
+      return { startDate: null, endDate: null }
   }
-
-  return { start: startDate, end: endDate }
-}
-
-// Helper function to safely serialize data
-function safeSerialize(obj: any) {
-  // Create a safe copy with only the properties we need
-  if (Array.isArray(obj)) {
-    return obj.map((item) => safeSerialize(item))
-  } else if (obj !== null && typeof obj === "object") {
-    const result: Record<string, any> = {}
-    for (const key in obj) {
-      if (Object.prototype.hasOwnProperty.call(obj, key)) {
-        // Skip functions and complex objects that might cause circular references
-        if (typeof obj[key] !== "function") {
-          result[key] = safeSerialize(obj[key])
-        }
-      }
-    }
-    return result
-  }
-  return obj
 }
 
 export async function GET(request: Request) {
@@ -75,8 +57,6 @@ export async function GET(request: Request) {
     // Get URL parameters
     const url = new URL(request.url)
     const period = url.searchParams.get("period") || "all-time"
-    const customStart = url.searchParams.get("start") || undefined
-    const customEnd = url.searchParams.get("end") || undefined
 
     // Get vendor name from cookie
     const cookieStore = cookies()
@@ -91,95 +71,83 @@ export async function GET(request: Request) {
     // Create Supabase client
     const supabase = createClient()
 
-    // Get date range for the selected period
-    const dateRange = getDateRangeForPeriod(period, customStart, customEnd)
-    const startDate = dateRange.start
-    const endDate = dateRange.end
+    // Get date range based on period
+    const { startDate, endDate } = getDateRange(period)
 
-    // Get product count
-    const { data: vendorProducts, error: productsError } = await supabase
-      .from("products")
-      .select("id")
-      .eq("vendor", vendorName)
+    // Build query for line items from this vendor
+    let query = supabase.from("order_line_items").select("*").eq("vendor_name", vendorName).eq("status", "active")
 
-    if (productsError) {
-      console.error("Error fetching vendor products:", productsError)
-      return NextResponse.json({ error: "Database error" }, { status: 500 })
-    }
-
-    // Query line items directly by vendor_name and status="active"
-    let query = supabase
-      .from("order_line_items")
-      .select("id, product_id, title, price, created_at, status")
-      .eq("vendor_name", vendorName)
-      .eq("status", "active")
-
-    // Add date filtering if applicable
-    if (startDate) {
-      query = query.gte("created_at", startDate.toISOString())
-    }
-
-    if (endDate) {
-      query = query.lte("created_at", endDate.toISOString())
+    // Add date filtering if a specific period is selected
+    if (startDate && endDate) {
+      // Assuming there's a created_at or order_date column
+      query = query.gte("created_at", startDate.toISOString()).lte("created_at", endDate.toISOString())
     }
 
     // Execute query
-    const { data: lineItems, error: lineItemsError } = await query
+    const { data: lineItems, error } = await query
 
-    if (lineItemsError) {
-      console.error("Error fetching line items:", lineItemsError)
+    if (error) {
+      console.error("Database error when fetching line items:", error)
       return NextResponse.json({ error: "Database error" }, { status: 500 })
     }
 
     // Calculate total sales and revenue
-    const totalSales = lineItems?.length || 0
+    let totalSales = 0
     let totalRevenue = 0
 
-    // Process line items - create a simplified array with only the data we need
-    const salesData = []
+    lineItems?.forEach((item) => {
+      totalSales += 1
 
-    if (lineItems && lineItems.length > 0) {
-      for (const item of lineItems) {
-        // Add to revenue
-        if (item.price !== null && item.price !== undefined) {
-          const price = typeof item.price === "string" ? Number.parseFloat(item.price) : Number(item.price)
-          if (!isNaN(price)) {
-            totalRevenue += price
-          }
+      // Add to revenue - handle different price formats
+      if (item.price !== null && item.price !== undefined) {
+        const price = typeof item.price === "string" ? Number.parseFloat(item.price) : Number(item.price)
+        if (!isNaN(price)) {
+          totalRevenue += price
         }
-
-        // Add to sales data - only include necessary fields
-        salesData.push({
-          id: item.id,
-          date: item.created_at,
-          productId: item.product_id,
-          productTitle: item.title || "Unknown Product",
-          price: typeof item.price === "string" ? Number.parseFloat(item.price) : Number(item.price) || 0,
-        })
       }
+    })
+
+    // Query for products from this vendor
+    const { data: products, error: productsError } = await supabase
+      .from("products")
+      .select("*")
+      .eq("vendor", vendorName)
+
+    if (productsError) {
+      console.error("Database error when fetching products:", productsError)
+      return NextResponse.json({ error: "Database error" }, { status: 500 })
     }
 
-    // Calculate pending payout (simplified)
+    // Calculate pending payout (simplified version)
     const pendingPayout = totalRevenue * 0.8 // Assuming 80% goes to vendor
 
-    // Create a safe response object with only the data we need
-    const responseData = {
-      totalProducts: vendorProducts?.length || 0,
+    // Get period label for display
+    const periodLabels: Record<string, string> = {
+      "all-time": "All Time",
+      "this-month": "This Month",
+      "last-month": "Last Month",
+      "this-year": "This Year",
+      "last-year": "Last Year",
+      "last-3-months": "Last 3 Months",
+      "last-6-months": "Last 6 Months",
+    }
+
+    // Return stats
+    return NextResponse.json({
+      totalProducts: products?.length || 0,
       totalSales: totalSales,
       totalRevenue: Number(totalRevenue.toFixed(2)),
       pendingPayout: Number(pendingPayout.toFixed(2)),
-      salesData: salesData,
       period: period,
-      dateRange: startDate
-        ? {
-            start: startDate.toISOString(),
-            end: endDate?.toISOString() || new Date().toISOString(),
-          }
-        : null,
-    }
-
-    // Return the safely serialized data
-    return NextResponse.json(safeSerialize(responseData))
+      periodLabel: periodLabels[period] || "Custom Period",
+      dateRange:
+        startDate && endDate
+          ? {
+              start: startDate.toISOString(),
+              end: endDate.toISOString(),
+            }
+          : null,
+    })
   } catch (error) {
     console.error("Unexpected error in vendor stats API:", error)
     return NextResponse.json({ error: "An unexpected error occurred" }, { status: 500 })

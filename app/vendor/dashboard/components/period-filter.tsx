@@ -20,7 +20,6 @@ const defaultPeriods: PeriodOption[] = [
   { value: "last-month", label: "Last Month" },
   { value: "last-3-months", label: "Last 3 Months" },
   { value: "last-6-months", label: "Last 6 Months" },
-  { value: "custom", label: "Custom Range" },
 ]
 
 interface PeriodFilterProps {
@@ -44,7 +43,7 @@ export function PeriodFilter({ value, onChange, periods = defaultPeriods, classN
           aria-expanded={open}
           className={cn("w-[200px] justify-between", className)}
         >
-          {selectedPeriod?.label || "Select period"}
+          {selectedPeriod?.label || "Select period..."}
           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
         </Button>
       </PopoverTrigger>
