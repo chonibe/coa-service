@@ -44,7 +44,8 @@ export async function GET() {
     salesData.forEach((item) => {
       if (item.price) {
         const price = typeof item.price === "string" ? Number.parseFloat(item.price) : item.price
-        totalRevenue += price
+        const quantity = item.quantity || 1
+        totalRevenue += price * quantity
       }
     })
 
@@ -62,7 +63,8 @@ export async function GET() {
           shopifyOrders.forEach((item) => {
             if (item.price) {
               const price = typeof item.price === "string" ? Number.parseFloat(item.price) : item.price
-              totalRevenue += price
+              const quantity = item.quantity || 1
+              totalRevenue += price * quantity
             }
           })
 
