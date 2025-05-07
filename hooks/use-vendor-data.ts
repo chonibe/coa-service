@@ -4,7 +4,6 @@ import { useState, useEffect } from "react"
 
 interface VendorStats {
   totalProducts: number
-  totalSales: number
   totalRevenue: number
   pendingPayout: number
   revenueGrowth?: number
@@ -20,7 +19,7 @@ interface Product {
   status: string
   vendor: string
   image?: string
-  totalSales?: number
+  totalRevenue?: number
   revenue?: number
   payout_amount?: number
   is_percentage?: boolean
@@ -77,8 +76,8 @@ export function useVendorData(): UseVendorDataReturn {
       // Mock sales data for now
       const salesData = statsData
         ? {
-            totalSales: statsData.totalRevenue || 0,
-            productsSold: statsData.totalSales || 0,
+            totalRevenue: statsData.totalRevenue || 0,
+            productsSold: statsData.totalProducts || 0,
             conversionRate: 3.2,
             chartData: [],
             recentActivity: [],
