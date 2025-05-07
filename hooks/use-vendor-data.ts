@@ -9,6 +9,7 @@ interface VendorStats {
   totalRevenue: number
   pendingPayout: number
   period: string
+  salesData: any[]
   dateRange?: {
     start: string
     end: string
@@ -93,14 +94,13 @@ export function useVendorData(): UseVendorDataReturn {
       setStats(statsData)
       setProducts(productsData.products || [])
 
-      // Mock sales data for now
+      // Create sales data from stats
       const salesData = statsData
         ? {
             totalSales: statsData.totalSales || 0,
             productsSold: statsData.totalSales || 0,
             conversionRate: 3.2,
-            chartData: [],
-            recentActivity: [],
+            chartData: statsData.salesData || [],
           }
         : null
 
