@@ -41,23 +41,48 @@ export async function GET() {
     let totalSales = salesData.length
     let totalRevenue = 0
 
+    // First fetch payout settings
+    const productIds = products.map((p) => p.id)
+    const { data: payouts, error: payoutsError } = await supabaseAdmin
+      .from("product_vendor_payouts")
+      .select("*")
+      .eq("vendor_name", vendorName)
+      .in("product_id", productIds)
+
+    if (payoutsError) {
+      console.error("Error fetching payouts:", payoutsError)
+    }
+
     console.log("Starting revenue calculation...")
     salesData.forEach((item) => {
       console.log("Processing item:", {
         id: item.id,
+        product_id: item.product_id,
         price: item.price,
-        quantity: item.quantity,
-        price_type: typeof item.price
+        quantity: item.quantity
       })
       
-      if (item.price) {
-        const price = typeof item.price === "string" ? Number.parseFloat(item.price) : item.price
+      const payout = payouts?.find((p) => p.product_id === item.product_id)
+      if (payout) {
+        const price = typeof item.price === "string" ? Number.parseFloat(item.price || "0") : item.price || 0
         const quantity = item.quantity || 1
-        const itemRevenue = price * quantity
+        
+        let itemRevenue
+        if (payout.is_percentage) {
+          itemRevenue = (price * payout.payout_amount / 100) * quantity
+        } else {
+          itemRevenue = payout.payout_amount * quantity
+        }
+        
         totalRevenue += itemRevenue
-        console.log(`Item revenue: $${itemRevenue.toFixed(2)} (price: $${price.toFixed(2)} x quantity: ${quantity})`)
+        console.log(`Item revenue: $${itemRevenue.toFixed(2)} (payout: ${payout.is_percentage ? payout.payout_amount + '%' : '$' + payout.payout_amount} x price: $${price.toFixed(2)} x quantity: ${quantity})`)
       } else {
-        console.log("Item has no price:", item)
+        // Default payout if no specific setting found (10%)
+        const price = typeof item.price === "string" ? Number.parseFloat(item.price || "0") : item.price || 0
+        const quantity = item.quantity || 1
+        const itemRevenue = (price * 0.1) * quantity // 10% default
+        totalRevenue += itemRevenue
+        console.log(`Item revenue (default 10%): $${itemRevenue.toFixed(2)} (price: $${price.toFixed(2)} x quantity: ${quantity})`)
       }
     })
     console.log(`Total revenue calculated: $${totalRevenue.toFixed(2)}`)
@@ -71,13 +96,27 @@ export async function GET() {
           salesData = shopifyOrders
           totalSales = shopifyOrders.length
 
-          // Recalculate revenue from Shopify data
+          // Recalculate revenue from Shopify data using payout settings
           totalRevenue = 0
           shopifyOrders.forEach((item) => {
-            if (item.price) {
-              const price = typeof item.price === "string" ? Number.parseFloat(item.price) : item.price
+            const payout = payouts?.find((p) => p.product_id === item.product_id)
+            if (payout) {
+              const price = typeof item.price === "string" ? Number.parseFloat(item.price || "0") : item.price || 0
               const quantity = item.quantity || 1
-              totalRevenue += price * quantity
+              
+              let itemRevenue
+              if (payout.is_percentage) {
+                itemRevenue = (price * payout.payout_amount / 100) * quantity
+              } else {
+                itemRevenue = payout.payout_amount * quantity
+              }
+              
+              totalRevenue += itemRevenue
+            } else {
+              // Default payout if no specific setting found (10%)
+              const price = typeof item.price === "string" ? Number.parseFloat(item.price || "0") : item.price || 0
+              const quantity = item.quantity || 1
+              totalRevenue += (price * 0.1) * quantity // 10% default
             }
           })
 
@@ -88,38 +127,10 @@ export async function GET() {
       }
     }
 
-    // 5. Fetch payout settings to calculate pending payout
-    const productIds = products.map((p) => p.id)
-    const { data: payouts, error: payoutsError } = await supabaseAdmin
-      .from("product_vendor_payouts")
-      .select("*")
-      .eq("vendor_name", vendorName)
-      .in("product_id", productIds)
+    // Calculate pending payout (this is now the same as total revenue)
+    const pendingPayout = totalRevenue
 
-    if (payoutsError) {
-      console.error("Error fetching payouts:", payoutsError)
-    }
-
-    // 6. Calculate pending payout based on sales and payout settings
-    let pendingPayout = 0
-    salesData.forEach((item) => {
-      const payout = payouts?.find((p) => p.product_id === item.product_id)
-      if (payout) {
-        const price = typeof item.price === "string" ? Number.parseFloat(item.price || "0") : item.price || 0
-
-        if (payout.is_percentage) {
-          pendingPayout += (price * payout.payout_amount) / 100
-        } else {
-          pendingPayout += payout.payout_amount
-        }
-      } else {
-        // Default payout if no specific setting found (10%)
-        const price = typeof item.price === "string" ? Number.parseFloat(item.price || "0") : item.price || 0
-        pendingPayout += price * 0.1 // 10% default
-      }
-    })
-
-    console.log(`Calculated pending payout: $${pendingPayout.toFixed(2)}`)
+    console.log(`Final calculations - Total Sales: ${totalSales}, Total Revenue: $${totalRevenue.toFixed(2)}, Pending Payout: $${pendingPayout.toFixed(2)}`)
 
     return NextResponse.json({
       totalProducts,
