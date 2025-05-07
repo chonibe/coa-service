@@ -41,13 +41,26 @@ export async function GET() {
     let totalSales = salesData.length
     let totalRevenue = 0
 
+    console.log("Starting revenue calculation...")
     salesData.forEach((item) => {
+      console.log("Processing item:", {
+        id: item.id,
+        price: item.price,
+        quantity: item.quantity,
+        price_type: typeof item.price
+      })
+      
       if (item.price) {
         const price = typeof item.price === "string" ? Number.parseFloat(item.price) : item.price
         const quantity = item.quantity || 1
-        totalRevenue += price * quantity
+        const itemRevenue = price * quantity
+        totalRevenue += itemRevenue
+        console.log(`Item revenue: $${itemRevenue.toFixed(2)} (price: $${price.toFixed(2)} x quantity: ${quantity})`)
+      } else {
+        console.log("Item has no price:", item)
       }
     })
+    console.log(`Total revenue calculated: $${totalRevenue.toFixed(2)}`)
 
     // 4. If no data from database, try fetching from Shopify as fallback
     if (salesData.length === 0) {
