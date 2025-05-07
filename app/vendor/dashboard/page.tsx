@@ -8,6 +8,7 @@ import { AlertCircle, ArrowUpRight, Package, PoundSterlingIcon as Pound, Shoppin
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
 import { VendorSalesChart } from "./components/vendor-sales-chart"
+import { ProductPerformance } from "./components/product-performance"
 import { PeriodFilter } from "./components/period-filter"
 import { CustomDateRange } from "./components/custom-date-range"
 import { useVendorData } from "@/hooks/use-vendor-data"
@@ -153,33 +154,11 @@ export default function VendorDashboard() {
             </Card>
             <Card className="col-span-3">
               <CardHeader>
-                <CardTitle>Recent Activity</CardTitle>
-                <CardDescription>Latest sales and updates</CardDescription>
+                <CardTitle>Top Products</CardTitle>
+                <CardDescription>Best performing products</CardDescription>
               </CardHeader>
               <CardContent>
-                {isLoading ? (
-                  <div className="space-y-2">
-                    <Skeleton className="h-12 w-full" />
-                    <Skeleton className="h-12 w-full" />
-                    <Skeleton className="h-12 w-full" />
-                  </div>
-                ) : (
-                  <div className="space-y-4">
-                    <div className="flex items-center">
-                      <div className="ml-4 space-y-1">
-                        <p className="text-sm font-medium leading-none">View detailed analytics for more insights</p>
-                        <p className="text-sm text-muted-foreground">
-                          Check the Analytics tab for more detailed reports
-                        </p>
-                      </div>
-                      <div className="ml-auto font-medium">
-                        <Button variant="ghost" size="sm" onClick={() => setActiveTab("analytics")}>
-                          View Analytics
-                        </Button>
-                      </div>
-                    </div>
-                  </div>
-                )}
+                <ProductPerformance period={period} />
               </CardContent>
             </Card>
           </div>

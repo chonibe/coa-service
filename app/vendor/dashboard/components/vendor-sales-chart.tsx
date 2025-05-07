@@ -8,6 +8,11 @@ interface SalesChartProps {
   period?: string
 }
 
+interface SalesDataPoint {
+  date: string
+  count: number
+}
+
 export function VendorSalesChart({ period = "all-time" }: SalesChartProps) {
   const [chartData, setChartData] = useState<any[]>([])
   const [isLoading, setIsLoading] = useState(true)
@@ -16,12 +21,29 @@ export function VendorSalesChart({ period = "all-time" }: SalesChartProps) {
     const fetchSalesData = async () => {
       setIsLoading(true)
       try {
-        // In a real app, you would fetch this data from an API
-        // For now, we'll generate mock data based on the period
-        const data = generateMockDataForPeriod(period)
-        setChartData(data)
+        // Fetch real sales data from the API
+        const response = await fetch(`/api/vendor/stats?period=${period}`)
+
+        if (!response.ok) {
+          throw new Error("Failed to fetch sales data")
+        }
+
+        const data = await response.json()
+
+        if (data.salesTimeline && data.salesTimeline.length > 0) {
+          // Format the data for the chart
+          const formattedData = formatChartData(data.salesTimeline, period)
+          setChartData(formattedData)
+        } else {
+          // Fallback to mock data if no sales data is available
+          const mockData = generateMockDataForPeriod(period)
+          setChartData(mockData)
+        }
       } catch (error) {
         console.error("Error fetching sales data:", error)
+        // Fallback to mock data on error
+        const mockData = generateMockDataForPeriod(period)
+        setChartData(mockData)
       } finally {
         setIsLoading(false)
       }
@@ -30,13 +52,117 @@ export function VendorSalesChart({ period = "all-time" }: SalesChartProps) {
     fetchSalesData()
   }, [period])
 
-  // Helper function to generate mock data based on period
+  // Helper function to format the sales timeline data for the chart
+  const formatChartData = (salesTimeline: SalesDataPoint[], period: string) => {
+    // For different periods, we might want to aggregate the data differently
+    switch (period) {
+      case "this-month":
+      case "last-month":
+      case "custom":
+        // Daily data - use as is but format the date
+        return salesTimeline.map((item) => ({
+          name: new Date(item.date).getDate().toString(), // Just the day number
+          sales: item.count,
+        }))
+
+      case "last-3-months":
+      case "last-6-months":
+        // Weekly aggregation
+        return aggregateByWeek(salesTimeline)
+
+      case "this-year":
+      case "last-year":
+        // Monthly aggregation
+        return aggregateByMonth(salesTimeline)
+
+      case "all-time":
+      default:
+        // Yearly aggregation
+        return aggregateByYear(salesTimeline)
+    }
+  }
+
+  // Helper function to aggregate data by week
+  const aggregateByWeek = (salesTimeline: SalesDataPoint[]) => {
+    const weeklyData = new Map()
+
+    salesTimeline.forEach((item) => {
+      const date = new Date(item.date)
+      // Get the week number (approximate)
+      const weekNum = Math.floor(date.getDate() / 7) + 1
+      const monthYear = `${date.getFullYear()}-${date.getMonth() + 1}`
+      const weekKey = `W${weekNum} ${monthYear}`
+
+      if (weeklyData.has(weekKey)) {
+        weeklyData.set(weekKey, weeklyData.get(weekKey) + item.count)
+      } else {
+        weeklyData.set(weekKey, item.count)
+      }
+    })
+
+    return Array.from(weeklyData.entries())
+      .map(([week, count]) => ({
+        name: week.split(" ")[0], // Just the week part
+        sales: count,
+      }))
+      .sort((a, b) => {
+        // Extract week number for sorting
+        const weekA = Number.parseInt(a.name.substring(1))
+        const weekB = Number.parseInt(b.name.substring(1))
+        return weekA - weekB
+      })
+  }
+
+  // Helper function to aggregate data by month
+  const aggregateByMonth = (salesTimeline: SalesDataPoint[]) => {
+    const monthlyData = new Map()
+    const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+
+    salesTimeline.forEach((item) => {
+      const date = new Date(item.date)
+      const monthKey = `${monthNames[date.getMonth()]} ${date.getFullYear()}`
+
+      if (monthlyData.has(monthKey)) {
+        monthlyData.set(monthKey, monthlyData.get(monthKey) + item.count)
+      } else {
+        monthlyData.set(monthKey, item.count)
+      }
+    })
+
+    return Array.from(monthlyData.entries()).map(([month, count]) => ({
+      name: month.split(" ")[0], // Just the month name
+      sales: count,
+    }))
+  }
+
+  // Helper function to aggregate data by year
+  const aggregateByYear = (salesTimeline: SalesDataPoint[]) => {
+    const yearlyData = new Map()
+
+    salesTimeline.forEach((item) => {
+      const year = item.date.split("-")[0]
+
+      if (yearlyData.has(year)) {
+        yearlyData.set(year, yearlyData.get(year) + item.count)
+      } else {
+        yearlyData.set(year, item.count)
+      }
+    })
+
+    return Array.from(yearlyData.entries())
+      .map(([year, count]) => ({
+        name: year,
+        sales: count,
+      }))
+      .sort((a, b) => a.name.localeCompare(b.name))
+  }
+
+  // Helper function to generate mock data based on period (fallback)
   const generateMockDataForPeriod = (period: string) => {
     const now = new Date()
     let data: any[] = []
 
     // For custom period, generate daily data for up to 30 days
-    // In a real app, you would adjust the granularity based on the range length
     if (period === "custom") {
       return Array.from({ length: 30 }, (_, i) => ({
         name: `Day ${i + 1}`,
@@ -122,7 +248,7 @@ export function VendorSalesChart({ period = "all-time" }: SalesChartProps) {
               case "last-year":
                 return `${label}`
               case "custom":
-                return `${label}`
+                return `Day ${label}`
               case "all-time":
               default:
                 return `Year ${label}`
