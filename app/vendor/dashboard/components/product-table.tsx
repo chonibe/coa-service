@@ -18,6 +18,8 @@ interface Product {
   image?: string
   totalSales?: number
   revenue?: number
+  payout_amount?: number
+  is_percentage?: boolean
 }
 
 interface ProductTableProps {
@@ -92,6 +94,7 @@ export function ProductTable({ products }: ProductTableProps) {
               <TableHead>Image</TableHead>
               <SortHeader field="title" label="Product" />
               <SortHeader field="price" label="Price" />
+              <TableHead>Payout</TableHead>
               <SortHeader field="status" label="Status" />
               <TableHead>Actions</TableHead>
             </TableRow>
@@ -118,6 +121,16 @@ export function ProductTable({ products }: ProductTableProps) {
                 </TableCell>
                 <TableCell className="font-medium">{product.title}</TableCell>
                 <TableCell>${product.price}</TableCell>
+                <TableCell>
+                  {product.payout_amount ? (
+                    <div className="flex items-center space-x-1">
+                      <span>${product.payout_amount}</span>
+                      {product.is_percentage && <span className="text-xs text-muted-foreground">({product.payout_amount}%)</span>}
+                    </div>
+                  ) : (
+                    <span className="text-muted-foreground">Default (10%)</span>
+                  )}
+                </TableCell>
                 <TableCell>{getStatusBadge(product.status)}</TableCell>
                 <TableCell>
                   <Button variant="ghost" size="sm" asChild>

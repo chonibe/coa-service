@@ -22,6 +22,8 @@ interface Product {
   image?: string
   totalSales?: number
   revenue?: number
+  payout_amount?: number
+  is_percentage?: boolean
 }
 
 interface SalesData {
