@@ -69,10 +69,16 @@ export default function VendorDashboardPage() {
                 {isLoading ? (
                   <Skeleton className="h-8 w-[100px]" />
                 ) : (
-                  <div className="text-2xl font-bold">${salesData?.totalSales || "0.00"}</div>
+                  <div className="text-2xl font-bold">${salesData?.totalSales.toFixed(2) || "0.00"}</div>
                 )}
                 <p className="text-xs text-muted-foreground">
-                  {isLoading ? <Skeleton className="h-4 w-[160px]" /> : "+20.1% from last month"}
+                  {isLoading ? (
+                    <Skeleton className="h-4 w-[160px]" />
+                  ) : salesData?.last30DaysTotal ? (
+                    `$${salesData.last30DaysTotal.revenue.toFixed(2)} this month`
+                  ) : (
+                    "No data for this month"
+                  )}
                 </p>
               </CardContent>
             </Card>
@@ -89,7 +95,13 @@ export default function VendorDashboardPage() {
                   <div className="text-2xl font-bold">{salesData?.productsSold || "0"}</div>
                 )}
                 <p className="text-xs text-muted-foreground">
-                  {isLoading ? <Skeleton className="h-4 w-[160px]" /> : "+12.5% from last month"}
+                  {isLoading ? (
+                    <Skeleton className="h-4 w-[160px]" />
+                  ) : salesData?.last30DaysTotal ? (
+                    `${salesData.last30DaysTotal.sales} this month`
+                  ) : (
+                    "No data for this month"
+                  )}
                 </p>
               </CardContent>
             </Card>

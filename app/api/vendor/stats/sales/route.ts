@@ -98,10 +98,20 @@ export async function GET(request: NextRequest) {
     // Only return the last 30 days for the chart
     const last30Days = chartSalesData.slice(-30)
 
+    // Calculate last 30 days totals
+    const last30DaysTotal = last30Days.reduce(
+      (acc, day) => ({
+        sales: acc.sales + day.sales,
+        revenue: acc.revenue + day.revenue,
+      }),
+      { sales: 0, revenue: 0 }
+    )
+
     return NextResponse.json({
       salesByDate: last30Days,
       totalSales,
       totalRevenue,
+      last30DaysTotal,
     })
   } catch (error: any) {
     console.error("Error in vendor sales stats API:", error)

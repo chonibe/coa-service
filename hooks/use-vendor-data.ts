@@ -4,6 +4,7 @@ import { useState, useEffect } from "react"
 
 interface VendorStats {
   totalProducts: number
+  totalSales: number
   totalRevenue: number
   pendingPayout: number
   revenueGrowth?: number
@@ -21,16 +22,15 @@ interface Product {
   image?: string
   totalSales?: number
   revenue?: number
-  payout_amount?: number
-  is_percentage?: boolean
 }
 
 interface SalesData {
-  totalRevenue: number
+  totalSales: number
   productsSold: number
   conversionRate: number
   chartData: any[]
   recentActivity?: any[]
+  last30DaysTotal: { sales: number; revenue: number }
 }
 
 interface UseVendorDataReturn {
@@ -70,19 +70,25 @@ export function useVendorData(): UseVendorDataReturn {
       const statsData = await statsResponse.json()
       const productsData = await productsResponse.json()
 
+      // Fetch sales data
+      const salesResponse = await fetch("/api/vendor/stats/sales")
+      if (!salesResponse.ok) {
+        throw new Error(`Failed to fetch sales data: ${salesResponse.status}`)
+      }
+      const salesStats = await salesResponse.json()
+
       setStats(statsData)
       setProducts(productsData.products || [])
 
-      // Mock sales data for now
-      const salesData = statsData
-        ? {
-            totalRevenue: statsData.totalRevenue || 0,
-            productsSold: statsData.totalProducts || 0,
-            conversionRate: 3.2,
-            chartData: [],
-            recentActivity: [],
-          }
-        : null
+      // Use real sales data
+      const salesData = {
+        totalSales: salesStats.totalRevenue || 0,
+        productsSold: salesStats.totalSales || 0,
+        conversionRate: 3.2, // TODO: Calculate this
+        chartData: salesStats.salesByDate || [],
+        recentActivity: [],
+        last30DaysTotal: salesStats.last30DaysTotal || { sales: 0, revenue: 0 }
+      }
 
       setSalesData(salesData)
     } catch (err) {
