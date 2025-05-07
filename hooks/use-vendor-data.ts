@@ -24,9 +24,18 @@ interface Product {
   revenue?: number
 }
 
+interface SalesData {
+  totalSales: number
+  productsSold: number
+  conversionRate: number
+  chartData: any[]
+  recentActivity?: any[]
+}
+
 interface UseVendorDataReturn {
   stats: VendorStats | null
   products: Product[] | null
+  salesData: SalesData | null
   isLoading: boolean
   error: Error | null
   refreshData: () => Promise<void>
@@ -35,6 +44,7 @@ interface UseVendorDataReturn {
 export function useVendorData(): UseVendorDataReturn {
   const [stats, setStats] = useState<VendorStats | null>(null)
   const [products, setProducts] = useState<Product[] | null>(null)
+  const [salesData, setSalesData] = useState<SalesData | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<Error | null>(null)
 
@@ -61,6 +71,19 @@ export function useVendorData(): UseVendorDataReturn {
 
       setStats(statsData)
       setProducts(productsData.products || [])
+
+      // Mock sales data for now
+      const salesData = statsData
+        ? {
+            totalSales: statsData.totalRevenue || 0,
+            productsSold: statsData.totalSales || 0,
+            conversionRate: 3.2,
+            chartData: [],
+            recentActivity: [],
+          }
+        : null
+
+      setSalesData(salesData)
     } catch (err) {
       console.error("Error in useVendorData:", err)
       setError(err instanceof Error ? err : new Error("Unknown error occurred"))
@@ -77,5 +100,5 @@ export function useVendorData(): UseVendorDataReturn {
     await fetchData()
   }
 
-  return { stats, products, isLoading, error, refreshData }
+  return { stats, products, salesData, isLoading, error, refreshData }
 }
