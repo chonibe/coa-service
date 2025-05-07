@@ -2,16 +2,33 @@ import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
 import { cookies } from "next/headers"
 import { supabaseAdmin } from "@/lib/supabase"
-import { SHOPIFY_SHOP, SHOPIFY_ACCESS_TOKEN } from "@/lib/env"
+
+interface LineItem {
+  id: string
+  line_item_id: string
+  order_id: string
+  order_name: string
+  product_id: string
+  variant_id: string
+  edition_number: number
+  created_at: string
+  vendor_name: string
+  status: string
+  price: number
+}
 
 export async function GET(request: NextRequest) {
   try {
     // Get the vendor name from the cookie
-    const cookieStore = cookies()
+    const cookieStore = await cookies()
     const vendorName = cookieStore.get("vendor_session")?.value
 
     if (!vendorName) {
       return NextResponse.json({ message: "Not authenticated" }, { status: 401 })
+    }
+
+    if (!supabaseAdmin) {
+      throw new Error("Supabase admin client not initialized")
     }
 
     console.log(`Fetching sales data for vendor: ${vendorName}`)
@@ -26,8 +43,6 @@ export async function GET(request: NextRequest) {
         order_name,
         product_id,
         variant_id,
-        price,
-        quantity,
         edition_number,
         created_at,
         vendor_name,
@@ -39,25 +54,15 @@ export async function GET(request: NextRequest) {
 
     if (lineItemsError) {
       console.error("Error fetching line items from Supabase:", lineItemsError)
-      // We'll continue and try to fetch from Shopify instead
+      return NextResponse.json({ error: "Failed to fetch sales data" }, { status: 500 })
     }
 
-    // If no data from Supabase or very few items, try fetching from Shopify as fallback
-    let salesData = lineItems || []
-
-    if (!salesData || salesData.length < 5) {
-      console.log("Insufficient data from Supabase, fetching from Shopify as fallback")
-      try {
-        const shopifyData = await fetchVendorSalesFromShopify(vendorName)
-        if (shopifyData && shopifyData.length > 0) {
-          salesData = shopifyData
-          console.log(`Successfully fetched ${shopifyData.length} items from Shopify`)
-        }
-      } catch (shopifyError) {
-        console.error("Error fetching from Shopify:", shopifyError)
-        // Continue with whatever data we have
-      }
-    }
+    // Process the line items
+    const salesData = (lineItems || []).map(item => ({
+      ...item,
+      price: 0, // Default price since we don't store it
+      quantity: 1 // Default to 1 since quantity is not stored
+    })) as LineItem[]
 
     // Group items by date (YYYY-MM-DD)
     const salesByDate: Record<string, { sales: number; revenue: number }> = {}
@@ -68,21 +73,18 @@ export async function GET(request: NextRequest) {
       // Format created_at date to YYYY-MM-DD
       const dateStr = new Date(item.created_at).toISOString().split("T")[0]
 
-      // Convert price to number if it's a string
-      const price = typeof item.price === "string" ? Number.parseFloat(item.price || "0") : item.price || 0
-
       // Initialize the date entry if it doesn't exist
       if (!salesByDate[dateStr]) {
         salesByDate[dateStr] = { sales: 0, revenue: 0 }
       }
 
       // Add the line item to the totals
-      salesByDate[dateStr].sales += 1
-      salesByDate[dateStr].revenue += price
+      salesByDate[dateStr].sales += 1 // Each line item counts as 1 sale
+      salesByDate[dateStr].revenue += item.price // Add the price to revenue
 
       // Update overall totals
       totalSales += 1
-      totalRevenue += price
+      totalRevenue += item.price
     })
 
     // Convert the salesByDate object to an array for the chart
@@ -112,103 +114,5 @@ export async function GET(request: NextRequest) {
       },
       { status: 500 },
     )
-  }
-}
-
-// Add a function to fetch vendor sales from Shopify as fallback
-async function fetchVendorSalesFromShopify(vendorName: string) {
-  try {
-    console.log(`Fetching sales data from Shopify for vendor: ${vendorName}`)
-
-    // Build the GraphQL query to fetch orders containing products from this vendor
-    const graphqlQuery = `
-      {
-        orders(first: 50, query: "status:any") {
-          edges {
-            node {
-              id
-              name
-              createdAt
-              lineItems(first: 50) {
-                edges {
-                  node {
-                    id
-                    quantity
-                    vendor
-                    product {
-                      id
-                      vendor
-                    }
-                    variant {
-                      id
-                      price
-                    }
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-    `
-
-    // Make the request to Shopify
-    const url = `https://${SHOPIFY_SHOP}/admin/api/2023-10/graphql.json`
-    const response = await fetch(url, {
-      method: "POST",
-      headers: {
-        "X-Shopify-Access-Token": SHOPIFY_ACCESS_TOKEN,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ query: graphqlQuery }),
-    })
-
-    if (!response.ok) {
-      throw new Error(`Shopify API error: ${response.status} ${response.statusText}`)
-    }
-
-    const data = await response.json()
-
-    if (!data || !data.data || !data.data.orders) {
-      throw new Error("Invalid response from Shopify GraphQL API")
-    }
-
-    // Process the orders to extract line items for this vendor
-    const vendorLineItems = []
-
-    for (const orderEdge of data.data.orders.edges) {
-      const order = orderEdge.node
-
-      for (const lineItemEdge of order.lineItems.edges) {
-        const lineItem = lineItemEdge.node
-
-        // Check if this line item is from our vendor
-        const isVendorItem =
-          (lineItem.vendor && lineItem.vendor.toLowerCase() === vendorName.toLowerCase()) ||
-          (lineItem.product &&
-            lineItem.product.vendor &&
-            lineItem.product.vendor.toLowerCase() === vendorName.toLowerCase())
-
-        if (isVendorItem) {
-          vendorLineItems.push({
-            line_item_id: lineItem.id.split("/").pop(),
-            order_id: order.id.split("/").pop(),
-            order_name: order.name,
-            product_id: lineItem.product?.id.split("/").pop(),
-            variant_id: lineItem.variant?.id.split("/").pop(),
-            price: lineItem.variant?.price || "0.00",
-            quantity: lineItem.quantity || 1,
-            created_at: order.createdAt,
-            vendor_name: vendorName,
-            status: "active",
-          })
-        }
-      }
-    }
-
-    return vendorLineItems
-  } catch (error) {
-    console.error("Error fetching from Shopify:", error)
-    throw error
   }
 }
