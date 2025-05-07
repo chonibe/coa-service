@@ -50,6 +50,26 @@ function getDateRangeForPeriod(
   return { start: startDate, end: endDate }
 }
 
+// Helper function to safely serialize data
+function safeSerialize(obj: any) {
+  // Create a safe copy with only the properties we need
+  if (Array.isArray(obj)) {
+    return obj.map((item) => safeSerialize(item))
+  } else if (obj !== null && typeof obj === "object") {
+    const result: Record<string, any> = {}
+    for (const key in obj) {
+      if (Object.prototype.hasOwnProperty.call(obj, key)) {
+        // Skip functions and complex objects that might cause circular references
+        if (typeof obj[key] !== "function") {
+          result[key] = safeSerialize(obj[key])
+        }
+      }
+    }
+    return result
+  }
+  return obj
+}
+
 export async function GET(request: Request) {
   try {
     // Get URL parameters
@@ -67,9 +87,6 @@ export async function GET(request: Request) {
     }
 
     console.log(`Fetching stats for vendor: ${vendorName}, period: ${period}`)
-    if (period === "custom") {
-      console.log(`Custom date range: ${customStart} to ${customEnd}`)
-    }
 
     // Create Supabase client
     const supabase = createClient()
@@ -79,34 +96,7 @@ export async function GET(request: Request) {
     const startDate = dateRange.start
     const endDate = dateRange.end
 
-    // DIRECT APPROACH: Query line items directly by vendor_name
-    // This gets the actual sales data with dates directly from the line items table
-    let lineItemsQuery = supabase
-      .from("order_line_items")
-      .select("*")
-      .eq("vendor_name", vendorName)
-      .eq("status", "active")
-
-    // Add date filtering if applicable
-    if (startDate) {
-      lineItemsQuery = lineItemsQuery.gte("created_at", startDate.toISOString())
-    }
-
-    if (endDate) {
-      lineItemsQuery = lineItemsQuery.lte("created_at", endDate.toISOString())
-    }
-
-    // Execute query to get line items
-    const { data: lineItems, error: lineItemsError } = await lineItemsQuery
-
-    if (lineItemsError) {
-      console.error("Error fetching line items:", lineItemsError)
-      return NextResponse.json({ error: "Database error" }, { status: 500 })
-    }
-
-    console.log(`Found ${lineItems?.length || 0} line items for vendor: ${vendorName}`)
-
-    // Get product count separately
+    // Get product count
     const { data: vendorProducts, error: productsError } = await supabase
       .from("products")
       .select("id")
@@ -117,17 +107,40 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: "Database error" }, { status: 500 })
     }
 
+    // Query line items directly by vendor_name and status="active"
+    let query = supabase
+      .from("order_line_items")
+      .select("id, product_id, title, price, created_at, status")
+      .eq("vendor_name", vendorName)
+      .eq("status", "active")
+
+    // Add date filtering if applicable
+    if (startDate) {
+      query = query.gte("created_at", startDate.toISOString())
+    }
+
+    if (endDate) {
+      query = query.lte("created_at", endDate.toISOString())
+    }
+
+    // Execute query
+    const { data: lineItems, error: lineItemsError } = await query
+
+    if (lineItemsError) {
+      console.error("Error fetching line items:", lineItemsError)
+      return NextResponse.json({ error: "Database error" }, { status: 500 })
+    }
+
     // Calculate total sales and revenue
     const totalSales = lineItems?.length || 0
     let totalRevenue = 0
 
-    // Create a map to track sales by date for charting
-    const salesByDate = new Map()
-    const salesByProduct = new Map()
+    // Process line items - create a simplified array with only the data we need
+    const salesData = []
 
     if (lineItems && lineItems.length > 0) {
       for (const item of lineItems) {
-        // Add to revenue - handle different price formats
+        // Add to revenue
         if (item.price !== null && item.price !== undefined) {
           const price = typeof item.price === "string" ? Number.parseFloat(item.price) : Number(item.price)
           if (!isNaN(price)) {
@@ -135,65 +148,27 @@ export async function GET(request: Request) {
           }
         }
 
-        // Track sales by date (using date part only)
-        const saleDate = item.created_at ? item.created_at.split("T")[0] : null
-        if (saleDate) {
-          if (salesByDate.has(saleDate)) {
-            salesByDate.set(saleDate, salesByDate.get(saleDate) + 1)
-          } else {
-            salesByDate.set(saleDate, 1)
-          }
-        }
-
-        // Track sales by product
-        if (item.product_id) {
-          if (salesByProduct.has(item.product_id)) {
-            const productData = salesByProduct.get(item.product_id)
-            productData.count += 1
-            productData.revenue +=
-              typeof item.price === "string" ? Number.parseFloat(item.price) : Number(item.price) || 0
-            salesByProduct.set(item.product_id, productData)
-          } else {
-            salesByProduct.set(item.product_id, {
-              count: 1,
-              revenue: typeof item.price === "string" ? Number.parseFloat(item.price) : Number(item.price) || 0,
-              title: item.title || "Unknown Product",
-            })
-          }
-        }
+        // Add to sales data - only include necessary fields
+        salesData.push({
+          id: item.id,
+          date: item.created_at,
+          productId: item.product_id,
+          productTitle: item.title || "Unknown Product",
+          price: typeof item.price === "string" ? Number.parseFloat(item.price) : Number(item.price) || 0,
+        })
       }
     }
 
-    // Convert salesByDate map to array for the response
-    const salesTimeline = Array.from(salesByDate.entries())
-      .map(([date, count]) => ({
-        date,
-        count,
-      }))
-      .sort((a, b) => a.date.localeCompare(b.date))
-
-    // Convert salesByProduct map to array for the response
-    const productPerformance = Array.from(salesByProduct.entries())
-      .map(([productId, data]) => ({
-        productId,
-        title: data.title,
-        salesCount: data.count,
-        revenue: Number(data.revenue.toFixed(2)),
-      }))
-      .sort((a, b) => b.salesCount - a.salesCount)
-
-    // Calculate pending payout (simplified version)
-    // In a real app, you'd calculate this based on unpaid line items
+    // Calculate pending payout (simplified)
     const pendingPayout = totalRevenue * 0.8 // Assuming 80% goes to vendor
 
-    // Return stats with period information
-    return NextResponse.json({
+    // Create a safe response object with only the data we need
+    const responseData = {
       totalProducts: vendorProducts?.length || 0,
       totalSales: totalSales,
       totalRevenue: Number(totalRevenue.toFixed(2)),
       pendingPayout: Number(pendingPayout.toFixed(2)),
-      salesTimeline: salesTimeline,
-      productPerformance: productPerformance,
+      salesData: salesData,
       period: period,
       dateRange: startDate
         ? {
@@ -201,7 +176,10 @@ export async function GET(request: Request) {
             end: endDate?.toISOString() || new Date().toISOString(),
           }
         : null,
-    })
+    }
+
+    // Return the safely serialized data
+    return NextResponse.json(safeSerialize(responseData))
   } catch (error) {
     console.error("Unexpected error in vendor stats API:", error)
     return NextResponse.json({ error: "An unexpected error occurred" }, { status: 500 })

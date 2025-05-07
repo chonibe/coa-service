@@ -3,229 +3,197 @@
 import { useEffect, useState } from "react"
 import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis, Tooltip } from "recharts"
 import { Skeleton } from "@/components/ui/skeleton"
+import { useVendorData } from "@/hooks/use-vendor-data"
 
 interface SalesChartProps {
   period?: string
 }
 
-interface SalesDataPoint {
-  date: string
-  count: number
-}
-
 export function VendorSalesChart({ period = "all-time" }: SalesChartProps) {
+  const { stats, isLoading } = useVendorData()
   const [chartData, setChartData] = useState<any[]>([])
-  const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
-    const fetchSalesData = async () => {
-      setIsLoading(true)
-      try {
-        // Fetch real sales data from the API
-        const response = await fetch(`/api/vendor/stats?period=${period}`)
+    if (stats && stats.salesData && Array.isArray(stats.salesData)) {
+      // Use the sales data directly from the stats
+      setChartData(formatChartData(stats.salesData, period))
+    } else {
+      // Fallback to empty array if no data
+      setChartData([])
+    }
+  }, [stats, period])
 
-        if (!response.ok) {
-          throw new Error("Failed to fetch sales data")
-        }
+  // Helper function to format the sales data for the chart
+  const formatChartData = (salesData: any[], period: string) => {
+    if (!salesData || salesData.length === 0) {
+      return []
+    }
 
-        const data = await response.json()
+    try {
+      // Group sales by date
+      const salesByDate = new Map()
 
-        if (data.salesTimeline && data.salesTimeline.length > 0) {
-          // Format the data for the chart
-          const formattedData = formatChartData(data.salesTimeline, period)
-          setChartData(formattedData)
+      salesData.forEach((item) => {
+        if (!item || !item.date) return
+
+        const dateStr = typeof item.date === "string" ? item.date : String(item.date)
+        const date = new Date(dateStr)
+
+        if (isNaN(date.getTime())) return // Skip invalid dates
+
+        const dateKey = date.toISOString().split("T")[0]
+
+        if (salesByDate.has(dateKey)) {
+          salesByDate.set(dateKey, salesByDate.get(dateKey) + 1)
         } else {
-          // Fallback to mock data if no sales data is available
-          const mockData = generateMockDataForPeriod(period)
-          setChartData(mockData)
+          salesByDate.set(dateKey, 1)
         }
-      } catch (error) {
-        console.error("Error fetching sales data:", error)
-        // Fallback to mock data on error
-        const mockData = generateMockDataForPeriod(period)
-        setChartData(mockData)
-      } finally {
-        setIsLoading(false)
-      }
-    }
-
-    fetchSalesData()
-  }, [period])
-
-  // Helper function to format the sales timeline data for the chart
-  const formatChartData = (salesTimeline: SalesDataPoint[], period: string) => {
-    // For different periods, we might want to aggregate the data differently
-    switch (period) {
-      case "this-month":
-      case "last-month":
-      case "custom":
-        // Daily data - use as is but format the date
-        return salesTimeline.map((item) => ({
-          name: new Date(item.date).getDate().toString(), // Just the day number
-          sales: item.count,
-        }))
-
-      case "last-3-months":
-      case "last-6-months":
-        // Weekly aggregation
-        return aggregateByWeek(salesTimeline)
-
-      case "this-year":
-      case "last-year":
-        // Monthly aggregation
-        return aggregateByMonth(salesTimeline)
-
-      case "all-time":
-      default:
-        // Yearly aggregation
-        return aggregateByYear(salesTimeline)
-    }
-  }
-
-  // Helper function to aggregate data by week
-  const aggregateByWeek = (salesTimeline: SalesDataPoint[]) => {
-    const weeklyData = new Map()
-
-    salesTimeline.forEach((item) => {
-      const date = new Date(item.date)
-      // Get the week number (approximate)
-      const weekNum = Math.floor(date.getDate() / 7) + 1
-      const monthYear = `${date.getFullYear()}-${date.getMonth() + 1}`
-      const weekKey = `W${weekNum} ${monthYear}`
-
-      if (weeklyData.has(weekKey)) {
-        weeklyData.set(weekKey, weeklyData.get(weekKey) + item.count)
-      } else {
-        weeklyData.set(weekKey, item.count)
-      }
-    })
-
-    return Array.from(weeklyData.entries())
-      .map(([week, count]) => ({
-        name: week.split(" ")[0], // Just the week part
-        sales: count,
-      }))
-      .sort((a, b) => {
-        // Extract week number for sorting
-        const weekA = Number.parseInt(a.name.substring(1))
-        const weekB = Number.parseInt(b.name.substring(1))
-        return weekA - weekB
       })
-  }
 
-  // Helper function to aggregate data by month
-  const aggregateByMonth = (salesTimeline: SalesDataPoint[]) => {
-    const monthlyData = new Map()
-    const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+      // Convert to array and sort by date
+      const sortedData = Array.from(salesByDate.entries())
+        .map(([date, count]) => ({ date, count }))
+        .sort((a, b) => a.date.localeCompare(b.date))
 
-    salesTimeline.forEach((item) => {
-      const date = new Date(item.date)
-      const monthKey = `${monthNames[date.getMonth()]} ${date.getFullYear()}`
+      // Format based on period
+      switch (period) {
+        case "this-month":
+        case "last-month":
+        case "custom":
+          // Daily data
+          return sortedData.map((item) => {
+            const date = new Date(item.date)
+            return {
+              name: date.getDate().toString(),
+              sales: item.count,
+            }
+          })
 
-      if (monthlyData.has(monthKey)) {
-        monthlyData.set(monthKey, monthlyData.get(monthKey) + item.count)
-      } else {
-        monthlyData.set(monthKey, item.count)
+        case "last-3-months":
+        case "last-6-months":
+          // Weekly data
+          return aggregateByWeek(sortedData)
+
+        case "this-year":
+        case "last-year":
+          // Monthly data
+          return aggregateByMonth(sortedData)
+
+        case "all-time":
+        default:
+          // Yearly data
+          return aggregateByYear(sortedData)
       }
-    })
-
-    return Array.from(monthlyData.entries()).map(([month, count]) => ({
-      name: month.split(" ")[0], // Just the month name
-      sales: count,
-    }))
-  }
-
-  // Helper function to aggregate data by year
-  const aggregateByYear = (salesTimeline: SalesDataPoint[]) => {
-    const yearlyData = new Map()
-
-    salesTimeline.forEach((item) => {
-      const year = item.date.split("-")[0]
-
-      if (yearlyData.has(year)) {
-        yearlyData.set(year, yearlyData.get(year) + item.count)
-      } else {
-        yearlyData.set(year, item.count)
-      }
-    })
-
-    return Array.from(yearlyData.entries())
-      .map(([year, count]) => ({
-        name: year,
-        sales: count,
-      }))
-      .sort((a, b) => a.name.localeCompare(b.name))
-  }
-
-  // Helper function to generate mock data based on period (fallback)
-  const generateMockDataForPeriod = (period: string) => {
-    const now = new Date()
-    let data: any[] = []
-
-    // For custom period, generate daily data for up to 30 days
-    if (period === "custom") {
-      return Array.from({ length: 30 }, (_, i) => ({
-        name: `Day ${i + 1}`,
-        sales: Math.floor(Math.random() * 10) + 1,
-      }))
+    } catch (error) {
+      console.error("Error formatting chart data:", error)
+      return []
     }
+  }
 
-    switch (period) {
-      case "this-month":
-        // Daily data for current month
-        const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate()
-        data = Array.from({ length: daysInMonth }, (_, i) => ({
-          name: `${i + 1}`,
-          sales: Math.floor(Math.random() * 10) + 1,
+  // Helper functions for aggregation
+  const aggregateByWeek = (data: any[]) => {
+    try {
+      const weeklyData = new Map()
+
+      data.forEach((item) => {
+        const date = new Date(item.date)
+        if (isNaN(date.getTime())) return // Skip invalid dates
+
+        const weekNum = Math.floor(date.getDate() / 7) + 1
+        const weekKey = `W${weekNum}`
+
+        if (weeklyData.has(weekKey)) {
+          weeklyData.set(weekKey, weeklyData.get(weekKey) + item.count)
+        } else {
+          weeklyData.set(weekKey, item.count)
+        }
+      })
+
+      return Array.from(weeklyData.entries())
+        .map(([week, count]) => ({
+          name: week,
+          sales: count,
         }))
-        break
+        .sort((a, b) => {
+          const weekA = Number.parseInt(a.name.substring(1), 10)
+          const weekB = Number.parseInt(b.name.substring(1), 10)
+          return weekA - weekB
+        })
+    } catch (error) {
+      console.error("Error aggregating by week:", error)
+      return []
+    }
+  }
 
-      case "last-month":
-        // Daily data for last month
-        const lastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1)
-        const daysInLastMonth = new Date(lastMonth.getFullYear(), lastMonth.getMonth() + 1, 0).getDate()
-        data = Array.from({ length: daysInLastMonth }, (_, i) => ({
-          name: `${i + 1}`,
-          sales: Math.floor(Math.random() * 10) + 1,
-        }))
-        break
+  const aggregateByMonth = (data: any[]) => {
+    try {
+      const monthlyData = new Map()
+      const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
 
-      case "last-3-months":
-      case "last-6-months":
-        // Weekly data for 3 or 6 months
-        const months = period === "last-3-months" ? 3 : 6
-        data = Array.from({ length: months * 4 }, (_, i) => ({
-          name: `W${i + 1}`,
-          sales: Math.floor(Math.random() * 30) + 5,
-        }))
-        break
+      data.forEach((item) => {
+        const date = new Date(item.date)
+        if (isNaN(date.getTime())) return // Skip invalid dates
 
-      case "this-year":
-      case "last-year":
-        // Monthly data for a year
-        const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
-        data = monthNames.map((month) => ({
+        const monthKey = monthNames[date.getMonth()]
+
+        if (monthlyData.has(monthKey)) {
+          monthlyData.set(monthKey, monthlyData.get(monthKey) + item.count)
+        } else {
+          monthlyData.set(monthKey, item.count)
+        }
+      })
+
+      return monthNames
+        .filter((month) => monthlyData.has(month))
+        .map((month) => ({
           name: month,
-          sales: Math.floor(Math.random() * 100) + 20,
+          sales: monthlyData.get(month),
         }))
-        break
-
-      case "all-time":
-      default:
-        // Yearly data for all time (last 5 years)
-        const currentYear = now.getFullYear()
-        data = Array.from({ length: 5 }, (_, i) => ({
-          name: `${currentYear - 4 + i}`,
-          sales: Math.floor(Math.random() * 500) + 100,
-        }))
-        break
+    } catch (error) {
+      console.error("Error aggregating by month:", error)
+      return []
     }
+  }
 
-    return data
+  const aggregateByYear = (data: any[]) => {
+    try {
+      const yearlyData = new Map()
+
+      data.forEach((item) => {
+        if (!item.date) return
+
+        const yearPart = String(item.date).split("-")[0]
+        if (!yearPart) return
+
+        if (yearlyData.has(yearPart)) {
+          yearlyData.set(yearPart, yearlyData.get(yearPart) + item.count)
+        } else {
+          yearlyData.set(yearPart, item.count)
+        }
+      })
+
+      return Array.from(yearlyData.entries())
+        .map(([year, count]) => ({
+          name: year,
+          sales: count,
+        }))
+        .sort((a, b) => a.name.localeCompare(b.name))
+    } catch (error) {
+      console.error("Error aggregating by year:", error)
+      return []
+    }
   }
 
   if (isLoading) {
     return <Skeleton className="h-[300px] w-full" />
+  }
+
+  if (chartData.length === 0) {
+    return (
+      <div className="h-[300px] w-full flex items-center justify-center text-muted-foreground">
+        No sales data available for this period
+      </div>
+    )
   }
 
   return (
@@ -236,7 +204,6 @@ export function VendorSalesChart({ period = "all-time" }: SalesChartProps) {
         <Tooltip
           formatter={(value: number) => [`${value} sales`, "Sales"]}
           labelFormatter={(label) => {
-            // Format the label based on period
             switch (period) {
               case "this-month":
               case "last-month":
