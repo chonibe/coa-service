@@ -79,10 +79,37 @@ export async function GET(request: Request) {
     const startDate = dateRange.start
     const endDate = dateRange.end
 
-    // First, get all products that belong to this vendor
+    // DIRECT APPROACH: Query line items directly by vendor_name
+    // This gets the actual sales data with dates directly from the line items table
+    let lineItemsQuery = supabase
+      .from("order_line_items")
+      .select("*")
+      .eq("vendor_name", vendorName)
+      .eq("status", "active")
+
+    // Add date filtering if applicable
+    if (startDate) {
+      lineItemsQuery = lineItemsQuery.gte("created_at", startDate.toISOString())
+    }
+
+    if (endDate) {
+      lineItemsQuery = lineItemsQuery.lte("created_at", endDate.toISOString())
+    }
+
+    // Execute query to get line items
+    const { data: lineItems, error: lineItemsError } = await lineItemsQuery
+
+    if (lineItemsError) {
+      console.error("Error fetching line items:", lineItemsError)
+      return NextResponse.json({ error: "Database error" }, { status: 500 })
+    }
+
+    console.log(`Found ${lineItems?.length || 0} line items for vendor: ${vendorName}`)
+
+    // Get product count separately
     const { data: vendorProducts, error: productsError } = await supabase
       .from("products")
-      .select("id, product_id, title, price")
+      .select("id")
       .eq("vendor", vendorName)
 
     if (productsError) {
@@ -90,59 +117,15 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: "Database error" }, { status: 500 })
     }
 
-    if (!vendorProducts || vendorProducts.length === 0) {
-      console.log(`No products found for vendor: ${vendorName}`)
-      return NextResponse.json({
-        totalProducts: 0,
-        totalSales: 0,
-        totalRevenue: 0,
-        pendingPayout: 0,
-        period: period,
-        dateRange: startDate
-          ? {
-              start: startDate.toISOString(),
-              end: endDate?.toISOString() || new Date().toISOString(),
-            }
-          : null,
-      })
-    }
-
-    // Extract product IDs
-    const productIds = vendorProducts.map((product) => product.product_id)
-    console.log(`Found ${productIds.length} products for vendor: ${vendorName}`)
-
-    // Build query for line items for these products
-    let query = supabase.from("order_line_items").select("*").in("product_id", productIds).eq("status", "active")
-
-    // Add date filtering if applicable
-    if (startDate) {
-      const startStr = startDate.toISOString()
-      query = query.gte("created_at", startStr)
-    }
-
-    if (endDate) {
-      const endStr = endDate.toISOString()
-      query = query.lte("created_at", endStr)
-    }
-
-    // Execute query
-    const { data: lineItems, error } = await query
-
-    if (error) {
-      console.error("Database error when fetching line items:", error)
-      return NextResponse.json({ error: "Database error" }, { status: 500 })
-    }
-
-    console.log(`Found ${lineItems?.length || 0} line items for vendor products`)
-
     // Calculate total sales and revenue
     const totalSales = lineItems?.length || 0
     let totalRevenue = 0
 
     // Create a map to track sales by date for charting
     const salesByDate = new Map()
+    const salesByProduct = new Map()
 
-    if (lineItems) {
+    if (lineItems && lineItems.length > 0) {
       for (const item of lineItems) {
         // Add to revenue - handle different price formats
         if (item.price !== null && item.price !== undefined) {
@@ -161,6 +144,23 @@ export async function GET(request: Request) {
             salesByDate.set(saleDate, 1)
           }
         }
+
+        // Track sales by product
+        if (item.product_id) {
+          if (salesByProduct.has(item.product_id)) {
+            const productData = salesByProduct.get(item.product_id)
+            productData.count += 1
+            productData.revenue +=
+              typeof item.price === "string" ? Number.parseFloat(item.price) : Number(item.price) || 0
+            salesByProduct.set(item.product_id, productData)
+          } else {
+            salesByProduct.set(item.product_id, {
+              count: 1,
+              revenue: typeof item.price === "string" ? Number.parseFloat(item.price) : Number(item.price) || 0,
+              title: item.title || "Unknown Product",
+            })
+          }
+        }
       }
     }
 
@@ -172,17 +172,28 @@ export async function GET(request: Request) {
       }))
       .sort((a, b) => a.date.localeCompare(b.date))
 
+    // Convert salesByProduct map to array for the response
+    const productPerformance = Array.from(salesByProduct.entries())
+      .map(([productId, data]) => ({
+        productId,
+        title: data.title,
+        salesCount: data.count,
+        revenue: Number(data.revenue.toFixed(2)),
+      }))
+      .sort((a, b) => b.salesCount - a.salesCount)
+
     // Calculate pending payout (simplified version)
     // In a real app, you'd calculate this based on unpaid line items
     const pendingPayout = totalRevenue * 0.8 // Assuming 80% goes to vendor
 
     // Return stats with period information
     return NextResponse.json({
-      totalProducts: vendorProducts.length,
+      totalProducts: vendorProducts?.length || 0,
       totalSales: totalSales,
       totalRevenue: Number(totalRevenue.toFixed(2)),
       pendingPayout: Number(pendingPayout.toFixed(2)),
       salesTimeline: salesTimeline,
+      productPerformance: productPerformance,
       period: period,
       dateRange: startDate
         ? {
