@@ -1,9 +1,9 @@
 "use client"
 
-import { SalesChart } from "./dashboard/components/sales-chart"
-import { PeriodSelector } from "./dashboard/components/period-selector"
+import { SalesChart } from "../dashboard/components/sales-chart"
+import { PeriodSelector } from "../dashboard/components/period-selector"
 import { useState } from "react"
-import type { Period } from "./dashboard/components/period-selector"
+import type { Period } from "../dashboard/components/period-selector"
 
 export default function AnalyticsPage() {
   const [period, setPeriod] = useState<Period>("30d")
