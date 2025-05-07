@@ -38,7 +38,7 @@ export async function GET() {
 
     // 3. Calculate sales and revenue from line items
     let salesData = lineItems || []
-    let totalSales = salesData.length
+    let totalSales = 0
     let totalRevenue = 0
 
     // First fetch payout settings
@@ -61,6 +61,9 @@ export async function GET() {
         price: item.price,
         quantity: item.quantity
       })
+      
+      // Add to total sales count
+      totalSales += item.quantity || 1
       
       const payout = payouts?.find((p) => p.product_id === item.product_id)
       if (payout) {
@@ -85,7 +88,7 @@ export async function GET() {
         console.log(`Item revenue (default 10%): $${itemRevenue.toFixed(2)} (price: $${price.toFixed(2)} x quantity: ${quantity})`)
       }
     })
-    console.log(`Total revenue calculated: $${totalRevenue.toFixed(2)}`)
+    console.log(`Total sales: ${totalSales}, Total revenue calculated: $${totalRevenue.toFixed(2)}`)
 
     // 4. If no data from database, try fetching from Shopify as fallback
     if (salesData.length === 0) {
@@ -94,11 +97,14 @@ export async function GET() {
         const shopifyOrders = await fetchVendorOrdersFromShopify(vendorName)
         if (shopifyOrders && shopifyOrders.length > 0) {
           salesData = shopifyOrders
-          totalSales = shopifyOrders.length
+          totalSales = 0 // Reset total sales count
+          totalRevenue = 0 // Reset total revenue
 
           // Recalculate revenue from Shopify data using payout settings
-          totalRevenue = 0
           shopifyOrders.forEach((item) => {
+            // Add to total sales count
+            totalSales += item.quantity || 1
+
             const payout = payouts?.find((p) => p.product_id === item.product_id)
             if (payout) {
               const price = typeof item.price === "string" ? Number.parseFloat(item.price || "0") : item.price || 0
@@ -120,7 +126,7 @@ export async function GET() {
             }
           })
 
-          console.log(`Found ${totalSales} orders from Shopify with revenue $${totalRevenue.toFixed(2)}`)
+          console.log(`Found ${totalSales} items sold from Shopify with revenue $${totalRevenue.toFixed(2)}`)
         }
       } catch (shopifyError) {
         console.error("Error fetching from Shopify:", shopifyError)
@@ -130,7 +136,7 @@ export async function GET() {
     // Calculate pending payout (same as total revenue)
     const pendingPayout = totalRevenue
 
-    console.log(`Final calculations - Total Sales: ${totalSales}, Total Revenue: $${totalRevenue.toFixed(2)}, Pending Payout: $${pendingPayout.toFixed(2)}`)
+    console.log(`Final calculations - Total Items Sold: ${totalSales}, Total Revenue: $${totalRevenue.toFixed(2)}, Pending Payout: $${pendingPayout.toFixed(2)}`)
 
     return NextResponse.json({
       totalProducts,
