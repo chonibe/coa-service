@@ -33,32 +33,32 @@ export function VendorSidebar() {
     },
     {
       title: "Products",
-      href: "/vendor/dashboard/products",
+      href: "/vendor/products",
       icon: <Package className="h-5 w-5" />,
     },
     {
       title: "Analytics",
-      href: "/vendor/dashboard/analytics",
+      href: "/vendor/analytics",
       icon: <BarChart className="h-5 w-5" />,
     },
     {
       title: "Payouts",
-      href: "/vendor/dashboard/payouts",
+      href: "/vendor/payouts",
       icon: <DollarSign className="h-5 w-5" />,
     },
     {
       title: "Benefits",
-      href: "/vendor/dashboard/benefits",
+      href: "/vendor/benefits",
       icon: <Award className="h-5 w-5" />,
     },
     {
       title: "Messages",
-      href: "/vendor/dashboard/messages",
+      href: "/vendor/messages",
       icon: <MessageSquare className="h-5 w-5" />,
     },
     {
       title: "Settings",
-      href: "/vendor/dashboard/settings",
+      href: "/vendor/settings",
       icon: <Settings className="h-5 w-5" />,
     },
   ]
