@@ -35,6 +35,15 @@ export function VendorSalesChart({ period = "all-time" }: SalesChartProps) {
     const now = new Date()
     let data: any[] = []
 
+    // For custom period, generate daily data for up to 30 days
+    // In a real app, you would adjust the granularity based on the range length
+    if (period === "custom") {
+      return Array.from({ length: 30 }, (_, i) => ({
+        name: `Day ${i + 1}`,
+        sales: Math.floor(Math.random() * 10) + 1,
+      }))
+    }
+
     switch (period) {
       case "this-month":
         // Daily data for current month
@@ -111,6 +120,8 @@ export function VendorSalesChart({ period = "all-time" }: SalesChartProps) {
                 return `Week ${label.substring(1)}`
               case "this-year":
               case "last-year":
+                return `${label}`
+              case "custom":
                 return `${label}`
               case "all-time":
               default:

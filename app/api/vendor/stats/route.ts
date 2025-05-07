@@ -3,9 +3,21 @@ import { cookies } from "next/headers"
 import { createClient } from "@/lib/supabase-server"
 
 // Helper function to get date range based on period
-function getDateRangeForPeriod(period: string): { start: Date | null; end: Date | null } {
+function getDateRangeForPeriod(
+  period: string,
+  customStart?: string,
+  customEnd?: string,
+): { start: Date | null; end: Date | null } {
+  // Handle custom date range
+  if (period === "custom" && customStart && customEnd) {
+    return {
+      start: new Date(customStart),
+      end: new Date(customEnd),
+    }
+  }
+
   const now = new Date()
-  const end = new Date(now)
+  let end = new Date(now)
   let start: Date | null = null
 
   switch (period) {
@@ -14,7 +26,7 @@ function getDateRangeForPeriod(period: string): { start: Date | null; end: Date 
       break
     case "last-month":
       start = new Date(now.getFullYear(), now.getMonth() - 1, 1)
-      end.setDate(0) // Last day of previous month
+      end = new Date(now.getFullYear(), now.getMonth(), 0) // Last day of previous month
       break
     case "last-3-months":
       start = new Date(now.getFullYear(), now.getMonth() - 3, 1)
@@ -27,7 +39,7 @@ function getDateRangeForPeriod(period: string): { start: Date | null; end: Date 
       break
     case "last-year":
       start = new Date(now.getFullYear() - 1, 0, 1)
-      const end = new Date(now.getFullYear(), 0, 0) // Last day of previous year
+      end = new Date(now.getFullYear(), 0, 0) // Last day of previous year
       break
     case "all-time":
     default:
@@ -43,6 +55,8 @@ export async function GET(request: Request) {
     // Get URL parameters
     const url = new URL(request.url)
     const period = url.searchParams.get("period") || "all-time"
+    const customStart = url.searchParams.get("start") || undefined
+    const customEnd = url.searchParams.get("end") || undefined
 
     // Get vendor name from cookie
     const cookieStore = cookies()
@@ -53,12 +67,15 @@ export async function GET(request: Request) {
     }
 
     console.log(`Fetching stats for vendor: ${vendorName}, period: ${period}`)
+    if (period === "custom") {
+      console.log(`Custom date range: ${customStart} to ${customEnd}`)
+    }
 
     // Create Supabase client
     const supabase = createClient()
 
     // Get date range for the selected period
-    const { start, end } = getDateRangeForPeriod(period)
+    const { start, end } = getDateRangeForPeriod(period, customStart, customEnd)
 
     // Build query for line items from this vendor
     let query = supabase.from("order_line_items").select("*").eq("vendor_name", vendorName).eq("status", "active")
