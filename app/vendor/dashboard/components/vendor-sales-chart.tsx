@@ -1,119 +1,128 @@
 "use client"
 
-import { useEffect, useState } from "react"
-import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis, Tooltip } from "recharts"
-import { Skeleton } from "@/components/ui/skeleton"
+import { useState, useEffect } from "react"
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts"
+import { Loader2, AlertCircle } from "lucide-react"
+import { Alert, AlertDescription } from "@/components/ui/alert"
 
-interface VendorSalesChartProps {
-  period?: string
+interface SalesDataPoint {
+  date: string
+  sales: number
+  revenue: number
 }
 
-export function VendorSalesChart({ period = "all-time" }: VendorSalesChartProps) {
-  const [data, setData] = useState<any[]>([])
-  const [loading, setLoading] = useState(true)
+interface VendorSalesChartProps {
+  vendorName?: string
+}
+
+export function VendorSalesChart({ vendorName }: VendorSalesChartProps) {
+  const [salesData, setSalesData] = useState<SalesDataPoint[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     const fetchSalesData = async () => {
-      setLoading(true)
+      setIsLoading(true)
+      setError(null)
+
       try {
-        const response = await fetch(`/api/vendor/sales-analytics?period=${period}`)
-        if (response.ok) {
-          const result = await response.json()
-          setData(result.data || [])
-        } else {
-          console.error("Failed to fetch sales data")
-          // Set some mock data if the API fails
-          setData(generateMockData(period))
+        const response = await fetch(`/api/vendor/stats/sales`)
+
+        if (!response.ok) {
+          throw new Error(`Failed to fetch sales data: ${response.status}`)
         }
-      } catch (error) {
-        console.error("Error fetching sales data:", error)
-        // Set some mock data if the API fails
-        setData(generateMockData(period))
+
+        const data = await response.json()
+        setSalesData(data.salesByDate || [])
+      } catch (err: any) {
+        console.error("Error fetching sales data:", err)
+        setError(err.message || "Failed to load sales data")
       } finally {
-        setLoading(false)
+        setIsLoading(false)
       }
     }
 
     fetchSalesData()
-  }, [period])
+  }, [vendorName])
 
-  if (loading) {
+  // Format date for display
+  const formatDate = (dateStr: string) => {
+    const date = new Date(dateStr)
+    return date.toLocaleDateString("en-US", { month: "short", day: "numeric" })
+  }
+
+  // Format currency for tooltip
+  const formatCurrency = (value: number) => {
+    return new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency: "USD",
+      minimumFractionDigits: 2,
+    }).format(value)
+  }
+
+  // Custom tooltip formatter
+  const customTooltip = ({ active, payload, label }: any) => {
+    if (active && payload && payload.length) {
+      return (
+        <div className="bg-background border border-border p-3 rounded-md shadow-md">
+          <p className="font-medium">{formatDate(label)}</p>
+          <p className="text-sm">
+            <span className="text-[#8884d8]">●</span> Sales: {payload[0].value}
+          </p>
+          <p className="text-sm">
+            <span className="text-[#82ca9d]">●</span> Revenue: {formatCurrency(payload[1].value)}
+          </p>
+        </div>
+      )
+    }
+    return null
+  }
+
+  if (isLoading) {
     return (
-      <div className="w-full aspect-[4/3]">
-        <Skeleton className="h-full w-full" />
+      <div className="flex justify-center items-center h-[300px]">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
       </div>
     )
   }
 
-  if (data.length === 0) {
+  if (error) {
     return (
-      <div className="flex h-[300px] w-full items-center justify-center">
-        <p className="text-sm text-muted-foreground">No sales data available for this period</p>
-      </div>
+      <Alert variant="destructive" className="mb-4">
+        <AlertCircle className="h-4 w-4" />
+        <AlertDescription>{error}</AlertDescription>
+      </Alert>
     )
   }
+
+  // If no real data, use mock data
+  const chartData =
+    salesData.length > 0
+      ? salesData
+      : [
+          { date: "2023-04-01", sales: 3, revenue: 150 },
+          { date: "2023-04-02", sales: 5, revenue: 250 },
+          { date: "2023-04-03", sales: 2, revenue: 100 },
+          { date: "2023-04-04", sales: 7, revenue: 350 },
+          { date: "2023-04-05", sales: 4, revenue: 200 },
+          { date: "2023-04-06", sales: 6, revenue: 300 },
+          { date: "2023-04-07", sales: 8, revenue: 400 },
+        ]
 
   return (
-    <ResponsiveContainer width="100%" height={350}>
-      <BarChart data={data}>
-        <XAxis dataKey="name" stroke="#888888" fontSize={12} tickLine={false} axisLine={false} />
-        <YAxis
-          stroke="#888888"
-          fontSize={12}
-          tickLine={false}
-          axisLine={false}
-          tickFormatter={(value) => `£${value}`}
-        />
-        <Tooltip
-          formatter={(value: number) => [`£${value}`, "Revenue"]}
-          labelFormatter={(label) => `Period: ${label}`}
-        />
-        <Bar dataKey="total" fill="#adfa1d" radius={[4, 4, 0, 0]} />
-      </BarChart>
-    </ResponsiveContainer>
+    <div className="h-[300px] w-full">
+      <ResponsiveContainer width="100%" height="100%">
+        <BarChart data={chartData} margin={{ top: 20, right: 30, left: 0, bottom: 5 }}>
+          <CartesianGrid strokeDasharray="3 3" />
+          <XAxis dataKey="date" tickFormatter={formatDate} />
+          <YAxis yAxisId="left" orientation="left" stroke="#8884d8" />
+          <YAxis yAxisId="right" orientation="right" stroke="#82ca9d" />
+          <Tooltip content={customTooltip} />
+          <Legend />
+          <Bar yAxisId="left" dataKey="sales" name="Sales" fill="#8884d8" />
+          <Bar yAxisId="right" dataKey="revenue" name="Revenue" fill="#82ca9d" />
+        </BarChart>
+      </ResponsiveContainer>
+    </div>
   )
-}
-
-// Helper function to generate mock data based on the period
-function generateMockData(period: string) {
-  switch (period) {
-    case "this-month":
-    case "last-month":
-      // Daily data for a month
-      return Array.from({ length: 30 }, (_, i) => ({
-        name: `Day ${i + 1}`,
-        total: Math.floor(Math.random() * 500) + 100,
-      }))
-
-    case "this-year":
-    case "last-year":
-      // Monthly data for a year
-      const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
-      return months.map((month) => ({
-        name: month,
-        total: Math.floor(Math.random() * 5000) + 1000,
-      }))
-
-    case "last-3-months":
-      // Weekly data for 3 months
-      return Array.from({ length: 12 }, (_, i) => ({
-        name: `Week ${i + 1}`,
-        total: Math.floor(Math.random() * 1000) + 500,
-      }))
-
-    case "last-6-months":
-      // Weekly data for 6 months
-      return Array.from({ length: 24 }, (_, i) => ({
-        name: `Week ${i + 1}`,
-        total: Math.floor(Math.random() * 1000) + 500,
-      }))
-
-    case "all-time":
-    default:
-      // Yearly data
-      return Array.from({ length: 5 }, (_, i) => ({
-        name: `${new Date().getFullYear() - 4 + i}`,
-        total: Math.floor(Math.random() * 10000) + 5000,
-      }))
-  }
 }
