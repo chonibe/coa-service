@@ -8,11 +8,10 @@ import { AlertCircle, ArrowUpRight, Package, PoundSterlingIcon as Pound, Shoppin
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
 import { VendorSalesChart } from "./components/vendor-sales-chart"
-import { PeriodFilter } from "./components/period-filter"
 import { useVendorData } from "@/hooks/use-vendor-data"
 
 export default function VendorDashboard() {
-  const { stats, isLoading, error, refreshData, period, setPeriod } = useVendorData()
+  const { stats, isLoading, error, refreshData } = useVendorData()
   const [activeTab, setActiveTab] = useState("overview")
 
   return (
@@ -20,7 +19,6 @@ export default function VendorDashboard() {
       <div className="flex items-center justify-between">
         <h2 className="text-3xl font-bold tracking-tight">Dashboard</h2>
         <div className="flex items-center gap-2">
-          <PeriodFilter value={period} onChange={setPeriod} />
           <Button variant="outline" size="sm" onClick={refreshData} disabled={isLoading}>
             Refresh
           </Button>
@@ -53,7 +51,7 @@ export default function VendorDashboard() {
                 ) : (
                   <div className="text-2xl font-bold">{stats?.totalProducts || 0}</div>
                 )}
-                <p className="text-xs text-muted-foreground">{stats?.periodLabel || "All Time"}</p>
+                <p className="text-xs text-muted-foreground">All-time total</p>
               </CardContent>
             </Card>
             <Card>
@@ -67,7 +65,7 @@ export default function VendorDashboard() {
                 ) : (
                   <div className="text-2xl font-bold">{stats?.totalSales || 0}</div>
                 )}
-                <p className="text-xs text-muted-foreground">{stats?.periodLabel || "All Time"}</p>
+                <p className="text-xs text-muted-foreground">All-time total</p>
               </CardContent>
             </Card>
             <Card>
@@ -81,7 +79,7 @@ export default function VendorDashboard() {
                 ) : (
                   <div className="text-2xl font-bold">£{stats?.totalRevenue?.toFixed(2) || "0.00"}</div>
                 )}
-                <p className="text-xs text-muted-foreground">{stats?.periodLabel || "All Time"}</p>
+                <p className="text-xs text-muted-foreground">All-time total</p>
               </CardContent>
             </Card>
             <Card>
@@ -101,14 +99,12 @@ export default function VendorDashboard() {
           </div>
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
             <Card className="col-span-4">
-              <CardHeader className="flex flex-row items-center justify-between">
-                <div>
-                  <CardTitle>Sales Overview</CardTitle>
-                  <CardDescription>{stats?.periodLabel || "All Time"} sales breakdown</CardDescription>
-                </div>
+              <CardHeader>
+                <CardTitle>Sales Overview</CardTitle>
+                <CardDescription>Monthly sales breakdown</CardDescription>
               </CardHeader>
               <CardContent className="pl-2">
-                <VendorSalesChart period={period} />
+                <VendorSalesChart />
               </CardContent>
             </Card>
             <Card className="col-span-3">

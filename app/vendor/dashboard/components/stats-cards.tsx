@@ -8,7 +8,6 @@ interface StatsCardsProps {
     totalSales: number
     totalRevenue: number
     pendingPayout: number
-    periodLabel?: string
   } | null
   isLoading: boolean
 }
@@ -27,7 +26,7 @@ export function StatsCards({ stats, isLoading }: StatsCardsProps) {
           ) : (
             <div className="text-2xl font-bold">{stats?.totalProducts || 0}</div>
           )}
-          <p className="text-xs text-muted-foreground">{stats?.periodLabel || "All Time"}</p>
+          <p className="text-xs text-muted-foreground">All-time total</p>
         </CardContent>
       </Card>
       <Card>
@@ -41,7 +40,7 @@ export function StatsCards({ stats, isLoading }: StatsCardsProps) {
           ) : (
             <div className="text-2xl font-bold">{stats?.totalSales || 0}</div>
           )}
-          <p className="text-xs text-muted-foreground">{stats?.periodLabel || "All Time"}</p>
+          <p className="text-xs text-muted-foreground">All-time total</p>
         </CardContent>
       </Card>
       <Card>
@@ -55,7 +54,7 @@ export function StatsCards({ stats, isLoading }: StatsCardsProps) {
           ) : (
             <div className="text-2xl font-bold">£{stats?.totalRevenue?.toFixed(2) || "0.00"}</div>
           )}
-          <p className="text-xs text-muted-foreground">{stats?.periodLabel || "All Time"}</p>
+          <p className="text-xs text-muted-foreground">All-time total</p>
         </CardContent>
       </Card>
       <Card>
