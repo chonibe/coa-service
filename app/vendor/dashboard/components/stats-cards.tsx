@@ -8,25 +8,12 @@ interface StatsCardsProps {
     totalSales: number
     totalRevenue: number
     pendingPayout: number
-    period?: string
+    periodLabel?: string
   } | null
   isLoading: boolean
 }
 
 export function StatsCards({ stats, isLoading }: StatsCardsProps) {
-  // Helper function to get period label
-  const getPeriodLabel = (statType: string) => {
-    if (!stats?.period || stats.period === "all-time") {
-      return "All-time total"
-    }
-
-    if (statType === "pendingPayout") {
-      return "Available for withdrawal"
-    }
-
-    return "For selected period"
-  }
-
   return (
     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
       <Card>
@@ -40,7 +27,7 @@ export function StatsCards({ stats, isLoading }: StatsCardsProps) {
           ) : (
             <div className="text-2xl font-bold">{stats?.totalProducts || 0}</div>
           )}
-          <p className="text-xs text-muted-foreground">{getPeriodLabel("totalProducts")}</p>
+          <p className="text-xs text-muted-foreground">{stats?.periodLabel || "All Time"}</p>
         </CardContent>
       </Card>
       <Card>
@@ -54,7 +41,7 @@ export function StatsCards({ stats, isLoading }: StatsCardsProps) {
           ) : (
             <div className="text-2xl font-bold">{stats?.totalSales || 0}</div>
           )}
-          <p className="text-xs text-muted-foreground">{getPeriodLabel("totalSales")}</p>
+          <p className="text-xs text-muted-foreground">{stats?.periodLabel || "All Time"}</p>
         </CardContent>
       </Card>
       <Card>
@@ -68,7 +55,7 @@ export function StatsCards({ stats, isLoading }: StatsCardsProps) {
           ) : (
             <div className="text-2xl font-bold">£{stats?.totalRevenue?.toFixed(2) || "0.00"}</div>
           )}
-          <p className="text-xs text-muted-foreground">{getPeriodLabel("totalRevenue")}</p>
+          <p className="text-xs text-muted-foreground">{stats?.periodLabel || "All Time"}</p>
         </CardContent>
       </Card>
       <Card>
@@ -82,7 +69,7 @@ export function StatsCards({ stats, isLoading }: StatsCardsProps) {
           ) : (
             <div className="text-2xl font-bold">£{stats?.pendingPayout?.toFixed(2) || "0.00"}</div>
           )}
-          <p className="text-xs text-muted-foreground">{getPeriodLabel("pendingPayout")}</p>
+          <p className="text-xs text-muted-foreground">Available for withdrawal</p>
         </CardContent>
       </Card>
     </div>

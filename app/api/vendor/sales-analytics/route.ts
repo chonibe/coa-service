@@ -2,8 +2,122 @@ import { NextResponse } from "next/server"
 import { cookies } from "next/headers"
 import { createClient } from "@/lib/supabase-server"
 
-export async function GET() {
+// Helper function to get date range based on period (same as in stats route)
+function getDateRange(period: string) {
+  const now = new Date()
+  const startDate = new Date()
+
+  switch (period) {
+    case "this-month":
+      startDate.setDate(1)
+      startDate.setHours(0, 0, 0, 0)
+      return { startDate, endDate: now }
+
+    case "last-month":
+      startDate.setMonth(startDate.getMonth() - 1)
+      startDate.setDate(1)
+      startDate.setHours(0, 0, 0, 0)
+      const endDate = new Date(startDate)
+      endDate.setMonth(endDate.getMonth() + 1)
+      endDate.setDate(0)
+      endDate.setHours(23, 59, 59, 999)
+      return { startDate, endDate }
+
+    case "this-year":
+      startDate.setMonth(0, 1)
+      startDate.setHours(0, 0, 0, 0)
+      return { startDate, endDate: now }
+
+    case "last-year":
+      startDate.setFullYear(startDate.getFullYear() - 1)
+      startDate.setMonth(0, 1)
+      startDate.setHours(0, 0, 0, 0)
+      const lastYearEnd = new Date(startDate)
+      lastYearEnd.setFullYear(lastYearEnd.getFullYear() + 1)
+      lastYearEnd.setDate(0)
+      lastYearEnd.setHours(23, 59, 59, 999)
+      return { startDate, endDate: lastYearEnd }
+
+    case "last-3-months":
+      startDate.setMonth(startDate.getMonth() - 3)
+      return { startDate, endDate: now }
+
+    case "last-6-months":
+      startDate.setMonth(startDate.getMonth() - 6)
+      return { startDate, endDate: now }
+
+    case "all-time":
+    default:
+      return { startDate: null, endDate: null }
+  }
+}
+
+// Helper function to group data by time period
+function groupDataByPeriod(data: any[], period: string) {
+  if (!data || data.length === 0) return []
+
+  // Sort data by created_at
+  const sortedData = [...data].sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime())
+
+  const groupedData: Record<string, number> = {}
+
+  sortedData.forEach((item) => {
+    const date = new Date(item.created_at)
+    let key = ""
+
+    // Group by different time periods based on the selected period
+    switch (period) {
+      case "this-month":
+      case "last-month":
+        // Group by day
+        key = `Day ${date.getDate()}`
+        break
+
+      case "this-year":
+      case "last-year":
+        // Group by month
+        key = date.toLocaleString("default", { month: "short" })
+        break
+
+      case "last-3-months":
+      case "last-6-months":
+        // Group by week
+        const weekNumber = Math.ceil((date.getDate() + new Date(date.getFullYear(), date.getMonth(), 1).getDay()) / 7)
+        key = `Week ${weekNumber}, ${date.toLocaleString("default", { month: "short" })}`
+        break
+
+      case "all-time":
+      default:
+        // Group by year
+        key = date.getFullYear().toString()
+        break
+    }
+
+    // Calculate price
+    const price = typeof item.price === "string" ? Number.parseFloat(item.price) : Number(item.price)
+
+    if (!isNaN(price)) {
+      if (groupedData[key]) {
+        groupedData[key] += price
+      } else {
+        groupedData[key] = price
+      }
+    }
+  })
+
+  // Convert to array format for chart
+  return Object.entries(groupedData).map(([name, total]) => ({
+    name,
+    total: Number(total.toFixed(2)),
+  }))
+}
+
+export async function GET(request: Request) {
   try {
+    // Get URL parameters
+    const url = new URL(request.url)
+    const period = url.searchParams.get("period") || "all-time"
+
     // Get vendor name from cookie
     const cookieStore = cookies()
     const vendorName = cookieStore.get("vendor_session")?.value
@@ -12,122 +126,45 @@ export async function GET() {
       return NextResponse.json({ error: "Not authenticated" }, { status: 401 })
     }
 
-    console.log(`Fetching sales analytics for vendor: ${vendorName}`)
-
     // Create Supabase client
     const supabase = createClient()
 
-    // Query for line items from this vendor
-    const { data: lineItems, error } = await supabase
-      .from("order_line_items")
-      .select("*")
-      .eq("vendor_name", vendorName)
-      .eq("status", "active")
+    // Get date range based on period
+    const { startDate, endDate } = getDateRange(period)
+
+    // Build query for line items from this vendor
+    let query = supabase.from("order_line_items").select("*").eq("vendor_name", vendorName).eq("status", "active")
+
+    // Add date filtering if a specific period is selected
+    if (startDate && endDate) {
+      query = query.gte("created_at", startDate.toISOString()).lte("created_at", endDate.toISOString())
+    }
+
+    // Execute query
+    const { data: lineItems, error } = await query
 
     if (error) {
       console.error("Database error when fetching line items:", error)
       return NextResponse.json({ error: "Database error" }, { status: 500 })
     }
 
-    // Process line items to get sales by date - fixed to prevent recursion
-    const salesByDate = processSalesByDate(lineItems || [])
+    // Group data by time period
+    const chartData = groupDataByPeriod(lineItems || [], period)
 
-    // Get sales by product - fixed to prevent recursion
-    const salesByProduct = processSalesByProduct(lineItems || [])
-
-    // Create sales history array
-    const salesHistory = (lineItems || []).map((item) => ({
-      id: item.id || `item-${Math.random().toString(36).substring(2, 9)}`,
-      product_id: item.product_id || "",
-      title: item.title || "Unknown Product",
-      date: item.created_at || new Date().toISOString(),
-      price: typeof item.price === "string" ? Number.parseFloat(item.price) : item.price || 0,
-      currency: "GBP", // Default to GBP for all products
-      quantity: item.quantity || 1,
-    }))
-
+    // Return the data
     return NextResponse.json({
-      salesByDate,
-      salesByProduct,
-      salesHistory,
-      totalItems: lineItems?.length || 0,
+      data: chartData,
+      period: period,
+      dateRange:
+        startDate && endDate
+          ? {
+              start: startDate.toISOString(),
+              end: endDate.toISOString(),
+            }
+          : null,
     })
   } catch (error) {
-    console.error("Unexpected error in vendor sales analytics API:", error)
+    console.error("Unexpected error in sales analytics API:", error)
     return NextResponse.json({ error: "An unexpected error occurred" }, { status: 500 })
   }
-}
-
-// Fixed function to prevent recursion
-function processSalesByDate(lineItems) {
-  // Group sales by month
-  const salesByMonth = {}
-
-  lineItems.forEach((item) => {
-    const date = new Date(item.created_at || item.updated_at || Date.now())
-    const monthYear = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`
-
-    if (!salesByMonth[monthYear]) {
-      salesByMonth[monthYear] = { sales: 0, revenue: 0 }
-    }
-
-    salesByMonth[monthYear].sales += 1
-
-    // Add to revenue - fixed to prevent NaN and type issues
-    if (item.price !== null && item.price !== undefined) {
-      const price = typeof item.price === "string" ? Number.parseFloat(item.price) : Number(item.price)
-      if (!isNaN(price)) {
-        salesByMonth[monthYear].revenue += price
-      }
-    }
-  })
-
-  // Convert to array and sort by date
-  return Object.entries(salesByMonth)
-    .map(([date, data]) => ({
-      date,
-      month: getMonthName(date),
-      sales: data.sales,
-      revenue: Number(data.revenue.toFixed(2)),
-    }))
-    .sort((a, b) => a.date.localeCompare(b.date))
-}
-
-// Fixed function to prevent recursion
-function processSalesByProduct(lineItems) {
-  // Group sales by product
-  const salesByProduct = {}
-
-  lineItems.forEach((item) => {
-    const productId = item.product_id || "unknown"
-    const title = item.title || `Product ${productId}`
-
-    if (!salesByProduct[productId]) {
-      salesByProduct[productId] = {
-        productId,
-        title,
-        sales: 0,
-        revenue: 0,
-      }
-    }
-
-    salesByProduct[productId].sales += 1
-
-    // Add to revenue - fixed to prevent NaN and type issues
-    if (item.price !== null && item.price !== undefined) {
-      const price = typeof item.price === "string" ? Number.parseFloat(item.price) : Number(item.price)
-      if (!isNaN(price)) {
-        salesByProduct[productId].revenue += price
-      }
-    }
-  })
-
-  // Convert to array and sort by sales
-  return Object.values(salesByProduct).sort((a, b) => b.sales - a.sales)
-}
-
-function getMonthName(dateStr) {
-  const [year, month] = dateStr.split("-")
-  const date = new Date(Number.parseInt(year), Number.parseInt(month) - 1, 1)
-  return date.toLocaleString("default", { month: "short", year: "numeric" })
 }
