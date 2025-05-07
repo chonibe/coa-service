@@ -55,11 +55,18 @@ export async function GET() {
 
     console.log("Starting revenue calculation...")
     salesData.forEach((item) => {
-      console.log("Processing item:", {
+      // Skip if item is not active
+      if (item.status !== "active") {
+        console.log(`Skipping inactive item: ${item.id}`)
+        return
+      }
+
+      console.log("Processing active item:", {
         id: item.id,
         product_id: item.product_id,
         price: item.price,
-        quantity: item.quantity
+        quantity: item.quantity,
+        status: item.status
       })
       
       // Add to total sales count
@@ -88,7 +95,7 @@ export async function GET() {
         console.log(`Item revenue (default 10%): $${itemRevenue.toFixed(2)} (price: $${price.toFixed(2)} x quantity: ${quantity})`)
       }
     })
-    console.log(`Total sales: ${totalSales}, Total revenue calculated: $${totalRevenue.toFixed(2)}`)
+    console.log(`Total active items sold: ${totalSales}, Total revenue calculated: $${totalRevenue.toFixed(2)}`)
 
     // 4. If no data from database, try fetching from Shopify as fallback
     if (salesData.length === 0) {
@@ -102,6 +109,12 @@ export async function GET() {
 
           // Recalculate revenue from Shopify data using payout settings
           shopifyOrders.forEach((item) => {
+            // Skip if item is not active
+            if (item.status !== "active") {
+              console.log(`Skipping inactive Shopify item: ${item.id}`)
+              return
+            }
+
             // Add to total sales count
             totalSales += item.quantity || 1
 
@@ -126,7 +139,7 @@ export async function GET() {
             }
           })
 
-          console.log(`Found ${totalSales} items sold from Shopify with revenue $${totalRevenue.toFixed(2)}`)
+          console.log(`Found ${totalSales} active items sold from Shopify with revenue $${totalRevenue.toFixed(2)}`)
         }
       } catch (shopifyError) {
         console.error("Error fetching from Shopify:", shopifyError)
@@ -136,7 +149,7 @@ export async function GET() {
     // Calculate pending payout (same as total revenue)
     const pendingPayout = totalRevenue
 
-    console.log(`Final calculations - Total Items Sold: ${totalSales}, Total Revenue: $${totalRevenue.toFixed(2)}, Pending Payout: $${pendingPayout.toFixed(2)}`)
+    console.log(`Final calculations - Total Active Items Sold: ${totalSales}, Total Revenue: $${totalRevenue.toFixed(2)}, Pending Payout: $${pendingPayout.toFixed(2)}`)
 
     return NextResponse.json({
       totalProducts,
