@@ -38,10 +38,57 @@ export async function GET() {
 
     // 3. Calculate sales and revenue from line items
     let salesData = lineItems || []
-    let totalSales = 0
+    let totalSales = salesData.length
     let totalRevenue = 0
 
-    // First fetch payout settings
+    console.log("Calculating revenue from line items:")
+    salesData.forEach((item) => {
+      console.log("Processing item:", {
+        id: item.id,
+        price: item.price,
+        quantity: item.quantity,
+        title: item.title
+      })
+      
+      if (item.price) {
+        const price = typeof item.price === "string" ? Number.parseFloat(item.price) : item.price
+        const quantity = item.quantity || 1
+        const itemRevenue = price * quantity
+        totalRevenue += itemRevenue
+        console.log(`Item revenue: $${itemRevenue.toFixed(2)} (price: $${price.toFixed(2)} x quantity: ${quantity})`)
+      } else {
+        console.log("Item has no price:", item)
+      }
+    })
+    console.log(`Total revenue calculated: $${totalRevenue.toFixed(2)}`)
+
+    // 4. If no data from database, try fetching from Shopify as fallback
+    if (salesData.length === 0) {
+      console.log("No sales data in database, fetching from Shopify")
+      try {
+        const shopifyOrders = await fetchVendorOrdersFromShopify(vendorName)
+        if (shopifyOrders && shopifyOrders.length > 0) {
+          salesData = shopifyOrders
+          totalSales = shopifyOrders.length
+
+          // Recalculate revenue from Shopify data
+          totalRevenue = 0
+          shopifyOrders.forEach((item) => {
+            if (item.price) {
+              const price = typeof item.price === "string" ? Number.parseFloat(item.price) : item.price
+              const quantity = item.quantity || 1
+              totalRevenue += price * quantity
+            }
+          })
+
+          console.log(`Found ${totalSales} orders from Shopify with revenue $${totalRevenue.toFixed(2)}`)
+        }
+      } catch (shopifyError) {
+        console.error("Error fetching from Shopify:", shopifyError)
+      }
+    }
+
+    // 5. Fetch payout settings to calculate pending payout
     const productIds = products.map((p) => p.id)
     const { data: payouts, error: payoutsError } = await supabaseAdmin
       .from("product_vendor_payouts")
@@ -53,109 +100,32 @@ export async function GET() {
       console.error("Error fetching payouts:", payoutsError)
     }
 
-    console.log("Starting revenue calculation...")
+    // 6. Calculate pending payout based on sales and payout settings
+    let pendingPayout = 0
     salesData.forEach((item) => {
-      // Skip if item is not active
-      if (item.status !== "active") {
-        console.log(`Skipping inactive item: ${item.id}`)
-        return
-      }
-
-      console.log("Processing active item:", {
-        id: item.id,
-        product_id: item.product_id,
-        price: item.price,
-        quantity: item.quantity,
-        status: item.status
-      })
-      
-      // Add to total sales count
-      totalSales += item.quantity || 1
-      
       const payout = payouts?.find((p) => p.product_id === item.product_id)
       if (payout) {
         const price = typeof item.price === "string" ? Number.parseFloat(item.price || "0") : item.price || 0
-        const quantity = item.quantity || 1
-        
-        let itemRevenue
+
         if (payout.is_percentage) {
-          itemRevenue = (price * payout.payout_amount / 100) * quantity
+          pendingPayout += (price * payout.payout_amount) / 100
         } else {
-          itemRevenue = payout.payout_amount * quantity
+          pendingPayout += payout.payout_amount
         }
-        
-        totalRevenue += itemRevenue
-        console.log(`Item revenue: $${itemRevenue.toFixed(2)} (payout: ${payout.is_percentage ? payout.payout_amount + '%' : '$' + payout.payout_amount} x price: $${price.toFixed(2)} x quantity: ${quantity})`)
       } else {
         // Default payout if no specific setting found (10%)
         const price = typeof item.price === "string" ? Number.parseFloat(item.price || "0") : item.price || 0
-        const quantity = item.quantity || 1
-        const itemRevenue = (price * 0.1) * quantity // 10% default
-        totalRevenue += itemRevenue
-        console.log(`Item revenue (default 10%): $${itemRevenue.toFixed(2)} (price: $${price.toFixed(2)} x quantity: ${quantity})`)
+        pendingPayout += price * 0.1 // 10% default
       }
     })
-    console.log(`Total active items sold: ${totalSales}, Total revenue calculated: $${totalRevenue.toFixed(2)}`)
 
-    // 4. If no data from database, try fetching from Shopify as fallback
-    if (salesData.length === 0) {
-      console.log("No sales data in database, fetching from Shopify")
-      try {
-        const shopifyOrders = await fetchVendorOrdersFromShopify(vendorName)
-        if (shopifyOrders && shopifyOrders.length > 0) {
-          salesData = shopifyOrders
-          totalSales = 0 // Reset total sales count
-          totalRevenue = 0 // Reset total revenue
-
-          // Recalculate revenue from Shopify data using payout settings
-          shopifyOrders.forEach((item) => {
-            // Skip if item is not active
-            if (item.status !== "active") {
-              console.log(`Skipping inactive Shopify item: ${item.id}`)
-              return
-            }
-
-            // Add to total sales count
-            totalSales += item.quantity || 1
-
-            const payout = payouts?.find((p) => p.product_id === item.product_id)
-            if (payout) {
-              const price = typeof item.price === "string" ? Number.parseFloat(item.price || "0") : item.price || 0
-              const quantity = item.quantity || 1
-              
-              let itemRevenue
-              if (payout.is_percentage) {
-                itemRevenue = (price * payout.payout_amount / 100) * quantity
-              } else {
-                itemRevenue = payout.payout_amount * quantity
-              }
-              
-              totalRevenue += itemRevenue
-            } else {
-              // Default payout if no specific setting found (10%)
-              const price = typeof item.price === "string" ? Number.parseFloat(item.price || "0") : item.price || 0
-              const quantity = item.quantity || 1
-              totalRevenue += (price * 0.1) * quantity // 10% default
-            }
-          })
-
-          console.log(`Found ${totalSales} active items sold from Shopify with revenue $${totalRevenue.toFixed(2)}`)
-        }
-      } catch (shopifyError) {
-        console.error("Error fetching from Shopify:", shopifyError)
-      }
-    }
-
-    // Calculate pending payout (same as total revenue)
-    const pendingPayout = totalRevenue
-
-    console.log(`Final calculations - Total Active Items Sold: ${totalSales}, Total Revenue: $${totalRevenue.toFixed(2)}, Pending Payout: $${pendingPayout.toFixed(2)}`)
+    console.log(`Calculated pending payout: $${pendingPayout.toFixed(2)}`)
 
     return NextResponse.json({
       totalProducts,
       totalSales,
-      totalRevenue,
-      pendingPayout,
+      totalRevenue: Number.parseFloat(totalRevenue.toFixed(2)),
+      pendingPayout: Number.parseFloat(pendingPayout.toFixed(2)),
     })
   } catch (error) {
     console.error("Unexpected error in vendor stats API:", error)
