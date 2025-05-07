@@ -17,29 +17,29 @@ function getDateRangeForPeriod(
   }
 
   const now = new Date()
-  let end = new Date(now)
-  let start: Date | null = null
+  let endDate = new Date(now)
+  let startDate: Date | null = null
 
   switch (period) {
     case "this-month":
-      start = new Date(now.getFullYear(), now.getMonth(), 1)
+      startDate = new Date(now.getFullYear(), now.getMonth(), 1)
       break
     case "last-month":
-      start = new Date(now.getFullYear(), now.getMonth() - 1, 1)
-      end = new Date(now.getFullYear(), now.getMonth(), 0) // Last day of previous month
+      startDate = new Date(now.getFullYear(), now.getMonth() - 1, 1)
+      endDate = new Date(now.getFullYear(), now.getMonth(), 0) // Last day of previous month
       break
     case "last-3-months":
-      start = new Date(now.getFullYear(), now.getMonth() - 3, 1)
+      startDate = new Date(now.getFullYear(), now.getMonth() - 3, 1)
       break
     case "last-6-months":
-      start = new Date(now.getFullYear(), now.getMonth() - 6, 1)
+      startDate = new Date(now.getFullYear(), now.getMonth() - 6, 1)
       break
     case "this-year":
-      start = new Date(now.getFullYear(), 0, 1)
+      startDate = new Date(now.getFullYear(), 0, 1)
       break
     case "last-year":
-      start = new Date(now.getFullYear() - 1, 0, 1)
-      end = new Date(now.getFullYear(), 0, 0) // Last day of previous year
+      startDate = new Date(now.getFullYear() - 1, 0, 1)
+      endDate = new Date(now.getFullYear(), 0, 0) // Last day of previous year
       break
     case "all-time":
     default:
@@ -47,7 +47,7 @@ function getDateRangeForPeriod(
       return { start: null, end: null }
   }
 
-  return { start, end }
+  return { start: startDate, end: endDate }
 }
 
 export async function GET(request: Request) {
@@ -75,7 +75,9 @@ export async function GET(request: Request) {
     const supabase = createClient()
 
     // Get date range for the selected period
-    const { start, end } = getDateRangeForPeriod(period, customStart, customEnd)
+    const dateRange = getDateRangeForPeriod(period, customStart, customEnd)
+    const startDate = dateRange.start
+    const endDate = dateRange.end
 
     // First, get all products that belong to this vendor
     const { data: vendorProducts, error: productsError } = await supabase
@@ -96,10 +98,10 @@ export async function GET(request: Request) {
         totalRevenue: 0,
         pendingPayout: 0,
         period: period,
-        dateRange: start
+        dateRange: startDate
           ? {
-              start: start.toISOString(),
-              end: end?.toISOString() || new Date().toISOString(),
+              start: startDate.toISOString(),
+              end: endDate?.toISOString() || new Date().toISOString(),
             }
           : null,
       })
@@ -113,13 +115,13 @@ export async function GET(request: Request) {
     let query = supabase.from("order_line_items").select("*").in("product_id", productIds).eq("status", "active")
 
     // Add date filtering if applicable
-    if (start) {
-      const startStr = start.toISOString()
+    if (startDate) {
+      const startStr = startDate.toISOString()
       query = query.gte("created_at", startStr)
     }
 
-    if (end) {
-      const endStr = end.toISOString()
+    if (endDate) {
+      const endStr = endDate.toISOString()
       query = query.lte("created_at", endStr)
     }
 
@@ -140,25 +142,27 @@ export async function GET(request: Request) {
     // Create a map to track sales by date for charting
     const salesByDate = new Map()
 
-    lineItems?.forEach((item) => {
-      // Add to revenue - handle different price formats
-      if (item.price !== null && item.price !== undefined) {
-        const price = typeof item.price === "string" ? Number.parseFloat(item.price) : Number(item.price)
-        if (!isNaN(price)) {
-          totalRevenue += price
+    if (lineItems) {
+      for (const item of lineItems) {
+        // Add to revenue - handle different price formats
+        if (item.price !== null && item.price !== undefined) {
+          const price = typeof item.price === "string" ? Number.parseFloat(item.price) : Number(item.price)
+          if (!isNaN(price)) {
+            totalRevenue += price
+          }
         }
-      }
 
-      // Track sales by date (using date part only)
-      const saleDate = item.created_at ? item.created_at.split("T")[0] : null
-      if (saleDate) {
-        if (salesByDate.has(saleDate)) {
-          salesByDate.set(saleDate, salesByDate.get(saleDate) + 1)
-        } else {
-          salesByDate.set(saleDate, 1)
+        // Track sales by date (using date part only)
+        const saleDate = item.created_at ? item.created_at.split("T")[0] : null
+        if (saleDate) {
+          if (salesByDate.has(saleDate)) {
+            salesByDate.set(saleDate, salesByDate.get(saleDate) + 1)
+          } else {
+            salesByDate.set(saleDate, 1)
+          }
         }
       }
-    })
+    }
 
     // Convert salesByDate map to array for the response
     const salesTimeline = Array.from(salesByDate.entries())
@@ -180,10 +184,10 @@ export async function GET(request: Request) {
       pendingPayout: Number(pendingPayout.toFixed(2)),
       salesTimeline: salesTimeline,
       period: period,
-      dateRange: start
+      dateRange: startDate
         ? {
-            start: start.toISOString(),
-            end: end?.toISOString() || new Date().toISOString(),
+            start: startDate.toISOString(),
+            end: endDate?.toISOString() || new Date().toISOString(),
           }
         : null,
     })
