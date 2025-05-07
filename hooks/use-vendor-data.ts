@@ -19,14 +19,14 @@ interface Product {
   status: string
   vendor: string
   image?: string
-  totalRevenue?: number
+  totalSales?: number
   revenue?: number
   payout_amount?: number
   is_percentage?: boolean
 }
 
 interface SalesData {
-  totalSales: number
+  totalRevenue: number
   productsSold: number
   conversionRate: number
   chartData: any[]

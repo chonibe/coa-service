@@ -127,7 +127,23 @@ export async function GET() {
       }
     }
 
-    // Calculate pending payout (this is now the same as total revenue)
+    // Calculate total revenue based on payout settings
+    const totalRevenue = lineItems.reduce((sum, item) => {
+      const payout = payouts?.find(p => p.product_id === item.product_id)
+      const payoutAmount = payout?.payout_amount || 10 // Default to 10% if no payout setting
+      const isPercentage = payout?.is_percentage ?? true // Default to percentage if not specified
+      
+      const itemPrice = parseFloat(item.price)
+      const itemQuantity = item.quantity || 1
+      
+      if (isPercentage) {
+        return sum + (itemPrice * itemQuantity * (payoutAmount / 100))
+      } else {
+        return sum + (payoutAmount * itemQuantity)
+      }
+    }, 0)
+
+    // Calculate pending payout
     const pendingPayout = totalRevenue
 
     console.log(`Final calculations - Total Sales: ${totalSales}, Total Revenue: $${totalRevenue.toFixed(2)}, Pending Payout: $${pendingPayout.toFixed(2)}`)
@@ -135,8 +151,8 @@ export async function GET() {
     return NextResponse.json({
       totalProducts,
       totalSales,
-      totalRevenue: Number.parseFloat(totalRevenue.toFixed(2)),
-      pendingPayout: Number.parseFloat(pendingPayout.toFixed(2)),
+      totalRevenue,
+      pendingPayout,
     })
   } catch (error) {
     console.error("Unexpected error in vendor stats API:", error)
