@@ -29,27 +29,47 @@ export async function GET() {
       return NextResponse.json({ error: "Database error" }, { status: 500 })
     }
 
+    // Fetch payout settings for these products
+    const productIds = lineItems?.map(item => item.product_id) || []
+    const { data: payouts, error: payoutsError } = await supabase
+      .from("product_vendor_payouts")
+      .select("product_id, payout_amount, is_percentage")
+      .eq("vendor_name", vendorName)
+      .in("product_id", productIds)
+
+    if (payoutsError) {
+      console.error("Error fetching vendor payouts:", payoutsError)
+    }
+
     console.log(`Found ${lineItems?.length || 0} active line items for vendor ${vendorName}`)
     if (lineItems && lineItems.length > 0) {
       console.log("Sample line item:", JSON.stringify(lineItems[0], null, 2))
     }
 
-    // Process line items to get sales by date - fixed to prevent recursion
-    const salesByDate = processSalesByDate(lineItems || [])
+    // Process line items to get sales by date
+    const salesByDate = processSalesByDate(lineItems || [], payouts || [])
 
-    // Get sales by product - fixed to prevent recursion
-    const salesByProduct = processSalesByProduct(lineItems || [])
+    // Get sales by product
+    const salesByProduct = processSalesByProduct(lineItems || [], payouts || [])
 
     // Create sales history array
-    const salesHistory = (lineItems || []).map((item) => ({
-      id: item.id || `item-${Math.random().toString(36).substring(2, 9)}`,
-      product_id: item.product_id || "",
-      title: item.title || "Unknown Product",
-      date: item.created_at || new Date().toISOString(),
-      price: typeof item.price === "string" ? Number.parseFloat(item.price) : item.price || 0,
-      currency: "GBP", // Default to GBP for all products
-      quantity: item.quantity || 1,
-    }))
+    const salesHistory = (lineItems || []).map((item) => {
+      const payout = payouts?.find(p => p.product_id === item.product_id)
+      const price = typeof item.price === "string" ? Number.parseFloat(item.price) : item.price || 0
+      const payoutAmount = payout?.is_percentage 
+        ? (price * (payout.payout_amount / 100))
+        : payout?.payout_amount || 0
+
+      return {
+        id: item.id || `item-${Math.random().toString(36).substring(2, 9)}`,
+        product_id: item.product_id || "",
+        title: item.title || "Unknown Product",
+        date: item.created_at || new Date().toISOString(),
+        price: payoutAmount,
+        currency: "GBP", // Default to GBP for all products
+        quantity: item.quantity || 1,
+      }
+    })
 
     return NextResponse.json({
       salesByDate,
@@ -63,10 +83,9 @@ export async function GET() {
   }
 }
 
-// Fixed function to prevent recursion
-function processSalesByDate(lineItems) {
-  // Group sales by month
-  const salesByMonth = {}
+function processSalesByDate(lineItems, payouts) {
+  // Group sales by date
+  const salesByDate = {}
 
   lineItems.forEach((item) => {
     // Ensure we have a valid date
@@ -82,25 +101,26 @@ function processSalesByDate(lineItems) {
       return
     }
 
-    const monthYear = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`
+    const dateStr = date.toISOString().split('T')[0] // YYYY-MM-DD format
 
-    if (!salesByMonth[monthYear]) {
-      salesByMonth[monthYear] = { sales: 0, revenue: 0 }
+    if (!salesByDate[dateStr]) {
+      salesByDate[dateStr] = { sales: 0, revenue: 0 }
     }
 
-    salesByMonth[monthYear].sales += 1
+    salesByDate[dateStr].sales += 1
 
-    // Add to revenue - fixed to prevent NaN and type issues
-    if (item.price !== null && item.price !== undefined) {
-      const price = typeof item.price === "string" ? Number.parseFloat(item.price) : Number(item.price)
-      if (!isNaN(price)) {
-        salesByMonth[monthYear].revenue += price
-      }
-    }
+    // Calculate revenue based on payout settings
+    const payout = payouts.find(p => p.product_id === item.product_id)
+    const price = typeof item.price === "string" ? Number.parseFloat(item.price) : item.price || 0
+    const payoutAmount = payout?.is_percentage 
+      ? (price * (payout.payout_amount / 100))
+      : payout?.payout_amount || 0
+
+    salesByDate[dateStr].revenue += payoutAmount
   })
 
   // Convert to array and sort by date
-  return Object.entries(salesByMonth)
+  return Object.entries(salesByDate)
     .map(([date, data]) => ({
       date,
       month: getMonthName(date),
@@ -110,8 +130,7 @@ function processSalesByDate(lineItems) {
     .sort((a, b) => a.date.localeCompare(b.date))
 }
 
-// Fixed function to prevent recursion
-function processSalesByProduct(lineItems) {
+function processSalesByProduct(lineItems, payouts) {
   // Group sales by product
   const salesByProduct = {}
 
@@ -130,13 +149,14 @@ function processSalesByProduct(lineItems) {
 
     salesByProduct[productId].sales += 1
 
-    // Add to revenue - fixed to prevent NaN and type issues
-    if (item.price !== null && item.price !== undefined) {
-      const price = typeof item.price === "string" ? Number.parseFloat(item.price) : Number(item.price)
-      if (!isNaN(price)) {
-        salesByProduct[productId].revenue += price
-      }
-    }
+    // Calculate revenue based on payout settings
+    const payout = payouts.find(p => p.product_id === item.product_id)
+    const price = typeof item.price === "string" ? Number.parseFloat(item.price) : item.price || 0
+    const payoutAmount = payout?.is_percentage 
+      ? (price * (payout.payout_amount / 100))
+      : payout?.payout_amount || 0
+
+    salesByProduct[productId].revenue += payoutAmount
   })
 
   // Convert to array and sort by sales
@@ -144,7 +164,6 @@ function processSalesByProduct(lineItems) {
 }
 
 function getMonthName(dateStr) {
-  const [year, month] = dateStr.split("-")
-  const date = new Date(Number.parseInt(year), Number.parseInt(month) - 1, 1)
+  const date = new Date(dateStr)
   return date.toLocaleString("default", { month: "short", year: "numeric" })
 }
