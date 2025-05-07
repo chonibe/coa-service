@@ -84,9 +84,9 @@ export function useVendorData(): UseVendorDataReturn {
       const salesData = {
         totalSales: salesStats.totalRevenue || 0,
         productsSold: salesStats.totalSales || 0,
-        conversionRate: 3.2, // TODO: Calculate this
+        conversionRate: calculateConversionRate(salesStats.totalSales, productsData.products?.length || 0),
         chartData: salesStats.salesByDate || [],
-        recentActivity: [],
+        recentActivity: generateRecentActivity(salesStats.salesByDate || []),
         last30DaysTotal: salesStats.last30DaysTotal || { sales: 0, revenue: 0 }
       }
 
@@ -108,4 +108,22 @@ export function useVendorData(): UseVendorDataReturn {
   }
 
   return { stats, products, salesData, isLoading, error, refreshData }
+}
+
+// Helper function to calculate conversion rate
+function calculateConversionRate(totalSales: number, totalProducts: number): number {
+  if (!totalProducts) return 0
+  return Number(((totalSales / totalProducts) * 100).toFixed(1))
+}
+
+// Helper function to generate recent activity from sales data
+function generateRecentActivity(salesData: any[]): any[] {
+  if (!salesData.length) return []
+  
+  return salesData.slice(-5).map(day => ({
+    title: `${day.sales} items sold`,
+    date: new Date(day.date).toLocaleDateString(),
+    type: 'sale',
+    amount: `$${day.revenue.toFixed(2)}`
+  }))
 }
