@@ -180,24 +180,27 @@ export default function VendorDashboardPage() {
                   </div>
                 ) : (
                   <div className="space-y-4">
-                    {salesData.recentActivity.map((sale, index) => (
-                      <div key={index} className="flex items-center justify-between">
-                        <div className="space-y-1">
-                          <p className="text-sm font-medium">
-                            {new Date(sale.date).toLocaleDateString("en-US", {
-                              month: "short",
-                              day: "numeric",
-                            })}
-                          </p>
-                          <p className="text-xs text-muted-foreground">
-                            {sale.quantity} {sale.quantity === 1 ? "item" : "items"}
-                          </p>
+                    {salesData.recentActivity.map((sale, index) => {
+                      const saleDate = new Date(sale.date)
+                      return (
+                        <div key={index} className="flex items-center justify-between">
+                          <div className="space-y-1">
+                            <p className="text-sm font-medium">
+                              {saleDate.toLocaleDateString("en-US", {
+                                month: "short",
+                                day: "numeric",
+                              })}
+                            </p>
+                            <p className="text-xs text-muted-foreground">
+                              {sale.quantity} {sale.quantity === 1 ? "item" : "items"}
+                            </p>
+                          </div>
+                          <div className="text-sm font-medium">
+                            {formatCurrency(sale.price * sale.quantity)}
+                          </div>
                         </div>
-                        <div className="text-sm font-medium">
-                          {formatCurrency(sale.price * sale.quantity)}
-                        </div>
-                      </div>
-                    ))}
+                      )
+                    })}
                   </div>
                 )}
               </CardContent>
