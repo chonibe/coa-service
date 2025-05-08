@@ -61,12 +61,13 @@ export default function VendorDashboardPage() {
   useEffect(() => {
     const fetchSalesData = async () => {
       try {
-        const response = await fetch("/api/vendor/stats/sales")
+        const response = await fetch("/api/vendor/stats")
         if (!response.ok) {
           const errorData = await response.json().catch(() => ({}))
           throw new Error(errorData.message || "Failed to fetch sales data")
         }
         const data = await response.json()
+        console.log("Fetched sales data:", data)
         setSalesData(data)
       } catch (err) {
         console.error("Error fetching sales data:", err)
