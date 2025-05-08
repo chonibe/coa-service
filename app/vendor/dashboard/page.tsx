@@ -14,6 +14,7 @@ import { useVendorData } from "@/hooks/use-vendor-data"
 interface SalesData {
   totalSales: number
   totalRevenue: number
+  pendingPayout: number
   salesByDate: Array<{
     date: string
     sales: number
@@ -23,9 +24,9 @@ interface SalesData {
 
 // Format currency
 const formatCurrency = (amount: number) => {
-  return new Intl.NumberFormat("en-US", {
+  return new Intl.NumberFormat("en-GB", {
     style: "currency",
-    currency: "USD",
+    currency: "GBP",
     minimumFractionDigits: 2,
   }).format(amount)
 }
@@ -38,6 +39,7 @@ export default function VendorDashboardPage() {
   const [salesData, setSalesData] = useState<SalesData>({
     totalSales: 0,
     totalRevenue: 0,
+    pendingPayout: 0,
     salesByDate: []
   })
 
@@ -125,17 +127,17 @@ export default function VendorDashboardPage() {
 
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Total Revenue</CardTitle>
+                <CardTitle className="text-sm font-medium">Total Payout</CardTitle>
                 <DollarSign className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
                 {isLoading ? (
                   <Skeleton className="h-8 w-[100px]" />
                 ) : (
-                  <div className="text-2xl font-bold">{formatCurrency(salesData?.totalRevenue || 0)}</div>
+                  <div className="text-2xl font-bold">{formatCurrency(salesData?.pendingPayout || 0)}</div>
                 )}
                 <p className="text-xs text-muted-foreground">
-                  {isLoading ? <Skeleton className="h-4 w-[160px]" /> : "Total revenue generated"}
+                  {isLoading ? <Skeleton className="h-4 w-[160px]" /> : "Total payout amount"}
                 </p>
               </CardContent>
             </Card>
