@@ -182,6 +182,7 @@ export async function GET() {
 
     console.log(`Final calculations - Total Sales: ${totalSales}, Total Revenue: $${totalRevenue.toFixed(2)}, Pending Payout: $${pendingPayout.toFixed(2)}`)
     console.log(`Recent activity items: ${recentActivity.length}`)
+    console.log('Recent activity dates:', recentActivity.map(item => new Date(item.date).toISOString()))
 
     return NextResponse.json({
       totalProducts,
