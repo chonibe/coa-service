@@ -53,6 +53,9 @@ export async function GET() {
       console.error("Error fetching payouts:", payoutsError)
     }
 
+    // Process sales by date for chart data
+    const salesByDate: Record<string, { sales: number; revenue: number }> = {}
+    
     console.log("Starting revenue calculation...")
     salesData.forEach((item) => {
       console.log("Processing item:", {
@@ -61,6 +64,12 @@ export async function GET() {
         price: item.price,
         quantity: item.quantity
       })
+      
+      // Format created_at date to YYYY-MM-DD for chart data
+      const dateStr = new Date(item.created_at).toISOString().split("T")[0]
+      if (!salesByDate[dateStr]) {
+        salesByDate[dateStr] = { sales: 0, revenue: 0 }
+      }
       
       const payout = payouts?.find((p) => p.product_id === item.product_id)
       if (payout) {
@@ -75,6 +84,9 @@ export async function GET() {
         }
         
         totalRevenue += itemRevenue
+        salesByDate[dateStr].sales += quantity
+        salesByDate[dateStr].revenue += itemRevenue
+        
         console.log(`Item revenue: $${itemRevenue.toFixed(2)} (payout: ${payout.is_percentage ? payout.payout_amount + '%' : '$' + payout.payout_amount} x price: $${price.toFixed(2)} x quantity: ${quantity})`)
       } else {
         // Default payout if no specific setting found (10%)
@@ -82,6 +94,9 @@ export async function GET() {
         const quantity = item.quantity || 1
         const itemRevenue = (price * 0.1) * quantity // 10% default
         totalRevenue += itemRevenue
+        salesByDate[dateStr].sales += quantity
+        salesByDate[dateStr].revenue += itemRevenue
+        
         console.log(`Item revenue (default 10%): $${itemRevenue.toFixed(2)} (price: $${price.toFixed(2)} x quantity: ${quantity})`)
       }
     })
@@ -99,6 +114,11 @@ export async function GET() {
           // Recalculate revenue from Shopify data using payout settings
           totalRevenue = 0
           shopifyOrders.forEach((item) => {
+            const dateStr = new Date(item.created_at).toISOString().split("T")[0]
+            if (!salesByDate[dateStr]) {
+              salesByDate[dateStr] = { sales: 0, revenue: 0 }
+            }
+            
             const payout = payouts?.find((p) => p.product_id === item.product_id)
             if (payout) {
               const price = typeof item.price === "string" ? Number.parseFloat(item.price || "0") : item.price || 0
@@ -112,11 +132,16 @@ export async function GET() {
               }
               
               totalRevenue += itemRevenue
+              salesByDate[dateStr].sales += quantity
+              salesByDate[dateStr].revenue += itemRevenue
             } else {
               // Default payout if no specific setting found (10%)
               const price = typeof item.price === "string" ? Number.parseFloat(item.price || "0") : item.price || 0
               const quantity = item.quantity || 1
-              totalRevenue += (price * 0.1) * quantity // 10% default
+              const itemRevenue = (price * 0.1) * quantity // 10% default
+              totalRevenue += itemRevenue
+              salesByDate[dateStr].sales += quantity
+              salesByDate[dateStr].revenue += itemRevenue
             }
           })
 
@@ -130,6 +155,19 @@ export async function GET() {
     // Calculate pending payout (this is now the same as total revenue)
     const pendingPayout = totalRevenue
 
+    // Convert the salesByDate object to an array for the chart
+    const chartSalesData = Object.entries(salesByDate).map(([date, stats]) => ({
+      date,
+      sales: stats.sales,
+      revenue: stats.revenue,
+    }))
+
+    // Sort by date (oldest to newest)
+    chartSalesData.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
+
+    // Only return the last 30 days for the chart
+    const last30Days = chartSalesData.slice(-30)
+
     console.log(`Final calculations - Total Sales: ${totalSales}, Total Revenue: $${totalRevenue.toFixed(2)}, Pending Payout: $${pendingPayout.toFixed(2)}`)
 
     return NextResponse.json({
@@ -137,6 +175,14 @@ export async function GET() {
       totalSales,
       totalRevenue: Number.parseFloat(totalRevenue.toFixed(2)),
       pendingPayout: Number.parseFloat(pendingPayout.toFixed(2)),
+      salesByDate: last30Days,
+      recentActivity: salesData.slice(-5).reverse().map(item => ({
+        id: item.id,
+        date: item.created_at,
+        product_id: item.product_id,
+        price: typeof item.price === "string" ? Number.parseFloat(item.price || "0") : item.price || 0,
+        quantity: item.quantity || 1
+      }))
     })
   } catch (error) {
     console.error("Unexpected error in vendor stats API:", error)

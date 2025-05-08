@@ -12,7 +12,7 @@ interface SalesDataPoint {
 }
 
 interface VendorSalesChartProps {
-  vendorName?: string
+  vendorName: string
 }
 
 export function VendorSalesChart({ vendorName }: VendorSalesChartProps) {
@@ -26,7 +26,7 @@ export function VendorSalesChart({ vendorName }: VendorSalesChartProps) {
       setError(null)
 
       try {
-        const response = await fetch(`/api/vendor/stats/sales`)
+        const response = await fetch("/api/vendor/stats")
 
         if (!response.ok) {
           throw new Error(`Failed to fetch sales data: ${response.status}`)
@@ -88,41 +88,38 @@ export function VendorSalesChart({ vendorName }: VendorSalesChartProps) {
 
   if (error) {
     return (
-      <Alert variant="destructive" className="mb-4">
+      <Alert variant="destructive">
         <AlertCircle className="h-4 w-4" />
         <AlertDescription>{error}</AlertDescription>
       </Alert>
     )
   }
 
-  // If no real data, use mock data
-  const chartData =
-    salesData.length > 0
-      ? salesData
-      : [
-          { date: "2023-04-01", sales: 3, revenue: 150 },
-          { date: "2023-04-02", sales: 5, revenue: 250 },
-          { date: "2023-04-03", sales: 2, revenue: 100 },
-          { date: "2023-04-04", sales: 7, revenue: 350 },
-          { date: "2023-04-05", sales: 4, revenue: 200 },
-          { date: "2023-04-06", sales: 6, revenue: 300 },
-          { date: "2023-04-07", sales: 8, revenue: 400 },
-        ]
+  if (salesData.length === 0) {
+    return (
+      <div className="flex justify-center items-center h-[300px] text-muted-foreground">
+        No sales data available
+      </div>
+    )
+  }
 
   return (
-    <div className="h-[300px] w-full">
-      <ResponsiveContainer width="100%" height="100%">
-        <BarChart data={chartData} margin={{ top: 20, right: 30, left: 0, bottom: 5 }}>
-          <CartesianGrid strokeDasharray="3 3" />
-          <XAxis dataKey="date" tickFormatter={formatDate} />
-          <YAxis yAxisId="left" orientation="left" stroke="#8884d8" />
-          <YAxis yAxisId="right" orientation="right" stroke="#82ca9d" />
-          <Tooltip content={customTooltip} />
-          <Legend />
-          <Bar yAxisId="left" dataKey="sales" name="Sales" fill="#8884d8" />
-          <Bar yAxisId="right" dataKey="revenue" name="Revenue" fill="#82ca9d" />
-        </BarChart>
-      </ResponsiveContainer>
-    </div>
+    <ResponsiveContainer width="100%" height={300}>
+      <BarChart data={salesData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+        <CartesianGrid strokeDasharray="3 3" />
+        <XAxis dataKey="date" tickFormatter={formatDate} />
+        <YAxis yAxisId="left" orientation="left" label={{ value: "Sales", angle: -90, position: "insideLeft" }} />
+        <YAxis
+          yAxisId="right"
+          orientation="right"
+          tickFormatter={(value) => `$${value}`}
+          label={{ value: "Revenue", angle: 90, position: "insideRight" }}
+        />
+        <Tooltip content={customTooltip} />
+        <Legend />
+        <Bar dataKey="sales" name="Sales" fill="#8884d8" yAxisId="left" />
+        <Bar dataKey="revenue" name="Revenue" fill="#82ca9d" yAxisId="right" />
+      </BarChart>
+    </ResponsiveContainer>
   )
 }
