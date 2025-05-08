@@ -168,6 +168,34 @@ export async function GET() {
     // Only return the last 30 days for the chart
     const last30Days = chartSalesData.slice(-30)
 
+    // Process recent activity with correct payout amounts
+    const recentActivity = salesData.slice(-5).reverse().map(item => {
+      const payout = payouts?.find((p) => p.product_id === item.product_id)
+      const price = typeof item.price === "string" ? Number.parseFloat(item.price || "0") : item.price || 0
+      const quantity = item.quantity || 1
+      
+      let payoutAmount = 0
+      if (payout) {
+        if (payout.is_percentage) {
+          payoutAmount = (price * payout.payout_amount / 100) * quantity
+        } else {
+          payoutAmount = payout.payout_amount * quantity
+        }
+      } else {
+        // Default payout if no specific setting found (10%)
+        payoutAmount = (price * 0.1) * quantity
+      }
+
+      return {
+        id: item.id,
+        date: item.created_at,
+        product_id: item.product_id,
+        price: price,
+        quantity: quantity,
+        payout_amount: Number.parseFloat(payoutAmount.toFixed(2))
+      }
+    })
+
     console.log(`Final calculations - Total Sales: ${totalSales}, Total Revenue: $${totalRevenue.toFixed(2)}, Pending Payout: $${pendingPayout.toFixed(2)}`)
 
     return NextResponse.json({
@@ -176,13 +204,7 @@ export async function GET() {
       totalRevenue: Number.parseFloat(totalRevenue.toFixed(2)),
       pendingPayout: Number.parseFloat(pendingPayout.toFixed(2)),
       salesByDate: last30Days,
-      recentActivity: salesData.slice(-5).reverse().map(item => ({
-        id: item.id,
-        date: item.created_at,
-        product_id: item.product_id,
-        price: typeof item.price === "string" ? Number.parseFloat(item.price || "0") : item.price || 0,
-        quantity: item.quantity || 1
-      }))
+      recentActivity
     })
   } catch (error) {
     console.error("Unexpected error in vendor stats API:", error)

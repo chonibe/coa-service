@@ -25,6 +25,7 @@ interface SalesData {
     product_id: string
     price: number
     quantity: number
+    payout_amount: number
   }>
 }
 
@@ -194,7 +195,7 @@ export default function VendorDashboardPage() {
                           </p>
                         </div>
                         <div className="text-sm font-medium">
-                          {formatCurrency(sale.price * sale.quantity)}
+                          {formatCurrency(sale.payout_amount)}
                         </div>
                       </div>
                     ))}
