@@ -7,12 +7,25 @@ export async function POST(request: NextRequest) {
     const body = await request.json()
     const { password } = body
 
+    console.log("Admin login attempt - Environment check:", {
+      hasAdminPassword: !!ADMIN_PASSWORD,
+      passwordLength: ADMIN_PASSWORD?.length,
+      providedPasswordLength: password?.length,
+      envVar: process.env.NEXT_PUBLIC_ADMIN_PASSWORD ? "Set" : "Not Set"
+    })
+
     if (!password) {
       return NextResponse.json({ message: "Password is required" }, { status: 400 })
     }
 
     // Check if the password matches
     if (password !== ADMIN_PASSWORD) {
+      console.log("Password mismatch - Debug info:", {
+        providedPassword: password,
+        expectedPassword: ADMIN_PASSWORD,
+        match: password === ADMIN_PASSWORD,
+        envVar: process.env.NEXT_PUBLIC_ADMIN_PASSWORD ? "Set" : "Not Set"
+      })
       return NextResponse.json({ message: "Invalid password" }, { status: 401 })
     }
 
