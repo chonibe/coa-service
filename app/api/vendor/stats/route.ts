@@ -26,11 +26,14 @@ export async function GET() {
     const vendorName = cookieStore.get("vendor_session")?.value
 
     if (!vendorName) {
+      console.error("No vendor session found")
       return NextResponse.json({ error: "Not authenticated" }, { status: 401 })
     }
 
+    console.log(`Fetching stats for vendor: ${vendorName}`)
+
     // Create Supabase client
-    const supabase = createClient()
+    const supabase = createClient(cookieStore)
 
     // Get vendor ID from vendor name
     const { data: vendor, error: vendorError } = await supabase
@@ -44,6 +47,8 @@ export async function GET() {
       return NextResponse.json({ error: "Vendor not found" }, { status: 404 })
     }
 
+    console.log(`Found vendor with ID: ${vendor.id}`)
+
     // Get total products
     const { data: products, error: productsError } = await supabase
       .from("products")
@@ -56,6 +61,7 @@ export async function GET() {
     }
 
     const totalProducts = products?.length || 0
+    console.log(`Found ${totalProducts} products`)
 
     // Get sales data and payout settings
     const { data: salesData, error: salesError } = await supabase
@@ -69,6 +75,8 @@ export async function GET() {
       return NextResponse.json({ error: "Failed to fetch sales" }, { status: 500 })
     }
 
+    console.log(`Found ${salesData?.length || 0} sales items`)
+
     // Get payout settings for the vendor's products
     const { data: payouts, error: payoutsError } = await supabase
       .from("product_vendor_payouts")
@@ -79,6 +87,8 @@ export async function GET() {
       console.error("Error fetching payouts:", payoutsError)
       return NextResponse.json({ error: "Failed to fetch payouts" }, { status: 500 })
     }
+
+    console.log(`Found ${payouts?.length || 0} payout settings`)
 
     // Calculate totals
     let totalSales = 0
@@ -105,6 +115,8 @@ export async function GET() {
       }
     })
 
+    console.log(`Calculated totals - Sales: ${totalSales}, Revenue: ${totalRevenue}, Payout: ${pendingPayout}`)
+
     // Group sales by date
     const salesByDate = (salesData as LineItem[] || []).reduce((acc: Record<string, any>, item: LineItem) => {
       const date = new Date(item.created_at).toISOString().split('T')[0]
@@ -119,13 +131,16 @@ export async function GET() {
 
     const salesByDateArray = Object.values(salesByDate || {})
     
-    return NextResponse.json({
+    const response = {
       totalProducts,
       totalSales,
       totalRevenue,
       pendingPayout,
       salesByDate: salesByDateArray,
-    })
+    }
+
+    console.log("Sending response:", response)
+    return NextResponse.json(response)
 
   } catch (error) {
     console.error("Error in vendor stats API:", error)
