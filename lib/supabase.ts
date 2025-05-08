@@ -1,21 +1,14 @@
 import { createClient } from "@supabase/supabase-js"
+import { supabaseEnv } from "./supabase-env"
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-
-if (!supabaseUrl || !supabaseAnonKey) {
-  if (process.env.NODE_ENV === 'development') {
-    console.warn('Missing Supabase environment variables')
-  } else {
-    throw new Error('Missing Supabase environment variables')
-  }
-}
-
-// Initialize the Supabase client
-export const supabase = createClient(supabaseUrl!, supabaseAnonKey!)
+// Initialize the Supabase client with validated environment variables
+export const supabase = createClient(
+  supabaseEnv.NEXT_PUBLIC_SUPABASE_URL,
+  supabaseEnv.NEXT_PUBLIC_SUPABASE_ANON_KEY
+)
 
 // Service role client for admin operations
 export const supabaseAdmin = createClient(
-  supabaseUrl!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY || supabaseAnonKey!
+  supabaseEnv.NEXT_PUBLIC_SUPABASE_URL,
+  supabaseEnv.SUPABASE_SERVICE_ROLE_KEY
 )
