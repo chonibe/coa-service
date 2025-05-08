@@ -1,63 +1,55 @@
-import { Container, Title, Text, Button, Box, SimpleGrid, Paper } from "@mantine/core"
+import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Lock, Store } from "lucide-react"
 import Link from "next/link"
 
-export default function Page() {
+export default function Home() {
   return (
-    <Container size="xl" py="xl">
-      <Box className="flex flex-col gap-8">
-        <Paper p="xl" radius="md" withBorder>
-          <Title order={1} ta="center" mb="md">
-            Collector Benefits System
-          </Title>
-          <Text size="xl" c="dimmed" ta="center">
-            Manage your limited editions and certificates
-          </Text>
-        </Paper>
-
-        <SimpleGrid cols={{ base: 1, sm: 2, lg: 3 }} spacing="md">
-          <Paper p="xl" radius="md" withBorder>
-            <Title order={3} mb="md">
-              Certificate Management
-            </Title>
-            <Text mb="md" c="dimmed">
-              Manage and view certificate details
-            </Text>
-            <Link href="/admin/certificates/management" passHref>
-              <Button component="a" fullWidth>
-                Go to Certificate Management
+    <main className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
+      <Card className="w-full max-w-md">
+        <CardHeader className="space-y-1">
+          <CardTitle className="text-2xl text-center">Authentication Portal</CardTitle>
+          <CardDescription className="text-center">Select your login type to continue</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Tabs defaultValue="admin" className="w-full">
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="admin">Admin Login</TabsTrigger>
+              <TabsTrigger value="vendor">Vendor Login</TabsTrigger>
+            </TabsList>
+            <TabsContent value="admin" className="mt-6 space-y-4">
+              <div className="flex justify-center mb-4">
+                <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center">
+                  <Lock className="h-6 w-6 text-primary" />
+                </div>
+              </div>
+              <p className="text-center text-sm text-muted-foreground mb-4">
+                Access the admin dashboard to manage products, certificates, and vendor settings.
+              </p>
+              <Button asChild className="w-full">
+                <Link href="/admin/login">Continue to Admin Login</Link>
               </Button>
-            </Link>
-          </Paper>
-
-          <Paper p="xl" radius="md" withBorder>
-            <Title order={3} mb="md">
-              Certificate Access Logs
-            </Title>
-            <Text mb="md" c="dimmed">
-              View certificate access history
-            </Text>
-            <Link href="/admin/certificates/logs" passHref>
-              <Button component="a" fullWidth variant="light">
-                View Access Logs
+            </TabsContent>
+            <TabsContent value="vendor" className="mt-6 space-y-4">
+              <div className="flex justify-center mb-4">
+                <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center">
+                  <Store className="h-6 w-6 text-primary" />
+                </div>
+              </div>
+              <p className="text-center text-sm text-muted-foreground mb-4">
+                Access the vendor portal to view your sales, manage payouts, and update your profile.
+              </p>
+              <Button asChild className="w-full">
+                <Link href="/vendor/login">Continue to Vendor Portal</Link>
               </Button>
-            </Link>
-          </Paper>
-
-          <Paper p="xl" radius="md" withBorder>
-            <Title order={3} mb="md">
-              Missing Orders
-            </Title>
-            <Text mb="md" c="dimmed">
-              Check for missing orders in the system
-            </Text>
-            <Link href="/admin/missing-orders" passHref>
-              <Button component="a" fullWidth variant="outline">
-                Check Missing Orders
-              </Button>
-            </Link>
-          </Paper>
-        </SimpleGrid>
-      </Box>
-    </Container>
+            </TabsContent>
+          </Tabs>
+        </CardContent>
+        <CardFooter className="flex justify-center">
+          <p className="text-xs text-muted-foreground">Contact support if you need assistance with login.</p>
+        </CardFooter>
+      </Card>
+    </main>
   )
 }
