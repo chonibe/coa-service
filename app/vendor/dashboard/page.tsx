@@ -174,13 +174,13 @@ export default function VendorDashboardPage() {
                     <Skeleton className="h-4 w-full" />
                     <Skeleton className="h-4 w-full" />
                   </div>
-                ) : salesData?.recentActivity?.length === 0 ? (
+                ) : !salesData?.recentActivity || salesData.recentActivity.length === 0 ? (
                   <div className="text-center text-muted-foreground py-4">
                     No sales activity yet
                   </div>
                 ) : (
                   <div className="space-y-4">
-                    {salesData?.recentActivity?.map((sale, index) => (
+                    {salesData.recentActivity.map((sale, index) => (
                       <div key={index} className="flex items-center justify-between">
                         <div className="space-y-1">
                           <p className="text-sm font-medium">
