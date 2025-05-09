@@ -32,7 +32,7 @@ export async function GET(request: NextRequest) {
     // Test inserting a record with minimal required fields
     const testRecord = {
       order_id: "test-order",
-      order_name: "Test Order",
+      name: "Test Order",
       line_item_id: "test-line-item",
       product_id: "test-product",
       created_at: new Date().toISOString(),
