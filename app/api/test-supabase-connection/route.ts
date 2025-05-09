@@ -42,12 +42,19 @@ export async function GET(request: NextRequest) {
       .from("order_line_items")
       .insert({
         order_id: testId,
+        order_name: `Test Order ${testId}`,
         line_item_id: testId,
         product_id: testId,
-        edition_number: 999,
-        status: "active",
+        variant_id: null,
+        edition_number: null,
+        edition_total: 100,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
+        status: "active",
+        vendor_name: "Test Vendor",
+        certificate_url: null,
+        certificate_token: null,
+        certificate_generated_at: null
       })
       .select()
 
