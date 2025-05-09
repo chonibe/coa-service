@@ -14,70 +14,48 @@ export async function GET(request: NextRequest) {
     console.log("Shopify Shop:", SHOPIFY_SHOP ? "Set" : "Not set")
     console.log("Shopify Access Token:", SHOPIFY_ACCESS_TOKEN ? "Set" : "Not set")
 
-    // Test the connection by querying a table
-    const { data, error, status } = await supabase
-      .from("order_line_items")
-      .select("count", { count: "exact", head: true })
+    // Test database connection
+    const { data, error } = await supabase.from("order_line_items").select("*").limit(1)
 
     if (error) {
-      console.error("Supabase connection test failed:", error)
+      console.error("Database connection test failed:", error)
       return NextResponse.json(
         {
           success: false,
-          message: "Failed to connect to Supabase",
+          message: "Failed to connect to database",
           error: error.message,
-          code: error.code,
-          details: error.details,
-          hint: error.hint,
         },
         { status: 500 },
       )
     }
 
-    console.log("Supabase connection test successful:", { status, count: data })
-
-    // Test table permissions by attempting to insert a test record
-    const testId = `test-${Date.now()}`
-    const { error: insertError } = await supabase
-      .from("order_line_items")
-      .insert({
-        order_id: testId,
-        order_name: `Test Order ${testId}`,
-        line_item_id: testId,
-        product_id: testId,
-        variant_id: null,
-        edition_number: null,
-        edition_total: 100,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-        status: "active",
-        vendor_name: "Test Vendor",
-        certificate_url: null,
-        certificate_token: null,
-        certificate_generated_at: null
-      })
-      .select()
-
-    // Delete the test record regardless of whether insert succeeded
-    try {
-      await supabase.from("order_line_items").delete().eq("order_id", testId).eq("line_item_id", testId)
-    } catch (deleteError) {
-      console.log("Error deleting test record:", deleteError)
+    // Test inserting a record with minimal required fields
+    const testRecord = {
+      order_id: "test-order",
+      order_name: "Test Order",
+      line_item_id: "test-line-item",
+      product_id: "test-product",
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+      status: "active"
     }
+
+    const { error: insertError } = await supabase.from("order_line_items").insert(testRecord)
 
     if (insertError) {
-      console.error("Supabase insert test failed:", insertError)
+      console.error("Failed to insert test record:", insertError)
       return NextResponse.json(
         {
-          success: true,
-          connectionStatus: "Connected but cannot insert",
+          success: false,
           message: "Connected to Supabase but cannot insert records",
           error: insertError.message,
-          code: insertError.code,
         },
-        { status: 200 },
+        { status: 500 },
       )
     }
+
+    // Clean up test record
+    await supabase.from("order_line_items").delete().eq("order_id", "test-order")
 
     // Test Shopify API connection
     let shopifyStatus = "Unknown"
@@ -105,8 +83,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      connectionStatus: "Connected with full permissions",
-      message: "Successfully connected to Supabase with read/write permissions",
+      message: "Successfully connected to database and verified write access",
       shopifyStatus,
       shopifyError,
       environmentVariables: {
