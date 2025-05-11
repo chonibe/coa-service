@@ -10,6 +10,9 @@ interface ShopifyLineItem {
   id: number
   product_id: number
   variant_id: number
+  title: string
+  vendor: string
+  properties: Array<{ name: string; value: string }>
 }
 
 interface ShopifyOrder {
@@ -93,7 +96,7 @@ export async function GET(request: Request) {
     // Get unique product IDs from database orders
     const productIds = [...new Set(dbOrders.map(order => order.product_id))]
 
-    // Fetch product details
+    // Fetch product details from our database
     const { data: products, error: productsError } = await supabase
       .from("products")
       .select("id, title, vendor, certificate_url")
@@ -109,39 +112,46 @@ export async function GET(request: Request) {
       return acc
     }, {} as Record<string, any>)
 
-    // Combine database orders with their product details
-    const dbOrdersWithProducts = dbOrders.map(order => ({
+    // Transform database orders with product details
+    const dbOrdersWithDetails = dbOrders.map(order => ({
       ...order,
-      product: productMap[order.product_id] || null,
+      product: productMap[order.product_id] || {
+        title: "Unknown Product",
+        vendor: "Unknown",
+        certificate_url: null
+      },
       source: "database"
     }))
 
     // Transform Shopify orders to match our format
-    const transformedShopifyOrders = shopifyOrders.map(order => ({
-      order_id: order.id.toString(),
-      order_name: order.name,
-      line_item_id: order.line_items?.[0]?.id.toString() || "",
-      product_id: order.line_items?.[0]?.product_id?.toString() || "",
-      variant_id: order.line_items?.[0]?.variant_id?.toString() || "",
-      created_at: order.created_at,
-      updated_at: order.updated_at,
-      status: "active",
-      source: "shopify"
-    }))
+    const transformedShopifyOrders = shopifyOrders.map(order => {
+      const lineItem = order.line_items[0]
+      return {
+        order_id: order.id.toString(),
+        order_name: order.name,
+        line_item_id: lineItem?.id.toString() || "",
+        product_id: lineItem?.product_id?.toString() || "",
+        variant_id: lineItem?.variant_id?.toString() || "",
+        created_at: order.created_at,
+        updated_at: order.updated_at,
+        status: "active",
+        product: {
+          title: lineItem?.title || "Unknown Product",
+          vendor: lineItem?.vendor || "Unknown",
+          certificate_url: lineItem?.properties?.find(p => p.name === "certificate_url")?.value || null
+        },
+        source: "shopify"
+      }
+    })
 
     // Combine and sort all orders by updated_at
-    const allOrders = [...dbOrdersWithProducts, ...transformedShopifyOrders]
+    const allOrders = [...dbOrdersWithDetails, ...transformedShopifyOrders]
       .sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime())
 
     // Apply pagination
     const start = (page - 1) * pageSize
     const end = start + pageSize
     const paginatedOrders = allOrders.slice(start, end)
-
-    // Get total count for pagination
-    const { count: totalCount } = await supabase
-      .from("order_line_items")
-      .select("*", { count: "exact", head: true })
 
     return NextResponse.json({
       orders: paginatedOrders,

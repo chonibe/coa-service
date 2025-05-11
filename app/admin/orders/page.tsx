@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Badge } from "@/components/ui/badge"
-import { Loader2, AlertCircle, RefreshCw, ExternalLink } from "lucide-react"
+import { Loader2, AlertCircle, RefreshCw, ExternalLink, Package } from "lucide-react"
 import {
   Table,
   TableBody,
@@ -53,6 +53,7 @@ export default function OrdersPage() {
   const [page, setPage] = useState(1)
   const [hasMore, setHasMore] = useState(true)
   const [isRefreshing, setIsRefreshing] = useState(false)
+  const [isSyncingProducts, setIsSyncingProducts] = useState(false)
 
   const fetchOrders = async (pageNum: number = 1, refresh: boolean = false) => {
     try {
@@ -99,6 +100,31 @@ export default function OrdersPage() {
     fetchOrders(page + 1)
   }
 
+  const handleSyncProducts = async () => {
+    try {
+      setIsSyncingProducts(true)
+      setError(null)
+
+      const response = await fetch("/api/shopify/sync-products", {
+        method: "POST",
+      })
+
+      if (!response.ok) {
+        throw new Error(`Error ${response.status}: Failed to sync products`)
+      }
+
+      const data = await response.json()
+      
+      // Refresh orders to show updated product details
+      await fetchOrders(1, true)
+    } catch (err: any) {
+      console.error("Error syncing products:", err)
+      setError(err.message || "Failed to sync products")
+    } finally {
+      setIsSyncingProducts(false)
+    }
+  }
+
   const getStatusBadge = (status: string) => {
     switch (status) {
       case "active":
@@ -129,14 +155,24 @@ export default function OrdersPage() {
             <h1 className="text-3xl font-bold tracking-tight">Shopify Orders</h1>
             <p className="text-muted-foreground mt-2">View and manage Shopify orders</p>
           </div>
-          <Button onClick={handleRefresh} disabled={isRefreshing}>
-            {isRefreshing ? (
-              <Loader2 className="h-4 w-4 animate-spin mr-2" />
-            ) : (
-              <RefreshCw className="h-4 w-4 mr-2" />
-            )}
-            Refresh
-          </Button>
+          <div className="flex gap-2">
+            <Button onClick={handleSyncProducts} disabled={isSyncingProducts}>
+              {isSyncingProducts ? (
+                <Loader2 className="h-4 w-4 animate-spin mr-2" />
+              ) : (
+                <Package className="h-4 w-4 mr-2" />
+              )}
+              Sync Products
+            </Button>
+            <Button onClick={handleRefresh} disabled={isRefreshing}>
+              {isRefreshing ? (
+                <Loader2 className="h-4 w-4 animate-spin mr-2" />
+              ) : (
+                <RefreshCw className="h-4 w-4 mr-2" />
+              )}
+              Refresh
+            </Button>
+          </div>
         </div>
 
         {error && (
