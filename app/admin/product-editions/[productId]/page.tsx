@@ -1,5 +1,17 @@
-import { createClient } from '@/lib/supabase/server'
+'use client'
+
+import { useEffect, useState, use } from 'react'
+import { createClient } from '@supabase/supabase-js'
+import { AssignEditionNumbersButton, RevokeEditionButton } from './AssignEditionNumbersButton'
+import { Button } from '@/components/ui/button'
+import { toast } from 'sonner'
 import ProductDetails from './ProductDetails'
+import { LineItem } from '@/types'
+
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+)
 
 async function getProductData(
   productId: string, 
@@ -14,9 +26,6 @@ async function getProductData(
     hasEditionNumber?: boolean;
   } = {}
 ) {
-  const supabase = createClient()
-  
-  // Fetch product details
   const { data: product, error: productError } = await supabase
     .from('products')
     .select('*')
@@ -27,17 +36,14 @@ async function getProductData(
     throw new Error('Error loading product details')
   }
 
-  // Calculate pagination
   const start = (page - 1) * pageSize
   const end = start + pageSize - 1
 
-  // Build query for line items
   let query = supabase
-    .from('order_line_items')
+    .from('order_line_items_v2')
     .select('*', { count: 'exact' })
     .eq('product_id', productId)
 
-  // Apply filters
   if (filters.status) {
     query = query.eq('status', filters.status)
   }
@@ -51,7 +57,6 @@ async function getProductData(
     query = query.not('edition_number', 'is', null)
   }
 
-  // Apply sorting and pagination
   const { data: lineItems, error: lineItemsError, count } = await query
     .order(sortBy, { ascending: sortOrder === 'asc' })
     .range(start, end)
@@ -71,42 +76,69 @@ async function getProductData(
   }
 }
 
-export default async function ProductDetailsPage({
-  params,
-  searchParams
-}: {
-  params: { productId: string }
-  searchParams: { 
-    page?: string
-    pageSize?: string
-    sortBy?: string
-    sortOrder?: 'asc' | 'desc'
-    status?: string
-    minPrice?: string
-    maxPrice?: string
-    hasEditionNumber?: string
-  }
-}) {
-  const page = searchParams.page ? parseInt(searchParams.page) : 1
-  const pageSize = searchParams.pageSize ? parseInt(searchParams.pageSize) : 10
-  const sortBy = searchParams.sortBy || 'created_at'
-  const sortOrder = searchParams.sortOrder || 'desc'
-  
-  const filters = {
-    status: searchParams.status,
-    minPrice: searchParams.minPrice ? parseFloat(searchParams.minPrice) : undefined,
-    maxPrice: searchParams.maxPrice ? parseFloat(searchParams.maxPrice) : undefined,
-    hasEditionNumber: searchParams.hasEditionNumber === 'true'
+export default function ProductEditionsPage({ params }: { params: Promise<{ productId: string }> }) {
+  const resolvedParams = use(params)
+  const [lineItems, setLineItems] = useState<LineItem[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+
+  const fetchLineItems = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('order_line_items_v2')
+        .select('*')
+        .eq('product_id', resolvedParams.productId)
+        .order('created_at', { ascending: true })
+
+      if (error) throw error
+      setLineItems(data || [])
+    } catch (error) {
+      toast.error('Failed to fetch line items')
+      console.error('Error:', error)
+    } finally {
+      setIsLoading(false)
+    }
   }
 
-  const data = await getProductData(
-    params.productId, 
-    page, 
-    pageSize, 
-    sortBy, 
-    sortOrder as 'asc' | 'desc',
-    filters
+  useEffect(() => {
+    fetchLineItems()
+  }, [resolvedParams.productId])
+
+  const handleSuccess = () => {
+    fetchLineItems()
+  }
+
+  if (isLoading) {
+    return <div>Loading...</div>
+  }
+
+  return (
+    <div className="space-y-6">
+      <div className="flex justify-between items-center">
+        <h1 className="text-2xl font-bold">Product Editions</h1>
+        <AssignEditionNumbersButton productId={resolvedParams.productId} onSuccess={handleSuccess} />
+      </div>
+      <ProductDetails lineItems={lineItems} productId={resolvedParams.productId} />
+      <div className="grid gap-4">
+        {lineItems.map((item) => (
+          <div 
+            key={item.id} 
+            className="border p-4 rounded-lg flex justify-between items-center"
+          >
+            <div>
+              <p>Order ID: {item.order_id}</p>
+              <p>Created: {new Date(item.created_at).toLocaleString()}</p>
+              <p>Edition: {item.edition_number || 'Not assigned'}</p>
+              {item.edition_total && <p>Total Editions: {item.edition_total}</p>}
+            </div>
+            {item.edition_number && (
+              <RevokeEditionButton 
+                lineItemId={item.id} 
+                onSuccess={handleSuccess}
+              />
+            )}
+          </div>
+        ))}
+      </div>
+    </div>
   )
-
-  return <ProductDetails data={data} productId={params.productId} />
 }

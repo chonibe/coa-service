@@ -17,7 +17,7 @@ export async function GET(request: NextRequest) {
 
     // Then, get all line items with edition numbers for this product from Supabase
     const { data: lineItems, error } = await supabase
-      .from("order_line_items")
+      .from("order_line_items_v2")
       .select("*")
       .eq("product_id", productId)
       .order("edition_number", { ascending: true })

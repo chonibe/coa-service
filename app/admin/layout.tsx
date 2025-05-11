@@ -111,7 +111,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     },
     {
       title: "Payouts",
-      href: "/admin/vendors/payouts/admin",
+      href: "/admin/vendors/payouts",
       icon: <DollarSign className="h-5 w-5" />,
       submenu: [
         {
@@ -121,12 +121,12 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         },
         {
           title: "Payout History",
-          href: "/admin/vendors/payouts/admin",
+          href: "/admin/vendors/payouts/history",
           icon: <Clock className="h-4 w-4" />,
         },
         {
           title: "Payout Settings",
-          href: "/admin/vendors/payouts",
+          href: "/admin/vendors/payouts/settings",
           icon: <Settings className="h-4 w-4" />,
         },
       ],
