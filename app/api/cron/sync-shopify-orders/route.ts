@@ -3,159 +3,249 @@ import type { NextRequest } from "next/server"
 import { SHOPIFY_SHOP, SHOPIFY_ACCESS_TOKEN, CRON_SECRET } from "@/lib/env"
 import { supabase } from "@/lib/supabase"
 import crypto from "crypto"
+import type { Json } from "@/types/supabase"
+
+interface ShopifyLineItem {
+  id: number;
+  product_id: number;
+  variant_id: number | null;
+  title: string;
+  sku: string | null;
+  vendor: string | null;
+  quantity: number;
+  price: string;
+  total_discount: string | null;
+  fulfillment_status: string | null;
+  tax_lines: any[];
+}
+
+interface ShopifyOrder {
+  id: number;
+  order_number: number;
+  name: string;
+  processed_at: string | null;
+  created_at: string;
+  updated_at: string;
+  financial_status: string;
+  fulfillment_status: string | null;
+  current_total_price: string | null;
+  currency: string;
+  email: string | null;
+  customer: { id: number } | null;
+  subtotal_price: string | null;
+  total_tax: string | null;
+  checkout_token: string | null;
+  cart_token: string | null;
+  line_items: ShopifyLineItem[];
+}
+
+interface SyncLog {
+  created_at: string;
+  type: string;
+  details: Json;
+}
+
+async function fetchAllOrdersFromShopify(startDate: Date): Promise<ShopifyOrder[]> {
+  let allOrders: ShopifyOrder[] = [];
+  let hasNextPage = true;
+  let nextPageUrl: string | null = null;
+
+  while (hasNextPage) {
+    try {
+      const url: string = nextPageUrl || 
+        `https://${SHOPIFY_SHOP}/admin/api/2024-01/orders.json?status=any&created_at_min=${startDate.toISOString()}&limit=250`;
+      
+      console.log(`[Cron] Fetching orders from: ${url}`);
+      
+      const response: Response = await fetch(url, {
+        headers: {
+          "X-Shopify-Access-Token": SHOPIFY_ACCESS_TOKEN,
+          "Content-Type": "application/json",
+        },
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Failed to fetch orders: ${response.status} ${errorText}`);
+      }
+
+      const data = await response.json();
+      const orders = data.orders || [];
+      allOrders = allOrders.concat(orders);
+
+      // Check for pagination
+      const linkHeader: string | null = response.headers.get("link");
+      if (linkHeader) {
+        const match: RegExpMatchArray | null = linkHeader.match(/<([^>]+)>; rel="next"/);
+        nextPageUrl = match ? match[1] : null;
+        hasNextPage = !!nextPageUrl;
+      } else {
+        hasNextPage = false;
+      }
+
+      console.log(`[Cron] Fetched ${orders.length} orders, total: ${allOrders.length}`);
+    } catch (error) {
+      console.error("[Cron] Error fetching orders:", error);
+      throw error;
+    }
+  }
+
+  return allOrders;
+}
 
 export async function GET(request: NextRequest) {
-  // Log more details about the request
-  console.log("========== CRON JOB FULL DETAILS ==========")
-  console.log("Request URL:", request.url)
-  console.log("Request method:", request.method)
-  console.log("Request origin:", request.nextUrl.origin)
-  console.log("Request path:", request.nextUrl.pathname)
-  console.log("Request search params:", Object.fromEntries(request.nextUrl.searchParams.entries()))
-  console.log("Headers:", Object.fromEntries(request.headers.entries()))
-
-  // Log detailed request information
-  console.log("==== CRON JOB ENDPOINT CALLED ====")
-  console.log("Request URL:", request.url)
-  console.log("Request method:", request.method)
-  console.log("Request headers:", Object.fromEntries(request.headers.entries()))
-  console.log("Request origin:", request.nextUrl.origin)
-  console.log("NEXT_PUBLIC_APP_URL:", process.env.NEXT_PUBLIC_APP_URL || "Not set")
-  console.log("Cron job endpoint called at:", new Date().toISOString())
-
-  console.log("Cron job endpoint called at:", new Date().toISOString())
-  console.log("Request URL:", request.url)
-
   try {
-    // Verify the cron secret to prevent unauthorized access
-    const { searchParams } = new URL(request.url)
-    const secret = searchParams.get("secret")
-
-    console.log("CRON_SECRET environment variable is:", CRON_SECRET ? "set" : "not set")
-    console.log("Secret provided in request:", secret ? "provided" : "not provided")
-
-    // For development/testing, allow the endpoint to be called without a secret
-    // In production, you would want to enforce this check
-    if (CRON_SECRET && secret !== CRON_SECRET) {
-      console.error("Invalid cron secret provided:", secret)
-      return NextResponse.json({ error: "Unauthorized", message: "Invalid secret provided" }, { status: 401 })
+    // Validate cron secret
+    const authHeader = request.headers.get("authorization");
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    console.log("Cron job started at:", new Date().toISOString())
+    const token = authHeader.split(" ")[1];
+    if (token !== CRON_SECRET) {
+      return NextResponse.json({ error: "Invalid token" }, { status: 401 });
+    }
+
+    if (!supabase) {
+      throw new Error("Database client not initialized");
+    }
+
+    const db = supabase; // Create a non-null reference
 
     // Get the last sync timestamp from the database
-    // First, check if the sync_status table exists and has the required columns
-    let tableInfo = null
-    let tableError = null
-    try {
-      const result = await supabase.from("sync_status").select("*").limit(1)
+    let startDate = new Date();
+    startDate.setHours(startDate.getHours() - 1); // Default to last hour
 
-      tableInfo = result.data
-      tableError = result.error
-    } catch (err) {
-      console.log("Error checking sync_status table:", err)
-      tableError = err
+    const { data: lastSync, error: syncError } = await db
+      .from("sync_logs")
+      .select("created_at")
+      .order("created_at", { ascending: false })
+      .limit(1);
+
+    if (!syncError && lastSync && lastSync.length > 0) {
+      const lastSyncDate = new Date((lastSync[0] as SyncLog).created_at);
+      // Add a small buffer to avoid missing orders
+      lastSyncDate.setMinutes(lastSyncDate.getMinutes() - 5);
+      startDate = lastSyncDate;
     }
 
-    // If there's an error with the table structure, use a different approach
-    let startDate = new Date()
-    startDate.setDate(startDate.getDate() - 7) // Default to 7 days ago
+    console.log(`[Cron] Fetching orders since ${startDate.toISOString()}`);
 
-    if (tableError) {
-      console.log("Using default start date due to table error:", tableError)
-    } else {
-      // Try to get the last sync timestamp
-      try {
-        const { data: syncData, error: syncError } = await supabase
-          .from("sync_logs") // Try an alternative table name
-          .select("*")
-          .order("created_at", { ascending: false })
-          .limit(1)
+    // Fetch all orders from Shopify
+    const orders = await fetchAllOrdersFromShopify(startDate);
+    console.log(`[Cron] Found ${orders.length} orders to sync`);
 
-        if (!syncError && syncData && syncData.length > 0) {
-          const lastSync = new Date(syncData[0].created_at)
-          // Add a small buffer to avoid missing orders
-          lastSync.setMinutes(lastSync.getMinutes() - 10)
-          startDate = lastSync
+    let processedCount = 0;
+    let errorCount = 0;
+
+    // Sync orders to database
+    if (orders.length > 0) {
+      for (const order of orders) {
+        try {
+          // Sync order data
+          const orderData = {
+            id: String(order.id),
+            order_number: String(order.order_number),
+            processed_at: order.processed_at || order.created_at,
+            financial_status: order.financial_status,
+            fulfillment_status: order.fulfillment_status,
+            total_price: order.current_total_price ? parseFloat(order.current_total_price) : null,
+            currency_code: order.currency,
+            customer_email: order.email,
+            updated_at: order.updated_at,
+            customer_id: order.customer?.id || null,
+            shopify_id: String(order.id),
+            subtotal_price: order.subtotal_price ? parseFloat(order.subtotal_price) : null,
+            total_tax: order.total_tax ? parseFloat(order.total_tax) : null,
+            customer_reference: order.checkout_token || order.cart_token || null,
+            raw_shopify_order_data: order as unknown as Json,
+            created_at: order.created_at,
+          };
+
+          const { error: orderError } = await db
+            .from("orders")
+            .upsert(orderData, { onConflict: "id" });
+
+          if (orderError) {
+            console.error(`[Cron] Error syncing order ${order.name}:`, orderError);
+            errorCount++;
+            continue;
+          }
+
+          // Sync line items
+          if (order.line_items && order.line_items.length > 0) {
+            const lineItemsData = order.line_items.map((li: ShopifyLineItem) => ({
+              line_item_id: li.id,
+              order_id: order.id,
+              product_id: li.product_id,
+              variant_id: li.variant_id,
+              title: li.title,
+              sku: li.sku,
+              vendor_name: li.vendor,
+              quantity: li.quantity,
+              price: parseFloat(li.price),
+              total_discount: li.total_discount ? parseFloat(li.total_discount) : null,
+              fulfillment_status: li.fulfillment_status,
+              tax_lines: li.tax_lines as unknown as Json,
+              raw_shopify_line_item_data: li as unknown as Json,
+            }));
+
+            // Delete existing line items for this order
+            await db
+              .from("order_line_items")
+              .delete()
+              .match({ order_id: order.id });
+
+            // Insert new line items
+            const { error: lineItemsError } = await db
+              .from("order_line_items")
+              .insert(lineItemsData);
+
+            if (lineItemsError) {
+              console.error(`[Cron] Error syncing line items for order ${order.name}:`, lineItemsError);
+              errorCount++;
+              continue;
+            }
+          }
+
+          processedCount++;
+        } catch (error) {
+          console.error(`[Cron] Error processing order ${order.name}:`, error);
+          errorCount++;
         }
-      } catch (syncError) {
-        console.log("Error fetching last sync timestamp, using default:", syncError)
       }
-    }
 
-    console.log(`Fetching orders since ${startDate.toISOString()}`)
-
-    // Fetch orders from Shopify
-    const orders = await fetchOrdersFromShopify(startDate)
-    console.log(`Fetched ${orders.length} orders from Shopify`)
-
-    // Process each order
-    let processedCount = 0
-    let lastProcessedOrder = null
-    for (const order of orders) {
-      await processShopifyOrder(order)
-      processedCount++
-      lastProcessedOrder = order
-    }
-
-    // Update the sync timestamp
-    const now = new Date().toISOString()
-
-    // Try to record the sync in the appropriate table
-    try {
-      // First try sync_logs table
-      const { error: logError } = await supabase.from("sync_logs").insert({
-        created_at: now,
+      // Log successful sync
+      const syncLog = {
         type: "cron_job",
         details: {
-          ordersProcessed: processedCount,
-          startDate: startDate.toISOString(),
-          endDate: now,
-          lastOrderId: lastProcessedOrder?.id,
-          lastOrderName: lastProcessedOrder?.name,
-          lastOrderNumber: lastProcessedOrder?.order_number,
-          source: "vercel_cron",
-        },
-      })
+          orders_synced: processedCount,
+          errors: errorCount,
+          start_date: startDate.toISOString(),
+          end_date: new Date().toISOString(),
+          period: `${startDate.toISOString()} to ${new Date().toISOString()}`,
+        } as Json,
+      };
 
+      const { error: logError } = await db.from("sync_logs").insert(syncLog);
       if (logError) {
-        // If that fails, try sync_status table without the type column
-        const { error: statusError } = await supabase.from("sync_status").insert({
-          created_at: now,
-          details: {
-            ordersProcessed: processedCount,
-            startDate: startDate.toISOString(),
-            endDate: now,
-            lastOrderId: lastProcessedOrder?.id,
-            lastOrderName: lastProcessedOrder?.name,
-            lastOrderNumber: lastProcessedOrder?.order_number,
-            source: "vercel_cron",
-          },
-        })
-
-        if (statusError) {
-          console.error("Error updating sync status:", statusError)
-        }
+        console.error("[Cron] Error logging sync:", logError);
       }
-    } catch (updateError) {
-      console.error("Error recording sync operation:", updateError)
     }
 
-    console.log(`Cron job completed successfully. Processed ${processedCount} orders.`)
     return NextResponse.json({
       success: true,
-      ordersProcessed: processedCount,
-      timestamp: now,
-    })
+      orders_synced: processedCount,
+      errors: errorCount,
+      start_date: startDate.toISOString(),
+      end_date: new Date().toISOString(),
+    });
   } catch (error: any) {
-    console.error("Error syncing Shopify orders:", error)
+    console.error("[Cron] Error in sync-shopify-orders:", error);
     return NextResponse.json(
-      {
-        error: error.message || "Failed to sync Shopify orders",
-        stack: process.env.NODE_ENV === "development" ? error.stack : undefined,
-      },
-      { status: 500 },
-    )
+      { error: error.message || "Internal server error" },
+      { status: 500 }
+    );
   }
 }
 

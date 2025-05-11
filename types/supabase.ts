@@ -1,8 +1,46 @@
-export type Json = string | number | boolean | null | { [key: string]: Json | undefined } | Json[]
+export type Json =
+  | string
+  | number
+  | boolean
+  | null
+  | { [key: string]: Json | undefined }
+  | Json[]
 
 export interface Database {
   public: {
     Tables: {
+      products: {
+        Row: {
+          id: string
+          product_id: string
+          name: string
+          vendor_name: string
+          sku: string
+          edition_size: string | null
+          price: number | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          product_id: string
+          name: string
+          vendor_name: string
+          sku: string
+          edition_size?: string | null
+          price?: number | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          product_id?: string
+          name?: string
+          vendor_name?: string
+          sku?: string
+          edition_size?: string | null
+          price?: number | null
+          created_at?: string
+        }
+      }
       order_line_items: {
         Row: {
           id: number
@@ -11,15 +49,17 @@ export interface Database {
           line_item_id: string
           product_id: string
           variant_id: string | null
+          title: string
+          sku: string | null
+          vendor_name: string | null
+          quantity: number
+          price: number
+          total_discount: number | null
+          fulfillment_status: string | null
+          status: string
           edition_number: number | null
           edition_total: number | null
-          created_at: string | null
-          updated_at: string | null
-          status: string | null
-          removed_reason: string | null
-          vendor_name: string | null
-          certificate_url: string | null
-          certificate_token: string | null
+          created_at: string
           certificate_generated_at: string | null
         }
         Insert: {
@@ -29,15 +69,17 @@ export interface Database {
           line_item_id: string
           product_id: string
           variant_id?: string | null
+          title: string
+          sku?: string | null
+          vendor_name?: string | null
+          quantity: number
+          price: number
+          total_discount?: number | null
+          fulfillment_status?: string | null
+          status: string
           edition_number?: number | null
           edition_total?: number | null
-          created_at?: string | null
-          updated_at?: string | null
-          status?: string | null
-          removed_reason?: string | null
-          vendor_name?: string | null
-          certificate_url?: string | null
-          certificate_token?: string | null
+          created_at?: string
           certificate_generated_at?: string | null
         }
         Update: {
@@ -47,18 +89,19 @@ export interface Database {
           line_item_id?: string
           product_id?: string
           variant_id?: string | null
+          title?: string
+          sku?: string | null
+          vendor_name?: string | null
+          quantity?: number
+          price?: number
+          total_discount?: number | null
+          fulfillment_status?: string | null
+          status?: string
           edition_number?: number | null
           edition_total?: number | null
-          created_at?: string | null
-          updated_at?: string | null
-          status?: string | null
-          removed_reason?: string | null
-          vendor_name?: string | null
-          certificate_url?: string | null
-          certificate_token?: string | null
+          created_at?: string
           certificate_generated_at?: string | null
         }
-        Relationships: []
       }
     }
     Views: {

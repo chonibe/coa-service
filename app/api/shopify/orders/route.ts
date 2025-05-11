@@ -1,168 +1,394 @@
 import { NextResponse } from "next/server"
-import { createClient } from "@supabase/supabase-js"
+import type { NextRequest } from "next/server"
+import { supabase } from "@/lib/supabase"
+import { SHOPIFY_SHOP, SHOPIFY_ACCESS_TOKEN } from "@/lib/env"
+import type { Json } from "@/types/supabase"; // Assuming Json type is exported from supabase types
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-)
+interface ShopifyCustomer {
+  id: number;
+  // We will still receive other fields from Shopify within the order object,
+  // but we won't map them to our 'customers' table columns other than 'id'.
+  // The 'raw_shopify_customer_data' was also removed from DB sync.
+  created_at?: string; // Keep if your DB table has this and it's non-nullable
+  updated_at?: string; // Keep if your DB table has this and it's non-nullable
+  [key: string]: any; // Allow other properties from Shopify's response
+}
+
+interface ShopifyAddress {
+  address1: string | null;
+  address2: string | null;
+  city: string | null;
+  province: string | null;
+  country: string | null;
+  zip: string | null;
+  phone: string | null;
+  name: string | null;
+  // other address fields
+  [key: string]: any;
+}
+
 
 interface ShopifyLineItem {
-  id: number
-  product_id: number
-  variant_id: number
-  title: string
-  vendor: string
-  properties: Array<{ name: string; value: string }>
+  id: number;
+  variant_id: number;
+  title: string;
+  quantity: number;
+  price: string;
+  sku: string;
+  vendor: string;
+  properties: any[];
 }
 
 interface ShopifyOrder {
-  id: number
-  name: string
-  created_at: string
-  updated_at: string
-  line_items: ShopifyLineItem[]
+  id: number; // Shopify Order ID
+  name: string; // Shopify Order Name (e.g., #1260)
+  order_number: number; // Shopify order_number field
+  processed_at: string | null; // Added for mapping
+  email: string | null; // Added for mapping (top-level email on order)
+  created_at: string;
+  updated_at: string;
+  financial_status: string;
+  fulfillment_status: string | null;
+  currency: string; // Will be mapped to currency_code
+  current_total_price: string; // Comes as string
+  subtotal_price: string; // Comes as string
+  total_tax: string | null; // Comes as string
+  total_discounts: string; // Source for total_discounts if needed, but not in user's final table schema
+  order_status_url: string | null; // Source for order_status_url if needed, but not in user's table
+  customer: ShopifyCustomer | null;
+  line_items: Array<ShopifyLineItem>;
+  checkout_token: string | null; // Added for mapping to customer_reference
+  cart_token: string | null; // Alternative for customer_reference
+  shipping_lines?: Array<{price: string; [key:string]: any}>; // Keep for total_shipping_price calculation if ever re-added
+  [key: string]: any; // Allow other properties from Shopify
 }
 
-async function fetchShopifyOrders(): Promise<ShopifyOrder[]> {
-  const shopifyUrl = process.env.SHOPIFY_STORE_URL
-  const accessToken = process.env.SHOPIFY_ACCESS_TOKEN
+interface DatabaseOrder { // For your local 'orders' table, if you enrich top-level info
+  order_id: string;
+  order_name: string;
+  // other fields you might sync to your main 'orders' table
+  created_at: string;
+  updated_at: string;
+  financial_status?: string;
+  email?: string;
+}
 
-  if (!shopifyUrl || !accessToken) {
-    throw new Error("Shopify credentials not configured")
+interface LineItemData {
+  order_id: string;
+  shopify_line_item_id: number;
+  variant_id: number;
+  title: string;
+  quantity: number;
+  price: number;
+  sku: string;
+  vendor: string;
+  properties: any[];
+  product_id?: string;
+}
+
+export async function GET(request: NextRequest) {
+  try {
+    const searchParams = request.nextUrl.searchParams;
+    const status = searchParams.get("status") || "all";
+    const search = searchParams.get("search") || "";
+    const cursor = searchParams.get("cursor") || null;
+    const limit = parseInt(searchParams.get("limit") || "20");
+    const lastUpdated = searchParams.get("lastUpdated") || null;
+
+    // First, try to get orders from Supabase
+    if (supabase) {
+      let query = supabase
+        .from("order_items")
+        .select("*")
+        .order("created_at", { ascending: false })
+        .limit(limit);
+
+      // Apply filters
+      if (status !== "all") {
+        query = query.eq("status", status);
+      }
+      if (search) {
+        query = query.ilike("order_name", `%${search}%`);
+      }
+      if (lastUpdated) {
+        query = query.gt("updated_at", lastUpdated);
+      }
+
+      const { data: supabaseData, error: supabaseError } = await query;
+
+      if (!supabaseError && supabaseData) {
+        // Transform Supabase data to match the expected format
+        const transformedOrders = transformSupabaseDataToOrders(supabaseData);
+        return NextResponse.json({
+          orders: transformedOrders,
+          pagination: {
+            nextCursor: null,
+            hasNextPage: false
+          }
+        });
+      }
+    }
+
+    // If Supabase fails or is not available, fall back to Shopify API
+    const shopifyOrders = await fetchOrdersFromShopify();
+    const transformedOrders = transformShopifyOrdersToOrders(shopifyOrders);
+    
+    // Sync to Supabase in the background
+    if (supabase) {
+      syncShopifyDataToSupabase(shopifyOrders).catch(error => {
+        console.error("Background sync failed:", error);
+      });
+    }
+
+    return NextResponse.json({
+      orders: transformedOrders,
+      pagination: {
+        nextCursor: null,
+        hasNextPage: false
+      }
+    });
+  } catch (error: any) {
+    console.error("Error in orders API:", error);
+    return NextResponse.json(
+      { error: error.message || "Internal server error" },
+      { status: 500 }
+    );
   }
+}
 
-  // Calculate date 30 days ago
-  const thirtyDaysAgo = new Date()
-  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
+// New endpoint for checking updates
+export async function POST(request: NextRequest) {
+  try {
+    const { lastUpdated } = await request.json();
+    
+    if (!supabase) {
+      return NextResponse.json(
+        { error: "Database not available" },
+        { status: 503 }
+      );
+    }
 
+    const { data, error } = await supabase
+      .from("order_items")
+      .select("*")
+      .gt("updated_at", lastUpdated)
+      .order("updated_at", { ascending: false });
+
+    if (error) {
+      throw error;
+    }
+
+    const transformedOrders = transformSupabaseDataToOrders(data || []);
+    return NextResponse.json({
+      orders: transformedOrders,
+      hasUpdates: transformedOrders.length > 0
+    });
+  } catch (error: any) {
+    console.error("Error checking for updates:", error);
+    return NextResponse.json(
+      { error: error.message || "Internal server error" },
+      { status: 500 }
+    );
+  }
+}
+
+async function syncShopifyDataToSupabase(orders: ShopifyOrder[]) {
+  if (!supabase) {
+    console.error("Supabase client is not initialized. Cannot sync data.");
+    return;
+  }
+  console.log(`[DB Sync] Starting sync for ${orders.length} orders.`);
+
+  let errors = 0;
+
+  for (const shopifyOrder of orders) {
+    try {
+      let customerIdForOrderTable: number | null = null;
+      if (shopifyOrder.customer && typeof shopifyOrder.customer.id === 'number') {
+        customerIdForOrderTable = shopifyOrder.customer.id;
+      }
+
+      const orderData = {
+        id: String(shopifyOrder.id),
+        order_number: String(shopifyOrder.order_number),
+        processed_at: shopifyOrder.processed_at || shopifyOrder.created_at,
+        financial_status: shopifyOrder.financial_status,
+        fulfillment_status: shopifyOrder.fulfillment_status,
+        total_price: shopifyOrder.current_total_price ? parseFloat(shopifyOrder.current_total_price) : null,
+        currency_code: shopifyOrder.currency,
+        customer_email: shopifyOrder.email,
+        updated_at: shopifyOrder.updated_at,
+        customer_id: customerIdForOrderTable,
+        shopify_id: String(shopifyOrder.id),
+        subtotal_price: shopifyOrder.subtotal_price ? parseFloat(shopifyOrder.subtotal_price) : null,
+        total_tax: shopifyOrder.total_tax ? parseFloat(shopifyOrder.total_tax) : null,
+        customer_reference: shopifyOrder.checkout_token || shopifyOrder.cart_token || null,
+        raw_shopify_order_data: shopifyOrder as unknown as Json,
+        created_at: shopifyOrder.created_at,
+      };
+      
+      const { data: syncedOrder, error: orderError } = await supabase
+        .from('orders')
+        .upsert(orderData)
+        .select()
+        .single();
+
+      if (orderError || !syncedOrder) {
+        console.error('[Order Sync] Error syncing order:', orderError);
+        errors++;
+        continue;
+      }
+
+      // Process line items
+      for (const lineItem of shopifyOrder.line_items) {
+        const lineItemData: Record<string, unknown> = {
+          order_id: syncedOrder.id,
+          shopify_line_item_id: lineItem.id,
+          variant_id: lineItem.variant_id,
+          title: lineItem.title,
+          quantity: lineItem.quantity,
+          price: parseFloat(lineItem.price),
+          sku: lineItem.sku || '',
+          vendor: lineItem.vendor || '',
+          properties: lineItem.properties || []
+        };
+
+        // Try to find the associated product
+        if (lineItem.variant_id) {
+          const { data: product } = await supabase
+            .from('products')
+            .select('id')
+            .eq('variant_id', lineItem.variant_id)
+            .single();
+
+          if (product?.id) {
+            lineItemData.product_id = product.id;
+          }
+        }
+
+        const { error: lineItemError } = await supabase
+          .from('order_items')
+          .upsert(lineItemData);
+
+        if (lineItemError) {
+          console.error('[Order Sync] Error syncing line item:', lineItemError);
+          errors++;
+        }
+      }
+    } catch (e: any) {
+      console.error(`[DB Sync] Overall error processing order ${shopifyOrder.name}: ${e.message}`, e);
+    }
+  }
+  console.log("[DB Sync] Finished sync process. Errors:", errors);
+}
+
+// Helper function to fetch orders from Shopify
+async function fetchOrdersFromShopify() {
   const response = await fetch(
-    `${shopifyUrl}/admin/api/2023-10/orders.json?limit=250&created_at_min=${thirtyDaysAgo.toISOString()}&status=any`,
+    `https://${SHOPIFY_SHOP}/admin/api/2024-01/orders.json?status=any&limit=250`,
     {
       headers: {
-        "X-Shopify-Access-Token": accessToken,
+        "X-Shopify-Access-Token": SHOPIFY_ACCESS_TOKEN,
         "Content-Type": "application/json",
       },
     }
-  )
+  );
 
   if (!response.ok) {
-    throw new Error(`Failed to fetch Shopify orders: ${response.statusText}`)
+    throw new Error(`Failed to fetch orders from Shopify: ${response.statusText}`);
   }
 
-  const data = await response.json()
-  return data.orders
+  const data = await response.json();
+  return data.orders;
 }
 
-export async function GET(request: Request) {
-  try {
-    const { searchParams } = new URL(request.url)
-    const page = parseInt(searchParams.get("page") || "1")
-    const status = searchParams.get("status") || "all"
-    const search = searchParams.get("search") || ""
-    const pageSize = 20
+// Helper function to transform Shopify orders to our format
+function transformShopifyOrdersToOrders(shopifyOrders: any[]) {
+  return shopifyOrders.map(order => ({
+    id: order.id.toString(),
+    order_id: order.id.toString(),
+    order_name: order.name,
+    created_at: order.created_at,
+    updated_at: order.updated_at,
+    financial_status: order.financial_status,
+    customer: order.customer ? {
+      first_name: order.customer.first_name,
+      last_name: order.customer.last_name
+    } : null,
+    line_items: order.line_items.map((li: any) => ({
+      id: li.id.toString(),
+      line_item_id: li.id.toString(),
+      product_id: li.product_id.toString(),
+      title: li.title,
+      quantity: li.quantity,
+      price: li.price,
+      total: (parseFloat(li.price) * li.quantity).toFixed(2),
+      vendor: li.vendor,
+      image: li.image?.src || "/placeholder.svg?height=400&width=400",
+      tags: [],
+      fulfillable: li.fulfillable_quantity > 0,
+      is_limited_edition: true,
+      total_inventory: "100",
+      inventory_quantity: li.fulfillable_quantity,
+      status: "active",
+      order_info: {
+        order_id: order.id.toString(),
+        order_number: order.name.replace("#", ""),
+        processed_at: order.processed_at,
+        fulfillment_status: order.fulfillment_status,
+        financial_status: order.financial_status,
+      },
+    })),
+  }));
+}
 
-    // Fetch orders from both sources
-    const [dbOrders, shopifyOrders] = await Promise.all([
-      // Fetch from database
-      (async () => {
-        let query = supabase
-          .from("order_line_items")
-          .select("*")
-          .order("updated_at", { ascending: false })
-          .range((page - 1) * pageSize, page * pageSize - 1)
+// Helper function to transform Supabase data to orders format
+function transformSupabaseDataToOrders(supabaseData: any[]) {
+  const orderMap = new Map();
 
-        if (status !== "all") {
-          query = query.eq("status", status)
-        }
-
-        if (search) {
-          query = query.or(
-            `order_name.ilike.%${search}%,order_id.ilike.%${search}%,product_id.ilike.%${search}%`
-          )
-        }
-
-        const { data: orders, error: ordersError } = await query
-
-        if (ordersError) {
-          throw ordersError
-        }
-
-        return orders
-      })(),
-      // Fetch from Shopify
-      fetchShopifyOrders()
-    ])
-
-    // Get unique product IDs from database orders
-    const productIds = [...new Set(dbOrders.map(order => order.product_id))]
-
-    // Fetch product details from our database
-    const { data: products, error: productsError } = await supabase
-      .from("products")
-      .select("id, title, vendor, certificate_url")
-      .in("id", productIds)
-
-    if (productsError) {
-      throw productsError
+  supabaseData.forEach((item) => {
+    if (!orderMap.has(item.order_id)) {
+      orderMap.set(item.order_id, {
+        id: item.order_id,
+        order_id: item.order_id,
+        order_name: item.order_name,
+        created_at: item.created_at,
+        updated_at: item.updated_at,
+        financial_status: "paid", // Default value
+        line_items: [],
+      });
     }
 
-    // Create a map of product details
-    const productMap = products.reduce((acc, product) => {
-      acc[product.id] = product
-      return acc
-    }, {} as Record<string, any>)
-
-    // Transform database orders with product details
-    const dbOrdersWithDetails = dbOrders.map(order => ({
-      ...order,
-      product: productMap[order.product_id] || {
-        title: "Unknown Product",
-        vendor: "Unknown",
-        certificate_url: null
+    const order = orderMap.get(item.order_id);
+    order.line_items.push({
+      id: item.line_item_id,
+      line_item_id: item.line_item_id,
+      product_id: item.product_id,
+      title: `Product ${item.product_id}`,
+      quantity: 1,
+      price: "0.00",
+      total: "0.00",
+      vendor: item.vendor_name || "Unknown Vendor",
+      image: "/placeholder.svg?height=400&width=400",
+      tags: [],
+      fulfillable: item.status === "active",
+      is_limited_edition: true,
+      total_inventory: item.edition_total?.toString() || "100",
+      inventory_quantity: 0,
+      status: item.status,
+      removed_reason: item.removed_reason,
+      order_info: {
+        order_id: item.order_id,
+        order_number: item.order_name?.replace("#", "") || item.order_id,
+        processed_at: item.created_at,
+        fulfillment_status: "fulfilled",
+        financial_status: "paid",
       },
-      source: "database"
-    }))
+    });
+  });
 
-    // Transform Shopify orders to match our format
-    const transformedShopifyOrders = shopifyOrders.map(order => {
-      const lineItem = order.line_items[0]
-      return {
-        order_id: order.id.toString(),
-        order_name: order.name,
-        line_item_id: lineItem?.id.toString() || "",
-        product_id: lineItem?.product_id?.toString() || "",
-        variant_id: lineItem?.variant_id?.toString() || "",
-        created_at: order.created_at,
-        updated_at: order.updated_at,
-        status: "active",
-        product: {
-          title: lineItem?.title || "Unknown Product",
-          vendor: lineItem?.vendor || "Unknown",
-          certificate_url: lineItem?.properties?.find(p => p.name === "certificate_url")?.value || null
-        },
-        source: "shopify"
-      }
-    })
+  return Array.from(orderMap.values());
+}
 
-    // Combine and sort all orders by updated_at
-    const allOrders = [...dbOrdersWithDetails, ...transformedShopifyOrders]
-      .sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime())
-
-    // Apply pagination
-    const start = (page - 1) * pageSize
-    const end = start + pageSize
-    const paginatedOrders = allOrders.slice(start, end)
-
-    return NextResponse.json({
-      orders: paginatedOrders,
-      hasMore: allOrders.length > end,
-      total: allOrders.length,
-    })
-  } catch (error: any) {
-    console.error("Error fetching orders:", error)
-    return NextResponse.json(
-      { error: error.message || "Failed to fetch orders" },
-      { status: 500 }
-    )
-  }
-} 
+// Removed the old mergeOrders and DatabaseOrder/Product enrichment from this file as it's simplified.
+// The detailed enrichment now happens in the single order detail API if needed. 
