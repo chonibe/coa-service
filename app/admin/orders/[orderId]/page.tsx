@@ -38,23 +38,28 @@ interface ShopifyLineItem {
 
 interface ShopifyOrderData {
   id: number;
-  name: string; // e.g., #1001
-  email: string; // Customer email
+  name: string;
+  email: string;
   created_at: string;
   updated_at: string;
-  financial_status: string; // e.g., "paid", "pending", "refunded"
-  fulfillment_status: string | null; // e.g., null, "fulfilled", "partial", "unfulfilled"
+  financial_status: string;
+  fulfillment_status: string | null;
   currency: string;
   current_total_price: string;
   subtotal_price: string;
   total_tax: string;
+  total_discounts: string;
+  discount_codes: Array<{
+    code: string;
+    amount: string;
+    type: string;
+  }>;
   total_shipping_price_set: { shop_money: { amount: string } };
   customer: ShopifyCustomer;
   line_items: ShopifyLineItem[];
   shipping_address?: ShopifyAddress;
   billing_address?: ShopifyAddress;
-  // Add other order properties you need
-  order_status_url: string; // Link to Shopify order status page
+  order_status_url: string;
 }
 
 interface ApiResponse {
@@ -82,6 +87,14 @@ interface Order {
   currency_code: string;
   customer_email: string;
   line_items: OrderLineItem[];
+  total_discounts: number;
+  subtotal_price: number;
+  total_tax: number;
+  discount_codes: Array<{
+    code: string;
+    amount: number;
+    type: string;
+  }>;
 }
 
 interface DatabaseOrderLineItem {
@@ -96,6 +109,92 @@ interface DatabaseOrderLineItem {
 }
 
 async function getOrderData(orderId: string) {
+  // Try to fetch from Shopify first
+  try {
+    const shop = process.env.SHOPIFY_SHOP;
+    const token = process.env.SHOPIFY_ACCESS_TOKEN;
+    
+    // First try to get the order from Supabase to get the Shopify ID
+    const cookieStore = await cookies();
+    const supabase = createServerClient<Database>(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      {
+        cookies: {
+          get(name: string) {
+            return cookieStore.get(name)?.value;
+          },
+          set(name: string, value: string, options: any) {},
+          remove(name: string, options: any) {},
+        },
+      }
+    );
+
+    const { data: orderData } = await supabase
+      .from('orders')
+      .select('*')
+      .eq('id', orderId)
+      .single();
+
+    if (!orderData) {
+      console.error('Order not found in Supabase');
+      return null;
+    }
+
+    // Use the Shopify ID from the raw data
+    const shopifyOrderId = orderData.raw_shopify_order_data?.id;
+    if (!shopifyOrderId) {
+      console.error('No Shopify ID found in order data');
+      return null;
+    }
+
+    const res = await fetch(`https://${shop}/admin/api/2023-10/orders/${shopifyOrderId}.json`, {
+      headers: {
+        'X-Shopify-Access-Token': token!,
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (res.ok) {
+      const { order: shopifyOrder } = await res.json();
+      // Transform Shopify data to our Order interface
+      return {
+        id: shopifyOrder.id.toString(),
+        order_number: shopifyOrder.name.replace('#', ''),
+        processed_at: shopifyOrder.created_at,
+        financial_status: shopifyOrder.financial_status,
+        fulfillment_status: shopifyOrder.fulfillment_status || 'pending',
+        total_price: parseFloat(shopifyOrder.current_total_price),
+        currency_code: shopifyOrder.currency,
+        customer_email: shopifyOrder.email,
+        total_discounts: parseFloat(shopifyOrder.total_discounts || '0'),
+        subtotal_price: parseFloat(shopifyOrder.subtotal_price || '0'),
+        total_tax: parseFloat(shopifyOrder.total_tax || '0'),
+        discount_codes: shopifyOrder.discount_codes?.map(code => ({
+          code: code.code,
+          amount: parseFloat(code.amount),
+          type: code.type
+        })) || [],
+        line_items: shopifyOrder.line_items.map((item: any) => ({
+          id: item.id.toString(),
+          title: item.title,
+          quantity: item.quantity,
+          price: parseFloat(item.price),
+          sku: item.sku,
+          vendor_name: item.vendor,
+          product_id: item.product_id?.toString() || '',
+          variant_id: item.variant_id?.toString() || null,
+          fulfillment_status: item.fulfillment_status || 'pending'
+        })),
+      };
+    } else {
+      console.error('Failed to fetch order from Shopify:', await res.text());
+    }
+  } catch (err) {
+    console.error('Error fetching order from Shopify:', err);
+  }
+
+  // Fallback: fetch from Supabase
   try {
     const cookieStore = await cookies();
     const supabase = createServerClient<Database>(
@@ -106,48 +205,22 @@ async function getOrderData(orderId: string) {
           get(name: string) {
             return cookieStore.get(name)?.value;
           },
-          set(name: string, value: string, options: any) {
-            // Server components can't set cookies
-          },
-          remove(name: string, options: any) {
-            // Server components can't remove cookies
-          },
+          set(name: string, value: string, options: any) {},
+          remove(name: string, options: any) {},
         },
       }
     );
-
-    console.log('Fetching order:', orderId);
-
-    // First, check if the order exists
-    const { data: orderData, error: orderError } = await supabase
+    const { data: orderData } = await supabase
       .from('orders')
       .select('*')
       .eq('id', orderId)
       .single();
-
-    if (orderError) {
-      console.error('Error fetching order:', orderError);
-      return null;
-    }
-
-    if (!orderData) {
-      console.log('Order not found:', orderId);
-      return null;
-    }
-
-    // Then fetch the line items
-    const { data: lineItems, error: lineItemsError } = await supabase
-      .from('order_line_items')
+    if (!orderData) return null;
+    const { data: lineItems } = await supabase
+      .from('order_line_items_v2')
       .select('*')
       .eq('order_id', orderId);
-
-    if (lineItemsError) {
-      console.error('Error fetching line items:', lineItemsError);
-      return null;
-    }
-
-    // Transform the data to match our Order interface
-    const order: Order = {
+    return {
       id: orderData.id,
       order_number: orderData.order_number,
       processed_at: orderData.processed_at,
@@ -156,6 +229,14 @@ async function getOrderData(orderId: string) {
       total_price: orderData.total_price,
       currency_code: orderData.currency_code,
       customer_email: orderData.customer_email,
+      total_discounts: orderData.total_discounts || 0,
+      subtotal_price: orderData.subtotal_price || 0,
+      total_tax: orderData.total_tax || 0,
+      discount_codes: orderData.raw_shopify_order_data?.discount_codes?.map((code: any) => ({
+        code: code.code,
+        amount: parseFloat(code.amount),
+        type: code.type
+      })) || [],
       line_items: lineItems?.map(item => ({
         id: item.line_item_id,
         title: item.title,
@@ -164,12 +245,10 @@ async function getOrderData(orderId: string) {
         sku: item.sku,
         vendor_name: item.vendor_name,
         product_id: item.product_id,
-        variant_id: item.variant_id
+        variant_id: item.variant_id,
+        fulfillment_status: item.fulfillment_status || 'pending'
       })) || []
     };
-
-    console.log('Transformed order data:', order);
-    return order;
   } catch (error) {
     console.error('Error in getOrderData:', error);
     return null;

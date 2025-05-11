@@ -16,6 +16,7 @@ interface Order {
   total_price: number;
   currency_code: string;
   customer_email: string;
+  orderId: string;
 }
 
 interface OrdersListProps {
