@@ -14,16 +14,10 @@ export async function GET(request: Request) {
     const search = searchParams.get("search") || ""
     const pageSize = 20
 
+    // First, fetch the orders
     let query = supabase
       .from("order_line_items")
-      .select(`
-        *,
-        product:products (
-          title,
-          vendor,
-          certificate_url
-        )
-      `)
+      .select("*")
       .order("updated_at", { ascending: false })
       .range((page - 1) * pageSize, page * pageSize - 1)
 
@@ -39,11 +33,36 @@ export async function GET(request: Request) {
       )
     }
 
-    const { data: orders, error, count } = await query
+    const { data: orders, error: ordersError } = await query
 
-    if (error) {
-      throw error
+    if (ordersError) {
+      throw ordersError
     }
+
+    // Get unique product IDs from orders
+    const productIds = [...new Set(orders.map(order => order.product_id))]
+
+    // Fetch product details for these IDs
+    const { data: products, error: productsError } = await supabase
+      .from("products")
+      .select("id, title, vendor, certificate_url")
+      .in("id", productIds)
+
+    if (productsError) {
+      throw productsError
+    }
+
+    // Create a map of product details
+    const productMap = products.reduce((acc, product) => {
+      acc[product.id] = product
+      return acc
+    }, {} as Record<string, any>)
+
+    // Combine orders with their product details
+    const ordersWithProducts = orders.map(order => ({
+      ...order,
+      product: productMap[order.product_id] || null
+    }))
 
     // Get total count for pagination
     const { count: totalCount } = await supabase
@@ -51,7 +70,7 @@ export async function GET(request: Request) {
       .select("*", { count: "exact", head: true })
 
     return NextResponse.json({
-      orders,
+      orders: ordersWithProducts,
       hasMore: totalCount ? page * pageSize < totalCount : false,
       total: totalCount,
     })
