@@ -79,6 +79,11 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       icon: <ShoppingCart className="h-5 w-5" />,
       submenu: [
         {
+          title: "All Orders",
+          href: "/admin/orders",
+          icon: <ShoppingCart className="h-4 w-4" />,
+        },
+        {
           title: "Missing Orders",
           href: "/admin/missing-orders",
           icon: <ShoppingCart className="h-4 w-4" />,
