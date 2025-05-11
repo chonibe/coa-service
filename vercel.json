@@ -3,6 +3,10 @@
     {
       "path": "/api/admin/run-cron?secret=${CRON_SECRET}",
       "schedule": "0 */6 * * *"
+    },
+    {
+      "path": "/api/cron/sync-shopify-products?secret=${CRON_SECRET}",
+      "schedule": "0 */6 * * *"
     }
   ]
 }
