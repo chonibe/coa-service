@@ -6,6 +6,50 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 )
 
+interface ShopifyLineItem {
+  id: number
+  product_id: number
+  variant_id: number
+}
+
+interface ShopifyOrder {
+  id: number
+  name: string
+  created_at: string
+  updated_at: string
+  line_items: ShopifyLineItem[]
+}
+
+async function fetchShopifyOrders(): Promise<ShopifyOrder[]> {
+  const shopifyUrl = process.env.SHOPIFY_STORE_URL
+  const accessToken = process.env.SHOPIFY_ACCESS_TOKEN
+
+  if (!shopifyUrl || !accessToken) {
+    throw new Error("Shopify credentials not configured")
+  }
+
+  // Calculate date 30 days ago
+  const thirtyDaysAgo = new Date()
+  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
+
+  const response = await fetch(
+    `${shopifyUrl}/admin/api/2023-10/orders.json?limit=250&created_at_min=${thirtyDaysAgo.toISOString()}&status=any`,
+    {
+      headers: {
+        "X-Shopify-Access-Token": accessToken,
+        "Content-Type": "application/json",
+      },
+    }
+  )
+
+  if (!response.ok) {
+    throw new Error(`Failed to fetch Shopify orders: ${response.statusText}`)
+  }
+
+  const data = await response.json()
+  return data.orders
+}
+
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url)
@@ -14,35 +58,42 @@ export async function GET(request: Request) {
     const search = searchParams.get("search") || ""
     const pageSize = 20
 
-    // First, fetch the orders
-    let query = supabase
-      .from("order_line_items")
-      .select("*")
-      .order("updated_at", { ascending: false })
-      .range((page - 1) * pageSize, page * pageSize - 1)
+    // Fetch orders from both sources
+    const [dbOrders, shopifyOrders] = await Promise.all([
+      // Fetch from database
+      (async () => {
+        let query = supabase
+          .from("order_line_items")
+          .select("*")
+          .order("updated_at", { ascending: false })
+          .range((page - 1) * pageSize, page * pageSize - 1)
 
-    // Apply status filter
-    if (status !== "all") {
-      query = query.eq("status", status)
-    }
+        if (status !== "all") {
+          query = query.eq("status", status)
+        }
 
-    // Apply search filter
-    if (search) {
-      query = query.or(
-        `order_name.ilike.%${search}%,order_id.ilike.%${search}%,product_id.ilike.%${search}%`
-      )
-    }
+        if (search) {
+          query = query.or(
+            `order_name.ilike.%${search}%,order_id.ilike.%${search}%,product_id.ilike.%${search}%`
+          )
+        }
 
-    const { data: orders, error: ordersError } = await query
+        const { data: orders, error: ordersError } = await query
 
-    if (ordersError) {
-      throw ordersError
-    }
+        if (ordersError) {
+          throw ordersError
+        }
 
-    // Get unique product IDs from orders
-    const productIds = [...new Set(orders.map(order => order.product_id))]
+        return orders
+      })(),
+      // Fetch from Shopify
+      fetchShopifyOrders()
+    ])
 
-    // Fetch product details for these IDs
+    // Get unique product IDs from database orders
+    const productIds = [...new Set(dbOrders.map(order => order.product_id))]
+
+    // Fetch product details
     const { data: products, error: productsError } = await supabase
       .from("products")
       .select("id, title, vendor, certificate_url")
@@ -58,11 +109,34 @@ export async function GET(request: Request) {
       return acc
     }, {} as Record<string, any>)
 
-    // Combine orders with their product details
-    const ordersWithProducts = orders.map(order => ({
+    // Combine database orders with their product details
+    const dbOrdersWithProducts = dbOrders.map(order => ({
       ...order,
-      product: productMap[order.product_id] || null
+      product: productMap[order.product_id] || null,
+      source: "database"
     }))
+
+    // Transform Shopify orders to match our format
+    const transformedShopifyOrders = shopifyOrders.map(order => ({
+      order_id: order.id.toString(),
+      order_name: order.name,
+      line_item_id: order.line_items?.[0]?.id.toString() || "",
+      product_id: order.line_items?.[0]?.product_id?.toString() || "",
+      variant_id: order.line_items?.[0]?.variant_id?.toString() || "",
+      created_at: order.created_at,
+      updated_at: order.updated_at,
+      status: "active",
+      source: "shopify"
+    }))
+
+    // Combine and sort all orders by updated_at
+    const allOrders = [...dbOrdersWithProducts, ...transformedShopifyOrders]
+      .sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime())
+
+    // Apply pagination
+    const start = (page - 1) * pageSize
+    const end = start + pageSize
+    const paginatedOrders = allOrders.slice(start, end)
 
     // Get total count for pagination
     const { count: totalCount } = await supabase
@@ -70,9 +144,9 @@ export async function GET(request: Request) {
       .select("*", { count: "exact", head: true })
 
     return NextResponse.json({
-      orders: ordersWithProducts,
-      hasMore: totalCount ? page * pageSize < totalCount : false,
-      total: totalCount,
+      orders: paginatedOrders,
+      hasMore: allOrders.length > end,
+      total: allOrders.length,
     })
   } catch (error: any) {
     console.error("Error fetching orders:", error)
