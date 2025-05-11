@@ -594,11 +594,15 @@ async function updateDatabaseWithEditionNumbers(editionAssignments, forceSync) {
 // Function to record sync operation in the database
 async function recordSyncOperation(totalProducts, successfulProducts, syncResults) {
   try {
-    const { error } = await supabase.from("sync_results").insert({
-      total_products: totalProducts,
-      successful_products: successfulProducts,
-      sync_results: syncResults,
+    const { error } = await supabase.from("sync_logs").insert({
       created_at: new Date().toISOString(),
+      type: "product_sync",
+      details: {
+        totalProducts,
+        successfulProducts,
+        syncResults,
+        source: "manual_sync"
+      }
     })
 
     if (error) {

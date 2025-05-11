@@ -84,7 +84,13 @@ export default function ShopifySyncPage() {
       setIsSyncing(true)
       setError(null)
 
-      const response = await fetch("/api/cron/sync-shopify-orders?secret=" + process.env.CRON_SECRET)
+      const response = await fetch("/api/shopify/manual-sync", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": "Bearer " + localStorage.getItem("admin_token")
+        }
+      })
 
       if (!response.ok) {
         throw new Error(`Error ${response.status}: Failed to trigger sync`)
