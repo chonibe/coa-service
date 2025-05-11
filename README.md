@@ -151,6 +151,82 @@ Vendors can select custom date ranges to view their sales data. This allows for 
 ## Support
 
 For support, please contact the development team.
+
+# COA Service
+
+## Edition Number Assignment System
+
+### Overview
+The edition number assignment system allows for automatic assignment of edition numbers to line items based on their product type (limited or open edition). The system includes both backend functionality and a user interface for managing editions.
+
+### Key Features
+- Automatic edition number assignment for line items
+- Support for both limited and open editions
+- UI for viewing and managing edition numbers
+- Ability to revoke and reassign edition numbers
+- Type standardization for product IDs
+
+### Database Changes
+1. **Product ID Type Standardization**
+   - Standardized `product_id` column type across tables
+   - Added type casting and comparison functions
+   - Implemented safe type conversion for product IDs
+
+2. **Edition Number Management**
+   - Added `edition_number` and `edition_total` columns to line items
+   - Created triggers for edition number assignment
+   - Implemented functions for revoking and reassigning editions
+
+### API Endpoints
+1. **Edition Assignment**
+   - `/api/editions/assign-all` - Assigns edition numbers to all line items
+   - `/api/editions/assign-numbers` - Assigns edition numbers to specific line items
+   - `/api/editions/revoke` - Revokes edition numbers from line items
+
+2. **Type Checking**
+   - `/api/editions/check-types` - Checks for type mismatches in product IDs
+   - `/api/editions/check-specific-product-ids` - Checks specific product IDs for type issues
+
+### UI Components
+1. **Product Editions Page**
+   - View all line items for a product
+   - Assign edition numbers
+   - Revoke edition numbers
+   - View edition details
+
+2. **Assign Edition Numbers Button**
+   - Client-side component for triggering edition number assignment
+   - Handles loading states and error messages
+   - Provides feedback on assignment success/failure
+
+### Type Safety
+- Implemented strict type checking for product IDs
+- Added type conversion functions to handle different ID formats
+- Standardized type usage across the application
+
+### Error Handling
+- Comprehensive error handling for type mismatches
+- User-friendly error messages
+- Logging for debugging purposes
+
+### Usage
+1. Navigate to the product editions page
+2. View existing line items and their edition numbers
+3. Use the "Assign Edition Numbers" button to assign numbers
+4. Use the "Revoke" button to remove edition numbers if needed
+
+### Technical Notes
+- All product IDs are handled as strings internally
+- Edition numbers are assigned sequentially
+- Limited editions are checked against the total edition count
+- Open editions are assigned numbers without limits
+
+### Recent Changes
+- Fixed type mismatch issues with product IDs
+- Improved error handling and user feedback
+- Added type checking endpoints
+- Standardized database column types
+- Enhanced UI components for better user experience
 \`\`\`
 
 Now, let's create a README file specifically for the vendor dashboard to help explain its functionality:
