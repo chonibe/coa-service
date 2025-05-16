@@ -227,6 +227,51 @@ The edition number assignment system allows for automatic assignment of edition 
 - Added type checking endpoints
 - Standardized database column types
 - Enhanced UI components for better user experience
-\`\`\`
 
-Now, let's create a README file specifically for the vendor dashboard to help explain its functionality:
+## Documentation Requirements
+
+### Feature Documentation
+Each new feature must include its own README file in the feature's directory with the following structure:
+
+```
+/feature-name/
+├── README.md
+├── components/
+├── api/
+└── tests/
+```
+
+The feature README must include:
+- [ ] Feature overview and purpose
+- [ ] Technical implementation details
+- [ ] API endpoints and their usage
+- [ ] Database schema changes
+- [ ] UI/UX considerations
+- [ ] Testing requirements
+- [ ] Deployment considerations
+- [ ] Known limitations
+- [ ] Future improvements
+
+### Change Documentation
+For any changes to existing features, the following must be updated:
+- [ ] Feature's README.md with change details
+- [ ] Main README.md with updated status
+- [ ] API documentation if endpoints are modified
+- [ ] Database migration documentation if schema changes
+- [ ] Test documentation if test cases are modified
+
+### Documentation Update Process
+1. Create/update feature README before implementing changes
+2. Update main README.md after changes are complete
+3. Update API documentation if endpoints are modified
+4. Update database documentation if schema changes
+5. Update test documentation if test cases are modified
+6. Review documentation with team before merging
+
+### Documentation Standards
+- Use clear, concise language
+- Include code examples where relevant
+- Document all configuration options
+- Include troubleshooting guides
+- Keep documentation up-to-date with code
+- Use consistent formatting and structure
