@@ -9,17 +9,26 @@ import { Loader2, AlertCircle, RefreshCw, ArrowLeft } from "lucide-react"
 import Link from "next/link"
 
 export default function TestConnectionsPage() {
+  const [mounted, setMounted] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [testResults, setTestResults] = useState<any>(null)
   const [isTesting, setIsTesting] = useState(false)
 
-  // Run tests on load
+  // Handle client-side mounting
   useEffect(() => {
-    runTests()
+    setMounted(true)
   }, [])
 
+  // Run tests on load
+  useEffect(() => {
+    if (mounted) {
+      runTests()
+    }
+  }, [mounted])
+
   const runTests = async () => {
+    if (!mounted) return
     try {
       setIsTesting(true)
       setError(null)
@@ -39,6 +48,11 @@ export default function TestConnectionsPage() {
       setIsTesting(false)
       setIsLoading(false)
     }
+  }
+
+  // Don't render anything until mounted
+  if (!mounted) {
+    return null
   }
 
   if (isLoading) {

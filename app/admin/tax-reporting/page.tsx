@@ -47,6 +47,7 @@ interface TaxForm {
 }
 
 export default function TaxReportingPage() {
+  const [mounted, setMounted] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
   const [isInitializing, setIsInitializing] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -61,8 +62,14 @@ export default function TaxReportingPage() {
   const [formType, setFormType] = useState<string>("1099-MISC")
   const { toast } = useToast()
 
+  // Handle client-side mounting
+  useEffect(() => {
+    setMounted(true)
+  }, [])
+
   // Initialize tables and functions
   useEffect(() => {
+    if (!mounted) return
     const initializeTaxReporting = async () => {
       setIsInitializing(true)
       try {
@@ -87,14 +94,14 @@ export default function TaxReportingPage() {
     }
 
     initializeTaxReporting()
-  }, [])
+  }, [mounted])
 
   // Fetch tax reporting data when year changes
   useEffect(() => {
-    if (!isInitializing) {
+    if (!isInitializing && mounted) {
       fetchTaxReportingData()
     }
-  }, [selectedYear, isInitializing])
+  }, [selectedYear, isInitializing, mounted])
 
   // Fetch tax reporting data
   const fetchTaxReportingData = async () => {
@@ -245,6 +252,11 @@ export default function TaxReportingPage() {
     } catch (e) {
       return "Invalid date"
     }
+  }
+
+  // Don't render anything until mounted
+  if (!mounted) {
+    return null
   }
 
   return (

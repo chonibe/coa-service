@@ -15,6 +15,7 @@ import Image from "next/image"
 import Link from "next/link"
 
 export default function AdminDashboard() {
+  const [mounted, setMounted] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [isFetchingProducts, setIsFetchingProducts] = useState(false)
   const [isSelectingAll, setIsSelectingAll] = useState(false)
@@ -26,6 +27,11 @@ export default function AdminDashboard() {
   const [currentProduct, setCurrentProduct] = useState<string | null>(null)
   // Add a state for sync progress messages
   const [progressMessages, setProgressMessages] = useState<string[]>([])
+
+  // Handle client-side mounting
+  useEffect(() => {
+    setMounted(true)
+  }, [])
 
   // Product selection state
   const [products, setProducts] = useState<any[]>([])
@@ -43,6 +49,11 @@ export default function AdminDashboard() {
   // Add state for Supabase connection test
   const [isTestingConnection, setIsTestingConnection] = useState(false)
   const [connectionTestResult, setConnectionTestResult] = useState<any>(null)
+
+  // Don't render anything until mounted
+  if (!mounted) {
+    return null
+  }
 
   // Fetch products for selection
   const fetchProducts = async (cursor = "", query = "", field = searchField) => {

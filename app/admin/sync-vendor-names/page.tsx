@@ -9,6 +9,7 @@ import { Loader2, CheckCircle, AlertCircle, RefreshCw } from "lucide-react"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 
 export default function SyncVendorNamesPage() {
+  const [mounted, setMounted] = useState(false)
   const [isRunning, setIsRunning] = useState(false)
   const [progress, setProgress] = useState(0)
   const [status, setStatus] = useState<"idle" | "running" | "success" | "error">("idle")
@@ -34,7 +35,13 @@ export default function SyncVendorNamesPage() {
   const [singleOrderMessage, setSingleOrderMessage] = useState("")
   const [singleOrderError, setSingleOrderError] = useState<string | null>(null)
 
+  // Handle client-side mounting
+  useEffect(() => {
+    setMounted(true)
+  }, [])
+
   const startSync = async () => {
+    if (!mounted) return
     setIsRunning(true)
     setStatus("running")
     setMessage("Starting vendor name sync...")
@@ -47,6 +54,11 @@ export default function SyncVendorNamesPage() {
     setError(null)
 
     await processBatch()
+  }
+
+  // Don't render anything until mounted
+  if (!mounted) {
+    return null
   }
 
   const processBatch = async () => {

@@ -12,6 +12,7 @@ import { Input } from "@/components/ui/input"
 import Link from "next/link"
 
 export default function ShopifySyncPage() {
+  const [mounted, setMounted] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [syncStatus, setSyncStatus] = useState<any>(null)
@@ -22,10 +23,17 @@ export default function ShopifySyncPage() {
   const [isTestingWebhook, setIsTestingWebhook] = useState(false)
   const [syncHistory, setSyncHistory] = useState<any[]>([])
 
+  // Handle client-side mounting
+  useEffect(() => {
+    setMounted(true)
+  }, [])
+
   // Fetch sync status on load
   useEffect(() => {
-    fetchSyncStatus()
-  }, [])
+    if (mounted) {
+      fetchSyncStatus()
+    }
+  }, [mounted])
 
   const fetchSyncStatus = async () => {
     try {
@@ -138,6 +146,11 @@ export default function ShopifySyncPage() {
     // In a real implementation, this would save the settings to the database
     // For now, we'll just show a success message
     alert("Settings saved successfully")
+  }
+
+  // Don't render anything until mounted
+  if (!mounted) {
+    return null
   }
 
   if (isLoading) {

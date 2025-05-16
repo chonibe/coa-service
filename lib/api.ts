@@ -229,47 +229,23 @@ export async function getEditionNumber(orderId: string, lineItemId: string, prod
 export async function updateItemStatus(
   lineItemId: string,
   orderId: string,
-  status: "active" | "removed",
-  reason?: string,
-): Promise<any> {
-  try {
-    const url = new URL(`/api/update-line-item-status`, window.location.origin)
+  status: 'active' | 'removed'
+): Promise<void> {
+  const response = await fetch('/api/update-line-item-status', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      lineItemId,
+      orderId,
+      status,
+    }),
+  })
 
-    console.log(`Attempting to update line item status: ${url.toString()}`)
-
-    // Set a timeout for the fetch request
-    const controller = new AbortController()
-    const timeoutId = setTimeout(() => controller.abort(), 5000) // 5 second timeout
-
-    try {
-      const response = await fetch(url.toString(), {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          lineItemId,
-          orderId,
-          status,
-          reason,
-        }),
-        signal: controller.signal,
-      })
-
-      clearTimeout(timeoutId)
-
-      if (!response.ok) {
-        throw new Error(`Failed to update line item status: ${response.status} ${response.statusText}`)
-      }
-
-      return await response.json()
-    } catch (fetchError) {
-      clearTimeout(timeoutId)
-      throw fetchError
-    }
-  } catch (error: any) {
-    console.error("Error updating line item status:", error.name, error.message)
-    throw error
+  if (!response.ok) {
+    const error = await response.json()
+    throw new Error(error.message || 'Failed to update status')
   }
 }
 
