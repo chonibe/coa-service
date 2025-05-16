@@ -1,7 +1,6 @@
 "use client"
 
-import * as React from "react"
-import { useState, useEffect } from "react"
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { Button } from "@/components/ui/button"
@@ -12,7 +11,6 @@ import { ArrowUpDown, ChevronLeft, ChevronRight } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { LineItem } from '@/types'
-import { StatusToggle } from './StatusToggle'
 
 interface Product {
   id: string
@@ -25,89 +23,40 @@ interface Product {
 }
 
 interface ProductDetailsProps {
+  lineItems: LineItem[]
   productId: string
-  searchParams: URLSearchParams
 }
 
-interface Filters {
-  status: string
-  hasEditionNumber: boolean
-}
-
-export function ProductDetails({ productId, searchParams }: ProductDetailsProps) {
+export default function ProductDetails({ lineItems, productId }: ProductDetailsProps) {
   const router = useRouter()
-  const [mounted, setMounted] = useState(false)
-  const [lineItems, setLineItems] = useState<LineItem[]>([])
-  const [totalEditions, setTotalEditions] = useState(0)
-  const [activeEditions, setActiveEditions] = useState(0)
+  const searchParams = useSearchParams()
   const [pageSize, setPageSize] = useState('10')
-  const [filters, setFilters] = useState<Filters>({
-    status: searchParams.get('status') || 'all',
+  const [filters, setFilters] = useState({
+    status: searchParams.get('status') || '',
+    minPrice: searchParams.get('minPrice') || '',
+    maxPrice: searchParams.get('maxPrice') || '',
     hasEditionNumber: searchParams.get('hasEditionNumber') === 'true'
   })
 
-  // Handle client-side mounting
   useEffect(() => {
-    setMounted(true)
-  }, [])
+    const size = searchParams.get('pageSize') || '10'
+    setPageSize(size)
+  }, [searchParams])
 
-  useEffect(() => {
-    if (mounted) {
-      const size = searchParams.get('pageSize') || '10'
-      setPageSize(size)
-    }
-  }, [searchParams, mounted])
-
-  useEffect(() => {
-    if (mounted && lineItems.length > 0) {
-      setTotalEditions(lineItems.length)
-      setActiveEditions(lineItems.filter((item: LineItem) => item.status === 'active').length)
-    }
-  }, [lineItems, mounted])
-
-  const updateFilters = (newFilters: Partial<Filters>) => {
-    if (mounted) {
-      setFilters((prev: Filters) => ({ ...prev, ...newFilters }))
-    }
+  const updateFilters = (newFilters: Partial<typeof filters>) => {
+    setFilters(prev => ({ ...prev, ...newFilters }))
   }
-
-  const handleStatusChange = () => {
-    // Refresh the line items after status change
-    if (mounted) {
-      fetchLineItems()
-    }
-  }
-
-  const fetchLineItems = async () => {
-    if (!mounted) return
-
-    try {
-      const response = await fetch(`/api/line-items?productId=${productId}&pageSize=${pageSize}`)
-      const data = await response.json()
-      setLineItems(data)
-    } catch (error) {
-      console.error('Error fetching line items:', error)
-    }
-  }
-
-  useEffect(() => {
-    if (mounted) {
-      fetchLineItems()
-    }
-  }, [productId, pageSize, mounted])
 
   const applyFilters = () => {
-    if (!mounted) return
-
     const params = new URLSearchParams(searchParams.toString())
     if (filters.status) params.set('status', filters.status)
+    if (filters.minPrice) params.set('minPrice', filters.minPrice)
+    if (filters.maxPrice) params.set('maxPrice', filters.maxPrice)
     if (filters.hasEditionNumber) params.set('hasEditionNumber', 'true')
     router.push(`/admin/product-editions/${productId}?${params.toString()}`)
   }
 
   const handleSort = (column: string) => {
-    if (!mounted) return
-
     const params = new URLSearchParams(searchParams.toString())
     const currentSort = params.get('sortBy')
     const currentOrder = params.get('sortOrder')
@@ -120,17 +69,10 @@ export function ProductDetails({ productId, searchParams }: ProductDetailsProps)
   }
 
   const handlePageSizeChange = (size: string) => {
-    if (!mounted) return
-
     const params = new URLSearchParams(searchParams.toString())
     params.set('pageSize', size)
     params.set('page', '1') // Reset to first page when changing page size
     router.push(`/admin/product-editions/${productId}?${params.toString()}`)
-  }
-
-  // Don't render anything until mounted
-  if (!mounted) {
-    return null
   }
 
   return (
@@ -151,8 +93,8 @@ export function ProductDetails({ productId, searchParams }: ProductDetailsProps)
             {/* Filters */}
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
               <Select
-                value={filters.status}
-                onValueChange={(value: string) => updateFilters({ status: value })}
+                value={filters.status || "all"}
+                onValueChange={(value) => updateFilters({ status: value === "all" ? "" : value })}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Filter by status" />
@@ -164,12 +106,27 @@ export function ProductDetails({ productId, searchParams }: ProductDetailsProps)
                 </SelectContent>
               </Select>
 
+              <div className="flex gap-2">
+                <Input
+                  type="number"
+                  placeholder="Min Price"
+                  value={filters.minPrice}
+                  onChange={(e) => updateFilters({ minPrice: e.target.value })}
+                />
+                <Input
+                  type="number"
+                  placeholder="Max Price"
+                  value={filters.maxPrice}
+                  onChange={(e) => updateFilters({ maxPrice: e.target.value })}
+                />
+              </div>
+
               <div className="flex items-center space-x-2">
                 <Checkbox
                   id="hasEditionNumber"
                   checked={filters.hasEditionNumber}
-                  onCheckedChange={(checked: boolean) => 
-                    updateFilters({ hasEditionNumber: checked })
+                  onCheckedChange={(checked) => 
+                    updateFilters({ hasEditionNumber: checked as boolean })
                   }
                 />
                 <label htmlFor="hasEditionNumber" className="text-sm">Has Edition Number</label>
@@ -212,7 +169,7 @@ export function ProductDetails({ productId, searchParams }: ProductDetailsProps)
                   </tr>
                 </thead>
                 <tbody>
-                  {lineItems.map((item: LineItem) => (
+                  {lineItems.map((item) => (
                     <tr key={item.id} className="border-b">
                       <td className="p-4">
                         {item.order_name ? (
@@ -227,17 +184,8 @@ export function ProductDetails({ productId, searchParams }: ProductDetailsProps)
                       </td>
                       <td className="p-4">{new Date(item.created_at).toLocaleString()}</td>
                       <td className="p-4">{item.edition_number || 'Not assigned'}</td>
-                      <td className="p-4">{item.edition_total !== null ? item.edition_total.toString() : 'N/A'}</td>
-                      <td className="p-4">
-                        <StatusToggle
-                          lineItemId={item.id}
-                          orderId={item.order_id}
-                          initialStatus={item.status}
-                          onStatusChange={handleStatusChange}
-                          totalEditions={totalEditions}
-                          activeEditions={activeEditions}
-                        />
-                      </td>
+                      <td className="p-4">{item.edition_total || 'N/A'}</td>
+                      <td className="p-4">{item.status}</td>
                     </tr>
                   ))}
                 </tbody>

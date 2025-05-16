@@ -27,8 +27,7 @@ import Image from "next/image"
 import Link from "next/link"
 
 export default function SyncProductsPage() {
-  const [mounted, setMounted] = useState(false)
-  const [isLoading, setIsLoading] = useState(true)
+  const [isLoading, setIsLoading] = useState(false)
   const [isFetchingProducts, setIsFetchingProducts] = useState(false)
   const [isSelectingAll, setIsSelectingAll] = useState(false)
   const [syncResults, setSyncResults] = useState<any>(null)
@@ -50,16 +49,6 @@ export default function SyncProductsPage() {
     hasPrev: false,
   })
   const [totalProductCount, setTotalProductCount] = useState(0)
-
-  // Handle client-side mounting
-  useEffect(() => {
-    setMounted(true)
-  }, [])
-
-  // Don't render anything until mounted
-  if (!mounted) {
-    return null
-  }
 
   // Fetch products for selection
   const fetchProducts = async (cursor = "", query = "", field = searchField) => {

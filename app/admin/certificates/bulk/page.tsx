@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
@@ -20,23 +20,12 @@ import { supabase } from "@/lib/supabase"
 import Link from "next/link"
 
 export default function BulkCertificatesPage() {
-  const [mounted, setMounted] = useState(false)
   const [productId, setProductId] = useState("")
   const [certificates, setCertificates] = useState<any[]>([])
   const [error, setError] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
 
-  // Handle client-side mounting
-  useEffect(() => {
-    setMounted(true)
-  }, [])
-
   const baseUrl = process.env.NEXT_PUBLIC_CUSTOMER_APP_URL || window.location.origin
-
-  // Don't render anything until mounted
-  if (!mounted) {
-    return null
-  }
 
   const generateCertificates = async () => {
     if (!productId) {

@@ -21,7 +21,6 @@ import { Badge } from "@/components/ui/badge"
 import { VendorDialog } from "./vendor-dialog"
 
 export default function VendorsPage() {
-  const [mounted, setMounted] = useState(false)
   const [vendors, setVendors] = useState<any[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [isRefreshing, setIsRefreshing] = useState(false)
@@ -38,14 +37,8 @@ export default function VendorsPage() {
   const [dialogOpen, setDialogOpen] = useState(false)
   const [isTableInitialized, setIsTableInitialized] = useState(false)
 
-  // Handle client-side mounting
-  useEffect(() => {
-    setMounted(true)
-  }, [])
-
   // Initialize the vendors table
   const initializeVendorsTable = async () => {
-    if (!mounted) return
     try {
       const response = await fetch("/api/vendors/create-table", {
         method: "POST",
@@ -65,15 +58,8 @@ export default function VendorsPage() {
 
   // Initialize table on first load
   useEffect(() => {
-    if (mounted) {
-      initializeVendorsTable()
-    }
-  }, [mounted])
-
-  // Don't render anything until mounted
-  if (!mounted) {
-    return null
-  }
+    initializeVendorsTable()
+  }, [])
 
   // Fetch vendors directly from Shopify
   const fetchVendors = async (refresh = false) => {

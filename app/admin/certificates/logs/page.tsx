@@ -21,7 +21,6 @@ import Link from "next/link"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 
 export default function CertificateLogsPage() {
-  const [mounted, setMounted] = useState(false)
   const [logs, setLogs] = useState<any[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -31,21 +30,9 @@ export default function CertificateLogsPage() {
   const [pageSize, setPageSize] = useState(50)
   const [totalPages, setTotalPages] = useState(1)
 
-  // Handle client-side mounting
   useEffect(() => {
-    setMounted(true)
-  }, [])
-
-  useEffect(() => {
-    if (mounted) {
-      fetchLogs()
-    }
-  }, [currentPage, pageSize, mounted])
-
-  // Don't render anything until mounted
-  if (!mounted) {
-    return null
-  }
+    fetchLogs()
+  }, [currentPage, pageSize])
 
   const fetchLogs = async () => {
     try {

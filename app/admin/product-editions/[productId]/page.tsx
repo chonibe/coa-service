@@ -78,18 +78,11 @@ async function getProductData(
 }
 
 export default function ProductEditionsPage({ params }: { params: Promise<{ productId: string }> }) {
-  const [mounted, setMounted] = useState(false)
   const resolvedParams = use(params)
   const [lineItems, setLineItems] = useState<LineItem[]>([])
   const [isLoading, setIsLoading] = useState(true)
 
-  // Handle client-side mounting
-  useEffect(() => {
-    setMounted(true)
-  }, [])
-
   const fetchLineItems = async () => {
-    if (!mounted) return
     try {
       const { data, error } = await supabase
         .from('order_line_items_v2')
@@ -108,20 +101,11 @@ export default function ProductEditionsPage({ params }: { params: Promise<{ prod
   }
 
   useEffect(() => {
-    if (mounted) {
-      fetchLineItems()
-    }
-  }, [resolvedParams.productId, mounted])
+    fetchLineItems()
+  }, [resolvedParams.productId])
 
   const handleSuccess = () => {
-    if (mounted) {
-      fetchLineItems()
-    }
-  }
-
-  // Don't render anything until mounted
-  if (!mounted) {
-    return null
+    fetchLineItems()
   }
 
   if (isLoading) {

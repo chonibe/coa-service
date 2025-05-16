@@ -64,20 +64,13 @@ const generateMockData = () => {
 }
 
 export default function SalesReportPage() {
-  const [mounted, setMounted] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [dateRange, setDateRange] = useState<string>("30days")
   const [reportData, setReportData] = useState<any>(null)
 
-  // Handle client-side mounting
-  useEffect(() => {
-    setMounted(true)
-  }, [])
-
   // Fetch report data
   useEffect(() => {
-    if (!mounted) return
     const fetchReportData = async () => {
       setIsLoading(true)
       setError(null)
@@ -97,11 +90,10 @@ export default function SalesReportPage() {
     }
 
     fetchReportData()
-  }, [dateRange, mounted])
+  }, [dateRange])
 
   // Handle refresh
   const handleRefresh = () => {
-    if (!mounted) return
     setReportData(null)
     setIsLoading(true)
     setTimeout(() => {
@@ -136,11 +128,6 @@ export default function SalesReportPage() {
       default:
         return "Custom date range"
     }
-  }
-
-  // Don't render anything until mounted
-  if (!mounted) {
-    return null
   }
 
   return (

@@ -46,17 +46,11 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { Progress } from "@/components/ui/progress"
 
 export default function CertificateManagementPage() {
-  const [mounted, setMounted] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
   const [isConfigured, setIsConfigured] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const router = useRouter()
   const searchParams = useSearchParams()
-
-  // Handle client-side mounting
-  useEffect(() => {
-    setMounted(true)
-  }, [])
 
   // State for certificates data
   const [certificates, setCertificates] = useState<any[]>([])
@@ -99,7 +93,6 @@ export default function CertificateManagementPage() {
   useEffect(() => {
     // Check if Supabase is configured
     const checkConfig = async () => {
-      if (!mounted) return
       try {
         setIsLoading(true)
         const configured = isSupabaseConfigured()
@@ -118,19 +111,18 @@ export default function CertificateManagementPage() {
     }
 
     checkConfig()
-  }, [mounted])
+  }, [])
 
   // Load certificates on initial render and when filters change
   useEffect(() => {
-    if (isConfigured && mounted) {
+    if (isConfigured) {
       fetchCertificates()
       fetchProducts()
     }
-  }, [page, pageSize, productFilter, statusFilter, sortField, sortDirection, isConfigured, mounted])
+  }, [page, pageSize, productFilter, statusFilter, sortField, sortDirection, isConfigured])
 
   // Apply search filter with debounce
   useEffect(() => {
-    if (!mounted) return
     const timer = setTimeout(() => {
       if (isConfigured) {
         fetchCertificates()
@@ -138,7 +130,7 @@ export default function CertificateManagementPage() {
     }, 300)
 
     return () => clearTimeout(timer)
-  }, [searchTerm, isConfigured, mounted])
+  }, [searchTerm, isConfigured])
 
   // Fetch certificates from the database
   const fetchCertificates = async () => {
@@ -574,11 +566,6 @@ export default function CertificateManagementPage() {
 
   // Calculate total pages
   const totalPages = Math.ceil(totalCount / pageSize)
-
-  // Don't render anything until mounted
-  if (!mounted) {
-    return null
-  }
 
   if (isLoading && certificates.length === 0) {
     return (

@@ -8,28 +8,15 @@ import { Loader2, AlertCircle, RefreshCw } from "lucide-react"
 import Link from "next/link"
 
 export default function TestUrlPage() {
-  const [mounted, setMounted] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [urlInfo, setUrlInfo] = useState<any>(null)
   const [isTesting, setIsTesting] = useState(false)
 
-  // Handle client-side mounting
-  useEffect(() => {
-    setMounted(true)
-  }, [])
-
   // Test the URL on load
   useEffect(() => {
-    if (mounted) {
-      testUrl()
-    }
-  }, [mounted])
-
-  // Don't render anything until mounted
-  if (!mounted) {
-    return null
-  }
+    testUrl()
+  }, [])
 
   const testUrl = async () => {
     try {

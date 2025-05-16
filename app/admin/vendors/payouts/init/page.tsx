@@ -8,24 +8,15 @@ import { Loader2, AlertCircle, CheckCircle2 } from "lucide-react"
 import { useToast } from "@/components/ui/use-toast"
 
 export default function InitPayoutsPage() {
-  const [mounted, setMounted] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
   const [status, setStatus] = useState<Record<string, { success: boolean; message: string }>>({})
   const { toast } = useToast()
 
-  // Handle client-side mounting
   useEffect(() => {
-    setMounted(true)
+    initializePayouts()
   }, [])
 
-  useEffect(() => {
-    if (mounted) {
-      initializePayouts()
-    }
-  }, [mounted])
-
   const initializePayouts = async () => {
-    if (!mounted) return
     setIsLoading(true)
     setStatus({})
 
@@ -82,11 +73,6 @@ export default function InitPayoutsPage() {
       }))
       throw err
     }
-  }
-
-  // Don't render anything until mounted
-  if (!mounted) {
-    return null
   }
 
   return (

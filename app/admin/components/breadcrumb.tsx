@@ -1,6 +1,7 @@
 /// <reference types="react" />
 "use client"
 
+import React from "react"
 import { usePathname } from "next/navigation"
 import Link from "next/link"
 import { ChevronRight, Home } from "lucide-react"
@@ -14,65 +15,66 @@ interface BreadcrumbProps {
 export function Breadcrumb({ className }: BreadcrumbProps) {
   const pathname = usePathname()
   const [productTitle, setProductTitle] = useState<string | null>(null)
-  const [mounted, setMounted] = useState(false)
-
-  // Handle client-side mounting
-  useEffect(() => {
-    setMounted(true)
-  }, [])
 
   // Skip rendering breadcrumbs on the main dashboard
   if (pathname === "/admin" || pathname === "/admin/dashboard") {
     return null
   }
 
-  // Get product ID from pathname if it exists
-  const paths = pathname.split("/").filter(Boolean)
-  const productEditionsIdx = paths.findIndex((p) => p === "product-editions")
-  const productId = productEditionsIdx !== -1 && paths.length > productEditionsIdx + 1
-    ? paths[productEditionsIdx + 1]
-    : null
+  // Generate breadcrumb items from pathname
+  const generateBreadcrumbs = () => {
+    // Remove leading slash and split by slash
+    const paths = pathname.split("/").filter(Boolean)
 
-  // Fetch product title when productId changes
-  useEffect(() => {
-    if (productId && mounted) {
-      fetch(`/api/products/${productId}`)
-        .then((res) => res.json())
-        .then((data) => {
-          if (data.success && data.product?.title) {
-            setProductTitle(data.product.title)
-          } else {
-            setProductTitle(null)
-          }
-        })
-        .catch(() => setProductTitle(null))
-    }
-  }, [productId, mounted])
-
-  // Generate breadcrumb items
-  const breadcrumbs = paths.map((path, index) => {
-    // Build the URL for this breadcrumb
-    const href = `/${paths.slice(0, index + 1).join("/")}`
-
-    // Format the label (capitalize, replace hyphens with spaces)
-    let label = path.replace(/-/g, " ").replace(/\b\w/g, (char) => char.toUpperCase())
-    
-    // If this is the productId segment under product-editions, use productTitle
+    // If this is a product-editions page, fetch the product title
+    const productEditionsIdx = paths.findIndex(
+      (p) => p === "product-editions"
+    )
+    let productId: string | null = null
     if (
       productEditionsIdx !== -1 &&
-      index === productEditionsIdx + 1 &&
-      productTitle &&
-      mounted
+      paths.length > productEditionsIdx + 1
     ) {
-      label = productTitle
+      productId = paths[productEditionsIdx + 1]
     }
-    return { href, label }
-  })
 
-  // Don't render anything until mounted
-  if (!mounted) {
-    return null
+    useEffect(() => {
+      if (productId) {
+        fetch(`/api/products/${productId}`)
+          .then((res) => res.json())
+          .then((data) => {
+            if (data.success && data.product?.title) {
+              setProductTitle(data.product.title)
+            } else {
+              setProductTitle(null)
+            }
+          })
+          .catch(() => setProductTitle(null))
+      }
+    }, [productId])
+
+    // Create breadcrumb items
+    const breadcrumbs = paths.map((path, index) => {
+      // Build the URL for this breadcrumb
+      const href = `/${paths.slice(0, index + 1).join("/")}`
+
+      // Format the label (capitalize, replace hyphens with spaces)
+      let label = path.replace(/-/g, " ").replace(/\b\w/g, (char) => char.toUpperCase())
+      // If this is the productId segment under product-editions, use productTitle
+      if (
+        productEditionsIdx !== -1 &&
+        index === productEditionsIdx + 1 &&
+        productTitle
+      ) {
+        label = productTitle
+      }
+      return { href, label }
+    })
+
+    return breadcrumbs
   }
+
+  const breadcrumbs = generateBreadcrumbs()
 
   return (
     <nav className={cn("flex items-center text-sm text-muted-foreground", className)}>
