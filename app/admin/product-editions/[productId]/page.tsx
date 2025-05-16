@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button'
 import { toast } from 'sonner'
 import ProductDetails from './ProductDetails'
 import { LineItem } from '@/types'
+import Link from 'next/link'
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -125,7 +126,17 @@ export default function ProductEditionsPage({ params }: { params: Promise<{ prod
             className="border p-4 rounded-lg flex justify-between items-center"
           >
             <div>
-              <p>Order ID: {item.order_id}</p>
+              <p>
+                Order: {item.order_name ? (
+                  <Link href={`/admin/orders/${item.order_id}`} className="text-blue-600 hover:underline">
+                    Order #{item.order_name}
+                  </Link>
+                ) : (
+                  <Link href={`/admin/orders/${item.order_id}`} className="text-blue-600 hover:underline">
+                    {item.order_id}
+                  </Link>
+                )}
+              </p>
               <p>Created: {new Date(item.created_at).toLocaleString()}</p>
               <p>Edition: {item.edition_number || 'Not assigned'}</p>
               {item.edition_total && <p>Total Editions: {item.edition_total}</p>}

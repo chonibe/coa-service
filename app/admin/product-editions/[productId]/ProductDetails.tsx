@@ -11,6 +11,7 @@ import { ArrowUpDown, ChevronLeft, ChevronRight } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { LineItem } from '@/types'
+import { StatusToggle } from './StatusToggle'
 
 interface Product {
   id: string
@@ -73,6 +74,11 @@ export default function ProductDetails({ lineItems, productId }: ProductDetailsP
     params.set('pageSize', size)
     params.set('page', '1') // Reset to first page when changing page size
     router.push(`/admin/product-editions/${productId}?${params.toString()}`)
+  }
+
+  const handleStatusChange = () => {
+    // Refresh the data to get updated edition numbers
+    router.refresh()
   }
 
   return (
@@ -171,11 +177,28 @@ export default function ProductDetails({ lineItems, productId }: ProductDetailsP
                 <tbody>
                   {lineItems.map((item) => (
                     <tr key={item.id} className="border-b">
-                      <td className="p-4">{item.order_id}</td>
+                      <td className="p-4">
+                        {item.order_name ? (
+                          <Link href={`/admin/orders/${item.order_id}`} className="text-blue-600 hover:underline">
+                            Order #{item.order_name}
+                          </Link>
+                        ) : (
+                          <Link href={`/admin/orders/${item.order_id}`} className="text-blue-600 hover:underline">
+                            {item.order_id}
+                          </Link>
+                        )}
+                      </td>
                       <td className="p-4">{new Date(item.created_at).toLocaleString()}</td>
                       <td className="p-4">{item.edition_number || 'Not assigned'}</td>
                       <td className="p-4">{item.edition_total || 'N/A'}</td>
-                      <td className="p-4">{item.status}</td>
+                      <td className="p-4">
+                        <StatusToggle
+                          lineItemId={item.line_item_id}
+                          orderId={item.order_id}
+                          initialStatus={item.status}
+                          onStatusChange={handleStatusChange}
+                        />
+                      </td>
                     </tr>
                   ))}
                 </tbody>

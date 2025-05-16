@@ -1,9 +1,12 @@
+/// <reference types="react" />
 "use client"
 
+import React from "react"
 import { usePathname } from "next/navigation"
 import Link from "next/link"
 import { ChevronRight, Home } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { useEffect, useState } from "react"
 
 interface BreadcrumbProps {
   className?: string
@@ -11,6 +14,7 @@ interface BreadcrumbProps {
 
 export function Breadcrumb({ className }: BreadcrumbProps) {
   const pathname = usePathname()
+  const [productTitle, setProductTitle] = useState<string | null>(null)
 
   // Skip rendering breadcrumbs on the main dashboard
   if (pathname === "/admin" || pathname === "/admin/dashboard") {
@@ -22,14 +26,48 @@ export function Breadcrumb({ className }: BreadcrumbProps) {
     // Remove leading slash and split by slash
     const paths = pathname.split("/").filter(Boolean)
 
+    // If this is a product-editions page, fetch the product title
+    const productEditionsIdx = paths.findIndex(
+      (p) => p === "product-editions"
+    )
+    let productId: string | null = null
+    if (
+      productEditionsIdx !== -1 &&
+      paths.length > productEditionsIdx + 1
+    ) {
+      productId = paths[productEditionsIdx + 1]
+    }
+
+    useEffect(() => {
+      if (productId) {
+        fetch(`/api/products/${productId}`)
+          .then((res) => res.json())
+          .then((data) => {
+            if (data.success && data.product?.title) {
+              setProductTitle(data.product.title)
+            } else {
+              setProductTitle(null)
+            }
+          })
+          .catch(() => setProductTitle(null))
+      }
+    }, [productId])
+
     // Create breadcrumb items
     const breadcrumbs = paths.map((path, index) => {
       // Build the URL for this breadcrumb
       const href = `/${paths.slice(0, index + 1).join("/")}`
 
       // Format the label (capitalize, replace hyphens with spaces)
-      const label = path.replace(/-/g, " ").replace(/\b\w/g, (char) => char.toUpperCase())
-
+      let label = path.replace(/-/g, " ").replace(/\b\w/g, (char) => char.toUpperCase())
+      // If this is the productId segment under product-editions, use productTitle
+      if (
+        productEditionsIdx !== -1 &&
+        index === productEditionsIdx + 1 &&
+        productTitle
+      ) {
+        label = productTitle
+      }
       return { href, label }
     })
 
