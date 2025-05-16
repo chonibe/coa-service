@@ -5,10 +5,14 @@
       "src": "package.json",
       "use": "@vercel/next",
       "config": {
-        "installCommand": "pnpm install --no-frozen-lockfile"
+        "installCommand": "pnpm install --no-frozen-lockfile",
+        "buildCommand": "pnpm run build"
       }
     }
   ],
+  "env": {
+    "NODE_ENV": "production"
+  },
   "crons": [
     {
       "path": "/api/sync/new-line-items",
