@@ -9,6 +9,8 @@ import { ArrowLeft, ExternalLink } from "lucide-react";
 import { formatCurrency } from '@/lib/utils';
 import { useState } from 'react';
 import DuplicateItemsBox from './DuplicateItemsBox';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { toast } from "sonner";
 
 interface OrderLineItem {
   id: string;
@@ -20,6 +22,7 @@ interface OrderLineItem {
   product_id: string;
   variant_id: string | null;
   fulfillment_status: string;
+  status: "active" | "inactive" | "removed";
 }
 
 interface Order {
@@ -50,6 +53,42 @@ export default function OrderDetails({ order }: OrderDetailsProps) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [lineItems, setLineItems] = useState(order.line_items);
+  const [updatingStatus, setUpdatingStatus] = useState<string | null>(null);
+
+  const handleStatusChange = async (lineItemId: string, newStatus: "active" | "inactive" | "removed") => {
+    setUpdatingStatus(lineItemId);
+    try {
+      const res = await fetch(`/api/update-line-item-status`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          lineItemId,
+          orderId: order.id,
+          status: newStatus,
+        }),
+      });
+
+      if (!res.ok) {
+        throw new Error('Failed to update line item status');
+      }
+
+      // Update local state
+      setLineItems(prev => prev.map(item => 
+        item.id === lineItemId 
+          ? { ...item, status: newStatus }
+          : item
+      ));
+
+      toast.success('Status updated successfully');
+    } catch (err: any) {
+      toast.error(err.message || 'Failed to update status');
+      setError(err.message || 'Failed to update line item status');
+    } finally {
+      setUpdatingStatus(null);
+    }
+  };
 
   const handleDuplicateStatusChange = async (itemIds: string[], status: 'approved' | 'declined') => {
     setLoading(true);
@@ -245,17 +284,30 @@ export default function OrderDetails({ order }: OrderDetailsProps) {
                         {formatCurrency(item.price * item.quantity, order.currency_code)}
                       </TableCell>
                       <TableCell className="text-right">
-                        <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                          item.fulfillment_status === 'fulfilled' 
-                            ? 'bg-green-100 text-green-800'
-                            : item.fulfillment_status === 'partial'
-                            ? 'bg-yellow-100 text-yellow-800'
-                            : item.fulfillment_status === 'cancelled'
-                            ? 'bg-red-100 text-red-800'
-                            : 'bg-gray-100 text-gray-800'
-                        }`}>
-                          {item.fulfillment_status || 'pending'}
-                        </span>
+                        {item.product_id ? (
+                          <Select
+                            value={item.status || 'active'}
+                            onValueChange={(value: "active" | "inactive" | "removed") => handleStatusChange(item.id, value)}
+                            disabled={updatingStatus === item.id}
+                          >
+                            <SelectTrigger className="w-[100px]">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="active">Active</SelectItem>
+                              <SelectItem value="inactive">Inactive</SelectItem>
+                              <SelectItem value="removed">Removed</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        ) : (
+                          <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                            item.fulfillment_status === 'fulfilled' 
+                              ? 'bg-green-100 text-green-800'
+                              : 'bg-gray-100 text-gray-800'
+                          }`}>
+                            {item.fulfillment_status || 'pending'}
+                          </span>
+                        )}
                       </TableCell>
                     </TableRow>
                   ))}
