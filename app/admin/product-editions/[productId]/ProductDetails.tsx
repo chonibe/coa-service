@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Checkbox } from "@/components/ui/checkbox"
-import { ArrowUpDown, ChevronLeft, ChevronRight } from "lucide-react"
+import { ArrowUpDown, ChevronLeft, ChevronRight, ExternalLink } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { LineItem } from '@/types'
@@ -161,7 +161,7 @@ export default function ProductDetails({ lineItems, productId }: ProductDetailsP
               <table className="w-full">
                 <thead>
                   <tr className="border-b">
-                    <th className="text-left p-4">Order ID</th>
+                    <th className="text-left p-4">Order</th>
                     <th className="text-left p-4">Created</th>
                     <th className="text-left p-4">Edition</th>
                     <th className="text-left p-4">Total Editions</th>
@@ -171,7 +171,15 @@ export default function ProductDetails({ lineItems, productId }: ProductDetailsP
                 <tbody>
                   {lineItems.map((item) => (
                     <tr key={item.id} className="border-b">
-                      <td className="p-4">{item.order_id}</td>
+                      <td className="p-4">
+                        <Link 
+                          href={`/admin/orders/${item.order_id}`}
+                          className="flex items-center gap-1 hover:text-primary transition-colors"
+                        >
+                          Order #{item.order_id}
+                          <ExternalLink className="h-3 w-3" />
+                        </Link>
+                      </td>
                       <td className="p-4">{new Date(item.created_at).toLocaleString()}</td>
                       <td className="p-4">{item.edition_number || 'Not assigned'}</td>
                       <td className="p-4">{item.edition_total || 'N/A'}</td>
