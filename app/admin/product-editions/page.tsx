@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { createClient } from "@supabase/supabase-js";
+import { getSupabaseClient } from "@/lib/supabase";
 import Link from "next/link";
 import Image from "next/image";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -22,11 +22,6 @@ interface Product {
   image_url: string | null;
 }
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
-
 export default function ProductEditionsPage() {
   const [products, setProducts] = useState<Product[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -41,6 +36,11 @@ export default function ProductEditionsPage() {
   const fetchProducts = async () => {
     setIsLoading(true);
     try {
+      const supabase = getSupabaseClient();
+      if (!supabase) {
+        throw new Error("Supabase client not initialized");
+      }
+
       let query = supabase
         .from("products")
         .select("*", { count: "exact" });
@@ -60,7 +60,7 @@ export default function ProductEditionsPage() {
 
       if (error) throw error;
 
-      setProducts(data || []);
+      setProducts((data as unknown as Product[]) || []);
       setTotalItems(count || 0);
       setTotalPages(Math.ceil((count || 0) / pageSize));
     } catch (error) {
