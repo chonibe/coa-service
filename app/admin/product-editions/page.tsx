@@ -1,31 +1,57 @@
-import { createClient } from '@/lib/supabase/server'
-import Link from 'next/link'
-import Image from 'next/image'
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { ArrowUpDown } from "lucide-react"
+"use client";
+
+import { useEffect, useState } from "react";
+import { createClient } from "@supabase/supabase-js";
+import Link from "next/link";
+import Image from "next/image";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 
 interface Product {
-  id: string
-  product_id: string
-  name: string
-  vendor_name: string
-  sku: string
-  edition_size: string | null
-  price: number | null
-  image_url: string | null
+  id: string;
+  product_id: string;
+  name: string;
+  vendor_name: string;
+  sku: string;
+  edition_size: string | null;
+  price: number | null;
+  image_url: string | null;
 }
 
-export default async function ProductEditionsPage() {
-  const supabase = createClient()
-  
-  const { data: products, error } = await supabase
-    .from('products')
-    .select('*')
-    .order('created_at', { ascending: false })
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+);
 
-  if (error) {
-    throw new Error('Error loading products')
+export default function ProductEditionsPage() {
+  const [products, setProducts] = useState<Product[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  const fetchProducts = async () => {
+    setIsLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from("products")
+        .select("*")
+        .order("created_at", { ascending: false });
+
+      if (error) throw error;
+
+      setProducts(data || []);
+    } catch (error) {
+      console.error('Error fetching products:', error);
+      setProducts([]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchProducts();
+  }, []);
+
+  if (isLoading) {
+    return <div>Loading...</div>;
   }
 
   return (
@@ -43,28 +69,16 @@ export default async function ProductEditionsPage() {
                     Product
                   </th>
                   <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground">
-                    <button className="flex items-center space-x-1">
-                      <span>Vendor</span>
-                      <ArrowUpDown className="h-4 w-4" />
-                    </button>
+                    Vendor
                   </th>
                   <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground">
-                    <button className="flex items-center space-x-1">
-                      <span>SKU</span>
-                      <ArrowUpDown className="h-4 w-4" />
-                    </button>
+                    SKU
                   </th>
                   <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground">
-                    <button className="flex items-center space-x-1">
-                      <span>Edition Size</span>
-                      <ArrowUpDown className="h-4 w-4" />
-                    </button>
+                    Edition Size
                   </th>
                   <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground">
-                    <button className="flex items-center space-x-1">
-                      <span>Price</span>
-                      <ArrowUpDown className="h-4 w-4" />
-                    </button>
+                    Price
                   </th>
                   <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground">
                     Actions
@@ -115,7 +129,7 @@ export default async function ProductEditionsPage() {
                         href={`/admin/product-editions/${product.product_id}`}
                         className="text-primary hover:underline"
                       >
-                        View Details
+                        View Editions
                       </Link>
                     </td>
                   </tr>
@@ -126,5 +140,5 @@ export default async function ProductEditionsPage() {
         </CardContent>
       </Card>
     </div>
-  )
+  );
 } 
