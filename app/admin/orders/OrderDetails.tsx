@@ -167,37 +167,39 @@ export default function OrderDetails({ order }: OrderDetailsProps) {
 
   return (
     <div className="container max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
-      <div className="mb-6 flex items-center gap-4">
-        <Link href="/admin/orders">
-          <Button variant="ghost" className="gap-2">
-            <ArrowLeft className="h-4 w-4" />
-            Back to Orders
+      <div className="mb-6 flex items-center justify-between">
+        <div className="flex items-center gap-4">
+          <Link href="/admin/orders">
+            <Button variant="ghost" className="gap-2">
+              <ArrowLeft className="h-4 w-4" />
+              Back to Orders
+            </Button>
+          </Link>
+          <Button onClick={handleRefresh} disabled={loading} variant="outline">
+            {loading ? 'Refreshing...' : 'Refresh from Shopify'}
           </Button>
-        </Link>
+          {error && <span className="text-red-500 ml-4">{error}</span>}
+        </div>
         <div className="flex items-center gap-2">
           <Button
             variant="outline"
             size="icon"
-            onClick={() => navigation.prevOrderId && handleNavigation(navigation.prevOrderId)}
-            disabled={!navigation.prevOrderId}
-            title="Previous Order"
+            onClick={() => navigation.nextOrderId && handleNavigation(navigation.nextOrderId)}
+            disabled={!navigation.nextOrderId}
+            title="Previous Order (Higher Number)"
           >
             <ChevronLeft className="h-4 w-4" />
           </Button>
           <Button
             variant="outline"
             size="icon"
-            onClick={() => navigation.nextOrderId && handleNavigation(navigation.nextOrderId)}
-            disabled={!navigation.nextOrderId}
-            title="Next Order"
+            onClick={() => navigation.prevOrderId && handleNavigation(navigation.prevOrderId)}
+            disabled={!navigation.prevOrderId}
+            title="Next Order (Lower Number)"
           >
             <ChevronRight className="h-4 w-4" />
           </Button>
         </div>
-        <Button onClick={handleRefresh} disabled={loading} variant="outline">
-          {loading ? 'Refreshing...' : 'Refresh from Shopify'}
-        </Button>
-        {error && <span className="text-red-500 ml-4">{error}</span>}
       </div>
 
       <div className="grid gap-6">
