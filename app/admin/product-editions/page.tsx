@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { createClient } from "@supabase/supabase-js";
 import Link from "next/link";
+import Image from "next/image";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ArrowUpDown, Search, ChevronLeft, ChevronRight } from "lucide-react";
@@ -10,15 +11,15 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 
-interface LineItem {
+interface Product {
   id: string;
   product_id: string;
-  order_id: string;
-  order_name: string;
-  created_at: string;
-  edition_number: string | null;
-  edition_total: number | null;
-  status: string;
+  name: string;
+  vendor_name: string;
+  sku: string;
+  edition_size: string | null;
+  price: number | null;
+  image_url: string | null;
 }
 
 const supabase = createClient(
@@ -27,7 +28,7 @@ const supabase = createClient(
 );
 
 export default function ProductEditionsPage() {
-  const [lineItems, setLineItems] = useState<LineItem[]>([]);
+  const [products, setProducts] = useState<Product[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
@@ -37,16 +38,16 @@ export default function ProductEditionsPage() {
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
   const pageSize = 10;
 
-  const fetchLineItems = async () => {
+  const fetchProducts = async () => {
     setIsLoading(true);
     try {
       let query = supabase
-        .from("order_line_items_v2")
+        .from("products")
         .select("*", { count: "exact" });
 
       // Apply search
       if (searchQuery) {
-        query = query.or(`order_name.ilike.%${searchQuery}%,order_id.ilike.%${searchQuery}%`);
+        query = query.ilike("name", `%${searchQuery}%`);
       }
 
       // Apply sorting and pagination
@@ -59,26 +60,26 @@ export default function ProductEditionsPage() {
 
       if (error) throw error;
 
-      setLineItems(data || []);
+      setProducts(data || []);
       setTotalItems(count || 0);
       setTotalPages(Math.ceil((count || 0) / pageSize));
     } catch (error) {
-      console.error('Error fetching line items:', error);
-      setLineItems([]);
+      console.error('Error fetching products:', error);
+      setProducts([]);
     } finally {
       setIsLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchLineItems();
+    fetchProducts();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentPage, searchQuery, sortBy, sortOrder]);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     setCurrentPage(1);
-    fetchLineItems();
+    fetchProducts();
   };
 
   if (isLoading) {
@@ -95,7 +96,7 @@ export default function ProductEditionsPage() {
           <form onSubmit={handleSearch} className="flex gap-4 mb-6">
             <div className="flex-1">
               <Input
-                placeholder="Search by order name or ID..."
+                placeholder="Search by product name..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
@@ -106,9 +107,11 @@ export default function ProductEditionsPage() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="created_at">Created Date</SelectItem>
-                <SelectItem value="order_name">Order Name</SelectItem>
-                <SelectItem value="edition_number">Edition Number</SelectItem>
-                <SelectItem value="status">Status</SelectItem>
+                <SelectItem value="name">Product Name</SelectItem>
+                <SelectItem value="vendor_name">Vendor</SelectItem>
+                <SelectItem value="sku">SKU</SelectItem>
+                <SelectItem value="edition_size">Edition Size</SelectItem>
+                <SelectItem value="price">Price</SelectItem>
               </SelectContent>
             </Select>
             <Button type="button" variant="outline" onClick={() => setSortOrder((prev) => (prev === "asc" ? "desc" : "asc"))}>
@@ -124,16 +127,19 @@ export default function ProductEditionsPage() {
               <thead>
                 <tr className="border-b bg-muted/50">
                   <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground">
-                    Order
+                    Product
                   </th>
                   <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground">
-                    Created
+                    Vendor
                   </th>
                   <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground">
-                    Edition
+                    SKU
                   </th>
                   <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground">
-                    Status
+                    Edition Size
+                  </th>
+                  <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground">
+                    Price
                   </th>
                   <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground">
                     Actions
@@ -141,37 +147,50 @@ export default function ProductEditionsPage() {
                 </tr>
               </thead>
               <tbody>
-                {lineItems.map((item) => (
-                  <tr key={item.id} className="border-b">
+                {products.map((product: Product) => (
+                  <tr key={product.id} className="border-b">
                     <td className="p-4">
                       <Link 
-                        href={`/admin/orders/${item.order_id}`}
-                        className="text-blue-600 hover:underline"
+                        href={`/admin/product-editions/${product.product_id}`}
+                        className="flex items-center space-x-4 hover:opacity-80 transition-opacity"
                       >
-                        {item.order_name || item.order_id}
+                        <div className="relative h-16 w-16 flex-shrink-0 overflow-hidden rounded-md border">
+                          {product.image_url ? (
+                            <Image
+                              src={product.image_url}
+                              alt={product.name}
+                              fill
+                              className="object-cover"
+                            />
+                          ) : (
+                            <div className="flex h-full w-full items-center justify-center bg-muted">
+                              <span className="text-xs text-muted-foreground">No image</span>
+                            </div>
+                          )}
+                        </div>
+                        <div>
+                          <p className="font-medium text-primary">{product.name}</p>
+                        </div>
                       </Link>
                     </td>
+                    <td className="p-4">{product.vendor_name}</td>
+                    <td className="p-4">{product.sku}</td>
                     <td className="p-4">
-                      {new Date(item.created_at).toLocaleString()}
-                    </td>
-                    <td className="p-4">
-                      {item.edition_number ? (
-                        <Badge variant="outline">{item.edition_number}</Badge>
+                      {product.edition_size ? (
+                        <Badge variant="outline">{product.edition_size}</Badge>
                       ) : (
-                        'Not assigned'
+                        'N/A'
                       )}
                     </td>
                     <td className="p-4">
-                      <Badge variant={item.status === 'active' ? 'default' : 'secondary'}>
-                        {item.status || 'active'}
-                      </Badge>
+                      {product.price ? `$${product.price.toFixed(2)}` : 'N/A'}
                     </td>
                     <td className="p-4">
                       <Link
-                        href={`/admin/product-editions/${item.product_id}`}
+                        href={`/admin/product-editions/${product.product_id}`}
                         className="text-primary hover:underline"
                       >
-                        View Details
+                        View Editions
                       </Link>
                     </td>
                   </tr>
