@@ -81,29 +81,35 @@ export default function OrderDetails({ order }: OrderDetailsProps) {
   }, [order.id]);
 
   useEffect(() => {
-    // Find duplicate items
+    // Find duplicate items (only among active items)
     const duplicates = new Map<string, string[]>();
     const seen = new Map<string, string[]>();
 
-    lineItems.forEach(item => {
-      if (item.product_id) {
-        if (seen.has(item.product_id)) {
-          const existing = seen.get(item.product_id) || [];
-          existing.push(item.id);
-          seen.set(item.product_id, existing);
-          // Add all items with this product_id to duplicates
-          existing.forEach(id => {
-            const current = duplicates.get(id) || [];
-            duplicates.set(id, [...current, ...existing.filter(i => i !== id)]);
-          });
-        } else {
-          seen.set(item.product_id, [item.id]);
+    lineItems
+      .filter(item => item.status === 'active') // Only consider active items for duplicates
+      .forEach(item => {
+        if (item.product_id) {
+          if (seen.has(item.product_id)) {
+            const existing = seen.get(item.product_id) || [];
+            existing.push(item.id);
+            seen.set(item.product_id, existing);
+            // Add all items with this product_id to duplicates
+            existing.forEach(id => {
+              const current = duplicates.get(id) || [];
+              duplicates.set(id, [...current, ...existing.filter(i => i !== id)]);
+            });
+          } else {
+            seen.set(item.product_id, [item.id]);
+          }
         }
-      }
-    });
+      });
 
     setDuplicateItems(duplicates);
   }, [lineItems]);
+
+  // Separate active and inactive/removed items
+  const activeItems = lineItems.filter(item => item.status === 'active');
+  const inactiveItems = lineItems.filter(item => item.status === 'inactive' || item.status === 'removed');
 
   const handleNavigation = (orderId: string) => {
     router.push(`/admin/orders/${orderId}`);
@@ -290,10 +296,10 @@ export default function OrderDetails({ order }: OrderDetailsProps) {
           onStatusChange={handleDuplicateStatusChange}
         />
 
-        {/* Line Items */}
+        {/* Active Line Items */}
         <Card>
           <CardHeader>
-            <CardTitle>Line Items</CardTitle>
+            <CardTitle>Active Line Items</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="rounded-md border">
@@ -311,7 +317,7 @@ export default function OrderDetails({ order }: OrderDetailsProps) {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {lineItems.map((item) => (
+                  {activeItems.map((item) => (
                     <TableRow key={item.id}>
                       <TableCell>
                         {item.image_url ? (
@@ -401,6 +407,100 @@ export default function OrderDetails({ order }: OrderDetailsProps) {
             </div>
           </CardContent>
         </Card>
+
+        {/* Inactive/Removed Line Items */}
+        {inactiveItems.length > 0 && (
+          <Card>
+            <CardHeader>
+              <CardTitle>Inactive/Removed Items</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="rounded-md border">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="w-[5%]">Image</TableHead>
+                      <TableHead className="w-[30%]">Product</TableHead>
+                      <TableHead className="w-[15%]">SKU</TableHead>
+                      <TableHead className="w-[15%]">Vendor</TableHead>
+                      <TableHead className="w-[10%] text-right">Quantity</TableHead>
+                      <TableHead className="w-[10%] text-right">Price</TableHead>
+                      <TableHead className="w-[10%] text-right">Total</TableHead>
+                      <TableHead className="w-[5%] text-right">Status</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {inactiveItems.map((item) => (
+                      <TableRow key={item.id}>
+                        <TableCell>
+                          {item.image_url ? (
+                            <img 
+                              src={item.image_url} 
+                              alt={item.title}
+                              className="w-12 h-12 object-cover rounded-md opacity-50"
+                            />
+                          ) : (
+                            <div className="w-12 h-12 bg-gray-100 rounded-md flex items-center justify-center opacity-50">
+                              <span className="text-gray-400 text-xs">No image</span>
+                            </div>
+                          )}
+                        </TableCell>
+                        <TableCell className="font-medium">
+                          <div className="flex items-center gap-2">
+                            {item.product_id ? (
+                              <Link 
+                                href={`/admin/product-editions/${item.product_id}`}
+                                className="flex items-center gap-1 hover:text-primary transition-colors line-through text-muted-foreground"
+                              >
+                                {item.title}
+                                <ExternalLink className="h-3 w-3" />
+                              </Link>
+                            ) : (
+                              <span className="line-through text-muted-foreground">
+                                {item.title}
+                              </span>
+                            )}
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-muted-foreground line-through">
+                          {item.sku || '-'}
+                        </TableCell>
+                        <TableCell className="text-muted-foreground line-through">
+                          {item.vendor_name || '-'}
+                        </TableCell>
+                        <TableCell className="text-right line-through text-muted-foreground">
+                          {item.quantity}
+                        </TableCell>
+                        <TableCell className="text-right line-through text-muted-foreground">
+                          {formatCurrency(item.price, order.currency_code)}
+                        </TableCell>
+                        <TableCell className="text-right font-medium line-through text-muted-foreground">
+                          {formatCurrency(item.price * item.quantity, order.currency_code)}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <Select
+                            value={item.status}
+                            onValueChange={(value: "active" | "inactive" | "removed") => handleStatusChange(item.id, value)}
+                            disabled={updatingStatus === item.id}
+                          >
+                            <SelectTrigger className="w-[100px]">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="active">Active</SelectItem>
+                              <SelectItem value="inactive">Inactive</SelectItem>
+                              <SelectItem value="removed">Removed</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Order Summary */}
         <Card>
