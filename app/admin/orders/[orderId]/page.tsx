@@ -184,7 +184,8 @@ async function getOrderData(orderId: string) {
           vendor_name: item.vendor,
           product_id: item.product_id?.toString() || '',
           variant_id: item.variant_id?.toString() || null,
-          fulfillment_status: item.fulfillment_status || 'pending'
+          fulfillment_status: item.fulfillment_status || 'pending',
+          status: 'active'
         })),
       };
     } else {
@@ -246,7 +247,8 @@ async function getOrderData(orderId: string) {
         vendor_name: item.vendor_name,
         product_id: item.product_id,
         variant_id: item.variant_id,
-        fulfillment_status: item.fulfillment_status || 'pending'
+        fulfillment_status: item.fulfillment_status || 'pending',
+        status: item.status || 'active'
       })) || []
     };
   } catch (error) {

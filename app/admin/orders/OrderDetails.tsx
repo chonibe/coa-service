@@ -57,7 +57,13 @@ interface OrderDetailsProps {
 export default function OrderDetails({ order }: OrderDetailsProps) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [lineItems, setLineItems] = useState(order.line_items);
+  const [lineItems, setLineItems] = useState<OrderLineItem[]>(() => {
+    // Initialize with default status if not present
+    return order.line_items.map(item => ({
+      ...item,
+      status: item.status || 'active'
+    }));
+  });
   const [updatingStatus, setUpdatingStatus] = useState<string | null>(null);
   const [navigation, setNavigation] = useState<{ prevOrderId: string | null; nextOrderId: string | null }>({
     prevOrderId: null,
