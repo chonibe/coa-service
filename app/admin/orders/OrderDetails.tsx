@@ -27,6 +27,7 @@ interface OrderLineItem {
   image_url?: string;
   is_duplicate?: boolean;
   duplicate_of?: string[];
+  edition_number?: number;
 }
 
 interface Order {
@@ -307,7 +308,8 @@ export default function OrderDetails({ order }: OrderDetailsProps) {
                 <TableHeader>
                   <TableRow>
                     <TableHead className="w-[5%]">Image</TableHead>
-                    <TableHead className="w-[30%]">Product</TableHead>
+                    <TableHead className="w-[25%]">Product</TableHead>
+                    <TableHead className="w-[10%]">Edition</TableHead>
                     <TableHead className="w-[15%]">SKU</TableHead>
                     <TableHead className="w-[15%]">Vendor</TableHead>
                     <TableHead className="w-[10%] text-right">Quantity</TableHead>
@@ -358,6 +360,13 @@ export default function OrderDetails({ order }: OrderDetailsProps) {
                             </div>
                           )}
                         </div>
+                      </TableCell>
+                      <TableCell>
+                        {item.edition_number ? (
+                          <span className="font-medium">#{item.edition_number}</span>
+                        ) : (
+                          <span className="text-muted-foreground text-sm">-</span>
+                        )}
                       </TableCell>
                       <TableCell className={`text-muted-foreground ${item.status === 'removed' || item.status === 'inactive' ? 'line-through' : ''}`}>
                         {item.sku || '-'}
@@ -420,7 +429,8 @@ export default function OrderDetails({ order }: OrderDetailsProps) {
                   <TableHeader>
                     <TableRow>
                       <TableHead className="w-[5%]">Image</TableHead>
-                      <TableHead className="w-[30%]">Product</TableHead>
+                      <TableHead className="w-[25%]">Product</TableHead>
+                      <TableHead className="w-[10%]">Edition</TableHead>
                       <TableHead className="w-[15%]">SKU</TableHead>
                       <TableHead className="w-[15%]">Vendor</TableHead>
                       <TableHead className="w-[10%] text-right">Quantity</TableHead>
@@ -461,6 +471,13 @@ export default function OrderDetails({ order }: OrderDetailsProps) {
                               </span>
                             )}
                           </div>
+                        </TableCell>
+                        <TableCell>
+                          {item.edition_number ? (
+                            <span className="font-medium line-through text-muted-foreground">#{item.edition_number}</span>
+                          ) : (
+                            <span className="text-muted-foreground text-sm">-</span>
+                          )}
                         </TableCell>
                         <TableCell className="text-muted-foreground line-through">
                           {item.sku || '-'}
