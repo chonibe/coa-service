@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, ExternalLink, ChevronLeft, ChevronRight, AlertCircle } from "lucide-react";
+import { ArrowLeft, ExternalLink, ChevronUp, ChevronDown, AlertCircle } from "lucide-react";
 import { formatCurrency } from '@/lib/utils';
 import { useState, useEffect } from 'react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -193,7 +193,7 @@ export default function OrderDetails({ order }: OrderDetailsProps) {
             disabled={!navigation.nextOrderId}
             title="Previous Order (Higher Number)"
           >
-            <ChevronLeft className="h-4 w-4" />
+            <ChevronUp className="h-4 w-4" />
           </Button>
           <Button
             variant="outline"
@@ -202,7 +202,7 @@ export default function OrderDetails({ order }: OrderDetailsProps) {
             disabled={!navigation.prevOrderId}
             title="Next Order (Lower Number)"
           >
-            <ChevronRight className="h-4 w-4" />
+            <ChevronDown className="h-4 w-4" />
           </Button>
         </div>
       </div>
