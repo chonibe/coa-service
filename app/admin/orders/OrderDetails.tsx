@@ -331,13 +331,17 @@ export default function OrderDetails({ order }: OrderDetailsProps) {
                           {item.product_id ? (
                             <Link 
                               href={`/admin/product-editions/${item.product_id}`}
-                              className="flex items-center gap-1 hover:text-primary transition-colors"
+                              className={`flex items-center gap-1 hover:text-primary transition-colors ${
+                                item.status === 'removed' || item.status === 'inactive' ? 'line-through text-muted-foreground' : ''
+                              }`}
                             >
                               {item.title}
                               <ExternalLink className="h-3 w-3" />
                             </Link>
                           ) : (
-                            item.title
+                            <span className={item.status === 'removed' || item.status === 'inactive' ? 'line-through text-muted-foreground' : ''}>
+                              {item.title}
+                            </span>
                           )}
                           {duplicateItems.has(item.id) && (
                             <div className="flex items-center gap-1">
@@ -349,13 +353,19 @@ export default function OrderDetails({ order }: OrderDetailsProps) {
                           )}
                         </div>
                       </TableCell>
-                      <TableCell className="text-muted-foreground">{item.sku || '-'}</TableCell>
-                      <TableCell className="text-muted-foreground">{item.vendor_name || '-'}</TableCell>
-                      <TableCell className="text-right">{item.quantity}</TableCell>
-                      <TableCell className="text-right">
+                      <TableCell className={`text-muted-foreground ${item.status === 'removed' || item.status === 'inactive' ? 'line-through' : ''}`}>
+                        {item.sku || '-'}
+                      </TableCell>
+                      <TableCell className={`text-muted-foreground ${item.status === 'removed' || item.status === 'inactive' ? 'line-through' : ''}`}>
+                        {item.vendor_name || '-'}
+                      </TableCell>
+                      <TableCell className={`text-right ${item.status === 'removed' || item.status === 'inactive' ? 'line-through text-muted-foreground' : ''}`}>
+                        {item.quantity}
+                      </TableCell>
+                      <TableCell className={`text-right ${item.status === 'removed' || item.status === 'inactive' ? 'line-through text-muted-foreground' : ''}`}>
                         {formatCurrency(item.price, order.currency_code)}
                       </TableCell>
-                      <TableCell className="text-right font-medium">
+                      <TableCell className={`text-right font-medium ${item.status === 'removed' || item.status === 'inactive' ? 'line-through text-muted-foreground' : ''}`}>
                         {formatCurrency(item.price * item.quantity, order.currency_code)}
                       </TableCell>
                       <TableCell className="text-right">
