@@ -4,27 +4,16 @@ import { formatCurrency } from '@/lib/utils';
 import type { Database } from '@/types/supabase';
 import OrdersList from './OrdersList';
 import SyncAllOrdersButton from './SyncAllOrdersButton';
-import { ArrowLeft, ExternalLink, AlertCircle } from "lucide-react";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import Link from "next/link";
 
 interface Order {
   id: string;
-  orderId: string;
   order_number: string;
   processed_at: string;
-  customer_email: string;
-  total_price: number;
-  currency_code: string;
   financial_status: string;
   fulfillment_status: string;
-  line_items: Array<{
-    id: string;
-    title: string;
-    quantity: number;
-    price: number;
-  }>;
+  total_price: number;
+  currency_code: string;
+  customer_email: string;
 }
 
 interface PageProps {
@@ -111,13 +100,6 @@ export default async function OrdersPage({ searchParams }: PageProps) {
     
     console.log('Orders page data:', { orders, totalPages });
 
-    const hasDuplicates = (order: any) => {
-      const titles = order.line_items.map((item: any) => item.title);
-      return titles.some((title: string) => 
-        titles.filter((t: string) => t === title).length > 1
-      );
-    };
-
     return (
       <div className="container mx-auto py-8">
         <div className="flex justify-between items-center mb-8">
@@ -129,48 +111,6 @@ export default async function OrdersPage({ searchParams }: PageProps) {
           currentPage={page} 
           totalPages={totalPages} 
         />
-        <div className="rounded-md border">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Order</TableHead>
-                <TableHead>Date</TableHead>
-                <TableHead>Customer</TableHead>
-                <TableHead className="text-right">Total</TableHead>
-                <TableHead className="text-right">Status</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {orders.map((order) => (
-                <TableRow key={order.id}>
-                  <TableCell className="font-medium">
-                    <div className="flex items-center gap-2">
-                      <Link 
-                        href={`/admin/orders/${order.id}`}
-                        className="hover:text-primary transition-colors"
-                      >
-                        #{order.order_number}
-                      </Link>
-                      {hasDuplicates(order) && (
-                        <TooltipProvider>
-                          <Tooltip>
-                            <TooltipTrigger>
-                              <AlertCircle className="h-4 w-4 text-yellow-500" />
-                            </TooltipTrigger>
-                            <TooltipContent>
-                              <p>This order contains duplicate items</p>
-                            </TooltipContent>
-                          </Tooltip>
-                        </TooltipProvider>
-                      )}
-                    </div>
-                  </TableCell>
-                  {/* ... rest of the row ... */}
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </div>
       </div>
     );
   } catch (error) {

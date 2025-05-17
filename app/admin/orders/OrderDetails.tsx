@@ -5,13 +5,13 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, ExternalLink, ChevronUp, ChevronDown, AlertCircle } from "lucide-react";
+import { ArrowLeft, ExternalLink, ChevronLeft, ChevronRight, ChevronUp, ChevronDown, AlertCircle } from "lucide-react";
 import { formatCurrency } from '@/lib/utils';
 import { useState, useEffect } from 'react';
+import DuplicateItemsBox from './DuplicateItemsBox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 import { useRouter } from 'next/navigation';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface OrderLineItem {
   id: string;
@@ -24,7 +24,9 @@ interface OrderLineItem {
   variant_id: string | null;
   fulfillment_status: string;
   status: "active" | "inactive" | "removed";
-  image_url: string | null;
+  image_url?: string;
+  is_duplicate?: boolean;
+  duplicate_of?: string[];
 }
 
 interface Order {
@@ -60,12 +62,8 @@ export default function OrderDetails({ order }: OrderDetailsProps) {
     prevOrderId: null,
     nextOrderId: null
   });
+  const [duplicateItems, setDuplicateItems] = useState<Set<string>>(new Set());
   const router = useRouter();
-
-  // Check for duplicate items
-  const hasDuplicates = lineItems.some(item => 
-    lineItems.filter(i => i.title === item.title).length > 1
-  );
 
   useEffect(() => {
     const fetchNavigation = async () => {
@@ -81,6 +79,27 @@ export default function OrderDetails({ order }: OrderDetailsProps) {
 
     fetchNavigation();
   }, [order.id]);
+
+  useEffect(() => {
+    // Find duplicate items
+    const duplicates = new Set<string>();
+    const seen = new Map<string, string[]>();
+
+    lineItems.forEach(item => {
+      if (item.product_id) {
+        if (seen.has(item.product_id)) {
+          duplicates.add(item.id);
+          const existing = seen.get(item.product_id) || [];
+          existing.push(item.id);
+          seen.set(item.product_id, existing);
+        } else {
+          seen.set(item.product_id, [item.id]);
+        }
+      }
+    });
+
+    setDuplicateItems(duplicates);
+  }, [lineItems]);
 
   const handleNavigation = (orderId: string) => {
     router.push(`/admin/orders/${orderId}`);
@@ -261,31 +280,23 @@ export default function OrderDetails({ order }: OrderDetailsProps) {
           </CardContent>
         </Card>
 
+        {/* Duplicate Items Box */}
+        <DuplicateItemsBox 
+          lineItems={lineItems}
+          onStatusChange={handleDuplicateStatusChange}
+        />
+
         {/* Line Items */}
         <Card>
           <CardHeader>
-            <div className="flex items-center gap-2">
-              <CardTitle>Line Items</CardTitle>
-              {hasDuplicates && (
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger>
-                      <AlertCircle className="h-5 w-5 text-yellow-500" />
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p>This order contains duplicate items</p>
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
-              )}
-            </div>
+            <CardTitle>Line Items</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="rounded-md border">
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead className="w-[50px]">Image</TableHead>
+                    <TableHead className="w-[5%]">Image</TableHead>
                     <TableHead className="w-[30%]">Product</TableHead>
                     <TableHead className="w-[15%]">SKU</TableHead>
                     <TableHead className="w-[15%]">Vendor</TableHead>
@@ -303,26 +314,31 @@ export default function OrderDetails({ order }: OrderDetailsProps) {
                           <img 
                             src={item.image_url} 
                             alt={item.title}
-                            className="w-10 h-10 object-cover rounded-md"
+                            className="w-12 h-12 object-cover rounded-md"
                           />
                         ) : (
-                          <div className="w-10 h-10 bg-gray-100 rounded-md flex items-center justify-center">
+                          <div className="w-12 h-12 bg-gray-100 rounded-md flex items-center justify-center">
                             <span className="text-gray-400 text-xs">No image</span>
                           </div>
                         )}
                       </TableCell>
                       <TableCell className="font-medium">
-                        {item.product_id ? (
-                          <Link 
-                            href={`/admin/product-editions/${item.product_id}`}
-                            className="flex items-center gap-1 hover:text-primary transition-colors"
-                          >
-                            {item.title}
-                            <ExternalLink className="h-3 w-3" />
-                          </Link>
-                        ) : (
-                          item.title
-                        )}
+                        <div className="flex items-center gap-2">
+                          {item.product_id ? (
+                            <Link 
+                              href={`/admin/product-editions/${item.product_id}`}
+                              className="flex items-center gap-1 hover:text-primary transition-colors"
+                            >
+                              {item.title}
+                              <ExternalLink className="h-3 w-3" />
+                            </Link>
+                          ) : (
+                            item.title
+                          )}
+                          {duplicateItems.has(item.id) && (
+                            <AlertCircle className="h-4 w-4 text-yellow-500" title="This item has duplicates" />
+                          )}
+                        </div>
                       </TableCell>
                       <TableCell className="text-muted-foreground">{item.sku || '-'}</TableCell>
                       <TableCell className="text-muted-foreground">{item.vendor_name || '-'}</TableCell>
