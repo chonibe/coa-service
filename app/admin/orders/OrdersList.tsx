@@ -5,7 +5,10 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { formatCurrency } from '@/lib/utils';
+import { Search, ChevronLeft, ChevronRight } from 'lucide-react';
 
 interface Order {
   id: string;
@@ -26,10 +29,28 @@ interface OrdersListProps {
 }
 
 export default function OrdersList({ orders, currentPage, totalPages }: OrdersListProps) {
-  console.log('OrdersList received props:', { orders, currentPage, totalPages });
+  const [searchQuery, setSearchQuery] = useState('');
+  const [statusFilter, setStatusFilter] = useState('');
+  const [sortBy, setSortBy] = useState('processed_at');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
+
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    const url = new URL(window.location.href);
+    url.searchParams.set('search', searchQuery);
+    url.searchParams.set('page', '1');
+    window.location.href = url.toString();
+  };
+
+  const handleFilterChange = (value: string) => {
+    setStatusFilter(value);
+    const url = new URL(window.location.href);
+    url.searchParams.set('status', value);
+    url.searchParams.set('page', '1');
+    window.location.href = url.toString();
+  };
 
   if (!orders || orders.length === 0) {
-    console.log('No orders to display');
     return (
       <Card className="p-6">
         <div className="text-center text-muted-foreground">
@@ -41,6 +62,31 @@ export default function OrdersList({ orders, currentPage, totalPages }: OrdersLi
 
   return (
     <div className="space-y-4">
+      <form onSubmit={handleSearch} className="flex gap-4 mb-6">
+        <div className="flex-1">
+          <Input
+            placeholder="Search by order number or customer email..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
+        </div>
+        <Select value={statusFilter} onValueChange={handleFilterChange}>
+          <SelectTrigger className="w-[180px]">
+            <SelectValue placeholder="Filter by status" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="">All Status</SelectItem>
+            <SelectItem value="paid">Paid</SelectItem>
+            <SelectItem value="pending">Pending</SelectItem>
+            <SelectItem value="refunded">Refunded</SelectItem>
+          </SelectContent>
+        </Select>
+        <Button type="submit">
+          <Search className="h-4 w-4 mr-2" />
+          Search
+        </Button>
+      </form>
+
       <Card>
         <div className="overflow-x-auto">
           <table className="w-full">
@@ -52,13 +98,16 @@ export default function OrdersList({ orders, currentPage, totalPages }: OrdersLi
                 <th className="text-left p-4">Status</th>
                 <th className="text-right p-4">Total</th>
                 <th className="text-right p-4">Actions</th>
+                <th className="text-right p-4">Product Editions</th>
               </tr>
             </thead>
             <tbody>
               {orders.map((order) => (
                 <tr key={order.id} className="border-b hover:bg-muted/50">
                   <td className="p-4">
-                    <div className="font-medium">#{order.order_number}</div>
+                    <Link href={`/admin/orders/${order.id}`} className="font-medium text-blue-600 hover:underline">
+                      #{order.order_number}
+                    </Link>
                   </td>
                   <td className="p-4">
                     {new Date(order.processed_at).toLocaleDateString()}
@@ -88,6 +137,13 @@ export default function OrdersList({ orders, currentPage, totalPages }: OrdersLi
                       </Link>
                     </Button>
                   </td>
+                  <td className="p-4 text-right">
+                    <Button asChild variant="outline" size="sm">
+                      <Link href={`/admin/product-editions/${order.id}`}>
+                        Product Editions
+                      </Link>
+                    </Button>
+                  </td>
                 </tr>
               ))}
             </tbody>
@@ -107,8 +163,12 @@ export default function OrdersList({ orders, currentPage, totalPages }: OrdersLi
               window.location.href = url.toString();
             }}
           >
+            <ChevronLeft className="h-4 w-4 mr-1" />
             Previous
           </Button>
+          <span className="flex items-center text-sm">
+            Page {currentPage} of {totalPages}
+          </span>
           <Button
             variant="outline"
             size="sm"
@@ -120,6 +180,7 @@ export default function OrdersList({ orders, currentPage, totalPages }: OrdersLi
             }}
           >
             Next
+            <ChevronRight className="h-4 w-4 ml-1" />
           </Button>
         </div>
       )}
