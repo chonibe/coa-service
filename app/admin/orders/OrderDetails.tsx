@@ -24,6 +24,7 @@ interface OrderLineItem {
   variant_id: string | null;
   fulfillment_status: string;
   status: "active" | "inactive" | "removed";
+  image_url: string | null;
 }
 
 interface Order {
@@ -284,7 +285,8 @@ export default function OrderDetails({ order }: OrderDetailsProps) {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead className="w-[35%]">Product</TableHead>
+                    <TableHead className="w-[50px]">Image</TableHead>
+                    <TableHead className="w-[30%]">Product</TableHead>
                     <TableHead className="w-[15%]">SKU</TableHead>
                     <TableHead className="w-[15%]">Vendor</TableHead>
                     <TableHead className="w-[10%] text-right">Quantity</TableHead>
@@ -296,6 +298,19 @@ export default function OrderDetails({ order }: OrderDetailsProps) {
                 <TableBody>
                   {lineItems.map((item) => (
                     <TableRow key={item.id}>
+                      <TableCell>
+                        {item.image_url ? (
+                          <img 
+                            src={item.image_url} 
+                            alt={item.title}
+                            className="w-10 h-10 object-cover rounded-md"
+                          />
+                        ) : (
+                          <div className="w-10 h-10 bg-gray-100 rounded-md flex items-center justify-center">
+                            <span className="text-gray-400 text-xs">No image</span>
+                          </div>
+                        )}
+                      </TableCell>
                       <TableCell className="font-medium">
                         {item.product_id ? (
                           <Link 
