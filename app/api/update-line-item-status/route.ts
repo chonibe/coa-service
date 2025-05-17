@@ -7,12 +7,14 @@ export async function POST(request: Request) {
   try {
     const cookieStore = cookies()
     const supabase = createClient(cookieStore)
+    const { orderId, lineItemId, status } = await request.json()
+
+    // Convert orderId to string to handle large Shopify IDs
+    const orderIdStr = orderId.toString()
 
     if (!supabase) {
       throw new Error("Failed to initialize Supabase client")
     }
-
-    const { lineItemId, orderId, status } = await request.json()
 
     if (!lineItemId || !orderId || !status) {
       return NextResponse.json(
@@ -31,32 +33,27 @@ export async function POST(request: Request) {
         edition_number: status === "active" ? null : null // Reset edition number if not active
       })
       .eq("id", lineItemId)
+      .eq("order_id", orderIdStr)
 
     if (updateError) {
-      throw updateError
+      console.error("Error updating line item status:", updateError)
+      return NextResponse.json({ error: updateError.message }, { status: 500 })
     }
 
-    // Get the product ID for resequencing
-    const { data: lineItem, error: fetchError } = await supabase
-      .from("order_line_items_v2")
-      .select("product_id")
-      .eq("id", lineItemId)
-      .single()
-
-    if (fetchError) {
-      throw fetchError
-    }
-
-    if (lineItem?.product_id) {
-      // Resequence edition numbers for the product
-      await resequenceEditionNumbers(lineItem.product_id)
+    // If status is 'removed', resequence edition numbers
+    if (status === "removed") {
+      const { error: resequenceError } = await resequenceEditionNumbers(supabase, orderIdStr)
+      if (resequenceError) {
+        console.error("Error resequencing edition numbers:", resequenceError)
+        return NextResponse.json({ error: resequenceError.message }, { status: 500 })
+      }
     }
 
     return NextResponse.json({ success: true })
   } catch (error: any) {
-    console.error("Error updating line item status:", error)
+    console.error("Error in update-line-item-status:", error)
     return NextResponse.json(
-      { error: error.message || "Failed to update line item status" },
+      { error: "Internal server error" },
       { status: 500 }
     )
   }
