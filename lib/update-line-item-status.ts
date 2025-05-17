@@ -11,7 +11,7 @@ if (!supabase) {
 export async function updateLineItemStatus(
   lineItemId: string,
   orderId: string,
-  status: "active" | "removed",
+  status: "active" | "inactive" | "removed",
   reason?: string,
 ) {
   try {
@@ -20,7 +20,7 @@ export async function updateLineItemStatus(
 
     // Prepare the update data
     const updateData: {
-      status: "active" | "removed";
+      status: "active" | "inactive" | "removed";
       updated_at: string;
       removed_reason?: string;
       edition_number?: null;
@@ -34,8 +34,8 @@ export async function updateLineItemStatus(
       updateData.removed_reason = reason
     }
 
-    // If marking as removed, set edition_number to null
-    if (status === "removed") {
+    // If marking as inactive or removed, set edition_number to null
+    if (status === "inactive" || status === "removed") {
       updateData.edition_number = null
     }
 
@@ -55,8 +55,8 @@ export async function updateLineItemStatus(
 
     console.log("Update successful, affected rows:", data?.length || 0)
 
-    // If we're marking an item as removed, we need to resequence the edition numbers
-    if (status === "removed") {
+    // If we're marking an item as inactive or removed, we need to resequence the edition numbers
+    if (status === "inactive" || status === "removed") {
       // Get the product ID for this line item
       const { data: lineItemData, error: lineItemError } = await supabase
         .from("order_line_items_v2")
@@ -81,7 +81,7 @@ export async function updateLineItemStatus(
 }
 
 /**
- * Resequences edition numbers for a product after items have been removed
+ * Resequences edition numbers for a product after items have been removed or marked inactive
  */
 async function resequenceEditionNumbers(productId: string) {
   try {
@@ -92,7 +92,7 @@ async function resequenceEditionNumbers(productId: string) {
       .from("order_line_items_v2")
       .select("*")
       .eq("product_id", productId)
-      .eq("status", "active") // Only select active items, explicitly exclude removed items
+      .eq("status", "active") // Only select active items, explicitly exclude inactive/removed items
       .order("created_at", { ascending: true })
 
     if (error) {
