@@ -264,6 +264,16 @@ export default function AdminDashboard() {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
+              <div className="flex items-center space-x-2 mb-4">
+                <Checkbox
+                  id="force-sync"
+                  checked={forceSync}
+                  onCheckedChange={(checked) => setForceSync(checked as boolean)}
+                />
+                <label htmlFor="force-sync" className="text-sm font-medium">
+                  Force Sync (Ignore existing data)
+                </label>
+              </div>
               <div className="flex flex-col space-y-2 sm:flex-row sm:space-y-0 sm:space-x-2">
                 <div className="flex-1">
                   <Input
