@@ -5,13 +5,13 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, ExternalLink, ChevronLeft, ChevronRight } from "lucide-react";
+import { ArrowLeft, ExternalLink, ChevronLeft, ChevronRight, AlertCircle } from "lucide-react";
 import { formatCurrency } from '@/lib/utils';
 import { useState, useEffect } from 'react';
-import DuplicateItemsBox from './DuplicateItemsBox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 import { useRouter } from 'next/navigation';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface OrderLineItem {
   id: string;
@@ -60,6 +60,11 @@ export default function OrderDetails({ order }: OrderDetailsProps) {
     nextOrderId: null
   });
   const router = useRouter();
+
+  // Check for duplicate items
+  const hasDuplicates = lineItems.some(item => 
+    lineItems.filter(i => i.title === item.title).length > 1
+  );
 
   useEffect(() => {
     const fetchNavigation = async () => {
@@ -255,16 +260,24 @@ export default function OrderDetails({ order }: OrderDetailsProps) {
           </CardContent>
         </Card>
 
-        {/* Duplicate Items Box */}
-        <DuplicateItemsBox 
-          lineItems={lineItems}
-          onStatusChange={handleDuplicateStatusChange}
-        />
-
         {/* Line Items */}
         <Card>
           <CardHeader>
-            <CardTitle>Line Items</CardTitle>
+            <div className="flex items-center gap-2">
+              <CardTitle>Line Items</CardTitle>
+              {hasDuplicates && (
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger>
+                      <AlertCircle className="h-5 w-5 text-yellow-500" />
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>This order contains duplicate items</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              )}
+            </div>
           </CardHeader>
           <CardContent>
             <div className="rounded-md border">
