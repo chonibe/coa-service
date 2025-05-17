@@ -45,7 +45,11 @@ export default function OrdersList({ orders, currentPage, totalPages }: OrdersLi
   const handleFilterChange = (value: string) => {
     setStatusFilter(value);
     const url = new URL(window.location.href);
-    url.searchParams.set('status', value);
+    if (value === 'all') {
+      url.searchParams.delete('status');
+    } else {
+      url.searchParams.set('status', value);
+    }
     url.searchParams.set('page', '1');
     window.location.href = url.toString();
   };
@@ -70,12 +74,12 @@ export default function OrdersList({ orders, currentPage, totalPages }: OrdersLi
             onChange={(e) => setSearchQuery(e.target.value)}
           />
         </div>
-        <Select value={statusFilter} onValueChange={handleFilterChange}>
+        <Select value={statusFilter || 'all'} onValueChange={handleFilterChange}>
           <SelectTrigger className="w-[180px]">
             <SelectValue placeholder="Filter by status" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="">All Status</SelectItem>
+            <SelectItem value="all">All Status</SelectItem>
             <SelectItem value="paid">Paid</SelectItem>
             <SelectItem value="pending">Pending</SelectItem>
             <SelectItem value="refunded">Refunded</SelectItem>

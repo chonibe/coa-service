@@ -47,7 +47,7 @@ export default function ProductEditionsPage({ params }: { params: Promise<{ prod
       }
 
       // Apply filters
-      if (filters.status) {
+      if (filters.status && filters.status !== 'all') {
         query = query.eq('status', filters.status)
       }
       if (filters.hasEditionNumber) {
@@ -114,12 +114,12 @@ export default function ProductEditionsPage({ params }: { params: Promise<{ prod
               onChange={(e) => setSearchQuery(e.target.value)}
             />
           </div>
-          <Select value={filters.status} onValueChange={(value) => handleFilterChange('status', value)}>
+          <Select value={filters.status || 'all'} onValueChange={(value) => handleFilterChange('status', value)}>
             <SelectTrigger className="w-[180px]">
               <SelectValue placeholder="Filter by status" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">All Status</SelectItem>
+              <SelectItem value="all">All Status</SelectItem>
               <SelectItem value="active">Active</SelectItem>
               <SelectItem value="cancelled">Cancelled</SelectItem>
               <SelectItem value="refunded">Refunded</SelectItem>
