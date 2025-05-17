@@ -96,15 +96,16 @@ export default function OrdersList({ orders, currentPage, totalPages }: OrdersLi
             </TableHeader>
             <TableBody>
               {orders.map((order) => (
-                <TableRow key={order.id}>
+                <TableRow 
+                  key={order.id}
+                  className="cursor-pointer hover:bg-muted/50"
+                  onClick={() => window.location.href = `/admin/orders/${order.id}`}
+                >
                   <TableCell className="font-medium">
                     <div className="flex items-center gap-2">
-                      <Link 
-                        href={`/admin/orders/${order.id}`}
-                        className="hover:text-primary transition-colors"
-                      >
+                      <span className="hover:text-primary transition-colors">
                         #{order.order_number}
-                      </Link>
+                      </span>
                       {order.has_duplicates && (
                         <AlertCircle className="h-4 w-4 text-yellow-500" title="This order has duplicate items" />
                       )}

@@ -62,7 +62,7 @@ export default function OrderDetails({ order }: OrderDetailsProps) {
     prevOrderId: null,
     nextOrderId: null
   });
-  const [duplicateItems, setDuplicateItems] = useState<Set<string>>(new Set());
+  const [duplicateItems, setDuplicateItems] = useState<Map<string, string[]>>(new Map());
   const router = useRouter();
 
   useEffect(() => {
@@ -82,16 +82,20 @@ export default function OrderDetails({ order }: OrderDetailsProps) {
 
   useEffect(() => {
     // Find duplicate items
-    const duplicates = new Set<string>();
+    const duplicates = new Map<string, string[]>();
     const seen = new Map<string, string[]>();
 
     lineItems.forEach(item => {
       if (item.product_id) {
         if (seen.has(item.product_id)) {
-          duplicates.add(item.id);
           const existing = seen.get(item.product_id) || [];
           existing.push(item.id);
           seen.set(item.product_id, existing);
+          // Add all items with this product_id to duplicates
+          existing.forEach(id => {
+            const current = duplicates.get(id) || [];
+            duplicates.set(id, [...current, ...existing.filter(i => i !== id)]);
+          });
         } else {
           seen.set(item.product_id, [item.id]);
         }
@@ -336,7 +340,12 @@ export default function OrderDetails({ order }: OrderDetailsProps) {
                             item.title
                           )}
                           {duplicateItems.has(item.id) && (
-                            <AlertCircle className="h-4 w-4 text-yellow-500" title="This item has duplicates" />
+                            <div className="flex items-center gap-1">
+                              <AlertCircle className="h-4 w-4 text-yellow-500" title={`This item has ${duplicateItems.get(item.id)?.length} duplicate(s)`} />
+                              <span className="text-xs text-muted-foreground">
+                                ({duplicateItems.get(item.id)?.length})
+                              </span>
+                            </div>
                           )}
                         </div>
                       </TableCell>
