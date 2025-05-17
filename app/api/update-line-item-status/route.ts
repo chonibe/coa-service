@@ -27,7 +27,6 @@ export async function POST(request: Request) {
       .update({
         status,
         updated_at: new Date().toISOString(),
-        removed_reason: status === "removed" ? "Manually removed" : null,
         edition_number: status === "active" ? null : null // Reset edition number if not active
       })
       .eq("id", lineItemId)
