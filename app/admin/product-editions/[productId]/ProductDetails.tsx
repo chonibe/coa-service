@@ -176,7 +176,7 @@ export default function ProductDetails({ lineItems, productId }: ProductDetailsP
                           href={`/admin/orders/${item.order_id}`}
                           className="flex items-center gap-1 hover:text-primary transition-colors"
                         >
-                          Order #{item.order_id}
+                          {item.order_name || `Order #${item.order_id}`}
                           <ExternalLink className="h-3 w-3" />
                         </Link>
                       </td>
