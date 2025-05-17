@@ -186,7 +186,7 @@ export default function ProductEditionsPage({ params }: { params: Promise<{ prod
               <p>
                 Order: {item.order_name ? (
                   <Link href={`/admin/orders/${item.order_id}`} className="text-blue-600 hover:underline">
-                    Order #{item.order_name}
+                    {item.order_name}
                   </Link>
                 ) : (
                   <Link href={`/admin/orders/${item.order_id}`} className="text-blue-600 hover:underline">

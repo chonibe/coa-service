@@ -102,7 +102,6 @@ export default function OrdersList({ orders, currentPage, totalPages }: OrdersLi
                 <th className="text-left p-4">Status</th>
                 <th className="text-right p-4">Total</th>
                 <th className="text-right p-4">Actions</th>
-                <th className="text-right p-4">Product Editions</th>
               </tr>
             </thead>
             <tbody>
