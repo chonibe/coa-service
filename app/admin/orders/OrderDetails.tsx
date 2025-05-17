@@ -5,12 +5,13 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, ExternalLink } from "lucide-react";
+import { ArrowLeft, ExternalLink, ChevronLeft, ChevronRight } from "lucide-react";
 import { formatCurrency } from '@/lib/utils';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import DuplicateItemsBox from './DuplicateItemsBox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
+import { useRouter } from 'next/navigation';
 
 interface OrderLineItem {
   id: string;
@@ -54,6 +55,30 @@ export default function OrderDetails({ order }: OrderDetailsProps) {
   const [error, setError] = useState<string | null>(null);
   const [lineItems, setLineItems] = useState(order.line_items);
   const [updatingStatus, setUpdatingStatus] = useState<string | null>(null);
+  const [navigation, setNavigation] = useState<{ prevOrderId: string | null; nextOrderId: string | null }>({
+    prevOrderId: null,
+    nextOrderId: null
+  });
+  const router = useRouter();
+
+  useEffect(() => {
+    const fetchNavigation = async () => {
+      try {
+        const res = await fetch(`/api/orders/navigation?orderId=${order.id}`);
+        if (!res.ok) throw new Error('Failed to fetch navigation');
+        const data = await res.json();
+        setNavigation(data);
+      } catch (err) {
+        console.error('Error fetching navigation:', err);
+      }
+    };
+
+    fetchNavigation();
+  }, [order.id]);
+
+  const handleNavigation = (orderId: string) => {
+    router.push(`/admin/orders/${orderId}`);
+  };
 
   const handleStatusChange = async (lineItemId: string, newStatus: "active" | "inactive" | "removed") => {
     setUpdatingStatus(lineItemId);
@@ -149,6 +174,26 @@ export default function OrderDetails({ order }: OrderDetailsProps) {
             Back to Orders
           </Button>
         </Link>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={() => navigation.prevOrderId && handleNavigation(navigation.prevOrderId)}
+            disabled={!navigation.prevOrderId}
+            title="Previous Order"
+          >
+            <ChevronLeft className="h-4 w-4" />
+          </Button>
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={() => navigation.nextOrderId && handleNavigation(navigation.nextOrderId)}
+            disabled={!navigation.nextOrderId}
+            title="Next Order"
+          >
+            <ChevronRight className="h-4 w-4" />
+          </Button>
+        </div>
         <Button onClick={handleRefresh} disabled={loading} variant="outline">
           {loading ? 'Refreshing...' : 'Refresh from Shopify'}
         </Button>
