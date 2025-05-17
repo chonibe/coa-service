@@ -255,41 +255,6 @@ export default function OrderDetails({ order }: OrderDetailsProps) {
           </CardContent>
         </Card>
 
-        {/* Order Summary */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Order Summary</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-2">
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Subtotal</span>
-                <span>{formatCurrency(order.subtotal_price, order.currency_code)}</span>
-              </div>
-              {order.discount_codes.length > 0 && (
-                <div className="flex justify-between text-green-600">
-                  <span>Discounts</span>
-                  <div className="text-right">
-                    {order.discount_codes.map((discount, index) => (
-                      <div key={index} className="text-sm">
-                        {discount.code} ({discount.type === 'percentage' ? `${discount.amount}%` : formatCurrency(discount.amount, order.currency_code)})
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Tax</span>
-                <span>{formatCurrency(order.total_tax, order.currency_code)}</span>
-              </div>
-              <div className="flex justify-between font-bold text-lg pt-2 border-t">
-                <span>Total</span>
-                <span>{formatCurrency(order.total_price, order.currency_code)}</span>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
         {/* Duplicate Items Box */}
         <DuplicateItemsBox 
           lineItems={lineItems}
@@ -370,6 +335,41 @@ export default function OrderDetails({ order }: OrderDetailsProps) {
                   ))}
                 </TableBody>
               </Table>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Order Summary */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Order Summary</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2">
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Subtotal</span>
+                <span>{formatCurrency(order.subtotal_price, order.currency_code)}</span>
+              </div>
+              {order.discount_codes.length > 0 && (
+                <div className="flex justify-between text-green-600">
+                  <span>Discounts</span>
+                  <div className="text-right">
+                    {order.discount_codes.map((discount, index) => (
+                      <div key={index} className="text-sm">
+                        {discount.code} ({discount.type === 'percentage' ? `${discount.amount}%` : formatCurrency(discount.amount, order.currency_code)})
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Tax</span>
+                <span>{formatCurrency(order.total_tax, order.currency_code)}</span>
+              </div>
+              <div className="flex justify-between font-bold text-lg pt-2 border-t">
+                <span>Total</span>
+                <span>{formatCurrency(order.total_price, order.currency_code)}</span>
+              </div>
             </div>
           </CardContent>
         </Card>
