@@ -1,6 +1,7 @@
 import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
 import { notFound } from 'next/navigation';
+import Link from 'next/link';
 import type { Database } from '@/types/supabase';
 import OrderDetails from '../OrderDetails';
 
@@ -106,6 +107,13 @@ interface DatabaseOrderLineItem {
   vendor_name: string | null;
   product_id: string;
   variant_id: string | null;
+}
+
+interface LineItem {
+  id: string;
+  product_id: string;
+  name: string;
+  // Add other fields as needed
 }
 
 async function getOrderData(orderId: string) {
@@ -249,9 +257,12 @@ async function getOrderData(orderId: string) {
         fulfillment_status: item.fulfillment_status || 'pending'
       })) || []
     };
-  } catch (error) {
-    console.error('Error in getOrderData:', error);
-    return null;
+  } catch (error: any) {
+    console.error('Error fetching order:', error);
+    if (error.code === 'PGRST116') {
+      notFound();
+    }
+    throw error;
   }
 }
 
@@ -271,5 +282,19 @@ export default async function OrderDetailsPage({
     notFound();
   }
 
-  return <OrderDetails order={order} />;
+  return (
+    <div className="space-y-6">
+      <h1 className="text-2xl font-bold">Order Details</h1>
+      <div className="grid gap-4">
+        {order.line_items.map((item: LineItem) => (
+          <div key={item.id} className="border p-4 rounded-lg">
+            <Link href={`/admin/product-editions/${item.product_id}`} className="text-blue-600 hover:underline">
+              {item.name}
+            </Link>
+          </div>
+        ))}
+      </div>
+      <OrderDetails order={order} />
+    </div>
+  );
 } 

@@ -140,13 +140,6 @@ export default function OrdersList({ orders, currentPage, totalPages }: OrdersLi
                       </Link>
                     </Button>
                   </td>
-                  <td className="p-4 text-right">
-                    <Button asChild variant="outline" size="sm">
-                      <Link href={`/admin/product-editions/${order.id}`}>
-                        Product Editions
-                      </Link>
-                    </Button>
-                  </td>
                 </tr>
               ))}
             </tbody>
