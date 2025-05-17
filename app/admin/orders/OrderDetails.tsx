@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, ExternalLink } from "lucide-react";
 import { formatCurrency } from '@/lib/utils';
 import { useState } from 'react';
 import DuplicateItemsBox from './DuplicateItemsBox';
@@ -222,7 +222,19 @@ export default function OrderDetails({ order }: OrderDetailsProps) {
                 <TableBody>
                   {lineItems.map((item) => (
                     <TableRow key={item.id}>
-                      <TableCell className="font-medium">{item.title}</TableCell>
+                      <TableCell className="font-medium">
+                        {item.product_id ? (
+                          <Link 
+                            href={`/admin/product-editions/${item.product_id}`}
+                            className="flex items-center gap-1 hover:text-primary transition-colors"
+                          >
+                            {item.title}
+                            <ExternalLink className="h-3 w-3" />
+                          </Link>
+                        ) : (
+                          item.title
+                        )}
+                      </TableCell>
                       <TableCell className="text-muted-foreground">{item.sku || '-'}</TableCell>
                       <TableCell className="text-muted-foreground">{item.vendor_name || '-'}</TableCell>
                       <TableCell className="text-right">{item.quantity}</TableCell>
