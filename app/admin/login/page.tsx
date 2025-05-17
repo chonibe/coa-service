@@ -37,7 +37,7 @@ export default function AdminLoginPage() {
       }
 
       // Set a cookie to indicate the user is logged in
-      document.cookie = "admin_session=true; path=/; max-age=86400; SameSite=Lax" // 24 hours
+      document.cookie = `admin_session=true; path=/; max-age=86400; SameSite=Strict; secure=${window.location.protocol === 'https:'}`
 
       // Redirect to admin dashboard
       router.push("/admin")

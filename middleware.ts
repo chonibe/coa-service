@@ -5,12 +5,14 @@ export function middleware(request: NextRequest) {
   // Check if the request is for an admin page (except the login page)
   if (request.nextUrl.pathname.startsWith("/admin") && !request.nextUrl.pathname.startsWith("/admin/login")) {
     // Check if the user is authenticated
-    const isAuthenticated = request.cookies.has("admin_session")
+    const adminSession = request.cookies.get("admin_session")
+    const isAuthenticated = adminSession?.value === "true"
 
     if (!isAuthenticated) {
-      // Redirect to the login page
-      const loginUrl = new URL("/admin/login", request.url)
-      return NextResponse.redirect(loginUrl)
+      // Clear any invalid admin session cookie
+      const response = NextResponse.redirect(new URL("/admin/login", request.url))
+      response.cookies.delete("admin_session")
+      return response
     }
   }
 
