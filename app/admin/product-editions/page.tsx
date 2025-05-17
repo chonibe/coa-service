@@ -6,6 +6,9 @@ import Link from "next/link";
 import Image from "next/image";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Search } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 
 interface Product {
   id: string;
@@ -26,14 +29,21 @@ const supabase = createClient(
 export default function ProductEditionsPage() {
   const [products, setProducts] = useState<Product[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState("");
 
   const fetchProducts = async () => {
     setIsLoading(true);
     try {
-      const { data, error } = await supabase
+      let query = supabase
         .from("products")
         .select("*")
         .order("created_at", { ascending: false });
+
+      if (searchQuery) {
+        query = query.ilike("name", `%${searchQuery}%`);
+      }
+
+      const { data, error } = await query;
 
       if (error) throw error;
 
@@ -48,7 +58,12 @@ export default function ProductEditionsPage() {
 
   useEffect(() => {
     fetchProducts();
-  }, []);
+  }, [searchQuery]);
+
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    fetchProducts();
+  };
 
   if (isLoading) {
     return <div>Loading...</div>;
@@ -61,6 +76,19 @@ export default function ProductEditionsPage() {
           <CardTitle>Product Editions</CardTitle>
         </CardHeader>
         <CardContent>
+          <form onSubmit={handleSearch} className="flex gap-4 mb-6">
+            <div className="flex-1">
+              <Input
+                placeholder="Search by product name..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+            </div>
+            <Button type="submit">
+              <Search className="h-4 w-4 mr-2" />
+              Search
+            </Button>
+          </form>
           <div className="rounded-md border">
             <table className="w-full">
               <thead>
