@@ -11,6 +11,7 @@ import { ArrowUpDown, ChevronLeft, ChevronRight, ExternalLink } from "lucide-rea
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { LineItem } from '@/types'
+import { toast } from 'sonner'
 
 interface Product {
   id: string
@@ -31,6 +32,7 @@ export default function ProductDetails({ lineItems, productId }: ProductDetailsP
   const router = useRouter()
   const searchParams = useSearchParams()
   const [pageSize, setPageSize] = useState('10')
+  const [updatingStatus, setUpdatingStatus] = useState<Record<string, boolean>>({})
   const [filters, setFilters] = useState({
     status: searchParams.get('status') || '',
     minPrice: searchParams.get('minPrice') || '',
@@ -73,6 +75,35 @@ export default function ProductDetails({ lineItems, productId }: ProductDetailsP
     params.set('pageSize', size)
     params.set('page', '1') // Reset to first page when changing page size
     router.push(`/admin/product-editions/${productId}?${params.toString()}`)
+  }
+
+  const handleStatusChange = async (lineItemId: string, orderId: string, newStatus: string) => {
+    setUpdatingStatus(prev => ({ ...prev, [lineItemId]: true }))
+    try {
+      const response = await fetch('/api/editions/update-status', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          lineItemId,
+          orderId,
+          status: newStatus,
+        }),
+      })
+
+      if (!response.ok) {
+        const data = await response.json()
+        throw new Error(data.message || 'Failed to update status')
+      }
+
+      toast.success('Status updated successfully')
+      router.refresh()
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Failed to update status')
+    } finally {
+      setUpdatingStatus(prev => ({ ...prev, [lineItemId]: false }))
+    }
   }
 
   return (
@@ -183,7 +214,21 @@ export default function ProductDetails({ lineItems, productId }: ProductDetailsP
                       <td className="p-4">{new Date(item.created_at).toLocaleString()}</td>
                       <td className="p-4">{item.edition_number || 'Not assigned'}</td>
                       <td className="p-4">{item.edition_total || 'N/A'}</td>
-                      <td className="p-4">{item.status}</td>
+                      <td className="p-4">
+                        <Select
+                          value={item.status}
+                          onValueChange={(value) => handleStatusChange(item.line_item_id, item.order_id, value)}
+                          disabled={updatingStatus[item.line_item_id]}
+                        >
+                          <SelectTrigger className="w-[120px]">
+                            <SelectValue placeholder="Select status" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="active">Active</SelectItem>
+                            <SelectItem value="removed">Inactive</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </td>
                     </tr>
                   ))}
                 </tbody>
