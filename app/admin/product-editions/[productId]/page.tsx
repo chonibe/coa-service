@@ -2,11 +2,12 @@
 
 import { useEffect, useState, use } from 'react'
 import { createClient } from '@supabase/supabase-js'
-import { AssignEditionNumbersButton, RevokeEditionButton } from './AssignEditionNumbersButton'
+import { AssignEditionNumbersButton } from './AssignEditionNumbersButton'
 import { toast } from 'sonner'
 import ProductDetails from './ProductDetails'
 import { LineItem } from '@/types'
 import Link from 'next/link'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -45,6 +46,29 @@ export default function ProductEditionsPage({ params }: { params: Promise<{ prod
     fetchLineItems()
   }
 
+  const handleStatusChange = async (lineItemId: string, newStatus: string) => {
+    try {
+      if (newStatus === 'inactive') {
+        // Call revoke API here
+        await supabase
+          .from('order_line_items_v2')
+          .update({ status: 'inactive' })
+          .eq('id', lineItemId)
+        toast.success('Edition revoked')
+      } else {
+        await supabase
+          .from('order_line_items_v2')
+          .update({ status: newStatus })
+          .eq('id', lineItemId)
+        toast.success('Status updated')
+      }
+      fetchLineItems()
+    } catch (error) {
+      toast.error('Failed to update status')
+      console.error('Error:', error)
+    }
+  }
+
   if (isLoading) {
     return <div>Loading...</div>
   }
@@ -80,12 +104,18 @@ export default function ProductEditionsPage({ params }: { params: Promise<{ prod
               <p>Edition: {item.edition_number || 'Not assigned'}</p>
               {item.edition_total && <p>Total Editions: {item.edition_total}</p>}
             </div>
-            {item.edition_number && (
-              <RevokeEditionButton 
-                lineItemId={item.id} 
-                onSuccess={handleSuccess}
-              />
-            )}
+            <Select
+              value={item.status || 'active'}
+              onValueChange={(value) => handleStatusChange(String(item.id), value)}
+            >
+              <SelectTrigger className="w-[120px]">
+                <SelectValue placeholder="Status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="active">Active</SelectItem>
+                <SelectItem value="inactive">Inactive</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
         ))}
       </div>
