@@ -1,6 +1,10 @@
 import { supabase } from "@/lib/supabase"
 import crypto from "crypto"
 
+if (!supabase) {
+  throw new Error("Supabase client is not initialized")
+}
+
 /**
  * Updates the status of a line item and sets the updated_at timestamp
  */
@@ -15,7 +19,12 @@ export async function updateLineItemStatus(
     console.log(`Updating line item ${lineItemId} in order ${orderId} to status: ${status} at ${now.toISOString()}`)
 
     // Prepare the update data
-    const updateData: any = {
+    const updateData: {
+      status: "active" | "removed";
+      updated_at: string;
+      removed_reason?: string;
+      edition_number?: null;
+    } = {
       status,
       updated_at: now.toISOString(),
     }
@@ -34,7 +43,7 @@ export async function updateLineItemStatus(
 
     // Update the line item
     const { error, data } = await supabase
-      .from("order_line_items")
+      .from("order_line_items_v2")
       .update(updateData)
       .eq("line_item_id", lineItemId)
       .eq("order_id", orderId)
@@ -50,7 +59,7 @@ export async function updateLineItemStatus(
     if (status === "removed") {
       // Get the product ID for this line item
       const { data: lineItemData, error: lineItemError } = await supabase
-        .from("order_line_items")
+        .from("order_line_items_v2")
         .select("product_id")
         .eq("line_item_id", lineItemId)
         .eq("order_id", orderId)
@@ -80,7 +89,7 @@ async function resequenceEditionNumbers(productId: string) {
 
     // Get all active line items for this product, ordered by creation date
     const { data: activeItems, error } = await supabase
-      .from("order_line_items")
+      .from("order_line_items_v2")
       .select("*")
       .eq("product_id", productId)
       .eq("status", "active") // Only select active items, explicitly exclude removed items
@@ -108,7 +117,7 @@ async function resequenceEditionNumbers(productId: string) {
       const certificateToken = crypto.randomUUID()
 
       const { error: updateError } = await supabase
-        .from("order_line_items")
+        .from("order_line_items_v2")
         .update({
           edition_number: editionCounter,
           updated_at: new Date().toISOString(),
