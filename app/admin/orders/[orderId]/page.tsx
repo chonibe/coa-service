@@ -78,6 +78,8 @@ interface OrderLineItem {
   fulfillment_status?: string;
   status?: string;
   image_url?: string;
+  edition_number?: number;
+  edition_size?: number;
 }
 
 interface Order {
@@ -148,13 +150,23 @@ async function getOrderData(orderId: string) {
   // Fetch product images for all unique product_ids
   const productIds = Array.from(new Set((lineItems || []).map(item => item.product_id).filter(Boolean)));
   let productImages: Record<string, string> = {};
+  let productEditions: Record<string, { sku: string | null; edition_number?: number; edition_size?: number }> = {};
   if (productIds.length > 0) {
+    // Fetch images
     const { data: products } = await supabase
       .from('products')
       .select('id, image_url')
       .in('id', productIds);
     if (products) {
       productImages = Object.fromEntries(products.map(p => [p.id, p.image_url]));
+    }
+    // Fetch product edition details
+    const { data: editions } = await supabase
+      .from('product_editions')
+      .select('product_id, sku, edition_number, edition_size')
+      .in('product_id', productIds);
+    if (editions) {
+      productEditions = Object.fromEntries(editions.map(e => [e.product_id, { sku: e.sku, edition_number: e.edition_number, edition_size: e.edition_size }]));
     }
   }
 
@@ -192,7 +204,7 @@ async function getOrderData(orderId: string) {
         total_discounts: parseFloat(shopifyOrder.total_discounts || '0'),
         subtotal_price: parseFloat(shopifyOrder.subtotal_price || '0'),
         total_tax: parseFloat(shopifyOrder.total_tax || '0'),
-        discount_codes: shopifyOrder.discount_codes?.map(code => ({
+        discount_codes: shopifyOrder.discount_codes?.map((code: { code: string; amount: string; type: string }) => ({
           code: code.code,
           amount: parseFloat(code.amount),
           type: code.type
@@ -202,13 +214,15 @@ async function getOrderData(orderId: string) {
           title: item.name,
           quantity: item.quantity,
           price: item.price,
-          sku: item.sku,
+          sku: productEditions[item.product_id]?.sku || null,
           vendor_name: item.vendor_name,
           product_id: item.product_id,
           variant_id: item.variant_id,
           fulfillment_status: item.fulfillment_status || 'pending',
           status: item.status || 'active',
-          image_url: productImages[item.product_id] || undefined
+          image_url: productImages[item.product_id] || undefined,
+          edition_number: productEditions[item.product_id]?.edition_number,
+          edition_size: productEditions[item.product_id]?.edition_size
         })) || []
       };
     }
@@ -239,13 +253,15 @@ async function getOrderData(orderId: string) {
       title: item.name,
       quantity: item.quantity,
       price: item.price,
-      sku: item.sku,
+      sku: productEditions[item.product_id]?.sku || null,
       vendor_name: item.vendor_name,
       product_id: item.product_id,
       variant_id: item.variant_id,
       fulfillment_status: item.fulfillment_status || 'pending',
       status: item.status || 'active',
-      image_url: productImages[item.product_id] || undefined
+      image_url: productImages[item.product_id] || undefined,
+      edition_number: productEditions[item.product_id]?.edition_number,
+      edition_size: productEditions[item.product_id]?.edition_size
     })) || []
   };
 }
