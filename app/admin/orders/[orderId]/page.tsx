@@ -136,10 +136,17 @@ async function getOrderData(orderId: string) {
     return null;
   }
 
+  // Use Shopify order ID for line items query
+  const shopifyOrderId = orderData.raw_shopify_order_data?.id?.toString();
+  if (!shopifyOrderId) {
+    console.error('No Shopify order ID found in order data');
+    return null;
+  }
+
   const { data: lineItems } = await supabase
     .from('order_line_items_v2')
     .select('line_item_id, title, quantity, price, sku, vendor_name, product_id, variant_id, fulfillment_status, status, edition_number, image_url')
-    .eq('order_id', orderId);
+    .eq('order_id', shopifyOrderId);
 
   return {
     id: orderData.id,
