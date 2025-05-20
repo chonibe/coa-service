@@ -23,7 +23,7 @@ interface OrderLineItem {
   product_id: string;
   variant_id: string | null;
   fulfillment_status: string;
-  status: "active" | "inactive" | "removed";
+  status: "active" | "inactive";
   image_url?: string;
   is_duplicate?: boolean;
   duplicate_of?: string[];
@@ -114,15 +114,15 @@ export default function OrderDetails({ order }: OrderDetailsProps) {
     setDuplicateItems(duplicates);
   }, [lineItems]);
 
-  // Separate active and inactive/removed items
+  // Separate active and inactive items
   const activeItems = lineItems.filter(item => item.status === 'active');
-  const inactiveItems = lineItems.filter(item => item.status === 'inactive' || item.status === 'removed');
+  const inactiveItems = lineItems.filter(item => item.status === 'inactive');
 
   const handleNavigation = (orderId: string) => {
     router.push(`/admin/orders/${orderId}`);
   };
 
-  const handleStatusChange = async (lineItemId: string, newStatus: "active" | "inactive" | "removed") => {
+  const handleStatusChange = async (lineItemId: string, newStatus: "active" | "inactive") => {
     setUpdatingStatus(lineItemId);
     try {
       const res = await fetch(`/api/update-line-item-status`, {
@@ -158,7 +158,7 @@ export default function OrderDetails({ order }: OrderDetailsProps) {
     }
   };
 
-  const handleDuplicateStatusChange = async (itemIds: string[], status: 'active' | 'inactive' | 'removed') => {
+  const handleDuplicateStatusChange = async (itemIds: string[], status: 'active' | 'inactive') => {
     setLoading(true);
     setError(null);
     try {
@@ -217,8 +217,6 @@ export default function OrderDetails({ order }: OrderDetailsProps) {
         return 'default';
       case 'inactive':
         return 'secondary';
-      case 'removed':
-        return 'destructive';
       default:
         return 'secondary';
     }
@@ -406,7 +404,7 @@ export default function OrderDetails({ order }: OrderDetailsProps) {
                         {item.product_id ? (
                           <Select
                             value={item.status || 'active'}
-                            onValueChange={(value: "active" | "inactive" | "removed") => handleStatusChange(item.id, value)}
+                            onValueChange={(value: "active" | "inactive") => handleStatusChange(item.id, value)}
                             disabled={updatingStatus === item.id}
                           >
                             <SelectTrigger className="w-[100px]">
@@ -415,7 +413,6 @@ export default function OrderDetails({ order }: OrderDetailsProps) {
                             <SelectContent>
                               <SelectItem value="active">Active</SelectItem>
                               <SelectItem value="inactive">Inactive</SelectItem>
-                              <SelectItem value="removed">Removed</SelectItem>
                             </SelectContent>
                           </Select>
                         ) : (
@@ -512,7 +509,7 @@ export default function OrderDetails({ order }: OrderDetailsProps) {
                         <TableCell className="text-right">
                           <Select
                             value={item.status}
-                            onValueChange={(value: "active" | "inactive" | "removed") => handleStatusChange(item.id, value)}
+                            onValueChange={(value: "active" | "inactive") => handleStatusChange(item.id, value)}
                             disabled={updatingStatus === item.id}
                           >
                             <SelectTrigger className="w-[100px]">
@@ -521,7 +518,6 @@ export default function OrderDetails({ order }: OrderDetailsProps) {
                             <SelectContent>
                               <SelectItem value="active">Active</SelectItem>
                               <SelectItem value="inactive">Inactive</SelectItem>
-                              <SelectItem value="removed">Removed</SelectItem>
                             </SelectContent>
                           </Select>
                         </TableCell>
