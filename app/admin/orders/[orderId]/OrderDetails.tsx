@@ -126,7 +126,7 @@ export default function OrderDetails({ order }: OrderDetailsProps) {
   const handleStatusChange = async (lineItemId: string, newStatus: "active" | "inactive") => {
     setUpdatingStatus(lineItemId);
     try {
-      const res = await fetch(`/api/update-line-item-status`, {
+      const res = await fetch(`/api/editions/update-status`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -143,16 +143,7 @@ export default function OrderDetails({ order }: OrderDetailsProps) {
         throw new Error(errorData.error || 'Failed to update line item status');
       }
 
-      // Update local state immediately for better UX
-      setLineItems(prev => prev.map(item => 
-        item.id === lineItemId 
-          ? { ...item, status: newStatus }
-          : item
-      ));
-
       toast.success('Status updated successfully');
-      
-      // Force a full page refresh to ensure we have the latest data
       router.refresh();
     } catch (err: any) {
       toast.error(err.message || 'Failed to update status');
@@ -166,13 +157,14 @@ export default function OrderDetails({ order }: OrderDetailsProps) {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch(`/api/orders/${order.id}/line-items/status`, {
+      const res = await fetch(`/api/editions/update-status`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
           itemIds,
+          orderId: order.id,
           status
         }),
       });
@@ -182,7 +174,7 @@ export default function OrderDetails({ order }: OrderDetailsProps) {
       }
 
       toast.success('Status updated successfully');
-      router.refresh(); // Force a full page refresh to get the latest data
+      router.refresh();
     } catch (err: any) {
       toast.error(err.message || 'Failed to update line item status');
       setError(err.message || 'Failed to update line item status');
