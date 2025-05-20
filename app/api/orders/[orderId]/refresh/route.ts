@@ -39,10 +39,10 @@ export async function POST(req: Request, { params }: { params: { orderId: string
       return NextResponse.json({ error: 'Failed to fetch existing line items' }, { status: 500 });
     }
 
+    // Create maps for quick lookup of existing statuses and edition numbers
     const existingStatuses = new Map(
       existingLineItems?.map(item => [item.line_item_id, item.status]) || []
     );
-
     const existingEditionNumbers = new Map(
       existingLineItems?.map(item => [item.line_item_id, item.edition_number]) || []
     );
@@ -60,6 +60,7 @@ export async function POST(req: Request, { params }: { params: { orderId: string
       updated_at: new Date().toISOString(),
     };
 
+    // Prepare line items with preserved statuses
     const lineItems = shopifyOrder.line_items.map((item: any) => {
       const lineItemId = item.id.toString();
       const existingStatus = existingStatuses.get(lineItemId);
@@ -76,7 +77,7 @@ export async function POST(req: Request, { params }: { params: { orderId: string
         price: parseFloat(item.price),
         sku: item.sku || null,
         vendor_name: item.vendor || null,
-        status: existingStatus || 'active', // Preserve existing status
+        status: existingStatus || 'active', // Preserve existing status or default to active
         edition_number: existingEditionNumber, // Preserve existing edition number
         updated_at: new Date().toISOString(),
         created_at: new Date().toISOString(),

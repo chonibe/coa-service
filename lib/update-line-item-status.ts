@@ -11,7 +11,7 @@ if (!supabase) {
 export async function updateLineItemStatus(
   lineItemId: string,
   orderId: string,
-  status: "active" | "inactive" | "removed",
+  status: "active" | "inactive",
   reason?: string,
 ) {
   try {
@@ -33,7 +33,7 @@ export async function updateLineItemStatus(
 
     // Prepare the update data
     const updateData: {
-      status: "active" | "inactive" | "removed";
+      status: "active" | "inactive";
       updated_at: string;
       removed_reason?: string;
       edition_number?: null;
@@ -47,8 +47,8 @@ export async function updateLineItemStatus(
       updateData.removed_reason = reason
     }
 
-    // If marking as inactive or removed, set edition_number to null
-    if (status === "inactive" || status === "removed") {
+    // If marking as inactive, set edition_number to null
+    if (status === "inactive") {
       updateData.edition_number = null
     }
 
@@ -70,11 +70,11 @@ export async function updateLineItemStatus(
 
     // Handle resequencing based on status transition
     if (currentItem && currentItem.product_id) {
-      if (status === "inactive" || status === "removed") {
-        // When becoming inactive/removed, resequence all active items
+      if (status === "inactive") {
+        // When becoming inactive, resequence all active items
         await resequenceEditionNumbers(currentItem.product_id)
-      } else if (status === "active" && (currentItem.status === "inactive" || currentItem.status === "removed")) {
-        // When becoming active from inactive/removed, resequence with the new item
+      } else if (status === "active" && currentItem.status === "inactive") {
+        // When becoming active from inactive, resequence with the new item
         await resequenceEditionNumbersWithNewItem(currentItem.product_id, lineItemId, orderId, currentItem.created_at)
       }
     }
