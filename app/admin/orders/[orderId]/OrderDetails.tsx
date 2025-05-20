@@ -29,6 +29,7 @@ interface OrderLineItem {
   is_duplicate?: boolean;
   duplicate_of?: string[];
   edition_number?: number;
+  edition_size?: number;
 }
 
 interface Order {
@@ -398,8 +399,8 @@ export default function OrderDetails({ order }: OrderDetailsProps) {
                       </div>
                     </TableCell>
                     <TableCell>
-                      {item.edition_number ? (
-                        <span className="font-medium">#{item.edition_number}</span>
+                      {item.edition_number && item.edition_size ? (
+                        <span className="font-medium">{item.edition_number}/{item.edition_size}</span>
                       ) : (
                         <span className="text-muted-foreground text-sm">-</span>
                       )}
@@ -411,13 +412,15 @@ export default function OrderDetails({ order }: OrderDetailsProps) {
                       {item.vendor_name || '-'}
                     </TableCell>
                     <TableCell className="text-right">
-                      {item.quantity}
+                      {typeof item.quantity === 'number' ? item.quantity : '-'}
                     </TableCell>
                     <TableCell className="text-right">
                       {formatCurrency(item.price, order.currency_code)}
                     </TableCell>
                     <TableCell className="text-right font-medium">
-                      {formatCurrency(item.price * item.quantity, order.currency_code)}
+                      {typeof item.price === 'number' && typeof item.quantity === 'number'
+                        ? formatCurrency(item.price * item.quantity, order.currency_code)
+                        : '-'}
                     </TableCell>
                   </TableRow>
                 ))}
@@ -484,7 +487,7 @@ export default function OrderDetails({ order }: OrderDetailsProps) {
                 <div className="grid grid-cols-3 gap-2 text-sm">
                   <div>
                     <div className="text-muted-foreground">Quantity</div>
-                    <div className="font-medium">{item.quantity}</div>
+                    <div className="font-medium">{typeof item.quantity === 'number' ? item.quantity : '-'}</div>
               </div>
               <div>
                     <div className="text-muted-foreground">Price</div>
@@ -492,7 +495,9 @@ export default function OrderDetails({ order }: OrderDetailsProps) {
               </div>
               <div>
                     <div className="text-muted-foreground">Total</div>
-                    <div className="font-medium">{formatCurrency(item.price * item.quantity, order.currency_code)}</div>
+                    <div className="font-medium">{typeof item.price === 'number' && typeof item.quantity === 'number'
+                      ? formatCurrency(item.price * item.quantity, order.currency_code)
+                      : '-'}</div>
                   </div>
                 </div>
               </div>
@@ -560,8 +565,8 @@ export default function OrderDetails({ order }: OrderDetailsProps) {
                         </div>
                       </TableCell>
                       <TableCell>
-                        {item.edition_number ? (
-                          <span className="font-medium line-through text-muted-foreground">#{item.edition_number}</span>
+                        {item.edition_number && item.edition_size ? (
+                          <span className="font-medium line-through text-muted-foreground">{item.edition_number}/{item.edition_size}</span>
                         ) : (
                           <span className="text-muted-foreground text-sm">-</span>
                         )}
@@ -573,13 +578,15 @@ export default function OrderDetails({ order }: OrderDetailsProps) {
                         {item.vendor_name || '-'}
                       </TableCell>
                       <TableCell className="text-right line-through text-muted-foreground">
-                        {item.quantity}
+                        {typeof item.quantity === 'number' ? item.quantity : '-'}
                       </TableCell>
                       <TableCell className="text-right line-through text-muted-foreground">
                         {formatCurrency(item.price, order.currency_code)}
                       </TableCell>
                       <TableCell className="text-right font-medium line-through text-muted-foreground">
-                        {formatCurrency(item.price * item.quantity, order.currency_code)}
+                        {typeof item.price === 'number' && typeof item.quantity === 'number'
+                          ? formatCurrency(item.price * item.quantity, order.currency_code)
+                          : '-'}
                       </TableCell>
                     </TableRow>
                   ))}
@@ -638,7 +645,7 @@ export default function OrderDetails({ order }: OrderDetailsProps) {
                   <div className="grid grid-cols-3 gap-2 text-sm">
                     <div>
                       <div className="text-muted-foreground">Quantity</div>
-                      <div className="font-medium line-through text-muted-foreground">{item.quantity}</div>
+                      <div className="font-medium line-through text-muted-foreground">{typeof item.quantity === 'number' ? item.quantity : '-'}</div>
                     </div>
                     <div>
                       <div className="text-muted-foreground">Price</div>
@@ -646,7 +653,9 @@ export default function OrderDetails({ order }: OrderDetailsProps) {
                     </div>
                     <div>
                       <div className="text-muted-foreground">Total</div>
-                      <div className="font-medium line-through text-muted-foreground">{formatCurrency(item.price * item.quantity, order.currency_code)}</div>
+                      <div className="font-medium line-through text-muted-foreground">{typeof item.price === 'number' && typeof item.quantity === 'number'
+                        ? formatCurrency(item.price * item.quantity, order.currency_code)
+                        : '-'}</div>
                     </div>
                   </div>
                 </div>
