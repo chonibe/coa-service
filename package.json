@@ -1,12 +1,16 @@
 {
-  "name": "my-v0-project",
+  "name": "coa-service",
   "version": "0.1.0",
   "private": true,
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "backup:build": "tsc -p tsconfig.backup.json",
+    "backup:start": "node backup/dist/scripts/backup-database.js",
+    "backup:test": "node backup/dist/scripts/test-backup.js",
+    "backup:schedule": "node backup/dist/scripts/schedule-backup.js"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.511.0",
@@ -76,6 +80,7 @@
   },
   "devDependencies": {
     "@types/node": "^22",
+    "@types/node-cron": "^3.0.11",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "postcss": "^8",
