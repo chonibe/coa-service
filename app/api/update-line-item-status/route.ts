@@ -30,7 +30,11 @@ export async function POST(request: Request) {
     // Update the status in the database
     const { error: updateError } = await supabase
       .from("order_line_items_v2")
-      .update({ status })
+      .update({ 
+        status,
+        // Reset edition number if becoming inactive
+        edition_number: status === 'inactive' ? null : undefined
+      })
       .eq("line_item_id", lineItemId)
       .eq("order_id", orderId)
 
@@ -40,6 +44,18 @@ export async function POST(request: Request) {
         { error: "Failed to update line item status" },
         { status: 500 }
       )
+    }
+
+    // If the item is becoming active, resequence edition numbers
+    if (status === 'active') {
+      const { error: resequenceError } = await resequenceEditionNumbers(supabase, orderId)
+      if (resequenceError) {
+        console.error("Error resequencing edition numbers:", resequenceError)
+        return NextResponse.json(
+          { error: "Failed to resequence edition numbers" },
+          { status: 500 }
+        )
+      }
     }
 
     return NextResponse.json({ success: true })
