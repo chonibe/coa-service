@@ -400,8 +400,8 @@ export default function OrderDetails({ order }: OrderDetailsProps) {
                       </div>
                     </TableCell>
                     <TableCell>
-                      {item.edition_number && item.edition_total ? (
-                        <span className="font-medium">{item.edition_number}/{item.edition_total}</span>
+                      {item.edition_number && item.edition_size ? (
+                        <span className="font-medium">{item.edition_number}/{item.edition_size}</span>
                       ) : (
                         <span className="text-muted-foreground text-sm">-</span>
                       )}
@@ -424,7 +424,7 @@ export default function OrderDetails({ order }: OrderDetailsProps) {
                         : '-'}
                     </TableCell>
                     <TableCell className="text-right font-medium">
-                      {typeof item.edition_total === 'number' ? item.edition_total : '-'}
+                      {typeof item.edition_size === 'number' ? item.edition_size : '-'}
                     </TableCell>
                   </TableRow>
                 ))}
@@ -505,7 +505,7 @@ export default function OrderDetails({ order }: OrderDetailsProps) {
                   </div>
                 </div>
                 <div className="text-right font-medium">
-                  {typeof item.edition_total === 'number' ? item.edition_total : '-'}
+                  {typeof item.edition_size === 'number' ? item.edition_size : '-'}
                 </div>
               </div>
             ))}
@@ -572,8 +572,8 @@ export default function OrderDetails({ order }: OrderDetailsProps) {
                         </div>
                       </TableCell>
                       <TableCell>
-                        {item.edition_number && item.edition_total ? (
-                          <span className="font-medium line-through text-muted-foreground">{item.edition_number}/{item.edition_total}</span>
+                        {item.edition_number && item.edition_size ? (
+                          <span className="font-medium line-through text-muted-foreground">{item.edition_number}/{item.edition_size}</span>
                         ) : (
                           <span className="text-muted-foreground text-sm">-</span>
                         )}
@@ -596,7 +596,7 @@ export default function OrderDetails({ order }: OrderDetailsProps) {
                           : '-'}
                       </TableCell>
                       <TableCell className="text-right font-medium">
-                        {typeof item.edition_total === 'number' ? item.edition_total : '-'}
+                        {typeof item.edition_size === 'number' ? item.edition_size : '-'}
                       </TableCell>
                     </TableRow>
                   ))}
@@ -669,7 +669,7 @@ export default function OrderDetails({ order }: OrderDetailsProps) {
                     </div>
                   </div>
                   <div className="text-right font-medium">
-                    {typeof item.edition_total === 'number' ? item.edition_total : '-'}
+                    {typeof item.edition_size === 'number' ? item.edition_size : '-'}
                   </div>
                 </div>
               ))}

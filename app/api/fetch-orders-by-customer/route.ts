@@ -186,6 +186,7 @@ export async function GET(request: NextRequest) {
             product_title: product?.title || item.title,
             product_id: product?.id ? product.id.split("/").pop() : null,
             line_item_id: item.id ? item.id.split("/").pop() : null,
+            edition_size: item.total_inventory ? Number.parseInt(item.total_inventory, 10) : null,
             order_info: {
               order_id: order.id ? order.id.split("/").pop() : null,
               order_number: orderNumber,
