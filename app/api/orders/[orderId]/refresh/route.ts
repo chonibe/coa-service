@@ -47,6 +47,9 @@ export async function POST(req: Request, { params }: { params: { orderId: string
       existingLineItems?.map(item => [item.line_item_id, item.edition_number]) || []
     );
 
+    console.log('Existing statuses:', Object.fromEntries(existingStatuses));
+    console.log('Existing edition numbers:', Object.fromEntries(existingEditionNumbers));
+
     const orderUpdate = {
       id: shopifyOrder.id.toString(),
       order_number: shopifyOrder.name.replace('#', ''),
@@ -65,6 +68,12 @@ export async function POST(req: Request, { params }: { params: { orderId: string
       const lineItemId = item.id.toString();
       const existingStatus = existingStatuses.get(lineItemId);
       const existingEditionNumber = existingEditionNumbers.get(lineItemId);
+
+      console.log(`Processing line item ${lineItemId}:`, {
+        existingStatus,
+        existingEditionNumber,
+        willUseStatus: existingStatus || 'active'
+      });
 
       return {
         order_id: shopifyOrder.id.toString(),
@@ -87,29 +96,46 @@ export async function POST(req: Request, { params }: { params: { orderId: string
     // Upsert order
     const { error: orderError } = await supabase.from('orders').upsert(orderUpdate, { onConflict: 'id' });
     if (orderError) {
+      console.error('Error upserting order:', orderError);
       return NextResponse.json({ error: 'Failed to upsert order', details: orderError.message }, { status: 500 });
     }
 
-    // Delete old line items for this order
-    const { error: deleteError } = await supabase
+    // Upsert line items one by one to ensure status preservation
+    for (const item of lineItems) {
+      const { error: upsertError } = await supabase
+        .from('order_line_items_v2')
+        .upsert(item, { 
+          onConflict: 'order_id,line_item_id',
+          ignoreDuplicates: false
+        });
+
+      if (upsertError) {
+        console.error(`Error upserting line item ${item.line_item_id}:`, upsertError);
+        return NextResponse.json({ 
+          error: 'Failed to upsert line items', 
+          details: upsertError.message,
+          failedItem: item.line_item_id
+        }, { status: 500 });
+      }
+    }
+
+    // Get final state to verify
+    const { data: finalLineItems, error: verifyError } = await supabase
       .from('order_line_items_v2')
-      .delete()
+      .select('line_item_id, status, edition_number')
       .eq('order_id', shopifyOrder.id.toString());
 
-    if (deleteError) {
-      return NextResponse.json({ error: 'Failed to delete old line items', details: deleteError.message }, { status: 500 });
+    if (verifyError) {
+      console.error('Error verifying final state:', verifyError);
+    } else {
+      console.log('Final line item states:', finalLineItems);
     }
 
-    // Insert new line items
-    const { error: lineItemsError } = await supabase
-      .from('order_line_items_v2')
-      .insert(lineItems);
-
-    if (lineItemsError) {
-      return NextResponse.json({ error: 'Failed to insert line items', details: lineItemsError.message }, { status: 500 });
-    }
-
-    return NextResponse.json({ success: true });
+    return NextResponse.json({ 
+      success: true,
+      message: 'Order refreshed successfully with status preservation',
+      lineItemsCount: lineItems.length
+    });
   } catch (error: any) {
     console.error('Error in order refresh:', error);
     return NextResponse.json({ error: 'Unexpected error', details: error.message }, { status: 500 });
