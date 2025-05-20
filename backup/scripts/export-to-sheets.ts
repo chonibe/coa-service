@@ -1,6 +1,15 @@
 import { google } from 'googleapis';
 import { BackupConfig } from '../config/backup-config';
-import { supabase } from '../../lib/supabase';
+import { readFileSync } from 'fs';
+import { join } from 'path';
+import { createGunzip } from 'zlib';
+import { promisify } from 'util';
+import dotenv from 'dotenv';
+import { createClient } from '@supabase/supabase-js';
+
+dotenv.config();
+
+const gunzip = promisify(createGunzip);
 
 const TABLES_TO_EXPORT = [
   'products',
@@ -18,13 +27,13 @@ const TABLES_TO_EXPORT = [
   'tax_forms'
 ];
 
-export async function exportToSheets(config: BackupConfig) {
+export async function exportToSheets(config: BackupConfig, backupPath?: string) {
   try {
-    // Authenticate with Google Sheets API
+    // Initialize Google Sheets API
     const auth = new google.auth.GoogleAuth({
       credentials: {
-        client_email: config.storage.googleDrive.clientEmail,
-        private_key: config.storage.googleDrive.privateKey,
+        client_email: process.env.GOOGLE_CLIENT_EMAIL,
+        private_key: process.env.GOOGLE_PRIVATE_KEY?.replace(/\\n/g, '\n'),
       },
       scopes: ['https://www.googleapis.com/auth/spreadsheets'],
     });
@@ -35,7 +44,7 @@ export async function exportToSheets(config: BackupConfig) {
     const spreadsheet = await sheets.spreadsheets.create({
       requestBody: {
         properties: {
-          title: `Database Backup ${new Date().toISOString().split('T')[0]}`,
+          title: `Database Backup - ${new Date().toISOString().split('T')[0]}`,
         },
       },
     });
@@ -45,39 +54,79 @@ export async function exportToSheets(config: BackupConfig) {
       throw new Error('Failed to create spreadsheet');
     }
 
-    // Export each table
-    for (const table of TABLES_TO_EXPORT) {
-      if (!supabase) {
-        throw new Error('Supabase client not initialized');
+    let backupData: Record<string, any[]>;
+
+    if (backupPath) {
+      // Read and decompress the backup file
+      const compressedData = readFileSync(backupPath);
+      const gunzipStream = createGunzip();
+      const chunks: Buffer[] = [];
+      
+      return new Promise((resolve, reject) => {
+        gunzipStream.on('data', (chunk: Buffer) => chunks.push(chunk));
+        gunzipStream.on('end', () => {
+          const decompressedData = Buffer.concat(chunks);
+          backupData = JSON.parse(decompressedData.toString());
+          resolve(backupData);
+        });
+        gunzipStream.on('error', reject);
+        gunzipStream.end(compressedData);
+      });
+    } else {
+      // Initialize Supabase client
+      const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+      const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+      if (!supabaseUrl || !supabaseKey) {
+        throw new Error('NEXT_PUBLIC_SUPABASE_URL or NEXT_PUBLIC_SUPABASE_ANON_KEY not set in environment');
       }
+      const supabase = createClient(supabaseUrl, supabaseKey);
 
-      const { data, error } = await supabase
-        .from(table)
-        .select('*');
+      // Fetch data from Supabase
+      backupData = {};
+      for (const table of TABLES_TO_EXPORT) {
+        const { data, error } = await supabase
+          .from(table)
+          .select('*');
 
-      if (error) {
-        console.error(`Error fetching data from ${table}:`, error);
-        continue;
+        if (error) {
+          console.error(`Error fetching data from ${table}:`, error);
+          continue;
+        }
+
+        backupData[table] = data || [];
       }
+    }
 
-      if (!data || data.length === 0) {
-        console.log(`No data found in table ${table}`);
-        continue;
-      }
+    // Export each table to a separate sheet
+    for (const [tableName, data] of Object.entries(backupData)) {
+      if (!Array.isArray(data) || data.length === 0) continue;
 
-      // Convert data to sheet format
+      // Create headers from the first row
       const headers = Object.keys(data[0]);
-      const values = [
-        headers,
-        ...data.map(row => headers.map(header => row[header]))
-      ];
+      const rows = data.map(row => headers.map(header => row[header]));
 
-      // Update sheet with data
+      // Add the sheet
+      await sheets.spreadsheets.batchUpdate({
+        spreadsheetId,
+        requestBody: {
+          requests: [{
+            addSheet: {
+              properties: {
+                title: tableName,
+              },
+            },
+          }],
+        },
+      });
+
+      // Write the data
       await sheets.spreadsheets.values.update({
         spreadsheetId,
-        range: `${table}!A1`,
+        range: `${tableName}!A1`,
         valueInputOption: 'RAW',
-        requestBody: { values },
+        requestBody: {
+          values: [headers, ...rows],
+        },
       });
 
       // Format the sheet
@@ -117,7 +166,7 @@ export async function exportToSheets(config: BackupConfig) {
     }
 
     // If main backup spreadsheet is configured, copy the sheet there
-    if (config.storage.googleDrive.folderId) {
+    if (config.storage.googleDrive?.folderId) {
       const mainSpreadsheet = await sheets.spreadsheets.get({
         spreadsheetId: config.storage.googleDrive.folderId,
       });
@@ -148,7 +197,8 @@ export async function exportToSheets(config: BackupConfig) {
       }
     }
 
-    console.log('Successfully exported data to Google Sheets');
+    console.log(`Backup exported to Google Sheets: ${spreadsheet.data.spreadsheetUrl}`);
+    return spreadsheet.data.spreadsheetUrl;
   } catch (error) {
     console.error('Error exporting to Google Sheets:', error);
     throw error;
@@ -159,15 +209,15 @@ export async function cleanupOldSheets(config: BackupConfig) {
   try {
     const auth = new google.auth.GoogleAuth({
       credentials: {
-        client_email: config.storage.googleDrive.clientEmail,
-        private_key: config.storage.googleDrive.privateKey,
+        client_email: process.env.GOOGLE_CLIENT_EMAIL,
+        private_key: process.env.GOOGLE_PRIVATE_KEY?.replace(/\\n/g, '\n'),
       },
       scopes: ['https://www.googleapis.com/auth/spreadsheets'],
     });
 
     const sheets = google.sheets({ version: 'v4', auth });
 
-    if (!config.storage.googleDrive.folderId) {
+    if (!config.storage.googleDrive?.folderId) {
       return;
     }
 

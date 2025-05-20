@@ -7,18 +7,18 @@
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
     "outDir": "./backup/dist",
-    "rootDir": "./",
-    "baseUrl": "./",
+    "rootDir": "./backup",
+    "baseUrl": "./backup",
     "paths": {
       "@/*": ["./*"]
     }
   },
   "include": [
-    "backup/**/*.ts",
-    "lib/**/*.ts"
+    "backup/**/*.ts"
   ],
   "exclude": [
     "node_modules",
-    "backup/dist"
+    "backup/dist",
+    "lib/**/*"
   ]
 } 

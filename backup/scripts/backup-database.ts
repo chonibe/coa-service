@@ -1,43 +1,94 @@
-import { exec } from 'child_process';
-import { promisify } from 'util';
-import { createGzip } from 'zlib';
-import { createWriteStream, readdir, unlink } from 'fs';
+import { createWriteStream, createReadStream, readdir, unlink, mkdirSync, existsSync } from 'fs';
 import { join } from 'path';
 import { BackupConfig } from '../config/backup-config';
+import { createClient } from '@supabase/supabase-js';
+import { createGzip } from 'zlib';
+import { promisify } from 'util';
+import dotenv from 'dotenv';
 
-const execAsync = promisify(exec);
+dotenv.config();
+
 const readdirAsync = promisify(readdir);
 const unlinkAsync = promisify(unlink);
 
 export async function backupDatabase(config: BackupConfig): Promise<string> {
   const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
   const backupDir = config.storage.local.path;
-  const filename = `backup-${timestamp}.sql`;
+  const filename = `backup-${timestamp}.json`;
   const compressedFilename = `${filename}.gz`;
   const backupPath = join(backupDir, filename);
   const compressedPath = join(backupDir, compressedFilename);
 
   try {
-    // Create backup directory if it doesn't exist
-    await execAsync(`mkdir -p ${backupDir}`);
+    // Create backup directory if it doesn't exist (cross-platform)
+    if (!existsSync(backupDir)) {
+      mkdirSync(backupDir, { recursive: true });
+    }
 
-    // Create pg_dump command using DATABASE_URL
-    const pgDumpCmd = `pg_dump "${config.database.url}" -F p > ${backupPath}`;
+    // Use Supabase URL and Anon Key from environment
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+    if (!supabaseUrl || !supabaseKey) {
+      throw new Error('NEXT_PUBLIC_SUPABASE_URL or NEXT_PUBLIC_SUPABASE_ANON_KEY not set in environment');
+    }
+    console.log('Supabase URL:', supabaseUrl);
+    console.log('Supabase Key:', supabaseKey.substring(0, 8) + '...');
+    const supabase = createClient(supabaseUrl, supabaseKey);
 
-    // Execute pg_dump
-    await execAsync(pgDumpCmd);
+    // List of tables to backup
+    const tables = [
+      'products',
+      'orders',
+      'order_line_items_v2',
+      'vendors',
+      'vendor_payouts',
+      'product_vendor_payouts',
+      'customers',
+      'users',
+      'nfc_tags',
+      'collector_benefit_claims',
+      'product_benefits',
+      'benefit_types',
+      'tax_forms'
+    ];
 
-    // Compress the backup
-    await new Promise((resolve, reject) => {
+    // Backup each table
+    const backupData: Record<string, any[]> = {};
+    for (const table of tables) {
+      const { data, error } = await supabase
+        .from(table)
+        .select('*');
+
+      if (error) {
+        console.error(`Error backing up table ${table}:`, error);
+        continue;
+      }
+
+      backupData[table] = data || [];
+    }
+
+    // Write backup to file
+    const writeStream = createWriteStream(backupPath);
+    writeStream.write(JSON.stringify(backupData, null, 2));
+    writeStream.end();
+
+    // Wait for write to complete
+    await new Promise<void>((resolve, reject) => {
+      writeStream.on('finish', () => resolve());
+      writeStream.on('error', reject);
+    });
+
+    // Compress the backup (use createReadStream)
+    await new Promise<void>((resolve, reject) => {
       const gzip = createGzip();
-      const input = createWriteStream(backupPath);
+      const input = createReadStream(backupPath);
       const output = createWriteStream(compressedPath);
 
       input.pipe(gzip).pipe(output);
 
       output.on('finish', () => {
         // Remove the uncompressed file
-        unlinkAsync(backupPath).then(resolve).catch(reject);
+        unlinkAsync(backupPath).then(() => resolve()).catch(reject);
       });
 
       output.on('error', reject);
@@ -64,11 +115,11 @@ export async function cleanupOldBackups(config: BackupConfig): Promise<void> {
     // List all backup files
     const files = await readdirAsync(backupDir);
     const backupFiles = files
-      .filter(file => file.endsWith('.sql.gz'))
+      .filter(file => file.endsWith('.json.gz'))
       .map(file => ({
         name: file,
         path: join(backupDir, file),
-        date: new Date(file.replace('backup-', '').replace('.sql.gz', '').replace(/-/g, ':'))
+        date: new Date(file.replace('backup-', '').replace('.json.gz', '').replace(/-/g, ':'))
       }))
       .sort((a, b) => b.date.getTime() - a.date.getTime());
 
