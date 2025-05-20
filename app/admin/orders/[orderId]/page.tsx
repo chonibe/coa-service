@@ -216,7 +216,7 @@ async function getOrderData(orderId: string) {
           fulfillment_status: item.fulfillment_status || 'pending',
           status: item.status || 'active',
           image_url: productDetails[item.product_id]?.image_url || undefined,
-          edition_number: productDetails[item.product_id]?.edition_number,
+          edition_number: item.edition_number,
           edition_size: productDetails[item.product_id]?.edition_size
         })) || []
       };
@@ -255,7 +255,7 @@ async function getOrderData(orderId: string) {
       fulfillment_status: item.fulfillment_status || 'pending',
       status: item.status || 'active',
       image_url: productDetails[item.product_id]?.image_url || undefined,
-      edition_number: productDetails[item.product_id]?.edition_number,
+      edition_number: item.edition_number,
       edition_size: productDetails[item.product_id]?.edition_size
     })) || []
   };
