@@ -71,7 +71,7 @@ interface OrderLineItem {
   title: string;
   quantity: number;
   price: number;
-  sku: string | null;
+  sku?: string | null;
   vendor_name: string | null;
   product_id: string;
   variant_id: string | null;
@@ -147,26 +147,21 @@ async function getOrderData(orderId: string) {
     .select('*')
     .eq('order_id', orderId);
 
-  // Fetch product images for all unique product_ids
+  // Fetch product details for all unique product_ids
   const productIds = Array.from(new Set((lineItems || []).map(item => item.product_id).filter(Boolean)));
-  let productImages: Record<string, string> = {};
-  let productEditions: Record<string, { sku: string | null; edition_number?: number; edition_size?: number }> = {};
+  let productDetails: Record<string, { sku?: string | null; edition_number?: number; edition_size?: number; image_url?: string }> = {};
   if (productIds.length > 0) {
-    // Fetch images
     const { data: products } = await supabase
       .from('products')
-      .select('id, image_url')
+      .select('id, sku, edition_number, edition_size, image_url')
       .in('id', productIds);
     if (products) {
-      productImages = Object.fromEntries(products.map(p => [p.id, p.image_url]));
-    }
-    // Fetch product edition details
-    const { data: editions } = await supabase
-      .from('product_editions')
-      .select('product_id, sku, edition_number, edition_size')
-      .in('product_id', productIds);
-    if (editions) {
-      productEditions = Object.fromEntries(editions.map(e => [e.product_id, { sku: e.sku, edition_number: e.edition_number, edition_size: e.edition_size }]));
+      productDetails = Object.fromEntries(products.map(p => [p.id, {
+        sku: p.sku,
+        edition_number: p.edition_number,
+        edition_size: p.edition_size,
+        image_url: p.image_url
+      }]));
     }
   }
 
@@ -214,15 +209,15 @@ async function getOrderData(orderId: string) {
           title: item.name,
           quantity: item.quantity,
           price: item.price,
-          sku: productEditions[item.product_id]?.sku || null,
+          sku: productDetails[item.product_id]?.sku || null,
           vendor_name: item.vendor_name,
           product_id: item.product_id,
           variant_id: item.variant_id,
           fulfillment_status: item.fulfillment_status || 'pending',
           status: item.status || 'active',
-          image_url: productImages[item.product_id] || undefined,
-          edition_number: productEditions[item.product_id]?.edition_number,
-          edition_size: productEditions[item.product_id]?.edition_size
+          image_url: productDetails[item.product_id]?.image_url || undefined,
+          edition_number: productDetails[item.product_id]?.edition_number,
+          edition_size: productDetails[item.product_id]?.edition_size
         })) || []
       };
     }
@@ -253,15 +248,15 @@ async function getOrderData(orderId: string) {
       title: item.name,
       quantity: item.quantity,
       price: item.price,
-      sku: productEditions[item.product_id]?.sku || null,
+      sku: productDetails[item.product_id]?.sku || null,
       vendor_name: item.vendor_name,
       product_id: item.product_id,
       variant_id: item.variant_id,
       fulfillment_status: item.fulfillment_status || 'pending',
       status: item.status || 'active',
-      image_url: productImages[item.product_id] || undefined,
-      edition_number: productEditions[item.product_id]?.edition_number,
-      edition_size: productEditions[item.product_id]?.edition_size
+      image_url: productDetails[item.product_id]?.image_url || undefined,
+      edition_number: productDetails[item.product_id]?.edition_number,
+      edition_size: productDetails[item.product_id]?.edition_size
     })) || []
   };
 }
