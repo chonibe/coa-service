@@ -30,6 +30,7 @@ interface OrderLineItem {
   duplicate_of?: string[];
   edition_number?: number;
   edition_size?: number;
+  edition_total?: number;
 }
 
 interface Order {
@@ -399,8 +400,8 @@ export default function OrderDetails({ order }: OrderDetailsProps) {
                       </div>
                     </TableCell>
                     <TableCell>
-                      {item.edition_number && item.edition_size ? (
-                        <span className="font-medium">{item.edition_number}/{item.edition_size}</span>
+                      {item.edition_number && item.edition_total ? (
+                        <span className="font-medium">{item.edition_number}/{item.edition_total}</span>
                       ) : (
                         <span className="text-muted-foreground text-sm">-</span>
                       )}
@@ -565,8 +566,8 @@ export default function OrderDetails({ order }: OrderDetailsProps) {
                         </div>
                       </TableCell>
                       <TableCell>
-                        {item.edition_number && item.edition_size ? (
-                          <span className="font-medium line-through text-muted-foreground">{item.edition_number}/{item.edition_size}</span>
+                        {item.edition_number && item.edition_total ? (
+                          <span className="font-medium line-through text-muted-foreground">{item.edition_number}/{item.edition_total}</span>
                         ) : (
                           <span className="text-muted-foreground text-sm">-</span>
                         )}
