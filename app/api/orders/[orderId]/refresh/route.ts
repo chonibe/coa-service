@@ -27,14 +27,24 @@ export async function POST(req: Request, { params }: { params: { orderId: string
     // Update Supabase
     const cookieStore = cookies();
     const supabase = createRouteHandlerClient<Database>({ cookies: () => cookieStore });
+
     // Get existing line items to preserve their status
-    const { data: existingLineItems } = await supabase
+    const { data: existingLineItems, error: fetchError } = await supabase
       .from('order_line_items_v2')
-      .select('line_item_id, status')
+      .select('line_item_id, status, edition_number')
       .eq('order_id', shopifyOrder.id.toString());
+
+    if (fetchError) {
+      console.error('Error fetching existing line items:', fetchError);
+      return NextResponse.json({ error: 'Failed to fetch existing line items' }, { status: 500 });
+    }
 
     const existingStatuses = new Map(
       existingLineItems?.map(item => [item.line_item_id, item.status]) || []
+    );
+
+    const existingEditionNumbers = new Map(
+      existingLineItems?.map(item => [item.line_item_id, item.edition_number]) || []
     );
 
     const orderUpdate = {
@@ -49,36 +59,58 @@ export async function POST(req: Request, { params }: { params: { orderId: string
       raw_shopify_order_data: shopifyOrder,
       updated_at: new Date().toISOString(),
     };
-    const lineItems = shopifyOrder.line_items.map((item: any) => ({
-      order_id: shopifyOrder.id.toString(),
-      order_name: shopifyOrder.name,
-      line_item_id: item.id.toString(),
-      product_id: item.product_id?.toString() || '',
-      variant_id: item.variant_id?.toString() || null,
-      title: item.title,
-      quantity: item.quantity,
-      price: parseFloat(item.price),
-      sku: item.sku || null,
-      vendor_name: item.vendor || null,
-      status: existingStatuses.get(item.id.toString()) || 'active',
-      updated_at: new Date().toISOString(),
-      created_at: new Date().toISOString(),
-    }));
+
+    const lineItems = shopifyOrder.line_items.map((item: any) => {
+      const lineItemId = item.id.toString();
+      const existingStatus = existingStatuses.get(lineItemId);
+      const existingEditionNumber = existingEditionNumbers.get(lineItemId);
+
+      return {
+        order_id: shopifyOrder.id.toString(),
+        order_name: shopifyOrder.name,
+        line_item_id: lineItemId,
+        product_id: item.product_id?.toString() || '',
+        variant_id: item.variant_id?.toString() || null,
+        title: item.title,
+        quantity: item.quantity,
+        price: parseFloat(item.price),
+        sku: item.sku || null,
+        vendor_name: item.vendor || null,
+        status: existingStatus || 'active', // Preserve existing status
+        edition_number: existingEditionNumber, // Preserve existing edition number
+        updated_at: new Date().toISOString(),
+        created_at: new Date().toISOString(),
+      };
+    });
 
     // Upsert order
     const { error: orderError } = await supabase.from('orders').upsert(orderUpdate, { onConflict: 'id' });
     if (orderError) {
       return NextResponse.json({ error: 'Failed to upsert order', details: orderError.message }, { status: 500 });
     }
+
     // Delete old line items for this order
-    await supabase.from('order_line_items').delete().eq('order_id', shopifyOrder.id.toString());
+    const { error: deleteError } = await supabase
+      .from('order_line_items_v2')
+      .delete()
+      .eq('order_id', shopifyOrder.id.toString());
+
+    if (deleteError) {
+      return NextResponse.json({ error: 'Failed to delete old line items', details: deleteError.message }, { status: 500 });
+    }
+
     // Insert new line items
-    const { error: lineItemsError } = await supabase.from('order_line_items').insert(lineItems);
+    const { error: lineItemsError } = await supabase
+      .from('order_line_items_v2')
+      .insert(lineItems);
+
     if (lineItemsError) {
       return NextResponse.json({ error: 'Failed to insert line items', details: lineItemsError.message }, { status: 500 });
     }
+
     return NextResponse.json({ success: true });
   } catch (error: any) {
+    console.error('Error in order refresh:', error);
     return NextResponse.json({ error: 'Unexpected error', details: error.message }, { status: 500 });
   }
 } 
