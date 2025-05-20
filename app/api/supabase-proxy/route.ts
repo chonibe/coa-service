@@ -63,8 +63,8 @@ async function updateLineItemStatus(supabaseAdmin: any, params: any) {
   }
 
   // Validate status
-  if (status !== "active" && status !== "removed") {
-    return NextResponse.json({ error: "Status must be either 'active' or 'removed'" }, { status: 400 })
+  if (status !== "active" && status !== "inactive") {
+    return NextResponse.json({ error: "Status must be either 'active' or 'inactive'" }, { status: 400 })
   }
 
   const updateData: any = {
@@ -77,14 +77,14 @@ async function updateLineItemStatus(supabaseAdmin: any, params: any) {
     updateData.removed_reason = reason
   }
 
-  // If marking as removed, set edition_number to null
-  if (status === "removed") {
+  // If marking as inactive, set edition_number to null
+  if (status === "inactive") {
     updateData.edition_number = null
   }
 
   // Update the line item
   const { error, data } = await supabaseAdmin
-    .from("order_line_items")
+    .from("order_line_items_v2")
     .update(updateData)
     .eq("line_item_id", lineItemId)
     .eq("order_id", orderId)
@@ -93,11 +93,11 @@ async function updateLineItemStatus(supabaseAdmin: any, params: any) {
     return NextResponse.json({ error: error.message }, { status: 500 })
   }
 
-  // If we're marking an item as removed, resequence the edition numbers
-  if (status === "removed") {
+  // If we're marking an item as inactive, resequence the edition numbers
+  if (status === "inactive") {
     // Get the product ID for this line item
     const { data: lineItemData, error: lineItemError } = await supabaseAdmin
-      .from("order_line_items")
+      .from("order_line_items_v2")
       .select("product_id")
       .eq("line_item_id", lineItemId)
       .eq("order_id", orderId)

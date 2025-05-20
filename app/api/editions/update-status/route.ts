@@ -15,9 +15,9 @@ export async function POST(request: NextRequest) {
     }
 
     // Validate status
-    if (status !== "active" && status !== "removed") {
+    if (status !== "active" && status !== "inactive") {
       return NextResponse.json(
-        { success: false, message: "Status must be either 'active' or 'removed'" },
+        { success: false, message: "Status must be either 'active' or 'inactive'" },
         { status: 400 },
       )
     }
