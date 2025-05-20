@@ -27,16 +27,35 @@ export async function POST(request: Request) {
     const cookieStore = cookies()
     const supabase = createClient()
 
+    // Get the current item to check its status
+    const { data: currentItem, error: fetchError } = await supabase
+      .from("order_line_items_v2")
+      .select("status, product_id")
+      .eq("line_item_id", lineItemId)
+      .eq("order_id", orderId)
+      .single()
+
+    if (fetchError) {
+      console.error("Error fetching current item:", fetchError)
+      return NextResponse.json(
+        { error: "Failed to fetch current item status" },
+        { status: 500 }
+      )
+    }
+
     // Update the status in the database
-    const { error: updateError } = await supabase
+    const { error: updateError, data: updatedItem } = await supabase
       .from("order_line_items_v2")
       .update({ 
         status,
         // Reset edition number if becoming inactive
-        edition_number: status === 'inactive' ? null : undefined
+        edition_number: status === 'inactive' ? null : undefined,
+        updated_at: new Date().toISOString()
       })
       .eq("line_item_id", lineItemId)
       .eq("order_id", orderId)
+      .select()
+      .single()
 
     if (updateError) {
       console.error("Error updating line item status:", updateError)
@@ -58,7 +77,10 @@ export async function POST(request: Request) {
       }
     }
 
-    return NextResponse.json({ success: true })
+    return NextResponse.json({ 
+      success: true,
+      data: updatedItem
+    })
   } catch (error: any) {
     console.error("Error in update-line-item-status:", error)
     return NextResponse.json(

@@ -143,8 +143,17 @@ export default function OrderDetails({ order }: OrderDetailsProps) {
         throw new Error(errorData.error || 'Failed to update line item status');
       }
 
+      // Update local state immediately for better UX
+      setLineItems(prev => prev.map(item => 
+        item.id === lineItemId 
+          ? { ...item, status: newStatus }
+          : item
+      ));
+
       toast.success('Status updated successfully');
-      router.refresh(); // Force a full page refresh to get the latest data
+      
+      // Force a full page refresh to ensure we have the latest data
+      router.refresh();
     } catch (err: any) {
       toast.error(err.message || 'Failed to update status');
       setError(err.message || 'Failed to update line item status');
