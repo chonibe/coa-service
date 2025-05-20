@@ -119,18 +119,34 @@ export async function POST() {
           };
         });
 
-        console.log(`Inserting ${lineItems.length} line items for order ${order.id}...`);
-        const { error: lineItemsError, data: insertedItems } = await supabase
-          .from('order_line_items_v2')
-          .insert(lineItems)
-          .select();
+        // Get product image URLs
+        const productIds = lineItems.map(item => item.product_id).filter(Boolean);
+        const { data: products } = await supabase
+          .from('products')
+          .select('product_id, image_url')
+          .in('product_id', productIds);
 
-        if (lineItemsError) {
-          console.error(`Error inserting line items for order ${order.id}:`, lineItemsError);
+        const productImageMap = new Map(
+          products?.map(p => [p.product_id, p.image_url]) || []
+        );
+
+        // Add image URLs to line items
+        const lineItemsWithImages = lineItems.map(item => ({
+          ...item,
+          img_url: productImageMap.get(item.product_id) || null
+        }));
+
+        console.log(`Inserting ${lineItemsWithImages.length} line items for order ${order.id}...`);
+        const { error: insertError } = await supabase
+          .from('order_line_items_v2')
+          .insert(lineItemsWithImages);
+
+        if (insertError) {
+          console.error(`Error inserting line items for order ${order.id}:`, insertError);
           errors++;
         } else {
-          console.log(`Successfully inserted ${lineItems.length} line items for order ${order.id}`);
-          syncedLineItems += lineItems.length;
+          console.log(`Successfully inserted ${lineItemsWithImages.length} line items for order ${order.id}`);
+          syncedLineItems += lineItemsWithImages.length;
         }
       } catch (error) {
         console.error(`Error processing order ${order.id}:`, error);
