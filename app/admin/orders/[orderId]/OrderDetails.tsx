@@ -12,6 +12,7 @@ import DuplicateItemsBox from '../DuplicateItemsBox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 import { useRouter } from 'next/navigation';
+import Image from "next/image"
 
 interface OrderLineItem {
   id: string;
@@ -142,12 +143,15 @@ export default function OrderDetails({ order }: OrderDetailsProps) {
         throw new Error(errorData.error || 'Failed to update line item status');
       }
 
-      // Update local state
-      setLineItems(prev => prev.map(item => 
-        item.id === lineItemId 
-          ? { ...item, status: newStatus }
-          : item
-      ));
+      // Fetch the latest line items from the database
+      const fetchRes = await fetch(`/api/orders/${order.id}/line-items`);
+      if (!fetchRes.ok) {
+        throw new Error('Failed to fetch updated line items');
+      }
+      const { data: updatedLineItems } = await fetchRes.json();
+
+      // Update local state with the fetched data
+      setLineItems(updatedLineItems);
 
       toast.success('Status updated successfully');
     } catch (err: any) {
@@ -227,12 +231,12 @@ export default function OrderDetails({ order }: OrderDetailsProps) {
       {/* Navigation and Actions */}
       <div className="mb-4 sm:mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-4">
-          <Link href="/admin/orders">
+        <Link href="/admin/orders">
             <Button variant="ghost" className="gap-2 w-full sm:w-auto">
               <ArrowLeft className="h-4 w-4" />
-              Back to Orders
-            </Button>
-          </Link>
+            Back to Orders
+          </Button>
+        </Link>
           <Button onClick={handleRefresh} disabled={loading} variant="outline" className="w-full sm:w-auto">
             {loading ? 'Refreshing...' : 'Refresh from Shopify'}
           </Button>
@@ -328,10 +332,10 @@ export default function OrderDetails({ order }: OrderDetailsProps) {
 
       {/* Active Line Items */}
       <Card className="mb-4 sm:mb-6">
-        <CardHeader>
+          <CardHeader>
           <CardTitle>Active Line Items</CardTitle>
-        </CardHeader>
-        <CardContent>
+          </CardHeader>
+          <CardContent>
           {/* Desktop Table View */}
           <div className="hidden sm:block rounded-md border">
             <Table>
@@ -352,11 +356,14 @@ export default function OrderDetails({ order }: OrderDetailsProps) {
                   <TableRow key={item.id}>
                     <TableCell>
                       {item.image_url ? (
-                        <img 
-                          src={item.image_url} 
-                          alt={item.title}
-                          className="w-12 h-12 object-cover rounded-md"
-                        />
+                        <div className="relative w-12 h-12">
+                          <Image 
+                            src={item.image_url} 
+                            alt={item.title}
+                            fill
+                            className="object-cover rounded-md"
+                          />
+                        </div>
                       ) : (
                         <div className="w-12 h-12 bg-gray-100 rounded-md flex items-center justify-center">
                           <span className="text-gray-400 text-xs">No image</span>
@@ -421,11 +428,14 @@ export default function OrderDetails({ order }: OrderDetailsProps) {
                 <div className="flex gap-3">
                   <div className="flex-shrink-0">
                     {item.image_url ? (
-                      <img 
-                        src={item.image_url} 
-                        alt={item.title}
-                        className="w-16 h-16 object-cover rounded-md"
-                      />
+                      <div className="relative w-16 h-16">
+                        <Image 
+                          src={item.image_url} 
+                          alt={item.title}
+                          fill
+                          className="object-cover rounded-md"
+                        />
+                      </div>
                     ) : (
                       <div className="w-16 h-16 bg-gray-100 rounded-md flex items-center justify-center">
                         <span className="text-gray-400 text-xs">No image</span>
@@ -458,8 +468,8 @@ export default function OrderDetails({ order }: OrderDetailsProps) {
                       {item.edition_number && (
                         <Badge variant="outline" className="flex-shrink-0">
                           #{item.edition_number}
-                        </Badge>
-                      )}
+                    </Badge>
+                  )}
                     </div>
                     <div className="mt-2 text-sm text-muted-foreground">
                       <div>SKU: {item.sku || '-'}</div>
@@ -471,21 +481,21 @@ export default function OrderDetails({ order }: OrderDetailsProps) {
                   <div>
                     <div className="text-muted-foreground">Quantity</div>
                     <div className="font-medium">{item.quantity}</div>
-                  </div>
-                  <div>
+              </div>
+              <div>
                     <div className="text-muted-foreground">Price</div>
                     <div className="font-medium">{formatCurrency(item.price, order.currency_code)}</div>
-                  </div>
-                  <div>
+              </div>
+              <div>
                     <div className="text-muted-foreground">Total</div>
                     <div className="font-medium">{formatCurrency(item.price * item.quantity, order.currency_code)}</div>
                   </div>
                 </div>
               </div>
             ))}
-          </div>
-        </CardContent>
-      </Card>
+            </div>
+          </CardContent>
+        </Card>
 
       {/* Inactive Items */}
       {inactiveItems.length > 0 && (
@@ -514,11 +524,14 @@ export default function OrderDetails({ order }: OrderDetailsProps) {
                     <TableRow key={item.id}>
                       <TableCell>
                         {item.image_url ? (
-                          <img 
-                            src={item.image_url} 
-                            alt={item.title}
-                            className="w-12 h-12 object-cover rounded-md opacity-50"
-                          />
+                          <div className="relative w-12 h-12">
+                            <Image 
+                              src={item.image_url} 
+                              alt={item.title}
+                              fill
+                              className="object-cover rounded-md opacity-50"
+                            />
+                          </div>
                         ) : (
                           <div className="w-12 h-12 bg-gray-100 rounded-md flex items-center justify-center opacity-50">
                             <span className="text-gray-400 text-xs">No image</span>
@@ -577,11 +590,14 @@ export default function OrderDetails({ order }: OrderDetailsProps) {
                   <div className="flex gap-3">
                     <div className="flex-shrink-0">
                       {item.image_url ? (
-                        <img 
-                          src={item.image_url} 
-                          alt={item.title}
-                          className="w-16 h-16 object-cover rounded-md"
-                        />
+                        <div className="relative w-16 h-16">
+                          <Image 
+                            src={item.image_url} 
+                            alt={item.title}
+                            fill
+                            className="object-cover rounded-md"
+                          />
+                        </div>
                       ) : (
                         <div className="w-16 h-16 bg-gray-100 rounded-md flex items-center justify-center">
                           <span className="text-gray-400 text-xs">No image</span>
@@ -667,7 +683,7 @@ export default function OrderDetails({ order }: OrderDetailsProps) {
               <span>Total</span>
               <span>{formatCurrency(order.total_price, order.currency_code)}</span>
             </div>
-          </div>
+      </div>
         </CardContent>
       </Card>
     </div>
