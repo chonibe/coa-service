@@ -423,6 +423,9 @@ export default function OrderDetails({ order }: OrderDetailsProps) {
                         ? formatCurrency(item.price * item.quantity, order.currency_code)
                         : '-'}
                     </TableCell>
+                    <TableCell className="text-right font-medium">
+                      {typeof item.edition_total === 'number' ? item.edition_total : '-'}
+                    </TableCell>
                   </TableRow>
                 ))}
               </TableBody>
@@ -500,6 +503,9 @@ export default function OrderDetails({ order }: OrderDetailsProps) {
                       ? formatCurrency(item.price * item.quantity, order.currency_code)
                       : '-'}</div>
                   </div>
+                </div>
+                <div className="text-right font-medium">
+                  {typeof item.edition_total === 'number' ? item.edition_total : '-'}
                 </div>
               </div>
             ))}
@@ -589,6 +595,9 @@ export default function OrderDetails({ order }: OrderDetailsProps) {
                           ? formatCurrency(item.price * item.quantity, order.currency_code)
                           : '-'}
                       </TableCell>
+                      <TableCell className="text-right font-medium">
+                        {typeof item.edition_total === 'number' ? item.edition_total : '-'}
+                      </TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
@@ -658,6 +667,9 @@ export default function OrderDetails({ order }: OrderDetailsProps) {
                         ? formatCurrency(item.price * item.quantity, order.currency_code)
                         : '-'}</div>
                     </div>
+                  </div>
+                  <div className="text-right font-medium">
+                    {typeof item.edition_total === 'number' ? item.edition_total : '-'}
                   </div>
                 </div>
               ))}
