@@ -59,7 +59,7 @@ export default function OrderDetails({ order }: OrderDetailsProps) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [lineItems, setLineItems] = useState<OrderLineItem[]>(() => {
-    // Initialize with default status if not present
+    // Initialize with line items from Supabase (order.line_items)
     return order.line_items.map(item => ({
       ...item,
       status: item.status || 'active'
@@ -143,6 +143,15 @@ export default function OrderDetails({ order }: OrderDetailsProps) {
         throw new Error(errorData.error || 'Failed to update line item status');
       }
 
+      // Update local state with the new status
+      setLineItems(prevItems => 
+        prevItems.map(item => 
+          item.id === lineItemId 
+            ? { ...item, status: newStatus }
+            : item
+        )
+      );
+
       toast.success('Status updated successfully');
       router.refresh();
     } catch (err: any) {
@@ -172,6 +181,15 @@ export default function OrderDetails({ order }: OrderDetailsProps) {
       if (!res.ok) {
         throw new Error('Failed to update line item status');
       }
+
+      // Update local state with the new status
+      setLineItems(prevItems => 
+        prevItems.map(item => 
+          itemIds.includes(item.id)
+            ? { ...item, status }
+            : item
+        )
+      );
 
       toast.success('Status updated successfully');
       router.refresh();
