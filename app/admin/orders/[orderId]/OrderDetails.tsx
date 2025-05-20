@@ -143,17 +143,8 @@ export default function OrderDetails({ order }: OrderDetailsProps) {
         throw new Error(errorData.error || 'Failed to update line item status');
       }
 
-      // Fetch the latest line items from the database
-      const fetchRes = await fetch(`/api/orders/${order.id}/line-items`);
-      if (!fetchRes.ok) {
-        throw new Error('Failed to fetch updated line items');
-      }
-      const { data: updatedLineItems } = await fetchRes.json();
-
-      // Update local state with the fetched data
-      setLineItems(updatedLineItems);
-
       toast.success('Status updated successfully');
+      router.refresh(); // Force a full page refresh to get the latest data
     } catch (err: any) {
       toast.error(err.message || 'Failed to update status');
       setError(err.message || 'Failed to update line item status');
@@ -181,14 +172,8 @@ export default function OrderDetails({ order }: OrderDetailsProps) {
         throw new Error('Failed to update line item status');
       }
 
-      // Update local state
-      setLineItems(prev => prev.map(item => 
-        itemIds.includes(item.id) 
-          ? { ...item, status }
-          : item
-      ));
-
       toast.success('Status updated successfully');
+      router.refresh(); // Force a full page refresh to get the latest data
     } catch (err: any) {
       toast.error(err.message || 'Failed to update line item status');
       setError(err.message || 'Failed to update line item status');
