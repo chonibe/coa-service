@@ -355,6 +355,7 @@ export default function OrderDetails({ order }: OrderDetailsProps) {
                   <TableHead className="w-[10%] text-right">Quantity</TableHead>
                   <TableHead className="w-[10%] text-right">Price</TableHead>
                   <TableHead className="w-[10%] text-right">Total</TableHead>
+                  <TableHead className="w-[10%] text-right">Edition Size</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -492,20 +493,21 @@ export default function OrderDetails({ order }: OrderDetailsProps) {
                   <div>
                     <div className="text-muted-foreground">Quantity</div>
                     <div className="font-medium">{typeof item.quantity === 'number' ? item.quantity : '-'}</div>
-              </div>
-              <div>
+                  </div>
+                  <div>
                     <div className="text-muted-foreground">Price</div>
                     <div className="font-medium">{formatCurrency(item.price, order.currency_code)}</div>
-              </div>
-              <div>
+                  </div>
+                  <div>
                     <div className="text-muted-foreground">Total</div>
                     <div className="font-medium">{typeof item.price === 'number' && typeof item.quantity === 'number'
                       ? formatCurrency(item.price * item.quantity, order.currency_code)
                       : '-'}</div>
                   </div>
                 </div>
-                <div className="text-right font-medium">
-                  {typeof item.edition_size === 'number' ? item.edition_size : '-'}
+                <div className="flex justify-between items-center text-sm">
+                  <div className="text-muted-foreground">Edition Size</div>
+                  <div className="font-medium">{typeof item.edition_size === 'number' ? item.edition_size : '-'}</div>
                 </div>
               </div>
             ))}
