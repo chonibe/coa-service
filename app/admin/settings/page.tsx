@@ -9,14 +9,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Separator } from "@/components/ui/separator"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Save } from "lucide-react"
-import { Metadata } from "next"
 import { SettingsLayout } from "@/components/settings-layout"
 import { Database, Users, Bell, Shield, HardDrive } from "lucide-react"
-
-export const metadata: Metadata = {
-  title: "Settings",
-  description: "Manage your application settings",
-}
 
 const settingsConfig = [
   {

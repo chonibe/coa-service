@@ -142,10 +142,29 @@ async function getOrderData(orderId: string) {
   }
 
   // Get line items from Supabase
-  const { data: lineItems } = await supabase
-    .from('order_line_items_v2')
-    .select('*')
-    .eq('order_id', orderId);
+  const { data: lineItems, error: lineItemsError } = await supabase
+    .from("order_line_items_v2")
+    .select(`
+      *,
+      products:product_id (
+        sku,
+        img_url
+      )
+    `)
+    .eq("order_id", orderId)
+    .order("created_at", { ascending: true });
+
+  if (lineItemsError) {
+    console.error("Error fetching line items:", lineItemsError);
+    throw new Error("Failed to fetch line items");
+  }
+
+  // Map the line items to include the SKU and img_url from the products table
+  const mappedLineItems = lineItems.map((item) => ({
+    ...item,
+    sku: item.products?.sku || null,
+    img_url: item.products?.img_url || null,
+  }));
 
   // Fetch product details for all unique product_ids
   const productIds = Array.from(new Set((lineItems || []).map(item => item.product_id).filter(Boolean)));

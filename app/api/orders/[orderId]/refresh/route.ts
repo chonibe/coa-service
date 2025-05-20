@@ -50,46 +50,46 @@ export async function POST(req: Request, { params }: { params: { orderId: string
     console.log('Existing statuses:', Object.fromEntries(existingStatuses));
     console.log('Existing edition numbers:', Object.fromEntries(existingEditionNumbers));
 
-    const orderUpdate = {
-      id: shopifyOrder.id.toString(),
-      order_number: shopifyOrder.name.replace('#', ''),
-      processed_at: shopifyOrder.created_at,
-      financial_status: shopifyOrder.financial_status,
-      fulfillment_status: shopifyOrder.fulfillment_status || 'pending',
-      total_price: parseFloat(shopifyOrder.current_total_price),
-      currency_code: shopifyOrder.currency,
-      customer_email: shopifyOrder.email,
-      raw_shopify_order_data: shopifyOrder,
-      updated_at: new Date().toISOString(),
-    };
+    // Get product data for img_urls
+    const productIds = shopifyOrder.line_items
+      .map((item) => item.product_id)
+      .filter((id): id is number => id !== null);
 
-    // Prepare line items with preserved statuses
-    const lineItems = shopifyOrder.line_items.map((item: any) => {
-      const lineItemId = item.id.toString();
-      const existingStatus = existingStatuses.get(lineItemId);
-      const existingEditionNumber = existingEditionNumbers.get(lineItemId);
+    const { data: products } = await supabase
+      .from("products")
+      .select("id, img_url")
+      .in("id", productIds);
 
-      console.log(`Processing line item ${lineItemId}:`, {
-        existingStatus,
-        existingEditionNumber,
-        willUseStatus: existingStatus || 'active'
-      });
+    const productMap = new Map(
+      products?.map((p) => [p.id.toString(), p.img_url]) || []
+    );
+
+    // Map line items, preserving existing statuses and edition numbers
+    const lineItems = shopifyOrder.line_items.map((item) => {
+      const existingItem = existingLineItems.find(
+        (li) => li.line_item_id === item.id.toString()
+      );
+
+      console.log(`Processing line item ${item.id} for order ${shopifyOrder.id}`);
+      console.log(`Existing status: ${existingItem?.status || 'none'}`);
+      console.log(`Existing edition number: ${existingItem?.edition_number || 'none'}`);
 
       return {
         order_id: shopifyOrder.id.toString(),
         order_name: shopifyOrder.name,
-        line_item_id: lineItemId,
+        line_item_id: item.id.toString(),
         product_id: item.product_id?.toString() || '',
         variant_id: item.variant_id?.toString() || null,
-        title: item.title,
-        quantity: item.quantity,
+        name: item.title,
+        description: item.title,
         price: parseFloat(item.price),
-        sku: item.sku || null,
         vendor_name: item.vendor || null,
-        status: existingStatus || 'active', // Preserve existing status or default to active
-        edition_number: existingEditionNumber, // Preserve existing edition number
+        fulfillment_status: item.fulfillment_status,
+        status: existingItem?.status || 'active',
+        edition_number: existingItem?.edition_number || null,
+        created_at: new Date(shopifyOrder.created_at).toISOString(),
         updated_at: new Date().toISOString(),
-        created_at: new Date().toISOString(),
+        img_url: item.product_id ? productMap.get(item.product_id.toString()) || null : null,
       };
     });
 

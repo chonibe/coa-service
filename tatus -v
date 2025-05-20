@@ -1,0 +1,138 @@
+warning: in the working copy of 'app/admin/layout.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'app/admin/orders/DuplicateItemsBox.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'app/api/orders/[orderId]/line-items/status/route.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'app/api/orders/[orderId]/refresh/route.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'app/api/supabase-proxy/route.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'lib/update-line-item-status.ts', LF will be replaced by CRLF the next time Git touches it
+[1mdiff --git a/app/admin/layout.tsx b/app/admin/layout.tsx[m
+[1mindex d35231e..9d3624c 100644[m
+[1m--- a/app/admin/layout.tsx[m
+[1m+++ b/app/admin/layout.tsx[m
+[36m@@ -24,12 +24,21 @@[m [mimport {[m
+ } from "lucide-react"[m
+ import { Button } from "@/components/ui/button"[m
+ import { ScrollArea } from "@/components/ui/scroll-area"[m
+[31m-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"[m
+ import { Toaster } from "@/components/ui/toaster"[m
+ import LogoutButton from "./logout-button"[m
+ import { useMobile } from "@/hooks/use-mobile"[m
+ import { BottomNav } from "./components/bottom-nav"[m
+ import { Breadcrumb } from "./components/breadcrumb"[m
+[32m+[m[32mimport {[m
+[32m+[m[32m  Sidebar,[m
+[32m+[m[32m  SidebarContent,[m
+[32m+[m[32m  SidebarHeader,[m
+[32m+[m[32m  SidebarMenu,[m
+[32m+[m[32m  SidebarMenuItem,[m
+[32m+[m[32m  SidebarMenuButton,[m
+[32m+[m[32m  SidebarTrigger,[m
+[32m+[m[32m  SidebarProvider,[m
+[32m+[m[32m} from "@/components/ui/sidebar"[m
+ [m
+ interface NavItem {[m
+   title: string[m
+[36m@@ -228,186 +237,68 @@[m [mexport default function AdminLayout({ children }: { children: React.ReactNode })[m
+   }, [pathname, navItems])[m
+ [m
+   return ([m
+[31m-    <div className="flex min-h-screen flex-col">[m
+[31m-      <header className="sticky top-0 z-30 flex h-16 items-center gap-4 border-b bg-background px-4 sm:px-6">[m
+[31m-        <Sheet open={open} onOpenChange={setOpen}>[m
+[31m-          <SheetTrigger asChild>[m
+[31m-            <Button variant="outline" size="icon" className="md:hidden">[m
+[31m-              <Menu className="h-6 w-6" />[m
+[31m-              <span className="sr-only">Toggle menu</span>[m
+[31m-            </Button>[m
+[31m-          </SheetTrigger>[m
+[31m-          <SheetContent side="left" className="w-[300px] sm:w-[400px] pr-0">[m
+[31m-            <div className="flex flex-col h-full">[m
+[31m-              <div className="flex items-center border-b h-16 px-6">[m
+[31m-                <Link href="/admin" className="flex items-center gap-2 font-semibold">[m
+[31m-                  <Award className="h-6 w-6" />[m
+[31m-                  {isMobile ? <span className="font-medium">{currentSection}</span> : <span>Admin Dashboard</span>}[m
+[31m-                </Link>[m
+[31m-                <Button variant="ghost" size="icon" className="ml-auto" onClick={() => setOpen(false)}>[m
+[31m-                  <X className="h-5 w-5" />[m
+[31m-                  <span className="sr-only">Close</span>[m
+[31m-                </Button>[m
+[31m-              </div>[m
+[31m-              <ScrollArea className="flex-1">[m
+[31m-                <div className="px-2 py-4">[m
+[31m-                  <nav className="flex flex-col gap-2">[m
+[31m-                    {navItems.map((item, index) => ([m
+[31m-                      <div key={item.href} className="flex flex-col">[m
+[31m-                        {item.submenu ? ([m
+[31m-                          <>[m
+[31m-                            <button[m
+[31m-                              onClick={() => toggleSubmenu(index)}[m
+[31m-                              className={`flex items-center justify-between rounded-md px-3 py-2 text-sm font-medium ${[m
+[31m-                                isActive(item)[m
+[31m-                                  ? "bg-accent text-accent-foreground"[m
+[31m-                                  : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"[m
+[31m-                              }`}[m
+[31m-                            >[m
+[31m-                              <div className="flex items-center gap-3">[m
+[31m-                                {item.icon}[m
+[31m-                                <span>{item.title}</span>[m
+[31m-                              </div>[m
+[31m-                              <svg[m
+[31m-                                xmlns="http://www.w3.org/2000/svg"[m
+[31m-                                width="24"[m
+[31m-                                height="24"[m
+[31m-                                viewBox="0 0 24 24"[m
+[31m-                                fill="none"[m
+[31m-                                stroke="currentColor"[m
+[31m-                                strokeWidth="2"[m
+[31m-                                strokeLinecap="round"[m
+[31m-                                strokeLinejoin="round"[m
+[31m-                                className={`h-4 w-4 transition-transform ${item.expanded ? "rotate-180" : ""}`}[m
+[31m-                              >[m
+[31m-                                <polyline points="6 9 12 15 18 9"></polyline>[m
+[31m-                              </svg>[m
+[31m-                            </button>[m
+[31m-                            {item.expanded && ([m
+[31m-                              <div className="mt-1 pl-6 space-y-1">[m
+[31m-                                {item.submenu.map((subItem) => ([m
+[31m-                                  <Link[m
+[31m-                                    key={subItem.href}[m
+[31m-                                    href={subItem.href}[m
+[31m-                                    className={`flex items-center gap-3 rounded-md px-3 py-2 text-sm ${[m
+[31m-                                      pathname === subItem.href[m
+[31m-                                        ? "bg-accent text-accent-foreground font-medium"[m
+[31m-                                        : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"[m
+[31m-                                    }`}[m
+[31m-                                  >[m
+[31m-                                    {subItem.icon}[m
+[31m-                                    <span>{subItem.title}</span>[m
+[31m-                                  </Link>[m
+[31m-                                ))}[m
+[31m-                              </div>[m
+[31m-                            )}[m
+[31m-                          </>[m
+[31m-                        ) : ([m
+[31m-                          <Link[m
+[31m-                            href={item.href}[m
+[31m-                            className={`flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium ${[m
+[31m-                              pathname === item.href[m
+[31m-                                ? "bg-accent text-accent-foreground"[m
+[31m-                                : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"[m
+[31m-                            }`}[m
+[31m-                          >[m
+[31m-                            {item.icon}[m
+[31m-                            <span>{item.title}</span>[m
+[31m-                          </Link>[m
+[31m-                        )}[m
+[31m-                      </div>[m
+[31m-                    ))}[m
+[31m-                  </nav>[m
+[31m-                </div>[m
+[31m-              </ScrollArea>[m
+[31m-              <div className="border-t p-4">[m
+[31m-                <LogoutButton className="w-full" />[m
+[31m-              </div>[m
+[31m-            </div>[m
+[31m-          </SheetContent>[m
+[31m-        </Sheet>[m
+[31m-        <Link href="/admin" className="flex items-center gap-2 font-semibold">[m
+[31m-          <Award className="h-6 w-6" />[m
+[31m-          <span className={isMobile ? "sr-only" : "inli

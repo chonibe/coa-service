@@ -174,13 +174,27 @@ export async function GET(request: NextRequest) {
 
           // Sync line items
           if (order.line_items && order.line_items.length > 0) {
+            // Get product data for img_urls
+            const productIds = order.line_items
+              .map((li: ShopifyLineItem) => li.product_id)
+              .filter((id): id is number => id !== null);
+
+            const { data: products } = await db
+              .from("products")
+              .select("id, img_url")
+              .in("id", productIds);
+
+            const productMap = new Map(
+              products?.map((p) => [p.id.toString(), p.img_url]) || []
+            );
+
             const lineItemsData = order.line_items.map((li: ShopifyLineItem) => ({
               line_item_id: li.id,
               order_id: order.id,
               product_id: li.product_id,
               variant_id: li.variant_id,
               title: li.title,
-              sku: li.sku,
+              sku: li.sku || null,
               vendor_name: li.vendor,
               quantity: li.quantity,
               price: parseFloat(li.price),
@@ -188,6 +202,7 @@ export async function GET(request: NextRequest) {
               fulfillment_status: li.fulfillment_status,
               tax_lines: li.tax_lines as unknown as Json,
               raw_shopify_line_item_data: li as unknown as Json,
+              img_url: li.product_id ? productMap.get(li.product_id.toString()) || null : null,
             }));
 
             // Delete existing line items for this order
