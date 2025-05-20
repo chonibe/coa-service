@@ -3,24 +3,36 @@ import { createClient } from "@/lib/supabase/server"
 import { cookies } from "next/headers"
 import { resequenceEditionNumbers } from "@/lib/resequence-edition-numbers"
 
+const VALID_STATUSES = ["active", "inactive", "removed"] as const;
+type LineItemStatus = typeof VALID_STATUSES[number];
+
 export async function POST(request: Request) {
   try {
     const cookieStore = cookies()
     const supabase = createClient(cookieStore)
     const { orderId, lineItemId, status } = await request.json()
 
+    // Validate required fields
+    if (!lineItemId || !orderId || !status) {
+      return NextResponse.json(
+        { error: "Missing required fields: lineItemId, orderId, and status are required" },
+        { status: 400 }
+      )
+    }
+
+    // Validate status value
+    if (!VALID_STATUSES.includes(status)) {
+      return NextResponse.json(
+        { error: `Invalid status. Must be one of: ${VALID_STATUSES.join(", ")}` },
+        { status: 400 }
+      )
+    }
+
     // Convert orderId to string to handle large Shopify IDs
     const orderIdStr = orderId.toString()
 
     if (!supabase) {
       throw new Error("Failed to initialize Supabase client")
-    }
-
-    if (!lineItemId || !orderId || !status) {
-      return NextResponse.json(
-        { error: "Missing required fields" },
-        { status: 400 }
-      )
     }
 
     // Update the line item status
@@ -53,7 +65,7 @@ export async function POST(request: Request) {
   } catch (error: any) {
     console.error("Error in update-line-item-status:", error)
     return NextResponse.json(
-      { error: "Internal server error" },
+      { error: error.message || "Internal server error" },
       { status: 500 }
     )
   }

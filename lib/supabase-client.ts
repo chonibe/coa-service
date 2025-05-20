@@ -31,30 +31,32 @@ export async function getEditionInfo(orderId: string, lineItemId: string) {
 export async function updateLineItemStatus(
   lineItemId: string,
   orderId: string,
-  status: "active" | "removed",
+  status: "active" | "inactive" | "removed",
   reason?: string,
 ) {
   try {
-    const response = await fetch("/api/supabase-proxy", {
+    const response = await fetch("/api/update-line-item-status", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        action: "updateLineItemStatus",
-        params: { lineItemId, orderId, status, reason },
+        lineItemId,
+        orderId,
+        status,
+        reason,
       }),
-    })
+    });
 
     if (!response.ok) {
-      const errorData = await response.json()
-      throw new Error(errorData.error || "Failed to update item status")
+      const errorData = await response.json();
+      throw new Error(errorData.error || "Failed to update item status");
     }
 
-    return await response.json()
+    return await response.json();
   } catch (error: any) {
-    console.error("Error updating line item status:", error)
-    throw error
+    console.error("Error updating line item status:", error);
+    throw error;
   }
 }
 
