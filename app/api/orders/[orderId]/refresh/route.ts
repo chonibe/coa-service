@@ -24,7 +24,19 @@ export async function POST(req: Request, { params }: { params: { orderId: string
     }
     const { order: shopifyOrder } = await res.json();
 
-    // Prepare order and line items for Supabase
+    // Update Supabase
+    const cookieStore = cookies();
+    const supabase = createRouteHandlerClient<Database>({ cookies: () => cookieStore });
+    // Get existing line items to preserve their status
+    const { data: existingLineItems } = await supabase
+      .from('order_line_items_v2')
+      .select('line_item_id, status')
+      .eq('order_id', shopifyOrder.id.toString());
+
+    const existingStatuses = new Map(
+      existingLineItems?.map(item => [item.line_item_id, item.status]) || []
+    );
+
     const orderUpdate = {
       id: shopifyOrder.id.toString(),
       order_number: shopifyOrder.name.replace('#', ''),
@@ -48,14 +60,11 @@ export async function POST(req: Request, { params }: { params: { orderId: string
       price: parseFloat(item.price),
       sku: item.sku || null,
       vendor_name: item.vendor || null,
-      status: 'active',
+      status: existingStatuses.get(item.id.toString()) || 'active',
       updated_at: new Date().toISOString(),
       created_at: new Date().toISOString(),
     }));
 
-    // Update Supabase
-    const cookieStore = cookies();
-    const supabase = createRouteHandlerClient<Database>({ cookies: () => cookieStore });
     // Upsert order
     const { error: orderError } = await supabase.from('orders').upsert(orderUpdate, { onConflict: 'id' });
     if (orderError) {
