@@ -165,6 +165,9 @@ async function getOrderData(orderId: string) {
     }
   }
 
+  console.log('DEBUG productDetails:', productDetails);
+  console.log('DEBUG lineItems before mapping:', lineItems);
+
   // Try to fetch additional details from Shopify
   try {
     const shop = process.env.SHOPIFY_SHOP;
@@ -186,7 +189,22 @@ async function getOrderData(orderId: string) {
 
     if (res.ok) {
       const { order: shopifyOrder } = await res.json();
-      // Transform Shopify data to our Order interface, but use Supabase line items
+      const mappedLineItems = lineItems?.map(item => ({
+        id: item.line_item_id,
+        title: item.name,
+        quantity: item.quantity,
+        price: item.price,
+        sku: productDetails[item.product_id]?.sku || null,
+        vendor_name: item.vendor_name,
+        product_id: item.product_id,
+        variant_id: item.variant_id,
+        fulfillment_status: item.fulfillment_status || 'pending',
+        status: item.status || 'active',
+        image_url: productDetails[item.product_id]?.image_url || undefined,
+        edition_number: item.edition_number,
+        edition_size: productDetails[item.product_id]?.edition_size
+      })) || [];
+      console.log('DEBUG mappedLineItems:', mappedLineItems);
       return {
         id: shopifyOrder.id.toString(),
         order_number: shopifyOrder.name.replace('#', ''),
@@ -204,21 +222,7 @@ async function getOrderData(orderId: string) {
           amount: parseFloat(code.amount),
           type: code.type
         })) || [],
-        line_items: lineItems?.map(item => ({
-          id: item.line_item_id,
-          title: item.name,
-          quantity: item.quantity,
-          price: item.price,
-          sku: productDetails[item.product_id]?.sku || null,
-          vendor_name: item.vendor_name,
-          product_id: item.product_id,
-          variant_id: item.variant_id,
-          fulfillment_status: item.fulfillment_status || 'pending',
-          status: item.status || 'active',
-          image_url: productDetails[item.product_id]?.image_url || undefined,
-          edition_number: item.edition_number,
-          edition_size: productDetails[item.product_id]?.edition_size
-        })) || []
+        line_items: mappedLineItems
       };
     }
   } catch (err) {
@@ -226,6 +230,22 @@ async function getOrderData(orderId: string) {
   }
 
   // If Shopify fetch fails, return data from Supabase
+  const mappedLineItems = lineItems?.map(item => ({
+    id: item.line_item_id,
+    title: item.name,
+    quantity: item.quantity,
+    price: item.price,
+    sku: productDetails[item.product_id]?.sku || null,
+    vendor_name: item.vendor_name,
+    product_id: item.product_id,
+    variant_id: item.variant_id,
+    fulfillment_status: item.fulfillment_status || 'pending',
+    status: item.status || 'active',
+    image_url: productDetails[item.product_id]?.image_url || undefined,
+    edition_number: item.edition_number,
+    edition_size: productDetails[item.product_id]?.edition_size
+  })) || [];
+  console.log('DEBUG mappedLineItems:', mappedLineItems);
   return {
     id: orderData.id,
     order_number: orderData.order_number,
@@ -243,21 +263,7 @@ async function getOrderData(orderId: string) {
       amount: parseFloat(code.amount),
       type: code.type
     })) || [],
-    line_items: lineItems?.map(item => ({
-      id: item.line_item_id,
-      title: item.name,
-      quantity: item.quantity,
-      price: item.price,
-      sku: productDetails[item.product_id]?.sku || null,
-      vendor_name: item.vendor_name,
-      product_id: item.product_id,
-      variant_id: item.variant_id,
-      fulfillment_status: item.fulfillment_status || 'pending',
-      status: item.status || 'active',
-      image_url: productDetails[item.product_id]?.image_url || undefined,
-      edition_number: item.edition_number,
-      edition_size: productDetails[item.product_id]?.edition_size
-    })) || []
+    line_items: mappedLineItems
   };
 }
 
