@@ -238,26 +238,32 @@ export default function OrderDetails({ order }: OrderDetailsProps) {
           </Button>
           {error && <span className="text-red-500 text-sm">{error}</span>}
         </div>
-        <div className="flex items-center gap-2 self-end sm:self-auto">
+        <div className="flex items-center justify-center gap-4 sm:gap-2 w-full sm:w-auto mt-2 sm:mt-0">
           <Button
             variant="outline"
-            size="icon"
+            size="lg"
             onClick={() => navigation.nextOrderId && handleNavigation(navigation.nextOrderId)}
             disabled={!navigation.nextOrderId}
             title="Previous Order (Higher Number)"
-            className="h-10 w-10"
+            className="flex-1 sm:flex-none h-12 w-full sm:w-12 relative"
           >
-            <ChevronUp className="h-4 w-4" />
+            <ChevronUp className="h-6 w-6" />
+            <span className="absolute -bottom-6 left-1/2 transform -translate-x-1/2 text-xs text-muted-foreground sm:hidden">
+              Previous
+            </span>
           </Button>
           <Button
             variant="outline"
-            size="icon"
+            size="lg"
             onClick={() => navigation.prevOrderId && handleNavigation(navigation.prevOrderId)}
             disabled={!navigation.prevOrderId}
             title="Next Order (Lower Number)"
-            className="h-10 w-10"
+            className="flex-1 sm:flex-none h-12 w-full sm:w-12 relative"
           >
-            <ChevronDown className="h-4 w-4" />
+            <ChevronDown className="h-6 w-6" />
+            <span className="absolute -bottom-6 left-1/2 transform -translate-x-1/2 text-xs text-muted-foreground sm:hidden">
+              Next
+            </span>
           </Button>
         </div>
       </div>
