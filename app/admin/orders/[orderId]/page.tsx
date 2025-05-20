@@ -151,16 +151,25 @@ async function getOrderData(orderId: string) {
   const productIds = Array.from(new Set((lineItems || []).map(item => item.product_id).filter(Boolean)));
   let productDetails: Record<string, { sku?: string | null; edition_number?: number; edition_size?: number; image_url?: string }> = {};
   if (productIds.length > 0) {
+    // First get basic product details
     const { data: products } = await supabase
       .from('products')
-      .select('id, sku, edition_number, edition_size, image_url')
+      .select('id, sku, image_url')
       .in('id', productIds);
+
+    // Then get edition counters
+    const { data: editionCounters } = await supabase
+      .from('product_edition_counters')
+      .select('product_id, edition_total')
+      .in('product_id', productIds);
+
     if (products) {
       productDetails = Object.fromEntries(products.map(p => [p.id, {
         sku: p.sku,
-        edition_number: p.edition_number,
-        edition_size: p.edition_size,
-        image_url: p.image_url
+        image_url: p.image_url,
+        edition_size: editionCounters?.find(ec => ec.product_id === p.id)?.edition_total ? 
+          Number.parseInt(editionCounters.find(ec => ec.product_id === p.id)?.edition_total || '0', 10) : 
+          undefined
       }]));
     }
   }
