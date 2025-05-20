@@ -11,41 +11,35 @@ interface OrderLineItem {
   id: string;
   title: string;
   product_id: string;
-  status: "active" | "inactive" | "removed";
+  status: 'active' | 'inactive';
 }
 
 interface DuplicateItemsBoxProps {
   lineItems: OrderLineItem[];
-  onStatusChange: (itemIds: string[], status: "active" | "inactive" | "removed") => void;
+  onStatusChange: (itemIds: string[], status: 'active' | 'inactive') => void;
 }
 
 export default function DuplicateItemsBox({ lineItems, onStatusChange }: DuplicateItemsBoxProps) {
-  // Find duplicate items (only among active items)
-  const duplicates = new Map<string, string[]>();
+  // Find duplicate items (same product_id) that are active
+  const activeItems = lineItems.filter(item => item.status === 'active');
   const seen = new Map<string, string[]>();
+  
+  activeItems.forEach(item => {
+    if (!seen.has(item.product_id)) {
+      seen.set(item.product_id, [item.id]);
+    } else {
+      seen.get(item.product_id)?.push(item.id);
+    }
+  });
 
-  lineItems
-    .filter(item => item.status === 'active') // Only consider active items for duplicates
-    .forEach(item => {
-      if (item.product_id) {
-        if (seen.has(item.product_id)) {
-          const existing = seen.get(item.product_id) || [];
-          existing.push(item.id);
-          seen.set(item.product_id, existing);
-          // Add all items with this product_id to duplicates
-          existing.forEach(id => {
-            const current = duplicates.get(id) || [];
-            duplicates.set(id, [...current, ...existing.filter(i => i !== id)]);
-          });
-        } else {
-          seen.set(item.product_id, [item.id]);
-        }
-      }
-    });
+  const duplicates = Array.from(seen.entries())
+    .filter(([_, ids]) => ids.length > 1)
+    .map(([productId, ids]) => ({
+      productId,
+      itemIds: ids
+    }));
 
-  if (duplicates.size === 0) {
-    return null;
-  }
+  if (duplicates.length === 0) return null;
 
   return (
     <Card className="border-yellow-200 bg-yellow-50">
@@ -57,32 +51,25 @@ export default function DuplicateItemsBox({ lineItems, onStatusChange }: Duplica
       </CardHeader>
       <CardContent>
         <div className="space-y-4">
-          {Array.from(duplicates.entries()).map(([itemId, duplicateIds]) => {
-            const item = lineItems.find(i => i.id === itemId);
+          {duplicates.map(({ productId, itemIds }) => {
+            const item = lineItems.find(i => i.product_id === productId);
             if (!item) return null;
 
             return (
-              <div key={itemId} className="flex items-center justify-between">
+              <div key={productId} className="flex items-center justify-between">
                 <div>
                   <p className="font-medium">{item.title}</p>
                   <p className="text-sm text-yellow-700">
-                    {duplicateIds.length} duplicate{duplicateIds.length > 1 ? 's' : ''} found
+                    {itemIds.length} duplicate{itemIds.length > 1 ? 's' : ''} found
                   </p>
                 </div>
                 <div className="flex gap-2">
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => onStatusChange([itemId, ...duplicateIds], 'inactive')}
+                    onClick={() => onStatusChange(itemIds.slice(1), 'inactive')}
                   >
-                    Mark All Inactive
-                  </Button>
-                  <Button
-                    variant="destructive"
-                    size="sm"
-                    onClick={() => onStatusChange([itemId, ...duplicateIds], 'removed')}
-                  >
-                    Remove All
+                    Mark All But First as Inactive
                   </Button>
                 </div>
               </div>
