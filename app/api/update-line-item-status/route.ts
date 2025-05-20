@@ -1,40 +1,60 @@
 import { NextResponse } from "next/server"
-import type { NextRequest } from "next/server"
-import { updateLineItemStatus } from "@/lib/update-line-item-status"
+import { createClient } from "@/lib/supabase/server"
+import { cookies } from "next/headers"
+import { resequenceEditionNumbers } from "@/lib/resequence-edition-numbers"
 
-export async function POST(request: NextRequest) {
+export async function POST(request: Request) {
   try {
-    const body = await request.json()
-    const { lineItemId, orderId, status, reason } = body
+    const cookieStore = cookies()
+    const supabase = createClient(cookieStore)
+    const { orderId, lineItemId, status } = await request.json()
+
+    // Convert orderId to string to handle large Shopify IDs
+    const orderIdStr = orderId.toString()
+
+    if (!supabase) {
+      throw new Error("Failed to initialize Supabase client")
+    }
 
     if (!lineItemId || !orderId || !status) {
       return NextResponse.json(
-        { success: false, message: "Line item ID, order ID, and status are required" },
-        { status: 400 },
-      )
-    }
-
-    // Validate status
-    if (status !== "active" && status !== "removed") {
-      return NextResponse.json(
-        { success: false, message: "Status must be either 'active' or 'removed'" },
-        { status: 400 },
+        { error: "Missing required fields" },
+        { status: 400 }
       )
     }
 
     // Update the line item status
-    const result = await updateLineItemStatus(lineItemId, orderId, status, reason)
+    const { error: updateError } = await supabase
+      .from("order_line_items_v2")
+      .update({
+        status,
+        updated_at: new Date().toISOString(),
+        removed_reason: status === "removed" ? "Manually removed" : null,
+        edition_number: status === "active" ? null : null // Reset edition number if not active
+      })
+      .eq("id", lineItemId)
+      .eq("order_id", orderIdStr)
 
-    return NextResponse.json({
-      success: true,
-      message: `Line item status updated to ${status}`,
-      updatedAt: result.updatedAt,
-    })
+    if (updateError) {
+      console.error("Error updating line item status:", updateError)
+      return NextResponse.json({ error: updateError.message }, { status: 500 })
+    }
+
+    // If status is 'removed', resequence edition numbers
+    if (status === "removed") {
+      const { error: resequenceError } = await resequenceEditionNumbers(supabase, orderIdStr)
+      if (resequenceError) {
+        console.error("Error resequencing edition numbers:", resequenceError)
+        return NextResponse.json({ error: resequenceError.message }, { status: 500 })
+      }
+    }
+
+    return NextResponse.json({ success: true })
   } catch (error: any) {
-    console.error("Error updating line item status:", error)
+    console.error("Error in update-line-item-status:", error)
     return NextResponse.json(
-      { success: false, message: error.message || "Failed to update line item status" },
-      { status: 500 },
+      { error: "Internal server error" },
+      { status: 500 }
     )
   }
 }
