@@ -9,6 +9,7 @@ CREATE TABLE "public"."order_line_items_v2" (
     "description" TEXT,
     "price" NUMERIC(10,2) NOT NULL,
     "quantity" INTEGER NOT NULL DEFAULT 1,
+    "sku" TEXT,
     "vendor_name" TEXT,
     "fulfillment_status" TEXT,
     "status" TEXT NOT NULL DEFAULT 'active' CHECK (status IN ('active', 'inactive')),
