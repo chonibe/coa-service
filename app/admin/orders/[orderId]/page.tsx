@@ -277,5 +277,7 @@ export default async function OrderDetailsPage({
     notFound();
   }
 
+  console.log('Order line items:', order.line_items);
+
   return <OrderDetails order={order} />;
 } 
