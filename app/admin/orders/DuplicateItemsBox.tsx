@@ -5,173 +5,89 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { formatCurrency } from '@/lib/utils';
+import { AlertCircle } from "lucide-react";
 
-interface LineItem {
+interface OrderLineItem {
   id: string;
   title: string;
-  quantity: number;
-  price: number;
-  sku: string | null;
-  vendor_name: string | null;
   product_id: string;
-  variant_id: string | null;
-  fulfillment_status: string;
-}
-
-interface DuplicateGroup {
-  items: LineItem[];
-  reasons: Array<{
-    type: 'same_sku' | 'same_title';
-    value: string;
-  }>;
+  status: "active" | "inactive" | "removed";
 }
 
 interface DuplicateItemsBoxProps {
-  lineItems: LineItem[];
-  onStatusChange: (itemIds: string[], status: 'approved' | 'declined') => void;
+  lineItems: OrderLineItem[];
+  onStatusChange: (itemIds: string[], status: "active" | "inactive" | "removed") => void;
 }
 
 export default function DuplicateItemsBox({ lineItems, onStatusChange }: DuplicateItemsBoxProps) {
-  const [duplicateGroups, setDuplicateGroups] = useState<DuplicateGroup[]>(() => {
-    // Find duplicates based on SKU (case-insensitive) or title
-    const skuMap = new Map<string, LineItem[]>();
-    const titleMap = new Map<string, LineItem[]>();
+  // Find duplicate items (only among active items)
+  const duplicates = new Map<string, string[]>();
+  const seen = new Map<string, string[]>();
 
-    lineItems.forEach(item => {
-      if (item.sku) {
-        const normalizedSku = item.sku.toLowerCase();
-        const existing = skuMap.get(normalizedSku) || [];
-        skuMap.set(normalizedSku, [...existing, item]);
-      }
-      
-      const normalizedTitle = item.title.toLowerCase();
-      const existing = titleMap.get(normalizedTitle) || [];
-      titleMap.set(normalizedTitle, [...existing, item]);
-    });
-
-    // Create a map to store unique groups by item IDs
-    const uniqueGroups = new Map<string, DuplicateGroup>();
-
-    // Process SKU duplicates
-    skuMap.forEach((items, sku) => {
-      if (items.length > 1) {
-        const itemIds = items.map(item => item.id).sort().join(',');
-        if (!uniqueGroups.has(itemIds)) {
-          uniqueGroups.set(itemIds, {
-            items,
-            reasons: [{ type: 'same_sku', value: sku }]
+  lineItems
+    .filter(item => item.status === 'active') // Only consider active items for duplicates
+    .forEach(item => {
+      if (item.product_id) {
+        if (seen.has(item.product_id)) {
+          const existing = seen.get(item.product_id) || [];
+          existing.push(item.id);
+          seen.set(item.product_id, existing);
+          // Add all items with this product_id to duplicates
+          existing.forEach(id => {
+            const current = duplicates.get(id) || [];
+            duplicates.set(id, [...current, ...existing.filter(i => i !== id)]);
           });
         } else {
-          const group = uniqueGroups.get(itemIds)!;
-          group.reasons.push({ type: 'same_sku', value: sku });
+          seen.set(item.product_id, [item.id]);
         }
       }
     });
 
-    // Process title duplicates
-    titleMap.forEach((items, title) => {
-      if (items.length > 1) {
-        const itemIds = items.map(item => item.id).sort().join(',');
-        if (!uniqueGroups.has(itemIds)) {
-          uniqueGroups.set(itemIds, {
-            items,
-            reasons: [{ type: 'same_title', value: title }]
-          });
-        } else {
-          const group = uniqueGroups.get(itemIds)!;
-          group.reasons.push({ type: 'same_title', value: title });
-        }
-      }
-    });
-
-    return Array.from(uniqueGroups.values());
-  });
-
-  const handleStatusChange = (itemId: string, status: 'approved' | 'declined') => {
-    onStatusChange([itemId], status);
-  };
-
-  if (duplicateGroups.length === 0) {
+  if (duplicates.size === 0) {
     return null;
   }
 
   return (
-    <Card className="mb-6">
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          Duplicate Items
-          <Badge variant="secondary">{duplicateGroups.length} groups</Badge>
+    <Card className="border-yellow-200 bg-yellow-50">
+      <CardHeader className="pb-2">
+        <CardTitle className="text-lg flex items-center gap-2 text-yellow-800">
+          <AlertCircle className="h-5 w-5" />
+          Duplicate Items Detected
         </CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="space-y-6">
-          {duplicateGroups.map((group) => (
-            <div key={group.items.map(item => item.id).join('-')} className="border rounded-lg p-4">
-              <div className="flex flex-wrap items-center gap-2 mb-4">
-                {group.reasons.map((reason, index) => (
-                  <Badge key={`${reason.type}-${reason.value}`} variant="outline">
-                    {reason.type === 'same_sku' ? 'Same SKU' : 'Same Title'}: {reason.value}
-                  </Badge>
-                ))}
+        <div className="space-y-4">
+          {Array.from(duplicates.entries()).map(([itemId, duplicateIds]) => {
+            const item = lineItems.find(i => i.id === itemId);
+            if (!item) return null;
+
+            return (
+              <div key={itemId} className="flex items-center justify-between">
+                <div>
+                  <p className="font-medium">{item.title}</p>
+                  <p className="text-sm text-yellow-700">
+                    {duplicateIds.length} duplicate{duplicateIds.length > 1 ? 's' : ''} found
+                  </p>
+                </div>
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => onStatusChange([itemId, ...duplicateIds], 'inactive')}
+                  >
+                    Mark All Inactive
+                  </Button>
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    onClick={() => onStatusChange([itemId, ...duplicateIds], 'removed')}
+                  >
+                    Remove All
+                  </Button>
+                </div>
               </div>
-              <div className="space-y-4">
-                {group.items.map((item) => (
-                  <div key={item.id} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
-                    <div className="flex-1">
-                      <div className="font-medium">{item.title}</div>
-                      {item.sku && (
-                        <div className="text-sm text-muted-foreground">SKU: {item.sku}</div>
-                      )}
-                      <div className="flex items-center gap-4 mt-1 text-sm">
-                        <span>Qty: {item.quantity}</span>
-                        <span>{formatCurrency(item.price, 'USD')}</span>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      {item.fulfillment_status === 'pending' && (
-                        <>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleStatusChange(item.id, 'approved')}
-                          >
-                            Approve
-                          </Button>
-                          <Button
-                            variant="destructive"
-                            size="sm"
-                            onClick={() => handleStatusChange(item.id, 'declined')}
-                          >
-                            Decline
-                          </Button>
-                        </>
-                      )}
-                      {item.fulfillment_status !== 'pending' && (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleStatusChange(item.id, 'approved')}
-                        >
-                          Reset
-                        </Button>
-                      )}
-                      <Badge 
-                        variant={
-                          item.fulfillment_status === 'approved' 
-                            ? 'default' 
-                            : item.fulfillment_status === 'declined' 
-                            ? 'destructive' 
-                            : 'secondary'
-                        }
-                      >
-                        {item.fulfillment_status || 'pending'}
-                      </Badge>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </CardContent>
     </Card>
