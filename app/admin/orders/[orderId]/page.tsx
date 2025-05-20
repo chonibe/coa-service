@@ -201,7 +201,7 @@ async function getOrderData(orderId: string) {
       const mappedLineItems = lineItems?.map(item => ({
         id: item.line_item_id,
         title: item.name,
-        quantity: item.quantity,
+        quantity: item.quantity || 1,
         price: item.price,
         sku: productDetails[item.product_id]?.sku || null,
         vendor_name: item.vendor_name,
@@ -242,7 +242,7 @@ async function getOrderData(orderId: string) {
   const mappedLineItems = lineItems?.map(item => ({
     id: item.line_item_id,
     title: item.name,
-    quantity: item.quantity,
+    quantity: item.quantity || 1,
     price: item.price,
     sku: productDetails[item.product_id]?.sku || null,
     vendor_name: item.vendor_name,
