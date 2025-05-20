@@ -1,11 +1,13 @@
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { formatCurrency } from '@/lib/utils';
+import { Table, TableHeader, TableBody, TableCell, TableHead, TableRow } from '@/components/ui/table';
+import { ArrowLeft, ExternalLink, AlertCircle } from "lucide-react";
 
 interface Order {
   id: string;
@@ -16,7 +18,11 @@ interface Order {
   total_price: number;
   currency_code: string;
   customer_email: string;
-  orderId: string;
+  line_items: Array<{
+    id: string;
+    product_id: string;
+  }>;
+  has_duplicates?: boolean;
 }
 
 interface OrdersListProps {
@@ -27,6 +33,41 @@ interface OrdersListProps {
 
 export default function OrdersList({ orders, currentPage, totalPages }: OrdersListProps) {
   console.log('OrdersList received props:', { orders, currentPage, totalPages });
+
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchOrders = async () => {
+      setLoading(true);
+      try {
+        const res = await fetch('/api/orders');
+        if (!res.ok) throw new Error('Failed to fetch orders');
+        const data = await res.json();
+        
+        // Process orders to identify duplicates
+        const ordersWithDuplicates = data.map((order: Order) => {
+          const seen = new Set<string>();
+          const hasDuplicates = order.line_items.some(item => {
+            if (item.product_id) {
+              if (seen.has(item.product_id)) return true;
+              seen.add(item.product_id);
+            }
+            return false;
+          });
+          return { ...order, has_duplicates: hasDuplicates };
+        });
+
+        setOrders(ordersWithDuplicates);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Failed to fetch orders');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchOrders();
+  }, []);
 
   if (!orders || orders.length === 0) {
     console.log('No orders to display');
@@ -43,55 +84,58 @@ export default function OrdersList({ orders, currentPage, totalPages }: OrdersLi
     <div className="space-y-4">
       <Card>
         <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead>
-              <tr className="border-b">
-                <th className="text-left p-4">Order</th>
-                <th className="text-left p-4">Date</th>
-                <th className="text-left p-4">Customer</th>
-                <th className="text-left p-4">Status</th>
-                <th className="text-right p-4">Total</th>
-                <th className="text-right p-4">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Order</TableHead>
+                <TableHead>Date</TableHead>
+                <TableHead>Customer</TableHead>
+                <TableHead className="text-right">Total</TableHead>
+                <TableHead>Status</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
               {orders.map((order) => (
-                <tr key={order.id} className="border-b hover:bg-muted/50">
-                  <td className="p-4">
-                    <div className="font-medium">#{order.order_number}</div>
-                  </td>
-                  <td className="p-4">
-                    {new Date(order.processed_at).toLocaleDateString()}
-                  </td>
-                  <td className="p-4">
-                    <div className="text-sm">{order.customer_email}</div>
-                  </td>
-                  <td className="p-4">
-                    <div className="flex gap-2">
-                      <Badge variant={order.financial_status === 'paid' ? 'default' : 'secondary'}>
-                        {order.financial_status}
-                      </Badge>
-                      {order.fulfillment_status && (
-                        <Badge variant={order.fulfillment_status === 'fulfilled' ? 'default' : 'secondary'}>
-                          {order.fulfillment_status}
-                        </Badge>
+                <TableRow 
+                  key={order.id}
+                  className="cursor-pointer hover:bg-muted/50"
+                  onClick={() => window.location.href = `/admin/orders/${order.id}`}
+                >
+                  <TableCell className="font-medium">
+                    <div className="flex items-center gap-2">
+                      <span className="hover:text-primary transition-colors">
+                        #{order.order_number}
+                      </span>
+                      {order.has_duplicates && (
+                        <AlertCircle className="h-4 w-4 text-yellow-500" title="This order has duplicate items" />
                       )}
                     </div>
-                  </td>
-                  <td className="p-4 text-right">
+                  </TableCell>
+                  <TableCell>{new Date(order.processed_at).toLocaleDateString()}</TableCell>
+                  <TableCell>{order.customer_email}</TableCell>
+                  <TableCell className="text-right">
                     {formatCurrency(order.total_price, order.currency_code)}
-                  </td>
-                  <td className="p-4 text-right">
-                    <Button asChild variant="ghost" size="sm">
-                      <Link href={`/admin/orders/${order.id}`}>
-                        View Details
-                      </Link>
-                    </Button>
-                  </td>
-                </tr>
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex gap-2">
+                      <Badge 
+                        variant={order.financial_status === 'paid' ? 'default' : 'secondary'}
+                        className="text-xs"
+                      >
+                        {order.financial_status}
+                      </Badge>
+                      <Badge 
+                        variant={order.fulfillment_status === 'fulfilled' ? 'default' : 'secondary'}
+                        className="text-xs"
+                      >
+                        {order.fulfillment_status || 'pending'}
+                      </Badge>
+                    </div>
+                  </TableCell>
+                </TableRow>
               ))}
-            </tbody>
-          </table>
+            </TableBody>
+          </Table>
         </div>
       </Card>
 

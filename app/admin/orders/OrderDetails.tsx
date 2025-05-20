@@ -5,12 +5,13 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, ExternalLink } from "lucide-react";
+import { ArrowLeft, ExternalLink, ChevronLeft, ChevronRight, ChevronUp, ChevronDown, AlertCircle } from "lucide-react";
 import { formatCurrency } from '@/lib/utils';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import DuplicateItemsBox from './DuplicateItemsBox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
+import { useRouter } from 'next/navigation';
 
 interface OrderLineItem {
   id: string;
@@ -23,6 +24,10 @@ interface OrderLineItem {
   variant_id: string | null;
   fulfillment_status: string;
   status: "active" | "inactive" | "removed";
+  image_url?: string;
+  is_duplicate?: boolean;
+  duplicate_of?: string[];
+  edition_number?: number;
 }
 
 interface Order {
@@ -52,8 +57,70 @@ interface OrderDetailsProps {
 export default function OrderDetails({ order }: OrderDetailsProps) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [lineItems, setLineItems] = useState(order.line_items);
+  const [lineItems, setLineItems] = useState<OrderLineItem[]>(() => {
+    // Initialize with default status if not present
+    return order.line_items.map(item => ({
+      ...item,
+      status: item.status || 'active'
+    }));
+  });
   const [updatingStatus, setUpdatingStatus] = useState<string | null>(null);
+  const [navigation, setNavigation] = useState<{ prevOrderId: string | null; nextOrderId: string | null }>({
+    prevOrderId: null,
+    nextOrderId: null
+  });
+  const [duplicateItems, setDuplicateItems] = useState<Map<string, string[]>>(new Map());
+  const router = useRouter();
+
+  useEffect(() => {
+    const fetchNavigation = async () => {
+      try {
+        const res = await fetch(`/api/orders/navigation?orderId=${order.id}`);
+        if (!res.ok) throw new Error('Failed to fetch navigation');
+        const data = await res.json();
+        setNavigation(data);
+      } catch (err) {
+        console.error('Error fetching navigation:', err);
+      }
+    };
+
+    fetchNavigation();
+  }, [order.id]);
+
+  useEffect(() => {
+    // Find duplicate items (only among active items)
+    const duplicates = new Map<string, string[]>();
+    const seen = new Map<string, string[]>();
+
+    lineItems
+      .filter(item => item.status === 'active') // Only consider active items for duplicates
+      .forEach(item => {
+        if (item.product_id) {
+          if (seen.has(item.product_id)) {
+            const existing = seen.get(item.product_id) || [];
+            existing.push(item.id);
+            seen.set(item.product_id, existing);
+            // Add all items with this product_id to duplicates
+            existing.forEach(id => {
+              const current = duplicates.get(id) || [];
+              duplicates.set(id, [...current, ...existing.filter(i => i !== id)]);
+            });
+          } else {
+            seen.set(item.product_id, [item.id]);
+          }
+        }
+      });
+
+    setDuplicateItems(duplicates);
+  }, [lineItems]);
+
+  // Separate active and inactive/removed items
+  const activeItems = lineItems.filter(item => item.status === 'active');
+  const inactiveItems = lineItems.filter(item => item.status === 'inactive' || item.status === 'removed');
+
+  const handleNavigation = (orderId: string) => {
+    router.push(`/admin/orders/${orderId}`);
+  };
 
   const handleStatusChange = async (lineItemId: string, newStatus: "active" | "inactive" | "removed") => {
     setUpdatingStatus(lineItemId);
@@ -142,17 +209,39 @@ export default function OrderDetails({ order }: OrderDetailsProps) {
 
   return (
     <div className="container max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
-      <div className="mb-6 flex items-center gap-4">
-        <Link href="/admin/orders">
-          <Button variant="ghost" className="gap-2">
-            <ArrowLeft className="h-4 w-4" />
-            Back to Orders
+      <div className="mb-6 flex items-center justify-between">
+        <div className="flex items-center gap-4">
+          <Link href="/admin/orders">
+            <Button variant="ghost" className="gap-2">
+              <ArrowLeft className="h-4 w-4" />
+              Back to Orders
+            </Button>
+          </Link>
+          <Button onClick={handleRefresh} disabled={loading} variant="outline">
+            {loading ? 'Refreshing...' : 'Refresh from Shopify'}
           </Button>
-        </Link>
-        <Button onClick={handleRefresh} disabled={loading} variant="outline">
-          {loading ? 'Refreshing...' : 'Refresh from Shopify'}
-        </Button>
-        {error && <span className="text-red-500 ml-4">{error}</span>}
+          {error && <span className="text-red-500 ml-4">{error}</span>}
+        </div>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={() => navigation.nextOrderId && handleNavigation(navigation.nextOrderId)}
+            disabled={!navigation.nextOrderId}
+            title="Previous Order (Higher Number)"
+          >
+            <ChevronUp className="h-4 w-4" />
+          </Button>
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={() => navigation.prevOrderId && handleNavigation(navigation.prevOrderId)}
+            disabled={!navigation.prevOrderId}
+            title="Next Order (Lower Number)"
+          >
+            <ChevronDown className="h-4 w-4" />
+          </Button>
+        </div>
       </div>
 
       <div className="grid gap-6">
@@ -208,58 +297,25 @@ export default function OrderDetails({ order }: OrderDetailsProps) {
           </CardContent>
         </Card>
 
-        {/* Order Summary */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Order Summary</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-2">
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Subtotal</span>
-                <span>{formatCurrency(order.subtotal_price, order.currency_code)}</span>
-              </div>
-              {order.discount_codes.length > 0 && (
-                <div className="flex justify-between text-green-600">
-                  <span>Discounts</span>
-                  <div className="text-right">
-                    {order.discount_codes.map((discount, index) => (
-                      <div key={index} className="text-sm">
-                        {discount.code} ({discount.type === 'percentage' ? `${discount.amount}%` : formatCurrency(discount.amount, order.currency_code)})
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Tax</span>
-                <span>{formatCurrency(order.total_tax, order.currency_code)}</span>
-              </div>
-              <div className="flex justify-between font-bold text-lg pt-2 border-t">
-                <span>Total</span>
-                <span>{formatCurrency(order.total_price, order.currency_code)}</span>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
         {/* Duplicate Items Box */}
         <DuplicateItemsBox 
           lineItems={lineItems}
           onStatusChange={handleDuplicateStatusChange}
         />
 
-        {/* Line Items */}
+        {/* Active Line Items */}
         <Card>
           <CardHeader>
-            <CardTitle>Line Items</CardTitle>
+            <CardTitle>Active Line Items</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="rounded-md border">
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead className="w-[35%]">Product</TableHead>
+                    <TableHead className="w-[5%]">Image</TableHead>
+                    <TableHead className="w-[25%]">Product</TableHead>
+                    <TableHead className="w-[10%]">Edition</TableHead>
                     <TableHead className="w-[15%]">SKU</TableHead>
                     <TableHead className="w-[15%]">Vendor</TableHead>
                     <TableHead className="w-[10%] text-right">Quantity</TableHead>
@@ -269,28 +325,68 @@ export default function OrderDetails({ order }: OrderDetailsProps) {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {lineItems.map((item) => (
+                  {activeItems.map((item) => (
                     <TableRow key={item.id}>
-                      <TableCell className="font-medium">
-                        {item.product_id ? (
-                          <Link 
-                            href={`/admin/product-editions/${item.product_id}`}
-                            className="flex items-center gap-1 hover:text-primary transition-colors"
-                          >
-                            {item.title}
-                            <ExternalLink className="h-3 w-3" />
-                          </Link>
+                      <TableCell>
+                        {item.image_url ? (
+                          <img 
+                            src={item.image_url} 
+                            alt={item.title}
+                            className="w-12 h-12 object-cover rounded-md"
+                          />
                         ) : (
-                          item.title
+                          <div className="w-12 h-12 bg-gray-100 rounded-md flex items-center justify-center">
+                            <span className="text-gray-400 text-xs">No image</span>
+                          </div>
                         )}
                       </TableCell>
-                      <TableCell className="text-muted-foreground">{item.sku || '-'}</TableCell>
-                      <TableCell className="text-muted-foreground">{item.vendor_name || '-'}</TableCell>
-                      <TableCell className="text-right">{item.quantity}</TableCell>
-                      <TableCell className="text-right">
+                      <TableCell className="font-medium">
+                        <div className="flex items-center gap-2">
+                          {item.product_id ? (
+                            <Link 
+                              href={`/admin/product-editions/${item.product_id}`}
+                              className={`flex items-center gap-1 hover:text-primary transition-colors ${
+                                item.status === 'removed' || item.status === 'inactive' ? 'line-through text-muted-foreground' : ''
+                              }`}
+                            >
+                              {item.title}
+                              <ExternalLink className="h-3 w-3" />
+                            </Link>
+                          ) : (
+                            <span className={item.status === 'removed' || item.status === 'inactive' ? 'line-through text-muted-foreground' : ''}>
+                              {item.title}
+                            </span>
+                          )}
+                          {duplicateItems.has(item.id) && (
+                            <div className="flex items-center gap-1">
+                              <AlertCircle className="h-4 w-4 text-yellow-500" title={`This item has ${duplicateItems.get(item.id)?.length} duplicate(s)`} />
+                              <span className="text-xs text-muted-foreground">
+                                ({duplicateItems.get(item.id)?.length})
+                              </span>
+                            </div>
+                          )}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        {item.edition_number ? (
+                          <span className="font-medium">#{item.edition_number}</span>
+                        ) : (
+                          <span className="text-muted-foreground text-sm">-</span>
+                        )}
+                      </TableCell>
+                      <TableCell className={`text-muted-foreground ${item.status === 'removed' || item.status === 'inactive' ? 'line-through' : ''}`}>
+                        {item.sku || '-'}
+                      </TableCell>
+                      <TableCell className={`text-muted-foreground ${item.status === 'removed' || item.status === 'inactive' ? 'line-through' : ''}`}>
+                        {item.vendor_name || '-'}
+                      </TableCell>
+                      <TableCell className={`text-right ${item.status === 'removed' || item.status === 'inactive' ? 'line-through text-muted-foreground' : ''}`}>
+                        {item.quantity}
+                      </TableCell>
+                      <TableCell className={`text-right ${item.status === 'removed' || item.status === 'inactive' ? 'line-through text-muted-foreground' : ''}`}>
                         {formatCurrency(item.price, order.currency_code)}
                       </TableCell>
-                      <TableCell className="text-right font-medium">
+                      <TableCell className={`text-right font-medium ${item.status === 'removed' || item.status === 'inactive' ? 'line-through text-muted-foreground' : ''}`}>
                         {formatCurrency(item.price * item.quantity, order.currency_code)}
                       </TableCell>
                       <TableCell className="text-right">
@@ -323,6 +419,143 @@ export default function OrderDetails({ order }: OrderDetailsProps) {
                   ))}
                 </TableBody>
               </Table>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Inactive/Removed Line Items */}
+        {inactiveItems.length > 0 && (
+          <Card>
+            <CardHeader>
+              <CardTitle>Inactive/Removed Items</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="rounded-md border">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="w-[5%]">Image</TableHead>
+                      <TableHead className="w-[25%]">Product</TableHead>
+                      <TableHead className="w-[10%]">Edition</TableHead>
+                      <TableHead className="w-[15%]">SKU</TableHead>
+                      <TableHead className="w-[15%]">Vendor</TableHead>
+                      <TableHead className="w-[10%] text-right">Quantity</TableHead>
+                      <TableHead className="w-[10%] text-right">Price</TableHead>
+                      <TableHead className="w-[10%] text-right">Total</TableHead>
+                      <TableHead className="w-[5%] text-right">Status</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {inactiveItems.map((item) => (
+                      <TableRow key={item.id}>
+                        <TableCell>
+                          {item.image_url ? (
+                            <img 
+                              src={item.image_url} 
+                              alt={item.title}
+                              className="w-12 h-12 object-cover rounded-md opacity-50"
+                            />
+                          ) : (
+                            <div className="w-12 h-12 bg-gray-100 rounded-md flex items-center justify-center opacity-50">
+                              <span className="text-gray-400 text-xs">No image</span>
+                            </div>
+                          )}
+                        </TableCell>
+                        <TableCell className="font-medium">
+                          <div className="flex items-center gap-2">
+                            {item.product_id ? (
+                              <Link 
+                                href={`/admin/product-editions/${item.product_id}`}
+                                className="flex items-center gap-1 hover:text-primary transition-colors line-through text-muted-foreground"
+                              >
+                                {item.title}
+                                <ExternalLink className="h-3 w-3" />
+                              </Link>
+                            ) : (
+                              <span className="line-through text-muted-foreground">
+                                {item.title}
+                              </span>
+                            )}
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          {item.edition_number ? (
+                            <span className="font-medium line-through text-muted-foreground">#{item.edition_number}</span>
+                          ) : (
+                            <span className="text-muted-foreground text-sm">-</span>
+                          )}
+                        </TableCell>
+                        <TableCell className="text-muted-foreground line-through">
+                          {item.sku || '-'}
+                        </TableCell>
+                        <TableCell className="text-muted-foreground line-through">
+                          {item.vendor_name || '-'}
+                        </TableCell>
+                        <TableCell className="text-right line-through text-muted-foreground">
+                          {item.quantity}
+                        </TableCell>
+                        <TableCell className="text-right line-through text-muted-foreground">
+                          {formatCurrency(item.price, order.currency_code)}
+                        </TableCell>
+                        <TableCell className="text-right font-medium line-through text-muted-foreground">
+                          {formatCurrency(item.price * item.quantity, order.currency_code)}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <Select
+                            value={item.status}
+                            onValueChange={(value: "active" | "inactive" | "removed") => handleStatusChange(item.id, value)}
+                            disabled={updatingStatus === item.id}
+                          >
+                            <SelectTrigger className="w-[100px]">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="active">Active</SelectItem>
+                              <SelectItem value="inactive">Inactive</SelectItem>
+                              <SelectItem value="removed">Removed</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Order Summary */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Order Summary</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2">
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Subtotal</span>
+                <span>{formatCurrency(order.subtotal_price, order.currency_code)}</span>
+              </div>
+              {order.discount_codes.length > 0 && (
+                <div className="flex justify-between text-green-600">
+                  <span>Discounts</span>
+                  <div className="text-right">
+                    {order.discount_codes.map((discount, index) => (
+                      <div key={index} className="text-sm">
+                        {discount.code} ({discount.type === 'percentage' ? `${discount.amount}%` : formatCurrency(discount.amount, order.currency_code)})
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Tax</span>
+                <span>{formatCurrency(order.total_tax, order.currency_code)}</span>
+              </div>
+              <div className="flex justify-between font-bold text-lg pt-2 border-t">
+                <span>Total</span>
+                <span>{formatCurrency(order.total_price, order.currency_code)}</span>
+              </div>
             </div>
           </CardContent>
         </Card>
