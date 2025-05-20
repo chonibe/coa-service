@@ -1,10 +1,8 @@
 import { NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+import { createClient } from '@/lib/supabase/server';
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+const VALID_STATUSES = ['active', 'inactive', 'removed'] as const;
+type Status = typeof VALID_STATUSES[number];
 
 export async function POST(
   request: Request,
@@ -12,57 +10,27 @@ export async function POST(
 ) {
   try {
     const { itemIds, status } = await request.json();
-    console.log('Received request:', { itemIds, status, orderId: params.orderId });
 
     if (!itemIds || !Array.isArray(itemIds) || itemIds.length === 0) {
-      console.error('Invalid itemIds:', itemIds);
       return NextResponse.json(
-        { error: 'Invalid itemIds provided' },
+        { error: 'Invalid or missing itemIds' },
         { status: 400 }
       );
     }
 
-    if (!status || !['active', 'cancelled'].includes(status)) {
-      console.error('Invalid status:', status);
+    if (!status || !VALID_STATUSES.includes(status)) {
       return NextResponse.json(
-        { error: 'Invalid status provided' },
+        { error: 'Invalid status. Must be one of: ' + VALID_STATUSES.join(', ') },
         { status: 400 }
       );
     }
 
-    // First verify the items exist and belong to the order
-    const { data: existingItems, error: fetchError } = await supabase
-      .from('order_line_items_v2')
-      .select('id')
-      .in('id', itemIds)
-      .eq('order_id', params.orderId);
+    const supabase = createClient();
 
-    if (fetchError) {
-      console.error('Error fetching items:', fetchError);
-      return NextResponse.json(
-        { error: 'Failed to verify items' },
-        { status: 500 }
-      );
-    }
-
-    if (!existingItems || existingItems.length !== itemIds.length) {
-      console.error('Items not found or do not belong to order:', { 
-        requested: itemIds, 
-        found: existingItems 
-      });
-      return NextResponse.json(
-        { error: 'One or more items not found or do not belong to this order' },
-        { status: 404 }
-      );
-    }
-
-    // Update the line items in Supabase
+    // Update the status for all specified items
     const { error: updateError } = await supabase
       .from('order_line_items_v2')
-      .update({ 
-        status: status,
-        updated_at: new Date().toISOString()
-      })
+      .update({ status })
       .in('id', itemIds)
       .eq('order_id', params.orderId);
 
@@ -74,7 +42,40 @@ export async function POST(
       );
     }
 
-    console.log('Successfully updated items:', { itemIds, status });
+    // If status is 'removed', resequence edition numbers
+    if (status === 'removed') {
+      const { data: activeItems, error: fetchError } = await supabase
+        .from('order_line_items_v2')
+        .select('id, edition_number')
+        .eq('order_id', params.orderId)
+        .eq('status', 'active')
+        .order('edition_number', { ascending: true });
+
+      if (fetchError) {
+        console.error('Error fetching active items:', fetchError);
+        return NextResponse.json(
+          { error: 'Failed to fetch active items for resequencing' },
+          { status: 500 }
+        );
+      }
+
+      // Update edition numbers sequentially
+      for (let i = 0; i < activeItems.length; i++) {
+        const { error: resequenceError } = await supabase
+          .from('order_line_items_v2')
+          .update({ edition_number: i + 1 })
+          .eq('id', activeItems[i].id);
+
+        if (resequenceError) {
+          console.error('Error resequencing edition numbers:', resequenceError);
+          return NextResponse.json(
+            { error: 'Failed to resequence edition numbers' },
+            { status: 500 }
+          );
+        }
+      }
+    }
+
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error('Error in line items status update:', error);
