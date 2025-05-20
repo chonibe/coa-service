@@ -109,7 +109,7 @@ interface DatabaseOrderLineItem {
 }
 
 async function getOrderData(orderId: string) {
-  // First get the order from Supabase to get the Shopify ID and line items
+  // Get order from Supabase (for Shopify ID)
   const cookieStore = await cookies();
   const supabase = createServerClient<Database>(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -136,34 +136,49 @@ async function getOrderData(orderId: string) {
     return null;
   }
 
-  // Get line items from Supabase
-  const { data: lineItems } = await supabase
+  // Get line item statuses from Supabase
+  const { data: supabaseLineItems } = await supabase
     .from('order_line_items_v2')
-    .select('*')
+    .select('line_item_id, title, quantity, price, sku, vendor_name, product_id, variant_id, fulfillment_status, status, edition_number')
     .eq('order_id', orderId);
+  const supabaseMap = new Map(
+    (supabaseLineItems || []).map(item => [item.line_item_id, item])
+  );
 
-  // Try to fetch additional details from Shopify
+  // Try to fetch full order from Shopify
   try {
     const shop = process.env.SHOPIFY_SHOP;
     const token = process.env.SHOPIFY_ACCESS_TOKEN;
-    
-    // Use the Shopify ID from the raw data
     const shopifyOrderId = orderData.raw_shopify_order_data?.id;
     if (!shopifyOrderId) {
       console.error('No Shopify ID found in order data');
       return null;
     }
-
     const res = await fetch(`https://${shop}/admin/api/2023-10/orders/${shopifyOrderId}.json`, {
       headers: {
         'X-Shopify-Access-Token': token!,
         'Content-Type': 'application/json',
       },
     });
-
     if (res.ok) {
       const { order: shopifyOrder } = await res.json();
-      // Transform Shopify data to our Order interface, but use Supabase line items
+      // Merge Shopify line items with Supabase status/edition_number
+      const mergedLineItems = shopifyOrder.line_items.map((item: any) => {
+        const supa = supabaseMap.get(item.id.toString());
+        return {
+          id: item.id.toString(),
+          title: item.title,
+          quantity: item.quantity,
+          price: parseFloat(item.price),
+          sku: item.sku,
+          vendor_name: item.vendor,
+          product_id: item.product_id?.toString() || '',
+          variant_id: item.variant_id?.toString() || null,
+          fulfillment_status: item.fulfillment_status || 'pending',
+          status: supa?.status || 'active',
+          edition_number: supa?.edition_number ?? null,
+        };
+      });
       return {
         id: shopifyOrder.id.toString(),
         order_number: shopifyOrder.name.replace('#', ''),
@@ -176,30 +191,19 @@ async function getOrderData(orderId: string) {
         total_discounts: parseFloat(shopifyOrder.total_discounts || '0'),
         subtotal_price: parseFloat(shopifyOrder.subtotal_price || '0'),
         total_tax: parseFloat(shopifyOrder.total_tax || '0'),
-        discount_codes: shopifyOrder.discount_codes?.map(code => ({
+        discount_codes: shopifyOrder.discount_codes?.map((code: { code: string; amount: string; type: string }) => ({
           code: code.code,
           amount: parseFloat(code.amount),
           type: code.type
         })) || [],
-        line_items: lineItems?.map(item => ({
-          id: item.line_item_id,
-          title: item.title,
-          quantity: item.quantity,
-          price: item.price,
-          sku: item.sku,
-          vendor_name: item.vendor_name,
-          product_id: item.product_id,
-          variant_id: item.variant_id,
-          fulfillment_status: item.fulfillment_status || 'pending',
-          status: item.status || 'active'
-        })) || []
+        line_items: mergedLineItems
       };
     }
   } catch (err) {
     console.error('Error fetching order from Shopify:', err);
   }
 
-  // If Shopify fetch fails, return data from Supabase
+  // If Shopify fetch fails, fallback to Supabase for everything
   return {
     id: orderData.id,
     order_number: orderData.order_number,
@@ -217,18 +221,19 @@ async function getOrderData(orderId: string) {
       amount: parseFloat(code.amount),
       type: code.type
     })) || [],
-    line_items: lineItems?.map(item => ({
+    line_items: (supabaseLineItems || []).map(item => ({
       id: item.line_item_id,
-      title: item.title,
-      quantity: item.quantity,
-      price: item.price,
-      sku: item.sku,
-      vendor_name: item.vendor_name,
-      product_id: item.product_id,
-      variant_id: item.variant_id,
+      title: item.title || '',
+      quantity: item.quantity || 1,
+      price: item.price || 0,
+      sku: item.sku || '',
+      vendor_name: item.vendor_name || '',
+      product_id: item.product_id || '',
+      variant_id: item.variant_id || null,
       fulfillment_status: item.fulfillment_status || 'pending',
-      status: item.status || 'active'
-    })) || []
+      status: item.status || 'active',
+      edition_number: item.edition_number ?? null,
+    }))
   };
 }
 
