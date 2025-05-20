@@ -10,7 +10,7 @@ CREATE TABLE "public"."order_line_items_v2" (
     "price" NUMERIC(10,2) NOT NULL,
     "vendor_name" TEXT,
     "fulfillment_status" TEXT,
-    "status" TEXT DEFAULT 'active',
+    "status" TEXT DEFAULT 'active' CHECK (status IN ('active', 'inactive', 'removed')),
     "created_at" TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     "updated_at" TIMESTAMPTZ DEFAULT NOW()
 );

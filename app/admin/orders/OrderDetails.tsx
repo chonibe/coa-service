@@ -138,7 +138,8 @@ export default function OrderDetails({ order }: OrderDetailsProps) {
       });
 
       if (!res.ok) {
-        throw new Error('Failed to update line item status');
+        const errorData = await res.json();
+        throw new Error(errorData.error || 'Failed to update line item status');
       }
 
       // Update local state
