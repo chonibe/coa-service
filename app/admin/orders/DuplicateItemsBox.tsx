@@ -42,7 +42,7 @@ export default function DuplicateItemsBox({ lineItems, onStatusChange }: Duplica
   if (duplicates.length === 0) return null;
 
   return (
-    <Card className="border-yellow-200 bg-yellow-50">
+    <Card className="border-yellow-200 bg-yellow-50 mb-4 sm:mb-6">
       <CardHeader className="pb-2">
         <CardTitle className="text-lg flex items-center gap-2 text-yellow-800">
           <AlertCircle className="h-5 w-5" />
@@ -56,7 +56,7 @@ export default function DuplicateItemsBox({ lineItems, onStatusChange }: Duplica
             if (!item) return null;
 
             return (
-              <div key={productId} className="flex items-center justify-between">
+              <div key={productId} className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                 <div>
                   <p className="font-medium">{item.title}</p>
                   <p className="text-sm text-yellow-700">
@@ -68,6 +68,7 @@ export default function DuplicateItemsBox({ lineItems, onStatusChange }: Duplica
                     variant="outline"
                     size="sm"
                     onClick={() => onStatusChange(itemIds.slice(1), 'inactive')}
+                    className="w-full sm:w-auto"
                   >
                     Mark All But First as Inactive
                   </Button>
