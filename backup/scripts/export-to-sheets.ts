@@ -26,6 +26,33 @@ const TABLES_TO_EXPORT = [
   'benefit_types'
 ];
 
+function validateGoogleCredentials() {
+  const clientEmail = process.env.GOOGLE_CLIENT_EMAIL;
+  const privateKey = process.env.GOOGLE_PRIVATE_KEY;
+  const projectId = process.env.GOOGLE_PROJECT_ID;
+
+  if (!clientEmail) {
+    throw new Error('GOOGLE_CLIENT_EMAIL is not set in environment variables');
+  }
+  if (!privateKey) {
+    throw new Error('GOOGLE_PRIVATE_KEY is not set in environment variables');
+  }
+  if (!projectId) {
+    throw new Error('GOOGLE_PROJECT_ID is not set in environment variables');
+  }
+
+  // Validate email format
+  if (!clientEmail.includes('@') || !clientEmail.endsWith('.iam.gserviceaccount.com')) {
+    throw new Error('GOOGLE_CLIENT_EMAIL must be a valid service account email');
+  }
+
+  return {
+    clientEmail,
+    privateKey,
+    projectId
+  };
+}
+
 function formatPrivateKey(key: string): string {
   // Remove any existing newlines and quotes
   const cleanKey = key.replace(/[\n\r"]/g, '');
@@ -39,29 +66,40 @@ function formatPrivateKey(key: string): string {
 
 export async function exportToSheets(config: BackupConfig, backupPath?: string): Promise<string> {
   try {
-    // Initialize Google Sheets API
-    const privateKey = process.env.GOOGLE_PRIVATE_KEY;
-    if (!privateKey) {
-      throw new Error('GOOGLE_PRIVATE_KEY not set in environment');
-    }
+    // Validate Google credentials
+    const { clientEmail, privateKey, projectId } = validateGoogleCredentials();
+    console.log('Using Google service account:', clientEmail);
+    console.log('Project ID:', projectId);
 
     const formattedPrivateKey = formatPrivateKey(privateKey);
     console.log('Formatted private key:', formattedPrivateKey.substring(0, 50) + '...');
 
     const auth = new google.auth.GoogleAuth({
       credentials: {
-        client_email: process.env.GOOGLE_CLIENT_EMAIL,
+        client_email: clientEmail,
         private_key: formattedPrivateKey,
+        project_id: projectId
       },
       scopes: ['https://www.googleapis.com/auth/spreadsheets'],
     });
 
     // Test the authentication
     try {
-      await auth.getClient();
+      const client = await auth.getClient();
       console.log('Successfully authenticated with Google Sheets API');
+      
+      // Verify the service account has access to the project
+      const drive = google.drive({ version: 'v3', auth });
+      await drive.files.list({
+        pageSize: 1,
+        fields: 'files(id, name)',
+      });
+      console.log('Successfully verified Google Drive access');
     } catch (error: any) {
       console.error('Authentication error:', error);
+      if (error.message?.includes('invalid_grant')) {
+        throw new Error('Invalid Google service account credentials. Please check that the service account exists and has the correct permissions.');
+      }
       throw new Error(`Failed to authenticate with Google Sheets API: ${error.message}`);
     }
 
