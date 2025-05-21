@@ -88,17 +88,38 @@ function validateGoogleCredentials() {
 
 function formatPrivateKey(key: string): string {
   try {
-    // Remove any existing newlines and quotes
-    const cleanKey = key.replace(/[\n\r"]/g, '');
+    // Remove any existing newlines, quotes, and spaces
+    let cleanKey = key.replace(/[\n\r" ]/g, '');
     
-    // Add proper PEM format
-    const formattedKey = `-----BEGIN PRIVATE KEY-----\n${cleanKey}\n-----END PRIVATE KEY-----`;
-    
-    // Replace any remaining escaped newlines
-    return formattedKey.replace(/\\n/g, '\n');
+    // If the key doesn't start with BEGIN PRIVATE KEY, add it
+    if (!cleanKey.includes('BEGINPRIVATEKEY')) {
+      // Split the key into chunks of 64 characters
+      const chunks = [];
+      for (let i = 0; i < cleanKey.length; i += 64) {
+        chunks.push(cleanKey.slice(i, i + 64));
+      }
+      
+      // Reconstruct the key with proper PEM format
+      cleanKey = `-----BEGIN PRIVATE KEY-----\n${chunks.join('\n')}\n-----END PRIVATE KEY-----`;
+    } else {
+      // If it already has the PEM format, just ensure proper line breaks
+      cleanKey = cleanKey
+        .replace('BEGINPRIVATEKEY', 'BEGIN PRIVATE KEY')
+        .replace('ENDPRIVATEKEY', 'END PRIVATE KEY')
+        .replace(/(.{64})/g, '$1\n');
+    }
+
+    // Ensure the key has proper line endings
+    return cleanKey.replace(/\r\n|\r|\n/g, '\n');
   } catch (error) {
     console.error('Error formatting private key:', error);
-    throw new Error('Failed to format private key. Please ensure it is a valid private key from your service account JSON file.');
+    throw new Error(
+      'Failed to format private key. Please ensure it is a valid private key from your service account JSON file.\n' +
+      'The key should be in PEM format and should look like:\n' +
+      '-----BEGIN PRIVATE KEY-----\n' +
+      'MIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQC9QFi67K6...\n' +
+      '-----END PRIVATE KEY-----'
+    );
   }
 }
 
@@ -109,8 +130,18 @@ export async function exportToSheets(config: BackupConfig, backupPath?: string):
     console.log('Using Google service account:', clientEmail);
     console.log('Project ID:', projectId);
 
-    const formattedPrivateKey = formatPrivateKey(privateKey);
-    console.log('Private key formatted successfully');
+    // Format the private key
+    let formattedPrivateKey: string;
+    try {
+      formattedPrivateKey = formatPrivateKey(privateKey);
+      console.log('Private key formatted successfully');
+    } catch (keyError) {
+      console.error('Private key formatting error:', keyError);
+      throw new Error(
+        'Failed to format private key. Please check your GOOGLE_PRIVATE_KEY environment variable.\n' +
+        'Make sure to copy the entire private key from your service account JSON file, including the BEGIN and END lines.'
+      );
+    }
 
     // Create JWT client
     const auth = new google.auth.JWT({
@@ -148,6 +179,17 @@ export async function exportToSheets(config: BackupConfig, backupPath?: string):
           '5. Compare the values in the JSON file with your environment variables'
         );
       }
+
+      if (error.message?.includes('DECODER routines::unsupported')) {
+        throw new Error(
+          'Invalid private key format. Please ensure your GOOGLE_PRIVATE_KEY is properly formatted:\n' +
+          '1. Copy the entire private key from your service account JSON file\n' +
+          '2. Include the "-----BEGIN PRIVATE KEY-----" and "-----END PRIVATE KEY-----" lines\n' +
+          '3. Make sure there are no extra spaces or characters\n' +
+          '4. The key should be in PEM format'
+        );
+      }
+
       throw new Error(`Failed to authenticate with Google Sheets API: ${error.message}`);
     }
 
