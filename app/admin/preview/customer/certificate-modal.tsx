@@ -2,6 +2,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { formatDate } from "../../../utils/date"
+import React, { useRef, ReactNode, MouseEvent } from "react"
 
 interface LineItem {
   line_item_id: string
@@ -23,6 +24,44 @@ interface CertificateModalProps {
   isOpen: boolean
   onClose: () => void
   lineItem: LineItem | null
+}
+
+function FloatingTiltCard({ children, className = "", ...props }: React.HTMLAttributes<HTMLDivElement> & { children: ReactNode }) {
+  const cardRef = useRef<HTMLDivElement>(null)
+  const handleMouseMove = (e: MouseEvent<HTMLDivElement>) => {
+    const card = cardRef.current
+    if (!card) return
+    const rect = card.getBoundingClientRect()
+    const x = e.clientX - rect.left
+    const y = e.clientY - rect.top
+    const centerX = rect.width / 2
+    const centerY = rect.height / 2
+    const rotateX = ((y - centerY) / centerY) * 8
+    const rotateY = ((x - centerX) / centerX) * -8
+    card.style.transform = `perspective(800px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale3d(1.03,1.03,1.03)`
+  }
+  const handleMouseLeave = () => {
+    const card = cardRef.current
+    if (!card) return
+    card.style.transform = ""
+  }
+  return (
+    <div
+      ref={cardRef}
+      className={`relative bg-zinc-900 border border-zinc-800 rounded-xl shadow-lg transition-transform duration-200 hover:shadow-2xl overflow-hidden ${className}`}
+      style={{ willChange: "transform" }}
+      onMouseMove={handleMouseMove}
+      onMouseLeave={handleMouseLeave}
+      tabIndex={0}
+      {...props}
+    >
+      {/* Shimmer overlay */}
+      <span className="pointer-events-none absolute inset-0 z-10 opacity-0 hover:opacity-100 transition-opacity duration-300">
+        <span className="block w-full h-full shimmer" />
+      </span>
+      {children}
+    </div>
+  )
 }
 
 export function CertificateModal({ isOpen, onClose, lineItem }: CertificateModalProps) {
@@ -90,7 +129,7 @@ export function CertificateModal({ isOpen, onClose, lineItem }: CertificateModal
           </div>
 
           {/* Certificate Content */}
-          <Card>
+          <FloatingTiltCard className="mt-4">
             <CardContent className="pt-6">
               <div className="space-y-4">
                 <div className="text-center">
@@ -115,8 +154,22 @@ export function CertificateModal({ isOpen, onClose, lineItem }: CertificateModal
                 </div>
               </div>
             </CardContent>
-          </Card>
+          </FloatingTiltCard>
         </div>
+        <style jsx global>{`
+          .shimmer {
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: linear-gradient(120deg, rgba(255,255,255,0) 60%, rgba(255,255,255,0.12) 80%, rgba(255,255,255,0) 100%);
+            background-size: 200% 100%;
+            animation: shimmer-move 1.2s linear infinite;
+            pointer-events: none;
+          }
+          @keyframes shimmer-move {
+            0% { background-position: -100% 0; }
+            100% { background-position: 200% 0; }
+          }
+        `}</style>
       </DialogContent>
     </Dialog>
   )
