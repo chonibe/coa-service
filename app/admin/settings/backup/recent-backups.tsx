@@ -15,7 +15,6 @@ import { ExternalLink, Download, Trash2 } from "lucide-react"
 import { toast } from "sonner"
 
 interface Backup {
-  id: string
   type: "database" | "sheets"
   createdAt: string
   status: "success" | "failed"
@@ -58,9 +57,9 @@ export function RecentBackups() {
     }
   }
 
-  async function deleteBackup(id: string) {
+  async function deleteBackup(type: string) {
     try {
-      const response = await fetch(`/api/admin/backup/${id}`, {
+      const response = await fetch(`/api/admin/backup/${type}`, {
         method: "DELETE",
       })
 
@@ -97,7 +96,7 @@ export function RecentBackups() {
       </TableHeader>
       <TableBody>
         {backups.map((backup) => (
-          <TableRow key={backup.id}>
+          <TableRow key={`${backup.type}-${backup.createdAt}`}>
             <TableCell>
               <Badge variant={backup.type === "database" ? "default" : "secondary"}>
                 {backup.type === "database" ? "Database" : "Google Sheets"}
@@ -133,7 +132,7 @@ export function RecentBackups() {
                 <Button
                   variant="ghost"
                   size="icon"
-                  onClick={() => deleteBackup(backup.id)}
+                  onClick={() => deleteBackup(backup.type)}
                 >
                   <Trash2 className="h-4 w-4" />
                 </Button>
