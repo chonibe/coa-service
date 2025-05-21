@@ -15,11 +15,7 @@ export async function GET(request: NextRequest) {
         id,
         name,
         created_at,
-        customer_id,
-        customers (
-          name,
-          email
-        )
+        customer_id
       `)
       .order("created_at", { ascending: false })
       .limit(100)
@@ -29,15 +25,12 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ success: false, message: "Failed to fetch orders" }, { status: 500 })
     }
 
-    // Transform the data to include customer information
+    // Transform the data
     const transformedOrders = orders.map(order => ({
       id: order.id,
       name: order.name,
       created_at: order.created_at,
-      customer: order.customers ? {
-        name: order.customers.name,
-        email: order.customers.email
-      } : null
+      customer_id: order.customer_id
     }))
 
     return NextResponse.json({

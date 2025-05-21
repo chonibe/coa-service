@@ -33,10 +33,7 @@ interface OrderListItem {
   id: string
   name: string
   created_at: string
-  customer: {
-    name: string
-    email: string
-  } | null
+  customer_id: string
 }
 
 interface Customer {
@@ -170,8 +167,7 @@ export default function CustomerPreviewPage() {
 
   const filteredOrders = orderList.filter(order => 
     order.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    (order.customer?.name.toLowerCase().includes(searchTerm.toLowerCase()) ?? false) ||
-    (order.customer?.email.toLowerCase().includes(searchTerm.toLowerCase()) ?? false)
+    order.id.toLowerCase().includes(searchTerm.toLowerCase())
   )
 
   const renderOrderContent = () => {
@@ -297,7 +293,7 @@ export default function CustomerPreviewPage() {
             <div className="flex flex-col sm:flex-row gap-4 mb-6">
               <div className="flex-1">
                 <Input
-                  placeholder="Search orders by ID, name, or customer..."
+                  placeholder="Search orders by ID or name..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                 />
@@ -309,7 +305,7 @@ export default function CustomerPreviewPage() {
                 <SelectContent>
                   {filteredOrders.map((order) => (
                     <SelectItem key={order.id} value={order.id}>
-                      {order.name} - {order.customer ? `${order.customer.name} (${order.customer.email})` : 'No customer'} - {new Date(order.created_at).toLocaleDateString()}
+                      {order.name} - {new Date(order.created_at).toLocaleDateString()}
                     </SelectItem>
                   ))}
                 </SelectContent>
