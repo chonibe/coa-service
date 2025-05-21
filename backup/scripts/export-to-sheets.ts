@@ -88,29 +88,22 @@ function validateGoogleCredentials() {
 
 function formatPrivateKey(key: string): string {
   try {
+    // If the key already has the proper format, return it as is
+    if (key.includes('-----BEGIN PRIVATE KEY-----') && key.includes('-----END PRIVATE KEY-----')) {
+      return key;
+    }
+
     // Remove any existing newlines, quotes, and spaces
     let cleanKey = key.replace(/[\n\r" ]/g, '');
     
-    // If the key doesn't start with BEGIN PRIVATE KEY, add it
-    if (!cleanKey.includes('BEGINPRIVATEKEY')) {
-      // Split the key into chunks of 64 characters
-      const chunks = [];
-      for (let i = 0; i < cleanKey.length; i += 64) {
-        chunks.push(cleanKey.slice(i, i + 64));
-      }
-      
-      // Reconstruct the key with proper PEM format
-      cleanKey = `-----BEGIN PRIVATE KEY-----\n${chunks.join('\n')}\n-----END PRIVATE KEY-----`;
-    } else {
-      // If it already has the PEM format, just ensure proper line breaks
-      cleanKey = cleanKey
-        .replace('BEGINPRIVATEKEY', 'BEGIN PRIVATE KEY')
-        .replace('ENDPRIVATEKEY', 'END PRIVATE KEY')
-        .replace(/(.{64})/g, '$1\n');
+    // Split the key into chunks of 64 characters
+    const chunks = [];
+    for (let i = 0; i < cleanKey.length; i += 64) {
+      chunks.push(cleanKey.slice(i, i + 64));
     }
-
-    // Ensure the key has proper line endings
-    return cleanKey.replace(/\r\n|\r|\n/g, '\n');
+    
+    // Reconstruct the key with proper PEM format
+    return `-----BEGIN PRIVATE KEY-----\n${chunks.join('\n')}\n-----END PRIVATE KEY-----`;
   } catch (error) {
     console.error('Error formatting private key:', error);
     throw new Error(
@@ -143,18 +136,21 @@ export async function exportToSheets(config: BackupConfig, backupPath?: string):
       );
     }
 
-    // Create JWT client
+    // Create JWT client with explicit credentials
     const auth = new google.auth.JWT({
       email: clientEmail,
       key: formattedPrivateKey,
       scopes: ['https://www.googleapis.com/auth/spreadsheets'],
+      projectId: projectId
     });
 
     // Test the authentication
     try {
       console.log('Testing authentication...');
-      await auth.authorize();
+      const tokens = await auth.authorize();
       console.log('Successfully authenticated with Google Sheets API');
+      console.log('Token type:', tokens.token_type);
+      console.log('Expires in:', tokens.expiry_date);
     } catch (error: any) {
       console.error('Authentication error details:', {
         message: error.message,
@@ -186,7 +182,11 @@ export async function exportToSheets(config: BackupConfig, backupPath?: string):
           '1. Copy the entire private key from your service account JSON file\n' +
           '2. Include the "-----BEGIN PRIVATE KEY-----" and "-----END PRIVATE KEY-----" lines\n' +
           '3. Make sure there are no extra spaces or characters\n' +
-          '4. The key should be in PEM format'
+          '4. The key should be in PEM format\n\n' +
+          'Example format:\n' +
+          '-----BEGIN PRIVATE KEY-----\n' +
+          'MIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQC9QFi67K6...\n' +
+          '-----END PRIVATE KEY-----'
         );
       }
 
