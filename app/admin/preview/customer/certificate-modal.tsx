@@ -65,8 +65,8 @@ export function CertificateModal({ isOpen, onClose, lineItem }: CertificateModal
                 </div>
                 {lineItem.edition_number && (
                   <div>
-                    <p className="text-sm font-medium text-gray-500">Edition Number</p>
-                    <p className="text-lg">#{lineItem.edition_number}</p>
+                    <p className="text-sm font-medium text-gray-500">Edition</p>
+                    <p className="text-lg">{lineItem.edition_number}/90</p>
                   </div>
                 )}
                 {lineItem.size && (
@@ -77,7 +77,7 @@ export function CertificateModal({ isOpen, onClose, lineItem }: CertificateModal
                 )}
                 {lineItem.vendor && (
                   <div>
-                    <p className="text-sm font-medium text-gray-500">Vendor</p>
+                    <p className="text-sm font-medium text-gray-500">Artist</p>
                     <p className="text-lg">{lineItem.vendor}</p>
                   </div>
                 )}

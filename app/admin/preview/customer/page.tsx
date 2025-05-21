@@ -161,14 +161,14 @@ export default function CustomerPreviewPage() {
                         <h3 className="font-medium">{item.title}</h3>
                         <div className="text-sm text-gray-500 space-y-1">
                           <p>Quantity: {item.quantity} × ${item.price}</p>
+                          {item.vendor && (
+                            <p>Artist: {item.vendor}</p>
+                          )}
                           {item.edition_number && (
-                            <p>Edition #{item.edition_number}</p>
+                            <p>Edition: {item.edition_number}/90</p>
                           )}
                           {item.size && (
                             <p>Size: {item.size}</p>
-                          )}
-                          {item.vendor && (
-                            <p>Vendor: {item.vendor}</p>
                           )}
                         </div>
                       </div>
@@ -177,7 +177,7 @@ export default function CustomerPreviewPage() {
                       <Badge variant={item.status === 'active' ? 'default' : 'secondary'}>
                         {item.status}
                       </Badge>
-                      {!item.nfc_tag_id && (
+                      {item.status === 'active' && !item.nfc_tag_id && (
                         <Button
                           variant="outline"
                           size="sm"
