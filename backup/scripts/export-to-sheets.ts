@@ -227,6 +227,28 @@ export async function exportToSheets(config: BackupConfig, backupPath?: string):
     }
     console.log('Spreadsheet created successfully:', spreadsheetId);
 
+    // Share the spreadsheet with the service account and make it accessible to anyone with the link
+    const drive = google.drive({ version: 'v3', auth });
+    await drive.permissions.create({
+      fileId: spreadsheetId,
+      requestBody: {
+        role: 'writer',
+        type: 'anyone',
+      },
+    });
+
+    // Also share with the service account email
+    await drive.permissions.create({
+      fileId: spreadsheetId,
+      requestBody: {
+        role: 'writer',
+        type: 'user',
+        emailAddress: clientEmail,
+      },
+    });
+
+    console.log('Spreadsheet shared successfully');
+
     let backupData: Record<string, any[]>;
 
     if (backupPath) {
