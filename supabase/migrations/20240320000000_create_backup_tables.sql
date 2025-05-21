@@ -40,6 +40,13 @@ CREATE POLICY "Allow authenticated users to update backup settings"
   TO authenticated
   USING (true);
 
+-- Allow only authenticated users to insert backup settings
+CREATE POLICY "Allow authenticated users to insert backup settings"
+  ON backup_settings
+  FOR INSERT
+  TO authenticated
+  WITH CHECK (true);
+
 -- Allow only authenticated users to read backups
 CREATE POLICY "Allow authenticated users to read backups"
   ON backups
