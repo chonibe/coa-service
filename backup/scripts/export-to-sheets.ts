@@ -27,7 +27,7 @@ const TABLES_TO_EXPORT = [
   'tax_forms'
 ];
 
-export async function exportToSheets(config: BackupConfig, backupPath?: string) {
+export async function exportToSheets(config: BackupConfig, backupPath?: string): Promise<string> {
   try {
     // Initialize Google Sheets API
     const auth = new google.auth.GoogleAuth({
@@ -60,24 +60,23 @@ export async function exportToSheets(config: BackupConfig, backupPath?: string) 
       // Read and decompress the backup file
       const compressedData = readFileSync(backupPath);
       const gunzipStream = createGunzip();
-      const chunks: Buffer[] = [];
+      const chunks: Uint8Array[] = [];
       
-      return new Promise((resolve, reject) => {
-        gunzipStream.on('data', (chunk: Buffer) => chunks.push(chunk));
+      backupData = await new Promise((resolve, reject) => {
+        gunzipStream.on('data', (chunk: Uint8Array) => chunks.push(chunk));
         gunzipStream.on('end', () => {
           const decompressedData = Buffer.concat(chunks);
-          backupData = JSON.parse(decompressedData.toString());
-          resolve(backupData);
+          resolve(JSON.parse(decompressedData.toString()));
         });
         gunzipStream.on('error', reject);
         gunzipStream.end(compressedData);
       });
     } else {
-      // Initialize Supabase client
+      // Initialize Supabase client with service role key
       const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-      const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+      const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
       if (!supabaseUrl || !supabaseKey) {
-        throw new Error('NEXT_PUBLIC_SUPABASE_URL or NEXT_PUBLIC_SUPABASE_ANON_KEY not set in environment');
+        throw new Error('NEXT_PUBLIC_SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY not set in environment');
       }
       const supabase = createClient(supabaseUrl, supabaseKey);
 
@@ -198,7 +197,7 @@ export async function exportToSheets(config: BackupConfig, backupPath?: string) 
     }
 
     console.log(`Backup exported to Google Sheets: ${spreadsheet.data.spreadsheetUrl}`);
-    return spreadsheet.data.spreadsheetUrl;
+    return spreadsheet.data.spreadsheetUrl || '';
   } catch (error) {
     console.error('Error exporting to Google Sheets:', error);
     throw error;

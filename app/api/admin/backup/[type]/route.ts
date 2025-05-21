@@ -6,18 +6,20 @@ import { exportToSheets } from "@/backup/scripts/export-to-sheets"
 interface BackupResult {
   size?: string
   path?: string
+  url?: string
 }
+
+// Create Supabase client with service role key for admin operations
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!
+)
 
 export async function POST(
   req: Request,
   { params }: { params: { type: string } }
 ) {
   try {
-    const supabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-    )
-
     // Get backup settings
     const { data: settings, error: settingsError } = await supabase
       .from("backup_settings")
@@ -32,7 +34,8 @@ export async function POST(
     if (params.type === "database") {
       result = await backupDatabase(settings)
     } else if (params.type === "sheets") {
-      result = await exportToSheets(settings)
+      const spreadsheetUrl = await exportToSheets(settings)
+      result = { url: spreadsheetUrl }
     } else {
       return NextResponse.json(
         { error: "Invalid backup type" },
@@ -44,7 +47,7 @@ export async function POST(
     const { error: backupError } = await supabase.from("backups").insert({
       type: params.type,
       status: "success",
-      url: typeof result === "string" ? result : undefined,
+      url: typeof result === "string" ? result : result.url,
       size: typeof result === "string" ? undefined : result.size,
       created_at: new Date().toISOString(),
     })
@@ -58,11 +61,6 @@ export async function POST(
     console.error(`Error triggering ${params.type} backup:`, error)
 
     // Record the failed backup
-    const supabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-    )
-
     await supabase.from("backups").insert({
       type: params.type,
       status: "failed",
@@ -82,11 +80,6 @@ export async function DELETE(
   { params }: { params: { type: string } }
 ) {
   try {
-    const supabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-    )
-
     const { error } = await supabase
       .from("backups")
       .delete()

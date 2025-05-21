@@ -160,7 +160,7 @@ async function getOrderData(orderId: string) {
   }
 
   // Map the line items to include the SKU and img_url from the products table
-  const mappedLineItems = lineItems.map((item) => ({
+  const initialMappedLineItems = lineItems.map((item) => ({
     ...item,
     sku: item.products?.sku || null,
     img_url: item.products?.img_url || null,
