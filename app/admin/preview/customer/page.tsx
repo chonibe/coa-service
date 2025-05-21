@@ -159,16 +159,16 @@ export default function CustomerPreviewPage() {
                       )}
                       <div>
                         <h3 className="font-medium">{item.title}</h3>
-                        <div className="text-sm text-gray-500 space-y-1">
-                          <p>Quantity: {item.quantity} × ${item.price}</p>
+                        <div className="text-sm space-y-1">
+                          <p className="text-gray-600">Quantity: {item.quantity} × ${item.price}</p>
                           {item.vendor && (
-                            <p>Artist: {item.vendor}</p>
+                            <p className="text-gray-700 font-medium">Artist: {item.vendor}</p>
                           )}
                           {item.edition_number && (
-                            <p>Edition: {item.edition_number}/90</p>
+                            <p className="text-gray-700 font-medium">Edition: {item.edition_number}/90</p>
                           )}
                           {item.size && (
-                            <p>Size: {item.size}</p>
+                            <p className="text-gray-600">Size: {item.size}</p>
                           )}
                         </div>
                       </div>
