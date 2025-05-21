@@ -14,9 +14,6 @@ interface LineItem {
   quantity: number
   price: number
   image_url: string | null
-  nfc_tag_id: string | null
-  nfc_claimed_at: string | null
-  certificate_url: string | null
   status: string
 }
 
@@ -130,22 +127,9 @@ export default function CustomerPreviewPage() {
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
-                      {item.nfc_tag_id ? (
-                        <Badge variant="default">
-                          NFC Tag: {item.nfc_tag_id}
-                        </Badge>
-                      ) : (
-                        <Badge variant="secondary">No NFC Tag</Badge>
-                      )}
-                      {item.certificate_url && (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => item.certificate_url && window.open(item.certificate_url, "_blank")}
-                        >
-                          View Certificate
-                        </Button>
-                      )}
+                      <Badge variant={item.status === 'active' ? 'default' : 'secondary'}>
+                        {item.status}
+                      </Badge>
                     </div>
                   </div>
                 ))}
