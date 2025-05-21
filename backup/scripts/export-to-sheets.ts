@@ -26,21 +26,44 @@ const TABLES_TO_EXPORT = [
   'benefit_types'
 ];
 
+function formatPrivateKey(key: string): string {
+  // Remove any existing newlines and quotes
+  const cleanKey = key.replace(/[\n\r"]/g, '');
+  
+  // Add proper PEM format
+  const formattedKey = `-----BEGIN PRIVATE KEY-----\n${cleanKey}\n-----END PRIVATE KEY-----`;
+  
+  // Replace any remaining escaped newlines
+  return formattedKey.replace(/\\n/g, '\n');
+}
+
 export async function exportToSheets(config: BackupConfig, backupPath?: string): Promise<string> {
   try {
     // Initialize Google Sheets API
-    const privateKey = process.env.GOOGLE_PRIVATE_KEY?.replace(/\\n/g, '\n');
+    const privateKey = process.env.GOOGLE_PRIVATE_KEY;
     if (!privateKey) {
       throw new Error('GOOGLE_PRIVATE_KEY not set in environment');
     }
 
+    const formattedPrivateKey = formatPrivateKey(privateKey);
+    console.log('Formatted private key:', formattedPrivateKey.substring(0, 50) + '...');
+
     const auth = new google.auth.GoogleAuth({
       credentials: {
         client_email: process.env.GOOGLE_CLIENT_EMAIL,
-        private_key: privateKey,
+        private_key: formattedPrivateKey,
       },
       scopes: ['https://www.googleapis.com/auth/spreadsheets'],
     });
+
+    // Test the authentication
+    try {
+      await auth.getClient();
+      console.log('Successfully authenticated with Google Sheets API');
+    } catch (error: any) {
+      console.error('Authentication error:', error);
+      throw new Error(`Failed to authenticate with Google Sheets API: ${error.message}`);
+    }
 
     const sheets = google.sheets({ version: 'v4', auth });
 
@@ -87,17 +110,22 @@ export async function exportToSheets(config: BackupConfig, backupPath?: string):
       // Fetch data from Supabase
       backupData = {};
       for (const table of TABLES_TO_EXPORT) {
-        const { data, error } = await supabase
-          .from(table)
-          .select('*');
+        try {
+          const { data, error } = await supabase
+            .from(table)
+            .select('*');
 
-        if (error) {
-          console.error(`Error fetching data from ${table}:`, error);
+          if (error) {
+            console.error(`Error fetching data from ${table}:`, error);
+            backupData[table] = []; // Set empty array for failed tables
+            continue;
+          }
+
+          backupData[table] = data || [];
+        } catch (tableError) {
+          console.error(`Unexpected error fetching data from ${table}:`, tableError);
           backupData[table] = []; // Set empty array for failed tables
-          continue;
         }
-
-        backupData[table] = data || [];
       }
     }
 
@@ -108,99 +136,109 @@ export async function exportToSheets(config: BackupConfig, backupPath?: string):
         continue;
       }
 
-      // Create headers from the first row or use empty array if no data
-      const headers = data.length > 0 ? Object.keys(data[0]) : [];
-      const rows = data.map(row => headers.map(header => row[header]));
+      try {
+        // Create headers from the first row or use empty array if no data
+        const headers = data.length > 0 ? Object.keys(data[0]) : [];
+        const rows = data.map(row => headers.map(header => row[header]));
 
-      // Add the sheet
-      await sheets.spreadsheets.batchUpdate({
-        spreadsheetId,
-        requestBody: {
-          requests: [{
-            addSheet: {
-              properties: {
-                title: tableName,
-              },
-            },
-          }],
-        },
-      });
-
-      // Write the data
-      await sheets.spreadsheets.values.update({
-        spreadsheetId,
-        range: `${tableName}!A1`,
-        valueInputOption: 'RAW',
-        requestBody: {
-          values: [headers, ...rows],
-        },
-      });
-
-      // Format the sheet
-      await sheets.spreadsheets.batchUpdate({
-        spreadsheetId,
-        requestBody: {
-          requests: [
-            {
-              autoResizeDimensions: {
-                dimensions: {
-                  sheetId: 0,
-                  dimension: 'COLUMNS',
-                  startIndex: 0,
-                  endIndex: headers.length,
-                },
-              },
-            },
-            {
-              repeatCell: {
-                range: {
-                  sheetId: 0,
-                  startRowIndex: 0,
-                  endRowIndex: 1,
-                },
-                cell: {
-                  userEnteredFormat: {
-                    backgroundColor: { red: 0.8, green: 0.8, blue: 0.8 },
-                    textFormat: { bold: true },
-                  },
-                },
-                fields: 'userEnteredFormat(backgroundColor,textFormat)',
-              },
-            },
-          ],
-        },
-      });
-    }
-
-    // If main backup spreadsheet is configured, copy the sheet there
-    if (config.storage.googleDrive?.folderId) {
-      const mainSpreadsheet = await sheets.spreadsheets.get({
-        spreadsheetId: config.storage.googleDrive.folderId,
-      });
-
-      if (mainSpreadsheet.data) {
-        // Copy the new sheet to the main spreadsheet
-        await sheets.spreadsheets.sheets.copyTo({
+        // Add the sheet
+        await sheets.spreadsheets.batchUpdate({
           spreadsheetId,
-          sheetId: 0,
           requestBody: {
-            destinationSpreadsheetId: config.storage.googleDrive.folderId,
+            requests: [{
+              addSheet: {
+                properties: {
+                  title: tableName,
+                },
+              },
+            }],
           },
         });
 
-        // Delete the temporary spreadsheet
+        // Write the data
+        await sheets.spreadsheets.values.update({
+          spreadsheetId,
+          range: `${tableName}!A1`,
+          valueInputOption: 'RAW',
+          requestBody: {
+            values: [headers, ...rows],
+          },
+        });
+
+        // Format the sheet
         await sheets.spreadsheets.batchUpdate({
-          spreadsheetId: config.storage.googleDrive.folderId,
+          spreadsheetId,
           requestBody: {
             requests: [
               {
-                deleteSheet: {
-                  sheetId: 0,
+                autoResizeDimensions: {
+                  dimensions: {
+                    sheetId: 0,
+                    dimension: 'COLUMNS',
+                    startIndex: 0,
+                    endIndex: headers.length,
+                  },
+                },
+              },
+              {
+                repeatCell: {
+                  range: {
+                    sheetId: 0,
+                    startRowIndex: 0,
+                    endRowIndex: 1,
+                  },
+                  cell: {
+                    userEnteredFormat: {
+                      backgroundColor: { red: 0.8, green: 0.8, blue: 0.8 },
+                      textFormat: { bold: true },
+                    },
+                  },
+                  fields: 'userEnteredFormat(backgroundColor,textFormat)',
                 },
               },
             ],
           },
         });
+      } catch (sheetError) {
+        console.error(`Error exporting table ${tableName} to sheet:`, sheetError);
+        // Continue with other tables even if one fails
+      }
+    }
+
+    // If main backup spreadsheet is configured, copy the sheet there
+    if (config.storage.googleDrive?.folderId) {
+      try {
+        const mainSpreadsheet = await sheets.spreadsheets.get({
+          spreadsheetId: config.storage.googleDrive.folderId,
+        });
+
+        if (mainSpreadsheet.data) {
+          // Copy the new sheet to the main spreadsheet
+          await sheets.spreadsheets.sheets.copyTo({
+            spreadsheetId,
+            sheetId: 0,
+            requestBody: {
+              destinationSpreadsheetId: config.storage.googleDrive.folderId,
+            },
+          });
+
+          // Delete the temporary spreadsheet
+          await sheets.spreadsheets.batchUpdate({
+            spreadsheetId: config.storage.googleDrive.folderId,
+            requestBody: {
+              requests: [
+                {
+                  deleteSheet: {
+                    sheetId: 0,
+                  },
+                },
+              ],
+            },
+          });
+        }
+      } catch (copyError) {
+        console.error('Error copying to main spreadsheet:', copyError);
+        // Continue even if copying fails - we still have the original spreadsheet
       }
     }
 
