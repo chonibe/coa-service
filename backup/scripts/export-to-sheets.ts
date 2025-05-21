@@ -35,10 +35,14 @@ export async function exportToSheets(config: BackupConfig, backupPath?: string) 
         client_email: process.env.GOOGLE_CLIENT_EMAIL,
         private_key: process.env.GOOGLE_PRIVATE_KEY?.replace(/\\n/g, '\n'),
       },
-      scopes: ['https://www.googleapis.com/auth/spreadsheets'],
+      scopes: [
+        'https://www.googleapis.com/auth/spreadsheets',
+        'https://www.googleapis.com/auth/drive'
+      ],
     });
 
     const sheets = google.sheets({ version: 'v4', auth });
+    const drive = google.drive({ version: 'v3', auth });
 
     // Create a new spreadsheet
     const spreadsheet = await sheets.spreadsheets.create({
@@ -75,9 +79,9 @@ export async function exportToSheets(config: BackupConfig, backupPath?: string) 
     } else {
       // Initialize Supabase client
       const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-      const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+      const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
       if (!supabaseUrl || !supabaseKey) {
-        throw new Error('NEXT_PUBLIC_SUPABASE_URL or NEXT_PUBLIC_SUPABASE_ANON_KEY not set in environment');
+        throw new Error('NEXT_PUBLIC_SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY not set in environment');
       }
       const supabase = createClient(supabaseUrl, supabaseKey);
 
@@ -106,7 +110,7 @@ export async function exportToSheets(config: BackupConfig, backupPath?: string) 
       const rows = data.map(row => headers.map(header => row[header]));
 
       // Add the sheet
-      await sheets.spreadsheets.batchUpdate({
+      const addSheetResponse = await sheets.spreadsheets.batchUpdate({
         spreadsheetId,
         requestBody: {
           requests: [{
@@ -118,6 +122,11 @@ export async function exportToSheets(config: BackupConfig, backupPath?: string) 
           }],
         },
       });
+
+      const sheetId = addSheetResponse.data.replies?.[0]?.addSheet?.properties?.sheetId;
+      if (!sheetId) {
+        throw new Error(`Failed to create sheet for table ${tableName}`);
+      }
 
       // Write the data
       await sheets.spreadsheets.values.update({
@@ -137,7 +146,7 @@ export async function exportToSheets(config: BackupConfig, backupPath?: string) 
             {
               autoResizeDimensions: {
                 dimensions: {
-                  sheetId: 0,
+                  sheetId,
                   dimension: 'COLUMNS',
                   startIndex: 0,
                   endIndex: headers.length,
@@ -147,7 +156,7 @@ export async function exportToSheets(config: BackupConfig, backupPath?: string) 
             {
               repeatCell: {
                 range: {
-                  sheetId: 0,
+                  sheetId,
                   startRowIndex: 0,
                   endRowIndex: 1,
                 },
@@ -165,36 +174,13 @@ export async function exportToSheets(config: BackupConfig, backupPath?: string) 
       });
     }
 
-    // If main backup spreadsheet is configured, copy the sheet there
+    // If folder ID is configured, move the spreadsheet to that folder
     if (config.storage.googleDrive?.folderId) {
-      const mainSpreadsheet = await sheets.spreadsheets.get({
-        spreadsheetId: config.storage.googleDrive.folderId,
+      await drive.files.update({
+        fileId: spreadsheetId,
+        addParents: config.storage.googleDrive.folderId,
+        fields: 'id, parents',
       });
-
-      if (mainSpreadsheet.data) {
-        // Copy the new sheet to the main spreadsheet
-        await sheets.spreadsheets.sheets.copyTo({
-          spreadsheetId,
-          sheetId: 0,
-          requestBody: {
-            destinationSpreadsheetId: config.storage.googleDrive.folderId,
-          },
-        });
-
-        // Delete the temporary spreadsheet
-        await sheets.spreadsheets.batchUpdate({
-          spreadsheetId: config.storage.googleDrive.folderId,
-          requestBody: {
-            requests: [
-              {
-                deleteSheet: {
-                  sheetId: 0,
-                },
-              },
-            ],
-          },
-        });
-      }
     }
 
     console.log(`Backup exported to Google Sheets: ${spreadsheet.data.spreadsheetUrl}`);
@@ -212,48 +198,39 @@ export async function cleanupOldSheets(config: BackupConfig) {
         client_email: process.env.GOOGLE_CLIENT_EMAIL,
         private_key: process.env.GOOGLE_PRIVATE_KEY?.replace(/\\n/g, '\n'),
       },
-      scopes: ['https://www.googleapis.com/auth/spreadsheets'],
+      scopes: [
+        'https://www.googleapis.com/auth/spreadsheets',
+        'https://www.googleapis.com/auth/drive'
+      ],
     });
 
-    const sheets = google.sheets({ version: 'v4', auth });
+    const drive = google.drive({ version: 'v3', auth });
 
     if (!config.storage.googleDrive?.folderId) {
-      return;
-    }
-
-    const spreadsheet = await sheets.spreadsheets.get({
-      spreadsheetId: config.storage.googleDrive.folderId,
-    });
-
-    if (!spreadsheet.data.sheets) {
       return;
     }
 
     const cutoffDate = new Date();
     cutoffDate.setDate(cutoffDate.getDate() - config.storage.googleDrive.retention.days);
 
-    for (const sheet of spreadsheet.data.sheets) {
-      const title = sheet.properties?.title;
-      if (!title) continue;
+    // List all files in the folder
+    const response = await drive.files.list({
+      q: `'${config.storage.googleDrive.folderId}' in parents and mimeType='application/vnd.google-apps.spreadsheet'`,
+      fields: 'files(id, name, createdTime)',
+    });
 
-      const dateMatch = title.match(/\d{4}-\d{2}-\d{2}/);
-      if (!dateMatch) continue;
+    if (!response.data.files) {
+      return;
+    }
 
-      const sheetDate = new Date(dateMatch[0]);
-      if (sheetDate < cutoffDate) {
-        await sheets.spreadsheets.batchUpdate({
-          spreadsheetId: config.storage.googleDrive.folderId,
-          requestBody: {
-            requests: [
-              {
-                deleteSheet: {
-                  sheetId: sheet.properties?.sheetId,
-                },
-              },
-            ],
-          },
+    // Delete old files
+    for (const file of response.data.files) {
+      const fileDate = new Date(file.createdTime || '');
+      if (fileDate < cutoffDate) {
+        await drive.files.delete({
+          fileId: file.id!,
         });
-        console.log(`Deleted old sheet: ${title}`);
+        console.log(`Deleted old spreadsheet: ${file.name}`);
       }
     }
   } catch (error) {
