@@ -2,6 +2,8 @@ import { NextResponse } from "next/server"
 import { createClient } from "@/lib/supabase/server"
 import crypto from "crypto"
 
+const BATCH_SIZE = 50 // Process 50 items at a time
+
 export async function POST() {
   try {
     const supabase = createClient()
@@ -13,6 +15,7 @@ export async function POST() {
       .select("*")
       .eq("status", "active")
       .is("certificate_url", null)
+      .limit(BATCH_SIZE) // Only process a batch at a time
 
     if (fetchError) {
       throw new Error(`Error fetching line items: ${fetchError.message}`)
@@ -29,7 +32,7 @@ export async function POST() {
     let failCount = 0
     const results = []
 
-    // Process each item
+    // Process each item in the batch
     for (const item of activeItems) {
       try {
         const certificateUrl = `${baseUrl}/certificate/${item.line_item_id}`
@@ -78,6 +81,9 @@ export async function POST() {
           success: true,
           certificateUrl
         })
+
+        // Add a small delay between items to prevent overwhelming the database
+        await new Promise(resolve => setTimeout(resolve, 100))
       } catch (err) {
         console.error(`Error processing item ${item.line_item_id}:`, err)
         failCount++
@@ -92,10 +98,20 @@ export async function POST() {
       }
     }
 
+    // Get total count of remaining items
+    const { count: remainingCount } = await supabase
+      .from("order_line_items_v2")
+      .select("*", { count: "exact", head: true })
+      .eq("status", "active")
+      .is("certificate_url", null)
+
+    const remainingItems = remainingCount ?? 0
+
     return NextResponse.json({
       success: true,
-      message: `Processed ${activeItems.length} items. Success: ${successCount}, Failed: ${failCount}`,
-      results
+      message: `Processed ${activeItems.length} items. Success: ${successCount}, Failed: ${failCount}. ${remainingItems > 0 ? `${remainingItems} items remaining.` : "All items processed."}`,
+      results,
+      hasMore: remainingItems > 0
     })
 
   } catch (error) {
