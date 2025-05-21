@@ -125,7 +125,7 @@ export function RecentBackups() {
                   <Button
                     variant="ghost"
                     size="icon"
-                    onClick={() => window.open(`/api/admin/backup/${backup.id}/download`, "_blank")}
+                    onClick={() => window.open(`/api/admin/backup/${backup.type}/download`, "_blank")}
                   >
                     <Download className="h-4 w-4" />
                   </Button>
