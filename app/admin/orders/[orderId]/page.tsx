@@ -160,7 +160,7 @@ async function getOrderData(orderId: string) {
   }
 
   // Map the line items to include the SKU and img_url from the products table
-  const mappedLineItems = lineItems.map((item) => ({
+  const supabaseMappedLineItems = lineItems.map((item) => ({
     ...item,
     sku: item.products?.sku || null,
     img_url: item.products?.img_url || null,
@@ -217,7 +217,7 @@ async function getOrderData(orderId: string) {
 
     if (res.ok) {
       const { order: shopifyOrder } = await res.json();
-      const mappedLineItems = lineItems?.map(item => ({
+      const shopifyMappedLineItems = lineItems?.map(item => ({
         id: item.line_item_id,
         title: item.name,
         quantity: item.quantity || 1,
@@ -232,7 +232,7 @@ async function getOrderData(orderId: string) {
         edition_number: item.edition_number,
         edition_size: productDetails[item.product_id]?.edition_size
       })) || [];
-      console.log('DEBUG mappedLineItems:', mappedLineItems);
+      console.log('DEBUG mappedLineItems:', shopifyMappedLineItems);
       return {
         id: shopifyOrder.id.toString(),
         order_number: shopifyOrder.name.replace('#', ''),
@@ -248,9 +248,9 @@ async function getOrderData(orderId: string) {
         discount_codes: shopifyOrder.discount_codes?.map((code: { code: string; amount: string; type: string }) => ({
           code: code.code,
           amount: parseFloat(code.amount),
-          type: code.type
+          type: code.type,
         })) || [],
-        line_items: mappedLineItems
+        line_items: shopifyMappedLineItems,
       };
     }
   } catch (err) {
