@@ -49,6 +49,13 @@ CREATE POLICY "Enable all access for authenticated users on backups"
   USING (true)
   WITH CHECK (true);
 
+-- Grant service role permissions to bypass RLS
+ALTER TABLE backup_settings FORCE ROW LEVEL SECURITY;
+ALTER TABLE backups FORCE ROW LEVEL SECURITY;
+
+GRANT ALL ON backup_settings TO service_role;
+GRANT ALL ON backups TO service_role;
+
 -- Insert default settings if table is empty
 INSERT INTO backup_settings (id, google_drive_enabled, retention_days, max_backups, schedule_database, schedule_sheets)
 SELECT 1, true, 30, 10, '0 0 * * *', '0 1 * * *'
