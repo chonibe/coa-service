@@ -181,7 +181,11 @@ export async function exportToSheets(config: BackupConfig, backupPath?: string):
     const auth = new google.auth.JWT({
       email: clientEmail,
       key: formattedPrivateKey,
-      scopes: ['https://www.googleapis.com/auth/spreadsheets'],
+      scopes: [
+        'https://www.googleapis.com/auth/spreadsheets',
+        'https://www.googleapis.com/auth/drive.file',
+        'https://www.googleapis.com/auth/drive'
+      ],
       projectId: projectId
     });
 
@@ -189,7 +193,7 @@ export async function exportToSheets(config: BackupConfig, backupPath?: string):
     try {
       console.log('Testing authentication...');
       const tokens = await auth.authorize();
-      console.log('Successfully authenticated with Google Sheets API');
+      console.log('Successfully authenticated with Google APIs');
       console.log('Token type:', tokens.token_type);
       console.log('Expires in:', tokens.expiry_date);
     } catch (error: any) {
@@ -201,6 +205,25 @@ export async function exportToSheets(config: BackupConfig, backupPath?: string):
         response: error.response?.data
       });
       
+      if (error.status === 403) {
+        throw new Error(
+          'Insufficient permissions. Please ensure:\n' +
+          '1. The service account has the following roles:\n' +
+          '   - Google Sheets API > Sheets Admin\n' +
+          '   - Google Drive API > Drive File Creator\n' +
+          '2. The APIs are enabled in your Google Cloud Console:\n' +
+          '   - Google Sheets API\n' +
+          '   - Google Drive API\n\n' +
+          'Steps to fix:\n' +
+          '1. Go to Google Cloud Console > IAM & Admin > Service Accounts\n' +
+          '2. Find your service account\n' +
+          '3. Click on it and go to the "Permissions" tab\n' +
+          '4. Add the necessary roles\n' +
+          '5. Go to APIs & Services > Enabled APIs & Services\n' +
+          '6. Enable both Google Sheets API and Google Drive API'
+        );
+      }
+
       if (error.message?.includes('invalid_grant')) {
         throw new Error(
           'Invalid Google service account credentials. Please verify:\n' +
@@ -217,21 +240,7 @@ export async function exportToSheets(config: BackupConfig, backupPath?: string):
         );
       }
 
-      if (error.message?.includes('DECODER routines::unsupported')) {
-        throw new Error(
-          'Invalid private key format. Please ensure your GOOGLE_PRIVATE_KEY is properly formatted:\n' +
-          '1. Copy the entire private key from your service account JSON file\n' +
-          '2. Include the "-----BEGIN PRIVATE KEY-----" and "-----END PRIVATE KEY-----" lines\n' +
-          '3. Make sure there are no extra spaces or characters\n' +
-          '4. The key should be in PEM format\n\n' +
-          'Example format:\n' +
-          '-----BEGIN PRIVATE KEY-----\n' +
-          'MIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQC9QFi67K6...\n' +
-          '-----END PRIVATE KEY-----'
-        );
-      }
-
-      throw new Error(`Failed to authenticate with Google Sheets API: ${error.message}`);
+      throw new Error(`Failed to authenticate with Google APIs: ${error.message}`);
     }
 
     const sheets = google.sheets({ version: 'v4', auth });
