@@ -78,32 +78,40 @@ export function BackupSettingsForm() {
   async function onSubmit(data: BackupFormValues) {
     setIsLoading(true)
     try {
-      console.log("Submitting backup settings:", data)
+      console.log("Starting to submit backup settings:", data)
+      const requestBody = {
+        google_drive_enabled: data.googleDriveEnabled,
+        google_drive_folder_id: data.googleDriveFolderId,
+        retention_days: data.retentionDays,
+        max_backups: data.maxBackups,
+        schedule_database: data.scheduleDatabase,
+        schedule_sheets: data.scheduleSheets,
+      }
+      console.log("Request body being sent:", requestBody)
+
       const response = await fetch("/api/admin/backup/settings", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          google_drive_enabled: data.googleDriveEnabled,
-          google_drive_folder_id: data.googleDriveFolderId,
-          retention_days: data.retentionDays,
-          max_backups: data.maxBackups,
-          schedule_database: data.scheduleDatabase,
-          schedule_sheets: data.scheduleSheets,
-        }),
+        body: JSON.stringify(requestBody),
       })
 
+      console.log("Response status:", response.status)
       const responseData = await response.json()
+      console.log("Response data:", responseData)
       
       if (!response.ok) {
         throw new Error(responseData.error || "Failed to update backup settings")
       }
 
       // Refresh the form data after successful save
+      console.log("Refreshing form data...")
       const refreshResponse = await fetch("/api/admin/backup/settings")
+      console.log("Refresh response status:", refreshResponse.status)
       if (!refreshResponse.ok) {
         throw new Error("Failed to refresh settings")
       }
       const refreshData = await refreshResponse.json()
+      console.log("Refresh data:", refreshData)
       
       form.reset({
         googleDriveEnabled: refreshData.google_drive_enabled ?? true,
