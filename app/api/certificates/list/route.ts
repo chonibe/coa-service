@@ -18,7 +18,7 @@ export async function GET(request: NextRequest) {
     const to = from + pageSize - 1
 
     // Build the query
-    let query = supabaseAdmin.from("order_line_items").select("*", { count: "exact" })
+    let query = supabaseAdmin.from("order_line_items_v2").select("*", { count: "exact" })
 
     // Apply filters
     if (productId) {
