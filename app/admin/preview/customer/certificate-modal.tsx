@@ -12,6 +12,11 @@ interface LineItem {
   image_url: string | null
   status: string
   created_at: string
+  edition_number?: number
+  size?: string
+  vendor?: string
+  nfc_tag_id?: string
+  nfc_claimed_at?: string
 }
 
 interface CertificateModalProps {
@@ -58,10 +63,35 @@ export function CertificateModal({ isOpen, onClose, lineItem }: CertificateModal
                   <p className="text-sm font-medium text-gray-500">Price</p>
                   <p className="text-lg">${lineItem.price}</p>
                 </div>
+                {lineItem.edition_number && (
+                  <div>
+                    <p className="text-sm font-medium text-gray-500">Edition Number</p>
+                    <p className="text-lg">#{lineItem.edition_number}</p>
+                  </div>
+                )}
+                {lineItem.size && (
+                  <div>
+                    <p className="text-sm font-medium text-gray-500">Size</p>
+                    <p className="text-lg">{lineItem.size}</p>
+                  </div>
+                )}
+                {lineItem.vendor && (
+                  <div>
+                    <p className="text-sm font-medium text-gray-500">Vendor</p>
+                    <p className="text-lg">{lineItem.vendor}</p>
+                  </div>
+                )}
               </div>
-              <Badge variant={lineItem.status === 'active' ? 'default' : 'secondary'}>
-                {lineItem.status}
-              </Badge>
+              <div className="flex items-center gap-2">
+                <Badge variant={lineItem.status === 'active' ? 'default' : 'secondary'}>
+                  {lineItem.status}
+                </Badge>
+                {lineItem.nfc_tag_id && (
+                  <Badge variant="outline">
+                    NFC Tag: {lineItem.nfc_tag_id}
+                  </Badge>
+                )}
+              </div>
             </div>
           </div>
 

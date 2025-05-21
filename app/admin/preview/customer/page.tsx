@@ -7,6 +7,8 @@ import { Badge } from "@/components/ui/badge"
 import { Loader2 } from "lucide-react"
 import { CertificateModal } from "./certificate-modal"
 import { formatDate } from "../../../utils/date"
+import { Button } from "@/components/ui/button"
+import { Tag } from "lucide-react"
 
 interface LineItem {
   line_item_id: string
@@ -17,6 +19,11 @@ interface LineItem {
   image_url: string | null
   status: string
   created_at: string
+  edition_number?: number
+  size?: string
+  vendor?: string
+  nfc_tag_id?: string
+  nfc_claimed_at?: string
 }
 
 interface Order {
@@ -61,6 +68,33 @@ export default function CustomerPreviewPage() {
       item.title.toLowerCase().includes(searchTerm.toLowerCase())
     )
   )
+
+  const handlePairNFC = async (item: LineItem) => {
+    try {
+      const response = await fetch("/api/nfc-tags/create", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          line_item_id: item.line_item_id,
+          order_id: item.order_id,
+        }),
+      })
+
+      const data = await response.json()
+
+      if (!data.success) {
+        throw new Error(data.message || "Failed to pair NFC tag")
+      }
+
+      // Refresh orders to show updated NFC status
+      fetchOrders()
+    } catch (err: any) {
+      console.error("Error pairing NFC tag:", err)
+      // You might want to show an error toast here
+    }
+  }
 
   if (loading) {
     return (
@@ -125,15 +159,43 @@ export default function CustomerPreviewPage() {
                       )}
                       <div>
                         <h3 className="font-medium">{item.title}</h3>
-                        <p className="text-sm text-gray-500">
-                          Quantity: {item.quantity} × ${item.price}
-                        </p>
+                        <div className="text-sm text-gray-500 space-y-1">
+                          <p>Quantity: {item.quantity} × ${item.price}</p>
+                          {item.edition_number && (
+                            <p>Edition #{item.edition_number}</p>
+                          )}
+                          {item.size && (
+                            <p>Size: {item.size}</p>
+                          )}
+                          {item.vendor && (
+                            <p>Vendor: {item.vendor}</p>
+                          )}
+                        </div>
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
                       <Badge variant={item.status === 'active' ? 'default' : 'secondary'}>
                         {item.status}
                       </Badge>
+                      {!item.nfc_tag_id && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            handlePairNFC(item)
+                          }}
+                        >
+                          <Tag className="w-4 h-4 mr-2" />
+                          Pair NFC
+                        </Button>
+                      )}
+                      {item.nfc_tag_id && (
+                        <Badge variant="outline" className="flex items-center gap-1">
+                          <Tag className="w-3 h-3" />
+                          Paired
+                        </Badge>
+                      )}
                     </div>
                   </div>
                 ))}
