@@ -30,12 +30,12 @@ export function CertificateModal({ isOpen, onClose, lineItem }: CertificateModal
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-3xl">
+      <DialogContent className="max-w-3xl" aria-describedby="certificate-description">
         <DialogHeader>
           <DialogTitle className="text-2xl font-bold">Certificate of Authenticity</DialogTitle>
         </DialogHeader>
         
-        <div className="mt-6 space-y-8">
+        <div id="certificate-description" className="mt-6 space-y-8">
           {/* Product Information */}
           <div className="flex gap-6">
             {lineItem.image_url && (
