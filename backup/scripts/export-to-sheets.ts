@@ -31,6 +31,11 @@ function validateGoogleCredentials() {
   const privateKey = process.env.GOOGLE_PRIVATE_KEY;
   const projectId = process.env.GOOGLE_PROJECT_ID;
 
+  console.log('Validating Google credentials...');
+  console.log('Client Email:', clientEmail ? `${clientEmail.substring(0, 10)}...` : 'not set');
+  console.log('Project ID:', projectId || 'not set');
+  console.log('Private Key:', privateKey ? 'set' : 'not set');
+
   if (!clientEmail) {
     throw new Error('GOOGLE_CLIENT_EMAIL is not set in environment variables');
   }
@@ -54,14 +59,19 @@ function validateGoogleCredentials() {
 }
 
 function formatPrivateKey(key: string): string {
-  // Remove any existing newlines and quotes
-  const cleanKey = key.replace(/[\n\r"]/g, '');
-  
-  // Add proper PEM format
-  const formattedKey = `-----BEGIN PRIVATE KEY-----\n${cleanKey}\n-----END PRIVATE KEY-----`;
-  
-  // Replace any remaining escaped newlines
-  return formattedKey.replace(/\\n/g, '\n');
+  try {
+    // Remove any existing newlines and quotes
+    const cleanKey = key.replace(/[\n\r"]/g, '');
+    
+    // Add proper PEM format
+    const formattedKey = `-----BEGIN PRIVATE KEY-----\n${cleanKey}\n-----END PRIVATE KEY-----`;
+    
+    // Replace any remaining escaped newlines
+    return formattedKey.replace(/\\n/g, '\n');
+  } catch (error) {
+    console.error('Error formatting private key:', error);
+    throw new Error('Failed to format private key');
+  }
 }
 
 export async function exportToSheets(config: BackupConfig, backupPath?: string): Promise<string> {
@@ -72,33 +82,37 @@ export async function exportToSheets(config: BackupConfig, backupPath?: string):
     console.log('Project ID:', projectId);
 
     const formattedPrivateKey = formatPrivateKey(privateKey);
-    console.log('Formatted private key:', formattedPrivateKey.substring(0, 50) + '...');
+    console.log('Private key formatted successfully');
 
-    const auth = new google.auth.GoogleAuth({
-      credentials: {
-        client_email: clientEmail,
-        private_key: formattedPrivateKey,
-        project_id: projectId
-      },
+    // Create JWT client
+    const auth = new google.auth.JWT({
+      email: clientEmail,
+      key: formattedPrivateKey,
       scopes: ['https://www.googleapis.com/auth/spreadsheets'],
     });
 
     // Test the authentication
     try {
-      const client = await auth.getClient();
+      console.log('Testing authentication...');
+      await auth.authorize();
       console.log('Successfully authenticated with Google Sheets API');
-      
-      // Verify the service account has access to the project
-      const drive = google.drive({ version: 'v3', auth });
-      await drive.files.list({
-        pageSize: 1,
-        fields: 'files(id, name)',
-      });
-      console.log('Successfully verified Google Drive access');
     } catch (error: any) {
-      console.error('Authentication error:', error);
+      console.error('Authentication error details:', {
+        message: error.message,
+        code: error.code,
+        status: error.status,
+        errors: error.errors,
+        response: error.response?.data
+      });
+      
       if (error.message?.includes('invalid_grant')) {
-        throw new Error('Invalid Google service account credentials. Please check that the service account exists and has the correct permissions.');
+        throw new Error(
+          'Invalid Google service account credentials. Please verify:\n' +
+          '1. The service account exists in your Google Cloud project\n' +
+          '2. The private key is correct and properly formatted\n' +
+          '3. The service account has the necessary permissions\n' +
+          '4. The project ID matches your Google Cloud project'
+        );
       }
       throw new Error(`Failed to authenticate with Google Sheets API: ${error.message}`);
     }
@@ -106,6 +120,7 @@ export async function exportToSheets(config: BackupConfig, backupPath?: string):
     const sheets = google.sheets({ version: 'v4', auth });
 
     // Create a new spreadsheet
+    console.log('Creating new spreadsheet...');
     const spreadsheet = await sheets.spreadsheets.create({
       requestBody: {
         properties: {
@@ -118,10 +133,12 @@ export async function exportToSheets(config: BackupConfig, backupPath?: string):
     if (!spreadsheetId) {
       throw new Error('Failed to create spreadsheet');
     }
+    console.log('Spreadsheet created successfully:', spreadsheetId);
 
     let backupData: Record<string, any[]>;
 
     if (backupPath) {
+      console.log('Reading backup file:', backupPath);
       // Read and decompress the backup file
       const compressedData = readFileSync(backupPath);
       const gunzipStream = createGunzip();
@@ -136,7 +153,9 @@ export async function exportToSheets(config: BackupConfig, backupPath?: string):
         gunzipStream.on('error', reject);
         gunzipStream.end(compressedData);
       });
+      console.log('Backup file read successfully');
     } else {
+      console.log('Fetching data from Supabase...');
       // Initialize Supabase client with service role key
       const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
       const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -149,6 +168,7 @@ export async function exportToSheets(config: BackupConfig, backupPath?: string):
       backupData = {};
       for (const table of TABLES_TO_EXPORT) {
         try {
+          console.log(`Fetching data from table: ${table}`);
           const { data, error } = await supabase
             .from(table)
             .select('*');
@@ -160,6 +180,7 @@ export async function exportToSheets(config: BackupConfig, backupPath?: string):
           }
 
           backupData[table] = data || [];
+          console.log(`Successfully fetched ${data?.length || 0} rows from ${table}`);
         } catch (tableError) {
           console.error(`Unexpected error fetching data from ${table}:`, tableError);
           backupData[table] = []; // Set empty array for failed tables
@@ -168,6 +189,7 @@ export async function exportToSheets(config: BackupConfig, backupPath?: string):
     }
 
     // Export each table to a separate sheet
+    console.log('Exporting data to sheets...');
     for (const [tableName, data] of Object.entries(backupData)) {
       if (!Array.isArray(data)) {
         console.warn(`Skipping ${tableName}: data is not an array`);
@@ -175,6 +197,7 @@ export async function exportToSheets(config: BackupConfig, backupPath?: string):
       }
 
       try {
+        console.log(`Creating sheet for table: ${tableName}`);
         // Create headers from the first row or use empty array if no data
         const headers = data.length > 0 ? Object.keys(data[0]) : [];
         const rows = data.map(row => headers.map(header => row[header]));
@@ -237,6 +260,7 @@ export async function exportToSheets(config: BackupConfig, backupPath?: string):
             ],
           },
         });
+        console.log(`Successfully exported table ${tableName}`);
       } catch (sheetError) {
         console.error(`Error exporting table ${tableName} to sheet:`, sheetError);
         // Continue with other tables even if one fails
@@ -246,6 +270,7 @@ export async function exportToSheets(config: BackupConfig, backupPath?: string):
     // If main backup spreadsheet is configured, copy the sheet there
     if (config.storage.googleDrive?.folderId) {
       try {
+        console.log('Copying to main backup spreadsheet...');
         const mainSpreadsheet = await sheets.spreadsheets.get({
           spreadsheetId: config.storage.googleDrive.folderId,
         });
@@ -273,6 +298,7 @@ export async function exportToSheets(config: BackupConfig, backupPath?: string):
               ],
             },
           });
+          console.log('Successfully copied to main backup spreadsheet');
         }
       } catch (copyError) {
         console.error('Error copying to main spreadsheet:', copyError);
