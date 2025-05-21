@@ -1,15 +1,15 @@
 import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
-import { supabase } from "@/lib/supabase"
+import { supabaseAdmin } from "@/lib/supabase"
 
 export async function GET(request: NextRequest) {
   try {
-    if (!supabase) {
+    if (!supabaseAdmin) {
       return NextResponse.json({ success: false, message: "Database connection error" }, { status: 500 })
     }
 
     // Get all orders with line items from order_line_items_v2
-    const { data: lineItems, error: lineItemsError } = await supabase
+    const { data: lineItems, error: lineItemsError } = await supabaseAdmin
       .from("order_line_items_v2")
       .select(`
         line_item_id,
