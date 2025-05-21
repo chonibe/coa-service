@@ -33,16 +33,17 @@ type BackupFormValues = z.infer<typeof backupFormSchema>
 export function BackupSettingsForm() {
   const [isLoading, setIsLoading] = useState(false)
   const [isInitialLoading, setIsInitialLoading] = useState(true)
+  const [isTestingConnection, setIsTestingConnection] = useState(false)
 
   const form = useForm<BackupFormValues>({
     resolver: zodResolver(backupFormSchema),
     defaultValues: {
-      googleDriveEnabled: true,
+      googleDriveEnabled: false,
       googleDriveFolderId: "",
       retentionDays: 30,
       maxBackups: 10,
       scheduleDatabase: "0 0 * * *",
-      scheduleSheets: "0 1 * * *",
+      scheduleSheets: "0 0 * * 0",
     },
   })
 
@@ -57,12 +58,12 @@ export function BackupSettingsForm() {
         
         // Update form with fetched settings
         form.reset({
-          googleDriveEnabled: data.google_drive_enabled ?? true,
+          googleDriveEnabled: data.google_drive_enabled ?? false,
           googleDriveFolderId: data.google_drive_folder_id ?? "",
           retentionDays: data.retention_days ?? 30,
           maxBackups: data.max_backups ?? 10,
           scheduleDatabase: data.schedule_database ?? "0 0 * * *",
-          scheduleSheets: data.schedule_sheets ?? "0 1 * * *",
+          scheduleSheets: data.schedule_sheets ?? "0 0 * * 0",
         })
       } catch (error) {
         console.error("Error fetching backup settings:", error)
@@ -114,12 +115,12 @@ export function BackupSettingsForm() {
       console.log("Refresh data:", refreshData)
       
       form.reset({
-        googleDriveEnabled: refreshData.google_drive_enabled ?? true,
+        googleDriveEnabled: refreshData.google_drive_enabled ?? false,
         googleDriveFolderId: refreshData.google_drive_folder_id ?? "",
         retentionDays: refreshData.retention_days ?? 30,
         maxBackups: refreshData.max_backups ?? 10,
         scheduleDatabase: refreshData.schedule_database ?? "0 0 * * *",
-        scheduleSheets: refreshData.schedule_sheets ?? "0 1 * * *",
+        scheduleSheets: refreshData.schedule_sheets ?? "0 0 * * 0",
       })
 
       toast.success("Backup settings updated successfully")
@@ -128,6 +129,36 @@ export function BackupSettingsForm() {
       toast.error(error instanceof Error ? error.message : "Failed to update backup settings")
     } finally {
       setIsLoading(false)
+    }
+  }
+
+  async function testGoogleDriveConnection() {
+    if (!form.getValues("googleDriveEnabled")) {
+      toast.error("Please enable Google Drive integration first")
+      return
+    }
+
+    setIsTestingConnection(true)
+    try {
+      const response = await fetch("/api/admin/backup/test-connection", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          folderId: form.getValues("googleDriveFolderId"),
+        }),
+      })
+
+      if (!response.ok) {
+        throw new Error("Connection test failed")
+      }
+
+      toast.success("Successfully connected to Google Drive")
+    } catch (error) {
+      toast.error("Failed to connect to Google Drive. Please check your credentials.")
+    } finally {
+      setIsTestingConnection(false)
     }
   }
 
@@ -142,7 +173,7 @@ export function BackupSettingsForm() {
         throw new Error(`Failed to trigger ${type} backup`)
       }
 
-      toast.success(`${type === "database" ? "Database" : "Google Sheets"} backup triggered successfully`)
+      toast.success(`${type} backup triggered successfully`)
       
       // Refresh the backup list by triggering a custom event
       window.dispatchEvent(new CustomEvent("backup-created"))
@@ -172,7 +203,7 @@ export function BackupSettingsForm() {
                   <div className="space-y-0.5">
                     <FormLabel className="text-base">Google Drive Integration</FormLabel>
                     <FormDescription>
-                      Enable or disable Google Drive integration for backups
+                      Enable to store backups in Google Drive
                     </FormDescription>
                   </div>
                   <FormControl>
@@ -193,7 +224,17 @@ export function BackupSettingsForm() {
                   <FormItem>
                     <FormLabel>Google Drive Folder ID</FormLabel>
                     <FormControl>
-                      <Input placeholder="Enter Google Drive folder ID" {...field} />
+                      <div className="flex gap-2">
+                        <Input {...field} placeholder="Enter folder ID" />
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={testGoogleDriveConnection}
+                          disabled={isTestingConnection}
+                        >
+                          {isTestingConnection ? "Testing..." : "Test Connection"}
+                        </Button>
+                      </div>
                     </FormControl>
                     <FormDescription>
                       The ID of the Google Drive folder where backups will be stored
@@ -277,7 +318,7 @@ export function BackupSettingsForm() {
                   <FormItem>
                     <FormLabel>Sheets Export Schedule</FormLabel>
                     <FormControl>
-                      <Input placeholder="0 1 * * *" {...field} />
+                      <Input placeholder="0 0 * * 0" {...field} />
                     </FormControl>
                     <FormDescription>
                       Cron expression for Google Sheets export schedule
