@@ -3,17 +3,21 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { format } from "date-fns"
 
+interface LineItem {
+  line_item_id: string
+  order_id: string
+  title: string
+  quantity: number
+  price: number
+  image_url: string | null
+  status: string
+  created_at: string
+}
+
 interface CertificateModalProps {
   isOpen: boolean
   onClose: () => void
-  lineItem: {
-    title: string
-    quantity: number
-    price: number
-    image_url: string | null
-    status: string
-    created_at: string
-  } | null
+  lineItem: LineItem | null
 }
 
 export function CertificateModal({ isOpen, onClose, lineItem }: CertificateModalProps) {
@@ -78,7 +82,7 @@ export function CertificateModal({ isOpen, onClose, lineItem }: CertificateModal
                 <div className="flex justify-between items-center pt-4 border-t border-gray-200">
                   <div>
                     <p className="text-sm font-medium">Certificate ID</p>
-                    <p className="text-sm text-gray-500">{lineItem.title}-{format(new Date(lineItem.created_at), "yyyyMMdd")}</p>
+                    <p className="text-sm text-gray-500">{lineItem.line_item_id}</p>
                   </div>
                   <div className="text-right">
                     <p className="text-sm font-medium">Date Issued</p>
