@@ -23,6 +23,12 @@ const defaultSettings = {
   updated_at: new Date().toISOString(),
 }
 
+// Create Supabase client with service role key for admin operations
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!
+)
+
 export async function POST(req: Request) {
   try {
     console.log("API: Received POST request for backup settings")
@@ -32,13 +38,6 @@ export async function POST(req: Request) {
     console.log("API: Validating settings against schema...")
     const settings = backupSettingsSchema.parse(body)
     console.log("API: Validated settings:", settings)
-
-    // Update settings in Supabase
-    console.log("API: Initializing Supabase client...")
-    const supabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-    )
 
     // First, check if settings exist
     const { data: existingSettings, error: checkError } = await supabase
@@ -88,11 +87,6 @@ export async function POST(req: Request) {
 export async function GET() {
   try {
     console.log("API: Received GET request for backup settings")
-    const supabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-    )
-
     console.log("API: Fetching settings from Supabase...")
     const { data, error } = await supabase
       .from("backup_settings")
