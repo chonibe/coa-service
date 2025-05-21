@@ -161,6 +161,11 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           icon: <Award className="h-4 w-4" />,
         },
         {
+          title: "Sync",
+          href: "/admin/certificates/sync",
+          icon: <RefreshCw className="h-4 w-4" />,
+        },
+        {
           title: "Bulk Operations",
           href: "/admin/certificates/bulk",
           icon: <Award className="h-4 w-4" />,
