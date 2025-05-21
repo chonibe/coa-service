@@ -12,11 +12,11 @@ interface LineItem {
   image_url: string | null
   status: string
   created_at: string
-  edition_number?: number
-  size?: string
-  vendor?: string
-  nfc_tag_id?: string
-  nfc_claimed_at?: string
+  vendor: string | null
+  edition_number: number | null
+  edition_total: number | null
+  nfc_tag_id: string | null
+  nfc_claimed_at: string | null
 }
 
 interface CertificateModalProps {
@@ -63,16 +63,10 @@ export function CertificateModal({ isOpen, onClose, lineItem }: CertificateModal
                   <p className="text-sm font-medium text-gray-500">Price</p>
                   <p className="text-lg">${lineItem.price}</p>
                 </div>
-                {lineItem.edition_number && (
+                {lineItem.edition_number && lineItem.edition_total && (
                   <div>
                     <p className="text-sm font-medium text-gray-500">Edition</p>
-                    <p className="text-lg">{lineItem.edition_number}/90</p>
-                  </div>
-                )}
-                {lineItem.size && (
-                  <div>
-                    <p className="text-sm font-medium text-gray-500">Size</p>
-                    <p className="text-lg">{lineItem.size}</p>
+                    <p className="text-lg">{lineItem.edition_number}/{lineItem.edition_total}</p>
                   </div>
                 )}
                 {lineItem.vendor && (

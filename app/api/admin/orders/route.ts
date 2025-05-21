@@ -20,7 +20,12 @@ export async function GET(request: NextRequest) {
         quantity,
         price,
         img_url,
-        status
+        status,
+        vendor_name,
+        edition_number,
+        edition_total,
+        nfc_tag_id,
+        nfc_claimed_at
       `)
       .order("created_at", { ascending: false })
       .limit(100)
@@ -48,7 +53,12 @@ export async function GET(request: NextRequest) {
         quantity: item.quantity,
         price: item.price,
         image_url: item.img_url,
-        status: item.status
+        status: item.status,
+        vendor: item.vendor_name,
+        edition_number: item.edition_number,
+        edition_total: item.edition_total,
+        nfc_tag_id: item.nfc_tag_id,
+        nfc_claimed_at: item.nfc_claimed_at
       })
     })
 

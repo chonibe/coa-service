@@ -19,11 +19,11 @@ interface LineItem {
   image_url: string | null
   status: string
   created_at: string
-  edition_number?: number
-  size?: string
-  vendor?: string
-  nfc_tag_id?: string
-  nfc_claimed_at?: string
+  vendor: string | null
+  edition_number: number | null
+  edition_total: number | null
+  nfc_tag_id: string | null
+  nfc_claimed_at: string | null
 }
 
 interface Order {
@@ -163,11 +163,8 @@ export default function CustomerPreviewPage() {
                           {item.vendor && (
                             <p className="text-gray-800 font-medium">Artist: {item.vendor}</p>
                           )}
-                          {item.edition_number && (
-                            <p className="text-gray-800 font-medium">Edition: {item.edition_number}/90</p>
-                          )}
-                          {item.size && (
-                            <p className="text-gray-600">Size: {item.size}</p>
+                          {item.edition_number && item.edition_total && (
+                            <p className="text-gray-800 font-medium">Edition: {item.edition_number}/{item.edition_total}</p>
                           )}
                           <p className="text-gray-600">Quantity: {item.quantity} × ${item.price}</p>
                         </div>
