@@ -1,7 +1,7 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { format } from "date-fns"
+import { formatDate } from "@/utils/date"
 
 interface LineItem {
   line_item_id: string
@@ -46,7 +46,7 @@ export function CertificateModal({ isOpen, onClose, lineItem }: CertificateModal
               <div>
                 <h3 className="text-xl font-semibold">{lineItem.title}</h3>
                 <p className="text-sm text-gray-500">
-                  Created on {format(new Date(lineItem.created_at), "MMMM d, yyyy")}
+                  Created on {formatDate(lineItem.created_at)}
                 </p>
               </div>
               <div className="grid grid-cols-2 gap-4">
@@ -86,7 +86,7 @@ export function CertificateModal({ isOpen, onClose, lineItem }: CertificateModal
                   </div>
                   <div className="text-right">
                     <p className="text-sm font-medium">Date Issued</p>
-                    <p className="text-sm text-gray-500">{format(new Date(lineItem.created_at), "MMMM d, yyyy")}</p>
+                    <p className="text-sm text-gray-500">{formatDate(lineItem.created_at)}</p>
                   </div>
                 </div>
               </div>

@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { Loader2 } from "lucide-react"
 import { CertificateModal } from "./certificate-modal"
+import { formatDate } from "@/utils/date"
 
 interface LineItem {
   line_item_id: string
@@ -98,7 +99,7 @@ export default function CustomerPreviewPage() {
                 <div>
                   <CardTitle className="text-xl">{order.name}</CardTitle>
                   <p className="text-sm text-gray-500">
-                    Created: {new Date(order.created_at).toLocaleDateString()}
+                    Created: {formatDate(order.created_at)}
                   </p>
                 </div>
                 <Badge variant="outline">
