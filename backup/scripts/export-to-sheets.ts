@@ -189,13 +189,56 @@ export async function exportToSheets(config: BackupConfig, backupPath?: string):
       projectId: projectId
     });
 
-    // Test the authentication
+    // Test the authentication and verify folder access
     try {
       console.log('Testing authentication...');
       const tokens = await auth.authorize();
       console.log('Successfully authenticated with Google APIs');
       console.log('Token type:', tokens.token_type);
       console.log('Expires in:', tokens.expiry_date);
+
+      // Verify folder access if folderId is provided
+      if (config.storage.googleDrive?.folderId) {
+        console.log('Verifying folder access...');
+        const drive = google.drive({ version: 'v3', auth });
+        try {
+          const folder = await drive.files.get({
+            fileId: config.storage.googleDrive.folderId,
+            fields: 'id, name, mimeType'
+          });
+          console.log('Successfully accessed folder:', folder.data.name);
+
+          // Share the folder with the service account if not already shared
+          await drive.permissions.create({
+            fileId: config.storage.googleDrive.folderId,
+            requestBody: {
+              role: 'writer',
+              type: 'user',
+              emailAddress: clientEmail
+            },
+            sendNotificationEmail: false
+          });
+          console.log('Folder shared with service account');
+        } catch (folderError: any) {
+          console.error('Folder access error:', {
+            message: folderError.message,
+            code: folderError.code,
+            status: folderError.status
+          });
+          throw new Error(
+            'Cannot access the backup folder. Please ensure:\n' +
+            '1. The folder ID is correct\n' +
+            '2. The service account has access to the folder\n' +
+            '3. The folder exists in Google Drive\n\n' +
+            'Steps to fix:\n' +
+            '1. Go to Google Drive\n' +
+            '2. Right-click the backup folder\n' +
+            '3. Click "Share"\n' +
+            '4. Add the service account email: ' + clientEmail + '\n' +
+            '5. Give it "Editor" access'
+          );
+        }
+      }
     } catch (error: any) {
       console.error('Authentication error details:', {
         message: error.message,
@@ -208,35 +251,23 @@ export async function exportToSheets(config: BackupConfig, backupPath?: string):
       if (error.status === 403) {
         throw new Error(
           'Insufficient permissions. Please ensure:\n' +
-          '1. The service account has the following roles:\n' +
-          '   - Google Sheets API > Sheets Admin\n' +
-          '   - Google Drive API > Drive File Creator\n' +
-          '2. The APIs are enabled in your Google Cloud Console:\n' +
+          '1. The service account has these roles in Google Cloud Console:\n' +
+          '   - "Editor" role (includes all necessary permissions)\n' +
+          '   OR\n' +
+          '   - "Google Sheets API > Sheets Admin"\n' +
+          '   - "Google Drive API > Drive File Creator"\n\n' +
+          '2. These APIs are enabled in Google Cloud Console:\n' +
           '   - Google Sheets API\n' +
           '   - Google Drive API\n\n' +
           'Steps to fix:\n' +
           '1. Go to Google Cloud Console > IAM & Admin > Service Accounts\n' +
-          '2. Find your service account\n' +
-          '3. Click on it and go to the "Permissions" tab\n' +
-          '4. Add the necessary roles\n' +
-          '5. Go to APIs & Services > Enabled APIs & Services\n' +
-          '6. Enable both Google Sheets API and Google Drive API'
-        );
-      }
-
-      if (error.message?.includes('invalid_grant')) {
-        throw new Error(
-          'Invalid Google service account credentials. Please verify:\n' +
-          '1. The service account exists in your Google Cloud project\n' +
-          '2. The private key is correct and properly formatted\n' +
-          '3. The service account has the necessary permissions\n' +
-          '4. The project ID matches your Google Cloud project\n\n' +
-          'You can verify these in the Google Cloud Console:\n' +
-          '1. Go to IAM & Admin > Service Accounts\n' +
-          '2. Find your service account\n' +
-          '3. Click on it and go to the "Keys" tab\n' +
-          '4. Create a new key if needed (JSON format)\n' +
-          '5. Compare the values in the JSON file with your environment variables'
+          '2. Find your service account: ' + clientEmail + '\n' +
+          '3. Click the edit (pencil) icon\n' +
+          '4. Click "ADD ANOTHER ROLE"\n' +
+          '5. Search for and add "Editor" role\n' +
+          '6. Go to APIs & Services > Enabled APIs & Services\n' +
+          '7. Click "+ ENABLE APIS AND SERVICES"\n' +
+          '8. Search for and enable both APIs'
         );
       }
 
