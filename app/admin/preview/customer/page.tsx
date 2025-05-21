@@ -186,9 +186,9 @@ export default function CustomerPreviewPage() {
             <CardContent>
               <div className="grid gap-4">
                 {order.line_items.map((item) => (
-                  <FloatingTiltCard
+                  <div
                     key={item.line_item_id}
-                    className="flex items-center justify-between p-4 mb-2 cursor-pointer group"
+                    className="flex items-center justify-between p-4 mb-2 cursor-pointer group bg-zinc-900 border border-zinc-800 rounded-xl hover:bg-zinc-800 transition-colors"
                     onClick={() => setSelectedLineItem(item)}
                   >
                     <div className="flex items-center gap-4">
@@ -236,7 +236,7 @@ export default function CustomerPreviewPage() {
                         </Badge>
                       )}
                     </div>
-                  </FloatingTiltCard>
+                  </div>
                 ))}
               </div>
             </CardContent>
@@ -249,20 +249,6 @@ export default function CustomerPreviewPage() {
         onClose={() => setSelectedLineItem(null)}
         lineItem={selectedLineItem}
       />
-      <style jsx global>{`
-        .shimmer {
-          position: absolute;
-          top: 0; left: 0; right: 0; bottom: 0;
-          background: linear-gradient(120deg, rgba(255,255,255,0) 60%, rgba(255,255,255,0.12) 80%, rgba(255,255,255,0) 100%);
-          background-size: 200% 100%;
-          animation: shimmer-move 1.2s linear infinite;
-          pointer-events: none;
-        }
-        @keyframes shimmer-move {
-          0% { background-position: -100% 0; }
-          100% { background-position: 200% 0; }
-        }
-      `}</style>
     </div>
   )
 } 

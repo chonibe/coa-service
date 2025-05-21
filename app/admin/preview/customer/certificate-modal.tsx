@@ -64,6 +64,45 @@ function FloatingTiltCard({ children, className = "", ...props }: React.HTMLAttr
   )
 }
 
+function FloatingTiltImage({ src, alt, className = "", ...props }: React.ImgHTMLAttributes<HTMLImageElement>) {
+  const imgRef = useRef<HTMLImageElement>(null)
+  const handleMouseMove = (e: MouseEvent<HTMLImageElement>) => {
+    const img = imgRef.current
+    if (!img) return
+    const rect = img.getBoundingClientRect()
+    const x = e.clientX - rect.left
+    const y = e.clientY - rect.top
+    const centerX = rect.width / 2
+    const centerY = rect.height / 2
+    const rotateX = ((y - centerY) / centerY) * 10
+    const rotateY = ((x - centerX) / centerX) * -10
+    img.style.transform = `perspective(800px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale3d(1.10,1.10,1.10)`
+  }
+  const handleMouseLeave = () => {
+    const img = imgRef.current
+    if (!img) return
+    img.style.transform = ""
+  }
+  return (
+    <div className={`relative w-48 h-48 flex-shrink-0 ${className}`} style={{ willChange: "transform" }}>
+      <img
+        ref={imgRef}
+        src={src}
+        alt={alt}
+        className="w-full h-full object-cover rounded-lg shadow-lg"
+        onMouseMove={handleMouseMove}
+        onMouseLeave={handleMouseLeave}
+        tabIndex={0}
+        {...props}
+      />
+      {/* Shimmer overlay */}
+      <span className="pointer-events-none absolute inset-0 z-10 opacity-0 hover:opacity-100 transition-opacity duration-300">
+        <span className="block w-full h-full shimmer" />
+      </span>
+    </div>
+  )
+}
+
 export function CertificateModal({ isOpen, onClose, lineItem }: CertificateModalProps) {
   if (!lineItem) return null
 
@@ -73,18 +112,14 @@ export function CertificateModal({ isOpen, onClose, lineItem }: CertificateModal
         <DialogHeader>
           <DialogTitle className="text-2xl font-bold">Certificate of Authenticity</DialogTitle>
         </DialogHeader>
-        
-        <div id="certificate-description" className="mt-6 space-y-8">
+        <FloatingTiltCard className="mt-6 space-y-8">
           {/* Product Information */}
           <div className="flex gap-6">
             {lineItem.image_url && (
-              <div className="w-48 h-48 flex-shrink-0">
-                <img
-                  src={lineItem.image_url}
-                  alt={lineItem.title}
-                  className="w-full h-full object-cover rounded-lg shadow-lg"
-                />
-              </div>
+              <FloatingTiltImage
+                src={lineItem.image_url}
+                alt={lineItem.title}
+              />
             )}
             <div className="flex-1 space-y-4">
               <div>
@@ -129,7 +164,7 @@ export function CertificateModal({ isOpen, onClose, lineItem }: CertificateModal
           </div>
 
           {/* Certificate Content */}
-          <FloatingTiltCard className="mt-4">
+          <Card className="mt-4">
             <CardContent className="pt-6">
               <div className="space-y-4">
                 <div className="text-center">
@@ -154,8 +189,8 @@ export function CertificateModal({ isOpen, onClose, lineItem }: CertificateModal
                 </div>
               </div>
             </CardContent>
-          </FloatingTiltCard>
-        </div>
+          </Card>
+        </FloatingTiltCard>
         <style jsx global>{`
           .shimmer {
             position: absolute;
