@@ -5,8 +5,9 @@ import { supabaseAdmin } from "@/lib/supabase"
 export async function GET(request: NextRequest) {
   try {
     if (!supabaseAdmin) {
-      console.error("Supabase admin client not initialized")
-      return NextResponse.json({ success: false, message: "Database connection error" }, { status: 500 })
+      const error = new Error("Database connection error: Supabase admin client not initialized")
+      console.error(error)
+      return NextResponse.json({ success: false, message: error.message }, { status: 500 })
     }
 
     console.log("Fetching line items from order_line_items_v2...")
@@ -34,7 +35,9 @@ export async function GET(request: NextRequest) {
       .limit(100)
 
     if (lineItemsError) {
-      console.error("Error fetching line items:", {
+      const error = new Error(`Failed to fetch orders: ${lineItemsError.message}`)
+      console.error("Supabase error:", {
+        error: lineItemsError,
         message: lineItemsError.message,
         code: lineItemsError.code,
         details: lineItemsError.details,
@@ -42,7 +45,7 @@ export async function GET(request: NextRequest) {
       })
       return NextResponse.json({ 
         success: false, 
-        message: "Failed to fetch orders",
+        message: error.message,
         error: lineItemsError.message,
         code: lineItemsError.code,
         details: lineItemsError.details,
@@ -50,11 +53,17 @@ export async function GET(request: NextRequest) {
       }, { status: 500 })
     }
 
+    if (!lineItems) {
+      const error = new Error("No line items returned from database")
+      console.error(error)
+      return NextResponse.json({ success: false, message: error.message }, { status: 500 })
+    }
+
     console.log(`Successfully fetched ${lineItems?.length || 0} line items`)
 
     // Group line items by order_name
     const ordersMap = new Map()
-    lineItems?.forEach(item => {
+    lineItems.forEach(item => {
       try {
         if (!ordersMap.has(item.order_name)) {
           ordersMap.set(item.order_name, {
@@ -79,7 +88,9 @@ export async function GET(request: NextRequest) {
           nfc_claimed_at: item.nfc_claimed_at
         })
       } catch (err) {
-        console.error("Error processing line item:", err, item)
+        const error = new Error(`Error processing line item: ${err instanceof Error ? err.message : 'Unknown error'}`)
+        console.error(error, { item })
+        throw error
       }
     })
 
@@ -91,14 +102,17 @@ export async function GET(request: NextRequest) {
       orders: orders
     })
   } catch (error: any) {
-    console.error("Error in orders API:", {
-      message: error.message,
+    // Ensure error is properly logged in Vercel
+    const serverError = new Error(`Orders API error: ${error.message}`)
+    console.error(serverError, {
+      originalError: error,
       stack: error.stack,
       name: error.name
     })
+    
     return NextResponse.json({ 
       success: false, 
-      message: error.message || "An error occurred",
+      message: serverError.message,
       error: error.toString(),
       stack: error.stack
     }, { status: 500 })
