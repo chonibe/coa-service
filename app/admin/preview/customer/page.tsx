@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { Loader2 } from "lucide-react"
-import { CertificateModal } from "@/components/ui"
+import { CertificateModal } from "@/components/ui/certificate-modal"
 
 interface LineItem {
   line_item_id: string
