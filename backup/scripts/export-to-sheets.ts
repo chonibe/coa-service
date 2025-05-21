@@ -117,6 +117,21 @@ function formatPrivateKey(key: string): string {
   }
 }
 
+function flattenObject(obj: any, prefix = ''): Record<string, any> {
+  return Object.keys(obj).reduce((acc: Record<string, any>, key: string) => {
+    const pre = prefix.length ? `${prefix}.` : '';
+    if (typeof obj[key] === 'object' && obj[key] !== null && !Array.isArray(obj[key])) {
+      Object.assign(acc, flattenObject(obj[key], pre + key));
+    } else if (Array.isArray(obj[key])) {
+      // For arrays, convert to JSON string
+      acc[pre + key] = JSON.stringify(obj[key]);
+    } else {
+      acc[pre + key] = obj[key];
+    }
+    return acc;
+  }, {});
+}
+
 export async function exportToSheets(config: BackupConfig, backupPath?: string): Promise<string> {
   try {
     // Validate Google credentials
@@ -275,9 +290,13 @@ export async function exportToSheets(config: BackupConfig, backupPath?: string):
 
       try {
         console.log(`Creating sheet for table: ${tableName}`);
+        
+        // Flatten the data structure
+        const flattenedData = data.map(row => flattenObject(row));
+        
         // Create headers from the first row or use empty array if no data
-        const headers = data.length > 0 ? Object.keys(data[0]) : [];
-        const rows = data.map(row => headers.map(header => row[header]));
+        const headers = flattenedData.length > 0 ? Object.keys(flattenedData[0]) : [];
+        const rows = flattenedData.map(row => headers.map(header => row[header]));
 
         // Add the sheet
         await sheets.spreadsheets.batchUpdate({
