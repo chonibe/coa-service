@@ -3,6 +3,8 @@ import { createClient } from "@supabase/supabase-js"
 import { backupDatabase } from "@/backup/scripts/backup-database"
 import { exportToSheets } from "@/backup/scripts/export-to-sheets"
 import { BackupConfig } from "@/backup/config/backup-config"
+import { join } from "path"
+import { tmpdir } from "os"
 
 interface BackupResult {
   size?: string
@@ -35,7 +37,7 @@ export async function POST(
     const backupConfig: BackupConfig = {
       storage: {
         local: {
-          path: './backup/storage',
+          path: join(tmpdir(), 'backup-storage'),
           retention: {
             days: settings.retention_days,
             maxBackups: settings.max_backups
@@ -63,7 +65,7 @@ export async function POST(
       },
       logging: {
         level: 'info',
-        file: './backup/logs/backup.log'
+        file: join(tmpdir(), 'backup-logs', 'backup.log')
       }
     }
 
