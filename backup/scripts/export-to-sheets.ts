@@ -118,15 +118,40 @@ function formatPrivateKey(key: string): string {
 }
 
 function flattenObject(obj: any, prefix = ''): Record<string, any> {
+  if (obj === null || obj === undefined) {
+    return { [prefix]: '' };
+  }
+
+  if (Array.isArray(obj)) {
+    if (obj.length === 0) {
+      return { [prefix]: '' };
+    }
+    // For arrays, convert to JSON string
+    return { [prefix]: JSON.stringify(obj) };
+  }
+
+  if (typeof obj !== 'object') {
+    return { [prefix]: obj };
+  }
+
   return Object.keys(obj).reduce((acc: Record<string, any>, key: string) => {
     const pre = prefix.length ? `${prefix}.` : '';
-    if (typeof obj[key] === 'object' && obj[key] !== null && !Array.isArray(obj[key])) {
-      Object.assign(acc, flattenObject(obj[key], pre + key));
-    } else if (Array.isArray(obj[key])) {
-      // For arrays, convert to JSON string
-      acc[pre + key] = JSON.stringify(obj[key]);
+    const value = obj[key];
+
+    if (value === null || value === undefined) {
+      acc[pre + key] = '';
+    } else if (Array.isArray(value)) {
+      if (value.length === 0) {
+        acc[pre + key] = '';
+      } else {
+        // For arrays of objects, stringify them
+        acc[pre + key] = JSON.stringify(value);
+      }
+    } else if (typeof value === 'object') {
+      // Recursively flatten nested objects
+      Object.assign(acc, flattenObject(value, pre + key));
     } else {
-      acc[pre + key] = obj[key];
+      acc[pre + key] = value;
     }
     return acc;
   }, {});
