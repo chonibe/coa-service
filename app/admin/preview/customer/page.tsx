@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { Loader2 } from "lucide-react"
 import { CertificateModal } from "./certificate-modal"
-import { formatDate } from "@/utils/date"
+import { formatDate } from "../../../utils/date"
 
 interface LineItem {
   line_item_id: string
