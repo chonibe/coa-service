@@ -1,1 +1,0 @@
-export { CertificateModal } from './certificate-modal' 
