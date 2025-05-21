@@ -78,6 +78,7 @@ export function BackupSettingsForm() {
   async function onSubmit(data: BackupFormValues) {
     setIsLoading(true)
     try {
+      console.log("Submitting backup settings:", data)
       const response = await fetch("/api/admin/backup/settings", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -91,14 +92,32 @@ export function BackupSettingsForm() {
         }),
       })
 
+      const responseData = await response.json()
+      
       if (!response.ok) {
-        throw new Error("Failed to update backup settings")
+        throw new Error(responseData.error || "Failed to update backup settings")
       }
+
+      // Refresh the form data after successful save
+      const refreshResponse = await fetch("/api/admin/backup/settings")
+      if (!refreshResponse.ok) {
+        throw new Error("Failed to refresh settings")
+      }
+      const refreshData = await refreshResponse.json()
+      
+      form.reset({
+        googleDriveEnabled: refreshData.google_drive_enabled ?? true,
+        googleDriveFolderId: refreshData.google_drive_folder_id ?? "",
+        retentionDays: refreshData.retention_days ?? 30,
+        maxBackups: refreshData.max_backups ?? 10,
+        scheduleDatabase: refreshData.schedule_database ?? "0 0 * * *",
+        scheduleSheets: refreshData.schedule_sheets ?? "0 1 * * *",
+      })
 
       toast.success("Backup settings updated successfully")
     } catch (error) {
-      toast.error("Failed to update backup settings")
-      console.error(error)
+      console.error("Error updating backup settings:", error)
+      toast.error(error instanceof Error ? error.message : "Failed to update backup settings")
     } finally {
       setIsLoading(false)
     }
