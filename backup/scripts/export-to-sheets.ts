@@ -90,7 +90,8 @@ function formatPrivateKey(key: string): string {
   try {
     // If the key already has the proper format, return it as is
     if (key.includes('-----BEGIN PRIVATE KEY-----') && key.includes('-----END PRIVATE KEY-----')) {
-      return key;
+      // Just ensure proper line endings
+      return key.replace(/\r\n|\r|\n/g, '\n');
     }
 
     // Remove any existing newlines, quotes, and spaces
