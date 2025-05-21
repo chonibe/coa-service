@@ -141,10 +141,16 @@ async function getOrderData(orderId: string) {
     return null;
   }
 
-  // Fetch line items without join
+  // Get line items from Supabase
   const { data: lineItems, error: lineItemsError } = await supabase
     .from("order_line_items_v2")
-    .select("*")
+    .select(`
+      *,
+      products:product_id (
+        sku,
+        img_url
+      )
+    `)
     .eq("order_id", orderId)
     .order("created_at", { ascending: true });
 
@@ -153,24 +159,31 @@ async function getOrderData(orderId: string) {
     throw new Error("Failed to fetch line items");
   }
 
-  // Collect unique product IDs (as bigint)
+  // Map the line items to include the SKU and img_url from the products table
+  const supabaseMappedLineItems = lineItems.map((item) => ({
+    ...item,
+    sku: item.products?.sku || null,
+    img_url: item.products?.img_url || null,
+  }));
+
+  // Fetch product details for all unique product_ids
   const productIds = Array.from(new Set((lineItems || []).map(item => item.product_id).filter(Boolean)));
   let productDetails: Record<string, { sku?: string | null; edition_number?: number; edition_size?: number; image_url?: string }> = {};
   if (productIds.length > 0) {
-    // Fetch product details using the correct field (shopify_id or id as bigint)
+    // First get basic product details
     const { data: products } = await supabase
       .from('products')
-      .select('shopify_id, sku, image_url')
-      .in('shopify_id', productIds);
+      .select('id, sku, image_url')
+      .in('id', productIds);
 
-    // Fetch edition counters if needed
+    // Then get edition counters
     const { data: editionCounters } = await supabase
       .from('product_edition_counters')
       .select('product_id, edition_total')
       .in('product_id', productIds);
 
     if (products) {
-      productDetails = Object.fromEntries(products.map(p => [p.shopify_id, {
+      productDetails = Object.fromEntries(products.map(p => [p.id, {
         sku: p.sku,
         image_url: p.image_url,
         edition_size: editionCounters?.find(ec => ec.product_id === p.id)?.edition_total ? 
@@ -179,13 +192,6 @@ async function getOrderData(orderId: string) {
       }]));
     }
   }
-
-  // Merge product data into line items
-  const mappedLineItems = lineItems?.map(item => ({
-    ...item,
-    sku: productDetails[item.product_id]?.sku || null,
-    image_url: productDetails[item.product_id]?.image_url || null,
-  })) || [];
 
   console.log('DEBUG productDetails:', productDetails);
   console.log('DEBUG lineItems before mapping:', lineItems);
@@ -211,7 +217,7 @@ async function getOrderData(orderId: string) {
 
     if (res.ok) {
       const { order: shopifyOrder } = await res.json();
-      const shopifyMappedLineItems = mappedLineItems.map(item => ({
+      const shopifyMappedLineItems = lineItems?.map(item => ({
         id: item.line_item_id,
         title: item.name,
         quantity: item.quantity || 1,
@@ -222,10 +228,10 @@ async function getOrderData(orderId: string) {
         variant_id: item.variant_id,
         fulfillment_status: item.fulfillment_status || 'pending',
         status: item.status || 'active',
-        image_url: item.image_url || undefined,
+        image_url: productDetails[item.product_id]?.image_url || undefined,
         edition_number: item.edition_number,
         edition_size: productDetails[item.product_id]?.edition_size
-      }));
+      })) || [];
       console.log('DEBUG mappedLineItems:', shopifyMappedLineItems);
       return {
         id: shopifyOrder.id.toString(),
@@ -252,6 +258,21 @@ async function getOrderData(orderId: string) {
   }
 
   // If Shopify fetch fails, return data from Supabase
+  const mappedLineItems = lineItems?.map(item => ({
+    id: item.line_item_id,
+    title: item.name,
+    quantity: item.quantity || 1,
+    price: item.price,
+    sku: item.sku || null,
+    vendor_name: item.vendor_name,
+    product_id: item.product_id,
+    variant_id: item.variant_id,
+    fulfillment_status: item.fulfillment_status || 'pending',
+    status: item.status || 'active',
+    image_url: productDetails[item.product_id]?.image_url || undefined,
+    edition_number: item.edition_number,
+    edition_size: productDetails[item.product_id]?.edition_size
+  })) || [];
   console.log('DEBUG mappedLineItems:', mappedLineItems);
   return {
     id: orderData.id,

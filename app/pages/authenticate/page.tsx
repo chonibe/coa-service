@@ -11,7 +11,6 @@ import { Badge } from "@/components/ui/badge"
 import { AlertCircle, CheckCircle, Loader2, User, Package, Smartphone, ShieldCheck, Info } from "lucide-react"
 import Link from "next/link"
 import { mockResponseData } from "@/lib/mock-data"
-import { useRouter } from "next/navigation"
 
 export default function AuthenticatePage() {
   const [isLoggedIn, setIsLoggedIn] = useState<boolean | null>(null)
@@ -26,7 +25,6 @@ export default function AuthenticatePage() {
   const [selectedCertificate, setSelectedCertificate] = useState<any>(null)
   const [isClaimingNfc, setIsClaimingNfc] = useState(false)
   const [claimedTags, setClaimedTags] = useState<Record<string, boolean>>({})
-  const router = useRouter()
 
   // Check login status
   useEffect(() => {

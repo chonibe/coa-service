@@ -21,10 +21,6 @@ import {
   RefreshCw,
   FileText,
   Clock,
-  Upload,
-  Smartphone,
-  Eye,
-  User,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { ScrollArea } from "@/components/ui/scroll-area"
@@ -156,12 +152,13 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     },
     {
       title: "Certificates",
-      icon: <FileText className="h-4 w-4" />,
+      href: "/admin/certificates",
+      icon: <Award className="h-5 w-5" />,
       submenu: [
         {
           title: "Management",
           href: "/admin/certificates/management",
-          icon: <Settings className="h-4 w-4" />,
+          icon: <Award className="h-4 w-4" />,
         },
         {
           title: "Sync",
@@ -171,30 +168,20 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         {
           title: "Bulk Operations",
           href: "/admin/certificates/bulk",
-          icon: <Upload className="h-4 w-4" />,
+          icon: <Award className="h-4 w-4" />,
+        },
+        {
+          title: "Access Logs",
+          href: "/admin/certificates/logs",
+          icon: <BarChart className="h-4 w-4" />,
         },
         {
           title: "NFC Tags",
           href: "/admin/certificates/nfc",
-          icon: <Smartphone className="h-4 w-4" />,
-        },
-        {
-          title: "Preview",
-          href: "/admin/certificates/preview",
-          icon: <Eye className="h-4 w-4" />,
+          icon: <Tag className="h-4 w-4" />,
         },
       ],
-    },
-    {
-      title: "Preview",
-      icon: <Eye className="h-4 w-4" />,
-      submenu: [
-        {
-          title: "Customer View",
-          href: "/admin/preview/customer",
-          icon: <User className="h-4 w-4" />,
-        },
-      ],
+      expanded: false,
     },
     {
       title: "Settings",
