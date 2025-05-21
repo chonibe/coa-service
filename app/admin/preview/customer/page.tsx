@@ -29,6 +29,16 @@ interface Order {
   line_items: LineItem[]
 }
 
+interface OrderListItem {
+  id: string
+  name: string
+  created_at: string
+  customer: {
+    name: string
+    email: string
+  } | null
+}
+
 interface Customer {
   id: string
   email: string
@@ -39,15 +49,16 @@ export default function CustomerPreviewPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [orders, setOrders] = useState<Order[]>([])
+  const [orderList, setOrderList] = useState<OrderListItem[]>([])
   const [customers, setCustomers] = useState<Customer[]>([])
   const [selectedCustomerId, setSelectedCustomerId] = useState<string>("")
   const [searchTerm, setSearchTerm] = useState("")
-  const [orderSearchTerm, setOrderSearchTerm] = useState("")
   const [selectedOrderId, setSelectedOrderId] = useState<string>("")
   const [activeTab, setActiveTab] = useState("customer")
 
   useEffect(() => {
     fetchCustomers()
+    fetchOrders()
   }, [])
 
   useEffect(() => {
@@ -122,6 +133,26 @@ export default function CustomerPreviewPage() {
     }
   }
 
+  const fetchOrders = async () => {
+    try {
+      setIsLoading(true)
+      setError(null)
+
+      const response = await fetch("/api/admin/orders")
+      if (!response.ok) {
+        throw new Error("Failed to fetch orders")
+      }
+
+      const data = await response.json()
+      setOrderList(data.orders)
+    } catch (err: any) {
+      console.error("Error fetching orders:", err)
+      setError(err.message || "Failed to fetch orders")
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
   const getNfcStatus = (lineItem: LineItem) => {
     if (lineItem.nfc_tag_id && lineItem.nfc_claimed_at) {
       return { status: "paired", label: "Paired", variant: "default" as const }
@@ -135,6 +166,12 @@ export default function CustomerPreviewPage() {
   const filteredCustomers = customers.filter(customer => 
     customer.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
     customer.name.toLowerCase().includes(searchTerm.toLowerCase())
+  )
+
+  const filteredOrders = orderList.filter(order => 
+    order.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (order.customer?.name.toLowerCase().includes(searchTerm.toLowerCase()) ?? false) ||
+    (order.customer?.email.toLowerCase().includes(searchTerm.toLowerCase()) ?? false)
   )
 
   const renderOrderContent = () => {
@@ -260,17 +297,23 @@ export default function CustomerPreviewPage() {
             <div className="flex flex-col sm:flex-row gap-4 mb-6">
               <div className="flex-1">
                 <Input
-                  placeholder="Enter order ID..."
-                  value={orderSearchTerm}
-                  onChange={(e) => setOrderSearchTerm(e.target.value)}
+                  placeholder="Search orders by ID, name, or customer..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
                 />
               </div>
-              <Button 
-                onClick={() => setSelectedOrderId(orderSearchTerm)}
-                disabled={!orderSearchTerm}
-              >
-                View Order
-              </Button>
+              <Select value={selectedOrderId} onValueChange={setSelectedOrderId}>
+                <SelectTrigger className="w-[300px]">
+                  <SelectValue placeholder="Select an order" />
+                </SelectTrigger>
+                <SelectContent>
+                  {filteredOrders.map((order) => (
+                    <SelectItem key={order.id} value={order.id}>
+                      {order.name} - {order.customer ? `${order.customer.name} (${order.customer.email})` : 'No customer'} - {new Date(order.created_at).toLocaleDateString()}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
           </TabsContent>
         </Tabs>
@@ -288,6 +331,14 @@ export default function CustomerPreviewPage() {
             <CardContent className="pt-6">
               <p className="text-center text-muted-foreground">
                 Select a customer to preview their dashboard
+              </p>
+            </CardContent>
+          </Card>
+        ) : activeTab === "order" && !selectedOrderId ? (
+          <Card>
+            <CardContent className="pt-6">
+              <p className="text-center text-muted-foreground">
+                Select an order to preview its details
               </p>
             </CardContent>
           </Card>
