@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
@@ -9,6 +9,7 @@ import { CertificateModal } from "./certificate-modal"
 import { formatDate } from "../../../utils/date"
 import { Button } from "@/components/ui/button"
 import { Tag } from "lucide-react"
+import React, { ReactNode, MouseEvent } from "react"
 
 interface LineItem {
   line_item_id: string
@@ -31,6 +32,47 @@ interface Order {
   name: string
   created_at: string
   line_items: LineItem[]
+}
+
+function FloatingTiltCard({ children, className = "", ...props }: React.HTMLAttributes<HTMLDivElement> & { children: ReactNode }) {
+  const cardRef = useRef<HTMLDivElement>(null)
+
+  // 3D tilt effect
+  const handleMouseMove = (e: MouseEvent<HTMLDivElement>) => {
+    const card = cardRef.current
+    if (!card) return
+    const rect = card.getBoundingClientRect()
+    const x = e.clientX - rect.left
+    const y = e.clientY - rect.top
+    const centerX = rect.width / 2
+    const centerY = rect.height / 2
+    const rotateX = ((y - centerY) / centerY) * 8 // max 8deg
+    const rotateY = ((x - centerX) / centerX) * -8
+    card.style.transform = `perspective(800px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale3d(1.03,1.03,1.03)`
+  }
+  const handleMouseLeave = () => {
+    const card = cardRef.current
+    if (!card) return
+    card.style.transform = ""
+  }
+
+  return (
+    <div
+      ref={cardRef}
+      className={`relative bg-zinc-900 border border-zinc-800 rounded-xl shadow-lg transition-transform duration-200 hover:shadow-2xl overflow-hidden ${className}`}
+      style={{ willChange: "transform" }}
+      onMouseMove={handleMouseMove}
+      onMouseLeave={handleMouseLeave}
+      tabIndex={0}
+      {...props}
+    >
+      {/* Shimmer overlay */}
+      <span className="pointer-events-none absolute inset-0 z-10 opacity-0 hover:opacity-100 transition-opacity duration-300">
+        <span className="block w-full h-full shimmer" />
+      </span>
+      {children}
+    </div>
+  )
 }
 
 export default function CustomerPreviewPage() {
@@ -144,9 +186,9 @@ export default function CustomerPreviewPage() {
             <CardContent>
               <div className="grid gap-4">
                 {order.line_items.map((item) => (
-                  <div
+                  <FloatingTiltCard
                     key={item.line_item_id}
-                    className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50 cursor-pointer transition-colors"
+                    className="flex items-center justify-between p-4 mb-2 cursor-pointer group"
                     onClick={() => setSelectedLineItem(item)}
                   >
                     <div className="flex items-center gap-4">
@@ -158,15 +200,15 @@ export default function CustomerPreviewPage() {
                         />
                       )}
                       <div>
-                        <h3 className="font-medium">{item.title}</h3>
+                        <h3 className="font-medium text-white">{item.title}</h3>
                         <div className="text-sm space-y-1 mt-1">
                           {item.vendor && (
-                            <p className="text-gray-800 font-medium">Artist: {item.vendor}</p>
+                            <p className="text-zinc-300 font-medium">Artist: {item.vendor}</p>
                           )}
                           {item.edition_number && item.edition_total && (
-                            <p className="text-gray-800 font-medium">Edition: {item.edition_number}/{item.edition_total}</p>
+                            <p className="text-zinc-300 font-medium">Edition: {item.edition_number}/{item.edition_total}</p>
                           )}
-                          <p className="text-gray-600">Quantity: {item.quantity} × ${item.price}</p>
+                          <p className="text-zinc-400">Quantity: {item.quantity} × ${item.price}</p>
                         </div>
                       </div>
                     </div>
@@ -194,7 +236,7 @@ export default function CustomerPreviewPage() {
                         </Badge>
                       )}
                     </div>
-                  </div>
+                  </FloatingTiltCard>
                 ))}
               </div>
             </CardContent>
@@ -209,4 +251,19 @@ export default function CustomerPreviewPage() {
       />
     </div>
   )
-} 
+}
+
+<style jsx global>{`
+  .shimmer {
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: linear-gradient(120deg, rgba(255,255,255,0) 60%, rgba(255,255,255,0.12) 80%, rgba(255,255,255,0) 100%);
+    background-size: 200% 100%;
+    animation: shimmer-move 1.2s linear infinite;
+    pointer-events: none;
+  }
+  @keyframes shimmer-move {
+    0% { background-position: -100% 0; }
+    100% { background-position: 200% 0; }
+  }
+`}</style> 
