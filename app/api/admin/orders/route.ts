@@ -16,10 +16,10 @@ export async function GET(request: NextRequest) {
         order_id,
         order_name,
         created_at,
-        title,
+        name,
         quantity,
         price,
-        image_url,
+        img_url,
         nfc_tag_id,
         nfc_claimed_at,
         certificate_url
@@ -46,10 +46,10 @@ export async function GET(request: NextRequest) {
       ordersMap.get(item.order_id).line_items.push({
         line_item_id: item.line_item_id,
         order_id: item.order_id,
-        title: item.title,
+        title: item.name,
         quantity: item.quantity,
         price: item.price,
-        image_url: item.image_url,
+        image_url: item.img_url,
         nfc_tag_id: item.nfc_tag_id,
         nfc_claimed_at: item.nfc_claimed_at,
         certificate_url: item.certificate_url
