@@ -3,9 +3,9 @@
 import { useState, useEffect } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
-import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Loader2 } from "lucide-react"
+import { CertificateModal } from "@/components/certificate-modal"
 
 interface LineItem {
   line_item_id: string
@@ -15,6 +15,7 @@ interface LineItem {
   price: number
   image_url: string | null
   status: string
+  created_at: string
 }
 
 interface Order {
@@ -29,6 +30,7 @@ export default function CustomerPreviewPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [searchTerm, setSearchTerm] = useState("")
+  const [selectedLineItem, setSelectedLineItem] = useState<LineItem | null>(null)
 
   useEffect(() => {
     fetchOrders()
@@ -109,7 +111,8 @@ export default function CustomerPreviewPage() {
                 {order.line_items.map((item) => (
                   <div
                     key={item.line_item_id}
-                    className="flex items-center justify-between p-4 border rounded-lg"
+                    className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50 cursor-pointer transition-colors"
+                    onClick={() => setSelectedLineItem(item)}
                   >
                     <div className="flex items-center gap-4">
                       {item.image_url && (
@@ -138,6 +141,12 @@ export default function CustomerPreviewPage() {
           </Card>
         ))}
       </div>
+
+      <CertificateModal
+        isOpen={!!selectedLineItem}
+        onClose={() => setSelectedLineItem(null)}
+        lineItem={selectedLineItem}
+      />
     </div>
   )
 } 
