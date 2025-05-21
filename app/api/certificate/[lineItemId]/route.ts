@@ -13,10 +13,17 @@ export async function GET(request: NextRequest, { params }: { params: { lineItem
     "Access-Control-Allow-Headers": "Content-Type, Authorization",
   }
 
+  if (!supabase) {
+    return NextResponse.json(
+      { success: false, message: "Database connection not available" },
+      { status: 500, headers: corsHeaders },
+    )
+  }
+
   try {
     // Get the line item data from the database
     const { data: lineItemData, error: lineItemError } = await supabase
-      .from("order_line_items")
+      .from("order_line_items_v2")
       .select("*")
       .eq("line_item_id", lineItemId)
       .single()
@@ -37,10 +44,10 @@ export async function GET(request: NextRequest, { params }: { params: { lineItem
     }
 
     // Get product data from Shopify
-    const productData = await fetchProductData(lineItemData.product_id)
+    const productData = await fetchProductData(lineItemData.product_id as string)
 
     // Get order data from Shopify
-    const orderData = await fetchOrderData(lineItemData.order_id)
+    const orderData = await fetchOrderData(lineItemData.order_id as string)
 
     // Check if we have a stored certificate URL
     const certificateUrl =
