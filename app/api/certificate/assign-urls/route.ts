@@ -34,42 +34,58 @@ export async function POST() {
       try {
         const certificateUrl = `${baseUrl}/certificate/${item.line_item_id}`
         const certificateToken = crypto.randomUUID()
+        const now = new Date().toISOString()
 
+        // Update order_line_items_v2
         const { error: updateError } = await supabase
           .from("order_line_items_v2")
           .update({
             certificate_url: certificateUrl,
             certificate_token: certificateToken,
-            certificate_generated_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
+            certificate_generated_at: now,
+            updated_at: now,
           })
           .eq("line_item_id", item.line_item_id)
           .eq("order_id", item.order_id)
 
         if (updateError) {
-          console.error(`Error updating item ${item.line_item_id}:`, updateError)
-          failCount++
-          results.push({
-            lineItemId: item.line_item_id,
-            orderId: item.order_id,
-            success: false,
-            error: updateError.message
-          })
-        } else {
-          successCount++
-          results.push({
-            lineItemId: item.line_item_id,
-            orderId: item.order_id,
-            success: true,
-            certificateUrl
-          })
+          throw new Error(`Error updating order_line_items_v2: ${updateError.message}`)
         }
+
+        // Update product_edition_counters
+        const { error: counterUpdateError } = await supabase
+          .from("product_edition_counters")
+          .update({
+            certificate_url: certificateUrl,
+            certificate_token: certificateToken,
+            certificate_generated_at: now,
+            updated_at: now,
+          })
+          .eq("product_id", item.product_id)
+          .eq("edition_number", item.edition_number)
+
+        if (counterUpdateError) {
+          console.error(`Error updating product_edition_counters for item ${item.line_item_id}:`, counterUpdateError)
+          // Don't fail the whole operation if counter update fails
+        }
+
+        successCount++
+        results.push({
+          lineItemId: item.line_item_id,
+          orderId: item.order_id,
+          productId: item.product_id,
+          editionNumber: item.edition_number,
+          success: true,
+          certificateUrl
+        })
       } catch (err) {
         console.error(`Error processing item ${item.line_item_id}:`, err)
         failCount++
         results.push({
           lineItemId: item.line_item_id,
           orderId: item.order_id,
+          productId: item.product_id,
+          editionNumber: item.edition_number,
           success: false,
           error: err instanceof Error ? err.message : "Unknown error"
         })
