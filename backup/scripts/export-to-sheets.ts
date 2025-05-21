@@ -261,6 +261,32 @@ export async function exportToSheets(config: BackupConfig, backupPath?: string):
     }
     console.log('Spreadsheet created successfully:', spreadsheetId);
 
+    // Move the spreadsheet to the specified folder
+    if (config.storage.googleDrive?.folderId) {
+      console.log('Moving spreadsheet to backup folder...');
+      try {
+        // Get the file metadata
+        const drive = google.drive({ version: 'v3', auth });
+        const file = await drive.files.get({
+          fileId: spreadsheetId,
+          fields: 'parents'
+        });
+
+        // Remove the file from its current parent
+        await drive.files.update({
+          fileId: spreadsheetId,
+          removeParents: file.data.parents?.join(','),
+          addParents: config.storage.googleDrive.folderId,
+          fields: 'id, parents'
+        });
+
+        console.log('Spreadsheet moved to backup folder successfully');
+      } catch (error) {
+        console.error('Error moving spreadsheet to folder:', error);
+        throw new Error('Failed to move spreadsheet to backup folder');
+      }
+    }
+
     // Share the spreadsheet with the service account and make it accessible to anyone with the link
     const drive = google.drive({ version: 'v3', auth });
     await drive.permissions.create({
