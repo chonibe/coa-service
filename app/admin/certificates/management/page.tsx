@@ -140,11 +140,17 @@ export default function CertificateManagementPage() {
 
       // Call our API endpoint instead of direct Supabase access
       const response = await fetch(
-        `/api/certificates/list?page=${page}&pageSize=${pageSize}&productId=${productFilter !== "all" ? productFilter : ""}&status=${statusFilter !== "all" ? statusFilter : ""}&search=${searchTerm}&sortField=${sortField}&sortDirection=${sortDirection}`,
+        `/api/certificates/list?page=${page}&pageSize=${pageSize}&productId=${
+          productFilter !== "all" ? productFilter : ""
+        }&status=${statusFilter !== "all" ? statusFilter : ""}&search=${searchTerm}&sortField=${sortField}&sortDirection=${sortDirection}`,
       )
 
       if (!response.ok) {
-        throw new Error(`Failed to fetch certificates: ${response.status}`)
+        const errorData = await response.json()
+        if (response.status === 504) {
+          throw new Error("Request timed out. Please try again with fewer items or more specific filters.")
+        }
+        throw new Error(errorData.message || `Failed to fetch certificates: ${response.status}`)
       }
 
       const data = await response.json()
