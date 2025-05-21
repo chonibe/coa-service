@@ -2,6 +2,7 @@ import { NextResponse } from "next/server"
 import { createClient } from "@supabase/supabase-js"
 import { backupDatabase } from "@/backup/scripts/backup-database"
 import { exportToSheets } from "@/backup/scripts/export-to-sheets"
+import { BackupConfig } from "@/backup/config/backup-config"
 
 interface BackupResult {
   size?: string
@@ -30,11 +31,47 @@ export async function POST(
       throw settingsError
     }
 
+    // Transform settings into BackupConfig format
+    const backupConfig: BackupConfig = {
+      storage: {
+        local: {
+          path: './backup/storage',
+          retention: {
+            days: settings.retention_days,
+            maxBackups: settings.max_backups
+          }
+        },
+        googleDrive: {
+          enabled: settings.google_drive_enabled,
+          folderId: settings.google_drive_folder_id || undefined,
+          clientEmail: process.env.GOOGLE_CLIENT_EMAIL || '',
+          privateKey: process.env.GOOGLE_PRIVATE_KEY || '',
+          retention: {
+            days: settings.retention_days,
+            maxBackups: settings.max_backups
+          }
+        }
+      },
+      schedule: {
+        databaseBackup: settings.schedule_database,
+        sheetsExport: settings.schedule_sheets,
+        cleanup: '0 2 * * *' // Default cleanup schedule
+      },
+      database: {
+        url: process.env.DATABASE_URL || '',
+        ssl: true
+      },
+      logging: {
+        level: 'info',
+        file: './backup/logs/backup.log'
+      }
+    }
+
     let result: string | BackupResult
     if (params.type === "database") {
-      result = await backupDatabase(settings)
+      result = await backupDatabase(backupConfig)
     } else if (params.type === "sheets") {
-      const spreadsheetUrl = await exportToSheets(settings)
+      const spreadsheetUrl = await exportToSheets(backupConfig)
       result = { url: spreadsheetUrl }
     } else {
       return NextResponse.json(
