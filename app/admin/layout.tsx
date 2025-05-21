@@ -21,6 +21,8 @@ import {
   RefreshCw,
   FileText,
   Clock,
+  Layers,
+  Link as LinkIcon,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { ScrollArea } from "@/components/ui/scroll-area"
@@ -164,6 +166,11 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           title: "Bulk Operations",
           href: "/admin/certificates/bulk",
           icon: <Award className="h-4 w-4" />,
+        },
+        {
+          title: "Assign URLs",
+          href: "/admin/certificates/assign-urls",
+          icon: <LinkIcon className="h-4 w-4" />,
         },
         {
           title: "Access Logs",
