@@ -23,17 +23,21 @@ const TABLES_TO_EXPORT = [
   'nfc_tags',
   'collector_benefit_claims',
   'product_benefits',
-  'benefit_types',
-  'tax_forms'
+  'benefit_types'
 ];
 
 export async function exportToSheets(config: BackupConfig, backupPath?: string): Promise<string> {
   try {
     // Initialize Google Sheets API
+    const privateKey = process.env.GOOGLE_PRIVATE_KEY?.replace(/\\n/g, '\n');
+    if (!privateKey) {
+      throw new Error('GOOGLE_PRIVATE_KEY not set in environment');
+    }
+
     const auth = new google.auth.GoogleAuth({
       credentials: {
         client_email: process.env.GOOGLE_CLIENT_EMAIL,
-        private_key: process.env.GOOGLE_PRIVATE_KEY?.replace(/\\n/g, '\n'),
+        private_key: privateKey,
       },
       scopes: ['https://www.googleapis.com/auth/spreadsheets'],
     });
@@ -89,6 +93,7 @@ export async function exportToSheets(config: BackupConfig, backupPath?: string):
 
         if (error) {
           console.error(`Error fetching data from ${table}:`, error);
+          backupData[table] = []; // Set empty array for failed tables
           continue;
         }
 
@@ -98,10 +103,13 @@ export async function exportToSheets(config: BackupConfig, backupPath?: string):
 
     // Export each table to a separate sheet
     for (const [tableName, data] of Object.entries(backupData)) {
-      if (!Array.isArray(data) || data.length === 0) continue;
+      if (!Array.isArray(data)) {
+        console.warn(`Skipping ${tableName}: data is not an array`);
+        continue;
+      }
 
-      // Create headers from the first row
-      const headers = Object.keys(data[0]);
+      // Create headers from the first row or use empty array if no data
+      const headers = data.length > 0 ? Object.keys(data[0]) : [];
       const rows = data.map(row => headers.map(header => row[header]));
 
       // Add the sheet
