@@ -2,20 +2,20 @@ import { NextResponse } from "next/server"
 import { createClient } from "@/lib/supabase/server"
 import crypto from "crypto"
 
-const BATCH_SIZE = 50 // Process 50 items at a time
+const BATCH_SIZE = 25 // Process 25 items at a time to prevent timeouts
 
 export async function POST() {
   try {
     const supabase = createClient()
     const baseUrl = process.env.NEXT_PUBLIC_CUSTOMER_APP_URL || process.env.NEXT_PUBLIC_APP_URL || ""
 
-    // Get all active line items
+    // Get all active line items without certificate URLs
     const { data: activeItems, error: fetchError } = await supabase
       .from("order_line_items_v2")
       .select("*")
       .eq("status", "active")
       .is("certificate_url", null)
-      .limit(BATCH_SIZE) // Only process a batch at a time
+      .limit(BATCH_SIZE)
 
     if (fetchError) {
       throw new Error(`Error fetching line items: ${fetchError.message}`)
@@ -83,7 +83,7 @@ export async function POST() {
         })
 
         // Add a small delay between items to prevent overwhelming the database
-        await new Promise(resolve => setTimeout(resolve, 100))
+        await new Promise(resolve => setTimeout(resolve, 50))
       } catch (err) {
         console.error(`Error processing item ${item.line_item_id}:`, err)
         failCount++

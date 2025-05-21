@@ -12,12 +12,20 @@ export default function AssignUrlsPage() {
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [result, setResult] = useState<any>(null)
+  const [progress, setProgress] = useState<{
+    processed: number;
+    total: number;
+    success: number;
+    failed: number;
+    hasMore: boolean;
+  } | null>(null)
 
   const handleAssignUrls = async () => {
     try {
       setIsLoading(true)
       setError(null)
       setResult(null)
+      setProgress(null)
 
       const response = await fetch("/api/certificate/assign-urls", {
         method: "POST",
@@ -30,6 +38,45 @@ export default function AssignUrlsPage() {
       }
 
       setResult(data)
+      setProgress({
+        processed: data.results.length,
+        total: data.results.length,
+        success: data.results.filter((r: any) => r.success).length,
+        failed: data.results.filter((r: any) => !r.success).length,
+        hasMore: data.hasMore
+      })
+    } catch (err: any) {
+      setError(err.message || "An error occurred")
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const handleContinueProcessing = async () => {
+    if (!progress?.hasMore) return
+
+    try {
+      setIsLoading(true)
+      setError(null)
+
+      const response = await fetch("/api/certificate/assign-urls", {
+        method: "POST",
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.error || "Failed to assign URLs")
+      }
+
+      setResult(data)
+      setProgress(prev => prev ? {
+        processed: prev.processed + data.results.length,
+        total: prev.total + data.results.length,
+        success: prev.success + data.results.filter((r: any) => r.success).length,
+        failed: prev.failed + data.results.filter((r: any) => !r.success).length,
+        hasMore: data.hasMore
+      } : null)
     } catch (err: any) {
       setError(err.message || "An error occurred")
     } finally {
@@ -77,6 +124,7 @@ export default function AssignUrlsPage() {
             <CardTitle>Assign Certificate URLs</CardTitle>
             <CardDescription>
               This will assign certificate URLs to all active line items that don't have one yet.
+              Items will be processed in batches to prevent timeouts.
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -88,6 +136,22 @@ export default function AssignUrlsPage() {
               </Alert>
             )}
 
+            {progress && (
+              <div className="space-y-4 mb-4">
+                <div className="flex justify-between text-sm text-muted-foreground">
+                  <span>Processed: {progress.processed} items</span>
+                  <span>Success: {progress.success}</span>
+                  <span>Failed: {progress.failed}</span>
+                </div>
+                <div className="w-full bg-secondary h-2 rounded-full overflow-hidden">
+                  <div 
+                    className="bg-primary h-full transition-all duration-300"
+                    style={{ width: `${(progress.processed / progress.total) * 100}%` }}
+                  />
+                </div>
+              </div>
+            )}
+
             {result && (
               <Alert className="mb-4">
                 <AlertTitle>Operation Complete</AlertTitle>
@@ -95,7 +159,7 @@ export default function AssignUrlsPage() {
               </Alert>
             )}
           </CardContent>
-          <CardFooter>
+          <CardFooter className="flex gap-2">
             <Button onClick={handleAssignUrls} disabled={isLoading}>
               {isLoading ? (
                 <>
@@ -106,6 +170,18 @@ export default function AssignUrlsPage() {
                 "Assign Certificate URLs"
               )}
             </Button>
+            {progress?.hasMore && (
+              <Button onClick={handleContinueProcessing} disabled={isLoading}>
+                {isLoading ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Processing More...
+                  </>
+                ) : (
+                  "Continue Processing"
+                )}
+              </Button>
+            )}
           </CardFooter>
         </Card>
       </div>
