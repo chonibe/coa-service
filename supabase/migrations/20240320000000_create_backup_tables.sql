@@ -26,44 +26,30 @@ CREATE TABLE IF NOT EXISTS backups (
 ALTER TABLE backup_settings ENABLE ROW LEVEL SECURITY;
 ALTER TABLE backups ENABLE ROW LEVEL SECURITY;
 
--- Allow only authenticated users to read backup settings
-CREATE POLICY "Allow authenticated users to read backup settings"
-  ON backup_settings
-  FOR SELECT
-  TO authenticated
-  USING (true);
+-- Drop existing policies if they exist
+DROP POLICY IF EXISTS "Allow authenticated users to read backup settings" ON backup_settings;
+DROP POLICY IF EXISTS "Allow authenticated users to update backup settings" ON backup_settings;
+DROP POLICY IF EXISTS "Allow authenticated users to insert backup settings" ON backup_settings;
+DROP POLICY IF EXISTS "Allow authenticated users to read backups" ON backups;
+DROP POLICY IF EXISTS "Allow authenticated users to insert backups" ON backups;
+DROP POLICY IF EXISTS "Allow authenticated users to delete backups" ON backups;
 
--- Allow only authenticated users to update backup settings
-CREATE POLICY "Allow authenticated users to update backup settings"
+-- Create new policies with proper permissions
+CREATE POLICY "Enable all access for authenticated users on backup_settings"
   ON backup_settings
-  FOR UPDATE
+  FOR ALL
   TO authenticated
-  USING (true);
-
--- Allow only authenticated users to insert backup settings
-CREATE POLICY "Allow authenticated users to insert backup settings"
-  ON backup_settings
-  FOR INSERT
-  TO authenticated
+  USING (true)
   WITH CHECK (true);
 
--- Allow only authenticated users to read backups
-CREATE POLICY "Allow authenticated users to read backups"
+CREATE POLICY "Enable all access for authenticated users on backups"
   ON backups
-  FOR SELECT
+  FOR ALL
   TO authenticated
-  USING (true);
-
--- Allow only authenticated users to insert backups
-CREATE POLICY "Allow authenticated users to insert backups"
-  ON backups
-  FOR INSERT
-  TO authenticated
+  USING (true)
   WITH CHECK (true);
 
--- Allow only authenticated users to delete backups
-CREATE POLICY "Allow authenticated users to delete backups"
-  ON backups
-  FOR DELETE
-  TO authenticated
-  USING (true); 
+-- Insert default settings if table is empty
+INSERT INTO backup_settings (id, google_drive_enabled, retention_days, max_backups, schedule_database, schedule_sheets)
+SELECT 1, true, 30, 10, '0 0 * * *', '0 1 * * *'
+WHERE NOT EXISTS (SELECT 1 FROM backup_settings WHERE id = 1); 
