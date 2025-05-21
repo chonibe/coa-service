@@ -3,6 +3,29 @@ import type { NextRequest } from "next/server"
 import { SHOPIFY_WEBHOOK_SECRET, SHOPIFY_SHOP, SHOPIFY_ACCESS_TOKEN } from "@/lib/env"
 import crypto from "crypto"
 import { supabase } from "@/lib/supabase"
+import { createClient } from "@supabase/supabase-js"
+
+// Initialize Supabase client
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+const supabaseClient = supabaseUrl && supabaseServiceKey ? createClient(supabaseUrl, supabaseServiceKey) : null
+
+/**
+ * Verify Shopify webhook signature
+ */
+function verifyWebhook(body: string, hmac: string): boolean {
+  if (!SHOPIFY_WEBHOOK_SECRET) {
+    console.error("Missing Shopify webhook secret")
+    return false
+  }
+
+  const generatedHash = crypto
+    .createHmac("sha256", SHOPIFY_WEBHOOK_SECRET)
+    .update(body, "utf8")
+    .digest("base64")
+
+  return generatedHash === hmac
+}
 
 /**
  * Shopify Order Webhook Handler
@@ -11,54 +34,69 @@ import { supabase } from "@/lib/supabase"
  */
 export async function POST(request: NextRequest) {
   try {
-    // Verify the webhook is from Shopify
-    const hmacHeader = request.headers.get("x-shopify-hmac-sha256")
-
-    if (!hmacHeader || !SHOPIFY_WEBHOOK_SECRET) {
-      console.error("Missing HMAC header or webhook secret")
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    if (!supabaseClient) {
+      throw new Error("Supabase client not initialized")
     }
 
-    // Get the raw request body for HMAC verification
-    const rawBody = await request.text()
+    const body = await request.text()
+    const hmac = request.headers.get("x-shopify-hmac-sha256")
+    const topic = request.headers.get("x-shopify-topic")
+    const shop = request.headers.get("x-shopify-shop-domain")
 
-    // Verify the HMAC signature
-    const generatedHash = crypto.createHmac("sha256", SHOPIFY_WEBHOOK_SECRET).update(rawBody, "utf8").digest("base64")
-
-    if (generatedHash !== hmacHeader) {
-      console.error("HMAC verification failed")
-      return NextResponse.json({ error: "HMAC verification failed" }, { status: 401 })
+    if (!hmac || !topic || !shop) {
+      return new Response("Missing required headers", { status: 400 })
     }
 
-    // Parse the webhook body
-    const webhookData = JSON.parse(rawBody)
-    console.log("Received Shopify order webhook:", webhookData.id)
+    // Verify webhook signature
+    const isValid = verifyWebhook(body, hmac)
+    if (!isValid) {
+      return new Response("Invalid webhook signature", { status: 401 })
+    }
 
-    // Process the order
-    await processShopifyOrder(webhookData)
+    // Parse the webhook data
+    const data = JSON.parse(body) as {
+      id: number
+      name: string
+      line_items: Array<{
+        id: number
+        product_id: number
+        variant_id: number
+        properties: Array<{ name: string; value: string }>
+      }>
+    }
 
     // Log the webhook event
-    try {
-      await supabase.from("webhook_logs").insert({
-        type: "shopify_order",
-        created_at: new Date().toISOString(),
-        details: {
-          orderId: webhookData.id,
-          orderName: webhookData.name,
-          orderNumber: webhookData.order_number,
-          processedAt: webhookData.processed_at,
-          lineItemsCount: webhookData.line_items?.length || 0,
-        },
-      })
-    } catch (logError) {
-      console.error("Error logging webhook event:", logError)
-      // Continue even if logging fails
+    const { error: logError } = await supabaseClient.from("webhook_logs").insert({
+      topic,
+      shop,
+      payload: data as unknown as Record<string, unknown>,
+      processed: false,
+      created_at: new Date().toISOString(),
+    })
+
+    if (logError) {
+      console.error("Error logging webhook:", logError)
     }
 
-    return NextResponse.json({ success: true })
-  } catch (error: any) {
-    console.error("Error processing Shopify webhook:", error)
-    return NextResponse.json({ error: error.message || "Failed to process webhook" }, { status: 500 })
+    // Process the order
+    await processShopifyOrder(data)
+
+    // Update webhook log as processed
+    const { error: updateError } = await supabaseClient
+      .from("webhook_logs")
+      .update({ processed: true, processed_at: new Date().toISOString() })
+      .eq("topic", topic)
+      .eq("shop", shop)
+      .eq("created_at", new Date().toISOString())
+
+    if (updateError) {
+      console.error("Error updating webhook log:", updateError)
+    }
+
+    return new Response("Webhook processed successfully", { status: 200 })
+  } catch (error) {
+    console.error("Error processing webhook:", error)
+    return new Response("Error processing webhook", { status: 500 })
   }
 }
 
@@ -69,26 +107,12 @@ async function processShopifyOrder(order: any) {
   try {
     console.log(`Processing order ${order.id} (${order.name})`)
 
-    // Check if this order contains any line items for limited edition products
-    const limitedEditionItems = order.line_items.filter((item: any) => {
-      // Check if this is a limited edition product
-      // You may need to adjust this logic based on how you identify limited edition products
-      const isLimitedEdition = item.properties?.some(
-        (prop: any) => prop.name === "limited_edition" && prop.value === "true",
-      )
+    // Process all line items in the order
+    const lineItems = order.line_items || []
+    console.log(`Found ${lineItems.length} line items in order ${order.id}`)
 
-      return isLimitedEdition
-    })
-
-    if (limitedEditionItems.length === 0) {
-      console.log(`Order ${order.id} does not contain any limited edition items`)
-      return
-    }
-
-    console.log(`Found ${limitedEditionItems.length} limited edition items in order ${order.id}`)
-
-    // Process each limited edition item
-    for (const item of limitedEditionItems) {
+    // Process each line item
+    for (const item of lineItems) {
       await processLineItem(order, item)
     }
 
@@ -155,6 +179,10 @@ async function getProductMetafields(productId: string) {
 // Update the processLineItem function to include vendor_name from line items
 
 async function processLineItem(order: any, lineItem: any) {
+  if (!supabaseClient) {
+    throw new Error("Supabase client not initialized")
+  }
+
   try {
     const orderId = order.id.toString()
     const lineItemId = lineItem.id.toString()
@@ -172,8 +200,8 @@ async function processLineItem(order: any, lineItem: any) {
     console.log(`Edition size for product ${productId}: ${editionSize || "Not set"}`)
 
     // Check if this line item already exists in the database
-    const { data: existingItems, error: queryError } = await supabase
-      .from("order_line_items")
+    const { data: existingItems, error: queryError } = await supabaseClient
+      .from("order_line_items_v2")
       .select("*")
       .eq("order_id", orderId)
       .eq("line_item_id", lineItemId)
@@ -184,12 +212,12 @@ async function processLineItem(order: any, lineItem: any) {
     }
 
     if (existingItems && existingItems.length > 0) {
-      console.log(`Line item ${lineItemId} already exists in database, skipping`)
+      console.log(`Line item ${lineItemId} already exists in database, checking for updates`)
 
       // Update vendor_name if it's available and not set previously
       if (vendorName && !existingItems[0].vendor_name) {
-        const { error: updateError } = await supabase
-          .from("order_line_items")
+        const { error: updateError } = await supabaseClient
+          .from("order_line_items_v2")
           .update({
             vendor_name: vendorName,
             updated_at: new Date().toISOString(),
@@ -215,20 +243,19 @@ async function processLineItem(order: any, lineItem: any) {
     // Generate certificate URL with query parameters
     const baseUrl =
       process.env.NEXT_PUBLIC_CUSTOMER_APP_URL || process.env.NEXT_PUBLIC_APP_URL || "https://your-domain.com"
-    const certificateUrl = `${baseUrl}/pages/certificate?line_item_id=${lineItemId}`
+    const certificateUrl = `${baseUrl}/certificate/${lineItemId}`
     const certificateToken = crypto.randomUUID()
     const now = new Date().toISOString()
 
     // Insert the new line item with certificate information and vendor_name
-    const { error: insertError } = await supabase.from("order_line_items").insert({
+    const { error: insertError } = await supabaseClient.from("order_line_items_v2").insert({
       order_id: orderId,
       order_name: order.name,
       line_item_id: lineItemId,
       product_id: productId,
       variant_id: lineItem.variant_id?.toString(),
-      vendor_name: vendorName, // Add vendor name to the insert
-      // Don't set edition_number here, it will be assigned during resequencing
-      edition_total: editionSize, // Add the edition_total from the metafield
+      vendor_name: vendorName,
+      edition_total: editionSize,
       created_at: new Date(order.created_at).toISOString(),
       updated_at: now,
       status: "active",
@@ -246,8 +273,13 @@ async function processLineItem(order: any, lineItem: any) {
       `Successfully inserted line item ${lineItemId} with certificate URL and vendor ${vendorName || "Unknown"}`,
     )
 
-    // Resequence edition numbers for this product
-    await resequenceEditionNumbers(productId)
+    // Resequence edition numbers for this product if it's a limited edition
+    const isLimitedEdition = lineItem.properties?.some(
+      (prop: any) => prop.name === "limited_edition" && prop.value === "true",
+    )
+    if (isLimitedEdition) {
+      await resequenceEditionNumbers(productId)
+    }
 
     console.log(`Successfully processed line item ${lineItemId}`)
   } catch (error) {
@@ -260,12 +292,16 @@ async function processLineItem(order: any, lineItem: any) {
  * Resequence edition numbers for a product
  */
 async function resequenceEditionNumbers(productId: string) {
+  if (!supabaseClient) {
+    throw new Error("Supabase client not initialized")
+  }
+
   try {
     console.log(`Resequencing edition numbers for product ${productId}`)
 
     // Get all active line items for this product, ordered by creation date
-    const { data: activeItems, error } = await supabase
-      .from("order_line_items")
+    const { data: activeItems, error } = await supabaseClient
+      .from("order_line_items_v2")
       .select("*")
       .eq("product_id", productId)
       .eq("status", "active")
@@ -293,8 +329,8 @@ async function resequenceEditionNumbers(productId: string) {
       const certificateToken = item.certificate_token || crypto.randomUUID()
       const certificateGeneratedAt = item.certificate_generated_at || new Date().toISOString()
 
-      const { error: updateError } = await supabase
-        .from("order_line_items")
+      const { error: updateError } = await supabaseClient
+        .from("order_line_items_v2")
         .update({
           edition_number: editionCounter,
           updated_at: new Date().toISOString(),
@@ -315,21 +351,25 @@ async function resequenceEditionNumbers(productId: string) {
 
     console.log(`Resequencing complete. Assigned edition numbers 1 through ${editionCounter - 1}`)
   } catch (error) {
-    console.error("Error in resequenceEditionNumbers:", error)
+    console.error(`Error resequencing edition numbers:`, error)
     throw error
   }
 }
 
 async function generateCertificateUrl(lineItemId: string, orderId: string) {
+  if (!supabaseClient) {
+    throw new Error("Supabase client not initialized")
+  }
+
   try {
     const baseUrl =
       process.env.NEXT_PUBLIC_CUSTOMER_APP_URL || process.env.NEXT_PUBLIC_APP_URL || "https://your-domain.com"
-    const certificateUrl = `${baseUrl}/pages/certificate?line_item_id=${lineItemId}`
+    const certificateUrl = `${baseUrl}/certificate/${lineItemId}`
     const certificateToken = crypto.randomUUID()
     const now = new Date().toISOString()
 
-    const { error: updateError } = await supabase
-      .from("order_line_items")
+    const { error: updateError } = await supabaseClient
+      .from("order_line_items_v2")
       .update({
         certificate_url: certificateUrl,
         certificate_token: certificateToken,
@@ -345,7 +385,7 @@ async function generateCertificateUrl(lineItemId: string, orderId: string) {
       console.log(`Updated item ${lineItemId} with certificate URL`)
     }
   } catch (error) {
-    console.error("Error in generateCertificateUrl:", error)
+    console.error(`Error generating certificate URL:`, error)
     throw error
   }
 }
