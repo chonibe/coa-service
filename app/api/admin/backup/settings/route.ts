@@ -4,7 +4,7 @@ import { createClient } from "@supabase/supabase-js"
 
 const backupSettingsSchema = z.object({
   google_drive_enabled: z.boolean(),
-  google_drive_folder_id: z.string().optional(),
+  google_drive_folder_id: z.string().nullable().optional(),
   retention_days: z.number().min(1).max(365),
   max_backups: z.number().min(1).max(100),
   schedule_database: z.string(),
@@ -14,7 +14,7 @@ const backupSettingsSchema = z.object({
 const defaultSettings = {
   id: 1,
   google_drive_enabled: true,
-  google_drive_folder_id: "",
+  google_drive_folder_id: null,
   retention_days: 30,
   max_backups: 10,
   schedule_database: "0 0 * * *",
@@ -51,12 +51,18 @@ export async function POST(req: Request) {
       throw checkError
     }
 
+    // Convert empty string to null for google_drive_folder_id
+    const settingsToSave = {
+      ...settings,
+      google_drive_folder_id: settings.google_drive_folder_id === "" ? null : settings.google_drive_folder_id,
+    }
+
     console.log("API: Attempting to upsert settings to Supabase...")
     const { data, error } = await supabase
       .from("backup_settings")
       .upsert({
         id: 1,
-        ...settings,
+        ...settingsToSave,
         updated_at: new Date().toISOString(),
         created_at: existingSettings?.created_at || new Date().toISOString(),
       })
