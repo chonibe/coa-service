@@ -1,5 +1,3 @@
-import { createWriteStream, createReadStream, readdir, unlink, mkdirSync, existsSync } from 'fs';
-import { join } from 'path';
 import { BackupConfig } from '../config/backup-config';
 import { createClient } from '@supabase/supabase-js';
 import { createGzip } from 'zlib';
@@ -8,28 +6,15 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
-const readdirAsync = promisify(readdir);
-const unlinkAsync = promisify(unlink);
-
 export async function backupDatabase(config: BackupConfig): Promise<string> {
-  const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-  const backupDir = config.storage.local.path;
-  const filename = `backup-${timestamp}.json`;
-  const compressedFilename = `${filename}.gz`;
-  const backupPath = join(backupDir, filename);
-  const compressedPath = join(backupDir, compressedFilename);
-
   try {
-    // Create backup directory if it doesn't exist (cross-platform)
-    if (!existsSync(backupDir)) {
-      mkdirSync(backupDir, { recursive: true });
-    }
-
-    // Use Supabase URL and Anon Key from environment
+    console.log('Starting database backup...');
+    
+    // Use Supabase URL and Service Role Key from environment
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-    const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+    const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
     if (!supabaseUrl || !supabaseKey) {
-      throw new Error('NEXT_PUBLIC_SUPABASE_URL or NEXT_PUBLIC_SUPABASE_ANON_KEY not set in environment');
+      throw new Error('NEXT_PUBLIC_SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY not set in environment');
     }
     console.log('Supabase URL:', supabaseUrl);
     console.log('Supabase Key:', supabaseKey.substring(0, 8) + '...');
@@ -55,6 +40,7 @@ export async function backupDatabase(config: BackupConfig): Promise<string> {
     // Backup each table
     const backupData: Record<string, any[]> = {};
     for (const table of tables) {
+      console.log(`Backing up table ${table}...`);
       const { data, error } = await supabase
         .from(table)
         .select('*');
@@ -65,39 +51,38 @@ export async function backupDatabase(config: BackupConfig): Promise<string> {
       }
 
       backupData[table] = data || [];
+      console.log(`Successfully backed up ${data?.length || 0} rows from ${table}`);
     }
 
-    // Write backup to file
-    const writeStream = createWriteStream(backupPath);
-    writeStream.write(JSON.stringify(backupData, null, 2));
-    writeStream.end();
-
-    // Wait for write to complete
-    await new Promise<void>((resolve, reject) => {
-      writeStream.on('finish', () => resolve());
-      writeStream.on('error', reject);
-    });
-
-    // Compress the backup (use createReadStream)
-    await new Promise<void>((resolve, reject) => {
+    // Convert backup data to JSON string
+    const jsonData = JSON.stringify(backupData, null, 2);
+    
+    // Compress the data
+    const compressedData = await new Promise<Uint8Array>((resolve, reject) => {
       const gzip = createGzip();
-      const input = createReadStream(backupPath);
-      const output = createWriteStream(compressedPath);
-
-      input.pipe(gzip).pipe(output);
-
-      output.on('finish', () => {
-        // Remove the uncompressed file
-        unlinkAsync(backupPath).then(() => resolve()).catch(reject);
+      const chunks: Uint8Array[] = [];
+      
+      gzip.on('data', (chunk) => chunks.push(chunk));
+      gzip.on('end', () => {
+        const result = new Uint8Array(chunks.reduce((acc, chunk) => acc + chunk.length, 0));
+        let offset = 0;
+        for (const chunk of chunks) {
+          result.set(chunk, offset);
+          offset += chunk.length;
+        }
+        resolve(result);
       });
-
-      output.on('error', reject);
+      gzip.on('error', reject);
+      
+      gzip.write(jsonData);
+      gzip.end();
     });
 
-    // Clean up old backups
-    await cleanupOldBackups(config);
-
-    return compressedPath;
+    // Convert to base64 string
+    const base64Data = Buffer.from(compressedData).toString('base64');
+    console.log('Backup completed successfully');
+    
+    return base64Data;
   } catch (error) {
     console.error('Backup failed:', error);
     throw error;
@@ -105,40 +90,56 @@ export async function backupDatabase(config: BackupConfig): Promise<string> {
 }
 
 export async function cleanupOldBackups(config: BackupConfig): Promise<void> {
-  const backupDir = config.storage.local.path;
-  const retentionDays = config.storage.local.retention.days;
-  const maxBackups = config.storage.local.retention.maxBackups;
-  const cutoffDate = new Date();
-  cutoffDate.setDate(cutoffDate.getDate() - retentionDays);
-
   try {
-    // List all backup files
-    const files = await readdirAsync(backupDir);
-    const backupFiles = files
-      .filter(file => file.endsWith('.json.gz'))
-      .map(file => ({
-        name: file,
-        path: join(backupDir, file),
-        date: new Date(file.replace('backup-', '').replace('.json.gz', '').replace(/-/g, ':'))
-      }))
-      .sort((a, b) => b.date.getTime() - a.date.getTime());
+    console.log('Starting cleanup of old backups...');
+    
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+    if (!supabaseUrl || !supabaseKey) {
+      throw new Error('NEXT_PUBLIC_SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY not set in environment');
+    }
+    
+    const supabase = createClient(supabaseUrl, supabaseKey);
+    const retentionDays = config.storage.local.retention.days;
+    const maxBackups = config.storage.local.retention.maxBackups;
+    const cutoffDate = new Date();
+    cutoffDate.setDate(cutoffDate.getDate() - retentionDays);
 
-    // Remove files older than retention period
-    for (const file of backupFiles) {
-      if (file.date < cutoffDate) {
-        await unlinkAsync(file.path);
-        console.log(`Removed old backup: ${file.name}`);
+    // Get all backups
+    const { data: backups, error } = await supabase
+      .from('backups')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      throw error;
+    }
+
+    // Delete backups older than retention period
+    for (const backup of backups) {
+      const backupDate = new Date(backup.created_at);
+      if (backupDate < cutoffDate) {
+        await supabase
+          .from('backups')
+          .delete()
+          .eq('id', backup.id);
+        console.log(`Deleted old backup from ${backupDate.toISOString()}`);
       }
     }
 
-    // Remove excess backups if we have more than maxBackups
-    if (backupFiles.length > maxBackups) {
-      const filesToRemove = backupFiles.slice(maxBackups);
-      for (const file of filesToRemove) {
-        await unlinkAsync(file.path);
-        console.log(`Removed excess backup: ${file.name}`);
+    // Delete excess backups if we have more than maxBackups
+    if (backups.length > maxBackups) {
+      const backupsToDelete = backups.slice(maxBackups);
+      for (const backup of backupsToDelete) {
+        await supabase
+          .from('backups')
+          .delete()
+          .eq('id', backup.id);
+        console.log(`Deleted excess backup from ${new Date(backup.created_at).toISOString()}`);
       }
     }
+
+    console.log('Cleanup completed successfully');
   } catch (error) {
     console.error('Cleanup failed:', error);
     throw error;
