@@ -1,14 +1,11 @@
 "use client"
 
-import { useEffect, useState } from "react"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { useState, useEffect } from "react"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { Loader2, AlertCircle, Search } from "lucide-react"
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
-import { Input } from "@/components/ui/input"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Loader2 } from "lucide-react"
 
 interface LineItem {
   line_item_id: string
@@ -16,10 +13,11 @@ interface LineItem {
   title: string
   quantity: number
   price: number
-  image_url: string
+  image_url: string | null
   nfc_tag_id: string | null
   nfc_claimed_at: string | null
-  certificate_url: string
+  certificate_url: string | null
+  status: string
 }
 
 interface Order {
@@ -29,143 +27,34 @@ interface Order {
   line_items: LineItem[]
 }
 
-interface OrderListItem {
-  id: string
-  name: string
-  created_at: string
-  line_items: LineItem[]
-}
-
-interface Customer {
-  id: string
-  email: string
-  name: string
-}
-
 export default function CustomerPreviewPage() {
-  const [isLoading, setIsLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
   const [orders, setOrders] = useState<Order[]>([])
-  const [orderList, setOrderList] = useState<OrderListItem[]>([])
-  const [customers, setCustomers] = useState<Customer[]>([])
-  const [selectedCustomerId, setSelectedCustomerId] = useState<string>("")
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
   const [searchTerm, setSearchTerm] = useState("")
-  const [selectedOrderId, setSelectedOrderId] = useState<string>("")
-  const [activeTab, setActiveTab] = useState("customer")
 
   useEffect(() => {
-    fetchCustomers()
     fetchOrders()
   }, [])
 
-  useEffect(() => {
-    if (selectedCustomerId) {
-      fetchCustomerOrders(selectedCustomerId)
-    }
-  }, [selectedCustomerId])
-
-  useEffect(() => {
-    if (selectedOrderId) {
-      fetchOrderById(selectedOrderId)
-    }
-  }, [selectedOrderId])
-
-  const fetchCustomers = async () => {
-    try {
-      setIsLoading(true)
-      setError(null)
-
-      const response = await fetch("/api/admin/customers")
-      if (!response.ok) {
-        throw new Error("Failed to fetch customers")
-      }
-
-      const data = await response.json()
-      setCustomers(data.customers)
-    } catch (err: any) {
-      console.error("Error fetching customers:", err)
-      setError(err.message || "Failed to fetch customers")
-    } finally {
-      setIsLoading(false)
-    }
-  }
-
-  const fetchCustomerOrders = async (customerId: string) => {
-    try {
-      setIsLoading(true)
-      setError(null)
-
-      const response = await fetch(`/api/admin/customers/${customerId}/orders`)
-      if (!response.ok) {
-        throw new Error("Failed to fetch orders")
-      }
-
-      const data = await response.json()
-      setOrders(data.orders)
-    } catch (err: any) {
-      console.error("Error fetching orders:", err)
-      setError(err.message || "Failed to fetch orders")
-    } finally {
-      setIsLoading(false)
-    }
-  }
-
-  const fetchOrderById = async (orderId: string) => {
-    try {
-      setIsLoading(true)
-      setError(null)
-
-      const response = await fetch(`/api/admin/orders/${orderId}`)
-      if (!response.ok) {
-        throw new Error("Failed to fetch order")
-      }
-
-      const data = await response.json()
-      setOrders([data.order])
-    } catch (err: any) {
-      console.error("Error fetching order:", err)
-      setError(err.message || "Failed to fetch order")
-    } finally {
-      setIsLoading(false)
-    }
-  }
-
   const fetchOrders = async () => {
     try {
-      setIsLoading(true)
-      setError(null)
-
       const response = await fetch("/api/admin/orders")
-      if (!response.ok) {
-        throw new Error("Failed to fetch orders")
+      const data = await response.json()
+
+      if (!data.success) {
+        throw new Error(data.message || "Failed to fetch orders")
       }
 
-      const data = await response.json()
-      setOrderList(data.orders)
+      setOrders(data.orders)
     } catch (err: any) {
-      console.error("Error fetching orders:", err)
-      setError(err.message || "Failed to fetch orders")
+      setError(err.message)
     } finally {
-      setIsLoading(false)
+      setLoading(false)
     }
   }
 
-  const getNfcStatus = (lineItem: LineItem) => {
-    if (lineItem.nfc_tag_id && lineItem.nfc_claimed_at) {
-      return { status: "paired", label: "Paired", variant: "default" as const }
-    }
-    if (lineItem.nfc_tag_id) {
-      return { status: "unclaimed", label: "Unclaimed", variant: "secondary" as const }
-    }
-    return { status: "unpaired", label: "Unpaired", variant: "destructive" as const }
-  }
-
-  const filteredCustomers = customers.filter(customer => 
-    customer.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    customer.name.toLowerCase().includes(searchTerm.toLowerCase())
-  )
-
-  const filteredOrders = orderList.filter(order => 
+  const filteredOrders = orders.filter(order => 
     order.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     order.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
     order.line_items.some(item => 
@@ -173,177 +62,97 @@ export default function CustomerPreviewPage() {
     )
   )
 
-  const renderOrderContent = () => {
-    if (isLoading) {
-      return (
-        <div className="flex justify-center py-8">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
-        </div>
-      )
-    }
-
-    if (orders.length === 0) {
-      return (
-        <Card>
-          <CardContent className="pt-6">
-            <p className="text-center text-muted-foreground">No orders found</p>
-          </CardContent>
-        </Card>
-      )
-    }
-
+  if (loading) {
     return (
-      <div className="space-y-6">
-        {orders.map((order) => (
-          <Card key={order.id}>
-            <CardHeader>
-              <CardTitle>Order {order.name}</CardTitle>
-              <CardDescription>
-                Placed on {new Date(order.created_at).toLocaleDateString()}
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {order.line_items.map((item) => {
-                  const nfcStatus = getNfcStatus(item)
-                  return (
-                    <div
-                      key={item.line_item_id}
-                      className="flex items-center justify-between p-4 border rounded-lg"
-                    >
-                      <div className="flex items-center space-x-4">
-                        {item.image_url && (
-                          <img
-                            src={item.image_url}
-                            alt={item.title}
-                            className="w-16 h-16 object-cover rounded"
-                          />
-                        )}
-                        <div>
-                          <h3 className="font-medium">{item.title}</h3>
-                          <p className="text-sm text-muted-foreground">
-                            Quantity: {item.quantity}
-                          </p>
-                        </div>
-                      </div>
-                      <div className="flex items-center space-x-4">
-                        <Badge variant={nfcStatus.variant}>{nfcStatus.label}</Badge>
-                        <Button
-                          variant="outline"
-                          onClick={() => window.open(item.certificate_url, "_blank")}
-                        >
-                          View Certificate
-                        </Button>
-                      </div>
-                    </div>
-                  )
-                })}
-              </div>
-            </CardContent>
-          </Card>
-        ))}
+      <div className="flex items-center justify-center min-h-screen">
+        <Loader2 className="h-8 w-8 animate-spin" />
       </div>
     )
   }
 
-  if (isLoading && !selectedCustomerId && !selectedOrderId) {
+  if (error) {
     return (
-      <div className="flex justify-center items-center min-h-screen">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-red-500">Error: {error}</div>
       </div>
     )
   }
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold mb-4">Preview Dashboard</h1>
-        <p className="text-muted-foreground mb-6">
-          View and test the customer experience by customer or order
-        </p>
+    <div className="container mx-auto py-8">
+      <div className="flex justify-between items-center mb-8">
+        <h1 className="text-3xl font-bold">Order Preview</h1>
+        <div className="w-64">
+          <Input
+            placeholder="Search orders by name, ID, or product..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
+        </div>
+      </div>
 
-        <Tabs defaultValue="customer" className="mb-6" onValueChange={setActiveTab}>
-          <TabsList>
-            <TabsTrigger value="customer">Customer View</TabsTrigger>
-            <TabsTrigger value="order">Order View</TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="customer">
-            <div className="flex flex-col sm:flex-row gap-4 mb-6">
-              <div className="flex-1">
-                <Input
-                  placeholder="Search customers by name or email..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                />
+      <div className="grid gap-6">
+        {filteredOrders.map((order) => (
+          <Card key={order.id}>
+            <CardHeader>
+              <div className="flex justify-between items-start">
+                <div>
+                  <CardTitle className="text-xl">{order.name}</CardTitle>
+                  <p className="text-sm text-gray-500">
+                    Created: {new Date(order.created_at).toLocaleDateString()}
+                  </p>
+                </div>
+                <Badge variant="outline">
+                  {order.line_items.length} items
+                </Badge>
               </div>
-              <Select value={selectedCustomerId} onValueChange={setSelectedCustomerId}>
-                <SelectTrigger className="w-[300px]">
-                  <SelectValue placeholder="Select a customer" />
-                </SelectTrigger>
-                <SelectContent>
-                  {filteredCustomers.map((customer) => (
-                    <SelectItem key={customer.id} value={customer.id}>
-                      {customer.name} ({customer.email})
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </TabsContent>
-
-          <TabsContent value="order">
-            <div className="flex flex-col sm:flex-row gap-4 mb-6">
-              <div className="flex-1">
-                <Input
-                  placeholder="Search orders by ID, name, or product..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                />
+            </CardHeader>
+            <CardContent>
+              <div className="grid gap-4">
+                {order.line_items.map((item) => (
+                  <div
+                    key={item.line_item_id}
+                    className="flex items-center justify-between p-4 border rounded-lg"
+                  >
+                    <div className="flex items-center gap-4">
+                      {item.image_url && (
+                        <img
+                          src={item.image_url}
+                          alt={item.title}
+                          className="w-16 h-16 object-cover rounded"
+                        />
+                      )}
+                      <div>
+                        <h3 className="font-medium">{item.title}</h3>
+                        <p className="text-sm text-gray-500">
+                          Quantity: {item.quantity} × ${item.price}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {item.nfc_tag_id ? (
+                        <Badge variant="default">
+                          NFC Tag: {item.nfc_tag_id}
+                        </Badge>
+                      ) : (
+                        <Badge variant="secondary">No NFC Tag</Badge>
+                      )}
+                      {item.certificate_url && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => item.certificate_url && window.open(item.certificate_url, "_blank")}
+                        >
+                          View Certificate
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                ))}
               </div>
-              <Select value={selectedOrderId} onValueChange={setSelectedOrderId}>
-                <SelectTrigger className="w-[300px]">
-                  <SelectValue placeholder="Select an order" />
-                </SelectTrigger>
-                <SelectContent>
-                  {filteredOrders.map((order) => (
-                    <SelectItem key={order.id} value={order.id}>
-                      {order.name} - {order.line_items.length} items - {new Date(order.created_at).toLocaleDateString()}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </TabsContent>
-        </Tabs>
-
-        {error && (
-          <Alert variant="destructive" className="mb-6">
-            <AlertCircle className="h-4 w-4" />
-            <AlertTitle>Error</AlertTitle>
-            <AlertDescription>{error}</AlertDescription>
-          </Alert>
-        )}
-
-        {activeTab === "customer" && !selectedCustomerId ? (
-          <Card>
-            <CardContent className="pt-6">
-              <p className="text-center text-muted-foreground">
-                Select a customer to preview their dashboard
-              </p>
             </CardContent>
           </Card>
-        ) : activeTab === "order" && !selectedOrderId ? (
-          <Card>
-            <CardContent className="pt-6">
-              <p className="text-center text-muted-foreground">
-                Select an order to preview its details
-              </p>
-            </CardContent>
-          </Card>
-        ) : (
-          renderOrderContent()
-        )}
+        ))}
       </div>
     </div>
   )

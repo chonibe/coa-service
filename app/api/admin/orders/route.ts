@@ -22,7 +22,8 @@ export async function GET(request: NextRequest) {
         img_url,
         nfc_tag_id,
         nfc_claimed_at,
-        certificate_url
+        certificate_url,
+        status
       `)
       .order("created_at", { ascending: false })
       .limit(100)
@@ -32,18 +33,18 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ success: false, message: "Failed to fetch orders" }, { status: 500 })
     }
 
-    // Group line items by order
+    // Group line items by order_name
     const ordersMap = new Map()
     lineItems.forEach(item => {
-      if (!ordersMap.has(item.order_id)) {
-        ordersMap.set(item.order_id, {
+      if (!ordersMap.has(item.order_name)) {
+        ordersMap.set(item.order_name, {
           id: item.order_id,
           name: item.order_name,
           created_at: item.created_at,
           line_items: []
         })
       }
-      ordersMap.get(item.order_id).line_items.push({
+      ordersMap.get(item.order_name).line_items.push({
         line_item_id: item.line_item_id,
         order_id: item.order_id,
         title: item.name,
@@ -52,7 +53,8 @@ export async function GET(request: NextRequest) {
         image_url: item.img_url,
         nfc_tag_id: item.nfc_tag_id,
         nfc_claimed_at: item.nfc_claimed_at,
-        certificate_url: item.certificate_url
+        certificate_url: item.certificate_url,
+        status: item.status
       })
     })
 
