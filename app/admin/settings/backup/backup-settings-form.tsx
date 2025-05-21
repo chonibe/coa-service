@@ -143,6 +143,9 @@ export function BackupSettingsForm() {
       }
 
       toast.success(`${type === "database" ? "Database" : "Google Sheets"} backup triggered successfully`)
+      
+      // Refresh the backup list by triggering a custom event
+      window.dispatchEvent(new CustomEvent("backup-created"))
     } catch (error) {
       toast.error(`Failed to trigger ${type} backup`)
       console.error(error)

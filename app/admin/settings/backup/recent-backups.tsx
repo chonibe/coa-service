@@ -29,6 +29,17 @@ export function RecentBackups() {
 
   useEffect(() => {
     fetchBackups()
+
+    // Listen for backup-created event
+    const handleBackupCreated = () => {
+      fetchBackups()
+    }
+
+    window.addEventListener("backup-created", handleBackupCreated)
+
+    return () => {
+      window.removeEventListener("backup-created", handleBackupCreated)
+    }
   }, [])
 
   async function fetchBackups() {
