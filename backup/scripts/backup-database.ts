@@ -48,8 +48,7 @@ export async function backupDatabase(config: BackupConfig): Promise<string> {
       'nfc_tags',
       'collector_benefit_claims',
       'product_benefits',
-      'benefit_types',
-      'tax_forms'
+      'benefit_types'
     ];
 
     // Backup each table
