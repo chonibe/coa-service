@@ -26,6 +26,17 @@ const TABLES_TO_EXPORT = [
   'benefit_types'
 ];
 
+function validateServiceAccountEmail(email: string): boolean {
+  if (!email) return false;
+  
+  // Check if it's a valid email format
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailRegex.test(email)) return false;
+  
+  // Check if it's a service account email
+  return email.endsWith('.iam.gserviceaccount.com');
+}
+
 function validateGoogleCredentials() {
   const clientEmail = process.env.GOOGLE_CLIENT_EMAIL;
   const privateKey = process.env.GOOGLE_PRIVATE_KEY;
@@ -36,19 +47,36 @@ function validateGoogleCredentials() {
   console.log('Project ID:', projectId || 'not set');
   console.log('Private Key:', privateKey ? 'set' : 'not set');
 
+  // Check if client email is set and valid
   if (!clientEmail) {
-    throw new Error('GOOGLE_CLIENT_EMAIL is not set in environment variables');
-  }
-  if (!privateKey) {
-    throw new Error('GOOGLE_PRIVATE_KEY is not set in environment variables');
-  }
-  if (!projectId) {
-    throw new Error('GOOGLE_PROJECT_ID is not set in environment variables');
+    throw new Error(
+      'GOOGLE_CLIENT_EMAIL is not set in environment variables.\n' +
+      'Please set it to your Google service account email (e.g., service-account@project-id.iam.gserviceaccount.com)'
+    );
   }
 
-  // Validate email format
-  if (!clientEmail.includes('@') || !clientEmail.endsWith('.iam.gserviceaccount.com')) {
-    throw new Error('GOOGLE_CLIENT_EMAIL must be a valid service account email');
+  if (!validateServiceAccountEmail(clientEmail)) {
+    throw new Error(
+      'GOOGLE_CLIENT_EMAIL must be a valid Google service account email.\n' +
+      'Expected format: service-account@project-id.iam.gserviceaccount.com\n' +
+      'Current value: ' + clientEmail
+    );
+  }
+
+  // Check if private key is set
+  if (!privateKey) {
+    throw new Error(
+      'GOOGLE_PRIVATE_KEY is not set in environment variables.\n' +
+      'Please set it to the private key from your service account JSON file'
+    );
+  }
+
+  // Check if project ID is set
+  if (!projectId) {
+    throw new Error(
+      'GOOGLE_PROJECT_ID is not set in environment variables.\n' +
+      'Please set it to your Google Cloud project ID'
+    );
   }
 
   return {
@@ -70,7 +98,7 @@ function formatPrivateKey(key: string): string {
     return formattedKey.replace(/\\n/g, '\n');
   } catch (error) {
     console.error('Error formatting private key:', error);
-    throw new Error('Failed to format private key');
+    throw new Error('Failed to format private key. Please ensure it is a valid private key from your service account JSON file.');
   }
 }
 
@@ -111,7 +139,13 @@ export async function exportToSheets(config: BackupConfig, backupPath?: string):
           '1. The service account exists in your Google Cloud project\n' +
           '2. The private key is correct and properly formatted\n' +
           '3. The service account has the necessary permissions\n' +
-          '4. The project ID matches your Google Cloud project'
+          '4. The project ID matches your Google Cloud project\n\n' +
+          'You can verify these in the Google Cloud Console:\n' +
+          '1. Go to IAM & Admin > Service Accounts\n' +
+          '2. Find your service account\n' +
+          '3. Click on it and go to the "Keys" tab\n' +
+          '4. Create a new key if needed (JSON format)\n' +
+          '5. Compare the values in the JSON file with your environment variables'
         );
       }
       throw new Error(`Failed to authenticate with Google Sheets API: ${error.message}`);
