@@ -16,7 +16,7 @@ export async function GET(request: NextRequest) {
         order_id,
         order_name,
         created_at,
-        title,
+        product_title,
         quantity,
         price,
         image_url,
@@ -46,7 +46,7 @@ export async function GET(request: NextRequest) {
       ordersMap.get(item.order_id).line_items.push({
         line_item_id: item.line_item_id,
         order_id: item.order_id,
-        title: item.title,
+        title: item.product_title,
         quantity: item.quantity,
         price: item.price,
         image_url: item.image_url,
