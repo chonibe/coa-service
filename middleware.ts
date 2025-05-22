@@ -2,6 +2,11 @@ import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
 
 export function middleware(request: NextRequest) {
+  // Skip middleware for API routes
+  if (request.nextUrl.pathname.startsWith('/api/')) {
+    return NextResponse.next()
+  }
+
   // Check if the request is for an admin page (except the login page)
   if (request.nextUrl.pathname.startsWith("/admin") && !request.nextUrl.pathname.startsWith("/admin/login")) {
     // Check if the user is authenticated
@@ -20,7 +25,7 @@ export function middleware(request: NextRequest) {
 // Update the matcher to properly exclude API routes
 export const config = {
   matcher: [
-    // Match admin routes except login
+    // Match admin routes except login and API routes
     "/admin/:path*",
     // Exclude API routes, certificate routes, and static files
     "/((?!api|certificate|_next/static|_next/image|favicon.ico).*)",

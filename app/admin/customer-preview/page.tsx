@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { toast } from "sonner"
+import { ErrorBoundary } from "react-error-boundary"
 
 interface LineItem {
   line_item_id: string
@@ -26,7 +27,27 @@ interface Order {
   line_items: LineItem[]
 }
 
-export default function CustomerPreviewPage() {
+function ErrorFallback({ error, resetErrorBoundary }: { error: Error; resetErrorBoundary: () => void }) {
+  return (
+    <div className="min-h-screen bg-gray-100 p-8">
+      <div className="max-w-7xl mx-auto">
+        <h1 className="text-3xl font-bold mb-8">Customer Preview</h1>
+        <div className="bg-red-50 border border-red-200 rounded-lg p-6">
+          <h2 className="text-xl font-semibold text-red-800 mb-2">Something went wrong</h2>
+          <p className="text-red-600 mb-4">{error.message}</p>
+          <button
+            onClick={resetErrorBoundary}
+            className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
+          >
+            Try again
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function CustomerPreviewContent() {
   const [orders, setOrders] = useState<Order[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -164,5 +185,13 @@ export default function CustomerPreviewPage() {
         )}
       </div>
     </div>
+  )
+}
+
+export default function CustomerPreviewPage() {
+  return (
+    <ErrorBoundary FallbackComponent={ErrorFallback}>
+      <CustomerPreviewContent />
+    </ErrorBoundary>
   )
 } 
