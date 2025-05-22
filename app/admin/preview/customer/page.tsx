@@ -12,6 +12,7 @@ import { AlertCircle, CheckCircle, Clock, ShoppingBag, User, BadgeIcon as Certif
 import { toast } from "sonner"
 import { useRouter } from "next/navigation"
 import { CertificateModal } from "./certificate-modal"
+import { motion, useMotionValue, useSpring, useTransform } from "framer-motion"
 
 // Utility functions
 const getStatusColor = (status: string) => {
@@ -154,98 +155,107 @@ export default function CustomerPreviewPage() {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-white">Your Orders</h1>
-        <div className="relative w-64">
-          <Input
-            type="search"
+    <div className="min-h-screen bg-zinc-950 text-white p-4 sm:p-6">
+      <div className="max-w-7xl mx-auto">
+        <div className="mb-8">
+          <h1 className="text-2xl sm:text-3xl font-bold mb-2">Customer Preview</h1>
+          <p className="text-zinc-400">View and manage customer orders</p>
+        </div>
+
+        {/* Search and Filter */}
+        <div className="mb-6">
+          <input
+            type="text"
             placeholder="Search orders..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="bg-zinc-900 border-zinc-800 text-white placeholder:text-zinc-500"
+            className="w-full sm:w-96 px-4 py-2 rounded-lg bg-zinc-900 border border-zinc-800 focus:outline-none focus:ring-2 focus:ring-indigo-500"
           />
         </div>
-      </div>
 
-      {filteredOrders.length === 0 ? (
-        <Alert>
-          <AlertCircle className="h-4 w-4" />
-          <AlertTitle>No orders found</AlertTitle>
-          <AlertDescription>
-            {searchTerm ? 'Try adjusting your search terms' : 'You haven\'t placed any orders yet'}
-          </AlertDescription>
-        </Alert>
-      ) : (
-        <div className="grid gap-6">
+        {/* Orders List */}
+        <div className="space-y-6">
           {filteredOrders.map((order) => (
-            <Card key={order.id} className="p-6 bg-zinc-900 border-zinc-800">
-              <div className="flex items-start justify-between">
-                <div>
-                  <div className="flex items-center gap-2 mb-2">
-                    <ShoppingBag className="h-4 w-4 text-zinc-400" />
-                    <span className="text-sm text-zinc-400">Order #{order.id}</span>
+            <div
+              key={order.id}
+              className="bg-zinc-900 rounded-xl border border-zinc-800 overflow-hidden"
+            >
+              <div className="p-4 sm:p-6">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
+                  <div>
+                    <h2 className="text-lg sm:text-xl font-semibold">Order #{order.id}</h2>
+                    <p className="text-sm text-zinc-400">
+                      {new Date(order.created_at).toLocaleDateString()}
+                    </p>
                   </div>
                   <div className="flex items-center gap-2">
-                    <Clock className="h-4 w-4 text-zinc-400" />
-                    <span className="text-sm text-zinc-400">{formatDate(order.created_at)}</span>
+                    <span className={`px-3 py-1 rounded-full text-sm ${
+                      order.line_items[0]?.status === 'completed' ? 'bg-green-500/20 text-green-400' :
+                      order.line_items[0]?.status === 'processing' ? 'bg-blue-500/20 text-blue-400' :
+                      'bg-yellow-500/20 text-yellow-400'
+                    }`}>
+                      {order.line_items[0]?.status?.charAt(0).toUpperCase() + order.line_items[0]?.status?.slice(1) || 'Unknown'}
+                    </span>
+                    <span className="text-lg font-semibold">
+                      ${order.line_items.reduce((total, item) => total + (item.price * item.quantity), 0).toFixed(2)}
+                    </span>
                   </div>
                 </div>
-                <div className="flex flex-col items-end gap-2">
-                  <Badge variant="outline" className={getStatusColor(order.line_items[0]?.status || '')}>
-                    {order.line_items[0]?.status || 'Unknown'}
-                  </Badge>
-                  <span className="text-lg font-semibold text-white">
-                    {formatCurrency(order.line_items.reduce((total, item) => total + (item.price * item.quantity), 0))}
-                  </span>
-                </div>
-              </div>
 
-              <div className="mt-6 space-y-4">
-                {order.line_items.map((item) => (
-                  <div
-                    key={item.id}
-                    className="group relative flex items-start gap-4 p-4 bg-zinc-800/50 rounded-lg border border-zinc-700/50 hover:border-zinc-600/50 transition-colors overflow-hidden"
-                  >
-                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000" />
-                    {item.img_url && (
-                      <div className="relative w-24 h-24 flex-shrink-0">
-                        <img
-                          src={item.img_url}
-                          alt={item.name}
-                          className="w-full h-full object-cover rounded-lg"
-                        />
-                      </div>
-                    )}
-                    <div className="flex-1 min-w-0">
-                      <h3 className="font-medium text-white truncate">{item.name}</h3>
-                      {item.vendor_name && (
-                        <p className="text-sm text-zinc-400 mt-1">{item.vendor_name}</p>
-                      )}
-                      {item.edition_number && item.edition_total && (
-                        <div className="flex items-center gap-2 mt-2">
-                          <Tag className="h-4 w-4 text-indigo-400" />
-                          <span className="text-sm text-indigo-400">
-                            Edition #{item.edition_number} of {item.edition_total}
-                          </span>
-                        </div>
-                      )}
-                    </div>
-                    <Button
-                      variant="outline"
-                      size="sm"
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {order.line_items.map((item) => (
+                    <motion.div
+                      key={item.id}
+                      className="group relative bg-zinc-800/50 rounded-lg overflow-hidden cursor-pointer"
+                      whileHover={{ scale: 1.02 }}
+                      transition={{ duration: 0.2 }}
                       onClick={() => setSelectedLineItem(item)}
-                      className="ml-4"
                     >
-                      View Certificate
-                    </Button>
-                  </div>
-                ))}
+                      <div className="aspect-[4/3] relative">
+                        {item.img_url ? (
+                          <motion.img
+                            src={item.img_url}
+                            alt={item.name}
+                            className="w-full h-full object-cover"
+                            style={{
+                              transformStyle: "preserve-3d",
+                              transform: "perspective(1000px)",
+                            }}
+                            whileHover={{
+                              rotateX: [0, -5, 5, 0],
+                              rotateY: [0, 5, -5, 0],
+                              transition: {
+                                duration: 0.5,
+                                ease: "easeInOut",
+                              },
+                            }}
+                          />
+                        ) : (
+                          <div className="w-full h-full bg-zinc-700 flex items-center justify-center">
+                            <span className="text-zinc-400">No image</span>
+                          </div>
+                        )}
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                      </div>
+                      <div className="p-4">
+                        <h3 className="font-medium text-white mb-1 line-clamp-1">{item.name}</h3>
+                        {item.vendor_name && (
+                          <p className="text-sm text-zinc-400 mb-2">{item.vendor_name}</p>
+                        )}
+                        {item.edition_number && item.edition_total && (
+                          <p className="text-sm text-indigo-400">
+                            Edition #{item.edition_number} of {item.edition_total}
+                          </p>
+                        )}
+                      </div>
+                    </motion.div>
+                  ))}
+                </div>
               </div>
-            </Card>
+            </div>
           ))}
         </div>
-      )}
+      </div>
 
       <CertificateModal
         lineItem={selectedLineItem ? {
