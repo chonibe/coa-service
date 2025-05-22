@@ -139,15 +139,13 @@ export function CertificateModal({ lineItem, onClose }: CertificateModalProps) {
             <X className="h-4 w-4" />
           </Button>
         </div>
-        <div className="mt-6">
+        <div className="mt-6 perspective-1000">
           <motion.div
             ref={cardRef}
             onMouseMove={handleMouseMove}
             onMouseLeave={handleMouseLeave}
             onClick={() => setIsFlipped(!isFlipped)}
             style={{
-              rotateX: isFlipped ? 180 : rotateX,
-              rotateY: isFlipped ? 0 : rotateY,
               transformStyle: "preserve-3d",
             }}
             className="relative w-full aspect-[3/4] rounded-xl bg-gradient-to-br from-zinc-800 to-zinc-900 p-8 shadow-2xl cursor-pointer"
@@ -155,18 +153,20 @@ export function CertificateModal({ lineItem, onClose }: CertificateModalProps) {
               rotateY: isFlipped ? 180 : 0,
             }}
             transition={{
-              duration: 0.6,
+              duration: 0.8,
               type: "spring",
-              stiffness: 100,
+              stiffness: 80,
+              damping: 15,
             }}
           >
             <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent translate-x-[-100%] animate-shimmer" />
             
             {/* Front of card */}
             <motion.div
-              className="absolute inset-0 backface-hidden"
+              className="absolute inset-0"
               style={{
                 backfaceVisibility: "hidden",
+                WebkitBackfaceVisibility: "hidden",
               }}
             >
               <div className="relative h-full flex flex-col items-center justify-center text-center">
@@ -194,10 +194,11 @@ export function CertificateModal({ lineItem, onClose }: CertificateModalProps) {
 
             {/* Back of card */}
             <motion.div
-              className="absolute inset-0 backface-hidden"
+              className="absolute inset-0"
               style={{
                 backfaceVisibility: "hidden",
-                rotateY: 180,
+                WebkitBackfaceVisibility: "hidden",
+                transform: "rotateY(180deg)",
               }}
             >
               <div className="relative h-full flex flex-col items-center justify-center text-center p-6">
