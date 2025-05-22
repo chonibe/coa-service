@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
 import { createClient } from '@supabase/supabase-js'
-import { cookies } from 'next/headers'
 
 // Initialize Supabase client with service role key
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
@@ -11,10 +10,10 @@ const supabase = createClient(supabaseUrl, supabaseServiceKey)
 export async function GET(request: NextRequest) {
   try {
     // Check for admin session cookie
-    const cookieStore = await cookies()
-    const adminSession = cookieStore.get('admin_session')
+    const adminSession = request.cookies.get('admin_session')
 
     if (!adminSession) {
+      console.log("No admin session cookie found")
       return NextResponse.json({ success: false, message: 'Unauthorized' }, { status: 401 })
     }
 
@@ -61,6 +60,7 @@ export async function GET(request: NextRequest) {
     }
 
     if (!lineItems) {
+      console.log("No line items found")
       return NextResponse.json({ 
         success: false, 
         message: 'No line items found'

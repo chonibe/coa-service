@@ -59,10 +59,17 @@ function CustomerPreviewContent() {
         setLoading(true)
         setError(null)
         
-        const response = await fetch('/api/admin/orders')
+        const response = await fetch('/api/admin/orders', {
+          credentials: 'include' // Include cookies in the request
+        })
         const data = await response.json()
 
         if (!response.ok) {
+          if (response.status === 401) {
+            // Redirect to login if unauthorized
+            router.push('/admin/login')
+            return
+          }
           throw new Error(data.message || 'Failed to fetch orders')
         }
 
@@ -81,7 +88,7 @@ function CustomerPreviewContent() {
     }
 
     fetchOrders()
-  }, [])
+  }, [router])
 
   if (loading) {
     return (
