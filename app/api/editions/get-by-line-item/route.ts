@@ -9,6 +9,14 @@ const supabase = createClient(
 
 export async function GET(request: Request) {
   try {
+    // Check for admin session cookie
+    const cookieStore = await cookies()
+    const adminSession = cookieStore.get('admin_session')
+
+    if (!adminSession) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
     // Get the productId from the query parameters
     const { searchParams } = new URL(request.url)
     const productId = searchParams.get('productId')
