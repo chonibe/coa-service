@@ -1,12 +1,10 @@
 "use client"
 
-import { useState, useRef, useEffect } from "react"
+import { useState, useRef, useEffect, ReactNode } from "react"
 import { Dialog, DialogContent } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
-import { X } from "lucide-react"
-import { motion, useMotionValue, useSpring, useTransform } from "framer-motion"
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
-import { AlertCircle, CheckCircle, Clock, ShoppingBag, User, BadgeIcon as Certificate } from "lucide-react"
+import { X, BadgeIcon as Certificate, User, Calendar, Hash } from "lucide-react"
+import { motion, useMotionValue, useSpring, useTransform, AnimatePresence } from "framer-motion"
 
 // Add shimmer effect styles
 const shimmerStyles = `
@@ -86,6 +84,7 @@ interface CertificateModalProps {
 
 export function CertificateModal({ lineItem, onClose }: CertificateModalProps) {
   const [isOpen, setIsOpen] = useState(false)
+  const [isFlipped, setIsFlipped] = useState(false)
   const cardRef = useRef<HTMLDivElement>(null)
   const x = useMotionValue(0)
   const y = useMotionValue(0)
@@ -97,7 +96,7 @@ export function CertificateModal({ lineItem, onClose }: CertificateModalProps) {
   const rotateY = useTransform(mouseXSpring, [-0.5, 0.5], ["-17.5deg", "17.5deg"])
 
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (!cardRef.current) return
+    if (!cardRef.current || isFlipped) return
 
     const rect = cardRef.current.getBoundingClientRect()
     const width = rect.width
@@ -117,6 +116,7 @@ export function CertificateModal({ lineItem, onClose }: CertificateModalProps) {
 
   useEffect(() => {
     setIsOpen(!!lineItem)
+    setIsFlipped(false)
   }, [lineItem])
 
   if (!lineItem) return null
@@ -144,34 +144,101 @@ export function CertificateModal({ lineItem, onClose }: CertificateModalProps) {
             ref={cardRef}
             onMouseMove={handleMouseMove}
             onMouseLeave={handleMouseLeave}
+            onClick={() => setIsFlipped(!isFlipped)}
             style={{
-              rotateX,
-              rotateY,
+              rotateX: isFlipped ? 180 : rotateX,
+              rotateY: isFlipped ? 0 : rotateY,
               transformStyle: "preserve-3d",
             }}
-            className="relative w-full aspect-[3/4] rounded-xl bg-gradient-to-br from-zinc-800 to-zinc-900 p-8 shadow-2xl"
+            className="relative w-full aspect-[3/4] rounded-xl bg-gradient-to-br from-zinc-800 to-zinc-900 p-8 shadow-2xl cursor-pointer"
+            animate={{
+              rotateY: isFlipped ? 180 : 0,
+            }}
+            transition={{
+              duration: 0.6,
+              type: "spring",
+              stiffness: 100,
+            }}
           >
             <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent translate-x-[-100%] animate-shimmer" />
-            <div className="relative h-full flex flex-col items-center justify-center text-center">
-              {lineItem.image_url && (
-                <div className="w-32 h-32 mb-6 rounded-full overflow-hidden border-2 border-zinc-700">
-                  <img
-                    src={lineItem.image_url}
-                    alt={lineItem.title}
-                    className="w-full h-full object-cover"
-                  />
+            
+            {/* Front of card */}
+            <motion.div
+              className="absolute inset-0 backface-hidden"
+              style={{
+                backfaceVisibility: "hidden",
+              }}
+            >
+              <div className="relative h-full flex flex-col items-center justify-center text-center">
+                {lineItem.image_url && (
+                  <div className="w-32 h-32 mb-6 rounded-full overflow-hidden border-2 border-zinc-700">
+                    <img
+                      src={lineItem.image_url}
+                      alt={lineItem.title}
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                )}
+                <h2 className="text-2xl font-bold text-white mb-2">{lineItem.title}</h2>
+                {lineItem.vendor && (
+                  <p className="text-zinc-400 mb-4">{lineItem.vendor}</p>
+                )}
+                {lineItem.edition_number && lineItem.edition_total && (
+                  <div className="text-indigo-400">
+                    Edition #{lineItem.edition_number} of {lineItem.edition_total}
+                  </div>
+                )}
+                <p className="text-sm text-zinc-500 mt-4">Click to view certificate details</p>
+              </div>
+            </motion.div>
+
+            {/* Back of card */}
+            <motion.div
+              className="absolute inset-0 backface-hidden"
+              style={{
+                backfaceVisibility: "hidden",
+                rotateY: 180,
+              }}
+            >
+              <div className="relative h-full flex flex-col items-center justify-center text-center p-6">
+                <div className="w-16 h-16 mb-6 rounded-full bg-indigo-500/10 flex items-center justify-center">
+                  <Certificate className="h-8 w-8 text-indigo-400" />
                 </div>
-              )}
-              <h2 className="text-2xl font-bold text-white mb-2">{lineItem.title}</h2>
-              {lineItem.vendor && (
-                <p className="text-zinc-400 mb-4">{lineItem.vendor}</p>
-              )}
-              {lineItem.edition_number && lineItem.edition_total && (
-                <div className="text-indigo-400">
-                  Edition #{lineItem.edition_number} of {lineItem.edition_total}
+                <h2 className="text-2xl font-bold text-white mb-6">Certificate of Authenticity</h2>
+                
+                <div className="space-y-4 w-full">
+                  <div className="flex items-center gap-3 text-left">
+                    <User className="h-5 w-5 text-indigo-400" />
+                    <div>
+                      <p className="text-sm text-zinc-400">Artist</p>
+                      <p className="text-white">{lineItem.vendor || "Unknown"}</p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-3 text-left">
+                    <Hash className="h-5 w-5 text-indigo-400" />
+                    <div>
+                      <p className="text-sm text-zinc-400">Edition</p>
+                      <p className="text-white">
+                        {lineItem.edition_number && lineItem.edition_total
+                          ? `#${lineItem.edition_number} of ${lineItem.edition_total}`
+                          : "Limited Edition"}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-3 text-left">
+                    <Calendar className="h-5 w-5 text-indigo-400" />
+                    <div>
+                      <p className="text-sm text-zinc-400">Created</p>
+                      <p className="text-white">{new Date().toLocaleDateString()}</p>
+                    </div>
+                  </div>
                 </div>
-              )}
-            </div>
+
+                <p className="text-sm text-zinc-500 mt-6">Click to flip back</p>
+              </div>
+            </motion.div>
           </motion.div>
         </div>
       </DialogContent>
