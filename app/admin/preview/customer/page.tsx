@@ -202,21 +202,20 @@ export default function CustomerPreviewPage() {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                <div className="space-y-4">
                   {order.line_items.map((item) => (
-                    <motion.div
+                    <div
                       key={item.id}
-                      className="group relative bg-zinc-800/50 rounded-lg overflow-hidden cursor-pointer"
-                      whileHover={{ scale: 1.02 }}
-                      transition={{ duration: 0.2 }}
+                      className="group relative flex items-start gap-4 p-4 bg-zinc-800/50 rounded-lg border border-zinc-700/50 hover:border-zinc-600/50 transition-colors overflow-hidden cursor-pointer"
                       onClick={() => setSelectedLineItem(item)}
                     >
-                      <div className="aspect-[4/3] relative">
-                        {item.img_url ? (
+                      <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000" />
+                      {item.img_url && (
+                        <div className="relative w-24 h-24 flex-shrink-0">
                           <motion.img
                             src={item.img_url}
                             alt={item.name}
-                            className="w-full h-full object-cover"
+                            className="w-full h-full object-cover rounded-lg"
                             style={{
                               transformStyle: "preserve-3d",
                               transform: "perspective(1000px)",
@@ -230,25 +229,23 @@ export default function CustomerPreviewPage() {
                               },
                             }}
                           />
-                        ) : (
-                          <div className="w-full h-full bg-zinc-700 flex items-center justify-center">
-                            <span className="text-zinc-400">No image</span>
-                          </div>
-                        )}
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                      </div>
-                      <div className="p-4">
-                        <h3 className="font-medium text-white mb-1 line-clamp-1">{item.name}</h3>
+                        </div>
+                      )}
+                      <div className="flex-1 min-w-0">
+                        <h3 className="font-medium text-white truncate">{item.name}</h3>
                         {item.vendor_name && (
-                          <p className="text-sm text-zinc-400 mb-2">{item.vendor_name}</p>
+                          <p className="text-sm text-zinc-400 mt-1">{item.vendor_name}</p>
                         )}
                         {item.edition_number && item.edition_total && (
-                          <p className="text-sm text-indigo-400">
-                            Edition #{item.edition_number} of {item.edition_total}
-                          </p>
+                          <div className="flex items-center gap-2 mt-2">
+                            <Tag className="h-4 w-4 text-indigo-400" />
+                            <span className="text-sm text-indigo-400">
+                              Edition #{item.edition_number} of {item.edition_total}
+                            </span>
+                          </div>
                         )}
                       </div>
-                    </motion.div>
+                    </div>
                   ))}
                 </div>
               </div>
