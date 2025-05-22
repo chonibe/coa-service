@@ -4,6 +4,13 @@ import { supabaseAdmin } from "@/lib/supabase"
 
 export async function GET(request: NextRequest) {
   try {
+    // Check if the user is authenticated
+    const adminSession = request.cookies.get("admin_session")
+    if (!adminSession) {
+      console.log("No admin session found")
+      return NextResponse.json({ success: false, message: "Unauthorized" }, { status: 401 })
+    }
+
     if (!supabaseAdmin) {
       const error = new Error("Database connection error: Supabase admin client not initialized")
       console.error(error)
