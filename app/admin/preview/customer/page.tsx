@@ -70,6 +70,21 @@ const getStatusColor = (status: string) => {
   }
 }
 
+// Add shimmer effect component
+const Shimmer = () => (
+  <div className="animate-shimmer bg-gradient-to-r from-gray-200 via-gray-100 to-gray-200 bg-[length:200%_100%] h-full w-full" />
+)
+
+// Add 3D card effect styles
+const cardStyles = {
+  transform: 'perspective(1000px) rotateX(0deg) rotateY(0deg)',
+  transition: 'transform 0.3s ease-in-out',
+  transformStyle: 'preserve-3d',
+  '&:hover': {
+    transform: 'perspective(1000px) rotateX(5deg) rotateY(5deg)',
+  },
+}
+
 class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
   constructor(props: ErrorBoundaryProps) {
     super(props)
@@ -157,26 +172,40 @@ function CustomerPreviewContent() {
       <div className="min-h-screen bg-gray-100 p-8">
         <div className="max-w-7xl mx-auto">
           <h1 className="text-3xl font-bold mb-8">Customer Preview</h1>
-          <div className="animate-pulse space-y-6">
+          <div className="space-y-6">
             {[1, 2, 3].map((i) => (
-              <div key={i} className="bg-white rounded-lg shadow">
+              <div key={i} className="bg-white rounded-lg shadow-lg overflow-hidden">
                 <div className="p-6">
                   <div className="flex justify-between items-start mb-4">
                     <div className="space-y-2">
-                      <div className="h-6 bg-gray-200 rounded w-1/3"></div>
-                      <div className="h-4 bg-gray-200 rounded w-1/4"></div>
+                      <div className="h-6 bg-gray-200 rounded w-1/3">
+                        <Shimmer />
+                      </div>
+                      <div className="h-4 bg-gray-200 rounded w-1/4">
+                        <Shimmer />
+                      </div>
                     </div>
                   </div>
                   <div className="space-y-4">
                     {[1, 2].map((j) => (
                       <div key={j} className="flex items-start space-x-4 p-4 bg-gray-50 rounded-lg">
-                        <div className="w-20 h-20 bg-gray-200 rounded"></div>
+                        <div className="w-20 h-20 bg-gray-200 rounded overflow-hidden">
+                          <Shimmer />
+                        </div>
                         <div className="flex-1 space-y-2">
-                          <div className="h-5 bg-gray-200 rounded w-1/2"></div>
-                          <div className="h-4 bg-gray-200 rounded w-1/4"></div>
+                          <div className="h-5 bg-gray-200 rounded w-1/2">
+                            <Shimmer />
+                          </div>
+                          <div className="h-4 bg-gray-200 rounded w-1/4">
+                            <Shimmer />
+                          </div>
                           <div className="flex space-x-4">
-                            <div className="h-4 bg-gray-200 rounded w-1/6"></div>
-                            <div className="h-4 bg-gray-200 rounded w-1/6"></div>
+                            <div className="h-4 bg-gray-200 rounded w-1/6">
+                              <Shimmer />
+                            </div>
+                            <div className="h-4 bg-gray-200 rounded w-1/6">
+                              <Shimmer />
+                            </div>
                           </div>
                         </div>
                       </div>
@@ -225,13 +254,17 @@ function CustomerPreviewContent() {
         <h1 className="text-3xl font-bold mb-8">Customer Preview</h1>
         
         {orders.length === 0 ? (
-          <div className="bg-white rounded-lg shadow p-6">
+          <div className="bg-white rounded-lg shadow-lg p-6">
             <p className="text-gray-500 text-center">No orders found</p>
           </div>
         ) : (
           <div className="space-y-6">
             {orders.map((order) => (
-              <div key={order.id} className="bg-white rounded-lg shadow">
+              <div 
+                key={order.id} 
+                className="bg-white rounded-lg shadow-lg overflow-hidden transition-all duration-300 hover:shadow-xl"
+                style={cardStyles}
+              >
                 <div className="p-6">
                   <div className="flex justify-between items-start mb-4">
                     <div>
@@ -244,35 +277,35 @@ function CustomerPreviewContent() {
                   
                   <div className="space-y-4">
                     {order.line_items.map((item) => (
-                      <div key={item.line_item_id} className="flex items-start space-x-4 p-4 bg-gray-50 rounded-lg">
+                      <div 
+                        key={item.line_item_id} 
+                        className="flex items-start space-x-4 p-4 bg-gray-50 rounded-lg cursor-pointer transition-all duration-200 hover:bg-gray-100"
+                        onClick={() => router.push(`/certificate/${item.line_item_id}`)}
+                      >
                         {item.image_url && (
-                          <img
-                            src={item.image_url}
-                            alt={item.title}
-                            className="w-20 h-20 object-cover rounded"
-                          />
+                          <div className="w-20 h-20 rounded overflow-hidden relative">
+                            <img
+                              src={item.image_url}
+                              alt={item.title}
+                              className="w-full h-full object-cover"
+                            />
+                            <div className="absolute inset-0 bg-black bg-opacity-0 transition-opacity duration-200 group-hover:bg-opacity-10" />
+                          </div>
                         )}
                         <div className="flex-1">
-                          <div className="flex justify-between items-start">
-                            <h3 className="font-medium">{item.title}</h3>
-                            <span className="text-sm font-medium text-gray-900">
-                              {formatCurrency(item.price)}
-                            </span>
-                          </div>
-                          <p className="text-sm text-gray-500">Vendor: {item.vendor}</p>
-                          <div className="mt-2 flex items-center space-x-4">
-                            <span className="text-sm text-gray-500">
-                              Edition: {item.edition_number} of {item.edition_total}
-                            </span>
-                            <span className={`text-sm px-2 py-1 rounded-full ${getStatusColor(item.status)}`}>
+                          <h3 className="font-medium">{item.title}</h3>
+                          <p className="text-sm text-gray-500">{item.vendor}</p>
+                          <div className="flex items-center space-x-2 mt-2">
+                            <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(item.status)}`}>
                               {item.status}
                             </span>
-                            {item.nfc_tag_id && (
-                              <span className="text-sm text-gray-500">
-                                NFC Tag: {item.nfc_tag_id}
-                              </span>
-                            )}
+                            <span className="text-sm text-gray-600">
+                              Edition #{item.edition_number} of {item.edition_total}
+                            </span>
                           </div>
+                          <p className="text-sm font-medium mt-1">
+                            {formatCurrency(item.price)}
+                          </p>
                         </div>
                       </div>
                     ))}
