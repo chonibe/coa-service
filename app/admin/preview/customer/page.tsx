@@ -43,19 +43,26 @@ const formatDate = (date: string) => {
 }
 
 interface LineItem {
-  line_item_id: string
-  title: string
-  image_url: string | null
-  vendor: string | null
+  id: string
+  order_id: string
+  name: string
+  description: string | null
+  price: number
+  quantity: number
+  vendor_name: string | null
+  status: string
+  created_at: string
+  img_url: string | null
   edition_number: number | null
   edition_total: number | null
+  nfc_tag_id: string | null
+  nfc_claimed_at: string | null
 }
 
 interface Order {
   id: string
+  name: string
   created_at: string
-  total_price: number
-  status: string
   line_items: LineItem[]
 }
 
@@ -75,7 +82,10 @@ export default function CustomerPreviewPage() {
           throw new Error('Failed to fetch orders')
         }
         const data = await response.json()
-        setOrders(data)
+        if (!data.success) {
+          throw new Error(data.message || 'Failed to fetch orders')
+        }
+        setOrders(data.orders)
       } catch (err) {
         setError(err instanceof Error ? err.message : 'An error occurred')
         toast.error('Failed to load orders')
@@ -88,9 +98,10 @@ export default function CustomerPreviewPage() {
   }, [])
 
   const filteredOrders = orders.filter(order => 
+    order.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     order.line_items.some(item => 
-      item.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      item.vendor?.toLowerCase().includes(searchTerm.toLowerCase())
+      item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      item.vendor_name?.toLowerCase().includes(searchTerm.toLowerCase())
     )
   )
 
@@ -152,11 +163,11 @@ export default function CustomerPreviewPage() {
                   </div>
                 </div>
                 <div className="flex flex-col items-end gap-2">
-                  <Badge variant="outline" className={getStatusColor(order.status)}>
-                    {order.status}
+                  <Badge variant="outline" className={getStatusColor(order.line_items[0]?.status || '')}>
+                    {order.line_items[0]?.status || 'Unknown'}
                   </Badge>
                   <span className="text-lg font-semibold text-white">
-                    {formatCurrency(order.total_price)}
+                    {formatCurrency(order.line_items.reduce((total, item) => total + (item.price * item.quantity), 0))}
                   </span>
                 </div>
               </div>
@@ -164,22 +175,22 @@ export default function CustomerPreviewPage() {
               <div className="mt-6 space-y-4">
                 {order.line_items.map((item) => (
                   <div
-                    key={item.line_item_id}
+                    key={item.id}
                     className="flex items-start gap-4 p-4 bg-zinc-800/50 rounded-lg border border-zinc-700/50 hover:border-zinc-600/50 transition-colors"
                   >
-                    {item.image_url && (
+                    {item.img_url && (
                       <div className="relative w-24 h-24 flex-shrink-0">
                         <img
-                          src={item.image_url}
-                          alt={item.title}
+                          src={item.img_url}
+                          alt={item.name}
                           className="w-full h-full object-cover rounded-lg"
                         />
                       </div>
                     )}
                     <div className="flex-1 min-w-0">
-                      <h3 className="font-medium text-white truncate">{item.title}</h3>
-                      {item.vendor && (
-                        <p className="text-sm text-zinc-400 mt-1">{item.vendor}</p>
+                      <h3 className="font-medium text-white truncate">{item.name}</h3>
+                      {item.vendor_name && (
+                        <p className="text-sm text-zinc-400 mt-1">{item.vendor_name}</p>
                       )}
                       {item.edition_number && item.edition_total && (
                         <div className="flex items-center gap-2 mt-2">
@@ -207,7 +218,14 @@ export default function CustomerPreviewPage() {
       )}
 
       <CertificateModal
-        lineItem={selectedLineItem}
+        lineItem={selectedLineItem ? {
+          line_item_id: selectedLineItem.id,
+          title: selectedLineItem.name,
+          image_url: selectedLineItem.img_url,
+          vendor: selectedLineItem.vendor_name,
+          edition_number: selectedLineItem.edition_number,
+          edition_total: selectedLineItem.edition_total
+        } : null}
         onClose={() => setSelectedLineItem(null)}
       />
     </div>
