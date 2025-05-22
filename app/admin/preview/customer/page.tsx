@@ -35,6 +35,41 @@ interface ErrorBoundaryState {
   error: Error | null
 }
 
+// Helper function to format currency
+const formatCurrency = (amount: number) => {
+  return new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: 'USD',
+  }).format(amount)
+}
+
+// Helper function to format date
+const formatDate = (dateString: string) => {
+  return new Date(dateString).toLocaleString('en-US', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  })
+}
+
+// Helper function to get status color
+const getStatusColor = (status: string) => {
+  switch (status.toLowerCase()) {
+    case 'active':
+      return 'bg-green-100 text-green-800'
+    case 'inactive':
+      return 'bg-gray-100 text-gray-800'
+    case 'pending':
+      return 'bg-yellow-100 text-yellow-800'
+    case 'completed':
+      return 'bg-blue-100 text-blue-800'
+    default:
+      return 'bg-gray-100 text-gray-800'
+  }
+}
+
 class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
   constructor(props: ErrorBoundaryProps) {
     super(props)
@@ -122,14 +157,31 @@ function CustomerPreviewContent() {
       <div className="min-h-screen bg-gray-100 p-8">
         <div className="max-w-7xl mx-auto">
           <h1 className="text-3xl font-bold mb-8">Customer Preview</h1>
-          <div className="animate-pulse space-y-4">
+          <div className="animate-pulse space-y-6">
             {[1, 2, 3].map((i) => (
-              <div key={i} className="bg-white rounded-lg shadow p-6">
-                <div className="h-4 bg-gray-200 rounded w-1/4 mb-4"></div>
-                <div className="space-y-3">
-                  <div className="h-4 bg-gray-200 rounded"></div>
-                  <div className="h-4 bg-gray-200 rounded"></div>
-                  <div className="h-4 bg-gray-200 rounded"></div>
+              <div key={i} className="bg-white rounded-lg shadow">
+                <div className="p-6">
+                  <div className="flex justify-between items-start mb-4">
+                    <div className="space-y-2">
+                      <div className="h-6 bg-gray-200 rounded w-1/3"></div>
+                      <div className="h-4 bg-gray-200 rounded w-1/4"></div>
+                    </div>
+                  </div>
+                  <div className="space-y-4">
+                    {[1, 2].map((j) => (
+                      <div key={j} className="flex items-start space-x-4 p-4 bg-gray-50 rounded-lg">
+                        <div className="w-20 h-20 bg-gray-200 rounded"></div>
+                        <div className="flex-1 space-y-2">
+                          <div className="h-5 bg-gray-200 rounded w-1/2"></div>
+                          <div className="h-4 bg-gray-200 rounded w-1/4"></div>
+                          <div className="flex space-x-4">
+                            <div className="h-4 bg-gray-200 rounded w-1/6"></div>
+                            <div className="h-4 bg-gray-200 rounded w-1/6"></div>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               </div>
             ))}
@@ -145,8 +197,16 @@ function CustomerPreviewContent() {
         <div className="max-w-7xl mx-auto">
           <h1 className="text-3xl font-bold mb-8">Customer Preview</h1>
           <div className="bg-red-50 border border-red-200 rounded-lg p-6">
-            <h2 className="text-xl font-semibold text-red-800 mb-2">Error</h2>
-            <p className="text-red-600">{error}</p>
+            <h2 className="text-xl font-semibold text-red-800 mb-2">Error Loading Orders</h2>
+            <p className="text-red-600 mb-4">{error}</p>
+            <div className="space-y-2">
+              <p className="text-sm text-gray-600">Please try the following:</p>
+              <ul className="list-disc list-inside text-sm text-gray-600">
+                <li>Check your internet connection</li>
+                <li>Make sure you're logged in</li>
+                <li>Try refreshing the page</li>
+              </ul>
+            </div>
             <button
               onClick={() => window.location.reload()}
               className="mt-4 px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
@@ -177,7 +237,7 @@ function CustomerPreviewContent() {
                     <div>
                       <h2 className="text-xl font-semibold">{order.name}</h2>
                       <p className="text-gray-500">
-                        {new Date(order.created_at).toLocaleDateString()}
+                        {formatDate(order.created_at)}
                       </p>
                     </div>
                   </div>
@@ -193,14 +253,19 @@ function CustomerPreviewContent() {
                           />
                         )}
                         <div className="flex-1">
-                          <h3 className="font-medium">{item.title}</h3>
+                          <div className="flex justify-between items-start">
+                            <h3 className="font-medium">{item.title}</h3>
+                            <span className="text-sm font-medium text-gray-900">
+                              {formatCurrency(item.price)}
+                            </span>
+                          </div>
                           <p className="text-sm text-gray-500">Vendor: {item.vendor}</p>
                           <div className="mt-2 flex items-center space-x-4">
                             <span className="text-sm text-gray-500">
                               Edition: {item.edition_number} of {item.edition_total}
                             </span>
-                            <span className="text-sm text-gray-500">
-                              Status: {item.status}
+                            <span className={`text-sm px-2 py-1 rounded-full ${getStatusColor(item.status)}`}>
+                              {item.status}
                             </span>
                             {item.nfc_tag_id && (
                               <span className="text-sm text-gray-500">
