@@ -77,16 +77,31 @@ export default function CustomerPreviewPage() {
   useEffect(() => {
     const fetchOrders = async () => {
       try {
+        console.log('Fetching orders...')
         const response = await fetch('/api/admin/orders')
+        console.log('Response status:', response.status)
+        
         if (!response.ok) {
-          throw new Error('Failed to fetch orders')
+          const errorData = await response.json()
+          console.error('Error response:', errorData)
+          throw new Error(errorData.message || 'Failed to fetch orders')
         }
+
         const data = await response.json()
+        console.log('Received data:', data)
+
         if (!data.success) {
           throw new Error(data.message || 'Failed to fetch orders')
         }
+
+        if (!Array.isArray(data.orders)) {
+          console.error('Invalid orders data:', data)
+          throw new Error('Invalid orders data received')
+        }
+
         setOrders(data.orders)
       } catch (err) {
+        console.error('Error in fetchOrders:', err)
         setError(err instanceof Error ? err.message : 'An error occurred')
         toast.error('Failed to load orders')
       } finally {
@@ -97,13 +112,15 @@ export default function CustomerPreviewPage() {
     fetchOrders()
   }, [])
 
-  const filteredOrders = orders.filter(order => 
-    order.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    order.line_items.some(item => 
-      item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      item.vendor_name?.toLowerCase().includes(searchTerm.toLowerCase())
-    )
-  )
+  const filteredOrders = orders.filter(order => {
+    if (!order || !order.line_items) return false
+    
+    return order.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      order.line_items.some(item => 
+        item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        item.vendor_name?.toLowerCase().includes(searchTerm.toLowerCase())
+      )
+  })
 
   if (loading) {
     return (
@@ -120,6 +137,18 @@ export default function CustomerPreviewPage() {
         <AlertCircle className="h-4 w-4" />
         <AlertTitle>Error</AlertTitle>
         <AlertDescription>{error}</AlertDescription>
+      </Alert>
+    )
+  }
+
+  if (!orders || orders.length === 0) {
+    return (
+      <Alert>
+        <AlertCircle className="h-4 w-4" />
+        <AlertTitle>No orders found</AlertTitle>
+        <AlertDescription>
+          You haven't placed any orders yet
+        </AlertDescription>
       </Alert>
     )
   }
