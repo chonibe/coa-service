@@ -96,7 +96,7 @@ export function CertificateModal({ lineItem, onClose }: CertificateModalProps) {
   const rotateY = useTransform(mouseXSpring, [-0.5, 0.5], ["-17.5deg", "17.5deg"])
 
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (!cardRef.current || isFlipped) return
+    if (!cardRef.current) return
 
     const rect = cardRef.current.getBoundingClientRect()
     const width = rect.width
@@ -126,7 +126,7 @@ export function CertificateModal({ lineItem, onClose }: CertificateModalProps) {
       setIsOpen(false)
       onClose()
     }}>
-      <DialogContent className="sm:max-w-[600px] bg-zinc-900 border-zinc-800">
+      <DialogContent className="sm:max-w-[800px] bg-zinc-900 border-zinc-800">
         <div className="absolute right-4 top-4">
           <Button
             variant="ghost"
@@ -148,15 +148,15 @@ export function CertificateModal({ lineItem, onClose }: CertificateModalProps) {
             style={{
               transformStyle: "preserve-3d",
             }}
-            className="relative w-full aspect-[3/4] rounded-xl bg-gradient-to-br from-zinc-800 to-zinc-900 p-8 shadow-2xl cursor-pointer"
+            className="relative w-full aspect-[4/3] rounded-xl bg-gradient-to-br from-zinc-800 to-zinc-900 p-8 shadow-2xl cursor-pointer"
             animate={{
               rotateY: isFlipped ? 180 : 0,
             }}
             transition={{
-              duration: 0.8,
+              duration: 1.2,
               type: "spring",
-              stiffness: 80,
-              damping: 15,
+              stiffness: 60,
+              damping: 12,
             }}
           >
             <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent translate-x-[-100%] animate-shimmer" />
@@ -171,7 +171,7 @@ export function CertificateModal({ lineItem, onClose }: CertificateModalProps) {
             >
               <div className="relative h-full flex flex-col items-center justify-center text-center">
                 {lineItem.image_url && (
-                  <div className="w-32 h-32 mb-6 rounded-full overflow-hidden border-2 border-zinc-700">
+                  <div className="w-64 h-64 mb-6 rounded-lg overflow-hidden border-2 border-zinc-700">
                     <img
                       src={lineItem.image_url}
                       alt={lineItem.title}
@@ -202,25 +202,25 @@ export function CertificateModal({ lineItem, onClose }: CertificateModalProps) {
               }}
             >
               <div className="relative h-full flex flex-col items-center justify-center text-center p-6">
-                <div className="w-16 h-16 mb-6 rounded-full bg-indigo-500/10 flex items-center justify-center">
-                  <Certificate className="h-8 w-8 text-indigo-400" />
+                <div className="w-20 h-20 mb-6 rounded-full bg-indigo-500/10 flex items-center justify-center">
+                  <Certificate className="h-10 w-10 text-indigo-400" />
                 </div>
-                <h2 className="text-2xl font-bold text-white mb-6">Certificate of Authenticity</h2>
+                <h2 className="text-3xl font-bold text-white mb-8">Certificate of Authenticity</h2>
                 
-                <div className="space-y-4 w-full">
-                  <div className="flex items-center gap-3 text-left">
-                    <User className="h-5 w-5 text-indigo-400" />
+                <div className="space-y-6 w-full max-w-md">
+                  <div className="flex items-center gap-4 text-left">
+                    <User className="h-6 w-6 text-indigo-400" />
                     <div>
                       <p className="text-sm text-zinc-400">Artist</p>
-                      <p className="text-white">{lineItem.vendor || "Unknown"}</p>
+                      <p className="text-lg text-white">{lineItem.vendor || "Unknown"}</p>
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-3 text-left">
-                    <Hash className="h-5 w-5 text-indigo-400" />
+                  <div className="flex items-center gap-4 text-left">
+                    <Hash className="h-6 w-6 text-indigo-400" />
                     <div>
                       <p className="text-sm text-zinc-400">Edition</p>
-                      <p className="text-white">
+                      <p className="text-lg text-white">
                         {lineItem.edition_number && lineItem.edition_total
                           ? `#${lineItem.edition_number} of ${lineItem.edition_total}`
                           : "Limited Edition"}
@@ -228,16 +228,16 @@ export function CertificateModal({ lineItem, onClose }: CertificateModalProps) {
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-3 text-left">
-                    <Calendar className="h-5 w-5 text-indigo-400" />
+                  <div className="flex items-center gap-4 text-left">
+                    <Calendar className="h-6 w-6 text-indigo-400" />
                     <div>
                       <p className="text-sm text-zinc-400">Created</p>
-                      <p className="text-white">{new Date().toLocaleDateString()}</p>
+                      <p className="text-lg text-white">{new Date().toLocaleDateString()}</p>
                     </div>
                   </div>
                 </div>
 
-                <p className="text-sm text-zinc-500 mt-6">Click to flip back</p>
+                <p className="text-sm text-zinc-500 mt-8">Click to view artwork</p>
               </div>
             </motion.div>
           </motion.div>
