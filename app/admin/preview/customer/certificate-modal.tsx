@@ -1,6 +1,10 @@
-import React, { useRef, ReactNode } from 'react'
+"use client"
+
+import { useState, useRef, useEffect } from "react"
 import { Dialog, DialogContent } from "@/components/ui/dialog"
-import { Skeleton } from "@/components/ui/skeleton"
+import { Button } from "@/components/ui/button"
+import { X } from "lucide-react"
+import { motion, useMotionValue, useSpring, useTransform } from "framer-motion"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { AlertCircle, CheckCircle, Clock, ShoppingBag, User, BadgeIcon as Certificate } from "lucide-react"
 
@@ -81,63 +85,94 @@ interface CertificateModalProps {
 }
 
 export function CertificateModal({ lineItem, onClose }: CertificateModalProps) {
+  const [isOpen, setIsOpen] = useState(false)
+  const cardRef = useRef<HTMLDivElement>(null)
+  const x = useMotionValue(0)
+  const y = useMotionValue(0)
+
+  const mouseXSpring = useSpring(x)
+  const mouseYSpring = useSpring(y)
+
+  const rotateX = useTransform(mouseYSpring, [-0.5, 0.5], ["17.5deg", "-17.5deg"])
+  const rotateY = useTransform(mouseXSpring, [-0.5, 0.5], ["-17.5deg", "17.5deg"])
+
+  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!cardRef.current) return
+
+    const rect = cardRef.current.getBoundingClientRect()
+    const width = rect.width
+    const height = rect.height
+    const mouseX = e.clientX - rect.left
+    const mouseY = e.clientY - rect.top
+    const xPct = mouseX / width - 0.5
+    const yPct = mouseY / height - 0.5
+    x.set(xPct)
+    y.set(yPct)
+  }
+
+  const handleMouseLeave = () => {
+    x.set(0)
+    y.set(0)
+  }
+
+  useEffect(() => {
+    setIsOpen(!!lineItem)
+  }, [lineItem])
+
   if (!lineItem) return null
 
   return (
-    <Dialog open={!!lineItem} onOpenChange={onClose}>
-      <DialogContent className="max-w-3xl bg-zinc-900 border-zinc-800 text-white">
-        <div className="space-y-6">
-          <div className="text-center">
-            <div className="inline-flex items-center justify-center p-2 bg-green-900/50 rounded-full mb-4">
-              <CheckCircle className="h-8 w-8 text-green-400" />
-            </div>
-            <h2 className="text-2xl font-bold text-white">Certificate of Authenticity</h2>
-            {lineItem.edition_number && lineItem.edition_total && (
-              <p className="text-zinc-400">
-                Edition #{lineItem.edition_number} of {lineItem.edition_total}
-              </p>
-            )}
-          </div>
-
-          {lineItem.image_url && (
-            <div className="aspect-video relative bg-zinc-800 rounded-lg overflow-hidden">
-              <img
-                src={lineItem.image_url}
-                alt={lineItem.title}
-                className="w-full h-full object-contain"
-              />
-            </div>
-          )}
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="border border-zinc-800 rounded-lg p-4">
-              <div className="flex items-start">
-                <Certificate className="h-5 w-5 text-indigo-400 mt-0.5 mr-2" />
-                <div>
-                  <h3 className="font-semibold text-white">Edition Details</h3>
-                  {lineItem.edition_number && lineItem.edition_total && (
-                    <p className="text-indigo-400 font-bold text-lg">
-                      #{lineItem.edition_number} of {lineItem.edition_total}
-                    </p>
-                  )}
-                  <p className="text-sm text-zinc-400">Limited Edition</p>
+    <Dialog open={isOpen} onOpenChange={() => {
+      setIsOpen(false)
+      onClose()
+    }}>
+      <DialogContent className="sm:max-w-[600px] bg-zinc-900 border-zinc-800">
+        <div className="absolute right-4 top-4">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => {
+              setIsOpen(false)
+              onClose()
+            }}
+          >
+            <X className="h-4 w-4" />
+          </Button>
+        </div>
+        <div className="mt-6">
+          <motion.div
+            ref={cardRef}
+            onMouseMove={handleMouseMove}
+            onMouseLeave={handleMouseLeave}
+            style={{
+              rotateX,
+              rotateY,
+              transformStyle: "preserve-3d",
+            }}
+            className="relative w-full aspect-[3/4] rounded-xl bg-gradient-to-br from-zinc-800 to-zinc-900 p-8 shadow-2xl"
+          >
+            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent translate-x-[-100%] animate-shimmer" />
+            <div className="relative h-full flex flex-col items-center justify-center text-center">
+              {lineItem.image_url && (
+                <div className="w-32 h-32 mb-6 rounded-full overflow-hidden border-2 border-zinc-700">
+                  <img
+                    src={lineItem.image_url}
+                    alt={lineItem.title}
+                    className="w-full h-full object-cover"
+                  />
                 </div>
-              </div>
-            </div>
-
-            {lineItem.vendor && (
-              <div className="border border-zinc-800 rounded-lg p-4">
-                <div className="flex items-start">
-                  <User className="h-5 w-5 text-indigo-400 mt-0.5 mr-2" />
-                  <div>
-                    <h3 className="font-semibold text-white">Artist</h3>
-                    <p className="text-zinc-300">{lineItem.vendor}</p>
-                    <p className="text-sm text-zinc-400">Original Creator</p>
-                  </div>
+              )}
+              <h2 className="text-2xl font-bold text-white mb-2">{lineItem.title}</h2>
+              {lineItem.vendor && (
+                <p className="text-zinc-400 mb-4">{lineItem.vendor}</p>
+              )}
+              {lineItem.edition_number && lineItem.edition_total && (
+                <div className="text-indigo-400">
+                  Edition #{lineItem.edition_number} of {lineItem.edition_total}
                 </div>
-              </div>
-            )}
-          </div>
+              )}
+            </div>
+          </motion.div>
         </div>
       </DialogContent>
     </Dialog>

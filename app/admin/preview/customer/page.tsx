@@ -11,7 +11,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { AlertCircle, CheckCircle, Clock, ShoppingBag, User, BadgeIcon as Certificate, Tag } from "lucide-react"
 import { toast } from "sonner"
 import { useRouter } from "next/navigation"
-import { FloatingTiltCard, CertificateModal } from "./certificate-modal"
+import { CertificateModal } from "./certificate-modal"
 
 // Utility functions
 const getStatusColor = (status: string) => {
@@ -179,7 +179,7 @@ export default function CustomerPreviewPage() {
       ) : (
         <div className="grid gap-6">
           {filteredOrders.map((order) => (
-            <FloatingTiltCard key={order.id} className="p-6">
+            <Card key={order.id} className="p-6 bg-zinc-900 border-zinc-800">
               <div className="flex items-start justify-between">
                 <div>
                   <div className="flex items-center gap-2 mb-2">
@@ -205,8 +205,9 @@ export default function CustomerPreviewPage() {
                 {order.line_items.map((item) => (
                   <div
                     key={item.id}
-                    className="flex items-start gap-4 p-4 bg-zinc-800/50 rounded-lg border border-zinc-700/50 hover:border-zinc-600/50 transition-colors"
+                    className="group relative flex items-start gap-4 p-4 bg-zinc-800/50 rounded-lg border border-zinc-700/50 hover:border-zinc-600/50 transition-colors overflow-hidden"
                   >
+                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000" />
                     {item.img_url && (
                       <div className="relative w-24 h-24 flex-shrink-0">
                         <img
@@ -241,7 +242,7 @@ export default function CustomerPreviewPage() {
                   </div>
                 ))}
               </div>
-            </FloatingTiltCard>
+            </Card>
           ))}
         </div>
       )}
