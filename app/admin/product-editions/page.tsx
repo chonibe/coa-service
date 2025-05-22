@@ -1,11 +1,11 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { createClient } from "@supabase/supabase-js";
 import Link from "next/link";
 import Image from "next/image";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { toast } from "sonner";
 
 interface Product {
   id: string;
@@ -18,11 +18,6 @@ interface Product {
   image_url: string | null;
 }
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
-
 export default function ProductEditionsPage() {
   const [products, setProducts] = useState<Product[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -30,16 +25,15 @@ export default function ProductEditionsPage() {
   const fetchProducts = async () => {
     setIsLoading(true);
     try {
-      const { data, error } = await supabase
-        .from("products")
-        .select("*")
-        .order("created_at", { ascending: false });
-
-      if (error) throw error;
-
+      const response = await fetch('/api/products');
+      if (!response.ok) {
+        throw new Error('Failed to fetch products');
+      }
+      const data = await response.json();
       setProducts(data || []);
     } catch (error) {
       console.error('Error fetching products:', error);
+      toast.error('Failed to fetch products');
       setProducts([]);
     } finally {
       setIsLoading(false);
