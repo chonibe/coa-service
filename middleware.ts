@@ -14,14 +14,22 @@ export function middleware(request: NextRequest) {
     }
   }
 
+  // Add a special header for API routes to bypass middleware
+  if (request.nextUrl.pathname.startsWith("/api")) {
+    const response = NextResponse.next()
+    response.headers.set("x-bypass-middleware", "true")
+    return response
+  }
+
   return NextResponse.next()
 }
 
-// Update the matcher to explicitly exclude ALL API routes and certificate routes
+// Update the matcher to properly exclude API routes
 export const config = {
   matcher: [
+    // Match admin routes except login
     "/admin/:path*",
-    // Exclude all API routes and certificate routes from middleware processing
+    // Exclude API routes, certificate routes, and static files
     "/((?!api|certificate|_next/static|_next/image|favicon.ico).*)",
   ],
 }
