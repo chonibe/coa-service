@@ -2,7 +2,7 @@ import { createClient } from '@supabase/supabase-js'
 import { NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
 
-// Initialize Supabase client
+// Initialize Supabase client with service role key
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
 const supabase = createClient(supabaseUrl, supabaseServiceKey)
@@ -17,18 +17,12 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: 'Product ID is required' }, { status: 400 })
     }
 
-    // Check if the request has the bypass header
-    const headers = new Headers(request.headers)
-    const bypassMiddleware = headers.get('x-bypass-middleware') === 'true'
+    // Check for admin session cookie
+    const cookieStore = await cookies()
+    const adminSession = cookieStore.get('admin_session')
 
-    // If not bypassing middleware, check for admin session
-    if (!bypassMiddleware) {
-      const cookieStore = await cookies()
-      const adminSession = cookieStore.get('admin_session')
-
-      if (!adminSession) {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-      }
+    if (!adminSession) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
     // Fetch line items from the database

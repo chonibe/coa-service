@@ -14,13 +14,6 @@ export function middleware(request: NextRequest) {
     }
   }
 
-  // Add a special header for API routes to bypass middleware
-  if (request.nextUrl.pathname.startsWith("/api")) {
-    const response = NextResponse.next()
-    response.headers.set("x-bypass-middleware", "true")
-    return response
-  }
-
   return NextResponse.next()
 }
 
