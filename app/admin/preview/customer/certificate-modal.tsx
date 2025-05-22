@@ -126,8 +126,8 @@ export function CertificateModal({ lineItem, onClose }: CertificateModalProps) {
       setIsOpen(false)
       onClose()
     }}>
-      <DialogContent className="sm:max-w-[800px] bg-zinc-900 border-zinc-800">
-        <div className="absolute right-4 top-4">
+      <DialogContent className="sm:max-w-[900px] bg-zinc-900 border-zinc-800">
+        <div className="absolute right-4 top-4 z-50">
           <Button
             variant="ghost"
             size="icon"
@@ -171,7 +171,7 @@ export function CertificateModal({ lineItem, onClose }: CertificateModalProps) {
             >
               <div className="relative h-full flex flex-col items-center justify-center text-center">
                 {lineItem.image_url && (
-                  <div className="w-64 h-64 mb-6 rounded-lg overflow-hidden border-2 border-zinc-700">
+                  <div className="w-80 h-80 mb-6 rounded-lg overflow-hidden border-2 border-zinc-700">
                     <img
                       src={lineItem.image_url}
                       alt={lineItem.title}
