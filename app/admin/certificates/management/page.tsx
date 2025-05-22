@@ -953,10 +953,10 @@ export default function CertificateManagementPage() {
                                 <DropdownMenuSeparator />
                                 {cert.certificate_url && (
                                   <>
-                                    <DropdownMenuItem onClick={() => window.open(cert.certificate_url, "_blank")}>
-                                      <Eye className="h-4 w-4 mr-2" />
-                                      View Certificate
-                                    </DropdownMenuItem>
+                                  <DropdownMenuItem onClick={() => window.open(cert.certificate_url, "_blank")}>
+                                    <Eye className="h-4 w-4 mr-2" />
+                                    View Certificate
+                                  </DropdownMenuItem>
                                     <DropdownMenuItem onClick={() => window.open(`/admin/certificates/preview?lineItemId=${cert.line_item_id}`, "_blank")}>
                                       <Eye className="h-4 w-4 mr-2" />
                                       Preview Certificate
