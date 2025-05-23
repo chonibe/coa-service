@@ -291,6 +291,27 @@ export function CertificateModal({ lineItem, onClose }: CertificateModalProps) {
                       </div>
                     </div>
 
+                    {/* Add vendor signature */}
+                    {lineItem.vendor && (
+                      <div className="flex items-center gap-3 sm:gap-4 text-left">
+                        <div className="w-24 h-12 sm:w-32 sm:h-16 bg-white/5 rounded-lg flex items-center justify-center">
+                          {profilePicture ? (
+                            <img
+                              src={profilePicture}
+                              alt={`${lineItem.vendor}'s signature`}
+                              className="w-full h-full object-contain"
+                            />
+                          ) : (
+                            <div className="text-xs text-zinc-500">Loading...</div>
+                          )}
+                        </div>
+                        <div>
+                          <p className="text-xs sm:text-sm text-zinc-400">Artist Signature</p>
+                          <p className="text-base sm:text-lg text-white">Verified</p>
+                        </div>
+                      </div>
+                    )}
+
                     <div className="flex items-center gap-3 sm:gap-4 text-left">
                       <Hash className="h-5 w-5 sm:h-6 sm:w-6 text-indigo-400" />
                       <div>
