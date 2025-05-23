@@ -38,18 +38,10 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ message: "Invalid Instagram URL" }, { status: 400 })
     }
 
-    // Fetch the profile picture using Instagram's oEmbed endpoint
-    const response = await fetch(
-      `https://api.instagram.com/oembed/?url=https://www.instagram.com/${username}/&format=json`
-    )
+    // Use the direct Instagram profile picture URL
+    const profilePicture = `https://www.instagram.com/${username}/media/?size=t`
 
-    if (!response.ok) {
-      console.error("Error fetching Instagram profile:", await response.text())
-      return NextResponse.json({ message: "Failed to fetch Instagram profile" }, { status: 500 })
-    }
-
-    const data = await response.json()
-    return NextResponse.json({ profilePicture: data.thumbnail_url })
+    return NextResponse.json({ profilePicture })
   } catch (error: any) {
     console.error("Error in Instagram profile API:", error)
     return NextResponse.json({ message: error.message || "An error occurred" }, { status: 500 })
