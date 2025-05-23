@@ -95,6 +95,7 @@ interface CertificateModalProps {
     vendor: string | null
     edition_number: number | null
     edition_total: number | null
+    nfc_tag_id: string | null
   } | null
   onClose: () => void
 }
@@ -104,13 +105,13 @@ export function CertificateModal({ lineItem, onClose }: CertificateModalProps) {
   const [isFlipped, setIsFlipped] = useState(false)
   const cardRef = useRef<HTMLDivElement>(null)
 
-  // Image motion values for subtle mirrored movement
+  // Image motion values for subtle parallax effect
   const imageX = useMotionValue(0)
   const imageY = useMotionValue(0)
-  const imageRotateX = useTransform(imageY, [-5, 5], [3, -3]) // Reduced range for subtle effect
-  const imageRotateY = useTransform(imageX, [-5, 5], [3, -3]) // Reduced range for subtle effect
-  const imageTranslateX = useTransform(imageX, [-5, 5], [5, -5]) // Reduced translation
-  const imageTranslateY = useTransform(imageY, [-5, 5], [5, -5]) // Reduced translation
+  const imageRotateX = useTransform(imageY, [-5, 5], [2, -2]) // Reduced range for subtle effect
+  const imageRotateY = useTransform(imageX, [-5, 5], [2, -2]) // Reduced range for subtle effect
+  const imageTranslateX = useTransform(imageX, [-5, 5], [3, -3]) // Reduced translation
+  const imageTranslateY = useTransform(imageY, [-5, 5], [3, -3]) // Reduced translation
 
   useEffect(() => {
     setIsOpen(!!lineItem)
@@ -129,9 +130,9 @@ export function CertificateModal({ lineItem, onClose }: CertificateModalProps) {
       const rotateX = ((y - centerY) / centerY) * 5
       const rotateY = ((x - centerX) / centerX) * -5
 
-      // Update image motion values for mirrored movement
-      imageX.set(-rotateY)
-      imageY.set(-rotateX)
+      // Update image motion values for subtle parallax
+      imageX.set(rotateY * 0.3) // Reduced multiplier and reversed direction
+      imageY.set(rotateX * 0.3) // Reduced multiplier and reversed direction
 
       // Apply card tilt
       if (cardRef.current) {
@@ -270,6 +271,22 @@ export function CertificateModal({ lineItem, onClose }: CertificateModalProps) {
                       <p className="text-base sm:text-lg text-white">{new Date().toLocaleDateString()}</p>
                     </div>
                   </div>
+
+                  {!lineItem.nfc_tag_id && (
+                    <div className="flex items-center gap-3 sm:gap-4 text-left">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="w-full mt-4 border-indigo-500/50 text-indigo-400 hover:bg-indigo-500/10 hover:text-indigo-300"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          // TODO: Implement NFC pairing logic
+                        }}
+                      >
+                        Pair Artwork with NFC Tag
+                      </Button>
+                    </div>
+                  )}
                 </div>
 
                 <p className="text-xs sm:text-sm text-zinc-500 mt-6 sm:mt-8">Click to view artwork</p>
