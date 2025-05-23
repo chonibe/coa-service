@@ -105,11 +105,13 @@ export function CertificateModal({ lineItem, onClose }: CertificateModalProps) {
   const cardRef = useRef<HTMLDivElement>(null)
   const [mousePosition, setMousePosition] = useState({ x: 50, y: 50 })
 
-  // Image motion values for mirrored movement
+  // Image motion values for mirrored movement with larger range
   const imageX = useMotionValue(0)
   const imageY = useMotionValue(0)
-  const imageRotateX = useTransform(imageY, [-5, 5], [5, -5])
-  const imageRotateY = useTransform(imageX, [-5, 5], [5, -5])
+  const imageRotateX = useTransform(imageY, [-5, 5], [15, -15]) // Increased range for more dramatic effect
+  const imageRotateY = useTransform(imageX, [-5, 5], [15, -15]) // Increased range for more dramatic effect
+  const imageTranslateX = useTransform(imageX, [-5, 5], [20, -20]) // Added translation for more depth
+  const imageTranslateY = useTransform(imageY, [-5, 5], [20, -20]) // Added translation for more depth
 
   useEffect(() => {
     setIsOpen(!!lineItem)
@@ -135,8 +137,9 @@ export function CertificateModal({ lineItem, onClose }: CertificateModalProps) {
       })
 
       // Update image motion values for mirrored movement
-      imageX.set(-rotateY)
-      imageY.set(-rotateX)
+      // Note the negative values to create inverse movement
+      imageX.set(-rotateY * 1.5) // Increased multiplier for more dramatic effect
+      imageY.set(-rotateX * 1.5) // Increased multiplier for more dramatic effect
 
       // Apply card tilt
       if (cardRef.current) {
@@ -216,7 +219,10 @@ export function CertificateModal({ lineItem, onClose }: CertificateModalProps) {
                     style={{
                       rotateX: imageRotateX,
                       rotateY: imageRotateY,
+                      x: imageTranslateX,
+                      y: imageTranslateY,
                       transformStyle: "preserve-3d",
+                      transition: "transform 0.1s ease-out",
                     }}
                   >
                     <img
