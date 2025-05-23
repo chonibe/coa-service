@@ -122,11 +122,11 @@ export function CertificateModal({ lineItem, onClose }: CertificateModalProps) {
   const x = useMotionValue(0)
   const y = useMotionValue(0)
 
-  const mouseXSpring = useSpring(x)
-  const mouseYSpring = useSpring(y)
+  const mouseXSpring = useSpring(x, { stiffness: 150, damping: 30 })
+  const mouseYSpring = useSpring(y, { stiffness: 150, damping: 30 })
 
-  const rotateX = useTransform(mouseYSpring, [-0.5, 0.5], ["17.5deg", "-17.5deg"])
-  const rotateY = useTransform(mouseXSpring, [-0.5, 0.5], ["-17.5deg", "17.5deg"])
+  const rotateX = useTransform(mouseYSpring, [-0.5, 0.5], ["7.5deg", "-7.5deg"])
+  const rotateY = useTransform(mouseXSpring, [-0.5, 0.5], ["-7.5deg", "7.5deg"])
 
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
     if (!cardRef.current) return
@@ -180,6 +180,8 @@ export function CertificateModal({ lineItem, onClose }: CertificateModalProps) {
             onClick={() => setIsFlipped(!isFlipped)}
             style={{
               transformStyle: "preserve-3d",
+              rotateX: isFlipped ? 0 : rotateX,
+              rotateY: isFlipped ? 0 : rotateY,
             }}
             className="relative w-full aspect-[4/3] rounded-xl bg-gradient-to-br from-zinc-800 to-zinc-900 p-4 sm:p-8 shadow-2xl cursor-pointer"
             animate={{
@@ -192,8 +194,6 @@ export function CertificateModal({ lineItem, onClose }: CertificateModalProps) {
               damping: 12,
             }}
           >
-            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent translate-x-[-100%] animate-shimmer" />
-            
             {/* Front of card */}
             <motion.div
               className="absolute inset-0"
