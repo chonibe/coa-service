@@ -320,12 +320,12 @@ function CustomerPreviewContent() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-zinc-950 to-zinc-900 p-8">
+    <div className="min-h-screen bg-[#0A0A0A] p-8">
       <div className="max-w-7xl mx-auto">
         <h1 className="text-3xl font-bold mb-8 text-white">Customer Preview</h1>
         
         {orders.length === 0 ? (
-          <div className="bg-zinc-800/50 border border-zinc-700/50 rounded-lg shadow-lg p-6">
+          <div className="bg-zinc-900/50 backdrop-blur-sm border border-zinc-800/50 rounded-lg shadow-lg p-6">
             <p className="text-zinc-400 text-center">No orders found</p>
           </div>
         ) : (
@@ -349,7 +349,7 @@ function CustomerPreviewContent() {
                     {order.line_items.map((item) => (
                       <div 
                         key={item.line_item_id} 
-                        className="flex items-start space-x-4 p-4 bg-zinc-800/30 rounded-lg cursor-pointer transition-all duration-200 hover:bg-zinc-800/50"
+                        className="flex items-start space-x-4 p-4 bg-zinc-800/20 rounded-lg cursor-pointer transition-all duration-200 hover:bg-zinc-800/30"
                         onClick={() => fetchCertificate(item.line_item_id)}
                       >
                         {item.image_url && (
@@ -389,7 +389,7 @@ function CustomerPreviewContent() {
 
       {/* Certificate Preview Dialog */}
       <Dialog open={!!selectedCertificate} onOpenChange={() => setSelectedCertificate(null)}>
-        <DialogContent className="max-w-3xl bg-zinc-900 border-zinc-800">
+        <DialogContent className="max-w-3xl bg-zinc-900/95 backdrop-blur-sm border-zinc-800/50">
           {isCertificateLoading ? (
             <div className="space-y-6">
               <div className="text-center">
@@ -397,7 +397,7 @@ function CustomerPreviewContent() {
                 <p className="text-zinc-400">Please wait while we fetch the certificate details</p>
               </div>
               <div className="space-y-4">
-                <div className="aspect-video relative bg-zinc-800 rounded-lg overflow-hidden">
+                <div className="aspect-video relative bg-zinc-800/50 rounded-lg overflow-hidden">
                   <Skeleton className="absolute inset-0" />
                 </div>
                 <div className="space-y-2">
@@ -428,7 +428,7 @@ function CustomerPreviewContent() {
               </div>
 
               {selectedCertificate.product.images && selectedCertificate.product.images.length > 0 && (
-                <div className="aspect-video relative bg-zinc-800 rounded-lg overflow-hidden">
+                <div className="aspect-video relative bg-zinc-800/50 rounded-lg overflow-hidden">
                   <img
                     src={selectedCertificate.product.images[0].src}
                     alt={selectedCertificate.product.images[0].alt}
@@ -438,7 +438,7 @@ function CustomerPreviewContent() {
               )}
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="border border-zinc-800 rounded-lg p-4">
+                <div className="border border-zinc-800/50 rounded-lg p-4">
                   <div className="flex items-start">
                     <Certificate className="h-5 w-5 text-indigo-400 mt-0.5 mr-2" />
                     <div>
@@ -451,7 +451,7 @@ function CustomerPreviewContent() {
                   </div>
                 </div>
 
-                <div className="border border-zinc-800 rounded-lg p-4">
+                <div className="border border-zinc-800/50 rounded-lg p-4">
                   <div className="flex items-start">
                     <Clock className="h-5 w-5 text-indigo-400 mt-0.5 mr-2" />
                     <div>
@@ -464,7 +464,7 @@ function CustomerPreviewContent() {
                   </div>
                 </div>
 
-                <div className="border border-zinc-800 rounded-lg p-4">
+                <div className="border border-zinc-800/50 rounded-lg p-4">
                   <div className="flex items-start">
                     <ShoppingBag className="h-5 w-5 text-indigo-400 mt-0.5 mr-2" />
                     <div>
@@ -477,7 +477,7 @@ function CustomerPreviewContent() {
                   </div>
                 </div>
 
-                <div className="border border-zinc-800 rounded-lg p-4">
+                <div className="border border-zinc-800/50 rounded-lg p-4">
                   <div className="flex items-start">
                     <User className="h-5 w-5 text-indigo-400 mt-0.5 mr-2" />
                     <div>
@@ -491,7 +491,7 @@ function CustomerPreviewContent() {
                 </div>
               </div>
 
-              <div className="border-t border-zinc-800 pt-4">
+              <div className="border-t border-zinc-800/50 pt-4">
                 <h3 className="font-semibold text-white mb-2">Product Description</h3>
                 <div className="text-zinc-400 prose prose-sm max-w-none">
                   <p>{selectedCertificate.product.description}</p>
