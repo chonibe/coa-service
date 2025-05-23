@@ -275,37 +275,53 @@ export default function CustomerPreviewPage() {
                   </div>
                 </div>
 
+                {/* Order Items */}
                 <div className="space-y-4">
                   {order.line_items.map((item) => (
-                    <FloatingCard
+                    <div
                       key={item.id}
-                      className="group relative flex items-start gap-4 p-4 cursor-pointer"
-                      onClick={() => setSelectedLineItem(item)}
+                      className="group relative bg-zinc-900/50 backdrop-blur-sm border border-zinc-800/50 rounded-xl p-4 hover:border-zinc-700/50 transition-all duration-300"
                     >
-                      {item.img_url && (
-                        <div className="relative w-24 h-24 flex-shrink-0">
-                          <img
-                            src={item.img_url}
-                            alt={item.name}
-                            className="w-full h-full object-cover rounded-lg"
-                          />
-                        </div>
-                      )}
-                      <div className="flex-1 min-w-0">
-                        <h3 className="font-medium text-white truncate">{item.name}</h3>
-                        {item.vendor_name && (
-                          <p className="text-sm text-zinc-400 mt-1">{item.vendor_name}</p>
-                        )}
-                        {item.edition_number && item.edition_total && (
-                          <div className="flex items-center gap-2 mt-2">
-                            <Tag className="h-4 w-4 text-indigo-400" />
-                            <span className="text-sm text-indigo-400">
-                              Edition #{item.edition_number} of {item.edition_total}
-                            </span>
+                      {/* Shimmer effect */}
+                      <span className="pointer-events-none absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                        <span className="block w-full h-full shimmer" />
+                      </span>
+                      
+                      <div className="flex items-center gap-4">
+                        {item.img_url && (
+                          <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-lg overflow-hidden border border-zinc-800">
+                            <img
+                              src={item.img_url}
+                              alt={item.name}
+                              className="w-full h-full object-cover"
+                            />
                           </div>
                         )}
+                        <div className="flex-1 min-w-0">
+                          <h3 className="text-sm sm:text-base font-medium text-white truncate">
+                            {item.name}
+                          </h3>
+                          {item.vendor_name && (
+                            <p className="text-xs sm:text-sm text-zinc-400 truncate">
+                              {item.vendor_name}
+                            </p>
+                          )}
+                          {item.edition_number && item.edition_total && (
+                            <p className="text-xs sm:text-sm text-indigo-400">
+                              Edition #{item.edition_number} of {item.edition_total}
+                            </p>
+                          )}
+                        </div>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="text-zinc-400 hover:text-white"
+                          onClick={() => setSelectedLineItem(item)}
+                        >
+                          View Certificate
+                        </Button>
                       </div>
-                    </FloatingCard>
+                    </div>
                   ))}
                 </div>
               </div>

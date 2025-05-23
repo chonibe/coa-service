@@ -116,40 +116,52 @@ export function CertificateModal({ lineItem, onClose }: CertificateModalProps) {
     setIsFlipped(false)
   }, [lineItem])
 
-  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
-    const card = cardRef.current
-    if (!card) return
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      if (!cardRef.current) return
 
-    const rect = card.getBoundingClientRect()
-    const x = e.clientX - rect.left
-    const y = e.clientY - rect.top
-    const centerX = rect.width / 2
-    const centerY = rect.height / 2
-    const rotateX = ((y - centerY) / centerY) * 5
-    const rotateY = ((x - centerX) / centerX) * -5
+      const rect = cardRef.current.getBoundingClientRect()
+      const x = e.clientX - rect.left
+      const y = e.clientY - rect.top
+      const centerX = rect.width / 2
+      const centerY = rect.height / 2
+      const rotateX = ((y - centerY) / centerY) * 5
+      const rotateY = ((x - centerX) / centerX) * -5
 
-    // Update mouse position for shimmer
-    setMousePosition({ 
-      x: (x / rect.width) * 100, 
-      y: (y / rect.height) * 100 
-    })
+      // Update mouse position for shimmer
+      setMousePosition({ 
+        x: (x / rect.width) * 100, 
+        y: (y / rect.height) * 100 
+      })
 
-    // Update image motion values for mirrored movement
-    imageX.set(-rotateY)
-    imageY.set(-rotateX)
+      // Update image motion values for mirrored movement
+      imageX.set(-rotateY)
+      imageY.set(-rotateX)
 
-    // Apply card tilt
-    card.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale3d(1.02,1.02,1.02)`
-  }
+      // Apply card tilt
+      if (cardRef.current) {
+        cardRef.current.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale3d(1.02,1.02,1.02)`
+      }
+    }
 
-  const handleMouseLeave = () => {
-    const card = cardRef.current
-    if (!card) return
-    card.style.transform = ""
-    setMousePosition({ x: 50, y: 50 })
-    imageX.set(0)
-    imageY.set(0)
-  }
+    const handleMouseLeave = () => {
+      if (!cardRef.current) return
+      cardRef.current.style.transform = ""
+      setMousePosition({ x: 50, y: 50 })
+      imageX.set(0)
+      imageY.set(0)
+    }
+
+    // Add global mouse move listener
+    window.addEventListener('mousemove', handleMouseMove)
+    window.addEventListener('mouseleave', handleMouseLeave)
+
+    // Cleanup
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove)
+      window.removeEventListener('mouseleave', handleMouseLeave)
+    }
+  }, [imageX, imageY])
 
   if (!lineItem) return null
 
@@ -163,8 +175,6 @@ export function CertificateModal({ lineItem, onClose }: CertificateModalProps) {
           <motion.div
             ref={cardRef}
             onClick={() => setIsFlipped(!isFlipped)}
-            onMouseMove={handleMouseMove}
-            onMouseLeave={handleMouseLeave}
             className="relative w-full aspect-[4/3] rounded-xl bg-gradient-to-br from-zinc-800 to-zinc-900 p-4 sm:p-8 shadow-2xl cursor-pointer"
             style={{
               willChange: "transform",
@@ -182,7 +192,7 @@ export function CertificateModal({ lineItem, onClose }: CertificateModalProps) {
           >
             {/* Dynamic shimmer overlay */}
             <span 
-              className="pointer-events-none absolute inset-0 z-10 opacity-0 hover:opacity-100 transition-opacity duration-300"
+              className="pointer-events-none absolute inset-0 z-10 opacity-100 transition-opacity duration-300"
               style={{
                 background: `radial-gradient(circle at ${mousePosition.x}% ${mousePosition.y}%, rgba(255,255,255,0.1) 0%, transparent 50%)`,
               }}
