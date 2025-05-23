@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useRef, useEffect } from "react"
+import { useState, useRef, useEffect, ReactNode } from "react"
 import { Dialog, DialogContent } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { X, BadgeIcon as Certificate, User, Calendar, Hash } from "lucide-react"
@@ -160,6 +160,18 @@ export function CertificateModal({ lineItem, onClose }: CertificateModalProps) {
       onClose()
     }}>
       <DialogContent className="w-[95vw] sm:w-[90vw] md:max-w-[900px] bg-transparent border-none p-0">
+        <div className="absolute right-2 top-2 sm:right-4 sm:top-4 z-50">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => {
+              setIsOpen(false)
+              onClose()
+            }}
+          >
+            <X className="h-4 w-4" />
+          </Button>
+        </div>
         <div className="perspective-1000">
           <motion.div
             onClick={() => setIsFlipped(!isFlipped)}
@@ -177,19 +189,6 @@ export function CertificateModal({ lineItem, onClose }: CertificateModalProps) {
               transformStyle: "preserve-3d",
             }}
           >
-            <Button
-              variant="ghost"
-              size="icon"
-              className="absolute right-2 top-2 z-50"
-              onClick={(e) => {
-                e.stopPropagation()
-                setIsOpen(false)
-                onClose()
-              }}
-            >
-              <X className="h-4 w-4" />
-            </Button>
-
             {/* Front of card */}
             <motion.div
               className="absolute inset-0"
@@ -211,10 +210,13 @@ export function CertificateModal({ lineItem, onClose }: CertificateModalProps) {
                     }}
                     className="w-48 h-48 sm:w-64 sm:h-64 md:w-80 md:h-80 mb-4 sm:mb-6 rounded-lg overflow-hidden border-2 border-zinc-700"
                   >
-                    <img
+                    <motion.img
                       src={lineItem.image_url}
                       alt={lineItem.title}
                       className="w-full h-full object-cover"
+                      style={{
+                        transformStyle: "preserve-3d",
+                      }}
                     />
                   </motion.div>
                 )}
