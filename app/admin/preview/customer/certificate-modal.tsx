@@ -188,20 +188,21 @@ export function CertificateModal({ lineItem, onClose }: CertificateModalProps) {
       onClose()
     }}>
       <DialogContent className="w-[95vw] sm:w-[90vw] md:max-w-[900px] bg-transparent border-none p-0">
-        <div className="perspective-1000">
+        <div className="perspective-[2000px]">
           <motion.div
             ref={cardRef}
             onClick={() => setIsFlipped(!isFlipped)}
             onMouseMove={handleCardMouseMove}
             onMouseLeave={handleCardMouseLeave}
             className="relative w-full aspect-[4/3] rounded-xl bg-gradient-to-br from-zinc-800 to-zinc-900 p-4 sm:p-8 shadow-2xl cursor-pointer"
-            animate={{
-              rotateY: isFlipped ? 180 : 0,
-            }}
             style={{
               transformStyle: "preserve-3d",
-              rotateX: isFlipped ? 0 : cardRotateX,
-              rotateY: isFlipped ? 0 : cardRotateY,
+              transformOrigin: "center center",
+            }}
+            animate={{
+              rotateY: isFlipped ? 180 : 0,
+              rotateX: isFlipped ? 0 : cardRotateX.get(),
+              rotateZ: isFlipped ? 0 : cardRotateY.get(),
             }}
             transition={{
               duration: 1.2,
@@ -216,6 +217,7 @@ export function CertificateModal({ lineItem, onClose }: CertificateModalProps) {
               style={{
                 backfaceVisibility: "hidden",
                 WebkitBackfaceVisibility: "hidden",
+                transformStyle: "preserve-3d",
               }}
             >
               <div className="relative h-full flex flex-col items-center justify-center text-center">
@@ -226,8 +228,8 @@ export function CertificateModal({ lineItem, onClose }: CertificateModalProps) {
                     onMouseLeave={handleImageMouseLeave}
                     style={{
                       transformStyle: "preserve-3d",
-                      rotateX: isFlipped ? 0 : imageRotateX,
-                      rotateY: isFlipped ? 0 : imageRotateY,
+                      rotateX: isFlipped ? 0 : imageRotateX.get(),
+                      rotateY: isFlipped ? 0 : imageRotateY.get(),
                     }}
                     className="w-48 h-48 sm:w-64 sm:h-64 md:w-80 md:h-80 mb-4 sm:mb-6 rounded-lg overflow-hidden border-2 border-zinc-700"
                   >
@@ -260,6 +262,7 @@ export function CertificateModal({ lineItem, onClose }: CertificateModalProps) {
               style={{
                 backfaceVisibility: "hidden",
                 WebkitBackfaceVisibility: "hidden",
+                transformStyle: "preserve-3d",
                 transform: "rotateY(180deg)",
               }}
             >
