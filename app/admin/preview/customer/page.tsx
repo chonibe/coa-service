@@ -102,10 +102,10 @@ function FloatingCard({ children, className = "", ...props }: React.HTMLAttribut
     const y = e.clientY - rect.top
     const centerX = rect.width / 2
     const centerY = rect.height / 2
-    const rotateX = ((y - centerY) / centerY) * 5
-    const rotateY = ((x - centerX) / centerX) * -5
+    const rotateX = ((y - centerY) / centerY) * 2
+    const rotateY = ((x - centerX) / centerX) * -2
     
-    card.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale3d(1.02,1.02,1.02)`
+    card.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale3d(1.01,1.01,1.01)`
   }
   
   const handleMouseLeave = () => {

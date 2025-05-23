@@ -122,45 +122,33 @@ export function CertificateModal({ lineItem, onClose }: CertificateModalProps) {
     }
   }, [lineItem])
 
-  useEffect(() => {
-    const handleMouseMove = (e: MouseEvent) => {
-      if (!cardRef.current) return
+  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!cardRef.current) return
 
-      const rect = cardRef.current.getBoundingClientRect()
-      const x = e.clientX - rect.left
-      const y = e.clientY - rect.top
-      const centerX = rect.width / 2
-      const centerY = rect.height / 2
-      const rotateX = ((y - centerY) / centerY) * 5
-      const rotateY = ((x - centerX) / centerX) * -5
+    const rect = cardRef.current.getBoundingClientRect()
+    const x = e.clientX - rect.left
+    const y = e.clientY - rect.top
+    const centerX = rect.width / 2
+    const centerY = rect.height / 2
+    const rotateX = ((y - centerY) / centerY) * 5
+    const rotateY = ((x - centerX) / centerX) * -5
 
-      // Update image motion values for subtle parallax
-      imageX.set(rotateY * 0.3)
-      imageY.set(rotateX * 0.3)
+    // Update image motion values for subtle parallax
+    imageX.set(rotateY * 0.3)
+    imageY.set(rotateX * 0.3)
 
-      // Apply card tilt
-      if (cardRef.current) {
-        cardRef.current.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale3d(1.02,1.02,1.02)`
-      }
+    // Apply card tilt
+    if (cardRef.current) {
+      cardRef.current.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale3d(1.02,1.02,1.02)`
     }
+  }
 
-    const handleMouseLeave = () => {
-      if (!cardRef.current) return
-      cardRef.current.style.transform = ""
-      imageX.set(0)
-      imageY.set(0)
-    }
-
-    // Add global mouse move listener
-    window.addEventListener('mousemove', handleMouseMove)
-    window.addEventListener('mouseleave', handleMouseLeave)
-
-    // Cleanup
-    return () => {
-      window.removeEventListener('mousemove', handleMouseMove)
-      window.removeEventListener('mouseleave', handleMouseLeave)
-    }
-  }, [imageX, imageY])
+  const handleMouseLeave = () => {
+    if (!cardRef.current) return
+    cardRef.current.style.transform = ""
+    imageX.set(0)
+    imageY.set(0)
+  }
 
   const handleCardClick = () => {
     setIsFlipped(!isFlipped)
@@ -178,6 +166,8 @@ export function CertificateModal({ lineItem, onClose }: CertificateModalProps) {
           <motion.div
             ref={cardRef}
             onClick={handleCardClick}
+            onMouseMove={handleMouseMove}
+            onMouseLeave={handleMouseLeave}
             className="relative w-full aspect-[4/3] rounded-xl bg-gradient-to-br from-zinc-800 to-zinc-900 p-4 sm:p-8 shadow-2xl cursor-pointer"
             style={{
               willChange: "transform",
