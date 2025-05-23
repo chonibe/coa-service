@@ -102,7 +102,8 @@ interface CertificateModalProps {
 export function CertificateModal({ lineItem, onClose }: CertificateModalProps) {
   const [isOpen, setIsOpen] = useState(false)
   const [isFlipped, setIsFlipped] = useState(false)
-  const [cardTilt, setCardTilt] = useState({ x: 0, y: 0 })
+  const cardRef = useRef<HTMLDivElement>(null)
+  const [mousePosition, setMousePosition] = useState({ x: 50, y: 50 })
 
   // Image motion values for mirrored movement
   const imageX = useMotionValue(0)
@@ -115,10 +116,39 @@ export function CertificateModal({ lineItem, onClose }: CertificateModalProps) {
     setIsFlipped(false)
   }, [lineItem])
 
-  const handleCardTilt = (x: number, y: number) => {
-    setCardTilt({ x, y })
-    imageX.set(-x)
-    imageY.set(-y)
+  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    const card = cardRef.current
+    if (!card) return
+
+    const rect = card.getBoundingClientRect()
+    const x = e.clientX - rect.left
+    const y = e.clientY - rect.top
+    const centerX = rect.width / 2
+    const centerY = rect.height / 2
+    const rotateX = ((y - centerY) / centerY) * 5
+    const rotateY = ((x - centerX) / centerX) * -5
+
+    // Update mouse position for shimmer
+    setMousePosition({ 
+      x: (x / rect.width) * 100, 
+      y: (y / rect.height) * 100 
+    })
+
+    // Update image motion values for mirrored movement
+    imageX.set(-rotateY)
+    imageY.set(-rotateX)
+
+    // Apply card tilt
+    card.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale3d(1.02,1.02,1.02)`
+  }
+
+  const handleMouseLeave = () => {
+    const card = cardRef.current
+    if (!card) return
+    card.style.transform = ""
+    setMousePosition({ x: 50, y: 50 })
+    imageX.set(0)
+    imageY.set(0)
   }
 
   if (!lineItem) return null
@@ -130,21 +160,36 @@ export function CertificateModal({ lineItem, onClose }: CertificateModalProps) {
     }}>
       <DialogContent className="w-[95vw] sm:w-[90vw] md:max-w-[900px] bg-transparent border-none p-0">
         <div className="perspective-[2000px]">
-          <FloatingCard
-            isFlipped={isFlipped}
+          <motion.div
+            ref={cardRef}
             onClick={() => setIsFlipped(!isFlipped)}
+            onMouseMove={handleMouseMove}
+            onMouseLeave={handleMouseLeave}
             className="relative w-full aspect-[4/3] rounded-xl bg-gradient-to-br from-zinc-800 to-zinc-900 p-4 sm:p-8 shadow-2xl cursor-pointer"
-            onMouseMove={(e) => {
-              const rect = e.currentTarget.getBoundingClientRect()
-              const x = e.clientX - rect.left
-              const y = e.clientY - rect.top
-              const centerX = rect.width / 2
-              const centerY = rect.height / 2
-              const rotateX = ((y - centerY) / centerY) * 5
-              const rotateY = ((x - centerX) / centerX) * -5
-              handleCardTilt(rotateY, rotateX)
+            style={{
+              willChange: "transform",
+              transformStyle: "preserve-3d",
+            }}
+            animate={{
+              rotateY: isFlipped ? 180 : 0,
+            }}
+            transition={{
+              duration: 1.2,
+              type: "spring",
+              stiffness: 60,
+              damping: 12,
             }}
           >
+            {/* Dynamic shimmer overlay */}
+            <span 
+              className="pointer-events-none absolute inset-0 z-10 opacity-0 hover:opacity-100 transition-opacity duration-300"
+              style={{
+                background: `radial-gradient(circle at ${mousePosition.x}% ${mousePosition.y}%, rgba(255,255,255,0.1) 0%, transparent 50%)`,
+              }}
+            >
+              <span className="block w-full h-full shimmer" />
+            </span>
+
             {/* Front of card */}
             <div
               className="absolute inset-0"
@@ -233,7 +278,7 @@ export function CertificateModal({ lineItem, onClose }: CertificateModalProps) {
                 <p className="text-xs sm:text-sm text-zinc-500 mt-6 sm:mt-8">Click to view artwork</p>
               </div>
             </div>
-          </FloatingCard>
+          </motion.div>
         </div>
       </DialogContent>
     </Dialog>
