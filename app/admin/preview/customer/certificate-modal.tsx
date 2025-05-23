@@ -6,6 +6,74 @@ import { Button } from "@/components/ui/button"
 import { X, BadgeIcon as Certificate, User, Calendar, Hash } from "lucide-react"
 import { motion } from "framer-motion"
 
+// Add shimmer effect styles
+const shimmerStyles = `
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+.shimmer {
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0) 0%,
+    rgba(255, 255, 255, 0.1) 50%,
+    rgba(255, 255, 255, 0) 100%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 2s infinite;
+}
+`
+
+function FloatingCard({ children, className = "", ...props }: React.HTMLAttributes<HTMLDivElement>) {
+  const cardRef = useRef<HTMLDivElement>(null)
+  
+  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    const card = cardRef.current
+    if (!card) return
+    
+    const rect = card.getBoundingClientRect()
+    const x = e.clientX - rect.left
+    const y = e.clientY - rect.top
+    const centerX = rect.width / 2
+    const centerY = rect.height / 2
+    const rotateX = ((y - centerY) / centerY) * 5
+    const rotateY = ((x - centerX) / centerX) * -5
+    
+    card.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale3d(1.02,1.02,1.02)`
+  }
+  
+  const handleMouseLeave = () => {
+    const card = cardRef.current
+    if (!card) return
+    card.style.transform = ""
+  }
+  
+  return (
+    <>
+      <style>{shimmerStyles}</style>
+      <div
+        ref={cardRef}
+        className={`relative bg-zinc-900/50 backdrop-blur-sm border border-zinc-800/50 rounded-xl shadow-lg transition-all duration-300 hover:shadow-xl hover:border-zinc-700/50 overflow-hidden ${className}`}
+        style={{ willChange: "transform" }}
+        onMouseMove={handleMouseMove}
+        onMouseLeave={handleMouseLeave}
+        {...props}
+      >
+        {/* Shimmer overlay */}
+        <span className="pointer-events-none absolute inset-0 z-10 opacity-0 hover:opacity-100 transition-opacity duration-300">
+          <span className="block w-full h-full shimmer" />
+        </span>
+        {children}
+      </div>
+    </>
+  )
+}
+
 interface CertificateModalProps {
   lineItem: {
     line_item_id: string
@@ -36,22 +104,9 @@ export function CertificateModal({ lineItem, onClose }: CertificateModalProps) {
     }}>
       <DialogContent className="w-[95vw] sm:w-[90vw] md:max-w-[900px] bg-transparent border-none p-0">
         <div className="perspective-[2000px]">
-          <motion.div
+          <FloatingCard
             onClick={() => setIsFlipped(!isFlipped)}
             className="relative w-full aspect-[4/3] rounded-xl bg-gradient-to-br from-zinc-800 to-zinc-900 p-4 sm:p-8 shadow-2xl cursor-pointer"
-            style={{
-              transformStyle: "preserve-3d",
-              transformOrigin: "center center",
-            }}
-            animate={{
-              rotateY: isFlipped ? 180 : 0,
-            }}
-            transition={{
-              duration: 1.2,
-              type: "spring",
-              stiffness: 60,
-              damping: 12,
-            }}
           >
             {/* Front of card */}
             <motion.div
@@ -60,6 +115,15 @@ export function CertificateModal({ lineItem, onClose }: CertificateModalProps) {
                 backfaceVisibility: "hidden",
                 WebkitBackfaceVisibility: "hidden",
                 transformStyle: "preserve-3d",
+              }}
+              animate={{
+                rotateY: isFlipped ? 180 : 0,
+              }}
+              transition={{
+                duration: 1.2,
+                type: "spring",
+                stiffness: 60,
+                damping: 12,
               }}
             >
               <div className="relative h-full flex flex-col items-center justify-center text-center">
@@ -93,6 +157,15 @@ export function CertificateModal({ lineItem, onClose }: CertificateModalProps) {
                 WebkitBackfaceVisibility: "hidden",
                 transformStyle: "preserve-3d",
                 transform: "rotateY(180deg)",
+              }}
+              animate={{
+                rotateY: isFlipped ? 0 : 180,
+              }}
+              transition={{
+                duration: 1.2,
+                type: "spring",
+                stiffness: 60,
+                damping: 12,
               }}
             >
               <div className="relative h-full flex flex-col items-center justify-center text-center p-4 sm:p-6">
@@ -134,7 +207,7 @@ export function CertificateModal({ lineItem, onClose }: CertificateModalProps) {
                 <p className="text-xs sm:text-sm text-zinc-500 mt-6 sm:mt-8">Click to view artwork</p>
               </div>
             </motion.div>
-          </motion.div>
+          </FloatingCard>
         </div>
       </DialogContent>
     </Dialog>
