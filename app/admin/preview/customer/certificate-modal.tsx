@@ -4,7 +4,7 @@ import { useState, useRef, useEffect, ReactNode } from "react"
 import { Dialog, DialogContent } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { X, BadgeIcon as Certificate, User, Calendar, Hash } from "lucide-react"
-import { motion } from "framer-motion"
+import { motion, useMotionValue, useSpring, useTransform } from "framer-motion"
 
 // Add shimmer effect styles
 const shimmerStyles = `
@@ -29,8 +29,9 @@ const shimmerStyles = `
 }
 `
 
-function FloatingCard({ children, className = "", ...props }: React.HTMLAttributes<HTMLDivElement>) {
+function FloatingCard({ children, className = "", isFlipped = false, ...props }: React.HTMLAttributes<HTMLDivElement> & { isFlipped?: boolean }) {
   const cardRef = useRef<HTMLDivElement>(null)
+  const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 })
   
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
     const card = cardRef.current
@@ -44,6 +45,8 @@ function FloatingCard({ children, className = "", ...props }: React.HTMLAttribut
     const rotateX = ((y - centerY) / centerY) * 5
     const rotateY = ((x - centerX) / centerX) * -5
     
+    setMousePosition({ x: (x / rect.width) * 100, y: (y / rect.height) * 100 })
+    
     card.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale3d(1.02,1.02,1.02)`
   }
   
@@ -51,6 +54,7 @@ function FloatingCard({ children, className = "", ...props }: React.HTMLAttribut
     const card = cardRef.current
     if (!card) return
     card.style.transform = ""
+    setMousePosition({ x: 50, y: 50 })
   }
   
   return (
@@ -59,13 +63,22 @@ function FloatingCard({ children, className = "", ...props }: React.HTMLAttribut
       <div
         ref={cardRef}
         className={`relative bg-zinc-900/50 backdrop-blur-sm border border-zinc-800/50 rounded-xl shadow-lg transition-all duration-300 hover:shadow-xl hover:border-zinc-700/50 overflow-hidden ${className}`}
-        style={{ willChange: "transform" }}
+        style={{ 
+          willChange: "transform",
+          transformStyle: "preserve-3d",
+          transform: isFlipped ? "rotateY(180deg)" : "",
+        }}
         onMouseMove={handleMouseMove}
         onMouseLeave={handleMouseLeave}
         {...props}
       >
-        {/* Shimmer overlay */}
-        <span className="pointer-events-none absolute inset-0 z-10 opacity-0 hover:opacity-100 transition-opacity duration-300">
+        {/* Dynamic shimmer overlay */}
+        <span 
+          className="pointer-events-none absolute inset-0 z-10 opacity-0 hover:opacity-100 transition-opacity duration-300"
+          style={{
+            background: `radial-gradient(circle at ${mousePosition.x}% ${mousePosition.y}%, rgba(255,255,255,0.1) 0%, transparent 50%)`,
+          }}
+        >
           <span className="block w-full h-full shimmer" />
         </span>
         {children}
@@ -89,11 +102,24 @@ interface CertificateModalProps {
 export function CertificateModal({ lineItem, onClose }: CertificateModalProps) {
   const [isOpen, setIsOpen] = useState(false)
   const [isFlipped, setIsFlipped] = useState(false)
+  const [cardTilt, setCardTilt] = useState({ x: 0, y: 0 })
+
+  // Image motion values for mirrored movement
+  const imageX = useMotionValue(0)
+  const imageY = useMotionValue(0)
+  const imageRotateX = useTransform(imageY, [-5, 5], [5, -5])
+  const imageRotateY = useTransform(imageX, [-5, 5], [5, -5])
 
   useEffect(() => {
     setIsOpen(!!lineItem)
     setIsFlipped(false)
   }, [lineItem])
+
+  const handleCardTilt = (x: number, y: number) => {
+    setCardTilt({ x, y })
+    imageX.set(-x)
+    imageY.set(-y)
+  }
 
   if (!lineItem) return null
 
@@ -105,36 +131,45 @@ export function CertificateModal({ lineItem, onClose }: CertificateModalProps) {
       <DialogContent className="w-[95vw] sm:w-[90vw] md:max-w-[900px] bg-transparent border-none p-0">
         <div className="perspective-[2000px]">
           <FloatingCard
+            isFlipped={isFlipped}
             onClick={() => setIsFlipped(!isFlipped)}
             className="relative w-full aspect-[4/3] rounded-xl bg-gradient-to-br from-zinc-800 to-zinc-900 p-4 sm:p-8 shadow-2xl cursor-pointer"
+            onMouseMove={(e) => {
+              const rect = e.currentTarget.getBoundingClientRect()
+              const x = e.clientX - rect.left
+              const y = e.clientY - rect.top
+              const centerX = rect.width / 2
+              const centerY = rect.height / 2
+              const rotateX = ((y - centerY) / centerY) * 5
+              const rotateY = ((x - centerX) / centerX) * -5
+              handleCardTilt(rotateY, rotateX)
+            }}
           >
             {/* Front of card */}
-            <motion.div
+            <div
               className="absolute inset-0"
               style={{
                 backfaceVisibility: "hidden",
                 WebkitBackfaceVisibility: "hidden",
                 transformStyle: "preserve-3d",
               }}
-              animate={{
-                rotateY: isFlipped ? 180 : 0,
-              }}
-              transition={{
-                duration: 1.2,
-                type: "spring",
-                stiffness: 60,
-                damping: 12,
-              }}
             >
               <div className="relative h-full flex flex-col items-center justify-center text-center">
                 {lineItem.image_url && (
-                  <div className="w-48 h-48 sm:w-64 sm:h-64 md:w-80 md:h-80 mb-4 sm:mb-6 rounded-lg overflow-hidden border-2 border-zinc-700">
+                  <motion.div
+                    className="w-48 h-48 sm:w-64 sm:h-64 md:w-80 md:h-80 mb-4 sm:mb-6 rounded-lg overflow-hidden border-2 border-zinc-700"
+                    style={{
+                      rotateX: imageRotateX,
+                      rotateY: imageRotateY,
+                      transformStyle: "preserve-3d",
+                    }}
+                  >
                     <img
                       src={lineItem.image_url}
                       alt={lineItem.title}
                       className="w-full h-full object-cover"
                     />
-                  </div>
+                  </motion.div>
                 )}
                 <h2 className="text-xl sm:text-2xl font-bold text-white mb-2">{lineItem.title}</h2>
                 {lineItem.vendor && (
@@ -147,25 +182,16 @@ export function CertificateModal({ lineItem, onClose }: CertificateModalProps) {
                 )}
                 <p className="text-xs sm:text-sm text-zinc-500 mt-2 sm:mt-4">Click to view certificate details</p>
               </div>
-            </motion.div>
+            </div>
 
             {/* Back of card */}
-            <motion.div
+            <div
               className="absolute inset-0"
               style={{
                 backfaceVisibility: "hidden",
                 WebkitBackfaceVisibility: "hidden",
                 transformStyle: "preserve-3d",
                 transform: "rotateY(180deg)",
-              }}
-              animate={{
-                rotateY: isFlipped ? 0 : 180,
-              }}
-              transition={{
-                duration: 1.2,
-                type: "spring",
-                stiffness: 60,
-                damping: 12,
               }}
             >
               <div className="relative h-full flex flex-col items-center justify-center text-center p-4 sm:p-6">
@@ -206,7 +232,7 @@ export function CertificateModal({ lineItem, onClose }: CertificateModalProps) {
 
                 <p className="text-xs sm:text-sm text-zinc-500 mt-6 sm:mt-8">Click to view artwork</p>
               </div>
-            </motion.div>
+            </div>
           </FloatingCard>
         </div>
       </DialogContent>
