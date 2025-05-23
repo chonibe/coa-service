@@ -30,6 +30,7 @@ interface VendorProfile {
   contact_name: string | null
   contact_email: string | null
   created_at: string
+  signature_url: string | null
 }
 
 interface FormState {
@@ -42,6 +43,7 @@ interface FormState {
   phone: string
   contact_name: string
   contact_email: string
+  signature_url: string | null
 }
 
 const COUNTRIES = [
@@ -85,6 +87,7 @@ export default function VendorSettingsPage() {
     phone: "",
     contact_name: "",
     contact_email: "",
+    signature_url: null,
   })
 
   useEffect(() => {
@@ -110,6 +113,7 @@ export default function VendorSettingsPage() {
             phone: data.vendor.phone || "",
             contact_name: data.vendor.contact_name || "",
             contact_email: data.vendor.contact_email || "",
+            signature_url: data.vendor.signature_url || null,
           })
 
           // Check completion steps
@@ -145,6 +149,36 @@ export default function VendorSettingsPage() {
 
   const handleSelectChange = (value: string) => {
     setFormState((prev) => ({ ...prev, tax_country: value }))
+  }
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    try {
+      const formData = new FormData()
+      formData.append("file", file)
+      formData.append("field", "signature")
+
+      const response = await fetch("/api/upload", {
+        method: "POST",
+        body: formData,
+      })
+
+      if (!response.ok) {
+        throw new Error("Failed to upload file")
+      }
+
+      const data = await response.json()
+      setFormState((prev) => ({ ...prev, signature_url: data.url }))
+    } catch (error) {
+      console.error("Error uploading file:", error)
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to upload signature. Please try again.",
+      })
+    }
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -219,7 +253,7 @@ export default function VendorSettingsPage() {
       <div className="grid gap-6 md:grid-cols-7">
         <div className="md:col-span-5">
           <Tabs value={activeTab} onValueChange={setActiveTab}>
-            <TabsList className="grid w-full grid-cols-4">
+            <TabsList className="grid w-full grid-cols-5">
               <TabsTrigger value="profile" className="flex items-center gap-2">
                 <User className="h-4 w-4" />
                 <span>Profile</span>
@@ -234,6 +268,11 @@ export default function VendorSettingsPage() {
                 <FileText className="h-4 w-4" />
                 <span>Tax Info</span>
                 {completionSteps.tax && <CheckCircle className="h-3 w-3 text-green-500 ml-1" />}
+              </TabsTrigger>
+              <TabsTrigger value="signature" className="flex items-center gap-2">
+                <FileText className="h-4 w-4" />
+                <span>Signature</span>
+                {formState.signature_url && <CheckCircle className="h-3 w-3 text-green-500 ml-1" />}
               </TabsTrigger>
               <TabsTrigger value="stripe" className="flex items-center gap-2">
                 <CreditCard className="h-4 w-4" />
@@ -405,6 +444,48 @@ export default function VendorSettingsPage() {
                       </AlertDescription>
                     </Alert>
                   </CardContent>
+                </Card>
+              </TabsContent>
+
+              <TabsContent value="signature" className="space-y-4 mt-4">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Digital Signature</CardTitle>
+                    <CardDescription>Upload your signature to be used on certificates of authenticity</CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="signature">Signature Image</Label>
+                      <Input
+                        id="signature"
+                        type="file"
+                        accept="image/*"
+                        onChange={handleFileUpload}
+                        className="cursor-pointer"
+                      />
+                      <p className="text-sm text-muted-foreground">
+                        Upload a clear image of your signature. This will be used on certificates of authenticity.
+                      </p>
+                    </div>
+                    {formState.signature_url && (
+                      <div className="mt-4">
+                        <Label>Current Signature</Label>
+                        <div className="mt-2 p-4 border rounded-md">
+                          <img
+                            src={formState.signature_url}
+                            alt="Current signature"
+                            className="h-16 object-contain"
+                          />
+                        </div>
+                      </div>
+                    )}
+                  </CardContent>
+                  <CardFooter>
+                    <Button type="submit" disabled={isSaving}>
+                      {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                      Save Changes
+                    </Button>
+                  </CardFooter>
                 </Card>
               </TabsContent>
 

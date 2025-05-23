@@ -1,11 +1,16 @@
 import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
-import { supabase } from "@/lib/supabase"
+import { getSupabaseClient } from "@/lib/supabase"
 
 export async function POST(request: NextRequest) {
   try {
+    const supabase = getSupabaseClient()
+    if (!supabase) {
+      return NextResponse.json({ message: "Database connection error" }, { status: 500 })
+    }
+
     const body = await request.json()
-    const { vendor_name, instagram_url, notes, paypal_email, tax_id, tax_country, is_company } = body
+    const { vendor_name, instagram_url, notes, paypal_email, tax_id, tax_country, is_company, signature_url } = body
 
     if (!vendor_name) {
       return NextResponse.json({ message: "Vendor name is required" }, { status: 400 })
@@ -36,6 +41,7 @@ export async function POST(request: NextRequest) {
           tax_id,
           tax_country,
           is_company,
+          signature_url,
           updated_at: now,
         })
         .eq("vendor_name", vendor_name)
@@ -54,6 +60,7 @@ export async function POST(request: NextRequest) {
         tax_id,
         tax_country,
         is_company,
+        signature_url,
         created_at: now,
         updated_at: now,
       })

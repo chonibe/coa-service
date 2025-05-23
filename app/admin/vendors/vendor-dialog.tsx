@@ -34,6 +34,7 @@ export function VendorDialog({ vendor, open, onOpenChange, onSave }: VendorDialo
   const [isCompany, setIsCompany] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [signatureUrl, setSignatureUrl] = useState<string | null>(null)
 
   // Reset form when vendor changes
   useEffect(() => {
@@ -44,6 +45,7 @@ export function VendorDialog({ vendor, open, onOpenChange, onSave }: VendorDialo
       setTaxId(vendor.tax_id || "")
       setTaxCountry(vendor.tax_country || "GB")
       setIsCompany(vendor.is_company || false)
+      setSignatureUrl(vendor.signature_url || null)
     } else {
       setInstagramUrl("")
       setNotes("")
@@ -51,9 +53,36 @@ export function VendorDialog({ vendor, open, onOpenChange, onSave }: VendorDialo
       setTaxId("")
       setTaxCountry("GB")
       setIsCompany(false)
+      setSignatureUrl(null)
     }
     setError(null)
   }, [vendor, open])
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    try {
+      const formData = new FormData()
+      formData.append("file", file)
+      formData.append("field", "signature")
+
+      const response = await fetch("/api/upload", {
+        method: "POST",
+        body: formData,
+      })
+
+      if (!response.ok) {
+        throw new Error("Failed to upload file")
+      }
+
+      const data = await response.json()
+      setSignatureUrl(data.url)
+    } catch (error) {
+      console.error("Error uploading file:", error)
+      setError("Failed to upload signature. Please try again.")
+    }
+  }
 
   const handleSave = async () => {
     if (!vendor) return
@@ -75,6 +104,7 @@ export function VendorDialog({ vendor, open, onOpenChange, onSave }: VendorDialo
           tax_id: taxId,
           tax_country: taxCountry,
           is_company: isCompany,
+          signature_url: signatureUrl,
         }),
       })
 
@@ -190,6 +220,33 @@ export function VendorDialog({ vendor, open, onOpenChange, onSave }: VendorDialo
                 <SelectItem value="OTHER">Other</SelectItem>
               </SelectContent>
             </Select>
+          </div>
+
+          <div className="grid grid-cols-4 items-center gap-4">
+            <Label htmlFor="signature" className="text-right">
+              Signature
+            </Label>
+            <div className="col-span-3 space-y-2">
+              <Input
+                id="signature"
+                type="file"
+                accept="image/*"
+                onChange={handleFileUpload}
+                className="cursor-pointer"
+              />
+              <p className="text-sm text-muted-foreground">
+                Upload a clear image of the vendor's signature for certificates of authenticity.
+              </p>
+              {signatureUrl && (
+                <div className="mt-2 p-4 border rounded-md">
+                  <img
+                    src={signatureUrl}
+                    alt="Current signature"
+                    className="h-16 object-contain"
+                  />
+                </div>
+              )}
+            </div>
           </div>
 
           <div className="grid grid-cols-4 items-center gap-4">

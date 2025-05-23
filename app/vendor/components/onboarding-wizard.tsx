@@ -37,6 +37,26 @@ const COUNTRIES = [
   "Other",
 ]
 
+interface FormData {
+  vendor_name: string
+  contact_name: string
+  contact_email: string
+  phone: string
+  address: string
+  website: string
+  instagram_url: string
+  bio: string
+  paypal_email: string
+  bank_account: string
+  is_company: boolean
+  tax_id: string
+  tax_country: string
+  notify_on_sale: boolean
+  notify_on_payout: boolean
+  notify_on_message: boolean
+  signature_url: string | null
+}
+
 export function OnboardingWizard({ initialData, onComplete }: OnboardingWizardProps) {
   const [currentStep, setCurrentStep] = useState(0)
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -44,7 +64,7 @@ export function OnboardingWizard({ initialData, onComplete }: OnboardingWizardPr
   const { toast } = useToast()
 
   // Form state
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<FormData>({
     // Basic info
     vendor_name: "",
     contact_name: "",
@@ -70,6 +90,7 @@ export function OnboardingWizard({ initialData, onComplete }: OnboardingWizardPr
     notify_on_sale: true,
     notify_on_payout: true,
     notify_on_message: true,
+    signature_url: null,
   })
 
   // Validation state
@@ -96,6 +117,7 @@ export function OnboardingWizard({ initialData, onComplete }: OnboardingWizardPr
         notify_on_sale: initialData.notify_on_sale !== undefined ? initialData.notify_on_sale : true,
         notify_on_payout: initialData.notify_on_payout !== undefined ? initialData.notify_on_payout : true,
         notify_on_message: initialData.notify_on_message !== undefined ? initialData.notify_on_message : true,
+        signature_url: initialData.signature_url || null,
       }))
     }
   }, [initialData])
@@ -110,27 +132,61 @@ export function OnboardingWizard({ initialData, onComplete }: OnboardingWizardPr
     {
       title: "Basic Information",
       description: "Tell us about yourself",
-      fields: ["contact_name", "contact_email", "phone"],
+      fields: [
+        { name: "contact_name", label: "Contact Name", type: "text", required: true },
+        { name: "contact_email", label: "Contact Email", type: "email", required: true },
+        { name: "phone", label: "Phone Number", type: "tel", required: true },
+        { name: "address", label: "Business Address", type: "textarea", required: true },
+      ],
     },
     {
-      title: "Business Details",
+      title: "Social Media & Bio",
       description: "Share your business information",
-      fields: ["address", "website", "instagram_url", "bio"],
+      fields: [
+        { name: "website", label: "Website", type: "text" },
+        { name: "instagram_url", label: "Instagram URL", type: "text" },
+        { name: "bio", label: "Bio", type: "textarea" },
+      ],
     },
     {
       title: "Payment Information",
       description: "How would you like to get paid",
-      fields: ["paypal_email", "bank_account"],
+      fields: [
+        { name: "paypal_email", label: "PayPal Email", type: "email", required: true },
+        { name: "bank_account", label: "Bank Account Details", type: "textarea" },
+      ],
     },
     {
       title: "Tax Information",
       description: "Required for tax compliance",
-      fields: ["is_company", "tax_id", "tax_country"],
+      fields: [
+        { name: "is_company", label: "Registering as a Company", type: "checkbox" },
+        { name: "tax_id", label: "Tax ID", type: "text", required: true },
+        { name: "tax_country", label: "Tax Country", type: "select", options: COUNTRIES, required: true },
+      ],
+    },
+    {
+      title: "Signature",
+      description: "Upload your digital signature",
+      fields: [
+        {
+          name: "signature_url",
+          label: "Digital Signature",
+          type: "file",
+          accept: "image/*",
+          required: true,
+          description: "Upload your signature to be used on certificates of authenticity",
+        },
+      ],
     },
     {
       title: "Notification Preferences",
       description: "Choose how you want to be notified",
-      fields: ["notify_on_sale", "notify_on_payout", "notify_on_message"],
+      fields: [
+        { name: "notify_on_sale", label: "Notify on Sale", type: "checkbox" },
+        { name: "notify_on_payout", label: "Notify on Payout", type: "checkbox" },
+        { name: "notify_on_message", label: "Notify on Message", type: "checkbox" },
+      ],
     },
     {
       title: "Complete",
@@ -170,6 +226,36 @@ export function OnboardingWizard({ initialData, onComplete }: OnboardingWizardPr
     }
   }
 
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>, fieldName: string) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    try {
+      const formData = new FormData()
+      formData.append("file", file)
+      formData.append("field", fieldName)
+
+      const response = await fetch("/api/upload", {
+        method: "POST",
+        body: formData,
+      })
+
+      if (!response.ok) {
+        throw new Error("Failed to upload file")
+      }
+
+      const data = await response.json()
+      setFormData((prev) => ({ ...prev, [fieldName]: data.url }))
+    } catch (error) {
+      console.error("Error uploading file:", error)
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to upload file. Please try again.",
+      })
+    }
+  }
+
   const validateStep = () => {
     const currentFields = steps[currentStep].fields
     const errors: Record<string, string> = {}
@@ -181,7 +267,7 @@ export function OnboardingWizard({ initialData, onComplete }: OnboardingWizardPr
 
     // Validate required fields based on the current step
     currentFields.forEach((field) => {
-      switch (field) {
+      switch (field.name) {
         case "contact_name":
           if (!formData.contact_name.trim()) {
             errors.contact_name = "Contact name is required"
@@ -366,12 +452,7 @@ export function OnboardingWizard({ initialData, onComplete }: OnboardingWizardPr
               />
               {validationErrors.phone && <p className="text-sm text-red-500">{validationErrors.phone}</p>}
             </div>
-          </div>
-        )
 
-      case 2: // Business Details
-        return (
-          <div className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="address">
                 Business Address <span className="text-red-500">*</span>
@@ -387,7 +468,12 @@ export function OnboardingWizard({ initialData, onComplete }: OnboardingWizardPr
               />
               {validationErrors.address && <p className="text-sm text-red-500">{validationErrors.address}</p>}
             </div>
+          </div>
+        )
 
+      case 2: // Social Media & Bio
+        return (
+          <div className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="website">Website (Optional)</Label>
               <Input
@@ -555,7 +641,32 @@ export function OnboardingWizard({ initialData, onComplete }: OnboardingWizardPr
           </div>
         )
 
-      case 5: // Notification Preferences
+      case 5: // Signature
+        return (
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="signature_url">Digital Signature</Label>
+              <Input
+                id="signature_url"
+                type="file"
+                accept="image/*"
+                onChange={(e) => handleFileUpload(e, "signature_url")}
+                className="cursor-pointer"
+              />
+              {formData.signature_url && (
+                <div className="mt-2">
+                  <img
+                    src={formData.signature_url}
+                    alt="Uploaded signature"
+                    className="h-16 object-contain border rounded-md p-2"
+                  />
+                </div>
+              )}
+            </div>
+          </div>
+        )
+
+      case 6: // Notification Preferences
         return (
           <div className="space-y-6">
             <p className="text-gray-600">
@@ -617,7 +728,7 @@ export function OnboardingWizard({ initialData, onComplete }: OnboardingWizardPr
           </div>
         )
 
-      case 6: // Complete
+      case 7: // Complete
         return (
           <div className="space-y-4 text-center">
             <div className="flex justify-center mb-6">
