@@ -159,8 +159,8 @@ export function CertificateModal({ lineItem, onClose }: CertificateModalProps) {
       setIsOpen(false)
       onClose()
     }}>
-      <DialogContent className="w-[95vw] sm:w-[90vw] md:max-w-[900px] bg-zinc-900 border-zinc-800 p-4 sm:p-6">
-        <div className="mt-4 sm:mt-6 perspective-1000">
+      <DialogContent className="w-[95vw] sm:w-[90vw] md:max-w-[900px] bg-transparent border-none p-0">
+        <div className="perspective-1000">
           <motion.div
             onClick={() => setIsFlipped(!isFlipped)}
             className="relative w-full aspect-[4/3] rounded-xl bg-gradient-to-br from-zinc-800 to-zinc-900 p-4 sm:p-8 shadow-2xl cursor-pointer"
@@ -205,6 +205,7 @@ export function CertificateModal({ lineItem, onClose }: CertificateModalProps) {
                     onMouseMove={handleMouseMove}
                     onMouseLeave={handleMouseLeave}
                     style={{
+                      transformStyle: "preserve-3d",
                       rotateX: isFlipped ? 0 : rotateX,
                       rotateY: isFlipped ? 0 : rotateY,
                     }}
