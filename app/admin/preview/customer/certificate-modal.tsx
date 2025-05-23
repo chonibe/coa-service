@@ -107,6 +107,7 @@ interface CertificateModalProps {
 export function CertificateModal({ lineItem, onClose }: CertificateModalProps) {
   const [isOpen, setIsOpen] = useState(false)
   const [isFlipped, setIsFlipped] = useState(false)
+  const [profilePicture, setProfilePicture] = useState<string | null>(null)
   const cardRef = useRef<HTMLDivElement>(null)
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 })
 
@@ -122,6 +123,19 @@ export function CertificateModal({ lineItem, onClose }: CertificateModalProps) {
     if (lineItem) {
       setIsOpen(true)
       setIsFlipped(false)
+      // Fetch the vendor's Instagram profile picture
+      if (lineItem.vendor) {
+        fetch(`/api/vendors/instagram-profile?vendorName=${encodeURIComponent(lineItem.vendor)}`)
+          .then((res) => res.json())
+          .then((data) => {
+            if (data.profilePicture) {
+              setProfilePicture(data.profilePicture)
+            }
+          })
+          .catch((error) => {
+            console.error("Error fetching Instagram profile:", error)
+          })
+      }
     } else {
       setIsOpen(false)
     }
