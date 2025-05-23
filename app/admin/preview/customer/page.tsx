@@ -140,7 +140,15 @@ export default function CustomerPreviewPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [searchTerm, setSearchTerm] = useState("")
-  const [selectedLineItem, setSelectedLineItem] = useState<LineItem | null>(null)
+  const [selectedLineItem, setSelectedLineItem] = useState<{
+    line_item_id: string
+    title: string
+    image_url: string | null
+    vendor: string | null
+    edition_number: number | null
+    edition_total: number | null
+    nfc_tag_id: string | null
+  } | null>(null)
   const router = useRouter()
 
   useEffect(() => {
@@ -278,50 +286,69 @@ export default function CustomerPreviewPage() {
                 {/* Order Items */}
                 <div className="space-y-4">
                   {order.line_items.map((item) => (
-                    <div
+                    <FloatingCard
                       key={item.id}
-                      className="group relative bg-zinc-900/50 backdrop-blur-sm border border-zinc-800/50 rounded-xl p-4 hover:border-zinc-700/50 transition-all duration-300"
+                      className="p-4 hover:bg-zinc-800/50 transition-colors duration-300"
                     >
-                      {/* Shimmer effect */}
-                      <span className="pointer-events-none absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                        <span className="block w-full h-full shimmer" />
-                      </span>
-                      
                       <div className="flex items-center gap-4">
-                        {item.img_url && (
-                          <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-lg overflow-hidden border border-zinc-800">
+                        <div className="relative w-16 h-16 rounded-lg overflow-hidden bg-zinc-800">
+                          {item.img_url ? (
                             <img
                               src={item.img_url}
                               alt={item.name}
                               className="w-full h-full object-cover"
                             />
-                          </div>
-                        )}
-                        <div className="flex-1 min-w-0">
-                          <h3 className="text-sm sm:text-base font-medium text-white truncate">
-                            {item.name}
-                          </h3>
-                          {item.vendor_name && (
-                            <p className="text-xs sm:text-sm text-zinc-400 truncate">
-                              {item.vendor_name}
-                            </p>
-                          )}
-                          {item.edition_number && item.edition_total && (
-                            <p className="text-xs sm:text-sm text-indigo-400">
-                              Edition #{item.edition_number} of {item.edition_total}
-                            </p>
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center text-zinc-500">
+                              <ShoppingBag className="w-6 h-6" />
+                            </div>
                           )}
                         </div>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="text-zinc-400 hover:text-white"
-                          onClick={() => setSelectedLineItem(item)}
-                        >
-                          View Certificate
-                        </Button>
+                        <div className="flex-1 min-w-0">
+                          <h3 className="font-medium text-white truncate">{item.name}</h3>
+                          <p className="text-sm text-zinc-400">
+                            {item.quantity} × {formatCurrency(item.price)}
+                          </p>
+                          {item.vendor_name && (
+                            <p className="text-sm text-zinc-500">{item.vendor_name}</p>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="text-zinc-400 hover:text-white"
+                            onClick={() => setSelectedLineItem({
+                              line_item_id: item.id,
+                              title: item.name,
+                              image_url: item.img_url,
+                              vendor: item.vendor_name,
+                              edition_number: item.edition_number,
+                              edition_total: item.edition_total,
+                              nfc_tag_id: item.nfc_tag_id
+                            })}
+                          >
+                            <Certificate className="w-4 h-4 mr-2" />
+                            View Certificate
+                          </Button>
+                          {!item.nfc_tag_id && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="text-indigo-400 border-indigo-500/20 hover:bg-indigo-500/10 hover:text-indigo-300"
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                // TODO: Implement NFC pairing logic
+                                toast.info("NFC pairing coming soon")
+                              }}
+                            >
+                              <Tag className="w-4 h-4 mr-2" />
+                              Pair Artwork
+                            </Button>
+                          )}
+                        </div>
                       </div>
-                    </div>
+                    </FloatingCard>
                   ))}
                 </div>
               </div>
@@ -331,14 +358,7 @@ export default function CustomerPreviewPage() {
       </div>
 
       <CertificateModal
-        lineItem={selectedLineItem ? {
-          line_item_id: selectedLineItem.id,
-          title: selectedLineItem.name,
-          image_url: selectedLineItem.img_url,
-          vendor: selectedLineItem.vendor_name,
-          edition_number: selectedLineItem.edition_number,
-          edition_total: selectedLineItem.edition_total
-        } : null}
+        lineItem={selectedLineItem}
         onClose={() => setSelectedLineItem(null)}
       />
     </div>

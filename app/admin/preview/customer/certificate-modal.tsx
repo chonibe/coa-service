@@ -108,14 +108,18 @@ export function CertificateModal({ lineItem, onClose }: CertificateModalProps) {
   // Image motion values for subtle parallax effect
   const imageX = useMotionValue(0)
   const imageY = useMotionValue(0)
-  const imageRotateX = useTransform(imageY, [-5, 5], [2, -2]) // Reduced range for subtle effect
-  const imageRotateY = useTransform(imageX, [-5, 5], [2, -2]) // Reduced range for subtle effect
-  const imageTranslateX = useTransform(imageX, [-5, 5], [3, -3]) // Reduced translation
-  const imageTranslateY = useTransform(imageY, [-5, 5], [3, -3]) // Reduced translation
+  const imageRotateX = useTransform(imageY, [-5, 5], [2, -2])
+  const imageRotateY = useTransform(imageX, [-5, 5], [2, -2])
+  const imageTranslateX = useTransform(imageX, [-5, 5], [3, -3])
+  const imageTranslateY = useTransform(imageY, [-5, 5], [3, -3])
 
   useEffect(() => {
-    setIsOpen(!!lineItem)
-    setIsFlipped(false)
+    if (lineItem) {
+      setIsOpen(true)
+      setIsFlipped(false)
+    } else {
+      setIsOpen(false)
+    }
   }, [lineItem])
 
   useEffect(() => {
@@ -131,8 +135,8 @@ export function CertificateModal({ lineItem, onClose }: CertificateModalProps) {
       const rotateY = ((x - centerX) / centerX) * -5
 
       // Update image motion values for subtle parallax
-      imageX.set(rotateY * 0.3) // Reduced multiplier and reversed direction
-      imageY.set(rotateX * 0.3) // Reduced multiplier and reversed direction
+      imageX.set(rotateY * 0.3)
+      imageY.set(rotateX * 0.3)
 
       // Apply card tilt
       if (cardRef.current) {
@@ -158,6 +162,10 @@ export function CertificateModal({ lineItem, onClose }: CertificateModalProps) {
     }
   }, [imageX, imageY])
 
+  const handleCardClick = () => {
+    setIsFlipped(!isFlipped)
+  }
+
   if (!lineItem) return null
 
   return (
@@ -169,7 +177,7 @@ export function CertificateModal({ lineItem, onClose }: CertificateModalProps) {
         <div className="perspective-[2000px]">
           <motion.div
             ref={cardRef}
-            onClick={() => setIsFlipped(!isFlipped)}
+            onClick={handleCardClick}
             className="relative w-full aspect-[4/3] rounded-xl bg-gradient-to-br from-zinc-800 to-zinc-900 p-4 sm:p-8 shadow-2xl cursor-pointer"
             style={{
               willChange: "transform",
