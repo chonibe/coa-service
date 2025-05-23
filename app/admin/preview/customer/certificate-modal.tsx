@@ -103,15 +103,14 @@ export function CertificateModal({ lineItem, onClose }: CertificateModalProps) {
   const [isOpen, setIsOpen] = useState(false)
   const [isFlipped, setIsFlipped] = useState(false)
   const cardRef = useRef<HTMLDivElement>(null)
-  const [mousePosition, setMousePosition] = useState({ x: 50, y: 50 })
 
-  // Image motion values for mirrored movement with larger range
+  // Image motion values for subtle mirrored movement
   const imageX = useMotionValue(0)
   const imageY = useMotionValue(0)
-  const imageRotateX = useTransform(imageY, [-5, 5], [15, -15]) // Increased range for more dramatic effect
-  const imageRotateY = useTransform(imageX, [-5, 5], [15, -15]) // Increased range for more dramatic effect
-  const imageTranslateX = useTransform(imageX, [-5, 5], [20, -20]) // Added translation for more depth
-  const imageTranslateY = useTransform(imageY, [-5, 5], [20, -20]) // Added translation for more depth
+  const imageRotateX = useTransform(imageY, [-5, 5], [3, -3]) // Reduced range for subtle effect
+  const imageRotateY = useTransform(imageX, [-5, 5], [3, -3]) // Reduced range for subtle effect
+  const imageTranslateX = useTransform(imageX, [-5, 5], [5, -5]) // Reduced translation
+  const imageTranslateY = useTransform(imageY, [-5, 5], [5, -5]) // Reduced translation
 
   useEffect(() => {
     setIsOpen(!!lineItem)
@@ -130,16 +129,9 @@ export function CertificateModal({ lineItem, onClose }: CertificateModalProps) {
       const rotateX = ((y - centerY) / centerY) * 5
       const rotateY = ((x - centerX) / centerX) * -5
 
-      // Update mouse position for shimmer
-      setMousePosition({ 
-        x: (x / rect.width) * 100, 
-        y: (y / rect.height) * 100 
-      })
-
       // Update image motion values for mirrored movement
-      // Note the negative values to create inverse movement
-      imageX.set(-rotateY * 1.5) // Increased multiplier for more dramatic effect
-      imageY.set(-rotateX * 1.5) // Increased multiplier for more dramatic effect
+      imageX.set(-rotateY)
+      imageY.set(-rotateX)
 
       // Apply card tilt
       if (cardRef.current) {
@@ -150,7 +142,6 @@ export function CertificateModal({ lineItem, onClose }: CertificateModalProps) {
     const handleMouseLeave = () => {
       if (!cardRef.current) return
       cardRef.current.style.transform = ""
-      setMousePosition({ x: 50, y: 50 })
       imageX.set(0)
       imageY.set(0)
     }
@@ -193,16 +184,6 @@ export function CertificateModal({ lineItem, onClose }: CertificateModalProps) {
               damping: 12,
             }}
           >
-            {/* Dynamic shimmer overlay */}
-            <span 
-              className="pointer-events-none absolute inset-0 z-10 opacity-100 transition-opacity duration-300"
-              style={{
-                background: `radial-gradient(circle at ${mousePosition.x}% ${mousePosition.y}%, rgba(255,255,255,0.1) 0%, transparent 50%)`,
-              }}
-            >
-              <span className="block w-full h-full shimmer" />
-            </span>
-
             {/* Front of card */}
             <div
               className="absolute inset-0"
