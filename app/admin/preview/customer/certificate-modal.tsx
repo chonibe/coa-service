@@ -10,9 +10,9 @@ function FloatingTiltCard({ children, className = "", ...props }: React.HTMLAttr
     const y = e.clientY - rect.top
     const centerX = rect.width / 2
     const centerY = rect.height / 2
-    const rotateX = ((y - centerY) / centerY) * 8
-    const rotateY = ((x - centerX) / centerX) * -8
-    card.style.transform = `perspective(800px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale3d(1.03,1.03,1.03)`
+    const rotateX = ((y - centerY) / centerY) * 10
+    const rotateY = ((x - centerX) / centerX) * -10
+    card.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale3d(1.05,1.05,1.05)`
   }
   const handleMouseLeave = () => {
     const card = cardRef.current
@@ -22,7 +22,7 @@ function FloatingTiltCard({ children, className = "", ...props }: React.HTMLAttr
   return (
     <div
       ref={cardRef}
-      className={`relative bg-zinc-900 border border-zinc-800 rounded-xl shadow-lg transition-transform duration-400 hover:shadow-2xl overflow-hidden ${className}`}
+      className={`relative bg-gradient-to-br from-zinc-900 to-zinc-800 border border-zinc-700/50 rounded-xl shadow-xl transition-all duration-300 hover:shadow-2xl hover:border-zinc-600/50 overflow-hidden ${className}`}
       style={{ willChange: "transform" }}
       onMouseMove={handleMouseMove}
       onMouseLeave={handleMouseLeave}
@@ -50,7 +50,7 @@ function FloatingTiltImage({ src, alt, className = "", ...props }: React.ImgHTML
     const centerY = rect.height / 2
     const rotateX = ((y - centerY) / centerY) * 10
     const rotateY = ((x - centerX) / centerX) * -10
-    img.style.transform = `perspective(800px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale3d(1.18,1.18,1.18)`
+    img.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale3d(1.1,1.1,1.1)`
   }
   const handleMouseLeave = () => {
     const img = imgRef.current
@@ -63,7 +63,7 @@ function FloatingTiltImage({ src, alt, className = "", ...props }: React.ImgHTML
         ref={imgRef}
         src={src}
         alt={alt}
-        className="w-full h-full object-cover rounded-lg shadow-lg transition-transform duration-700"
+        className="w-full h-full object-cover rounded-lg shadow-lg transition-transform duration-300"
         onMouseMove={handleMouseMove}
         onMouseLeave={handleMouseLeave}
         tabIndex={0}

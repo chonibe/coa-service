@@ -320,13 +320,13 @@ function CustomerPreviewContent() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-100 p-8">
+    <div className="min-h-screen bg-gradient-to-br from-zinc-950 to-zinc-900 p-8">
       <div className="max-w-7xl mx-auto">
-        <h1 className="text-3xl font-bold mb-8">Customer Preview</h1>
+        <h1 className="text-3xl font-bold mb-8 text-white">Customer Preview</h1>
         
         {orders.length === 0 ? (
-          <div className="bg-white rounded-lg shadow-lg p-6">
-            <p className="text-gray-500 text-center">No orders found</p>
+          <div className="bg-zinc-800/50 border border-zinc-700/50 rounded-lg shadow-lg p-6">
+            <p className="text-zinc-400 text-center">No orders found</p>
           </div>
         ) : (
           <div className="space-y-6">
@@ -349,7 +349,7 @@ function CustomerPreviewContent() {
                     {order.line_items.map((item) => (
                       <div 
                         key={item.line_item_id} 
-                        className="flex items-start space-x-4 p-4 bg-zinc-800/50 rounded-lg cursor-pointer transition-all duration-200 hover:bg-zinc-800"
+                        className="flex items-start space-x-4 p-4 bg-zinc-800/30 rounded-lg cursor-pointer transition-all duration-200 hover:bg-zinc-800/50"
                         onClick={() => fetchCertificate(item.line_item_id)}
                       >
                         {item.image_url && (
@@ -389,15 +389,15 @@ function CustomerPreviewContent() {
 
       {/* Certificate Preview Dialog */}
       <Dialog open={!!selectedCertificate} onOpenChange={() => setSelectedCertificate(null)}>
-        <DialogContent className="max-w-3xl">
+        <DialogContent className="max-w-3xl bg-zinc-900 border-zinc-800">
           {isCertificateLoading ? (
             <div className="space-y-6">
               <div className="text-center">
-                <h2 className="text-2xl font-bold">Loading Certificate...</h2>
-                <p className="text-gray-500">Please wait while we fetch the certificate details</p>
+                <h2 className="text-2xl font-bold text-white">Loading Certificate...</h2>
+                <p className="text-zinc-400">Please wait while we fetch the certificate details</p>
               </div>
               <div className="space-y-4">
-                <div className="aspect-video relative bg-gray-100 rounded-lg overflow-hidden">
+                <div className="aspect-video relative bg-zinc-800 rounded-lg overflow-hidden">
                   <Skeleton className="absolute inset-0" />
                 </div>
                 <div className="space-y-2">
@@ -421,14 +421,14 @@ function CustomerPreviewContent() {
                 <div className="inline-flex items-center justify-center p-2 bg-green-100 rounded-full mb-4">
                   <CheckCircle className="h-8 w-8 text-green-600" />
                 </div>
-                <h2 className="text-2xl font-bold">Certificate of Authenticity</h2>
-                <p className="text-gray-500">
+                <h2 className="text-2xl font-bold text-white">Certificate of Authenticity</h2>
+                <p className="text-zinc-400">
                   Edition #{selectedCertificate.lineItem.editionNumber} of {selectedCertificate.lineItem.editionTotal}
                 </p>
               </div>
 
               {selectedCertificate.product.images && selectedCertificate.product.images.length > 0 && (
-                <div className="aspect-video relative bg-gray-100 rounded-lg overflow-hidden">
+                <div className="aspect-video relative bg-zinc-800 rounded-lg overflow-hidden">
                   <img
                     src={selectedCertificate.product.images[0].src}
                     alt={selectedCertificate.product.images[0].alt}
@@ -438,62 +438,62 @@ function CustomerPreviewContent() {
               )}
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="border rounded-lg p-4">
+                <div className="border border-zinc-800 rounded-lg p-4">
                   <div className="flex items-start">
-                    <Certificate className="h-5 w-5 text-indigo-600 mt-0.5 mr-2" />
+                    <Certificate className="h-5 w-5 text-indigo-400 mt-0.5 mr-2" />
                     <div>
-                      <h3 className="font-semibold text-gray-900">Edition Details</h3>
-                      <p className="text-indigo-600 font-bold text-lg">
+                      <h3 className="font-semibold text-white">Edition Details</h3>
+                      <p className="text-indigo-400 font-bold text-lg">
                         #{selectedCertificate.lineItem.editionNumber} of {selectedCertificate.lineItem.editionTotal}
                       </p>
-                      <p className="text-sm text-gray-500">Limited Edition</p>
+                      <p className="text-sm text-zinc-400">Limited Edition</p>
                     </div>
                   </div>
                 </div>
 
-                <div className="border rounded-lg p-4">
+                <div className="border border-zinc-800 rounded-lg p-4">
                   <div className="flex items-start">
-                    <Clock className="h-5 w-5 text-indigo-600 mt-0.5 mr-2" />
+                    <Clock className="h-5 w-5 text-indigo-400 mt-0.5 mr-2" />
                     <div>
-                      <h3 className="font-semibold text-gray-900">Authentication Date</h3>
-                      <p className="text-gray-600">
+                      <h3 className="font-semibold text-white">Authentication Date</h3>
+                      <p className="text-zinc-400">
                         {formatDate(selectedCertificate.lineItem.updatedAt)}
                       </p>
-                      <p className="text-sm text-gray-500">Last verified edition number</p>
+                      <p className="text-sm text-zinc-400">Last verified edition number</p>
                     </div>
                   </div>
                 </div>
 
-                <div className="border rounded-lg p-4">
+                <div className="border border-zinc-800 rounded-lg p-4">
                   <div className="flex items-start">
-                    <ShoppingBag className="h-5 w-5 text-indigo-600 mt-0.5 mr-2" />
+                    <ShoppingBag className="h-5 w-5 text-indigo-400 mt-0.5 mr-2" />
                     <div>
-                      <h3 className="font-semibold text-gray-900">Purchase Information</h3>
-                      <p className="text-gray-600">{selectedCertificate.order.orderName}</p>
-                      <p className="text-sm text-gray-500">
+                      <h3 className="font-semibold text-white">Purchase Information</h3>
+                      <p className="text-zinc-400">{selectedCertificate.order.orderName}</p>
+                      <p className="text-sm text-zinc-400">
                         {formatDate(selectedCertificate.order.processedAt)}
                       </p>
                     </div>
                   </div>
                 </div>
 
-                <div className="border rounded-lg p-4">
+                <div className="border border-zinc-800 rounded-lg p-4">
                   <div className="flex items-start">
-                    <User className="h-5 w-5 text-indigo-600 mt-0.5 mr-2" />
+                    <User className="h-5 w-5 text-indigo-400 mt-0.5 mr-2" />
                     <div>
-                      <h3 className="font-semibold text-gray-900">Ownership</h3>
-                      <p className="text-gray-600">
+                      <h3 className="font-semibold text-white">Ownership</h3>
+                      <p className="text-zinc-400">
                         {selectedCertificate.order.customer.firstName} {selectedCertificate.order.customer.lastName}
                       </p>
-                      <p className="text-sm text-gray-500">Original Purchaser</p>
+                      <p className="text-sm text-zinc-400">Original Purchaser</p>
                     </div>
                   </div>
                 </div>
               </div>
 
-              <div className="border-t pt-4">
-                <h3 className="font-semibold text-gray-900 mb-2">Product Description</h3>
-                <div className="text-gray-600 prose prose-sm max-w-none">
+              <div className="border-t border-zinc-800 pt-4">
+                <h3 className="font-semibold text-white mb-2">Product Description</h3>
+                <div className="text-zinc-400 prose prose-sm max-w-none">
                   <p>{selectedCertificate.product.description}</p>
                 </div>
               </div>
