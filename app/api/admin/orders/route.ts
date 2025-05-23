@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
-import { createClient } from "@/lib/supabase/server"
+import { getSupabaseAdmin } from "@/lib/supabase"
 
 export async function GET(request: NextRequest) {
   try {
@@ -12,7 +12,16 @@ export async function GET(request: NextRequest) {
     }
 
     // Create Supabase client with service role key
-    const supabase = createClient()
+    let supabase
+    try {
+      supabase = getSupabaseAdmin()
+      if (!supabase) {
+        throw new Error("Failed to initialize Supabase admin client")
+      }
+    } catch (error) {
+      console.error("Error initializing Supabase client:", error)
+      return NextResponse.json({ success: false, message: "Database connection error" }, { status: 500 })
+    }
 
     // Fetch line items from the database
     const { data: lineItems, error } = await supabase
