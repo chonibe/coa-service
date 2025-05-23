@@ -60,12 +60,13 @@ export function VendorDialog({ vendor, open, onOpenChange, onSave }: VendorDialo
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
-    if (!file) return
+    if (!file || !vendor) return
 
     try {
       const formData = new FormData()
       formData.append("file", file)
       formData.append("field", "signature")
+      formData.append("vendorId", vendor.id)
 
       const response = await fetch("/api/upload", {
         method: "POST",
