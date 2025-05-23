@@ -300,8 +300,10 @@ export default function CustomerPreviewPage() {
                                 className="w-full h-full object-cover"
                               />
                               {!item.nfc_tag_id && (
-                                <div className="absolute inset-0 bg-indigo-500/20 backdrop-blur-[2px] flex items-center justify-center">
-                                  <Tag className="w-6 h-6 text-indigo-400" />
+                                <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/10 to-transparent flex items-center justify-center">
+                                  <div className="absolute top-1 right-1">
+                                    <Tag className="w-4 h-4 text-indigo-400" />
+                                  </div>
                                 </div>
                               )}
                             </>

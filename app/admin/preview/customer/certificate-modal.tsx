@@ -219,8 +219,10 @@ export function CertificateModal({ lineItem, onClose }: CertificateModalProps) {
                         className="w-full h-full object-cover"
                       />
                       {!lineItem.nfc_tag_id && (
-                        <div className="absolute inset-0 bg-indigo-500/20 backdrop-blur-[2px] flex items-center justify-center">
-                          <Tag className="w-12 h-12 text-indigo-400" />
+                        <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/10 to-transparent">
+                          <div className="absolute top-2 right-2">
+                            <Tag className="w-6 h-6 text-indigo-400" />
+                          </div>
                         </div>
                       )}
                     </motion.div>
