@@ -160,18 +160,6 @@ export function CertificateModal({ lineItem, onClose }: CertificateModalProps) {
       onClose()
     }}>
       <DialogContent className="w-[95vw] sm:w-[90vw] md:max-w-[900px] bg-transparent border-none p-0">
-        <div className="absolute right-2 top-2 sm:right-4 sm:top-4 z-50">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => {
-              setIsOpen(false)
-              onClose()
-            }}
-          >
-            <X className="h-4 w-4" />
-          </Button>
-        </div>
         <div className="perspective-1000">
           <motion.div
             onClick={() => setIsFlipped(!isFlipped)}
