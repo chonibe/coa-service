@@ -34,29 +34,56 @@ export async function POST(request: NextRequest) {
       console.error("Error creating exec_sql function:", functionError)
     }
 
-    // Now create the vendors table
-    const vendorsTableSql = fs.readFileSync(path.join(process.cwd(), "db", "vendors_table.sql"), "utf8")
+    // Check if vendors table exists
+    const { data: vendorsTable, error: checkError } = await supabase
+      .from("vendors")
+      .select("id")
+      .limit(1)
 
-    const { error } = await supabase.rpc("exec_sql", { sql_query: vendorsTableSql })
-
-    if (error) {
-      console.error("Error creating vendors table:", error)
-      return NextResponse.json({ error: error.message }, { status: 500 })
+    if (checkError && checkError.code !== "PGRST116") {
+      // If error is not "relation does not exist", something else went wrong
+      console.error("Error checking vendors table:", checkError)
+      return NextResponse.json({ error: checkError.message }, { status: 500 })
     }
 
-    // Now create the product_vendor_payouts table
-    const productVendorPayoutsTableSql = fs.readFileSync(
-      path.join(process.cwd(), "db", "product_vendor_payouts_table.sql"),
-      "utf8",
-    )
+    // Only create vendors table if it doesn't exist
+    if (!vendorsTable) {
+      const vendorsTableSql = fs.readFileSync(path.join(process.cwd(), "db", "vendors_table.sql"), "utf8")
+      const { error } = await supabase.rpc("exec_sql", { sql_query: vendorsTableSql })
 
-    const { error: productVendorPayoutsError } = await supabase.rpc("exec_sql", {
-      sql_query: productVendorPayoutsTableSql,
-    })
+      if (error) {
+        console.error("Error creating vendors table:", error)
+        return NextResponse.json({ error: error.message }, { status: 500 })
+      }
+    }
 
-    if (productVendorPayoutsError) {
-      console.error("Error creating product_vendor_payouts table:", productVendorPayoutsError)
-      return NextResponse.json({ error: productVendorPayoutsError.message }, { status: 500 })
+    // Check if product_vendor_payouts table exists
+    const { data: payoutsTable, error: checkPayoutsError } = await supabase
+      .from("product_vendor_payouts")
+      .select("id")
+      .limit(1)
+
+    if (checkPayoutsError && checkPayoutsError.code !== "PGRST116") {
+      // If error is not "relation does not exist", something else went wrong
+      console.error("Error checking product_vendor_payouts table:", checkPayoutsError)
+      return NextResponse.json({ error: checkPayoutsError.message }, { status: 500 })
+    }
+
+    // Only create product_vendor_payouts table if it doesn't exist
+    if (!payoutsTable) {
+      const productVendorPayoutsTableSql = fs.readFileSync(
+        path.join(process.cwd(), "db", "product_vendor_payouts_table.sql"),
+        "utf8",
+      )
+
+      const { error: productVendorPayoutsError } = await supabase.rpc("exec_sql", {
+        sql_query: productVendorPayoutsTableSql,
+      })
+
+      if (productVendorPayoutsError) {
+        console.error("Error creating product_vendor_payouts table:", productVendorPayoutsError)
+        return NextResponse.json({ error: productVendorPayoutsError.message }, { status: 500 })
+      }
     }
 
     return NextResponse.json({ success: true, message: "Database initialized successfully" })
