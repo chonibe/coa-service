@@ -104,6 +104,7 @@ export function CertificateModal({ lineItem, onClose }: CertificateModalProps) {
   const [isOpen, setIsOpen] = useState(false)
   const [isFlipped, setIsFlipped] = useState(false)
   const cardRef = useRef<HTMLDivElement>(null)
+  const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 })
 
   // Image motion values for subtle parallax effect
   const imageX = useMotionValue(0)
@@ -137,6 +138,9 @@ export function CertificateModal({ lineItem, onClose }: CertificateModalProps) {
     imageX.set(rotateY * 0.3)
     imageY.set(rotateX * 0.3)
 
+    // Update mouse position for shimmer effect
+    setMousePosition({ x: (x / rect.width) * 100, y: (y / rect.height) * 100 })
+
     // Apply card tilt
     if (cardRef.current) {
       cardRef.current.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale3d(1.02,1.02,1.02)`
@@ -148,6 +152,7 @@ export function CertificateModal({ lineItem, onClose }: CertificateModalProps) {
     cardRef.current.style.transform = ""
     imageX.set(0)
     imageY.set(0)
+    setMousePosition({ x: 50, y: 50 })
   }
 
   const handleCardClick = () => {
@@ -161,7 +166,11 @@ export function CertificateModal({ lineItem, onClose }: CertificateModalProps) {
       setIsOpen(false)
       onClose()
     }}>
-      <DialogContent className="w-[95vw] sm:w-[90vw] md:max-w-[900px] bg-transparent border-none p-0">
+      <DialogContent 
+        className="w-[95vw] sm:w-[90vw] md:max-w-[900px] bg-transparent border-none p-0"
+        onMouseMove={handleMouseMove}
+        onMouseLeave={handleMouseLeave}
+      >
         <div className="perspective-[2000px]">
           <motion.div
             onClick={handleCardClick}
@@ -182,9 +191,7 @@ export function CertificateModal({ lineItem, onClose }: CertificateModalProps) {
             {/* Tilt container */}
             <div
               ref={cardRef}
-              onMouseMove={handleMouseMove}
-              onMouseLeave={handleMouseLeave}
-              className="absolute inset-0 rounded-xl bg-gradient-to-br from-zinc-800 to-zinc-900 p-4 sm:p-8 shadow-2xl"
+              className="absolute inset-0 rounded-xl p-4 sm:p-8 shadow-2xl"
               style={{
                 willChange: "transform",
                 transformStyle: "preserve-3d",
@@ -221,17 +228,9 @@ export function CertificateModal({ lineItem, onClose }: CertificateModalProps) {
                         alt={lineItem.title}
                         className="w-full h-full object-cover"
                       />
-                      {!lineItem.nfc_tag_id ? (
-                        <div className="absolute inset-0 bg-gradient-to-br from-red-500/20 to-transparent">
-                          <div className="absolute top-2 right-2">
-                            <Tag className="w-6 h-6 text-red-400" />
-                          </div>
-                        </div>
-                      ) : (
-                        <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/10 to-transparent">
-                          <div className="absolute top-2 right-2">
-                            <Tag className="w-6 h-6 text-indigo-400" />
-                          </div>
+                      {!lineItem.nfc_tag_id && (
+                        <div className="absolute top-2 right-2">
+                          <Tag className="w-6 h-6 text-red-400" />
                         </div>
                       )}
                     </motion.div>
