@@ -1,10 +1,10 @@
 "use client"
 
-import { useState, useRef, useEffect, ReactNode } from "react"
+import { useState, useRef, useEffect } from "react"
 import { Dialog, DialogContent } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { X, BadgeIcon as Certificate, User, Calendar, Hash } from "lucide-react"
-import { motion, useMotionValue, useSpring, useTransform, AnimatePresence } from "framer-motion"
+import { motion, useMotionValue, useSpring, useTransform } from "framer-motion"
 
 // Add shimmer effect styles
 const shimmerStyles = `
@@ -118,20 +118,20 @@ interface CertificateModalProps {
 export function CertificateModal({ lineItem, onClose }: CertificateModalProps) {
   const [isOpen, setIsOpen] = useState(false)
   const [isFlipped, setIsFlipped] = useState(false)
-  const cardRef = useRef<HTMLDivElement>(null)
+  const imageRef = useRef<HTMLDivElement>(null)
   const x = useMotionValue(0)
   const y = useMotionValue(0)
 
-  const mouseXSpring = useSpring(x, { stiffness: 150, damping: 30 })
-  const mouseYSpring = useSpring(y, { stiffness: 150, damping: 30 })
+  const mouseXSpring = useSpring(x, { stiffness: 100, damping: 20 })
+  const mouseYSpring = useSpring(y, { stiffness: 100, damping: 20 })
 
-  const rotateX = useTransform(mouseYSpring, [-0.5, 0.5], ["7.5deg", "-7.5deg"])
-  const rotateY = useTransform(mouseXSpring, [-0.5, 0.5], ["-7.5deg", "7.5deg"])
+  const rotateX = useTransform(mouseYSpring, [-0.5, 0.5], ["15deg", "-15deg"])
+  const rotateY = useTransform(mouseXSpring, [-0.5, 0.5], ["-15deg", "15deg"])
 
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (!cardRef.current) return
+    if (!imageRef.current) return
 
-    const rect = cardRef.current.getBoundingClientRect()
+    const rect = imageRef.current.getBoundingClientRect()
     const width = rect.width
     const height = rect.height
     const mouseX = e.clientX - rect.left
@@ -160,29 +160,9 @@ export function CertificateModal({ lineItem, onClose }: CertificateModalProps) {
       onClose()
     }}>
       <DialogContent className="w-[95vw] sm:w-[90vw] md:max-w-[900px] bg-zinc-900 border-zinc-800 p-4 sm:p-6">
-        <div className="absolute right-2 top-2 sm:right-4 sm:top-4 z-50">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => {
-              setIsOpen(false)
-              onClose()
-            }}
-          >
-            <X className="h-4 w-4" />
-          </Button>
-        </div>
         <div className="mt-4 sm:mt-6 perspective-1000">
           <motion.div
-            ref={cardRef}
-            onMouseMove={handleMouseMove}
-            onMouseLeave={handleMouseLeave}
             onClick={() => setIsFlipped(!isFlipped)}
-            style={{
-              transformStyle: "preserve-3d",
-              rotateX: isFlipped ? 0 : rotateX,
-              rotateY: isFlipped ? 0 : rotateY,
-            }}
             className="relative w-full aspect-[4/3] rounded-xl bg-gradient-to-br from-zinc-800 to-zinc-900 p-4 sm:p-8 shadow-2xl cursor-pointer"
             animate={{
               rotateY: isFlipped ? 180 : 0,
@@ -193,7 +173,23 @@ export function CertificateModal({ lineItem, onClose }: CertificateModalProps) {
               stiffness: 60,
               damping: 12,
             }}
+            style={{
+              transformStyle: "preserve-3d",
+            }}
           >
+            <Button
+              variant="ghost"
+              size="icon"
+              className="absolute right-2 top-2 z-50"
+              onClick={(e) => {
+                e.stopPropagation()
+                setIsOpen(false)
+                onClose()
+              }}
+            >
+              <X className="h-4 w-4" />
+            </Button>
+
             {/* Front of card */}
             <motion.div
               className="absolute inset-0"
@@ -204,13 +200,22 @@ export function CertificateModal({ lineItem, onClose }: CertificateModalProps) {
             >
               <div className="relative h-full flex flex-col items-center justify-center text-center">
                 {lineItem.image_url && (
-                  <div className="w-48 h-48 sm:w-64 sm:h-64 md:w-80 md:h-80 mb-4 sm:mb-6 rounded-lg overflow-hidden border-2 border-zinc-700">
+                  <motion.div
+                    ref={imageRef}
+                    onMouseMove={handleMouseMove}
+                    onMouseLeave={handleMouseLeave}
+                    style={{
+                      rotateX: isFlipped ? 0 : rotateX,
+                      rotateY: isFlipped ? 0 : rotateY,
+                    }}
+                    className="w-48 h-48 sm:w-64 sm:h-64 md:w-80 md:h-80 mb-4 sm:mb-6 rounded-lg overflow-hidden border-2 border-zinc-700"
+                  >
                     <img
                       src={lineItem.image_url}
                       alt={lineItem.title}
                       className="w-full h-full object-cover"
                     />
-                  </div>
+                  </motion.div>
                 )}
                 <h2 className="text-xl sm:text-2xl font-bold text-white mb-2">{lineItem.title}</h2>
                 {lineItem.vendor && (
