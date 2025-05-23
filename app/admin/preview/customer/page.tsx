@@ -299,7 +299,13 @@ export default function CustomerPreviewPage() {
                                 alt={item.name}
                                 className="w-full h-full object-cover"
                               />
-                              {!item.nfc_tag_id && (
+                              {!item.nfc_tag_id ? (
+                                <div className="absolute inset-0 bg-gradient-to-br from-red-500/20 to-transparent flex items-center justify-center">
+                                  <div className="absolute top-1 right-1">
+                                    <Tag className="w-4 h-4 text-red-400" />
+                                  </div>
+                                </div>
+                              ) : (
                                 <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/10 to-transparent flex items-center justify-center">
                                   <div className="absolute top-1 right-1">
                                     <Tag className="w-4 h-4 text-indigo-400" />
@@ -344,7 +350,7 @@ export default function CustomerPreviewPage() {
                             <Button
                               variant="outline"
                               size="sm"
-                              className="text-indigo-400 border-indigo-500/20 hover:bg-indigo-500/10 hover:text-indigo-300"
+                              className="text-red-400 border-red-500/20 hover:bg-red-500/10 hover:text-red-300"
                               onClick={(e) => {
                                 e.stopPropagation()
                                 // TODO: Implement NFC pairing logic

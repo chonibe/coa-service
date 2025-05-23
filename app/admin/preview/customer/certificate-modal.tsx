@@ -189,6 +189,9 @@ export function CertificateModal({ lineItem, onClose }: CertificateModalProps) {
                 willChange: "transform",
                 transformStyle: "preserve-3d",
                 backfaceVisibility: "hidden",
+                background: lineItem.nfc_tag_id 
+                  ? "linear-gradient(to bottom right, rgb(30 27 75), rgb(24 24 27))"
+                  : "linear-gradient(to bottom right, rgb(76 29 29), rgb(24 24 27))",
               }}
             >
               {/* Front of card */}
@@ -218,7 +221,13 @@ export function CertificateModal({ lineItem, onClose }: CertificateModalProps) {
                         alt={lineItem.title}
                         className="w-full h-full object-cover"
                       />
-                      {!lineItem.nfc_tag_id && (
+                      {!lineItem.nfc_tag_id ? (
+                        <div className="absolute inset-0 bg-gradient-to-br from-red-500/20 to-transparent">
+                          <div className="absolute top-2 right-2">
+                            <Tag className="w-6 h-6 text-red-400" />
+                          </div>
+                        </div>
+                      ) : (
                         <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/10 to-transparent">
                           <div className="absolute top-2 right-2">
                             <Tag className="w-6 h-6 text-indigo-400" />
@@ -290,7 +299,7 @@ export function CertificateModal({ lineItem, onClose }: CertificateModalProps) {
                         <Button
                           variant="outline"
                           size="sm"
-                          className="w-full mt-4 border-indigo-500/50 text-indigo-400 hover:bg-indigo-500/10 hover:text-indigo-300"
+                          className="w-full mt-4 border-red-500/50 text-red-400 hover:bg-red-500/10 hover:text-red-300"
                           onClick={(e) => {
                             e.stopPropagation()
                             // TODO: Implement NFC pairing logic
