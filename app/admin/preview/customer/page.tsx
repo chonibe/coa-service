@@ -79,7 +79,12 @@ export default function CustomerPreviewPage() {
     const fetchOrders = async () => {
       try {
         console.log('Fetching orders...')
-        const response = await fetch('/api/admin/orders')
+        const response = await fetch('/api/admin/orders', {
+          credentials: 'include', // Include cookies in the request
+          headers: {
+            'x-preview-mode': 'true'
+          }
+        })
         console.log('Response status:', response.status)
         
         if (!response.ok) {

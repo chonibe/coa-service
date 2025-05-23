@@ -25,11 +25,11 @@ export async function backupDatabase(config: BackupConfig): Promise<string> {
       mkdirSync(backupDir, { recursive: true });
     }
 
-    // Use Supabase URL and Anon Key from environment
+    // Use Supabase URL and Service Role Key from environment
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-    const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+    const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
     if (!supabaseUrl || !supabaseKey) {
-      throw new Error('NEXT_PUBLIC_SUPABASE_URL or NEXT_PUBLIC_SUPABASE_ANON_KEY not set in environment');
+      throw new Error('NEXT_PUBLIC_SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY not set in environment');
     }
     console.log('Supabase URL:', supabaseUrl);
     console.log('Supabase Key:', supabaseKey.substring(0, 8) + '...');
@@ -48,8 +48,7 @@ export async function backupDatabase(config: BackupConfig): Promise<string> {
       'nfc_tags',
       'collector_benefit_claims',
       'product_benefits',
-      'benefit_types',
-      'tax_forms'
+      'benefit_types'
     ];
 
     // Backup each table

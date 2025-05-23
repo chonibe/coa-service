@@ -173,8 +173,8 @@ async function getOrderData(orderId: string) {
       productDetails = Object.fromEntries(products.map(p => [p.shopify_id, {
         sku: p.sku,
         image_url: p.image_url,
-        edition_size: editionCounters?.find(ec => ec.product_id === p.id)?.edition_total ? 
-          Number.parseInt(editionCounters.find(ec => ec.product_id === p.id)?.edition_total || '0', 10) : 
+        edition_size: editionCounters?.find(ec => ec.product_id === p.shopify_id)?.edition_total ? 
+          Number.parseInt(editionCounters.find(ec => ec.product_id === p.shopify_id)?.edition_total || '0', 10) : 
           undefined
       }]));
     }
