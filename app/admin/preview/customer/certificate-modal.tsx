@@ -119,16 +119,25 @@ export function CertificateModal({ lineItem, onClose }: CertificateModalProps) {
   const [isOpen, setIsOpen] = useState(false)
   const [isFlipped, setIsFlipped] = useState(false)
   const imageRef = useRef<HTMLDivElement>(null)
-  const x = useMotionValue(0)
-  const y = useMotionValue(0)
+  const cardRef = useRef<HTMLDivElement>(null)
+  
+  // Image tilt motion values
+  const imageX = useMotionValue(0)
+  const imageY = useMotionValue(0)
+  const imageMouseXSpring = useSpring(imageX, { stiffness: 100, damping: 20 })
+  const imageMouseYSpring = useSpring(imageY, { stiffness: 100, damping: 20 })
+  const imageRotateX = useTransform(imageMouseYSpring, [-0.5, 0.5], ["15deg", "-15deg"])
+  const imageRotateY = useTransform(imageMouseXSpring, [-0.5, 0.5], ["-15deg", "15deg"])
 
-  const mouseXSpring = useSpring(x, { stiffness: 100, damping: 20 })
-  const mouseYSpring = useSpring(y, { stiffness: 100, damping: 20 })
+  // Card tilt motion values
+  const cardX = useMotionValue(0)
+  const cardY = useMotionValue(0)
+  const cardMouseXSpring = useSpring(cardX, { stiffness: 50, damping: 15 })
+  const cardMouseYSpring = useSpring(cardY, { stiffness: 50, damping: 15 })
+  const cardRotateX = useTransform(cardMouseYSpring, [-0.5, 0.5], ["5deg", "-5deg"])
+  const cardRotateY = useTransform(cardMouseXSpring, [-0.5, 0.5], ["-5deg", "5deg"])
 
-  const rotateX = useTransform(mouseYSpring, [-0.5, 0.5], ["15deg", "-15deg"])
-  const rotateY = useTransform(mouseXSpring, [-0.5, 0.5], ["-15deg", "15deg"])
-
-  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+  const handleImageMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
     if (!imageRef.current) return
 
     const rect = imageRef.current.getBoundingClientRect()
@@ -138,13 +147,32 @@ export function CertificateModal({ lineItem, onClose }: CertificateModalProps) {
     const mouseY = e.clientY - rect.top
     const xPct = mouseX / width - 0.5
     const yPct = mouseY / height - 0.5
-    x.set(xPct)
-    y.set(yPct)
+    imageX.set(xPct)
+    imageY.set(yPct)
   }
 
-  const handleMouseLeave = () => {
-    x.set(0)
-    y.set(0)
+  const handleImageMouseLeave = () => {
+    imageX.set(0)
+    imageY.set(0)
+  }
+
+  const handleCardMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!cardRef.current || isFlipped) return
+
+    const rect = cardRef.current.getBoundingClientRect()
+    const width = rect.width
+    const height = rect.height
+    const mouseX = e.clientX - rect.left
+    const mouseY = e.clientY - rect.top
+    const xPct = mouseX / width - 0.5
+    const yPct = mouseY / height - 0.5
+    cardX.set(xPct)
+    cardY.set(yPct)
+  }
+
+  const handleCardMouseLeave = () => {
+    cardX.set(0)
+    cardY.set(0)
   }
 
   useEffect(() => {
@@ -162,19 +190,24 @@ export function CertificateModal({ lineItem, onClose }: CertificateModalProps) {
       <DialogContent className="w-[95vw] sm:w-[90vw] md:max-w-[900px] bg-transparent border-none p-0">
         <div className="perspective-1000">
           <motion.div
+            ref={cardRef}
             onClick={() => setIsFlipped(!isFlipped)}
+            onMouseMove={handleCardMouseMove}
+            onMouseLeave={handleCardMouseLeave}
             className="relative w-full aspect-[4/3] rounded-xl bg-gradient-to-br from-zinc-800 to-zinc-900 p-4 sm:p-8 shadow-2xl cursor-pointer"
             animate={{
               rotateY: isFlipped ? 180 : 0,
+            }}
+            style={{
+              transformStyle: "preserve-3d",
+              rotateX: isFlipped ? 0 : cardRotateX,
+              rotateY: isFlipped ? 0 : cardRotateY,
             }}
             transition={{
               duration: 1.2,
               type: "spring",
               stiffness: 60,
               damping: 12,
-            }}
-            style={{
-              transformStyle: "preserve-3d",
             }}
           >
             {/* Front of card */}
@@ -189,12 +222,12 @@ export function CertificateModal({ lineItem, onClose }: CertificateModalProps) {
                 {lineItem.image_url && (
                   <motion.div
                     ref={imageRef}
-                    onMouseMove={handleMouseMove}
-                    onMouseLeave={handleMouseLeave}
+                    onMouseMove={handleImageMouseMove}
+                    onMouseLeave={handleImageMouseLeave}
                     style={{
                       transformStyle: "preserve-3d",
-                      rotateX: isFlipped ? 0 : rotateX,
-                      rotateY: isFlipped ? 0 : rotateY,
+                      rotateX: isFlipped ? 0 : imageRotateX,
+                      rotateY: isFlipped ? 0 : imageRotateY,
                     }}
                     className="w-48 h-48 sm:w-64 sm:h-64 md:w-80 md:h-80 mb-4 sm:mb-6 rounded-lg overflow-hidden border-2 border-zinc-700"
                   >
