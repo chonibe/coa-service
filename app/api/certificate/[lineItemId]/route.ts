@@ -5,12 +5,13 @@ import { SHOPIFY_SHOP, SHOPIFY_ACCESS_TOKEN, CERTIFICATE_METAFIELD_ID } from "@/
 
 export async function GET(request: NextRequest, { params }: { params: { lineItemId: string } }) {
   const lineItemId = params.lineItemId
+  const isPreview = request.headers.get("x-preview-mode") === "true"
 
   // CORS headers for accessing from any domain
   const corsHeaders = {
     "Access-Control-Allow-Origin": "*",
     "Access-Control-Allow-Methods": "GET, OPTIONS",
-    "Access-Control-Allow-Headers": "Content-Type, Authorization",
+    "Access-Control-Allow-Headers": "Content-Type, Authorization, x-preview-mode",
   }
 
   if (!supabase) {
@@ -84,19 +85,21 @@ export async function GET(request: NextRequest, { params }: { params: { lineItem
       verificationUrl: `${process.env.NEXT_PUBLIC_APP_URL || request.nextUrl.origin}/api/certificate/${lineItemData.line_item_id}`,
     }
 
-    // Log certificate access
-    try {
-      await supabase.from("certificate_access_logs").insert({
-        line_item_id: lineItemId,
-        order_id: lineItemData.order_id,
-        product_id: lineItemData.product_id,
-        accessed_at: new Date().toISOString(),
-        ip_address: request.headers.get("x-forwarded-for") || "unknown",
-        user_agent: request.headers.get("user-agent") || "unknown",
-      })
-    } catch (logError) {
-      console.error("Error logging certificate access:", logError)
-      // Continue even if logging fails
+    // Only log certificate access if not in preview mode
+    if (!isPreview) {
+      try {
+        await supabase.from("certificate_access_logs").insert({
+          line_item_id: lineItemId,
+          order_id: lineItemData.order_id,
+          product_id: lineItemData.product_id,
+          accessed_at: new Date().toISOString(),
+          ip_address: request.headers.get("x-forwarded-for") || "unknown",
+          user_agent: request.headers.get("user-agent") || "unknown",
+        })
+      } catch (logError) {
+        console.error("Error logging certificate access:", logError)
+        // Continue even if logging fails
+      }
     }
 
     return NextResponse.json({ success: true, certificate: certificateData }, { status: 200, headers: corsHeaders })

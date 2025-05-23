@@ -13,7 +13,7 @@ import {
 import { Skeleton } from "@/components/ui/skeleton"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { AlertCircle, CheckCircle, Clock, ShoppingBag, User, BadgeIcon as Certificate } from "lucide-react"
-import { FloatingTiltCard } from "./certificate-modal"
+import FloatingTiltCard from "./certificate-modal"
 
 interface LineItem {
   line_item_id: string
@@ -178,7 +178,10 @@ function CustomerPreviewContent() {
         setError(null)
         
         const response = await fetch('/api/admin/orders', {
-          credentials: 'include' // Include cookies in the request
+          credentials: 'include', // Include cookies in the request
+          headers: {
+            'x-preview-mode': 'true'
+          }
         })
         const data = await response.json()
 
@@ -214,7 +217,11 @@ function CustomerPreviewContent() {
       setIsCertificateLoading(true)
       setCertificateError(null)
       
-      const response = await fetch(`/api/certificate/${lineItemId}`)
+      const response = await fetch(`/api/certificate/${lineItemId}`, {
+        headers: {
+          'x-preview-mode': 'true'
+        }
+      })
       const data = await response.json()
 
       if (!response.ok) {

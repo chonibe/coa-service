@@ -4,11 +4,16 @@ import { createClient } from "@/lib/supabase/server"
 
 export async function GET(request: NextRequest) {
   try {
-    // Check if the user is authenticated
-    const adminSession = request.cookies.get("admin_session")
-    if (!adminSession) {
-      console.log("No admin session found")
-      return NextResponse.json({ success: false, message: "Unauthorized" }, { status: 401 })
+    // Check if this is a preview request
+    const isPreview = request.headers.get("x-preview-mode") === "true"
+    
+    // Only check for admin session if not in preview mode
+    if (!isPreview) {
+      const adminSession = request.cookies.get("admin_session")
+      if (!adminSession) {
+        console.log("No admin session found")
+        return NextResponse.json({ success: false, message: "Unauthorized" }, { status: 401 })
+      }
     }
 
     // Create Supabase client with service role key
