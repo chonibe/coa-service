@@ -1,10 +1,10 @@
 import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
-import { getSupabaseClient } from "@/lib/supabase"
+import { getSupabaseAdmin } from "@/lib/supabase"
 
 export async function POST(request: NextRequest) {
   try {
-    const supabase = getSupabaseClient()
+    const supabase = getSupabaseAdmin()
     if (!supabase) {
       return NextResponse.json({ message: "Database connection error" }, { status: 500 })
     }
