@@ -277,30 +277,17 @@ export default function CustomerPreviewPage() {
 
                 <div className="space-y-4">
                   {order.line_items.map((item) => (
-                    <div
+                    <FloatingCard
                       key={item.id}
-                      className="group relative flex items-start gap-4 p-4 bg-zinc-800/50 rounded-lg border border-zinc-700/50 hover:border-zinc-600/50 transition-colors overflow-hidden cursor-pointer"
+                      className="group relative flex items-start gap-4 p-4 cursor-pointer"
                       onClick={() => setSelectedLineItem(item)}
                     >
-                      <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000" />
                       {item.img_url && (
                         <div className="relative w-24 h-24 flex-shrink-0">
-                          <motion.img
+                          <img
                             src={item.img_url}
                             alt={item.name}
                             className="w-full h-full object-cover rounded-lg"
-                            style={{
-                              transformStyle: "preserve-3d",
-                              transform: "perspective(1000px)",
-                            }}
-                            whileHover={{
-                              rotateX: [0, -5, 5, 0],
-                              rotateY: [0, 5, -5, 0],
-                              transition: {
-                                duration: 0.5,
-                                ease: "easeInOut",
-                              },
-                            }}
                           />
                         </div>
                       )}
@@ -318,7 +305,7 @@ export default function CustomerPreviewPage() {
                           </div>
                         )}
                       </div>
-                    </div>
+                    </FloatingCard>
                   ))}
                 </div>
               </div>
