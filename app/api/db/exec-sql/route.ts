@@ -1,27 +1,34 @@
 import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
-import { supabase } from "@/lib/supabase"
+import { getSupabaseAdmin } from "@/lib/supabase"
 import fs from "fs"
 import path from "path"
 
 export async function POST(request: NextRequest) {
   try {
+    const supabase = getSupabaseAdmin()
+    if (!supabase) {
+      throw new Error("Failed to initialize Supabase admin client")
+    }
+
     // First, create the exec_sql function if it doesn't exist
     const createFunctionSql = fs.readFileSync(path.join(process.cwd(), "db", "create_exec_sql_function.sql"), "utf8")
 
     // Execute the SQL directly to create the function
-    const { error: functionError } = await supabase
-      .rpc("exec_sql", {
+    let functionError = null
+    try {
+      const { error } = await supabase.rpc("exec_sql", {
         sql_query: createFunctionSql,
       })
-      .catch(() => {
-        // If the function doesn't exist yet, we need to create it directly
-        return supabase
-          .from("_temp_exec_sql")
-          .select()
-          .limit(1)
-          .then(() => ({ error: null }))
-      })
+      functionError = error
+    } catch (error) {
+      // If the function doesn't exist yet, we need to create it directly
+      try {
+        await supabase.from("_temp_exec_sql").select().limit(1)
+      } catch (error) {
+        console.error("Error creating exec_sql function:", error)
+      }
+    }
 
     if (functionError) {
       console.error("Error creating exec_sql function:", functionError)
