@@ -66,7 +66,7 @@ export function VendorDialog({ vendor, open, onOpenChange, onSave }: VendorDialo
       const formData = new FormData()
       formData.append("file", file)
       formData.append("field", "signature")
-      formData.append("vendorId", vendor.id)
+      formData.append("vendorId", vendor.name)
 
       const response = await fetch("/api/upload", {
         method: "POST",

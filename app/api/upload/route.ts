@@ -49,7 +49,7 @@ export async function POST(request: NextRequest) {
       const { error: updateError } = await supabase
         .from("vendors")
         .update({ signature_url: publicUrl })
-        .eq("id", vendorId)
+        .eq("vendor_name", vendorId)
 
       if (updateError) {
         console.error("Error updating vendor signature:", updateError)
