@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect, ReactNode } from "react"
 import { Dialog, DialogContent } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
-import { X, BadgeIcon as Certificate, User, Calendar, Hash } from "lucide-react"
+import { X, BadgeIcon as Certificate, User, Calendar, Hash, Tag } from "lucide-react"
 import { motion, useMotionValue, useSpring, useTransform } from "framer-motion"
 
 // Add shimmer effect styles
@@ -203,7 +203,7 @@ export function CertificateModal({ lineItem, onClose }: CertificateModalProps) {
                 <div className="relative h-full flex flex-col items-center justify-center text-center">
                   {lineItem.image_url && (
                     <motion.div
-                      className="w-48 h-48 sm:w-64 sm:h-64 md:w-80 md:h-80 mb-4 sm:mb-6 rounded-lg overflow-hidden border-2 border-zinc-700"
+                      className="w-48 h-48 sm:w-64 sm:h-64 md:w-80 md:h-80 mb-4 sm:mb-6 rounded-lg overflow-hidden border-2 border-zinc-700 relative"
                       style={{
                         rotateX: imageRotateX,
                         rotateY: imageRotateY,
@@ -218,6 +218,11 @@ export function CertificateModal({ lineItem, onClose }: CertificateModalProps) {
                         alt={lineItem.title}
                         className="w-full h-full object-cover"
                       />
+                      {!lineItem.nfc_tag_id && (
+                        <div className="absolute inset-0 bg-indigo-500/20 backdrop-blur-[2px] flex items-center justify-center">
+                          <Tag className="w-12 h-12 text-indigo-400" />
+                        </div>
+                      )}
                     </motion.div>
                   )}
                   <h2 className="text-xl sm:text-2xl font-bold text-white mb-2">{lineItem.title}</h2>

@@ -293,11 +293,18 @@ export default function CustomerPreviewPage() {
                       <div className="flex items-center gap-4">
                         <div className="relative w-16 h-16 rounded-lg overflow-hidden bg-zinc-800">
                           {item.img_url ? (
-                            <img
-                              src={item.img_url}
-                              alt={item.name}
-                              className="w-full h-full object-cover"
-                            />
+                            <>
+                              <img
+                                src={item.img_url}
+                                alt={item.name}
+                                className="w-full h-full object-cover"
+                              />
+                              {!item.nfc_tag_id && (
+                                <div className="absolute inset-0 bg-indigo-500/20 backdrop-blur-[2px] flex items-center justify-center">
+                                  <Tag className="w-6 h-6 text-indigo-400" />
+                                </div>
+                              )}
+                            </>
                           ) : (
                             <div className="w-full h-full flex items-center justify-center text-zinc-500">
                               <ShoppingBag className="w-6 h-6" />
