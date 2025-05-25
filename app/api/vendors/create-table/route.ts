@@ -1,20 +1,42 @@
 import { NextResponse } from "next/server"
+import { createClient } from "@/lib/supabase-server"
+import { cookies } from "next/headers"
 
 export async function POST() {
   try {
-    // Call the database initialization endpoint
-    const response = await fetch(`${process.env.NEXT_PUBLIC_APP_URL || process.env.VERCEL_URL || ""}/api/db/exec-sql`, {
-      method: "POST",
-    })
+    const cookieStore = cookies()
+    const supabase = createClient(cookieStore)
 
-    if (!response.ok) {
-      const error = await response.json()
-      throw new Error(error.error || "Failed to initialize database")
+    // Fetch vendors from the existing vendors table
+    const { data: vendors, error: vendorsError } = await supabase
+      .from("vendors")
+      .select("*")
+
+    if (vendorsError) {
+      console.error("Error fetching vendors:", vendorsError)
+      return NextResponse.json({ error: "Failed to fetch vendors" }, { status: 500 })
     }
 
-    return NextResponse.json({ success: true, message: "Vendors table created successfully" })
+    // Fetch products for each vendor
+    const vendorsWithProducts = await Promise.all(
+      vendors.map(async (vendor) => {
+        const { data: products, error: productsError } = await supabase
+          .from("products")
+          .select("*")
+          .eq("vendor", vendor.id)
+
+        if (productsError) {
+          console.error(`Error fetching products for vendor ${vendor.id}:`, productsError)
+          return { ...vendor, products: [] }
+        }
+
+        return { ...vendor, products }
+      })
+    )
+
+    return NextResponse.json({ vendors: vendorsWithProducts })
   } catch (error) {
-    console.error("Error creating vendors table:", error)
+    console.error("Error fetching vendors and products:", error)
     return NextResponse.json(
       { error: error instanceof Error ? error.message : "An unexpected error occurred" },
       { status: 500 },
