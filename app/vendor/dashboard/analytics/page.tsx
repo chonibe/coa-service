@@ -35,6 +35,7 @@ interface SaleItem {
   price: number
   currency: string
   quantity?: number
+  payout_amount: number
 }
 
 export default function AnalyticsPage() {
@@ -44,6 +45,7 @@ export default function AnalyticsPage() {
   const [salesByProduct, setSalesByProduct] = useState<any[]>([])
   const [salesHistory, setSalesHistory] = useState<SaleItem[]>([])
   const [totalItems, setTotalItems] = useState(0)
+  const [totalPayouts, setTotalPayouts] = useState(0)
   const [sortField, setSortField] = useState<string>("date")
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc")
   const { toast } = useToast()
@@ -66,6 +68,7 @@ export default function AnalyticsPage() {
       setSalesByProduct(data.salesByProduct || [])
       setSalesHistory(data.salesHistory || [])
       setTotalItems(data.totalItems || 0)
+      setTotalPayouts(data.totalPayouts || 0)
     } catch (err) {
       console.error("Error fetching analytics data:", err)
       setError(err instanceof Error ? err.message : "Failed to load analytics data")
@@ -168,7 +171,7 @@ export default function AnalyticsPage() {
       <Card className="w-full">
         <CardHeader>
           <CardTitle>Sales Over Time</CardTitle>
-          <CardDescription>Monthly sales and revenue trends</CardDescription>
+          <CardDescription>Monthly sales, revenue, and payouts</CardDescription>
         </CardHeader>
         <CardContent>
           {isLoading ? (
@@ -190,20 +193,19 @@ export default function AnalyticsPage() {
                 <YAxis yAxisId="right" orientation="right" stroke="#82ca9d" />
                 <Tooltip
                   formatter={(value, name) => {
-                    if (name === "Revenue ($)") {
+                    if (name === "Revenue (£)") {
                       return [`£${Number(value).toFixed(2)}`, "Revenue (£)"]
+                    }
+                    if (name === "Payouts (£)") {
+                      return [`£${Number(value).toFixed(2)}`, "Payouts (£)"]
                     }
                     return [value, name]
                   }}
                 />
-                <Legend
-                  payload={[
-                    { value: "Sales (Units)", type: "square", color: "#8884d8" },
-                    { value: "Revenue (£)", type: "square", color: "#82ca9d" },
-                  ]}
-                />
-                <Bar yAxisId="left" dataKey="sales" fill="#8884d8" name="Sales (Units)" />
-                <Bar yAxisId="right" dataKey="revenue" fill="#82ca9d" name="Revenue (£)" />
+                <Legend />
+                <Bar yAxisId="left" dataKey="sales" name="Sales" fill="#8884d8" />
+                <Bar yAxisId="right" dataKey="revenue" name="Revenue (£)" fill="#82ca9d" />
+                <Bar yAxisId="right" dataKey="payouts" name="Payouts (£)" fill="#ffc658" />
               </BarChart>
             </ResponsiveContainer>
           ) : (
@@ -214,108 +216,16 @@ export default function AnalyticsPage() {
         </CardContent>
       </Card>
 
-      <div className="grid gap-4 md:grid-cols-2">
-        <Card className="w-full">
+      <div className="grid gap-6 md:grid-cols-2">
+        <Card>
           <CardHeader>
-            <CardTitle>Sales Trend</CardTitle>
-            <CardDescription>Monthly sales trend</CardDescription>
+            <CardTitle>Sales by Product</CardTitle>
+            <CardDescription>Top selling products with revenue and payouts</CardDescription>
           </CardHeader>
           <CardContent>
             {isLoading ? (
-              <Skeleton className="h-[200px] w-full" />
-            ) : salesByDate.length > 0 ? (
-              <ResponsiveContainer width="100%" height={200}>
-                <LineChart
-                  data={salesByDate}
-                  margin={{
-                    top: 5,
-                    right: 30,
-                    left: 20,
-                    bottom: 5,
-                  }}
-                >
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="month" />
-                  <YAxis />
-                  <Tooltip />
-                  <Line type="monotone" dataKey="sales" stroke="#8884d8" activeDot={{ r: 8 }} />
-                </LineChart>
-              </ResponsiveContainer>
-            ) : (
-              <div className="flex items-center justify-center h-[200px]">
-                <p className="text-muted-foreground">No sales data available</p>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
-        <Card className="w-full">
-          <CardHeader>
-            <CardTitle>Revenue Trend</CardTitle>
-            <CardDescription>Monthly revenue trend</CardDescription>
-          </CardHeader>
-          <CardContent>
-            {isLoading ? (
-              <Skeleton className="h-[200px] w-full" />
-            ) : salesByDate.length > 0 ? (
-              <ResponsiveContainer width="100%" height={200}>
-                <LineChart
-                  data={salesByDate}
-                  margin={{
-                    top: 5,
-                    right: 30,
-                    left: 20,
-                    bottom: 5,
-                  }}
-                >
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="month" />
-                  <YAxis />
-                  <Tooltip formatter={(value) => [`£${Number(value).toFixed(2)}`, "Revenue"]} />
-                  <Line type="monotone" dataKey="revenue" stroke="#82ca9d" activeDot={{ r: 8 }} />
-                </LineChart>
-              </ResponsiveContainer>
-            ) : (
-              <div className="flex items-center justify-center h-[200px]">
-                <p className="text-muted-foreground">No revenue data available</p>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      </div>
-
-      <Card className="w-full">
-        <CardHeader>
-          <CardTitle>Sales by Product</CardTitle>
-          <CardDescription>Distribution of sales across products</CardDescription>
-        </CardHeader>
-        <CardContent>
-          {isLoading ? (
-            <Skeleton className="h-[300px] w-full" />
-          ) : salesByProduct.length > 0 ? (
-            <div className="grid md:grid-cols-2 gap-4">
-              <div className="h-[300px]">
-                <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
-                    <Pie
-                      data={salesByProduct}
-                      cx="50%"
-                      cy="50%"
-                      labelLine={false}
-                      label={({ name, percent }) => `${percent ? (percent * 100).toFixed(0) : 0}%`}
-                      outerRadius={80}
-                      fill="#8884d8"
-                      dataKey="sales"
-                      nameKey="title"
-                    >
-                      {salesByProduct.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                      ))}
-                    </Pie>
-                    <Tooltip content={<CustomTooltip />} />
-                  </PieChart>
-                </ResponsiveContainer>
-              </div>
+              <Skeleton className="h-[300px] w-full" />
+            ) : salesByProduct.length > 0 ? (
               <div className="space-y-2">
                 {salesByProduct.map((product, index) => (
                   <div key={index} className="flex items-center justify-between">
@@ -330,88 +240,93 @@ export default function AnalyticsPage() {
                     </div>
                     <div className="text-sm font-medium">
                       {product.sales} sales (£{product.revenue.toFixed(2)})
+                      <br />
+                      <span className="text-muted-foreground">
+                        Payout: £{product.payouts.toFixed(2)}
+                      </span>
                     </div>
                   </div>
                 ))}
               </div>
-            </div>
-          ) : (
-            <div className="flex items-center justify-center h-[300px]">
-              <p className="text-muted-foreground">No product sales data available</p>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+            ) : (
+              <div className="flex items-center justify-center h-[300px]">
+                <p className="text-muted-foreground">No product sales data available</p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
 
-      {/* Sales History Table */}
-      <Card className="w-full">
+        <Card>
+          <CardHeader>
+            <CardTitle>Payout Summary</CardTitle>
+            <CardDescription>Total payouts and earnings</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {isLoading ? (
+              <Skeleton className="h-[300px] w-full" />
+            ) : (
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium">Total Sales</span>
+                  <span className="text-sm font-medium">{totalItems}</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium">Total Revenue</span>
+                  <span className="text-sm font-medium">
+                    £{salesHistory.reduce((sum, item) => sum + item.price, 0).toFixed(2)}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium">Total Payouts</span>
+                  <span className="text-sm font-medium">£{totalPayouts.toFixed(2)}</span>
+                </div>
+                <div className="flex items-center justify-between pt-4 border-t">
+                  <span className="text-sm font-medium">Net Earnings</span>
+                  <span className="text-sm font-medium">
+                    £{(salesHistory.reduce((sum, item) => sum + item.price, 0) - totalPayouts).toFixed(2)}
+                  </span>
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+
+      <Card>
         <CardHeader>
           <CardTitle>Sales History</CardTitle>
-          <CardDescription>Detailed record of individual sales</CardDescription>
+          <CardDescription>Detailed sales history with payout information</CardDescription>
         </CardHeader>
         <CardContent>
           {isLoading ? (
             <Skeleton className="h-[300px] w-full" />
-          ) : salesHistory && salesHistory.length > 0 ? (
-            <div>
-              <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center gap-2">
-                  <span className="text-sm font-medium">Sort by:</span>
-                  <Select
-                    value={sortField}
-                    onValueChange={(value) => {
-                      setSortField(value)
-                      setSortDirection("desc")
-                    }}
-                  >
-                    <SelectTrigger className="w-[180px]">
-                      <SelectValue placeholder="Sort by" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="date">Date</SelectItem>
-                      <SelectItem value="title">Product</SelectItem>
-                      <SelectItem value="price">Price</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setSortDirection(sortDirection === "asc" ? "desc" : "asc")}
-                  >
-                    {sortDirection === "asc" ? "↑ Ascending" : "↓ Descending"}
-                  </Button>
-                </div>
-              </div>
-
-              <div className="rounded-md border">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead className="cursor-pointer" onClick={() => handleSort("date")}>
-                        Date {sortField === "date" && (sortDirection === "asc" ? "↑" : "↓")}
-                      </TableHead>
-                      <TableHead className="cursor-pointer" onClick={() => handleSort("title")}>
-                        Product {sortField === "title" && (sortDirection === "asc" ? "↑" : "↓")}
-                      </TableHead>
-                      <TableHead className="cursor-pointer text-right" onClick={() => handleSort("price")}>
-                        Price {sortField === "price" && (sortDirection === "asc" ? "↑" : "↓")}
-                      </TableHead>
+          ) : salesHistory.length > 0 ? (
+            <div className="border rounded-md">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Date</TableHead>
+                    <TableHead>Product</TableHead>
+                    <TableHead>Price</TableHead>
+                    <TableHead>Payout</TableHead>
+                    <TableHead>Net</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {sortedSalesHistory.map((item) => (
+                    <TableRow key={item.id}>
+                      <TableCell>{formatDate(item.date)}</TableCell>
+                      <TableCell>{item.title}</TableCell>
+                      <TableCell>£{item.price.toFixed(2)}</TableCell>
+                      <TableCell>£{item.payout_amount.toFixed(2)}</TableCell>
+                      <TableCell>£{(item.price - item.payout_amount).toFixed(2)}</TableCell>
                     </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {sortedSalesHistory.map((sale) => (
-                      <TableRow key={sale.id}>
-                        <TableCell>{formatDate(sale.date)}</TableCell>
-                        <TableCell className="font-medium">{sale.title}</TableCell>
-                        <TableCell className="text-right">£{sale.price.toFixed(2)}</TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
+                  ))}
+                </TableBody>
+              </Table>
             </div>
           ) : (
-            <div className="flex items-center justify-center h-[100px]">
+            <div className="flex items-center justify-center h-[300px]">
               <p className="text-muted-foreground">No sales history available</p>
             </div>
           )}

@@ -12,6 +12,7 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
 import { useRouter } from "next/navigation"
+import { Input } from "@/components/ui/input"
 
 interface Vendor {
   id: string
@@ -19,6 +20,11 @@ interface Vendor {
   email: string
   phone: string
   status: string
+  contact_name: string
+  contact_email: string
+  address: string
+  website: string
+  bio: string
 }
 
 interface Product {
@@ -27,6 +33,8 @@ interface Product {
   price: string
   inventory: number
   amountSold: number
+  payout_amount: number
+  is_percentage: boolean
 }
 
 interface Order {
@@ -78,6 +86,44 @@ export default function VendorProfilePage() {
     fetchVendorData()
   }, [vendorId])
 
+  const handlePayoutChange = (productId: string, value: string, isPercentage: boolean) => {
+    setProducts((prev) =>
+      prev.map((product) =>
+        product.id === productId
+          ? { ...product, payout_amount: parseFloat(value), is_percentage: isPercentage }
+          : product
+      )
+    )
+  }
+
+  const savePayoutSettings = async () => {
+    try {
+      const response = await fetch(`/api/vendors/${vendorId}/payouts`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ products }),
+      })
+
+      if (!response.ok) {
+        throw new Error("Failed to save payout settings")
+      }
+
+      toast({
+        title: "Payout settings saved",
+        description: "Your payout settings have been updated successfully.",
+      })
+    } catch (err: any) {
+      console.error("Error saving payout settings:", err)
+      toast({
+        variant: "destructive",
+        title: "Error saving payout settings",
+        description: err.message || "Failed to save payout settings",
+      })
+    }
+  }
+
   if (isLoading) {
     return (
       <div className="flex justify-center py-8">
@@ -123,6 +169,11 @@ export default function VendorProfilePage() {
               <p>Email: {vendor.email}</p>
               <p>Phone: {vendor.phone}</p>
               <p>Status: {vendor.status}</p>
+              <p>Contact Name: {vendor.contact_name}</p>
+              <p>Contact Email: {vendor.contact_email}</p>
+              <p>Address: {vendor.address}</p>
+              <p>Website: {vendor.website}</p>
+              <p>Bio: {vendor.bio}</p>
             </div>
             <div>
               <h2 className="text-xl font-semibold">Products</h2>
@@ -133,6 +184,8 @@ export default function VendorProfilePage() {
                     <TableHead>Price</TableHead>
                     <TableHead>Inventory</TableHead>
                     <TableHead>Amount Sold</TableHead>
+                    <TableHead>Payout Amount</TableHead>
+                    <TableHead>Is Percentage</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -142,10 +195,27 @@ export default function VendorProfilePage() {
                       <TableCell>£{product.price}</TableCell>
                       <TableCell>{product.inventory}</TableCell>
                       <TableCell>{product.amountSold}</TableCell>
+                      <TableCell>
+                        <Input
+                          type="number"
+                          value={product.payout_amount}
+                          onChange={(e) => handlePayoutChange(product.id, e.target.value, product.is_percentage)}
+                        />
+                      </TableCell>
+                      <TableCell>
+                        <input
+                          type="checkbox"
+                          checked={product.is_percentage}
+                          onChange={(e) => handlePayoutChange(product.id, product.payout_amount.toString(), e.target.checked)}
+                        />
+                      </TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
               </Table>
+              <Button onClick={savePayoutSettings} className="mt-4">
+                Save Payout Settings
+              </Button>
             </div>
           </div>
         </CardContent>
