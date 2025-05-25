@@ -30,6 +30,8 @@ export async function GET(
       return NextResponse.json({ error: "Invalid vendor ID" }, { status: 400 })
     }
 
+    console.log("Fetching vendor with ID:", vendorId)
+
     // Get vendor details
     const { data: vendor, error: vendorError } = await supabase
       .from("vendors")
@@ -42,63 +44,24 @@ export async function GET(
       return NextResponse.json({ error: "Failed to fetch vendor" }, { status: 500 })
     }
 
+    console.log("Vendor data:", vendor)
+
     // Get vendor's products
     const { data: products, error: productsError } = await supabase
       .from("products")
       .select("*")
-      .eq("vendor", vendorId)
+      .eq("vendor", vendor.name)
 
     if (productsError) {
       console.error("Error fetching products:", productsError)
       return NextResponse.json({ error: "Failed to fetch products" }, { status: 500 })
     }
 
-    // Get recent orders containing vendor's products
-    const { data: orders, error: ordersError } = await supabase
-      .from("orders")
-      .select("*, order_line_items_v2(*)")
-      .eq("order_line_items_v2.vendor_name", vendorId)
-      .order("created_at", { ascending: false })
-      .limit(10)
-
-    if (ordersError) {
-      console.error("Error fetching orders:", ordersError)
-      return NextResponse.json({ error: "Failed to fetch orders" }, { status: 500 })
-    }
-
-    // Process orders to get totals
-    const processedOrders = (orders as Order[]).map((order) => {
-      if (!Array.isArray(order.order_line_items_v2)) {
-        console.error("order_line_items_v2 is not an array:", order.order_line_items_v2);
-        return {
-          id: order.id,
-          created_at: order.created_at,
-          status: order.status,
-          total: 0,
-        };
-      }
-
-      const vendorItems = order.order_line_items_v2.filter(
-        (item) => item.vendor_name === vendorId.toString()
-      );
-
-      const total = vendorItems.reduce((sum: number, item: OrderLineItem) => {
-        const price = typeof item.price === "string" ? Number.parseFloat(item.price) : item.price || 0;
-        return sum + price;
-      }, 0);
-
-      return {
-        id: order.id,
-        created_at: order.created_at,
-        status: order.status,
-        total,
-      };
-    })
+    console.log("Products data:", products)
 
     return NextResponse.json({
       vendor,
       products,
-      orders: processedOrders,
     })
   } catch (error) {
     console.error("Unexpected error in vendor details API:", error)
