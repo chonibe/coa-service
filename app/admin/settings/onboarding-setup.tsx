@@ -39,13 +39,13 @@ export function OnboardingSetup() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Vendor Onboarding Setup</CardTitle>
-        <CardDescription>Initialize the database fields required for vendor onboarding</CardDescription>
+        <CardTitle>Artist Onboarding Setup</CardTitle>
+        <CardDescription>Initialize the database fields required for artist onboarding</CardDescription>
       </CardHeader>
       <CardContent>
         <p className="text-sm text-muted-foreground">
-          This will add the necessary fields to the vendors table to support the onboarding wizard. Only run this once
-          when setting up the vendor onboarding feature.
+          This will add the necessary fields to the artists table to support the onboarding wizard. Only run this once
+          when setting up the artist onboarding feature.
         </p>
       </CardContent>
       <CardFooter>

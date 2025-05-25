@@ -130,9 +130,9 @@ The application uses cron jobs for various tasks:
 - Checking for missing orders
 - Processing Stripe transfers
 
-## Vendor Portal
+## Artist Portal
 
-The vendor portal allows vendors to:
+The artist portal allows artists to:
 
 - View their sales and revenue
 - Track their products
@@ -142,11 +142,11 @@ The vendor portal allows vendors to:
 
 ## Stripe Integration
 
-The application integrates with Stripe Connect to process vendor payouts. Vendors can connect their Stripe accounts to receive payouts.
+The application integrates with Stripe Connect to process artist payouts. Artists can connect their Stripe accounts to receive payouts.
 
 ## Custom Date Ranges
 
-Vendors can select custom date ranges to view their sales data. This allows for flexible reporting and analysis.
+Artists can select custom date ranges to view their sales data. This allows for flexible reporting and analysis.
 
 ## Support
 
