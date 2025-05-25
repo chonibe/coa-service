@@ -185,7 +185,7 @@ export default function AuthenticatePage() {
   // Render login required view
   if (isLoggedIn === false) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+      <div className="min-h-screen bg-background flex items-center justify-center p-4">
         <Card className="w-full max-w-md">
           <CardHeader>
             <CardTitle className="text-center">Authentication Required</CardTitle>

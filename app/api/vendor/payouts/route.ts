@@ -5,11 +5,16 @@ import { supabaseAdmin } from "@/lib/supabase"
 export async function GET() {
   try {
     // Get vendor name from cookie
-    const cookieStore = cookies()
-    const vendorName = cookieStore.get("vendor_session")?.value
+    const cookieStore = await cookies()
+    const vendorSession = cookieStore.get("vendor_session")
+    const vendorName = vendorSession?.value
 
     if (!vendorName) {
       return NextResponse.json({ error: "Not authenticated" }, { status: 401 })
+    }
+
+    if (!supabaseAdmin) {
+      return NextResponse.json({ error: "Database connection error" }, { status: 500 })
     }
 
     console.log(`Fetching payouts for vendor: ${vendorName}`)
@@ -39,44 +44,58 @@ export async function GET() {
       return NextResponse.json({ payouts: formattedPayouts })
     }
 
-    // If no payouts found, calculate pending payout from sales data
-    // First get the vendor's sales data
-    const { data: lineItems } = await supabaseAdmin
-      .from("order_line_items")
+    // If no payouts found, calculate pending payout from order_line_items_v2
+    const { data: lineItems, error: lineItemsError } = await supabaseAdmin
+      .from("order_line_items_v2")
       .select("*")
       .eq("vendor_name", vendorName)
       .eq("status", "active")
 
-    // Get the vendor's products
-    const { products } = await fetchProductsByVendor(vendorName)
-    const productIds = products.map((p) => p.id)
+    if (lineItemsError) {
+      console.error("Error fetching line items:", lineItemsError)
+      return NextResponse.json({ error: "Failed to fetch line items" }, { status: 500 })
+    }
 
-    // Get payout settings
-    const { data: payoutSettings } = await supabaseAdmin
+    // Get the vendor's products and their payout settings
+    const { data: payoutSettings, error: payoutSettingsError } = await supabaseAdmin
       .from("product_vendor_payouts")
       .select("*")
       .eq("vendor_name", vendorName)
-      .in("product_id", productIds)
+
+    if (payoutSettingsError) {
+      console.error("Error fetching payout settings:", payoutSettingsError)
+      return NextResponse.json({ error: "Failed to fetch payout settings" }, { status: 500 })
+    }
 
     // Calculate pending payout
     let pendingAmount = 0
     const salesData = lineItems || []
+    const processedItems = new Set()
 
     salesData.forEach((item) => {
-      const payout = payoutSettings?.find((p) => p.product_id === item.product_id)
-      if (payout) {
-        const price = typeof item.price === "string" ? Number.parseFloat(item.price || "0") : item.price || 0
+      // Skip if this item has already been processed
+      if (processedItems.has(item.line_item_id)) {
+        return
+      }
+      processedItems.add(item.line_item_id)
 
+      const payout = payoutSettings?.find((p) => p.product_id === item.product_id)
+      const price = typeof item.price === "string" ? Number.parseFloat(item.price || "0") : item.price || 0
+      const quantity = item.quantity || 1
+
+      let itemPayout
+      if (payout) {
         if (payout.is_percentage) {
-          pendingAmount += (price * payout.payout_amount) / 100
+          itemPayout = (price * payout.payout_amount / 100) * quantity
         } else {
-          pendingAmount += payout.payout_amount
+          itemPayout = payout.payout_amount * quantity
         }
       } else {
         // Default payout if no specific setting found (10%)
-        const price = typeof item.price === "string" ? Number.parseFloat(item.price || "0") : item.price || 0
-        pendingAmount += price * 0.1 // 10% default
+        itemPayout = (price * 0.1) * quantity
       }
+
+      pendingAmount += itemPayout
     })
 
     // Create a mock pending payout
@@ -86,7 +105,7 @@ export async function GET() {
         amount: pendingAmount,
         status: "pending",
         date: new Date().toISOString().split("T")[0],
-        products: salesData.length,
+        products: processedItems.size,
         reference: "Pending Payout",
       },
     ]
