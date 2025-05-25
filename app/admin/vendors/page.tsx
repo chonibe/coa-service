@@ -19,6 +19,7 @@ import {
 } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { VendorDialog } from "./vendor-dialog"
+import Link from "next/link"
 
 export default function VendorsPage() {
   const [vendors, setVendors] = useState<any[]>([])
@@ -252,39 +253,48 @@ export default function VendorsPage() {
                     </TableHeader>
                     <TableBody>
                       {vendors.map((vendor, index) => (
-                        <TableRow key={`${vendor.id}-${index}`}>
-                          <TableCell className="font-medium">{vendor.name}</TableCell>
-                          <TableCell className="hidden md:table-cell">
-                            {vendor.instagram_url ? (
-                              <a
-                                href={vendor.instagram_url}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="flex items-center text-pink-500 hover:underline"
+                        <Link href={`/admin/vendors/${vendor.id}`} key={vendor.id} className="block">
+                          <TableRow className="cursor-pointer hover:bg-muted/50">
+                            <TableCell>
+                              {vendor.name}
+                            </TableCell>
+                            <TableCell className="hidden md:table-cell">
+                              {vendor.instagram_url ? (
+                                <a
+                                  href={vendor.instagram_url}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="flex items-center text-pink-500 hover:underline"
+                                  onClick={(e) => e.stopPropagation()}
+                                >
+                                  <Instagram className="h-4 w-4 mr-1" />
+                                  {formatInstagramUrl(vendor.instagram_url)}
+                                  <ExternalLink className="h-3 w-3 ml-1" />
+                                </a>
+                              ) : (
+                                <span className="text-muted-foreground text-sm">Not set</span>
+                              )}
+                            </TableCell>
+                            <TableCell className="text-right">
+                              <Badge variant="secondary">{vendor.product_count || 0}</Badge>
+                            </TableCell>
+                            <TableCell>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  e.stopPropagation();
+                                  handleEditVendor(vendor);
+                                }}
+                                className="h-8 w-8 p-0"
                               >
-                                <Instagram className="h-4 w-4 mr-1" />
-                                {formatInstagramUrl(vendor.instagram_url)}
-                                <ExternalLink className="h-3 w-3 ml-1" />
-                              </a>
-                            ) : (
-                              <span className="text-muted-foreground text-sm">Not set</span>
-                            )}
-                          </TableCell>
-                          <TableCell className="text-right">
-                            <Badge variant="secondary">{vendor.product_count || 0}</Badge>
-                          </TableCell>
-                          <TableCell>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => handleEditVendor(vendor)}
-                              className="h-8 w-8 p-0"
-                            >
-                              <span className="sr-only">Edit</span>
-                              <Pencil className="h-4 w-4" />
-                            </Button>
-                          </TableCell>
-                        </TableRow>
+                                <span className="sr-only">Edit</span>
+                                <Pencil className="h-4 w-4" />
+                              </Button>
+                            </TableCell>
+                          </TableRow>
+                        </Link>
                       ))}
                     </TableBody>
                   </Table>
