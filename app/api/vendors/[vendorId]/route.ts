@@ -63,8 +63,6 @@ export async function GET(
       return NextResponse.json({ error: "Invalid vendor ID" }, { status: 400 })
     }
 
-    console.log("Fetching vendor with ID:", vendorId)
-
     // Get vendor details
     const { data: vendor, error: vendorError } = await supabase
       .from("vendors")
@@ -76,8 +74,6 @@ export async function GET(
       console.error("Error fetching vendor:", vendorError)
       return NextResponse.json({ error: "Failed to fetch vendor" }, { status: 500 })
     }
-
-    console.log("Vendor data:", vendor)
 
     if (!vendor || !vendor.vendor_name) {
       console.error("Vendor data is missing or invalid:", vendor)
@@ -94,8 +90,6 @@ export async function GET(
       console.error("Error fetching products:", productsError)
       return NextResponse.json({ error: "Failed to fetch products" }, { status: 500 })
     }
-
-    console.log("Products data:", products)
 
     // Get payout settings for products
     const productIds = products.map((p) => p.id)
