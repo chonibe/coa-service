@@ -22,11 +22,19 @@ export async function GET(
     const cookieStore = cookies()
     const supabase = createClient(cookieStore)
 
+    // Convert vendorId to integer
+    const vendorId = parseInt(params.vendorId, 10)
+
+    // Validate vendorId
+    if (isNaN(vendorId)) {
+      return NextResponse.json({ error: "Invalid vendor ID" }, { status: 400 })
+    }
+
     // Get vendor details
     const { data: vendor, error: vendorError } = await supabase
       .from("vendors")
       .select("*")
-      .eq("id", params.vendorId)
+      .eq("id", vendorId)
       .single()
 
     if (vendorError) {
@@ -38,7 +46,7 @@ export async function GET(
     const { data: products, error: productsError } = await supabase
       .from("products")
       .select("*")
-      .eq("vendor", params.vendorId)
+      .eq("vendor", vendorId)
 
     if (productsError) {
       console.error("Error fetching products:", productsError)
@@ -49,7 +57,7 @@ export async function GET(
     const { data: orders, error: ordersError } = await supabase
       .from("orders")
       .select("*, order_line_items_v2(*)")
-      .eq("order_line_items_v2.vendor_name", params.vendorId)
+      .eq("order_line_items_v2.vendor_name", vendorId)
       .order("created_at", { ascending: false })
       .limit(10)
 
@@ -60,20 +68,31 @@ export async function GET(
 
     // Process orders to get totals
     const processedOrders = (orders as Order[]).map((order) => {
+      if (!Array.isArray(order.order_line_items_v2)) {
+        console.error("order_line_items_v2 is not an array:", order.order_line_items_v2);
+        return {
+          id: order.id,
+          created_at: order.created_at,
+          status: order.status,
+          total: 0,
+        };
+      }
+
       const vendorItems = order.order_line_items_v2.filter(
-        (item) => item.vendor_name === params.vendorId
-      )
+        (item) => item.vendor_name === vendorId.toString()
+      );
+
       const total = vendorItems.reduce((sum: number, item: OrderLineItem) => {
-        const price = typeof item.price === "string" ? Number.parseFloat(item.price) : item.price || 0
-        return sum + price
-      }, 0)
+        const price = typeof item.price === "string" ? Number.parseFloat(item.price) : item.price || 0;
+        return sum + price;
+      }, 0);
 
       return {
         id: order.id,
         created_at: order.created_at,
         status: order.status,
         total,
-      }
+      };
     })
 
     return NextResponse.json({
