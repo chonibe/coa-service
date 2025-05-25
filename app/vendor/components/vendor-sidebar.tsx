@@ -22,7 +22,7 @@ export function VendorSidebar() {
   const router = useRouter()
   const isMobile = useMobile()
   const [sidebarOpen, setSidebarOpen] = useState(false)
-  const [vendorName, setVendorName] = useState<string>("Vendor")
+  const [vendorName, setVendorName] = useState<string>("Artist")
   const [profileComplete, setProfileComplete] = useState<boolean>(true)
 
   const navItems: NavItem[] = [
@@ -70,7 +70,7 @@ export function VendorSidebar() {
         const response = await fetch("/api/vendor/profile")
         if (response.ok) {
           const data = await response.json()
-          setVendorName(data.vendor?.vendor_name || "Vendor")
+          setVendorName(data.vendor?.vendor_name || "Artist")
 
           // Check if profile is complete
           const vendor = data.vendor
@@ -86,7 +86,7 @@ export function VendorSidebar() {
           }
         }
       } catch (error) {
-        console.error("Error fetching vendor profile:", error)
+        console.error("Error fetching artist profile:", error)
       }
     }
 

@@ -15,7 +15,24 @@ import { useToast } from "@/components/ui/use-toast"
 import { CheckCircle, ChevronLeft, ChevronRight, Loader2, AlertCircle } from "lucide-react"
 
 interface OnboardingWizardProps {
-  initialData?: any
+  initialData: {
+    vendor_name: string
+    contact_name: string
+    contact_email: string
+    phone: string
+    address: string
+    website: string
+    instagram_url: string
+    bio: string
+    paypal_email: string
+    bank_account: string
+    is_company: boolean
+    tax_id: string
+    tax_country: string
+    notify_on_sale: boolean
+    notify_on_payout: boolean
+    notify_on_message: boolean
+  } | null
   onComplete: () => void
 }
 

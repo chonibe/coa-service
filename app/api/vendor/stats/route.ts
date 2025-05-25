@@ -22,7 +22,7 @@ export async function GET() {
 
     // 2. Query for line items from this vendor in our database
     const { data: lineItems, error } = await supabaseAdmin
-      .from("order_line_items")
+      .from("order_line_items_v2")
       .select("*")
       .eq("vendor_name", vendorName)
       .eq("status", "active")
@@ -72,35 +72,28 @@ export async function GET() {
       }
       
       const payout = payouts?.find((p) => p.product_id === item.product_id)
+      const price = typeof item.price === "string" ? Number.parseFloat(item.price || "0") : item.price || 0
+      const quantity = item.quantity || 1
+      
+      let itemRevenue
       if (payout) {
-        const price = typeof item.price === "string" ? Number.parseFloat(item.price || "0") : item.price || 0
-        const quantity = item.quantity || 1
-        
-        let itemRevenue
         if (payout.is_percentage) {
           itemRevenue = (price * payout.payout_amount / 100) * quantity
         } else {
           itemRevenue = payout.payout_amount * quantity
         }
-        
-        totalRevenue += itemRevenue
-        salesByDate[dateStr].sales += quantity
-        salesByDate[dateStr].revenue += itemRevenue
-        
-        console.log(`Item revenue: $${itemRevenue.toFixed(2)} (payout: ${payout.is_percentage ? payout.payout_amount + '%' : '$' + payout.payout_amount} x price: $${price.toFixed(2)} x quantity: ${quantity})`)
       } else {
-        // Default payout if no specific setting found (10%)
-        const price = typeof item.price === "string" ? Number.parseFloat(item.price || "0") : item.price || 0
-        const quantity = item.quantity || 1
-        const itemRevenue = (price * 0.1) * quantity // 10% default
-        totalRevenue += itemRevenue
-        salesByDate[dateStr].sales += quantity
-        salesByDate[dateStr].revenue += itemRevenue
-        
-        console.log(`Item revenue (default 10%): $${itemRevenue.toFixed(2)} (price: $${price.toFixed(2)} x quantity: ${quantity})`)
+        // Default payout if no specific setting found (20%)
+        itemRevenue = (price * 0.2) * quantity
       }
+      
+      totalRevenue += itemRevenue
+      salesByDate[dateStr].sales += quantity
+      salesByDate[dateStr].revenue += itemRevenue
+      
+      console.log(`Item revenue: £${itemRevenue.toFixed(2)} (payout: ${payout ? (payout.is_percentage ? payout.payout_amount + '%' : '£' + payout.payout_amount) : '20% default'} x price: £${price.toFixed(2)} x quantity: ${quantity})`)
     })
-    console.log(`Total revenue calculated: $${totalRevenue.toFixed(2)}`)
+    console.log(`Total revenue calculated: £${totalRevenue.toFixed(2)}`)
 
     // 4. If no data from database, try fetching from Shopify as fallback
     if (salesData.length === 0) {
@@ -120,32 +113,27 @@ export async function GET() {
             }
             
             const payout = payouts?.find((p) => p.product_id === item.product_id)
+            const price = typeof item.price === "string" ? Number.parseFloat(item.price || "0") : item.price || 0
+            const quantity = item.quantity || 1
+            
+            let itemRevenue
             if (payout) {
-              const price = typeof item.price === "string" ? Number.parseFloat(item.price || "0") : item.price || 0
-              const quantity = item.quantity || 1
-              
-              let itemRevenue
               if (payout.is_percentage) {
                 itemRevenue = (price * payout.payout_amount / 100) * quantity
               } else {
                 itemRevenue = payout.payout_amount * quantity
               }
-              
-              totalRevenue += itemRevenue
-              salesByDate[dateStr].sales += quantity
-              salesByDate[dateStr].revenue += itemRevenue
             } else {
-              // Default payout if no specific setting found (10%)
-              const price = typeof item.price === "string" ? Number.parseFloat(item.price || "0") : item.price || 0
-              const quantity = item.quantity || 1
-              const itemRevenue = (price * 0.1) * quantity // 10% default
-              totalRevenue += itemRevenue
-              salesByDate[dateStr].sales += quantity
-              salesByDate[dateStr].revenue += itemRevenue
+              // Default payout if no specific setting found (20%)
+              itemRevenue = (price * 0.2) * quantity
             }
+            
+            totalRevenue += itemRevenue
+            salesByDate[dateStr].sales += quantity
+            salesByDate[dateStr].revenue += itemRevenue
           })
 
-          console.log(`Found ${totalSales} orders from Shopify with revenue $${totalRevenue.toFixed(2)}`)
+          console.log(`Found ${totalSales} orders from Shopify with revenue £${totalRevenue.toFixed(2)}`)
         }
       } catch (shopifyError) {
         console.error("Error fetching from Shopify:", shopifyError)
@@ -180,7 +168,7 @@ export async function GET() {
         quantity: item.quantity || 1
       }))
 
-    console.log(`Final calculations - Total Sales: ${totalSales}, Total Revenue: $${totalRevenue.toFixed(2)}, Pending Payout: $${pendingPayout.toFixed(2)}`)
+    console.log(`Final calculations - Total Sales: ${totalSales}, Total Revenue: £${totalRevenue.toFixed(2)}, Pending Payout: £${pendingPayout.toFixed(2)}`)
     console.log(`Recent activity items: ${recentActivity.length}`)
     console.log('Recent activity dates:', recentActivity.map(item => new Date(item.date).toISOString()))
 

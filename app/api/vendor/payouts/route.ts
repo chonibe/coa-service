@@ -91,8 +91,8 @@ export async function GET() {
           itemPayout = payout.payout_amount * quantity
         }
       } else {
-        // Default payout if no specific setting found (10%)
-        itemPayout = (price * 0.1) * quantity
+        // Default payout if no specific setting found (20%)
+        itemPayout = (price * 0.2) * quantity
       }
 
       pendingAmount += itemPayout

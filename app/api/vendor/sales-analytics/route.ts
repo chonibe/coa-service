@@ -19,7 +19,7 @@ export async function GET() {
 
     // Query for line items from this vendor
     const { data: lineItems, error } = await supabase
-      .from("order_line_items")
+      .from("order_line_items_v2")
       .select("*")
       .eq("vendor_name", vendorName)
       .eq("status", "active")
@@ -34,20 +34,20 @@ export async function GET() {
       console.log("Sample line item:", JSON.stringify(lineItems[0], null, 2))
     }
 
-    // Process line items to get sales by date - fixed to prevent recursion
+    // Process line items to get sales by date
     const salesByDate = processSalesByDate(lineItems || [])
 
-    // Get sales by product - fixed to prevent recursion
+    // Get sales by product
     const salesByProduct = processSalesByProduct(lineItems || [])
 
     // Create sales history array
     const salesHistory = (lineItems || []).map((item) => ({
       id: item.id || `item-${Math.random().toString(36).substring(2, 9)}`,
       product_id: item.product_id || "",
-      title: item.title || "Unknown Product",
+      title: item.name || "Unknown Product",
       date: item.created_at || new Date().toISOString(),
       price: typeof item.price === "string" ? Number.parseFloat(item.price) : item.price || 0,
-      currency: "GBP", // Default to GBP for all products
+      currency: "GBP",
       quantity: item.quantity || 1,
     }))
 
@@ -117,7 +117,7 @@ function processSalesByProduct(lineItems) {
 
   lineItems.forEach((item) => {
     const productId = item.product_id || "unknown"
-    const title = item.title || `Product ${productId}`
+    const title = item.name || `Product ${productId}`
 
     if (!salesByProduct[productId]) {
       salesByProduct[productId] = {

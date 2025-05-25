@@ -7,7 +7,7 @@ import { Progress } from "@/components/ui/progress"
 import { AlertCircle, ChevronRight } from "lucide-react"
 import Link from "next/link"
 
-interface VendorProfile {
+interface ArtistProfile {
   vendor_name: string
   paypal_email: string | null
   tax_id: string | null
@@ -19,7 +19,7 @@ interface VendorProfile {
 }
 
 export function OnboardingAlert() {
-  const [profile, setProfile] = useState<VendorProfile | null>(null)
+  const [profile, setProfile] = useState<ArtistProfile | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [completionPercentage, setCompletionPercentage] = useState(0)
   const [dismissed, setDismissed] = useState(false)
@@ -55,7 +55,7 @@ export function OnboardingAlert() {
     fetchProfile()
   }, [])
 
-  const calculateCompletionPercentage = (vendor: VendorProfile) => {
+  const calculateCompletionPercentage = (vendor: ArtistProfile) => {
     if (!vendor) return 0
 
     const requiredFields = [
