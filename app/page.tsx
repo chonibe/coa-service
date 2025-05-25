@@ -16,7 +16,7 @@ export default function Home() {
           <Tabs defaultValue="admin" className="w-full">
             <TabsList className="grid w-full grid-cols-2">
               <TabsTrigger value="admin">Admin Login</TabsTrigger>
-              <TabsTrigger value="vendor">Vendor Login</TabsTrigger>
+              <TabsTrigger value="vendor">Artist Login</TabsTrigger>
             </TabsList>
             <TabsContent value="admin" className="mt-6 space-y-4">
               <div className="flex justify-center mb-4">
@@ -25,7 +25,7 @@ export default function Home() {
                 </div>
               </div>
               <p className="text-center text-sm text-muted-foreground mb-4">
-                Access the admin dashboard to manage products, certificates, and vendor settings.
+                Access the admin dashboard to manage products, certificates, and artist settings.
               </p>
               <Button asChild className="w-full">
                 <Link href="/admin/login">Continue to Admin Login</Link>
@@ -38,10 +38,10 @@ export default function Home() {
                 </div>
               </div>
               <p className="text-center text-sm text-muted-foreground mb-4">
-                Access the vendor portal to view your sales, manage payouts, and update your profile.
+                Access the artist portal to view your sales, manage payouts, and update your profile.
               </p>
               <Button asChild className="w-full">
-                <Link href="/vendor/login">Continue to Vendor Portal</Link>
+                <Link href="/vendor/login">Continue to Artist Portal</Link>
               </Button>
             </TabsContent>
           </Tabs>

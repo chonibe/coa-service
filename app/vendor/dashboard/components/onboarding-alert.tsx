@@ -84,7 +84,7 @@ export function OnboardingAlert() {
     <Alert className="mb-6 border-amber-200 bg-amber-50">
       <AlertCircle className="h-5 w-5 text-amber-600" />
       <div className="flex-1">
-        <AlertTitle className="text-amber-800">Complete your vendor profile</AlertTitle>
+        <AlertTitle className="text-amber-800">Complete your artist profile</AlertTitle>
         <AlertDescription className="text-amber-700">
           <div className="mt-2 mb-3">
             <div className="flex justify-between mb-1 text-sm">

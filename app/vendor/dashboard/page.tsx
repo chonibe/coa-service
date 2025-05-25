@@ -95,7 +95,7 @@ export default function VendorDashboardPage() {
     <div className="p-6">
       <div className="mb-6">
         <h1 className="text-2xl font-bold">Dashboard</h1>
-        <p className="text-muted-foreground">Welcome back to your vendor dashboard</p>
+        <p className="text-muted-foreground">Welcome back to your artist dashboard</p>
       </div>
 
       {!onboardingCompleted && <OnboardingBanner vendorName={vendorName} />}

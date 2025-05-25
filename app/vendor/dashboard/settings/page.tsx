@@ -172,7 +172,7 @@ export default function VendorSettingsPage() {
 
       toast({
         title: "Settings updated",
-        description: "Your vendor profile has been successfully updated.",
+        description: "Your artist profile has been successfully updated.",
       })
     } catch (err) {
       console.error("Error updating settings:", err)

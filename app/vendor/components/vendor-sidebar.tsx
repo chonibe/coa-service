@@ -144,7 +144,7 @@ export function VendorSidebar() {
 
         <Link href="/vendor/dashboard" className="flex items-center gap-2 font-semibold">
           <Award className="h-6 w-6" />
-          <span className={isMobile ? "sr-only" : "inline-block"}>Vendor Portal</span>
+          <span className={isMobile ? "sr-only" : "inline-block"}>Artist Portal</span>
         </Link>
 
         <div className="ml-auto flex items-center gap-2">
@@ -177,7 +177,7 @@ export function VendorSidebar() {
         <div className="flex items-center justify-between h-16 px-6 border-b">
           <Link href="/vendor/dashboard" className="flex items-center gap-2 font-semibold">
             <Award className="h-6 w-6" />
-            <span className="font-medium">Vendor Portal</span>
+            <span className="font-medium">Artist Portal</span>
           </Link>
           <Button
             variant="ghost"

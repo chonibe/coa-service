@@ -104,7 +104,7 @@ export function OnboardingWizard({ initialData, onComplete }: OnboardingWizardPr
   const steps = [
     {
       title: "Welcome",
-      description: "Let's get started with your vendor profile",
+      description: "Let's get started with your artist profile",
       fields: [],
     },
     {
@@ -268,7 +268,7 @@ export function OnboardingWizard({ initialData, onComplete }: OnboardingWizardPr
 
       toast({
         title: "Profile updated",
-        description: "Your vendor profile has been successfully updated.",
+        description: "Your artist profile has been successfully updated.",
       })
     } catch (err) {
       console.error("Error updating profile:", err)
@@ -295,10 +295,10 @@ export function OnboardingWizard({ initialData, onComplete }: OnboardingWizardPr
               </div>
             </div>
 
-            <h3 className="text-xl font-medium text-center">Welcome to the Vendor Portal!</h3>
+            <h3 className="text-xl font-medium text-center">Welcome to the Artist Portal!</h3>
 
             <p className="text-center text-gray-600">
-              This wizard will guide you through setting up your vendor profile. Complete all steps to ensure you can
+              This wizard will guide you through setting up your artist profile. Complete all steps to ensure you can
               receive payments and comply with tax regulations.
             </p>
 
@@ -559,7 +559,7 @@ export function OnboardingWizard({ initialData, onComplete }: OnboardingWizardPr
         return (
           <div className="space-y-6">
             <p className="text-gray-600">
-              Choose how you want to be notified about important events related to your vendor account.
+              Choose how you want to be notified about important events related to your artist account.
             </p>
 
             <div className="space-y-4">
@@ -629,13 +629,13 @@ export function OnboardingWizard({ initialData, onComplete }: OnboardingWizardPr
             <h3 className="text-xl font-medium">Profile Setup Complete!</h3>
 
             <p className="text-gray-600">
-              Thank you for completing your vendor profile. You're now ready to start selling your products.
+              Thank you for completing your artist profile. You're now ready to start selling your products.
             </p>
 
             <div className="bg-green-50 p-4 rounded-md border border-green-100 mt-4">
               <h4 className="font-medium text-green-800 mb-2">What's Next:</h4>
               <ul className="list-disc pl-5 text-green-700 space-y-1">
-                <li>Explore your vendor dashboard</li>
+                <li>Explore your artist dashboard</li>
                 <li>Check your product listings</li>
                 <li>Review your payment settings</li>
                 <li>Set up your tax information</li>

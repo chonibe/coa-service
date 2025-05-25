@@ -87,8 +87,8 @@ export default function VendorLoginPage() {
           <div className="flex justify-center mb-4">
             <Store className="h-12 w-12 text-primary" />
           </div>
-          <CardTitle className="text-2xl text-center">Vendor Portal</CardTitle>
-          <CardDescription className="text-center">Select your vendor name to access your dashboard</CardDescription>
+          <CardTitle className="text-2xl text-center">Artist Portal</CardTitle>
+          <CardDescription className="text-center">Select your artist name to access your dashboard</CardDescription>
         </CardHeader>
         <CardContent>
           {error && (
@@ -102,10 +102,10 @@ export default function VendorLoginPage() {
           <form onSubmit={handleLogin}>
             <div className="grid gap-4">
               <div className="grid gap-2">
-                <Label htmlFor="vendor-name">Vendor Name</Label>
+                <Label htmlFor="vendor-name">Artist Name</Label>
                 <Select value={vendorName} onValueChange={setVendorName} disabled={isLoading}>
                   <SelectTrigger id="vendor-name">
-                    <SelectValue placeholder="Select your vendor name" />
+                    <SelectValue placeholder="Select your artist name" />
                   </SelectTrigger>
                   <SelectContent>
                     {vendors.map((vendor) => (
