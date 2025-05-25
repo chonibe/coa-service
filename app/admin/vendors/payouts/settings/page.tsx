@@ -107,7 +107,7 @@ export default function PayoutSettingsPage() {
 
     setSavedStatus((prev) => ({
       ...prev,
-      [productId]: undefined,
+      [productId]: false,
     }))
 
     try {
@@ -131,10 +131,11 @@ export default function PayoutSettingsPage() {
         throw new Error("Failed to save payout setting")
       }
 
-      setSavedStatus((prev) => ({
-        ...prev,
-        [productId]: true,
-      }))
+      setSavedStatus((prev) => {
+        const newState = { ...prev };
+        delete newState[productId];
+        return newState;
+      });
 
       toast({
         title: "Success",
@@ -284,13 +285,12 @@ export default function PayoutSettingsPage() {
                                 <Input
                                   type="number"
                                   value={payout.amount}
-                                  onChange={(e) =>
-                                    updatePayoutSetting(
-                                      product.id,
-                                      Number.parseFloat(e.target.value) || 0,
-                                      payout.isPercentage
-                                    )
-                                  }
+                                  onChange={(e) => {
+                                    const value = Number.parseFloat(e.target.value);
+                                    if (!isNaN(value) && value >= 0) {
+                                      updatePayoutSetting(product.id, value, payout.isPercentage);
+                                    }
+                                  }}
                                   className="w-[100px]"
                                   min={0}
                                   step={payout.isPercentage ? 1 : 0.01}
