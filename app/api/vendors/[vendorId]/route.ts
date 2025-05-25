@@ -3,18 +3,48 @@ import { createClient } from "@/lib/supabase-server"
 import { cookies } from "next/headers"
 
 interface OrderLineItem {
-  vendor_name: string
-  price: number | string
-  quantity: number
+  id: number
+  order_id: string
   product_id: string
-  line_item_id: string
+  vendor_name: string
+  price: number
+  quantity: number
+  status: string
+  created_at: string
 }
 
-interface Order {
+interface Product {
   id: string
-  created_at: string
+  vendor_name: string
+  name: string
+  description: string | null
+  price: number
+  handle: string | null
+  sku: string | null
+  edition_size: string | null
+  product_id: string
+  image_url: string | null
+  payout_amount?: number
+  is_percentage?: boolean
+  amountSold?: number
+}
+
+interface Vendor {
+  id: number
+  vendor_name: string
+  instagram_url: string | null
+  notes: string | null
+  paypal_email: string | null
+  payout_method: string
+  tax_id: string | null
+  tax_country: string | null
+  is_company: boolean
   status: string
-  order_line_items_v2: OrderLineItem[]
+  contact_name: string | null
+  contact_email: string | null
+  phone: string | null
+  address: string | null
+  website: string | null
 }
 
 export async function GET(
@@ -33,8 +63,6 @@ export async function GET(
       return NextResponse.json({ error: "Invalid vendor ID" }, { status: 400 })
     }
 
-    console.log("Fetching vendor with ID:", vendorId)
-
     // Get vendor details
     const { data: vendor, error: vendorError } = await supabase
       .from("vendors")
@@ -47,27 +75,23 @@ export async function GET(
       return NextResponse.json({ error: "Failed to fetch vendor" }, { status: 500 })
     }
 
-    console.log("Vendor data:", vendor)
-
     // Get vendor's products
     const { data: products, error: productsError } = await supabase
       .from("products")
       .select("*")
-      .eq("vendor", vendor.name)
+      .eq("vendor_name", vendor.vendor_name)
 
     if (productsError) {
       console.error("Error fetching products:", productsError)
       return NextResponse.json({ error: "Failed to fetch products" }, { status: 500 })
     }
 
-    console.log("Products data:", products)
-
     // Get payout settings for products
     const productIds = products.map((p) => p.id)
     const { data: payoutSettings, error: payoutSettingsError } = await supabase
       .from("product_vendor_payouts")
       .select("*")
-      .eq("vendor_name", vendor.name)
+      .eq("vendor_name", vendor.vendor_name)
       .in("product_id", productIds)
 
     if (payoutSettingsError) {
@@ -76,32 +100,33 @@ export async function GET(
     }
 
     // Get recent orders containing vendor's products
-    const { data: orders, error: ordersError } = await supabase
-      .from("orders")
-      .select("*, order_line_items_v2(*)")
-      .eq("order_line_items_v2.vendor_name", vendor.name)
+    const { data: orderLineItems, error: orderLineItemsError } = await supabase
+      .from("order_line_items_v2")
+      .select("*")
+      .eq("vendor_name", vendor.vendor_name)
       .order("created_at", { ascending: false })
-      .limit(10)
+      .limit(100)
 
-    if (ordersError) {
-      console.error("Error fetching orders:", ordersError)
-      return NextResponse.json({ error: "Failed to fetch orders" }, { status: 500 })
+    if (orderLineItemsError) {
+      console.error("Error fetching order line items:", orderLineItemsError)
+      return NextResponse.json({ error: "Failed to fetch order line items" }, { status: 500 })
     }
 
     // Calculate sales analytics
-    const salesData = (orders as Order[]).flatMap((order) => order.order_line_items_v2 || [])
-    const processedItems = new Set()
     let totalSales = 0
     let pendingPayout = 0
+    const productSales = new Map<string, number>()
 
-    salesData.forEach((item) => {
-      if (processedItems.has(item.line_item_id)) return
-      processedItems.add(item.line_item_id)
-
-      const price = typeof item.price === "string" ? Number.parseFloat(item.price) : item.price || 0
+    orderLineItems.forEach((item: OrderLineItem) => {
+      const price = item.price
       const quantity = item.quantity || 1
       totalSales += price * quantity
 
+      // Track product sales
+      const currentSales = productSales.get(item.product_id) || 0
+      productSales.set(item.product_id, currentSales + quantity)
+
+      // Calculate payout
       const payout = payoutSettings?.find((p) => p.product_id === item.product_id)
       if (payout) {
         if (payout.is_percentage) {
@@ -118,8 +143,7 @@ export async function GET(
     // Enhance products with payout settings and sales data
     const enhancedProducts = products.map((product) => {
       const payout = payoutSettings?.find((p) => p.product_id === product.id)
-      const productSales = salesData.filter((item) => item.product_id === product.id)
-      const amountSold = productSales.reduce((sum, item) => sum + (item.quantity || 1), 0)
+      const amountSold = productSales.get(product.id) || 0
 
       return {
         ...product,
@@ -135,10 +159,10 @@ export async function GET(
       analytics: {
         totalSales,
         pendingPayout,
-        totalOrders: orders.length,
+        totalOrders: new Set(orderLineItems.map(item => item.order_id)).size,
         totalProducts: products.length,
       },
-      recentOrders: orders,
+      recentOrders: orderLineItems,
     })
   } catch (error) {
     console.error("Unexpected error in vendor details API:", error)
