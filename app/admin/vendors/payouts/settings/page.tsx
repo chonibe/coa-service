@@ -13,8 +13,10 @@ import { useToast } from "@/components/ui/use-toast"
 interface Product {
   id: string
   title: string
-  vendor: string
-  price: string
+  vendor_name: string
+  price: number
+  payout_amount?: number
+  is_percentage?: boolean
 }
 
 interface PayoutSetting {
@@ -52,7 +54,7 @@ export default function PayoutSettingsPage() {
 
       // Fetch payout settings for all products
       const productIds = products.map((p: Product) => p.id)
-      const vendorNames = [...new Set(products.map((p: Product) => p.vendor))]
+      const vendorNames = [...new Set(products.map((p: Product) => p.vendor_name))]
 
       if (productIds.length > 0) {
         const payoutsResponse = await fetch("/api/vendors/all-payouts", {
@@ -170,7 +172,7 @@ export default function PayoutSettingsPage() {
       const filtered = allProducts.filter(
         (product) =>
           product.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          product.vendor.toLowerCase().includes(searchQuery.toLowerCase())
+          product.vendor_name.toLowerCase().includes(searchQuery.toLowerCase())
       )
       setFilteredProducts(filtered)
     } else {
@@ -233,7 +235,7 @@ export default function PayoutSettingsPage() {
                     <TableBody>
                       {filteredProducts.map((product) => {
                         const payout = payoutSettings[product.id] || { amount: 0, isPercentage: false }
-                        const productPrice = Number.parseFloat(product.price)
+                        const productPrice = Number.parseFloat(product.price.toString())
                         const estimatedPayout = payout.isPercentage
                           ? (productPrice * payout.amount) / 100
                           : payout.amount
@@ -243,7 +245,7 @@ export default function PayoutSettingsPage() {
                         return (
                           <TableRow key={product.id}>
                             <TableCell>{product.title}</TableCell>
-                            <TableCell>{product.vendor}</TableCell>
+                            <TableCell>{product.vendor_name}</TableCell>
                             <TableCell>£{productPrice.toFixed(2)}</TableCell>
                             <TableCell>
                               <Select
@@ -306,7 +308,7 @@ export default function PayoutSettingsPage() {
                               <Button
                                 variant={saveStatus === false ? "default" : "outline"}
                                 size="sm"
-                                onClick={() => savePayoutSetting(product.id, product.vendor)}
+                                onClick={() => savePayoutSetting(product.id, product.vendor_name)}
                                 disabled={saveStatus === undefined}
                                 className="w-full"
                               >

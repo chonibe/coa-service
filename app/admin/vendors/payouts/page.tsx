@@ -20,7 +20,7 @@ interface Product {
   image: string | null
   price: string
   currency: string
-  vendor: string
+  vendor_name: string
   payout_amount?: number
   is_percentage?: boolean
 }
@@ -103,7 +103,7 @@ export default function VendorPayoutsPage() {
 
       // Fetch payout settings for all products
       const productIds = products.map((p: Product) => p.id)
-      const vendorNames = [...new Set(products.map((p: Product) => p.vendor))]
+      const vendorNames = [...new Set(products.map((p: Product) => p.vendor_name))]
 
       if (productIds.length > 0) {
         console.log("Fetching payout settings for", productIds.length, "products")
@@ -153,14 +153,14 @@ export default function VendorPayoutsPage() {
       result = result.filter(
         (product) =>
           product.title.toLowerCase().includes(query) ||
-          product.vendor.toLowerCase().includes(query) ||
+          product.vendor_name.toLowerCase().includes(query) ||
           product.id.toLowerCase().includes(query),
       )
     }
 
     // Apply vendor filter
     if (filters.vendor) {
-      result = result.filter((product) => product.vendor === filters.vendor)
+      result = result.filter((product) => product.vendor_name === filters.vendor)
     }
 
     // Apply price filters
@@ -296,7 +296,7 @@ export default function VendorPayoutsPage() {
           const product = allProducts.find((p) => p.id === productId)
           return {
             product_id: productId,
-            vendor_name: product?.vendor || "",
+            vendor_name: product?.vendor_name || "",
             payout_amount: setting.amount,
             is_percentage: setting.isPercentage,
           }
@@ -409,7 +409,7 @@ export default function VendorPayoutsPage() {
 
   // Get unique vendor names for filter
   const uniqueVendors = useMemo(() => {
-    return [...new Set(allProducts.map((product) => product.vendor))].sort()
+    return [...new Set(allProducts.map((product) => product.vendor_name))].sort()
   }, [allProducts])
 
   return (
@@ -697,7 +697,7 @@ export default function VendorPayoutsPage() {
                                   />
                                 </div>
                               </TableCell>
-                              <TableCell>{product.vendor}</TableCell>
+                              <TableCell>{product.vendor_name}</TableCell>
                               <TableCell>
                                 <div className="flex items-center gap-3">
                                   {product.image ? (
@@ -780,7 +780,7 @@ export default function VendorPayoutsPage() {
                                 <Button
                                   variant={saveStatus === false ? "default" : "outline"}
                                   size="sm"
-                                  onClick={() => savePayoutSetting(product.id, product.vendor)}
+                                  onClick={() => savePayoutSetting(product.id, product.vendor_name)}
                                   disabled={saveStatus === undefined}
                                   className="w-full"
                                 >

@@ -12,7 +12,7 @@ export async function GET() {
 
     const { data: products, error } = await supabaseAdmin
       .from("products")
-      .select("id, title, vendor, price")
+      .select("id, title, vendor_name, price")
       .order("title")
 
     if (error) {

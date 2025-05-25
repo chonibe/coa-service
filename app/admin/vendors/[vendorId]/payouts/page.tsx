@@ -16,7 +16,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 interface Product {
   id: string
   title: string
-  vendor: string
+  vendor_name: string
   price: number
   payout_amount?: number
   is_percentage?: boolean
@@ -42,7 +42,7 @@ export default function VendorPayoutsPage() {
       }
 
       const data = await response.json()
-      const vendorProducts = data.products.filter((product: Product) => product.vendor === vendorId)
+      const vendorProducts = data.products.filter((product: Product) => product.vendor_name === vendorId)
       setProducts(vendorProducts)
 
       // Fetch existing payout settings

@@ -251,7 +251,7 @@ async function fetchProductsByVendor(vendorName: string) {
         id: product.id.split("/").pop(),
         title: product.title,
         handle: product.handle,
-        vendor: product.vendor,
+        vendor_name: product.vendor,
         productType: product.productType,
         inventory: product.totalInventory,
         price: product.priceRangeV2.minVariantPrice.amount,
