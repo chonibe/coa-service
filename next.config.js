@@ -15,7 +15,7 @@ const nextConfig = {
         source: "/api/:path*",
         headers: [
           { key: "Access-Control-Allow-Credentials", value: "true" },
-          { key: "Access-Control-Allow-Origin", value: "*" }, // We'll handle specific origins in the API routes
+          { key: "Access-Control-Allow-Origin", value: "*" },
           { key: "Access-Control-Allow-Methods", value: "GET,OPTIONS,PATCH,DELETE,POST,PUT" },
           {
             key: "Access-Control-Allow-Headers",
@@ -36,6 +36,10 @@ const nextConfig = {
         destination: "/api/:path*",
       },
     ]
+  },
+  // Add this to ensure API routes are properly handled
+  experimental: {
+    serverActions: true,
   },
 }
 
