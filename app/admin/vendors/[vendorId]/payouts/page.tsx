@@ -36,38 +36,24 @@ export default function VendorPayoutsPage() {
       setIsLoading(true)
       setError(null)
 
-      const response = await fetch("/api/vendors/all-products")
+      // Get vendor details and products in one call
+      const response = await fetch(`/api/vendors/${vendorId}`)
       if (!response.ok) {
-        throw new Error("Failed to fetch products")
+        throw new Error("Failed to fetch vendor details")
       }
 
       const data = await response.json()
-      const vendorProducts = data.products.filter((product: Product) => product.vendor_name === vendorId)
-      setProducts(vendorProducts)
+      setProducts(data.products)
 
-      // Fetch existing payout settings
-      const payoutResponse = await fetch("/api/vendors/all-payouts", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          productIds: vendorProducts.map((p: Product) => p.id),
-          vendorNames: [vendorId],
-        }),
-      })
-
-      if (payoutResponse.ok) {
-        const payoutData = await payoutResponse.json()
-        const settingsMap = payoutData.payouts.reduce((acc: any, setting: any) => {
-          acc[setting.product_id] = {
-            amount: setting.payout_amount,
-            isPercentage: setting.is_percentage,
-          }
-          return acc
-        }, {})
-        setPayoutSettings(settingsMap)
-      }
+      // Create payout settings map from the products data
+      const settingsMap = data.products.reduce((acc: any, product: Product) => {
+        acc[product.id] = {
+          amount: product.payout_amount || 20,
+          isPercentage: product.is_percentage || true,
+        }
+        return acc
+      }, {})
+      setPayoutSettings(settingsMap)
     } catch (err) {
       console.error("Error fetching products:", err)
       setError(err instanceof Error ? err.message : "Failed to load products")
