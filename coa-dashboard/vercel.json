@@ -1,36 +1,4 @@
 {
-  "rewrites": [
-    {
-      "source": "/",
-      "destination": "/dashboard/welcome",
-      "has": [
-        {
-          "type": "host",
-          "value": "dashboard.thestreetlamp.com"
-        }
-      ]
-    },
-    {
-      "source": "/",
-      "destination": "/admin",
-      "has": [
-        {
-          "type": "host",
-          "value": "admin.thestreetlamp.com"
-        }
-      ]
-    },
-    {
-      "source": "/",
-      "destination": "/artist",
-      "has": [
-        {
-          "type": "host",
-          "value": "artist.thestreetlamp.com"
-        }
-      ]
-    }
-  ],
   "headers": [
     {
       "source": "/(.*)",
