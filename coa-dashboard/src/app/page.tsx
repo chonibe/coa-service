@@ -15,26 +15,39 @@ export default function HomePage() {
   useEffect(() => {
     async function checkAuth() {
       try {
-        // If account ID is provided, redirect to dashboard
-        if (accountId) {
-          router.push(`/dashboard?customer_id=${accountId}`)
-          return
-        }
+        // Get the current hostname
+        const hostname = window.location.hostname
 
-        // Check if user is already authenticated
-        const { data: { session } } = await supabase.auth.getSession()
-        
-        if (session) {
-          // If authenticated, redirect to dashboard with their customer ID
-          const customerId = session.user.user_metadata.customer_id
-          if (customerId) {
-            router.push(`/dashboard?customer_id=${customerId}`)
+        // Handle different domains
+        if (hostname === 'dashboard.thestreetlamp.com') {
+          // If account ID is provided, redirect to dashboard
+          if (accountId) {
+            router.push(`/dashboard?customer_id=${accountId}`)
             return
           }
-        }
 
-        // If not authenticated, redirect to login
-        router.push('https://www.thestreetlamp.com/account/login')
+          // Check if user is already authenticated
+          const { data: { session } } = await supabase.auth.getSession()
+          
+          if (session) {
+            // If authenticated, redirect to dashboard with their customer ID
+            const customerId = session.user.user_metadata.customer_id
+            if (customerId) {
+              router.push(`/dashboard?customer_id=${customerId}`)
+              return
+            }
+          }
+
+          // If not authenticated, redirect to login
+          router.push('https://www.thestreetlamp.com/account/login')
+        } else if (hostname === 'admin.thestreetlamp.com') {
+          router.push('/admin')
+        } else if (hostname === 'artist.thestreetlamp.com') {
+          router.push('/artist')
+        } else {
+          // Default fallback
+          router.push('https://www.thestreetlamp.com')
+        }
       } catch (error) {
         console.error('Auth check error:', error)
         router.push('https://www.thestreetlamp.com/account/login')
@@ -62,9 +75,9 @@ export default function HomePage() {
   return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center">
       <div className="text-center">
-        <h2 className="text-lg font-medium text-gray-900">Redirecting to login...</h2>
+        <h2 className="text-lg font-medium text-gray-900">Redirecting...</h2>
         <p className="mt-1 text-sm text-gray-500">
-          Please log in to access your dashboard.
+          Please wait while we redirect you to the appropriate page.
         </p>
       </div>
     </div>
