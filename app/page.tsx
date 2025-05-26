@@ -14,10 +14,10 @@ export default function Home() {
         <CardContent className="space-y-4">
           <div className="text-center space-y-2">
             <p className="text-muted-foreground">
-              To access your dashboard, you need to be logged into your Shopify account.
+              To access your dashboard, you need to authenticate with your Shopify account.
             </p>
             <p className="text-muted-foreground">
-              You will be automatically redirected to your dashboard when you log in.
+              Click the button below to start the authentication process.
             </p>
           </div>
           <div className="flex justify-center">
