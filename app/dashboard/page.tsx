@@ -38,9 +38,9 @@ export default function Dashboard() {
   const [customerId, setCustomerId] = useState<string | null>(null)
 
   useEffect(() => {
-    // Get customer ID from URL
-    const params = new URLSearchParams(window.location.search)
-    const id = params.get('customer_id')
+    // Get customer ID from URL path
+    const pathParts = window.location.pathname.split('/')
+    const id = pathParts[pathParts.length - 1]
     if (id) {
       setCustomerId(id)
       fetchOrders(id)
@@ -143,41 +143,10 @@ export default function Dashboard() {
 
   if (error) {
     return (
-      <div className="flex min-h-screen items-center justify-center p-4">
-        <Card className="w-full max-w-2xl">
-          <CardHeader>
-            <CardTitle>Error</CardTitle>
-            <CardDescription>There was a problem loading your orders</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Alert variant="destructive">
-              <AlertDescription>{error}</AlertDescription>
-            </Alert>
-            <div className="mt-4 flex justify-center">
-              <Button onClick={() => window.location.href = 'https://www.thestreetlamp.com/pages/authenticate'}>
-                Go to Authentication Page
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-    )
-  }
-
-  if (orders.length === 0) {
-    return (
-      <div className="flex min-h-screen items-center justify-center p-4">
-        <Card className="w-full max-w-2xl">
-          <CardHeader>
-            <CardTitle>No Orders Found</CardTitle>
-            <CardDescription>You haven't placed any orders yet</CardDescription>
-          </CardHeader>
-          <CardContent className="text-center">
-            <Button onClick={() => window.location.href = 'https://www.thestreetlamp.com/collections/all'}>
-              Start Shopping
-            </Button>
-          </CardContent>
-        </Card>
+      <div className="container mx-auto px-4 py-8">
+        <Alert variant="destructive">
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
       </div>
     )
   }
@@ -186,65 +155,71 @@ export default function Dashboard() {
     <main className="container mx-auto py-8 px-4">
       <h1 className="text-3xl font-bold mb-8">Your Orders</h1>
       <div className="space-y-8">
-        {orders.map(order => (
-          <Card key={order.id}>
-            <CardHeader>
-              <div className="flex justify-between items-start">
-                <div>
-                  <CardTitle>Order {order.name}</CardTitle>
-                  <CardDescription>
-                    Placed on {new Date(order.created_at).toLocaleDateString()}
-                  </CardDescription>
-                </div>
-                <div className="px-3 py-1 rounded-full bg-green-100 text-green-800 text-sm">
-                  {order.financial_status.charAt(0).toUpperCase() + order.financial_status.slice(1)}
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {order.line_items.map(item => (
-                  <div key={item.id} className="flex gap-4 p-4 border rounded-lg">
-                    <div className="w-24 h-24 flex-shrink-0">
-                      <img
-                        src={item.image}
-                        alt={item.title}
-                        className="w-full h-full object-cover rounded"
-                      />
-                    </div>
-                    <div className="flex-1">
-                      <h3 className="font-medium">{item.title}</h3>
-                      <p className="text-sm text-muted-foreground">{item.vendor}</p>
-                      <div className="mt-2 space-y-1">
-                        <p className="text-sm">Quantity: {item.quantity}</p>
-                        <p className="text-sm">Price: {formatMoney(item.price)}</p>
-                        {item.edition_number && (
-                          <p className="text-sm">
-                            Edition {item.edition_number} of {item.edition_total}
-                          </p>
-                        )}
-                        {item.nfc_tag_id && (
-                          <p className="text-sm">
-                            NFC Tag: {item.nfc_claimed_at ? 'Claimed' : 'Unclaimed'}
-                          </p>
-                        )}
-                      </div>
-                      {item.certificate_url && (
-                        <Button
-                          variant="link"
-                          className="mt-2 p-0 h-auto"
-                          onClick={() => window.open(item.certificate_url, '_blank')}
-                        >
-                          View Certificate
-                        </Button>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
+        {orders.length === 0 ? (
+          <Card>
+            <CardContent className="pt-6">
+              <p className="text-center text-muted-foreground">No orders found</p>
             </CardContent>
           </Card>
-        ))}
+        ) : (
+          orders.map(order => (
+            <Card key={order.id}>
+              <CardHeader>
+                <div className="flex justify-between items-start">
+                  <div>
+                    <CardTitle>Order {order.name}</CardTitle>
+                    <CardDescription>
+                      Placed on {new Date(order.created_at).toLocaleDateString()}
+                    </CardDescription>
+                  </div>
+                  <div className="px-3 py-1 rounded-full bg-green-100 text-green-800 text-sm">
+                    {order.financial_status.charAt(0).toUpperCase() + order.financial_status.slice(1)}
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {order.line_items.map(item => (
+                    <div key={item.id} className="flex items-start space-x-4 p-4 border rounded-lg">
+                      <div className="w-20 h-20 flex-shrink-0">
+                        <img
+                          src={item.image}
+                          alt={item.title}
+                          className="w-full h-full object-cover rounded"
+                        />
+                      </div>
+                      <div className="flex-1">
+                        <h3 className="font-medium">{item.title}</h3>
+                        <p className="text-sm text-muted-foreground">
+                          {item.vendor} • Edition {item.edition_number} of {item.edition_total}
+                        </p>
+                        <div className="mt-2 flex items-center space-x-4">
+                          <span className="text-sm">
+                            Quantity: {item.quantity}
+                          </span>
+                          <span className="text-sm font-medium">
+                            {formatMoney(item.total)}
+                          </span>
+                        </div>
+                        {item.certificate_url && (
+                          <div className="mt-2">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => window.open(item.certificate_url, '_blank')}
+                            >
+                              View Certificate
+                            </Button>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          ))
+        )}
       </div>
     </main>
   )

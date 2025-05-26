@@ -55,7 +55,7 @@ export async function GET(request: NextRequest, { params }: { params: { lineItem
       lineItemData.certificate_url ||
       `${process.env.NEXT_PUBLIC_CUSTOMER_APP_URL || request.nextUrl.origin}/certificate/${lineItemData.line_item_id}`
 
-    // Format the certificate data
+    // Format the certificate data - removing PII
     const certificateData = {
       lineItem: {
         id: lineItemData.line_item_id,
@@ -71,13 +71,6 @@ export async function GET(request: NextRequest, { params }: { params: { lineItem
       order: {
         id: lineItemData.order_id,
         orderName: lineItemData.order_name,
-        customer: orderData.customer
-          ? {
-              firstName: orderData.customer.first_name,
-              lastName: orderData.customer.last_name,
-              email: orderData.customer.email,
-            }
-          : null,
         createdAt: orderData.created_at,
         processedAt: orderData.processed_at,
       },

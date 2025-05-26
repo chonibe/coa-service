@@ -9,25 +9,19 @@ interface OrderCardProps {
 
 export function OrderCard({ order }: OrderCardProps) {
   const [isClaiming, setIsClaiming] = useState(false)
-  const [error, setError] = useState<string | null>(null)
   const supabase = createClientComponentClient<Database>()
 
-  const handleClaimNFC = async (lineItemId: string, nfcTagId: string) => {
-    setIsClaiming(true)
-    setError(null)
-
+  const handleClaimNFC = async (lineItemId: string) => {
     try {
-      const { error: updateError } = await supabase
+      setIsClaiming(true)
+      const { error } = await supabase
         .from('order_line_items')
         .update({ nfc_claimed_at: new Date().toISOString() })
-        .eq('id', lineItemId)
+        .eq('line_item_id', lineItemId)
 
-      if (updateError) throw updateError
-
-      // Refresh the page to show updated state
-      window.location.reload()
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to claim NFC tag')
+      if (error) throw error
+    } catch (error) {
+      console.error('Error claiming NFC tag:', error)
     } finally {
       setIsClaiming(false)
     }
@@ -55,77 +49,40 @@ export function OrderCard({ order }: OrderCardProps) {
 
       <div className="px-6 py-4">
         <div className="space-y-4">
-          {order.order_line_items.map((item: OrderLineItem) => (
-            <div key={item.id} className="flex gap-6 p-4 border border-gray-200 rounded-lg">
-              <div className="w-24 h-24 flex-shrink-0">
-                {item.image_url ? (
-                  <img
-                    src={item.image_url}
-                    alt={item.title}
-                    className="w-full h-full object-cover rounded-md"
-                  />
-                ) : (
-                  <div className="w-full h-full bg-gray-100 rounded-md flex items-center justify-center">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                    </svg>
-                  </div>
-                )}
+          {order.line_items.map((item) => (
+            <div key={item.id} className="flex items-start space-x-4 p-4 border rounded-lg">
+              <div className="w-20 h-20 flex-shrink-0">
+                <img
+                  src={item.image}
+                  alt={item.title}
+                  className="w-full h-full object-cover rounded"
+                />
               </div>
-
               <div className="flex-1">
-                <h3 className="text-lg font-medium text-gray-900">{item.title}</h3>
-                {item.vendor_name && (
-                  <p className="text-sm text-gray-500">{item.vendor_name}</p>
-                )}
-                <p className="text-sm text-gray-500">Quantity: {item.quantity}</p>
-                <p className="text-sm font-medium text-gray-900">
-                  {new Intl.NumberFormat('en-US', {
-                    style: 'currency',
-                    currency: 'USD'
-                  }).format(parseFloat(item.price))}
+                <h3 className="font-medium">{item.title}</h3>
+                <p className="text-sm text-gray-500">
+                  {item.vendor} • Edition {item.edition_number} of {item.edition_total}
                 </p>
-
-                {item.nfc_tag_id && (
-                  <div className="mt-2">
-                    <div className={`inline-block px-2 py-1 rounded-full text-xs font-medium ${
-                      item.nfc_claimed_at
-                        ? 'bg-green-100 text-green-800'
-                        : 'bg-yellow-100 text-yellow-800'
-                    }`}>
-                      {item.nfc_claimed_at ? 'NFC Tag Claimed' : 'NFC Tag Unclaimed'}
-                    </div>
-                    {!item.nfc_claimed_at && (
-                      <button
-                        onClick={() => handleClaimNFC(item.id, item.nfc_tag_id!)}
-                        disabled={isClaiming}
-                        className="ml-2 inline-block px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800 hover:bg-blue-200 disabled:opacity-50"
-                      >
-                        {isClaiming ? 'Claiming...' : 'Claim NFC Tag'}
-                      </button>
-                    )}
-                  </div>
-                )}
-
-                {item.edition_number && (
-                  <div className="mt-2 text-sm text-gray-600">
-                    Edition {item.edition_number} of {item.edition_total}
-                  </div>
-                )}
-
+                <div className="mt-2 flex items-center space-x-4">
+                  <span className="text-sm">
+                    Quantity: {item.quantity}
+                  </span>
+                  <span className="text-sm font-medium">
+                    {new Intl.NumberFormat('en-US', {
+                      style: 'currency',
+                      currency: 'USD'
+                    }).format(parseFloat(item.total))}
+                  </span>
+                </div>
                 {item.certificate_url && (
-                  <a
-                    href={item.certificate_url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="mt-2 inline-block text-sm text-blue-600 hover:text-blue-800"
-                  >
-                    View Certificate
-                  </a>
-                )}
-
-                {error && (
-                  <p className="mt-2 text-sm text-red-600">{error}</p>
+                  <div className="mt-2">
+                    <button
+                      className="text-sm text-blue-600 hover:text-blue-800"
+                      onClick={() => window.open(item.certificate_url, '_blank')}
+                    >
+                      View Certificate
+                    </button>
+                  </div>
                 )}
               </div>
             </div>
