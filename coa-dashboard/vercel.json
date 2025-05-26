@@ -1,5 +1,5 @@
 {
-  "rewrites": [
+  "redirects": [
     {
       "source": "/",
       "destination": "/dashboard",
@@ -8,7 +8,8 @@
           "type": "host",
           "value": "dashboard.thestreetlamp.com"
         }
-      ]
+      ],
+      "permanent": false
     },
     {
       "source": "/",
@@ -18,7 +19,8 @@
           "type": "host",
           "value": "admin.thestreetlamp.com"
         }
-      ]
+      ],
+      "permanent": false
     },
     {
       "source": "/",
@@ -27,6 +29,26 @@
         {
           "type": "host",
           "value": "artist.thestreetlamp.com"
+        }
+      ],
+      "permanent": false
+    }
+  ],
+  "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [
+        {
+          "key": "X-Frame-Options",
+          "value": "DENY"
+        },
+        {
+          "key": "X-Content-Type-Options",
+          "value": "nosniff"
+        },
+        {
+          "key": "X-XSS-Protection",
+          "value": "1; mode=block"
         }
       ]
     }

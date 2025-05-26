@@ -17,40 +17,43 @@ export default function HomePage() {
       try {
         // Get the current hostname
         const hostname = window.location.hostname
+        console.log('Current hostname:', hostname)
 
         // Handle different domains
-        if (hostname === 'dashboard.thestreetlamp.com') {
-          // If account ID is provided, redirect to dashboard
-          if (accountId) {
-            router.push(`/dashboard?customer_id=${accountId}`)
-            return
-          }
-
-          // Check if user is already authenticated
-          const { data: { session } } = await supabase.auth.getSession()
-          
-          if (session) {
-            // If authenticated, redirect to dashboard with their customer ID
-            const customerId = session.user.user_metadata.customer_id
-            if (customerId) {
-              router.push(`/dashboard?customer_id=${customerId}`)
-              return
+        switch (hostname) {
+          case 'dashboard.thestreetlamp.com':
+            if (accountId) {
+              console.log('Redirecting to dashboard with account ID:', accountId)
+              router.replace(`/dashboard?customer_id=${accountId}`)
+            } else {
+              const { data: { session } } = await supabase.auth.getSession()
+              if (session?.user?.user_metadata?.customer_id) {
+                console.log('Redirecting to dashboard with session customer ID')
+                router.replace(`/dashboard?customer_id=${session.user.user_metadata.customer_id}`)
+              } else {
+                console.log('Redirecting to login')
+                window.location.href = 'https://www.thestreetlamp.com/account/login'
+              }
             }
-          }
+            break
 
-          // If not authenticated, redirect to login
-          router.push('https://www.thestreetlamp.com/account/login')
-        } else if (hostname === 'admin.thestreetlamp.com') {
-          router.push('/admin')
-        } else if (hostname === 'artist.thestreetlamp.com') {
-          router.push('/artist')
-        } else {
-          // Default fallback
-          router.push('https://www.thestreetlamp.com')
+          case 'admin.thestreetlamp.com':
+            console.log('Redirecting to admin portal')
+            router.replace('/admin')
+            break
+
+          case 'artist.thestreetlamp.com':
+            console.log('Redirecting to artist portal')
+            router.replace('/artist')
+            break
+
+          default:
+            console.log('Redirecting to main site')
+            window.location.href = 'https://www.thestreetlamp.com'
         }
       } catch (error) {
         console.error('Auth check error:', error)
-        router.push('https://www.thestreetlamp.com/account/login')
+        window.location.href = 'https://www.thestreetlamp.com/account/login'
       } finally {
         setLoading(false)
       }
