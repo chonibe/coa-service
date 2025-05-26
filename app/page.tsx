@@ -1,30 +1,54 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { RedirectButton } from "./components/RedirectButton"
+import { Button } from "@/components/ui/button"
+import Link from "next/link"
 
 export default function Home() {
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center p-4 md:p-24">
-      <Card className="w-full max-w-2xl">
-        <CardHeader>
-          <CardTitle className="text-3xl font-bold text-center">Welcome to The Street Lamp Dashboard</CardTitle>
-          <CardDescription className="text-center">
-            Access your certificates and manage your orders
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="text-center space-y-2">
-            <p className="text-muted-foreground">
-              To access your dashboard, you need to authenticate with your Shopify account.
-            </p>
-            <p className="text-muted-foreground">
-              Click the button below to start the authentication process.
-            </p>
-          </div>
-          <div className="flex justify-center">
-            <RedirectButton />
-          </div>
-        </CardContent>
-      </Card>
+    <main className="flex min-h-[calc(100vh-4rem)] flex-col items-center justify-center p-4 md:p-24">
+      <div className="max-w-4xl w-full space-y-8">
+        <div className="text-center space-y-4">
+          <h1 className="text-4xl md:text-6xl font-bold tracking-tight">
+            Welcome to The Street Lamp
+          </h1>
+          <p className="text-xl text-muted-foreground">
+            Your gateway to exclusive limited edition certificates and digital collectibles
+          </p>
+        </div>
+
+        <div className="grid md:grid-cols-2 gap-6 mt-12">
+          <Card>
+            <CardHeader>
+              <CardTitle>For Collectors</CardTitle>
+              <CardDescription>
+                Access and manage your certificates
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Link href="/admin/login">
+                <Button className="w-full">
+                  View My Collection
+                </Button>
+              </Link>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>For Artists</CardTitle>
+              <CardDescription>
+                Manage your limited edition releases
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Link href="/admin/login">
+                <Button variant="outline" className="w-full">
+                  Artist Dashboard
+                </Button>
+              </Link>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
     </main>
   )
 }
