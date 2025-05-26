@@ -120,10 +120,10 @@ export default function PreviewPage() {
 
   if (loading) {
     return (
-      <div className="flex min-h-screen items-center justify-center">
+      <div className="flex min-h-screen items-center justify-center bg-black text-white">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
-          <p className="mt-4 text-muted-foreground">Loading preview...</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white mx-auto"></div>
+          <p className="mt-4 text-gray-400">Loading preview...</p>
         </div>
       </div>
     )
@@ -131,9 +131,9 @@ export default function PreviewPage() {
 
   if (error) {
     return (
-      <div className="container mx-auto px-4 py-8">
-        <Alert variant="destructive">
-          <AlertDescription>{error}</AlertDescription>
+      <div className="container mx-auto px-4 py-8 bg-black min-h-screen">
+        <Alert variant="destructive" className="bg-red-900/50 border-red-800">
+          <AlertDescription className="text-red-200">{error}</AlertDescription>
         </Alert>
       </div>
     )
@@ -141,10 +141,10 @@ export default function PreviewPage() {
 
   if (!order) {
     return (
-      <div className="container mx-auto px-4 py-8">
-        <Card>
+      <div className="container mx-auto px-4 py-8 bg-black min-h-screen">
+        <Card className="bg-zinc-900 border-zinc-800">
           <CardContent className="pt-6">
-            <p className="text-center text-muted-foreground">No orders found</p>
+            <p className="text-center text-gray-400">No orders found</p>
           </CardContent>
         </Card>
       </div>
@@ -152,63 +152,66 @@ export default function PreviewPage() {
   }
 
   return (
-    <main className="container mx-auto py-8 px-4">
-      <h1 className="text-3xl font-bold mb-8">Order Preview</h1>
-      <Card>
-        <CardHeader>
-          <div className="flex justify-between items-start">
-            <div>
-              <CardTitle>Order {order.name}</CardTitle>
-              <CardDescription>
-                Placed on {new Date(order.created_at).toLocaleDateString()}
-              </CardDescription>
-            </div>
-            <div className="px-3 py-1 rounded-full bg-green-100 text-green-800 text-sm">
-              {order.financial_status.charAt(0).toUpperCase() + order.financial_status.slice(1)}
-            </div>
-          </div>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            {order.line_items.map(item => (
-              <div key={item.id} className="flex items-start space-x-4 p-4 border rounded-lg">
-                <div className="w-20 h-20 flex-shrink-0">
-                  <img
-                    src={item.image}
-                    alt={item.title}
-                    className="w-full h-full object-cover rounded"
-                  />
-                </div>
-                <div className="flex-1">
-                  <h3 className="font-medium">{item.title}</h3>
-                  <p className="text-sm text-muted-foreground">
-                    {item.vendor} • Edition {item.edition_number} of {item.edition_total}
-                  </p>
-                  <div className="mt-2 flex items-center space-x-4">
-                    <span className="text-sm">
-                      Quantity: {item.quantity}
-                    </span>
-                    <span className="text-sm font-medium">
-                      {formatMoney(item.total)}
-                    </span>
-                  </div>
-                  {item.certificate_url && (
-                    <div className="mt-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => window.open(item.certificate_url, '_blank')}
-                      >
-                        View Certificate
-                      </Button>
-                    </div>
-                  )}
-                </div>
+    <main className="container mx-auto py-8 px-4 bg-black min-h-screen text-white">
+      <div className="max-w-4xl mx-auto">
+        <h1 className="text-3xl font-bold mb-8 text-white">Order Preview</h1>
+        <Card className="bg-zinc-900 border-zinc-800">
+          <CardHeader>
+            <div className="flex justify-between items-start">
+              <div>
+                <CardTitle className="text-white">Order {order.name}</CardTitle>
+                <CardDescription className="text-gray-400">
+                  Placed on {new Date(order.created_at).toLocaleDateString()}
+                </CardDescription>
               </div>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
+              <div className="px-3 py-1 rounded-full bg-green-900/50 text-green-200 text-sm border border-green-800">
+                {order.financial_status.charAt(0).toUpperCase() + order.financial_status.slice(1)}
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {order.line_items.map(item => (
+                <div key={item.id} className="flex items-start space-x-4 p-4 border border-zinc-800 rounded-lg bg-zinc-900/50">
+                  <div className="w-20 h-20 flex-shrink-0">
+                    <img
+                      src={item.image}
+                      alt={item.title}
+                      className="w-full h-full object-cover rounded"
+                    />
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="font-medium text-white">{item.title}</h3>
+                    <p className="text-sm text-gray-400">
+                      {item.vendor} • Edition {item.edition_number} of {item.edition_total}
+                    </p>
+                    <div className="mt-2 flex items-center space-x-4">
+                      <span className="text-sm text-gray-400">
+                        Quantity: {item.quantity}
+                      </span>
+                      <span className="text-sm font-medium text-white">
+                        {formatMoney(item.total)}
+                      </span>
+                    </div>
+                    {item.certificate_url && (
+                      <div className="mt-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="border-zinc-700 text-gray-300 hover:bg-zinc-800 hover:text-white"
+                          onClick={() => window.open(item.certificate_url, '_blank')}
+                        >
+                          View Certificate
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
     </main>
   )
 } 
