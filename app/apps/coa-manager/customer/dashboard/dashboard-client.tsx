@@ -2,6 +2,16 @@
 
 import { useEffect, useState } from 'react'
 
+declare global {
+  interface Window {
+    Shopify?: {
+      customer?: {
+        id: string
+      }
+    }
+  }
+}
+
 export default function DashboardClient({ customerId }: { customerId: string }) {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -10,9 +20,15 @@ export default function DashboardClient({ customerId }: { customerId: string }) 
   useEffect(() => {
     async function loadOrders() {
       try {
+        // Get customer ID from Shopify first
+        const shopifyCustomerId = window.Shopify?.customer?.id
+        if (!shopifyCustomerId) {
+          throw new Error('Please log in to your Shopify account')
+        }
+
         const response = await fetch('/api/customer/orders', {
           headers: {
-            'X-Customer-ID': customerId
+            'X-Customer-ID': shopifyCustomerId
           }
         })
         
@@ -44,9 +60,9 @@ export default function DashboardClient({ customerId }: { customerId: string }) 
     return (
       <div className="error-state">
         <p>{error}</p>
-        <button onClick={() => window.location.reload()} className="action-button outline">
-          Try Again
-        </button>
+        <a href="/account/login" className="action-button outline">
+          Log In to Shopify
+        </a>
       </div>
     )
   }
