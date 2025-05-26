@@ -37,10 +37,10 @@ export default function PreviewPage() {
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    fetchFirstOrder()
+    fetchSpecificOrder()
   }, [])
 
-  const fetchFirstOrder = async () => {
+  const fetchSpecificOrder = async () => {
     try {
       const response = await fetch('/api/supabase-proxy', {
         method: 'POST',
@@ -50,7 +50,7 @@ export default function PreviewPage() {
         body: JSON.stringify({
           action: 'fetchOrderLineItems',
           params: { 
-            limit: 1
+            order_id: '11741876552066'
           }
         })
       })
@@ -120,10 +120,10 @@ export default function PreviewPage() {
 
   if (loading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-black text-white">
+      <div className="flex min-h-screen items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white mx-auto"></div>
-          <p className="mt-4 text-gray-400">Loading preview...</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
+          <p className="mt-4 text-muted-foreground">Loading preview...</p>
         </div>
       </div>
     )
@@ -131,9 +131,9 @@ export default function PreviewPage() {
 
   if (error) {
     return (
-      <div className="container mx-auto px-4 py-8 bg-black min-h-screen">
-        <Alert variant="destructive" className="bg-red-900/50 border-red-800">
-          <AlertDescription className="text-red-200">{error}</AlertDescription>
+      <div className="container mx-auto px-4 py-8">
+        <Alert variant="destructive">
+          <AlertDescription>{error}</AlertDescription>
         </Alert>
       </div>
     )
@@ -141,10 +141,10 @@ export default function PreviewPage() {
 
   if (!order) {
     return (
-      <div className="container mx-auto px-4 py-8 bg-black min-h-screen">
-        <Card className="bg-zinc-900 border-zinc-800">
+      <div className="container mx-auto px-4 py-8">
+        <Card>
           <CardContent className="pt-6">
-            <p className="text-center text-gray-400">No orders found</p>
+            <p className="text-center text-muted-foreground">No orders found</p>
           </CardContent>
         </Card>
       </div>
@@ -152,59 +152,67 @@ export default function PreviewPage() {
   }
 
   return (
-    <main className="container mx-auto py-8 px-4 bg-black min-h-screen text-white">
+    <main className="container mx-auto py-8 px-4">
       <div className="max-w-4xl mx-auto">
-        <h1 className="text-3xl font-bold mb-8 text-white">Order Preview</h1>
-        <Card className="bg-zinc-900 border-zinc-800">
+        <div className="flex justify-between items-center mb-8">
+          <h1 className="text-3xl font-bold">Order Preview</h1>
+          <Button variant="outline" onClick={() => window.history.back()}>
+            Back
+          </Button>
+        </div>
+        <Card className="mb-8">
           <CardHeader>
             <div className="flex justify-between items-start">
               <div>
-                <CardTitle className="text-white">Order {order.name}</CardTitle>
-                <CardDescription className="text-gray-400">
+                <CardTitle className="text-2xl">Order #{order.name}</CardTitle>
+                <CardDescription>
                   Placed on {new Date(order.created_at).toLocaleDateString()}
                 </CardDescription>
               </div>
-              <div className="px-3 py-1 rounded-full bg-green-900/50 text-green-200 text-sm border border-green-800">
+              <div className="px-3 py-1 rounded-full bg-green-100 text-green-800 text-sm">
                 {order.financial_status.charAt(0).toUpperCase() + order.financial_status.slice(1)}
               </div>
             </div>
           </CardHeader>
           <CardContent>
-            <div className="space-y-4">
+            <div className="space-y-6">
               {order.line_items.map(item => (
-                <div key={item.id} className="flex items-start space-x-4 p-4 border border-zinc-800 rounded-lg bg-zinc-900/50">
-                  <div className="w-20 h-20 flex-shrink-0">
+                <div key={item.id} className="flex items-start space-x-6 p-6 border rounded-lg bg-white shadow-sm">
+                  <div className="w-32 h-32 flex-shrink-0">
                     <img
                       src={item.image}
                       alt={item.title}
-                      className="w-full h-full object-cover rounded"
+                      className="w-full h-full object-cover rounded-lg"
                     />
                   </div>
                   <div className="flex-1">
-                    <h3 className="font-medium text-white">{item.title}</h3>
-                    <p className="text-sm text-gray-400">
-                      {item.vendor} • Edition {item.edition_number} of {item.edition_total}
-                    </p>
-                    <div className="mt-2 flex items-center space-x-4">
-                      <span className="text-sm text-gray-400">
-                        Quantity: {item.quantity}
-                      </span>
-                      <span className="text-sm font-medium text-white">
-                        {formatMoney(item.total)}
-                      </span>
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <h3 className="text-lg font-semibold">{item.title}</h3>
+                        <p className="text-sm text-muted-foreground mt-1">
+                          {item.vendor} • Edition {item.edition_number} of {item.edition_total}
+                        </p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-lg font-semibold">{formatMoney(item.total)}</p>
+                        <p className="text-sm text-muted-foreground">Quantity: {item.quantity}</p>
+                      </div>
                     </div>
-                    {item.certificate_url && (
-                      <div className="mt-2">
+                    <div className="mt-4 flex space-x-4">
+                      {item.certificate_url && (
                         <Button
                           variant="outline"
-                          size="sm"
-                          className="border-zinc-700 text-gray-300 hover:bg-zinc-800 hover:text-white"
                           onClick={() => window.open(item.certificate_url, '_blank')}
                         >
                           View Certificate
                         </Button>
-                      </div>
-                    )}
+                      )}
+                      {item.nfc_tag_id && !item.nfc_claimed_at && (
+                        <Button variant="secondary">
+                          Claim NFC Tag
+                        </Button>
+                      )}
+                    </div>
                   </div>
                 </div>
               ))}

@@ -179,13 +179,20 @@ async function resequenceEditionNumbers(supabaseAdmin: any, params: any) {
 
 // Fetch order line items
 async function fetchOrderLineItems(supabaseAdmin: any, params: any) {
-  const { limit = 20 } = params
+  const { limit = 20, order_id } = params
 
-  const { data, error, count } = await supabaseAdmin
+  let query = supabaseAdmin
     .from("order_line_items")
     .select("*", { count: "exact" })
     .order("created_at", { ascending: false })
-    .limit(limit)
+
+  if (order_id) {
+    query = query.eq("order_id", order_id)
+  } else {
+    query = query.limit(limit)
+  }
+
+  const { data, error, count } = await query
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 })
