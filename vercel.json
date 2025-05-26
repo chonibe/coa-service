@@ -4,5 +4,18 @@
       "path": "/api/sync/new-line-items",
       "schedule": "*/5 * * * *"
     }
+  ],
+  "redirects": [
+    {
+      "source": "/",
+      "destination": "/dashboard",
+      "has": [
+        {
+          "type": "host",
+          "value": "dashboard.thestreetlamp.com"
+        }
+      ],
+      "permanent": false
+    }
   ]
 }

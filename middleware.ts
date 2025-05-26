@@ -37,7 +37,12 @@ export async function middleware(req: NextRequest) {
     // Get the customer ID from either account or customer_id parameter
     const customerId = req.nextUrl.searchParams.get('customer_id') || req.nextUrl.searchParams.get('account')
 
-    // If no customer ID is provided, redirect to the main store
+    // If we're on the root path, allow access without customer ID
+    if (req.nextUrl.pathname === '/') {
+      return res
+    }
+
+    // For other paths, require customer ID
     if (!customerId) {
       const storeUrl = process.env.NEXT_PUBLIC_SHOPIFY_STORE_URL || 'https://thestreetlamp.com'
       try {
