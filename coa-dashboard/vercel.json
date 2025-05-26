@@ -1,5 +1,5 @@
 {
-  "redirects": [
+  "rewrites": [
     {
       "source": "/",
       "destination": "/dashboard/welcome",
@@ -8,8 +8,7 @@
           "type": "host",
           "value": "dashboard.thestreetlamp.com"
         }
-      ],
-      "permanent": false
+      ]
     },
     {
       "source": "/",
@@ -19,8 +18,7 @@
           "type": "host",
           "value": "admin.thestreetlamp.com"
         }
-      ],
-      "permanent": false
+      ]
     },
     {
       "source": "/",
@@ -30,8 +28,7 @@
           "type": "host",
           "value": "artist.thestreetlamp.com"
         }
-      ],
-      "permanent": false
+      ]
     }
   ],
   "headers": [

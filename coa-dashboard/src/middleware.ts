@@ -51,7 +51,29 @@ export async function middleware(req: NextRequest) {
     return NextResponse.redirect(new URL(`/dashboard?customer_id=${customerId}`, req.url))
   }
 
-  return res
+  const hostname = req.headers.get('host') || ''
+  const path = req.nextUrl.pathname
+
+  // Only handle root path
+  if (path !== '/') {
+    return res
+  }
+
+  // Handle different domains
+  if (hostname === 'dashboard.thestreetlamp.com') {
+    return NextResponse.rewrite(new URL('/dashboard/welcome', req.url))
+  }
+
+  if (hostname === 'admin.thestreetlamp.com') {
+    return NextResponse.rewrite(new URL('/admin', req.url))
+  }
+
+  if (hostname === 'artist.thestreetlamp.com') {
+    return NextResponse.rewrite(new URL('/artist', req.url))
+  }
+
+  // Default to main site
+  return NextResponse.redirect('https://www.thestreetlamp.com')
 }
 
 export const config = {
