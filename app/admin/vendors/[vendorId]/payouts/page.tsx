@@ -30,6 +30,7 @@ export default function VendorPayoutsPage() {
   const [products, setProducts] = useState<Product[]>([])
   const [payoutSettings, setPayoutSettings] = useState<Record<string, { amount: number; isPercentage: boolean }>>({})
   const { toast } = useToast()
+  const [vendorName, setVendorName] = useState<string>("")
 
   const fetchProducts = async () => {
     try {
@@ -43,6 +44,7 @@ export default function VendorPayoutsPage() {
       }
 
       const data = await response.json()
+      setVendorName(data.vendor.vendor_name)
       setProducts(data.products)
 
       // Create payout settings map from the products data
@@ -86,7 +88,7 @@ export default function VendorPayoutsPage() {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          vendorName: vendorId,
+          vendorName,
           payouts: Object.entries(payoutSettings).map(([productId, setting]) => ({
             product_id: productId,
             payout_amount: setting.amount,

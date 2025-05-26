@@ -1,0 +1,16 @@
+{% if order.tags contains 'has_coa' %}
+<div class="order-coa">
+  <h3>Certificate of Authenticity</h3>
+  <p>Your order includes a Certificate of Authenticity. You can view and manage your certificate here:</p>
+  <div id="coa-manager-root"></div>
+  <script src="{{ 'coa-manager.js' | asset_url }}" async defer></script>
+  <script>
+    window.shopifyAppConfig = {
+      apiKey: '{{ app.api_key }}',
+      shop: '{{ shop.permanent_domain }}',
+      orderId: '{{ order.id }}',
+      baseUrl: 'https://streetcollector.vercel.app'
+    };
+  </script>
+</div>
+{% endif %} 

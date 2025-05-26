@@ -80,6 +80,7 @@ export default function AdminLoginPage() {
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="Enter admin password"
                   required
+                  autoComplete="new-password"
                 />
               </div>
             </div>

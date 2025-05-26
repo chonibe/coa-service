@@ -25,10 +25,9 @@ export async function POST(request: NextRequest) {
     }
 
     // Generate the certificate URL - use the public customer app URL if available
-    // MODIFIED: Changed from path-based to query parameter-based URL
     const baseUrl =
       process.env.NEXT_PUBLIC_CUSTOMER_APP_URL || process.env.NEXT_PUBLIC_APP_URL || request.nextUrl.origin
-    const certificateUrl = `${baseUrl}/pages/certificate?line_item_id=${lineItemId}`
+    const certificateUrl = `${baseUrl}/pages/authenticate/certificate/${lineItemId}`
 
     // Generate a unique access token for additional security (optional)
     const accessToken = crypto.randomUUID()

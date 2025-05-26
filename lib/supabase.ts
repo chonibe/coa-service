@@ -63,3 +63,9 @@ export function isSupabaseConfigured(): boolean {
 // For backwards compatibility - will use the appropriate client based on context
 // This should be avoided in favor of the specific functions above
 export const supabase = typeof window !== "undefined" ? getSupabaseClient() : getSupabaseAdmin()
+
+if (!supabaseUrl || !supabaseAnonKey) {
+  throw new Error('Missing Supabase environment variables')
+}
+
+export const supabaseClient = createClient(supabaseUrl, supabaseAnonKey)

@@ -4,6 +4,13 @@ import { supabaseAdmin } from "@/lib/supabase"
 
 export async function POST(request: NextRequest) {
   try {
+    if (!supabaseAdmin) {
+      return NextResponse.json(
+        { error: "Database connection not available" },
+        { status: 500 }
+      )
+    }
+
     const body = await request.json()
     const { productIds, vendorName } = body
 
@@ -13,7 +20,7 @@ export async function POST(request: NextRequest) {
 
     // Fetch payout settings for these products
     const { data, error } = await supabaseAdmin
-      .from("vendor_payouts")
+      .from("product_vendor_payouts")
       .select("*")
       .eq("vendor_name", vendorName)
       .in("product_id", productIds)

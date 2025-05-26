@@ -55,19 +55,15 @@ export async function GET(
     const cookieStore = cookies()
     const supabase = createClient(cookieStore)
 
-    // Convert vendorId to integer
-    const vendorId = parseInt(params.vendorId, 10)
-
-    // Validate vendorId
-    if (isNaN(vendorId)) {
-      return NextResponse.json({ error: "Invalid vendor ID" }, { status: 400 })
-    }
+    // Try to parse vendorId as integer
+    const numericId = parseInt(params.vendorId, 10)
+    const isNumericId = !isNaN(numericId)
 
     // Get vendor details
     const { data: vendor, error: vendorError } = await supabase
       .from("vendors")
       .select("*")
-      .eq("id", vendorId)
+      .eq(isNumericId ? "id" : "vendor_name", isNumericId ? numericId : params.vendorId)
       .single()
 
     if (vendorError) {

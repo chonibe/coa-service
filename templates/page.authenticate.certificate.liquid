@@ -5,13 +5,12 @@
   certificate information for limited edition products.
   
   Usage:
-  1. Add this file to your theme's templates directory as templates/page.certificate.liquid
-  2. Create a new page in Shopify admin and select "page.certificate" as the template
-  3. The page will automatically display certificate information based on the URL parameters
+  1. Add this file to your theme's templates directory as templates/page.authenticate.certificate.liquid
+  2. Create a new page in Shopify admin and select "page.authenticate.certificate" as the template
+  3. The page will automatically display certificate information based on the URL path
   
-  URL Parameters:
-  - line_item_id: The ID of the line item to display the certificate for
-  - token: Optional verification token
+  URL Structure:
+  /pages/authenticate/certificate/{line_item_id}
 {% endcomment %}
 
 {% layout 'theme' %}
@@ -184,9 +183,9 @@
 </style>
 
 <div class="certificate-container">
-  {% if request.parameters.line_item_id %}
-    {% assign line_item_id = request.parameters.line_item_id %}
-    
+  {% assign line_item_id = request.path | split: '/' | last %}
+  
+  {% if line_item_id %}
     {% comment %}
       In a real implementation, you would fetch the certificate data from your backend API
       For this template, we'll use placeholder data that would be replaced with real data
@@ -250,7 +249,7 @@
           </div>
           
           <div class="certificate-verification">
-            <p>Verification URL: {{ request.origin }}{{ request.path }}?line_item_id={{ line_item_id }}</p>
+            <p>Verification URL: {{ request.origin }}{{ request.path }}</p>
             <p>Line Item ID: {{ line_item_id }}</p>
             <p>Verified on: {{ 'now' | date: '%B %d, %Y at %I:%M %p' }}</p>
           </div>
@@ -287,4 +286,4 @@
       });
     }
   });
-</script>
+</script> 

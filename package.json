@@ -7,6 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
+    "copy-dashboard": "node scripts/copy-dashboard.js",
     "backup:build": "tsc -p tsconfig.backup.json",
     "backup:start": "node backup/dist/scripts/backup-database.js",
     "backup:test": "node backup/dist/scripts/test-backup.js",
