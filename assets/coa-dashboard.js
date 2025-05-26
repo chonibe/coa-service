@@ -2,20 +2,19 @@
   const app = {
     init() {
       this.container = document.getElementById('coa-dashboard-app')
+      this.customerId = this.container.dataset.customerId
       this.loadOrders()
     },
 
     async loadOrders() {
       try {
-        // Get the customer ID from Shopify's customer object
-        const customerId = window.Shopify?.customer?.id
-        if (!customerId) {
+        if (!this.customerId) {
           throw new Error('Customer not logged in')
         }
 
         const response = await fetch('/api/customer/orders', {
           headers: {
-            'X-Customer-ID': customerId
+            'X-Customer-ID': this.customerId
           }
         })
         

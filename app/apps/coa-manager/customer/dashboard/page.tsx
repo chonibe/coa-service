@@ -9,7 +9,7 @@ export default async function DashboardPage() {
   }
 
   return (
-    <div id="coa-dashboard-app">
+    <div id="coa-dashboard-app" data-customer-id={customerId}>
       <div className="loading-state">
         <div className="loading-spinner"></div>
         <p>Loading your orders...</p>
