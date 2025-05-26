@@ -1,4 +1,5 @@
 import { headers } from 'next/headers'
+import DashboardClient from './dashboard-client'
 
 export default async function DashboardPage() {
   const headersList = await headers()
@@ -9,11 +10,8 @@ export default async function DashboardPage() {
   }
 
   return (
-    <div id="coa-dashboard-app" data-customer-id={customerId}>
-      <div className="loading-state">
-        <div className="loading-spinner"></div>
-        <p>Loading your orders...</p>
-      </div>
+    <div id="coa-dashboard-app">
+      <DashboardClient customerId={customerId} />
     </div>
   )
 } 
