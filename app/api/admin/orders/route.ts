@@ -4,16 +4,11 @@ import { createClient } from "@/lib/supabase/server"
 
 export async function GET(request: NextRequest) {
   try {
-    // Check if this is a preview request
-    const isPreview = request.headers.get("x-preview-mode") === "true"
-    
-    // Only check for admin session if not in preview mode
-    if (!isPreview) {
-      const adminSession = request.cookies.get("admin_session")
-      if (!adminSession) {
-        console.log("No admin session found")
-        return NextResponse.json({ success: false, message: "Unauthorized" }, { status: 401 })
-      }
+    // Check for admin session cookie
+    const adminSession = request.cookies.get("admin_session")
+    if (!adminSession) {
+      console.log("No admin session found")
+      return NextResponse.json({ success: false, message: "Unauthorized" }, { status: 401 })
     }
 
     // Create Supabase client with service role key
@@ -51,50 +46,12 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ success: false, message: "No orders found" }, { status: 404 })
     }
 
-    // Group line items by order
-    const orders = lineItems.reduce((acc: any, item: any) => {
-      const orderName = item.order_name
-      if (!acc[orderName]) {
-        acc[orderName] = {
-          id: item.order_id,
-          name: orderName,
-          created_at: item.created_at,
-          line_items: [],
-        }
-      }
-      acc[orderName].line_items.push({
-        id: item.id,
-        order_id: item.order_id,
-        name: item.name,
-        description: item.description,
-        price: item.price,
-        quantity: item.quantity,
-        vendor_name: item.vendor_name,
-        status: item.status,
-        created_at: item.created_at,
-        img_url: item.img_url,
-        edition_number: item.edition_number,
-        edition_total: item.edition_total,
-        nfc_tag_id: item.nfc_tag_id,
-        nfc_claimed_at: item.nfc_claimed_at
-      })
-      return acc
-    }, {})
-
-    // Convert to array and sort by creation date
-    const ordersArray = Object.values(orders).sort((a: any, b: any) => 
-      new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-    )
-
-    return NextResponse.json({ 
-      success: true, 
-      orders: ordersArray 
-    })
+    return NextResponse.json({ success: true, orders: lineItems })
   } catch (error: any) {
-    console.error("Error in orders API:", error)
-    return NextResponse.json({ 
-      success: false, 
-      message: error.message || "An error occurred" 
-    }, { status: 500 })
+    console.error("Error in orders route:", error)
+    return NextResponse.json(
+      { success: false, message: error.message || "Internal server error" },
+      { status: 500 }
+    )
   }
 } 
