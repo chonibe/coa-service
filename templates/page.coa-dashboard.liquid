@@ -1,0 +1,628 @@
+{% layout 'theme' %}
+
+{% if customer %}
+  <meta name="customer_id" content="{{ customer.id }}">
+  <meta name="customer_email" content="{{ customer.email }}">
+  <meta name="customer_name" content="{{ customer.name }}">
+  <script>
+    // Set initial customer data
+    window.SHOPIFY_CUSTOMER = {
+      id: {{ customer.id | json }},
+      email: {{ customer.email | json }},
+      name: {{ customer.name | json }}
+    };
+
+    // Redirect to the new dashboard
+    window.location.href = 'https://dashboard.thestreetlamp.com?account={{ customer.id }}';
+  </script>
+{% else %}
+  <div class="page-width">
+    <div class="grid">
+      <div class="grid__item">
+        <div class="login-required">
+          <div class="login-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"></path><polyline points="10 17 15 12 10 7"></polyline><line x1="15" y1="12" x2="3" y2="12"></line></svg>
+          </div>
+          <h1 class="login-title">Please Log In</h1>
+          <p class="login-message">You need to be logged in to view your orders.</p>
+          <div class="login-actions">
+            <a href="/account/login" class="btn">Log In to Your Account</a>
+            <a href="/account/register" class="btn btn-secondary">Create an Account</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+{% endif %}
+
+<div class="page-width">
+  <div class="grid">
+    <div class="grid__item">
+      <h1 class="order-lookup-title">{{ page.title }}</h1>
+      
+      <div id="coa-dashboard-app" 
+           class="order-lookup-container"
+           {% if customer %}
+           data-customer-id="{{ customer.id }}"
+           data-customer-email="{{ customer.email }}"
+           data-customer-name="{{ customer.name }}"
+           {% endif %}>
+        <!-- Loading State -->
+        <div id="loading-state" class="loading-state">
+          <div class="loading-spinner"></div>
+          <p>Loading your orders...</p>
+        </div>
+
+        <!-- Error State -->
+        <div id="error-state" class="error-state" style="display: none;">
+          <div class="error-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+          </div>
+          <p id="error-message"></p>
+          <div class="error-actions">
+            <a href="/account/login" class="btn">Log In to Your Account</a>
+            <button onclick="window.location.reload()" class="btn btn-secondary">Try Again</button>
+          </div>
+        </div>
+
+        <!-- Orders List -->
+        <div id="orders-list" class="orders-list" style="display: none;">
+          <!-- Orders will be populated here -->
+        </div>
+
+        <!-- Empty State -->
+        <div id="empty-state" class="empty-state" style="display: none;">
+          <div class="empty-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"></circle><circle cx="20" cy="21" r="1"></circle><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path></svg>
+          </div>
+          <p>You haven't placed any orders yet</p>
+          <a href="/collections/all" class="btn">Start Shopping</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(() => {
+  const app = {
+    init() {
+      this.container = document.getElementById('coa-dashboard-app')
+      
+      // Get customer ID from multiple sources
+      this.shopifyCustomerId = this.getCustomerId()
+      console.log('Using Customer ID:', this.shopifyCustomerId)
+
+      if (!this.shopifyCustomerId) {
+        console.error('No customer ID found')
+        this.showError('Please log in to view your orders')
+        return
+      }
+
+      // Add customer ID to URL if not present
+      this.updateUrlWithCustomerId()
+      
+      this.loadOrders()
+    },
+
+    getCustomerId() {
+      // Try to get customer ID from multiple sources
+      const sources = {
+        window: window.SHOPIFY_CUSTOMER?.id,
+        url: new URLSearchParams(window.location.search).get('account'),
+        meta: document.querySelector('meta[name="customer_id"]')?.content,
+        data: this.container?.dataset.customerId
+      }
+
+      console.log('Customer ID Sources:', sources)
+
+      // Return the first available source
+      return sources.window || sources.url || sources.meta || sources.data
+    },
+
+    updateUrlWithCustomerId() {
+      const urlParams = new URLSearchParams(window.location.search)
+      if (!urlParams.has('account')) {
+        const newUrl = `${window.location.pathname}?account=${this.shopifyCustomerId}`
+        window.history.replaceState({}, '', newUrl)
+        console.log('Updated URL with customer ID:', newUrl)
+      }
+    },
+
+    async loadOrders() {
+      try {
+        // Show loading state
+        this.showState('loading')
+
+        // Fetch orders using the Supabase proxy
+        const ordersResponse = await fetch('/api/supabase-proxy', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Customer-ID': this.shopifyCustomerId
+          },
+          body: JSON.stringify({
+            action: 'fetchOrderLineItems',
+            params: { 
+              limit: 20,
+              customer_id: this.shopifyCustomerId
+            }
+          })
+        })
+
+        if (!ordersResponse.ok) {
+          const errorData = await ordersResponse.json().catch(() => null)
+          console.error('API Error:', errorData)
+          throw new Error('Failed to fetch orders. Please try again later.')
+        }
+
+        const data = await ordersResponse.json()
+        console.log('Orders data:', data)
+        
+        if (!data.success || !data.data || data.data.length === 0) {
+          this.showState('empty')
+          return
+        }
+
+        // Transform the data to match our expected format
+        const orders = this.transformSupabaseDataToOrders(data.data)
+        this.renderOrders(orders)
+      } catch (error) {
+        console.error('Error loading orders:', error)
+        this.showError(error.message || 'Failed to load orders. Please try again later.')
+      }
+    },
+
+    transformSupabaseDataToOrders(supabaseData) {
+      // Group line items by order_id
+      const orderMap = new Map()
+      
+      supabaseData.forEach(item => {
+        if (!orderMap.has(item.order_id)) {
+          orderMap.set(item.order_id, {
+            id: item.order_id,
+            name: item.order_name?.replace('#', '') || item.order_id,
+            created_at: item.created_at,
+            financial_status: "paid", // Default value
+            line_items: []
+          })
+        }
+        
+        // Add this line item to the order
+        const order = orderMap.get(item.order_id)
+        order.line_items.push({
+          id: item.line_item_id,
+          line_item_id: item.line_item_id,
+          product_id: item.product_id,
+          title: item.title || `Product ${item.product_id}`,
+          quantity: item.quantity || 1,
+          price: item.price || "0.00",
+          total: (parseFloat(item.price || "0") * (item.quantity || 1)).toFixed(2),
+          vendor: item.vendor_name || "Unknown Vendor",
+          image: item.image_url || "/placeholder.svg?height=400&width=400",
+          tags: [],
+          fulfillable: item.status === "active",
+          is_limited_edition: true,
+          total_inventory: item.edition_total?.toString() || "100",
+          inventory_quantity: 0,
+          status: item.status,
+          removed_reason: item.removed_reason,
+          nfc_tag_id: item.nfc_tag_id,
+          nfc_claimed_at: item.nfc_claimed_at,
+          certificate_url: item.certificate_url,
+          edition_number: item.edition_number,
+          edition_total: item.edition_total
+        })
+      })
+      
+      // Convert the map to an array of orders
+      return Array.from(orderMap.values())
+    },
+
+    renderOrders(orders) {
+      const ordersList = document.getElementById('orders-list')
+      ordersList.innerHTML = orders.map(order => `
+        <div class="order-card">
+          <div class="order-header">
+            <div class="order-info">
+              <h2 class="order-title">Order ${order.name}</h2>
+              <p class="order-date">Placed on ${new Date(order.created_at).toLocaleDateString()}</p>
+            </div>
+            <div class="order-status">
+              <span class="status-badge ${order.financial_status}">
+                ${order.financial_status.charAt(0).toUpperCase() + order.financial_status.slice(1)}
+              </span>
+            </div>
+          </div>
+
+          <div class="line-items">
+            ${order.line_items.map(item => `
+              <div class="line-item">
+                <div class="line-item-image">
+                  ${item.image ? `
+                    <img src="${item.image}" alt="${item.title}">
+                  ` : `
+                    <div class="placeholder-image">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
+                    </div>
+                  `}
+                </div>
+                <div class="line-item-details">
+                  <h3>${item.title}</h3>
+                  <p class="vendor">${item.vendor}</p>
+                  <p class="quantity">Quantity: ${item.quantity}</p>
+                  <p class="price">${this.formatMoney(item.price)}</p>
+                  ${item.nfc_tag_id ? `
+                    <div class="nfc-status ${item.nfc_claimed_at ? 'claimed' : 'unclaimed'}">
+                      ${item.nfc_claimed_at ? 'NFC Tag Claimed' : 'NFC Tag Unclaimed'}
+                    </div>
+                  ` : ''}
+                  ${item.edition_number ? `
+                    <div class="edition-info">
+                      Edition ${item.edition_number} of ${item.edition_total}
+                    </div>
+                  ` : ''}
+                  ${item.certificate_url ? `
+                    <a href="${item.certificate_url}" target="_blank" class="certificate-link">View Certificate</a>
+                  ` : ''}
+                </div>
+              </div>
+            `).join('')}
+          </div>
+        </div>
+      `).join('')
+
+      this.showState('orders')
+    },
+
+    showState(state) {
+      // Hide all states
+      document.getElementById('loading-state').style.display = 'none'
+      document.getElementById('error-state').style.display = 'none'
+      document.getElementById('orders-list').style.display = 'none'
+      document.getElementById('empty-state').style.display = 'none'
+
+      // Show requested state
+      switch (state) {
+        case 'loading':
+          document.getElementById('loading-state').style.display = 'flex'
+          break
+        case 'error':
+          document.getElementById('error-state').style.display = 'flex'
+          break
+        case 'orders':
+          document.getElementById('orders-list').style.display = 'block'
+          break
+        case 'empty':
+          document.getElementById('empty-state').style.display = 'flex'
+          break
+      }
+    },
+
+    showError(message) {
+      document.getElementById('error-message').textContent = message
+      this.showState('error')
+    },
+
+    formatMoney(amount) {
+      return new Intl.NumberFormat('en-US', {
+        style: 'currency',
+        currency: 'USD'
+      }).format(parseFloat(amount))
+    }
+  }
+
+  // Initialize the app when the DOM is ready
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', () => app.init())
+  } else {
+    app.init()
+  }
+})()
+</script>
+
+<style>
+:root {
+  --primary-color: #008060;
+  --text-primary: #212b36;
+  --text-secondary: #637381;
+  --border-color: #dfe3e8;
+  --bg-light: #f4f6f8;
+  --success-color: #50b83c;
+  --warning-color: #ffea8a;
+  --error-color: #de3618;
+}
+
+.page-width {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2rem 1rem;
+}
+
+.order-lookup-title {
+  font-size: 2rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 2rem;
+  text-align: center;
+}
+
+/* Loading State */
+.loading-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem;
+  background: var(--bg-light);
+  border-radius: 8px;
+}
+
+.loading-spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid var(--border-color);
+  border-top-color: var(--primary-color);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-bottom: 1rem;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Error State */
+.error-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  background: #fff;
+  border: 1px solid var(--error-color);
+  border-radius: 8px;
+  text-align: center;
+}
+
+.error-icon {
+  color: var(--error-color);
+  margin-bottom: 1rem;
+}
+
+/* Empty State */
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem;
+  background: var(--bg-light);
+  border-radius: 8px;
+  text-align: center;
+}
+
+.empty-icon {
+  color: var(--text-secondary);
+  margin-bottom: 1rem;
+}
+
+/* Orders List */
+.orders-list {
+  display: grid;
+  gap: 2rem;
+}
+
+.order-card {
+  background: #fff;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.order-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.5rem;
+  background: var(--bg-light);
+  border-bottom: 1px solid var(--border-color);
+}
+
+.order-title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.order-date {
+  color: var(--text-secondary);
+  margin: 0.5rem 0 0;
+}
+
+.status-badge {
+  padding: 0.25rem 0.75rem;
+  border-radius: 1rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.status-badge.paid {
+  background: var(--success-color);
+  color: #fff;
+}
+
+.status-badge.pending {
+  background: var(--warning-color);
+  color: var(--text-primary);
+}
+
+/* Line Items */
+.line-items {
+  padding: 1.5rem;
+}
+
+.line-item {
+  display: flex;
+  gap: 1.5rem;
+  padding: 1rem;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  margin-bottom: 1rem;
+}
+
+.line-item:last-child {
+  margin-bottom: 0;
+}
+
+.line-item-image {
+  width: 100px;
+  height: 100px;
+  flex-shrink: 0;
+}
+
+.line-item-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 4px;
+}
+
+.placeholder-image {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-light);
+  border-radius: 4px;
+  color: var(--text-secondary);
+}
+
+.line-item-details {
+  flex: 1;
+}
+
+.line-item-details h3 {
+  font-size: 1.125rem;
+  font-weight: 500;
+  color: var(--text-primary);
+  margin: 0 0 0.5rem;
+}
+
+.vendor {
+  color: var(--text-secondary);
+  margin: 0 0 0.5rem;
+}
+
+.quantity, .price {
+  margin: 0.25rem 0;
+  color: var(--text-secondary);
+}
+
+.nfc-status {
+  display: inline-block;
+  padding: 0.25rem 0.75rem;
+  border-radius: 1rem;
+  font-size: 0.875rem;
+  margin-top: 0.5rem;
+}
+
+.nfc-status.claimed {
+  background: var(--success-color);
+  color: #fff;
+}
+
+.nfc-status.unclaimed {
+  background: var(--warning-color);
+  color: var(--text-primary);
+}
+
+/* Buttons */
+.btn {
+  display: inline-block;
+  padding: 0.75rem 1.5rem;
+  background: var(--primary-color);
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  font-size: 1rem;
+  font-weight: 500;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.btn:hover {
+  background: #006e52;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .order-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+
+  .line-item {
+    flex-direction: column;
+  }
+
+  .line-item-image {
+    width: 100%;
+    height: 200px;
+  }
+}
+
+/* Login Required Styles */
+.login-required {
+  text-align: center;
+  padding: 3rem;
+  background: var(--bg-light);
+  border-radius: 8px;
+  margin: 2rem 0;
+}
+
+.login-icon {
+  color: var(--primary-color);
+  margin-bottom: 1.5rem;
+}
+
+.login-title {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 1rem;
+}
+
+.login-message {
+  color: var(--text-secondary);
+  margin-bottom: 1.5rem;
+}
+
+.login-actions {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+}
+
+.btn-secondary {
+  background: var(--bg-light);
+  color: var(--text-primary);
+  border: 1px solid var(--border-color);
+}
+
+.btn-secondary:hover {
+  background: var(--border-color);
+}
+
+.error-actions {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+  margin-top: 1rem;
+}
+</style>
+

@@ -2,25 +2,67 @@
   const app = {
     init() {
       this.container = document.getElementById('coa-dashboard-app')
-      this.customerId = this.container.dataset.customerId
       this.loadOrders()
+    },
+
+    getCustomerId() {
+      // Get customer ID from URL parameters
+      const urlParams = new URLSearchParams(window.location.search)
+      const accountNumber = urlParams.get('accountnumber')
+      
+      console.log('URL Account Number:', accountNumber)
+      console.log('Current URL:', window.location.href)
+      
+      if (accountNumber) {
+        console.log('Using account number from URL:', accountNumber)
+        return accountNumber
+      }
+
+      // Try to get customer ID from Shopify's customer object
+      if (window.Shopify?.customer?.id) {
+        console.log('Using Shopify customer ID:', window.Shopify.customer.id)
+        return window.Shopify.customer.id
+      }
+
+      console.log('No customer ID found')
+      return null
     },
 
     async loadOrders() {
       try {
-        if (!this.customerId) {
-          throw new Error('Customer not logged in')
+        const customerId = this.getCustomerId()
+        console.log('Final customer ID:', customerId)
+        
+        if (!customerId) {
+          throw new Error('Please log in to your Shopify account')
         }
 
+        console.log('Fetching orders for customer:', customerId)
         const response = await fetch('/api/customer/orders', {
+          method: 'GET',
           headers: {
-            'X-Customer-ID': this.customerId
+            'X-Customer-ID': customerId,
+            'Content-Type': 'application/json'
           }
         })
         
-        if (!response.ok) throw new Error('Failed to fetch orders')
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => null)
+          console.error('API Error Response:', {
+            status: response.status,
+            statusText: response.statusText,
+            error: errorData
+          })
+          throw new Error(`Failed to fetch orders: ${response.statusText}`)
+        }
         
         const data = await response.json()
+        console.log('Orders data:', data)
+        
+        if (!data.orders) {
+          throw new Error('No orders data received')
+        }
+
         this.renderOrders(data.orders)
       } catch (error) {
         console.error('Error loading orders:', error)
@@ -115,9 +157,14 @@
       this.container.innerHTML = `
         <div class="error-state">
           <p>${message}</p>
-          <button onclick="window.location.reload()" class="action-button outline">
-            Try Again
-          </button>
+          <div class="error-actions">
+            <a href="/account/login" class="action-button outline">
+              Log In to Shopify
+            </a>
+            <button onclick="window.location.reload()" class="action-button outline">
+              Try Again
+            </button>
+          </div>
         </div>
       `
     },
