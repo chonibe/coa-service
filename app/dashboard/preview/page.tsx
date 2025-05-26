@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -36,7 +36,7 @@ interface Order {
   line_items: LineItem[]
 }
 
-export default function DashboardPreviewPage() {
+function DashboardPreviewContent() {
   const [orders, setOrders] = useState<Order[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -255,5 +255,22 @@ export default function DashboardPreviewPage() {
         </DialogContent>
       </Dialog>
     </div>
+  )
+}
+
+export default function DashboardPreviewPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-zinc-950 text-white p-4 sm:p-6">
+        <div className="max-w-7xl mx-auto">
+          <div className="space-y-4">
+            <Skeleton className="h-8 w-[200px]" />
+            <Skeleton className="h-[400px] w-full" />
+          </div>
+        </div>
+      </div>
+    }>
+      <DashboardPreviewContent />
+    </Suspense>
   )
 } 

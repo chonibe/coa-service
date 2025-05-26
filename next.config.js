@@ -39,7 +39,10 @@ const nextConfig = {
   },
   // Add this to ensure API routes are properly handled
   experimental: {
-    serverActions: true,
+    serverActions: {
+      allowedOrigins: ['*'],
+      bodySizeLimit: '2mb'
+    },
   },
 }
 
