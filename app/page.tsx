@@ -1,5 +1,5 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
+import { RedirectButton } from "./components/RedirectButton"
 
 export default function Home() {
   return (
@@ -21,12 +21,7 @@ export default function Home() {
             </p>
           </div>
           <div className="flex justify-center">
-            <Button
-              onClick={() => window.location.href = 'https://thestreetlamp.com/account'}
-              className="w-full md:w-auto"
-            >
-              Go to My Account
-            </Button>
+            <RedirectButton />
           </div>
         </CardContent>
       </Card>
