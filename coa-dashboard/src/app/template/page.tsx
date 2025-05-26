@@ -6,17 +6,17 @@ import { useRouter, useSearchParams } from 'next/navigation'
 export default function TemplatePage() {
   const router = useRouter()
   const searchParams = useSearchParams()
-  const customerId = searchParams.get('customer_id')
+  const accountId = searchParams.get('account')
 
   useEffect(() => {
-    if (customerId) {
+    if (accountId) {
       // Redirect to the dashboard with the customer ID
-      router.push(`/dashboard?customer_id=${customerId}`)
+      router.push(`/dashboard?customer_id=${accountId}`)
     } else {
       // If no customer ID, redirect to the main store
       router.push('https://thestreetlamp.com/account')
     }
-  }, [customerId, router])
+  }, [accountId, router])
 
   return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center">

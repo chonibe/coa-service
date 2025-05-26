@@ -1,4 +1,39 @@
 {
+  "redirects": [
+    {
+      "source": "/",
+      "destination": "/dashboard",
+      "has": [
+        {
+          "type": "host",
+          "value": "dashboard.thestreetlamp.com"
+        }
+      ],
+      "permanent": false
+    },
+    {
+      "source": "/",
+      "destination": "/admin",
+      "has": [
+        {
+          "type": "host",
+          "value": "admin.thestreetlamp.com"
+        }
+      ],
+      "permanent": false
+    },
+    {
+      "source": "/",
+      "destination": "/artist",
+      "has": [
+        {
+          "type": "host",
+          "value": "artist.thestreetlamp.com"
+        }
+      ],
+      "permanent": false
+    }
+  ],
   "headers": [
     {
       "source": "/(.*)",
