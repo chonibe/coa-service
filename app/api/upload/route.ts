@@ -12,6 +12,7 @@ export async function POST(request: NextRequest) {
     const formData = await request.formData()
     const file = formData.get("file") as File
     const field = formData.get("field") as string
+    const vendorId = formData.get("vendorId") as string
 
     if (!file) {
       return NextResponse.json({ message: "No file provided" }, { status: 400 })
@@ -42,6 +43,19 @@ export async function POST(request: NextRequest) {
     const { data: { publicUrl } } = supabase.storage
       .from("signatures")
       .getPublicUrl(filename)
+
+    // If this is a vendor signature, update the vendor record
+    if (field === "signature" && vendorId) {
+      const { error: updateError } = await supabase
+        .from("vendors")
+        .update({ signature_url: publicUrl })
+        .eq("vendor_name", vendorId)
+
+      if (updateError) {
+        console.error("Error updating vendor signature:", updateError)
+        return NextResponse.json({ message: updateError.message }, { status: 500 })
+      }
+    }
 
     return NextResponse.json({ url: publicUrl })
   } catch (error: any) {
