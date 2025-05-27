@@ -1,145 +1,59 @@
 "use client"
 
 import { useState, useRef, useEffect, ReactNode } from "react"
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { Dialog, DialogContent } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { X, BadgeIcon as Certificate, User, Calendar, Hash, Tag } from "lucide-react"
 import { motion, useMotionValue, useSpring, useTransform } from "framer-motion"
-import { getSupabaseClient } from "@/lib/supabase"
 
 // Add shimmer effect styles
 const shimmerStyles = `
-@keyframes shimmer {
-  0% {
-    background-position: -200% 0;
+  .shimmer {
+    position: relative;
+    overflow: hidden;
   }
-  100% {
-    background-position: 200% 0;
+  .shimmer::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    background: linear-gradient(
+      90deg,
+      rgba(255, 255, 255, 0) 0%,
+      rgba(255, 255, 255, 0.1) 50%,
+      rgba(255, 255, 255, 0) 100%
+    );
+    animation: shimmer 2s infinite;
   }
-}
-
-.shimmer {
-  background: linear-gradient(
-    90deg,
-    rgba(255, 255, 255, 0) 0%,
-    rgba(255, 255, 255, 0.1) 50%,
-    rgba(255, 255, 255, 0) 100%
-  );
-  background-size: 200% 100%;
-  animation: shimmer 2s infinite;
-}
+  @keyframes shimmer {
+    0% {
+      transform: translateX(-100%);
+    }
+    100% {
+      transform: translateX(100%);
+    }
+  }
 `
 
-function FloatingCard({ children, className = "", isFlipped = false, ...props }: React.HTMLAttributes<HTMLDivElement> & { isFlipped?: boolean }) {
-  const cardRef = useRef<HTMLDivElement>(null)
-  const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 })
-  
-  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
-    const card = cardRef.current
-    if (!card) return
-    
-    const rect = card.getBoundingClientRect()
-    const x = e.clientX - rect.left
-    const y = e.clientY - rect.top
-    const centerX = rect.width / 2
-    const centerY = rect.height / 2
-    const rotateX = ((y - centerY) / centerY) * 5
-    const rotateY = ((x - centerX) / centerX) * -5
-    
-    setMousePosition({ x: (x / rect.width) * 100, y: (y / rect.height) * 100 })
-    
-    card.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale3d(1.02,1.02,1.02)`
-  }
-  
-  const handleMouseLeave = () => {
-    const card = cardRef.current
-    if (!card) return
-    card.style.transform = ""
-    setMousePosition({ x: 50, y: 50 })
-  }
-  
-  return (
-    <>
-      <style>{shimmerStyles}</style>
-      <div
-        ref={cardRef}
-        className={`relative bg-zinc-900/50 backdrop-blur-sm border border-zinc-800/50 rounded-xl shadow-lg transition-all duration-300 hover:shadow-xl hover:border-zinc-700/50 overflow-hidden ${className}`}
-        style={{ 
-          willChange: "transform",
-          transformStyle: "preserve-3d",
-          transform: isFlipped ? "rotateY(180deg)" : "",
-        }}
-        onMouseMove={handleMouseMove}
-        onMouseLeave={handleMouseLeave}
-        {...props}
-      >
-        {/* Dynamic shimmer overlay */}
-        <span 
-          className="pointer-events-none absolute inset-0 z-10 opacity-0 hover:opacity-100 transition-opacity duration-300"
-          style={{
-            background: `radial-gradient(circle at ${mousePosition.x}% ${mousePosition.y}%, rgba(255,255,255,0.1) 0%, transparent 50%)`,
-          }}
-        >
-          <span className="block w-full h-full shimmer" />
-        </span>
-        {children}
-      </div>
-    </>
-  )
+// Add the styles to the document
+if (typeof document !== "undefined") {
+  const style = document.createElement("style")
+  style.textContent = shimmerStyles
+  document.head.appendChild(style)
 }
 
-interface CertificateModalProps {
-  isOpen: boolean
-  onClose: () => void
-  lineItem: {
-    id: string
-    name: string
-    description: string
-    price: number
-    img_url: string
-    vendor_name: string
-    nfc_tag_id: string | null
-  }
+interface FloatingCardProps {
+  children: ReactNode
+  className?: string
+  isFlipped?: boolean
+  [key: string]: any
 }
 
-export function CertificateModal({ isOpen, onClose, lineItem }: CertificateModalProps) {
-  const [isFlipped, setIsFlipped] = useState(false)
-  const [vendorSignature, setVendorSignature] = useState<string | null>(null)
+function FloatingCard({ children, className = "", isFlipped = false, ...props }: FloatingCardProps) {
   const mouseX = useMotionValue(0)
   const mouseY = useMotionValue(0)
-
-  useEffect(() => {
-    if (lineItem.vendor_name) {
-      fetchVendorSignature(lineItem.vendor_name)
-    }
-  }, [lineItem.vendor_name])
-
-  const fetchVendorSignature = async (vendorName: string) => {
-    try {
-      const supabase = getSupabaseClient()
-      if (!supabase) {
-        console.error("Failed to initialize Supabase client")
-        return
-      }
-
-      const { data, error } = await supabase
-        .from("vendors")
-        .select("signature_url")
-        .eq("vendor_name", vendorName)
-        .single()
-
-      if (error) {
-        console.error("Error fetching vendor signature:", error)
-        return
-      }
-
-      if (data?.signature_url) {
-        setVendorSignature(data.signature_url as string)
-      }
-    } catch (error) {
-      console.error("Error in fetchVendorSignature:", error)
-    }
-  }
 
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
     const rect = e.currentTarget.getBoundingClientRect()
@@ -160,120 +74,282 @@ export function CertificateModal({ isOpen, onClose, lineItem }: CertificateModal
   const springRotateX = useSpring(rotateX, springConfig)
   const springRotateY = useSpring(rotateY, springConfig)
 
-  const handleFlip = () => {
+  return (
+    <motion.div
+      className={`relative ${className}`}
+      onMouseMove={handleMouseMove}
+      onMouseLeave={handleMouseLeave}
+      style={{
+        rotateX: springRotateX,
+        rotateY: springRotateY,
+        transformStyle: "preserve-3d",
+      }}
+      {...props}
+    >
+      {children}
+    </motion.div>
+  )
+}
+
+interface CertificateModalProps {
+  lineItem: {
+    line_item_id: string
+    title: string
+    image_url: string | null
+    vendor: string | null
+    edition_number: number | null
+    edition_total: number | null
+    nfc_tag_id: string | null
+  } | null
+  onClose: () => void
+}
+
+export function CertificateModal({ lineItem, onClose }: CertificateModalProps) {
+  const [isOpen, setIsOpen] = useState(false)
+  const [isFlipped, setIsFlipped] = useState(false)
+  const [profilePicture, setProfilePicture] = useState<string | null>(null)
+  const cardRef = useRef<HTMLDivElement>(null)
+  const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 })
+
+  // Image motion values for subtle parallax effect
+  const imageX = useMotionValue(0)
+  const imageY = useMotionValue(0)
+  const imageRotateX = useTransform(imageY, [-5, 5], [2, -2])
+  const imageRotateY = useTransform(imageX, [-5, 5], [2, -2])
+  const imageTranslateX = useTransform(imageX, [-5, 5], [3, -3])
+  const imageTranslateY = useTransform(imageY, [-5, 5], [3, -3])
+
+  useEffect(() => {
+    if (lineItem) {
+      setIsOpen(true)
+      setIsFlipped(false)
+      // Fetch the vendor's Instagram profile picture
+      if (lineItem.vendor) {
+        fetch(`/api/vendors/instagram-profile?vendorName=${encodeURIComponent(lineItem.vendor)}`)
+          .then((res) => res.json())
+          .then((data) => {
+            if (data.profilePicture) {
+              setProfilePicture(data.profilePicture)
+            }
+          })
+          .catch((error) => {
+            console.error("Error fetching Instagram profile:", error)
+          })
+      }
+    } else {
+      setIsOpen(false)
+    }
+  }, [lineItem])
+
+  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!cardRef.current) return
+
+    const rect = cardRef.current.getBoundingClientRect()
+    const x = e.clientX - rect.left
+    const y = e.clientY - rect.top
+    const centerX = rect.width / 2
+    const centerY = rect.height / 2
+    const rotateX = ((y - centerY) / centerY) * 5
+    const rotateY = ((x - centerX) / centerX) * -5
+
+    // Update image motion values for subtle parallax
+    imageX.set(rotateY * 0.3)
+    imageY.set(rotateX * 0.3)
+
+    // Update mouse position for shimmer effect
+    setMousePosition({ x: (x / rect.width) * 100, y: (y / rect.height) * 100 })
+
+    // Apply card tilt
+    if (cardRef.current) {
+      cardRef.current.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale3d(1.02,1.02,1.02)`
+    }
+  }
+
+  const handleMouseLeave = () => {
+    if (!cardRef.current) return
+    cardRef.current.style.transform = ""
+    imageX.set(0)
+    imageY.set(0)
+    setMousePosition({ x: 50, y: 50 })
+  }
+
+  const handleCardClick = () => {
     setIsFlipped(!isFlipped)
   }
 
+  if (!lineItem) return null
+
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent
-        className="max-w-4xl p-0 bg-transparent border-none"
+    <Dialog open={isOpen} onOpenChange={() => {
+      setIsOpen(false)
+      onClose()
+    }}>
+      <DialogContent 
+        className="w-[95vw] sm:w-[90vw] md:max-w-[900px] bg-transparent border-none p-0"
         onMouseMove={handleMouseMove}
         onMouseLeave={handleMouseLeave}
       >
-        <div className="relative w-full h-[600px] perspective-1000">
+        <div className="perspective-[2000px]">
           <motion.div
-            className={`w-full h-full transition-transform duration-500 transform-style-3d ${isFlipped ? "rotate-y-180" : ""}`}
+            onClick={handleCardClick}
+            className="relative w-full aspect-[4/3] cursor-pointer"
             style={{
-              rotateX: springRotateX,
-              rotateY: springRotateY,
+              transformStyle: "preserve-3d",
+            }}
+            animate={{
+              rotateY: isFlipped ? 180 : 0,
+            }}
+            transition={{
+              duration: 1.2,
+              type: "spring",
+              stiffness: 60,
+              damping: 12,
             }}
           >
-            {/* Front of the card */}
+            {/* Tilt container */}
             <div
-              className={`absolute w-full h-full backface-hidden ${
-                lineItem.nfc_tag_id
-                  ? "bg-gradient-to-br from-[rgb(30,27,75)] to-[rgb(24,24,27)]"
-                  : "bg-gradient-to-br from-[rgb(76,29,29)] to-[rgb(24,24,27)]"
-              } rounded-xl shadow-2xl p-8`}
+              ref={cardRef}
+              className="absolute inset-0 rounded-xl p-4 sm:p-8 shadow-2xl"
+              style={{
+                willChange: "transform",
+                transformStyle: "preserve-3d",
+                backfaceVisibility: "hidden",
+                background: lineItem.nfc_tag_id 
+                  ? "linear-gradient(to bottom right, rgb(30 27 75), rgb(24 24 27))"
+                  : "linear-gradient(to bottom right, rgb(76 29 29), rgb(24 24 27))",
+              }}
             >
-              <div className="flex flex-col h-full">
-                <div className="flex-1 relative">
-                  <motion.div
-                    className="w-full h-[400px] rounded-lg overflow-hidden relative"
-                    style={{
-                      rotateX: springRotateX,
-                      rotateY: springRotateY,
-                    }}
-                  >
-                    <img
-                      src={lineItem.img_url}
-                      alt={lineItem.name}
-                      className="w-full h-full object-cover"
-                    />
-                    {!lineItem.nfc_tag_id && (
-                      <div className="absolute inset-0 bg-gradient-to-br from-red-500/10 to-transparent flex items-center justify-center">
-                        <Tag className="w-6 h-6 text-red-400" />
-                      </div>
-                    )}
-                  </motion.div>
-                </div>
-                <div className="mt-6 text-center">
-                  <h3 className="text-2xl font-bold text-white mb-2">{lineItem.name}</h3>
-                  <p className="text-gray-300 mb-4">{lineItem.description}</p>
-                  <Button
-                    onClick={handleFlip}
-                    className={`${
-                      lineItem.nfc_tag_id
-                        ? "bg-indigo-500/20 text-indigo-400 border-indigo-500/50"
-                        : "bg-red-500/20 text-red-400 border-red-500/50"
-                    } hover:bg-opacity-30 transition-all duration-300`}
-                  >
-                    View Certificate
-                  </Button>
+              {/* Front of card */}
+              <div
+                className="absolute inset-0"
+                style={{
+                  backfaceVisibility: "hidden",
+                  WebkitBackfaceVisibility: "hidden",
+                  transformStyle: "preserve-3d",
+                }}
+              >
+                <div className="relative h-full flex flex-col items-center justify-center text-center">
+                  {lineItem.image_url && (
+                    <motion.div
+                      className="w-48 h-48 sm:w-64 sm:h-64 md:w-80 md:h-80 mb-4 sm:mb-6 rounded-lg overflow-hidden border-2 border-zinc-700 relative"
+                      style={{
+                        rotateX: imageRotateX,
+                        rotateY: imageRotateY,
+                        x: imageTranslateX,
+                        y: imageTranslateY,
+                        transformStyle: "preserve-3d",
+                        transition: "transform 0.1s ease-out",
+                      }}
+                    >
+                      <img
+                        src={lineItem.image_url}
+                        alt={lineItem.title}
+                        className="w-full h-full object-cover"
+                      />
+                      {!lineItem.nfc_tag_id && (
+                        <div className="absolute top-2 right-2">
+                          <Tag className="w-6 h-6 text-red-400" />
+                        </div>
+                      )}
+                    </motion.div>
+                  )}
+                  <h2 className="text-xl sm:text-2xl font-bold text-white mb-2">{lineItem.title}</h2>
+                  {lineItem.vendor && (
+                    <p className="text-sm sm:text-base text-zinc-400 mb-2 sm:mb-4">{lineItem.vendor}</p>
+                  )}
+                  {lineItem.edition_number && lineItem.edition_total && (
+                    <div className="text-sm sm:text-base text-indigo-400">
+                      Edition #{lineItem.edition_number} of {lineItem.edition_total}
+                    </div>
+                  )}
+                  <p className="text-xs sm:text-sm text-zinc-500 mt-2 sm:mt-4">Click to view certificate details</p>
                 </div>
               </div>
-            </div>
 
-            {/* Back of the card */}
-            <div
-              className={`absolute w-full h-full backface-hidden rotate-y-180 ${
-                lineItem.nfc_tag_id
-                  ? "bg-gradient-to-br from-[rgb(30,27,75)] to-[rgb(24,24,27)]"
-                  : "bg-gradient-to-br from-[rgb(76,29,29)] to-[rgb(24,24,27)]"
-              } rounded-xl shadow-2xl p-8`}
-            >
-              <div className="flex flex-col h-full">
-                <div className="flex-1">
-                  <h2 className="text-3xl font-bold text-white mb-6 text-center">Certificate of Authenticity</h2>
-                  <div className="space-y-4 text-white">
-                    <p className="text-lg">
-                      <span className="font-semibold">Artwork:</span> {lineItem.name}
-                    </p>
-                    <p className="text-lg">
-                      <span className="font-semibold">Artist:</span> {lineItem.vendor_name}
-                    </p>
-                    <p className="text-lg">
-                      <span className="font-semibold">Edition Number:</span> 1/1
-                    </p>
-                    <p className="text-lg">
-                      <span className="font-semibold">Certificate ID:</span> {lineItem.nfc_tag_id || "Not paired"}
-                    </p>
+              {/* Back of card */}
+              <div
+                className="absolute inset-0"
+                style={{
+                  backfaceVisibility: "hidden",
+                  WebkitBackfaceVisibility: "hidden",
+                  transformStyle: "preserve-3d",
+                  transform: "rotateY(180deg)",
+                }}
+              >
+                <div className="relative h-full flex flex-col items-center justify-center text-center p-4 sm:p-6">
+                  <div className="w-16 h-16 sm:w-20 sm:h-20 mb-4 sm:mb-6 rounded-full bg-indigo-500/10 flex items-center justify-center">
+                    <Certificate className="h-8 w-8 sm:h-10 sm:w-10 text-indigo-400" />
                   </div>
-                </div>
-                <div className="mt-8 flex justify-between items-end">
-                  <div className="flex-1">
-                    <p className="text-white text-sm">Artist Signature</p>
-                    {vendorSignature ? (
-                      <img
-                        src={vendorSignature}
-                        alt="Artist Signature"
-                        className="h-16 object-contain"
-                      />
-                    ) : (
-                      <div className="h-16 flex items-center text-gray-400">No signature available</div>
+                  <h2 className="text-2xl sm:text-3xl font-bold text-white mb-6 sm:mb-8">Certificate of Authenticity</h2>
+                  
+                  <div className="space-y-4 sm:space-y-6 w-full max-w-md">
+                    <div className="flex items-center gap-3 sm:gap-4 text-left">
+                      <User className="h-5 w-5 sm:h-6 sm:w-6 text-indigo-400" />
+                      <div>
+                        <p className="text-xs sm:text-sm text-zinc-400">Artist</p>
+                        <p className="text-base sm:text-lg text-white">{lineItem.vendor || "Unknown"}</p>
+                      </div>
+                    </div>
+
+                    {/* Add vendor signature */}
+                    {lineItem.vendor && (
+                      <div className="flex items-center gap-3 sm:gap-4 text-left">
+                        <div className="w-24 h-12 sm:w-32 sm:h-16 bg-white/5 rounded-lg flex items-center justify-center">
+                          {profilePicture ? (
+                            <img
+                              src={profilePicture}
+                              alt={`${lineItem.vendor}'s signature`}
+                              className="w-full h-full object-contain"
+                            />
+                          ) : (
+                            <div className="text-xs text-zinc-500">Loading...</div>
+                          )}
+                        </div>
+                        <div>
+                          <p className="text-xs sm:text-sm text-zinc-400">Artist Signature</p>
+                          <p className="text-base sm:text-lg text-white">Verified</p>
+                        </div>
+                      </div>
+                    )}
+
+                    <div className="flex items-center gap-3 sm:gap-4 text-left">
+                      <Hash className="h-5 w-5 sm:h-6 sm:w-6 text-indigo-400" />
+                      <div>
+                        <p className="text-xs sm:text-sm text-zinc-400">Edition</p>
+                        <p className="text-base sm:text-lg text-white">
+                          {lineItem.edition_number && lineItem.edition_total
+                            ? `#${lineItem.edition_number} of ${lineItem.edition_total}`
+                            : "Limited Edition"}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-3 sm:gap-4 text-left">
+                      <Calendar className="h-5 w-5 sm:h-6 sm:w-6 text-indigo-400" />
+                      <div>
+                        <p className="text-xs sm:text-sm text-zinc-400">Created</p>
+                        <p className="text-base sm:text-lg text-white">{new Date().toLocaleDateString()}</p>
+                      </div>
+                    </div>
+
+                    {!lineItem.nfc_tag_id && (
+                      <div className="flex items-center gap-3 sm:gap-4 text-left">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="w-full mt-4 border-red-500/50 text-red-400 hover:bg-red-500/10 hover:text-red-300"
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            // TODO: Implement NFC pairing logic
+                          }}
+                        >
+                          Pair Artwork with NFC Tag
+                        </Button>
+                      </div>
                     )}
                   </div>
-                  <Button
-                    onClick={handleFlip}
-                    className={`${
-                      lineItem.nfc_tag_id
-                        ? "bg-indigo-500/20 text-indigo-400 border-indigo-500/50"
-                        : "bg-red-500/20 text-red-400 border-red-500/50"
-                    } hover:bg-opacity-30 transition-all duration-300`}
-                  >
-                    View Artwork
-                  </Button>
+
+                  <p className="text-xs sm:text-sm text-zinc-500 mt-6 sm:mt-8">Click to view artwork</p>
                 </div>
               </div>
             </div>
