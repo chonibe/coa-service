@@ -26,10 +26,10 @@ interface Product {
 
 interface SalesData {
   totalSales: number
-  productsSold: number
-  conversionRate: number
-  chartData: any[]
-  recentActivity?: any[]
+  totalRevenue: number
+  salesByDate: any[]
+  salesByProduct: any[]
+  recentActivity: any[]
 }
 
 interface UseVendorDataReturn {
@@ -53,9 +53,10 @@ export function useVendorData(): UseVendorDataReturn {
       setIsLoading(true)
       setError(null)
 
-      const [statsResponse, productsResponse] = await Promise.all([
+      const [statsResponse, productsResponse, salesResponse] = await Promise.all([
         fetch("/api/vendor/stats"),
         fetch("/api/vendors/products"),
+        fetch("/api/vendor/sales-analytics")
       ])
 
       if (!statsResponse.ok) {
@@ -66,22 +67,25 @@ export function useVendorData(): UseVendorDataReturn {
         throw new Error(`Failed to fetch vendor products: ${productsResponse.status}`)
       }
 
+      if (!salesResponse.ok) {
+        throw new Error(`Failed to fetch sales analytics: ${salesResponse.status}`)
+      }
+
       const statsData = await statsResponse.json()
       const productsData = await productsResponse.json()
+      const salesAnalyticsData = await salesResponse.json()
 
       setStats(statsData)
       setProducts(productsData.products || [])
 
-      // Mock sales data for now
-      const salesData = statsData
-        ? {
-            totalSales: statsData.totalRevenue || 0,
-            productsSold: statsData.totalSales || 0,
-            conversionRate: 3.2,
-            chartData: [],
-            recentActivity: [],
-          }
-        : null
+      // Use real sales data from the analytics endpoint
+      const salesData = {
+        totalSales: statsData.totalSales || 0,
+        totalRevenue: statsData.totalRevenue || 0,
+        salesByDate: salesAnalyticsData.salesByDate || [],
+        salesByProduct: salesAnalyticsData.salesByProduct || [],
+        recentActivity: statsData.recentActivity || []
+      }
 
       setSalesData(salesData)
     } catch (err) {

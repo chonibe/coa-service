@@ -10,12 +10,18 @@ import { OnboardingAlert } from "./components/onboarding-alert"
 import { OnboardingBanner } from "./components/onboarding-banner"
 import { VendorSalesChart } from "./components/vendor-sales-chart"
 import { useVendorData } from "@/hooks/use-vendor-data"
+import { BarChart, CartesianGrid, XAxis, YAxis, Tooltip, Legend, Bar, ResponsiveContainer } from "recharts"
 
 interface SalesData {
   totalSales: number
   totalRevenue: number
   salesByDate: Array<{
     date: string
+    sales: number
+    revenue: number
+  }>
+  salesByProduct: Array<{
+    product_id: string
     sales: number
     revenue: number
   }>
@@ -28,15 +34,6 @@ interface SalesData {
   }>
 }
 
-// Format currency
-const formatCurrency = (amount: number) => {
-  return new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency: "USD",
-    minimumFractionDigits: 2,
-  }).format(amount)
-}
-
 export default function VendorDashboardPage() {
   const [vendorName, setVendorName] = useState<string>("Vendor")
   const [onboardingCompleted, setOnboardingCompleted] = useState<boolean>(true)
@@ -45,7 +42,9 @@ export default function VendorDashboardPage() {
   const [salesData, setSalesData] = useState<SalesData>({
     totalSales: 0,
     totalRevenue: 0,
-    salesByDate: []
+    salesByDate: [],
+    salesByProduct: [],
+    recentActivity: []
   })
 
   useEffect(() => {
@@ -68,17 +67,31 @@ export default function VendorDashboardPage() {
   useEffect(() => {
     const fetchSalesData = async () => {
       try {
-        const response = await fetch("/api/vendor/stats")
-        if (!response.ok) {
-          const errorData = await response.json().catch(() => ({}))
+        setIsLoading(true)
+        const [statsResponse, analyticsResponse] = await Promise.all([
+          fetch("/api/vendor/stats"),
+          fetch("/api/vendor/sales-analytics")
+        ])
+
+        if (!statsResponse.ok) {
+          const errorData = await statsResponse.json().catch(() => ({}))
           throw new Error(errorData.message || "Failed to fetch sales data")
         }
-        const data = await response.json()
+
+        if (!analyticsResponse.ok) {
+          const errorData = await analyticsResponse.json().catch(() => ({}))
+          throw new Error(errorData.message || "Failed to fetch analytics data")
+        }
+
+        const statsData = await statsResponse.json()
+        const analyticsData = await analyticsResponse.json()
+
         setSalesData({
-          totalSales: data.totalSales || 0,
-          totalRevenue: data.totalRevenue || 0,
-          salesByDate: data.salesByDate || [],
-          recentActivity: data.recentActivity || []
+          totalSales: statsData.totalSales || 0,
+          totalRevenue: statsData.totalRevenue || 0,
+          salesByDate: analyticsData.salesByDate || [],
+          salesByProduct: analyticsData.salesByProduct || [],
+          recentActivity: statsData.recentActivity || []
         })
       } catch (err) {
         console.error("Error fetching sales data:", err)
@@ -91,11 +104,20 @@ export default function VendorDashboardPage() {
     fetchSalesData()
   }, [])
 
+  // Format currency
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat("en-GB", {
+      style: "currency",
+      currency: "GBP",
+      minimumFractionDigits: 2,
+    }).format(amount)
+  }
+
   return (
     <div className="p-6">
       <div className="mb-6">
         <h1 className="text-2xl font-bold">Dashboard</h1>
-        <p className="text-muted-foreground">Welcome back to your vendor dashboard</p>
+        <p className="text-muted-foreground">Welcome back, {vendorName}</p>
       </div>
 
       {!onboardingCompleted && <OnboardingBanner vendorName={vendorName} />}
@@ -153,69 +175,91 @@ export default function VendorDashboardPage() {
             </Card>
           </div>
 
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
-            <Card className="col-span-4">
-              <CardHeader>
-                <CardTitle>Sales Overview</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <VendorSalesChart vendorName={vendorName} />
-              </CardContent>
-            </Card>
-
-            <Card className="col-span-3">
-              <CardHeader>
-                <CardTitle>Recent Sales Activity</CardTitle>
-              </CardHeader>
-              <CardContent>
-                {isLoading ? (
-                  <div className="space-y-4">
-                    <Skeleton className="h-4 w-full" />
-                    <Skeleton className="h-4 w-full" />
-                    <Skeleton className="h-4 w-full" />
-                  </div>
-                ) : !salesData?.recentActivity || salesData.recentActivity.length === 0 ? (
-                  <div className="text-center text-muted-foreground py-4">
-                    No sales activity yet
-                  </div>
-                ) : (
-                  <div className="space-y-4">
-                    {salesData.recentActivity.map((sale, index) => {
-                      const saleDate = new Date(sale.date)
-                      return (
-                        <div key={index} className="flex items-center justify-between">
-                          <div className="space-y-1">
-                            <p className="text-sm font-medium">
-                              {saleDate.toLocaleDateString("en-US", {
-                                month: "short",
-                                day: "numeric",
-                              })}
-                            </p>
-                            <p className="text-xs text-muted-foreground">
-                              {sale.quantity} {sale.quantity === 1 ? "item" : "items"}
-                            </p>
-                          </div>
-                          <div className="text-sm font-medium">
-                            {formatCurrency(sale.price * sale.quantity)}
-                          </div>
+          <Card>
+            <CardHeader>
+              <CardTitle>Recent Activity</CardTitle>
+              <CardDescription>Your latest sales and transactions</CardDescription>
+            </CardHeader>
+            <CardContent>
+              {isLoading ? (
+                <div className="space-y-4">
+                  <Skeleton className="h-4 w-full" />
+                  <Skeleton className="h-4 w-full" />
+                  <Skeleton className="h-4 w-full" />
+                </div>
+              ) : !salesData?.recentActivity || salesData.recentActivity.length === 0 ? (
+                <div className="text-center text-muted-foreground py-4">
+                  No sales activity yet
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {salesData.recentActivity.map((sale, index) => {
+                    const saleDate = new Date(sale.date)
+                    return (
+                      <div key={index} className="flex items-center justify-between">
+                        <div className="space-y-1">
+                          <p className="text-sm font-medium">
+                            {saleDate.toLocaleDateString("en-GB", {
+                              month: "short",
+                              day: "numeric",
+                            })}
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            {sale.quantity} {sale.quantity === 1 ? "item" : "items"}
+                          </p>
                         </div>
-                      )
-                    })}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </div>
+                        <div className="text-sm font-medium">
+                          {formatCurrency(sale.price * sale.quantity)}
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+              )}
+            </CardContent>
+          </Card>
         </TabsContent>
 
         <TabsContent value="analytics" className="space-y-4">
           <Card>
             <CardHeader>
-              <CardTitle>Analytics</CardTitle>
+              <CardTitle>Sales Analytics</CardTitle>
               <CardDescription>Detailed analytics for your products</CardDescription>
             </CardHeader>
-            <CardContent className="h-[400px] flex items-center justify-center">
-              <p className="text-muted-foreground">Visit the Analytics page for detailed insights</p>
+            <CardContent>
+              {isLoading ? (
+                <div className="space-y-4">
+                  <Skeleton className="h-[300px] w-full" />
+                </div>
+              ) : salesData?.salesByDate && salesData.salesByDate.length > 0 ? (
+                <div className="space-y-4">
+                  <div className="h-[300px]">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart data={salesData.salesByDate}>
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis dataKey="month" />
+                        <YAxis yAxisId="left" orientation="left" stroke="#8884d8" />
+                        <YAxis yAxisId="right" orientation="right" stroke="#82ca9d" />
+                        <Tooltip
+                          formatter={(value, name) => {
+                            if (name === "Revenue") {
+                              return [formatCurrency(value as number), "Revenue"]
+                            }
+                            return [value, "Sales"]
+                          }}
+                        />
+                        <Legend />
+                        <Bar yAxisId="left" dataKey="sales" name="Sales" fill="#8884d8" />
+                        <Bar yAxisId="right" dataKey="revenue" name="Revenue" fill="#82ca9d" />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+                </div>
+              ) : (
+                <div className="text-center text-muted-foreground py-4">
+                  No analytics data available yet
+                </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>

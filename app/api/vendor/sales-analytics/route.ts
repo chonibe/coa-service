@@ -88,13 +88,16 @@ function processSalesByDate(lineItems) {
       salesByMonth[monthYear] = { sales: 0, revenue: 0 }
     }
 
-    salesByMonth[monthYear].sales += 1
+    // Use quantity instead of incrementing by 1
+    const quantity = item.quantity || 1
+    salesByMonth[monthYear].sales += quantity
 
     // Add to revenue - fixed to prevent NaN and type issues
     if (item.price !== null && item.price !== undefined) {
       const price = typeof item.price === "string" ? Number.parseFloat(item.price) : Number(item.price)
       if (!isNaN(price)) {
-        salesByMonth[monthYear].revenue += price
+        // Calculate revenue based on quantity
+        salesByMonth[monthYear].revenue += price * quantity
       }
     }
   })
@@ -128,13 +131,16 @@ function processSalesByProduct(lineItems) {
       }
     }
 
-    salesByProduct[productId].sales += 1
+    // Use quantity instead of incrementing by 1
+    const quantity = item.quantity || 1
+    salesByProduct[productId].sales += quantity
 
     // Add to revenue - fixed to prevent NaN and type issues
     if (item.price !== null && item.price !== undefined) {
       const price = typeof item.price === "string" ? Number.parseFloat(item.price) : Number(item.price)
       if (!isNaN(price)) {
-        salesByProduct[productId].revenue += price
+        // Calculate revenue based on quantity
+        salesByProduct[productId].revenue += price * quantity
       }
     }
   })
