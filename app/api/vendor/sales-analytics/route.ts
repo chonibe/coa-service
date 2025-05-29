@@ -59,7 +59,7 @@ export async function GET() {
 
     // Query for line items from this vendor
     const { data: lineItems, error } = await supabase
-      .from("order_line_items")
+      .from("order_line_items_v2")
       .select("*")
       .eq("vendor_name", vendorName)
       .eq("status", "active")

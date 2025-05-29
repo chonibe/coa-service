@@ -1,20 +1,35 @@
 import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
 import { cookies } from "next/headers"
-import { supabaseAdmin } from "@/lib/supabase"
+import { createClient } from "@supabase/supabase-js"
+import type { Database } from "@/types/supabase"
 
 export async function GET(request: NextRequest) {
   try {
     // Get the vendor name from the cookie
-    const cookieStore = cookies()
+    const cookieStore = await cookies()
     const vendorName = cookieStore.get("vendor_session")?.value
 
     if (!vendorName) {
       return NextResponse.json({ message: "Not authenticated" }, { status: 401 })
     }
 
+    // Create Supabase client with service role key
+    const supabase = createClient<Database>(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!,
+      {
+        auth: {
+          persistSession: false,
+        },
+        global: {
+          headers: { "Content-Type": "application/json" },
+        },
+      }
+    )
+
     // Fetch vendor data
-    const { data: vendor, error } = await supabaseAdmin
+    const { data: vendor, error } = await supabase
       .from("vendors")
       .select("*")
       .eq("vendor_name", vendorName)
