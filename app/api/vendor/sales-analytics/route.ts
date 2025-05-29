@@ -1,11 +1,40 @@
 import { NextResponse } from "next/server"
 import { cookies } from "next/headers"
-import { createClient } from "@/lib/supabase-server"
+import { createClient } from "@supabase/supabase-js"
+import type { Database } from "@/types/supabase"
+
+interface LineItem {
+  id?: string
+  product_id?: string
+  title?: string
+  created_at?: string
+  updated_at?: string
+  price?: number | string
+  quantity?: number
+  vendor_name?: string
+  status?: string
+}
+
+interface SalesByMonth {
+  [key: string]: {
+    sales: number
+    revenue: number
+  }
+}
+
+interface SalesByProduct {
+  [key: string]: {
+    productId: string
+    title: string
+    sales: number
+    revenue: number
+  }
+}
 
 export async function GET() {
   try {
     // Get vendor name from cookie
-    const cookieStore = cookies()
+    const cookieStore = await cookies()
     const vendorName = cookieStore.get("vendor_session")?.value
 
     if (!vendorName) {
@@ -14,8 +43,19 @@ export async function GET() {
 
     console.log(`Fetching sales analytics for vendor: ${vendorName}`)
 
-    // Create Supabase client
-    const supabase = createClient()
+    // Create Supabase client with service role key
+    const supabase = createClient<Database>(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!,
+      {
+        auth: {
+          persistSession: false,
+        },
+        global: {
+          headers: { "Content-Type": "application/json" },
+        },
+      }
+    )
 
     // Query for line items from this vendor
     const { data: lineItems, error } = await supabase
@@ -34,20 +74,20 @@ export async function GET() {
       console.log("Sample line item:", JSON.stringify(lineItems[0], null, 2))
     }
 
-    // Process line items to get sales by date - fixed to prevent recursion
+    // Process line items to get sales by date
     const salesByDate = processSalesByDate(lineItems || [])
 
-    // Get sales by product - fixed to prevent recursion
+    // Get sales by product
     const salesByProduct = processSalesByProduct(lineItems || [])
 
     // Create sales history array
-    const salesHistory = (lineItems || []).map((item) => ({
+    const salesHistory = (lineItems || []).map((item: LineItem) => ({
       id: item.id || `item-${Math.random().toString(36).substring(2, 9)}`,
       product_id: item.product_id || "",
       title: item.title || "Unknown Product",
       date: item.created_at || new Date().toISOString(),
       price: typeof item.price === "string" ? Number.parseFloat(item.price) : item.price || 0,
-      currency: "GBP", // Default to GBP for all products
+      currency: "GBP",
       quantity: item.quantity || 1,
     }))
 
@@ -63,10 +103,8 @@ export async function GET() {
   }
 }
 
-// Fixed function to prevent recursion
-function processSalesByDate(lineItems) {
-  // Group sales by month
-  const salesByMonth = {}
+function processSalesByDate(lineItems: LineItem[]) {
+  const salesByMonth: SalesByMonth = {}
 
   lineItems.forEach((item) => {
     // Ensure we have a valid date
@@ -113,10 +151,8 @@ function processSalesByDate(lineItems) {
     .sort((a, b) => a.date.localeCompare(b.date))
 }
 
-// Fixed function to prevent recursion
-function processSalesByProduct(lineItems) {
-  // Group sales by product
-  const salesByProduct = {}
+function processSalesByProduct(lineItems: LineItem[]) {
+  const salesByProduct: SalesByProduct = {}
 
   lineItems.forEach((item) => {
     const productId = item.product_id || "unknown"
@@ -149,7 +185,7 @@ function processSalesByProduct(lineItems) {
   return Object.values(salesByProduct).sort((a, b) => b.sales - a.sales)
 }
 
-function getMonthName(dateStr) {
+function getMonthName(dateStr: string): string {
   const [year, month] = dateStr.split("-")
   const date = new Date(Number.parseInt(year), Number.parseInt(month) - 1, 1)
   return date.toLocaleString("default", { month: "short", year: "numeric" })
