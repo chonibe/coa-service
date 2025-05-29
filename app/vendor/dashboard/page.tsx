@@ -15,6 +15,7 @@ import { BarChart, CartesianGrid, XAxis, YAxis, Tooltip, Legend, Bar, Responsive
 interface SalesData {
   totalSales: number
   totalRevenue: number
+  totalPayout: number
   salesByDate: Array<{
     date: string
     sales: number
@@ -42,6 +43,7 @@ export default function VendorDashboardPage() {
   const [salesData, setSalesData] = useState<SalesData>({
     totalSales: 0,
     totalRevenue: 0,
+    totalPayout: 0,
     salesByDate: [],
     salesByProduct: [],
     recentActivity: []
@@ -86,12 +88,32 @@ export default function VendorDashboardPage() {
         const statsData = await statsResponse.json()
         const analyticsData = await analyticsResponse.json()
 
+        // Calculate total sales and revenue from analytics data
+        const totalSales = analyticsData.salesByProduct.reduce((total: number, product: any) => total + product.sales, 0)
+        const totalRevenue = analyticsData.salesByProduct.reduce((total: number, product: any) => total + product.revenue, 0)
+
+        // Calculate total payout amount
+        const totalPayout = analyticsData.salesByProduct.reduce((total: number, product: any) => {
+          const payoutPercentage = product.payout_percentage || 0
+          return total + (product.revenue * (payoutPercentage / 100))
+        }, 0)
+
+        // Create recent activity from sales history
+        const recentActivity = analyticsData.salesHistory?.map((sale: any) => ({
+          id: sale.id,
+          date: sale.date,
+          product_id: sale.product_id,
+          price: sale.price,
+          quantity: sale.quantity
+        })) || []
+
         setSalesData({
-          totalSales: statsData.totalSales || 0,
-          totalRevenue: statsData.totalRevenue || 0,
+          totalSales,
+          totalRevenue,
+          totalPayout,
           salesByDate: analyticsData.salesByDate || [],
           salesByProduct: analyticsData.salesByProduct || [],
-          recentActivity: statsData.recentActivity || []
+          recentActivity
         })
       } catch (err) {
         console.error("Error fetching sales data:", err)
@@ -170,6 +192,23 @@ export default function VendorDashboardPage() {
                 )}
                 <p className="text-xs text-muted-foreground">
                   {isLoading ? <Skeleton className="h-4 w-[160px]" /> : "Total revenue generated"}
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Total Payout</CardTitle>
+                <DollarSign className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                {isLoading ? (
+                  <Skeleton className="h-8 w-[100px]" />
+                ) : (
+                  <div className="text-2xl font-bold">{formatCurrency(salesData?.totalPayout || 0)}</div>
+                )}
+                <p className="text-xs text-muted-foreground">
+                  {isLoading ? <Skeleton className="h-4 w-[160px]" /> : "Total payout amount"}
                 </p>
               </CardContent>
             </Card>
