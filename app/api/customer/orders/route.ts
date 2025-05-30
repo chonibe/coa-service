@@ -9,24 +9,41 @@ export async function GET(request: NextRequest) {
     const accountNumber = searchParams.get('accountnumber')
     const shopifyCustomerId = searchParams.get('shopify_customer_id')
 
-    // If no account number or Shopify customer ID is provided, return a prompt for account number
+    const supabase = createRouteHandlerClient({ cookies })
+
+    // If no account number or Shopify customer ID is provided, fetch available account numbers
     if (!accountNumber && !shopifyCustomerId) {
+      const { data: accountNumbers, error: accountNumbersError } = await supabase
+        .from('orders')
+        .select('account_number')
+        .not('account_number', 'is', null)
+        .order('account_number')
+
+      if (accountNumbersError) {
+        console.error('Error fetching account numbers:', accountNumbersError)
+        return NextResponse.json(
+          { success: false, message: 'Failed to fetch account numbers' },
+          { status: 500 }
+        )
+      }
+
+      // Get unique account numbers
+      const uniqueAccountNumbers = [...new Set(accountNumbers.map(order => order.account_number))]
+
       return NextResponse.json(
         { 
           success: false, 
-          message: 'Please provide an account number',
+          message: 'Please select an account number',
           requiresInput: true,
           inputType: 'accountnumber',
-          prompt: 'Please enter your account number to view your orders'
+          prompt: 'Please select your account number to view your orders',
+          accountNumbers: uniqueAccountNumbers
         },
         { status: 400 }
       )
     }
 
     // If account number is provided, use it to fetch orders
-    const supabase = createRouteHandlerClient({ cookies })
-    
-    // First, get all orders for this account number
     const { data: orders, error: ordersError } = await supabase
       .from('orders')
       .select('id, name, created_at')
