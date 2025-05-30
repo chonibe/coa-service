@@ -1,6 +1,20 @@
 # Order Lookup & Vendor Portal
 
-A Next.js application for managing product editions, certificates, and vendor payouts.
+A Next.js application for managing product editions, certificates, and vendor payouts, evolving into an intelligent eCommerce optimization platform.
+
+## VXO Vision
+
+This project is evolving into an Adaptive UX Engine that continuously improves the eCommerce experience through data-driven optimization and AI-powered insights. See [VISION.md](./VISION.md) for detailed roadmap and implementation status.
+
+### Current Phase
+- Core feature implementation
+- Basic optimization capabilities
+- Initial analytics integration
+
+### Next Phase
+- Advanced optimization layer
+- A/B testing framework
+- Enhanced analytics dashboard
 
 ## Project Overview
 
