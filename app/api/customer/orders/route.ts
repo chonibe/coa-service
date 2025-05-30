@@ -9,57 +9,18 @@ export async function GET(request: NextRequest) {
     const accountNumber = searchParams.get('accountnumber')
     const shopifyCustomerId = searchParams.get('shopify_customer_id')
 
-    // If no account number or Shopify customer ID is provided, try to get the authenticated user
+    // If no account number or Shopify customer ID is provided, return a prompt for account number
     if (!accountNumber && !shopifyCustomerId) {
-      const supabase = createRouteHandlerClient({ cookies })
-      const { data: { user }, error: userError } = await supabase.auth.getUser()
-      
-      if (userError || !user) {
-        return NextResponse.json(
-          { success: false, message: 'Unauthorized - No account number or customer ID provided' },
-          { status: 401 }
-        )
-      }
-
-      // Fetch orders for the authenticated user
-      const { data: orders, error: ordersError } = await supabase
-        .from('orders')
-        .select(`
-          id,
-          name,
-          created_at,
-          line_items:order_line_items_v2 (
-            id,
-            order_id,
-            name,
-            description,
-            price,
-            quantity,
-            vendor_name,
-            status,
-            created_at,
-            img_url,
-            edition_number,
-            edition_total,
-            nfc_tag_id,
-            nfc_claimed_at
-          )
-        `)
-        .eq('customer_id', user.id)
-        .order('created_at', { ascending: false })
-
-      if (ordersError) {
-        console.error('Error fetching orders:', ordersError)
-        return NextResponse.json(
-          { success: false, message: 'Failed to fetch orders' },
-          { status: 500 }
-        )
-      }
-
-      return NextResponse.json({
-        success: true,
-        orders: orders || []
-      })
+      return NextResponse.json(
+        { 
+          success: false, 
+          message: 'Please provide an account number',
+          requiresInput: true,
+          inputType: 'accountnumber',
+          prompt: 'Please enter your account number to view your orders'
+        },
+        { status: 400 }
+      )
     }
 
     // If account number is provided, use it to fetch orders
@@ -77,6 +38,18 @@ export async function GET(request: NextRequest) {
       return NextResponse.json(
         { success: false, message: 'Failed to fetch orders' },
         { status: 500 }
+      )
+    }
+
+    // If no orders found, return a message
+    if (!orders || orders.length === 0) {
+      return NextResponse.json(
+        { 
+          success: false, 
+          message: 'No orders found for this account number',
+          accountNumber
+        },
+        { status: 404 }
       )
     }
 
@@ -119,7 +92,8 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      orders: ordersWithLineItems
+      orders: ordersWithLineItems,
+      accountNumber
     })
   } catch (error) {
     console.error('Error in orders API:', error)
