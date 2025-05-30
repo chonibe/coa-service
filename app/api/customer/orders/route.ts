@@ -1,66 +1,65 @@
-import { NextResponse } from "next/server"
-import type { NextRequest } from "next/server"
-import { supabase } from "@/lib/supabase"
+import { NextResponse } from 'next/server'
+import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs'
+import { cookies } from 'next/headers'
 
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
-    if (!supabase) {
-      return NextResponse.json({ success: false, message: "Database connection error" }, { status: 500 })
-    }
+    const supabase = createRouteHandlerClient({ cookies })
 
-    // Get the customer ID from the session
-    const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+    // Get the current user
+    const { data: { user }, error: userError } = await supabase.auth.getUser()
     
-    if (sessionError) {
-      console.error("Error getting session:", sessionError)
-      return NextResponse.json({ success: false, message: "Authentication error" }, { status: 401 })
+    if (userError || !user) {
+      return NextResponse.json(
+        { success: false, message: 'Unauthorized' },
+        { status: 401 }
+      )
     }
 
-    if (!session?.user) {
-      return NextResponse.json({ success: false, message: "Not authenticated" }, { status: 401 })
-    }
-
-    // Get customer's orders
+    // Fetch orders for the current user
     const { data: orders, error: ordersError } = await supabase
-      .from("orders")
+      .from('orders')
       .select(`
         id,
         name,
         created_at,
-        order_line_items (
-          line_item_id,
+        line_items:order_line_items_v2 (
+          id,
           order_id,
-          title,
-          quantity,
+          name,
+          description,
           price,
-          image_url,
+          quantity,
+          vendor_name,
+          status,
+          created_at,
+          img_url,
+          edition_number,
+          edition_total,
           nfc_tag_id,
-          nfc_claimed_at,
-          certificate_url
+          nfc_claimed_at
         )
       `)
-      .eq("customer_id", session.user.id)
-      .order("created_at", { ascending: false })
+      .eq('customer_id', user.id)
+      .order('created_at', { ascending: false })
 
     if (ordersError) {
-      console.error("Error fetching orders:", ordersError)
-      return NextResponse.json({ success: false, message: "Failed to fetch orders" }, { status: 500 })
+      console.error('Error fetching orders:', ordersError)
+      return NextResponse.json(
+        { success: false, message: 'Failed to fetch orders' },
+        { status: 500 }
+      )
     }
-
-    // Transform the data to match the expected format
-    const transformedOrders = orders.map(order => ({
-      id: order.id,
-      name: order.name,
-      created_at: order.created_at,
-      line_items: order.order_line_items
-    }))
 
     return NextResponse.json({
       success: true,
-      orders: transformedOrders
+      orders: orders || []
     })
-  } catch (error: any) {
-    console.error("Error in customer orders API:", error)
-    return NextResponse.json({ success: false, message: error.message || "An error occurred" }, { status: 500 })
+  } catch (error) {
+    console.error('Error in orders API:', error)
+    return NextResponse.json(
+      { success: false, message: 'Internal server error' },
+      { status: 500 }
+    )
   }
 } 
