@@ -1,5 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
+import { createClient } from '@supabase/supabase-js'
+
+// Initialize Supabase client
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!, 
+  process.env.SUPABASE_SERVICE_ROLE_KEY!
+)
 
 // Function to get the correct redirect URI based on environment
 function getRedirectUri() {
@@ -70,6 +77,26 @@ export async function GET(request: NextRequest) {
     // Set cookies on the response
     response.cookies.set('street_lamp_token', tokenData.access_token, cookieOptions)
     response.cookies.set('customer_id', userInfo.customer_id || userInfo.sub, cookieOptions)
+
+    // Upsert customer record
+    const { data: customerData, error: customerError } = await supabase
+      .from('customers')
+      .upsert({
+        user_id: userInfo.sub, // Assuming sub is the unique identifier
+        shopify_customer_id: userInfo.customer_id,
+        // Add any other relevant customer information
+        metadata: {
+          source: 'street_lamp_oauth',
+          last_login: new Date().toISOString()
+        }
+      }, {
+        onConflict: 'user_id' // Update if user_id already exists
+      })
+
+    if (customerError) {
+      console.error('Customer Upsert Error:', customerError)
+      // Non-critical, so we'll continue with the authentication flow
+    }
 
     return response
 
