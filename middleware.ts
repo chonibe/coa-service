@@ -1,33 +1,32 @@
-import { NextResponse } from "next/server"
-import type { NextRequest } from "next/server"
+import { NextResponse } from 'next/server'
+import type { NextRequest } from 'next/server'
 
-export function middleware(request: NextRequest) {
-  // Skip middleware for API routes
-  if (request.nextUrl.pathname.startsWith('/api/')) {
-    return NextResponse.next()
+export async function middleware(req: NextRequest) {
+  const res = NextResponse.next()
+
+  // Check for Street Lamp authentication token and customer ID
+  const streetLampToken = req.cookies.get('street_lamp_token')
+  const customerId = req.cookies.get('customer_id')
+
+  // Redirect to login if no token or customer ID for protected routes
+  if ((!streetLampToken || !customerId) && req.nextUrl.pathname.startsWith('/customer')) {
+    return NextResponse.redirect(new URL('/login', req.url))
   }
 
-  // Check if the request is for an admin page (except the login page)
-  if (request.nextUrl.pathname.startsWith("/admin") && !request.nextUrl.pathname.startsWith("/admin/login")) {
-    // Check if the user is authenticated
-    const isAuthenticated = request.cookies.has("admin_session")
-
-    if (!isAuthenticated) {
-      // Redirect to the login page
-      const loginUrl = new URL("/admin/login", request.url)
-      return NextResponse.redirect(loginUrl)
+  // If customer ID is present, ensure routing matches the customer's ID
+  if (customerId && req.nextUrl.pathname.startsWith('/customer/dashboard')) {
+    const pathParts = req.nextUrl.pathname.split('/')
+    const requestedCustomerId = pathParts[pathParts.length - 1]
+    
+    if (requestedCustomerId !== customerId.value) {
+      return NextResponse.redirect(new URL(`/customer/dashboard/${customerId.value}`, req.url))
     }
   }
 
-  return NextResponse.next()
+  return res
 }
 
-// Update the matcher to properly exclude API routes
+// Specify which routes this middleware should run on
 export const config = {
-  matcher: [
-    // Match admin routes except login and API routes
-    "/admin/:path*",
-    // Exclude API routes, certificate routes, and static files
-    "/((?!api|certificate|_next/static|_next/image|favicon.ico).*)",
-  ],
+  matcher: ['/customer/:path*']
 }

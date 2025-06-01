@@ -1,38 +1,41 @@
-# COA Service Project Documentation
+# COA Service Documentation
 
-## Project Overview
-**Project Name:** COA Service
-**Purpose:** Vendor Portal and Analytics Platform
+## 📚 Documentation Structure
 
-## Quick Links
-- [Architecture](architecture/README.md)
-- [Epics](epics/README.md)
-- [Sprints](sprints/README.md)
-- [Project Status Dashboard](project-status.md)
+### User Dashboards
+- [Customer Dashboard](/app/customer/dashboard/README.md)
+- [Vendor Dashboard](/app/vendor/dashboard/README.md)
+- [Admin Dashboard](/app/admin/dashboard/README.md)
 
-## Technology Stack
-- Frontend: Next.js
-- Backend: Supabase
-- Database: PostgreSQL
-- Authentication: Supabase Auth
-- Deployment: [Deployment Platform]
+### Technical Design
+- [Project Overview](/technical-design/overview.md)
+- [Architecture](/architecture/README.md)
+- [**Data Fetching Strategies**](/data-fetching/README.md) 🆕
 
-## Getting Started
-### Prerequisites
-- Node.js (v18+)
-- Supabase Account
-- Git
+### Authentication
+- [Authentication Flows](/authentication/README.md)
 
-### Local Setup
-1. Clone the repository
-2. Install dependencies: `npm install`
-3. Set up environment variables
-4. Run local development server: `npm run dev`
+### NFC Certification
+- [NFC Authentication Flow](/nfc-certification/authentication-flow.md)
 
-## Contributing
-- Please read our [Contributing Guidelines](CONTRIBUTING.md)
-- Follow our [Code of Conduct](CODE_OF_CONDUCT.md)
+### Sprint Planning
+- [Sprint Roadmap](/sprint-planning/roadmap.md)
 
-## Contact
-- Project Lead: [Your Name]
-- Email: [project-contact@example.com] 
+## 🔗 Quick Links
+- [Main Project README](/README.md)
+- [Technical Overview](/technical-design/overview.md)
+
+## Routing Structure
+- Customer Routes: `/customer/*`
+- Vendor Routes: `/vendor/*`
+- Admin Routes: `/admin/*`
+
+## Contributing to Documentation
+1. Follow markdown best practices
+2. Keep documentation concise and up-to-date
+3. Use clear, technical language
+4. Include code examples where appropriate
+
+## Version
+**Documentation Version**: 1.2.0
+**Last Updated**: [Current Date] 
