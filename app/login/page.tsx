@@ -5,8 +5,20 @@ import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 
+// Function to get the correct redirect URI based on environment
+function getRedirectUri() {
+  if (process.env.NODE_ENV === 'production') {
+    return 'https://streetcollector.vercel.app/auth/callback'
+  } else if (process.env.VERCEL_URL) {
+    return `https://${process.env.VERCEL_URL}/auth/callback`
+  } else {
+    return 'http://localhost:3000/auth/callback'
+  }
+}
+
 export default function LoginPage() {
   const router = useRouter()
+  const redirectUri = getRedirectUri()
 
   useEffect(() => {
     // Check if user is already logged in
@@ -52,7 +64,6 @@ export default function LoginPage() {
 
   const handleLogin = () => {
     const clientId = '594cf36a-179f-4227-821d-1dd00f778900'
-    const redirectUri = encodeURIComponent('https://account.thestreetlamp.com/callback?source=core')
     const scope = encodeURIComponent('openid email customer-account-api:full')
     const state = crypto.randomUUID()
     const nonce = crypto.randomUUID()
@@ -60,7 +71,7 @@ export default function LoginPage() {
     const authUrl = `https://account.thestreetlamp.com/authentication/login?` +
       `client_id=${clientId}` +
       `&locale=en` +
-      `&redirect_uri=${redirectUri}` +
+      `&redirect_uri=${encodeURIComponent(redirectUri)}` +
       `&response_type=code` +
       `&scope=${scope}` +
       `&state=${state}` +

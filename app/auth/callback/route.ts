@@ -1,6 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
 
+// Function to get the correct redirect URI based on environment
+function getRedirectUri() {
+  if (process.env.NODE_ENV === 'production') {
+    return 'https://streetcollector.vercel.app/auth/callback'
+  } else if (process.env.VERCEL_URL) {
+    return `https://${process.env.VERCEL_URL}/auth/callback`
+  } else {
+    return 'http://localhost:3000/auth/callback'
+  }
+}
+
 export async function GET(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams
   const code = searchParams.get('code')
@@ -11,6 +22,8 @@ export async function GET(request: NextRequest) {
   }
 
   try {
+    const redirectUri = getRedirectUri()
+
     // Exchange authorization code for access token
     const tokenResponse = await fetch('https://account.thestreetlamp.com/authentication/oauth/token', {
       method: 'POST',
@@ -22,7 +35,7 @@ export async function GET(request: NextRequest) {
         client_secret: process.env.STREET_LAMP_CLIENT_SECRET || '',
         grant_type: 'authorization_code',
         code: code,
-        redirect_uri: 'https://account.thestreetlamp.com/callback?source=core'
+        redirect_uri: redirectUri
       })
     })
 
