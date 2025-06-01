@@ -10,9 +10,21 @@ const supabase = createClient(
 
 // Function to get the correct redirect URI based on environment
 function getRedirectUri() {
-  // Use environment variables with a fallback
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://streetcollector.com'
-  return `${baseUrl}/auth/callback`
+  // Prioritize environment variables
+  const baseUrls = [
+    process.env.NEXT_PUBLIC_APP_URL,
+    process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : null,
+    'https://streetcollector.com'
+  ].filter(Boolean)
+
+  // Try each base URL
+  for (const baseUrl of baseUrls) {
+    const redirectUri = `${baseUrl}/auth/callback`
+    console.log(`Attempting redirect URI: ${redirectUri}`)
+    return redirectUri
+  }
+
+  throw new Error('No valid redirect URI could be generated')
 }
 
 export async function GET(request: NextRequest) {
@@ -25,7 +37,15 @@ export async function GET(request: NextRequest) {
   }
 
   try {
+    // Log all relevant environment variables
+    console.log('Environment Variables:', {
+      NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL,
+      VERCEL_URL: process.env.VERCEL_URL,
+      NODE_ENV: process.env.NODE_ENV
+    })
+
     const redirectUri = getRedirectUri()
+    console.log('Final Redirect URI:', redirectUri)
 
     // Exchange authorization code for access token
     const tokenResponse = await fetch('https://account.thestreetlamp.com/authentication/oauth/token', {
@@ -101,7 +121,7 @@ export async function GET(request: NextRequest) {
     return response
 
   } catch (error) {
-    console.error('Authentication error:', error)
+    console.error('Comprehensive Redirect URI Error:', error)
     return NextResponse.redirect(new URL('/login', request.url))
   }
 } 

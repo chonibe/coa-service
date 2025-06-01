@@ -7,9 +7,21 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 
 // Function to get the correct redirect URI based on environment
 function getRedirectUri() {
-  // Use environment variables with a fallback
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://streetcollector.com'
-  return `${baseUrl}/auth/callback`
+  // Prioritize environment variables
+  const baseUrls = [
+    process.env.NEXT_PUBLIC_APP_URL,
+    process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : null,
+    'https://streetcollector.com'
+  ].filter(Boolean)
+
+  // Try each base URL
+  for (const baseUrl of baseUrls) {
+    const redirectUri = `${baseUrl}/auth/callback`
+    console.log(`Attempting redirect URI: ${redirectUri}`)
+    return redirectUri
+  }
+
+  throw new Error('No valid redirect URI could be generated')
 }
 
 export default function LoginPage() {
