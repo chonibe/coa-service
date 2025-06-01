@@ -3,13 +3,8 @@ import { cookies } from 'next/headers'
 
 // Function to get the correct redirect URI based on environment
 function getRedirectUri() {
-  if (process.env.NODE_ENV === 'production') {
-    return 'https://streetcollector.vercel.app/auth/callback'
-  } else if (process.env.VERCEL_URL) {
-    return `https://${process.env.VERCEL_URL}/auth/callback`
-  } else {
-    return 'http://localhost:3000/auth/callback'
-  }
+  // Use the current Vercel deployment URL
+  return 'https://street-collector-jzt95pwqa-chonibes-projects.vercel.app/auth/callback'
 }
 
 export async function GET(request: NextRequest) {
