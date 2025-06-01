@@ -7,8 +7,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 
 // Function to get the correct redirect URI based on environment
 function getRedirectUri() {
-  // Use the current Vercel deployment URL
-  return 'https://street-collector-jzt95pwqa-chonibes-projects.vercel.app/auth/callback'
+  // Use environment variables with a fallback
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://streetcollector.com'
+  return `${baseUrl}/auth/callback`
 }
 
 export default function LoginPage() {
