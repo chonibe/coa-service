@@ -59,7 +59,7 @@ export default function LoginPage() {
 
   const handleLogin = () => {
     const clientId = '594cf36a-179f-4227-821d-1dd00f778900'
-    const scope = encodeURIComponent('openid email customer-account-api:full')
+    const scope = encodeURIComponent('openid customer-account-api:full')
     const state = crypto.randomUUID()
     const nonce = crypto.randomUUID()
 

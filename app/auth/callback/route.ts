@@ -68,7 +68,6 @@ export async function GET(request: NextRequest) {
 
     // Set cookies on the response
     response.cookies.set('street_lamp_token', tokenData.access_token, cookieOptions)
-    response.cookies.set('user_email', userInfo.email, cookieOptions)
     response.cookies.set('customer_id', userInfo.customer_id || userInfo.sub, cookieOptions)
 
     return response
