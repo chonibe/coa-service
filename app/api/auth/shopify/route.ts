@@ -7,17 +7,12 @@ function generateState(): string {
 }
 
 export async function GET(request: NextRequest) {
-  // Ensure these are set in your .env file
-  const shopDomain = process.env.SHOPIFY_SHOP || 'thestreetlamp-9103.myshopify.com';
-  const redirectUri = process.env.SHOPIFY_REDIRECT_URI || 'http://localhost:3000/api/auth/callback';
+  // Get the base URL of the application
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+  
+  // Construct the dashboard URL
+  const dashboardUrl = new URL('/customer/dashboard', baseUrl);
 
-  // Generate state for CSRF protection
-  const state = generateState();
-
-  // Construct the customer login URL with dashboard redirect
-  const authUrl = new URL(`https://${shopDomain}/account/login`);
-  authUrl.searchParams.append('return_to', '/customer/dashboard');
-
-  // Redirect to Shopify customer login page
-  return NextResponse.redirect(authUrl.toString());
+  // Redirect directly to the dashboard
+  return NextResponse.redirect(dashboardUrl.toString());
 } 

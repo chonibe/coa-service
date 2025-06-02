@@ -39,50 +39,81 @@ export default function CustomerDashboard() {
   const supabase = createClientComponentClient()
 
   useEffect(() => {
-    // Check for Shopify customer ID cookie
-    const shopifyCustomerId = document.cookie
-      .split('; ')
-      .find(row => row.startsWith('shopify_customer_id='))
-      ?.split('=')[1]
+    // Check if customer is logged in on the Shopify storefront
+    const checkCustomerAuthentication = async () => {
+      try {
+        // Fetch customer information from Shopify
+        const response = await fetch('/account', {
+          credentials: 'include', // Important for sending cookies
+          headers: {
+            'Accept': 'application/json'
+          }
+        });
 
-    // If no customer ID, redirect to Shopify login
-    if (!shopifyCustomerId) {
-      // Redirect to Shopify login
-      window.location.href = `/api/auth/shopify`
-      return
+        if (!response.ok) {
+          // Not logged in, redirect to login
+          window.location.href = `/api/auth/shopify`
+          return false
+        }
+
+        const customerData = await response.json()
+        
+        if (!customerData.customer) {
+          // No customer found, redirect to login
+          window.location.href = `/api/auth/shopify`
+          return false
+        }
+
+        // Customer is logged in, proceed with fetching orders
+        return true
+      } catch (error) {
+        console.error('Authentication check failed:', error)
+        window.location.href = `/api/auth/shopify`
+        return false
+      }
     }
 
     const fetchOrders = async () => {
       try {
+        // First, verify authentication
+        const isAuthenticated = await checkCustomerAuthentication()
+        if (!isAuthenticated) return
+
         setIsLoading(true)
         setError(null)
 
-        // Fetch orders using Shopify customer ID
-        const { data: ordersData, error: ordersError } = await supabase
-          .from('orders')
-          .select(`
-            id,
-            name,
-            created_at,
-            line_items (
-              line_item_id,
-              title,
-              quantity,
-              nfc_tag_id,
-              certificate_url
-            )
-          `)
-          .eq('shopify_customer_id', parseInt(shopifyCustomerId))
+        // Fetch orders using Shopify customer ID from Shopify's account page
+        const response = await fetch('/account/orders', {
+          credentials: 'include',
+          headers: {
+            'Accept': 'application/json'
+          }
+        })
 
-        if (ordersError) {
-          console.error('Orders Fetch Error:', ordersError)
-          throw new Error(ordersError.message || 'Failed to fetch orders')
+        if (!response.ok) {
+          throw new Error('Failed to fetch orders')
         }
 
-        setOrders(ordersData || [])
+        const ordersData = await response.json()
+
+        // Transform Shopify orders to match your application's order structure
+        const formattedOrders = ordersData.orders.map((order: any) => ({
+          id: order.id.toString(),
+          name: order.name,
+          created_at: order.created_at,
+          line_items: order.line_items.map((item: any) => ({
+            line_item_id: item.id.toString(),
+            title: item.title,
+            quantity: item.quantity,
+            // Add more fields as needed
+          }))
+        }))
+
+        setOrders(formattedOrders)
       } catch (err: any) {
         console.error('Dashboard Fetch Error:', err)
         setError(err.message || 'An unexpected error occurred')
+        window.location.href = `/api/auth/shopify`
       } finally {
         setIsLoading(false)
       }
