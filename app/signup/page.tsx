@@ -44,8 +44,8 @@ export default function SignupPage() {
         return
       }
 
-      // Show success message and redirect to login
-      router.push('/login')
+      // Redirect to Shopify OAuth instead of login
+      router.push('/api/auth/shopify')
     } catch (err: any) {
       setError(err.message || 'An unexpected error occurred')
     } finally {
@@ -123,8 +123,8 @@ export default function SignupPage() {
           <div className="mt-4 text-center text-sm">
             <p>
               Already have an account? {' '}
-              <a href="/login" className="text-blue-600 hover:underline">
-                Log In
+              <a href="/api/auth/shopify" className="text-blue-600 hover:underline">
+                Log In with Shopify
               </a>
             </p>
           </div>

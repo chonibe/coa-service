@@ -22,15 +22,7 @@ export async function GET(request: NextRequest) {
   if (!email) {
     return NextResponse.json(
       { message: "Email parameter is required" },
-      {
-        status: 400,
-        headers: {
-          "Access-Control-Allow-Origin": "https://www.thestreetlamp.com",
-          "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-          "Access-Control-Allow-Headers": "Content-Type, Authorization",
-          "Access-Control-Allow-Credentials": "true",
-        },
-      },
+      { status: 400 }
     )
   }
 
@@ -45,7 +37,7 @@ export async function GET(request: NextRequest) {
       body: JSON.stringify({
         query: `
           query getCustomerByEmail($email: String!) {
-            customers(first: 1, query: $email) {
+            customers(first: 1, query: "email:${email}") {
               edges {
                 node {
                   id
@@ -72,15 +64,7 @@ export async function GET(request: NextRequest) {
     if (!shopifyData.data.customers.edges.length) {
       return NextResponse.json(
         { message: "No customer found with this email" },
-        {
-          status: 404,
-          headers: {
-            "Access-Control-Allow-Origin": "https://www.thestreetlamp.com",
-            "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-            "Access-Control-Allow-Headers": "Content-Type, Authorization",
-            "Access-Control-Allow-Credentials": "true",
-          },
-        },
+        { status: 404 }
       )
     }
 
@@ -91,29 +75,13 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json(
       { customerId },
-      {
-        status: 200,
-        headers: {
-          "Access-Control-Allow-Origin": "https://www.thestreetlamp.com",
-          "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-          "Access-Control-Allow-Headers": "Content-Type, Authorization",
-          "Access-Control-Allow-Credentials": "true",
-        },
-      },
+      { status: 200 }
     )
   } catch (error: any) {
     console.error("Error fetching customer:", error)
     return NextResponse.json(
       { message: "Error fetching customer" },
-      {
-        status: 500,
-        headers: {
-          "Access-Control-Allow-Origin": "https://www.thestreetlamp.com",
-          "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-          "Access-Control-Allow-Headers": "Content-Type, Authorization",
-          "Access-Control-Allow-Credentials": "true",
-        },
-      },
+      { status: 500 }
     )
   }
 }

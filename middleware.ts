@@ -8,9 +8,9 @@ export async function middleware(req: NextRequest) {
   const streetLampToken = req.cookies.get('street_lamp_token')
   const customerId = req.cookies.get('customer_id')
 
-  // Redirect to login if no token or customer ID for protected routes
+  // Redirect to Shopify OAuth if no token or customer ID for protected routes
   if ((!streetLampToken || !customerId) && req.nextUrl.pathname.startsWith('/customer')) {
-    return NextResponse.redirect(new URL('/login', req.url))
+    return NextResponse.redirect(new URL('/api/auth/shopify', req.url))
   }
 
   // If customer ID is present, ensure routing matches the customer's ID
