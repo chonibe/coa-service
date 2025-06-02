@@ -14,8 +14,9 @@ export async function GET(request: NextRequest) {
   // Generate state for CSRF protection
   const state = generateState();
 
-  // Construct the customer login URL
+  // Construct the customer login URL with dashboard redirect
   const authUrl = new URL(`https://${shopDomain}/account/login`);
+  authUrl.searchParams.append('return_to', '/customer/dashboard');
 
   // Redirect to Shopify customer login page
   return NextResponse.redirect(authUrl.toString());
