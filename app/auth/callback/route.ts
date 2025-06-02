@@ -57,6 +57,11 @@ export async function GET(request: NextRequest) {
     const postLoginRedirect = request.cookies.get('post_login_redirect')?.value 
       || '/customer/dashboard'
 
+    console.log('Callback Route Redirect:', {
+      postLoginRedirect,
+      requestUrl: request.url
+    });
+
     // Fetch the logged-in customer's information
     const customerResponse = await fetch(`https://${shop}/admin/api/2024-01/customers.json`, {
       headers: {
@@ -77,6 +82,11 @@ export async function GET(request: NextRequest) {
     if (!primaryCustomer) {
       throw new Error('No customer found')
     }
+
+    console.log('Customer Found:', {
+      customerId: primaryCustomer.id,
+      email: primaryCustomer.email
+    });
 
     // Prepare cookie options
     const cookieOptions = {
@@ -106,8 +116,13 @@ export async function GET(request: NextRequest) {
       console.error('Customer Upsert Error:', customerError)
     }
 
+    // Construct the full redirect URL
+    const fullRedirectUrl = new URL(postLoginRedirect, `https://${shop}`).toString()
+
+    console.log('Final Redirect URL:', fullRedirectUrl);
+
     // Set cookies and redirect to dashboard
-    const response = NextResponse.redirect(new URL(postLoginRedirect, request.url))
+    const response = NextResponse.redirect(fullRedirectUrl)
 
     // Set essential cookies
     response.cookies.set('shopify_customer_id', primaryCustomer.id.toString(), cookieOptions)

@@ -13,8 +13,14 @@ export async function GET(request: NextRequest) {
     ? `${process.env.NEXT_PUBLIC_APP_URL}/customer/dashboard` 
     : 'http://localhost:3000/customer/dashboard';
 
-  // Construct the customer login URL
+  console.log('Shopify Login Redirect:', {
+    shopDomain,
+    dashboardUrl
+  });
+
+  // Construct the customer login URL with explicit return_to
   const authUrl = new URL(`https://${shopDomain}/account/login`);
+  authUrl.searchParams.append('return_to', dashboardUrl);
 
   // Create a response that will redirect to the Shopify login page
   const response = NextResponse.redirect(authUrl.toString());
