@@ -42,15 +42,19 @@ export default function CustomerDashboard() {
     console.log('Dashboard useEffect started');
 
     // Check authentication status
-    const checkAuthentication = async () => {
+    const checkAuthentication = () => {
       console.log('Checking authentication');
 
-      // Check if customer is logged in
-      const isLoggedIn = document.cookie.includes('customer_logged_in=true');
-      console.log('Is logged in:', isLoggedIn);
+      // Check for authentication cookies
+      const authToken = document.cookie.includes('customer_auth_token=');
+      const loginAttempt = document.cookie.includes('customer_login_attempt=true');
+      
+      console.log('Auth Token Present:', authToken);
+      console.log('Login Attempt:', loginAttempt);
 
-      if (!isLoggedIn) {
-        console.log('Not logged in, redirecting to login');
+      // If no auth token and no recent login attempt, redirect to login
+      if (!authToken && !loginAttempt) {
+        console.log('No authentication, redirecting to login');
         window.location.href = `/api/auth/shopify`;
         return false;
       }
@@ -63,7 +67,7 @@ export default function CustomerDashboard() {
         console.log('Fetching orders');
         
         // First, verify authentication
-        const isAuthenticated = await checkAuthentication();
+        const isAuthenticated = checkAuthentication();
         if (!isAuthenticated) return;
 
         setIsLoading(true)
@@ -95,7 +99,11 @@ export default function CustomerDashboard() {
       } catch (err: any) {
         console.error('Dashboard Fetch Error:', err)
         setError(err.message || 'An unexpected error occurred')
-        window.location.href = `/api/auth/shopify`
+        
+        // Only redirect if there's no recent login attempt
+        if (!document.cookie.includes('customer_login_attempt=true')) {
+          window.location.href = `/api/auth/shopify`
+        }
       } finally {
         setIsLoading(false)
       }

@@ -21,6 +21,24 @@ export async function GET(request: NextRequest) {
 
   console.log('Redirecting to:', dashboardUrl.toString());
 
-  // Redirect directly to the dashboard
-  return NextResponse.redirect(dashboardUrl.toString());
+  // Create a response with a redirect to the dashboard
+  const response = NextResponse.redirect(dashboardUrl.toString());
+
+  // Set an authentication cookie
+  response.cookies.set('customer_auth_token', crypto.randomBytes(32).toString('hex'), {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'strict',
+    maxAge: 60 * 60 * 24 // 24 hours
+  });
+
+  // Set a flag to indicate authentication attempt
+  response.cookies.set('customer_login_attempt', 'true', {
+    httpOnly: false,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'strict',
+    maxAge: 60 * 5 // 5 minutes
+  });
+
+  return response;
 } 
