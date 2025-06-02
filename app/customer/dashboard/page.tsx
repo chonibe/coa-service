@@ -45,9 +45,9 @@ export default function CustomerDashboard() {
       .find(row => row.startsWith('shopify_customer_id='))
       ?.split('=')[1]
 
-    // If no customer ID, redirect to Shopify OAuth
+    // If no customer ID, redirect to Shopify login
     if (!shopifyCustomerId) {
-      // Redirect to Shopify OAuth
+      // Redirect to Shopify login
       window.location.href = `/api/auth/shopify`
       return
     }
