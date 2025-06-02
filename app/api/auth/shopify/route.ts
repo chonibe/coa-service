@@ -7,8 +7,10 @@ function generateState(): string {
 }
 
 export async function GET(request: NextRequest) {
-  // Get the base URL of the application
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+  // Prioritize local development URL
+  const baseUrl = process.env.NODE_ENV === 'development' 
+    ? 'http://localhost:3000' 
+    : (process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000');
   
   // Construct the dashboard URL
   const dashboardUrl = new URL('/customer/dashboard', baseUrl);
