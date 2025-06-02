@@ -50,29 +50,23 @@ function getRedirectUri(): string {
 }
 
 export async function GET(request: NextRequest) {
-  const shop = process.env.SHOPIFY_SHOP || 'thestreetlamp-9103.myshopify.com'
-
   try {
-    // Hardcode the local dashboard URL for development
-    const dashboardUrl = 'http://localhost:3000/customer/dashboard'
+    // Retrieve the stored redirect URL from cookies
+    const redirectUrl = request.cookies.get('shopify_login_redirect')?.value 
+      || 'http://localhost:3000/customer/dashboard';
 
     console.log('Callback Route Redirect:', {
-      dashboardUrl,
+      redirectUrl,
       requestUrl: request.url
     });
 
-    // Construct a response that will redirect to the local dashboard
-    const response = NextResponse.redirect(new URL(dashboardUrl))
+    // Construct a response that will redirect to the dashboard
+    const response = NextResponse.redirect(new URL(redirectUrl));
 
-    // Set a flag cookie to indicate successful Shopify login
-    response.cookies.set('shopify_login_complete', 'true', {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict',
-      maxAge: 60 * 5 // 5 minutes
-    });
+    // Clear the redirect cookie
+    response.cookies.delete('shopify_login_redirect');
 
-    return response
+    return response;
 
   } catch (error) {
     console.error('Authentication Redirect Error:', error)
