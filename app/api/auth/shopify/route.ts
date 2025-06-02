@@ -9,13 +9,18 @@ function generateState(): string {
 export async function GET(request: NextRequest) {
   // Ensure these are set in your .env file
   const shopDomain = process.env.SHOPIFY_SHOP || 'thestreetlamp-9103.myshopify.com';
-  const dashboardUrl = process.env.NEXT_PUBLIC_APP_URL 
-    ? `${process.env.NEXT_PUBLIC_APP_URL}/customer/dashboard` 
-    : 'http://localhost:3000/customer/dashboard';
+  
+  // Prioritize local development
+  const dashboardUrl = process.env.NODE_ENV === 'development' 
+    ? 'http://localhost:3000/customer/dashboard'
+    : (process.env.NEXT_PUBLIC_APP_URL 
+      ? `${process.env.NEXT_PUBLIC_APP_URL}/customer/dashboard` 
+      : 'https://streetcollector.vercel.app/customer/dashboard');
 
   console.log('Shopify Login Redirect:', {
     shopDomain,
-    dashboardUrl
+    dashboardUrl,
+    nodeEnv: process.env.NODE_ENV
   });
 
   // Construct the customer login URL with explicit return_to
