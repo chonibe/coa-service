@@ -17,29 +17,23 @@ export async function GET(request: NextRequest) {
   // Ensure these are set in your .env file
   const shopDomain = process.env.SHOPIFY_SHOP || 'thestreetlamp-9103.myshopify.com';
   
-  // Prioritize local development
-  const dashboardUrl = process.env.NODE_ENV === 'development' 
-    ? 'http://localhost:3000/customer/dashboard'
-    : (process.env.NEXT_PUBLIC_APP_URL 
-      ? `${process.env.NEXT_PUBLIC_APP_URL}/customer/dashboard` 
-      : 'https://streetcollector.vercel.app/customer/dashboard');
+  // Hardcoded local dashboard URL for development
+  const dashboardUrl = 'http://localhost:3000/customer/dashboard';
 
   console.log('Shopify Login Redirect:', {
     shopDomain,
     dashboardUrl,
-    nodeEnv: process.env.NODE_ENV,
-    fullRedirectUrl: `https://${shopDomain}/account/login?return_to=${encodeURIComponent(dashboardUrl)}`
+    nodeEnv: process.env.NODE_ENV
   });
 
-  // Construct the customer login URL with explicit return_to
+  // Construct the customer login URL
   const authUrl = new URL(`https://${shopDomain}/account/login`);
-  authUrl.searchParams.append('return_to', dashboardUrl);
 
   // Create a response that will redirect to the Shopify login page
   const response = NextResponse.redirect(authUrl.toString());
 
-  // Set a cookie to track the intended post-login destination
-  response.cookies.set('post_login_redirect', dashboardUrl, {
+  // Set a cookie to track the login attempt
+  response.cookies.set('shopify_login_attempt', 'true', {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
     sameSite: 'strict',
