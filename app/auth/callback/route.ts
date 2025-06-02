@@ -53,6 +53,10 @@ export async function GET(request: NextRequest) {
   const shop = process.env.SHOPIFY_SHOP || 'thestreetlamp-9103.myshopify.com'
 
   try {
+    // Check for post-login redirect cookie
+    const postLoginRedirect = request.cookies.get('post_login_redirect')?.value 
+      || '/customer/dashboard'
+
     // Fetch the logged-in customer's information
     const customerResponse = await fetch(`https://${shop}/admin/api/2024-01/customers.json`, {
       headers: {
@@ -103,13 +107,14 @@ export async function GET(request: NextRequest) {
     }
 
     // Set cookies and redirect to dashboard
-    const response = NextResponse.redirect(
-      new URL(`/customer/dashboard`, request.url)
-    )
+    const response = NextResponse.redirect(new URL(postLoginRedirect, request.url))
 
     // Set essential cookies
     response.cookies.set('shopify_customer_id', primaryCustomer.id.toString(), cookieOptions)
     response.cookies.set('customer_email', primaryCustomer.email, cookieOptions)
+
+    // Clear the post-login redirect cookie
+    response.cookies.delete('post_login_redirect')
 
     return response
 
