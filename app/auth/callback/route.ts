@@ -8,120 +8,145 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 )
 
-// Function to get the correct redirect URI based on environment
-function getRedirectUri() {
-  // Prioritize environment variables
-  const baseUrls = [
-    process.env.NEXT_PUBLIC_APP_URL,
-    process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : null,
-    'https://streetcollector.com'
+function sanitizeRedirectUri(baseUrl: string, path: string): string {
+  // Remove trailing and leading slashes, then join with a single slash
+  const cleanBaseUrl = baseUrl.replace(/\/+$/, '')
+  const cleanPath = path.replace(/^\/+/, '')
+  return `${cleanBaseUrl}/${cleanPath}`
+}
+
+function getRedirectUri(): string {
+  // Prioritize environment-specific redirect URIs for Street Lamp
+  const redirectUris = [
+    process.env.NEXT_PUBLIC_VERCEL_REDIRECT_URI,
+    process.env.NEXT_PUBLIC_PROD_REDIRECT_URI,
+    process.env.NEXT_PUBLIC_LOCAL_REDIRECT_URI
   ].filter(Boolean)
 
-  // Try each base URL
-  for (const baseUrl of baseUrls) {
-    const redirectUri = `${baseUrl}/auth/callback`
-    console.log(`Attempting redirect URI: ${redirectUri}`)
-    return redirectUri
+  // Determine current environment with nuanced detection
+  const isVercel = process.env.VERCEL === '1'
+  const isProduction = process.env.NODE_ENV === 'production'
+  const hasVercelUrl = !!process.env.VERCEL_URL
+
+  let selectedRedirectUri: string | undefined
+
+  // Prioritize based on environment
+  if (isVercel || hasVercelUrl) {
+    selectedRedirectUri = process.env.NEXT_PUBLIC_VERCEL_REDIRECT_URI
+  } else if (isProduction) {
+    selectedRedirectUri = process.env.NEXT_PUBLIC_PROD_REDIRECT_URI
+  } else {
+    // Default to local for development
+    selectedRedirectUri = process.env.NEXT_PUBLIC_LOCAL_REDIRECT_URI
   }
 
-  throw new Error('No valid redirect URI could be generated')
+  // Fallback and validation
+  if (!selectedRedirectUri) {
+    console.warn('No valid redirect URI could be determined')
+    throw new Error('No valid redirect URI could be generated')
+  }
+
+  return selectedRedirectUri
 }
 
 export async function GET(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams
   const code = searchParams.get('code')
-  const state = searchParams.get('state')
+  const shop = process.env.SHOPIFY_SHOP || 'thestreetlamp-9103.myshopify.com'
 
   if (!code) {
-    return NextResponse.redirect(new URL('/login', request.url))
+    return NextResponse.redirect(new URL('/customer/dashboard', request.url))
   }
 
   try {
-    // Log all relevant environment variables
-    console.log('Environment Variables:', {
-      NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL,
-      VERCEL_URL: process.env.VERCEL_URL,
-      NODE_ENV: process.env.NODE_ENV
-    })
-
-    const redirectUri = getRedirectUri()
-    console.log('Final Redirect URI:', redirectUri)
-
-    // Exchange authorization code for access token
-    const tokenResponse = await fetch('https://account.thestreetlamp.com/authentication/oauth/token', {
+    // Shopify OAuth token exchange
+    const tokenResponse = await fetch(`https://${shop}/admin/oauth/access_token`, {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/x-www-form-urlencoded',
+        'Content-Type': 'application/json',
       },
-      body: new URLSearchParams({
-        client_id: '594cf36a-179f-4227-821d-1dd00f778900',
-        client_secret: process.env.STREET_LAMP_CLIENT_SECRET || '',
-        grant_type: 'authorization_code',
-        code: code,
-        redirect_uri: redirectUri
+      body: JSON.stringify({
+        client_id: process.env.SHOPIFY_CLIENT_ID,
+        client_secret: process.env.SHOPIFY_CLIENT_SECRET,
+        code,
+        grant_type: 'authorization_code'
       })
     })
 
     if (!tokenResponse.ok) {
+      const errorText = await tokenResponse.text()
+      console.error('Token Exchange Error:', errorText)
       throw new Error('Failed to exchange authorization code')
     }
 
     const tokenData = await tokenResponse.json()
+    const accessToken = tokenData.access_token
 
-    // Fetch user info
-    const userInfoResponse = await fetch('https://account.thestreetlamp.com/oauth/userinfo', {
+    // Fetch customer information
+    const customerResponse = await fetch(`https://${shop}/admin/api/2024-01/customers.json`, {
       headers: {
-        'Authorization': `Bearer ${tokenData.access_token}`
+        'X-Shopify-Access-Token': accessToken,
+        'Content-Type': 'application/json'
       }
     })
 
-    if (!userInfoResponse.ok) {
-      throw new Error('Failed to fetch user info')
+    if (!customerResponse.ok) {
+      const errorText = await customerResponse.text()
+      console.error('Customer Fetch Error:', errorText)
+      throw new Error('Failed to fetch customer information')
     }
 
-    const userInfo = await userInfoResponse.json()
-
+    const customerData = await customerResponse.json()
+    
     // Prepare cookie options
     const cookieOptions = {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'strict' as const,
-      maxAge: tokenData.expires_in
+      maxAge: 60 * 60 * 24 * 7 // 1 week
     }
 
-    // Set cookies using NextResponse
-    const response = NextResponse.redirect(
-      new URL(`/customer/dashboard/${userInfo.customer_id || userInfo.sub}`, request.url)
-    )
+    // Minimal user record in Supabase
+    const primaryCustomer = customerData.customers && customerData.customers[0]
+    
+    if (primaryCustomer) {
+      const { data: upsertedCustomer, error: customerError } = await supabase
+        .from('customers')
+        .upsert({
+          shopify_customer_id: primaryCustomer.id,
+          email: primaryCustomer.email,
+          first_name: primaryCustomer.first_name,
+          last_name: primaryCustomer.last_name,
+          metadata: {
+            source: 'shopify_oauth',
+            last_login: new Date().toISOString()
+          }
+        }, {
+          onConflict: 'shopify_customer_id'
+        })
 
-    // Set cookies on the response
-    response.cookies.set('street_lamp_token', tokenData.access_token, cookieOptions)
-    response.cookies.set('customer_id', userInfo.customer_id || userInfo.sub, cookieOptions)
+      if (customerError) {
+        console.error('Customer Upsert Error:', customerError)
+      }
 
-    // Upsert customer record
-    const { data: customerData, error: customerError } = await supabase
-      .from('customers')
-      .upsert({
-        user_id: userInfo.sub, // Assuming sub is the unique identifier
-        shopify_customer_id: userInfo.customer_id,
-        // Add any other relevant customer information
-        metadata: {
-          source: 'street_lamp_oauth',
-          last_login: new Date().toISOString()
-        }
-      }, {
-        onConflict: 'user_id' // Update if user_id already exists
-      })
+      // Set cookies and redirect to dashboard
+      const response = NextResponse.redirect(
+        new URL(`/customer/dashboard`, request.url)
+      )
 
-    if (customerError) {
-      console.error('Customer Upsert Error:', customerError)
-      // Non-critical, so we'll continue with the authentication flow
+      // Set essential cookies
+      response.cookies.set('shopify_access_token', accessToken, cookieOptions)
+      response.cookies.set('shopify_customer_id', primaryCustomer.id.toString(), cookieOptions)
+      response.cookies.set('customer_email', primaryCustomer.email, cookieOptions)
+
+      return response
     }
 
-    return response
+    // If no customer found, redirect to dashboard
+    return NextResponse.redirect(new URL('/customer/dashboard', request.url))
 
   } catch (error) {
-    console.error('Comprehensive Redirect URI Error:', error)
-    return NextResponse.redirect(new URL('/login', request.url))
+    console.error('Authentication Error:', error)
+    return NextResponse.redirect(new URL('/customer/dashboard', request.url))
   }
 } 

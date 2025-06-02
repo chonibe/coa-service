@@ -9,6 +9,9 @@ import { Badge } from "@/components/ui/badge"
 import { Loader2, Link, AlertCircle } from "lucide-react"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 
+// Import server-side cookie handling
+import { cookies } from 'next/headers'
+
 interface LineItem {
   line_item_id: string
   title: string
@@ -36,26 +39,25 @@ export default function CustomerDashboard() {
   const supabase = createClientComponentClient()
 
   useEffect(() => {
+    // Check for Shopify customer ID cookie
+    const shopifyCustomerId = document.cookie
+      .split('; ')
+      .find(row => row.startsWith('shopify_customer_id='))
+      ?.split('=')[1]
+
+    // If no customer ID, redirect to Shopify OAuth
+    if (!shopifyCustomerId) {
+      // Redirect to Shopify OAuth
+      window.location.href = `/api/auth/shopify`
+      return
+    }
+
     const fetchOrders = async () => {
       try {
         setIsLoading(true)
         setError(null)
 
-        // Explicit session check
-        const { data: { session }, error: sessionError } = await supabase.auth.getSession()
-        
-        if (sessionError) {
-          console.error('Session Error:', sessionError)
-          throw new Error('Authentication session error')
-        }
-
-        if (!session) {
-          console.error('No active session')
-          router.push('/login')
-          return
-        }
-
-        // Fetch orders with explicit user ID
+        // Fetch orders using Shopify customer ID
         const { data: ordersData, error: ordersError } = await supabase
           .from('orders')
           .select(`
@@ -70,7 +72,7 @@ export default function CustomerDashboard() {
               certificate_url
             )
           `)
-          .eq('customer_id', session.user.id)
+          .eq('shopify_customer_id', parseInt(shopifyCustomerId))
 
         if (ordersError) {
           console.error('Orders Fetch Error:', ordersError)
@@ -79,16 +81,15 @@ export default function CustomerDashboard() {
 
         setOrders(ordersData || [])
       } catch (err: any) {
-        console.error('Comprehensive Error:', err)
+        console.error('Dashboard Fetch Error:', err)
         setError(err.message || 'An unexpected error occurred')
-        router.push('/login')
       } finally {
         setIsLoading(false)
       }
     }
 
     fetchOrders()
-  }, [router, supabase])
+  }, [router])
 
   const getNfcStatus = (lineItem: LineItem) => {
     if (lineItem.nfc_tag_id && lineItem.nfc_claimed_at) {
@@ -110,97 +111,64 @@ export default function CustomerDashboard() {
 
   if (error) {
     return (
-      <div className="container mx-auto px-4 py-8">
-        <Alert variant="destructive">
-          <AlertCircle className="h-4 w-4" />
-          <AlertTitle>Authentication Error</AlertTitle>
-          <AlertDescription>
-            {error}. Please log in again.
+      <div className="flex justify-center items-center min-h-screen">
+        <Card className="w-full max-w-md">
+          <CardHeader>
+            <CardTitle>Authentication Error</CardTitle>
+            <CardDescription>Unable to load dashboard</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <p className="text-destructive">{error}</p>
             <Button 
-              onClick={() => router.push('/login')} 
-              className="ml-4"
+              onClick={() => {
+                // Redirect to Shopify OAuth
+                window.location.href = `/api/auth/shopify`
+              }} 
+              className="mt-4 w-full"
             >
-              Go to Login
+              Authenticate with Shopify
             </Button>
-          </AlertDescription>
-        </Alert>
+          </CardContent>
+        </Card>
       </div>
     )
   }
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <div className="flex justify-between items-center mb-8">
-        <h1 className="text-3xl font-bold">Your Orders</h1>
-        <Button onClick={() => router.push("/customer/authenticate")}>
-          <Link className="h-4 w-4 mr-2" />
-          Go to Authentication
-        </Button>
-      </div>
+      <h1 className="text-2xl font-bold mb-6">Your Digital Art Collection</h1>
 
       {orders.length === 0 ? (
         <Card>
-          <CardContent className="pt-6">
-            <p className="text-center text-muted-foreground">No orders found</p>
-          </CardContent>
+          <CardHeader>
+            <CardTitle>No Orders Found</CardTitle>
+            <CardDescription>You haven't purchased any digital artworks yet.</CardDescription>
+          </CardHeader>
         </Card>
       ) : (
-        <div className="space-y-6">
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
           {orders.map((order) => (
             <Card key={order.id}>
               <CardHeader>
-                <CardTitle>Order {order.name}</CardTitle>
-                <CardDescription>
-                  Placed on {new Date(order.created_at).toLocaleDateString()}
-                </CardDescription>
+                <CardTitle>{order.name}</CardTitle>
+                <CardDescription>Purchased on {new Date(order.created_at).toLocaleDateString()}</CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="space-y-4">
-                  {order.line_items.map((item) => {
-                    const nfcStatus = getNfcStatus(item)
-                    return (
-                      <div
-                        key={item.line_item_id}
-                        className="flex items-center justify-between p-4 border rounded-lg"
+                {order.line_items.map((item) => (
+                  <div key={item.line_item_id} className="mb-4">
+                    <h3 className="font-semibold">{item.title}</h3>
+                    {item.certificate_url && (
+                      <Button
+                        variant="outline"
+                        size="sm" 
+                        onClick={() => window.open(item.certificate_url, '_blank')}
+                        className="mt-2"
                       >
-                        <div className="flex items-center space-x-4">
-                          {item.image_url && (
-                            <img
-                              src={item.image_url}
-                              alt={item.title}
-                              className="w-16 h-16 object-cover rounded"
-                            />
-                          )}
-                          <div>
-                            <h3 className="font-medium">{item.title}</h3>
-                            <p className="text-sm text-muted-foreground">
-                              Quantity: {item.quantity}
-                            </p>
-                          </div>
-                        </div>
-                        <div className="flex items-center space-x-4">
-                          <Badge variant={nfcStatus.variant}>{nfcStatus.label}</Badge>
-                          {nfcStatus.status === "unpaired" && (
-                            <Button
-                              variant="outline"
-                              onClick={() => router.push(`/customer/authenticate?lineItemId=${item.line_item_id}`)}
-                            >
-                              Pair NFC Tag
-                            </Button>
-                          )}
-                          {nfcStatus.status === "paired" && (
-                            <Button
-                              variant="outline"
-                              onClick={() => router.push(item.certificate_url)}
-                            >
-                              View Certificate
-                            </Button>
-                          )}
-                        </div>
-                      </div>
-                    )
-                  })}
-                </div>
+                        View Certificate
+                      </Button>
+                    )}
+                  </div>
+                ))}
               </CardContent>
             </Card>
           ))}
