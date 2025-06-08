@@ -348,6 +348,202 @@ export default function CustomerDashboardById() {
     [orders]
   )
 
+  // Add state for mouse position and interaction
+  const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 })
+  const [isInteracting, setIsInteracting] = useState(false)
+
+  // Interactive Timeline Component
+  const InteractiveTimeline = () => {
+    const containerRef = useRef<HTMLDivElement>(null)
+
+    // Handle mouse move for parallax and interaction
+    const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+      if (!containerRef.current) return
+
+      const rect = containerRef.current.getBoundingClientRect()
+      const x = ((e.clientX - rect.left) / rect.width) * 2 - 1
+      const y = ((e.clientY - rect.top) / rect.height) * 2 - 1
+
+      setMousePosition({ x, y })
+      setIsInteracting(true)
+    }
+
+    const handleMouseLeave = () => {
+      setMousePosition({ x: 0, y: 0 })
+      setIsInteracting(false)
+    }
+
+    return (
+      <div 
+        ref={containerRef}
+        className="relative w-full h-[800px] overflow-hidden perspective-[1000px]"
+        onMouseMove={handleMouseMove}
+        onMouseLeave={handleMouseLeave}
+        style={{
+          background: `
+            radial-gradient(
+              circle at ${50 + mousePosition.x * 20}% ${50 + mousePosition.y * 20}%, 
+              rgba(79, 209, 197, 0.1) 0%, 
+              transparent 60%
+            ),
+            linear-gradient(
+              to bottom, 
+              rgba(9,9,11,0) 0%, 
+              rgba(9,9,11,0.5) 20%, 
+              rgba(9,9,11,1) 50%, 
+              rgba(9,9,11,0.5) 80%, 
+              rgba(9,9,11,0) 100%
+            )
+          `,
+          transition: 'background-position 0.3s ease'
+        }}
+      >
+        {/* Road Horizon with Parallax */}
+        <motion.div 
+          className="absolute bottom-0 left-0 w-full h-1/2 bg-gradient-to-t from-zinc-900/50 via-zinc-800/30 to-transparent"
+          style={{ 
+            perspective: '1000px',
+            transformStyle: 'preserve-3d',
+            transform: `
+              rotateX(70deg) 
+              translateX(${mousePosition.x * 20}px) 
+              translateY(${mousePosition.y * 20}px)
+            `,
+            transition: 'transform 0.3s ease'
+          }}
+        />
+
+        {/* Interactive Lighting Effect */}
+        <motion.div 
+          className="absolute inset-0 pointer-events-none z-50"
+          style={{
+            background: `
+              radial-gradient(
+                circle at ${50 + mousePosition.x * 20}% ${50 + mousePosition.y * 20}%, 
+                rgba(79, 209, 197, 0.1) 0%, 
+                transparent 40%
+              )
+            `,
+            opacity: isInteracting ? 0.5 : 0,
+            transition: 'opacity 0.3s ease'
+          }}
+        />
+
+        {/* Timeline Markers Container */}
+        <motion.div 
+          className="absolute inset-0"
+          initial="hidden"
+          animate="visible"
+          variants={{
+            hidden: { opacity: 0 },
+            visible: { 
+              opacity: 1,
+              transition: { 
+                staggerChildren: 0.1,
+                delayChildren: 0.2 
+              }
+            }
+          }}
+        >
+          {timelineData.map((milestone: TimelineMilestone, index: number) => (
+            <motion.div
+              key={milestone.orderId}
+              variants={{
+                hidden: { 
+                  opacity: 0, 
+                  scale: 0.5,
+                  y: 200,
+                  x: index % 2 === 0 ? -100 : 100
+                },
+                visible: { 
+                  opacity: 1, 
+                  scale: 1,
+                  y: 0,
+                  x: 0,
+                  transition: { 
+                    type: "spring", 
+                    stiffness: 100, 
+                    damping: 20 
+                  }
+                }
+              }}
+              whileHover={{
+                scale: 1.05,
+                rotate: index % 2 === 0 ? -2 : 2,
+                transition: { duration: 0.2 }
+              }}
+              className={`
+                absolute w-[300px] bg-zinc-900/80 backdrop-blur-sm 
+                border border-zinc-800/50 rounded-xl p-6 
+                transform 
+                transition-all duration-300 ease-out
+                ${index % 2 === 0 
+                  ? 'left-1/4 -translate-x-full' 
+                  : 'right-1/4 translate-x-full'}
+              `}
+              style={{ 
+                top: '50%',
+                zIndex: timelineData.length - index,
+                transformStyle: 'preserve-3d',
+                perspective: '1000px',
+                transform: `
+                  translateY(50%)
+                  translateX(${index % 2 === 0 ? '-120%' : '120%'})
+                  translateZ(${-500 + index * 200}px)
+                  rotateX(${70}deg)
+                  translateX(${mousePosition.x * (index % 2 === 0 ? -10 : 10)}px)
+                  translateY(${mousePosition.y * (index % 2 === 0 ? -10 : 10)}px)
+                  scale(${1 - index * 0.2})
+                `,
+                boxShadow: isInteracting 
+                  ? '0 10px 25px rgba(79, 209, 197, 0.2)' 
+                  : '0 4px 15px rgba(0,0,0,0.2)'
+              }}
+            >
+              <div className="text-center">
+                <p className="text-sm text-zinc-400 mb-2">
+                  {milestone.date.toLocaleDateString('en-US', {
+                    month: 'short', 
+                    day: 'numeric', 
+                    year: 'numeric'
+                  })}
+                </p>
+                <div className="flex justify-center space-x-2 mb-4">
+                  {milestone.items.map((item: LineItem) => (
+                    <motion.div 
+                      key={item.line_item_id} 
+                      className="w-24 h-24 rounded-lg overflow-hidden"
+                      whileHover={{ 
+                        scale: 1.1,
+                        rotate: 2,
+                        transition: { duration: 0.2 }
+                      }}
+                    >
+                      {item.img_url ? (
+                        <img 
+                          src={item.img_url} 
+                          alt={item.name} 
+                          className="w-full h-full object-cover" 
+                        />
+                      ) : (
+                        <div className="w-full h-full bg-zinc-800 flex items-center justify-center">
+                          <Album className="w-12 h-12 text-zinc-600" />
+                        </div>
+                      )}
+                    </motion.div>
+                  ))}
+                </div>
+                <p className="text-sm text-white truncate">
+                  Order #{milestone.orderNumber}
+                </p>
+              </div>
+            </motion.div>
+          ))}
+        </motion.div>
+      </div>
+    )
+  }
+
   useEffect(() => {
     // Set cookie for the customer ID if it's not already set
     const existingCustomerId = document.cookie
@@ -609,125 +805,16 @@ export default function CustomerDashboardById() {
       </div>
 
       {/* Collection Timeline Section */}
-      <div className="container mx-auto px-4 py-8 relative overflow-hidden">
-        <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-b from-transparent via-transparent to-zinc-950 z-10 pointer-events-none"></div>
-        <motion.div 
-          className="relative z-20"
-          initial="hidden"
-          animate="visible"
-          variants={{
-            hidden: { opacity: 0, y: 50 },
-            visible: { 
-              opacity: 1, 
-              y: 0,
-              transition: { 
-                staggerChildren: 0.1,
-                delayChildren: 0.2 
-              }
-            }
-          }}
-        >
-          <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold mb-4">Your Journey</h2>
-            <p className="text-zinc-400 max-w-xl mx-auto">
-              Explore the highway of your art collection, with each milestone marking a unique moment in your artistic journey.
-            </p>
-          </div>
+      <div className="container mx-auto px-4 py-8">
+        <div className="text-center mb-12">
+          <h2 className="text-3xl font-bold mb-4">Your Artistic Journey</h2>
+          <p className="text-zinc-400 max-w-xl mx-auto">
+            Cruise through your collection, where memories come alive with every movement.
+          </p>
+        </div>
 
-          {/* Highway-like Timeline */}
-          <div className="relative w-full h-[600px] overflow-hidden perspective-[1000px]">
-            {/* Road Background */}
-            <div 
-              className="absolute top-1/2 left-0 w-full h-1 bg-gradient-to-r from-zinc-800 via-zinc-700 to-zinc-800"
-              style={{ transform: 'translateY(-50%)' }}
-            />
-
-            {/* Milestone Markers */}
-            <motion.div 
-              className="relative h-full"
-              initial="hidden"
-              animate="visible"
-              variants={{
-                hidden: { opacity: 0 },
-                visible: { 
-                  opacity: 1,
-                  transition: { 
-                    staggerChildren: 0.2,
-                    delayChildren: 0.5 
-                  }
-                }
-              }}
-            >
-              {timelineData.map((milestone: TimelineMilestone, index: number) => (
-                <motion.div
-                  key={milestone.orderId}
-                  variants={{
-                    hidden: { 
-                      opacity: 0, 
-                      x: index % 2 === 0 ? -100 : 100,
-                      rotateX: 90
-                    },
-                    visible: { 
-                      opacity: 1, 
-                      x: 0,
-                      rotateX: 0,
-                      transition: { 
-                        type: "spring", 
-                        stiffness: 300, 
-                        damping: 30 
-                      }
-                    }
-                  }}
-                  className={`
-                    absolute w-[300px] bg-zinc-900/80 backdrop-blur-sm 
-                    border border-zinc-800/50 rounded-xl p-6 
-                    transform -translate-x-1/2 -translate-y-1/2
-                    ${index % 2 === 0 
-                      ? 'left-1/4 top-1/4 rotate-[-15deg]' 
-                      : 'right-1/4 top-3/4 rotate-[15deg]'}
-                  `}
-                  style={{ 
-                    zIndex: timelineData.length - index,
-                    perspective: '1000px'
-                  }}
-                >
-                  <div className="text-center">
-                    <p className="text-sm text-zinc-400 mb-2">
-                      {milestone.date.toLocaleDateString('en-US', {
-                        month: 'short', 
-                        day: 'numeric', 
-                        year: 'numeric'
-                      })}
-                    </p>
-                    <div className="flex justify-center space-x-2 mb-4">
-                      {milestone.items.map((item: LineItem) => (
-                        <div 
-                          key={item.line_item_id} 
-                          className="w-16 h-16 rounded-lg overflow-hidden"
-                        >
-                          {item.img_url ? (
-                            <img 
-                              src={item.img_url} 
-                              alt={item.name} 
-                              className="w-full h-full object-cover" 
-                            />
-                          ) : (
-                            <div className="w-full h-full bg-zinc-800 flex items-center justify-center">
-                              <Album className="w-8 h-8 text-zinc-600" />
-                            </div>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                    <p className="text-sm text-white truncate">
-                      Order #{milestone.orderNumber}
-                    </p>
-                  </div>
-                </motion.div>
-              ))}
-            </motion.div>
-          </div>
-        </motion.div>
+        {/* Interactive Timeline */}
+        <InteractiveTimeline />
       </div>
 
       {/* NFC Scanner Sidebar */}
