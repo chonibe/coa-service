@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from "react"
 import { Dialog, DialogContent } from "@/components/ui/dialog"
-import { X, BadgeIcon as Certificate, User, Calendar, Hash, ExternalLink, Award, Sparkles, Signature, Wifi, WifiOff } from "lucide-react"
+import { X, BadgeIcon as Certificate, User, Calendar, Hash, ExternalLink, Award, Sparkles, Signature, Wifi, WifiOff, Album } from "lucide-react"
 import { motion, useMotionValue, useTransform } from "framer-motion"
 import { Badge } from "@/components/ui/badge"
 
@@ -256,127 +256,85 @@ export function CertificateModal({ lineItem, onClose }: CertificateModalProps) {
                   transform: "rotateY(180deg)",
                 }}
               >
-                <div className="h-full flex flex-col">
+                <div className="h-full flex flex-col justify-between">
                   {/* Certificate Header */}
-                  <div className="text-center mb-8">
-                    <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-gradient-to-br from-amber-500/20 to-amber-600/10 border border-amber-400/30 flex items-center justify-center">
-                      <Certificate className="h-8 w-8 text-amber-400" />
-                    </div>
-                    <h1 className="text-2xl sm:text-3xl font-bold text-white mb-2">Certificate of Authenticity</h1>
-                    <div className="h-px w-32 bg-gradient-to-r from-transparent via-amber-400/50 to-transparent mx-auto"></div>
-                  </div>
-
-                  {/* Certificate Content */}
-                  <div className="flex-1 space-y-6">
-                    {/* Artwork Title Section */}
-                    <div className="text-center bg-zinc-800/30 rounded-lg p-4 border border-zinc-700/30">
-                      <h2 className="text-xl font-bold text-white mb-1">{lineItem.name}</h2>
-                      <p className="text-amber-400 font-semibold">Edition #{editionInfo}</p>
+                  <div>
+                    <div className="flex justify-between items-center mb-6">
+                      <div className="w-24 h-16 bg-zinc-900/30 border border-zinc-700/30 rounded-lg flex items-center justify-center">
+                        <Certificate className="h-8 w-8 text-amber-400" />
+                      </div>
+                      <div className="text-right">
+                        <h1 className="text-2xl font-bold text-white">Certificate of Authenticity</h1>
+                        <p className="text-sm text-zinc-400">Unique Digital Artwork</p>
+                      </div>
                     </div>
 
-                    <div className="grid md:grid-cols-2 gap-6">
-                      {/* Left Column - Artist Info */}
-                      <div className="space-y-4">
-                        <div className="bg-zinc-800/20 rounded-lg p-4 border border-zinc-700/20">
-                          <div className="flex items-center gap-2 mb-3">
-                            <User className="h-5 w-5 text-amber-400" />
-                            <span className="text-sm text-zinc-400">Artist</span>
-                          </div>
-                          <p className="text-lg font-semibold text-white mb-3">{artistName}</p>
-                          
-                          {/* Artist Signature */}
-                          <div className="pt-3 border-t border-zinc-700/30">
-                            <div className="flex items-center gap-2 mb-2">
-                              <Signature className="h-4 w-4 text-amber-400" />
-                              <span className="text-xs text-zinc-400">Signature</span>
-                            </div>
-                            <div className="signature-font text-2xl text-amber-300 opacity-80">
-                              {artistName}
-                            </div>
-                          </div>
+                    {/* Artwork Image Thumbnail */}
+                    <div className="w-full aspect-video rounded-lg overflow-hidden mb-6 border-2 border-zinc-700/50">
+                      {lineItem.img_url ? (
+                        <img 
+                          src={lineItem.img_url} 
+                          alt={lineItem.name} 
+                          className="w-full h-full object-cover" 
+                        />
+                      ) : (
+                        <div className="w-full h-full bg-zinc-800/50 flex items-center justify-center">
+                          <Album className="w-24 h-24 text-zinc-600" />
                         </div>
-
-                        {/* Edition Details */}
-                        <div className="bg-zinc-800/20 rounded-lg p-4 border border-zinc-700/20">
-                          <div className="flex items-center gap-2 mb-2">
-                            <Hash className="h-5 w-5 text-amber-400" />
-                            <span className="text-sm text-zinc-400">Edition</span>
-                          </div>
-                          <p className="text-lg text-white font-medium">#{editionInfo}</p>
-                        </div>
-                      </div>
-
-                      {/* Right Column - Technical Details */}
-                      <div className="space-y-4">
-                        {/* Authentication Date */}
-                        <div className="bg-zinc-800/20 rounded-lg p-4 border border-zinc-700/20">
-                          <div className="flex items-center gap-2 mb-2">
-                            <Calendar className="h-5 w-5 text-amber-400" />
-                            <span className="text-sm text-zinc-400">Authenticated</span>
-                          </div>
-                          <p className="text-lg text-white font-medium">{new Date().toLocaleDateString()}</p>
-                        </div>
-
-                        {/* NFC Status */}
-                        <div className="bg-zinc-800/20 rounded-lg p-4 border border-zinc-700/20">
-                          <div className="flex items-center gap-2 mb-3">
-                            <Wifi className="h-5 w-5 text-amber-400" />
-                            <span className="text-sm text-zinc-400">Physical Status</span>
-                          </div>
-                          {nfcStatus === "paired" && (
-                            <Badge className="bg-green-500/20 text-green-400 border-green-400/30">
-                              <Wifi className="h-3 w-3 mr-1" />
-                              NFC Paired
-                            </Badge>
-                          )}
-                          {nfcStatus === "unpaired" && (
-                            <Badge className="bg-orange-500/20 text-orange-400 border-orange-400/30">
-                              <WifiOff className="h-3 w-3 mr-1" />
-                              Ready to Pair
-                            </Badge>
-                          )}
-                          {nfcStatus === "no-nfc" && (
-                            <Badge className="bg-zinc-500/20 text-zinc-400 border-zinc-400/30">
-                              Digital Only
-                            </Badge>
-                          )}
-                        </div>
-
-                        {/* Certificate Token */}
-                        {lineItem.certificate_token && (
-                          <div className="bg-zinc-800/20 rounded-lg p-4 border border-zinc-700/20">
-                            <div className="flex items-center gap-2 mb-2">
-                              <Certificate className="h-5 w-5 text-amber-400" />
-                              <span className="text-sm text-zinc-400">Certificate ID</span>
-                            </div>
-                            <p className="text-xs text-zinc-300 font-mono bg-zinc-900/50 px-2 py-1 rounded">
-                              {lineItem.certificate_token.slice(0, 16)}...
-                            </p>
-                          </div>
-                        )}
-                      </div>
+                      )}
                     </div>
                   </div>
 
-                  {/* Bottom Actions */}
-                  <div className="mt-6 space-y-3">
-                    {lineItem.certificate_url && (
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          window.open(lineItem.certificate_url, '_blank')
-                        }}
-                        className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-700 hover:to-amber-800 text-white rounded-lg transition-all duration-200 shadow-lg"
-                      >
-                        <ExternalLink className="h-4 w-4" />
-                        View Full Certificate
-                      </button>
-                    )}
-                    
-                    <p className="text-xs text-zinc-500 text-center flex items-center justify-center gap-2">
-                      <Sparkles className="h-3 w-3" />
-                      Click to view artwork
-                    </p>
+                  {/* Certificate Details */}
+                  <div className="grid grid-cols-2 gap-4 mb-6">
+                    <div>
+                      <p className="text-xs text-zinc-400 mb-1">Artwork Title</p>
+                      <h2 className="text-lg font-bold text-white truncate">{lineItem.name}</h2>
+                    </div>
+                    <div>
+                      <p className="text-xs text-zinc-400 mb-1">Artist</p>
+                      <p className="text-lg font-semibold text-amber-400">
+                        {artistName}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-zinc-400 mb-1">Edition</p>
+                      <p className="text-base text-white">
+                        {lineItem.edition_number && lineItem.edition_total
+                          ? `#${lineItem.edition_number} of ${lineItem.edition_total}`
+                          : "Limited Edition"}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-zinc-400 mb-1">Authenticated</p>
+                      <p className="text-base text-white">
+                        {new Date().toLocaleDateString('en-US', {
+                          month: 'long', 
+                          day: 'numeric', 
+                          year: 'numeric'
+                        })}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Signature and Seal Area */}
+                  <div className="flex justify-between items-end border-t border-zinc-700/30 pt-4">
+                    <div className="w-1/3">
+                      <p className="text-xs text-zinc-400 mb-2">Authorized Signature</p>
+                      <div className="h-16 border-b border-zinc-700/50"></div>
+                    </div>
+                    <div className="w-1/3 text-center">
+                      <div className="w-24 h-24 mx-auto bg-zinc-900/30 border border-zinc-700/30 rounded-full flex items-center justify-center">
+                        <Sparkles className="h-12 w-12 text-amber-400 opacity-50" />
+                      </div>
+                      <p className="text-xs text-zinc-400 mt-2">Official Seal</p>
+                    </div>
+                    <div className="w-1/3 text-right">
+                      <p className="text-xs text-zinc-400 mb-2">Certificate Number</p>
+                      <p className="text-sm text-white font-mono">
+                        {lineItem.certificate_token?.slice(0, 8) || 'N/A'}
+                      </p>
+                    </div>
                   </div>
                 </div>
               </div>
