@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect, useMemo } from "react"
 import { useRouter, useParams } from "next/navigation"
-import { motion, AnimatePresence, useMotionValue, useTransform, LayoutGroup, Variants } from "framer-motion"
+import { motion, AnimatePresence, useMotionValue, useTransform, LayoutGroup, Variants, useScroll } from "framer-motion"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { 
@@ -353,192 +353,176 @@ export default function CustomerDashboardById() {
   const [isInteracting, setIsInteracting] = useState(false)
 
   // Interactive Timeline Component
-  const InteractiveTimeline = () => {
+  const ConveyorTimeline = () => {
     const containerRef = useRef<HTMLDivElement>(null)
+    const { scrollYProgress } = useScroll({
+      container: containerRef,
+      offset: ["start start", "end end"]
+    })
 
-    // Handle mouse move for parallax and interaction
-    const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
-      if (!containerRef.current) return
-
-      const rect = containerRef.current.getBoundingClientRect()
-      const x = ((e.clientX - rect.left) / rect.width) * 2 - 1
-      const y = ((e.clientY - rect.top) / rect.height) * 2 - 1
-
-      setMousePosition({ x, y })
-      setIsInteracting(true)
-    }
-
-    const handleMouseLeave = () => {
-      setMousePosition({ x: 0, y: 0 })
-      setIsInteracting(false)
+    // Animated scroll-driven timeline
+    const timelineVariants: Variants = {
+      initial: { 
+        opacity: 0, 
+        x: -100,
+        scale: 0.8 
+      },
+      animate: (index) => ({ 
+        opacity: 1, 
+        x: 0,
+        scale: 1,
+        transition: { 
+          delay: index * 0.1,
+          type: "spring",
+          stiffness: 100,
+          damping: 15
+        }
+      }),
+      exit: { 
+        opacity: 0, 
+        x: 100,
+        scale: 0.8 
+      }
     }
 
     return (
-      <div 
-        ref={containerRef}
-        className="relative w-full h-[800px] overflow-hidden perspective-[1000px]"
-        onMouseMove={handleMouseMove}
-        onMouseLeave={handleMouseLeave}
-        style={{
-          background: `
-            radial-gradient(
-              circle at ${50 + mousePosition.x * 20}% ${50 + mousePosition.y * 20}%, 
-              rgba(79, 209, 197, 0.1) 0%, 
-              transparent 60%
-            ),
-            linear-gradient(
-              to bottom, 
-              rgba(9,9,11,0) 0%, 
-              rgba(9,9,11,0.5) 20%, 
-              rgba(9,9,11,1) 50%, 
-              rgba(9,9,11,0.5) 80%, 
-              rgba(9,9,11,0) 100%
-            )
-          `,
-          transition: 'background-position 0.3s ease'
-        }}
-      >
-        {/* Road Horizon with Parallax */}
+      <div className="relative w-full h-[800px] overflow-hidden perspective-[1000px]">
+        {/* Scrollable Container */}
         <motion.div 
-          className="absolute bottom-0 left-0 w-full h-1/2 bg-gradient-to-t from-zinc-900/50 via-zinc-800/30 to-transparent"
+          ref={containerRef}
+          className="h-full overflow-y-scroll no-scrollbar"
           style={{ 
             perspective: '1000px',
-            transformStyle: 'preserve-3d',
-            transform: `
-              rotateX(70deg) 
-              translateX(${mousePosition.x * 20}px) 
-              translateY(${mousePosition.y * 20}px)
-            `,
-            transition: 'transform 0.3s ease'
-          }}
-        />
-
-        {/* Interactive Lighting Effect */}
-        <motion.div 
-          className="absolute inset-0 pointer-events-none z-50"
-          style={{
-            background: `
-              radial-gradient(
-                circle at ${50 + mousePosition.x * 20}% ${50 + mousePosition.y * 20}%, 
-                rgba(79, 209, 197, 0.1) 0%, 
-                transparent 40%
-              )
-            `,
-            opacity: isInteracting ? 0.5 : 0,
-            transition: 'opacity 0.3s ease'
-          }}
-        />
-
-        {/* Timeline Markers Container */}
-        <motion.div 
-          className="absolute inset-0"
-          initial="hidden"
-          animate="visible"
-          variants={{
-            hidden: { opacity: 0 },
-            visible: { 
-              opacity: 1,
-              transition: { 
-                staggerChildren: 0.1,
-                delayChildren: 0.2 
-              }
-            }
+            transformStyle: 'preserve-3d'
           }}
         >
-          {timelineData.map((milestone: TimelineMilestone, index: number) => (
-            <motion.div
-              key={milestone.orderId}
-              variants={{
-                hidden: { 
-                  opacity: 0, 
-                  scale: 0.5,
-                  y: 200,
-                  x: index % 2 === 0 ? -100 : 100
-                },
-                visible: { 
-                  opacity: 1, 
-                  scale: 1,
-                  y: 0,
-                  x: 0,
-                  transition: { 
-                    type: "spring", 
-                    stiffness: 100, 
-                    damping: 20 
-                  }
-                }
-              }}
-              whileHover={{
-                scale: 1.05,
-                rotate: index % 2 === 0 ? -2 : 2,
-                transition: { duration: 0.2 }
-              }}
-              className={`
-                absolute w-[300px] bg-zinc-900/80 backdrop-blur-sm 
-                border border-zinc-800/50 rounded-xl p-6 
-                transform 
-                transition-all duration-300 ease-out
-                ${index % 2 === 0 
-                  ? 'left-1/4 -translate-x-full' 
-                  : 'right-1/4 translate-x-full'}
-              `}
-              style={{ 
-                top: '50%',
-                zIndex: timelineData.length - index,
-                transformStyle: 'preserve-3d',
-                perspective: '1000px',
-                transform: `
-                  translateY(50%)
-                  translateX(${index % 2 === 0 ? '-120%' : '120%'})
-                  translateZ(${-500 + index * 200}px)
-                  rotateX(${70}deg)
-                  translateX(${mousePosition.x * (index % 2 === 0 ? -10 : 10)}px)
-                  translateY(${mousePosition.y * (index % 2 === 0 ? -10 : 10)}px)
-                  scale(${1 - index * 0.2})
-                `,
-                boxShadow: isInteracting 
-                  ? '0 10px 25px rgba(79, 209, 197, 0.2)' 
-                  : '0 4px 15px rgba(0,0,0,0.2)'
-              }}
-            >
-              <div className="text-center">
-                <p className="text-sm text-zinc-400 mb-2">
-                  {milestone.date.toLocaleDateString('en-US', {
-                    month: 'short', 
-                    day: 'numeric', 
-                    year: 'numeric'
-                  })}
-                </p>
-                <div className="flex justify-center space-x-2 mb-4">
-                  {milestone.items.map((item: LineItem) => (
-                    <motion.div 
-                      key={item.line_item_id} 
-                      className="w-24 h-24 rounded-lg overflow-hidden"
-                      whileHover={{ 
-                        scale: 1.1,
-                        rotate: 2,
-                        transition: { duration: 0.2 }
-                      }}
-                    >
-                      {item.img_url ? (
-                        <img 
-                          src={item.img_url} 
-                          alt={item.name} 
-                          className="w-full h-full object-cover" 
-                        />
-                      ) : (
-                        <div className="w-full h-full bg-zinc-800 flex items-center justify-center">
-                          <Album className="w-12 h-12 text-zinc-600" />
-                        </div>
-                      )}
-                    </motion.div>
-                  ))}
+          {/* Infinite Scroll Content */}
+          <div className="relative w-full min-h-[2000px]">
+            {timelineData.map((milestone, index) => (
+              <motion.div
+                key={milestone.orderId}
+                custom={index}
+                initial="initial"
+                animate="animate"
+                exit="exit"
+                variants={timelineVariants}
+                style={{
+                  position: 'absolute',
+                  top: `${index * 300}px`, // Stagger vertically
+                  left: '50%',
+                  translateX: '-50%',
+                  translateZ: `${-index * 100}px`, // Create depth effect
+                  rotateX: scrollYProgress.get() * (index % 2 === 0 ? 20 : -20), // Subtle rotation
+                  opacity: scrollYProgress.get() > index / timelineData.length ? 0.5 : 1,
+                  scale: 1 - Math.abs(scrollYProgress.get() - index / timelineData.length) * 0.3
+                }}
+                className={`
+                  w-[500px] p-8 
+                  bg-zinc-900/80 backdrop-blur-sm 
+                  border border-zinc-800/50 
+                  rounded-2xl 
+                  shadow-xl
+                  transition-all duration-300
+                `}
+              >
+                {/* Milestone Details */}
+                <div className="text-center">
+                  <p className="text-xl font-bold text-zinc-200 mb-4">
+                    {milestone.date.toLocaleDateString('en-US', {
+                      month: 'long', 
+                      day: 'numeric', 
+                      year: 'numeric'
+                    })}
+                  </p>
+
+                  {/* Artwork Carousel */}
+                  <motion.div 
+                    className="flex justify-center space-x-4 mb-6"
+                    initial={{ opacity: 0, y: 50 }}
+                    animate={{ 
+                      opacity: 1, 
+                      y: 0,
+                      transition: { 
+                        staggerChildren: 0.1,
+                        delayChildren: 0.2 
+                      }
+                    }}
+                  >
+                    {milestone.items.map((item, itemIndex) => (
+                      <motion.div
+                        key={item.line_item_id}
+                        variants={{
+                          hidden: { opacity: 0, y: 50 },
+                          visible: { 
+                            opacity: 1, 
+                            y: 0,
+                            transition: { 
+                              type: "spring", 
+                              stiffness: 300, 
+                              damping: 20 
+                            }
+                          }
+                        }}
+                        className="w-32 h-32 rounded-lg overflow-hidden"
+                        whileHover={{ 
+                          scale: 1.1,
+                          rotate: 3,
+                          transition: { duration: 0.2 }
+                        }}
+                      >
+                        {item.img_url ? (
+                          <img 
+                            src={item.img_url} 
+                            alt={item.name} 
+                            className="w-full h-full object-cover" 
+                          />
+                        ) : (
+                          <div className="w-full h-full bg-zinc-800 flex items-center justify-center">
+                            <Album className="w-16 h-16 text-zinc-600" />
+                          </div>
+                        )}
+                      </motion.div>
+                    ))}
+                  </motion.div>
+
+                  {/* Order Details */}
+                  <div className="space-y-2">
+                    {milestone.items.map(item => (
+                      <p 
+                        key={item.line_item_id} 
+                        className="text-sm text-zinc-400 truncate"
+                      >
+                        {item.name}
+                      </p>
+                    ))}
+                    <Badge className="mt-4 mx-auto">
+                      Order #{milestone.orderNumber}
+                    </Badge>
+                  </div>
                 </div>
-                <p className="text-sm text-white truncate">
-                  Order #{milestone.orderNumber}
-                </p>
-              </div>
-            </motion.div>
-          ))}
+              </motion.div>
+            ))}
+          </div>
+        </motion.div>
+
+        {/* Scroll Indicator */}
+        <motion.div 
+          className="absolute bottom-8 left-1/2 transform -translate-x-1/2 
+            w-12 h-20 border-2 border-zinc-700 rounded-full 
+            flex items-center justify-center"
+        >
+          <motion.div 
+            className="w-2 h-2 bg-zinc-500 rounded-full"
+            animate={{
+              y: [0, 10, 0],
+              opacity: [0.5, 1, 0.5]
+            }}
+            transition={{
+              duration: 1.5,
+              repeat: Infinity,
+              ease: "easeInOut"
+            }}
+          />
         </motion.div>
       </div>
     )
@@ -809,12 +793,12 @@ export default function CustomerDashboardById() {
         <div className="text-center mb-12">
           <h2 className="text-3xl font-bold mb-4">Your Artistic Journey</h2>
           <p className="text-zinc-400 max-w-xl mx-auto">
-            Cruise through your collection, where memories come alive with every movement.
+            Scroll through your collection, watching memories flow like a digital time machine.
           </p>
         </div>
 
-        {/* Interactive Timeline */}
-        <InteractiveTimeline />
+        {/* Conveyor Timeline */}
+        <ConveyorTimeline />
       </div>
 
       {/* NFC Scanner Sidebar */}
