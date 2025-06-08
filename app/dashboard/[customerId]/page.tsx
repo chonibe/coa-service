@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useRef, useEffect } from "react"
+import { useState, useRef, useEffect, useMemo } from "react"
 import { useRouter, useParams } from "next/navigation"
 import { motion, AnimatePresence, useMotionValue, useTransform, LayoutGroup, Variants } from "framer-motion"
 import { Badge } from "@/components/ui/badge"
@@ -50,6 +50,14 @@ interface Order {
   financial_status: string
   fulfillment_status: string | null
   line_items: LineItem[]
+}
+
+// Timeline data type
+type TimelineMilestone = {
+  date: Date
+  items: LineItem[]
+  orderId: string
+  orderNumber: number
 }
 
 // Vinyl-like artwork card component
@@ -187,8 +195,8 @@ const CollectionTimeline = ({ orders }: { orders: Order[] }) => {
     new Date(a.processed_at).getTime() - new Date(b.processed_at).getTime()
   )
 
-  // Prepare timeline data
-  const timelineData = sortedOrders.map((order, index) => ({
+  // Prepare timeline data with proper typing
+  const timelineData: TimelineMilestone[] = sortedOrders.map((order, index) => ({
     date: new Date(order.processed_at),
     items: order.line_items,
     orderId: order.id,
@@ -319,6 +327,26 @@ export default function CustomerDashboardById() {
   const [orders, setOrders] = useState<Order[]>([])
   const [selectedLineItem, setSelectedLineItem] = useState<LineItem | null>(null)
   const [selectedArtworkIndex, setSelectedArtworkIndex] = useState<number | null>(null)
+  const [viewMode, setViewMode] = useState<'vinyl' | 'grid'>('vinyl')
+
+  // Timeline data type
+  type TimelineMilestone = {
+    date: Date
+    items: LineItem[]
+    orderId: string
+    orderNumber: number
+  }
+
+  // Prepare timeline data with proper typing using useMemo
+  const timelineData = useMemo<TimelineMilestone[]>(() => 
+    orders.map(order => ({
+      date: new Date(order.processed_at),
+      items: order.line_items,
+      orderId: order.id,
+      orderNumber: order.order_number
+    })),
+    [orders]
+  )
 
   useEffect(() => {
     // Set cookie for the customer ID if it's not already set
@@ -491,127 +519,215 @@ export default function CustomerDashboardById() {
 
   return (
     <div className="min-h-screen bg-zinc-950 text-white">
-      {/* Vinyl Record Box Container */}
+      {/* Vinyl Collection Section */}
       <div className="container mx-auto px-4 py-8">
         <div className="flex items-center justify-between mb-8">
           <h1 className="text-3xl font-bold">Your Vinyl Collection</h1>
           <div className="flex items-center gap-4">
-            <Button variant="outline" className="text-zinc-400 hover:text-white">
+            <Button 
+              variant={viewMode === 'vinyl' ? 'default' : 'outline'} 
+              onClick={() => setViewMode('vinyl')}
+              className="text-zinc-400 hover:text-white"
+            >
+              <Album className="h-5 w-5 mr-2" /> Vinyl View
+            </Button>
+            <Button 
+              variant={viewMode === 'grid' ? 'default' : 'outline'} 
+              onClick={() => setViewMode('grid')}
+              className="text-zinc-400 hover:text-white"
+            >
               <LayoutGrid className="h-5 w-5 mr-2" /> Grid View
             </Button>
           </div>
         </div>
 
-        {/* Horizontal Scrollable Vinyl Collection */}
-        <motion.div 
-          className="flex overflow-x-auto pb-8 no-scrollbar"
-          style={{ 
-            cursor: 'grab',
-            userSelect: 'none'
-          }}
-        >
-          <div className="flex space-x-6">
-            {allItems.map((item, index) => (
-              <VinylArtworkCard 
+        {/* Conditional Rendering for Vinyl or Grid View */}
+        {viewMode === 'vinyl' ? (
+          <motion.div 
+            className="flex overflow-x-auto pb-8 no-scrollbar"
+            style={{ 
+              cursor: 'grab',
+              userSelect: 'none'
+            }}
+          >
+            <div className="flex space-x-6">
+              {allItems.map((item, index) => (
+                <VinylArtworkCard 
+                  key={item.line_item_id}
+                  item={item}
+                  isSelected={selectedArtworkIndex === index}
+                  onSelect={() => setSelectedArtworkIndex(index)}
+                  onNfcWrite={() => handleNfcWrite(item)}
+                  onCertificateView={() => setSelectedLineItem(item)}
+                />
+              ))}
+            </div>
+          </motion.div>
+        ) : (
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+            {allItems.map((item) => (
+              <motion.div
                 key={item.line_item_id}
-                item={item}
-                isSelected={selectedArtworkIndex === index}
-                onSelect={() => setSelectedArtworkIndex(index)}
-                onNfcWrite={() => handleNfcWrite(item)}
-                onCertificateView={() => setSelectedLineItem(item)}
-              />
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ type: "spring", stiffness: 300 }}
+                className="bg-zinc-900/80 rounded-xl overflow-hidden shadow-lg border border-zinc-800/50"
+              >
+                {item.img_url ? (
+                  <img 
+                    src={item.img_url} 
+                    alt={item.name} 
+                    className="w-full h-48 object-cover" 
+                  />
+                ) : (
+                  <div className="w-full h-48 bg-zinc-800/50 flex items-center justify-center">
+                    <Album className="w-24 h-24 text-zinc-600" />
+                  </div>
+                )}
+                <div className="p-4">
+                  <h3 className="text-lg font-bold mb-2 truncate">{item.name}</h3>
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-zinc-400">
+                      {item.vendor_name || "Street Collector"}
+                    </span>
+                    <Button 
+                      size="sm" 
+                      variant="outline"
+                      onClick={() => {
+                        setSelectedLineItem(item)
+                        setSelectedArtworkIndex(null)
+                      }}
+                    >
+                      View Details
+                    </Button>
+                  </div>
+                </div>
+              </motion.div>
             ))}
           </div>
-        </motion.div>
-
-        {/* Detailed Artwork View */}
-        <AnimatePresence>
-          {selectedArtworkIndex !== null && (
-            <motion.div 
-              initial={{ opacity: 0, y: 50 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: 50 }}
-              className="mt-8 bg-zinc-900/80 backdrop-blur-sm rounded-2xl p-8 border border-zinc-800/50"
-            >
-              <div className="grid md:grid-cols-2 gap-8">
-                {/* Artwork Details */}
-                <div>
-                  <h2 className="text-2xl font-bold mb-4">
-                    {allItems[selectedArtworkIndex].name}
-                  </h2>
-                  <div className="space-y-4">
-                    <div className="flex items-center gap-3">
-                      <User className="h-5 w-5 text-amber-400" />
-                      <span className="text-zinc-300">
-                        {allItems[selectedArtworkIndex].vendor_name || "Street Collector"}
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <Calendar className="h-5 w-5 text-amber-400" />
-                      <span className="text-zinc-300">
-                        {new Date(allItems[selectedArtworkIndex].processed_at).toLocaleDateString()}
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <Award className="h-5 w-5 text-amber-400" />
-                      <span className="text-zinc-300">
-                        Edition {allItems[selectedArtworkIndex].edition_number || "N/A"}
-                      </span>
-                    </div>
-                  </div>
-                  <div className="mt-6 flex gap-4">
-                    <Button 
-                      onClick={() => setSelectedLineItem(allItems[selectedArtworkIndex])}
-                      className="bg-amber-600 hover:bg-amber-700 text-white"
-                    >
-                      View Certificate <ArrowRight className="h-4 w-4 ml-2" />
-                    </Button>
-                    {allItems[selectedArtworkIndex].nfc_tag_id && (
-                      <Button 
-                        variant="outline" 
-                        onClick={() => handleNfcWrite(allItems[selectedArtworkIndex])}
-                        className="border-blue-500/30 text-blue-400 hover:bg-blue-500/10"
-                      >
-                        <Wifi className="h-4 w-4 mr-2" /> NFC Pairing
-                      </Button>
-                    )}
-                  </div>
-                </div>
-
-                {/* Artwork Image */}
-                <div className="flex items-center justify-center">
-                  {allItems[selectedArtworkIndex].img_url ? (
-                    <motion.div 
-                      initial={{ scale: 0.8, opacity: 0 }}
-                      animate={{ scale: 1, opacity: 1 }}
-                      transition={{ type: "spring", stiffness: 300 }}
-                      className="w-full max-w-md rounded-2xl overflow-hidden shadow-2xl border-4 border-zinc-700/50"
-                    >
-                      <img 
-                        src={allItems[selectedArtworkIndex].img_url} 
-                        alt={allItems[selectedArtworkIndex].name} 
-                        className="w-full h-auto object-cover" 
-                      />
-                    </motion.div>
-                  ) : (
-                    <div className="w-full max-w-md h-96 bg-zinc-800/50 rounded-2xl flex items-center justify-center">
-                      <Album className="w-32 h-32 text-zinc-600" />
-                    </div>
-                  )}
-                </div>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
+        )}
       </div>
 
       {/* Collection Timeline Section */}
-      <div className="container mx-auto px-4 py-8">
-        <div className="flex items-center justify-between mb-12">
-          <h2 className="text-3xl font-bold">Your Collection Journey</h2>
-        </div>
-        
-        <CollectionTimeline orders={orders} />
+      <div className="container mx-auto px-4 py-8 relative overflow-hidden">
+        <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-b from-transparent via-transparent to-zinc-950 z-10 pointer-events-none"></div>
+        <motion.div 
+          className="relative z-20"
+          initial="hidden"
+          animate="visible"
+          variants={{
+            hidden: { opacity: 0, y: 50 },
+            visible: { 
+              opacity: 1, 
+              y: 0,
+              transition: { 
+                staggerChildren: 0.1,
+                delayChildren: 0.2 
+              }
+            }
+          }}
+        >
+          <div className="text-center mb-12">
+            <h2 className="text-3xl font-bold mb-4">Your Journey</h2>
+            <p className="text-zinc-400 max-w-xl mx-auto">
+              Explore the highway of your art collection, with each milestone marking a unique moment in your artistic journey.
+            </p>
+          </div>
+
+          {/* Highway-like Timeline */}
+          <div className="relative w-full h-[600px] overflow-hidden perspective-[1000px]">
+            {/* Road Background */}
+            <div 
+              className="absolute top-1/2 left-0 w-full h-1 bg-gradient-to-r from-zinc-800 via-zinc-700 to-zinc-800"
+              style={{ transform: 'translateY(-50%)' }}
+            />
+
+            {/* Milestone Markers */}
+            <motion.div 
+              className="relative h-full"
+              initial="hidden"
+              animate="visible"
+              variants={{
+                hidden: { opacity: 0 },
+                visible: { 
+                  opacity: 1,
+                  transition: { 
+                    staggerChildren: 0.2,
+                    delayChildren: 0.5 
+                  }
+                }
+              }}
+            >
+              {timelineData.map((milestone: TimelineMilestone, index: number) => (
+                <motion.div
+                  key={milestone.orderId}
+                  variants={{
+                    hidden: { 
+                      opacity: 0, 
+                      x: index % 2 === 0 ? -100 : 100,
+                      rotateX: 90
+                    },
+                    visible: { 
+                      opacity: 1, 
+                      x: 0,
+                      rotateX: 0,
+                      transition: { 
+                        type: "spring", 
+                        stiffness: 300, 
+                        damping: 30 
+                      }
+                    }
+                  }}
+                  className={`
+                    absolute w-[300px] bg-zinc-900/80 backdrop-blur-sm 
+                    border border-zinc-800/50 rounded-xl p-6 
+                    transform -translate-x-1/2 -translate-y-1/2
+                    ${index % 2 === 0 
+                      ? 'left-1/4 top-1/4 rotate-[-15deg]' 
+                      : 'right-1/4 top-3/4 rotate-[15deg]'}
+                  `}
+                  style={{ 
+                    zIndex: timelineData.length - index,
+                    perspective: '1000px'
+                  }}
+                >
+                  <div className="text-center">
+                    <p className="text-sm text-zinc-400 mb-2">
+                      {milestone.date.toLocaleDateString('en-US', {
+                        month: 'short', 
+                        day: 'numeric', 
+                        year: 'numeric'
+                      })}
+                    </p>
+                    <div className="flex justify-center space-x-2 mb-4">
+                      {milestone.items.map((item: LineItem) => (
+                        <div 
+                          key={item.line_item_id} 
+                          className="w-16 h-16 rounded-lg overflow-hidden"
+                        >
+                          {item.img_url ? (
+                            <img 
+                              src={item.img_url} 
+                              alt={item.name} 
+                              className="w-full h-full object-cover" 
+                            />
+                          ) : (
+                            <div className="w-full h-full bg-zinc-800 flex items-center justify-center">
+                              <Album className="w-8 h-8 text-zinc-600" />
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                    <p className="text-sm text-white truncate">
+                      Order #{milestone.orderNumber}
+                    </p>
+                  </div>
+                </motion.div>
+              ))}
+            </motion.div>
+          </div>
+        </motion.div>
       </div>
 
       {/* NFC Scanner Sidebar */}
