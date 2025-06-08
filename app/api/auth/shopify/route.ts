@@ -1,34 +1,63 @@
 import { NextRequest, NextResponse } from 'next/server';
 import crypto from 'crypto';
 
-// Generate a secure state parameter to prevent CSRF
-function generateState(): string {
-  return crypto.randomBytes(16).toString('hex');
-}
-
 export async function GET(request: NextRequest) {
-  // Ensure these are set in your .env file
-  const shopDomain = process.env.SHOPIFY_SHOP || 'thestreetlamp-9103.myshopify.com';
-  
-  // Construct the customer login URL
-  const authUrl = new URL(`https://${shopDomain}/account/login`);
+  try {
+    // Ensure these are set in your .env file
+    const shopDomain = process.env.SHOPIFY_SHOP || 'thestreetlamp-9103.myshopify.com';
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL || request.nextUrl.origin;
 
-  // Create a response that will redirect to the Shopify login page
-  const response = NextResponse.redirect(authUrl.toString());
+    // Generate a secure state to prevent CSRF
+    const state = crypto.randomBytes(16).toString('hex');
 
-  // Set cookies to help with post-login tracking
-  response.cookies.set('shopify_login_redirect', 'http://localhost:3000/customer/dashboard', {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: 'strict',
-    maxAge: 60 * 5 // 5 minutes
-  });
+    // Create the redirect URL back to our app
+    const redirectBackUrl = `${appUrl}/api/auth/callback`;
+    
+    // Try a simpler approach - redirect directly to Shopify account login
+    // with a return URL that includes our callback information
+    const loginUrl = new URL(`https://${shopDomain}/account/login`);
+    
+    // Create a return URL that will work with Shopify's default behavior
+    const returnUrl = `/pages/street-collector-auth?redirect_uri=${encodeURIComponent(redirectBackUrl)}&state=${state}`;
+    loginUrl.searchParams.set('return_url', returnUrl);
 
-  // Log for debugging
-  console.log('Shopify Login Redirect Attempt:', {
-    shopDomain,
-    redirectUrl: authUrl.toString()
-  });
+    console.log('Shopify Auth Debug:', {
+      shopDomain,
+      appUrl,
+      redirectBackUrl,
+      returnUrl,
+      fullLoginUrl: loginUrl.toString()
+    });
 
-  return response;
+    // Create a response that will redirect to the Shopify customer login page
+    const response = NextResponse.redirect(loginUrl.toString());
+
+    // Set cookies for state and post-login redirect
+    const postLoginRedirect = '/customer/dashboard';
+
+    // Set state cookie for CSRF protection
+    response.cookies.set('shopify_oauth_state', state, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax', // Changed to 'lax' to allow cross-site redirects
+      maxAge: 60 * 10 // 10 minutes
+    });
+
+    // Set redirect destination cookie
+    response.cookies.set('shopify_login_redirect', postLoginRedirect, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax', // Changed to 'lax' to allow cross-site redirects
+      maxAge: 60 * 10 // 10 minutes
+    });
+
+    return response;
+
+  } catch (error) {
+    console.error('Shopify Customer Login Redirect Error:', error);
+    return NextResponse.json({ 
+      error: 'Failed to initiate Shopify customer login',
+      details: error instanceof Error ? error.message : 'Unknown error'
+    }, { status: 500 });
+  }
 } 

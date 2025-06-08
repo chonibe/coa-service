@@ -1,0 +1,78 @@
+---
+description:
+globs:
+alwaysApply: false
+---
+{
+    "name": "Branch Management Protocol",
+    "version": "1.0.0",
+    "description": "Defines branch management, naming conventions, and documentation standards",
+    "rules": {
+        "branch_naming": {
+            "format": "sprint/{number}/{epic-name}",
+            "constraints": [
+                "Use lowercase",
+                "Separate words with hyphens",
+                "Include sprint number",
+                "Include descriptive epic name"
+            ]
+        },
+        "documentation": {
+            "required_sections": [
+                "Sprint Goals",
+                "Key Deliverables", 
+                "Challenges and Risks",
+                "Success Criteria"
+            ],
+            "style_guidelines": [
+                "Use clear, descriptive headers",
+                "Maintain consistent markdown formatting",
+                "Provide context and rationale"
+            ]
+        },
+        "commit_messages": {
+            "guidelines": [
+                "Use imperative mood",
+                "Capitalize first letter",
+                "Keep messages concise",
+                "Reference related issues/tickets"
+            ]
+        },
+        "version_control": {
+            "best_practices": [
+                "Always pull latest main branch",
+                "Use draft PRs for work in progress",
+                "Require code reviews for all merges",
+                "Implement branch protection rules"
+            ]
+        }
+    },
+    "compliance": {
+        "review_process": [
+            "Technical lead review",
+            "Security validation",
+            "Performance assessment"
+        ],
+        "restrictions": [
+            "No sensitive information",
+            "Clear and professional language",
+            "Avoid unnecessary technical jargon"
+        ]
+    },
+    "example": {
+        "branch_name": "sprint/2/nfc-authentication",
+        "documentation_template": {
+            "title": "Sprint 2 - NFC Authentication Epic",
+            "sections": {
+                "sprint_goals": [
+                    "Implement cross-platform NFC scanning",
+                    "Enhance security mechanisms"
+                ],
+                "key_deliverables": [
+                    "Mobile NFC experience",
+                    "Advanced authentication system"
+                ]
+            }
+        }
+    }
+}
