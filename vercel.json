@@ -1,14 +1,5 @@
 {
   "version": 2,
-  "name": "street-collector",
-  "builds": [
-    { "src": "next.config.js", "use": "@vercel/next" }
-  ],
-  "routes": [
-    { "src": "/api/(.*)", "dest": "/api/$1" },
-    { "src": "/auth/(.*)", "dest": "/auth/$1" },
-    { "src": "/customer/(.*)", "dest": "/customer/$1" }
-  ],
   "env": {
     "NODE_ENV": "production",
     "NEXT_PUBLIC_STREET_LAMP_CLIENT_ID": "594cf36a-179f-4227-821d-1dd00f778900"

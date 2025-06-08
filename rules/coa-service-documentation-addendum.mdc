@@ -1,0 +1,150 @@
+---
+description:
+globs:
+alwaysApply: false
+---
+# COA Service Documentation Addendum
+
+## Project-Specific Documentation Requirements
+
+### 1. Vendor Portal Documentation Standards
+
+#### 1.1 Feature Documentation Requirements
+- Mandatory sections for vendor-related features:
+  - Vendor onboarding process
+  - Dashboard functionality breakdown
+  - Sales analytics calculation methods
+  - Product catalog management
+  - Vendor data isolation mechanisms
+
+#### 1.2 Dashboard Documentation
+- Detailed explanation of:
+  - Analytics data retrieval
+  - Performance metric calculations
+  - User role-based access controls
+  - Real-time data update mechanisms
+
+### 2. Technology Stack Specifics
+
+#### 2.1 Next.js Documentation
+- Document server-side rendering strategies
+- Explain client-side data fetching methods
+- Detail API route implementations
+- Highlight performance optimization techniques
+
+#### 2.2 Supabase Integration
+- Comprehensive authentication flow documentation
+- Row Level Security (RLS) implementation details
+- Database query optimization strategies
+- Real-time subscription mechanisms
+
+#### 2.3 PostgreSQL Schema
+- Detailed schema evolution documentation
+- Vendor and product relationship mappings
+- Performance-critical query explanations
+- Data migration strategies
+
+### 3. Analytics Platform Documentation
+
+#### 3.1 Sales Analytics
+- Calculation method documentation
+- Data source explanations
+- Performance metric definitions
+- Vendor-specific analytics breakdown
+
+#### 3.2 Reporting Requirements
+- Document report generation logic
+- Explain data aggregation methods
+- Detail export functionality
+- Highlight data visualization approaches
+
+### 4. Security Documentation
+
+#### 4.1 Authentication
+- Vendor authentication flow
+- Role-based access control (RBAC) implementation
+- Multi-factor authentication considerations
+- Session management strategies
+
+#### 4.2 Data Protection
+- Vendor data isolation techniques
+- Encryption at rest and in transit
+- Compliance with data protection regulations
+- Audit trail mechanisms
+
+### 5. Performance Documentation
+
+#### 5.1 Query Optimization
+- Database query performance tracking
+- Indexing strategies
+- Caching mechanisms
+- Real-time data update optimizations
+
+#### 5.2 Analytics Performance
+- Performance benchmarks
+- Calculation time optimization
+- Scalability considerations
+- Resource utilization metrics
+
+### 6. Deployment and Infrastructure
+
+#### 6.1 Deployment Documentation
+- Environment-specific configurations
+- Continuous integration/deployment (CI/CD) processes
+- Infrastructure as Code (IaC) details
+- Scaling strategies
+
+#### 6.2 Monitoring and Logging
+- Application performance monitoring
+- Error tracking mechanisms
+- Logging standards
+- Alerting configurations
+
+### 7. Vendor Interaction Documentation
+
+#### 7.1 Onboarding Process
+- Step-by-step vendor registration
+- Dashboard initial setup
+- First-time user experience
+- Troubleshooting guides
+
+#### 7.2 Support Documentation
+- Common issue resolution
+- FAQ sections
+- Contact and support channels
+- Self-service resources
+
+### 8. Compliance and Regulatory Documentation
+
+#### 8.1 Data Compliance
+- GDPR considerations
+- Data retention policies
+- User consent mechanisms
+- Data export and deletion processes
+
+#### 8.2 Financial Reporting
+- Payout calculation transparency
+- Revenue sharing mechanisms
+- Financial data protection
+- Audit trail requirements
+
+### 9. Future Development Documentation
+
+#### 9.1 Roadmap
+- Planned feature enhancements
+- Technology stack evolution
+- Performance improvement strategies
+- Scalability considerations
+
+#### 9.2 Known Limitations
+- Current system constraints
+- Performance bottlenecks
+- Potential improvement areas
+- Future optimization plans
+
+## Compliance Statement
+By contributing to the COA Service project, team members must adhere to these documentation standards, ensuring comprehensive, clear, and maintainable documentation across all project aspects.
+
+**Version**: 1.0.0
+**Last Updated**: [Current Date]
+**Project**: COA Service Vendor Portal and Analytics Platform

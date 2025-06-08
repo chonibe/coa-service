@@ -12,17 +12,17 @@ export async function GET(request: NextRequest) {
       }, { status: 500 })
     }
 
-    // Get the customer session
-    const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+    // Get Shopify customer ID from cookies instead of session
+    const shopifyCustomerId = request.cookies.get('shopify_customer_id')?.value
     
-    if (sessionError || !session?.user) {
+    if (!shopifyCustomerId) {
       return NextResponse.json({ 
         success: false, 
-        message: "Authentication required" 
+        message: "Not authenticated - please log in via Shopify" 
       }, { status: 401 })
     }
 
-    // Comprehensive dashboard data retrieval
+    // Comprehensive dashboard data retrieval using Shopify customer ID
     const { data: dashboardData, error: dataError } = await supabase
       .from("orders")
       .select(`
@@ -37,16 +37,11 @@ export async function GET(request: NextRequest) {
           description,
           price,
           quantity,
-          nfc_tags (
-            id,
-            tag_id,
-            claimed_at,
-            status
-          ),
+          nfc_tag_id,
           certificate_url
         )
       `)
-      .eq("customer_id", session.user.id)
+      .eq("shopify_customer_id", parseInt(shopifyCustomerId))
       .order("processed_at", { ascending: false })
 
     if (dataError) {
@@ -58,12 +53,12 @@ export async function GET(request: NextRequest) {
     }
 
     // Transform data for frontend consumption
-    const transformedDashboard = dashboardData.map(order => ({
+    const transformedDashboard = (dashboardData || []).map((order: any) => ({
       orderId: order.id,
       orderNumber: order.order_number,
       processedAt: order.processed_at,
       totalPrice: order.total_price,
-      lineItems: order.order_line_items_v2.map(lineItem => ({
+      lineItems: (order.order_line_items_v2 || []).map((lineItem: any) => ({
         id: lineItem.id,
         productId: lineItem.product_id,
         name: lineItem.name,
@@ -71,12 +66,7 @@ export async function GET(request: NextRequest) {
         price: lineItem.price,
         quantity: lineItem.quantity,
         certificateUrl: lineItem.certificate_url,
-        nfcTags: lineItem.nfc_tags.map(tag => ({
-          id: tag.id,
-          tagId: tag.tag_id,
-          claimedAt: tag.claimed_at,
-          status: tag.status
-        }))
+        nfcTagId: lineItem.nfc_tag_id
       }))
     }))
 

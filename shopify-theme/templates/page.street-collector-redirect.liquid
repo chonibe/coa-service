@@ -1,0 +1,73 @@
+{% comment %}
+  Street Collector Authentication Redirect Template
+  
+  This template handles redirects and logging for authentication events
+  from the Street Collector platform.
+{% endcomment %}
+
+{% assign origin = request.parameters.origin %}
+{% assign customer_id = customer.id | default: '' %}
+
+{% comment %} Log the authentication event {% endcomment %}
+{% if origin == 'street_collector' %}
+  {% capture log_entry %}
+    Authentication from Street Collector
+    - Customer ID: {{ customer_id }}
+    - Timestamp: {{ 'now' | date: '%Y-%m-%d %H:%M:%S' }}
+    - IP: {{ request.remote_ip }}
+  {% endcapture %}
+  
+  {% comment %} Optional: Log to a metafield or external system {% endcomment %}
+  {% if customer.email %}
+    {% assign log_namespace = 'street_collector_auth' %}
+    {% assign log_key = 'login_events' %}
+    
+    {% comment %} Append new log entry to existing logs {% endcomment %}
+    {% assign existing_logs = customer.metafields[log_namespace][log_key] | default: '' %}
+    {% assign updated_logs = existing_logs | append: log_entry | append: '
+' %}
+    
+    {% comment %} Update customer metafield with new logs {% endcomment %}
+    {% if customer.email %}
+      {% form 'customer', customer %}
+        {% comment %} Update metafield with authentication logs {% endcomment %}
+        {{ customer.metafields[log_namespace][log_key] = updated_logs }}
+      {% endform %}
+    {% endif %}
+  {% endif %}
+{% endif %}
+
+{% comment %} Redirect Logic {% endcomment %}
+<script>
+  (function() {
+    // Redirect destinations based on origin
+    var redirectMap = {
+      'street_collector': '/customer/dashboard',
+      'default': '/account'
+    };
+
+    // Get the origin from URL parameters
+    var urlParams = new URLSearchParams(window.location.search);
+    var origin = urlParams.get('origin') || 'default';
+
+    // Perform redirect
+    var redirectUrl = redirectMap[origin] || redirectMap['default'];
+    
+    // Optional: Add logging or tracking
+    console.log('Street Collector Redirect:', {
+      origin: origin,
+      redirectUrl: redirectUrl
+    });
+
+    // Perform the redirect
+    window.location.href = redirectUrl;
+  })();
+</script>
+
+{% comment %} Fallback HTML in case JavaScript is disabled {% endcomment %}
+<noscript>
+  <div class="redirect-message">
+    <p>Redirecting to your dashboard...</p>
+    <a href="/customer/dashboard">Click here if not redirected</a>
+  </div>
+</noscript> 

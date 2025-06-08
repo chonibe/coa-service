@@ -1,96 +1,109 @@
 import { NextRequest, NextResponse } from 'next/server';
-import crypto from 'crypto';
 
 export async function GET(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams
-  const code = searchParams.get('code')
   const state = searchParams.get('state')
-  const shop = searchParams.get('shop')
+  const customerId = searchParams.get('customer_id')
+  const customerAccessToken = searchParams.get('customer_access_token')
 
-  if (!code) {
-    return NextResponse.redirect(new URL('/api/auth/shopify', request.url))
+  // Comprehensive debug logging
+  console.log('=== CALLBACK ROUTE DEBUG ===');
+  console.log('Full URL:', request.url);
+  console.log('Search Params:', Object.fromEntries(request.nextUrl.searchParams));
+  console.log('Headers:', {
+    referer: request.headers.get('referer'),
+    origin: request.headers.get('origin'),
+    userAgent: request.headers.get('user-agent')
+  });
+  console.log('Cookies:', {
+    shopifyOAuthState: request.cookies.get('shopify_oauth_state')?.value,
+    shopifyLoginRedirect: request.cookies.get('shopify_login_redirect')?.value
+  });
+
+  // Get stored state for validation
+  const storedState = request.cookies.get('shopify_oauth_state')?.value
+  
+  // More lenient state validation for development
+  const isDevelopment = process.env.NODE_ENV === 'development'
+  const isTestState = state === 'test' // Allow test state for development
+  
+  if (!isDevelopment && (!state || !storedState || state !== storedState)) {
+    console.error('OAuth state validation failed', { 
+      receivedState: state, 
+      storedState,
+      isDevelopment,
+      isTestState
+    });
+    return NextResponse.json({ 
+      error: 'Invalid OAuth state' 
+    }, { status: 400 })
+  }
+
+  // In development, allow bypassing state validation if it's a test
+  if (isDevelopment && isTestState) {
+    console.log('🔧 Development mode: Allowing test state bypass');
   }
 
   try {
-    // Use the redirect URI from environment variables
-    const redirectUri = process.env.SHOPIFY_REDIRECT_URI;
+    // Log debug information
+    console.log('Callback processing:', {
+      customerId,
+      customerAccessToken,
+      state,
+      storedState,
+      isDevelopment
+    });
 
-    // Ensure these are set in your .env file
-    const clientId = process.env.SHOPIFY_CLIENT_ID
-    const clientSecret = process.env.SHOPIFY_CLIENT_SECRET
+    // If we have customer_id, proceed with setting cookies
+    if (customerId) {
+      console.log('✅ Customer ID found, setting authentication cookies');
+      
+      // Redirect to customer dashboard
+      const response = NextResponse.redirect(new URL('/customer/dashboard', request.url));
 
-    if (!clientId || !clientSecret || !redirectUri) {
-      return NextResponse.json({ 
-        error: 'Missing Shopify client configuration' 
-      }, { status: 500 })
+      // Set authentication cookies
+      response.cookies.set('shopify_customer_id', customerId, {
+        httpOnly: false, // Allow JavaScript to read this cookie
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
+        maxAge: 60 * 60 * 24 * 7 // 7 days
+      });
+
+      if (customerAccessToken) {
+        response.cookies.set('shopify_customer_access_token', customerAccessToken, {
+          httpOnly: true,
+          secure: process.env.NODE_ENV === 'production',
+          sameSite: 'lax',
+          maxAge: 60 * 60 * 24 * 7 // 7 days
+        });
+      }
+
+      response.cookies.set('shopify_customer_login', 'true', {
+        httpOnly: false, // Allow client-side access for this flag
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
+        maxAge: 60 * 60 * 24 * 7 // 7 days
+      });
+
+      // Clear the state cookie
+      response.cookies.delete('shopify_oauth_state');
+
+      console.log('🎉 Authentication successful, redirecting to dashboard');
+      return response;
     }
 
-    // Exchange authorization code for access token
-    const tokenResponse = await fetch(`https://${shop}/admin/oauth/access_token`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        client_id: clientId,
-        client_secret: clientSecret,
-        code,
-        grant_type: 'authorization_code',
-        redirect_uri: redirectUri
-      })
-    })
-
-    const tokenData = await tokenResponse.json();
-
-    // Fetch customer information
-    const customerResponse = await fetch(`https://${shop}/admin/api/2023-10/customers.json`, {
-      headers: {
-        'X-Shopify-Access-Token': tokenData.access_token,
-        'Content-Type': 'application/json'
-      }
-    });
-
-    const customerData = await customerResponse.json();
-
-    // Fetch shop information as a fallback
-    const shopResponse = await fetch(`https://${shop}/admin/api/2023-10/shop.json`, {
-      headers: {
-        'X-Shopify-Access-Token': tokenData.access_token,
-        'Content-Type': 'application/json'
-      }
-    });
-
-    const shopData = await shopResponse.json();
-
-    // Prepare the response with a redirect
-    const response = NextResponse.redirect(new URL('/customer/dashboard', request.url));
-
-    // Set cookies for customer ID and access token
-    // Use shop ID as a fallback if customer ID is not available
-    response.cookies.set('shopify_customer_id', 
-      (customerData.customers && customerData.customers[0]?.id.toString()) || 
-      shopData.shop.id.toString(), 
-      {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'strict',
-        maxAge: 60 * 60 * 24 * 7 // 1 week
-      }
-    );
-
-    response.cookies.set('shopify_access_token', tokenData.access_token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict',
-      maxAge: 60 * 60 * 24 * 7 // 1 week
-    });
-
-    return response;
+    // If no customer_id, this might be the first step of OAuth
+    console.log('❌ No customer ID found in callback');
+    return NextResponse.json({ 
+      error: 'No customer information received',
+      received: Object.fromEntries(searchParams)
+    }, { status: 400 });
 
   } catch (error) {
-    console.error('Shopify OAuth Error:', error);
+    console.error('Callback processing error:', error);
     return NextResponse.json({ 
-      error: 'Failed to complete OAuth flow' 
+      error: 'Authentication failed',
+      details: error instanceof Error ? error.message : 'Unknown error'
     }, { status: 500 });
   }
 } 
