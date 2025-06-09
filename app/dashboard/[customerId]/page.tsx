@@ -24,7 +24,8 @@ import { toast } from "@/components/ui/use-toast"
 import { Toaster } from "@/components/ui/toaster"
 import { CertificateModal } from '../../customer/dashboard/certificate-modal'
 
-interface LineItem {
+// Type Definitions
+export interface LineItem {
   line_item_id: string
   name: string
   description?: string
@@ -42,7 +43,7 @@ interface LineItem {
   status?: string
 }
 
-interface Order {
+export interface Order {
   id: string
   order_number: number
   processed_at: string
@@ -53,7 +54,7 @@ interface Order {
 }
 
 // Timeline data type
-type TimelineMilestone = {
+export type TimelineMilestone = {
   date: Date
   items: LineItem[]
   orderId: string
@@ -317,6 +318,576 @@ const CollectionTimeline = ({ orders }: { orders: Order[] }) => {
   )
 }
 
+// Road-Like Timeline Component
+const RoadTimeline: React.FC<{ timelineData: TimelineMilestone[] }> = ({ timelineData }) => {
+  const containerRef = useRef<HTMLDivElement>(null)
+  const [scrollProgress, setScrollProgress] = useState(0)
+  const { scrollYProgress } = useScroll({
+    container: containerRef,
+    offset: ["start start", "end end"]
+  })
+
+  // Road Sign Variants
+  const roadSignVariants: Variants = {
+    initial: { 
+      opacity: 0, 
+      x: 200,  // Start far to the right
+      scale: 0.6,
+      rotateY: 90  // Rotated away from view
+    },
+    enter: (index: number) => ({ 
+      opacity: 1, 
+      x: 0,
+      scale: 1,
+      rotateY: 0,
+      transition: { 
+        type: "spring",
+        stiffness: 100,
+        damping: 20,
+        delay: index * 0.2
+      }
+    }),
+    exit: { 
+      opacity: 0, 
+      x: -200,  // Move far to the left
+      scale: 0.6,
+      rotateY: -90  // Rotate away
+    }
+  }
+
+  return (
+    <div 
+      ref={containerRef}
+      className="relative w-full h-[800px] overflow-y-scroll perspective-[1500px]"
+      style={{ 
+        transformStyle: 'preserve-3d',
+        scrollSnapType: 'y mandatory'
+      }}
+    >
+      {/* Road Background Simulation */}
+      <div 
+        className="fixed inset-0 bg-gradient-to-b from-zinc-900 via-zinc-800 to-zinc-900 
+          before:absolute before:inset-0 
+          before:bg-[linear-gradient(transparent_50%,rgba(0,0,0,0.1)_50%)] 
+          before:bg-[size:4px_4px]"
+        style={{
+          transform: `
+            translateZ(-500px)
+            rotateX(${scrollYProgress.get() * 30}deg)
+          `
+        }}
+      />
+
+      {/* Road Lane Markers */}
+      <div 
+        className="fixed left-1/2 top-0 bottom-0 w-1 
+          bg-gradient-to-b from-amber-500/30 via-amber-500/50 to-amber-500/30 
+          transform -translate-x-1/2"
+      />
+
+      {/* Timeline Content */}
+      <div className="relative w-full min-h-[3000px] px-4 pt-[200px]">
+        {timelineData.map((milestone: TimelineMilestone, index: number) => (
+          <motion.div
+            key={milestone.orderId}
+            custom={index}
+            initial="initial"
+            animate="enter"
+            exit="exit"
+            variants={roadSignVariants}
+            style={{
+              position: 'absolute',
+              top: `${index * 500}px`,
+              left: index % 2 === 0 ? '20%' : '80%',
+              transformStyle: 'preserve-3d',
+              perspective: '1000px',
+              transform: `
+                translateZ(${
+                  Math.abs(scrollYProgress.get() - index / timelineData.length) * -500
+                }px)
+                rotateX(${
+                  (scrollYProgress.get() - index / timelineData.length) * 30
+                }deg)
+                scale(${
+                  1 - Math.abs(scrollYProgress.get() - index / timelineData.length) * 0.3
+                })
+              `,
+              opacity: Math.max(
+                0, 
+                1 - Math.abs(scrollYProgress.get() - index / timelineData.length) * 2
+              )
+            }}
+            className={`
+              absolute w-[500px] p-8 
+              bg-white/10 backdrop-blur-md 
+              border-2 border-amber-500/20
+              rounded-3xl 
+              shadow-2xl
+              transition-all duration-500
+              will-change-transform
+              ${index % 2 === 0 ? 'text-left' : 'text-right'}
+            `}
+          >
+            {/* Road Sign Inspired Design */}
+            <motion.div 
+              initial={{ opacity: 0, y: 50 }}
+              animate={{ 
+                opacity: 1, 
+                y: 0,
+                transition: { 
+                  delay: index * 0.2,
+                  type: "spring",
+                  stiffness: 100
+                }
+              }}
+            >
+              {/* Date Header with Road Sign Styling */}
+              <motion.h3 
+                className={`
+                  text-2xl font-bold mb-6 
+                  ${index % 2 === 0 ? 'text-left' : 'text-right'}
+                  text-amber-400
+                `}
+              >
+                {milestone.date.toLocaleDateString('en-US', {
+                  month: 'long', 
+                  day: 'numeric', 
+                  year: 'numeric'
+                })}
+              </motion.h3>
+
+              {/* Artwork Road Sign Thumbnails */}
+              <motion.div 
+                className="flex space-x-4 mb-6"
+                initial={{ opacity: 0, x: index % 2 === 0 ? -50 : 50 }}
+                animate={{ 
+                  opacity: 1, 
+                  x: 0,
+                  transition: { 
+                    staggerChildren: 0.1,
+                    delayChildren: 0.2 
+                  }
+                }}
+              >
+                {milestone.items.map((item: LineItem, itemIndex: number) => (
+                  <motion.div
+                    key={item.line_item_id}
+                    variants={{
+                      hidden: { 
+                        opacity: 0, 
+                        x: index % 2 === 0 ? -50 : 50,
+                        rotate: index % 2 === 0 ? -10 : 10
+                      },
+                      visible: { 
+                        opacity: 1, 
+                        x: 0,
+                        rotate: 0,
+                        transition: { 
+                          type: "spring", 
+                          stiffness: 200, 
+                          damping: 20 
+                        }
+                      }
+                    }}
+                    className={`
+                      w-32 h-32 rounded-lg overflow-hidden 
+                      border-2 border-amber-500/30
+                      ${index % 2 === 0 ? 'mr-auto' : 'ml-auto'}
+                    `}
+                    whileHover={{ 
+                      scale: 1.1,
+                      rotate: index % 2 === 0 ? 5 : -5,
+                      transition: { duration: 0.2 }
+                    }}
+                  >
+                    {item.img_url ? (
+                      <img 
+                        src={item.img_url} 
+                        alt={item.name} 
+                        className="w-full h-full object-cover" 
+                      />
+                    ) : (
+                      <div className="w-full h-full bg-zinc-800 flex items-center justify-center">
+                        <Album className="w-16 h-16 text-zinc-600" />
+                      </div>
+                    )}
+                  </motion.div>
+                ))}
+              </motion.div>
+
+              {/* Order Details with Road Sign Styling */}
+              <motion.div 
+                className={`
+                  space-y-3 
+                  ${index % 2 === 0 ? 'text-left' : 'text-right'}
+                `}
+                initial={{ opacity: 0, x: index % 2 === 0 ? -30 : 30 }}
+                animate={{ 
+                  opacity: 1, 
+                  x: 0,
+                  transition: { 
+                    delay: index * 0.3,
+                    type: "spring",
+                    stiffness: 100
+                  }
+                }}
+              >
+                {milestone.items.map((item: LineItem) => (
+                  <p 
+                    key={item.line_item_id} 
+                    className="text-sm text-zinc-400 truncate"
+                  >
+                    {item.name}
+                  </p>
+                ))}
+                <Badge 
+                  className={`
+                    mt-6 
+                    ${index % 2 === 0 ? 'mr-auto' : 'ml-auto'}
+                    bg-amber-500/20 text-amber-400
+                  `}
+                >
+                  Order #{milestone.orderNumber}
+                </Badge>
+              </motion.div>
+            </motion.div>
+          </motion.div>
+        ))}
+      </div>
+
+      {/* Road Navigation Indicator */}
+      <motion.div 
+        className="fixed bottom-12 left-1/2 transform -translate-x-1/2 
+          w-16 h-24 border-2 border-amber-700 rounded-full 
+          flex items-center justify-center"
+        initial={{ opacity: 0, y: 50 }}
+        animate={{ 
+          opacity: 1, 
+          y: 0,
+          transition: { 
+            type: "spring",
+            stiffness: 100
+          }
+        }}
+      >
+        <motion.div 
+          className="w-3 h-3 bg-amber-500 rounded-full"
+          animate={{
+            y: [0, 15, 0],
+            opacity: [0.5, 1, 0.5]
+          }}
+          transition={{
+            duration: 1.5,
+            repeat: Infinity,
+            ease: "easeInOut"
+          }}
+        />
+      </motion.div>
+    </div>
+  )
+}
+
+// 3D Interactive Timeline Component
+const InteractiveTimeline: React.FC<{ timelineData: TimelineMilestone[] }> = ({ timelineData }) => {
+  const containerRef = useRef<HTMLDivElement>(null)
+  const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 })
+  const { scrollYProgress } = useScroll({
+    container: containerRef,
+    offset: ["start start", "end end"]
+  })
+
+  // 3D Animation Variants
+  const timelineVariants: Variants = {
+    initial: { 
+      opacity: 0, 
+      scale: 0.6,
+      z: -500,
+      rotateX: 45,
+      rotateY: 15
+    },
+    animate: (index: number) => ({ 
+      opacity: 1, 
+      scale: 1,
+      z: 0,
+      rotateX: 0,
+      rotateY: 0,
+      transition: { 
+        type: "spring",
+        stiffness: 50,
+        damping: 15,
+        delay: index * 0.2
+      }
+    }),
+    hover: {
+      scale: 1.05,
+      boxShadow: "0 15px 30px rgba(0,0,0,0.3)",
+      transition: { duration: 0.3 }
+    }
+  }
+
+  // Handle mouse movement for 3D effect
+  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!containerRef.current) return
+    const rect = containerRef.current.getBoundingClientRect()
+    const x = ((e.clientX - rect.left) / rect.width) * 2 - 1
+    const y = ((e.clientY - rect.top) / rect.height) * 2 - 1
+    setMousePosition({ x, y })
+  }
+
+  return (
+    <div 
+      ref={containerRef}
+      className="relative w-full min-h-[1200px] overflow-hidden perspective-[2000px]"
+      onMouseMove={handleMouseMove}
+    >
+      {/* 3D Road Background */}
+      <div 
+        className="absolute inset-0 bg-gradient-to-b from-zinc-900 via-zinc-800 to-zinc-900 
+          before:absolute before:inset-0 
+          before:bg-[linear-gradient(transparent_50%,rgba(0,0,0,0.1)_50%)] 
+          before:bg-[size:4px_4px]"
+        style={{
+          transform: `
+            rotateX(${mousePosition.y * 10}deg) 
+            rotateY(${mousePosition.x * 10}deg)
+          `,
+          transition: 'transform 0.1s ease'
+        }}
+      />
+
+      {/* Timeline Content Container */}
+      <div className="relative w-full min-h-[2000px] px-4 overflow-hidden">
+        {timelineData.map((milestone: TimelineMilestone, index: number) => (
+          <motion.div
+            key={milestone.orderId}
+            custom={index}
+            initial="initial"
+            animate="animate"
+            whileHover="hover"
+            variants={timelineVariants}
+            style={{
+              position: 'absolute',
+              top: `${index * 500}px`,
+              left: index % 2 === 0 ? '20%' : '80%',
+              translateX: index % 2 === 0 ? '-100%' : '100%',
+              transformStyle: 'preserve-3d',
+              perspective: '1500px',
+              transform: `
+                translateZ(${
+                  Math.abs(scrollYProgress.get() - index / timelineData.length) * 
+                  (index % 2 === 0 ? -400 : 400)
+                }px)
+                rotateX(${
+                  (scrollYProgress.get() - index / timelineData.length) * 
+                  (index % 2 === 0 ? 30 : -30)
+                }deg)
+                rotateY(${mousePosition.x * 15}deg)
+                scale(${
+                  1 - Math.abs(scrollYProgress.get() - index / timelineData.length) * 0.5
+                })
+              `,
+              opacity: Math.max(
+                0, 
+                1 - Math.abs(scrollYProgress.get() - index / timelineData.length) * 2
+              )
+            }}
+            className={`
+              absolute w-[600px] p-10 
+              bg-zinc-900/90 backdrop-blur-md 
+              border-2 border-amber-500/20
+              rounded-3xl 
+              shadow-2xl
+              transition-all duration-500
+              will-change-transform
+              ${index % 2 === 0 ? 'text-left' : 'text-right'}
+            `}
+          >
+            {/* 3D Milestone Content */}
+            <motion.div 
+              initial={{ opacity: 0, y: 50 }}
+              animate={{ 
+                opacity: 1, 
+                y: 0,
+                transition: { 
+                  delay: index * 0.2,
+                  type: "spring",
+                  stiffness: 100
+                }
+              }}
+            >
+              {/* Date Header with 3D Tilt */}
+              <motion.h3 
+                className={`
+                  text-2xl font-bold mb-6 
+                  ${index % 2 === 0 ? 'text-left' : 'text-right'}
+                  text-amber-400
+                `}
+                style={{
+                  transform: `
+                    rotateY(${
+                      (scrollYProgress.get() - index / timelineData.length) * 
+                      (index % 2 === 0 ? 15 : -15)
+                    }deg)
+                    rotateX(${mousePosition.y * 10}deg)
+                  `
+                }}
+              >
+                {milestone.date.toLocaleDateString('en-US', {
+                  month: 'long', 
+                  day: 'numeric', 
+                  year: 'numeric'
+                })}
+              </motion.h3>
+
+              {/* Artwork 3D Carousel */}
+              <motion.div 
+                className="flex justify-center space-x-6 mb-8"
+                initial={{ opacity: 0, z: -200 }}
+                animate={{ 
+                  opacity: 1, 
+                  z: 0,
+                  transition: { 
+                    staggerChildren: 0.1,
+                    delayChildren: 0.2 
+                  }
+                }}
+              >
+                {milestone.items.map((item: LineItem, itemIndex: number) => (
+                  <motion.div
+                    key={item.line_item_id}
+                    variants={{
+                      hidden: { 
+                        opacity: 0, 
+                        z: -300,
+                        scale: 0.6,
+                        rotateY: index % 2 === 0 ? 45 : -45
+                      },
+                      visible: { 
+                        opacity: 1, 
+                        z: 0,
+                        scale: 1,
+                        rotateY: 0,
+                        transition: { 
+                          type: "spring", 
+                          stiffness: 200, 
+                          damping: 20 
+                        }
+                      }
+                    }}
+                    className={`
+                      w-40 h-40 rounded-xl overflow-hidden 
+                      border-2 border-amber-500/30
+                      ${index % 2 === 0 ? 'mr-auto' : 'ml-auto'}
+                    `}
+                    whileHover={{ 
+                      scale: 1.1,
+                      rotate: index % 2 === 0 ? 5 : -5,
+                      z: 50,
+                      transition: { duration: 0.2 }
+                    }}
+                    style={{
+                      transform: `
+                        rotateY(${mousePosition.x * 15}deg)
+                        rotateX(${mousePosition.y * 15}deg)
+                      `,
+                      transformStyle: 'preserve-3d'
+                    }}
+                  >
+                    {item.img_url ? (
+                      <img 
+                        src={item.img_url} 
+                        alt={item.name} 
+                        className="w-full h-full object-cover" 
+                      />
+                    ) : (
+                      <div className="w-full h-full bg-zinc-800 flex items-center justify-center">
+                        <Album className="w-20 h-20 text-zinc-600" />
+                      </div>
+                    )}
+                  </motion.div>
+                ))}
+              </motion.div>
+
+              {/* Order Details with 3D Interaction */}
+              <motion.div 
+                className={`
+                  space-y-3 
+                  ${index % 2 === 0 ? 'text-left' : 'text-right'}
+                `}
+                initial={{ opacity: 0, z: -100 }}
+                animate={{ 
+                  opacity: 1, 
+                  z: 0,
+                  transition: { 
+                    delay: index * 0.3,
+                    type: "spring",
+                    stiffness: 100
+                  }
+                }}
+              >
+                {milestone.items.map((item: LineItem) => (
+                  <p 
+                    key={item.line_item_id} 
+                    className="text-sm text-zinc-400 truncate"
+                  >
+                    {item.name}
+                  </p>
+                ))}
+                <Badge 
+                  className={`
+                    mt-6 
+                    ${index % 2 === 0 ? 'mr-auto' : 'ml-auto'}
+                    bg-amber-500/20 text-amber-400
+                  `}
+                >
+                  Order #{milestone.orderNumber}
+                </Badge>
+              </motion.div>
+            </motion.div>
+          </motion.div>
+        ))}
+      </div>
+
+      {/* 3D Navigation Indicator */}
+      <motion.div 
+        className="fixed bottom-12 left-1/2 transform -translate-x-1/2 
+          w-16 h-24 border-2 border-amber-700 rounded-full 
+          flex items-center justify-center"
+        initial={{ opacity: 0, y: 50 }}
+        animate={{ 
+          opacity: 1, 
+          y: 0,
+          transition: { 
+            type: "spring",
+            stiffness: 100
+          }
+        }}
+        style={{
+          transform: `
+            translateX(-50%) 
+            rotateX(${mousePosition.y * 10}deg)
+            rotateY(${mousePosition.x * 10}deg)
+          `,
+          transformStyle: 'preserve-3d'
+        }}
+      >
+        <motion.div 
+          className="w-3 h-3 bg-amber-500 rounded-full"
+          animate={{
+            y: [0, 15, 0],
+            opacity: [0.5, 1, 0.5]
+          }}
+          transition={{
+            duration: 1.5,
+            repeat: Infinity,
+            ease: "easeInOut"
+          }}
+        />
+      </motion.div>
+    </div>
+  )
+}
+
 export default function CustomerDashboardById() {
   const router = useRouter()
   const params = useParams()
@@ -329,14 +900,6 @@ export default function CustomerDashboardById() {
   const [selectedArtworkIndex, setSelectedArtworkIndex] = useState<number | null>(null)
   const [viewMode, setViewMode] = useState<'vinyl' | 'grid'>('vinyl')
 
-  // Timeline data type
-  type TimelineMilestone = {
-    date: Date
-    items: LineItem[]
-    orderId: string
-    orderNumber: number
-  }
-
   // Prepare timeline data with proper typing using useMemo
   const timelineData = useMemo<TimelineMilestone[]>(() => 
     orders.map(order => ({
@@ -347,186 +910,6 @@ export default function CustomerDashboardById() {
     })),
     [orders]
   )
-
-  // Add state for mouse position and interaction
-  const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 })
-  const [isInteracting, setIsInteracting] = useState(false)
-
-  // Interactive Timeline Component
-  const ConveyorTimeline = () => {
-    const containerRef = useRef<HTMLDivElement>(null)
-    const { scrollYProgress } = useScroll({
-      container: containerRef,
-      offset: ["start start", "end end"]
-    })
-
-    // Animated scroll-driven timeline
-    const timelineVariants: Variants = {
-      initial: { 
-        opacity: 0, 
-        x: -100,
-        scale: 0.8 
-      },
-      animate: (index) => ({ 
-        opacity: 1, 
-        x: 0,
-        scale: 1,
-        transition: { 
-          delay: index * 0.1,
-          type: "spring",
-          stiffness: 100,
-          damping: 15
-        }
-      }),
-      exit: { 
-        opacity: 0, 
-        x: 100,
-        scale: 0.8 
-      }
-    }
-
-    return (
-      <div className="relative w-full h-[800px] overflow-hidden perspective-[1000px]">
-        {/* Scrollable Container */}
-        <motion.div 
-          ref={containerRef}
-          className="h-full overflow-y-scroll no-scrollbar"
-          style={{ 
-            perspective: '1000px',
-            transformStyle: 'preserve-3d'
-          }}
-        >
-          {/* Infinite Scroll Content */}
-          <div className="relative w-full min-h-[2000px]">
-            {timelineData.map((milestone, index) => (
-              <motion.div
-                key={milestone.orderId}
-                custom={index}
-                initial="initial"
-                animate="animate"
-                exit="exit"
-                variants={timelineVariants}
-                style={{
-                  position: 'absolute',
-                  top: `${index * 300}px`, // Stagger vertically
-                  left: '50%',
-                  translateX: '-50%',
-                  translateZ: `${-index * 100}px`, // Create depth effect
-                  rotateX: scrollYProgress.get() * (index % 2 === 0 ? 20 : -20), // Subtle rotation
-                  opacity: scrollYProgress.get() > index / timelineData.length ? 0.5 : 1,
-                  scale: 1 - Math.abs(scrollYProgress.get() - index / timelineData.length) * 0.3
-                }}
-                className={`
-                  w-[500px] p-8 
-                  bg-zinc-900/80 backdrop-blur-sm 
-                  border border-zinc-800/50 
-                  rounded-2xl 
-                  shadow-xl
-                  transition-all duration-300
-                `}
-              >
-                {/* Milestone Details */}
-                <div className="text-center">
-                  <p className="text-xl font-bold text-zinc-200 mb-4">
-                    {milestone.date.toLocaleDateString('en-US', {
-                      month: 'long', 
-                      day: 'numeric', 
-                      year: 'numeric'
-                    })}
-                  </p>
-
-                  {/* Artwork Carousel */}
-                  <motion.div 
-                    className="flex justify-center space-x-4 mb-6"
-                    initial={{ opacity: 0, y: 50 }}
-                    animate={{ 
-                      opacity: 1, 
-                      y: 0,
-                      transition: { 
-                        staggerChildren: 0.1,
-                        delayChildren: 0.2 
-                      }
-                    }}
-                  >
-                    {milestone.items.map((item, itemIndex) => (
-                      <motion.div
-                        key={item.line_item_id}
-                        variants={{
-                          hidden: { opacity: 0, y: 50 },
-                          visible: { 
-                            opacity: 1, 
-                            y: 0,
-                            transition: { 
-                              type: "spring", 
-                              stiffness: 300, 
-                              damping: 20 
-                            }
-                          }
-                        }}
-                        className="w-32 h-32 rounded-lg overflow-hidden"
-                        whileHover={{ 
-                          scale: 1.1,
-                          rotate: 3,
-                          transition: { duration: 0.2 }
-                        }}
-                      >
-                        {item.img_url ? (
-                          <img 
-                            src={item.img_url} 
-                            alt={item.name} 
-                            className="w-full h-full object-cover" 
-                          />
-                        ) : (
-                          <div className="w-full h-full bg-zinc-800 flex items-center justify-center">
-                            <Album className="w-16 h-16 text-zinc-600" />
-                          </div>
-                        )}
-                      </motion.div>
-                    ))}
-                  </motion.div>
-
-                  {/* Order Details */}
-                  <div className="space-y-2">
-                    {milestone.items.map(item => (
-                      <p 
-                        key={item.line_item_id} 
-                        className="text-sm text-zinc-400 truncate"
-                      >
-                        {item.name}
-                      </p>
-                    ))}
-                    <Badge className="mt-4 mx-auto">
-                      Order #{milestone.orderNumber}
-                    </Badge>
-                  </div>
-                </div>
-              </motion.div>
-            ))}
-          </div>
-        </motion.div>
-
-        {/* Scroll Indicator */}
-        <motion.div 
-          className="absolute bottom-8 left-1/2 transform -translate-x-1/2 
-            w-12 h-20 border-2 border-zinc-700 rounded-full 
-            flex items-center justify-center"
-        >
-          <motion.div 
-            className="w-2 h-2 bg-zinc-500 rounded-full"
-            animate={{
-              y: [0, 10, 0],
-              opacity: [0.5, 1, 0.5]
-            }}
-            transition={{
-              duration: 1.5,
-              repeat: Infinity,
-              ease: "easeInOut"
-            }}
-          />
-        </motion.div>
-      </div>
-    )
-  }
 
   useEffect(() => {
     // Set cookie for the customer ID if it's not already set
@@ -723,26 +1106,31 @@ export default function CustomerDashboardById() {
 
         {/* Conditional Rendering for Vinyl or Grid View */}
         {viewMode === 'vinyl' ? (
-          <motion.div 
-            className="flex overflow-x-auto pb-8 no-scrollbar"
-            style={{ 
-              cursor: 'grab',
-              userSelect: 'none'
-            }}
-          >
-            <div className="flex space-x-6">
-              {allItems.map((item, index) => (
-                <VinylArtworkCard 
-                  key={item.line_item_id}
-                  item={item}
-                  isSelected={selectedArtworkIndex === index}
-                  onSelect={() => setSelectedArtworkIndex(index)}
-                  onNfcWrite={() => handleNfcWrite(item)}
-                  onCertificateView={() => setSelectedLineItem(item)}
-                />
-              ))}
-            </div>
-          </motion.div>
+          <div className="relative">
+            <motion.div 
+              className="flex overflow-x-auto pb-8 no-scrollbar"
+              style={{ 
+                cursor: 'grab',
+                userSelect: 'none'
+              }}
+            >
+              <div className="flex space-x-6 relative">
+                {/* Timeline Line */}
+                <div className="absolute left-0 top-1/2 transform -translate-y-1/2 w-full h-1 bg-zinc-800 z-0"></div>
+                
+                {allItems.map((item, index) => (
+                  <VinylArtworkCard 
+                    key={item.line_item_id}
+                    item={item}
+                    isSelected={selectedArtworkIndex === index}
+                    onSelect={() => setSelectedArtworkIndex(index)}
+                    onNfcWrite={() => handleNfcWrite(item)}
+                    onCertificateView={() => setSelectedLineItem(item)}
+                  />
+                ))}
+              </div>
+            </motion.div>
+          </div>
         ) : (
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
             {allItems.map((item) => (
@@ -786,19 +1174,6 @@ export default function CustomerDashboardById() {
             ))}
           </div>
         )}
-      </div>
-
-      {/* Collection Timeline Section */}
-      <div className="container mx-auto px-4 py-8">
-        <div className="text-center mb-12">
-          <h2 className="text-3xl font-bold mb-4">Your Artistic Journey</h2>
-          <p className="text-zinc-400 max-w-xl mx-auto">
-            Scroll through your collection, watching memories flow like a digital time machine.
-          </p>
-        </div>
-
-        {/* Conveyor Timeline */}
-        <ConveyorTimeline />
       </div>
 
       {/* NFC Scanner Sidebar */}
