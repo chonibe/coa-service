@@ -87,8 +87,15 @@ export default function CustomerDashboard() {
       setIsLoading(true)
       setError(null)
 
-      // Use the customer API endpoint instead of direct Supabase queries
-      const response = await fetch('/api/customer/orders')
+      // Extract customer ID from URL
+      const customerId = window.location.pathname.split('/').pop()
+
+      // Use the customer API endpoint with optional customer ID
+      const url = customerId 
+        ? `/api/customer/orders?customerId=${customerId}` 
+        : '/api/customer/orders'
+
+      const response = await fetch(url)
       
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}))

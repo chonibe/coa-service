@@ -9,10 +9,18 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ success: false, message: "Database connection error" }, { status: 500 })
     }
 
-    // Get Shopify customer ID from cookies instead of session
-    const shopifyCustomerId = request.cookies.get('shopify_customer_id')?.value
+    // Check for customer ID in URL search params first
+    const { searchParams } = new URL(request.url)
+    const urlCustomerId = searchParams.get('customerId')
+
+    // Get Shopify customer ID from cookies as fallback
+    const cookieCustomerId = request.cookies.get('shopify_customer_id')?.value
+    
+    const shopifyCustomerId = urlCustomerId || cookieCustomerId
     
     console.log('Customer Orders API Debug:', {
+      urlCustomerId,
+      cookieCustomerId,
       shopifyCustomerId,
       allCookies: request.headers.get('cookie'),
       customerIdExists: !!shopifyCustomerId
