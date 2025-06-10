@@ -5,6 +5,8 @@ import { Dialog, DialogContent } from "@/components/ui/dialog"
 import { X, BadgeIcon as Certificate, User, Calendar, Hash, ExternalLink, Award, Sparkles, Signature, Wifi, WifiOff, Album } from "lucide-react"
 import { motion, useMotionValue, useTransform } from "framer-motion"
 import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
+import { toast } from "@/components/ui/use-toast"
 
 // Add shimmer effect styles
 const shimmerStyles = `
@@ -315,6 +317,50 @@ export function CertificateModal({ lineItem, onClose }: CertificateModalProps) {
                         })}
                       </p>
                     </div>
+                  </div>
+
+                  {/* NFC Pairing Section */}
+                  <div className="mt-4 bg-zinc-800/50 rounded-lg p-4 border border-zinc-700/30">
+                    <div className="flex justify-between items-center mb-3">
+                      <div className="flex items-center gap-2">
+                        {nfcStatus === "paired" ? (
+                          <Wifi className="h-5 w-5 text-green-400" />
+                        ) : nfcStatus === "unpaired" ? (
+                          <WifiOff className="h-5 w-5 text-yellow-400" />
+                        ) : (
+                          <WifiOff className="h-5 w-5 text-red-400" />
+                        )}
+                        <p className="text-sm font-medium text-white">
+                          NFC Tag Status: {
+                            nfcStatus === "paired" ? "Paired" : 
+                            nfcStatus === "unpaired" ? "Unclaimed" : 
+                            "No NFC Tag"
+                          }
+                        </p>
+                      </div>
+                      {nfcStatus !== "paired" && lineItem.nfc_tag_id && (
+                        <Button 
+                          size="sm" 
+                          variant="outline"
+                          className="text-xs"
+                          onClick={() => {
+                            // TODO: Implement NFC pairing logic
+                            toast({
+                              title: "NFC Pairing",
+                              description: "Pairing functionality coming soon",
+                              variant: "default"
+                            })
+                          }}
+                        >
+                          Pair NFC Tag
+                        </Button>
+                      )}
+                    </div>
+                    {nfcStatus === "paired" && (
+                      <div className="text-xs text-zinc-400">
+                        <p>Paired on: {lineItem.nfc_claimed_at ? new Date(lineItem.nfc_claimed_at).toLocaleString() : 'Unknown'}</p>
+                      </div>
+                    )}
                   </div>
 
                   {/* Signature and Seal Area */}
