@@ -145,6 +145,7 @@ interface LineItem {
   nfc_tag_id?: string | null
   nfc_claimed_at?: string | null
   status?: string
+  order_id?: string
 }
 
 interface CertificateModalProps {
@@ -343,13 +344,62 @@ export function CertificateModal({ lineItem, onClose }: CertificateModalProps) {
                           size="sm" 
                           variant="outline"
                           className="text-xs"
-                          onClick={() => {
-                            // TODO: Implement NFC pairing logic
-                            toast({
-                              title: "NFC Pairing",
-                              description: "Pairing functionality coming soon",
-                              variant: "default"
-                            })
+                          onClick={async () => {
+                            try {
+                              // Prompt for NFC tag scanning
+                              const tagId = await new Promise<string>((resolve, reject) => {
+                                // You might want to replace this with a proper NFC scanning modal/component
+                                const scannedTagId = prompt("Please scan your NFC tag")
+                                if (scannedTagId) {
+                                  resolve(scannedTagId)
+                                } else {
+                                  reject(new Error("No tag scanned"))
+                                }
+                              })
+
+                              // Call the NFC claim API
+                              const response = await fetch('/api/nfc-tags/claim', {
+                                method: 'POST',
+                                headers: {
+                                  'Content-Type': 'application/json',
+                                },
+                                body: JSON.stringify({
+                                  tagId,
+                                  lineItemId: lineItem.line_item_id,
+                                  orderId: lineItem.order_id,
+                                  customerId: document.cookie
+                                    .split('; ')
+                                    .find(row => row.startsWith('shopify_customer_id='))
+                                    ?.split('=')[1]
+                                })
+                              })
+
+                              const result = await response.json()
+
+                              if (result.success) {
+                                toast({
+                                  title: "NFC Tag Paired",
+                                  description: "Your NFC tag has been successfully paired with this artwork.",
+                                  variant: "default"
+                                })
+                                
+                                // Optionally, you might want to refresh the line item data
+                                // This would require passing a refresh callback from the parent component
+                              } else {
+                                toast({
+                                  title: "NFC Pairing Failed",
+                                  description: result.message || "Unable to pair NFC tag",
+                                  variant: "destructive"
+                                })
+                              }
+                            } catch (error) {
+                              console.error("NFC Pairing Error:", error)
+                              toast({
+                                title: "NFC Pairing Error",
+                                description: error instanceof Error ? error.message : "An unexpected error occurred",
+                                variant: "destructive"
+                              })
+                            }
                           }}
                         >
                           Pair NFC Tag
