@@ -11,12 +11,50 @@ The NFC (Near Field Communication) pairing system allows users to authenticate a
 - NFC Claim API: Backend endpoint for processing NFC tag claims
 - Database Tables: 
   - `nfc_tags`: Tracks NFC tag metadata
-  - `order_line_items`: Stores artwork and order information
+  - `order_line_items_v2`: Stores artwork and order information
 
 ### Tag Lifecycle
 1. **Unassigned**: Initial state of an NFC tag
-2. **Claimed**: Tag associated with a specific artwork and order
+2. **Claimed**: Tag assoc ated with a specific artwork and order
 3. **Programmed**: Optional state indicating physical tag programming
+
+## User Journey Flow
+
+### 1. Initial NFC Tag Interaction
+- User scans NFC tag embedded in artwork
+- Tag redirects to a generic manufacturer's landing page
+- Page contains embedded information about the artwork and authentication process
+
+### 2. Authentication Process
+- User prompted to log in to store account
+- Successful login retrieves customer ID
+- Redirected to customer dashboard with authenticated session
+
+### 3. Customer Dashboard Experience
+#### Artwork Display
+- All purchased artworks listed
+- Artwork status categorized:
+  - **Paired**: NFC tag already associated
+  - **Unpaired**: NFC tag not yet linked
+
+#### Pairing Workflow
+- Unpaired items can be selected for NFC tag pairing
+- Each artwork has a unique Certificate of Authenticity
+- Certificate includes:
+  - Provenance ID
+  - Artist information
+  - Process images
+  - Artwork content
+
+### 4. NFC Tag Pairing
+- Select unpaired artwork
+- Initiate NFC tag pairing process
+- Scan NFC tag to associate with artwork
+
+### 5. Post-Pairing Benefits
+- Unlocked content becomes available
+- Future artwork drop notifications
+- Exclusive artist information
 
 ## Technical Implementation
 
@@ -49,7 +87,7 @@ CREATE TABLE nfc_tags (
    - Verify tag ID
    - Check if tag is already claimed
    - Validate associated line item and order
-   - Update `nfc_tags` and `order_line_items` tables
+   - Update `nfc_tags` and `order_line_items_v2` tables
 
 ### Web NFC Compatibility
 
