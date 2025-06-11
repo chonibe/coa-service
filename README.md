@@ -1,3 +1,91 @@
+# COA Service (Certificate of Authenticity Platform)
+
+## Overview
+
+COA Service is a comprehensive digital art authentication and management platform that leverages NFC technology to provide secure, verifiable certificates for digital artworks.
+
+## Key Features
+
+### 🖼️ Digital Art Management
+- Secure artwork tracking
+- Edition management
+- Certificate generation
+
+### 🏷️ NFC Authentication
+- Web NFC tag scanning
+- Digital artwork verification
+- Secure claim process
+
+### 🔒 Security Highlights
+- Unique certificate generation
+- NFC tag pairing
+- Ownership verification
+
+## NFC Pairing Technology
+
+### How It Works
+- Scan NFC tag using Web NFC API
+- Verify artwork authenticity
+- Claim digital certificate
+
+### Compatibility
+- Supported Browsers: Chrome, Edge, Opera
+- Platforms: Web-based
+
+[📖 Full NFC Pairing Documentation](/docs/NFC_PAIRING.md)
+
+## Technical Stack
+
+- Frontend: Next.js, React
+- Backend: Supabase
+- Authentication: Shopify OAuth
+- NFC Technology: Web NFC API
+
+## Getting Started
+
+### Prerequisites
+- Node.js 16+
+- Supabase Account
+- Shopify Developer Account
+
+### Installation
+```bash
+git clone https://github.com/chonibe/coa-service.git
+cd coa-service
+npm install
+```
+
+### Configuration
+1. Copy `.env.example` to `.env`
+2. Fill in Supabase and Shopify credentials
+
+### Running the Application
+```bash
+npm run dev
+```
+
+## Documentation
+
+- [NFC Pairing](/docs/NFC_PAIRING.md)
+- [Authentication](/docs/authentication/README.md)
+- [Dashboard Guides](/docs/README.md)
+
+## Contributing
+
+1. Fork the repository
+2. Create your feature branch
+3. Commit changes
+4. Push to the branch
+5. Create a Pull Request
+
+## License
+
+Proprietary - Street Collector
+
+## Support
+
+Contact: support@streetcollector.com
+
 # Order Lookup & Vendor Portal
 
 A Next.js application for managing product editions, certificates, and vendor payouts.
