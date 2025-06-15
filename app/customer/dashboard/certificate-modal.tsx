@@ -392,6 +392,144 @@ export function CertificateModal({ lineItem, onClose }: CertificateModalProps) {
               </div>
             </div>
           </div>
+
+          {/* Modify the back side of the certificate when isFlipped is true */}
+          {isFlipped && (
+            <div className="absolute inset-0 bg-white text-black p-8 flex flex-col justify-between overflow-hidden">
+              {/* Holographic Security Overlay */}
+              <div 
+                className="absolute inset-0 pointer-events-none opacity-10 bg-gradient-to-br from-amber-100/20 via-emerald-200/20 to-blue-100/20"
+                style={{
+                  backgroundSize: '200% 200%',
+                  animation: 'holographicMove 10s ease infinite',
+                  mixBlendMode: 'overlay'
+                }}
+              />
+
+              {/* Certificate Header */}
+              <div className="relative z-10">
+                <div className="flex justify-between items-center border-b-2 border-gray-200 pb-4 mb-6">
+                  <div className="flex items-center gap-3">
+                    <Certificate className="w-10 h-10 text-amber-600" />
+                    <h1 className="text-3xl font-bold text-gray-900">Certificate of Authenticity</h1>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <img 
+                      src="/street-collector-logo.svg" 
+                      alt="Street Collector Logo" 
+                      className="h-10 w-auto opacity-80"
+                    />
+                  </div>
+                </div>
+
+                {/* Artwork Details */}
+                <div className="space-y-6">
+                  {/* Artwork Image Thumbnail */}
+                  <div className="absolute top-4 right-4 w-32 h-32 rounded-lg overflow-hidden shadow-lg border-2 border-gray-200">
+                    {lineItem.img_url ? (
+                      <img 
+                        src={lineItem.img_url} 
+                        alt={lineItem.name} 
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <div className="w-full h-full bg-gray-100 flex items-center justify-center">
+                        <Album className="w-12 h-12 text-gray-400" />
+                      </div>
+                    )}
+                  </div>
+
+                  <div>
+                    <p className="text-sm text-gray-500 uppercase tracking-wider">Artwork Title</p>
+                    <h2 className="text-2xl font-semibold text-gray-900">{lineItem.name}</h2>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <p className="text-sm text-gray-500 uppercase tracking-wider">Artist</p>
+                      <p className="text-xl font-medium text-gray-800">{artistName}</p>
+                    </div>
+
+                    <div>
+                      <p className="text-sm text-gray-500 uppercase tracking-wider">Edition</p>
+                      <p className="text-xl font-medium text-gray-800">
+                        {lineItem.edition_number && lineItem.edition_total
+                          ? `${lineItem.edition_number} of ${lineItem.edition_total}`
+                          : "Limited Edition"}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* NFC Authentication Section */}
+                  <div className="mt-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <Wifi className="w-8 h-8 text-green-600" />
+                        <div>
+                          <p className="text-lg font-semibold text-gray-800">
+                            {nfcStatus === "paired" 
+                              ? "NFC Authenticated" 
+                              : "NFC Authentication Pending"}
+                          </p>
+                          {lineItem.nfc_claimed_at && (
+                            <p className="text-sm text-gray-600">
+                              Authenticated on: {new Date(lineItem.nfc_claimed_at).toLocaleDateString()}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                      
+                      {/* NFC Chip Visualization */}
+                      <div className="w-24 h-16 bg-gray-200 rounded-lg flex items-center justify-center">
+                        <Scan className="w-10 h-10 text-gray-500" />
+                      </div>
+                    </div>
+
+                    {/* Verification Hash */}
+                    <div className="mt-4 border-t border-gray-200 pt-4">
+                      <p className="text-xs text-gray-500 uppercase tracking-wider mb-2">
+                        Verification Hash
+                      </p>
+                      <code className="block bg-gray-100 p-2 rounded text-sm text-gray-700 truncate">
+                        {lineItem.nfc_tag_id 
+                          ? `NFC:${lineItem.nfc_tag_id.slice(0, 12)}...` 
+                          : 'Not Available'}
+                      </code>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Certificate Footer */}
+              <div className="relative z-10 mt-6 border-t-2 border-gray-200 pt-4 flex justify-between items-center">
+                <div>
+                  <p className="text-xs text-gray-500">Certificate Number</p>
+                  <p className="font-mono text-sm text-gray-800">
+                    {lineItem.certificate_token?.slice(0, 16) || 'N/A'}
+                  </p>
+                </div>
+                <div className="text-right">
+                  <p className="text-xs text-gray-500">Issued Date</p>
+                  <p className="text-sm text-gray-800">
+                    {new Date().toLocaleDateString('en-US', {
+                      month: 'long',
+                      day: 'numeric',
+                      year: 'numeric'
+                    })}
+                  </p>
+                </div>
+              </div>
+
+              {/* Hidden Styles for Holographic Effect */}
+              <style jsx>{`
+                @keyframes holographicMove {
+                  0% { background-position: 0% 50%; }
+                  50% { background-position: 100% 50%; }
+                  100% { background-position: 0% 50%; }
+                }
+              `}</style>
+            </div>
+          )}
         </PostcardCertificate>
       </DialogContent>
     </Dialog>
