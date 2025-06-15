@@ -36,4 +36,32 @@
 3. Validate customer ID retrieval
 4. Test authentication middleware
 
+## Dashboard Route Debugging [$(date '+%Y-%m-%d %H:%M:%S')]
+
+### Identified Issues
+- Potential domain configuration conflict
+- Authentication route handling complexity
+- Middleware routing challenges
+
+### Debugging Strategies
+- Enhanced middleware logging
+- Strict customer ID validation
+- Explicit authentication checks
+
+### Middleware Modifications
+- Added comprehensive route logging
+- Implemented strict authentication validation
+- Created explicit customer ID matching
+
+### Recommended Next Steps
+- Review Vercel domain configuration
+- Validate Shopify OAuth flow
+- Test authentication scenarios
+- Monitor server-side logs
+
+### Potential Root Causes
+1. Domain misconfiguration
+2. Authentication token management
+3. Routing middleware complexity
+
 --- 
