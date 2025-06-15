@@ -2,10 +2,10 @@
 
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { Loader2, Link, AlertCircle, Wifi, WifiOff, Scan } from "lucide-react"
+import { Loader2, Link, AlertCircle, Wifi, WifiOff, Scan, Hash, User } from "lucide-react"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { NfcTagScanner } from '@/src/components/NfcTagScanner'
 import { toast } from "@/components/ui/use-toast"
@@ -233,10 +233,27 @@ export default function CustomerDashboard() {
                     </CardHeader>
                     <CardContent>
                       {order.line_items.map((item) => {
-                        // Determine NFC status
+                        // Determine NFC status with more detailed logic
                         const nfcStatus = item.nfc_tag_id 
-                          ? (item.nfc_claimed_at ? "paired" : "unpaired")
-                          : "no-nfc"
+                          ? (item.nfc_claimed_at 
+                            ? { 
+                                status: "paired", 
+                                label: "Authenticated", 
+                                icon: <Wifi className="w-4 h-4 text-green-500" />,
+                                variant: "default"
+                              }
+                            : { 
+                                status: "unpaired", 
+                                label: "Needs Authentication", 
+                                icon: <WifiOff className="w-4 h-4 text-yellow-500" />,
+                                variant: "secondary"
+                              })
+                          : { 
+                              status: "no-nfc", 
+                              label: "No NFC Tag", 
+                              icon: <WifiOff className="w-4 h-4 text-red-500" />,
+                              variant: "destructive"
+                            }
 
                         // NFC Pairing Handler
                         const handleNfcPairing = async () => {
@@ -305,53 +322,79 @@ export default function CustomerDashboard() {
                         }
 
                         return (
-                          <div key={item.line_item_id} className="mb-4 relative">
-                            {item.img_url && (
-                              <div className="w-full h-32 mb-3 rounded-lg overflow-hidden">
-                                <img
-                                  src={item.img_url}
-                                  alt={item.name}
-                                  className="w-full h-full object-cover"
-                                />
+                          <Card 
+                            key={item.line_item_id} 
+                            className="hover:shadow-lg transition-shadow duration-300 group"
+                          >
+                            <CardHeader className="pb-2">
+                              <div className="flex justify-between items-center">
+                                <CardTitle className="text-lg truncate">{item.name}</CardTitle>
+                                <Badge variant={nfcStatus.variant} className="flex items-center gap-1">
+                                  {nfcStatus.icon}
+                                  {nfcStatus.label}
+                                </Badge>
                               </div>
-                            )}
-                            <h3 className="font-semibold">{item.name}</h3>
-                            {item.description && item.description !== item.name && (
-                              <p className="text-sm text-muted-foreground mb-2">{item.description}</p>
-                            )}
-                            
-                            {/* NFC Status and Pairing Button */}
-                            <div className="flex items-center justify-between mt-2">
-                              <div className="flex items-center gap-2">
-                                {nfcStatus === "paired" ? (
-                                  <Wifi className="h-4 w-4 text-green-500" />
-                                ) : nfcStatus === "unpaired" ? (
-                                  <WifiOff className="h-4 w-4 text-yellow-500" />
-                                ) : (
-                                  <WifiOff className="h-4 w-4 text-gray-500" />
-                                )}
-                                <span className="text-xs">
-                                  {nfcStatus === "paired" 
-                                    ? "NFC Paired" 
-                                    : nfcStatus === "unpaired" 
-                                    ? "NFC Available" 
-                                    : "No NFC Tag"}
-                                </span>
-                              </div>
+                            </CardHeader>
+                            <CardContent>
+                              {item.img_url && (
+                                <div className="w-full aspect-square mb-4 rounded-lg overflow-hidden">
+                                  <img
+                                    src={item.img_url}
+                                    alt={item.name}
+                                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                                  />
+                                </div>
+                              )}
                               
-                              {nfcStatus === "unpaired" && (
+                              <div className="space-y-2">
+                                {item.description && (
+                                  <p className="text-sm text-muted-foreground line-clamp-2">
+                                    {item.description}
+                                  </p>
+                                )}
+                                
+                                <div className="flex justify-between text-sm">
+                                  <div className="flex items-center gap-2">
+                                    <Hash className="w-4 h-4 text-muted-foreground" />
+                                    <span>
+                                      {item.edition_number 
+                                        ? `Edition ${item.edition_number}` 
+                                        : "Limited Edition"}
+                                    </span>
+                                  </div>
+                                  
+                                  {item.vendor_name && (
+                                    <div className="flex items-center gap-2">
+                                      <User className="w-4 h-4 text-muted-foreground" />
+                                      <span>{item.vendor_name}</span>
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            </CardContent>
+                            <CardFooter className="flex justify-between">
+                              <Button 
+                                variant="outline" 
+                                size="sm"
+                                onClick={() => handleCertificateClick(item)}
+                              >
+                                View Certificate
+                              </Button>
+                              
+                              {nfcStatus.status !== "paired" && (
                                 <Button 
-                                  size="sm" 
-                                  variant="outline" 
-                                  className="flex items-center gap-1"
+                                  variant="secondary" 
+                                  size="sm"
                                   onClick={handleNfcPairing}
+                                  disabled={nfcStatus.status === "no-nfc"}
                                 >
-                                  <Scan className="h-3 w-3" />
-                                  Pair NFC
+                                  {nfcStatus.status === "unpaired" 
+                                    ? "Pair NFC Tag" 
+                                    : "No NFC Available"}
                                 </Button>
                               )}
-                            </div>
-                          </div>
+                            </CardFooter>
+                          </Card>
                         )
                       })}
                     </CardContent>
