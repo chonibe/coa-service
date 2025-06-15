@@ -53,7 +53,7 @@ export async function GET(request: NextRequest) {
   try {
     // Retrieve the stored redirect URL from cookies
     const redirectUrl = request.cookies.get('shopify_login_redirect')?.value 
-      || 'http://localhost:3000/customer/dashboard';
+      || 'https://dashboard.thestreetlamp.com/customer/dashboard';
 
     console.log('Callback Route Redirect:', {
       redirectUrl,
@@ -70,6 +70,6 @@ export async function GET(request: NextRequest) {
 
   } catch (error) {
     console.error('Authentication Redirect Error:', error)
-    return NextResponse.redirect(new URL('http://localhost:3000/customer/dashboard'))
+    return NextResponse.redirect(new URL('https://dashboard.thestreetlamp.com/customer/dashboard'))
   }
 } 
