@@ -12,8 +12,14 @@
 - NFC tag integration
 - Certificate modal
 
+### Troubleshooting Notes
+- Added enhanced logging to middleware
+- Modified dashboard route handling
+- Investigating authentication flow
+- Potential cookie/session management issues
+
 ### Verification Checklist
-- [ ] Validate dashboard access
+- [x] Validate dashboard access
 - [ ] Test customer login
 - [ ] Verify NFC tag claim process
 - [ ] Check certificate modal rendering
@@ -23,5 +29,11 @@
 - Performance metrics
 - Error logging
 - User experience feedback
+
+### Debugging Steps
+1. Verify Shopify OAuth configuration
+2. Check cookie settings
+3. Validate customer ID retrieval
+4. Test authentication middleware
 
 --- 
