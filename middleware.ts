@@ -41,23 +41,22 @@ export async function middleware(req: NextRequest) {
 
     // Comprehensive Authentication Checks with More Detailed Logging
     const shopifyCustomerId = req.cookies.get('shopify_customer_id')?.value
-    const shopifyCustomerAccessToken = req.cookies.get('shopify_customer_access_token')?.value
+    const shopifyCustomerAccessToken = req.cookies.get('shopify_customer_access_token')?.value // Optional, not required
 
-    // Enhanced Logging for Authentication State
+    // Logging of authentication state (access token now optional)
     console.log('🔐 Authentication State', JSON.stringify({
       hasCustomerId: !!shopifyCustomerId,
       hasAccessToken: !!shopifyCustomerAccessToken,
       requestedCustomerId: customerId
     }, null, 2))
 
-    // More Flexible Authentication Logic
-    if (!shopifyCustomerId || !shopifyCustomerAccessToken) {
+    // Updated Authentication Logic – only customer ID is required
+    if (!shopifyCustomerId) {
       console.warn('⚠️ Authentication Required', JSON.stringify({
-        reason: 'Missing customer ID or access token',
+        reason: 'Missing customer ID',
         redirectTo: '/login',
         details: {
-          missingCustomerId: !shopifyCustomerId,
-          missingAccessToken: !shopifyCustomerAccessToken
+          missingCustomerId: true
         }
       }, null, 2))
       
