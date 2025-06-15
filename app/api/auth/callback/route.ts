@@ -1,5 +1,28 @@
 import { NextRequest, NextResponse } from 'next/server';
 
+// Enhanced customer ID extraction function
+function extractCustomerIdFromRedirect(redirectPath: string | null): string | null {
+  if (!redirectPath) return null;
+
+  // Try different extraction patterns
+  const patterns = [
+    /\/dashboard\/(\d+)/, // Matches /dashboard/6435402285283
+    /\/customer\/dashboard\/(\d+)/, // Matches /customer/dashboard/6435402285283
+    /\/(\d+)$/ // Matches URLs ending with a number
+  ];
+
+  for (const pattern of patterns) {
+    const match = redirectPath.match(pattern);
+    if (match && match[1]) {
+      console.log('🔍 Customer ID extracted:', match[1], 'from path:', redirectPath);
+      return match[1];
+    }
+  }
+
+  console.warn('❌ No customer ID found in redirect path:', redirectPath);
+  return null;
+}
+
 export async function GET(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams
   const state = searchParams.get('state')
@@ -7,8 +30,14 @@ export async function GET(request: NextRequest) {
   const customerAccessToken = searchParams.get('customer_access_token')
   const redirectFromParams = searchParams.get('redirect')
 
+  // Enhanced customer ID extraction
+  const extractedCustomerId = extractCustomerIdFromRedirect(redirectFromParams)
+
   // Comprehensive debug logging
-  console.log('=== CALLBACK ROUTE DEBUG ===');
+  console.log('=== ENHANCED CALLBACK ROUTE DEBUG ===');
+  console.log('Extracted Customer ID:', extractedCustomerId);
+  console.log('Original Customer ID from Params:', customerId);
+  console.log('Redirect Path:', redirectFromParams);
   console.log('Full URL:', request.url);
   console.log('Search Params:', Object.fromEntries(request.nextUrl.searchParams));
   console.log('Headers:', {
@@ -46,6 +75,9 @@ export async function GET(request: NextRequest) {
   }
 
   try {
+    // Prioritize extracted customer ID, then original customer ID
+    const finalCustomerId = extractedCustomerId || customerId
+
     // Determine the redirect path (prioritize from params, then cookies, then default)
     const redirectPath = redirectFromParams || 
       request.cookies.get('shopify_login_redirect')?.value || 
@@ -53,16 +85,14 @@ export async function GET(request: NextRequest) {
 
     // Log debug information
     console.log('Callback processing:', {
-      customerId,
+      finalCustomerId,
       customerAccessToken,
       state,
-      storedState,
-      isDevelopment,
       redirectPath
     });
 
-    // If we have customer_id, proceed with setting cookies
-    if (customerId) {
+    // If we have a customer ID, proceed with setting cookies
+    if (finalCustomerId) {
       console.log('✅ Customer ID found, setting authentication cookies');
       
       // Construct full redirect URL
@@ -72,7 +102,7 @@ export async function GET(request: NextRequest) {
       const response = NextResponse.redirect(fullRedirectUrl);
 
       // Set authentication cookies
-      response.cookies.set('shopify_customer_id', customerId, {
+      response.cookies.set('shopify_customer_id', finalCustomerId, {
         httpOnly: false, // Allow JavaScript to read this cookie
         secure: process.env.NODE_ENV === 'production',
         sameSite: 'lax',
@@ -103,7 +133,7 @@ export async function GET(request: NextRequest) {
       return response;
     }
 
-    // If no customer_id, this might be the first step of OAuth
+    // If no customer ID, log and return error
     console.log('❌ No customer ID found in callback');
     return NextResponse.json({ 
       error: 'No customer information received',
