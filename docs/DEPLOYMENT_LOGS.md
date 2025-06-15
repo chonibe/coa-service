@@ -121,4 +121,37 @@
 - Cookie management
 - Session handling mechanisms
 
+## Domain and Routing Configuration [$(date '+%Y-%m-%d %H:%M:%S')]
+
+### Routing Strategy Enhancements
+1. Case-Insensitive Path Handling
+   - Normalize dashboard routes
+   - Support varied URL capitalizations
+   - Improve cross-domain compatibility
+
+2. Domain Allowlist Implementation
+   - Define explicit allowed domains
+   - Comprehensive domain validation
+   - Flexible routing across environments
+
+### Key Configuration Updates
+- Added support for multiple domain variations
+- Implemented case-insensitive route matching
+- Enhanced logging for domain-specific routing
+
+### Supported Domains
+- `dashboard.thestreetlamp.com`
+- `street-collector-chonibes-projects.vercel.app`
+- `localhost:3000`
+
+### Debugging Insights
+- Improved visibility into routing logic
+- Simplified domain-specific handling
+- Reduced potential routing conflicts
+
+### Next Investigation Points
+- Verify domain propagation
+- Test cross-environment routing
+- Monitor performance impact
+
 --- 

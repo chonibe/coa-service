@@ -2,29 +2,40 @@ import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 
 export async function middleware(req: NextRequest) {
-  // Enhanced Logging for Comprehensive Debugging
+  // Normalize path to handle case variations
+  const normalizedPath = req.nextUrl.pathname.toLowerCase()
+  const originalPath = req.nextUrl.pathname
+
+  // Comprehensive Domain Handling
+  const host = req.headers.get('host') || ''
+  const allowedDomains = [
+    'dashboard.thestreetlamp.com',
+    'street-collector-chonibes-projects.vercel.app',
+    'localhost:3000'
+  ]
+
   const logContext = {
     timestamp: new Date().toISOString(),
     requestDetails: {
       fullUrl: req.url,
-      pathname: req.nextUrl.pathname,
-      host: req.headers.get('host'),
+      originalPath,
+      normalizedPath,
+      host,
       method: req.method
     },
-    authenticationContext: {
-      shopifyCustomerId: req.cookies.get('shopify_customer_id')?.value,
-      hasAccessToken: !!req.cookies.get('shopify_customer_access_token'),
-      shopifyDomain: process.env.NEXT_PUBLIC_SHOPIFY_DOMAIN
+    domainContext: {
+      isAllowedDomain: allowedDomains.includes(host),
+      allowedDomains
     }
   }
 
-  console.log('🔍 Middleware Debug: Comprehensive Route Access', logContext)
+  console.log('🌐 Domain and Routing Analysis', logContext)
 
-  // Specific dashboard route handling with enhanced validation
-  if (req.nextUrl.pathname.startsWith('/dashboard/')) {
-    const customerId = req.nextUrl.pathname.split('/')[2]
+  // Case-Insensitive Dashboard Route Handling
+  if (normalizedPath.startsWith('/dashboard/')) {
+    const customerId = originalPath.split('/')[2]
     
-    const dashboardAccessContext = {
+    const dashboardContext = {
       ...logContext,
       dashboardDetails: {
         requestedCustomerId: customerId,
@@ -32,7 +43,7 @@ export async function middleware(req: NextRequest) {
       }
     }
 
-    console.log('🚦 Dashboard Route Detailed Analysis', dashboardAccessContext)
+    console.log('🚦 Dashboard Route Detailed Analysis', dashboardContext)
 
     // Strict Authentication Validation
     const shopifyCustomerId = req.cookies.get('shopify_customer_id')?.value
@@ -41,7 +52,7 @@ export async function middleware(req: NextRequest) {
     // Comprehensive Authentication Checks
     if (!shopifyCustomerId) {
       console.warn('⚠️ Missing Customer ID', {
-        ...dashboardAccessContext,
+        ...dashboardContext,
         reason: 'No Shopify Customer ID found in cookies'
       })
       return NextResponse.redirect(new URL('/login', req.url))
@@ -49,16 +60,16 @@ export async function middleware(req: NextRequest) {
 
     if (!shopifyCustomerAccessToken) {
       console.warn('⚠️ Missing Access Token', {
-        ...dashboardAccessContext,
+        ...dashboardContext,
         reason: 'No Shopify Customer Access Token found'
       })
       return NextResponse.redirect(new URL('/api/auth/shopify', req.url))
     }
 
-    // Customer ID Validation and Redirection
-    if (customerId !== shopifyCustomerId) {
+    // Case-Insensitive Customer ID Validation
+    if (customerId.toLowerCase() !== shopifyCustomerId.toLowerCase()) {
       console.warn('🚫 Customer ID Mismatch', {
-        ...dashboardAccessContext,
+        ...dashboardContext,
         reason: 'Requested customer ID does not match authenticated customer ID'
       })
       return NextResponse.redirect(new URL(`/dashboard/${shopifyCustomerId}`, req.url))
