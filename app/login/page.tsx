@@ -1,22 +1,14 @@
 "use client"
 
-import { useState, useEffect } from 'react'
+import { Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { toast } from '@/components/ui/use-toast'
 
-export default function CustomerLogin() {
+function LoginContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
-  const [redirectPath, setRedirectPath] = useState<string | null>(null)
-
-  useEffect(() => {
-    // Get redirect path from URL query parameter
-    const redirect = searchParams.get('redirect')
-    if (redirect) {
-      setRedirectPath(redirect)
-    }
-  }, [searchParams])
+  const redirectPath = searchParams.get('redirect')
 
   const handleShopifyLogin = async () => {
     try {
@@ -53,5 +45,13 @@ export default function CustomerLogin() {
         </div>
       </div>
     </div>
+  )
+}
+
+export default function CustomerLogin() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <LoginContent />
+    </Suspense>
   )
 } 
