@@ -29,7 +29,7 @@ export async function middleware(req: NextRequest) {
     }
   }
 
-  console.log('🌐 Domain and Routing Analysis', logContext)
+  console.log('🌐 Domain and Routing Analysis', JSON.stringify(logContext, null, 2))
 
   // Case-Insensitive Dashboard Route Handling
   if (normalizedPath.startsWith('/dashboard/')) {
@@ -43,35 +43,41 @@ export async function middleware(req: NextRequest) {
       }
     }
 
-    console.log('🚦 Dashboard Route Detailed Analysis', dashboardContext)
+    console.log('🚦 Dashboard Route Detailed Analysis', JSON.stringify(dashboardContext, null, 2))
 
-    // Strict Authentication Validation
+    // Comprehensive Authentication Checks with More Detailed Logging
     const shopifyCustomerId = req.cookies.get('shopify_customer_id')?.value
     const shopifyCustomerAccessToken = req.cookies.get('shopify_customer_access_token')?.value
 
-    // Comprehensive Authentication Checks
-    if (!shopifyCustomerId) {
-      console.warn('⚠️ Missing Customer ID', {
-        ...dashboardContext,
-        reason: 'No Shopify Customer ID found in cookies'
-      })
-      return NextResponse.redirect(new URL('/login', req.url))
+    // Enhanced Logging for Authentication State
+    console.log('🔐 Authentication State', JSON.stringify({
+      hasCustomerId: !!shopifyCustomerId,
+      hasAccessToken: !!shopifyCustomerAccessToken,
+      requestedCustomerId: customerId
+    }, null, 2))
+
+    // More Flexible Authentication Logic
+    if (!shopifyCustomerId || !shopifyCustomerAccessToken) {
+      console.warn('⚠️ Authentication Required', JSON.stringify({
+        reason: 'Missing customer ID or access token',
+        redirectTo: '/login'
+      }, null, 2))
+      
+      // Create a redirect response with the original destination as a query parameter
+      const loginUrl = new URL('/login', req.url)
+      loginUrl.searchParams.set('redirect', originalPath)
+      
+      return NextResponse.redirect(loginUrl)
     }
 
-    if (!shopifyCustomerAccessToken) {
-      console.warn('⚠️ Missing Access Token', {
-        ...dashboardContext,
-        reason: 'No Shopify Customer Access Token found'
-      })
-      return NextResponse.redirect(new URL('/api/auth/shopify', req.url))
-    }
-
-    // Case-Insensitive Customer ID Validation
-    if (customerId.toLowerCase() !== shopifyCustomerId.toLowerCase()) {
-      console.warn('🚫 Customer ID Mismatch', {
-        ...dashboardContext,
-        reason: 'Requested customer ID does not match authenticated customer ID'
-      })
+    // More Permissive Customer ID Validation
+    if (customerId && customerId.toLowerCase() !== shopifyCustomerId.toLowerCase()) {
+      console.warn('🚫 Customer ID Mismatch', JSON.stringify({
+        requestedCustomerId: customerId,
+        authenticatedCustomerId: shopifyCustomerId,
+        action: 'Redirecting to authenticated customer dashboard'
+      }, null, 2))
+      
       return NextResponse.redirect(new URL(`/dashboard/${shopifyCustomerId}`, req.url))
     }
   }
