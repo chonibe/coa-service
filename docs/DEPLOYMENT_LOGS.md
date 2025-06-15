@@ -64,4 +64,33 @@
 2. Authentication token management
 3. Routing middleware complexity
 
+## Domain Configuration Debugging [$(date '+%Y-%m-%d %H:%M:%S')]
+
+### Current Status
+- No custom domains assigned to Vercel project
+- `dashboard.thestreetlamp.com` assigned to another project
+- 404 errors on dashboard routes
+
+### Domain Conflict Resolution Strategies
+1. Project Domain Coordination
+   - Contact domain management team
+   - Request domain reassignment
+   - Verify DNS and routing configurations
+
+2. Temporary Routing Alternatives
+   - Use Vercel-generated deployment URL
+   - Implement server-side redirects
+   - Update client-side authentication flow
+
+### Recommended Immediate Actions
+- Verify Shopify OAuth configuration
+- Review DNS settings
+- Check middleware authentication logic
+- Test with Vercel-generated URL
+
+### Potential Root Causes
+1. Domain misconfiguration
+2. Project-level routing restrictions
+3. OAuth token management issues
+
 --- 
