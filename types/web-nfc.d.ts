@@ -9,17 +9,18 @@ interface NDEFRecord {
   data?: ArrayBuffer;
 }
 
-interface NDEFReader {
+interface NDEFReadingEvent {
+  message: NDEFMessage;
+  serialNumber: string;
+}
+
+declare class NDEFReader {
+  constructor();
   scan(): Promise<void>;
   write(message: NDEFMessage): Promise<void>;
-  addEventListener(type: 'reading', listener: (event: {
-    message: NDEFMessage;
-    serialNumber: string;
-  }) => void): void;
+  addEventListener(type: 'reading', listener: (event: NDEFReadingEvent) => void): void;
 }
 
 interface Window {
-  NDEFReader?: {
-    new(): NDEFReader;
-  };
+  NDEFReader: typeof NDEFReader;
 } 
