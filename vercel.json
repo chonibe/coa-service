@@ -8,5 +8,19 @@
     "env": {
       "NEXT_PUBLIC_STREET_LAMP_CLIENT_ID": "594cf36a-179f-4227-821d-1dd00f778900"
     }
-  }
+  },
+  "routes": [
+    {
+      "src": "/dashboard/(.*)",
+      "dest": "/app/dashboard/[customerId]/page.tsx"
+    },
+    {
+      "src": "/",
+      "dest": "/app/page.tsx"
+    }
+  ],
+  "domains": [
+    "dashboard.thestreetlamp.com",
+    "street-collector-chonibes-projects.vercel.app"
+  ]
 }
