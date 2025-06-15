@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from "react"
 import { Dialog, DialogContent } from "@/components/ui/dialog"
-import { X, BadgeIcon as Certificate, User, Calendar, Hash, ExternalLink, Award, Sparkles, Signature, Wifi, WifiOff, Album } from "lucide-react"
+import { X, BadgeIcon as Certificate, User, Calendar, Hash, ExternalLink, Award, Sparkles, Signature, Wifi, WifiOff, Album, Scan, Loader2 } from "lucide-react"
 import { motion, useMotionValue, useTransform } from "framer-motion"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -156,6 +156,7 @@ interface CertificateModalProps {
 export function CertificateModal({ lineItem, onClose }: CertificateModalProps) {
   const [isOpen, setIsOpen] = useState(false)
   const [isFlipped, setIsFlipped] = useState(false)
+  const [isNfcPairing, setIsNfcPairing] = useState(false)
 
   useEffect(() => {
     setIsOpen(!!lineItem)
@@ -174,6 +175,76 @@ export function CertificateModal({ lineItem, onClose }: CertificateModalProps) {
   const nfcStatus = lineItem.nfc_tag_id 
     ? (lineItem.nfc_claimed_at ? "paired" : "unpaired")
     : "no-nfc"
+
+  const handleNfcPairing = async () => {
+    // Check if Web NFC is supported
+    if ('NDEFReader' in window) {
+      try {
+        setIsNfcPairing(true)
+        const ndef = new NDEFReader()
+        await ndef.scan()
+
+        ndef.addEventListener("reading", async ({ message, serialNumber }) => {
+          try {
+            // Send tag to backend for verification and claim
+            const response = await fetch('/api/nfc-tags/claim', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                tagId: serialNumber,
+                lineItemId: lineItem?.line_item_id,
+                orderId: lineItem?.order_id,
+                customerId: null // TODO: Get actual customer ID
+              })
+            })
+
+            const result = await response.json()
+
+            if (result.success) {
+              toast({
+                title: "NFC Tag Paired",
+                description: "Your artwork has been successfully authenticated.",
+                variant: "default"
+              })
+              // Optionally refresh the line item or close modal
+              onClose()
+            } else {
+              toast({
+                title: "Pairing Failed",
+                description: result.message || "Unable to pair NFC tag",
+                variant: "destructive"
+              })
+            }
+          } catch (error) {
+            console.error("NFC Claim Error:", error)
+            toast({
+              title: "Pairing Error",
+              description: "An unexpected error occurred",
+              variant: "destructive"
+            })
+          } finally {
+            setIsNfcPairing(false)
+          }
+        })
+      } catch (error) {
+        console.error("NFC Scanning Error:", error)
+        toast({
+          title: "NFC Error",
+          description: "Unable to start NFC scanning",
+          variant: "destructive"
+        })
+        setIsNfcPairing(false)
+      }
+    } else {
+      toast({
+        title: "Unsupported Browser",
+        description: "Web NFC is not supported in your browser",
+        variant: "destructive"
+      })
+    }
+  }
 
   return (
     <Dialog open={isOpen} onOpenChange={() => {
@@ -321,95 +392,42 @@ export function CertificateModal({ lineItem, onClose }: CertificateModalProps) {
                   </div>
 
                   {/* NFC Pairing Section */}
-                  <div className="mt-4 bg-zinc-800/50 rounded-lg p-4 border border-zinc-700/30">
-                    <div className="flex justify-between items-center mb-3">
+                  <div className="mt-4 border-t pt-4">
+                    <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
-                        {nfcStatus === "paired" ? (
-                          <Wifi className="h-5 w-5 text-green-400" />
-                        ) : nfcStatus === "unpaired" ? (
-                          <WifiOff className="h-5 w-5 text-yellow-400" />
+                        {nfcStatus === "unpaired" ? (
+                          <WifiOff className="h-5 w-5 text-yellow-500" />
                         ) : (
-                          <WifiOff className="h-5 w-5 text-red-400" />
+                          <Wifi className="h-5 w-5 text-gray-500" />
                         )}
-                        <p className="text-sm font-medium text-white">
-                          NFC Tag Status: {
-                            nfcStatus === "paired" ? "Paired" : 
-                            nfcStatus === "unpaired" ? "Unclaimed" : 
-                            "No NFC Tag"
-                          }
-                        </p>
+                        <span className="text-sm">
+                          {nfcStatus === "unpaired" 
+                            ? "NFC Tag Available" 
+                            : "No NFC Tag Assigned"}
+                        </span>
                       </div>
-                      {nfcStatus !== "paired" && lineItem.nfc_tag_id && (
-                        <Button 
-                          size="sm" 
-                          variant="outline"
-                          className="text-xs"
-                          onClick={async () => {
-                            try {
-                              // Prompt for NFC tag scanning
-                              const tagId = await new Promise<string>((resolve, reject) => {
-                                // You might want to replace this with a proper NFC scanning modal/component
-                                const scannedTagId = prompt("Please scan your NFC tag")
-                                if (scannedTagId) {
-                                  resolve(scannedTagId)
-                                } else {
-                                  reject(new Error("No tag scanned"))
-                                }
-                              })
-
-                              // Call the NFC claim API
-                              const response = await fetch('/api/nfc-tags/claim', {
-                                method: 'POST',
-                                headers: {
-                                  'Content-Type': 'application/json',
-                                },
-                                body: JSON.stringify({
-                                  tagId,
-                                  lineItemId: lineItem.line_item_id,
-                                  orderId: lineItem.order_id,
-                                  customerId: document.cookie
-                                    .split('; ')
-                                    .find(row => row.startsWith('shopify_customer_id='))
-                                    ?.split('=')[1]
-                                })
-                              })
-
-                              const result = await response.json()
-
-                              if (result.success) {
-                                toast({
-                                  title: "NFC Tag Paired",
-                                  description: "Your NFC tag has been successfully paired with this artwork.",
-                                  variant: "default"
-                                })
-                                
-                                // Optionally, you might want to refresh the line item data
-                                // This would require passing a refresh callback from the parent component
-                              } else {
-                                toast({
-                                  title: "NFC Pairing Failed",
-                                  description: result.message || "Unable to pair NFC tag",
-                                  variant: "destructive"
-                                })
-                              }
-                            } catch (error) {
-                              console.error("NFC Pairing Error:", error)
-                              toast({
-                                title: "NFC Pairing Error",
-                                description: error instanceof Error ? error.message : "An unexpected error occurred",
-                                variant: "destructive"
-                              })
-                            }
-                          }}
-                        >
-                          Pair NFC Tag
-                        </Button>
-                      )}
+                      <Button 
+                        onClick={handleNfcPairing}
+                        disabled={isNfcPairing}
+                        className="flex items-center gap-2"
+                      >
+                        {isNfcPairing ? (
+                          <>
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                            Scanning...
+                          </>
+                        ) : (
+                          <>
+                            <Scan className="h-4 w-4" />
+                            Pair NFC Tag
+                          </>
+                        )}
+                      </Button>
                     </div>
-                    {nfcStatus === "paired" && (
-                      <div className="text-xs text-zinc-400">
-                        <p>Paired on: {lineItem.nfc_claimed_at ? new Date(lineItem.nfc_claimed_at).toLocaleString() : 'Unknown'}</p>
-                      </div>
+                    {nfcStatus === "unpaired" && (
+                      <p className="text-xs text-muted-foreground mt-2">
+                        Scan an NFC tag to authenticate and pair with this artwork.
+                      </p>
                     )}
                   </div>
 
