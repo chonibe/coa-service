@@ -1,16 +1,42 @@
 import { NextRequest, NextResponse } from 'next/server';
 import crypto from 'crypto';
 
+// Enhanced redirect path extraction function
+function normalizeRedirectPath(rawRedirectPath: string | null): string {
+  if (!rawRedirectPath) return '/customer/dashboard';
+
+  // Try to extract customer ID from various URL formats
+  const customerIdPatterns = [
+    /\/dashboard\/(\d+)/, // Matches /dashboard/6435402285283
+    /\/customer\/dashboard\/(\d+)/, // Matches /customer/dashboard/6435402285283
+    /\/(\d+)$/ // Matches URLs ending with a number
+  ];
+
+  for (const pattern of customerIdPatterns) {
+    const match = rawRedirectPath.match(pattern);
+    if (match && match[1]) {
+      console.log('🔍 Customer ID found in redirect path:', match[1]);
+      return `/dashboard/${match[1]}`;
+    }
+  }
+
+  // If no customer ID found, return default or original path
+  return rawRedirectPath.startsWith('/dashboard/') 
+    ? rawRedirectPath 
+    : `/customer/dashboard`;
+}
+
 export async function GET(request: NextRequest) {
   try {
-    // Extract redirect path, with fallback and normalization
-    const rawRedirectPath = request.nextUrl.searchParams.get('redirect') || '/dashboard'
-    const redirectPath = normalizeRedirectPath(rawRedirectPath)
+    // Enhanced redirect path normalization
+    const rawRedirectPath = request.nextUrl.searchParams.get('redirect') || '/customer/dashboard'
+    const redirectPath = normalizeRedirectPath(rawRedirectPath);
 
-    console.log('Shopify Auth Redirect Processing', {
+    // Log debug information about redirect path
+    console.log('Redirect Path Processing:', {
       rawRedirectPath,
       normalizedRedirectPath: redirectPath
-    })
+    });
 
     // Check if user is already authenticated
     const existingCustomerId = request.cookies.get('shopify_customer_id')?.value
@@ -68,19 +94,4 @@ export async function GET(request: NextRequest) {
     // Fallback error handling
     return NextResponse.redirect(new URL('/login', request.url));
   }
-}
-
-// Utility function to normalize redirect paths
-function normalizeRedirectPath(path: string | null): string {
-  if (!path) return '/dashboard'
-
-  // Remove any potential double slashes
-  path = path.replace(/\/+/g, '/')
-
-  // Ensure path starts with /dashboard or /customer/dashboard
-  if (!path.startsWith('/dashboard') && !path.startsWith('/customer/dashboard')) {
-    return `/dashboard/${path.replace(/^\//, '')}`
-  }
-
-  return path
 } 
