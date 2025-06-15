@@ -3,11 +3,14 @@ import crypto from 'crypto';
 
 export async function GET(request: NextRequest) {
   try {
-    // Extract redirect path, ensuring it starts with /dashboard
-    const rawRedirectPath = request.nextUrl.searchParams.get('redirect') || '/customer/dashboard'
-    const redirectPath = rawRedirectPath.startsWith('/dashboard/') 
-      ? rawRedirectPath 
-      : `/dashboard/${rawRedirectPath.split('/').pop() || ''}`.replace('//', '/');
+    // Extract redirect path, with fallback and normalization
+    const rawRedirectPath = request.nextUrl.searchParams.get('redirect') || '/dashboard'
+    const redirectPath = normalizeRedirectPath(rawRedirectPath)
+
+    console.log('Shopify Auth Redirect Processing', {
+      rawRedirectPath,
+      normalizedRedirectPath: redirectPath
+    })
 
     // Check if user is already authenticated
     const existingCustomerId = request.cookies.get('shopify_customer_id')?.value
@@ -33,49 +36,51 @@ export async function GET(request: NextRequest) {
     // Create the redirect URL back to our app
     const redirectBackUrl = `${appUrl}/api/auth/callback`;
     
-    // Try a simpler approach - redirect directly to Shopify account login
-    // with a return URL that includes our callback information
+    // Create login URL with comprehensive redirect handling
     const loginUrl = new URL(`https://${shopDomain}/account/login`);
     
-    // Create a return URL that will work with Shopify's default behavior
-    const returnUrl = `/pages/street-collector-auth?redirect_uri=${encodeURIComponent(redirectBackUrl)}&state=${state}&redirect=${encodeURIComponent(redirectPath)}`;
+    // Create a return URL that includes all necessary authentication context
+    const returnUrl = `/pages/street-collector-customer-redirect?redirect_uri=${encodeURIComponent(redirectBackUrl)}&state=${state}&redirect=${encodeURIComponent(redirectPath)}`;
+    
     loginUrl.searchParams.set('return_url', returnUrl);
 
-    console.log('Shopify Auth Debug:', {
-      shopDomain,
-      appUrl,
-      redirectBackUrl,
-      returnUrl,
-      fullLoginUrl: loginUrl.toString(),
-      redirectPath
-    });
-
-    // Create a response that will redirect to the Shopify customer login page
-    const response = NextResponse.redirect(loginUrl.toString());
-
-    // Set cookies for state and post-login redirect
+    // Set state in a cookie for verification
+    const response = NextResponse.redirect(loginUrl);
     response.cookies.set('shopify_oauth_state', state, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
-      maxAge: 60 * 10 // 10 minutes
+      maxAge: 60 * 15 // 15 minutes
     });
 
-    // Set redirect destination cookie
+    // Store the original redirect path for callback use
     response.cookies.set('shopify_login_redirect', redirectPath, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
-      maxAge: 60 * 10 // 10 minutes
+      maxAge: 60 * 15 // 15 minutes
     });
 
     return response;
-
   } catch (error) {
-    console.error('Shopify Customer Login Redirect Error:', error);
-    return NextResponse.json({ 
-      error: 'Failed to initiate Shopify customer login',
-      details: error instanceof Error ? error.message : 'Unknown error'
-    }, { status: 500 });
+    console.error('Shopify Authentication Error:', error);
+    
+    // Fallback error handling
+    return NextResponse.redirect(new URL('/login', request.url));
   }
+}
+
+// Utility function to normalize redirect paths
+function normalizeRedirectPath(path: string | null): string {
+  if (!path) return '/dashboard'
+
+  // Remove any potential double slashes
+  path = path.replace(/\/+/g, '/')
+
+  // Ensure path starts with /dashboard or /customer/dashboard
+  if (!path.startsWith('/dashboard') && !path.startsWith('/customer/dashboard')) {
+    return `/dashboard/${path.replace(/^\//, '')}`
+  }
+
+  return path
 } 

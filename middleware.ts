@@ -2,37 +2,31 @@ import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 
 export async function middleware(req: NextRequest) {
-  // Normalize path to handle case variations
-  const normalizedPath = req.nextUrl.pathname.toLowerCase()
-  const originalPath = req.nextUrl.pathname
-
-  // Comprehensive Domain Handling
-  const host = req.headers.get('host') || ''
-  const allowedDomains = [
-    'dashboard.thestreetlamp.com',
-    'street-collector-chonibes-projects.vercel.app',
-    'localhost:3000'
-  ]
-
+  // Enhanced logging context
   const logContext = {
     timestamp: new Date().toISOString(),
-    requestDetails: {
-      fullUrl: req.url,
-      originalPath,
-      normalizedPath,
-      host,
-      method: req.method
-    },
-    domainContext: {
-      isAllowedDomain: allowedDomains.includes(host),
-      allowedDomains
-    }
+    path: req.nextUrl.pathname,
+    method: req.method
   }
 
-  console.log('🌐 Domain and Routing Analysis', JSON.stringify(logContext, null, 2))
+  // Normalize path for case-insensitive routing
+  const originalPath = req.nextUrl.pathname
+  const normalizedPath = originalPath.toLowerCase()
+
+  // Detailed authentication logging
+  const authLoggingContext = {
+    shopifyCustomerId: req.cookies.get('shopify_customer_id')?.value,
+    shopifyCustomerAccessToken: req.cookies.get('shopify_customer_access_token')?.value,
+    shopifyCustomerLogin: req.cookies.get('shopify_customer_login')?.value
+  }
+
+  console.log('🔍 Middleware Authentication Context', JSON.stringify({
+    ...logContext,
+    ...authLoggingContext
+  }, null, 2))
 
   // Case-Insensitive Dashboard Route Handling
-  if (normalizedPath.startsWith('/dashboard/')) {
+  if (normalizedPath.startsWith('/dashboard/') || normalizedPath.startsWith('/customer/dashboard')) {
     const customerId = originalPath.split('/')[2]
     
     const dashboardContext = {
@@ -60,7 +54,11 @@ export async function middleware(req: NextRequest) {
     if (!shopifyCustomerId || !shopifyCustomerAccessToken) {
       console.warn('⚠️ Authentication Required', JSON.stringify({
         reason: 'Missing customer ID or access token',
-        redirectTo: '/login'
+        redirectTo: '/login',
+        details: {
+          missingCustomerId: !shopifyCustomerId,
+          missingAccessToken: !shopifyCustomerAccessToken
+        }
       }, null, 2))
       
       // Create a redirect response with the original destination as a query parameter
@@ -86,7 +84,10 @@ export async function middleware(req: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/dashboard/:path*']
+  matcher: [
+    '/dashboard/:path*', 
+    '/customer/dashboard/:path*'
+  ]
 }
 
 
