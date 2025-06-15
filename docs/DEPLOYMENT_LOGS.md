@@ -93,4 +93,32 @@
 2. Project-level routing restrictions
 3. OAuth token management issues
 
+## Middleware Authentication Debugging [$(date '+%Y-%m-%d %H:%M:%S')]
+
+### Comprehensive Logging Strategy
+- Enhanced middleware logging
+- Detailed authentication context capture
+- Strict validation of customer routes
+
+### Authentication Flow Insights
+1. Cookie-based Authentication
+   - Verify Shopify Customer ID
+   - Check Access Token presence
+   - Validate customer route matching
+
+2. Redirection Scenarios
+   - Missing Customer ID → `/login`
+   - Missing Access Token → `/api/auth/shopify`
+   - Customer ID Mismatch → Redirect to correct dashboard
+
+### Debugging Enhancements
+- Added timestamp to log entries
+- Captured full request context
+- Implemented granular authentication checks
+
+### Potential Investigation Points
+- Shopify OAuth configuration
+- Cookie management
+- Session handling mechanisms
+
 --- 
