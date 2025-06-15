@@ -1,15 +1,12 @@
 {
   "version": 2,
-  "builds": [
-    {
-      "src": "next.config.js",
-      "use": "@vercel/next"
+  "env": {
+    "NODE_ENV": "production",
+    "NEXT_PUBLIC_STREET_LAMP_CLIENT_ID": "594cf36a-179f-4227-821d-1dd00f778900"
+  },
+  "build": {
+    "env": {
+      "NEXT_PUBLIC_STREET_LAMP_CLIENT_ID": "594cf36a-179f-4227-821d-1dd00f778900"
     }
-  ],
-  "routes": [
-    {
-      "src": "/(.*)",
-      "dest": "/"
-    }
-  ]
+  }
 }
