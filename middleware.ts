@@ -2,48 +2,55 @@ import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 
 export async function middleware(req: NextRequest) {
-  console.log('Middleware Triggered:', {
-    path: req.nextUrl.pathname,
+  console.log('🔍 Middleware Debug: Dashboard Route Access', {
+    fullUrl: req.url,
+    pathname: req.nextUrl.pathname,
+    host: req.headers.get('host'),
     shopifyCustomerId: req.cookies.get('shopify_customer_id')?.value,
-    hasAccessToken: !!req.cookies.get('shopify_customer_access_token')
+    accessToken: !!req.cookies.get('shopify_customer_access_token'),
+    method: req.method
   })
 
-  const res = NextResponse.next()
-
-  // Check for Shopify customer authentication
-  const shopifyCustomerId = req.cookies.get('shopify_customer_id')
-  const shopifyCustomerAccessToken = req.cookies.get('shopify_customer_access_token')
-
-  // Enhanced logging for dashboard routes
-  if (req.nextUrl.pathname.startsWith('/dashboard')) {
-    console.log('Dashboard Route Accessed:', {
-      fullUrl: req.url,
-      customerId: req.nextUrl.pathname.split('/').pop(),
-      authStatus: {
-        hasCustomerId: !!shopifyCustomerId,
-        hasAccessToken: !!shopifyCustomerAccessToken
+  // Specific dashboard route handling
+  if (req.nextUrl.pathname.startsWith('/dashboard/')) {
+    const customerId = req.nextUrl.pathname.split('/')[2]
+    
+    console.log('🚦 Dashboard Route Details', {
+      customerId,
+      authenticationStatus: {
+        hasCustomerId: !!customerId,
+        cookieCustomerId: req.cookies.get('shopify_customer_id')?.value
       }
     })
-  }
 
-  // Redirect to Shopify OAuth if no authentication for customer routes
-  if ((!shopifyCustomerId || !shopifyCustomerAccessToken) && req.nextUrl.pathname.startsWith('/customer')) {
-    console.log('Redirecting to Shopify OAuth: No authentication')
-    return NextResponse.redirect(new URL('/api/auth/shopify', req.url))
-  }
+    // Enhanced authentication check
+    const shopifyCustomerId = req.cookies.get('shopify_customer_id')?.value
+    const shopifyCustomerAccessToken = req.cookies.get('shopify_customer_access_token')?.value
 
-  // For customer dashboard routes, ensure user is properly authenticated
-  if (req.nextUrl.pathname.startsWith('/dashboard')) {
-    if (!shopifyCustomerId) {
-      console.log('Redirecting to Shopify OAuth: No customer ID for dashboard')
-      return NextResponse.redirect(new URL('/api/auth/shopify', req.url))
+    if (!shopifyCustomerId || !shopifyCustomerAccessToken) {
+      console.warn('⚠️ Unauthorized Dashboard Access Attempt', {
+        reason: 'Missing authentication',
+        requestedRoute: req.nextUrl.pathname
+      })
+
+      return NextResponse.redirect(new URL('/login', req.url))
+    }
+
+    // Validate customer ID match
+    if (customerId !== shopifyCustomerId) {
+      console.warn('🚫 Customer ID Mismatch', {
+        requestedId: customerId,
+        authenticatedId: shopifyCustomerId
+      })
+
+      return NextResponse.redirect(new URL('/dashboard/' + shopifyCustomerId, req.url))
     }
   }
 
-  return res
+  return NextResponse.next()
 }
 
-// Specify which routes this middleware should run on
 export const config = {
-  matcher: ['/customer/:path*', '/dashboard/:path*']
+  matcher: ['/dashboard/:path*']
 }
+
