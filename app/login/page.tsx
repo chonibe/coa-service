@@ -1,57 +1,81 @@
 "use client"
 
-import { Suspense } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { toast } from '@/components/ui/use-toast'
 
-function LoginContent() {
+export default function LoginPage() {
   const router = useRouter()
   const searchParams = useSearchParams()
-  const redirectPath = searchParams.get('redirect')
+  const [isLoading, setIsLoading] = useState(false)
+  const [redirectPath, setRedirectPath] = useState<string | null>(null)
+
+  useEffect(() => {
+    // Extract redirect path from search parameters
+    const redirect = searchParams.get('redirect')
+    if (redirect) {
+      setRedirectPath(decodeURIComponent(redirect))
+      console.log('Login Page Redirect Path:', redirect)
+    }
+  }, [searchParams])
 
   const handleShopifyLogin = async () => {
     try {
+      setIsLoading(true)
+      
+      // Construct Shopify login URL with redirect
+      const loginUrl = new URL('/api/auth/shopify', window.location.origin)
+      
+      // Include redirect path if available
+      if (redirectPath) {
+        loginUrl.searchParams.set('redirect', redirectPath)
+      }
+
       // Redirect to Shopify authentication
-      const authUrl = `/api/auth/shopify${redirectPath ? `?redirect=${encodeURIComponent(redirectPath)}` : ''}`
-      router.push(authUrl)
+      window.location.href = loginUrl.toString()
     } catch (error) {
+      console.error('Login Error:', error)
       toast({
-        title: 'Login Error',
-        description: 'Unable to initiate Shopify login',
+        title: 'Authentication Error',
+        description: 'Unable to initiate login. Please try again.',
         variant: 'destructive'
       })
+      setIsLoading(false)
     }
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full space-y-8">
-        <div>
-          <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-            Street Collector Login
-          </h2>
-          <p className="mt-2 text-center text-sm text-gray-600">
-            Access your digital art collection
-          </p>
-        </div>
-        <div>
-          <Button 
-            onClick={handleShopifyLogin} 
-            className="w-full"
-          >
-            Login with Shopify
-          </Button>
-        </div>
-      </div>
-    </div>
-  )
-}
+    <div className="flex min-h-screen items-center justify-center bg-gray-100 p-4">
+      <Card className="w-full max-w-md">
+        <CardHeader>
+          <CardTitle>Street Collector Login</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            <p className="text-muted-foreground">
+              {redirectPath 
+                ? `Please log in to access: ${redirectPath}` 
+                : 'Log in to access your Street Collector dashboard'}
+            </p>
+            
+            <Button 
+              onClick={handleShopifyLogin} 
+              disabled={isLoading}
+              className="w-full"
+            >
+              {isLoading ? 'Authenticating...' : 'Log in with Shopify'}
+            </Button>
 
-export default function CustomerLogin() {
-  return (
-    <Suspense fallback={<div>Loading...</div>}>
-      <LoginContent />
-    </Suspense>
+            {redirectPath && (
+              <div className="text-sm text-muted-foreground text-center mt-2">
+                You will be redirected to {redirectPath} after authentication
+              </div>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+    </div>
   )
 } 
