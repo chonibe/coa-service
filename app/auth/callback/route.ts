@@ -51,12 +51,18 @@ function getRedirectUri(): string {
 
 export async function GET(request: NextRequest) {
   try {
-    // Retrieve the stored redirect URL from cookies
-    const redirectUrl = request.cookies.get('shopify_login_redirect')?.value 
-      || 'https://dashboard.thestreetlamp.com/customer/dashboard';
+    // Check for custom redirect from query parameters
+    const { searchParams } = new URL(request.url)
+    const customRedirect = searchParams.get('redirect')
+
+    // Retrieve the stored redirect URL from cookies or use default
+    const redirectUrl = customRedirect || 
+      request.cookies.get('shopify_login_redirect')?.value || 
+      'https://dashboard.thestreetlamp.com/customer/dashboard';
 
     console.log('Callback Route Redirect:', {
       redirectUrl,
+      customRedirect,
       requestUrl: request.url
     });
 
