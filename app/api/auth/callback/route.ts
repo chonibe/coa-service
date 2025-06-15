@@ -5,6 +5,7 @@ export async function GET(request: NextRequest) {
   const state = searchParams.get('state')
   const customerId = searchParams.get('customer_id')
   const customerAccessToken = searchParams.get('customer_access_token')
+  const redirectFromParams = searchParams.get('redirect')
 
   // Comprehensive debug logging
   console.log('=== CALLBACK ROUTE DEBUG ===');
@@ -45,21 +46,30 @@ export async function GET(request: NextRequest) {
   }
 
   try {
+    // Determine the redirect path (prioritize from params, then cookies, then default)
+    const redirectPath = redirectFromParams || 
+      request.cookies.get('shopify_login_redirect')?.value || 
+      '/dashboard'
+
     // Log debug information
     console.log('Callback processing:', {
       customerId,
       customerAccessToken,
       state,
       storedState,
-      isDevelopment
+      isDevelopment,
+      redirectPath
     });
 
     // If we have customer_id, proceed with setting cookies
     if (customerId) {
       console.log('✅ Customer ID found, setting authentication cookies');
       
+      // Construct full redirect URL
+      const fullRedirectUrl = new URL(redirectPath, request.nextUrl.origin)
+
       // Redirect to customer dashboard
-      const response = NextResponse.redirect(new URL('/customer/dashboard', request.url));
+      const response = NextResponse.redirect(fullRedirectUrl);
 
       // Set authentication cookies
       response.cookies.set('shopify_customer_id', customerId, {
@@ -85,10 +95,11 @@ export async function GET(request: NextRequest) {
         maxAge: 60 * 60 * 24 * 7 // 7 days
       });
 
-      // Clear the state cookie
+      // Clear the state and redirect cookies
       response.cookies.delete('shopify_oauth_state');
+      response.cookies.delete('shopify_login_redirect');
 
-      console.log('🎉 Authentication successful, redirecting to dashboard');
+      console.log('🎉 Authentication successful, redirecting to:', fullRedirectUrl.toString());
       return response;
     }
 

@@ -3,6 +3,21 @@ import crypto from 'crypto';
 
 export async function GET(request: NextRequest) {
   try {
+    // Check if user is already authenticated
+    const existingCustomerId = request.cookies.get('shopify_customer_id')?.value
+    const existingCustomerAccessToken = request.cookies.get('shopify_customer_access_token')?.value
+    const redirectPath = request.nextUrl.searchParams.get('redirect') || '/customer/dashboard'
+
+    // If already authenticated, redirect to the requested or default path
+    if (existingCustomerId && existingCustomerAccessToken) {
+      console.log('User already authenticated, redirecting', {
+        customerId: existingCustomerId,
+        redirectPath
+      });
+
+      return NextResponse.redirect(new URL(redirectPath, request.url));
+    }
+
     // Ensure these are set in your .env file
     const shopDomain = process.env.SHOPIFY_SHOP || 'thestreetlamp-9103.myshopify.com';
     const appUrl = process.env.NEXT_PUBLIC_APP_URL || request.nextUrl.origin;
@@ -18,7 +33,7 @@ export async function GET(request: NextRequest) {
     const loginUrl = new URL(`https://${shopDomain}/account/login`);
     
     // Create a return URL that will work with Shopify's default behavior
-    const returnUrl = `/pages/street-collector-auth?redirect_uri=${encodeURIComponent(redirectBackUrl)}&state=${state}`;
+    const returnUrl = `/pages/street-collector-auth?redirect_uri=${encodeURIComponent(redirectBackUrl)}&state=${state}&redirect=${encodeURIComponent(redirectPath)}`;
     loginUrl.searchParams.set('return_url', returnUrl);
 
     console.log('Shopify Auth Debug:', {
@@ -26,28 +41,26 @@ export async function GET(request: NextRequest) {
       appUrl,
       redirectBackUrl,
       returnUrl,
-      fullLoginUrl: loginUrl.toString()
+      fullLoginUrl: loginUrl.toString(),
+      redirectPath
     });
 
     // Create a response that will redirect to the Shopify customer login page
     const response = NextResponse.redirect(loginUrl.toString());
 
     // Set cookies for state and post-login redirect
-    const postLoginRedirect = '/customer/dashboard';
-
-    // Set state cookie for CSRF protection
     response.cookies.set('shopify_oauth_state', state, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax', // Changed to 'lax' to allow cross-site redirects
+      sameSite: 'lax',
       maxAge: 60 * 10 // 10 minutes
     });
 
     // Set redirect destination cookie
-    response.cookies.set('shopify_login_redirect', postLoginRedirect, {
+    response.cookies.set('shopify_login_redirect', redirectPath, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax', // Changed to 'lax' to allow cross-site redirects
+      sameSite: 'lax',
       maxAge: 60 * 10 // 10 minutes
     });
 
