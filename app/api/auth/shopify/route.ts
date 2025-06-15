@@ -3,12 +3,17 @@ import crypto from 'crypto';
 
 export async function GET(request: NextRequest) {
   try {
+    // Extract redirect path, ensuring it starts with /dashboard
+    const rawRedirectPath = request.nextUrl.searchParams.get('redirect') || '/customer/dashboard'
+    const redirectPath = rawRedirectPath.startsWith('/dashboard/') 
+      ? rawRedirectPath 
+      : `/dashboard/${rawRedirectPath.split('/').pop() || ''}`.replace('//', '/');
+
     // Check if user is already authenticated
     const existingCustomerId = request.cookies.get('shopify_customer_id')?.value
     const existingCustomerAccessToken = request.cookies.get('shopify_customer_access_token')?.value
-    const redirectPath = request.nextUrl.searchParams.get('redirect') || '/customer/dashboard'
 
-    // If already authenticated, redirect to the requested or default path
+    // If already authenticated, redirect to the requested dashboard path
     if (existingCustomerId && existingCustomerAccessToken) {
       console.log('User already authenticated, redirecting', {
         customerId: existingCustomerId,
