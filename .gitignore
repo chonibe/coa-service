@@ -42,3 +42,6 @@ next-env.d.ts
 
 # large files
 postgresql-installer.exe
+
+# Ignore production env file
+.env.production
