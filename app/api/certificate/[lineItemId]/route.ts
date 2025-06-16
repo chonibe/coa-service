@@ -1,141 +1,114 @@
 import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
-import { createClient } from "@/lib/supabase/server"
-import { generateCertificate } from "@/lib/certificate-generator"
+import { supabase } from "@/lib/supabase"
 import { SHOPIFY_SHOP, SHOPIFY_ACCESS_TOKEN, CERTIFICATE_METAFIELD_ID } from "@/lib/env"
 
-export async function GET(
-  request: NextRequest,
-  { params }: { params: { lineItemId: string } }
-) {
+export async function GET(request: NextRequest, { params }: { params: { lineItemId: string } }) {
+  const lineItemId = params.lineItemId
+  const isPreview = request.headers.get("x-preview-mode") === "true"
+
+  // CORS headers for accessing from any domain
+  const corsHeaders = {
+    "Access-Control-Allow-Origin": "*",
+    "Access-Control-Allow-Methods": "GET, OPTIONS",
+    "Access-Control-Allow-Headers": "Content-Type, Authorization, x-preview-mode",
+  }
+
+  if (!supabase) {
+    return NextResponse.json(
+      { success: false, message: "Database connection not available" },
+      { status: 500, headers: corsHeaders },
+    )
+  }
+
   try {
-    // Create Supabase client using the server-side method
-    const supabase = createClient()
-
-    const { lineItemId } = params
-    const searchParams = request.nextUrl.searchParams
-    const token = searchParams.get("token")
-
-    // Validate line item
-    const { data: lineItem, error: lineItemError } = await supabase
+    // Get the line item data from the database
+    const { data: lineItemData, error: lineItemError } = await supabase
       .from("order_line_items_v2")
-      .select(`
-        line_item_id,
-        order_id,
-        product_id,
-        title,
-        quantity,
-        status,
-        edition_number,
-        edition_total,
-        certificate_url,
-        certificate_token,
-        certificate_generated_at,
-        nfc_tag_id,
-        nfc_claimed_at
-      `)
+      .select("*")
       .eq("line_item_id", lineItemId)
       .single()
 
     if (lineItemError) {
-      if (lineItemError.code === "PGRST116") {
-        return NextResponse.json({ error: "Line item not found" }, { status: 404 })
-      }
-      throw lineItemError
+      console.error("Error fetching line item:", lineItemError)
+      return NextResponse.json(
+        { success: false, message: "Line item not found" },
+        { status: 404, headers: corsHeaders },
+      )
     }
 
-    // Validate certificate token if provided
-    if (token && token !== lineItem.certificate_token) {
-      return NextResponse.json({ error: "Invalid certificate token" }, { status: 403 })
+    if (!lineItemData) {
+      return NextResponse.json(
+        { success: false, message: "Line item not found" },
+        { status: 404, headers: corsHeaders },
+      )
     }
 
-    // Get product details
-    const { data: product, error: productError } = await supabase
-      .from("products")
-      .select(`
-        id,
-        title,
-        description,
-        vendor_name,
-        collection_name,
-        image_url
-      `)
-      .eq("id", lineItem.product_id)
-      .single()
+    // Get product data from Shopify
+    const productData = await fetchProductData(lineItemData.product_id as string)
 
-    if (productError) {
-      if (productError.code === "PGRST116") {
-        return NextResponse.json({ error: "Product not found" }, { status: 404 })
-      }
-      throw productError
-    }
+    // Get order data from Shopify
+    const orderData = await fetchOrderData(lineItemData.order_id as string)
 
-    // Get order details
-    const { data: order, error: orderError } = await supabase
-      .from("orders")
-      .select("name, created_at")
-      .eq("id", lineItem.order_id)
-      .single()
+    // Check if we have a stored certificate URL
+    const certificateUrl =
+      lineItemData.certificate_url ||
+      `${process.env.NEXT_PUBLIC_CUSTOMER_APP_URL || request.nextUrl.origin}/certificate/${lineItemData.line_item_id}`
 
-    if (orderError) {
-      if (orderError.code === "PGRST116") {
-        return NextResponse.json({ error: "Order not found" }, { status: 404 })
-      }
-      throw orderError
-    }
-
-    // Prepare certificate data
+    // Format the certificate data
     const certificateData = {
       lineItem: {
-        id: lineItem.line_item_id,
-        title: lineItem.title,
-        quantity: lineItem.quantity,
-        editionNumber: lineItem.edition_number,
-        editionTotal: lineItem.edition_total,
-        nfcTagId: lineItem.nfc_tag_id,
-        nfcClaimedAt: lineItem.nfc_claimed_at,
+        id: lineItemData.line_item_id,
+        editionNumber: lineItemData.edition_number,
+        editionTotal: lineItemData.edition_total,
+        status: lineItemData.status,
+        createdAt: lineItemData.created_at,
+        updatedAt: lineItemData.updated_at,
+        certificateGeneratedAt: lineItemData.certificate_generated_at,
+        accessToken: lineItemData.certificate_token,
       },
-      product: {
-        id: product.id,
-        title: product.title,
-        description: product.description,
-        vendorName: product.vendor_name,
-        collectionName: product.collection_name,
-        imageUrl: product.image_url,
-      },
+      product: productData,
       order: {
-        name: order.name,
-        createdAt: order.created_at,
+        id: lineItemData.order_id,
+        orderName: lineItemData.order_name,
+        customer: orderData.customer
+          ? {
+              firstName: orderData.customer.first_name,
+              lastName: orderData.customer.last_name,
+              email: orderData.customer.email,
+            }
+          : null,
+        createdAt: orderData.created_at,
+        processedAt: orderData.processed_at,
       },
-      additionalInfo: null,
+      certificateUrl: certificateUrl,
+      verificationUrl: `${process.env.NEXT_PUBLIC_APP_URL || request.nextUrl.origin}/api/certificate/${lineItemData.line_item_id}`,
     }
 
-    // Generate or retrieve certificate
-    const certificateUrl = await generateCertificate(certificateData)
-
-    // Update certificate URL if not already set
-    if (!lineItem.certificate_url) {
-      await supabase
-        .from("order_line_items_v2")
-        .update({
-          certificate_url: certificateUrl,
-          updated_at: new Date().toISOString(),
+    // Only log certificate access if not in preview mode
+    if (!isPreview) {
+      try {
+        await supabase.from("certificate_access_logs").insert({
+          line_item_id: lineItemId,
+          order_id: lineItemData.order_id,
+          product_id: lineItemData.product_id,
+          accessed_at: new Date().toISOString(),
+          ip_address: request.headers.get("x-forwarded-for") || "unknown",
+          user_agent: request.headers.get("user-agent") || "unknown",
         })
-        .eq("line_item_id", lineItemId)
+      } catch (logError) {
+        console.error("Error logging certificate access:", logError)
+        // Continue even if logging fails
+      }
     }
 
-    return NextResponse.json({
-      success: true,
-      certificateUrl,
-      lineItem: certificateData.lineItem,
-      product: certificateData.product,
-      order: certificateData.order,
-    })
+    return NextResponse.json({ success: true, certificate: certificateData }, { status: 200, headers: corsHeaders })
   } catch (error: any) {
     console.error("Error generating certificate:", error)
-    return NextResponse.json({ 
-      error: error.message || "An unexpected error occurred" 
-    }, { status: 500 })
+    return NextResponse.json(
+      { success: false, message: error.message || "Error generating certificate" },
+      { status: 500, headers: corsHeaders },
+    )
   }
 }
 

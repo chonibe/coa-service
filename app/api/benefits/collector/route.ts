@@ -1,12 +1,9 @@
 import { NextResponse } from "next/server"
-import type { NextRequest } from "next/server"
-import { createClient } from "@/lib/supabase/server"
+import type { NextRequest } from "next/request"
+import { supabase } from "@/lib/supabase"
 
 export async function GET(request: NextRequest) {
   try {
-    // Create Supabase client using the server-side method
-    const supabase = createClient()
-
     const searchParams = request.nextUrl.searchParams
     const lineItemId = searchParams.get("line_item_id")
     const customerEmail = searchParams.get("customer_email")

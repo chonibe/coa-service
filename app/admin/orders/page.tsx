@@ -87,14 +87,18 @@ async function getOrders({ page, limit }: GetOrdersParams) {
   }
 }
 
-export const dynamic = 'force-static'
-
-export default async function OrdersPage() {
+export default async function OrdersPage({ searchParams }: PageProps) {
   try {
-    const page = 1;
-    const limit = 10;
+    console.log('OrdersPage searchParams:', searchParams);
+    
+    const page = typeof searchParams.page === 'string' ? parseInt(searchParams.page) : 1;
+    const limit = typeof searchParams.limit === 'string' ? parseInt(searchParams.limit) : 10;
+    
+    console.log('Parsed page and limit:', { page, limit });
     
     const { orders, totalPages } = await getOrders({ page, limit });
+    
+    console.log('Orders page data:', { orders, totalPages });
 
     return (
       <div className="container mx-auto py-8">

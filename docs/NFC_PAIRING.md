@@ -2,30 +2,7 @@
 
 ## Overview
 
-The NFC (Near Field Communication) authentication system provides a secure, user-friendly method to verify the authenticity of digital artworks using NFC tags.
-
-## Authentication Statuses
-
-### 1. Unavailable
-- **Description**: No NFC tag associated with the artwork
-- **User Experience**: 
-  - Authentication not possible
-  - Informative message displayed
-  - No pairing action available
-
-### 2. Unclaimed
-- **Description**: NFC tag exists but not yet paired with user's account
-- **User Experience**:
-  - Prompted to authenticate
-  - Can initiate NFC tag scanning
-  - Guided authentication process
-
-### 3. Authenticated
-- **Description**: NFC tag successfully paired and verified
-- **User Experience**:
-  - Full authentication details visible
-  - Date of authentication displayed
-  - Additional artwork provenance information
+The NFC (Near Field Communication) pairing system allows users to authenticate and claim digital artworks using NFC tags. This document provides a comprehensive guide to the NFC pairing process, implementation details, and technical considerations.
 
 ## System Architecture
 
@@ -99,24 +76,6 @@ CREATE TABLE nfc_tags (
 );
 ```
 
-### Authentication Workflow
-```typescript
-const nfcAuthStatus = {
-  status: 'authenticated' | 'unclaimed' | 'unavailable',
-  label: string,
-  description: string,
-  color: string
-}
-
-async function authenticateNFCTag(lineItem) {
-  // Determine authentication status based on NFC tag presence and claim status
-  const authStatus = determineAuthenticationStatus(lineItem)
-  
-  // Provide appropriate user interface and actions
-  renderAuthenticationUI(authStatus)
-}
-```
-
 ### Claim Process Workflow
 
 1. **Initiate Claim**
@@ -160,13 +119,7 @@ async function authenticateNFCTag(lineItem) {
 - Prevent duplicate tag claims
 - Validate user ownership
 - Secure API endpoints
-- Comprehensive error handling
-
-## User Interface Guidelines
-1. Always provide clear authentication status
-2. Offer contextual guidance
-3. Implement fallback mechanisms
-4. Maintain a clean, intuitive design
+- Handle potential scanning errors
 
 ## Troubleshooting
 
@@ -188,9 +141,9 @@ async function authenticateNFCTag(lineItem) {
 
 ## Future Improvements
 
-- Enhanced cross-browser NFC support
-- Machine learning fraud detection
-- Blockchain-based verification layer
+- Enhanced cross-browser support
+- Offline tag claim capabilities
+- Advanced tag management features
 
 ## Example Usage
 
@@ -220,8 +173,4 @@ const handleNfcClaim = async (tagId: string, lineItemId: string) => {
 
 ## Contact and Support
 
-For technical support or implementation details, contact the development team.
-
-## Version
-- Last Updated: 2024-05-22
-- Version: 2.0.0 (Workflow Redesign) 
+For technical support or implementation details, contact the development team. 

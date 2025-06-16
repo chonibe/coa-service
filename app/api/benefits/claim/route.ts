@@ -1,13 +1,10 @@
 import { NextResponse } from "next/server"
-import type { NextRequest } from "next/server"
-import { createClient } from "@/lib/supabase/server"
+import type { NextRequest } from "next/request"
+import { supabase } from "@/lib/supabase"
 import crypto from "crypto"
 
 export async function POST(request: NextRequest) {
   try {
-    // Create Supabase client using the server-side method
-    const supabase = createClient()
-
     const body = await request.json()
     const { product_benefit_id, line_item_id, customer_email } = body
 

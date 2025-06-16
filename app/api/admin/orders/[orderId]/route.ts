@@ -1,14 +1,15 @@
 import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
-import { createClient } from "@/lib/supabase/server"
+import { supabase } from "@/lib/supabase"
 
 export async function GET(
   request: NextRequest,
   { params }: { params: { orderId: string } }
 ) {
   try {
-    // Create Supabase client using the server-side method
-    const supabase = createClient()
+    if (!supabase) {
+      return NextResponse.json({ success: false, message: "Database connection error" }, { status: 500 })
+    }
 
     const { orderId } = params
 
