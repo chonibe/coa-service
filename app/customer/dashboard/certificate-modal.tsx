@@ -70,7 +70,7 @@ const MemoizedStageIndicator = React.memo(({
     success: "Authentication Complete",
     error: "Authentication Failed"
   }
-
+  
   return (
     <motion.div 
       initial={{ opacity: 0, y: 20 }}
@@ -240,7 +240,7 @@ export function EnhancedCertificateModal({
           <div className="relative">
             <img 
               src={lineItem.img_url || '/placeholder.jpg'} 
-              alt={lineItem.name}
+                          alt={lineItem.name} 
               className="w-full h-[500px] object-cover rounded-lg shadow-xl"
               loading="lazy"
             />
@@ -249,10 +249,10 @@ export function EnhancedCertificateModal({
                 stage={authStage} 
                 errorMessage={errorMessage} 
               />
-            </div>
-          </div>
+                    </div>
+                  </div>
 
-          {/* Certificate Details */}
+                  {/* Certificate Details */}
           <div className="space-y-6">
             <DialogHeader>
               <DialogTitle className="text-3xl">{lineItem.name}</DialogTitle>
@@ -273,7 +273,7 @@ export function EnhancedCertificateModal({
                 {nfcAuthStatus.description}
               </p>
 
-              <Button 
+                        <Button 
                 onClick={handleNfcPairing}
                 disabled={
                   nfcAuthStatus.status !== 'unclaimed' || 
@@ -284,7 +284,7 @@ export function EnhancedCertificateModal({
                 {nfcAuthStatus.status === 'unclaimed' 
                   ? 'Authenticate Artwork' 
                   : 'Authentication Complete'}
-              </Button>
+                        </Button>
 
               {authStage === 'error' && (
                 <div className="bg-red-50 border border-red-200 p-3 rounded-lg flex items-center gap-3">
@@ -292,9 +292,9 @@ export function EnhancedCertificateModal({
                   <span className="text-red-800">
                     {errorMessage || 'Authentication failed. Please try again.'}
                   </span>
-                </div>
-              )}
-            </div>
+                      </div>
+                    )}
+                  </div>
           </div>
         </div>
       </DialogContent>
