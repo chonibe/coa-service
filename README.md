@@ -315,6 +315,27 @@ The edition number assignment system allows for automatic assignment of edition 
 - Added type checking endpoints
 - Standardized database column types
 - Enhanced UI components for better user experience
-\`\`\`
 
-Now, let's create a README file specifically for the vendor dashboard to help explain its functionality:
+## Recent Updates
+
+### Authentication and Performance Cleanup (ef00c42c)
+- Removed deprecated NFC authentication files
+- Streamlined customer dashboard authentication flow
+- Updated Vercel deployment configuration
+- Improved overall project structure and code organization
+
+### Project Status
+- Current Focus: Enhancing authentication reliability
+- Ongoing Improvements: Simplifying integration with Shopify and Supabase
+
+## Deployment
+
+### Vercel Production
+- **URL:** https://street-collector-lymtrdiem-chonibes-projects.vercel.app
+- **Latest Commit:** 8432db33
+- **Environment:** Production
+
+### Deployment Notes
+- Configured production-specific environment variables
+- Resolved build and configuration challenges
+- Continuous integration and deployment (CI/CD) enabled
