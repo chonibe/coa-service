@@ -1,77 +1,51 @@
 import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
-import { supabaseAdmin } from "@/lib/supabase"
+import { getSupabaseAdmin } from "@/lib/supabase"
 import { retrieveAccount } from "@/lib/stripe"
+import type Stripe from "stripe"
 
-export async function POST(request: NextRequest) {
+export async function GET(request: NextRequest) {
+  const supabaseAdmin = getSupabaseAdmin()
+  if (!supabaseAdmin) {
+    return NextResponse.json({ error: "Supabase admin client initialization failed" }, { status: 500 })
+  }
+
   try {
-    const body = await request.json()
-    const { vendorName } = body
-
-    if (!vendorName) {
-      return NextResponse.json({ error: "Vendor name is required" }, { status: 400 })
-    }
-
-    // Get vendor details from database
     const { data: vendor, error: vendorError } = await supabaseAdmin
       .from("vendors")
-      .select("*")
-      .eq("vendor_name", vendorName)
+      .select("stripe_account_id")
+      .eq("vendor_name", "ADMIN")
       .single()
 
-    if (vendorError || !vendor) {
-      console.error("Error fetching vendor:", vendorError)
-      return NextResponse.json({ error: "Vendor not found" }, { status: 404 })
+    if (vendorError) {
+      console.error("Vendor fetch error:", vendorError)
+      return NextResponse.json({ error: vendorError.message }, { status: 400 })
     }
 
-    // Check if vendor has a Stripe account
-    if (!vendor.stripe_account_id) {
-      return NextResponse.json({
-        hasStripeAccount: false,
-        message: "Vendor does not have a Stripe account",
-      })
+    if (!vendor || !vendor.stripe_account_id) {
+      return NextResponse.json({ error: "No Stripe account found" }, { status: 404 })
     }
 
-    // Retrieve account details from Stripe
     const result = await retrieveAccount(vendor.stripe_account_id)
-
+    
     if (!result.success) {
       return NextResponse.json({ error: result.error }, { status: 500 })
     }
 
-    const account = result.account
-    const isOnboardingComplete =
-      account.details_submitted && account.payouts_enabled && !account.requirements.currently_due.length
-
-    // Update vendor record with onboarding status if it has changed
-    if (isOnboardingComplete !== vendor.stripe_onboarding_complete) {
-      await supabaseAdmin
-        .from("vendors")
-        .update({
-          stripe_onboarding_complete: isOnboardingComplete,
-          stripe_payouts_enabled: account.payouts_enabled,
-          stripe_last_updated_at: new Date().toISOString(),
-        })
-        .eq("vendor_name", vendorName)
-    }
+    const account = result.account as Stripe.Account
+    const requirementStatus = account.requirements?.currently_due?.length ? "incomplete" : "complete"
+    const detailsSubmitted = account.details_submitted ?? false
+    const chargesEnabled = account.charges_enabled ?? false
 
     return NextResponse.json({
-      success: true,
-      hasStripeAccount: true,
-      accountId: vendor.stripe_account_id,
-      isOnboardingComplete,
-      payoutsEnabled: account.payouts_enabled,
-      requirements: account.requirements,
-      accountDetails: {
-        business_type: account.business_type,
-        email: account.email,
-        country: account.country,
-        created: account.created,
-        default_currency: account.default_currency,
-      },
-    })
-  } catch (error: any) {
-    console.error("Error in check Stripe account status API:", error)
-    return NextResponse.json({ error: error.message || "An unexpected error occurred" }, { status: 500 })
+      accountId: account.id,
+      requirementStatus,
+      detailsSubmitted,
+      chargesEnabled,
+      requirements: account.requirements?.currently_due ?? []
+    }, { status: 200 })
+  } catch (err) {
+    console.error("Unexpected error:", err)
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }
 }

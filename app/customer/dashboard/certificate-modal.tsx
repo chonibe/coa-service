@@ -300,4 +300,6 @@ export function EnhancedCertificateModal({
       </DialogContent>
     </Dialog>
   )
-} 
+}
+
+export const CertificateModal = EnhancedCertificateModal; 

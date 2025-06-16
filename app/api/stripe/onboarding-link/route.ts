@@ -1,52 +1,65 @@
 import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
-import { supabaseAdmin } from "@/lib/supabase"
-import { createAccountLink } from "@/lib/stripe"
-import { API_BASE_URL } from "@/lib/config"
+import { getSupabaseAdmin } from "@/lib/supabase"
+import { createAccountLink, retrieveAccount } from "@/lib/stripe"
+import type Stripe from "stripe"
 
 export async function POST(request: NextRequest) {
+  const supabaseAdmin = getSupabaseAdmin()
+  if (!supabaseAdmin) {
+    return NextResponse.json({ error: "Supabase admin client initialization failed" }, { status: 500 })
+  }
+
   try {
     const body = await request.json()
-    const { vendorName } = body
+    const { vendorName, refreshUrl, returnUrl } = body
 
-    if (!vendorName) {
-      return NextResponse.json({ error: "Vendor name is required" }, { status: 400 })
+    if (!vendorName || !refreshUrl || !returnUrl) {
+      return NextResponse.json({ error: "Missing required parameters" }, { status: 400 })
     }
 
     // Get vendor details from database
     const { data: vendor, error: vendorError } = await supabaseAdmin
       .from("vendors")
-      .select("*")
+      .select("stripe_account_id")
       .eq("vendor_name", vendorName)
       .single()
 
-    if (vendorError || !vendor) {
-      console.error("Error fetching vendor:", vendorError)
-      return NextResponse.json({ error: "Vendor not found" }, { status: 404 })
+    if (vendorError) {
+      console.error("Vendor fetch error:", vendorError)
+      return NextResponse.json({ error: vendorError.message }, { status: 400 })
     }
 
-    // Check if vendor has a Stripe account
-    if (!vendor.stripe_account_id) {
-      return NextResponse.json({ error: "Vendor does not have a Stripe account" }, { status: 400 })
+    if (!vendor || !vendor.stripe_account_id) {
+      return NextResponse.json({ error: "No Stripe account found" }, { status: 404 })
     }
 
-    // Create account link for onboarding
-    const refreshUrl = `${API_BASE_URL}/vendor/dashboard/settings?stripe=refresh`
-    const returnUrl = `${API_BASE_URL}/vendor/dashboard/settings?stripe=success`
+    // Verify Stripe account exists
+    const accountResult = await retrieveAccount(vendor.stripe_account_id)
+    
+    if (!accountResult.success) {
+      return NextResponse.json({ error: accountResult.error }, { status: 500 })
+    }
 
-    const result = await createAccountLink(vendor.stripe_account_id, refreshUrl, returnUrl)
+    const account = accountResult.account as Stripe.Account
 
-    if (!result.success) {
-      return NextResponse.json({ error: result.error }, { status: 500 })
+    // Create account link
+    const linkResult = await createAccountLink(
+      vendor.stripe_account_id, 
+      refreshUrl, 
+      returnUrl
+    )
+
+    if (!linkResult.success) {
+      return NextResponse.json({ error: linkResult.error }, { status: 500 })
     }
 
     return NextResponse.json({
-      success: true,
-      url: result.url,
-      message: "Onboarding link created successfully",
-    })
-  } catch (error: any) {
-    console.error("Error in create onboarding link API:", error)
-    return NextResponse.json({ error: error.message || "An unexpected error occurred" }, { status: 500 })
+      accountId: vendor.stripe_account_id,
+      onboardingLink: linkResult.url
+    }, { status: 200 })
+  } catch (err) {
+    console.error("Unexpected error:", err)
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }
 }

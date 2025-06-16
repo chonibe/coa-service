@@ -1,13 +1,19 @@
 import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
 import { SHOPIFY_SHOP, SHOPIFY_ACCESS_TOKEN, CRON_SECRET } from "@/lib/env"
-import { supabase } from "@/lib/supabase"
+import { getSupabaseAdmin } from "@/lib/supabase"
 import crypto from "crypto"
 import type { Json } from "@/types/supabase"
 
-interface ShopifyLineItem {
+// Simplified type definitions with more explicit typing
+type LineItemProperty = {
+  name: string;
+  value: string;
+}
+
+type ShopifyLineItem = {
   id: number;
-  product_id: number;
+  product_id: number | null;
   variant_id: number | null;
   title: string;
   sku: string | null;
@@ -16,10 +22,11 @@ interface ShopifyLineItem {
   price: string;
   total_discount: string | null;
   fulfillment_status: string | null;
-  tax_lines: any[];
+  tax_lines: unknown[];
+  properties?: LineItemProperty[];
 }
 
-interface ShopifyOrder {
+type ShopifyOrder = {
   id: number;
   order_number: number;
   name: string;
@@ -45,6 +52,16 @@ interface SyncLog {
   details: Json;
 }
 
+// Utility function to extract vendor name
+function extractVendorName(lineItem: ShopifyLineItem): string | null {
+  const vendorFromProperties = lineItem.properties?.find(
+    prop => prop.name.toLowerCase() === 'vendor'
+  )?.value;
+
+  return vendorFromProperties || lineItem.vendor || null;
+}
+
+// Fetch orders from Shopify
 async function fetchAllOrdersFromShopify(startDate: Date): Promise<ShopifyOrder[]> {
   let allOrders: ShopifyOrder[] = [];
   let hasNextPage = true;
@@ -52,12 +69,10 @@ async function fetchAllOrdersFromShopify(startDate: Date): Promise<ShopifyOrder[
 
   while (hasNextPage) {
     try {
-      const url: string = nextPageUrl || 
+      const url = nextPageUrl || 
         `https://${SHOPIFY_SHOP}/admin/api/2024-01/orders.json?status=any&created_at_min=${startDate.toISOString()}&limit=250`;
       
-      console.log(`[Cron] Fetching orders from: ${url}`);
-      
-      const response: Response = await fetch(url, {
+      const response = await fetch(url, {
         headers: {
           "X-Shopify-Access-Token": SHOPIFY_ACCESS_TOKEN,
           "Content-Type": "application/json",
@@ -74,16 +89,14 @@ async function fetchAllOrdersFromShopify(startDate: Date): Promise<ShopifyOrder[
       allOrders = allOrders.concat(orders);
 
       // Check for pagination
-      const linkHeader: string | null = response.headers.get("link");
+      const linkHeader = response.headers.get("link");
       if (linkHeader) {
-        const match: RegExpMatchArray | null = linkHeader.match(/<([^>]+)>; rel="next"/);
+        const match = linkHeader.match(/<([^>]+)>; rel="next"/);
         nextPageUrl = match ? match[1] : null;
         hasNextPage = !!nextPageUrl;
       } else {
         hasNextPage = false;
       }
-
-      console.log(`[Cron] Fetched ${orders.length} orders, total: ${allOrders.length}`);
     } catch (error) {
       console.error("[Cron] Error fetching orders:", error);
       throw error;
@@ -106,11 +119,10 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "Invalid token" }, { status: 401 });
     }
 
-    if (!supabase) {
+    const db = getSupabaseAdmin();
+    if (!db) {
       throw new Error("Database client not initialized");
     }
-
-    const db = supabase; // Create a non-null reference
 
     // Get the last sync timestamp from the database
     let startDate = new Date();
@@ -122,143 +134,140 @@ export async function GET(request: NextRequest) {
       .order("created_at", { ascending: false })
       .limit(1);
 
-    if (!syncError && lastSync && lastSync.length > 0) {
-      const lastSyncDate = new Date((lastSync[0] as SyncLog).created_at);
-      // Add a small buffer to avoid missing orders
+    if (syncError) {
+      console.error("Error fetching last sync:", syncError);
+      throw syncError;
+    }
+
+    // Adjust start date based on last sync
+    if (lastSync && lastSync.length > 0 && lastSync[0].created_at) {
+      const lastSyncDate = new Date(lastSync[0].created_at);
       lastSyncDate.setMinutes(lastSyncDate.getMinutes() - 5);
       startDate = lastSyncDate;
     }
 
-    console.log(`[Cron] Fetching orders since ${startDate.toISOString()}`);
-
-    // Fetch all orders from Shopify
+    // Fetch orders from Shopify
     const orders = await fetchAllOrdersFromShopify(startDate);
-    console.log(`[Cron] Found ${orders.length} orders to sync`);
 
     let processedCount = 0;
     let errorCount = 0;
 
-    // Sync orders to database
-    if (orders.length > 0) {
-      for (const order of orders) {
-        try {
-          // Sync order data
-          const orderData = {
-            id: String(order.id),
-            order_number: String(order.order_number),
-            processed_at: order.processed_at || order.created_at,
-            financial_status: order.financial_status,
-            fulfillment_status: order.fulfillment_status,
-            total_price: order.current_total_price ? parseFloat(order.current_total_price) : null,
-            currency_code: order.currency,
-            customer_email: order.email,
-            updated_at: order.updated_at,
-            customer_id: order.customer?.id || null,
-            shopify_id: String(order.id),
-            subtotal_price: order.subtotal_price ? parseFloat(order.subtotal_price) : null,
-            total_tax: order.total_tax ? parseFloat(order.total_tax) : null,
-            customer_reference: order.checkout_token || order.cart_token || null,
-            raw_shopify_order_data: order as unknown as Json,
-            created_at: order.created_at,
-          };
+    for (const order of orders) {
+      try {
+        // Sync order data
+        const orderData = {
+          id: String(order.id),
+          order_number: String(order.order_number),
+          processed_at: order.processed_at || order.created_at,
+          financial_status: order.financial_status,
+          fulfillment_status: order.fulfillment_status,
+          total_price: order.current_total_price ? parseFloat(order.current_total_price) : null,
+          currency_code: order.currency,
+          customer_email: order.email,
+          updated_at: order.updated_at,
+          customer_id: order.customer?.id || null,
+          shopify_id: String(order.id),
+          subtotal_price: order.subtotal_price ? parseFloat(order.subtotal_price) : null,
+          total_tax: order.total_tax ? parseFloat(order.total_tax) : null,
+          customer_reference: order.checkout_token || order.cart_token || null,
+          raw_shopify_order_data: order as unknown as Json,
+          created_at: order.created_at,
+        };
 
-          const { error: orderError } = await db
-            .from("orders")
-            .upsert(orderData, { onConflict: "id" });
+        const { error: orderError } = await db
+          .from("orders")
+          .upsert(orderData, { onConflict: "id" });
 
-          if (orderError) {
-            console.error(`[Cron] Error syncing order ${order.name}:`, orderError);
-            errorCount++;
-            continue;
-          }
+        if (orderError) {
+          console.error(`Error syncing order ${order.name}:`, orderError);
+          errorCount++;
+          continue;
+        }
 
-          // Sync line items
-          if (order.line_items && order.line_items.length > 0) {
-            // Get product data for img_urls
-            const productIds = order.line_items
-              .map((li: ShopifyLineItem) => li.product_id)
-              .filter((id): id is number => id !== null);
+        // Sync line items
+        if (order.line_items && order.line_items.length > 0) {
+          // Fetch product data for img_urls
+          const productIds = order.line_items
+            .map(li => li.product_id)
+            .filter((id): id is number => id !== null);
 
-            const { data: products } = await db
-              .from("products")
-              .select("id, img_url")
-              .in("id", productIds);
+          const { data: products } = await db
+            .from("products")
+            .select("id, img_url")
+            .in("id", productIds);
 
-            const productMap = new Map(
-              products?.map((p) => [p.id.toString(), p.img_url]) || []
-            );
+          const productMap = new Map(
+            products?.map(p => [String(p.id), p.img_url || null]) || []
+          );
 
-            const lineItemsData = order.line_items.map((li: ShopifyLineItem) => ({
-              line_item_id: li.id,
-              order_id: order.id,
-              product_id: li.product_id,
-              variant_id: li.variant_id,
-              title: li.title,
-              sku: li.sku || null,
-              vendor_name: li.vendor,
-              quantity: li.quantity,
-              price: parseFloat(li.price),
-              total_discount: li.total_discount ? parseFloat(li.total_discount) : null,
-              fulfillment_status: li.fulfillment_status,
-              tax_lines: li.tax_lines as unknown as Json,
-              raw_shopify_line_item_data: li as unknown as Json,
-              img_url: li.product_id ? productMap.get(li.product_id.toString()) || null : null,
-            }));
+          // Process each line item
+          for (const lineItem of order.line_items) {
+            try {
+              const lineItemData = {
+                line_item_id: String(lineItem.id),
+                order_id: String(order.id),
+                order_name: order.name,
+                product_id: lineItem.product_id ? String(lineItem.product_id) : null,
+                title: lineItem.title,
+                vendor_name: extractVendorName(lineItem),
+                quantity: lineItem.quantity,
+                price: parseFloat(lineItem.price),
+                status: 'active',
+                img_url: lineItem.product_id 
+                  ? productMap.get(String(lineItem.product_id)) || null 
+                  : null,
+              };
 
-            // Delete existing line items for this order
-            await db
-              .from("order_line_items")
-              .delete()
-              .match({ order_id: order.id });
+              const { error: lineItemError } = await db
+                .from("order_line_items")
+                .upsert(lineItemData, { onConflict: "line_item_id" });
 
-            // Insert new line items
-            const { error: lineItemsError } = await db
-              .from("order_line_items")
-              .insert(lineItemsData);
-
-            if (lineItemsError) {
-              console.error(`[Cron] Error syncing line items for order ${order.name}:`, lineItemsError);
+              if (lineItemError) {
+                console.error(`Error syncing line item ${lineItem.id}:`, lineItemError);
+                errorCount++;
+              } else {
+                processedCount++;
+              }
+            } catch (lineItemProcessError) {
+              console.error(`Error processing line item ${lineItem.id}:`, lineItemProcessError);
               errorCount++;
-              continue;
             }
           }
-
-          processedCount++;
-        } catch (error) {
-          console.error(`[Cron] Error processing order ${order.name}:`, error);
-          errorCount++;
         }
+      } catch (orderProcessError) {
+        console.error(`Error processing order ${order.name}:`, orderProcessError);
+        errorCount++;
       }
+    }
 
-      // Log successful sync
-      const syncLog = {
-        type: "cron_job",
-        details: {
-          orders_synced: processedCount,
-          errors: errorCount,
-          start_date: startDate.toISOString(),
-          end_date: new Date().toISOString(),
-          period: `${startDate.toISOString()} to ${new Date().toISOString()}`,
-        } as Json,
-      };
+    // Log sync results
+    const syncLog = {
+      type: "cron_job",
+      details: {
+        orders_synced: processedCount,
+        errors: errorCount,
+        start_date: startDate.toISOString(),
+        end_date: new Date().toISOString(),
+      } as Json,
+    };
 
-      const { error: logError } = await db.from("sync_logs").insert(syncLog);
-      if (logError) {
-        console.error("[Cron] Error logging sync:", logError);
-      }
+    const { error: logError } = await db.from("sync_logs").insert(syncLog);
+    if (logError) {
+      console.error("Error logging sync:", logError);
     }
 
     return NextResponse.json({
       success: true,
-      orders_synced: processedCount,
+      processed: processedCount,
       errors: errorCount,
-      start_date: startDate.toISOString(),
-      end_date: new Date().toISOString(),
     });
-  } catch (error: any) {
-    console.error("[Cron] Error in sync-shopify-orders:", error);
+  } catch (error) {
+    console.error("[Cron] Sync error:", error);
     return NextResponse.json(
-      { error: error.message || "Internal server error" },
+      { 
+        error: error instanceof Error ? error.message : "An unexpected error occurred",
+        details: error 
+      }, 
       { status: 500 }
     );
   }
@@ -350,7 +359,7 @@ async function generateCertificateUrl(lineItemId: string, orderId: string) {
     const accessToken = crypto.randomUUID()
 
     // Store the certificate URL and access token in the database
-    const { error: updateError } = await supabase
+    const { error: updateError } = await getSupabaseAdmin()
       .from("order_line_items")
       .update({
         certificate_url: certificateUrl,
@@ -375,15 +384,20 @@ async function generateCertificateUrl(lineItemId: string, orderId: string) {
 
 // Update the processLineItem function to include vendor_name
 
-async function processLineItem(order: any, lineItem: any) {
+async function processLineItem(order: ShopifyOrder, lineItem: ShopifyLineItem) {
+  const db = getSupabaseAdmin();
+  if (!db) {
+    throw new Error("Database client not initialized");
+  }
+
   try {
     const orderId = order.id.toString()
     const lineItemId = lineItem.id.toString()
-    const productId = lineItem.product_id.toString()
+    const productId = lineItem.product_id?.toString() || null
     // Extract vendor name from line item properties or vendor field
-    const vendorName =
-      lineItem.vendor ||
-      (lineItem.properties && lineItem.properties.find((p: any) => p.name === "vendor")?.value) ||
+    const vendorName = 
+      lineItem.properties?.find(prop => prop.name.toLowerCase() === 'vendor')?.value || 
+      lineItem.vendor || 
       null
 
     console.log(`Processing line item ${lineItemId} for product ${productId}, vendor: ${vendorName || "Unknown"}`)
@@ -393,23 +407,22 @@ async function processLineItem(order: any, lineItem: any) {
     console.log(`Edition size for product ${productId}: ${editionSize || "Not set"}`)
 
     // Check if this line item already exists in the database
-    const { data: existingItems, error: queryError } = await supabase
+    const { data: existingItems, error: queryError } = await db
       .from("order_line_items")
       .select("*")
-      .eq("order_id", orderId)
       .eq("line_item_id", lineItemId)
+      .single();
 
-    if (queryError) {
-      console.error(`Error checking existing line item:`, queryError)
-      throw queryError
+    if (queryError && queryError.code !== 'PGRST116') {
+      throw queryError;
     }
 
-    if (existingItems && existingItems.length > 0) {
+    if (existingItems) {
       console.log(`Line item ${lineItemId} already exists in database, skipping`)
 
       // Update vendor_name if it's available and not set previously
-      if (vendorName && !existingItems[0].vendor_name) {
-        const { error: updateError } = await supabase
+      if (vendorName && !existingItems.vendor_name) {
+        const { error: updateError } = await db
           .from("order_line_items")
           .update({
             vendor_name: vendorName,
@@ -426,7 +439,7 @@ async function processLineItem(order: any, lineItem: any) {
       }
 
       // Check if it has a certificate URL, if not, generate one
-      if (!existingItems[0].certificate_url) {
+      if (!existingItems.certificate_url) {
         await generateCertificateUrl(lineItemId, orderId)
       }
 
@@ -434,7 +447,7 @@ async function processLineItem(order: any, lineItem: any) {
     }
 
     // Insert the new line item
-    const { error: insertError } = await supabase.from("order_line_items").insert({
+    const { error: insertError } = await db.from("order_line_items").insert({
       order_id: orderId,
       order_name: order.name,
       line_item_id: lineItemId,
@@ -476,7 +489,7 @@ async function resequenceEditionNumbers(productId: string) {
     console.log(`Resequencing edition numbers for product ${productId}`)
 
     // Get all active line items for this product, ordered by creation date
-    const { data: activeItems, error } = await supabase
+    const { data: activeItems, error } = await getSupabaseAdmin()
       .from("order_line_items")
       .select("*")
       .eq("product_id", productId)
@@ -499,7 +512,7 @@ async function resequenceEditionNumbers(productId: string) {
     let editionCounter = 1
 
     for (const item of activeItems) {
-      const { error: updateError } = await supabase
+      const { error: updateError } = await getSupabaseAdmin()
         .from("order_line_items")
         .update({
           edition_number: editionCounter,
