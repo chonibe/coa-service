@@ -31,9 +31,11 @@ interface CertificateModalProps {
 }
 
 export function CertificateModal({ lineItem, onClose }: CertificateModalProps) {
+  const cardRef = useRef<HTMLDivElement>(null)
   const [isOpen, setIsOpen] = useState(false)
   const [isFlipped, setIsFlipped] = useState(false)
   const [isNfcPairing, setIsNfcPairing] = useState(false)
+  const [mousePosition, setMousePosition] = useState({ x: 50, y: 50 })
 
   useEffect(() => {
     setIsOpen(!!lineItem)
@@ -52,6 +54,33 @@ export function CertificateModal({ lineItem, onClose }: CertificateModalProps) {
   const nfcStatus = lineItem.nfc_tag_id 
     ? (lineItem.nfc_claimed_at ? "paired" : "unpaired")
     : "no-nfc"
+
+  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    const card = cardRef.current
+    if (!card) return
+    
+    const rect = card.getBoundingClientRect()
+    const x = e.clientX - rect.left
+    const y = e.clientY - rect.top
+    const centerX = rect.width / 2
+    const centerY = rect.height / 2
+    
+    // Calculate rotation based on mouse position relative to center
+    const rotateX = ((y - centerY) / centerY) * -15 // Increased intensity
+    const rotateY = ((x - centerX) / centerX) * 15   // Increased intensity
+    
+    setMousePosition({ x: (x / rect.width) * 100, y: (y / rect.height) * 100 })
+    
+    // Apply 3D transform with enhanced tilt
+    card.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) ${isFlipped ? 'rotateY(180deg)' : ''} scale(1.02)`
+  }
+
+  const handleMouseLeave = () => {
+    const card = cardRef.current
+    if (!card) return
+    card.style.transform = isFlipped ? "perspective(1000px) rotateY(180deg)" : "perspective(1000px)"
+    setMousePosition({ x: 50, y: 50 })
+  }
 
   const handleNfcPairing = async () => {
     // Check if Web NFC is supported
@@ -127,10 +156,13 @@ export function CertificateModal({ lineItem, onClose }: CertificateModalProps) {
     <Dialog open={isOpen} onOpenChange={() => onClose()}>
       <DialogContent className="max-w-4xl w-full p-0 overflow-hidden">
         <motion.div 
+          ref={cardRef}
           className="w-full h-[600px] relative perspective-1000"
           initial={false}
           animate={{ rotateY: isFlipped ? 180 : 0 }}
           transition={{ duration: 0.6, animationDirection: "normal" }}
+          onMouseMove={handleMouseMove}
+          onMouseLeave={handleMouseLeave}
         >
           {/* Front of Card */}
           <motion.div 
@@ -138,6 +170,8 @@ export function CertificateModal({ lineItem, onClose }: CertificateModalProps) {
             style={{
               backfaceVisibility: 'hidden',
               transform: 'rotateY(0deg)',
+              transformStyle: 'preserve-3d',
+              willChange: 'transform',
             }}
             onClick={() => setIsFlipped(true)}
           >
@@ -162,15 +196,31 @@ export function CertificateModal({ lineItem, onClose }: CertificateModalProps) {
               <div className="flex justify-between items-center">
                 <p className="text-zinc-300">{artistName}</p>
                 <div className="flex items-center space-x-2">
-                  {nfcStatus === "paired" && (
-                    <Wifi className="w-5 h-5 text-green-500" />
-                  )}
-                  {nfcStatus === "unpaired" && (
-                    <WifiOff className="w-5 h-5 text-yellow-500" />
-                  )}
-                  {nfcStatus === "no-nfc" && (
-                    <WifiOff className="w-5 h-5 text-red-500" />
-                  )}
+                  <Badge 
+                    variant={
+                      nfcStatus === "paired" 
+                        ? "default" 
+                        : nfcStatus === "unpaired" 
+                        ? "secondary" 
+                        : "destructive"
+                    }
+                    className="flex items-center gap-2"
+                  >
+                    {nfcStatus === "paired" && (
+                      <Wifi className="w-4 h-4 text-green-500" />
+                    )}
+                    {nfcStatus === "unpaired" && (
+                      <WifiOff className="w-4 h-4 text-yellow-500" />
+                    )}
+                    {nfcStatus === "no-nfc" && (
+                      <WifiOff className="w-4 h-4 text-red-500" />
+                    )}
+                    {nfcStatus === "paired" 
+                      ? "Authenticated" 
+                      : nfcStatus === "unpaired" 
+                      ? "Needs Authentication" 
+                      : "No NFC Tag"}
+                  </Badge>
                   <span className="text-sm font-medium">
                     {editionInfo}
                   </span>
@@ -185,6 +235,8 @@ export function CertificateModal({ lineItem, onClose }: CertificateModalProps) {
             style={{
               backfaceVisibility: 'hidden',
               transform: 'rotateY(180deg)',
+              transformStyle: 'preserve-3d',
+              willChange: 'transform',
             }}
             onClick={() => setIsFlipped(false)}
           >
@@ -217,14 +269,19 @@ export function CertificateModal({ lineItem, onClose }: CertificateModalProps) {
                 {nfcStatus !== "no-nfc" && (
                   <div className="mt-6 border-t pt-4">
                     <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <Wifi className={`w-6 h-6 ${nfcStatus === "paired" ? 'text-green-600' : 'text-yellow-500'}`} />
-                        <span className="text-sm text-zinc-600">
-                          {nfcStatus === "paired" 
-                            ? "NFC Authenticated" 
-                            : "NFC Authentication Pending"}
-                        </span>
-                      </div>
+                      <Badge 
+                        variant={
+                          nfcStatus === "paired" 
+                            ? "default" 
+                            : "secondary"
+                        }
+                        className="flex items-center gap-2"
+                      >
+                        <Wifi className={`w-4 h-4 ${nfcStatus === "paired" ? 'text-green-500' : 'text-yellow-500'}`} />
+                        {nfcStatus === "paired" 
+                          ? "NFC Authenticated" 
+                          : "NFC Authentication Pending"}
+                      </Badge>
                       {lineItem.nfc_claimed_at && (
                         <p className="text-sm text-zinc-500">
                           Authenticated on: {new Date(lineItem.nfc_claimed_at).toLocaleDateString()}
