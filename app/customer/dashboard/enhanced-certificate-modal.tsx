@@ -17,12 +17,14 @@ import {
   Award, 
   Image as ImageIcon, 
   CheckCircle2, 
-  XCircle 
+  XCircle,
+  AlertCircle
 } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { toast } from "@/components/ui/use-toast"
 import Image from 'next/image'
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 
 // Enhanced type definition
 interface ArtworkCertificate {
@@ -136,9 +138,46 @@ export const EnhancedCertificateModal: React.FC<EnhancedCertificateModalProps> =
     }
   }
 
+  // If no artwork, return null or a placeholder
   if (!artwork) {
+    console.error('EnhancedCertificateModal - No artwork provided')
     return null
   }
+
+  // Validate required artwork properties
+  const requiredProps: (keyof ArtworkCertificate)[] = ['id', 'name', 'artist', 'editionNumber', 'totalEdition']
+  const missingProps = requiredProps.filter(prop => {
+    const value = artwork[prop]
+    return value === null || value === undefined || value === ''
+  })
+
+  if (missingProps.length > 0) {
+    console.error('EnhancedCertificateModal - Missing required properties:', missingProps)
+    return (
+      <Dialog open={true} onOpenChange={() => onClose()}>
+        <DialogContent className="max-w-md">
+          <Alert variant="destructive">
+            <AlertCircle className="h-4 w-4" />
+            <AlertTitle>Incomplete Artwork Data</AlertTitle>
+            <AlertDescription>
+              Unable to display certificate. Missing properties: {missingProps.join(', ')}
+            </AlertDescription>
+          </Alert>
+        </DialogContent>
+      </Dialog>
+    )
+  }
+
+  console.log('EnhancedCertificateModal - Rendering Artwork:', {
+    id: artwork.id,
+    name: artwork.name,
+    artist: artwork.artist,
+    editionNumber: artwork.editionNumber,
+    totalEdition: artwork.totalEdition,
+    imageUrl: artwork.imageUrl,
+    nfcTagId: artwork.nfcTagId,
+    nfcClaimedAt: artwork.nfcClaimedAt
+  })
 
   return (
     <Dialog open={!!artwork} onOpenChange={() => onClose()}>

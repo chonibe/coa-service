@@ -133,6 +133,37 @@ export default function CustomerDashboard() {
 
   const handleCertificateClick = (lineItem: LineItem) => {
     console.log('Attempting to open certificate modal for:', lineItem)
+    console.log('Current selectedLineItem state:', selectedLineItem)
+    
+    // Add additional debugging
+    if (!lineItem) {
+      console.error('No line item provided to handleCertificateClick')
+      toast({
+        title: "Error",
+        description: "Unable to open certificate: No line item found",
+        variant: "destructive"
+      })
+      return
+    }
+
+    // Validate line item properties
+    const requiredProps: (keyof LineItem)[] = ['line_item_id', 'name', 'img_url']
+    const missingProps = requiredProps.filter(prop => {
+      const value = lineItem[prop]
+      return value === null || value === undefined || value === ''
+    })
+    
+    if (missingProps.length > 0) {
+      console.error('Missing required properties:', missingProps)
+      toast({
+        title: "Incomplete Artwork Data",
+        description: `Missing properties: ${missingProps.join(', ')}`,
+        variant: "destructive"
+      })
+      return
+    }
+
+    // Set the selected line item
     setSelectedLineItem(lineItem)
   }
 
