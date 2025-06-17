@@ -1,26 +1,3 @@
-# Deployment Logs
-
-## Vercel Deployment - Certificate Modal Redesign
-- **Date**: ${new Date().toISOString()}
-- **Branch**: vercel-deployment-troubleshoot
-- **Commit**: 3568f047
-- **Preview URL**: https://street-collector-qdjz96428-chonibes-projects.vercel.app
-- **Changes**:
-  - Redesigned certificate modal UI
-  - Improved card flip interaction
-  - Enhanced NFC pairing status display
-  - Simplified artwork presentation
-
-### Deployment Notes
-- Successful preview deployment
-- No critical issues detected
-- Recommended further testing of NFC pairing functionality
-
-### Environment Details
-- Vercel CLI Version: 42.3.0
-- Deployment Type: Preview
-- Target Environment: Development/Staging
-
 ## Production Deployment [$(date '+%Y-%m-%d %H:%M:%S')]
 
 ### Deployment Details

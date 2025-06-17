@@ -22,7 +22,7 @@ import {
 import { NfcTagScanner } from '@/src/components/NfcTagScanner'
 import { toast } from "@/components/ui/use-toast"
 import { Toaster } from "@/components/ui/toaster"
-import { EnhancedCertificateModal } from '../../customer/dashboard/enhanced-certificate-modal'
+import { CertificateModal } from '../../customer/dashboard/certificate-modal'
 
 // Type Definitions
 export interface LineItem {
@@ -1182,7 +1182,7 @@ export default function CustomerDashboardById() {
       </div>
       
       {/* Certificate Modal */}
-      <EnhancedCertificateModal 
+      <CertificateModal 
         lineItem={selectedLineItem} 
         onClose={() => setSelectedLineItem(null)} 
       />

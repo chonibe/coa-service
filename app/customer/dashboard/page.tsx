@@ -10,7 +10,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { NfcTagScanner } from '@/src/components/NfcTagScanner'
 import { toast } from "@/components/ui/use-toast"
 import { Toaster } from "@/components/ui/toaster"
-import { EnhancedCertificateModal } from './enhanced-certificate-modal'
+import { CertificateModal } from './certificate-modal'
 
 interface LineItem {
   line_item_id: string
@@ -27,7 +27,6 @@ interface LineItem {
   edition_number?: number | null
   vendor_name?: string
   status?: string
-  edition_total?: number
 }
 
 interface Order {
@@ -132,40 +131,6 @@ export default function CustomerDashboard() {
   }
 
   const handleCertificateClick = (lineItem: LineItem) => {
-    console.log('Attempting to open certificate modal for:', lineItem)
-    console.log('Current selectedLineItem state:', selectedLineItem)
-    
-    // Add additional debugging
-    if (!lineItem) {
-      console.error('No line item provided to handleCertificateClick')
-      toast({
-        title: "Error",
-        description: "Unable to open certificate: No line item found",
-        variant: "destructive"
-      })
-      return
-    }
-
-    // Validate line item properties
-    const requiredProps: (keyof LineItem)[] = ['line_item_id', 'name', 'img_url']
-    const missingProps = requiredProps.filter(prop => {
-      const value = lineItem[prop]
-      console.log(`Checking property ${prop}:`, value)
-      return value === null || value === undefined || value === ''
-    })
-    
-    if (missingProps.length > 0) {
-      console.error('Missing required properties:', missingProps)
-      toast({
-        title: "Incomplete Artwork Data",
-        description: `Missing properties: ${missingProps.join(', ')}`,
-        variant: "destructive"
-      })
-      return
-    }
-
-    // Set the selected line item
-    console.log('Setting selectedLineItem to:', lineItem)
     setSelectedLineItem(lineItem)
   }
 
@@ -275,19 +240,19 @@ export default function CustomerDashboard() {
                                 status: "paired", 
                                 label: "Authenticated", 
                                 icon: <Wifi className="w-4 h-4 text-green-500" />,
-                                variant: "default" as const
+                                variant: "default"
                               }
                             : { 
                                 status: "unpaired", 
                                 label: "Needs Authentication", 
                                 icon: <WifiOff className="w-4 h-4 text-yellow-500" />,
-                                variant: "secondary" as const
+                                variant: "secondary"
                               })
                           : { 
                               status: "no-nfc", 
                               label: "No NFC Tag", 
                               icon: <WifiOff className="w-4 h-4 text-red-500" />,
-                              variant: "destructive" as const
+                              variant: "destructive"
                             }
 
                         // NFC Pairing Handler
@@ -446,44 +411,10 @@ export default function CustomerDashboard() {
         </div>
       </div>
       
-      {/* Enhanced Certificate Modal */}
-      <EnhancedCertificateModal 
-        artwork={selectedLineItem ? (() => {
-          console.log('Full selectedLineItem:', JSON.stringify(selectedLineItem, null, 2));
-          
-          const artworkData = {
-            id: selectedLineItem.line_item_id,
-            name: selectedLineItem.name,
-            artist: selectedLineItem.vendor_name || 'Street Collector',
-            editionNumber: selectedLineItem.edition_number || 0,
-            totalEdition: selectedLineItem.edition_total || 0,
-            imageUrl: selectedLineItem.img_url,
-            description: selectedLineItem.description,
-            nfcTagId: selectedLineItem.nfc_tag_id || undefined,
-            nfcClaimedAt: selectedLineItem.nfc_claimed_at || undefined,
-            certificateToken: selectedLineItem.certificate_token || undefined
-          };
-
-          console.log('Converted Artwork Data:', JSON.stringify(artworkData, null, 2));
-          
-          // Validate all properties
-          Object.entries(artworkData).forEach(([key, value]) => {
-            console.log(`Artwork Property ${key}:`, {
-              value,
-              type: typeof value,
-              isNull: value === null,
-              isUndefined: value === undefined,
-              isEmpty: value === ''
-            });
-          });
-
-          return artworkData;
-        })() : null} 
-        onClose={() => {
-          console.log('Closing enhanced certificate modal')
-          console.log('Current selectedLineItem before closing:', selectedLineItem)
-          setSelectedLineItem(null)
-        }} 
+      {/* Certificate Modal */}
+      <CertificateModal 
+        lineItem={selectedLineItem} 
+        onClose={() => setSelectedLineItem(null)} 
       />
       
       <Toaster />
