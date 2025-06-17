@@ -154,4 +154,19 @@
 - Test cross-environment routing
 - Monitor performance impact
 
+## Deployment Log
+
+### Vercel Deployment - [Current Date]
+- **Branch**: vercel-deployment-troubleshoot
+- **Commit Hash**: 5a23dea5
+- **Preview URL**: https://street-collector-qgtxqyfc3-chonibes-projects.vercel.app
+- **Changes**:
+  - Updated certificate modal component
+  - Modified deployment logs
+  - Updated related dashboard components
+
+**Deployment Notes**:
+- Successful preview deployment
+- Recommended review before production deployment
+
 --- 
