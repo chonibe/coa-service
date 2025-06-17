@@ -35,7 +35,6 @@ export function CertificateModal({ lineItem, onClose }: CertificateModalProps) {
   const [isOpen, setIsOpen] = useState(false)
   const [isFlipped, setIsFlipped] = useState(false)
   const [isNfcPairing, setIsNfcPairing] = useState(false)
-  const [mousePosition, setMousePosition] = useState({ x: 50, y: 50 })
 
   useEffect(() => {
     setIsOpen(!!lineItem)
@@ -54,33 +53,6 @@ export function CertificateModal({ lineItem, onClose }: CertificateModalProps) {
   const nfcStatus = lineItem.nfc_tag_id 
     ? (lineItem.nfc_claimed_at ? "paired" : "unpaired")
     : "no-nfc"
-
-  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
-    const card = cardRef.current
-    if (!card) return
-    
-    const rect = card.getBoundingClientRect()
-    const x = e.clientX - rect.left
-    const y = e.clientY - rect.top
-    const centerX = rect.width / 2
-    const centerY = rect.height / 2
-    
-    // Calculate rotation based on mouse position relative to center
-    const rotateX = ((y - centerY) / centerY) * -15 // Increased intensity
-    const rotateY = ((x - centerX) / centerX) * 15   // Increased intensity
-    
-    setMousePosition({ x: (x / rect.width) * 100, y: (y / rect.height) * 100 })
-    
-    // Apply 3D transform with enhanced tilt
-    card.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) ${isFlipped ? 'rotateY(180deg)' : ''} scale(1.02)`
-  }
-
-  const handleMouseLeave = () => {
-    const card = cardRef.current
-    if (!card) return
-    card.style.transform = isFlipped ? "perspective(1000px) rotateY(180deg)" : "perspective(1000px)"
-    setMousePosition({ x: 50, y: 50 })
-  }
 
   const handleNfcPairing = async () => {
     // Check if Web NFC is supported
@@ -160,9 +132,17 @@ export function CertificateModal({ lineItem, onClose }: CertificateModalProps) {
           className="w-full h-[600px] relative perspective-1000"
           initial={false}
           animate={{ rotateY: isFlipped ? 180 : 0 }}
-          transition={{ duration: 0.6, animationDirection: "normal" }}
-          onMouseMove={handleMouseMove}
-          onMouseLeave={handleMouseLeave}
+          transition={{ 
+            type: "spring", 
+            stiffness: 300, 
+            damping: 30 
+          }}
+          style={{
+            transformStyle: 'preserve-3d',
+            width: '100%',
+            height: '100%',
+            position: 'relative',
+          }}
         >
           {/* Front of Card */}
           <motion.div 
@@ -173,6 +153,11 @@ export function CertificateModal({ lineItem, onClose }: CertificateModalProps) {
               transformStyle: 'preserve-3d',
               willChange: 'transform',
             }}
+            whileHover={{ 
+              scale: 1.02,
+              transition: { duration: 0.2 }
+            }}
+            whileTap={{ scale: 0.98 }}
             onClick={() => setIsFlipped(true)}
           >
             {/* Artwork Image */}
@@ -238,6 +223,11 @@ export function CertificateModal({ lineItem, onClose }: CertificateModalProps) {
               transformStyle: 'preserve-3d',
               willChange: 'transform',
             }}
+            whileHover={{ 
+              scale: 1.02,
+              transition: { duration: 0.2 }
+            }}
+            whileTap={{ scale: 0.98 }}
             onClick={() => setIsFlipped(false)}
           >
             <div>
