@@ -240,161 +240,72 @@ export default function CustomerDashboard() {
                                 status: "paired", 
                                 label: "Authenticated", 
                                 icon: <Wifi className="w-4 h-4 text-green-500" />,
-                                variant: "default"
+                                variant: "default" as const
                               }
                             : { 
                                 status: "unpaired", 
                                 label: "Needs Authentication", 
                                 icon: <WifiOff className="w-4 h-4 text-yellow-500" />,
-                                variant: "secondary"
+                                variant: "secondary" as const
                               })
-                          : { 
-                              status: "no-nfc", 
-                              label: "No NFC Tag", 
+                          : {
+                              status: "no-nfc",
+                              label: "No NFC",
                               icon: <WifiOff className="w-4 h-4 text-red-500" />,
-                              variant: "destructive"
+                              variant: "destructive" as const
                             }
-
-                        // NFC Pairing Handler
-                        const handleNfcPairing = async () => {
-                          // Check if Web NFC is supported
-                          if (typeof NDEFReader !== 'undefined') {
-                            try {
-                              const ndef = new NDEFReader()
-                              await ndef.scan()
-
-                              ndef.addEventListener("reading", async (event: NDEFReadingEvent) => {
-                                try {
-                                  const response = await fetch('/api/nfc-tags/claim', {
-                                    method: 'POST',
-                                    headers: {
-                                      'Content-Type': 'application/json',
-                                    },
-                                    body: JSON.stringify({
-                                      tagId: event.serialNumber,
-                                      lineItemId: item.line_item_id,
-                                      orderId: order.id,
-                                      customerId: null // TODO: Get actual customer ID
-                                    })
-                                  })
-
-                                  const result = await response.json()
-
-                                  if (result.success) {
-                                    toast({
-                                      title: "NFC Tag Paired",
-                                      description: `Artwork "${item.name}" has been successfully authenticated.`,
-                                      variant: "default"
-                                    })
-                                    // Optionally refresh orders or trigger a re-fetch
-                                    // fetchOrders();
-                                  } else {
-                                    toast({
-                                      title: "Pairing Failed",
-                                      description: result.message || "Unable to pair NFC tag",
-                                      variant: "destructive"
-                                    })
-                                  }
-                                } catch (error) {
-                                  console.error("NFC Claim Error:", error)
-                                  toast({
-                                    title: "Pairing Error",
-                                    description: "An unexpected error occurred",
-                                    variant: "destructive"
-                                  })
-                                }
-                              })
-                            } catch (error) {
-                              console.error("NFC Scanning Error:", error)
-                              toast({
-                                title: "NFC Error",
-                                description: "Unable to start NFC scanning",
-                                variant: "destructive"
-                              })
-                            }
-                          } else {
-                            toast({
-                              title: "Unsupported Browser",
-                              description: "Web NFC is not supported in your browser",
-                              variant: "destructive"
-                            })
-                          }
-                        }
 
                         return (
-                          <Card 
-                            key={item.line_item_id} 
-                            className="hover:shadow-lg transition-shadow duration-300 group"
-                          >
-                            <CardHeader className="pb-2">
-                              <div className="flex justify-between items-center">
-                                <CardTitle className="text-lg truncate">{item.name}</CardTitle>
-                                <Badge variant={nfcStatus.variant} className="flex items-center gap-1">
-                                  {nfcStatus.icon}
-                                  {nfcStatus.label}
-                                </Badge>
-                              </div>
-                            </CardHeader>
-                            <CardContent>
-                              {item.img_url && (
-                                <div className="w-full aspect-square mb-4 rounded-lg overflow-hidden">
-                                  <img
-                                    src={item.img_url}
-                                    alt={item.name}
-                                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                          <div key={item.line_item_id} className="flex flex-col space-y-2">
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center space-x-2">
+                                {item.img_url ? (
+                                  <img 
+                                    src={item.img_url} 
+                                    alt={item.name} 
+                                    className="w-16 h-16 object-cover rounded-md"
                                   />
-                                </div>
-                              )}
-                              
-                              <div className="space-y-2">
-                                {item.description && (
-                                  <p className="text-sm text-muted-foreground line-clamp-2">
-                                    {item.description}
-                                  </p>
-                                )}
-                                
-                                <div className="flex justify-between text-sm">
-                                  <div className="flex items-center gap-2">
-                                    <Hash className="w-4 h-4 text-muted-foreground" />
-                                    <span>
-                                      {item.edition_number 
-                                        ? `Edition ${item.edition_number}` 
-                                        : "Limited Edition"}
-                                    </span>
+                                ) : (
+                                  <div className="w-16 h-16 bg-zinc-200 rounded-md flex items-center justify-center">
+                                    <Hash className="w-8 h-8 text-zinc-500" />
                                   </div>
-                                  
-                                  {item.vendor_name && (
-                                    <div className="flex items-center gap-2">
-                                      <User className="w-4 h-4 text-muted-foreground" />
-                                      <span>{item.vendor_name}</span>
-                                    </div>
-                                  )}
+                                )}
+                                <div>
+                                  <h3 className="text-sm font-semibold">{item.name}</h3>
+                                  <p className="text-xs text-muted-foreground">
+                                    {item.vendor_name || "Street Collector"}
+                                  </p>
                                 </div>
                               </div>
-                            </CardContent>
-                            <CardFooter className="flex justify-between">
+                              <Badge 
+                                variant={nfcStatus.variant}
+                                className="flex items-center gap-2"
+                              >
+                                {nfcStatus.icon}
+                                {nfcStatus.label}
+                              </Badge>
+                            </div>
+                            <div className="flex space-x-2">
+                              {item.certificate_url && (
+                                <Button 
+                                  variant="outline" 
+                                  size="sm"
+                                  onClick={() => window.open(item.certificate_url, '_blank')}
+                                >
+                                  <Link className="w-4 h-4 mr-2" />
+                                  View Certificate
+                                </Button>
+                              )}
                               <Button 
-                                variant="outline" 
+                                variant="secondary" 
                                 size="sm"
                                 onClick={() => handleCertificateClick(item)}
                               >
-                                View Certificate
+                                <Scan className="w-4 h-4 mr-2" />
+                                Authenticate
                               </Button>
-                              
-                              {nfcStatus.status !== "paired" && (
-                                <Button 
-                                  variant="secondary" 
-                                  size="sm"
-                                  onClick={handleNfcPairing}
-                                  disabled={nfcStatus.status === "no-nfc"}
-                                >
-                                  {nfcStatus.status === "unpaired" 
-                                    ? "Pair NFC Tag" 
-                                    : "No NFC Available"}
-                                </Button>
-                              )}
-                            </CardFooter>
-                          </Card>
+                            </div>
+                          </div>
                         )
                       })}
                     </CardContent>

@@ -1,12 +1,13 @@
 "use client"
 
-import { useState, useRef, useEffect } from "react"
-import { Dialog, DialogContent } from "@/components/ui/dialog"
+import { useState, useRef, useEffect, useCallback } from "react"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
 import { X, BadgeIcon as Certificate, User, Calendar, Hash, ExternalLink, Award, Sparkles, Signature, Wifi, WifiOff, Album, Scan, Loader2 } from "lucide-react"
 import { motion, useMotionValue, useTransform } from "framer-motion"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { toast } from "@/components/ui/use-toast"
+import { createClient } from "@/lib/supabase/client"
 
 // Add shimmer effect styles
 const shimmerStyles = `
@@ -157,10 +158,13 @@ export function CertificateModal({ lineItem, onClose }: CertificateModalProps) {
   const [isOpen, setIsOpen] = useState(false)
   const [isFlipped, setIsFlipped] = useState(false)
   const [isNfcPairing, setIsNfcPairing] = useState(false)
+  const [nfcError, setNfcError] = useState<string | null>(null)
+  const supabase = createClient()
 
   useEffect(() => {
     setIsOpen(!!lineItem)
     setIsFlipped(false)
+    setNfcError(null)
   }, [lineItem])
 
   if (!lineItem) return null
@@ -176,302 +180,129 @@ export function CertificateModal({ lineItem, onClose }: CertificateModalProps) {
     ? (lineItem.nfc_claimed_at ? "paired" : "unpaired")
     : "no-nfc"
 
-  const handleNfcPairing = async () => {
-    // Check if Web NFC is supported
-    if ('NDEFReader' in window) {
-      try {
-        setIsNfcPairing(true)
-        const ndef = new NDEFReader()
-        await ndef.scan()
+  const handleNfcPairing = useCallback(async () => {
+    setNfcError(null)
+    setIsNfcPairing(true)
 
-        ndef.addEventListener("reading", async ({ message, serialNumber }) => {
-          try {
-            // Send tag to backend for verification and claim
-                              const response = await fetch('/api/nfc-tags/claim', {
-                                method: 'POST',
-                                headers: {
-                                  'Content-Type': 'application/json',
-                                },
-                                body: JSON.stringify({
-                tagId: serialNumber,
-                lineItemId: lineItem?.line_item_id,
-                orderId: lineItem?.order_id,
-                customerId: null // TODO: Get actual customer ID
-                                })
-                              })
+    if (!('NDEFReader' in window)) {
+      setNfcError("Web NFC is not supported in your browser")
+      setIsNfcPairing(false)
+      return
+    }
 
-                              const result = await response.json()
+    try {
+      const ndef = new NDEFReader()
+      await ndef.scan()
 
-                              if (result.success) {
-                                toast({
-                                  title: "NFC Tag Paired",
-                description: "Your artwork has been successfully authenticated.",
-                                  variant: "default"
-                                })
-              // Optionally refresh the line item or close modal
-              onClose()
-                              } else {
-                                toast({
-                title: "Pairing Failed",
-                                  description: result.message || "Unable to pair NFC tag",
-                                  variant: "destructive"
-                                })
-                              }
-                            } catch (error) {
-            console.error("NFC Claim Error:", error)
-            toast({
-              title: "Pairing Error",
-              description: "An unexpected error occurred",
-              variant: "destructive"
-            })
-          } finally {
-            setIsNfcPairing(false)
-          }
-        })
-      } catch (error) {
-        console.error("NFC Scanning Error:", error)
-        toast({
-          title: "NFC Error",
-          description: "Unable to start NFC scanning",
-          variant: "destructive"
-        })
+      const pairingTimeout = setTimeout(() => {
+        setNfcError("NFC pairing timed out. Please try again.")
         setIsNfcPairing(false)
-      }
-    } else {
-                              toast({
-        title: "Unsupported Browser",
-        description: "Web NFC is not supported in your browser",
-                                variant: "destructive"
-                              })
-                            }
-  }
+      }, 30000)
+
+      ndef.addEventListener("reading", async ({ serialNumber }) => {
+        clearTimeout(pairingTimeout)
+        
+        try {
+          const { data: { user } } = await supabase.auth.getUser()
+          
+          if (!user) {
+            throw new Error("User not authenticated")
+          }
+
+          const response = await fetch('/api/nfc-tags/claim', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              tagId: serialNumber,
+              lineItemId: lineItem?.line_item_id,
+              orderId: lineItem?.order_id,
+              customerId: user.id
+            })
+          })
+
+          const result = await response.json()
+
+          if (result.success) {
+            toast({
+              title: "NFC Tag Paired",
+              description: "Your artwork has been successfully authenticated.",
+              variant: "default"
+            })
+            onClose()
+          } else {
+            setNfcError(result.message || "Unable to pair NFC tag")
+          }
+        } catch (error) {
+          console.error("NFC Claim Error:", error)
+          setNfcError(error instanceof Error ? error.message : "An unexpected error occurred")
+        } finally {
+          setIsNfcPairing(false)
+        }
+      })
+    } catch (scanError) {
+      console.error("NFC Scanning Error:", scanError)
+      setNfcError("Failed to start NFC scanning")
+      setIsNfcPairing(false)
+    }
+  }, [lineItem, onClose, supabase])
 
   return (
-    <Dialog open={isOpen} onOpenChange={() => onClose()}>
-      <DialogContent className="max-w-4xl w-full p-0 overflow-hidden">
-        <PostcardCertificate 
-          isFlipped={isFlipped}
-          className="w-full h-[600px] flex flex-col"
-        >
-          <div className="absolute top-4 right-4 z-30 flex items-center gap-2">
-            <Badge 
-              variant={
-                nfcStatus === "paired" 
-                  ? "default" 
-                  : nfcStatus === "unpaired" 
-                  ? "secondary" 
-                  : "destructive"
-              }
-              className="flex items-center gap-2"
-            >
-              {nfcStatus === "paired" ? (
-                <Wifi className="w-4 h-4 text-green-500" />
-              ) : nfcStatus === "unpaired" ? (
-                <WifiOff className="w-4 h-4 text-yellow-500" />
-              ) : (
-                <WifiOff className="w-4 h-4 text-red-500" />
-              )}
-              {nfcStatus === "paired" 
-                ? "Authenticated" 
-                : nfcStatus === "unpaired" 
-                ? "Needs Authentication" 
-                : "No NFC Tag"}
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="sm:max-w-[600px] bg-zinc-900 border-amber-500/30">
+        <DialogHeader>
+          <DialogTitle className="flex items-center text-amber-400">
+            <Certificate className="mr-2" /> Certificate of Authenticity
+          </DialogTitle>
+          <DialogDescription>
+            Authenticate your limited edition artwork
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <h3 className="text-xl font-bold text-amber-300">
+              {lineItem.name}
+            </h3>
+            <Badge variant="secondary">
+              Edition {lineItem.edition_number} of {lineItem.edition_total}
             </Badge>
-            <Button 
-              variant="ghost" 
-              size="icon" 
-              onClick={() => onClose()}
-            >
-              <X className="w-5 h-5" />
-                        </Button>
-                    </div>
-
-          <div className="grid md:grid-cols-2 h-full">
-            {/* Artwork Image Side */}
-            <div className="relative overflow-hidden">
-              {lineItem.img_url ? (
-                <img 
-                  src={lineItem.img_url} 
-                  alt={lineItem.name} 
-                  className="w-full h-full object-cover"
-                />
-              ) : (
-                <div className="w-full h-full bg-gradient-to-br from-zinc-800 to-zinc-900 flex items-center justify-center">
-                  <Album className="w-24 h-24 text-zinc-600" />
-                      </div>
-                    )}
-              <div className="absolute bottom-0 left-0 right-0 bg-black/50 p-4 text-white">
-                <h2 className="text-2xl font-bold">{lineItem.name}</h2>
-                <p className="text-sm text-zinc-300">{artistName}</p>
-              </div>
-            </div>
-
-            {/* Certificate Details Side */}
-            <div className="p-8 flex flex-col justify-between">
-              <div>
-                <div className="flex justify-between items-center mb-6">
-                  <div>
-                    <h3 className="text-xl font-semibold flex items-center gap-2">
-                      <Certificate className="w-6 h-6 text-amber-500" />
-                      Certificate of Authenticity
-                    </h3>
-                    <p className="text-muted-foreground">{editionInfo}</p>
-                  </div>
-                  <Button 
-                    variant="outline" 
-                    size="sm"
-                    onClick={() => setIsFlipped(!isFlipped)}
-                  >
-                    {isFlipped ? "View Artwork" : "View Certificate"}
-                  </Button>
-                  </div>
-
-                <div className="space-y-4">
-                  <div className="flex items-center gap-3">
-                    <Signature className="w-5 h-5 text-muted-foreground" />
-                    <span>Artist: {artistName}</span>
-                    </div>
-                  <div className="flex items-center gap-3">
-                    <Calendar className="w-5 h-5 text-muted-foreground" />
-                    <span>
-                      Issued: {new Date().toLocaleDateString()}
-                    </span>
-                      </div>
-                  {lineItem.certificate_url && (
-                    <div className="flex items-center gap-3">
-                      <ExternalLink className="w-5 h-5 text-muted-foreground" />
-                      <a 
-                        href={lineItem.certificate_url} 
-                        target="_blank" 
-                        rel="noopener noreferrer"
-                        className="text-blue-500 hover:underline"
-                      >
-                        View Online Certificate
-                      </a>
-                    </div>
-                  )}
-                </div>
-                    </div>
-
-              <div className="mt-6">
-                {nfcStatus === "unpaired" && (
-                  <Button 
-                    className="w-full" 
-                    onClick={handleNfcPairing}
-                    disabled={isNfcPairing}
-                  >
-                    {isNfcPairing ? (
-                      <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Scanning for NFC Tag
-                      </>
-                    ) : (
-                      <>
-                        <Scan className="mr-2 h-4 w-4" />
-                        Pair NFC Tag
-                      </>
-                    )}
-                  </Button>
-                )}
-                {nfcStatus === "paired" && (
-                  <div className="bg-green-50 border border-green-200 p-3 rounded-lg flex items-center gap-3">
-                    <Sparkles className="w-6 h-6 text-green-500" />
-                    <span className="text-green-800">
-                      Artwork Authenticated with NFC
-                    </span>
-                  </div>
-                )}
-                {nfcStatus === "no-nfc" && (
-                  <div className="bg-yellow-50 border border-yellow-200 p-3 rounded-lg flex items-center gap-3">
-                    <WifiOff className="w-6 h-6 text-yellow-500" />
-                    <span className="text-yellow-800">
-                      No NFC Tag Available for this Artwork
-                    </span>
-                </div>
-                )}
-              </div>
-            </div>
           </div>
 
-          {/* Modify the back side of the certificate when isFlipped is true */}
-          {isFlipped && (
-            <div className="absolute inset-0 bg-white text-black p-8 flex flex-col justify-between">
-              {/* Certificate Header */}
-              <div>
-                <div className="flex justify-between items-center border-b pb-4 mb-6">
-                  <h1 className="text-3xl font-bold text-gray-900">Certificate of Authenticity</h1>
-                  <div className="flex items-center gap-2">
-                    <Certificate className="w-8 h-8 text-amber-600" />
-                    <span className="text-lg font-semibold text-gray-700">Street Collector</span>
-                  </div>
-                </div>
-
-                {/* Artwork Details */}
-                <div className="space-y-4">
-                  <div>
-                    <p className="text-sm text-gray-500 uppercase tracking-wider">Artwork Title</p>
-                    <h2 className="text-2xl font-semibold text-gray-900">{lineItem.name}</h2>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <p className="text-sm text-gray-500 uppercase tracking-wider">Artist</p>
-                      <p className="text-xl font-medium text-gray-800">{artistName}</p>
-                    </div>
-
-                    <div>
-                      <p className="text-sm text-gray-500 uppercase tracking-wider">Edition</p>
-                      <p className="text-xl font-medium text-gray-800">
-                        {lineItem.edition_number && lineItem.edition_total
-                          ? `${lineItem.edition_number} of ${lineItem.edition_total}`
-                          : "Limited Edition"}
-                      </p>
-                    </div>
-                  </div>
-
-                  {/* NFC Authentication */}
-                  <div className="mt-6 border-t pt-4">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <Wifi className="w-6 h-6 text-green-600" />
-                        <span className="text-sm text-gray-600">
-                          {nfcStatus === "paired" 
-                            ? "NFC Authenticated" 
-                            : "NFC Authentication Pending"}
-                        </span>
-                      </div>
-                      {lineItem.nfc_claimed_at && (
-                        <p className="text-sm text-gray-500">
-                          Authenticated on: {new Date(lineItem.nfc_claimed_at).toLocaleDateString()}
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                </div>
+          {/* NFC Pairing Section */}
+          <div className="bg-zinc-800 p-4 rounded-lg border border-zinc-700">
+            {nfcError && (
+              <div className="text-red-400 flex items-center mb-4">
+                <WifiOff className="mr-2" />
+                {nfcError}
               </div>
+            )}
 
-              {/* Certificate Footer */}
-              <div className="mt-6 border-t pt-4 flex justify-between items-center">
-                <div>
-                  <p className="text-xs text-gray-500">Certificate Number</p>
-                  <p className="font-mono text-sm text-gray-800">
-                    {lineItem.certificate_token?.slice(0, 12) || 'N/A'}
-                  </p>
-                </div>
-                <div className="text-right">
-                  <p className="text-xs text-gray-500">Issued Date</p>
-                  <p className="text-sm text-gray-800">
-                    {new Date().toLocaleDateString('en-US', {
-                      month: 'long',
-                      day: 'numeric',
-                      year: 'numeric'
-                    })}
-                  </p>
-                </div>
+            <Button 
+              onClick={handleNfcPairing} 
+              disabled={isNfcPairing}
+              className="w-full"
+              variant="secondary"
+            >
+              {isNfcPairing ? (
+                <>
+                  <Loader2 className="mr-2 animate-spin" />
+                  Scanning for NFC Tag...
+                </>
+              ) : (
+                "Pair NFC Tag"
+              )}
+            </Button>
+
+            {/* Non-NFC Fallback */}
+            {!('NDEFReader' in window) && (
+              <div className="text-yellow-400 text-sm mt-2 text-center">
+                Your browser does not support NFC. Please use a compatible device.
+              </div>
+            )}
           </div>
         </div>
-          )}
-        </PostcardCertificate>
       </DialogContent>
     </Dialog>
   )
