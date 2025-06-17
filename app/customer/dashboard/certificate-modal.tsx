@@ -1,135 +1,12 @@
 "use client"
 
 import { useState, useRef, useEffect } from "react"
+import { motion } from "framer-motion"
 import { Dialog, DialogContent } from "@/components/ui/dialog"
 import { X, BadgeIcon as Certificate, User, Calendar, Hash, ExternalLink, Award, Sparkles, Signature, Wifi, WifiOff, Album, Scan, Loader2 } from "lucide-react"
-import { motion, useMotionValue, useTransform } from "framer-motion"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { toast } from "@/components/ui/use-toast"
-
-// Add shimmer effect styles
-const shimmerStyles = `
-@keyframes shimmer {
-  0% {
-    background-position: -200% 0;
-  }
-  100% {
-    background-position: 200% 0;
-  }
-}
-
-.shimmer {
-  background: linear-gradient(
-    90deg,
-    rgba(255, 255, 255, 0) 0%,
-    rgba(255, 255, 255, 0.1) 50%,
-    rgba(255, 255, 255, 0) 100%
-  );
-  background-size: 200% 100%;
-  animation: shimmer 2s infinite;
-}
-
-@keyframes golden-glow {
-  0%, 100% {
-    box-shadow: 0 0 20px rgba(251, 191, 36, 0.3);
-  }
-  50% {
-    box-shadow: 0 0 40px rgba(251, 191, 36, 0.6);
-  }
-}
-
-.golden-glow {
-  animation: golden-glow 3s ease-in-out infinite;
-}
-
-.signature-font {
-  font-family: 'Brush Script MT', cursive, serif;
-  font-style: italic;
-}
-
-.postcard-tilt {
-  transform-style: preserve-3d;
-  transition: transform 0.1s ease-out;
-}
-`
-
-function PostcardCertificate({ children, className = "", isFlipped = false, onMouseMove, onMouseLeave, ...props }: React.HTMLAttributes<HTMLDivElement> & { 
-  isFlipped?: boolean
-  onMouseMove?: (e: React.MouseEvent<HTMLDivElement>) => void
-  onMouseLeave?: () => void
-}) {
-  const cardRef = useRef<HTMLDivElement>(null)
-  const [mousePosition, setMousePosition] = useState({ x: 50, y: 50 })
-  
-  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
-    const card = cardRef.current
-    if (!card) return
-    
-    const rect = card.getBoundingClientRect()
-    const x = e.clientX - rect.left
-    const y = e.clientY - rect.top
-    const centerX = rect.width / 2
-    const centerY = rect.height / 2
-    
-    // Calculate rotation based on mouse position relative to center
-    const rotateX = ((y - centerY) / centerY) * -15 // Increased intensity
-    const rotateY = ((x - centerX) / centerX) * 15   // Increased intensity
-    
-    setMousePosition({ x: (x / rect.width) * 100, y: (y / rect.height) * 100 })
-    
-    // Apply 3D transform with enhanced tilt
-    card.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) ${isFlipped ? 'rotateY(' + (180 + rotateY) + 'deg)' : ''} scale3d(1.02,1.02,1.02)`
-    
-    // Call parent mouse move handler
-    onMouseMove?.(e)
-  }
-  
-  const handleMouseLeave = () => {
-    const card = cardRef.current
-    if (!card) return
-    card.style.transform = isFlipped ? "perspective(1000px) rotateY(180deg)" : "perspective(1000px)"
-    setMousePosition({ x: 50, y: 50 })
-    onMouseLeave?.()
-  }
-  
-  return (
-    <>
-      <style>{shimmerStyles}</style>
-      <div
-        ref={cardRef}
-        className={`postcard-tilt relative bg-gradient-to-br from-zinc-900/95 via-zinc-800/95 to-zinc-900/95 backdrop-blur-sm border border-amber-500/30 rounded-xl shadow-2xl hover:shadow-3xl hover:border-amber-400/50 overflow-hidden golden-glow ${className}`}
-        style={{ 
-          willChange: "transform",
-          transformStyle: "preserve-3d",
-          transform: isFlipped ? "perspective(1000px) rotateY(180deg)" : "perspective(1000px)",
-        }}
-        onMouseMove={handleMouseMove}
-        onMouseLeave={handleMouseLeave}
-        {...props}
-      >
-        {/* Premium border gradient */}
-        <div className="absolute inset-0 bg-gradient-to-r from-amber-400/20 via-amber-300/10 to-amber-400/20 p-[1px] rounded-xl">
-          <div className="h-full w-full bg-gradient-to-br from-zinc-900 via-zinc-800 to-zinc-900 rounded-xl" />
-        </div>
-        
-        {/* Enhanced shimmer overlay with mouse tracking */}
-        <span 
-          className="pointer-events-none absolute inset-0 z-10 opacity-0 hover:opacity-100 transition-opacity duration-300"
-          style={{
-            background: `radial-gradient(circle at ${mousePosition.x}% ${mousePosition.y}%, rgba(251,191,36,0.2) 0%, transparent 60%)`,
-          }}
-        >
-          <span className="block w-full h-full shimmer" />
-        </span>
-        
-        <div className="relative z-20 h-full">
-          {children}
-        </div>
-      </div>
-    </>
-  )
-}
 
 interface LineItem {
   line_item_id: string
@@ -167,7 +44,7 @@ export function CertificateModal({ lineItem, onClose }: CertificateModalProps) {
 
   const artistName = lineItem.vendor_name || "Street Collector"
   const editionInfo = lineItem.edition_number && lineItem.edition_total
-    ? `${lineItem.edition_number} of ${lineItem.edition_total}`
+    ? `${lineItem.edition_number}/${lineItem.edition_total}`
     : lineItem.edition_number 
     ? `${lineItem.edition_number}`
     : "Limited Edition"
@@ -249,114 +126,117 @@ export function CertificateModal({ lineItem, onClose }: CertificateModalProps) {
   return (
     <Dialog open={isOpen} onOpenChange={() => onClose()}>
       <DialogContent className="max-w-4xl w-full p-0 overflow-hidden">
-        <PostcardCertificate 
-          isFlipped={isFlipped}
-          className="w-full h-[600px] flex flex-col"
+        <motion.div 
+          className="w-full h-[600px] relative perspective-1000"
+          initial={false}
+          animate={{ rotateY: isFlipped ? 180 : 0 }}
+          transition={{ duration: 0.6, animationDirection: "normal" }}
         >
-          <div className="absolute top-4 right-4 z-30 flex items-center gap-2">
-            <Badge 
-              variant={
-                nfcStatus === "paired" 
-                  ? "default" 
-                  : nfcStatus === "unpaired" 
-                  ? "secondary" 
-                  : "destructive"
-              }
-              className="flex items-center gap-2"
-            >
-              {nfcStatus === "paired" ? (
-                <Wifi className="w-4 h-4 text-green-500" />
-              ) : nfcStatus === "unpaired" ? (
-                <WifiOff className="w-4 h-4 text-yellow-500" />
-              ) : (
-                <WifiOff className="w-4 h-4 text-red-500" />
-              )}
-              {nfcStatus === "paired" 
-                ? "Authenticated" 
-                : nfcStatus === "unpaired" 
-                ? "Needs Authentication" 
-                : "No NFC Tag"}
-            </Badge>
-            <Button 
-              variant="ghost" 
-              size="icon" 
-              onClick={() => onClose()}
-            >
-              <X className="w-5 h-5" />
-                        </Button>
-                    </div>
-
-          <div className="grid md:grid-cols-2 h-full">
-            {/* Artwork Image Side */}
-            <div className="relative overflow-hidden">
+          {/* Front of Card */}
+          <motion.div 
+            className={`absolute inset-0 w-full h-full bg-gradient-to-br from-zinc-900 to-zinc-800 rounded-xl shadow-2xl p-6 flex flex-col justify-between cursor-pointer ${!isFlipped ? 'z-20' : 'z-10 opacity-0'}`}
+            style={{
+              backfaceVisibility: 'hidden',
+              transform: 'rotateY(0deg)',
+            }}
+            onClick={() => setIsFlipped(true)}
+          >
+            {/* Artwork Image */}
+            <div className="flex-grow relative overflow-hidden rounded-lg mb-4">
               {lineItem.img_url ? (
                 <img 
                   src={lineItem.img_url} 
                   alt={lineItem.name} 
-                  className="w-full h-full object-cover"
+                  className="absolute inset-0 w-full h-full object-cover"
                 />
               ) : (
-                <div className="w-full h-full bg-gradient-to-br from-zinc-800 to-zinc-900 flex items-center justify-center">
-                  <Album className="w-24 h-24 text-zinc-600" />
-                      </div>
-                    )}
-              <div className="absolute bottom-0 left-0 right-0 bg-black/50 p-4 text-white">
-                <h2 className="text-2xl font-bold">{lineItem.name}</h2>
-                <p className="text-sm text-zinc-300">{artistName}</p>
-              </div>
+                <div className="absolute inset-0 bg-zinc-700 flex items-center justify-center">
+                  <Album className="w-24 h-24 text-zinc-500" />
+                </div>
+              )}
             </div>
 
-            {/* Certificate Details Side */}
-            <div className="p-8 flex flex-col justify-between">
-              <div>
-                <div className="flex justify-between items-center mb-6">
-                  <div>
-                    <h3 className="text-xl font-semibold flex items-center gap-2">
-                      <Certificate className="w-6 h-6 text-amber-500" />
-                      Certificate of Authenticity
-                    </h3>
-                    <p className="text-muted-foreground">{editionInfo}</p>
-                  </div>
-                  <Button 
-                    variant="outline" 
-                    size="sm"
-                    onClick={() => setIsFlipped(!isFlipped)}
-                  >
-                    {isFlipped ? "View Artwork" : "View Certificate"}
-                  </Button>
-                  </div>
-
-                <div className="space-y-4">
-                  <div className="flex items-center gap-3">
-                    <Signature className="w-5 h-5 text-muted-foreground" />
-                    <span>Artist: {artistName}</span>
-                    </div>
-                  <div className="flex items-center gap-3">
-                    <Calendar className="w-5 h-5 text-muted-foreground" />
-                    <span>
-                      Issued: {new Date().toLocaleDateString()}
-                    </span>
-                      </div>
-                  {lineItem.certificate_url && (
-                    <div className="flex items-center gap-3">
-                      <ExternalLink className="w-5 h-5 text-muted-foreground" />
-                      <a 
-                        href={lineItem.certificate_url} 
-                        target="_blank" 
-                        rel="noopener noreferrer"
-                        className="text-blue-500 hover:underline"
-                      >
-                        View Online Certificate
-                      </a>
-                    </div>
+            {/* Artwork Details */}
+            <div className="text-white space-y-2">
+              <h2 className="text-2xl font-bold tracking-tight">{lineItem.name}</h2>
+              <div className="flex justify-between items-center">
+                <p className="text-zinc-300">{artistName}</p>
+                <div className="flex items-center space-x-2">
+                  {nfcStatus === "paired" && (
+                    <Wifi className="w-5 h-5 text-green-500" />
                   )}
+                  {nfcStatus === "unpaired" && (
+                    <WifiOff className="w-5 h-5 text-yellow-500" />
+                  )}
+                  {nfcStatus === "no-nfc" && (
+                    <WifiOff className="w-5 h-5 text-red-500" />
+                  )}
+                  <span className="text-sm font-medium">
+                    {editionInfo}
+                  </span>
                 </div>
-                    </div>
+              </div>
+            </div>
+          </motion.div>
 
-              <div className="mt-6">
+          {/* Back of Card (Certificate Details) */}
+          <motion.div 
+            className={`absolute inset-0 w-full h-full bg-white text-zinc-900 rounded-xl shadow-2xl p-6 flex flex-col justify-between cursor-pointer ${isFlipped ? 'z-20' : 'z-10 opacity-0'}`}
+            style={{
+              backfaceVisibility: 'hidden',
+              transform: 'rotateY(180deg)',
+            }}
+            onClick={() => setIsFlipped(false)}
+          >
+            <div>
+              <div className="flex justify-between items-center border-b pb-4 mb-6">
+                <h1 className="text-3xl font-bold">Certificate of Authenticity</h1>
+                <Certificate className="w-10 h-10 text-amber-600" />
+              </div>
+
+              <div className="space-y-4">
+                <div>
+                  <p className="text-sm text-zinc-500 uppercase tracking-wider">Artwork</p>
+                  <h2 className="text-2xl font-semibold">{lineItem.name}</h2>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <p className="text-sm text-zinc-500 uppercase tracking-wider">Artist</p>
+                    <p className="text-xl font-medium">{artistName}</p>
+                  </div>
+
+                  <div>
+                    <p className="text-sm text-zinc-500 uppercase tracking-wider">Edition</p>
+                    <p className="text-xl font-medium">
+                      {editionInfo}
+                    </p>
+                  </div>
+                </div>
+
+                {nfcStatus !== "no-nfc" && (
+                  <div className="mt-6 border-t pt-4">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <Wifi className={`w-6 h-6 ${nfcStatus === "paired" ? 'text-green-600' : 'text-yellow-500'}`} />
+                        <span className="text-sm text-zinc-600">
+                          {nfcStatus === "paired" 
+                            ? "NFC Authenticated" 
+                            : "NFC Authentication Pending"}
+                        </span>
+                      </div>
+                      {lineItem.nfc_claimed_at && (
+                        <p className="text-sm text-zinc-500">
+                          Authenticated on: {new Date(lineItem.nfc_claimed_at).toLocaleDateString()}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                )}
+
                 {nfcStatus === "unpaired" && (
                   <Button 
-                    className="w-full" 
+                    className="w-full mt-4" 
                     onClick={handleNfcPairing}
                     disabled={isNfcPairing}
                   >
@@ -373,105 +253,29 @@ export function CertificateModal({ lineItem, onClose }: CertificateModalProps) {
                     )}
                   </Button>
                 )}
-                {nfcStatus === "paired" && (
-                  <div className="bg-green-50 border border-green-200 p-3 rounded-lg flex items-center gap-3">
-                    <Sparkles className="w-6 h-6 text-green-500" />
-                    <span className="text-green-800">
-                      Artwork Authenticated with NFC
-                    </span>
-                  </div>
-                )}
-                {nfcStatus === "no-nfc" && (
-                  <div className="bg-yellow-50 border border-yellow-200 p-3 rounded-lg flex items-center gap-3">
-                    <WifiOff className="w-6 h-6 text-yellow-500" />
-                    <span className="text-yellow-800">
-                      No NFC Tag Available for this Artwork
-                    </span>
-                </div>
-                )}
               </div>
             </div>
-          </div>
 
-          {/* Modify the back side of the certificate when isFlipped is true */}
-          {isFlipped && (
-            <div className="absolute inset-0 bg-white text-black p-8 flex flex-col justify-between">
-              {/* Certificate Header */}
+            <div className="mt-6 border-t pt-4 flex justify-between items-center">
               <div>
-                <div className="flex justify-between items-center border-b pb-4 mb-6">
-                  <h1 className="text-3xl font-bold text-gray-900">Certificate of Authenticity</h1>
-                  <div className="flex items-center gap-2">
-                    <Certificate className="w-8 h-8 text-amber-600" />
-                    <span className="text-lg font-semibold text-gray-700">Street Collector</span>
-                  </div>
-                </div>
-
-                {/* Artwork Details */}
-                <div className="space-y-4">
-                  <div>
-                    <p className="text-sm text-gray-500 uppercase tracking-wider">Artwork Title</p>
-                    <h2 className="text-2xl font-semibold text-gray-900">{lineItem.name}</h2>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <p className="text-sm text-gray-500 uppercase tracking-wider">Artist</p>
-                      <p className="text-xl font-medium text-gray-800">{artistName}</p>
-                    </div>
-
-                    <div>
-                      <p className="text-sm text-gray-500 uppercase tracking-wider">Edition</p>
-                      <p className="text-xl font-medium text-gray-800">
-                        {lineItem.edition_number && lineItem.edition_total
-                          ? `${lineItem.edition_number} of ${lineItem.edition_total}`
-                          : "Limited Edition"}
-                      </p>
-                    </div>
-                  </div>
-
-                  {/* NFC Authentication */}
-                  <div className="mt-6 border-t pt-4">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <Wifi className="w-6 h-6 text-green-600" />
-                        <span className="text-sm text-gray-600">
-                          {nfcStatus === "paired" 
-                            ? "NFC Authenticated" 
-                            : "NFC Authentication Pending"}
-                        </span>
-                      </div>
-                      {lineItem.nfc_claimed_at && (
-                        <p className="text-sm text-gray-500">
-                          Authenticated on: {new Date(lineItem.nfc_claimed_at).toLocaleDateString()}
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                </div>
+                <p className="text-xs text-zinc-500">Certificate Number</p>
+                <p className="font-mono text-sm text-zinc-800">
+                  {lineItem.certificate_token?.slice(0, 12) || 'N/A'}
+                </p>
               </div>
-
-              {/* Certificate Footer */}
-              <div className="mt-6 border-t pt-4 flex justify-between items-center">
-                <div>
-                  <p className="text-xs text-gray-500">Certificate Number</p>
-                  <p className="font-mono text-sm text-gray-800">
-                    {lineItem.certificate_token?.slice(0, 12) || 'N/A'}
-                  </p>
-                </div>
-                <div className="text-right">
-                  <p className="text-xs text-gray-500">Issued Date</p>
-                  <p className="text-sm text-gray-800">
-                    {new Date().toLocaleDateString('en-US', {
-                      month: 'long',
-                      day: 'numeric',
-                      year: 'numeric'
-                    })}
-                  </p>
-                </div>
-          </div>
-        </div>
-          )}
-        </PostcardCertificate>
+              <div className="text-right">
+                <p className="text-xs text-zinc-500">Issued Date</p>
+                <p className="text-sm text-zinc-800">
+                  {new Date().toLocaleDateString('en-US', {
+                    month: 'long',
+                    day: 'numeric',
+                    year: 'numeric'
+                  })}
+                </p>
+              </div>
+            </div>
+          </motion.div>
+        </motion.div>
       </DialogContent>
     </Dialog>
   )
