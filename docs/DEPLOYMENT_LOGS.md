@@ -158,15 +158,16 @@
 
 ### Vercel Deployment - [Current Date]
 - **Branch**: vercel-deployment-troubleshoot
-- **Commit Hash**: 5a23dea5
-- **Preview URL**: https://street-collector-qgtxqyfc3-chonibes-projects.vercel.app
+- **Commit Hash**: 7efcae46
+- **Preview URL**: https://street-collector-azmcr7gyv-chonibes-projects.vercel.app
 - **Changes**:
-  - Updated certificate modal component
-  - Modified deployment logs
-  - Updated related dashboard components
+  - Enhanced certificate modal with improved NFC authentication
+  - Updated dashboard page UI
+  - Simplified Supabase client integration
 
 **Deployment Notes**:
 - Successful preview deployment
+- Certificate modal functionality improved
 - Recommended review before production deployment
 
 --- 
