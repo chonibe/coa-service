@@ -11,7 +11,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { AlertCircle, CheckCircle, Clock, ShoppingBag, User, BadgeIcon as Certificate, Tag } from "lucide-react"
 import { toast } from "sonner"
 import { useRouter } from "next/navigation"
-import { CertificateModal } from "./certificate-modal"
+import { EnhancedCertificateModal } from '../../../customer/dashboard/enhanced-certificate-modal'
 import { motion, useMotionValue, useSpring, useTransform } from "framer-motion"
 
 // Utility functions
@@ -314,16 +314,19 @@ export default function CustomerPreviewPage() {
         </div>
       </div>
 
-      <CertificateModal
-        lineItem={selectedLineItem ? {
-          line_item_id: selectedLineItem.id,
-          title: selectedLineItem.name,
-          image_url: selectedLineItem.img_url,
-          vendor: selectedLineItem.vendor_name,
-          edition_number: selectedLineItem.edition_number,
-          edition_total: selectedLineItem.edition_total
-        } : null}
-        onClose={() => setSelectedLineItem(null)}
+      <EnhancedCertificateModal 
+        artwork={selectedLineItem ? {
+          id: selectedLineItem.id,
+          name: selectedLineItem.name,
+          artist: selectedLineItem.vendor_name || 'Street Collector',
+          editionNumber: selectedLineItem.edition_number || 0,
+          totalEdition: selectedLineItem.edition_total || 0,
+          imageUrl: selectedLineItem.img_url || undefined,
+          description: undefined,
+          nfcTagId: undefined,
+          nfcClaimedAt: undefined
+        } : null} 
+        onClose={() => setSelectedLineItem(null)} 
       />
     </div>
   )
