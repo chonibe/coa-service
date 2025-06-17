@@ -339,3 +339,18 @@ The edition number assignment system allows for automatic assignment of edition 
 - Configured production-specific environment variables
 - Resolved build and configuration challenges
 - Continuous integration and deployment (CI/CD) enabled
+
+## 📦 Project Documentation
+
+### Deployment Workflow
+For comprehensive guidance on deployment processes, environment configuration, and troubleshooting, please refer to our [Deployment Workflow Documentation](/docs/DEPLOYMENT_WORKFLOW.md).
+
+#### Key Documentation Resources
+- [Deployment Workflow](/docs/DEPLOYMENT_WORKFLOW.md) - Detailed guide for deployment configuration and best practices
+- [Environment Configuration](/docs/DEPLOYMENT_WORKFLOW.md#environment-configuration-management)
+- [Troubleshooting Guide](/docs/DEPLOYMENT_WORKFLOW.md#deployment-troubleshooting-workflow)
+
+### Documentation Update Process
+1. Keep documentation current with latest project changes
+2. Review and update documentation after each significant deployment
+3. Encourage team contributions and improvements
