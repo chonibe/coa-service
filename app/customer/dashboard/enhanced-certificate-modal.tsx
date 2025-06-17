@@ -141,18 +141,29 @@ export const EnhancedCertificateModal: React.FC<EnhancedCertificateModalProps> =
   // If no artwork, return null or a placeholder
   if (!artwork) {
     console.error('EnhancedCertificateModal - No artwork provided')
+    console.log('Artwork object:', artwork)
     return null
   }
 
-  // Validate required artwork properties
+  // Validate required artwork properties with more detailed logging
   const requiredProps: (keyof ArtworkCertificate)[] = ['id', 'name', 'artist', 'editionNumber', 'totalEdition']
   const missingProps = requiredProps.filter(prop => {
     const value = artwork[prop]
+    console.log(`Checking required prop ${prop}:`, {
+      value,
+      type: typeof value,
+      isNull: value === null,
+      isUndefined: value === undefined,
+      isEmpty: value === ''
+    })
     return value === null || value === undefined || value === ''
   })
 
   if (missingProps.length > 0) {
     console.error('EnhancedCertificateModal - Missing required properties:', missingProps)
+    console.log('Full artwork object:', JSON.stringify(artwork, null, 2))
+    
+    // Provide a fallback rendering with available information
     return (
       <Dialog open={true} onOpenChange={() => onClose()}>
         <DialogContent className="max-w-md">
@@ -160,7 +171,9 @@ export const EnhancedCertificateModal: React.FC<EnhancedCertificateModalProps> =
             <AlertCircle className="h-4 w-4" />
             <AlertTitle>Incomplete Artwork Data</AlertTitle>
             <AlertDescription>
-              Unable to display certificate. Missing properties: {missingProps.join(', ')}
+              Unable to display full certificate. Missing properties: {missingProps.join(', ')}
+              <br />
+              Available data: {Object.keys(artwork).join(', ')}
             </AlertDescription>
           </Alert>
         </DialogContent>
@@ -168,15 +181,29 @@ export const EnhancedCertificateModal: React.FC<EnhancedCertificateModalProps> =
     )
   }
 
-  console.log('EnhancedCertificateModal - Rendering Artwork:', {
-    id: artwork.id,
-    name: artwork.name,
-    artist: artwork.artist,
-    editionNumber: artwork.editionNumber,
-    totalEdition: artwork.totalEdition,
-    imageUrl: artwork.imageUrl,
+  // Ensure all required properties have valid values
+  const safeArtwork: ArtworkCertificate = {
+    id: artwork.id || 'Unknown ID',
+    name: artwork.name || 'Untitled',
+    artist: artwork.artist || 'Unknown Artist',
+    editionNumber: artwork.editionNumber || 0,
+    totalEdition: artwork.totalEdition || 0,
+    imageUrl: artwork.imageUrl || artwork.imageUrl, // Fallback to original property
+    description: artwork.description,
     nfcTagId: artwork.nfcTagId,
-    nfcClaimedAt: artwork.nfcClaimedAt
+    nfcClaimedAt: artwork.nfcClaimedAt,
+    certificateToken: artwork.certificateToken
+  }
+
+  console.log('EnhancedCertificateModal - Rendering Artwork:', {
+    id: safeArtwork.id,
+    name: safeArtwork.name,
+    artist: safeArtwork.artist,
+    editionNumber: safeArtwork.editionNumber,
+    totalEdition: safeArtwork.totalEdition,
+    imageUrl: safeArtwork.imageUrl,
+    nfcTagId: safeArtwork.nfcTagId,
+    nfcClaimedAt: safeArtwork.nfcClaimedAt
   })
 
   return (
@@ -186,9 +213,9 @@ export const EnhancedCertificateModal: React.FC<EnhancedCertificateModalProps> =
         style={{ aspectRatio: '3/2' }}
       >
         <DialogHeader className="sr-only">
-          <DialogTitle>Artwork Certificate: {artwork.name}</DialogTitle>
+          <DialogTitle>Artwork Certificate: {safeArtwork.name}</DialogTitle>
           <DialogDescription>
-            Certificate of Authenticity for {artwork.name} by {artwork.artist}
+            Certificate of Authenticity for {safeArtwork.name} by {safeArtwork.artist}
           </DialogDescription>
         </DialogHeader>
 
@@ -217,10 +244,10 @@ export const EnhancedCertificateModal: React.FC<EnhancedCertificateModalProps> =
               className="absolute w-full h-full bg-zinc-100 flex flex-col justify-between p-6"
               style={{ backfaceVisibility: 'hidden' }}
             >
-              {artwork.imageUrl ? (
+              {safeArtwork.imageUrl ? (
                 <Image 
-                  src={artwork.imageUrl} 
-                  alt={artwork.name} 
+                  src={safeArtwork.imageUrl} 
+                  alt={safeArtwork.name} 
                   fill 
                   className="object-cover rounded-xl"
                 />
@@ -231,10 +258,10 @@ export const EnhancedCertificateModal: React.FC<EnhancedCertificateModalProps> =
               )}
               
               <div className="absolute bottom-0 left-0 right-0 p-4 bg-black/50 text-white">
-                <h2 className="text-xl font-bold">{artwork.name}</h2>
+                <h2 className="text-xl font-bold">{safeArtwork.name}</h2>
                 <div className="flex justify-between items-center mt-2">
                   <span className="text-sm">
-                    Edition {artwork.editionNumber}/{artwork.totalEdition || 0}
+                    Edition {safeArtwork.editionNumber}/{safeArtwork.totalEdition || 0}
                   </span>
                   <Badge variant={nfcStatus.status === 'paired' ? 'default' : 'secondary'}>
                     {nfcStatus.icon}
@@ -258,19 +285,19 @@ export const EnhancedCertificateModal: React.FC<EnhancedCertificateModalProps> =
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <p className="text-sm text-zinc-500 uppercase tracking-wider">Artist</p>
-                    <p className="text-xl font-medium">{artwork.artist}</p>
+                    <p className="text-xl font-medium">{safeArtwork.artist}</p>
                   </div>
                   <div>
                     <p className="text-sm text-zinc-500 uppercase tracking-wider">Edition</p>
                     <p className="text-xl font-medium">
-                      {artwork.editionNumber}/{artwork.totalEdition || 0}
+                      {safeArtwork.editionNumber}/{safeArtwork.totalEdition || 0}
                     </p>
                   </div>
                 </div>
-                {artwork.description && (
+                {safeArtwork.description && (
                   <div className="mt-6">
                     <p className="text-sm text-zinc-500 uppercase tracking-wider">Description</p>
-                    <p className="text-base text-zinc-700">{artwork.description}</p>
+                    <p className="text-base text-zinc-700">{safeArtwork.description}</p>
                   </div>
                 )}
               </div>
@@ -287,7 +314,7 @@ export const EnhancedCertificateModal: React.FC<EnhancedCertificateModalProps> =
                   }
                 </Button>
                 <div className="text-sm text-zinc-500">
-                  Certificate Token: {artwork.certificateToken?.slice(0, 8)}...
+                  Certificate Token: {safeArtwork.certificateToken?.slice(0, 8)}...
                 </div>
               </div>
             </motion.div>
