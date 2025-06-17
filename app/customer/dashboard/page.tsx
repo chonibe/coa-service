@@ -150,6 +150,7 @@ export default function CustomerDashboard() {
     const requiredProps: (keyof LineItem)[] = ['line_item_id', 'name', 'img_url']
     const missingProps = requiredProps.filter(prop => {
       const value = lineItem[prop]
+      console.log(`Checking property ${prop}:`, value)
       return value === null || value === undefined || value === ''
     })
     
@@ -164,6 +165,7 @@ export default function CustomerDashboard() {
     }
 
     // Set the selected line item
+    console.log('Setting selectedLineItem to:', lineItem)
     setSelectedLineItem(lineItem)
   }
 
@@ -446,20 +448,40 @@ export default function CustomerDashboard() {
       
       {/* Enhanced Certificate Modal */}
       <EnhancedCertificateModal 
-        artwork={selectedLineItem ? {
-          id: selectedLineItem.line_item_id,
-          name: selectedLineItem.name,
-          artist: selectedLineItem.vendor_name || 'Street Collector',
-          editionNumber: selectedLineItem.edition_number || 0,
-          totalEdition: selectedLineItem.edition_total || 0,
-          imageUrl: selectedLineItem.img_url,
-          description: selectedLineItem.description,
-          nfcTagId: selectedLineItem.nfc_tag_id || undefined,
-          nfcClaimedAt: selectedLineItem.nfc_claimed_at || undefined,
-          certificateToken: selectedLineItem.certificate_token || undefined
-        } : null} 
+        artwork={selectedLineItem ? (() => {
+          console.log('Full selectedLineItem:', JSON.stringify(selectedLineItem, null, 2));
+          
+          const artworkData = {
+            id: selectedLineItem.line_item_id,
+            name: selectedLineItem.name,
+            artist: selectedLineItem.vendor_name || 'Street Collector',
+            editionNumber: selectedLineItem.edition_number || 0,
+            totalEdition: selectedLineItem.edition_total || 0,
+            imageUrl: selectedLineItem.img_url,
+            description: selectedLineItem.description,
+            nfcTagId: selectedLineItem.nfc_tag_id || undefined,
+            nfcClaimedAt: selectedLineItem.nfc_claimed_at || undefined,
+            certificateToken: selectedLineItem.certificate_token || undefined
+          };
+
+          console.log('Converted Artwork Data:', JSON.stringify(artworkData, null, 2));
+          
+          // Validate all properties
+          Object.entries(artworkData).forEach(([key, value]) => {
+            console.log(`Artwork Property ${key}:`, {
+              value,
+              type: typeof value,
+              isNull: value === null,
+              isUndefined: value === undefined,
+              isEmpty: value === ''
+            });
+          });
+
+          return artworkData;
+        })() : null} 
         onClose={() => {
           console.log('Closing enhanced certificate modal')
+          console.log('Current selectedLineItem before closing:', selectedLineItem)
           setSelectedLineItem(null)
         }} 
       />
