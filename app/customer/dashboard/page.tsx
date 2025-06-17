@@ -424,7 +424,8 @@ export default function CustomerDashboard() {
           imageUrl: selectedLineItem.img_url,
           description: selectedLineItem.description,
           nfcTagId: selectedLineItem.nfc_tag_id || undefined,
-          nfcClaimedAt: selectedLineItem.nfc_claimed_at || undefined
+          nfcClaimedAt: selectedLineItem.nfc_claimed_at || undefined,
+          certificateToken: selectedLineItem.certificate_token || undefined
         } : null} 
         onClose={() => {
           console.log('Closing enhanced certificate modal')
