@@ -1,8 +1,14 @@
 "use client"
 
-import { useState, useCallback } from "react"
+import { useState, useCallback, useEffect } from "react"
 import { motion } from "framer-motion"
-import { Dialog, DialogContent } from "@/components/ui/dialog"
+import { 
+  Dialog, 
+  DialogContent, 
+  DialogHeader, 
+  DialogTitle, 
+  DialogDescription 
+} from "@/components/ui/dialog"
 import { Wifi, WifiOff, Scan, Loader2, Award, Image as ImageIcon, CheckCircle2, XCircle } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -19,7 +25,6 @@ interface ArtworkCertificate {
   description?: string
   nfcTagId?: string
   nfcClaimedAt?: string
-  certificateToken?: string
 }
 
 interface EnhancedCertificateModalProps {
@@ -28,13 +33,28 @@ interface EnhancedCertificateModalProps {
 }
 
 export function EnhancedCertificateModal({ artwork, onClose }: EnhancedCertificateModalProps) {
+  const [isOpen, setIsOpen] = useState(false)
   const [isFlipped, setIsFlipped] = useState(false)
   const [isNfcScanning, setIsNfcScanning] = useState(false)
-  const [nfcStatus, setNfcStatus] = useState<'unpaired' | 'paired' | 'no-nfc'>(
-    artwork?.nfcTagId 
-      ? (artwork.nfcClaimedAt ? 'paired' : 'unpaired') 
-      : 'no-nfc'
-  )
+  const [nfcStatus, setNfcStatus] = useState<'unpaired' | 'paired' | 'no-nfc'>('no-nfc')
+
+  // Debug logging
+  useEffect(() => {
+    console.log('EnhancedCertificateModal - Artwork:', artwork)
+    console.log('EnhancedCertificateModal - Is Open:', isOpen)
+  }, [artwork, isOpen])
+
+  // Ensure modal opens when artwork is provided
+  useEffect(() => {
+    setIsOpen(!!artwork)
+    if (artwork) {
+      setNfcStatus(
+        artwork.nfcTagId 
+          ? (artwork.nfcClaimedAt ? 'paired' : 'unpaired') 
+          : 'no-nfc'
+      )
+    }
+  }, [artwork])
 
   const handleNfcAuthentication = useCallback(async () => {
     if (!('NDEFReader' in window)) {
@@ -95,8 +115,22 @@ export function EnhancedCertificateModal({ artwork, onClose }: EnhancedCertifica
     }
   }, [artwork])
 
-  // If no artwork, return null
-  if (!artwork) return null
+  // If no artwork, return null or a placeholder
+  if (!artwork) {
+    console.log('EnhancedCertificateModal - No artwork, returning null')
+    return null
+  }
+
+  console.log('EnhancedCertificateModal - Rendering Artwork:', {
+    id: artwork.id,
+    name: artwork.name,
+    artist: artwork.artist,
+    editionNumber: artwork.editionNumber,
+    totalEdition: artwork.totalEdition,
+    imageUrl: artwork.imageUrl,
+    nfcTagId: artwork.nfcTagId,
+    nfcClaimedAt: artwork.nfcClaimedAt
+  })
 
   // Determine NFC and edition status
   const nfcStatusDetails = {
@@ -118,8 +152,18 @@ export function EnhancedCertificateModal({ artwork, onClose }: EnhancedCertifica
   }[nfcStatus]
 
   return (
-    <Dialog open={!!artwork} onOpenChange={onClose}>
+    <Dialog open={isOpen} onOpenChange={(open) => {
+      setIsOpen(open)
+      if (!open) onClose()
+    }}>
       <DialogContent className="max-w-4xl w-full p-0 overflow-hidden">
+        <DialogHeader>
+          <DialogTitle className="sr-only">Certificate of Authenticity</DialogTitle>
+          <DialogDescription className="sr-only">
+            Detailed information about the artwork and its authentication status
+          </DialogDescription>
+        </DialogHeader>
+
         <motion.div 
           className="relative w-full h-[600px] perspective-1000"
           initial={false}
@@ -167,7 +211,7 @@ export function EnhancedCertificateModal({ artwork, onClose }: EnhancedCertifica
               <div className="flex justify-between items-center text-zinc-300">
                 <p>{artwork.artist}</p>
                 <span className="text-sm font-medium">
-                  Edition {artwork.editionNumber}/{artwork.totalEdition}
+                  Edition {artwork.editionNumber}/{artwork.totalEdition || 0}
                 </span>
               </div>
             </div>
@@ -206,7 +250,7 @@ export function EnhancedCertificateModal({ artwork, onClose }: EnhancedCertifica
                   <div>
                     <p className="text-sm text-zinc-500 uppercase tracking-wider">Edition</p>
                     <p className="text-xl font-medium">
-                      {artwork.editionNumber}/{artwork.totalEdition}
+                      {artwork.editionNumber}/{artwork.totalEdition || 0}
                     </p>
                   </div>
                 </div>

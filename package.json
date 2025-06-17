@@ -7,6 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
+    "test": "jest",
+    "test:watch": "jest --watch",
     "backup:build": "tsc -p tsconfig.backup.json",
     "backup:start": "node backup/dist/scripts/backup-database.js",
     "backup:test": "node backup/dist/scripts/test-backup.js",
@@ -84,6 +86,7 @@
     "zod": "^3.24.1"
   },
   "devDependencies": {
+    "@testing-library/dom": "^10.4.0",
     "@testing-library/jest-dom": "^6.6.3",
     "@testing-library/react": "^16.3.0",
     "@types/jest": "^30.0.0",
@@ -91,6 +94,7 @@
     "@types/node-cron": "^3.0.11",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "jest": "^30.0.0",
     "jest-environment-jsdom": "^30.0.0",
     "postcss": "^8",
     "supabase": "^2.22.12",

@@ -21,4 +21,37 @@
 - Conduct thorough user acceptance testing
 - Monitor performance of new features
 
+## Commit: Enhanced Certificate Modal Improvements and Testing
+
+### Changes
+- Updated `EnhancedCertificateModal` with improved accessibility
+- Added comprehensive test suite for certificate modal
+- Improved NFC authentication status rendering
+- Fixed type safety and null handling
+
+### Accessibility Improvements
+- Added `DialogTitle` and `DialogDescription`
+- Ensured proper screen reader support
+- Improved error handling and logging
+
+### Testing
+- Created comprehensive Jest test suite
+- Added tests for modal rendering
+- Verified NFC authentication status display
+- Improved test coverage for edge cases
+
+### Deployment
+- Deployed to Vercel preview environment
+- Passed all test cases
+
+### Checklist
+- [x] Implement enhanced modal
+- [x] Add accessibility attributes
+- [x] Create test suite
+- [x] Deploy to Vercel
+- [ ] Perform manual QA testing
+
+### Notes
+Continued refinement of the certificate authentication flow with a focus on user experience and accessibility.
+
 --- 

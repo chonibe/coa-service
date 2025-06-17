@@ -35,25 +35,14 @@ export function CertificateModal({ lineItem, onClose }: CertificateModalProps) {
   const [isOpen, setIsOpen] = useState(false)
   const [isFlipped, setIsFlipped] = useState(false)
   const [isNfcPairing, setIsNfcPairing] = useState(false)
+  const [mousePosition, setMousePosition] = useState({ x: 50, y: 50 })
 
   useEffect(() => {
-    console.log('CertificateModal - lineItem:', lineItem)
     setIsOpen(!!lineItem)
     setIsFlipped(false)
   }, [lineItem])
 
-  // Add a console log to check if the component is even rendering
-  console.log('CertificateModal - Rendering', { 
-    lineItem, 
-    isOpen, 
-    isFlipped 
-  })
-
-  // If no line item, return null but log a message
-  if (!lineItem) {
-    console.log('CertificateModal - No line item, returning null')
-    return null
-  }
+  if (!lineItem) return null
 
   const artistName = lineItem.vendor_name || "Street Collector"
   const editionInfo = lineItem.edition_number && lineItem.edition_total
@@ -66,6 +55,33 @@ export function CertificateModal({ lineItem, onClose }: CertificateModalProps) {
     ? (lineItem.nfc_claimed_at ? "paired" : "unpaired")
     : "no-nfc"
 
+  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    const card = cardRef.current
+    if (!card) return
+    
+    const rect = card.getBoundingClientRect()
+    const x = e.clientX - rect.left
+    const y = e.clientY - rect.top
+    const centerX = rect.width / 2
+    const centerY = rect.height / 2
+    
+    // Calculate rotation based on mouse position relative to center
+    const rotateX = ((y - centerY) / centerY) * -15 // Increased intensity
+    const rotateY = ((x - centerX) / centerX) * 15   // Increased intensity
+    
+    setMousePosition({ x: (x / rect.width) * 100, y: (y / rect.height) * 100 })
+    
+    // Apply 3D transform with enhanced tilt
+    card.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) ${isFlipped ? 'rotateY(180deg)' : ''} scale(1.02)`
+  }
+
+  const handleMouseLeave = () => {
+    const card = cardRef.current
+    if (!card) return
+    card.style.transform = isFlipped ? "perspective(1000px) rotateY(180deg)" : "perspective(1000px)"
+    setMousePosition({ x: 50, y: 50 })
+  }
+
   const handleNfcPairing = async () => {
     // Check if Web NFC is supported
     if ('NDEFReader' in window) {
@@ -77,37 +93,37 @@ export function CertificateModal({ lineItem, onClose }: CertificateModalProps) {
         ndef.addEventListener("reading", async ({ message, serialNumber }) => {
           try {
             // Send tag to backend for verification and claim
-                              const response = await fetch('/api/nfc-tags/claim', {
-                                method: 'POST',
-                                headers: {
-                                  'Content-Type': 'application/json',
-                                },
-                                body: JSON.stringify({
+            const response = await fetch('/api/nfc-tags/claim', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
                 tagId: serialNumber,
                 lineItemId: lineItem?.line_item_id,
                 orderId: lineItem?.order_id,
                 customerId: null // TODO: Get actual customer ID
-                                })
-                              })
+              })
+            })
 
-                              const result = await response.json()
+            const result = await response.json()
 
-                              if (result.success) {
-                                toast({
-                                  title: "NFC Tag Paired",
+            if (result.success) {
+              toast({
+                title: "NFC Tag Paired",
                 description: "Your artwork has been successfully authenticated.",
-                                  variant: "default"
-                                })
+                variant: "default"
+              })
               // Optionally refresh the line item or close modal
               onClose()
-                              } else {
-                                toast({
+            } else {
+              toast({
                 title: "Pairing Failed",
-                                  description: result.message || "Unable to pair NFC tag",
-                                  variant: "destructive"
-                                })
-                              }
-                            } catch (error) {
+                description: result.message || "Unable to pair NFC tag",
+                variant: "destructive"
+              })
+            }
+          } catch (error) {
             console.error("NFC Claim Error:", error)
             toast({
               title: "Pairing Error",
@@ -128,12 +144,12 @@ export function CertificateModal({ lineItem, onClose }: CertificateModalProps) {
         setIsNfcPairing(false)
       }
     } else {
-                              toast({
+      toast({
         title: "Unsupported Browser",
         description: "Web NFC is not supported in your browser",
-                                variant: "destructive"
-                              })
-                            }
+        variant: "destructive"
+      })
+    }
   }
 
   return (
@@ -144,17 +160,9 @@ export function CertificateModal({ lineItem, onClose }: CertificateModalProps) {
           className="w-full h-[600px] relative perspective-1000"
           initial={false}
           animate={{ rotateY: isFlipped ? 180 : 0 }}
-          transition={{ 
-            type: "spring", 
-            stiffness: 300, 
-            damping: 30 
-          }}
-          style={{
-            transformStyle: 'preserve-3d',
-            width: '100%',
-            height: '100%',
-            position: 'relative',
-          }}
+          transition={{ duration: 0.6, animationDirection: "normal" }}
+          onMouseMove={handleMouseMove}
+          onMouseLeave={handleMouseLeave}
         >
           {/* Front of Card */}
           <motion.div 
@@ -165,11 +173,6 @@ export function CertificateModal({ lineItem, onClose }: CertificateModalProps) {
               transformStyle: 'preserve-3d',
               willChange: 'transform',
             }}
-            whileHover={{ 
-              scale: 1.02,
-              transition: { duration: 0.2 }
-            }}
-            whileTap={{ scale: 0.98 }}
             onClick={() => setIsFlipped(true)}
           >
             {/* Artwork Image */}
@@ -184,8 +187,8 @@ export function CertificateModal({ lineItem, onClose }: CertificateModalProps) {
                 <div className="absolute inset-0 bg-zinc-700 flex items-center justify-center">
                   <Album className="w-24 h-24 text-zinc-500" />
                 </div>
-                      )}
-                    </div>
+              )}
+            </div>
 
             {/* Artwork Details */}
             <div className="text-white space-y-2">
@@ -235,11 +238,6 @@ export function CertificateModal({ lineItem, onClose }: CertificateModalProps) {
               transformStyle: 'preserve-3d',
               willChange: 'transform',
             }}
-            whileHover={{ 
-              scale: 1.02,
-              transition: { duration: 0.2 }
-            }}
-            whileTap={{ scale: 0.98 }}
             onClick={() => setIsFlipped(false)}
           >
             <div>
@@ -262,77 +260,51 @@ export function CertificateModal({ lineItem, onClose }: CertificateModalProps) {
 
                   <div>
                     <p className="text-sm text-zinc-500 uppercase tracking-wider">Edition</p>
-                    <p className="text-xl font-medium">
-                      {editionInfo}
-                    </p>
-                    </div>
-                      </div>
-
-                {nfcStatus !== "no-nfc" && (
-                  <div className="mt-6 border-t pt-4">
-                    <div className="flex items-center justify-between">
-                      <Badge 
-                        variant={
-                          nfcStatus === "paired" 
-                            ? "default" 
-                            : "secondary"
-                        }
-                        className="flex items-center gap-2"
-                      >
-                        <Wifi className={`w-4 h-4 ${nfcStatus === "paired" ? 'text-green-500' : 'text-yellow-500'}`} />
-                        {nfcStatus === "paired" 
-                          ? "NFC Authenticated" 
-                          : "NFC Authentication Pending"}
-                      </Badge>
-                      {lineItem.nfc_claimed_at && (
-                        <p className="text-sm text-zinc-500">
-                          Authenticated on: {new Date(lineItem.nfc_claimed_at).toLocaleDateString()}
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                )}
-
-                {nfcStatus === "unpaired" && (
-                  <Button 
-                    className="w-full mt-4" 
-                    onClick={handleNfcPairing}
-                    disabled={isNfcPairing}
-                  >
-                    {isNfcPairing ? (
-                      <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Scanning for NFC Tag
-                      </>
-                    ) : (
-                      <>
-                        <Scan className="mr-2 h-4 w-4" />
-                        Pair NFC Tag
-                      </>
-                    )}
-                  </Button>
-                )}
+                    <p className="text-xl font-medium">{editionInfo}</p>
                   </div>
                 </div>
 
-            <div className="mt-6 border-t pt-4 flex justify-between items-center">
-              <div>
-                <p className="text-xs text-zinc-500">Certificate Number</p>
-                <p className="font-mono text-sm text-zinc-800">
-                  {lineItem.certificate_token?.slice(0, 12) || 'N/A'}
-                </p>
+                <div className="mt-6 border-t pt-4">
+                  <div className="flex justify-between items-center">
+                    <div>
+                      <p className="text-sm text-zinc-500 uppercase tracking-wider">NFC Status</p>
+                      <div className="flex items-center space-x-2">
+                        {nfcStatus === "paired" && (
+                          <Wifi className="w-5 h-5 text-green-600" />
+                        )}
+                        {nfcStatus === "unpaired" && (
+                          <WifiOff className="w-5 h-5 text-yellow-600" />
+                        )}
+                        {nfcStatus === "no-nfc" && (
+                          <WifiOff className="w-5 h-5 text-red-600" />
+                        )}
+                        <span className="text-lg font-medium">
+                          {nfcStatus === "paired" 
+                            ? "Authenticated" 
+                            : nfcStatus === "unpaired" 
+                            ? "Needs Authentication" 
+                            : "No NFC Tag"}
+                        </span>
+                      </div>
+                    </div>
+                    {nfcStatus !== "paired" && (
+                      <Button 
+                        onClick={handleNfcPairing} 
+                        disabled={isNfcPairing}
+                        className="flex items-center space-x-2"
+                      >
+                        {isNfcPairing ? (
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                        ) : (
+                          <Scan className="w-4 h-4" />
+                        )}
+                        <span>Pair NFC Tag</span>
+                      </Button>
+                    )}
+                  </div>
+                </div>
               </div>
-              <div className="text-right">
-                <p className="text-xs text-zinc-500">Issued Date</p>
-                <p className="text-sm text-zinc-800">
-                  {new Date().toLocaleDateString('en-US', {
-                    month: 'long',
-                    day: 'numeric',
-                    year: 'numeric'
-                  })}
-                </p>
-          </div>
-        </div>
+            </div>
           </motion.div>
         </motion.div>
       </DialogContent>

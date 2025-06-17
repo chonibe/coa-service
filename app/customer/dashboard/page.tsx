@@ -11,6 +11,7 @@ import { NfcTagScanner } from '@/src/components/NfcTagScanner'
 import { toast } from "@/components/ui/use-toast"
 import { Toaster } from "@/components/ui/toaster"
 import { CertificateModal } from './certificate-modal'
+import { EnhancedCertificateModal } from './enhanced-certificate-modal'
 
 interface LineItem {
   line_item_id: string
@@ -27,6 +28,7 @@ interface LineItem {
   edition_number?: number | null
   vendor_name?: string
   status?: string
+  edition_total?: number
 }
 
 interface Order {
@@ -241,19 +243,19 @@ export default function CustomerDashboard() {
                                 status: "paired", 
                                 label: "Authenticated", 
                                 icon: <Wifi className="w-4 h-4 text-green-500" />,
-                                variant: "default"
+                                variant: "default" as const
                               }
                             : { 
                                 status: "unpaired", 
                                 label: "Needs Authentication", 
                                 icon: <WifiOff className="w-4 h-4 text-yellow-500" />,
-                                variant: "secondary"
+                                variant: "secondary" as const
                               })
                           : { 
                               status: "no-nfc", 
                               label: "No NFC Tag", 
                               icon: <WifiOff className="w-4 h-4 text-red-500" />,
-                              variant: "destructive"
+                              variant: "destructive" as const
                             }
 
                         // NFC Pairing Handler
@@ -417,6 +419,25 @@ export default function CustomerDashboard() {
         lineItem={selectedLineItem} 
         onClose={() => {
           console.log('Closing certificate modal')
+          setSelectedLineItem(null)
+        }} 
+      />
+      
+      {/* Enhanced Certificate Modal */}
+      <EnhancedCertificateModal 
+        artwork={selectedLineItem ? {
+          id: selectedLineItem.line_item_id,
+          name: selectedLineItem.name,
+          artist: selectedLineItem.vendor_name || 'Street Collector',
+          editionNumber: selectedLineItem.edition_number || 0,
+          totalEdition: selectedLineItem.edition_total || 0,
+          imageUrl: selectedLineItem.img_url,
+          description: selectedLineItem.description,
+          nfcTagId: selectedLineItem.nfc_tag_id || undefined,
+          nfcClaimedAt: selectedLineItem.nfc_claimed_at || undefined
+        } : null} 
+        onClose={() => {
+          console.log('Closing enhanced certificate modal')
           setSelectedLineItem(null)
         }} 
       />
