@@ -10,7 +10,6 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { NfcTagScanner } from '@/src/components/NfcTagScanner'
 import { toast } from "@/components/ui/use-toast"
 import { Toaster } from "@/components/ui/toaster"
-import { CertificateModal } from './certificate-modal'
 import { EnhancedCertificateModal } from './enhanced-certificate-modal'
 
 interface LineItem {
@@ -413,15 +412,6 @@ export default function CustomerDashboard() {
           </div>
         </div>
       </div>
-      
-      {/* Certificate Modal */}
-      <CertificateModal 
-        lineItem={selectedLineItem} 
-        onClose={() => {
-          console.log('Closing certificate modal')
-          setSelectedLineItem(null)
-        }} 
-      />
       
       {/* Enhanced Certificate Modal */}
       <EnhancedCertificateModal 
