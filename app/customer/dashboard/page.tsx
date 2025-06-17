@@ -131,6 +131,7 @@ export default function CustomerDashboard() {
   }
 
   const handleCertificateClick = (lineItem: LineItem) => {
+    console.log('Attempting to open certificate modal for:', lineItem)
     setSelectedLineItem(lineItem)
   }
 
@@ -414,7 +415,10 @@ export default function CustomerDashboard() {
       {/* Certificate Modal */}
       <CertificateModal 
         lineItem={selectedLineItem} 
-        onClose={() => setSelectedLineItem(null)} 
+        onClose={() => {
+          console.log('Closing certificate modal')
+          setSelectedLineItem(null)
+        }} 
       />
       
       <Toaster />

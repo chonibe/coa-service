@@ -37,11 +37,23 @@ export function CertificateModal({ lineItem, onClose }: CertificateModalProps) {
   const [isNfcPairing, setIsNfcPairing] = useState(false)
 
   useEffect(() => {
+    console.log('CertificateModal - lineItem:', lineItem)
     setIsOpen(!!lineItem)
     setIsFlipped(false)
   }, [lineItem])
 
-  if (!lineItem) return null
+  // Add a console log to check if the component is even rendering
+  console.log('CertificateModal - Rendering', { 
+    lineItem, 
+    isOpen, 
+    isFlipped 
+  })
+
+  // If no line item, return null but log a message
+  if (!lineItem) {
+    console.log('CertificateModal - No line item, returning null')
+    return null
+  }
 
   const artistName = lineItem.vendor_name || "Street Collector"
   const editionInfo = lineItem.edition_number && lineItem.edition_total
