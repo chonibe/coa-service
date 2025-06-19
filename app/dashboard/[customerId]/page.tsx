@@ -2,7 +2,6 @@
 
 import { useState, useRef, useEffect, useMemo } from "react"
 import { useRouter, useParams } from "next/navigation"
-import { motion, AnimatePresence, useMotionValue, useTransform, LayoutGroup, Variants, useScroll } from "framer-motion"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { 
@@ -26,40 +25,34 @@ import { CertificateModal } from '../../customer/dashboard/certificate-modal'
 import { useNFCScan } from '@/hooks/use-nfc-scan'
 
 // Type Definitions
-export interface LineItem {
+interface LineItem {
   line_item_id: string
+  order_id: string
   name: string
-  description?: string
-  quantity: number
-  price?: number
   img_url?: string
-  nfc_tag_id: string | null
-  certificate_url: string
-  certificate_token?: string
-  nfc_claimed_at?: string | null
-  order_id?: string
-  edition_number?: number | null
-  edition_total?: number | null
+  price?: number
+  quantity?: number
   vendor_name?: string
+  edition_number?: number
+  edition_total?: number
+  certificate_url?: string
+  nfc_tag_id?: string
+  nfc_claimed_at?: string
   status?: string
 }
 
-export interface Order {
+interface Order {
   id: string
-  order_number: number
-  processed_at: string
-  total_price: number
-  financial_status: string
-  fulfillment_status: string | null
+  order_number: string
+  created_at: string
   line_items: LineItem[]
 }
 
-// Timeline data type
-export type TimelineMilestone = {
+interface TimelineMilestone {
+  orderId: string
+  orderNumber: string
   date: Date
   items: LineItem[]
-  orderId: string
-  orderNumber: number
 }
 
 // Vinyl-like artwork card component
@@ -74,10 +67,6 @@ const VinylArtworkCard = ({
   onSelect: () => void, 
   onCertificateView: () => void 
 }) => {
-  const cardRef = useRef<HTMLDivElement>(null)
-  const x = useMotionValue(0)
-  const rotate = useTransform(x, [-100, 0, 100], [-15, 0, 15])
-  const scale = useTransform(x, [-100, 0, 100], [0.9, 1, 0.9])
   const [isPairing, setIsPairing] = useState(false)
 
   const { startScanning, stopScanning, isScanning, error: nfcError } = useNFCScan({
@@ -154,24 +143,10 @@ const VinylArtworkCard = ({
   }
 
   return (
-    <motion.div 
-      ref={cardRef}
-      drag="x"
-      dragConstraints={{ left: 0, right: 0 }}
-      dragElastic={0.7}
-      style={{ 
-        x, 
-        rotate, 
-        scale,
-        cursor: 'grab',
-        zIndex: isSelected ? 10 : 1
-      }}
-      whileTap={{ cursor: 'grabbing' }}
-      onClick={onSelect}
+    <div 
       className={`
-        relative min-w-[420px] h-[245px] mx-4 rounded-2xl 
-        transition-all duration-300 
-        ${isSelected ? 'shadow-2xl scale-105' : 'shadow-lg'}
+        relative w-full max-w-[420px] h-[245px] rounded-2xl 
+        ${isSelected ? 'shadow-2xl' : 'shadow-lg'}
         bg-gradient-to-br from-zinc-900/80 via-zinc-800/80 to-zinc-900/80 
         backdrop-blur-sm border border-zinc-700/50
         flex items-stretch
@@ -219,35 +194,28 @@ const VinylArtworkCard = ({
         {/* Middle Section - Status Badges */}
         <div className="space-y-2">
           {status === "nfc-paired" && (
-            <Badge className="bg-green-500/20 text-green-400 border-green-400/30">
-              <Wifi className="h-3 w-3 mr-1" /> NFC Paired
-            </Badge>
+            <div className="bg-green-500/10 border border-green-500/20 rounded-lg p-3 flex items-center gap-2">
+              <Wifi className="h-4 w-4 text-green-400" />
+              <span className="text-sm text-green-400">NFC Tag Paired</span>
+            </div>
           )}
           {status === "nfc-unpaired" && (
-            <Badge className="bg-orange-500/20 text-orange-400 border-orange-400/30">
-              <WifiOff className="h-3 w-3 mr-1" /> Ready to Pair
-            </Badge>
+            <div className="bg-orange-500/10 border border-orange-500/20 rounded-lg p-3 flex items-center gap-2">
+              <WifiOff className="h-4 w-4 text-orange-400" />
+              <span className="text-sm text-orange-400">Ready to Pair NFC Tag</span>
+            </div>
           )}
           {status === "digital-only" && (
-            <Badge className="bg-blue-500/20 text-blue-400 border-blue-400/30">
-              <Certificate className="h-3 w-3 mr-1" /> Digital Only
-            </Badge>
-          )}
-          {item.status && (
-            <Badge 
-              className={`
-                ${item.status === 'active' ? 'bg-green-500/20 text-green-400 border-green-400/30' : 
-                  item.status === 'pending' ? 'bg-yellow-500/20 text-yellow-400 border-yellow-400/30' :
-                  'bg-red-500/20 text-red-400 border-red-400/30'}
-              `}
-            >
-              {item.status.charAt(0).toUpperCase() + item.status.slice(1)}
-            </Badge>
+            <div className="bg-blue-500/10 border border-blue-500/20 rounded-lg p-3 flex items-center gap-2">
+              <Certificate className="h-4 w-4 text-blue-400" />
+              <span className="text-sm text-blue-400">Digital Certificate Only</span>
+            </div>
           )}
           {nfcError && (
-            <Badge variant="destructive" className="animate-pulse">
-              {nfcError}
-            </Badge>
+            <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-3 flex items-center gap-2">
+              <AlertCircle className="h-4 w-4 text-red-400" />
+              <span className="text-sm text-red-400">{nfcError}</span>
+            </div>
           )}
         </div>
 
@@ -262,13 +230,18 @@ const VinylArtworkCard = ({
               onCertificateView()
             }}
           >
-            <Certificate className="h-4 w-4 mr-2" /> Certificate
+            <Certificate className="h-4 w-4 mr-2" /> View Certificate
           </Button>
           {item.nfc_tag_id && !item.nfc_claimed_at && (
             <Button 
               size="sm" 
               variant="outline" 
-              className="text-blue-400 border-blue-500/30 hover:bg-blue-500/10 flex-1"
+              className={`
+                flex-1
+                ${isScanning || isPairing 
+                  ? 'text-blue-400 border-blue-500/30 bg-blue-500/10'
+                  : 'text-blue-400 border-blue-500/30 hover:bg-blue-500/10'}
+              `}
               onClick={handleNfcClick}
               disabled={isPairing}
             >
@@ -284,14 +257,14 @@ const VinylArtworkCard = ({
                 </>
               ) : (
                 <>
-                  <Wifi className="h-4 w-4 mr-2" /> Pair NFC
+                  <Wifi className="h-4 w-4 mr-2" /> Pair NFC Tag
                 </>
               )}
             </Button>
           )}
         </div>
       </div>
-    </motion.div>
+    </div>
   )
 }
 
@@ -299,12 +272,12 @@ const VinylArtworkCard = ({
 const CollectionTimeline = ({ orders }: { orders: Order[] }) => {
   // Sort orders by processed date
   const sortedOrders = [...orders].sort((a, b) => 
-    new Date(a.processed_at).getTime() - new Date(b.processed_at).getTime()
+    new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
   )
 
   // Prepare timeline data with proper typing
   const timelineData: TimelineMilestone[] = sortedOrders.map((order, index) => ({
-    date: new Date(order.processed_at),
+    date: new Date(order.created_at),
     items: order.line_items,
     orderId: order.id,
     orderNumber: order.order_number
@@ -759,146 +732,48 @@ const InteractiveTimeline: React.FC<{ timelineData: TimelineMilestone[] }> = ({ 
 export default function CustomerDashboardById() {
   const router = useRouter()
   const params = useParams()
-  const customerId = params.customerId as string
-  
-  const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [orders, setOrders] = useState<Order[]>([])
   const [selectedLineItem, setSelectedLineItem] = useState<LineItem>()
   const [selectedArtworkIndex, setSelectedArtworkIndex] = useState<number>(-1)
-  const [viewMode, setViewMode] = useState<'vinyl' | 'grid'>('vinyl')
-
-  // Prepare timeline data with proper typing using useMemo
-  const timelineData = useMemo<TimelineMilestone[]>(() => 
-    orders.map(order => ({
-      date: new Date(order.processed_at),
-      items: order.line_items,
-      orderId: order.id,
-      orderNumber: order.order_number
-    })),
-    [orders]
-  )
 
   useEffect(() => {
-    // Set cookie for the customer ID if it's not already set
-    const existingCustomerId = document.cookie
-      .split('; ')
-      .find(row => row.startsWith('shopify_customer_id='))
-      ?.split('=')[1]
-
-    if (!existingCustomerId && customerId) {
-      // Set the customer ID cookie for API calls
-      document.cookie = `shopify_customer_id=${customerId}; path=/; max-age=86400`
-    }
-
     const fetchOrders = async () => {
       try {
-        setIsLoading(true)
-        setError(null)
-
-        // Use the customer API endpoint
-        const response = await fetch('/api/customer/orders')
-        
-        if (!response.ok) {
-          const errorData = await response.json().catch(() => ({}))
-          throw new Error(errorData.message || 'Failed to fetch orders')
-        }
-
+        const response = await fetch(`/api/customer/dashboard/${params.customerId}`)
         const data = await response.json()
-        
-        if (!data.success) {
-          throw new Error(data.message || 'Failed to fetch orders')
+
+        if (!response.ok) {
+          throw new Error(data.error || 'Failed to fetch orders')
         }
 
-        setOrders(data.orders || [])
-      } catch (err: any) {
-        console.error('Dashboard Fetch Error:', err)
-        setError(err.message || 'An unexpected error occurred')
-      } finally {
-        setIsLoading(false)
+        setOrders(data.orders)
+      } catch (err) {
+        console.error('Error fetching orders:', err)
+        setError(err instanceof Error ? err.message : 'Failed to fetch orders')
       }
     }
 
-    if (customerId) {
-      fetchOrders()
-    } else {
-      setError('Customer ID is required')
-      setIsLoading(false)
-    }
-  }, [customerId, router])
+    fetchOrders()
+  }, [params.customerId])
 
-  const handleCertificateClick = (lineItem: LineItem) => {
-    setSelectedLineItem(lineItem)
-  }
-
-  const handleNfcTagScanned = async (tagId: string) => {
-    try {
-      const response = await fetch('/api/nfc-tags/verify', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ tagId }),
-      });
-
-      const result = await response.json();
-
-      if (result.success) {
-        toast({
-          title: "NFC Tag Verified",
-          description: `Artwork authenticated: ${result.artworkTitle}`,
-        });
-      } else {
-        toast({
-          title: "NFC Tag Verification Failed",
-          description: result.message || "Unable to verify the NFC tag",
-          variant: "destructive",
-        });
-      }
-    } catch (error) {
-      console.error("NFC Tag Verification Error:", error);
-      toast({
-        title: "Verification Error",
-        description: "An error occurred while verifying the NFC tag",
-        variant: "destructive",
-      });
-    }
-  };
-
-  // Flatten orders into individual items
-  const allItems = orders.flatMap(order => 
-    order.line_items.map(item => ({
-      ...item,
-      order_number: order.order_number,
-      processed_at: order.processed_at,
-      financial_status: order.financial_status
-    }))
-  )
-
-  if (isLoading) {
-    return (
-      <div className="flex justify-center items-center min-h-screen">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
-    )
-  }
+  // Transform orders into timeline data
+  const timelineData: TimelineMilestone[] = useMemo(() => {
+    return orders.map(order => ({
+      orderId: order.id,
+      orderNumber: order.order_number,
+      date: new Date(order.created_at),
+      items: order.line_items
+    })).sort((a, b) => b.date.getTime() - a.date.getTime())
+  }, [orders])
 
   if (error) {
     return (
-      <div className="flex justify-center items-center min-h-screen">
-        <div className="w-full max-w-md">
-          <div>
-            <h2 className="text-white">Authentication Error</h2>
-            <p className="text-destructive">{error}</p>
-            <Button 
-              onClick={() => {
-                window.location.href = `/api/auth/shopify`
-              }} 
-              className="mt-4 w-full"
-            >
-              Authenticate with Shopify
-            </Button>
-          </div>
+      <div className="min-h-screen bg-zinc-950 text-white flex items-center justify-center">
+        <div className="text-center">
+          <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
+          <h2 className="text-xl font-bold mb-2">Error Loading Dashboard</h2>
+          <p className="text-zinc-400">{error}</p>
         </div>
       </div>
     )
@@ -908,41 +783,28 @@ export default function CustomerDashboardById() {
     <div className="min-h-screen bg-gradient-to-b from-zinc-900 via-zinc-800 to-zinc-900">
       <div className="container mx-auto py-8">
         <div className="flex items-center justify-between mb-8">
-          <h1 className="text-3xl font-bold">Your Vinyl Collection</h1>
-          <div className="flex items-center gap-4">
-            <Button 
-              variant={viewMode === 'vinyl' ? 'default' : 'outline'} 
-              onClick={() => setViewMode('vinyl')}
-              className="text-zinc-400 hover:text-white"
-            >
-              <Album className="h-5 w-5 mr-2" /> Vinyl View
-            </Button>
-            <Button 
-              variant={viewMode === 'grid' ? 'default' : 'outline'} 
-              onClick={() => setViewMode('grid')}
-              className="text-zinc-400 hover:text-white"
-            >
-              <LayoutGrid className="h-5 w-5 mr-2" /> Grid View
-            </Button>
-          </div>
+          <h1 className="text-3xl font-bold text-white">Your Vinyl Collection</h1>
         </div>
 
-        {/* Conditional Rendering for Vinyl or Grid View */}
-        {viewMode === 'vinyl' ? (
-          <div className="relative">
-            <motion.div 
-              className="flex overflow-x-auto pb-8 no-scrollbar"
-              style={{ 
-                cursor: 'grab',
-                userSelect: 'none'
-              }}
-            >
-              <div className="flex space-x-6 relative">
-                {/* Timeline Line */}
-                <div className="absolute left-0 top-1/2 transform -translate-y-1/2 w-full h-1 bg-zinc-800 z-0"></div>
-                
-                {allItems.map((item, index) => (
-                  <VinylArtworkCard 
+        <div className="mt-8">
+          {timelineData.map((milestone, index) => (
+            <div key={milestone.orderId} className="mb-12">
+              <div className="flex items-center gap-4 mb-6">
+                <h2 className="text-xl font-semibold text-white">
+                  {milestone.date.toLocaleDateString('en-US', {
+                    month: 'long',
+                    day: 'numeric',
+                    year: 'numeric'
+                  })}
+                </h2>
+                <Badge variant="outline">
+                  Order #{milestone.orderNumber}
+                </Badge>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {milestone.items.map((item, index) => (
+                  <VinylArtworkCard
                     key={item.line_item_id}
                     item={item}
                     isSelected={selectedArtworkIndex === index}
@@ -951,57 +813,8 @@ export default function CustomerDashboardById() {
                   />
                 ))}
               </div>
-            </motion.div>
-          </div>
-        ) : (
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-            {allItems.map((item) => (
-              <motion.div
-                key={item.line_item_id}
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ type: "spring", stiffness: 300 }}
-                className="bg-zinc-900/80 rounded-xl overflow-hidden shadow-lg border border-zinc-800/50"
-              >
-                {item.img_url ? (
-                  <img 
-                    src={item.img_url} 
-                    alt={item.name} 
-                    className="w-full h-48 object-cover" 
-                  />
-                ) : (
-                  <div className="w-full h-48 bg-zinc-800/50 flex items-center justify-center">
-                    <Album className="w-24 h-24 text-zinc-600" />
-                  </div>
-                )}
-                <div className="p-4">
-                  <h3 className="text-lg font-bold mb-2 truncate">{item.name}</h3>
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm text-zinc-400">
-                      {item.vendor_name || "Street Collector"}
-                    </span>
-                    <Button 
-                      size="sm" 
-                      variant="outline"
-                      onClick={() => {
-                        setSelectedLineItem(item)
-                        setSelectedArtworkIndex(-1)
-                      }}
-                    >
-                      View Details
-                    </Button>
-                  </div>
-                </div>
-              </motion.div>
-            ))}
-          </div>
-        )}
-
-        <div className="mt-8">
-          <RoadTimeline 
-            timelineData={timelineData} 
-            onCertificateClick={setSelectedLineItem}
-          />
+            </div>
+          ))}
         </div>
       </div>
 
@@ -1012,6 +825,8 @@ export default function CustomerDashboardById() {
           onClose={() => setSelectedLineItem(undefined)}
         />
       )}
+
+      <Toaster />
     </div>
   )
 } 
