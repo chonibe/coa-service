@@ -1,70 +1,79 @@
-import { createRouteHandlerClient } from "@supabase/auth-helpers-nextjs"
-import { cookies } from "next/headers"
-import { NextResponse } from "next/server"
+import { NextResponse } from 'next/server'
+import { createClient } from '@/lib/supabase/server'
 
-interface OrderLineItem {
-  id: string
-  quantity: number
-  product: {
-    name: string
-  } | null
-  order: {
-    order_number: string
-  } | null
-}
+export const dynamic = 'force-dynamic'
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
-    const supabase = createRouteHandlerClient({ cookies })
+    const { searchParams } = new URL(request.url)
+    const page = parseInt(searchParams.get('page') || '1')
+    const limit = parseInt(searchParams.get('limit') || '10')
+    const search = searchParams.get('search') || ''
+    const sortBy = searchParams.get('sortBy') || 'created_at'
+    const sortOrder = searchParams.get('sortOrder') || 'desc'
+    
+    const offset = (page - 1) * limit
 
-    // Get authenticated user
-    const { data: { user }, error: authError } = await supabase.auth.getUser()
-    if (authError || !user) {
-      return NextResponse.json(
-        { error: "Unauthorized" },
-        { status: 401 }
-      )
-    }
+    const supabase = createClient()
 
-    // Fetch unpaired items
-    const { data: items, error: fetchError } = await supabase
-      .from("order_line_items_v2")
+    // Start building the query
+    let query = supabase
+      .from('order_line_items_v2')
       .select(`
         id,
-        product:products (
-          name
-        ),
-        order:orders (
-          order_number
-        ),
-        quantity
+        product_id,
+        product_name,
+        order_number,
+        quantity,
+        nfc_pairing_status,
+        created_at
       `)
-      .is("nfc_tag_id", null)
-      .eq("nfc_pairing_status", "pending")
-      .order("created_at", { ascending: false })
-      .returns<OrderLineItem[]>()
+      .eq('nfc_pairing_status', 'pending')
 
-    if (fetchError) {
-      console.error("Error fetching unpaired items:", fetchError)
+    // Add search filter if provided
+    if (search) {
+      query = query.or(`
+        product_name.ilike.%${search}%,
+        order_number.ilike.%${search}%
+      `)
+    }
+
+    // Add sorting
+    if (sortBy && sortOrder) {
+      query = query.order(sortBy, { ascending: sortOrder === 'asc' })
+    }
+
+    // Get total count for pagination
+    const { count } = await supabase
+      .from('order_line_items_v2')
+      .select('*', { count: 'exact', head: true })
+      .eq('nfc_pairing_status', 'pending')
+
+    // Get paginated results
+    const { data: items, error } = await query
+      .range(offset, offset + limit - 1)
+
+    if (error) {
+      console.error('Error fetching unpaired items:', error)
       return NextResponse.json(
-        { error: "Failed to fetch unpaired items" },
+        { error: 'Failed to fetch unpaired items' },
         { status: 500 }
       )
     }
 
-    // Transform the data to match the expected format
-    const transformedItems = (items || []).map(item => ({
-      id: item.id,
-      productName: item.product?.name || "Unknown Product",
-      orderNumber: item.order?.order_number || "Unknown Order",
-      quantity: item.quantity
-    }))
-
-    return NextResponse.json({ items: transformedItems })
-  } catch (error) {
-    console.error("Error in unpaired items endpoint:", error)
+    return NextResponse.json({
+      items,
+      pagination: {
+        total: count,
+        page,
+        limit,
+        totalPages: Math.ceil((count || 0) / limit)
+      }
+    })
+  } catch (err) {
+    console.error('Unexpected error in unpaired-items route:', err)
     return NextResponse.json(
-      { error: "Internal server error" },
+      { error: 'An unexpected error occurred' },
       { status: 500 }
     )
   }
