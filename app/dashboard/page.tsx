@@ -29,7 +29,12 @@ interface LineItem {
   price: number
   quantity: number
   certificateUrl?: string
-  nfcTags: NfcTag[]
+  imgUrl?: string
+  nfcTagId?: string
+  nfcClaimedAt?: string | null
+  editionNumber?: number
+  vendorName?: string
+  status?: string
 }
 
 interface NfcTag {
@@ -56,25 +61,25 @@ export default function DashboardPage() {
     fetchDashboardData()
   }, [])
 
-  async function fetchDashboardData() {
-    try {
-      setIsLoading(true)
-      const response = await fetch('/api/customer/dashboard')
-      const result = await response.json()
+    async function fetchDashboardData() {
+      try {
+        setIsLoading(true)
+        const response = await fetch('/api/customer/dashboard')
+        const result = await response.json()
 
-      if (result.success) {
-        setDashboardData(result.dashboard)
-      } else {
-        setError(result.message || 'Failed to load dashboard')
-      }
-    } catch (err) {
-      console.error('Dashboard fetch error:', err)
-      setError('An unexpected error occurred')
-    } finally {
-      setIsLoading(false)
+        if (result.success) {
+          setDashboardData(result.dashboard)
+        } else {
+          setError(result.message || 'Failed to load dashboard')
+        }
+      } catch (err) {
+        console.error('Dashboard fetch error:', err)
+        setError('An unexpected error occurred')
+      } finally {
+        setIsLoading(false)
       setIsRefreshing(false)
+      }
     }
-  }
 
   // Pull to Refresh Handler
   const handleRefresh = async () => {
@@ -87,7 +92,8 @@ export default function DashboardPage() {
     return dashboardData
       .filter(order => 
         order.lineItems.some(item => 
-          item.name.toLowerCase().includes(searchQuery.toLowerCase())
+          item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          (item.vendorName && item.vendorName.toLowerCase().includes(searchQuery.toLowerCase()))
         )
       )
       .sort((a, b) => {
@@ -98,6 +104,64 @@ export default function DashboardPage() {
       })
   }, [dashboardData, searchQuery, sortBy])
 
+  const renderLineItem = (lineItem: LineItem) => (
+    <div key={lineItem.id} className="border rounded-lg p-4 mb-4 hover:shadow-md transition-shadow">
+      <div className="flex items-start gap-4">
+        {lineItem.imgUrl && (
+          <img 
+            src={lineItem.imgUrl} 
+            alt={lineItem.name}
+            className="w-20 h-20 object-cover rounded"
+          />
+        )}
+        <div className="flex-grow">
+          <div className="flex justify-between items-start">
+            <div>
+              <h3 className="font-semibold text-lg">{lineItem.name}</h3>
+              {lineItem.vendorName && (
+                <p className="text-sm text-muted-foreground">by {lineItem.vendorName}</p>
+              )}
+              <p className="text-sm text-muted-foreground mt-1">
+                {formatCurrency(lineItem.price)} × {lineItem.quantity}
+              </p>
+            </div>
+            <div className="flex flex-col items-end gap-2">
+              {lineItem.certificateUrl && (
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => window.open(lineItem.certificateUrl, '_blank')}
+                >
+                  View Certificate
+                </Button>
+              )}
+              {lineItem.editionNumber && (
+                <Badge variant="secondary">
+                  Edition #{lineItem.editionNumber}
+                </Badge>
+              )}
+            </div>
+          </div>
+          
+          {lineItem.nfcTagId && (
+            <div className="mt-3">
+              <Separator className="my-2" />
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-medium">NFC Status</span>
+                <Badge 
+                  variant={lineItem.nfcClaimedAt ? "secondary" : "outline"}
+                  className={lineItem.nfcClaimedAt ? "bg-green-500 text-white" : "bg-yellow-500 text-white"}
+                >
+                  {lineItem.nfcClaimedAt ? 'Claimed' : 'Unclaimed'}
+                </Badge>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  )
+
   // Order Details Modal
   const renderOrderDetailsModal = () => {
     const selectedOrder = dashboardData.find(order => order.orderId === selectedOrderId)
@@ -106,61 +170,27 @@ export default function DashboardPage() {
 
     return (
       <Dialog open={!!selectedOrderId} onOpenChange={() => setSelectedOrderId(null)}>
-        <DialogContent>
+        <DialogContent className="max-w-2xl">
           <DialogHeader>
-            <DialogTitle>Order #{selectedOrder.orderNumber} Details</DialogTitle>
+            <DialogTitle>Order #{selectedOrder.orderNumber}</DialogTitle>
             <DialogDescription>
               Processed on {formatDate(selectedOrder.processedAt)}
             </DialogDescription>
           </DialogHeader>
           
-          {selectedOrder.lineItems.map(lineItem => (
-            <div key={lineItem.id} className="border rounded p-3 mb-2">
-              <div className="flex justify-between items-center">
-                <div>
-                  <h3 className="font-semibold">{lineItem.name}</h3>
-                  <p className="text-sm text-muted-foreground">
-                    {formatCurrency(lineItem.price)} × {lineItem.quantity}
-                  </p>
-                </div>
-                {lineItem.certificateUrl && (
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    onClick={() => window.open(lineItem.certificateUrl, '_blank')}
-                  >
-                    View Certificate
-                  </Button>
-                )}
-              </div>
-              
-              {lineItem.nfcTags.length > 0 && (
-                <div className="mt-2">
-                  <Separator className="my-2" />
-                  <h4 className="text-sm font-medium mb-2">NFC Tags</h4>
-                  <div className="flex gap-2">
-                    {lineItem.nfcTags.map(tag => (
-                      <Badge 
-                        key={tag.id} 
-                        variant="outline" 
-                        className={`
-                          ${tag.status === 'claimed' ? 'bg-green-500' : 
-                            tag.status === 'unclaimed' ? 'bg-yellow-500' : 
-                            'bg-red-500'} 
-                          text-white
-                        `}
-                      >
-                        {tag.status}
-                      </Badge>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-          ))}
+          <div className="space-y-4 my-4">
+            {selectedOrder.lineItems.map(renderLineItem)}
+          </div>
           
-          <div className="text-right font-bold mt-4">
-            Total: {formatCurrency(selectedOrder.totalPrice)}
+          <Separator />
+          
+          <div className="flex justify-between items-center pt-4">
+            <span className="text-muted-foreground">Total Items: {
+              selectedOrder.lineItems.reduce((acc, item) => acc + item.quantity, 0)
+            }</span>
+            <span className="text-xl font-bold">
+              Total: {formatCurrency(selectedOrder.totalPrice)}
+            </span>
           </div>
         </DialogContent>
       </Dialog>
@@ -185,79 +215,119 @@ export default function DashboardPage() {
     </div>
   )
 
+  // Main content rendering
+  const renderContent = () => {
+    if (isLoading) {
+      return (
+        <div className="flex justify-center items-center min-h-[50vh]">
+          <div className="animate-spin">
+            <RefreshCw className="w-8 h-8 text-primary" />
+          </div>
+        </div>
+      )
+    }
+
+    if (error) {
+      return (
+        <div className="text-center py-8">
+          <p className="text-red-500">{error}</p>
+          <Button 
+            variant="outline" 
+            onClick={fetchDashboardData}
+            className="mt-4"
+          >
+            Try Again
+          </Button>
+        </div>
+      )
+    }
+
+    if (!dashboardData.length) {
+      return renderEmptyState()
+    }
+
+    return (
+      <div className="space-y-4">
+        {processedOrders.map(order => (
+          <Card key={order.orderId} className="hover:shadow-md transition-shadow">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-xl">
+                Order #{order.orderNumber}
+              </CardTitle>
+              <Button 
+                variant="ghost" 
+                onClick={() => setSelectedOrderId(order.orderId)}
+              >
+                View Details
+              </Button>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-1">
+                <p className="text-sm text-muted-foreground">
+                  Processed on {formatDate(order.processedAt)}
+                </p>
+                <p className="font-medium">
+                  {order.lineItems.length} items • {formatCurrency(order.totalPrice)}
+                </p>
+              </div>
+              <div className="mt-4 space-y-2">
+                {order.lineItems.slice(0, 2).map(renderLineItem)}
+                {order.lineItems.length > 2 && (
+                  <Button 
+                    variant="ghost" 
+                    className="w-full text-center"
+                    onClick={() => setSelectedOrderId(order.orderId)}
+                  >
+                    View {order.lineItems.length - 2} more items
+                  </Button>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+    )
+  }
+
   return (
-    <PullToRefresh onRefresh={handleRefresh} isRefreshing={isRefreshing}>
+    <PullToRefresh onRefresh={handleRefresh}>
       <div className="container mx-auto p-4">
-        <h1 className="text-2xl font-bold mb-6">My Dashboard</h1>
+        <div className="flex justify-between items-center mb-6">
+          <h1 className="text-2xl font-bold">My Orders</h1>
+          <Button 
+            variant="outline" 
+            size="sm"
+            onClick={fetchDashboardData}
+            disabled={isLoading}
+          >
+            <RefreshCw className={`w-4 h-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
+            Refresh
+          </Button>
+        </div>
         
         {/* Search and Filter Section */}
-        <div className="flex mb-4 space-x-2">
+        <div className="flex gap-2 mb-6">
           <div className="relative flex-grow">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
             <Input 
-              placeholder="Search orders..." 
+              placeholder="Search by product name or vendor..." 
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="pl-10"
             />
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground" size={20} />
           </div>
-          
           <Select value={sortBy} onValueChange={(value: 'date' | 'total') => setSortBy(value)}>
             <SelectTrigger className="w-[180px]">
-              <SelectValue placeholder="Sort By" />
+              <SelectValue placeholder="Sort by..." />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="date">Date</SelectItem>
-              <SelectItem value="total">Total Price</SelectItem>
+              <SelectItem value="date">Sort by Date</SelectItem>
+              <SelectItem value="total">Sort by Total</SelectItem>
             </SelectContent>
           </Select>
         </div>
-        
-        {/* Orders List */}
-        {processedOrders.length > 0 ? (
-          processedOrders.map(order => (
-            <Card 
-              key={order.orderId} 
-              className="mb-4 cursor-pointer hover:shadow-lg transition-shadow"
-              onClick={() => setSelectedOrderId(order.orderId)}
-            >
-              <CardHeader>
-                <CardTitle>
-                  Order #{order.orderNumber} 
-                  <span className="text-sm text-muted-foreground ml-2">
-                    {formatDate(order.processedAt)}
-                  </span>
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="grid gap-2">
-                  {order.lineItems.slice(0, 2).map(lineItem => (
-                    <div key={lineItem.id} className="flex justify-between items-center">
-                      <div>
-                        <h3 className="font-semibold">{lineItem.name}</h3>
-                        <p className="text-sm text-muted-foreground">
-                          {formatCurrency(lineItem.price)} × {lineItem.quantity}
-                        </p>
-                      </div>
-                    </div>
-                  ))}
-                  {order.lineItems.length > 2 && (
-                    <p className="text-sm text-muted-foreground">
-                      +{order.lineItems.length - 2} more items
-                    </p>
-                  )}
-                </div>
-                <div className="mt-4 text-right font-bold">
-                  Total: {formatCurrency(order.totalPrice)}
-                </div>
-              </CardContent>
-            </Card>
-          ))
-        ) : (
-          renderEmptyState()
-        )}
 
-        {/* Order Details Modal */}
+        {renderContent()}
         {renderOrderDetailsModal()}
       </div>
     </PullToRefresh>

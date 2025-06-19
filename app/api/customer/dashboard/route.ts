@@ -38,7 +38,13 @@ export async function GET(request: NextRequest) {
           price,
           quantity,
           nfc_tag_id,
-          certificate_url
+          nfc_claimed_at,
+          certificate_url,
+          certificate_token,
+          edition_number,
+          vendor_name,
+          status,
+          img_url
         )
       `)
       .eq("shopify_customer_id", parseInt(shopifyCustomerId))
@@ -66,7 +72,12 @@ export async function GET(request: NextRequest) {
         price: lineItem.price,
         quantity: lineItem.quantity,
         certificateUrl: lineItem.certificate_url,
-        nfcTagId: lineItem.nfc_tag_id
+        nfcTagId: lineItem.nfc_tag_id,
+        nfcClaimedAt: lineItem.nfc_claimed_at,
+        editionNumber: lineItem.edition_number,
+        vendorName: lineItem.vendor_name,
+        status: lineItem.status,
+        imgUrl: lineItem.img_url
       }))
     }))
 
