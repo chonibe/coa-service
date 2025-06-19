@@ -1,22 +1,28 @@
 "use client"
 
 import { useState } from "react"
-import { Card, CardContent, CardFooter } from "@/components/ui/card"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { Loader2, Tag, Package, CheckCircle } from "lucide-react"
+import { Separator } from "@/components/ui/separator"
+import { Badge } from "@/components/ui/badge"
+import { Loader2, Tag, Package, AlertTriangle } from "lucide-react"
+
+interface LineItem {
+  id: string
+  product_name: string
+  order_number: string
+  quantity: number
+}
+
+interface NFCTagData {
+  serialNumber: string
+  id?: string
+}
 
 interface ConfirmPairingProps {
-  itemDetails: {
-    id: string
-    productName: string
-    orderNumber: string
-    quantity: number
-  }
-  tagDetails: {
-    serialNumber: string
-    id?: string
-  }
+  itemDetails: LineItem
+  tagDetails: NFCTagData
   onConfirm: () => Promise<void>
   onCancel: () => void
 }
@@ -27,109 +33,115 @@ export function ConfirmPairing({
   onConfirm,
   onCancel
 }: ConfirmPairingProps) {
-  const [isProcessing, setIsProcessing] = useState(false)
+  const [isConfirming, setIsConfirming] = useState(false)
   const [error, setError] = useState<string>()
-  const [isComplete, setIsComplete] = useState(false)
 
   const handleConfirm = async () => {
-    setError(undefined)
-    setIsProcessing(true)
-
     try {
+      setIsConfirming(true)
+      setError(undefined)
       await onConfirm()
-      setIsComplete(true)
     } catch (err) {
+      console.error("Error confirming pairing:", err)
       setError(
         err instanceof Error
           ? err.message
           : "Failed to complete pairing. Please try again."
       )
     } finally {
-      setIsProcessing(false)
+      setIsConfirming(false)
     }
-  }
-
-  if (isComplete) {
-    return (
-      <Card>
-        <CardContent className="pt-6">
-          <div className="text-center space-y-4">
-            <CheckCircle className="h-12 w-12 mx-auto text-green-500" />
-            <h3 className="text-lg font-semibold">Pairing Complete</h3>
-            <p className="text-sm text-muted-foreground">
-              The NFC tag has been successfully paired with the selected item.
-            </p>
-          </div>
-        </CardContent>
-      </Card>
-    )
   }
 
   return (
     <Card>
-      <CardContent className="pt-6">
+      <CardHeader>
+        <CardTitle>Confirm NFC Tag Pairing</CardTitle>
+      </CardHeader>
+      <CardContent>
+        {error && (
+          <Alert variant="destructive" className="mb-6">
+            <AlertTriangle className="h-4 w-4" />
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
+        )}
+
         <div className="space-y-6">
-          <div className="space-y-4">
-            <h3 className="text-lg font-semibold">Confirm Pairing Details</h3>
-            <p className="text-sm text-muted-foreground">
-              Please review the details below before confirming the pairing.
-            </p>
-          </div>
-
-          <div className="space-y-4">
-            <div className="flex items-start space-x-3 p-4 bg-muted rounded-lg">
-              <Package className="h-5 w-5 mt-0.5 text-primary" />
-              <div className="space-y-1">
-                <p className="font-medium">Selected Item</p>
-                <p className="text-sm">{itemDetails.productName}</p>
-                <p className="text-sm text-muted-foreground">
-                  Order: {itemDetails.orderNumber} • Quantity: {itemDetails.quantity}
-                </p>
-              </div>
-            </div>
-
-            <div className="flex items-start space-x-3 p-4 bg-muted rounded-lg">
-              <Tag className="h-5 w-5 mt-0.5 text-primary" />
-              <div className="space-y-1">
-                <p className="font-medium">NFC Tag</p>
-                <p className="text-sm font-mono">{tagDetails.serialNumber}</p>
-                <p className="text-sm text-muted-foreground">
-                  {tagDetails.id ? "Existing tag" : "New tag"}
-                </p>
+          {/* Item Details */}
+          <div>
+            <h3 className="text-sm font-medium text-muted-foreground mb-2">
+              Item Details
+            </h3>
+            <div className="bg-accent/50 rounded-lg p-4">
+              <div className="flex items-start gap-3">
+                <Package className="h-5 w-5 mt-0.5 text-primary" />
+                <div>
+                  <p className="font-medium">{itemDetails.product_name}</p>
+                  <p className="text-sm text-muted-foreground">
+                    Order #{itemDetails.order_number}
+                  </p>
+                  <Badge variant="outline" className="mt-2">
+                    Quantity: {itemDetails.quantity}
+                  </Badge>
+                </div>
               </div>
             </div>
           </div>
 
-          {error && (
-            <Alert variant="destructive">
-              <AlertDescription>{error}</AlertDescription>
-            </Alert>
-          )}
+          <Separator />
+
+          {/* NFC Tag Details */}
+          <div>
+            <h3 className="text-sm font-medium text-muted-foreground mb-2">
+              NFC Tag Details
+            </h3>
+            <div className="bg-accent/50 rounded-lg p-4">
+              <div className="flex items-start gap-3">
+                <Tag className="h-5 w-5 mt-0.5 text-primary" />
+                <div>
+                  <p className="font-medium">Serial Number</p>
+                  <p className="text-sm font-mono bg-background px-2 py-1 rounded mt-1">
+                    {tagDetails.serialNumber}
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Warning */}
+          <Alert>
+            <AlertTriangle className="h-4 w-4" />
+            <AlertDescription>
+              This action cannot be undone. Please verify the details above before
+              confirming.
+            </AlertDescription>
+          </Alert>
+
+          {/* Actions */}
+          <div className="flex justify-end gap-3">
+            <Button
+              variant="outline"
+              onClick={onCancel}
+              disabled={isConfirming}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleConfirm}
+              disabled={isConfirming}
+            >
+              {isConfirming ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Confirming...
+                </>
+              ) : (
+                "Confirm Pairing"
+              )}
+            </Button>
+          </div>
         </div>
       </CardContent>
-
-      <CardFooter className="flex justify-between space-x-4">
-        <Button
-          variant="secondary"
-          onClick={onCancel}
-          disabled={isProcessing}
-        >
-          Back
-        </Button>
-        <Button
-          onClick={handleConfirm}
-          disabled={isProcessing}
-        >
-          {isProcessing ? (
-            <>
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              Pairing...
-            </>
-          ) : (
-            "Confirm Pairing"
-          )}
-        </Button>
-      </CardFooter>
     </Card>
   )
 } 
