@@ -88,6 +88,7 @@ const VinylArtworkCard = ({
   }
 
   const status = getCertificationStatus()
+  const price = item.price ? new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(item.price) : null
 
   return (
     <motion.div 
@@ -126,16 +127,30 @@ const VinylArtworkCard = ({
             <Album className="w-24 h-24 text-zinc-600" />
           </div>
         )}
+        {item.edition_number && item.edition_total && (
+          <Badge 
+            className="absolute top-2 right-2 bg-black/60 text-white border-zinc-700"
+          >
+            Edition #{item.edition_number}/{item.edition_total}
+          </Badge>
+        )}
       </div>
 
       {/* Artwork Details - Right Side */}
       <div className="flex-grow p-6 flex flex-col justify-between">
-        {/* Top Section - Title and Artist */}
+        {/* Top Section - Title, Artist, and Price */}
         <div>
           <h3 className="text-xl font-bold text-white mb-2 truncate">{item.name}</h3>
-          <p className="text-sm text-zinc-400 truncate mb-4">
-            {item.vendor_name || "Street Collector"}
-          </p>
+          <div className="flex justify-between items-start">
+            <p className="text-sm text-zinc-400 truncate">
+              {item.vendor_name || "Street Collector"}
+            </p>
+            {price && item.quantity && (
+              <p className="text-sm text-zinc-400">
+                {price} × {item.quantity}
+              </p>
+            )}
+          </div>
         </div>
 
         {/* Middle Section - Status Badges */}
@@ -155,6 +170,17 @@ const VinylArtworkCard = ({
               <Certificate className="h-3 w-3 mr-1" /> Digital Only
             </Badge>
           )}
+          {item.status && (
+            <Badge 
+              className={`
+                ${item.status === 'active' ? 'bg-green-500/20 text-green-400 border-green-400/30' : 
+                  item.status === 'pending' ? 'bg-yellow-500/20 text-yellow-400 border-yellow-400/30' :
+                  'bg-red-500/20 text-red-400 border-red-400/30'}
+              `}
+            >
+              {item.status.charAt(0).toUpperCase() + item.status.slice(1)}
+            </Badge>
+          )}
         </div>
 
         {/* Bottom Section - Actions */}
@@ -170,7 +196,7 @@ const VinylArtworkCard = ({
           >
             <Certificate className="h-4 w-4 mr-2" /> Certificate
           </Button>
-          {item.nfc_tag_id && (
+          {item.nfc_tag_id && !item.nfc_claimed_at && (
             <Button 
               size="sm" 
               variant="outline" 
@@ -180,7 +206,7 @@ const VinylArtworkCard = ({
                 onNfcWrite()
               }}
             >
-              <Wifi className="h-4 w-4 mr-2" /> NFC
+              <Wifi className="h-4 w-4 mr-2" /> Pair NFC
             </Button>
           )}
         </div>
