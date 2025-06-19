@@ -1,102 +1,118 @@
+import { createRouteHandlerClient } from "@supabase/auth-helpers-nextjs"
+import { cookies } from "next/headers"
 import { NextResponse } from "next/server"
-import type { NextRequest } from "next/server"
-import { createClient } from "@supabase/supabase-js"
-import { generateCertificateUrl } from "@/lib/certificate"
-import type { Database } from "@/types/supabase"
 
-interface PairingRequest {
-  nfc_tag_id: string;
-  line_item_id: string;
+interface NFCTag {
+  id: string
+  certificate_id: string | null
 }
 
-export async function POST(request: NextRequest) {
-  let requestBody: PairingRequest | null = null;
-  
-  try {
-    requestBody = await request.json()
-    const { nfc_tag_id, line_item_id } = requestBody
+interface OrderLineItem {
+  id: string
+  certificate: {
+    url: string
+  } | null
+}
 
-    if (!nfc_tag_id || !line_item_id) {
+export async function POST(request: Request) {
+  try {
+    const supabase = createRouteHandlerClient({ cookies })
+
+    // Get authenticated user
+    const { data: { user }, error: authError } = await supabase.auth.getUser()
+    if (authError || !user) {
       return NextResponse.json(
-        { success: false, message: "NFC tag ID and line item ID are required" },
+        { error: "Unauthorized" },
+        { status: 401 }
+      )
+    }
+
+    // Get pairing data from request
+    const { serialNumber, itemId } = await request.json()
+    
+    if (!serialNumber || !itemId) {
+      return NextResponse.json(
+        { error: "Serial number and item ID are required" },
         { status: 400 }
       )
     }
 
-    // Create Supabase client
-    const supabase = createClient<Database>(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!
-    )
-
-    // Start pairing process
-    const { data: tag, error: updateError } = await supabase
-      .from("nfc_tags")
-      .update({
-        pairing_status: "pairing_in_progress",
-        pairing_attempted_at: new Date().toISOString(),
-        line_item_id: line_item_id
-      })
-      .eq("id", nfc_tag_id)
-      .select()
-      .single()
-
-    if (updateError) {
-      console.error("Error updating NFC tag:", updateError)
-      return NextResponse.json(
-        { success: false, message: "Failed to initiate pairing" },
-        { status: 500 }
-      )
-    }
-
-    // Generate certificate URL
-    const certificateUrl = await generateCertificateUrl(line_item_id)
-
-    // Complete pairing
-    const { error: completionError } = await supabase
-      .from("nfc_tags")
-      .update({
-        pairing_status: "paired",
-        pairing_completed_at: new Date().toISOString(),
-        certificate_url: certificateUrl
-      })
-      .eq("id", nfc_tag_id)
-
-    if (completionError) {
-      console.error("Error completing pairing:", completionError)
-      return NextResponse.json(
-        { success: false, message: "Failed to complete pairing" },
-        { status: 500 }
-      )
-    }
-
-    return NextResponse.json({
-      success: true,
-      certificate_url: certificateUrl,
-      pairing_status: "paired"
-    })
-  } catch (error: any) {
-    console.error("Error in NFC pairing:", error)
-    
-    // Create Supabase client for error handling
-    const supabase = createClient<Database>(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!
-    )
-    
-    // Update tag with error status if we have the tag ID
-    if (requestBody?.nfc_tag_id) {
-      await supabase
+    try {
+      // Get or create NFC tag
+      const { data: existingTag, error: tagError } = await supabase
         .from("nfc_tags")
-        .update({
-          pairing_status: "pairing_failed",
-          pairing_error: error.message
-        })
-        .eq("id", requestBody.nfc_tag_id)
-    }
+        .select("id, certificate_id")
+        .eq("serial_number", serialNumber)
+        .single<NFCTag>()
 
+      if (tagError && tagError.code !== "PGRST116") { // PGRST116 is "not found"
+        throw tagError
+      }
+
+      // Check if tag is already paired
+      if (existingTag?.certificate_id) {
+        throw new Error("This NFC tag is already paired with a certificate")
+      }
+
+      let tagId: string
+
+      if (!existingTag) {
+        // Create new tag
+        const { data: newTag, error: createError } = await supabase
+          .from("nfc_tags")
+          .insert({ serial_number: serialNumber })
+          .select("id")
+          .single<{ id: string }>()
+
+        if (createError || !newTag) {
+          throw new Error("Failed to create NFC tag")
+        }
+        
+        tagId = newTag.id
+      } else {
+        tagId = existingTag.id
+      }
+
+      // Update the line item with the tag ID
+      const { error: updateError } = await supabase
+        .from("order_line_items_v2")
+        .update({ nfc_tag_id: tagId })
+        .eq("id", itemId)
+
+      if (updateError) throw updateError
+
+      // Get the certificate URL
+      const { data: item, error: itemError } = await supabase
+        .from("order_line_items_v2")
+        .select(`
+          id,
+          certificate:certificates (
+            url
+          )
+        `)
+        .eq("id", itemId)
+        .single<OrderLineItem>()
+
+      if (itemError || !item) {
+        throw new Error("Failed to fetch certificate details")
+      }
+
+      return NextResponse.json({
+        success: true,
+        message: "NFC tag paired successfully",
+        certificateUrl: item.certificate?.url
+      })
+    } catch (error) {
+      throw error
+    }
+  } catch (error) {
+    console.error("Error pairing NFC tag:", error)
     return NextResponse.json(
-      { success: false, message: error.message || "Failed to pair NFC tag" },
+      { 
+        error: error instanceof Error 
+          ? error.message 
+          : "Failed to pair NFC tag"
+      },
       { status: 500 }
     )
   }

@@ -59,4 +59,36 @@
 - API endpoint returns proper data format
 - Error states and loading indicators in place
 
+## 2024-03-15: NFC Pairing Wizard and V2 Table Migration
+
+### Changes
+- [x] [[app/admin/certificates/pairing/page.tsx](../app/admin/certificates/pairing/page.tsx)] Implemented NFC pairing wizard with multi-step flow
+- [x] [[app/admin/certificates/pairing/components/confirm-pairing.tsx](../app/admin/certificates/pairing/components/confirm-pairing.tsx)] Added confirmation step component
+- [x] [[app/admin/certificates/pairing/components/select-item.tsx](../app/admin/certificates/pairing/components/select-item.tsx)] Added item selection component
+- [x] [[app/api/nfc-tags/pair/route.ts](../app/api/nfc-tags/pair/route.ts)] Created API endpoint for NFC tag pairing
+- [x] [[app/api/nfc-tags/pair/unpaired-items/route.ts](../app/api/nfc-tags/pair/unpaired-items/route.ts)] Created API endpoint for fetching unpaired items
+- [x] [[supabase/migrations/20240315000000_add_nfc_pairing_status.sql](../supabase/migrations/20240315000000_add_nfc_pairing_status.sql)] Added migration for NFC pairing fields
+- [x] [[scripts/validate-v2-tables.js](../scripts/validate-v2-tables.js)] Added script to validate v2 table usage
+- [x] [[scripts/check-prerequisites.js](../scripts/check-prerequisites.js)] Added script to check database prerequisites
+- [x] [[scripts/run-migration.js](../scripts/run-migration.js)] Added migration runner script
+- [x] [[docs/technical-design/nfc-pairing-wizard.md](../docs/technical-design/nfc-pairing-wizard.md)] Added technical design documentation
+
+### Migration Notes
+- Added NFC pairing fields to `order_line_items_v2` table
+- Created indexes for performance optimization
+- Added trigger for automatic timestamp updates
+- Added transaction support functions
+
+### Testing Requirements
+1. Database connection and prerequisites check
+2. Migration execution
+3. V2 table validation
+4. NFC pairing wizard functionality
+5. API endpoint validation
+
+### Related Issues/PRs
+- Implements NFC pairing wizard feature
+- Updates all references to use `order_line_items_v2` table
+- Adds validation tooling for table migrations
+
 --- 

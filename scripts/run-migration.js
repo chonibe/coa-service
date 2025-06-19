@@ -1,28 +1,48 @@
-require('dotenv').config();
-const { Client } = require('pg');
+#!/usr/bin/env node
 
-console.log('DATABASE_URL:', process.env.DATABASE_URL);
+const { execSync } = require('child_process');
+const path = require('path');
+const fs = require('fs');
 
-const client = new Client({
-  connectionString: process.env.DATABASE_URL
-});
-
-async function runMigration() {
+function runMigration() {
   try {
-    await client.connect();
-    console.log('Connected to database');
+    console.log('🔄 Running database migration...\n');
 
-    const result = await client.query(`
-      ALTER TABLE order_line_items 
-      ADD COLUMN IF NOT EXISTS quantity INTEGER;
-    `);
+    // Get all migration files
+    const migrationsDir = path.join(process.cwd(), 'supabase', 'migrations');
+    const files = fs.readdirSync(migrationsDir)
+      .filter(file => file.endsWith('.sql'))
+      .sort();
 
-    console.log('Migration completed successfully');
-    console.log('Result:', result);
+    // Run each migration
+    for (const file of files) {
+      console.log(`Running migration: ${file}`);
+      const migrationPath = path.join(migrationsDir, file);
+      const sql = fs.readFileSync(migrationPath, 'utf8');
+
+      try {
+        execSync(`psql "$DATABASE_URL" -f "${migrationPath}"`, {
+          stdio: ['pipe', 'pipe', 'pipe']
+        });
+        console.log(`✅ Successfully applied migration: ${file}\n`);
+      } catch (error) {
+        console.error(`❌ Error applying migration ${file}:`, error.message);
+        throw error;
+      }
+    }
+
+    console.log('🎉 All migrations completed successfully!');
+
+    // Run table validation
+    console.log('\n🔍 Running v2 table validation...');
+    try {
+      execSync('node scripts/validate-v2-tables.js', { stdio: 'inherit' });
+    } catch (error) {
+      console.warn('\n⚠️ Table validation found issues that need attention');
+    }
   } catch (error) {
-    console.error('Error running migration:', error);
-  } finally {
-    await client.end();
+    console.error('\n❌ Migration failed:', error.message);
+    process.exit(1);
   }
 }
 

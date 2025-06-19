@@ -2,12 +2,8 @@
 
 import { useEffect, useState } from "react"
 import { Card, CardContent } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
-import { ScrollArea } from "@/components/ui/scroll-area"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { Loader2 } from "lucide-react"
+import { Loader2, Package } from "lucide-react"
 
 interface LineItem {
   id: string
@@ -17,47 +13,49 @@ interface LineItem {
 }
 
 interface SelectItemProps {
-  onSelect: (itemId: string) => void
   selectedItemId?: string
+  onSelect: (id: string, item: LineItem) => void
 }
 
-export function SelectItem({ onSelect, selectedItemId }: SelectItemProps) {
-  const [searchQuery, setSearchQuery] = useState("")
+export function SelectItem({ selectedItemId, onSelect }: SelectItemProps) {
   const [items, setItems] = useState<LineItem[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string>()
 
+  // Fetch unpaired items on component mount
   useEffect(() => {
-    const fetchItems = async () => {
-      try {
-        const response = await fetch("/api/nfc-tags/pair/unpaired-items")
-        if (!response.ok) {
-          throw new Error("Failed to fetch items")
-        }
-        const data = await response.json()
-        setItems(data)
-      } catch (err) {
-        setError("Failed to load unpaired items. Please try again.")
-        console.error("Error fetching items:", err)
-      } finally {
-        setIsLoading(false)
-      }
-    }
-
-    fetchItems()
+    fetchUnpairedItems()
   }, [])
 
-  const filteredItems = items.filter(item =>
-    item.productName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    item.orderNumber.toLowerCase().includes(searchQuery.toLowerCase())
-  )
+  const fetchUnpairedItems = async () => {
+    try {
+      const response = await fetch("/api/nfc-tags/pair/unpaired-items")
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.error || "Failed to fetch unpaired items")
+      }
+
+      setItems(data.items)
+    } catch (err) {
+      console.error("Error fetching unpaired items:", err)
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Failed to fetch unpaired items. Please try again."
+      )
+    } finally {
+      setIsLoading(false)
+    }
+  }
 
   if (isLoading) {
     return (
       <Card>
-        <CardContent className="pt-6 text-center">
-          <Loader2 className="h-8 w-8 animate-spin mx-auto" />
-          <p className="mt-2 text-sm text-muted-foreground">Loading items...</p>
+        <CardContent className="pt-6">
+          <div className="flex items-center justify-center p-8">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          </div>
         </CardContent>
       </Card>
     )
@@ -74,8 +72,14 @@ export function SelectItem({ onSelect, selectedItemId }: SelectItemProps) {
   if (items.length === 0) {
     return (
       <Card>
-        <CardContent className="pt-6 text-center">
-          <p className="text-muted-foreground">No unpaired items found.</p>
+        <CardContent className="pt-6">
+          <div className="text-center p-8">
+            <Package className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+            <p className="text-lg font-medium">No Items Available</p>
+            <p className="text-sm text-muted-foreground mt-2">
+              There are no unpaired items available at this time.
+            </p>
+          </div>
         </CardContent>
       </Card>
     )
@@ -85,41 +89,36 @@ export function SelectItem({ onSelect, selectedItemId }: SelectItemProps) {
     <Card>
       <CardContent className="pt-6">
         <div className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="search">Search Items</Label>
-            <Input
-              id="search"
-              placeholder="Search by product name or order number..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
+          <div>
+            <h3 className="text-lg font-semibold">Select Item to Pair</h3>
+            <p className="text-sm text-muted-foreground">
+              Choose an item from the list below to pair with an NFC tag.
+            </p>
           </div>
 
-          <ScrollArea className="h-[400px] pr-4">
-            <RadioGroup
-              value={selectedItemId}
-              onValueChange={onSelect}
-              className="space-y-2"
-            >
-              {filteredItems.map((item) => (
-                <div
-                  key={item.id}
-                  className="flex items-center space-x-2 rounded-lg border p-4"
-                >
-                  <RadioGroupItem value={item.id} id={item.id} />
-                  <Label
-                    htmlFor={item.id}
-                    className="flex-1 cursor-pointer space-y-1"
-                  >
-                    <div className="font-medium">{item.productName}</div>
-                    <div className="text-sm text-muted-foreground">
+          <div className="space-y-2">
+            {items.map((item) => (
+              <button
+                key={item.id}
+                onClick={() => onSelect(item.id, item)}
+                className={`w-full text-left p-4 rounded-lg border transition-colors ${
+                  selectedItemId === item.id
+                    ? "border-primary bg-primary/5"
+                    : "border-border hover:border-primary/50"
+                }`}
+              >
+                <div className="flex items-start space-x-3">
+                  <Package className="h-5 w-5 mt-0.5 text-primary" />
+                  <div>
+                    <p className="font-medium">{item.productName}</p>
+                    <p className="text-sm text-muted-foreground">
                       Order: {item.orderNumber} • Quantity: {item.quantity}
-                    </div>
-                  </Label>
+                    </p>
+                  </div>
                 </div>
-              ))}
-            </RadioGroup>
-          </ScrollArea>
+              </button>
+            ))}
+          </div>
         </div>
       </CardContent>
     </Card>

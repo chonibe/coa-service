@@ -10,7 +10,10 @@
     "backup:build": "tsc -p tsconfig.backup.json",
     "backup:start": "node backup/dist/scripts/backup-database.js",
     "backup:test": "node backup/dist/scripts/test-backup.js",
-    "backup:schedule": "node backup/dist/scripts/schedule-backup.js"
+    "backup:schedule": "node backup/dist/scripts/schedule-backup.js",
+    "check:prerequisites": "node scripts/check-prerequisites.js",
+    "migration:run": "node scripts/check-prerequisites.js && node scripts/run-migration.js",
+    "validate:v2-tables": "node scripts/validate-v2-tables.js"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.511.0",
@@ -45,7 +48,7 @@
     "@shopify/shopify-api": "^11.12.0",
     "@supabase/auth-helpers-nextjs": "^0.10.0",
     "@supabase/ssr": "^0.6.1",
-    "@supabase/supabase-js": "^2.49.7",
+    "@supabase/supabase-js": "^2.50.0",
     "@types/axios": "^0.9.36",
     "@types/node-cron": "^3.0.11",
     "autoprefixer": "^10.4.20",

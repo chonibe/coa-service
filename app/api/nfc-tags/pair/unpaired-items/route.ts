@@ -2,26 +2,15 @@ import { createRouteHandlerClient } from "@supabase/auth-helpers-nextjs"
 import { cookies } from "next/headers"
 import { NextResponse } from "next/server"
 
-interface DatabaseProduct {
-  name: string
-}
-
-interface DatabaseOrder {
-  order_number: string
-}
-
-interface DatabaseOrderLineItem {
+interface OrderLineItem {
   id: string
   quantity: number
-  product: DatabaseProduct
-  order: DatabaseOrder
-}
-
-interface TransformedLineItem {
-  id: string
-  productName: string
-  orderNumber: string
-  quantity: number
+  product: {
+    name: string
+  } | null
+  order: {
+    order_number: string
+  } | null
 }
 
 export async function GET() {
@@ -37,46 +26,43 @@ export async function GET() {
       )
     }
 
-    // Fetch unpaired line items
-    const { data, error: dbError } = await supabase
-      .from("order_line_items")
+    // Fetch unpaired items
+    const { data: items, error: fetchError } = await supabase
+      .from("order_line_items_v2")
       .select(`
         id,
-        quantity,
         product:products (
           name
         ),
         order:orders (
           order_number
-        )
+        ),
+        quantity
       `)
-      .is("nfc_tag_id", null) // Only get items without NFC tags
+      .is("nfc_tag_id", null)
+      .eq("nfc_pairing_status", "pending")
       .order("created_at", { ascending: false })
-      .returns<DatabaseOrderLineItem[]>()
+      .returns<OrderLineItem[]>()
 
-    if (dbError) {
-      console.error("Database error:", dbError)
+    if (fetchError) {
+      console.error("Error fetching unpaired items:", fetchError)
       return NextResponse.json(
         { error: "Failed to fetch unpaired items" },
         { status: 500 }
       )
     }
 
-    if (!data) {
-      return NextResponse.json<TransformedLineItem[]>([])
-    }
-
-    // Transform the data to match our frontend interface
-    const transformedItems: TransformedLineItem[] = data.map(item => ({
+    // Transform the data to match the expected format
+    const transformedItems = (items || []).map(item => ({
       id: item.id,
       productName: item.product?.name || "Unknown Product",
       orderNumber: item.order?.order_number || "Unknown Order",
-      quantity: item.quantity || 1
+      quantity: item.quantity
     }))
 
-    return NextResponse.json(transformedItems)
+    return NextResponse.json({ items: transformedItems })
   } catch (error) {
-    console.error("Unexpected error:", error)
+    console.error("Error in unpaired items endpoint:", error)
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 }
