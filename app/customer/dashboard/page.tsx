@@ -146,6 +146,13 @@ export default function CustomerDashboard() {
   }
 
   const getNfcStatus = (lineItem: LineItem) => {
+    // Debug logging
+    console.log('Get NFC Status Debug:', {
+      lineItemId: lineItem.line_item_id,
+      nfcTagId: lineItem.nfc_tag_id,
+      nfcClaimedAt: lineItem.nfc_claimed_at
+    })
+
     if (lineItem.nfc_tag_id && lineItem.nfc_claimed_at) {
       return { status: "paired", label: "Paired", variant: "default" as const }
     }
@@ -156,6 +163,11 @@ export default function CustomerDashboard() {
   }
 
   const handleCertificateClick = (lineItem: LineItem) => {
+    // Debug logging
+    console.log('Certificate Click Debug:', {
+      lineItem,
+      nfcStatus: getNfcStatus(lineItem)
+    })
     setSelectedLineItem(lineItem)
   }
 
@@ -260,7 +272,11 @@ export default function CustomerDashboard() {
                       {order.line_items.map((item) => {
                         const nfcStatus = getNfcStatus(item)
                         return (
-                          <div key={item.line_item_id} className="space-y-2">
+                          <div 
+                            key={item.line_item_id} 
+                            className="space-y-2 cursor-pointer hover:bg-accent/50 p-2 rounded-md transition-colors"
+                            onClick={() => handleCertificateClick(item)}
+                          >
                             <div className="flex justify-between items-start">
                               <div>
                                 <p className="font-medium">{item.name}</p>

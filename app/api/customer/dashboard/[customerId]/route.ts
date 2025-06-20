@@ -95,31 +95,48 @@ export async function GET(
     }
 
     // Transform data for frontend
-    const transformedOrders = orders.map((order: any) => ({
-      id: order.id,
-      order_number: order.order_number,
-      processed_at: order.processed_at,
-      total_price: order.total_price,
-      financial_status: order.financial_status,
-      fulfillment_status: order.fulfillment_status,
-      line_items: (order.line_items || []).map((item: any) => ({
-        line_item_id: item.line_item_id,
-        name: item.name,
-        description: item.description,
-        quantity: item.quantity,
-        price: item.price,
-        img_url: item.img_url,
-        nfc_tag_id: item.nfc_tag_id,
-        certificate_url: item.certificate_url,
-        certificate_token: item.certificate_token,
-        nfc_claimed_at: item.nfc_claimed_at,
-        order_id: order.id,
-        edition_number: item.edition_number,
-        edition_total: item.edition_total,
-        vendor_name: item.vendor_name,
-        status: item.status
-      }))
-    }))
+    const transformedOrders = orders.map((order: any) => {
+      // Debug logging
+      console.log('Order Debug:', {
+        orderId: order.id,
+        lineItems: order.line_items
+      })
+
+      return {
+        id: order.id,
+        order_number: order.order_number,
+        processed_at: order.processed_at,
+        total_price: order.total_price,
+        financial_status: order.financial_status,
+        fulfillment_status: order.fulfillment_status,
+        line_items: (order.line_items || []).map((item: any) => {
+          // Debug logging
+          console.log('Line Item Debug:', {
+            lineItemId: item.line_item_id,
+            nfcTagId: item.nfc_tag_id,
+            nfcClaimedAt: item.nfc_claimed_at
+          })
+
+          return {
+            line_item_id: item.line_item_id,
+            name: item.name,
+            description: item.description,
+            quantity: item.quantity,
+            price: item.price,
+            img_url: item.img_url,
+            nfc_tag_id: item.nfc_tag_id,
+            certificate_url: item.certificate_url,
+            certificate_token: item.certificate_token,
+            nfc_claimed_at: item.nfc_claimed_at,
+            order_id: order.id,
+            edition_number: item.edition_number,
+            edition_total: item.edition_total,
+            vendor_name: item.vendor_name,
+            status: item.status
+          }
+        })
+      }
+    })
 
     return NextResponse.json({ 
       success: true, 

@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useRef, useEffect } from "react"
-import { Dialog, DialogContent } from "@/components/ui/dialog"
+import { Dialog, DialogContent, DialogTitle, DialogDescription, DialogHeader } from "@/components/ui/dialog"
 import { X, BadgeIcon as Certificate, User, Calendar, Hash, ExternalLink, Award, Sparkles, Signature, Wifi, WifiOff, Album, Scan, Loader2 } from "lucide-react"
 import { motion, useMotionValue, useTransform } from "framer-motion"
 import { Badge } from "@/components/ui/badge"
@@ -112,6 +112,16 @@ export function CertificateModal({ lineItem, onClose }: CertificateModalProps) {
   useEffect(() => {
     setIsOpen(!!lineItem)
     setIsFlipped(false)
+    
+    // Debug logging
+    console.log('Certificate Modal Debug:', {
+      lineItem,
+      nfcStatus: lineItem ? (
+        lineItem.nfc_tag_id 
+          ? (lineItem.nfc_claimed_at ? "paired" : "unpaired")
+          : "no-nfc"
+      ) : null
+    })
   }, [lineItem])
 
   if (!lineItem) return null
@@ -126,6 +136,13 @@ export function CertificateModal({ lineItem, onClose }: CertificateModalProps) {
   const nfcStatus = lineItem.nfc_tag_id 
     ? (lineItem.nfc_claimed_at ? "paired" : "unpaired")
     : "no-nfc"
+
+  // Debug logging
+  console.log('NFC Status Debug:', {
+    nfcTagId: lineItem.nfc_tag_id,
+    nfcClaimedAt: lineItem.nfc_claimed_at,
+    status: nfcStatus
+  })
 
   const handleNfcPairing = async () => {
     // Check if Web NFC is supported
@@ -200,11 +217,14 @@ export function CertificateModal({ lineItem, onClose }: CertificateModalProps) {
   return (
     <Dialog open={isOpen} onOpenChange={() => onClose()}>
       <DialogContent className="max-w-4xl w-full p-0 overflow-hidden">
-        <PostcardCertificate 
-          isFlipped={isFlipped}
-          className="w-full h-[600px] flex flex-col"
-        >
-          <div className="absolute top-4 right-4 z-30 flex items-center gap-2">
+        <DialogHeader className="absolute top-0 left-0 right-0 z-50 bg-black/50 p-4 flex justify-between items-center">
+          <div>
+            <DialogTitle className="text-white">{lineItem.name}</DialogTitle>
+            <DialogDescription className="text-zinc-300">
+              Certificate of Authenticity • {editionInfo}
+            </DialogDescription>
+          </div>
+          <div className="flex items-center gap-2">
             <Badge 
               variant={
                 nfcStatus === "paired" 
@@ -230,13 +250,19 @@ export function CertificateModal({ lineItem, onClose }: CertificateModalProps) {
             </Badge>
             <Button 
               variant="ghost" 
-              size="icon" 
+              size="icon"
+              className="text-white hover:text-white/80"
               onClick={() => onClose()}
             >
               <X className="w-5 h-5" />
             </Button>
           </div>
+        </DialogHeader>
 
+        <PostcardCertificate 
+          isFlipped={isFlipped}
+          className="w-full h-[600px] flex flex-col"
+        >
           <div className="grid md:grid-cols-2 h-full">
             {/* Artwork Image Side */}
             <div className="relative overflow-hidden">
@@ -305,7 +331,7 @@ export function CertificateModal({ lineItem, onClose }: CertificateModalProps) {
 
                 {/* NFC Pairing Section */}
                 <div className="mt-6">
-                  {nfcStatus === "unpaired" && (
+                  {(!lineItem.nfc_tag_id || (lineItem.nfc_tag_id && !lineItem.nfc_claimed_at)) && (
                     <Button 
                       className="w-full" 
                       onClick={handleNfcPairing}
@@ -324,7 +350,7 @@ export function CertificateModal({ lineItem, onClose }: CertificateModalProps) {
                       )}
                     </Button>
                   )}
-                  {nfcStatus === "paired" && (
+                  {lineItem.nfc_tag_id && lineItem.nfc_claimed_at && (
                     <div className="bg-green-50 border border-green-200 p-3 rounded-lg flex items-center gap-3">
                       <Sparkles className="w-6 h-6 text-green-500" />
                       <span className="text-green-800">
@@ -332,7 +358,7 @@ export function CertificateModal({ lineItem, onClose }: CertificateModalProps) {
                       </span>
                     </div>
                   )}
-                  {nfcStatus === "no-nfc" && (
+                  {!lineItem.nfc_tag_id && (
                     <div className="bg-yellow-50 border border-yellow-200 p-3 rounded-lg flex items-center gap-3">
                       <WifiOff className="w-6 h-6 text-yellow-500" />
                       <span className="text-yellow-800">
