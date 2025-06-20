@@ -2,6 +2,19 @@ import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
 import { supabase } from "@/lib/supabase"
 
+interface LineItem {
+  id: number;
+  line_item_id: string;
+  order_id: string;
+  product_id: string;
+  edition_number: number | null;
+  edition_total: number | null;
+  certificate_url: string | null;
+  certificate_token: string | null;
+  certificate_generated_at: string | null;
+  created_at: string;
+}
+
 /**
  * This endpoint manually resequences edition numbers for a product
  * It will set all active items to sequential numbers starting from 1
@@ -18,24 +31,25 @@ export async function GET(request: NextRequest) {
   try {
     console.log(`Manual resequencing for product ${productId}`)
 
-    // First, ensure all removed items have null edition numbers
+    // First, ensure all inactive items have null edition numbers
     const { error: removeError } = await supabase
-      .from("order_line_items")
+      .from("order_line_items_v2")
       .update({
         edition_number: null,
+        edition_total: null,
         updated_at: new Date().toISOString(),
       })
       .eq("product_id", productId)
-      .eq("status", "removed")
+      .eq("status", "inactive")
 
     if (removeError) {
-      console.error("Error clearing edition numbers for removed items:", removeError)
-      throw new Error("Failed to clear edition numbers for removed items")
+      console.error("Error clearing edition numbers for inactive items:", removeError)
+      throw new Error("Failed to clear edition numbers for inactive items")
     }
 
     // Get all active line items for this product, ordered by creation date
     const { data: activeItems, error } = await supabase
-      .from("order_line_items")
+      .from("order_line_items_v2")
       .select("*")
       .eq("product_id", productId)
       .eq("status", "active")
@@ -51,7 +65,7 @@ export async function GET(request: NextRequest) {
         success: true,
         message: "No active items found for resequencing",
         activeItemsCount: 0,
-        removedItemsCount: 0,
+        inactiveItemsCount: 0,
       })
     }
 
@@ -61,12 +75,22 @@ export async function GET(request: NextRequest) {
     let editionCounter = 1
     let updatedCount = 0
 
-    for (const item of activeItems) {
+    for (const item of activeItems as LineItem[]) {
+      // Generate certificate URL if it doesn't exist
+      const baseUrl = process.env.NEXT_PUBLIC_CUSTOMER_APP_URL || process.env.NEXT_PUBLIC_APP_URL || ""
+      const certificateUrl = item.certificate_url || `${baseUrl}/certificate/${item.line_item_id}`
+      const certificateToken = item.certificate_token || crypto.randomUUID()
+      const now = new Date().toISOString()
+
       const { error: updateError } = await supabase
-        .from("order_line_items")
+        .from("order_line_items_v2")
         .update({
           edition_number: editionCounter,
-          updated_at: new Date().toISOString(),
+          edition_total: activeItems.length,
+          updated_at: now,
+          certificate_url: certificateUrl,
+          certificate_token: certificateToken,
+          certificate_generated_at: item.certificate_generated_at || now,
         })
         .eq("line_item_id", item.line_item_id)
         .eq("order_id", item.order_id)
@@ -79,15 +103,15 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    // Get count of removed items
-    const { count: removedCount, error: countError } = await supabase
-      .from("order_line_items")
+    // Get count of inactive items
+    const { count: inactiveCount, error: countError } = await supabase
+      .from("order_line_items_v2")
       .select("*", { count: "exact" })
       .eq("product_id", productId)
-      .eq("status", "removed")
+      .eq("status", "inactive")
 
     if (countError) {
-      console.error("Error counting removed items:", countError)
+      console.error("Error counting inactive items:", countError)
     }
 
     return NextResponse.json({
@@ -95,7 +119,7 @@ export async function GET(request: NextRequest) {
       message: `Resequencing complete. Assigned edition numbers 1 through ${editionCounter - 1}`,
       activeItemsCount: activeItems.length,
       updatedCount,
-      removedItemsCount: removedCount || 0,
+      inactiveItemsCount: inactiveCount || 0,
     })
   } catch (error: any) {
     console.error("Error in manual resequencing:", error)

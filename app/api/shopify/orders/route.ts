@@ -306,40 +306,30 @@ async function fetchOrdersFromShopify() {
 function transformShopifyOrdersToOrders(shopifyOrders: any[]) {
   return shopifyOrders.map(order => ({
     id: order.id.toString(),
-    order_id: order.id.toString(),
-    order_name: order.name,
-    created_at: order.created_at,
-    updated_at: order.updated_at,
+    order_number: parseInt(order.name.replace("#", "")),
+    processed_at: order.processed_at || order.created_at,
+    total_price: parseFloat(order.current_total_price),
     financial_status: order.financial_status,
-    customer: order.customer ? {
-      first_name: order.customer.first_name,
-      last_name: order.customer.last_name
-    } : null,
+    fulfillment_status: order.fulfillment_status || "unfulfilled",
     line_items: order.line_items.map((li: any) => ({
       id: li.id.toString(),
       line_item_id: li.id.toString(),
-      product_id: li.product_id.toString(),
-      title: li.title,
+      name: li.title,
+      description: li.title,
       quantity: li.quantity,
-      price: li.price,
-      total: (parseFloat(li.price) * li.quantity).toFixed(2),
-      vendor: li.vendor,
-      image: li.image?.src || "/placeholder.svg?height=400&width=400",
-      tags: [],
-      fulfillable: li.fulfillable_quantity > 0,
-      is_limited_edition: true,
-      total_inventory: "100",
-      inventory_quantity: li.fulfillable_quantity,
-      status: "active",
-      order_info: {
-        order_id: order.id.toString(),
-        order_number: order.name.replace("#", ""),
-        processed_at: order.processed_at,
-        fulfillment_status: order.fulfillment_status,
-        financial_status: order.financial_status,
-      },
-    })),
-  }));
+      price: parseFloat(li.price),
+      img_url: li.image?.src || "/placeholder.svg?height=400&width=400",
+      nfc_tag_id: null,
+      certificate_url: null,
+      certificate_token: null,
+      nfc_claimed_at: null,
+      order_id: order.id.toString(),
+      edition_number: null,
+      edition_total: null,
+      vendor_name: li.vendor,
+      status: "active"
+    }))
+  }))
 }
 
 // Helper function to transform Supabase data to orders format

@@ -1,7 +1,8 @@
 import { NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
+import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
 import { cookies } from 'next/headers';
 import { resequenceEditionNumbers } from "@/lib/resequence-edition-numbers";
+import type { Database } from "@/types/supabase";
 
 const VALID_STATUSES = ['active', 'inactive'] as const;
 type Status = typeof VALID_STATUSES[number];
@@ -28,15 +29,17 @@ export async function POST(
     }
 
     const cookieStore = cookies();
-    const supabase = createClient();
+    const supabase = createRouteHandlerClient<Database>({ cookies: () => cookieStore });
 
     // Update the status for all specified items
     const { error: updateError } = await supabase
       .from('order_line_items_v2')
       .update({ 
         status,
-        // Reset edition numbers if becoming inactive
-        edition_number: status === 'inactive' ? null : undefined
+        // Reset edition numbers and edition total if becoming inactive
+        edition_number: status === 'inactive' ? null : undefined,
+        edition_total: status === 'inactive' ? null : undefined,
+        updated_at: new Date().toISOString()
       })
       .in('id', itemIds)
       .eq('order_id', params.orderId);

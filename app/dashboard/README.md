@@ -116,3 +116,64 @@ If experiencing 404 errors:
 ## Related Documentation
 - [Authentication Documentation](/docs/authentication/README.md)
 - [Technical Design Overview](/docs/technical-design/overview.md) 
+
+# Customer Dashboard Documentation
+
+## Overview
+The customer dashboard provides a comprehensive view of a user's orders, NFC tags, and digital certificates.
+
+## Current Features
+- Order history display
+- NFC tag status tracking
+- Certificate viewing
+- Responsive design
+
+## Planned Improvements
+
+### Implementation Checklist
+
+#### 1. UI/UX Enhancements
+- [ ] Redesign order card with interactive elements
+- [ ] Create order filtering and sorting mechanism
+- [ ] Develop engaging empty state design
+- [ ] Implement order details modal
+- [ ] Add pull-to-refresh functionality
+
+#### 2. NFC Tag Experience
+- [ ] Design enhanced NFC tag visualization
+- [ ] Create QR code generation for tags
+- [ ] Implement tag history tracking
+- [ ] Add tag transfer/gift feature
+
+#### 3. Performance Optimization
+- [ ] Replace loading spinner with skeleton screens
+- [ ] Add ARIA attributes for accessibility
+- [ ] Implement infinite scroll for order list
+- [ ] Add performance monitoring hooks
+
+#### 4. Personalization Features
+- [ ] Develop product recommendation algorithm
+- [ ] Create digital collectibles showcase section
+- [ ] Add order tracking integration
+- [ ] Implement dark mode toggle
+
+#### 5. Engagement Improvements
+- [ ] Design digital certificate gallery
+- [ ] Create shareable certificate links
+- [ ] Implement collection achievement tracking
+- [ ] Add social sharing capabilities
+
+## Success Criteria
+- Improved user engagement
+- Enhanced performance
+- More intuitive user experience
+- Increased user retention
+
+## Future Roadmap
+- Continuous UX refinement
+- Advanced personalization
+- Social and sharing features
+
+## Version
+- Current Version: 1.0.0
+- Last Updated: ${new Date().toISOString()} 

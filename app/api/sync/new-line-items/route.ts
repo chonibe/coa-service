@@ -111,11 +111,20 @@ export async function POST() {
             name: item.title,
             description: item.title,
             price: parseFloat(item.price),
+            quantity: item.quantity,
+            sku: item.sku || null,
             vendor_name: item.vendor || null,
             fulfillment_status: item.fulfillment_status,
             status: 'active',
             created_at: new Date(order.raw_shopify_order_data.created_at).toISOString(),
-            updated_at: new Date().toISOString()
+            updated_at: new Date().toISOString(),
+            nfc_tag_id: null,
+            certificate_url: null,
+            certificate_token: null,
+            nfc_claimed_at: null,
+            edition_number: null,
+            edition_total: null,
+            img_url: null
           };
         });
 

@@ -67,19 +67,25 @@ interface ApiResponse {
 }
 
 interface OrderLineItem {
-  id: string;
-  title: string;
-  quantity: number;
-  price: number;
-  sku?: string | null;
-  vendor_name: string | null;
-  product_id: string;
-  variant_id: string | null;
-  fulfillment_status?: string;
-  status?: string;
-  image_url?: string;
-  edition_number?: number;
-  edition_size?: number;
+  id: string
+  line_item_id: string
+  name: string
+  description: string | null
+  quantity: number
+  price: number
+  sku: string | null
+  vendor_name: string | null
+  product_id: string
+  variant_id: string | null
+  fulfillment_status: string | null
+  status: string
+  img_url: string | null
+  nfc_tag_id: string | null
+  certificate_url: string | null
+  certificate_token: string | null
+  nfc_claimed_at: string | null
+  edition_number: number | null
+  edition_total: number | null
 }
 
 interface Order {

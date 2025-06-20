@@ -57,7 +57,7 @@ export async function GET(
         total_price,
         financial_status,
         fulfillment_status,
-        line_items:order_line_items (
+        line_items:order_line_items_v2 (
           id,
           line_item_id,
           product_id,
@@ -76,7 +76,7 @@ export async function GET(
           img_url
         )
       `)
-      .eq("shopify_customer_id", customerId)
+      .eq("customer_id", customerId)
       .order("processed_at", { ascending: false })
 
     if (ordersError) {
@@ -123,7 +123,7 @@ export async function GET(
 
     return NextResponse.json({ 
       success: true, 
-      data: transformedOrders 
+      orders: transformedOrders 
     })
 
   } catch (error) {

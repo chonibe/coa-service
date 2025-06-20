@@ -92,16 +92,23 @@ export async function POST() {
             line_item_id: item.id.toString(),
             product_id: item.product_id?.toString() || null,
             variant_id: item.variant_id?.toString() || null,
-            title: item.title,
-            quantity: item.quantity,
+            name: item.title,
+            description: item.title,
             price: parseFloat(item.price),
+            quantity: item.quantity,
             sku: item.sku || null,
             vendor_name: item.vendor || null,
             fulfillment_status: item.fulfillment_status,
-            total_discount: parseFloat(item.total_discount || '0'),
             status: 'active',
             created_at: new Date().toISOString(),
             updated_at: new Date().toISOString(),
+            nfc_tag_id: null,
+            certificate_url: null,
+            certificate_token: null,
+            nfc_claimed_at: null,
+            edition_number: null,
+            edition_total: null,
+            img_url: null
           }));
 
           const { error: lineItemsError } = await supabase

@@ -52,8 +52,9 @@ function transformSupabaseDataToOrders(supabaseData: any[]) {
         id: item.order_id,
         order_number: item.order_name?.replace("#", "") || item.order_id,
         processed_at: item.created_at,
-        fulfillment_status: "fulfilled", // Default value
-        financial_status: "paid", // Default value
+        total_price: item.total_price || 0,
+        financial_status: item.financial_status || "paid",
+        fulfillment_status: item.fulfillment_status || "fulfilled",
         line_items: [],
       })
     }
@@ -63,27 +64,20 @@ function transformSupabaseDataToOrders(supabaseData: any[]) {
     order.line_items.push({
       id: item.line_item_id,
       line_item_id: item.line_item_id,
-      product_id: item.product_id,
-      title: `Product ${item.product_id}`, // Default title
-      quantity: 1,
-      price: "0.00", // Default price
-      total: "0.00", // Default total
-      vendor: "Unknown Vendor",
-      image: "/placeholder.svg?height=400&width=400",
-      tags: [],
-      fulfillable: item.status === "active",
-      is_limited_edition: true,
-      total_inventory: item.edition_total?.toString() || "100",
-      inventory_quantity: 0,
-      status: item.status,
-      removed_reason: item.removed_reason,
-      order_info: {
-        order_id: item.order_id,
-        order_number: item.order_name?.replace("#", "") || item.order_id,
-        processed_at: item.created_at,
-        fulfillment_status: "fulfilled", // Default value
-        financial_status: "paid", // Default value
-      },
+      name: item.name,
+      description: item.description,
+      quantity: item.quantity || 1,
+      price: item.price || 0,
+      img_url: item.img_url || "/placeholder.svg?height=400&width=400",
+      nfc_tag_id: item.nfc_tag_id,
+      certificate_url: item.certificate_url,
+      certificate_token: item.certificate_token,
+      nfc_claimed_at: item.nfc_claimed_at,
+      order_id: item.order_id,
+      edition_number: item.edition_number,
+      edition_total: item.edition_total,
+      vendor_name: item.vendor_name,
+      status: item.status || "active"
     })
   })
 

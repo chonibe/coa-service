@@ -23,6 +23,7 @@ import { toast } from "@/components/ui/use-toast"
 import { Toaster } from "@/components/ui/toaster"
 import { CertificateModal } from '../../customer/dashboard/certificate-modal'
 import { useNFCScan } from '@/hooks/use-nfc-scan'
+import { motion, LayoutGroup, Variants, useScroll } from "framer-motion"
 
 // Type Definitions
 interface LineItem {
@@ -43,8 +44,11 @@ interface LineItem {
 
 interface Order {
   id: string
-  order_number: string
-  created_at: string
+  order_number: number
+  processed_at: string
+  total_price: number
+  financial_status: string
+  fulfillment_status: string | null
   line_items: LineItem[]
 }
 
@@ -272,15 +276,15 @@ const VinylArtworkCard = ({
 const CollectionTimeline = ({ orders }: { orders: Order[] }) => {
   // Sort orders by processed date
   const sortedOrders = [...orders].sort((a, b) => 
-    new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+    new Date(a.processed_at).getTime() - new Date(b.processed_at).getTime()
   )
 
   // Prepare timeline data with proper typing
   const timelineData: TimelineMilestone[] = sortedOrders.map((order, index) => ({
-    date: new Date(order.created_at),
+    date: new Date(order.processed_at),
     items: order.line_items,
     orderId: order.id,
-    orderNumber: order.order_number
+    orderNumber: order.order_number.toString()
   }))
 
   // Timeline Item Variants
@@ -744,10 +748,14 @@ export default function CustomerDashboardById() {
         const data = await response.json()
 
         if (!response.ok) {
-          throw new Error(data.error || 'Failed to fetch orders')
+          throw new Error(data.message || 'Failed to fetch orders')
         }
 
-        setOrders(data.orders)
+        if (!data.success) {
+          throw new Error(data.message || 'Failed to fetch orders')
+        }
+
+        setOrders(data.orders || [])
       } catch (err) {
         console.error('Error fetching orders:', err)
         setError(err instanceof Error ? err.message : 'Failed to fetch orders')
@@ -761,8 +769,8 @@ export default function CustomerDashboardById() {
   const timelineData: TimelineMilestone[] = useMemo(() => {
     return orders.map(order => ({
       orderId: order.id,
-      orderNumber: order.order_number,
-      date: new Date(order.created_at),
+      orderNumber: order.order_number.toString(),
+      date: new Date(order.processed_at),
       items: order.line_items
     })).sort((a, b) => b.date.getTime() - a.date.getTime())
   }, [orders])
