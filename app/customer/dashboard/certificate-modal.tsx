@@ -265,15 +265,15 @@ export function CertificateModal({ lineItem, onClose }: CertificateModalProps) {
   return (
     <>
       <Dialog open={isOpen} onOpenChange={() => onClose()}>
-        <DialogContent className="max-w-4xl w-full p-0 overflow-hidden">
-          <DialogHeader className="absolute top-0 left-0 right-0 z-50 glass-effect p-4 flex justify-between items-center">
+        <DialogContent className="max-w-4xl w-full p-0 overflow-hidden sm:rounded-xl rounded-none">
+          <DialogHeader className="absolute top-0 left-0 right-0 z-50 glass-effect p-4 flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-0 justify-between">
             <div>
-              <DialogTitle className="text-white text-2xl font-bold">{lineItem.name}</DialogTitle>
-              <DialogDescription className="text-zinc-300">
+              <DialogTitle className="text-xl sm:text-2xl font-bold text-white line-clamp-1">{lineItem.name}</DialogTitle>
+              <DialogDescription className="text-sm sm:text-base text-zinc-300">
                 Certificate of Authenticity • {editionInfo}
               </DialogDescription>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 self-end sm:self-auto">
               <Badge 
                 variant={
                   nfcStatus === "paired" 
@@ -282,39 +282,39 @@ export function CertificateModal({ lineItem, onClose }: CertificateModalProps) {
                     ? "secondary" 
                     : "destructive"
                 }
-                className="flex items-center gap-2 px-3 py-1.5 text-sm"
+                className="flex items-center gap-2 px-2 sm:px-3 py-1 sm:py-1.5 text-xs sm:text-sm whitespace-nowrap"
               >
                 {nfcStatus === "paired" ? (
-                  <Wifi className="w-4 h-4 text-green-500" />
+                  <Wifi className="w-3 h-3 sm:w-4 sm:h-4 text-green-500" />
                 ) : nfcStatus === "unpaired" ? (
-                  <WifiOff className="w-4 h-4 text-yellow-500" />
+                  <WifiOff className="w-3 h-3 sm:w-4 sm:h-4 text-yellow-500" />
                 ) : (
-                  <WifiOff className="w-4 h-4 text-red-500" />
+                  <WifiOff className="w-3 h-3 sm:w-4 sm:h-4 text-red-500" />
                 )}
                 {nfcStatus === "paired" 
                   ? "Authenticated" 
                   : nfcStatus === "unpaired" 
-                  ? "Needs Authentication" 
-                  : "No NFC Tag"}
+                  ? "Needs Auth" 
+                  : "No NFC"}
               </Badge>
               <Button 
                 variant="ghost" 
                 size="icon"
-                className="text-white hover:text-white/80 hover:bg-white/10 transition-colors"
+                className="text-white hover:text-white/80 hover:bg-white/10 transition-colors h-8 w-8 sm:h-10 sm:w-10"
                 onClick={() => onClose()}
               >
-                <X className="w-5 h-5" />
+                <X className="w-4 h-4 sm:w-5 sm:h-5" />
               </Button>
             </div>
           </DialogHeader>
 
           <PostcardCertificate 
             isFlipped={isFlipped}
-            className="w-full h-[600px] flex flex-col"
+            className="w-full min-h-[400px] sm:h-[600px] flex flex-col"
           >
-            <div className="grid md:grid-cols-2 h-full">
+            <div className="grid grid-cols-1 md:grid-cols-2 h-full">
               {/* Artwork Image Side */}
-              <div className="relative overflow-hidden group">
+              <div className="relative overflow-hidden group min-h-[200px] sm:min-h-[300px]">
                 {lineItem.img_url ? (
                   <img 
                     src={lineItem.img_url} 
@@ -323,55 +323,55 @@ export function CertificateModal({ lineItem, onClose }: CertificateModalProps) {
                   />
                 ) : (
                   <div className="w-full h-full bg-gradient-to-br from-zinc-800 to-zinc-900 flex items-center justify-center">
-                    <Album className="w-24 h-24 text-zinc-600 float" />
+                    <Album className="w-16 h-16 sm:w-24 sm:h-24 text-zinc-600 float" />
                   </div>
                 )}
-                <div className="absolute bottom-0 left-0 right-0 glass-effect p-4 text-white transform translate-y-full transition-transform duration-300 group-hover:translate-y-0">
-                  <h2 className="text-2xl font-bold">{lineItem.name}</h2>
-                  <p className="text-sm text-zinc-300">{artistName}</p>
+                <div className="absolute bottom-0 left-0 right-0 glass-effect p-3 sm:p-4 text-white transform translate-y-full transition-transform duration-300 group-hover:translate-y-0 sm:group-hover:translate-y-0">
+                  <h2 className="text-lg sm:text-2xl font-bold line-clamp-1">{lineItem.name}</h2>
+                  <p className="text-xs sm:text-sm text-zinc-300">{artistName}</p>
                 </div>
               </div>
 
               {/* Certificate Details Side */}
-              <div className="p-8 flex flex-col justify-between bg-gradient-to-br from-zinc-900 to-zinc-800">
+              <div className="p-4 sm:p-8 flex flex-col justify-between bg-gradient-to-br from-zinc-900 to-zinc-800">
                 <div>
-                  <div className="flex justify-between items-center mb-6">
+                  <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-0 mb-4 sm:mb-6">
                     <div>
-                      <h3 className="text-xl font-semibold flex items-center gap-2 text-white">
-                        <Certificate className="w-6 h-6 text-amber-500" />
+                      <h3 className="text-lg sm:text-xl font-semibold flex items-center gap-2 text-white">
+                        <Certificate className="w-5 h-5 sm:w-6 sm:h-6 text-amber-500" />
                         Certificate of Authenticity
                       </h3>
-                      <p className="text-zinc-400">{editionInfo}</p>
+                      <p className="text-sm sm:text-base text-zinc-400">{editionInfo}</p>
                     </div>
                     <Button 
                       variant="outline" 
                       size="sm"
                       onClick={() => setIsFlipped(!isFlipped)}
-                      className="hover:bg-white/10 transition-colors"
+                      className="hover:bg-white/10 transition-colors text-xs sm:text-sm w-full sm:w-auto"
                     >
                       {isFlipped ? "View Artwork" : "View Certificate"}
                     </Button>
                   </div>
 
-                  <div className="space-y-4">
-                    <div className="flex items-center gap-3 text-white/90 hover:text-white transition-colors">
-                      <Signature className="w-5 h-5 text-amber-500" />
-                      <span>Artist: {artistName}</span>
+                  <div className="space-y-3 sm:space-y-4">
+                    <div className="flex items-center gap-2 sm:gap-3 text-white/90 hover:text-white transition-colors">
+                      <Signature className="w-4 h-4 sm:w-5 sm:h-5 text-amber-500" />
+                      <span className="text-sm sm:text-base">Artist: {artistName}</span>
                     </div>
-                    <div className="flex items-center gap-3 text-white/90 hover:text-white transition-colors">
-                      <Calendar className="w-5 h-5 text-amber-500" />
-                      <span>
+                    <div className="flex items-center gap-2 sm:gap-3 text-white/90 hover:text-white transition-colors">
+                      <Calendar className="w-4 h-4 sm:w-5 sm:h-5 text-amber-500" />
+                      <span className="text-sm sm:text-base">
                         Issued: {new Date().toLocaleDateString()}
                       </span>
                     </div>
                     {lineItem.certificate_url && (
-                      <div className="flex items-center gap-3">
-                        <ExternalLink className="w-5 h-5 text-amber-500" />
+                      <div className="flex items-center gap-2 sm:gap-3">
+                        <ExternalLink className="w-4 h-4 sm:w-5 sm:h-5 text-amber-500" />
                         <a 
                           href={lineItem.certificate_url} 
                           target="_blank" 
                           rel="noopener noreferrer"
-                          className="text-blue-400 hover:text-blue-300 transition-colors hover:underline"
+                          className="text-sm sm:text-base text-blue-400 hover:text-blue-300 transition-colors hover:underline"
                         >
                           View Online Certificate
                         </a>
@@ -380,38 +380,38 @@ export function CertificateModal({ lineItem, onClose }: CertificateModalProps) {
                   </div>
 
                   {/* NFC Pairing Section */}
-                  <div className="mt-6">
+                  <div className="mt-4 sm:mt-6">
                     {(!lineItem.nfc_tag_id || (lineItem.nfc_tag_id && !lineItem.nfc_claimed_at)) && (
                       <Button 
-                        className="w-full bg-amber-500 hover:bg-amber-600 text-black font-medium transition-colors" 
+                        className="w-full bg-amber-500 hover:bg-amber-600 text-black font-medium transition-colors text-sm sm:text-base py-2 sm:py-3" 
                         onClick={handleNfcPairing}
                         disabled={isNfcPairing}
                       >
                         {isNfcPairing ? (
                           <>
-                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            <Loader2 className="mr-2 h-3 w-3 sm:h-4 sm:w-4 animate-spin" />
                             Scanning for NFC Tag
                           </>
                         ) : (
                           <>
-                            <Scan className="mr-2 h-4 w-4" />
+                            <Scan className="mr-2 h-3 w-3 sm:h-4 sm:w-4" />
                             Pair NFC Tag
                           </>
                         )}
                       </Button>
                     )}
                     {lineItem.nfc_tag_id && lineItem.nfc_claimed_at && (
-                      <div className="glass-effect p-4 rounded-lg flex items-center gap-3 border border-green-500/20">
-                        <Sparkles className="w-6 h-6 text-green-500 float" />
-                        <span className="text-green-400">
+                      <div className="glass-effect p-3 sm:p-4 rounded-lg flex items-center gap-2 sm:gap-3 border border-green-500/20">
+                        <Sparkles className="w-5 h-5 sm:w-6 sm:h-6 text-green-500 float" />
+                        <span className="text-sm sm:text-base text-green-400">
                           Artwork Authenticated with NFC
                         </span>
                       </div>
                     )}
                     {!lineItem.nfc_tag_id && (
-                      <div className="glass-effect p-4 rounded-lg flex items-center gap-3 border border-yellow-500/20">
-                        <WifiOff className="w-6 h-6 text-yellow-500" />
-                        <span className="text-yellow-400">
+                      <div className="glass-effect p-3 sm:p-4 rounded-lg flex items-center gap-2 sm:gap-3 border border-yellow-500/20">
+                        <WifiOff className="w-5 h-5 sm:w-6 sm:h-6 text-yellow-500" />
+                        <span className="text-sm sm:text-base text-yellow-400">
                           No NFC Tag Available for this Artwork
                         </span>
                       </div>
@@ -426,10 +426,10 @@ export function CertificateModal({ lineItem, onClose }: CertificateModalProps) {
 
       {/* NFC Pairing Wizard */}
       <Dialog open={showNfcWizard} onOpenChange={() => setShowNfcWizard(false)}>
-        <DialogContent className="sm:max-w-md bg-gradient-to-br from-zinc-900 to-zinc-800 border-amber-500/30 text-white">
+        <DialogContent className="sm:max-w-md w-[calc(100%-2rem)] bg-gradient-to-br from-zinc-900 to-zinc-800 border-amber-500/30 text-white sm:rounded-lg rounded-none">
           <DialogHeader>
-            <DialogTitle className="text-2xl">Pair NFC Tag</DialogTitle>
-            <DialogDescription className="text-zinc-400">
+            <DialogTitle className="text-xl sm:text-2xl">Pair NFC Tag</DialogTitle>
+            <DialogDescription className="text-sm sm:text-base text-zinc-400">
               Follow these steps to authenticate your artwork with NFC
             </DialogDescription>
           </DialogHeader>
@@ -442,22 +442,22 @@ export function CertificateModal({ lineItem, onClose }: CertificateModalProps) {
             />
           </div>
 
-          <div className="space-y-6 py-4">
+          <div className="space-y-4 sm:space-y-6 py-3 sm:py-4">
             {wizardStep === 1 && (
-              <div className="space-y-4">
-                <div className="flex items-center gap-4 glass-effect p-4 rounded-lg">
-                  <div className="bg-amber-500/20 p-3 rounded-full">
-                    <Smartphone className="w-8 h-8 text-amber-500" />
+              <div className="space-y-3 sm:space-y-4">
+                <div className="flex items-start sm:items-center gap-3 sm:gap-4 glass-effect p-3 sm:p-4 rounded-lg">
+                  <div className="bg-amber-500/20 p-2 sm:p-3 rounded-full shrink-0">
+                    <Smartphone className="w-6 h-6 sm:w-8 sm:h-8 text-amber-500" />
                   </div>
                   <div>
-                    <h3 className="font-medium text-lg">Ready to Scan</h3>
-                    <p className="text-sm text-zinc-400">
+                    <h3 className="font-medium text-base sm:text-lg">Ready to Scan</h3>
+                    <p className="text-xs sm:text-sm text-zinc-400">
                       Make sure NFC is enabled on your device and hold it near the NFC tag
                     </p>
                   </div>
                 </div>
                 <Alert className="bg-amber-500/10 border-amber-500/20 text-amber-400">
-                  <AlertDescription>
+                  <AlertDescription className="text-xs sm:text-sm">
                     Your device must support NFC and have it enabled. Most modern smartphones have this feature.
                   </AlertDescription>
                 </Alert>
@@ -465,36 +465,36 @@ export function CertificateModal({ lineItem, onClose }: CertificateModalProps) {
             )}
 
             {wizardStep === 2 && (
-              <div className="space-y-4">
-                <div className="flex items-center gap-4 glass-effect p-4 rounded-lg">
-                  <div className="bg-blue-500/20 p-3 rounded-full">
-                    <Scan className="w-8 h-8 text-blue-500 animate-pulse" />
+              <div className="space-y-3 sm:space-y-4">
+                <div className="flex items-start sm:items-center gap-3 sm:gap-4 glass-effect p-3 sm:p-4 rounded-lg">
+                  <div className="bg-blue-500/20 p-2 sm:p-3 rounded-full shrink-0">
+                    <Scan className="w-6 h-6 sm:w-8 sm:h-8 text-blue-500 animate-pulse" />
                   </div>
                   <div>
-                    <h3 className="font-medium text-lg">Scanning for NFC Tag</h3>
-                    <p className="text-sm text-zinc-400">
+                    <h3 className="font-medium text-base sm:text-lg">Scanning for NFC Tag</h3>
+                    <p className="text-xs sm:text-sm text-zinc-400">
                       Hold your device steady near the NFC tag
                     </p>
                   </div>
                 </div>
-                <div className="flex justify-center p-8">
+                <div className="flex justify-center p-6 sm:p-8">
                   <div className="relative">
                     <div className="absolute inset-0 bg-blue-500/20 rounded-full animate-ping" />
-                    <Loader2 className="w-12 h-12 animate-spin text-blue-500" />
+                    <Loader2 className="w-10 h-10 sm:w-12 sm:h-12 animate-spin text-blue-500" />
                   </div>
                 </div>
               </div>
             )}
 
             {wizardStep === 3 && (
-              <div className="space-y-4">
-                <div className="flex items-center gap-4 glass-effect p-4 rounded-lg">
-                  <div className="bg-purple-500/20 p-3 rounded-full">
-                    <Loader2 className="w-8 h-8 text-purple-500 animate-spin" />
+              <div className="space-y-3 sm:space-y-4">
+                <div className="flex items-start sm:items-center gap-3 sm:gap-4 glass-effect p-3 sm:p-4 rounded-lg">
+                  <div className="bg-purple-500/20 p-2 sm:p-3 rounded-full shrink-0">
+                    <Loader2 className="w-6 h-6 sm:w-8 sm:h-8 text-purple-500 animate-spin" />
                   </div>
                   <div>
-                    <h3 className="font-medium text-lg">Verifying Tag</h3>
-                    <p className="text-sm text-zinc-400">
+                    <h3 className="font-medium text-base sm:text-lg">Verifying Tag</h3>
+                    <p className="text-xs sm:text-sm text-zinc-400">
                       Please wait while we verify and pair your NFC tag
                     </p>
                   </div>
@@ -503,44 +503,44 @@ export function CertificateModal({ lineItem, onClose }: CertificateModalProps) {
             )}
 
             {wizardStep === 4 && (
-              <div className="space-y-4">
-                <div className="flex items-center gap-4 glass-effect p-4 rounded-lg">
-                  <div className="bg-green-500/20 p-3 rounded-full">
-                    <CheckCircle2 className="w-8 h-8 text-green-500 float" />
+              <div className="space-y-3 sm:space-y-4">
+                <div className="flex items-start sm:items-center gap-3 sm:gap-4 glass-effect p-3 sm:p-4 rounded-lg">
+                  <div className="bg-green-500/20 p-2 sm:p-3 rounded-full shrink-0">
+                    <CheckCircle2 className="w-6 h-6 sm:w-8 sm:h-8 text-green-500 float" />
                   </div>
                   <div>
-                    <h3 className="font-medium text-lg">Successfully Paired!</h3>
-                    <p className="text-sm text-zinc-400">
+                    <h3 className="font-medium text-base sm:text-lg">Successfully Paired!</h3>
+                    <p className="text-xs sm:text-sm text-zinc-400">
                       Your artwork has been authenticated with NFC
                     </p>
                   </div>
                 </div>
                 <div className="flex justify-center">
-                  <Sparkles className="w-16 h-16 text-amber-500 float" />
+                  <Sparkles className="w-12 h-12 sm:w-16 sm:h-16 text-amber-500 float" />
                 </div>
               </div>
             )}
           </div>
 
-          <DialogFooter className="flex justify-between items-center">
+          <DialogFooter className="flex justify-between items-center sm:mt-2">
             {wizardStep === 1 ? (
               <Button 
                 onClick={startNfcScan} 
-                className="w-full bg-amber-500 hover:bg-amber-600 text-black font-medium transition-colors"
+                className="w-full bg-amber-500 hover:bg-amber-600 text-black font-medium transition-colors text-sm sm:text-base py-2 sm:py-3"
               >
                 Start Scanning
               </Button>
             ) : wizardStep === 4 ? (
               <Button 
                 onClick={() => setShowNfcWizard(false)} 
-                className="w-full bg-green-500 hover:bg-green-600 text-black font-medium transition-colors"
+                className="w-full bg-green-500 hover:bg-green-600 text-black font-medium transition-colors text-sm sm:text-base py-2 sm:py-3"
               >
                 Done
               </Button>
             ) : (
               <Button 
                 disabled 
-                className="w-full bg-zinc-700 text-zinc-400 cursor-not-allowed"
+                className="w-full bg-zinc-700 text-zinc-400 cursor-not-allowed text-sm sm:text-base py-2 sm:py-3"
               >
                 Scanning in Progress...
               </Button>
