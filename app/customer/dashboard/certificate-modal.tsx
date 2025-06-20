@@ -40,8 +40,21 @@ const shimmerStyles = `
   }
 }
 
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
 .golden-glow {
   animation: golden-glow 3s ease-in-out infinite;
+}
+
+.float {
+  animation: float 6s ease-in-out infinite;
 }
 
 .signature-font {
@@ -49,9 +62,26 @@ const shimmerStyles = `
   font-style: italic;
 }
 
-.postcard-tilt {
-  transform-style: preserve-3d;
-  transition: transform 0.1s ease-out;
+.glass-effect {
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.progress-bar {
+  transition: width 0.3s ease-in-out;
+}
+
+.certificate-border {
+  background: linear-gradient(45deg, #fbbf24, #d97706, #92400e);
+  background-size: 200% 200%;
+  animation: gradient 15s ease infinite;
+}
+
+@keyframes gradient {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
 }
 `
 
@@ -62,16 +92,16 @@ function PostcardCertificate({ children, className = "", isFlipped = false, ...p
     <>
       <style>{shimmerStyles}</style>
       <div
-        className={`relative bg-gradient-to-br from-zinc-900/95 via-zinc-800/95 to-zinc-900/95 backdrop-blur-sm border border-amber-500/30 rounded-xl shadow-2xl hover:border-amber-400/50 overflow-hidden golden-glow ${className}`}
+        className={`relative bg-gradient-to-br from-zinc-900/95 via-zinc-800/95 to-zinc-900/95 backdrop-blur-sm rounded-xl shadow-2xl overflow-hidden golden-glow ${className}`}
         style={{ 
           transformStyle: "preserve-3d",
           transform: isFlipped ? "rotateY(180deg)" : "none",
-          transition: "transform 0.6s ease-in-out"
+          transition: "transform 0.6s cubic-bezier(0.4, 0, 0.2, 1)"
         }}
         {...props}
       >
         {/* Premium border gradient */}
-        <div className="absolute inset-0 bg-gradient-to-r from-amber-400/20 via-amber-300/10 to-amber-400/20 p-[1px] rounded-xl">
+        <div className="absolute inset-0 certificate-border p-[1px] rounded-xl opacity-75">
           <div className="h-full w-full bg-gradient-to-br from-zinc-900 via-zinc-800 to-zinc-900 rounded-xl" />
         </div>
         
@@ -236,9 +266,9 @@ export function CertificateModal({ lineItem, onClose }: CertificateModalProps) {
     <>
       <Dialog open={isOpen} onOpenChange={() => onClose()}>
         <DialogContent className="max-w-4xl w-full p-0 overflow-hidden">
-          <DialogHeader className="absolute top-0 left-0 right-0 z-50 bg-black/50 p-4 flex justify-between items-center">
+          <DialogHeader className="absolute top-0 left-0 right-0 z-50 glass-effect p-4 flex justify-between items-center">
             <div>
-              <DialogTitle className="text-white">{lineItem.name}</DialogTitle>
+              <DialogTitle className="text-white text-2xl font-bold">{lineItem.name}</DialogTitle>
               <DialogDescription className="text-zinc-300">
                 Certificate of Authenticity • {editionInfo}
               </DialogDescription>
@@ -252,7 +282,7 @@ export function CertificateModal({ lineItem, onClose }: CertificateModalProps) {
                     ? "secondary" 
                     : "destructive"
                 }
-                className="flex items-center gap-2"
+                className="flex items-center gap-2 px-3 py-1.5 text-sm"
               >
                 {nfcStatus === "paired" ? (
                   <Wifi className="w-4 h-4 text-green-500" />
@@ -270,7 +300,7 @@ export function CertificateModal({ lineItem, onClose }: CertificateModalProps) {
               <Button 
                 variant="ghost" 
                 size="icon"
-                className="text-white hover:text-white/80"
+                className="text-white hover:text-white/80 hover:bg-white/10 transition-colors"
                 onClick={() => onClose()}
               >
                 <X className="w-5 h-5" />
@@ -284,63 +314,64 @@ export function CertificateModal({ lineItem, onClose }: CertificateModalProps) {
           >
             <div className="grid md:grid-cols-2 h-full">
               {/* Artwork Image Side */}
-              <div className="relative overflow-hidden">
+              <div className="relative overflow-hidden group">
                 {lineItem.img_url ? (
                   <img 
                     src={lineItem.img_url} 
                     alt={lineItem.name} 
-                    className="w-full h-full object-cover"
+                    className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
                   />
                 ) : (
                   <div className="w-full h-full bg-gradient-to-br from-zinc-800 to-zinc-900 flex items-center justify-center">
-                    <Album className="w-24 h-24 text-zinc-600" />
+                    <Album className="w-24 h-24 text-zinc-600 float" />
                   </div>
                 )}
-                <div className="absolute bottom-0 left-0 right-0 bg-black/50 p-4 text-white">
+                <div className="absolute bottom-0 left-0 right-0 glass-effect p-4 text-white transform translate-y-full transition-transform duration-300 group-hover:translate-y-0">
                   <h2 className="text-2xl font-bold">{lineItem.name}</h2>
                   <p className="text-sm text-zinc-300">{artistName}</p>
                 </div>
               </div>
 
               {/* Certificate Details Side */}
-              <div className="p-8 flex flex-col justify-between">
+              <div className="p-8 flex flex-col justify-between bg-gradient-to-br from-zinc-900 to-zinc-800">
                 <div>
                   <div className="flex justify-between items-center mb-6">
                     <div>
-                      <h3 className="text-xl font-semibold flex items-center gap-2">
+                      <h3 className="text-xl font-semibold flex items-center gap-2 text-white">
                         <Certificate className="w-6 h-6 text-amber-500" />
                         Certificate of Authenticity
                       </h3>
-                      <p className="text-muted-foreground">{editionInfo}</p>
+                      <p className="text-zinc-400">{editionInfo}</p>
                     </div>
                     <Button 
                       variant="outline" 
                       size="sm"
                       onClick={() => setIsFlipped(!isFlipped)}
+                      className="hover:bg-white/10 transition-colors"
                     >
                       {isFlipped ? "View Artwork" : "View Certificate"}
                     </Button>
                   </div>
 
                   <div className="space-y-4">
-                    <div className="flex items-center gap-3">
-                      <Signature className="w-5 h-5 text-muted-foreground" />
+                    <div className="flex items-center gap-3 text-white/90 hover:text-white transition-colors">
+                      <Signature className="w-5 h-5 text-amber-500" />
                       <span>Artist: {artistName}</span>
                     </div>
-                    <div className="flex items-center gap-3">
-                      <Calendar className="w-5 h-5 text-muted-foreground" />
+                    <div className="flex items-center gap-3 text-white/90 hover:text-white transition-colors">
+                      <Calendar className="w-5 h-5 text-amber-500" />
                       <span>
                         Issued: {new Date().toLocaleDateString()}
                       </span>
                     </div>
                     {lineItem.certificate_url && (
                       <div className="flex items-center gap-3">
-                        <ExternalLink className="w-5 h-5 text-muted-foreground" />
+                        <ExternalLink className="w-5 h-5 text-amber-500" />
                         <a 
                           href={lineItem.certificate_url} 
                           target="_blank" 
                           rel="noopener noreferrer"
-                          className="text-blue-500 hover:underline"
+                          className="text-blue-400 hover:text-blue-300 transition-colors hover:underline"
                         >
                           View Online Certificate
                         </a>
@@ -352,7 +383,7 @@ export function CertificateModal({ lineItem, onClose }: CertificateModalProps) {
                   <div className="mt-6">
                     {(!lineItem.nfc_tag_id || (lineItem.nfc_tag_id && !lineItem.nfc_claimed_at)) && (
                       <Button 
-                        className="w-full" 
+                        className="w-full bg-amber-500 hover:bg-amber-600 text-black font-medium transition-colors" 
                         onClick={handleNfcPairing}
                         disabled={isNfcPairing}
                       >
@@ -370,17 +401,17 @@ export function CertificateModal({ lineItem, onClose }: CertificateModalProps) {
                       </Button>
                     )}
                     {lineItem.nfc_tag_id && lineItem.nfc_claimed_at && (
-                      <div className="bg-green-50 border border-green-200 p-3 rounded-lg flex items-center gap-3">
-                        <Sparkles className="w-6 h-6 text-green-500" />
-                        <span className="text-green-800">
+                      <div className="glass-effect p-4 rounded-lg flex items-center gap-3 border border-green-500/20">
+                        <Sparkles className="w-6 h-6 text-green-500 float" />
+                        <span className="text-green-400">
                           Artwork Authenticated with NFC
                         </span>
                       </div>
                     )}
                     {!lineItem.nfc_tag_id && (
-                      <div className="bg-yellow-50 border border-yellow-200 p-3 rounded-lg flex items-center gap-3">
+                      <div className="glass-effect p-4 rounded-lg flex items-center gap-3 border border-yellow-500/20">
                         <WifiOff className="w-6 h-6 text-yellow-500" />
-                        <span className="text-yellow-800">
+                        <span className="text-yellow-400">
                           No NFC Tag Available for this Artwork
                         </span>
                       </div>
@@ -389,112 +420,43 @@ export function CertificateModal({ lineItem, onClose }: CertificateModalProps) {
                 </div>
               </div>
             </div>
-
-            {/* Modify the back side of the certificate when isFlipped is true */}
-            {isFlipped && (
-              <div className="absolute inset-0 bg-white text-black p-8 flex flex-col justify-between">
-                {/* Certificate Header */}
-                <div>
-                  <div className="flex justify-between items-center border-b pb-4 mb-6">
-                    <h1 className="text-3xl font-bold text-gray-900">Certificate of Authenticity</h1>
-                    <div className="flex items-center gap-2">
-                      <Certificate className="w-8 h-8 text-amber-600" />
-                      <span className="text-lg font-semibold text-gray-700">Street Collector</span>
-                    </div>
-                  </div>
-
-                  {/* Artwork Details */}
-                  <div className="space-y-4">
-                    <div>
-                      <p className="text-sm text-gray-500 uppercase tracking-wider">Artwork Title</p>
-                      <h2 className="text-2xl font-semibold text-gray-900">{lineItem.name}</h2>
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <p className="text-sm text-gray-500 uppercase tracking-wider">Artist</p>
-                        <p className="text-xl font-medium text-gray-800">{artistName}</p>
-                      </div>
-
-                      <div>
-                        <p className="text-sm text-gray-500 uppercase tracking-wider">Edition</p>
-                        <p className="text-xl font-medium text-gray-800">
-                          {lineItem.edition_number && lineItem.edition_total
-                            ? `${lineItem.edition_number} of ${lineItem.edition_total}`
-                            : "Limited Edition"}
-                        </p>
-                      </div>
-                    </div>
-
-                    {/* NFC Authentication */}
-                    <div className="mt-6 border-t pt-4">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                          <Wifi className="w-6 h-6 text-green-600" />
-                          <span className="text-sm text-gray-600">
-                            {nfcStatus === "paired" 
-                              ? "NFC Authenticated" 
-                              : "NFC Authentication Pending"}
-                          </span>
-                        </div>
-                        {lineItem.nfc_claimed_at && (
-                          <p className="text-sm text-gray-500">
-                            Authenticated on: {new Date(lineItem.nfc_claimed_at).toLocaleDateString()}
-                          </p>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Certificate Footer */}
-                <div className="mt-6 border-t pt-4 flex justify-between items-center">
-                  <div>
-                    <p className="text-xs text-gray-500">Certificate Number</p>
-                    <p className="font-mono text-sm text-gray-800">
-                      {lineItem.certificate_token?.slice(0, 12) || 'N/A'}
-                    </p>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-xs text-gray-500">Issued Date</p>
-                    <p className="text-sm text-gray-800">
-                      {new Date().toLocaleDateString('en-US', {
-                        month: 'long',
-                        day: 'numeric',
-                        year: 'numeric'
-                      })}
-                    </p>
-                  </div>
-                </div>
-              </div>
-            )}
           </PostcardCertificate>
         </DialogContent>
       </Dialog>
 
       {/* NFC Pairing Wizard */}
       <Dialog open={showNfcWizard} onOpenChange={() => setShowNfcWizard(false)}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-md bg-gradient-to-br from-zinc-900 to-zinc-800 border-amber-500/30 text-white">
           <DialogHeader>
-            <DialogTitle>Pair NFC Tag</DialogTitle>
-            <DialogDescription>
+            <DialogTitle className="text-2xl">Pair NFC Tag</DialogTitle>
+            <DialogDescription className="text-zinc-400">
               Follow these steps to authenticate your artwork with NFC
             </DialogDescription>
           </DialogHeader>
 
+          {/* Progress Bar */}
+          <div className="h-1 bg-zinc-700 rounded-full overflow-hidden">
+            <div 
+              className="h-full bg-amber-500 progress-bar"
+              style={{ width: `${(wizardStep / 4) * 100}%` }}
+            />
+          </div>
+
           <div className="space-y-6 py-4">
             {wizardStep === 1 && (
               <div className="space-y-4">
-                <div className="flex items-center gap-3">
-                  <Smartphone className="w-8 h-8 text-primary" />
+                <div className="flex items-center gap-4 glass-effect p-4 rounded-lg">
+                  <div className="bg-amber-500/20 p-3 rounded-full">
+                    <Smartphone className="w-8 h-8 text-amber-500" />
+                  </div>
                   <div>
-                    <h3 className="font-medium">Ready to Scan</h3>
-                    <p className="text-sm text-muted-foreground">
+                    <h3 className="font-medium text-lg">Ready to Scan</h3>
+                    <p className="text-sm text-zinc-400">
                       Make sure NFC is enabled on your device and hold it near the NFC tag
                     </p>
                   </div>
                 </div>
-                <Alert>
+                <Alert className="bg-amber-500/10 border-amber-500/20 text-amber-400">
                   <AlertDescription>
                     Your device must support NFC and have it enabled. Most modern smartphones have this feature.
                   </AlertDescription>
@@ -504,28 +466,35 @@ export function CertificateModal({ lineItem, onClose }: CertificateModalProps) {
 
             {wizardStep === 2 && (
               <div className="space-y-4">
-                <div className="flex items-center gap-3">
-                  <Scan className="w-8 h-8 text-primary animate-pulse" />
+                <div className="flex items-center gap-4 glass-effect p-4 rounded-lg">
+                  <div className="bg-blue-500/20 p-3 rounded-full">
+                    <Scan className="w-8 h-8 text-blue-500 animate-pulse" />
+                  </div>
                   <div>
-                    <h3 className="font-medium">Scanning for NFC Tag</h3>
-                    <p className="text-sm text-muted-foreground">
+                    <h3 className="font-medium text-lg">Scanning for NFC Tag</h3>
+                    <p className="text-sm text-zinc-400">
                       Hold your device steady near the NFC tag
                     </p>
                   </div>
                 </div>
-                <div className="flex justify-center">
-                  <Loader2 className="w-8 h-8 animate-spin text-primary" />
+                <div className="flex justify-center p-8">
+                  <div className="relative">
+                    <div className="absolute inset-0 bg-blue-500/20 rounded-full animate-ping" />
+                    <Loader2 className="w-12 h-12 animate-spin text-blue-500" />
+                  </div>
                 </div>
               </div>
             )}
 
             {wizardStep === 3 && (
               <div className="space-y-4">
-                <div className="flex items-center gap-3">
-                  <Loader2 className="w-8 h-8 text-primary animate-spin" />
+                <div className="flex items-center gap-4 glass-effect p-4 rounded-lg">
+                  <div className="bg-purple-500/20 p-3 rounded-full">
+                    <Loader2 className="w-8 h-8 text-purple-500 animate-spin" />
+                  </div>
                   <div>
-                    <h3 className="font-medium">Verifying Tag</h3>
-                    <p className="text-sm text-muted-foreground">
+                    <h3 className="font-medium text-lg">Verifying Tag</h3>
+                    <p className="text-sm text-zinc-400">
                       Please wait while we verify and pair your NFC tag
                     </p>
                   </div>
@@ -535,14 +504,19 @@ export function CertificateModal({ lineItem, onClose }: CertificateModalProps) {
 
             {wizardStep === 4 && (
               <div className="space-y-4">
-                <div className="flex items-center gap-3">
-                  <CheckCircle2 className="w-8 h-8 text-green-500" />
+                <div className="flex items-center gap-4 glass-effect p-4 rounded-lg">
+                  <div className="bg-green-500/20 p-3 rounded-full">
+                    <CheckCircle2 className="w-8 h-8 text-green-500 float" />
+                  </div>
                   <div>
-                    <h3 className="font-medium">Successfully Paired!</h3>
-                    <p className="text-sm text-muted-foreground">
+                    <h3 className="font-medium text-lg">Successfully Paired!</h3>
+                    <p className="text-sm text-zinc-400">
                       Your artwork has been authenticated with NFC
                     </p>
                   </div>
+                </div>
+                <div className="flex justify-center">
+                  <Sparkles className="w-16 h-16 text-amber-500 float" />
                 </div>
               </div>
             )}
@@ -550,15 +524,24 @@ export function CertificateModal({ lineItem, onClose }: CertificateModalProps) {
 
           <DialogFooter className="flex justify-between items-center">
             {wizardStep === 1 ? (
-              <Button onClick={startNfcScan} className="w-full">
+              <Button 
+                onClick={startNfcScan} 
+                className="w-full bg-amber-500 hover:bg-amber-600 text-black font-medium transition-colors"
+              >
                 Start Scanning
               </Button>
             ) : wizardStep === 4 ? (
-              <Button onClick={() => setShowNfcWizard(false)} className="w-full">
+              <Button 
+                onClick={() => setShowNfcWizard(false)} 
+                className="w-full bg-green-500 hover:bg-green-600 text-black font-medium transition-colors"
+              >
                 Done
               </Button>
             ) : (
-              <Button disabled className="w-full">
+              <Button 
+                disabled 
+                className="w-full bg-zinc-700 text-zinc-400 cursor-not-allowed"
+              >
                 Scanning in Progress...
               </Button>
             )}
