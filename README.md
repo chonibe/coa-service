@@ -390,17 +390,51 @@ For comprehensive guidance on deployment processes, environment configuration, a
 - [Vendor Portal Product Management Guide](/docs/vendor-portal/product-management.md)
 
 ## Version
-- Current Version: 1.4.0
-- Last Updated: $(date +"%Y-%m-%d")
+**Current Version**: 1.4.2
+**Last Updated**: 2024-06-08
 
-## Version History
-- v1.1.0: Initial bio and story management
-- v1.2.0: Wizard-based profile completion system
-- v1.3.0: Onboarding tooltips and enhanced guidance
-- v1.4.0: Performance tracking and user feedback integration
+## Recent Updates
 
-## Upcoming Roadmap
-- Analytics service integration
-- Advanced performance optimization
-- Expanded user testing
-- Comprehensive feature documentation
+### v1.4.2 - Build Optimization
+- 🔧 Resolved dynamic server rendering warnings
+- 🚀 Improved static page generation strategy
+- 🛠️ Enhanced build performance and stability
+
+## Key Features
+- Vendor onboarding wizard
+- Product story submission
+- Dynamic certificate generation
+- Comprehensive vendor management
+
+## Technical Overview
+- Framework: Next.js 15.2.4
+- Database: Supabase
+- Authentication: Supabase Auth
+- Deployment: Vercel
+
+## Performance Highlights
+- Optimized server-side rendering
+- Improved build complexity
+- Enhanced error handling
+
+## Upcoming Focus
+- Performance monitoring
+- Vendor experience improvements
+- Comprehensive testing
+
+## Documentation
+- [Deployment Logs](/docs/DEPLOYMENT_LOGS.md)
+- [Commit History](/docs/COMMIT_LOGS.md)
+- [Technical Design](/docs/technical-design/build-optimization-v1.4.2.md)
+
+## Quick Start
+```bash
+npm install
+npm run dev
+```
+
+## Contributing
+Please read our [Contributing Guidelines](/CONTRIBUTING.md) before submitting pull requests.
+
+## License
+Proprietary - Street Collector Platform

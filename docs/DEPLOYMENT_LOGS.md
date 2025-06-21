@@ -156,6 +156,30 @@
 
 ## Deployment Log
 
+### Deployment 2024-06-08 (v1.4.2)
+
+**Commit Hash**: a643b1cd
+
+**Changes**:
+- Fixed build issues with onboarding and orders pages
+- Added missing Upload import in onboarding page
+- Refactored orders page to use static generation
+- Resolved dynamic server rendering warnings
+
+**Deployment Details**:
+- Environment: Production
+- Platform: Vercel
+- Build Time: 3 seconds
+- Deployment URL: https://street-collector-jji36wfx0-chonibes-projects.vercel.app
+
+**Build Warnings**:
+- Resolved critical build warnings related to dynamic server rendering
+- Simplified page rendering logic
+
+**Next Steps**:
+- Monitor application performance
+- Conduct thorough testing of orders and onboarding pages
+
 ### v1.4.0 Production Deployment ($(date +"%Y-%m-%d %H:%M:%S"))
 - **Version**: 1.4.0
 - **Branch**: `revert-dashboard-keep-certificate`
