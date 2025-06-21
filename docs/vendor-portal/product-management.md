@@ -76,6 +76,64 @@ Vendors can add detailed information about their artwork, including a personal b
   2. Save button clicked
   3. Status updated correctly
 
+### Wizard-Based Onboarding
+
+#### Purpose of the Wizard
+- Guided experience for vendors
+- Step-by-step profile and product story completion
+- Improve data quality and user engagement
+
+#### Wizard Stages
+1. **Bio Wizard**
+   - Collect artist background information
+   - 500-character narrative
+   - Optional profile image upload
+
+2. **Artwork Story Wizard**
+   - Per-product storytelling
+   - 1000-character detailed narrative
+   - Multiple image support
+   - Context and inspiration sharing
+
+### Wizard Features
+
+#### Progress Tracking
+- Completion percentage indicator
+- Visual progress bars
+- Gamification elements
+
+#### Validation
+- Real-time character count
+- Input validation
+- Error guidance
+
+#### Motivation
+- Profile strength meter
+- Completion rewards
+- Enhanced visibility for complete profiles
+
+### Technical Implementation
+- Stored in `vendors` and `order_line_items_v2` tables
+- Columns: 
+  - `bio`: TEXT
+  - `bio_status`: TEXT (incomplete/completed)
+  - `artwork_story`: TEXT
+  - `artwork_story_status`: TEXT (incomplete/completed)
+  - `wizard_completion_percentage`: NUMERIC
+
+### Best Practices
+- Use clear, engaging language
+- Be authentic
+- Provide context
+- Share personal insights
+- Update stories periodically
+
+### Troubleshooting
+- Wizard not progressing? Check:
+  1. Character limits
+  2. Image upload requirements
+  3. Validation errors
+
 ## Version
 - Last Updated: $(date +"%Y-%m-%d")
-- Version: 1.1.0 
+- Version: 1.2.0 
