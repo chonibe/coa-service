@@ -296,4 +296,97 @@ https://street-collector-3e50j85zi-chonibes-projects.vercel.app
 - Deployment URL: https://street-collector-1aua7obde-chonibes-projects.vercel.app
 - Inspect URL: https://vercel.com/chonibes-projects/street-collector/HEqeMopbYnpmt5MjV1s2TeXvgLzc
 
+## Latest Deployments
+
+### 2024-03-19 - Layout and Responsiveness Improvements
+- **Branch:** vercel-dashboard-improvements
+- **Commit:** adebaa24
+- **URL:** https://street-collector-fo54u8n12-chonibes-projects.vercel.app
+- **Changes:**
+  - Updated card layout with consistent aspect ratio
+  - Fixed image containment and overflow
+  - Improved responsive grid breakpoints
+  - Enhanced button layout and spacing
+  - Added better text truncation and spacing
+  - Optimized for mobile and larger screens
+- **Status:** ✅ Successful
+- **Deployment Method:** Vercel CLI
+- **Notes:** Enhanced overall layout and responsiveness of the dashboard
+
+### 2024-03-19 - NFC Wizard Dialog and Improved Pairing UX
+- **Branch:** vercel-dashboard-improvements
+- **Commit:** 393cfbcf
+- **URL:** https://street-collector-bu4u0wdvo-chonibes-projects.vercel.app
+- **Changes:**
+  - Added NFCWizardDialog component for guided NFC pairing
+  - Updated VinylArtworkCard to show pairing button for all unpaired items
+  - Improved status handling and user feedback
+  - Added proper error handling and success states
+- **Status:** ✅ Successful
+- **Deployment Method:** Vercel CLI
+- **Notes:** Enhanced the NFC pairing experience with a step-by-step wizard
+
+### March 19, 2024 - Update 2
+- Production URL: https://street-collector-oou84sel5-chonibes-projects.vercel.app
+- Branch: vercel-dashboard-improvements
+- Commit: dda9dacd
+- Changes:
+  - Added search functionality for artworks
+  - Added sorting options (name, date, price)
+  - Added loading skeletons for better UX
+  - Added smooth transitions between views
+  - Added better empty states with context
+  - Improved grid layout and spacing
+  - Enhanced mobile responsiveness
+
+### March 19, 2024
+- Production URL: https://street-collector-iatgk0zh7-chonibes-projects.vercel.app
+- Branch: vercel-dashboard-improvements
+- Commit: a0e7f087
+- Changes:
+  - Improved dashboard card layout and UX
+  - Moved status badges to top-right corner with compact design
+  - Enhanced action buttons with better visual hierarchy
+  - Improved mobile responsiveness
+  - Added better visual feedback and hover states
+  - Fixed icon imports and component organization
+
+## Certificate Experience Enhancement Deployment - [Date: 2024-03-21]
+
+### Changes Implemented
+- Added enhanced certificate viewing experience with 3D effects
+- Implemented holographic elements and parallax effects
+- Added QR code generation for quick certificate verification
+- Improved NFC pairing visual feedback
+- Enhanced mobile responsiveness and animations
+
+### Components Added/Modified
+- New: components/ui/certificate-qr.tsx
+- New: components/ui/enhanced-certificate.tsx
+- Modified: app/customer/dashboard/certificate-modal.tsx
+- Modified: components/ui/holographic-element.tsx
+
+### Dependencies Added
+- framer-motion: For advanced animations and 3D effects
+- qrcode.react: For QR code generation
+- react-use: For utility hooks
+
+### Testing Notes
+- Verified certificate display on desktop and mobile devices
+- Tested NFC pairing flow with enhanced visual feedback
+- Confirmed QR code generation and scanning functionality
+- Validated 3D effects and animations across browsers
+
+### Deployment URL
+[Pending deployment]
+
+### Status
+✅ Ready for deployment
+
+### Rollback Plan
+If issues are encountered:
+1. Revert to previous commit
+2. Roll back to previous Vercel deployment
+3. Remove new dependencies if necessary
+
 --- 

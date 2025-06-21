@@ -1,17 +1,29 @@
 "use client"
 
-import { useMotionValue, useTransform, motion } from "framer-motion"
+import { motion, useMotionValue, useTransform } from "framer-motion"
 import { useEffect } from "react"
 
 interface HolographicElementProps {
+  children: React.ReactNode
   className?: string
 }
 
-export function HolographicElement({ className = "" }: HolographicElementProps) {
+export function HolographicElement({ children, className = "" }: HolographicElementProps) {
   const mouseX = useMotionValue(0)
   const mouseY = useMotionValue(0)
-  const brightness = useTransform(mouseX, [-300, 300], [0.5, 1.5])
-  const gradientRotate = useTransform(mouseX, [-300, 300], [0, 360])
+
+  const rotateX = useTransform(mouseY, [-300, 300], [10, -10])
+  const rotateY = useTransform(mouseX, [-300, 300], [-10, 10])
+  const brightness = useTransform(mouseX, [-300, 300], [0.5, 1.2])
+  const gradient = useTransform(
+    mouseX,
+    [-300, 0, 300],
+    [
+      "linear-gradient(45deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.3) 100%)",
+      "linear-gradient(45deg, rgba(255,255,255,0.2) 0%, rgba(255,255,255,0.4) 100%)",
+      "linear-gradient(45deg, rgba(255,255,255,0.3) 0%, rgba(255,255,255,0.5) 100%)"
+    ]
+  )
 
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
@@ -29,39 +41,30 @@ export function HolographicElement({ className = "" }: HolographicElementProps) 
 
   return (
     <motion.div
-      className={`absolute inset-0 pointer-events-none ${className}`}
+      className={`relative overflow-hidden rounded-xl ${className}`}
       style={{
-        background: useTransform(
-          gradientRotate,
-          (rotate) =>
-            `linear-gradient(${rotate}deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.2) 50%, rgba(255,255,255,0.1) 100%)`
-        ),
-        filter: `brightness(${brightness})`,
-        mixBlendMode: "overlay",
+        rotateX,
+        rotateY,
+        transformStyle: "preserve-3d",
+        perspective: "1000px",
       }}
     >
-      {/* Rainbow Spectrum Effect */}
       <motion.div
-        className="absolute inset-0"
+        className="absolute inset-0 z-10 pointer-events-none"
         style={{
-          background:
-            "linear-gradient(45deg, rgba(255,0,0,0.1), rgba(255,255,0,0.1), rgba(0,255,0,0.1), rgba(0,255,255,0.1), rgba(0,0,255,0.1), rgba(255,0,255,0.1))",
-          opacity: useTransform(mouseX, [-300, 300], [0.1, 0.3]),
-          mixBlendMode: "color",
+          background: gradient,
+          filter: "blur(10px)",
+          opacity: 0.5,
         }}
       />
-
-      {/* Sparkle Effect */}
       <motion.div
-        className="absolute inset-0"
+        className="relative z-20"
         style={{
-          background:
-            "radial-gradient(circle at var(--mouse-x) var(--mouse-y), rgba(255,255,255,0.3) 0%, transparent 50%)",
-          opacity: useTransform(mouseX, [-300, 300], [0.1, 0.4]),
-          "--mouse-x": useTransform(mouseX, (x) => `${50 + (x / window.innerWidth) * 100}%`),
-          "--mouse-y": useTransform(mouseY, (y) => `${50 + (y / window.innerHeight) * 100}%`),
-        } as any}
-      />
+          filter: `brightness(${brightness})`,
+        }}
+      >
+        {children}
+      </motion.div>
     </motion.div>
   )
 } 
