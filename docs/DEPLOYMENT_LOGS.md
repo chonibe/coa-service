@@ -416,4 +416,23 @@ If issues are encountered:
 2. Roll back to previous Vercel deployment
 3. Remove new dependencies if necessary
 
+### 2024-03-22: Mobile Responsiveness Improvements
+- Branch: `revert-dashboard-keep-certificate`
+- Changes:
+  - Enhanced line item card layout for mobile devices
+  - Added responsive design for NFC status and action buttons
+  - Improved hover/tap interactions
+  - Added image placeholders for line items
+- Vercel Preview URL: https://street-collector-jrl8d25ra-chonibes-projects.vercel.app
+- Testing:
+  - [x] Mobile responsiveness
+  - [x] Line item card interactions
+  - [x] NFC status display
+  - [x] Action button visibility
+- Monitoring:
+  - Mobile user engagement
+  - Interaction rates
+- Rollback Plan:
+  - Revert to previous commit if issues arise
+
 --- 
