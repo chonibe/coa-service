@@ -12,7 +12,7 @@
 - Updated `certificate-modal.tsx` with tab navigation
 - Added database migration for artist and artwork metadata
 
-### �� Changes
+### 📋 Changes
 - New API routes for artist and artwork details
 - Enhanced certificate modal user experience
 - Improved data fetching and error handling
@@ -26,6 +26,75 @@
 ### 🔍 Notes
 - Requires Supabase schema update
 - Restart Next.js application after deployment
+
+## Commit Log: Vendor Bio and Artwork Story Feature (v1.1.0)
+
+### Feature Implementation
+- **Date**: $(date +"%Y-%m-%d")
+- **Version**: 1.1.0
+- **Branch**: `feature/vendor-bio-artwork-story`
+
+### Changes Made
+1. Created API routes for bio and artwork story updates
+   - `/api/vendor/update-bio`
+   - `/api/vendor/update-artwork-story`
+
+2. Enhanced Product Edit Page
+   - Added input fields for artist bio
+   - Added input fields for artwork story
+   - Implemented client-side validation
+   - Added error handling and toast notifications
+
+3. Database Migrations
+   - Added `bio_status` column to `vendors` table
+   - Added `artwork_story_status` column to `order_line_items_v2` table
+   - Created PostgreSQL triggers for automatic status updates
+
+4. Documentation Updates
+   - Updated vendor portal product management guide
+   - Updated main README with feature details
+   - Added version tracking
+
+### Technical Details
+- Validation: Zod schema validation
+- Max Length: 
+  - Bio: 500 characters
+  - Artwork Story: 1000 characters
+- Status Tracking: 
+  - `incomplete`
+  - `completed`
+
+### Remaining Tasks
+- [ ] Implement UI status indicators
+- [ ] Add comprehensive test coverage
+- [ ] Performance monitoring setup
+
+### Impact
+- Improved vendor profile customization
+- Enhanced storytelling capabilities
+- Better user experience for artists
+
+### Potential Risks
+- Increased database complexity
+- Additional API load
+- Potential performance overhead with triggers
+
+### Deployment Notes
+- Requires Supabase migration
+- Restart Next.js application after deployment
+- Clear browser cache recommended
+
+### Verification Steps
+1. Test bio update API
+2. Test artwork story update API
+3. Verify database status tracking
+4. Check error handling scenarios
+
+### Rollback Procedure
+- Revert Supabase migration
+- Restore previous API route implementations
+- Remove new UI components
+
 ## Merge: Certificate Card Design [$(date '+%Y-%m-%d')]
 
 ### Changes Merged
@@ -240,34 +309,5 @@
 - [ ] Add E2E tests for dashboard flow
 - [ ] Monitor performance with new data fields
 - [ ] Gather user feedback on new layout
-
-## Commit: Certificate Modal Artist & Story Integration
-
-### 🚀 Feature Enhancements
-- Added dynamic tabs to certificate modal
-- Implemented artist bio retrieval
-- Added artwork story display functionality
-- Improved mobile responsiveness
-
-### 🛠 Technical Implementation
-- Created `/app/api/artist/[id]/route.ts`
-- Created `/app/api/story/[lineItemId]/route.ts`
-- Updated `certificate-modal.tsx` with tab navigation
-- Added database migration for artist and artwork metadata
-
-### 📋 Changes
-- New API routes for artist and artwork details
-- Enhanced certificate modal user experience
-- Improved data fetching and error handling
-
-### 🧪 Testing Requirements
-- Verify artist bio retrieval
-- Test artwork story display
-- Check mobile responsiveness
-- Validate NFC pairing functionality
-
-### 🔍 Notes
-- Requires Supabase schema update
-- Restart Next.js application after deployment
 
 --- 

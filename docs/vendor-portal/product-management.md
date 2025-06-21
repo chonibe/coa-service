@@ -5,6 +5,12 @@
 ### Overview
 Vendors can add detailed information about their artwork, including a personal bio and artwork story, to enhance the customer experience.
 
+### Status Tracking
+- Bio and artwork story have status tracking
+- Statuses: 
+  - `incomplete`: No content added
+  - `completed`: Content added successfully
+
 ### Artist Bio
 #### Purpose
 - Provide context about the artist's background
@@ -13,10 +19,10 @@ Vendors can add detailed information about their artwork, including a personal b
 
 #### Adding an Artist Bio
 1. Navigate to Vendor Dashboard
-2. Go to Profile Settings
+2. Go to Product Edit Page
 3. Locate "Artist Bio" section
 4. Write a compelling narrative (500 characters max)
-5. Optional: Upload a profile image
+5. Click "Save Changes"
 
 #### Bio Guidelines
 - Be authentic and personal
@@ -31,12 +37,10 @@ Vendors can add detailed information about their artwork, including a personal b
 - Create emotional connection with collectors
 
 #### Adding an Artwork Story
-1. Navigate to Product Management
-2. Select specific artwork
-3. Click "Edit Product Details"
-4. Find "Artwork Story" text area
-5. Write detailed narrative (1000 characters max)
-6. Optional: Upload supporting media
+1. Navigate to Product Edit Page
+2. Find "Artwork Story" text area
+3. Write detailed narrative (1000 characters max)
+4. Click "Save Changes"
 
 #### Story Guidelines
 - Describe creative process
@@ -53,10 +57,12 @@ Vendors can add detailed information about their artwork, including a personal b
 - Supported formats: JPEG, PNG, WebP
 
 ### Technical Implementation
-- Stored in `order_line_items_v2` table
+- Stored in `vendors` and `order_line_items_v2` tables
 - Columns: 
+  - `bio`: TEXT
+  - `bio_status`: TEXT (incomplete/completed)
   - `artwork_story`: TEXT
-  - `artwork_media_urls`: TEXT[]
+  - `artwork_story_status`: TEXT (incomplete/completed)
 
 ### Best Practices
 - Use clear, engaging language
@@ -67,9 +73,9 @@ Vendors can add detailed information about their artwork, including a personal b
 ### Troubleshooting
 - Story not displaying? Check:
   1. Character limit
-  2. Supported file types
-  3. Image upload success
+  2. Save button clicked
+  3. Status updated correctly
 
 ## Version
 - Last Updated: $(date +"%Y-%m-%d")
-- Version: 1.0.0 
+- Version: 1.1.0 
