@@ -16,7 +16,10 @@ import {
   Calendar, 
   Album, 
   LayoutGrid,
-  ArrowRight
+  ArrowRight,
+  Search,
+  SortAsc,
+  SortDesc
 } from "lucide-react"
 import { NfcTagScanner } from '@/src/components/NfcTagScanner'
 import { toast } from "@/components/ui/use-toast"
@@ -25,6 +28,10 @@ import { CertificateModal } from '../../customer/dashboard/certificate-modal'
 import { useNFCScan } from '@/hooks/use-nfc-scan'
 import { motion, LayoutGroup, Variants, useScroll } from "framer-motion"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { Input } from "@/components/ui/input"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Skeleton } from "@/components/ui/skeleton"
+import { AnimatePresence } from "framer-motion"
 import { NFCWizardDialog } from './nfc-wizard-dialog'
 
 // Type Definitions
@@ -59,6 +66,12 @@ interface TimelineMilestone {
   orderNumber: string
   date: Date
   items: LineItem[]
+}
+
+interface SortOption {
+  label: string
+  value: 'name' | 'date' | 'price'
+  direction: 'asc' | 'desc'
 }
 
 // Vinyl-like artwork card component
@@ -102,21 +115,21 @@ const VinylArtworkCard = ({
         onClick={() => onSelect()}
       >
         {/* Status Badge - Top Right */}
-        <div className="absolute top-3 right-3 z-10">
+        <div className="absolute top-3 right-3 z-20">
           {status === "nfc-paired" && (
-            <Badge variant="outline" className="bg-green-500/10 text-green-400 border-green-500/20 gap-1">
+            <Badge variant="outline" className="bg-green-500/10 text-green-400 border-green-500/20 gap-1 whitespace-nowrap">
               <Wifi className="h-3 w-3" />
               Authenticated
             </Badge>
           )}
           {status === "unpaired" && (
-            <Badge variant="outline" className="bg-orange-500/10 text-orange-400 border-orange-500/20 gap-1">
+            <Badge variant="outline" className="bg-orange-500/10 text-orange-400 border-orange-500/20 gap-1 whitespace-nowrap">
               <WifiOff className="h-3 w-3" />
               Ready to Pair
             </Badge>
           )}
           {status === "no-certificate" && (
-            <Badge variant="outline" className="bg-zinc-500/10 text-zinc-400 border-zinc-500/20 gap-1">
+            <Badge variant="outline" className="bg-zinc-500/10 text-zinc-400 border-zinc-500/20 gap-1 whitespace-nowrap">
               <CertificateIcon className="h-3 w-3" />
               No Certificate
             </Badge>
@@ -146,14 +159,14 @@ const VinylArtworkCard = ({
         </div>
 
         {/* Content Container */}
-        <div className="flex-1 p-4 sm:p-6 flex flex-col justify-between min-w-0">
+        <div className="relative flex-1 p-4 sm:p-6 flex flex-col justify-between min-w-0">
           {/* Top Section - Title, Artist, and Price */}
-          <div>
-            <h3 className="text-lg sm:text-xl font-bold text-white mb-2 truncate">
+          <div className="space-y-2">
+            <h3 className="text-lg sm:text-xl font-bold text-white truncate pr-24">
               {item.name}
             </h3>
-            <div className="flex justify-between items-start gap-2">
-              <p className="text-sm text-zinc-400 truncate flex-1">
+            <div className="flex justify-between items-start gap-4">
+              <p className="text-sm text-zinc-400 truncate max-w-[70%]">
                 {item.vendor_name || "Street Collector"}
               </p>
               {price && item.quantity && (
@@ -530,6 +543,30 @@ const NFCWizardDialog = ({
   )
 }
 
+// Loading skeleton for artwork card
+const ArtworkCardSkeleton = () => (
+  <div className="relative w-full h-auto aspect-[1.618/1] rounded-2xl overflow-hidden bg-zinc-900/90 border border-zinc-700/50">
+    <div className="absolute top-3 right-3 w-24">
+      <Skeleton className="h-6 w-full bg-zinc-800" />
+    </div>
+    <div className="flex flex-col sm:flex-row h-full">
+      <div className="relative w-full sm:w-[45%] aspect-square sm:aspect-auto">
+        <Skeleton className="w-full h-full bg-zinc-800" />
+      </div>
+      <div className="flex-1 p-4 sm:p-6 flex flex-col justify-between">
+        <div className="space-y-2">
+          <Skeleton className="h-7 w-3/4 bg-zinc-800" />
+          <Skeleton className="h-5 w-1/2 bg-zinc-800" />
+        </div>
+        <div className="space-y-2 mt-4">
+          <Skeleton className="h-9 w-full bg-zinc-800" />
+          <Skeleton className="h-9 w-full bg-zinc-800" />
+        </div>
+      </div>
+    </div>
+  </div>
+)
+
 export default function CustomerDashboardById() {
   const router = useRouter()
   const params = useParams()
@@ -539,12 +576,19 @@ export default function CustomerDashboardById() {
   const [selectedArtworkIndex, setSelectedArtworkIndex] = useState<number>(-1)
   const [view, setView] = useState<'grid' | 'timeline'>('grid')
   const [filter, setFilter] = useState<'all' | 'authenticated' | 'pending'>('all')
-  const [isNFCWizardOpen, setIsNFCWizardOpen] = useState(false)
+  const [isLoading, setIsLoading] = useState(true)
+  const [searchQuery, setSearchQuery] = useState('')
+  const [sortOption, setSortOption] = useState<SortOption>({
+    label: 'Name (A-Z)',
+    value: 'name',
+    direction: 'asc'
+  })
   const { scrollYProgress } = useScroll()
 
   // Fetch orders
   useEffect(() => {
     const fetchOrders = async () => {
+      setIsLoading(true)
       try {
         const response = await fetch(`/api/customer/dashboard/${params.customerId}`)
         const data = await response.json()
@@ -561,11 +605,54 @@ export default function CustomerDashboardById() {
       } catch (err) {
         console.error('Error fetching orders:', err)
         setError(err instanceof Error ? err.message : 'Failed to fetch orders')
+      } finally {
+        setIsLoading(false)
       }
     }
 
     fetchOrders()
   }, [params.customerId])
+
+  // Filtered and sorted line items
+  const filteredLineItems = useMemo(() => {
+    let items = orders.flatMap(order => 
+      order.line_items.filter(item => {
+        // Apply status filter
+        if (filter === 'authenticated') return item.nfc_claimed_at
+        if (filter === 'pending') return !item.nfc_claimed_at
+        return true
+      }).map(item => ({
+        ...item,
+        order_date: new Date(order.processed_at)
+      }))
+    )
+
+    // Apply search filter
+    if (searchQuery) {
+      const query = searchQuery.toLowerCase()
+      items = items.filter(item => 
+        item.name.toLowerCase().includes(query) ||
+        (item.vendor_name && item.vendor_name.toLowerCase().includes(query))
+      )
+    }
+
+    // Apply sorting
+    items.sort((a, b) => {
+      const direction = sortOption.direction === 'asc' ? 1 : -1
+      switch (sortOption.value) {
+        case 'name':
+          return direction * a.name.localeCompare(b.name)
+        case 'date':
+          return direction * (a.order_date.getTime() - b.order_date.getTime())
+        case 'price':
+          return direction * ((a.price || 0) - (b.price || 0))
+        default:
+          return 0
+      }
+    })
+
+    return items
+  }, [orders, filter, searchQuery, sortOption])
 
   // Error handling
   if (error) {
@@ -592,16 +679,35 @@ export default function CustomerDashboardById() {
     }
   }, [orders])
 
-  // Filtered line items
-  const filteredLineItems = useMemo(() => {
-    return orders.flatMap(order => 
-      order.line_items.filter(item => {
-        if (filter === 'authenticated') return item.nfc_claimed_at
-        if (filter === 'pending') return !item.nfc_claimed_at
-        return true
-      })
-    )
-  }, [orders, filter])
+  const containerVariants = {
+    grid: {
+      transition: { staggerChildren: 0.05 }
+    },
+    timeline: {
+      transition: { staggerChildren: 0.05 }
+    }
+  }
+
+  const itemVariants = {
+    hidden: { 
+      opacity: 0, 
+      y: 20 
+    },
+    visible: { 
+      opacity: 1, 
+      y: 0,
+      transition: {
+        type: "spring",
+        stiffness: 300,
+        damping: 30
+      }
+    },
+    exit: { 
+      opacity: 0,
+      y: -20,
+      transition: { duration: 0.2 }
+    }
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-zinc-900 via-zinc-800 to-zinc-900">
@@ -662,7 +768,7 @@ export default function CustomerDashboardById() {
           </div>
         </div>
 
-        {/* Controls */}
+        {/* Enhanced Controls */}
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex flex-wrap gap-2">
             <Button
@@ -692,110 +798,180 @@ export default function CustomerDashboardById() {
               Pending
             </Button>
           </div>
-          <div className="flex gap-2">
-            <Button
-              variant={view === 'grid' ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => setView('grid')}
+          <div className="flex flex-col sm:flex-row gap-2">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-400" />
+              <Input
+                placeholder="Search artworks..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-9 bg-zinc-900/50"
+              />
+            </div>
+            <Select
+              value={`${sortOption.value}-${sortOption.direction}`}
+              onValueChange={(value) => {
+                const [field, direction] = value.split('-') as [SortOption['value'], SortOption['direction']]
+                setSortOption({
+                  label: `${field.charAt(0).toUpperCase() + field.slice(1)} (${direction === 'asc' ? 'A-Z' : 'Z-A'})`,
+                  value: field,
+                  direction
+                })
+              }}
             >
-              <LayoutGrid className="w-4 h-4" />
-            </Button>
-            <Button
-              variant={view === 'timeline' ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => setView('timeline')}
-            >
-              <Calendar className="w-4 h-4" />
-            </Button>
+              <SelectTrigger className="w-[140px] bg-zinc-900/50">
+                <SelectValue placeholder="Sort by" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="name-asc">Name (A-Z)</SelectItem>
+                <SelectItem value="name-desc">Name (Z-A)</SelectItem>
+                <SelectItem value="date-desc">Newest First</SelectItem>
+                <SelectItem value="date-asc">Oldest First</SelectItem>
+                <SelectItem value="price-desc">Price (High-Low)</SelectItem>
+                <SelectItem value="price-asc">Price (Low-High)</SelectItem>
+              </SelectContent>
+            </Select>
+            <div className="flex gap-2">
+              <Button
+                variant={view === 'grid' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setView('grid')}
+              >
+                <LayoutGrid className="w-4 h-4" />
+              </Button>
+              <Button
+                variant={view === 'timeline' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setView('timeline')}
+              >
+                <Calendar className="w-4 h-4" />
+              </Button>
+            </div>
           </div>
         </div>
 
-        {/* Grid View */}
-        {view === 'grid' && (
-          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4">
-            {filteredLineItems.map((item, index) => (
-              <VinylArtworkCard
-                key={item.line_item_id}
-                item={item}
-                isSelected={selectedArtworkIndex === index}
-                onSelect={() => setSelectedArtworkIndex(index)}
-                onCertificateView={() => {
-                  setSelectedLineItem(item)
-                  setSelectedArtworkIndex(index)
-                }}
-                onNFCPaired={() => {
-                  // Refresh the orders
-                  window.location.reload()
-                }}
-              />
+        {/* Loading State */}
+        {isLoading && (
+          <div className="grid grid-cols-1 gap-4 sm:gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 2xl:grid-cols-4">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <ArtworkCardSkeleton key={i} />
             ))}
           </div>
         )}
 
+        {/* Grid View */}
+        {!isLoading && view === 'grid' && (
+          <AnimatePresence mode="wait">
+            <motion.div
+              key="grid"
+              variants={containerVariants}
+              initial="hidden"
+              animate="visible"
+              exit="exit"
+              className="grid grid-cols-1 gap-4 sm:gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 2xl:grid-cols-4"
+            >
+              {filteredLineItems.map((item, index) => (
+                <motion.div
+                  key={item.line_item_id}
+                  variants={itemVariants}
+                  layoutId={item.line_item_id}
+                >
+                  <VinylArtworkCard
+                    item={item}
+                    isSelected={selectedArtworkIndex === index}
+                    onSelect={() => setSelectedArtworkIndex(index)}
+                    onCertificateView={() => {
+                      setSelectedLineItem(item)
+                      setSelectedArtworkIndex(index)
+                    }}
+                    onNFCPaired={() => {
+                      window.location.reload()
+                    }}
+                  />
+                </motion.div>
+              ))}
+            </motion.div>
+          </AnimatePresence>
+        )}
+
         {/* Timeline View */}
-        {view === 'timeline' && (
-          <div className="space-y-8">
-            {orders.map((order) => {
-              const orderItems = order.line_items.filter(item => {
-                if (filter === 'authenticated') return item.nfc_claimed_at
-                if (filter === 'pending') return !item.nfc_claimed_at
-                return true
-              })
+        {!isLoading && view === 'timeline' && (
+          <AnimatePresence mode="wait">
+            <motion.div
+              key="timeline"
+              variants={containerVariants}
+              initial="hidden"
+              animate="visible"
+              exit="exit"
+              className="space-y-8"
+            >
+              {orders.map((order) => {
+                const orderItems = order.line_items.filter(item => {
+                  if (filter === 'authenticated') return item.nfc_claimed_at
+                  if (filter === 'pending') return !item.nfc_claimed_at
+                  return true
+                })
 
-              if (orderItems.length === 0) return null
+                if (orderItems.length === 0) return null
 
-              return (
-                <div key={order.id} className="glass-effect rounded-xl p-6">
-                  <div className="flex items-center justify-between mb-4">
-                    <div>
-                      <h3 className="text-lg font-semibold text-white">
-                        Order #{order.order_number}
-                      </h3>
-                      <p className="text-sm text-zinc-400">
-                        {new Date(order.processed_at).toLocaleDateString()}
-                      </p>
+                return (
+                  <div key={order.id} className="glass-effect rounded-xl p-6">
+                    <div className="flex items-center justify-between mb-4">
+                      <div>
+                        <h3 className="text-lg font-semibold text-white">
+                          Order #{order.order_number}
+                        </h3>
+                        <p className="text-sm text-zinc-400">
+                          {new Date(order.processed_at).toLocaleDateString()}
+                        </p>
+                      </div>
+                      <Badge variant="outline">
+                        {orderItems.length} {orderItems.length === 1 ? 'Artwork' : 'Artworks'}
+                      </Badge>
                     </div>
-                    <Badge variant="outline">
-                      {orderItems.length} {orderItems.length === 1 ? 'Artwork' : 'Artworks'}
-                    </Badge>
+                    <div className="grid grid-cols-1 gap-4 sm:gap-6 md:grid-cols-2 lg:grid-cols-3">
+                      {orderItems.map((item, index) => (
+                        <VinylArtworkCard
+                          key={item.line_item_id}
+                          item={item}
+                          isSelected={selectedArtworkIndex === index}
+                          onSelect={() => setSelectedArtworkIndex(index)}
+                          onCertificateView={() => {
+                            setSelectedLineItem(item)
+                            setSelectedArtworkIndex(index)
+                          }}
+                          onNFCPaired={() => {
+                            window.location.reload()
+                          }}
+                        />
+                      ))}
+                    </div>
                   </div>
-                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                    {orderItems.map((item, index) => (
-                      <VinylArtworkCard
-                        key={item.line_item_id}
-                        item={item}
-                        isSelected={selectedArtworkIndex === index}
-                        onSelect={() => setSelectedArtworkIndex(index)}
-                        onCertificateView={() => {
-                          setSelectedLineItem(item)
-                          setSelectedArtworkIndex(index)
-                        }}
-                        onNFCPaired={() => {
-                          // Refresh the orders
-                          window.location.reload()
-                        }}
-                      />
-                    ))}
-                  </div>
-                </div>
-              )
-            })}
-          </div>
+                )
+              })}
+            </motion.div>
+          </AnimatePresence>
         )}
 
         {/* Empty State */}
-        {filteredLineItems.length === 0 && (
-          <div className="text-center py-12">
+        {!isLoading && filteredLineItems.length === 0 && (
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="text-center py-12"
+          >
             <Album className="w-12 h-12 mx-auto text-zinc-600" />
             <h3 className="mt-4 text-lg font-semibold text-white">No Artworks Found</h3>
             <p className="mt-2 text-zinc-400">
-              {filter === 'all' 
+              {searchQuery 
+                ? "No artworks match your search"
+                : filter === 'all' 
                 ? "You don't have any artworks yet"
                 : filter === 'authenticated'
                 ? "You don't have any authenticated artworks"
                 : "You don't have any pending artworks"}
             </p>
-          </div>
+          </motion.div>
         )}
       </div>
 
