@@ -1,9 +1,9 @@
 "use client"
 
 import { useCallback, useEffect, useState } from "react"
-import { loadFull } from "tsparticles"
-import type { Container, Engine } from "tsparticles-engine"
 import Particles from "react-tsparticles"
+import { loadSlim } from "tsparticles-slim"
+import type { Container, Engine } from "tsparticles-engine"
 import { motion } from "framer-motion"
 import { type ColorPalette } from "@/lib/color-extractor"
 
@@ -20,7 +20,7 @@ export function DynamicBackground({ palette, className = "" }: DynamicBackground
   }, [])
 
   const particlesInit = useCallback(async (engine: Engine) => {
-    await loadFull(engine)
+    await loadSlim(engine)
   }, [])
 
   const particlesLoaded = useCallback(async (container: Container | undefined) => {
