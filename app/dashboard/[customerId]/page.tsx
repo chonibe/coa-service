@@ -15,8 +15,9 @@ import {
   User, 
   Calendar, 
   Album, 
-  LayoutGrid, 
-  ArrowRight 
+  LayoutGrid,
+  ArrowRight,
+  Timeline
 } from "lucide-react"
 import { NfcTagScanner } from '@/src/components/NfcTagScanner'
 import { toast } from "@/components/ui/use-toast"
@@ -412,6 +413,44 @@ export default function CustomerDashboardById() {
   const [filter, setFilter] = useState<'all' | 'authenticated' | 'pending'>('all')
   const { scrollYProgress } = useScroll()
 
+  // Fetch orders
+  useEffect(() => {
+    const fetchOrders = async () => {
+      try {
+        const response = await fetch(`/api/customer/dashboard/${params.customerId}`)
+        const data = await response.json()
+
+        if (!response.ok) {
+          throw new Error(data.message || 'Failed to fetch orders')
+        }
+
+        if (!data.success) {
+          throw new Error(data.message || 'Failed to fetch orders')
+        }
+
+        setOrders(data.orders || [])
+      } catch (err) {
+        console.error('Error fetching orders:', err)
+        setError(err instanceof Error ? err.message : 'Failed to fetch orders')
+      }
+    }
+
+    fetchOrders()
+  }, [params.customerId])
+
+  // Error handling
+  if (error) {
+    return (
+      <div className="min-h-screen bg-zinc-950 text-white flex items-center justify-center">
+        <div className="text-center">
+          <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
+          <h2 className="text-xl font-bold mb-2">Error Loading Dashboard</h2>
+          <p className="text-zinc-400">{error}</p>
+        </div>
+      </div>
+    )
+  }
+
   // Stats calculation
   const stats = useMemo(() => {
     const totalArtworks = orders.reduce((acc, order) => acc + order.line_items.length, 0)
@@ -537,7 +576,7 @@ export default function CustomerDashboardById() {
               size="sm"
               onClick={() => setView('timeline')}
             >
-              <Timeline className="w-4 h-4" />
+              <Calendar className="w-4 h-4" />
             </Button>
           </div>
         </div>
