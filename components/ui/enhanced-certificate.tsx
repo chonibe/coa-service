@@ -193,11 +193,12 @@ export function EnhancedCertificate({
         >
           <div className="h-full flex flex-col items-center justify-center space-y-6">
             {imgUrl ? (
-              <div className="relative w-full max-w-md aspect-square">
+              <div className="relative w-full h-full flex items-center justify-center">
                 <img 
                   src={imgUrl} 
                   alt={name}
-                  className="w-full h-full object-contain rounded-lg"
+                  className="max-w-full max-h-full object-contain rounded-lg"
+                  style={{ maxHeight: "calc(100% - 100px)" }} // Leave space for QR code
                 />
               </div>
             ) : (
@@ -209,7 +210,7 @@ export function EnhancedCertificate({
                 initial={{ scale: 0.9, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
                 transition={{ delay: 0.3 }}
-                className="w-32 h-32 bg-white p-4 rounded-xl"
+                className="absolute bottom-6 w-32 h-32 bg-white p-4 rounded-xl"
               >
                 <QRCodeSVG
                   value={certificateUrl}
