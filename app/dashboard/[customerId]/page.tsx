@@ -16,8 +16,7 @@ import {
   Calendar, 
   Album, 
   LayoutGrid,
-  ArrowRight,
-  Timeline
+  ArrowRight
 } from "lucide-react"
 import { NfcTagScanner } from '@/src/components/NfcTagScanner'
 import { toast } from "@/components/ui/use-toast"
@@ -91,24 +90,28 @@ const VinylArtworkCard = ({
     <>
       <div 
         className={`
-          relative w-full max-w-[420px] h-[245px] rounded-2xl 
-          ${isSelected ? 'shadow-2xl' : 'shadow-lg'}
-          bg-gradient-to-br from-zinc-900/80 via-zinc-800/80 to-zinc-900/80 
+          relative w-full h-auto aspect-[1.618/1] rounded-2xl overflow-hidden
+          ${isSelected ? 'ring-2 ring-amber-500/50 shadow-xl shadow-amber-500/10' : 'shadow-lg'}
+          bg-gradient-to-br from-zinc-900/90 via-zinc-800/90 to-zinc-900/90 
           backdrop-blur-sm border border-zinc-700/50
-          flex items-stretch
+          flex flex-col sm:flex-row
+          transition-all duration-300 ease-in-out
+          hover:shadow-xl hover:border-zinc-600/50
+          group
         `}
+        onClick={() => onSelect()}
       >
-        {/* Artwork Image - Left Side */}
-        <div className="w-[245px] flex-shrink-0 relative overflow-hidden rounded-l-2xl">
+        {/* Artwork Image */}
+        <div className="relative w-full sm:w-[45%] aspect-square sm:aspect-auto">
           {item.img_url ? (
             <img 
               src={item.img_url} 
               alt={item.name} 
-              className="w-full h-full object-cover" 
+              className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105" 
             />
           ) : (
             <div className="w-full h-full bg-zinc-800/50 flex items-center justify-center">
-              <Album className="w-24 h-24 text-zinc-600" />
+              <Album className="w-16 h-16 text-zinc-600" />
             </div>
           )}
           {item.edition_number && item.edition_total && (
@@ -120,17 +123,19 @@ const VinylArtworkCard = ({
           )}
         </div>
 
-        {/* Artwork Details - Right Side */}
-        <div className="flex-grow p-6 flex flex-col justify-between">
+        {/* Content Container */}
+        <div className="flex-1 p-4 sm:p-6 flex flex-col justify-between min-w-0">
           {/* Top Section - Title, Artist, and Price */}
           <div>
-            <h3 className="text-xl font-bold text-white mb-2 truncate">{item.name}</h3>
-            <div className="flex justify-between items-start">
-              <p className="text-sm text-zinc-400 truncate">
+            <h3 className="text-lg sm:text-xl font-bold text-white mb-2 truncate">
+              {item.name}
+            </h3>
+            <div className="flex justify-between items-start gap-2">
+              <p className="text-sm text-zinc-400 truncate flex-1">
                 {item.vendor_name || "Street Collector"}
               </p>
               {price && item.quantity && (
-                <p className="text-sm text-zinc-400">
+                <p className="text-sm text-zinc-400 whitespace-nowrap">
                   {price} × {item.quantity}
                 </p>
               )}
@@ -138,53 +143,53 @@ const VinylArtworkCard = ({
           </div>
 
           {/* Middle Section - Status Badges */}
-          <div className="space-y-2">
+          <div className="space-y-2 my-4">
             {status === "nfc-paired" && (
-              <div className="bg-green-500/10 border border-green-500/20 rounded-lg p-3 flex items-center gap-2">
-                <Wifi className="h-4 w-4 text-green-400" />
-                <span className="text-sm text-green-400">NFC Tag Paired</span>
+              <div className="bg-green-500/10 border border-green-500/20 rounded-lg p-2.5 flex items-center gap-2">
+                <Wifi className="h-4 w-4 text-green-400 flex-shrink-0" />
+                <span className="text-sm text-green-400 truncate">NFC Tag Paired</span>
               </div>
             )}
             {status === "unpaired" && (
-              <div className="bg-orange-500/10 border border-orange-500/20 rounded-lg p-3 flex items-center gap-2">
-                <WifiOff className="h-4 w-4 text-orange-400" />
-                <span className="text-sm text-orange-400">Ready to Pair NFC Tag</span>
+              <div className="bg-orange-500/10 border border-orange-500/20 rounded-lg p-2.5 flex items-center gap-2">
+                <WifiOff className="h-4 w-4 text-orange-400 flex-shrink-0" />
+                <span className="text-sm text-orange-400 truncate">Ready to Pair NFC Tag</span>
               </div>
             )}
             {status === "no-certificate" && (
-              <div className="bg-zinc-500/10 border border-zinc-500/20 rounded-lg p-3 flex items-center gap-2">
-                <Certificate className="h-4 w-4 text-zinc-400" />
-                <span className="text-sm text-zinc-400">No Certificate Available</span>
+              <div className="bg-zinc-500/10 border border-zinc-500/20 rounded-lg p-2.5 flex items-center gap-2">
+                <Certificate className="h-4 w-4 text-zinc-400 flex-shrink-0" />
+                <span className="text-sm text-zinc-400 truncate">No Certificate Available</span>
               </div>
             )}
           </div>
 
           {/* Bottom Section - Actions */}
-          <div className="flex gap-2 mt-4">
+          <div className="flex flex-col sm:flex-row gap-2 mt-auto">
             {item.certificate_url && (
               <Button 
                 size="sm" 
                 variant="outline" 
-                className="text-amber-400 border-amber-500/30 hover:bg-amber-500/10 flex-1"
+                className="text-amber-400 border-amber-500/30 hover:bg-amber-500/10 w-full sm:flex-1"
                 onClick={(e) => {
                   e.stopPropagation()
                   onCertificateView()
                 }}
               >
-                <Certificate className="h-4 w-4 mr-2" /> View Certificate
+                <Certificate className="h-4 w-4 mr-2 flex-shrink-0" /> View Certificate
               </Button>
             )}
             {status === "unpaired" && (
               <Button 
                 size="sm" 
                 variant="outline" 
-                className="text-blue-400 border-blue-500/30 hover:bg-blue-500/10 flex-1"
+                className="text-blue-400 border-blue-500/30 hover:bg-blue-500/10 w-full sm:flex-1"
                 onClick={(e) => {
                   e.stopPropagation()
                   setIsNFCWizardOpen(true)
                 }}
               >
-                <Wifi className="h-4 w-4 mr-2" /> Pair NFC Tag
+                <Wifi className="h-4 w-4 mr-2 flex-shrink-0" /> Pair NFC Tag
               </Button>
             )}
           </div>
@@ -602,7 +607,7 @@ export default function CustomerDashboardById() {
         style={{ scaleX: scrollYProgress }}
       />
 
-      <div className="max-w-7xl mx-auto px-4 py-8 space-y-8 sm:px-6 lg:px-8">
+      <div className="max-w-[90rem] mx-auto px-4 py-8 space-y-8 sm:px-6 lg:px-8">
         {/* Hero Section */}
         <div className="relative overflow-hidden rounded-2xl bg-zinc-900/50 backdrop-blur-sm border border-zinc-800 p-6 sm:p-8">
           <div className="absolute inset-0 bg-gradient-to-r from-amber-500/10 via-transparent to-transparent" />
@@ -703,7 +708,7 @@ export default function CustomerDashboardById() {
 
         {/* Grid View */}
         {view === 'grid' && (
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4">
             {filteredLineItems.map((item, index) => (
               <VinylArtworkCard
                 key={item.line_item_id}
