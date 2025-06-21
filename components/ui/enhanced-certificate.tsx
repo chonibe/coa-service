@@ -4,6 +4,7 @@ import { motion, useMotionValue, useTransform } from "framer-motion"
 import { QRCodeSVG } from "qrcode.react"
 import { useState, useEffect } from "react"
 import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
 import { User, Calendar, Hash, Wifi, WifiOff, Album, BadgeIcon as Certificate } from "lucide-react"
 
 interface EnhancedCertificateProps {
@@ -17,6 +18,7 @@ interface EnhancedCertificateProps {
   certificateUrl?: string
   isFlipped: boolean
   onFlip: () => void
+  onStartPairing?: () => void
   className?: string
 }
 
@@ -31,6 +33,7 @@ export function EnhancedCertificate({
   certificateUrl,
   isFlipped,
   onFlip,
+  onStartPairing,
   className = "",
 }: EnhancedCertificateProps) {
   const mouseX = useMotionValue(0)
@@ -56,11 +59,10 @@ export function EnhancedCertificate({
 
   return (
     <motion.div
-      className={`relative aspect-[4/3] w-full cursor-pointer ${className}`}
+      className={`relative aspect-[4/3] w-full ${className}`}
       style={{
         perspective: "2000px",
       }}
-      onClick={onFlip}
       onHoverStart={() => setIsHovered(true)}
       onHoverEnd={() => setIsHovered(false)}
     >
@@ -70,17 +72,19 @@ export function EnhancedCertificate({
           transformStyle: "preserve-3d",
           rotateX,
           rotateY,
-          transition: "transform 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275)",
-          transform: `rotateY(${isFlipped ? "180deg" : "0deg"})`,
+          transition: "all 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275)",
+          transform: isFlipped ? "rotateY(180deg)" : "rotateY(0deg)",
         }}
       >
         {/* Front of Certificate */}
         <motion.div
-          className="absolute inset-0 w-full h-full bg-gradient-to-br from-zinc-900 to-zinc-800 rounded-xl p-6 sm:p-8"
+          className="absolute inset-0 w-full h-full bg-gradient-to-br from-zinc-900 to-zinc-800 rounded-xl p-6 sm:p-8 cursor-pointer"
           style={{
             backfaceVisibility: "hidden",
+            WebkitBackfaceVisibility: "hidden",
             filter: `brightness(${brightness})`,
           }}
+          onClick={onFlip}
         >
           <div className="relative h-full flex flex-col">
             <div className="flex-1 flex flex-col justify-between">
@@ -155,6 +159,22 @@ export function EnhancedCertificate({
                     </Badge>
                   )}
                 </div>
+
+                {/* NFC Pairing Button */}
+                {!nfcClaimedAt && nfcTagId && onStartPairing && (
+                  <div className="mt-4">
+                    <Button 
+                      onClick={(e) => {
+                        e.stopPropagation() // Prevent flip when clicking button
+                        onStartPairing()
+                      }}
+                      className="w-full bg-amber-500 hover:bg-amber-600 text-black"
+                    >
+                      <Wifi className="w-4 h-4 mr-2" />
+                      Authenticate with NFC
+                    </Button>
+                  </div>
+                )}
               </motion.div>
             </div>
           </div>
@@ -162,12 +182,14 @@ export function EnhancedCertificate({
 
         {/* Back of Certificate */}
         <motion.div
-          className="absolute inset-0 w-full h-full bg-gradient-to-br from-zinc-900 to-zinc-800 rounded-xl p-6"
+          className="absolute inset-0 w-full h-full bg-gradient-to-br from-zinc-900 to-zinc-800 rounded-xl p-6 cursor-pointer"
           style={{
             backfaceVisibility: "hidden",
+            WebkitBackfaceVisibility: "hidden",
             transform: "rotateY(180deg)",
             filter: `brightness(${brightness})`,
           }}
+          onClick={onFlip}
         >
           <div className="h-full flex flex-col items-center justify-center space-y-6">
             {imgUrl ? (
