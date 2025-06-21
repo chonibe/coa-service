@@ -177,6 +177,24 @@
   - [x] Verify feedback mechanism
   - [x] Confirm wizard validation
 
+### v1.4.1 Production Deployment ($(date +"%Y-%m-%d %H:%M:%S"))
+- **Version**: 1.4.1
+- **Branch**: `revert-dashboard-keep-certificate`
+- **Production URL**: https://street-collector-8pg6w9hv8-chonibes-projects.vercel.app
+- **Changes**:
+  - Enhanced vendor story submission feature
+  - Added API route for product story creation
+  - Implemented Supabase storage for story images
+  - Updated vendor portal documentation
+- **Deployment Notes**:
+  - Resolved environment configuration issues
+  - Verified Supabase integration
+- **Verification Status**:
+  - [x] Story submission API
+  - [x] Image upload functionality
+  - [x] Database migration
+  - [ ] Comprehensive user testing
+
 ### Previous Deployments
 [Existing deployment logs...]
 
