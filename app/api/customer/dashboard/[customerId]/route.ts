@@ -22,6 +22,32 @@ interface OrderLineItem {
   order_id: string
 }
 
+interface Customer {
+  id: string
+}
+
+interface RewardEvent {
+  id: string
+  customer_id: string
+  points: number
+  reason: string
+  created_at: string
+}
+
+interface RewardTier {
+  id: string
+  name: string
+  required_points: number
+  benefits: string[]
+}
+
+interface CustomerRewards {
+  id: string
+  customer_id: string
+  points: number
+  level: string
+}
+
 export async function GET(
   request: Request,
   { params }: { params: { customerId: string } }
@@ -29,6 +55,22 @@ export async function GET(
   try {
     if (!supabase) {
       throw new Error("Database connection not available")
+    }
+
+    // First, get the customer UUID from the Shopify customer ID
+    const { data: customer, error: customerError } = await supabase
+      .from("customers")
+      .select("id")
+      .eq("shopify_customer_id", params.customerId)
+      .single()
+
+    if (customerError) {
+      console.error("Customer lookup error:", customerError)
+      throw new Error("Customer not found")
+    }
+
+    if (!customer) {
+      throw new Error("Customer not found")
     }
 
     // Fetch line items directly from order_line_items_v2
@@ -54,7 +96,7 @@ export async function GET(
         status,
         order_id
       `)
-      .eq("customer_id", params.customerId)
+      .eq("customer_id", (customer as Customer).id)
 
     if (lineItemsError) {
       throw lineItemsError
@@ -64,7 +106,7 @@ export async function GET(
     const { data: rewardsData, error: rewardsError } = await supabase
       .from("customer_rewards")
       .select("*")
-      .eq("customer_id", params.customerId)
+      .eq("customer_id", (customer as Customer).id)
       .single()
 
     if (rewardsError && rewardsError.code !== "PGRST116") {
@@ -75,7 +117,7 @@ export async function GET(
     const { data: rewardEvents, error: eventsError } = await supabase
       .from("reward_events")
       .select("*")
-      .eq("customer_id", params.customerId)
+      .eq("customer_id", (customer as Customer).id)
       .order("created_at", { ascending: false })
       .limit(5)
 
@@ -87,7 +129,7 @@ export async function GET(
     const { data: currentTier, error: currentTierError } = await supabase
       .from("reward_tiers")
       .select("*")
-      .eq("name", rewardsData?.level || "bronze")
+      .eq("name", (rewardsData as unknown as CustomerRewards | null)?.level || "bronze")
       .single()
 
     if (currentTierError) {
@@ -98,7 +140,7 @@ export async function GET(
     const { data: nextTier, error: nextTierError } = await supabase
       .from("reward_tiers")
       .select("*")
-      .gt("required_points", rewardsData?.points || 0)
+      .gt("required_points", (rewardsData as unknown as CustomerRewards | null)?.points || 0)
       .order("required_points", { ascending: true })
       .limit(1)
       .single()

@@ -56,11 +56,7 @@ interface RewardsData {
   recentEvents: RewardEvent[]
 }
 
-export default function CustomerDashboardPage({
-  params,
-}: {
-  params: { customerId: string }
-}) {
+export default function CustomerDashboardPage() {
   const router = useRouter()
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -109,10 +105,15 @@ export default function CustomerDashboardPage({
         setIsLoading(true)
         setError(null)
 
-        const response = await fetch(`/api/customer/dashboard/${params.customerId}`)
+        const response = await fetch(`/api/customer/dashboard/${shopifyCustomerId}`)
         
         if (!response.ok) {
           const errorData = await response.json().catch(() => ({}))
+          if (response.status === 500 && errorData.message === "Customer not found") {
+            console.error("Customer mapping not found, redirecting to Shopify auth")
+            window.location.href = `/api/auth/shopify`
+            return
+          }
           throw new Error(errorData.message || 'Failed to fetch dashboard data')
         }
 
@@ -133,7 +134,7 @@ export default function CustomerDashboardPage({
     }
 
     fetchDashboardData()
-  }, [router, params.customerId])
+  }, [router])
 
   const handleNfcScan = async () => {
     try {
@@ -200,21 +201,17 @@ export default function CustomerDashboardPage({
       if (result.success) {
         toast({
           title: "NFC Tag Verified",
-          description: `Artwork authenticated: ${result.artworkTitle}`,
+          description: "The NFC tag has been successfully verified.",
         })
       } else {
-        toast({
-          title: "NFC Tag Verification Failed",
-          description: result.message || "Unable to verify the NFC tag",
-          variant: "destructive",
-        })
+        throw new Error(result.message || 'Failed to verify NFC tag')
       }
-    } catch (error) {
-      console.error("NFC Tag Verification Error:", error)
+    } catch (error: any) {
+      console.error('NFC Tag Verification Error:', error)
       toast({
-        title: "Verification Error",
-        description: "An error occurred while verifying the NFC tag",
         variant: "destructive",
+        title: "Verification Failed",
+        description: error.message || "Failed to verify NFC tag",
       })
     }
   }
@@ -222,14 +219,14 @@ export default function CustomerDashboardPage({
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <Loader2 className="w-8 h-8 animate-spin" />
+        <Loader2 className="h-8 w-8 animate-spin" />
       </div>
     )
   }
 
   if (error) {
     return (
-      <div className="container max-w-6xl py-8">
+      <div className="p-4">
         <Alert variant="destructive">
           <AlertCircle className="h-4 w-4" />
           <AlertTitle>Error</AlertTitle>
@@ -240,159 +237,177 @@ export default function CustomerDashboardPage({
   }
 
   return (
-    <div className="container max-w-6xl py-8">
-      <div className="grid gap-8">
-        {/* Collection Section */}
-        <section>
-          <h1 className="text-2xl font-bold mb-6">Your Digital Art Collection</h1>
-
-          {lineItems.length === 0 ? (
-            <Card>
-              <CardHeader>
-                <CardTitle>No Artworks Yet</CardTitle>
-                <CardDescription>
-                  Your digital art collection will appear here once you make a purchase.
-                </CardDescription>
-              </CardHeader>
-            </Card>
-          ) : (
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {lineItems.map((item) => {
-                const nfcStatus = getNfcStatus(item)
-                return (
-                  <Card key={item.id}>
-                    <CardHeader>
-                      <CardTitle>{item.name}</CardTitle>
-                      <CardDescription>
-                        {item.vendor_name || 'Unknown Vendor'} • Edition {item.edition_number || 'N/A'}/{item.edition_total || 'N/A'}
-                      </CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="flex justify-between items-start">
-                        <div>
-                          <Badge variant={nfcStatus.variant}>
-                            {nfcStatus.label}
-                          </Badge>
-                        </div>
-                        <Button
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            handleCertificateClick(item)
-                          }}
-                        >
-                          View Certificate
-                        </Button>
+    <div className="container mx-auto p-4 space-y-8">
+      <h1 className="text-3xl font-bold">Your Collection</h1>
+      
+      {lineItems.length === 0 ? (
+        <div className="text-center py-12">
+          <h2 className="text-2xl font-semibold mb-4">No items in your collection yet</h2>
+          <p className="text-gray-600 mb-8">Start collecting unique pieces to build your digital art collection.</p>
+          <Button asChild>
+            <a href="https://thestreetlamp.com/collections/all" target="_blank" rel="noopener noreferrer">
+              Browse Collection
+            </a>
+          </Button>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {lineItems.map((item) => {
+            const nfcStatus = getNfcStatus(item)
+            return (
+              <Card key={item.id} className="overflow-hidden">
+                <CardHeader>
+                  <div className="relative aspect-square overflow-hidden rounded-lg mb-4">
+                    <img
+                      src={item.image_url || item.img_url || '/placeholder-logo.png'}
+                      alt={item.name}
+                      className="object-cover w-full h-full"
+                    />
+                  </div>
+                  <CardTitle className="line-clamp-2">{item.name}</CardTitle>
+                  <CardDescription>
+                    {item.vendor_name && (
+                      <div className="flex items-center gap-2 mb-2">
+                        <User className="h-4 w-4" />
+                        <span>{item.vendor_name}</span>
                       </div>
-                    </CardContent>
-                  </Card>
-                )
-              })}
-            </div>
-          )}
-        </section>
-
-        {/* Rewards Section */}
-        {rewards && (
-          <section>
-            <Card>
-              <CardHeader>
-                <CardTitle>Rewards & Benefits</CardTitle>
-                <CardDescription>
-                  Earn points and unlock exclusive benefits
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                {/* Current Level */}
-                <div className="space-y-4">
-                  <div className="flex justify-between items-center">
-                    <div className="flex items-center gap-2">
-                      <Award className="w-5 h-5 text-amber-400" />
-                      <div>
-                        <p className="font-medium">{rewards.level || "Bronze"} Level</p>
-                        <p className="text-sm text-muted-foreground">{rewards.points || 0} points</p>
-                      </div>
-                    </div>
-                    {rewards.nextTier && (
-                      <Badge variant="outline" className="bg-zinc-900/50">
-                        {rewards.nextTier.required_points - rewards.points} points to {rewards.nextTier.name}
-                      </Badge>
                     )}
-                  </div>
-
-                  {/* Progress Bar */}
-                  {rewards.nextTier && (
-                    <div className="space-y-2">
-                      <div className="h-2 bg-zinc-900/50 rounded-full overflow-hidden">
-                        <div
-                          className="h-full bg-gradient-to-r from-amber-500 to-amber-600 transition-all"
-                          style={{ width: `${(rewards.points / rewards.nextTier.required_points) * 100}%` }}
-                        />
+                    {item.edition_number && (
+                      <div className="flex items-center gap-2">
+                        <Hash className="h-4 w-4" />
+                        <span>
+                          Edition {item.edition_number}
+                          {item.edition_total && ` of ${item.edition_total}`}
+                        </span>
                       </div>
-                      <p className="text-sm text-muted-foreground text-right">
-                        {Math.round((rewards.points / rewards.nextTier.required_points) * 100)}% to next level
-                      </p>
-                    </div>
+                    )}
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex items-center gap-2 mb-4">
+                    {nfcStatus.status === "paired" ? (
+                      <Wifi className="h-4 w-4 text-green-500" />
+                    ) : nfcStatus.status === "unclaimed" ? (
+                      <Scan className="h-4 w-4 text-yellow-500" />
+                    ) : (
+                      <WifiOff className="h-4 w-4 text-red-500" />
+                    )}
+                    <Badge variant={nfcStatus.variant}>{nfcStatus.label}</Badge>
+                  </div>
+                </CardContent>
+                <CardFooter className="flex justify-between">
+                  <Button
+                    variant="outline"
+                    onClick={() => handleCertificateClick(item)}
+                  >
+                    View Certificate
+                  </Button>
+                  {nfcStatus.status === "unclaimed" && (
+                    <Button onClick={handleNfcScan}>
+                      <Scan className="h-4 w-4 mr-2" />
+                      Pair NFC
+                    </Button>
                   )}
-                </div>
+                </CardFooter>
+              </Card>
+            )
+          })}
+        </div>
+      )}
 
-                {/* Benefits */}
-                <div className="space-y-4">
-                  <h3 className="font-medium">Your Benefits</h3>
-                  <div className="grid gap-2">
-                    {rewards.currentTier.benefits.map((benefit: string, index: number) => (
-                      <div
-                        key={index}
-                        className="flex items-center gap-2 text-sm"
-                      >
-                        <Gift className="w-4 h-4 text-amber-400" />
-                        <span>{benefit}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Recent Activity */}
+      {rewards && (
+        <div className="mt-12">
+          <h2 className="text-2xl font-bold mb-6 flex items-center gap-2">
+            <Award className="h-6 w-6" />
+            Rewards & Benefits
+          </h2>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Gift className="h-5 w-5" />
+                  Current Tier
+                </CardTitle>
+                <CardDescription>
+                  {rewards.currentTier.name.charAt(0).toUpperCase() + rewards.currentTier.name.slice(1)} Member
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
                 <div className="space-y-2">
-                  <h3 className="font-medium">Recent Activity</h3>
-                  {rewards.recentEvents && rewards.recentEvents.length > 0 ? (
-                    <div className="space-y-2">
-                      {rewards.recentEvents.map((event: RewardEvent) => (
-                        <div
-                          key={event.id}
-                          className="flex justify-between items-center"
-                        >
-                          <div className="flex items-center gap-2">
-                            <Clock className="w-4 h-4 text-blue-400" />
-                            <div>
-                              <p className="text-sm">{event.reason}</p>
-                              <p className="text-xs text-muted-foreground">
-                                {format(new Date(event.created_at), "MMM d, yyyy")}
-                              </p>
-                            </div>
-                          </div>
-                          <Badge variant="outline" className="bg-green-500/10 text-green-400">
-                            +{event.points}
-                          </Badge>
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <p className="text-sm text-muted-foreground">No recent activity</p>
-                  )}
+                  <p className="font-semibold">{rewards.points} Points</p>
+                  <ul className="list-disc list-inside space-y-1">
+                    {rewards.currentTier.benefits.map((benefit, index) => (
+                      <li key={index}>{benefit}</li>
+                    ))}
+                  </ul>
                 </div>
               </CardContent>
             </Card>
-          </section>
-        )}
-      </div>
 
-      {selectedLineItem ? (
+            {rewards.nextTier && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Award className="h-5 w-5" />
+                    Next Tier
+                  </CardTitle>
+                  <CardDescription>
+                    {rewards.nextTier.name.charAt(0).toUpperCase() + rewards.nextTier.name.slice(1)} Member
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-2">
+                    <p className="font-semibold">
+                      {rewards.nextTier.required_points - rewards.points} points needed
+                    </p>
+                    <ul className="list-disc list-inside space-y-1">
+                      {rewards.nextTier.benefits.map((benefit, index) => (
+                        <li key={index}>{benefit}</li>
+                      ))}
+                    </ul>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            <Card className="md:col-span-2">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Clock className="h-5 w-5" />
+                  Recent Activity
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {rewards.recentEvents.map((event) => (
+                    <div key={event.id} className="flex items-center justify-between">
+                      <div>
+                        <p className="font-medium">{event.reason}</p>
+                        <p className="text-sm text-gray-500">
+                          {format(new Date(event.created_at), 'MMM d, yyyy')}
+                        </p>
+                      </div>
+                      <Badge variant={event.points > 0 ? "default" : "secondary"}>
+                        {event.points > 0 ? `+${event.points}` : event.points} points
+                      </Badge>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      )}
+
+      {selectedLineItem && (
         <CertificateModal
           lineItem={selectedLineItem}
           onClose={() => setSelectedLineItem(null)}
+          onNfcScanned={handleNfcTagScanned}
         />
-      ) : null}
-
+      )}
+      
       <Toaster />
     </div>
   )
