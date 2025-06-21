@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Award, CheckCircle, Star } from 'lucide-react';
+import { Award, CheckCircle, Star, Upload } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { SocialStoryCreator } from '@/components/vendor/SocialStoryCreator';

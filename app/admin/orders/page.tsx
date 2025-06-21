@@ -1,4 +1,6 @@
-import { createServerClient } from '@supabase/ssr';
+import { Suspense } from 'react';
+import { headers } from 'next/headers';
+import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
 import { cookies } from 'next/headers';
 import { formatCurrency } from '@/lib/utils';
 import type { Database } from '@/types/supabase';
@@ -30,23 +32,7 @@ async function getOrders({ page, limit }: GetOrdersParams) {
     console.log('Fetching orders with params:', { page, limit });
     
     const cookieStore = await cookies();
-    const supabase = createServerClient<Database>(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      {
-        cookies: {
-          get(name: string) {
-            return cookieStore.get(name)?.value;
-          },
-          set(name: string, value: string, options: any) {
-            // Server components can't set cookies
-          },
-          remove(name: string, options: any) {
-            // Server components can't remove cookies
-          },
-        },
-      }
-    );
+    const supabase = createServerComponentClient({ cookies: () => cookieStore });
 
     const offset = (page - 1) * limit;
     console.log('Calculated offset:', offset);
@@ -87,44 +73,39 @@ async function getOrders({ page, limit }: GetOrdersParams) {
   }
 }
 
-export default async function OrdersPage({ searchParams }: PageProps) {
-  try {
-    console.log('OrdersPage searchParams:', searchParams);
-    
-    const page = typeof searchParams.page === 'string' ? parseInt(searchParams.page) : 1;
-    const limit = typeof searchParams.limit === 'string' ? parseInt(searchParams.limit) : 10;
-    
-    console.log('Parsed page and limit:', { page, limit });
-    
-    const { orders, totalPages } = await getOrders({ page, limit });
-    
-    console.log('Orders page data:', { orders, totalPages });
+async function OrdersList() {
+  const cookieStore = cookies();
+  const supabase = createServerComponentClient({ cookies: () => cookieStore });
 
-    return (
-      <div className="container mx-auto py-8">
-        <div className="flex justify-between items-center mb-8">
-          <h1 className="text-3xl font-bold">Orders</h1>
-          <SyncAllOrdersButton />
-        </div>
-        <OrdersList 
-          orders={orders} 
-          currentPage={page} 
-          totalPages={totalPages} 
-        />
-      </div>
-    );
-  } catch (error) {
-    console.error('Error in OrdersPage:', error);
-    return (
-      <div className="container mx-auto py-8">
-        <div className="flex justify-between items-center mb-8">
-          <h1 className="text-3xl font-bold">Orders</h1>
-          <SyncAllOrdersButton />
-        </div>
-        <div className="text-red-500">
-          Error loading orders. Please try again.
-        </div>
-      </div>
-    );
+  // Use a fixed page size and default to first page
+  const PAGE_SIZE = 10;
+  const page = 1;
+
+  const { data: orders, error } = await supabase
+    .from('orders')
+    .select('*')
+    .range((page - 1) * PAGE_SIZE, page * PAGE_SIZE - 1);
+
+  if (error) {
+    return <div>Error loading orders: {error.message}</div>;
   }
+
+  return (
+    <div>
+      {orders.map(order => (
+        <div key={order.id}>
+          {/* Render order details */}
+          <p>{order.id}</p>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+export default function OrdersPage() {
+  return (
+    <Suspense fallback={<div>Loading orders...</div>}>
+      <OrdersList />
+    </Suspense>
+  );
 } 
