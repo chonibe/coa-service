@@ -401,338 +401,6 @@ const CollectionTimeline = ({ orders }: { orders: Order[] }) => {
   )
 }
 
-// Road-Like Timeline Component
-const RoadTimeline: React.FC<{ 
-  timelineData: TimelineMilestone[],
-  onCertificateClick: (item: LineItem) => void 
-}> = ({ 
-  timelineData,
-  onCertificateClick
-}) => {
-  return (
-    <div className="relative">
-      {timelineData.map((milestone, index) => (
-        <div key={milestone.orderId} className="mb-12">
-          {/* ... existing milestone header code ... */}
-          
-          <div className="flex overflow-x-auto pb-6 gap-4 mt-4">
-            {milestone.items.map((item) => (
-              <VinylArtworkCard
-                key={item.line_item_id}
-                item={item}
-                isSelected={false}
-                onSelect={() => {}}
-                onCertificateView={() => onCertificateClick(item)}
-              />
-            ))}
-          </div>
-        </div>
-      ))}
-    </div>
-  )
-}
-
-// 3D Interactive Timeline Component
-const InteractiveTimeline: React.FC<{ timelineData: TimelineMilestone[] }> = ({ timelineData }) => {
-  const containerRef = useRef<HTMLDivElement>(null)
-  const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 })
-  const { scrollYProgress } = useScroll({
-    container: containerRef,
-    offset: ["start start", "end end"]
-  })
-
-  // 3D Animation Variants
-  const timelineVariants: Variants = {
-    initial: { 
-      opacity: 0, 
-      scale: 0.6,
-      z: -500,
-      rotateX: 45,
-      rotateY: 15
-    },
-    animate: (index: number) => ({ 
-      opacity: 1, 
-      scale: 1,
-      z: 0,
-      rotateX: 0,
-      rotateY: 0,
-      transition: { 
-        type: "spring",
-        stiffness: 50,
-        damping: 15,
-        delay: index * 0.2
-      }
-    }),
-    hover: {
-      scale: 1.05,
-      boxShadow: "0 15px 30px rgba(0,0,0,0.3)",
-      transition: { duration: 0.3 }
-    }
-  }
-
-  // Handle mouse movement for 3D effect
-  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (!containerRef.current) return
-    const rect = containerRef.current.getBoundingClientRect()
-    const x = ((e.clientX - rect.left) / rect.width) * 2 - 1
-    const y = ((e.clientY - rect.top) / rect.height) * 2 - 1
-    setMousePosition({ x, y })
-  }
-
-  return (
-    <div 
-      ref={containerRef}
-      className="relative w-full min-h-[1200px] overflow-hidden perspective-[2000px]"
-      onMouseMove={handleMouseMove}
-    >
-      {/* 3D Road Background */}
-      <div 
-        className="absolute inset-0 bg-gradient-to-b from-zinc-900 via-zinc-800 to-zinc-900 
-          before:absolute before:inset-0 
-          before:bg-[linear-gradient(transparent_50%,rgba(0,0,0,0.1)_50%)] 
-          before:bg-[size:4px_4px]"
-        style={{
-          transform: `
-            rotateX(${mousePosition.y * 10}deg) 
-            rotateY(${mousePosition.x * 10}deg)
-          `,
-          transition: 'transform 0.1s ease'
-        }}
-      />
-
-      {/* Timeline Content Container */}
-      <div className="relative w-full min-h-[2000px] px-4 overflow-hidden">
-        {timelineData.map((milestone: TimelineMilestone, index: number) => (
-          <motion.div
-            key={milestone.orderId}
-            custom={index}
-            initial="initial"
-            animate="animate"
-            whileHover="hover"
-            variants={timelineVariants}
-            style={{
-              position: 'absolute',
-              top: `${index * 500}px`,
-              left: index % 2 === 0 ? '20%' : '80%',
-              translateX: index % 2 === 0 ? '-100%' : '100%',
-              transformStyle: 'preserve-3d',
-              perspective: '1500px',
-              transform: `
-                translateZ(${
-                  Math.abs(scrollYProgress.get() - index / timelineData.length) * 
-                  (index % 2 === 0 ? -400 : 400)
-                }px)
-                rotateX(${
-                  (scrollYProgress.get() - index / timelineData.length) * 
-                  (index % 2 === 0 ? 30 : -30)
-                }deg)
-                rotateY(${mousePosition.x * 15}deg)
-                scale(${
-                  1 - Math.abs(scrollYProgress.get() - index / timelineData.length) * 0.5
-                })
-              `,
-              opacity: Math.max(
-                0, 
-                1 - Math.abs(scrollYProgress.get() - index / timelineData.length) * 2
-              )
-            }}
-            className={`
-              absolute w-[600px] p-10 
-              bg-zinc-900/90 backdrop-blur-md 
-              border-2 border-amber-500/20
-              rounded-3xl 
-              shadow-2xl
-              transition-all duration-500
-              will-change-transform
-              ${index % 2 === 0 ? 'text-left' : 'text-right'}
-            `}
-          >
-            {/* 3D Milestone Content */}
-            <motion.div 
-              initial={{ opacity: 0, y: 50 }}
-              animate={{ 
-                opacity: 1, 
-                y: 0,
-                transition: { 
-                  delay: index * 0.2,
-                  type: "spring",
-                  stiffness: 100
-                }
-              }}
-            >
-              {/* Date Header with 3D Tilt */}
-              <motion.h3 
-                className={`
-                  text-2xl font-bold mb-6 
-                  ${index % 2 === 0 ? 'text-left' : 'text-right'}
-                  text-amber-400
-                `}
-                style={{
-                  transform: `
-                    rotateY(${
-                      (scrollYProgress.get() - index / timelineData.length) * 
-                      (index % 2 === 0 ? 15 : -15)
-                    }deg)
-                    rotateX(${mousePosition.y * 10}deg)
-                  `
-                }}
-              >
-                {milestone.date.toLocaleDateString('en-US', {
-                  month: 'long', 
-                  day: 'numeric', 
-                  year: 'numeric'
-                })}
-              </motion.h3>
-
-              {/* Artwork 3D Carousel */}
-              <motion.div 
-                className="flex justify-center space-x-6 mb-8"
-                initial={{ opacity: 0, z: -200 }}
-                animate={{ 
-                  opacity: 1, 
-                  z: 0,
-                  transition: { 
-                    staggerChildren: 0.1,
-                    delayChildren: 0.2 
-                  }
-                }}
-              >
-                {milestone.items.map((item: LineItem, itemIndex: number) => (
-                  <motion.div
-                    key={item.line_item_id}
-                    variants={{
-                      hidden: { 
-                        opacity: 0, 
-                        z: -300,
-                        scale: 0.6,
-                        rotateY: index % 2 === 0 ? 45 : -45
-                      },
-                      visible: { 
-                        opacity: 1, 
-                        z: 0,
-                        scale: 1,
-                        rotateY: 0,
-                        transition: { 
-                          type: "spring", 
-                          stiffness: 200, 
-                          damping: 20 
-                        }
-                      }
-                    }}
-                    className={`
-                      w-40 h-40 rounded-xl overflow-hidden 
-                      border-2 border-amber-500/30
-                      ${index % 2 === 0 ? 'mr-auto' : 'ml-auto'}
-                    `}
-                    whileHover={{ 
-                      scale: 1.1,
-                      rotate: index % 2 === 0 ? 5 : -5,
-                      z: 50,
-                      transition: { duration: 0.2 }
-                    }}
-                    style={{
-                      transform: `
-                        rotateY(${mousePosition.x * 15}deg)
-                        rotateX(${mousePosition.y * 15}deg)
-                      `,
-                      transformStyle: 'preserve-3d'
-                    }}
-                  >
-                    {item.img_url ? (
-                      <img 
-                        src={item.img_url} 
-                        alt={item.name} 
-                        className="w-full h-full object-cover" 
-                      />
-                    ) : (
-                      <div className="w-full h-full bg-zinc-800 flex items-center justify-center">
-                        <Album className="w-20 h-20 text-zinc-600" />
-                      </div>
-                    )}
-                  </motion.div>
-                ))}
-              </motion.div>
-
-              {/* Order Details with 3D Interaction */}
-              <motion.div 
-                className={`
-                  space-y-3 
-                  ${index % 2 === 0 ? 'text-left' : 'text-right'}
-                `}
-                initial={{ opacity: 0, z: -100 }}
-                animate={{ 
-                  opacity: 1, 
-                  z: 0,
-                  transition: { 
-                    delay: index * 0.3,
-                    type: "spring",
-                    stiffness: 100
-                  }
-                }}
-              >
-                {milestone.items.map((item: LineItem) => (
-                  <p 
-                    key={item.line_item_id} 
-                    className="text-sm text-zinc-400 truncate"
-                  >
-                    {item.name}
-                  </p>
-                ))}
-                <Badge 
-                  className={`
-                    mt-6 
-                    ${index % 2 === 0 ? 'mr-auto' : 'ml-auto'}
-                    bg-amber-500/20 text-amber-400
-                  `}
-                >
-                  Order #{milestone.orderNumber}
-                </Badge>
-              </motion.div>
-            </motion.div>
-          </motion.div>
-        ))}
-      </div>
-
-      {/* 3D Navigation Indicator */}
-      <motion.div 
-        className="fixed bottom-12 left-1/2 transform -translate-x-1/2 
-          w-16 h-24 border-2 border-amber-700 rounded-full 
-          flex items-center justify-center"
-        initial={{ opacity: 0, y: 50 }}
-        animate={{ 
-          opacity: 1, 
-          y: 0,
-          transition: { 
-            type: "spring",
-            stiffness: 100
-          }
-        }}
-        style={{
-          transform: `
-            translateX(-50%) 
-            rotateX(${mousePosition.y * 10}deg)
-            rotateY(${mousePosition.x * 10}deg)
-          `,
-          transformStyle: 'preserve-3d'
-        }}
-      >
-        <motion.div 
-          className="w-3 h-3 bg-amber-500 rounded-full"
-          animate={{
-            y: [0, 15, 0],
-            opacity: [0.5, 1, 0.5]
-          }}
-          transition={{
-            duration: 1.5,
-            repeat: Infinity,
-            ease: "easeInOut"
-          }}
-        />
-      </motion.div>
-    </div>
-  )
-}
-
 export default function CustomerDashboardById() {
   const router = useRouter()
   const params = useParams()
@@ -740,6 +408,33 @@ export default function CustomerDashboardById() {
   const [orders, setOrders] = useState<Order[]>([])
   const [selectedLineItem, setSelectedLineItem] = useState<LineItem>()
   const [selectedArtworkIndex, setSelectedArtworkIndex] = useState<number>(-1)
+  const [view, setView] = useState<'grid' | 'timeline'>('grid')
+  const [filter, setFilter] = useState<'all' | 'authenticated' | 'pending'>('all')
+  const { scrollYProgress } = useScroll()
+
+  // Stats calculation
+  const stats = useMemo(() => {
+    const totalArtworks = orders.reduce((acc, order) => acc + order.line_items.length, 0)
+    const authenticatedArtworks = orders.reduce((acc, order) => 
+      acc + order.line_items.filter(item => item.nfc_claimed_at).length, 0
+    )
+    const pendingAuthentication = totalArtworks - authenticatedArtworks
+
+    return {
+      total: totalArtworks,
+      authenticated: authenticatedArtworks,
+      pending: pendingAuthentication
+    }
+  }, [orders])
+
+  // Filter items based on authentication status
+  const filteredItems = useMemo(() => {
+    return orders.flatMap(order => order.line_items).filter(item => {
+      if (filter === 'authenticated') return item.nfc_claimed_at
+      if (filter === 'pending') return !item.nfc_claimed_at
+      return true
+    })
+  }, [orders, filter])
 
   useEffect(() => {
     const fetchOrders = async () => {
@@ -765,16 +460,6 @@ export default function CustomerDashboardById() {
     fetchOrders()
   }, [params.customerId])
 
-  // Transform orders into timeline data
-  const timelineData: TimelineMilestone[] = useMemo(() => {
-    return orders.map(order => ({
-      orderId: order.id,
-      orderNumber: order.order_number.toString(),
-      date: new Date(order.processed_at),
-      items: order.line_items
-    })).sort((a, b) => b.date.getTime() - a.date.getTime())
-  }, [orders])
-
   if (error) {
     return (
       <div className="min-h-screen bg-zinc-950 text-white flex items-center justify-center">
@@ -789,41 +474,130 @@ export default function CustomerDashboardById() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-zinc-900 via-zinc-800 to-zinc-900">
-      <div className="container mx-auto py-8">
-        <div className="flex items-center justify-between mb-8">
-          <h1 className="text-3xl font-bold text-white">Your Vinyl Collection</h1>
-        </div>
+      {/* Progress bar */}
+      <motion.div 
+        className="fixed top-0 left-0 right-0 h-1 bg-amber-500 origin-left z-50"
+        style={{ scaleX: scrollYProgress }}
+      />
 
-        <div className="mt-8">
-          {timelineData.map((milestone, index) => (
-            <div key={milestone.orderId} className="mb-12">
-              <div className="flex items-center gap-4 mb-6">
-                <h2 className="text-xl font-semibold text-white">
-                  {milestone.date.toLocaleDateString('en-US', {
-                    month: 'long',
-                    day: 'numeric',
-                    year: 'numeric'
-                  })}
-                </h2>
-                <Badge variant="outline">
-                  Order #{milestone.orderNumber}
-                </Badge>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {milestone.items.map((item, index) => (
-                  <VinylArtworkCard
-                    key={item.line_item_id}
-                    item={item}
-                    isSelected={selectedArtworkIndex === index}
-                    onSelect={() => setSelectedArtworkIndex(index)}
-                    onCertificateView={() => setSelectedLineItem(item)}
-                  />
-                ))}
-              </div>
+      {/* Hero Section */}
+      <div className="relative overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-r from-amber-500/10 to-purple-500/10 pointer-events-none" />
+        <div className="container mx-auto py-12 px-4">
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+            <div>
+              <h1 className="text-4xl md:text-5xl font-bold text-white mb-4">
+                Your Digital Collection
+              </h1>
+              <p className="text-zinc-400 text-lg max-w-xl">
+                Explore your authenticated digital artworks and manage your collection
+              </p>
             </div>
-          ))}
+            
+            {/* Stats Cards */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 w-full md:w-auto">
+              <motion.div 
+                whileHover={{ scale: 1.02 }}
+                className="bg-zinc-800/50 backdrop-blur-sm p-4 rounded-xl border border-zinc-700"
+              >
+                <div className="text-3xl font-bold text-white">{stats.total}</div>
+                <div className="text-zinc-400">Total Artworks</div>
+              </motion.div>
+              <motion.div 
+                whileHover={{ scale: 1.02 }}
+                className="bg-zinc-800/50 backdrop-blur-sm p-4 rounded-xl border border-zinc-700"
+              >
+                <div className="text-3xl font-bold text-green-500">{stats.authenticated}</div>
+                <div className="text-zinc-400">Authenticated</div>
+              </motion.div>
+              <motion.div 
+                whileHover={{ scale: 1.02 }}
+                className="bg-zinc-800/50 backdrop-blur-sm p-4 rounded-xl border border-zinc-700"
+              >
+                <div className="text-3xl font-bold text-amber-500">{stats.pending}</div>
+                <div className="text-zinc-400">Pending Auth</div>
+              </motion.div>
+            </div>
+          </div>
         </div>
+      </div>
+
+      {/* Controls */}
+      <div className="container mx-auto px-4 py-8">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
+          <div className="flex items-center gap-4">
+            <Button
+              variant={view === 'grid' ? 'default' : 'outline'}
+              onClick={() => setView('grid')}
+              className="gap-2"
+            >
+              <LayoutGrid className="w-4 h-4" />
+              Grid
+            </Button>
+            <Button
+              variant={view === 'timeline' ? 'default' : 'outline'}
+              onClick={() => setView('timeline')}
+              className="gap-2"
+            >
+              <Calendar className="w-4 h-4" />
+              Timeline
+            </Button>
+          </div>
+
+          <div className="flex items-center gap-4">
+            <Button
+              variant={filter === 'all' ? 'default' : 'outline'}
+              onClick={() => setFilter('all')}
+              size="sm"
+            >
+              All
+            </Button>
+            <Button
+              variant={filter === 'authenticated' ? 'default' : 'outline'}
+              onClick={() => setFilter('authenticated')}
+              size="sm"
+              className="gap-2"
+            >
+              <Wifi className="w-4 h-4" />
+              Authenticated
+            </Button>
+            <Button
+              variant={filter === 'pending' ? 'default' : 'outline'}
+              onClick={() => setFilter('pending')}
+              size="sm"
+              className="gap-2"
+            >
+              <WifiOff className="w-4 h-4" />
+              Pending
+            </Button>
+          </div>
+        </div>
+
+        {/* Grid View */}
+        {view === 'grid' && (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            {filteredItems.map((item, index) => (
+              <motion.div
+                key={item.line_item_id}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: index * 0.1 }}
+              >
+                <VinylArtworkCard
+                  item={item}
+                  isSelected={selectedArtworkIndex === index}
+                  onSelect={() => setSelectedArtworkIndex(index)}
+                  onCertificateView={() => setSelectedLineItem(item)}
+                />
+              </motion.div>
+            ))}
+          </div>
+        )}
+
+        {/* Timeline View */}
+        {view === 'timeline' && (
+          <CollectionTimeline timelineData={timelineData} />
+        )}
       </div>
 
       {/* Certificate Modal */}
@@ -837,4 +611,4 @@ export default function CustomerDashboardById() {
       <Toaster />
     </div>
   )
-} 
+}
