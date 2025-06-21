@@ -351,6 +351,32 @@ https://street-collector-3e50j85zi-chonibes-projects.vercel.app
   - Added better visual feedback and hover states
   - Fixed icon imports and component organization
 
+### 2024-03-19: Certificate Modal Improvements
+- Branch: `revert-dashboard-keep-certificate`
+- Changes:
+  - Updated certificate modal with flippable card design
+  - Added dark theme and improved animations
+  - Enhanced NFC pairing UX
+  - Added loading states and error handling
+  - Improved certificate display with parallax effects
+- Testing:
+  - [x] Certificate modal opens correctly
+  - [x] Card flips smoothly
+  - [x] NFC pairing works as expected
+  - [x] Error states display correctly
+  - [x] Mobile responsiveness
+- Monitoring:
+  - Certificate modal performance
+  - NFC pairing success rate
+  - Error rates
+- Rollback Plan:
+  - Revert to commit `5b2a200a` if issues arise
+- Security:
+  - No sensitive data exposed
+  - NFC pairing properly secured
+- Database:
+  - No changes required
+
 ## Certificate Experience Enhancement Deployment - [Date: 2024-03-21]
 
 ### Changes Implemented

@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { Loader2, Link, AlertCircle, Wifi, WifiOff, Scan, Hash, User } from "lucide-react"
+import { Loader2, Link, AlertCircle, Wifi, WifiOff, Scan, Hash, User, Album } from "lucide-react"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { NfcTagScanner } from '@/src/components/NfcTagScanner'
 import { toast } from "@/components/ui/use-toast"
@@ -206,6 +206,37 @@ export default function CustomerDashboard() {
     }
   }
 
+  const handleNfcPairing = async (lineItem?: LineItem) => {
+  if (lineItem) {
+    setSelectedLineItem(lineItem)
+  }
+    try {
+      if (!('NDEFReader' in window)) {
+        throw new Error('NFC is not supported on this device')
+      }
+
+      // If a line item is passed, set it as the selected line item
+      if (lineItem) {
+        setSelectedLineItem(lineItem)
+      }
+
+      const ndef = new (window as any).NDEFReader()
+      await ndef.scan()
+
+      ndef.onreading = ({ message }: any) => {
+        // Handle NFC reading
+        console.log('NFC Message:', message)
+      }
+
+      ndef.onreadingerror = () => {
+        throw new Error('Error reading NFC tag')
+      }
+    } catch (error) {
+      console.error('NFC Error:', error)
+      setError('Failed to scan NFC tag')
+    }
+  }
+
   if (isLoading) {
     return (
       <div className="flex justify-center items-center min-h-screen">
@@ -270,19 +301,68 @@ export default function CustomerDashboard() {
                         return (
                           <div 
                             key={item.line_item_id} 
-                            className="space-y-2 cursor-pointer hover:bg-accent/50 p-2 rounded-md transition-colors"
-                            onClick={() => handleCertificateClick(item)}
+                            className="relative group cursor-pointer rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-all duration-300"
                           >
-                            <div className="flex justify-between items-start">
-                              <div>
-                                <p className="font-medium">{item.name}</p>
-                                <p className="text-sm text-muted-foreground">
+                            <div 
+                              className="absolute inset-0 bg-gradient-to-r from-primary/10 to-primary/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+                              onClick={() => handleCertificateClick(item)}
+                            />
+                            <div className="p-4 flex flex-col sm:flex-row items-start sm:items-center space-y-3 sm:space-y-0 sm:space-x-4">
+                              <div className="flex-shrink-0">
+                                {item.img_url ? (
+                                  <img 
+                                    src={item.img_url} 
+                                    alt={item.name} 
+                                    className="w-20 h-20 object-cover rounded-md"
+                                  />
+                                ) : (
+                                  <div className="w-20 h-20 bg-gray-200 rounded-md flex items-center justify-center">
+                                    <Album className="w-10 h-10 text-gray-500" />
+                                  </div>
+                                )}
+                              </div>
+                              <div className="flex-grow space-y-1">
+                                <div className="flex justify-between items-center">
+                                  <h3 className="font-semibold text-sm sm:text-base">{item.name}</h3>
+                                  <Badge 
+                                    variant={nfcStatus.variant} 
+                                    className="hidden sm:inline-flex"
+                                  >
+                                    {nfcStatus.label}
+                                  </Badge>
+                                </div>
+                                <p className="text-xs sm:text-sm text-muted-foreground">
                                   {item.vendor_name || 'Unknown Vendor'} • Edition {item.edition_number || 'N/A'}/{item.edition_total || 'N/A'}
                                 </p>
+                                <Badge 
+                                  variant={nfcStatus.variant} 
+                                  className="sm:hidden mt-2"
+                                >
+                                  {nfcStatus.label}
+                                </Badge>
                               </div>
-                              <Badge variant={nfcStatus.variant}>
-                                {nfcStatus.label}
-                              </Badge>
+                            </div>
+                            <div className="absolute bottom-0 left-0 right-0 bg-background/80 backdrop-blur-sm p-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex justify-between items-center">
+                              <Button 
+                                size="sm" 
+                                variant="outline" 
+                                className="w-1/2 mr-2"
+                                onClick={() => handleCertificateClick(item)}
+                              >
+                                View Certificate
+                              </Button>
+                              {!item.nfc_claimed_at && item.nfc_tag_id && (
+                                <Button 
+                                  size="sm" 
+                                  className="w-1/2"
+                                  onClick={() => {
+                                    setSelectedLineItem(item)
+                                    handleNfcPairing(item)
+                                  }}
+                                >
+                                  Authenticate NFC
+                                </Button>
+                              )}
                             </div>
                           </div>
                         )
