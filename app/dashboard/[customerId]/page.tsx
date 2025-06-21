@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button"
 import { 
   Loader2, 
   AlertCircle, 
-  BadgeIcon as Certificate, 
+  BadgeIcon as CertificateIcon, 
   Wifi, 
   WifiOff, 
   ExternalLink, 
@@ -97,10 +97,32 @@ const VinylArtworkCard = ({
           flex flex-col sm:flex-row
           transition-all duration-300 ease-in-out
           hover:shadow-xl hover:border-zinc-600/50
-          group
+          group cursor-pointer
         `}
         onClick={() => onSelect()}
       >
+        {/* Status Badge - Top Right */}
+        <div className="absolute top-3 right-3 z-10">
+          {status === "nfc-paired" && (
+            <Badge variant="outline" className="bg-green-500/10 text-green-400 border-green-500/20 gap-1">
+              <Wifi className="h-3 w-3" />
+              Authenticated
+            </Badge>
+          )}
+          {status === "unpaired" && (
+            <Badge variant="outline" className="bg-orange-500/10 text-orange-400 border-orange-500/20 gap-1">
+              <WifiOff className="h-3 w-3" />
+              Ready to Pair
+            </Badge>
+          )}
+          {status === "no-certificate" && (
+            <Badge variant="outline" className="bg-zinc-500/10 text-zinc-400 border-zinc-500/20 gap-1">
+              <CertificateIcon className="h-3 w-3" />
+              No Certificate
+            </Badge>
+          )}
+        </div>
+
         {/* Artwork Image */}
         <div className="relative w-full sm:w-[45%] aspect-square sm:aspect-auto">
           {item.img_url ? (
@@ -116,7 +138,7 @@ const VinylArtworkCard = ({
           )}
           {item.edition_number && item.edition_total && (
             <Badge 
-              className="absolute top-2 right-2 bg-black/60 text-white border-zinc-700"
+              className="absolute bottom-2 left-2 bg-black/60 text-white border-zinc-700"
             >
               Edition #{item.edition_number}/{item.edition_total}
             </Badge>
@@ -142,54 +164,36 @@ const VinylArtworkCard = ({
             </div>
           </div>
 
-          {/* Middle Section - Status Badges */}
-          <div className="space-y-2 my-4">
-            {status === "nfc-paired" && (
-              <div className="bg-green-500/10 border border-green-500/20 rounded-lg p-2.5 flex items-center gap-2">
-                <Wifi className="h-4 w-4 text-green-400 flex-shrink-0" />
-                <span className="text-sm text-green-400 truncate">NFC Tag Paired</span>
-              </div>
-            )}
-            {status === "unpaired" && (
-              <div className="bg-orange-500/10 border border-orange-500/20 rounded-lg p-2.5 flex items-center gap-2">
-                <WifiOff className="h-4 w-4 text-orange-400 flex-shrink-0" />
-                <span className="text-sm text-orange-400 truncate">Ready to Pair NFC Tag</span>
-              </div>
-            )}
-            {status === "no-certificate" && (
-              <div className="bg-zinc-500/10 border border-zinc-500/20 rounded-lg p-2.5 flex items-center gap-2">
-                <Certificate className="h-4 w-4 text-zinc-400 flex-shrink-0" />
-                <span className="text-sm text-zinc-400 truncate">No Certificate Available</span>
-              </div>
-            )}
-          </div>
-
-          {/* Bottom Section - Actions */}
-          <div className="flex flex-col sm:flex-row gap-2 mt-auto">
+          {/* Action Buttons */}
+          <div className="flex flex-col gap-2 mt-4">
             {item.certificate_url && (
               <Button 
                 size="sm" 
                 variant="outline" 
-                className="text-amber-400 border-amber-500/30 hover:bg-amber-500/10 w-full sm:flex-1"
+                className="w-full justify-start text-amber-400 border-amber-500/20 bg-amber-500/5 hover:bg-amber-500/10 hover:border-amber-500/30 transition-colors"
                 onClick={(e) => {
                   e.stopPropagation()
                   onCertificateView()
                 }}
               >
-                <Certificate className="h-4 w-4 mr-2 flex-shrink-0" /> View Certificate
+                <CertificateIcon className="h-4 w-4 mr-2 flex-shrink-0" />
+                <span className="flex-1">View Certificate</span>
+                <ArrowRight className="h-4 w-4 text-amber-500/50" />
               </Button>
             )}
             {status === "unpaired" && (
               <Button 
                 size="sm" 
                 variant="outline" 
-                className="text-blue-400 border-blue-500/30 hover:bg-blue-500/10 w-full sm:flex-1"
+                className="w-full justify-start text-blue-400 border-blue-500/20 bg-blue-500/5 hover:bg-blue-500/10 hover:border-blue-500/30 transition-colors"
                 onClick={(e) => {
                   e.stopPropagation()
                   setIsNFCWizardOpen(true)
                 }}
               >
-                <Wifi className="h-4 w-4 mr-2 flex-shrink-0" /> Pair NFC Tag
+                <Wifi className="h-4 w-4 mr-2 flex-shrink-0" />
+                <span className="flex-1">Pair NFC Tag</span>
+                <ArrowRight className="h-4 w-4 text-blue-500/50" />
               </Button>
             )}
           </div>
