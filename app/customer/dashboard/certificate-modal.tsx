@@ -265,287 +265,244 @@ export function CertificateModal({ lineItem, onClose }: CertificateModalProps) {
   return (
     <>
       <Dialog open={isOpen} onOpenChange={() => onClose()}>
-        <DialogContent className="w-full p-0 overflow-hidden rounded-none sm:max-w-4xl sm:rounded-xl">
-          <DialogHeader className="absolute top-0 left-0 right-0 z-50 glass-effect p-3 flex flex-col gap-2 justify-between sm:p-4 sm:flex-row sm:items-center sm:gap-0">
-            <div>
-              <DialogTitle className="text-lg font-bold text-white line-clamp-1 sm:text-2xl">{lineItem.name}</DialogTitle>
-              <DialogDescription className="text-xs text-zinc-300 sm:text-base">
-                Certificate of Authenticity • {editionInfo}
-              </DialogDescription>
-            </div>
-            <div className="flex items-center gap-2 self-end sm:self-auto">
-              <Badge 
-                variant={
-                  nfcStatus === "paired" 
-                    ? "default" 
-                    : nfcStatus === "unpaired" 
-                    ? "secondary" 
-                    : "destructive"
-                }
-                className="flex items-center gap-1 px-2 py-1 text-xs whitespace-nowrap sm:gap-2 sm:px-3 sm:py-1.5 sm:text-sm"
-              >
-                {nfcStatus === "paired" ? (
-                  <Wifi className="w-3 h-3 text-green-500 sm:w-4 sm:h-4" />
-                ) : nfcStatus === "unpaired" ? (
-                  <WifiOff className="w-3 h-3 text-yellow-500 sm:w-4 sm:h-4" />
-                ) : (
-                  <WifiOff className="w-3 h-3 text-red-500 sm:w-4 sm:h-4" />
+        <DialogContent className="max-w-4xl w-full p-0 overflow-hidden sm:rounded-xl rounded-none">
+          {/* Fixed header with proper spacing */}
+          <DialogHeader className="sticky top-0 left-0 right-0 z-50 glass-effect p-4 mb-4">
+            <div className="flex flex-col sm:flex-row sm:items-center gap-4 sm:gap-6">
+              <div className="flex-1 min-w-0">
+                <DialogTitle className="text-xl sm:text-2xl font-bold text-white truncate">
+                  {lineItem.name}
+                </DialogTitle>
+                <DialogDescription className="text-sm sm:text-base text-zinc-300">
+                  Certificate of Authenticity • {editionInfo}
+                </DialogDescription>
+              </div>
+              <div className="flex items-center gap-2 self-end sm:self-auto">
+                <Badge variant="outline" className="bg-zinc-900/50">
+                  <User className="w-3 h-3 mr-1" />
+                  {artistName}
+                </Badge>
+                {lineItem.certificate_url && (
+                  <a
+                    href={lineItem.certificate_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center justify-center h-8 px-3 text-xs font-medium transition-colors bg-zinc-900/50 border border-zinc-800 rounded-md hover:bg-zinc-900 focus:outline-none"
+                  >
+                    <ExternalLink className="w-3 h-3 mr-1" />
+                    View Original
+                  </a>
                 )}
-                {nfcStatus === "paired" 
-                  ? "Authenticated" 
-                  : nfcStatus === "unpaired" 
-                  ? "Needs Auth" 
-                  : "No NFC"}
-              </Badge>
-              <Button 
-                variant="ghost" 
-                size="icon"
-                className="h-8 w-8 text-white hover:text-white/80 hover:bg-white/10 transition-colors sm:h-10 sm:w-10"
-                onClick={() => onClose()}
-              >
-                <X className="w-4 h-4 sm:w-5 sm:h-5" />
-              </Button>
+              </div>
             </div>
           </DialogHeader>
 
-          <PostcardCertificate 
-            isFlipped={isFlipped}
-            className="w-full min-h-[400px] flex flex-col sm:h-[600px]"
-          >
-            <div className="grid grid-cols-1 h-full sm:grid-cols-2">
-              {/* Artwork Image Side */}
-              <div className="relative overflow-hidden group min-h-[200px] sm:min-h-[300px]">
-                {lineItem.img_url ? (
-                  <img 
-                    src={lineItem.img_url} 
-                    alt={lineItem.name} 
-                    className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
-                  />
-                ) : (
-                  <div className="w-full h-full bg-gradient-to-br from-zinc-800 to-zinc-900 flex items-center justify-center">
-                    <Album className="w-16 h-16 text-zinc-600 float sm:w-24 sm:h-24" />
-                  </div>
-                )}
-                <div className="absolute bottom-0 left-0 right-0 glass-effect p-3 text-white transform translate-y-full transition-transform duration-300 group-hover:translate-y-0 sm:p-4">
-                  <h2 className="text-lg font-bold line-clamp-1 sm:text-2xl">{lineItem.name}</h2>
-                  <p className="text-xs text-zinc-300 sm:text-sm">{artistName}</p>
-                </div>
-              </div>
+          {/* Main content with proper padding */}
+          <div className="p-4 space-y-6">
+            {/* Certificate Display */}
+            <div className="relative aspect-[4/3] w-full">
+              <PostcardCertificate isFlipped={isFlipped} className="w-full h-full">
+                {/* Front of Certificate */}
+                <div className={`absolute inset-0 w-full h-full ${isFlipped ? 'invisible' : ''}`}>
+                  <div className="relative h-full flex flex-col p-6 sm:p-8">
+                    {/* Certificate Content */}
+                    <div className="flex-1 flex flex-col justify-between">
+                      <div className="space-y-4">
+                        <div className="flex items-start justify-between">
+                          <motion.div
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: 0.2 }}
+                            className="float"
+                          >
+                            <Certificate className="w-12 h-12 text-amber-500" />
+                          </motion.div>
+                          <motion.div
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            transition={{ delay: 0.4 }}
+                            className="text-right"
+                          >
+                            <p className="text-zinc-400 text-sm">Edition</p>
+                            <p className="text-white font-bold">{editionInfo}</p>
+                          </motion.div>
+                        </div>
 
-              {/* Certificate Details Side */}
-              <div className="p-4 flex flex-col justify-between bg-gradient-to-br from-zinc-900 to-zinc-800 sm:p-8">
-                <div>
-                  <div className="flex flex-col gap-3 mb-4 sm:flex-row sm:items-center sm:gap-0 sm:justify-between sm:mb-6">
-                    <div>
-                      <h3 className="text-base font-semibold flex items-center gap-2 text-white sm:text-xl">
-                        <Certificate className="w-5 h-5 text-amber-500 sm:w-6 sm:h-6" />
-                        Certificate of Authenticity
-                      </h3>
-                      <p className="text-xs text-zinc-400 sm:text-base">{editionInfo}</p>
-                    </div>
-                    <Button 
-                      variant="outline" 
-                      size="sm"
-                      onClick={() => setIsFlipped(!isFlipped)}
-                      className="w-full text-xs hover:bg-white/10 transition-colors sm:w-auto sm:text-sm"
-                    >
-                      {isFlipped ? "View Artwork" : "View Certificate"}
-                    </Button>
-                  </div>
-
-                  <div className="space-y-3 sm:space-y-4">
-                    <div className="flex items-center gap-2 text-white/90 hover:text-white transition-colors sm:gap-3">
-                      <Signature className="w-4 h-4 text-amber-500 sm:w-5 sm:h-5" />
-                      <span className="text-xs sm:text-base">Artist: {artistName}</span>
-                    </div>
-                    <div className="flex items-center gap-2 text-white/90 hover:text-white transition-colors sm:gap-3">
-                      <Calendar className="w-4 h-4 text-amber-500 sm:w-5 sm:h-5" />
-                      <span className="text-xs sm:text-base">
-                        Issued: {new Date().toLocaleDateString()}
-                      </span>
-                    </div>
-                    {lineItem.certificate_url && (
-                      <div className="flex items-center gap-2 sm:gap-3">
-                        <ExternalLink className="w-4 h-4 text-amber-500 sm:w-5 sm:h-5" />
-                        <a 
-                          href={lineItem.certificate_url} 
-                          target="_blank" 
-                          rel="noopener noreferrer"
-                          className="text-xs text-blue-400 hover:text-blue-300 transition-colors hover:underline sm:text-base"
+                        <motion.div
+                          initial={{ opacity: 0, y: 20 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ delay: 0.3 }}
+                          className="space-y-2"
                         >
-                          View Online Certificate
-                        </a>
+                          <h2 className="text-2xl sm:text-3xl font-bold text-white">{lineItem.name}</h2>
+                          <p className="text-zinc-400">{lineItem.description}</p>
+                        </motion.div>
                       </div>
-                    )}
-                  </div>
 
-                  {/* NFC Pairing Section */}
-                  <div className="mt-4 sm:mt-6">
-                    {(!lineItem.nfc_tag_id || (lineItem.nfc_tag_id && !lineItem.nfc_claimed_at)) && (
-                      <Button 
-                        className="w-full bg-amber-500 hover:bg-amber-600 text-black font-medium text-sm py-2 transition-colors sm:text-base sm:py-3" 
-                        onClick={handleNfcPairing}
-                        disabled={isNfcPairing}
+                      <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        transition={{ delay: 0.5 }}
+                        className="mt-auto pt-6 space-y-4"
                       >
-                        {isNfcPairing ? (
-                          <>
-                            <Loader2 className="mr-2 h-3 w-3 animate-spin sm:h-4 sm:w-4" />
-                            Scanning for NFC Tag
-                          </>
-                        ) : (
-                          <>
-                            <Scan className="mr-2 h-3 w-3 sm:h-4 sm:w-4" />
-                            Pair NFC Tag
-                          </>
-                        )}
-                      </Button>
-                    )}
-                    {lineItem.nfc_tag_id && lineItem.nfc_claimed_at && (
-                      <div className="glass-effect p-3 rounded-lg flex items-center gap-2 border border-green-500/20 sm:p-4 sm:gap-3">
-                        <Sparkles className="w-5 h-5 text-green-500 float sm:w-6 sm:h-6" />
-                        <span className="text-xs text-green-400 sm:text-base">
-                          Artwork Authenticated with NFC
-                        </span>
-                      </div>
-                    )}
-                    {!lineItem.nfc_tag_id && (
-                      <div className="glass-effect p-3 rounded-lg flex items-center gap-2 border border-yellow-500/20 sm:p-4 sm:gap-3">
-                        <WifiOff className="w-5 h-5 text-yellow-500 sm:w-6 sm:h-6" />
-                        <span className="text-xs text-yellow-400 sm:text-base">
-                          No NFC Tag Available for this Artwork
-                        </span>
-                      </div>
+                        <div className="flex flex-wrap gap-4">
+                          <Badge variant="outline" className="bg-zinc-900/50">
+                            <User className="w-3 h-3 mr-1" />
+                            {artistName}
+                          </Badge>
+                          <Badge variant="outline" className="bg-zinc-900/50">
+                            <Calendar className="w-3 h-3 mr-1" />
+                            {new Date().getFullYear()}
+                          </Badge>
+                          {lineItem.nfc_tag_id && (
+                            <Badge variant="outline" className="bg-zinc-900/50">
+                              <Hash className="w-3 h-3 mr-1" />
+                              {lineItem.nfc_tag_id.slice(0, 8)}
+                            </Badge>
+                          )}
+                        </div>
+
+                        <div className="flex items-center justify-between">
+                          <div className="signature-font text-2xl text-amber-500">
+                            Street Collector
+                          </div>
+                          {lineItem.nfc_claimed_at ? (
+                            <Badge className="bg-green-500/20 text-green-400">
+                              <Wifi className="w-3 h-3 mr-1" />
+                              Authenticated
+                            </Badge>
+                          ) : (
+                            <Badge variant="outline" className="bg-zinc-900/50">
+                              <WifiOff className="w-3 h-3 mr-1" />
+                              Pending Authentication
+                            </Badge>
+                          )}
+                        </div>
+                      </motion.div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Back of Certificate */}
+                <div 
+                  className={`absolute inset-0 w-full h-full ${!isFlipped ? 'invisible' : ''}`}
+                  style={{ transform: 'rotateY(180deg)' }}
+                >
+                  <div className="h-full flex items-center justify-center p-6">
+                    {lineItem.img_url ? (
+                      <img 
+                        src={lineItem.img_url} 
+                        alt={lineItem.name}
+                        className="max-w-full max-h-full object-contain rounded-lg"
+                      />
+                    ) : (
+                      <Album className="w-24 h-24 text-zinc-700" />
                     )}
                   </div>
+                </div>
+              </PostcardCertificate>
+            </div>
+
+            {/* Actions */}
+            <div className="flex flex-wrap items-center gap-4 justify-end">
+              <Button
+                variant="outline"
+                onClick={() => setIsFlipped(!isFlipped)}
+                className="flex-1 sm:flex-none"
+              >
+                {isFlipped ? 'View Certificate' : 'View Artwork'}
+              </Button>
+              
+              {!lineItem.nfc_claimed_at && lineItem.nfc_tag_id && (
+                <Button
+                  onClick={handleNfcPairing}
+                  className="flex-1 sm:flex-none"
+                >
+                  Authenticate with NFC
+                </Button>
+              )}
+            </div>
+          </div>
+
+          {/* NFC Wizard Modal */}
+          {showNfcWizard && (
+            <div className="fixed inset-0 z-50 bg-black/90 flex items-center justify-center p-4">
+              <div className="max-w-md w-full bg-zinc-900 rounded-xl p-6 space-y-6">
+                {/* Wizard Progress */}
+                <div className="relative h-2 bg-zinc-800 rounded-full overflow-hidden">
+                  <div 
+                    className="absolute inset-y-0 left-0 bg-amber-500 progress-bar"
+                    style={{ width: `${(wizardStep / 4) * 100}%` }}
+                  />
+                </div>
+
+                {/* Step Content */}
+                <div className="text-center space-y-4">
+                  {wizardStep === 1 && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="space-y-4"
+                    >
+                      <Smartphone className="w-16 h-16 mx-auto text-amber-500" />
+                      <h3 className="text-xl font-bold text-white">Ready to Authenticate</h3>
+                      <p className="text-zinc-400">
+                        Make sure NFC is enabled on your device and tap Start to begin the authentication process.
+                      </p>
+                      <Button onClick={startNfcScan} className="w-full">
+                        Start Authentication
+                      </Button>
+                    </motion.div>
+                  )}
+
+                  {wizardStep === 2 && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="space-y-4"
+                    >
+                      <Scan className="w-16 h-16 mx-auto text-amber-500 animate-pulse" />
+                      <h3 className="text-xl font-bold text-white">Scanning for NFC Tag</h3>
+                      <p className="text-zinc-400">
+                        Hold your device near the NFC tag on your artwork to authenticate.
+                      </p>
+                      <Button variant="outline" onClick={() => setWizardStep(1)} className="w-full">
+                        Cancel
+                      </Button>
+                    </motion.div>
+                  )}
+
+                  {wizardStep === 3 && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="space-y-4"
+                    >
+                      <Loader2 className="w-16 h-16 mx-auto text-amber-500 animate-spin" />
+                      <h3 className="text-xl font-bold text-white">Verifying Tag</h3>
+                      <p className="text-zinc-400">
+                        Please keep your device in place while we verify the NFC tag.
+                      </p>
+                    </motion.div>
+                  )}
+
+                  {wizardStep === 4 && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="space-y-4"
+                    >
+                      <CheckCircle2 className="w-16 h-16 mx-auto text-green-500" />
+                      <h3 className="text-xl font-bold text-white">Authentication Complete!</h3>
+                      <p className="text-zinc-400">
+                        Your artwork has been successfully authenticated.
+                      </p>
+                    </motion.div>
+                  )}
                 </div>
               </div>
             </div>
-          </PostcardCertificate>
-        </DialogContent>
-      </Dialog>
-
-      {/* NFC Pairing Wizard */}
-      <Dialog open={showNfcWizard} onOpenChange={() => setShowNfcWizard(false)}>
-        <DialogContent className="w-[calc(100%-1rem)] bg-gradient-to-br from-zinc-900 to-zinc-800 border-amber-500/30 text-white rounded-none sm:max-w-md sm:rounded-lg">
-          <DialogHeader>
-            <DialogTitle className="text-lg sm:text-2xl">Pair NFC Tag</DialogTitle>
-            <DialogDescription className="text-xs text-zinc-400 sm:text-base">
-              Follow these steps to authenticate your artwork with NFC
-            </DialogDescription>
-          </DialogHeader>
-
-          {/* Progress Bar */}
-          <div className="h-1 bg-zinc-700 rounded-full overflow-hidden">
-            <div 
-              className="h-full bg-amber-500 progress-bar"
-              style={{ width: `${(wizardStep / 4) * 100}%` }}
-            />
-          </div>
-
-          <div className="space-y-3 py-3 sm:space-y-6 sm:py-4">
-            {wizardStep === 1 && (
-              <div className="space-y-3 sm:space-y-4">
-                <div className="flex items-start gap-2 glass-effect p-3 rounded-lg sm:items-center sm:gap-4 sm:p-4">
-                  <div className="bg-amber-500/20 p-2 rounded-full shrink-0 sm:p-3">
-                    <Smartphone className="w-6 h-6 text-amber-500 sm:w-8 sm:h-8" />
-                  </div>
-                  <div>
-                    <h3 className="text-sm font-medium sm:text-lg">Ready to Scan</h3>
-                    <p className="text-xs text-zinc-400 sm:text-sm">
-                      Make sure NFC is enabled on your device and hold it near the NFC tag
-                    </p>
-                  </div>
-                </div>
-                <Alert className="bg-amber-500/10 border-amber-500/20 text-amber-400">
-                  <AlertDescription className="text-xs sm:text-sm">
-                    Your device must support NFC and have it enabled. Most modern smartphones have this feature.
-                  </AlertDescription>
-                </Alert>
-              </div>
-            )}
-
-            {wizardStep === 2 && (
-              <div className="space-y-3 sm:space-y-4">
-                <div className="flex items-start gap-2 glass-effect p-3 rounded-lg sm:items-center sm:gap-4 sm:p-4">
-                  <div className="bg-blue-500/20 p-2 rounded-full shrink-0 sm:p-3">
-                    <Scan className="w-6 h-6 text-blue-500 animate-pulse sm:w-8 sm:h-8" />
-                  </div>
-                  <div>
-                    <h3 className="text-sm font-medium sm:text-lg">Scanning for NFC Tag</h3>
-                    <p className="text-xs text-zinc-400 sm:text-sm">
-                      Hold your device steady near the NFC tag
-                    </p>
-                  </div>
-                </div>
-                <div className="flex justify-center p-6 sm:p-8">
-                  <div className="relative">
-                    <div className="absolute inset-0 bg-blue-500/20 rounded-full animate-ping" />
-                    <Loader2 className="w-10 h-10 animate-spin text-blue-500 sm:w-12 sm:h-12" />
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {wizardStep === 3 && (
-              <div className="space-y-3 sm:space-y-4">
-                <div className="flex items-start gap-2 glass-effect p-3 rounded-lg sm:items-center sm:gap-4 sm:p-4">
-                  <div className="bg-purple-500/20 p-2 rounded-full shrink-0 sm:p-3">
-                    <Loader2 className="w-6 h-6 text-purple-500 animate-spin sm:w-8 sm:h-8" />
-                  </div>
-                  <div>
-                    <h3 className="text-sm font-medium sm:text-lg">Verifying Tag</h3>
-                    <p className="text-xs text-zinc-400 sm:text-sm">
-                      Please wait while we verify and pair your NFC tag
-                    </p>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {wizardStep === 4 && (
-              <div className="space-y-3 sm:space-y-4">
-                <div className="flex items-start gap-2 glass-effect p-3 rounded-lg sm:items-center sm:gap-4 sm:p-4">
-                  <div className="bg-green-500/20 p-2 rounded-full shrink-0 sm:p-3">
-                    <CheckCircle2 className="w-6 h-6 text-green-500 float sm:w-8 sm:h-8" />
-                  </div>
-                  <div>
-                    <h3 className="text-sm font-medium sm:text-lg">Successfully Paired!</h3>
-                    <p className="text-xs text-zinc-400 sm:text-sm">
-                      Your artwork has been authenticated with NFC
-                    </p>
-                  </div>
-                </div>
-                <div className="flex justify-center">
-                  <Sparkles className="w-12 h-12 text-amber-500 float sm:w-16 sm:h-16" />
-                </div>
-              </div>
-            )}
-          </div>
-
-          <DialogFooter className="flex justify-between items-center mt-2">
-            {wizardStep === 1 ? (
-              <Button 
-                onClick={startNfcScan} 
-                className="w-full bg-amber-500 hover:bg-amber-600 text-black font-medium text-sm py-2 transition-colors sm:text-base sm:py-3"
-              >
-                Start Scanning
-              </Button>
-            ) : wizardStep === 4 ? (
-              <Button 
-                onClick={() => setShowNfcWizard(false)} 
-                className="w-full bg-green-500 hover:bg-green-600 text-black font-medium text-sm py-2 transition-colors sm:text-base sm:py-3"
-              >
-                Done
-              </Button>
-            ) : (
-              <Button 
-                disabled 
-                className="w-full bg-zinc-700 text-zinc-400 cursor-not-allowed text-sm py-2 sm:text-base sm:py-3"
-              >
-                Scanning in Progress...
-              </Button>
-            )}
-          </DialogFooter>
+          )}
         </DialogContent>
       </Dialog>
     </>

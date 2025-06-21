@@ -416,187 +416,210 @@ export default function CustomerDashboardById() {
   const stats = useMemo(() => {
     const totalArtworks = orders.reduce((acc, order) => acc + order.line_items.length, 0)
     const authenticatedArtworks = orders.reduce((acc, order) => 
-      acc + order.line_items.filter(item => item.nfc_claimed_at).length, 0
-    )
-    const pendingAuthentication = totalArtworks - authenticatedArtworks
-
+      acc + order.line_items.filter(item => item.nfc_claimed_at).length, 0)
     return {
       total: totalArtworks,
       authenticated: authenticatedArtworks,
-      pending: pendingAuthentication
+      pending: totalArtworks - authenticatedArtworks
     }
   }, [orders])
 
-  // Filter items based on authentication status
-  const filteredItems = useMemo(() => {
-    return orders.flatMap(order => order.line_items).filter(item => {
-      if (filter === 'authenticated') return item.nfc_claimed_at
-      if (filter === 'pending') return !item.nfc_claimed_at
-      return true
-    })
-  }, [orders, filter])
-
-  useEffect(() => {
-    const fetchOrders = async () => {
-      try {
-        const response = await fetch(`/api/customer/dashboard/${params.customerId}`)
-        const data = await response.json()
-
-        if (!response.ok) {
-          throw new Error(data.message || 'Failed to fetch orders')
-        }
-
-        if (!data.success) {
-          throw new Error(data.message || 'Failed to fetch orders')
-        }
-
-        setOrders(data.orders || [])
-      } catch (err) {
-        console.error('Error fetching orders:', err)
-        setError(err instanceof Error ? err.message : 'Failed to fetch orders')
-      }
-    }
-
-    fetchOrders()
-  }, [params.customerId])
-
-  if (error) {
-    return (
-      <div className="min-h-screen bg-zinc-950 text-white flex items-center justify-center">
-        <div className="text-center">
-          <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
-          <h2 className="text-xl font-bold mb-2">Error Loading Dashboard</h2>
-          <p className="text-zinc-400">{error}</p>
-        </div>
-      </div>
+  // Filtered line items
+  const filteredLineItems = useMemo(() => {
+    return orders.flatMap(order => 
+      order.line_items.filter(item => {
+        if (filter === 'authenticated') return item.nfc_claimed_at
+        if (filter === 'pending') return !item.nfc_claimed_at
+        return true
+      })
     )
-  }
+  }, [orders, filter])
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-zinc-900 via-zinc-800 to-zinc-900">
       {/* Progress bar */}
-      <motion.div 
+      <motion.div
         className="fixed top-0 left-0 right-0 h-1 bg-amber-500 origin-left z-50"
         style={{ scaleX: scrollYProgress }}
       />
 
-      {/* Hero Section */}
-      <div className="relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-r from-amber-500/10 to-purple-500/10 pointer-events-none" />
-        <div className="container mx-auto py-12 px-4">
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
-            <div>
-              <h1 className="text-4xl md:text-5xl font-bold text-white mb-4">
-                Your Digital Collection
-              </h1>
-              <p className="text-zinc-400 text-lg max-w-xl">
-                Explore your authenticated digital artworks and manage your collection
-              </p>
-            </div>
-            
-            {/* Stats Cards */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 w-full md:w-auto">
-              <motion.div 
-                whileHover={{ scale: 1.02 }}
-                className="bg-zinc-800/50 backdrop-blur-sm p-4 rounded-xl border border-zinc-700"
-              >
-                <div className="text-3xl font-bold text-white">{stats.total}</div>
-                <div className="text-zinc-400">Total Artworks</div>
-              </motion.div>
-              <motion.div 
-                whileHover={{ scale: 1.02 }}
-                className="bg-zinc-800/50 backdrop-blur-sm p-4 rounded-xl border border-zinc-700"
-              >
-                <div className="text-3xl font-bold text-green-500">{stats.authenticated}</div>
-                <div className="text-zinc-400">Authenticated</div>
-              </motion.div>
-              <motion.div 
-                whileHover={{ scale: 1.02 }}
-                className="bg-zinc-800/50 backdrop-blur-sm p-4 rounded-xl border border-zinc-700"
-              >
-                <div className="text-3xl font-bold text-amber-500">{stats.pending}</div>
-                <div className="text-zinc-400">Pending Auth</div>
-              </motion.div>
+      <div className="max-w-7xl mx-auto px-4 py-8 space-y-8 sm:px-6 lg:px-8">
+        {/* Hero Section */}
+        <div className="relative overflow-hidden rounded-2xl bg-zinc-900/50 backdrop-blur-sm border border-zinc-800 p-6 sm:p-8">
+          <div className="absolute inset-0 bg-gradient-to-r from-amber-500/10 via-transparent to-transparent" />
+          <div className="relative z-10">
+            <h1 className="text-2xl font-bold text-white sm:text-3xl lg:text-4xl">
+              Your Collection
+            </h1>
+            <p className="mt-2 text-zinc-400 text-sm sm:text-base">
+              View and manage your authenticated artworks
+            </p>
+
+            {/* Stats Grid */}
+            <div className="grid grid-cols-1 gap-4 mt-6 sm:grid-cols-3">
+              <div className="glass-effect rounded-xl p-4 sm:p-6">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-amber-500/20 rounded-lg">
+                    <Album className="w-5 h-5 text-amber-500" />
+                  </div>
+                  <div>
+                    <p className="text-sm text-zinc-400">Total Artworks</p>
+                    <p className="text-2xl font-bold text-white">{stats.total}</p>
+                  </div>
+                </div>
+              </div>
+              <div className="glass-effect rounded-xl p-4 sm:p-6">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-green-500/20 rounded-lg">
+                    <Wifi className="w-5 h-5 text-green-500" />
+                  </div>
+                  <div>
+                    <p className="text-sm text-zinc-400">Authenticated</p>
+                    <p className="text-2xl font-bold text-white">{stats.authenticated}</p>
+                  </div>
+                </div>
+              </div>
+              <div className="glass-effect rounded-xl p-4 sm:p-6">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-yellow-500/20 rounded-lg">
+                    <WifiOff className="w-5 h-5 text-yellow-500" />
+                  </div>
+                  <div>
+                    <p className="text-sm text-zinc-400">Pending</p>
+                    <p className="text-2xl font-bold text-white">{stats.pending}</p>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
-      </div>
 
-      {/* Controls */}
-      <div className="container mx-auto px-4 py-8">
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
-          <div className="flex items-center gap-4">
-            <Button
-              variant={view === 'grid' ? 'default' : 'outline'}
-              onClick={() => setView('grid')}
-              className="gap-2"
-            >
-              <LayoutGrid className="w-4 h-4" />
-              Grid
-            </Button>
-            <Button
-              variant={view === 'timeline' ? 'default' : 'outline'}
-              onClick={() => setView('timeline')}
-              className="gap-2"
-            >
-              <Calendar className="w-4 h-4" />
-              Timeline
-            </Button>
-          </div>
-
-          <div className="flex items-center gap-4">
+        {/* Controls */}
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex flex-wrap gap-2">
             <Button
               variant={filter === 'all' ? 'default' : 'outline'}
-              onClick={() => setFilter('all')}
               size="sm"
+              onClick={() => setFilter('all')}
+              className="flex-1 sm:flex-none"
             >
-              All
+              All Artworks
             </Button>
             <Button
               variant={filter === 'authenticated' ? 'default' : 'outline'}
-              onClick={() => setFilter('authenticated')}
               size="sm"
-              className="gap-2"
+              onClick={() => setFilter('authenticated')}
+              className="flex-1 sm:flex-none"
             >
-              <Wifi className="w-4 h-4" />
+              <Wifi className="w-4 h-4 mr-2" />
               Authenticated
             </Button>
             <Button
               variant={filter === 'pending' ? 'default' : 'outline'}
-              onClick={() => setFilter('pending')}
               size="sm"
-              className="gap-2"
+              onClick={() => setFilter('pending')}
+              className="flex-1 sm:flex-none"
             >
-              <WifiOff className="w-4 h-4" />
+              <WifiOff className="w-4 h-4 mr-2" />
               Pending
+            </Button>
+          </div>
+          <div className="flex gap-2">
+            <Button
+              variant={view === 'grid' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setView('grid')}
+            >
+              <LayoutGrid className="w-4 h-4" />
+            </Button>
+            <Button
+              variant={view === 'timeline' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setView('timeline')}
+            >
+              <Timeline className="w-4 h-4" />
             </Button>
           </div>
         </div>
 
         {/* Grid View */}
         {view === 'grid' && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {filteredItems.map((item, index) => (
-              <motion.div
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            {filteredLineItems.map((item, index) => (
+              <VinylArtworkCard
                 key={item.line_item_id}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: index * 0.1 }}
-              >
-                <VinylArtworkCard
-                  item={item}
-                  isSelected={selectedArtworkIndex === index}
-                  onSelect={() => setSelectedArtworkIndex(index)}
-                  onCertificateView={() => setSelectedLineItem(item)}
-                />
-              </motion.div>
+                item={item}
+                isSelected={selectedArtworkIndex === index}
+                onSelect={() => setSelectedArtworkIndex(index)}
+                onCertificateView={() => {
+                  setSelectedLineItem(item)
+                  setSelectedArtworkIndex(index)
+                }}
+              />
             ))}
           </div>
         )}
 
         {/* Timeline View */}
         {view === 'timeline' && (
-          <CollectionTimeline timelineData={timelineData} />
+          <div className="space-y-8">
+            {orders.map((order) => {
+              const orderItems = order.line_items.filter(item => {
+                if (filter === 'authenticated') return item.nfc_claimed_at
+                if (filter === 'pending') return !item.nfc_claimed_at
+                return true
+              })
+
+              if (orderItems.length === 0) return null
+
+              return (
+                <div key={order.id} className="glass-effect rounded-xl p-6">
+                  <div className="flex items-center justify-between mb-4">
+                    <div>
+                      <h3 className="text-lg font-semibold text-white">
+                        Order #{order.order_number}
+                      </h3>
+                      <p className="text-sm text-zinc-400">
+                        {new Date(order.processed_at).toLocaleDateString()}
+                      </p>
+                    </div>
+                    <Badge variant="outline">
+                      {orderItems.length} {orderItems.length === 1 ? 'Artwork' : 'Artworks'}
+                    </Badge>
+                  </div>
+                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                    {orderItems.map((item, index) => (
+                      <VinylArtworkCard
+                        key={item.line_item_id}
+                        item={item}
+                        isSelected={selectedArtworkIndex === index}
+                        onSelect={() => setSelectedArtworkIndex(index)}
+                        onCertificateView={() => {
+                          setSelectedLineItem(item)
+                          setSelectedArtworkIndex(index)
+                        }}
+                      />
+                    ))}
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        )}
+
+        {/* Empty State */}
+        {filteredLineItems.length === 0 && (
+          <div className="text-center py-12">
+            <Album className="w-12 h-12 mx-auto text-zinc-600" />
+            <h3 className="mt-4 text-lg font-semibold text-white">No Artworks Found</h3>
+            <p className="mt-2 text-zinc-400">
+              {filter === 'all' 
+                ? "You don't have any artworks yet"
+                : filter === 'authenticated'
+                ? "You don't have any authenticated artworks"
+                : "You don't have any pending artworks"}
+            </p>
+          </div>
         )}
       </div>
 
@@ -607,8 +630,6 @@ export default function CustomerDashboardById() {
           onClose={() => setSelectedLineItem(undefined)}
         />
       )}
-
-      <Toaster />
     </div>
   )
 }
