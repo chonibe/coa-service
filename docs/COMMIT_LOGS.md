@@ -1,3 +1,31 @@
+## Commit: Certificate Modal Artist & Story Integration
+
+### 🚀 Feature Enhancements
+- Added dynamic tabs to certificate modal
+- Implemented artist bio retrieval
+- Added artwork story display functionality
+- Improved mobile responsiveness
+
+### 🛠 Technical Implementation
+- Created `/app/api/artist/[id]/route.ts`
+- Created `/app/api/story/[lineItemId]/route.ts`
+- Updated `certificate-modal.tsx` with tab navigation
+- Added database migration for artist and artwork metadata
+
+### �� Changes
+- New API routes for artist and artwork details
+- Enhanced certificate modal user experience
+- Improved data fetching and error handling
+
+### 🧪 Testing Requirements
+- Verify artist bio retrieval
+- Test artwork story display
+- Check mobile responsiveness
+- Validate NFC pairing functionality
+
+### 🔍 Notes
+- Requires Supabase schema update
+- Restart Next.js application after deployment
 ## Merge: Certificate Card Design [$(date '+%Y-%m-%d')]
 
 ### Changes Merged
@@ -212,5 +240,34 @@
 - [ ] Add E2E tests for dashboard flow
 - [ ] Monitor performance with new data fields
 - [ ] Gather user feedback on new layout
+
+## Commit: Certificate Modal Artist & Story Integration
+
+### 🚀 Feature Enhancements
+- Added dynamic tabs to certificate modal
+- Implemented artist bio retrieval
+- Added artwork story display functionality
+- Improved mobile responsiveness
+
+### 🛠 Technical Implementation
+- Created `/app/api/artist/[id]/route.ts`
+- Created `/app/api/story/[lineItemId]/route.ts`
+- Updated `certificate-modal.tsx` with tab navigation
+- Added database migration for artist and artwork metadata
+
+### 📋 Changes
+- New API routes for artist and artwork details
+- Enhanced certificate modal user experience
+- Improved data fetching and error handling
+
+### 🧪 Testing Requirements
+- Verify artist bio retrieval
+- Test artwork story display
+- Check mobile responsiveness
+- Validate NFC pairing functionality
+
+### 🔍 Notes
+- Requires Supabase schema update
+- Restart Next.js application after deployment
 
 --- 

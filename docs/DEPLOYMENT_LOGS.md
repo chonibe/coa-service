@@ -435,4 +435,60 @@ If issues are encountered:
 - Rollback Plan:
   - Revert to previous commit if issues arise
 
+## Deployment on $(date +"%Y-%m-%d %H:%M:%S")
+
+### Certificate Modal Enhancements
+- Added artist bio and artwork story tabs to certificate view
+- Created new API routes for fetching artist and artwork details
+- Improved mobile responsiveness of certificate modal
+- Added database migration to support artist and artwork story metadata
+
+### Technical Changes
+- Created `/app/api/artist/[id]/route.ts`
+- Created `/app/api/story/[lineItemId]/route.ts`
+- Updated `certificate-modal.tsx` with dynamic tab navigation
+- Added migration for `vendors` and `order_line_items_v2` tables
+
+### Deployment Notes
+- Requires Supabase migration
+- Restart Next.js application after deployment
+- Verify API routes and database schema updates
+
+### Testing Checklist
+- [ ] Verify artist bio retrieval
+- [ ] Verify artwork story display
+- [ ] Test mobile responsiveness
+- [ ] Check NFC pairing functionality
+
+## Deployment: Artist & Story Tab Enhancements
+
+### Certificate Modal Improvements
+- Added dynamic artist and artwork story tabs
+- Implemented robust data fetching mechanism
+- Enhanced error handling and loading states
+- Improved user experience with fallback content
+
+### Technical Enhancements
+- Added loading indicators
+- Implemented retry functionality
+- Graceful handling of missing data
+- Improved type safety and error management
+
+### User Experience
+- Customers can now view detailed artist information
+- Artwork stories provide context and emotional connection
+- Seamless integration with existing certificate view
+
+### Testing Checklist
+- [x] Verify artist bio retrieval
+- [x] Test artwork story display
+- [x] Check error handling scenarios
+- [x] Validate loading states
+- [ ] Perform cross-browser compatibility testing
+
+### Deployment Notes
+- Requires updated Supabase schema
+- Restart Next.js application
+- Verify API routes functionality
+
 --- 

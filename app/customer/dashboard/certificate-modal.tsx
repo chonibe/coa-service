@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from "react"
 import { Dialog, DialogContent, DialogTitle, DialogDescription, DialogHeader, DialogFooter } from "@/components/ui/dialog"
-import { X, BadgeIcon as Certificate, User, Calendar, Hash, ExternalLink, Award, Sparkles, Signature, Wifi, WifiOff, Album, Scan, Loader2, Smartphone, CheckCircle2 } from "lucide-react"
+import { X, BadgeIcon as Certificate, User, Calendar, Hash, ExternalLink, Award, Sparkles, Signature, Wifi, WifiOff, Album, Scan, Loader2, Smartphone, CheckCircle2, AlertCircle } from "lucide-react"
 import { motion, useMotionValue, useTransform } from "framer-motion"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -11,6 +11,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert"
 import { HolographicElement } from "@/components/ui/holographic-element"
 import { CertificateQR } from "@/components/ui/certificate-qr"
 import { EnhancedCertificate } from "@/components/ui/enhanced-certificate"
+import Image from 'next/image'
 
 // Add shimmer effect styles
 const shimmerStyles = `
@@ -144,6 +145,20 @@ export function CertificateModal({ lineItem, onClose }: CertificateModalProps) {
   const [isNfcPairing, setIsNfcPairing] = useState(false)
   const [showNfcWizard, setShowNfcWizard] = useState(false)
   const [wizardStep, setWizardStep] = useState(1)
+  const [activeTab, setActiveTab] = useState<'certificate' | 'artist' | 'story'>('certificate')
+  const [artistInfo, setArtistInfo] = useState<{
+    name: string
+    bio: string
+    profileImageUrl?: string
+  } | null>(null)
+  const [artworkStory, setArtworkStory] = useState<{
+    text: string
+    mediaUrls: string[]
+  } | null>(null)
+  const [isLoadingArtistInfo, setIsLoadingArtistInfo] = useState(false)
+  const [isLoadingArtworkStory, setIsLoadingArtworkStory] = useState(false)
+  const [artistInfoError, setArtistInfoError] = useState<string | null>(null)
+  const [artworkStoryError, setArtworkStoryError] = useState<string | null>(null)
 
   useEffect(() => {
     setIsOpen(!!lineItem)
@@ -158,6 +173,52 @@ export function CertificateModal({ lineItem, onClose }: CertificateModalProps) {
           : "no-nfc"
       ) : null
     })
+  }, [lineItem])
+
+  const fetchArtistAndStoryData = async () => {
+    if (!lineItem) return
+
+    try {
+      // Fetch artist info
+      setIsLoadingArtistInfo(true)
+      setArtistInfoError(null)
+      const artistResponse = await fetch(`/api/vendor/${lineItem.vendor_name}`)
+      const artistData = await artistResponse.json()
+      
+      if (artistData.success) {
+        setArtistInfo(artistData.artist)
+      } else {
+        setArtistInfoError(artistData.message || 'Failed to load artist information')
+      }
+    } catch (error) {
+      console.error('Failed to fetch artist data:', error)
+      setArtistInfoError('Unable to retrieve artist information')
+    } finally {
+      setIsLoadingArtistInfo(false)
+    }
+
+    try {
+      // Fetch artwork story
+      setIsLoadingArtworkStory(true)
+      setArtworkStoryError(null)
+      const storyResponse = await fetch(`/api/story/${lineItem.line_item_id}`)
+      const storyData = await storyResponse.json()
+      
+      if (storyData.success) {
+        setArtworkStory(storyData.story)
+      } else {
+        setArtworkStoryError(storyData.message || 'Failed to load artwork story')
+      }
+    } catch (error) {
+      console.error('Failed to fetch artwork story:', error)
+      setArtworkStoryError('Unable to retrieve artwork story')
+    } finally {
+      setIsLoadingArtworkStory(false)
+    }
+  }
+
+  useEffect(() => {
+    fetchArtistAndStoryData()
   }, [lineItem])
 
   if (!lineItem) return null
@@ -265,6 +326,117 @@ export function CertificateModal({ lineItem, onClose }: CertificateModalProps) {
                             }
   }
 
+  const renderModalContent = () => {
+    switch (activeTab) {
+      case 'certificate':
+        const safeLineItem = {
+          name: lineItem.name || '',
+          description: lineItem.description || '',
+          artistName: artistName || '',
+          editionInfo: editionInfo || '',
+          nfcTagId: lineItem.nfc_tag_id ?? undefined,
+          nfcClaimedAt: lineItem.nfc_claimed_at ?? undefined,
+          imgUrl: lineItem.img_url ?? undefined,
+          certificateUrl: lineItem.certificate_url ?? undefined
+        }
+
+        return (
+          <div className="p-4">
+            <EnhancedCertificate 
+              {...safeLineItem}
+              isFlipped={isFlipped}
+              onFlip={() => setIsFlipped(!isFlipped)}
+              onStartPairing={handleNfcPairing}
+              className="w-full"
+            />
+          </div>
+        )
+      case 'artist':
+        return (
+          <div className="p-4 space-y-4">
+            {isLoadingArtistInfo ? (
+              <div className="flex justify-center items-center h-full">
+                <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+              </div>
+            ) : artistInfoError ? (
+              <div className="text-center text-red-500 space-y-2">
+                <AlertCircle className="h-12 w-12 mx-auto text-red-500" />
+                <p>{artistInfoError}</p>
+                <Button variant="outline" onClick={fetchArtistAndStoryData}>
+                  Retry
+                </Button>
+              </div>
+            ) : artistInfo ? (
+              <>
+                {artistInfo.profileImageUrl && (
+                  <div className="flex justify-center mb-4">
+                    <Image 
+                      src={artistInfo.profileImageUrl} 
+                      alt={`${artistInfo.name || 'Artist'} profile`} 
+                      width={150} 
+                      height={150} 
+                      className="rounded-full object-cover shadow-lg"
+                    />
+                  </div>
+                )}
+                <h2 className="text-2xl font-bold text-center">{artistInfo.name || 'Unknown Artist'}</h2>
+                <p className="text-muted-foreground text-center">
+                  {artistInfo.bio || 'No artist bio available'}
+                </p>
+              </>
+            ) : (
+              <div className="text-center text-muted-foreground">
+                No artist information available
+              </div>
+            )}
+          </div>
+        )
+      case 'story':
+        return (
+          <div className="p-4 space-y-4">
+            {isLoadingArtworkStory ? (
+              <div className="flex justify-center items-center h-full">
+                <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+              </div>
+            ) : artworkStoryError ? (
+              <div className="text-center text-red-500 space-y-2">
+                <AlertCircle className="h-12 w-12 mx-auto text-red-500" />
+                <p>{artworkStoryError}</p>
+                <Button variant="outline" onClick={fetchArtistAndStoryData}>
+                  Retry
+                </Button>
+              </div>
+            ) : artworkStory?.text ? (
+              <>
+                <h2 className="text-2xl font-bold">Artwork Story</h2>
+                <p className="text-muted-foreground">{artworkStory.text}</p>
+                {artworkStory.mediaUrls?.length > 0 && (
+                  <div className="grid grid-cols-3 gap-2 mt-4">
+                    {artworkStory.mediaUrls.map((url, index) => (
+                      <Image 
+                        key={index} 
+                        src={url} 
+                        alt={`Artwork story media ${index + 1}`} 
+                        width={100} 
+                        height={100} 
+                        className="rounded-lg object-cover shadow-md"
+                      />
+                    ))}
+                  </div>
+                )}
+              </>
+            ) : (
+              <div className="text-center text-muted-foreground">
+                No artwork story available
+              </div>
+            )}
+          </div>
+        )
+      default:
+        return null
+    }
+  }
+
   return (
     <>
     <Dialog open={isOpen} onOpenChange={() => onClose()}>
@@ -302,20 +474,33 @@ export function CertificateModal({ lineItem, onClose }: CertificateModalProps) {
 
           {/* Main content with proper padding */}
           <div className="p-4 space-y-6">
-                          <EnhancedCertificate
-              name={lineItem.name}
-              description={lineItem.description}
-              artistName={artistName}
-              editionInfo={editionInfo}
-              nfcTagId={lineItem.nfc_tag_id}
-              nfcClaimedAt={lineItem.nfc_claimed_at}
-              imgUrl={lineItem.img_url}
-              certificateUrl={lineItem.certificate_url}
-              isFlipped={isFlipped}
-              onFlip={() => setIsFlipped(!isFlipped)}
-              onStartPairing={handleNfcPairing}
-              className="w-full"
-            />
+            {/* Tab Navigation */}
+            <div className="flex justify-center space-x-4 mb-4 border-b pb-2">
+              <Button 
+                variant={activeTab === 'certificate' ? 'default' : 'ghost'}
+                onClick={() => setActiveTab('certificate')}
+                className="w-full"
+              >
+                Certificate
+              </Button>
+              <Button 
+                variant={activeTab === 'artist' ? 'default' : 'ghost'}
+                onClick={() => setActiveTab('artist')}
+                className="w-full"
+              >
+                Artist
+              </Button>
+              <Button 
+                variant={activeTab === 'story' ? 'default' : 'ghost'}
+                onClick={() => setActiveTab('story')}
+                className="w-full"
+              >
+                Story
+              </Button>
+            </div>
+
+            {/* Dynamic Content */}
+            {renderModalContent()}
 
             {/* Actions */}
             <div className="flex flex-wrap items-center gap-4 justify-end">
