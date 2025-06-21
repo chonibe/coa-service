@@ -6,6 +6,7 @@ import { useWizardStep } from './VendorWizard';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { toast } from '@/components/ui/use-toast';
+import OnboardingTooltip from '@/components/vendor/OnboardingTooltip';
 
 const BioSchema = z.object({
   bio: z.string().min(50, "Bio must be at least 50 characters").max(500, "Bio must be 500 characters or less")
@@ -81,7 +82,17 @@ export const BioWizardStep: React.FC<BioWizardStepProps> = ({
 
   return (
     <div className="bio-wizard-step space-y-4">
-      <h2 className="text-2xl font-bold">Tell Us About Yourself</h2>
+      <div className="flex items-center justify-between">
+        <h2 className="text-2xl font-bold">Tell Us About Yourself</h2>
+        <OnboardingTooltip
+          id="vendor-bio-tooltip"
+          title="Crafting Your Artist Bio"
+          description="Share your unique artistic journey. Highlight your inspirations, techniques, and what makes your art special. A compelling bio helps collectors connect with you personally."
+        >
+          <span>Bio Writing Tips</span>
+        </OnboardingTooltip>
+      </div>
+      
       <p className="text-muted-foreground">
         Share your artistic journey, inspirations, and what makes you unique.
       </p>

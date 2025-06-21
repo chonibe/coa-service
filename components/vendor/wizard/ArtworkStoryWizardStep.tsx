@@ -13,6 +13,7 @@ import {
   SelectTrigger, 
   SelectValue 
 } from '@/components/ui/select';
+import OnboardingTooltip from '@/components/vendor/OnboardingTooltip';
 
 const ArtworkStorySchema = z.object({
   productId: z.string().uuid("Please select a product"),
@@ -125,7 +126,17 @@ export const ArtworkStoryWizardStep: React.FC<ArtworkStoryWizardStepProps> = ({
 
   return (
     <div className="artwork-story-wizard-step space-y-4">
-      <h2 className="text-2xl font-bold">Share Your Artwork's Story</h2>
+      <div className="flex items-center justify-between">
+        <h2 className="text-2xl font-bold">Share Your Artwork's Story</h2>
+        <OnboardingTooltip
+          id="vendor-artwork-story-tooltip"
+          title="Crafting Your Artwork Story"
+          description="Tell the unique narrative behind your artwork. Explain your creative process, inspiration, and the emotions you want to convey. A compelling story helps collectors connect deeply with your art."
+        >
+          <span>Story Writing Tips</span>
+        </OnboardingTooltip>
+      </div>
+      
       <p className="text-muted-foreground">
         Tell us about the inspiration, process, and meaning behind your artwork.
       </p>

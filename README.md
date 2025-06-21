@@ -355,7 +355,7 @@ For comprehensive guidance on deployment processes, environment configuration, a
 2. Review and update documentation after each significant deployment
 3. Encourage team contributions and improvements
 
-### Vendor Portal Enhancements (v1.1.0)
+### Vendor Portal Enhancements (v1.4.0)
 - Added comprehensive bio and artwork story management
 - Implemented status tracking for vendor profiles
 - New API routes for updating vendor information
@@ -369,6 +369,17 @@ For comprehensive guidance on deployment processes, environment configuration, a
 - Validation and error handling
 - Seamless integration with vendor dashboard
 
+#### Technical Highlights
+- Reusable `useWizardStep` hook
+- Zod-based validation
+- Local storage-based tooltip tracking
+- Framer Motion animations
+
+### Vendor Profile Management
+- Fetch and update vendor profile data
+- Support for artist bio and artwork stories
+- Status tracking for profile completion
+
 ## Remaining Checklist
 - [ ] Add UI indicators for bio/story completion status
 - [ ] Implement frontend fetching of existing bio/story
@@ -379,5 +390,17 @@ For comprehensive guidance on deployment processes, environment configuration, a
 - [Vendor Portal Product Management Guide](/docs/vendor-portal/product-management.md)
 
 ## Version
-- Current Version: 1.1.0
+- Current Version: 1.4.0
 - Last Updated: $(date +"%Y-%m-%d")
+
+## Version History
+- v1.1.0: Initial bio and story management
+- v1.2.0: Wizard-based profile completion system
+- v1.3.0: Onboarding tooltips and enhanced guidance
+- v1.4.0: Performance tracking and user feedback integration
+
+## Upcoming Roadmap
+- Analytics service integration
+- Advanced performance optimization
+- Expanded user testing
+- Comprehensive feature documentation

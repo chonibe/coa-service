@@ -134,6 +134,43 @@ Vendors can add detailed information about their artwork, including a personal b
   2. Image upload requirements
   3. Validation errors
 
+## Onboarding and Guidance
+
+### Onboarding Tooltips
+
+#### Purpose
+Onboarding tooltips provide contextual guidance to help vendors understand how to effectively complete their profiles and share their stories.
+
+#### Tooltip Features
+- Contextual help for each wizard step
+- One-time display to prevent overwhelming users
+- Stored in browser's local storage
+- Easily dismissible
+
+#### Tooltip Types
+1. **Bio Writing Tooltip**
+   - Helps vendors craft a compelling artist bio
+   - Provides guidance on content and tone
+   - Encourages personal storytelling
+
+2. **Artwork Story Tooltip**
+   - Guides vendors in creating meaningful artwork narratives
+   - Explains the importance of storytelling
+   - Provides tips for engaging descriptions
+
+### Tooltip Interaction
+- Tooltips appear with a help icon (?) next to the section
+- First-time users see the tooltip automatically
+- Can be manually triggered
+- Dismissed after first view
+- Stored in browser's local storage to prevent repeated displays
+
+### Best Practices for Tooltip Content
+- Be concise and actionable
+- Use encouraging language
+- Provide clear, specific guidance
+- Focus on helping vendors tell their unique stories
+
 ## Version
 - Last Updated: $(date +"%Y-%m-%d")
-- Version: 1.2.0 
+- Version: 1.3.0 
