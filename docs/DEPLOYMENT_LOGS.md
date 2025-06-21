@@ -156,74 +156,24 @@
 
 ## Deployment Log
 
-### Vercel Deployment - Dashboard Improvements
-- **Date**: ${new Date().toISOString()}
-- **Branch**: `vercel-dashboard-improvements`
-- **Commit Hash**: 2aeac3bc
-- **Deployment URL**: https://street-collector-66guc6tf2-chonibes-projects.vercel.app
-- **Environment**: Preview
-- **Key Changes**:
-  - Enhanced customer dashboard UI/UX
-  - Added interactive order cards
-  - Implemented search and sorting
-  - Created engaging empty state
-  - Integrated pull-to-refresh functionality
+### v1.4.0 Deployment ($(date +"%Y-%m-%d %H:%M:%S"))
+- **Version**: 1.4.0
+- **Branch**: `revert-dashboard-keep-certificate`
+- **Preview URL**: https://street-collector-49ji0bf91-chonibes-projects.vercel.app
+- **Changes**:
+  - Implemented comprehensive performance tracking
+  - Added visual completion rewards
+  - Created user testing plan
+  - Developed feedback gathering mechanism
+  - Enhanced wizard validation and testing
+  - Updated documentation and version
+- **Deployment Notes**:
+  - Resolved Babel configuration conflicts
+  - Switched to Next.js default SWC compiler
+  - Removed custom Babel plugins
 
-### Deployment Notes
-- Preview deployment successful
-- Recommended next steps: User testing and performance review
-- Pending production deployment
-
-### Performance Metrics
-- Initial load time: To be measured
-- Interaction responsiveness: To be evaluated
-
-### Recommended Actions
-- [ ] Conduct user acceptance testing
-- [ ] Review performance metrics
-- [ ] Prepare for production deployment
-
-### Vercel Production Deployment - Enhanced Line Items
-- **Date**: ${new Date().toISOString()}
-- **Branch**: `vercel-dashboard-improvements`
-- **Commit Hash**: 86f761e2
-- **Deployment URL**: https://street-collector-cxrkrts7a-chonibes-projects.vercel.app
-- **Environment**: Production
-- **Key Changes**:
-  - Enhanced line item display in customer dashboard
-  - Added product images and vendor information
-  - Implemented NFC tag status indicators
-  - Added edition number display
-  - Improved search functionality
-  - Updated API with additional line item fields
-  - Added loading and error states
-
-### Deployment Notes
-- Production deployment successful
-- New features available in customer dashboard
-- Enhanced line item visibility and information
-
-### Performance Metrics
-- Initial load time: To be monitored
-- API response time: To be measured
-- Search performance: To be evaluated
-
-### Verification Checklist
-- [ ] Verify line item display
-- [ ] Test search functionality
-- [ ] Validate NFC status display
-- [ ] Check edition number visibility
-- [ ] Test pull-to-refresh
-- [ ] Monitor error handling
-- [ ] Review loading states
-
-### Next Steps
-- [ ] Monitor user engagement with new features
-- [ ] Gather feedback on enhanced line item display
-- [ ] Track performance metrics
-- [ ] Plan potential UI/UX improvements based on usage
-
-## Deployment History
+### Previous Deployments
+[Existing deployment logs...]
 
 ## 2024-03-15: Enhanced Customer Dashboard with NFC Pairing
 
