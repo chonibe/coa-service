@@ -302,7 +302,7 @@ export function CertificateModal({ lineItem, onClose }: CertificateModalProps) {
 
           {/* Main content with proper padding */}
           <div className="p-4 space-y-6">
-            <EnhancedCertificate
+                          <EnhancedCertificate
               name={lineItem.name}
               description={lineItem.description}
               artistName={artistName}
@@ -313,6 +313,7 @@ export function CertificateModal({ lineItem, onClose }: CertificateModalProps) {
               certificateUrl={lineItem.certificate_url}
               isFlipped={isFlipped}
               onFlip={() => setIsFlipped(!isFlipped)}
+              onStartPairing={handleNfcPairing}
               className="w-full"
             />
 

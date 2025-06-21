@@ -180,35 +180,31 @@ export default function CustomerDashboard() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({ tagId }),
-      });
+      })
 
-      const result = await response.json();
+      const result = await response.json()
 
       if (result.success) {
-        // Tag is valid, update UI or perform additional actions
         toast({
           title: "NFC Tag Verified",
           description: `Artwork authenticated: ${result.artworkTitle}`,
-        });
-
-        // Optionally refresh orders or trigger a re-fetch
-        // fetchOrders();
+        })
       } else {
         toast({
           title: "NFC Tag Verification Failed",
           description: result.message || "Unable to verify the NFC tag",
           variant: "destructive",
-        });
+        })
       }
     } catch (error) {
-      console.error("NFC Tag Verification Error:", error);
+      console.error("NFC Tag Verification Error:", error)
       toast({
         title: "Verification Error",
         description: "An error occurred while verifying the NFC tag",
         variant: "destructive",
-      });
+      })
     }
-  };
+  }
 
   if (isLoading) {
     return (
