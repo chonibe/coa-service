@@ -283,17 +283,17 @@ https://street-collector-3e50j85zi-chonibes-projects.vercel.app
 
 ## Deployment - [Date: March 19, 2024]
 - Branch: vercel-dashboard-improvements
-- Commit: fix(dashboard): improve responsive layout and fix overlapping elements
+- Commit: fix(dashboard): resolve client-side errors and restore data fetching
 - Changes:
-  - Fixed overlapping elements in certificate modal
-  - Improved mobile-first responsive design
-  - Enhanced spacing and containment in dashboard layout
-  - Added proper padding and margins for all screen sizes
-  - Fixed mobile stacking issues
-  - Improved grid and timeline view responsiveness
-  - Enhanced empty state display
-- Status: ✅ Deployed
+  - Fixed client-side exception by restoring data fetching logic
+  - Restored error handling for failed API requests
+  - Fixed missing Timeline component issue
+  - Improved error state display
+  - Ensured proper data loading before rendering
+  - Fixed component dependencies
+- Status: ✅ Deployed via Vercel CLI
 - Environment: Production
-- Deployment URL: https://street-collector-c4txngttb-chonibes-projects.vercel.app
+- Deployment URL: https://street-collector-1aua7obde-chonibes-projects.vercel.app
+- Inspect URL: https://vercel.com/chonibes-projects/street-collector/HEqeMopbYnpmt5MjV1s2TeXvgLzc
 
 --- 

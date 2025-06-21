@@ -25,6 +25,8 @@ import { Toaster } from "@/components/ui/toaster"
 import { CertificateModal } from '../../customer/dashboard/certificate-modal'
 import { useNFCScan } from '@/hooks/use-nfc-scan'
 import { motion, LayoutGroup, Variants, useScroll } from "framer-motion"
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { NFCWizardDialog } from './nfc-wizard-dialog'
 
 // Type Definitions
 interface LineItem {
@@ -65,211 +67,140 @@ const VinylArtworkCard = ({
   item, 
   isSelected, 
   onSelect, 
-  onCertificateView 
+  onCertificateView,
+  onNFCPaired
 }: { 
   item: LineItem, 
   isSelected: boolean, 
   onSelect: () => void, 
-  onCertificateView: () => void 
+  onCertificateView: () => void,
+  onNFCPaired: () => void
 }) => {
-  const [isPairing, setIsPairing] = useState(false)
-
-  const { startScanning, stopScanning, isScanning, error: nfcError } = useNFCScan({
-    onSuccess: async (tagData) => {
-      try {
-        setIsPairing(true)
-        const response = await fetch('/api/nfc-tags/claim', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            tagId: tagData.serialNumber,
-            lineItemId: item.line_item_id,
-            orderId: item.order_id,
-          })
-        })
-
-        const result = await response.json()
-
-        if (result.success) {
-          toast({
-            title: "NFC Tag Paired",
-            description: `Artwork "${item.name}" has been successfully authenticated.`,
-            variant: "default"
-          })
-          // Trigger a refresh of the orders
-          window.location.reload()
-        } else {
-          toast({
-            title: "Pairing Failed",
-            description: result.message || "Unable to pair NFC tag",
-            variant: "destructive"
-          })
-        }
-      } catch (error) {
-        console.error("NFC Claim Error:", error)
-        toast({
-          title: "Pairing Error",
-          description: "An unexpected error occurred",
-          variant: "destructive"
-        })
-      } finally {
-        setIsPairing(false)
-        stopScanning()
-      }
-    },
-    onError: (error) => {
-      toast({
-        title: "NFC Error",
-        description: error,
-        variant: "destructive"
-      })
-    }
-  })
+  const [isNFCWizardOpen, setIsNFCWizardOpen] = useState(false)
 
   const getCertificationStatus = () => {
-    if (!item.certificate_url) return "no-certificate";
-    if (!item.nfc_tag_id) return "digital-only";
     if (item.nfc_claimed_at) return "nfc-paired";
-    return "nfc-unpaired";
+    if (!item.certificate_url) return "no-certificate";
+    return "unpaired";
   }
 
   const status = getCertificationStatus()
   const price = item.price ? new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(item.price) : null
 
-  const handleNfcClick = (e: React.MouseEvent) => {
-    e.stopPropagation()
-    if (!isScanning && !isPairing) {
-      startScanning()
-    } else {
-      stopScanning()
-    }
-  }
-
   return (
-    <div 
-      className={`
-        relative w-full max-w-[420px] h-[245px] rounded-2xl 
-        ${isSelected ? 'shadow-2xl' : 'shadow-lg'}
-        bg-gradient-to-br from-zinc-900/80 via-zinc-800/80 to-zinc-900/80 
-        backdrop-blur-sm border border-zinc-700/50
-        flex items-stretch
-      `}
-    >
-      {/* Artwork Image - Left Side */}
-      <div className="w-[245px] flex-shrink-0 relative overflow-hidden rounded-l-2xl">
-        {item.img_url ? (
-          <img 
-            src={item.img_url} 
-            alt={item.name} 
-            className="w-full h-full object-cover" 
-          />
-        ) : (
-          <div className="w-full h-full bg-zinc-800/50 flex items-center justify-center">
-            <Album className="w-24 h-24 text-zinc-600" />
-          </div>
-        )}
-        {item.edition_number && item.edition_total && (
-          <Badge 
-            className="absolute top-2 right-2 bg-black/60 text-white border-zinc-700"
-          >
-            Edition #{item.edition_number}/{item.edition_total}
-          </Badge>
-        )}
-      </div>
+    <>
+      <div 
+        className={`
+          relative w-full max-w-[420px] h-[245px] rounded-2xl 
+          ${isSelected ? 'shadow-2xl' : 'shadow-lg'}
+          bg-gradient-to-br from-zinc-900/80 via-zinc-800/80 to-zinc-900/80 
+          backdrop-blur-sm border border-zinc-700/50
+          flex items-stretch
+        `}
+      >
+        {/* Artwork Image - Left Side */}
+        <div className="w-[245px] flex-shrink-0 relative overflow-hidden rounded-l-2xl">
+          {item.img_url ? (
+            <img 
+              src={item.img_url} 
+              alt={item.name} 
+              className="w-full h-full object-cover" 
+            />
+          ) : (
+            <div className="w-full h-full bg-zinc-800/50 flex items-center justify-center">
+              <Album className="w-24 h-24 text-zinc-600" />
+            </div>
+          )}
+          {item.edition_number && item.edition_total && (
+            <Badge 
+              className="absolute top-2 right-2 bg-black/60 text-white border-zinc-700"
+            >
+              Edition #{item.edition_number}/{item.edition_total}
+            </Badge>
+          )}
+        </div>
 
-      {/* Artwork Details - Right Side */}
-      <div className="flex-grow p-6 flex flex-col justify-between">
-        {/* Top Section - Title, Artist, and Price */}
-        <div>
-          <h3 className="text-xl font-bold text-white mb-2 truncate">{item.name}</h3>
-          <div className="flex justify-between items-start">
-            <p className="text-sm text-zinc-400 truncate">
-              {item.vendor_name || "Street Collector"}
-            </p>
-            {price && item.quantity && (
-              <p className="text-sm text-zinc-400">
-                {price} × {item.quantity}
+        {/* Artwork Details - Right Side */}
+        <div className="flex-grow p-6 flex flex-col justify-between">
+          {/* Top Section - Title, Artist, and Price */}
+          <div>
+            <h3 className="text-xl font-bold text-white mb-2 truncate">{item.name}</h3>
+            <div className="flex justify-between items-start">
+              <p className="text-sm text-zinc-400 truncate">
+                {item.vendor_name || "Street Collector"}
               </p>
+              {price && item.quantity && (
+                <p className="text-sm text-zinc-400">
+                  {price} × {item.quantity}
+                </p>
+              )}
+            </div>
+          </div>
+
+          {/* Middle Section - Status Badges */}
+          <div className="space-y-2">
+            {status === "nfc-paired" && (
+              <div className="bg-green-500/10 border border-green-500/20 rounded-lg p-3 flex items-center gap-2">
+                <Wifi className="h-4 w-4 text-green-400" />
+                <span className="text-sm text-green-400">NFC Tag Paired</span>
+              </div>
+            )}
+            {status === "unpaired" && (
+              <div className="bg-orange-500/10 border border-orange-500/20 rounded-lg p-3 flex items-center gap-2">
+                <WifiOff className="h-4 w-4 text-orange-400" />
+                <span className="text-sm text-orange-400">Ready to Pair NFC Tag</span>
+              </div>
+            )}
+            {status === "no-certificate" && (
+              <div className="bg-zinc-500/10 border border-zinc-500/20 rounded-lg p-3 flex items-center gap-2">
+                <Certificate className="h-4 w-4 text-zinc-400" />
+                <span className="text-sm text-zinc-400">No Certificate Available</span>
+              </div>
+            )}
+          </div>
+
+          {/* Bottom Section - Actions */}
+          <div className="flex gap-2 mt-4">
+            {item.certificate_url && (
+              <Button 
+                size="sm" 
+                variant="outline" 
+                className="text-amber-400 border-amber-500/30 hover:bg-amber-500/10 flex-1"
+                onClick={(e) => {
+                  e.stopPropagation()
+                  onCertificateView()
+                }}
+              >
+                <Certificate className="h-4 w-4 mr-2" /> View Certificate
+              </Button>
+            )}
+            {status === "unpaired" && (
+              <Button 
+                size="sm" 
+                variant="outline" 
+                className="text-blue-400 border-blue-500/30 hover:bg-blue-500/10 flex-1"
+                onClick={(e) => {
+                  e.stopPropagation()
+                  setIsNFCWizardOpen(true)
+                }}
+              >
+                <Wifi className="h-4 w-4 mr-2" /> Pair NFC Tag
+              </Button>
             )}
           </div>
         </div>
-
-        {/* Middle Section - Status Badges */}
-        <div className="space-y-2">
-          {status === "nfc-paired" && (
-            <div className="bg-green-500/10 border border-green-500/20 rounded-lg p-3 flex items-center gap-2">
-              <Wifi className="h-4 w-4 text-green-400" />
-              <span className="text-sm text-green-400">NFC Tag Paired</span>
-            </div>
-          )}
-          {status === "nfc-unpaired" && (
-            <div className="bg-orange-500/10 border border-orange-500/20 rounded-lg p-3 flex items-center gap-2">
-              <WifiOff className="h-4 w-4 text-orange-400" />
-              <span className="text-sm text-orange-400">Ready to Pair NFC Tag</span>
-            </div>
-          )}
-          {status === "digital-only" && (
-            <div className="bg-blue-500/10 border border-blue-500/20 rounded-lg p-3 flex items-center gap-2">
-              <Certificate className="h-4 w-4 text-blue-400" />
-              <span className="text-sm text-blue-400">Digital Certificate Only</span>
-            </div>
-          )}
-          {nfcError && (
-            <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-3 flex items-center gap-2">
-              <AlertCircle className="h-4 w-4 text-red-400" />
-              <span className="text-sm text-red-400">{nfcError}</span>
-            </div>
-          )}
-        </div>
-
-        {/* Bottom Section - Actions */}
-        <div className="flex gap-2 mt-4">
-          <Button 
-            size="sm" 
-            variant="outline" 
-            className="text-amber-400 border-amber-500/30 hover:bg-amber-500/10 flex-1"
-            onClick={(e) => {
-              e.stopPropagation()
-              onCertificateView()
-            }}
-          >
-            <Certificate className="h-4 w-4 mr-2" /> View Certificate
-          </Button>
-          {item.nfc_tag_id && !item.nfc_claimed_at && (
-            <Button 
-              size="sm" 
-              variant="outline" 
-              className={`
-                flex-1
-                ${isScanning || isPairing 
-                  ? 'text-blue-400 border-blue-500/30 bg-blue-500/10'
-                  : 'text-blue-400 border-blue-500/30 hover:bg-blue-500/10'}
-              `}
-              onClick={handleNfcClick}
-              disabled={isPairing}
-            >
-              {isScanning ? (
-                <>
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  Scanning...
-                </>
-              ) : isPairing ? (
-                <>
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  Pairing...
-                </>
-              ) : (
-                <>
-                  <Wifi className="h-4 w-4 mr-2" /> Pair NFC Tag
-                </>
-              )}
-            </Button>
-          )}
-        </div>
       </div>
-    </div>
+
+      <NFCWizardDialog
+        isOpen={isNFCWizardOpen}
+        onClose={() => setIsNFCWizardOpen(false)}
+        item={item}
+        onSuccess={() => {
+          onNFCPaired()
+          setIsNFCWizardOpen(false)
+        }}
+      />
+    </>
   )
 }
 
@@ -402,6 +333,194 @@ const CollectionTimeline = ({ orders }: { orders: Order[] }) => {
   )
 }
 
+const NFCWizardDialog = ({ 
+  isOpen, 
+  onClose, 
+  item,
+  onSuccess 
+}: { 
+  isOpen: boolean
+  onClose: () => void
+  item: LineItem
+  onSuccess: () => void
+}) => {
+  const [step, setStep] = useState(1)
+  const [isPairing, setIsPairing] = useState(false)
+  
+  const { startScanning, stopScanning, isScanning, error: nfcError } = useNFCScan({
+    onSuccess: async (tagData) => {
+      try {
+        setIsPairing(true)
+        const response = await fetch('/api/nfc-tags/claim', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            tagId: tagData.serialNumber,
+            lineItemId: item.line_item_id,
+            orderId: item.order_id,
+          })
+        })
+
+        const result = await response.json()
+
+        if (result.success) {
+          toast({
+            title: "NFC Tag Paired",
+            description: `Artwork "${item.name}" has been successfully authenticated.`,
+            variant: "default"
+          })
+          onSuccess()
+        } else {
+          toast({
+            title: "Pairing Failed",
+            description: result.message || "Unable to pair NFC tag",
+            variant: "destructive"
+          })
+        }
+      } catch (error) {
+        console.error("NFC Claim Error:", error)
+        toast({
+          title: "Pairing Error",
+          description: "An unexpected error occurred",
+          variant: "destructive"
+        })
+      } finally {
+        setIsPairing(false)
+        stopScanning()
+        onClose()
+      }
+    },
+    onError: (error) => {
+      toast({
+        title: "NFC Error",
+        description: error,
+        variant: "destructive"
+      })
+    }
+  })
+
+  useEffect(() => {
+    if (!isOpen) {
+      setStep(1)
+      stopScanning()
+    }
+  }, [isOpen, stopScanning])
+
+  const steps = [
+    {
+      title: "Prepare Your Device",
+      description: "Ensure NFC is enabled on your device. On most phones, you can enable it in your device settings."
+    },
+    {
+      title: "Get Your NFC Tag Ready",
+      description: "Take your NFC tag out of its packaging and keep it ready for scanning."
+    },
+    {
+      title: "Position the Tag",
+      description: "Hold the NFC tag close to the back of your phone where the NFC reader is located."
+    },
+    {
+      title: "Scan the Tag",
+      description: "Keep the tag steady while we scan and pair it with your artwork."
+    }
+  ]
+
+  return (
+    <Dialog open={isOpen} onOpenChange={() => {
+      stopScanning()
+      onClose()
+    }}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>Pair NFC Tag</DialogTitle>
+          <DialogDescription>
+            Follow these steps to authenticate your artwork with an NFC tag.
+          </DialogDescription>
+        </DialogHeader>
+        
+        <div className="space-y-6 py-4">
+          {/* Progress Bar */}
+          <div className="relative h-2 bg-zinc-200 rounded-full overflow-hidden">
+            <div 
+              className="absolute left-0 top-0 h-full bg-amber-500 transition-all duration-300"
+              style={{ width: `${(step / steps.length) * 100}%` }}
+            />
+          </div>
+
+          {/* Step Content */}
+          <div className="space-y-4">
+            <h3 className="text-lg font-semibold">
+              Step {step}: {steps[step - 1].title}
+            </h3>
+            <p className="text-zinc-600">
+              {steps[step - 1].description}
+            </p>
+          </div>
+
+          {/* Error Display */}
+          {nfcError && (
+            <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+              <div className="flex items-center gap-2 text-red-700">
+                <AlertCircle className="h-5 w-5" />
+                <p className="text-sm font-medium">{nfcError}</p>
+              </div>
+            </div>
+          )}
+
+          {/* Action Buttons */}
+          <div className="flex justify-between">
+            <Button
+              variant="outline"
+              onClick={() => {
+                if (step > 1) {
+                  setStep(step - 1)
+                } else {
+                  onClose()
+                }
+              }}
+            >
+              {step === 1 ? 'Cancel' : 'Back'}
+            </Button>
+            
+            {step < steps.length ? (
+              <Button onClick={() => setStep(step + 1)}>
+                Next
+              </Button>
+            ) : (
+              <Button 
+                onClick={() => {
+                  if (!isScanning && !isPairing) {
+                    startScanning()
+                  } else {
+                    stopScanning()
+                  }
+                }}
+                disabled={isPairing}
+              >
+                {isScanning ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Scanning...
+                  </>
+                ) : isPairing ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Pairing...
+                  </>
+                ) : (
+                  'Start Scanning'
+                )}
+              </Button>
+            )}
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+  )
+}
+
 export default function CustomerDashboardById() {
   const router = useRouter()
   const params = useParams()
@@ -411,6 +530,7 @@ export default function CustomerDashboardById() {
   const [selectedArtworkIndex, setSelectedArtworkIndex] = useState<number>(-1)
   const [view, setView] = useState<'grid' | 'timeline'>('grid')
   const [filter, setFilter] = useState<'all' | 'authenticated' | 'pending'>('all')
+  const [isNFCWizardOpen, setIsNFCWizardOpen] = useState(false)
   const { scrollYProgress } = useScroll()
 
   // Fetch orders
@@ -594,6 +714,10 @@ export default function CustomerDashboardById() {
                   setSelectedLineItem(item)
                   setSelectedArtworkIndex(index)
                 }}
+                onNFCPaired={() => {
+                  // Refresh the orders
+                  window.location.reload()
+                }}
               />
             ))}
           </div>
@@ -636,6 +760,10 @@ export default function CustomerDashboardById() {
                         onCertificateView={() => {
                           setSelectedLineItem(item)
                           setSelectedArtworkIndex(index)
+                        }}
+                        onNFCPaired={() => {
+                          // Refresh the orders
+                          window.location.reload()
                         }}
                       />
                     ))}
