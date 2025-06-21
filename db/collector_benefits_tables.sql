@@ -18,6 +18,7 @@ CREATE TABLE IF NOT EXISTS product_benefits (
     description TEXT,
     content_url TEXT,
     access_code TEXT,
+    requires_nfc BOOLEAN DEFAULT TRUE,
     is_active BOOLEAN DEFAULT TRUE,
     starts_at TIMESTAMP WITH TIME ZONE,
     expires_at TIMESTAMP WITH TIME ZONE,

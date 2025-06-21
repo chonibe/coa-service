@@ -22,4 +22,5 @@ export interface LineItem {
   edition_number: number | null
   edition_total: number | null
   img_url: string | null
+  customer_id: string
 } 

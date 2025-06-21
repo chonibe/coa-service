@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
-import { AlertCircle, Loader2, Plus, FileText, Key, Video, Package, Percent, Eye, Trash2, Edit } from "lucide-react"
+import { AlertCircle, Loader2, Plus, FileText, Key, Video, Package, Percent, Eye, Trash2, Edit, Lock, Unlock } from "lucide-react"
 import {
   Dialog,
   DialogContent,
@@ -24,6 +24,7 @@ import { format } from "date-fns"
 import { toast } from "@/components/ui/use-toast"
 import { SidebarLayout } from "../../components/sidebar-layout"
 import { PullToRefresh } from "@/components/pull-to-refresh"
+import { Switch } from "@/components/ui/switch"
 
 // Get icon based on benefit type
 const getBenefitIcon = (type: string) => {
@@ -45,6 +46,17 @@ const getBenefitIcon = (type: string) => {
   }
 }
 
+interface FormData {
+  title: string
+  benefitTypeId: string
+  description: string
+  contentUrl: string
+  accessCode: string
+  startsAt: string
+  expiresAt: string
+  requiresNfc: boolean
+}
+
 export default function BenefitsPage() {
   const router = useRouter()
   const [isLoading, setIsLoading] = useState(true)
@@ -55,7 +67,7 @@ export default function BenefitsPage() {
   const [benefitTypes, setBenefitTypes] = useState<any[]>([])
   const [error, setError] = useState<string | null>(null)
   const [isDialogOpen, setIsDialogOpen] = useState(false)
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<FormData>({
     title: "",
     benefitTypeId: "",
     description: "",
@@ -63,6 +75,7 @@ export default function BenefitsPage() {
     accessCode: "",
     startsAt: "",
     expiresAt: "",
+    requiresNfc: true
   })
   const [isSubmitting, setIsSubmitting] = useState(false)
 
@@ -162,6 +175,7 @@ export default function BenefitsPage() {
         accessCode: "",
         startsAt: "",
         expiresAt: "",
+        requiresNfc: true
       })
     }
   }
@@ -191,6 +205,7 @@ export default function BenefitsPage() {
           description: formData.description,
           content_url: formData.contentUrl,
           access_code: formData.accessCode,
+          requires_nfc: formData.requiresNfc,
           starts_at: formData.startsAt || null,
           expires_at: formData.expiresAt || null,
         }),
@@ -311,23 +326,23 @@ export default function BenefitsPage() {
                   </Select>
                 </div>
 
-                <div className="flex items-end">
+                <div>
                   <Dialog open={isDialogOpen} onOpenChange={handleDialogOpen}>
                     <DialogTrigger asChild>
-                      <Button className="w-full md:w-auto">
+                      <Button className="w-full" disabled={!selectedProduct}>
                         <Plus className="h-4 w-4 mr-2" />
                         Add New Benefit
                       </Button>
                     </DialogTrigger>
-                    <DialogContent className="sm:max-w-[550px]">
+                    <DialogContent className="sm:max-w-[600px]">
                       <DialogHeader>
-                        <DialogTitle>Add New Collector Benefit</DialogTitle>
+                        <DialogTitle>Create New Benefit</DialogTitle>
                         <DialogDescription>
-                          Create a new benefit for collectors of {selectedProduct?.title}
+                          Add a new benefit for collectors of your limited editions
                         </DialogDescription>
                       </DialogHeader>
 
-                      <div className="grid gap-4 py-4">
+                      <div className="grid gap-6">
                         <div className="grid gap-2">
                           <Label htmlFor="benefit-type">Benefit Type *</Label>
                           <Select
@@ -396,6 +411,19 @@ export default function BenefitsPage() {
                           </p>
                         </div>
 
+                        <div className="flex items-center justify-between">
+                          <div className="space-y-0.5">
+                            <Label>Require NFC Authentication</Label>
+                            <div className="text-sm text-muted-foreground">
+                              Lock this benefit until the collector authenticates their artwork with NFC
+                            </div>
+                          </div>
+                          <Switch
+                            checked={formData.requiresNfc}
+                            onCheckedChange={(checked) => setFormData({ ...formData, requiresNfc: checked })}
+                          />
+                        </div>
+
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                           <div className="grid gap-2">
                             <Label htmlFor="starts-at">Starts At</Label>
@@ -457,11 +485,17 @@ export default function BenefitsPage() {
                     <Card key={benefit.id} className="overflow-hidden">
                       <CardHeader className="p-4 pb-2 flex flex-row items-start justify-between">
                         <div>
-                          <div className="flex items-center mb-1">
+                          <div className="flex items-center gap-2 mb-1">
                             {getBenefitIcon(benefit.benefit_types.name)}
-                            <Badge variant="outline" className="ml-2">
+                            <Badge variant="outline">
                               {benefit.benefit_types.name}
                             </Badge>
+                            {benefit.requires_nfc && (
+                              <Badge variant="outline" className="bg-amber-500/10 text-amber-500">
+                                <Lock className="h-3 w-3 mr-1" />
+                                NFC Required
+                              </Badge>
+                            )}
                           </div>
                           <CardTitle className="text-base">{benefit.title}</CardTitle>
                         </div>
@@ -522,43 +556,32 @@ export default function BenefitsPage() {
 
           <Card>
             <CardHeader>
-              <CardTitle>About Collector Benefits</CardTitle>
-              <CardDescription>Learn how to use benefits to add value to your limited editions</CardDescription>
+              <CardTitle>About Benefits</CardTitle>
+              <CardDescription>Learn about the different types of benefits you can offer</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="space-y-4">
-                <div>
-                  <h3 className="text-lg font-medium mb-2">What are collector benefits?</h3>
-                  <p className="text-muted-foreground">
-                    Collector benefits are additional value you provide to your customers who purchase your limited
-                    edition products. Similar to how Patreon and Verisart work, these benefits can increase the value of
-                    your editions and build collector loyalty.
-                  </p>
-                </div>
-
-                <div>
-                  <h3 className="text-lg font-medium mb-2">Types of benefits you can offer:</h3>
-                  <ul className="list-disc pl-5 space-y-2 text-muted-foreground">
-                    <li>
-                      <span className="font-medium">Digital Content</span> - PDFs, videos, exclusive images, etc.
-                    </li>
-                    <li>
-                      <span className="font-medium">Exclusive Access</span> - Early access to new products or content
-                    </li>
-                    <li>
-                      <span className="font-medium">Virtual Events</span> - Livestreams, webinars, Q&A sessions
-                    </li>
-                    <li>
-                      <span className="font-medium">Physical Items</span> - Signed prints, merchandise, etc.
-                    </li>
-                    <li>
-                      <span className="font-medium">Discounts</span> - Special pricing on future purchases
-                    </li>
-                    <li>
-                      <span className="font-medium">Behind the Scenes</span> - Process videos, stories, etc.
-                    </li>
-                  </ul>
-                </div>
+              <div>
+                <h3 className="text-lg font-medium mb-2">Types of benefits you can offer:</h3>
+                <ul className="list-disc pl-5 space-y-2 text-muted-foreground">
+                  <li>
+                    <span className="font-medium">Digital Content</span> - PDFs, videos, exclusive images, etc.
+                  </li>
+                  <li>
+                    <span className="font-medium">Exclusive Access</span> - Early access to new products or content
+                  </li>
+                  <li>
+                    <span className="font-medium">Virtual Events</span> - Livestreams, webinars, Q&A sessions
+                  </li>
+                  <li>
+                    <span className="font-medium">Physical Items</span> - Signed prints, merchandise, etc.
+                  </li>
+                  <li>
+                    <span className="font-medium">Discounts</span> - Special pricing on future purchases
+                  </li>
+                  <li>
+                    <span className="font-medium">Behind the Scenes</span> - Process videos, stories, etc.
+                  </li>
+                </ul>
               </div>
             </CardContent>
           </Card>

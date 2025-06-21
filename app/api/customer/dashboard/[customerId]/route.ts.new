@@ -19,7 +19,11 @@ interface OrderLineItem {
   edition_total?: number | null
   vendor_name?: string
   status?: string
-  order_id: string
+}
+
+interface Order {
+  id: string
+  order_line_items_v2: OrderLineItem[]
 }
 
 export async function GET(
@@ -31,34 +35,44 @@ export async function GET(
       throw new Error("Database connection not available")
     }
 
-    // Fetch line items directly from order_line_items_v2
+    // Fetch line items
     const { data: lineItems, error: lineItemsError } = await supabase
-      .from("order_line_items_v2")
+      .from("orders")
       .select(`
         id,
-        name,
-        product_id,
-        vendor_id,
-        image_url,
-        nfc_claimed_at,
-        description,
-        quantity,
-        price,
-        img_url,
-        nfc_tag_id,
-        certificate_url,
-        certificate_token,
-        edition_number,
-        edition_total,
-        vendor_name,
-        status,
-        order_id
+        order_line_items_v2 (
+          id,
+          name,
+          product_id,
+          vendor_id,
+          image_url,
+          nfc_claimed_at,
+          description,
+          quantity,
+          price,
+          img_url,
+          nfc_tag_id,
+          certificate_url,
+          certificate_token,
+          edition_number,
+          edition_total,
+          vendor_name,
+          status
+        )
       `)
       .eq("customer_id", params.customerId)
 
     if (lineItemsError) {
       throw lineItemsError
     }
+
+    // Transform the nested data structure
+    const flattenedLineItems = (lineItems as Order[] | null)?.flatMap(order => 
+      order.order_line_items_v2.map((item: OrderLineItem) => ({
+        ...item,
+        order_id: order.id
+      }))
+    ) || []
 
     // Fetch rewards data
     const { data: rewardsData, error: rewardsError } = await supabase
@@ -109,7 +123,7 @@ export async function GET(
 
     return NextResponse.json({
       success: true,
-      lineItems: lineItems || [],
+      lineItems: flattenedLineItems,
       rewards: {
         ...rewardsData,
         currentTier,

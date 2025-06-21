@@ -5,17 +5,21 @@ import { useRouter } from "next/navigation"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { Loader2, Link, AlertCircle, Wifi, WifiOff, Scan, Hash, User } from "lucide-react"
+import { Loader2, Link, AlertCircle, Wifi, WifiOff, Scan, Hash, User, Award, Gift, Clock } from "lucide-react"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { NfcTagScanner } from '@/src/components/NfcTagScanner'
 import { toast } from "@/components/ui/use-toast"
 import { Toaster } from "@/components/ui/toaster"
 import { CertificateModal } from './certificate-modal'
+import { format } from "date-fns"
 
 interface LineItem {
   id: string
-  line_item_id: string
   name: string
+  product_id: string
+  vendor_id: string
+  image_url: string
+  nfc_claimed_at?: string
   description?: string
   quantity: number
   price?: number
@@ -23,7 +27,6 @@ interface LineItem {
   nfc_tag_id: string | null
   certificate_url: string
   certificate_token?: string
-  nfc_claimed_at?: string | null
   order_id?: string
   edition_number?: number | null
   edition_total?: number | null
@@ -31,21 +34,38 @@ interface LineItem {
   status?: string
 }
 
-interface Order {
-  id: string
-  order_number: number
-  processed_at: string
-  total_price: number
-  financial_status: string
-  fulfillment_status: string | null
-  line_items: LineItem[]
+interface RewardTier {
+  name: string
+  required_points: number
+  benefits: string[]
 }
 
-export default function CustomerDashboard() {
+interface RewardEvent {
+  id: string
+  customer_id: string
+  points: number
+  reason: string
+  created_at: string
+}
+
+interface RewardsData {
+  points: number
+  level: string
+  currentTier: RewardTier
+  nextTier?: RewardTier
+  recentEvents: RewardEvent[]
+}
+
+export default function CustomerDashboardPage({
+  params,
+}: {
+  params: { customerId: string }
+}) {
   const router = useRouter()
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [orders, setOrders] = useState<Order[]>([])
+  const [lineItems, setLineItems] = useState<LineItem[]>([])
+  const [rewards, setRewards] = useState<RewardsData | null>(null)
   const [selectedLineItem, setSelectedLineItem] = useState<LineItem | null>(null)
 
   useEffect(() => {
@@ -84,43 +104,36 @@ export default function CustomerDashboard() {
       document.cookie = 'shopify_customer_login=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;'
     }
 
-  const fetchOrders = async () => {
-    try {
-      setIsLoading(true)
-      setError(null)
+    const fetchDashboardData = async () => {
+      try {
+        setIsLoading(true)
+        setError(null)
 
-      // Extract customer ID from URL
-      const customerId = window.location.pathname.split('/').pop()
+        const response = await fetch(`/api/customer/dashboard/${params.customerId}`)
+        
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({}))
+          throw new Error(errorData.message || 'Failed to fetch dashboard data')
+        }
 
-      // Use the customer API endpoint with optional customer ID
-      const url = customerId 
-        ? `/api/customer/dashboard/${customerId}` 
-        : '/api/customer/dashboard'
+        const data = await response.json()
+        
+        if (!data.success) {
+          throw new Error(data.message || 'Failed to fetch dashboard data')
+        }
 
-      const response = await fetch(url)
-      
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}))
-        throw new Error(errorData.message || 'Failed to fetch orders')
-      }
-
-      const data = await response.json()
-      
-      if (!data.success) {
-        throw new Error(data.message || 'Failed to fetch orders')
-      }
-
-      setOrders(data.orders || [])
-    } catch (err: any) {
+        setLineItems(data.lineItems || [])
+        setRewards(data.rewards || null)
+      } catch (err: any) {
         console.error('Dashboard Fetch Error:', err)
         setError(err.message || 'An unexpected error occurred')
-    } finally {
-      setIsLoading(false)
+      } finally {
+        setIsLoading(false)
+      }
     }
-  }
 
-    fetchOrders()
-  }, [router])
+    fetchDashboardData()
+  }, [router, params.customerId])
 
   const handleNfcScan = async () => {
     try {
@@ -148,7 +161,7 @@ export default function CustomerDashboard() {
   const getNfcStatus = (lineItem: LineItem) => {
     // Debug logging
     console.log('Get NFC Status Debug:', {
-      lineItemId: lineItem.line_item_id,
+      lineItemId: lineItem.id,
       nfcTagId: lineItem.nfc_tag_id,
       nfcClaimedAt: lineItem.nfc_claimed_at
     })
@@ -208,106 +221,179 @@ export default function CustomerDashboard() {
 
   if (isLoading) {
     return (
-      <div className="flex justify-center items-center min-h-screen">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      <div className="flex items-center justify-center min-h-screen">
+        <Loader2 className="w-8 h-8 animate-spin" />
       </div>
     )
   }
 
   if (error) {
     return (
-      <div className="flex justify-center items-center min-h-screen">
-        <Card className="w-full max-w-md">
-          <CardHeader>
-            <CardTitle>Authentication Error</CardTitle>
-            <CardDescription>Unable to load dashboard</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <p className="text-destructive">{error}</p>
-            <Button 
-              onClick={() => {
-                // Redirect to Shopify OAuth
-                window.location.href = `/api/auth/shopify`
-              }} 
-              className="mt-4 w-full"
-            >
-              Authenticate with Shopify
-            </Button>
-          </CardContent>
-        </Card>
+      <div className="container max-w-6xl py-8">
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertTitle>Error</AlertTitle>
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
       </div>
     )
   }
 
   return (
-    <>
-      <div className="container mx-auto px-4 py-8">
-        <div className="grid md:grid-cols-3 gap-6">
-          {/* Main dashboard content */}
-          <div className="md:col-span-2">
-            <h1 className="text-2xl font-bold mb-6">Your Digital Art Collection</h1>
+    <div className="container max-w-6xl py-8">
+      <div className="grid gap-8">
+        {/* Collection Section */}
+        <section>
+          <h1 className="text-2xl font-bold mb-6">Your Digital Art Collection</h1>
 
-            {orders.length === 0 ? (
-              <Card>
-                <CardHeader>
-                  <CardTitle>No Orders Found</CardTitle>
-                  <CardDescription>You haven't purchased any digital artworks yet.</CardDescription>
-                </CardHeader>
-              </Card>
-            ) : (
-              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {orders.map((order) => (
-                  <Card key={order.id}>
+          {lineItems.length === 0 ? (
+            <Card>
+              <CardHeader>
+                <CardTitle>No Artworks Yet</CardTitle>
+                <CardDescription>
+                  Your digital art collection will appear here once you make a purchase.
+                </CardDescription>
+              </CardHeader>
+            </Card>
+          ) : (
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {lineItems.map((item) => {
+                const nfcStatus = getNfcStatus(item)
+                return (
+                  <Card key={item.id}>
                     <CardHeader>
-                      <CardTitle>Order #{order.order_number}</CardTitle>
+                      <CardTitle>{item.name}</CardTitle>
                       <CardDescription>
-                        {new Date(order.processed_at).toLocaleDateString()} • {order.financial_status}
+                        {item.vendor_name || 'Unknown Vendor'} • Edition {item.edition_number || 'N/A'}/{item.edition_total || 'N/A'}
                       </CardDescription>
                     </CardHeader>
                     <CardContent>
-                      {order.line_items.map((item) => {
-                        const nfcStatus = getNfcStatus(item)
-                        return (
-                          <div 
-                            key={item.line_item_id} 
-                            className="space-y-2 cursor-pointer hover:bg-accent/50 p-2 rounded-md transition-colors"
-                            onClick={() => handleCertificateClick(item)}
-                          >
-                            <div className="flex justify-between items-start">
-                              <div>
-                                <p className="font-medium">{item.name}</p>
-                                <p className="text-sm text-muted-foreground">
-                                  {item.vendor_name || 'Unknown Vendor'} • Edition {item.edition_number || 'N/A'}/{item.edition_total || 'N/A'}
-                                </p>
-                              </div>
-                              <Badge variant={nfcStatus.variant}>
-                                {nfcStatus.label}
-                              </Badge>
-                            </div>
-                          </div>
-                        )
-                      })}
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <Badge variant={nfcStatus.variant}>
+                            {nfcStatus.label}
+                          </Badge>
+                        </div>
+                        <Button
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            handleCertificateClick(item)
+                          }}
+                        >
+                          View Certificate
+                        </Button>
+                      </div>
                     </CardContent>
                   </Card>
-                ))}
-              </div>
-            )}
-          </div>
+                )
+              })}
+            </div>
+          )}
+        </section>
 
-          {/* NFC Scanner Sidebar */}
-          <div className="md:col-span-1">
-            <NfcTagScanner onTagScanned={handleNfcTagScanned} />
-          </div>
-        </div>
+        {/* Rewards Section */}
+        {rewards && (
+          <section>
+            <Card>
+              <CardHeader>
+                <CardTitle>Rewards & Benefits</CardTitle>
+                <CardDescription>
+                  Earn points and unlock exclusive benefits
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                {/* Current Level */}
+                <div className="space-y-4">
+                  <div className="flex justify-between items-center">
+                    <div className="flex items-center gap-2">
+                      <Award className="w-5 h-5 text-amber-400" />
+                      <div>
+                        <p className="font-medium">{rewards.level || "Bronze"} Level</p>
+                        <p className="text-sm text-muted-foreground">{rewards.points || 0} points</p>
+                      </div>
+                    </div>
+                    {rewards.nextTier && (
+                      <Badge variant="outline" className="bg-zinc-900/50">
+                        {rewards.nextTier.required_points - rewards.points} points to {rewards.nextTier.name}
+                      </Badge>
+                    )}
+                  </div>
+
+                  {/* Progress Bar */}
+                  {rewards.nextTier && (
+                    <div className="space-y-2">
+                      <div className="h-2 bg-zinc-900/50 rounded-full overflow-hidden">
+                        <div
+                          className="h-full bg-gradient-to-r from-amber-500 to-amber-600 transition-all"
+                          style={{ width: `${(rewards.points / rewards.nextTier.required_points) * 100}%` }}
+                        />
+                      </div>
+                      <p className="text-sm text-muted-foreground text-right">
+                        {Math.round((rewards.points / rewards.nextTier.required_points) * 100)}% to next level
+                      </p>
+                    </div>
+                  )}
+                </div>
+
+                {/* Benefits */}
+                <div className="space-y-4">
+                  <h3 className="font-medium">Your Benefits</h3>
+                  <div className="grid gap-2">
+                    {rewards.currentTier.benefits.map((benefit: string, index: number) => (
+                      <div
+                        key={index}
+                        className="flex items-center gap-2 text-sm"
+                      >
+                        <Gift className="w-4 h-4 text-amber-400" />
+                        <span>{benefit}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Recent Activity */}
+                <div className="space-y-2">
+                  <h3 className="font-medium">Recent Activity</h3>
+                  {rewards.recentEvents && rewards.recentEvents.length > 0 ? (
+                    <div className="space-y-2">
+                      {rewards.recentEvents.map((event: RewardEvent) => (
+                        <div
+                          key={event.id}
+                          className="flex justify-between items-center"
+                        >
+                          <div className="flex items-center gap-2">
+                            <Clock className="w-4 h-4 text-blue-400" />
+                            <div>
+                              <p className="text-sm">{event.reason}</p>
+                              <p className="text-xs text-muted-foreground">
+                                {format(new Date(event.created_at), "MMM d, yyyy")}
+                              </p>
+                            </div>
+                          </div>
+                          <Badge variant="outline" className="bg-green-500/10 text-green-400">
+                            +{event.points}
+                          </Badge>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-sm text-muted-foreground">No recent activity</p>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          </section>
+        )}
       </div>
-      
-      {/* Certificate Modal */}
-      <CertificateModal 
-        lineItem={selectedLineItem} 
-        onClose={() => setSelectedLineItem(null)} 
-      />
-      
+
+      {selectedLineItem ? (
+        <CertificateModal
+          lineItem={selectedLineItem}
+          onClose={() => setSelectedLineItem(null)}
+        />
+      ) : null}
+
       <Toaster />
-    </>
+    </div>
   )
 } 

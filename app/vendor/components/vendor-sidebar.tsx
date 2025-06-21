@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Toaster } from "@/components/ui/toaster"
 import { useMobile } from "@/hooks/use-mobile"
-import { LogOut, Menu, Home, BarChart, Settings, Award, Package, DollarSign, MessageSquare, X } from "lucide-react"
+import { LogOut, Menu, Home, BarChart, Settings, Award, Package, DollarSign, MessageSquare, X, BookOpen } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 interface NavItem {
@@ -35,6 +35,11 @@ export function VendorSidebar() {
       title: "Products",
       href: "/vendor/dashboard/products",
       icon: <Package className="h-5 w-5" />,
+    },
+    {
+      title: "Stories",
+      href: "/vendor/dashboard/stories",
+      icon: <BookOpen className="h-5 w-5" />,
     },
     {
       title: "Analytics",
@@ -106,8 +111,9 @@ export function VendorSidebar() {
   const mobileNavItems = [
     navItems[0], // Dashboard
     navItems[1], // Products
-    navItems[2], // Analytics
-    navItems[3], // Payouts
+    navItems[2], // Stories
+    navItems[3], // Analytics
+    navItems[4], // Payouts
     navItems[6], // Settings
   ]
 
