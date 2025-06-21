@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Toaster } from "@/components/ui/toaster"
 import { useMobile } from "@/hooks/use-mobile"
-import { LogOut, Menu, Home, BarChart, Settings, Award, Package, DollarSign, MessageSquare, X } from "lucide-react"
+import { LogOut, Menu, Home, BarChart, Settings, Award, Package, DollarSign, MessageSquare, X, Palette, BookOpen } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 interface NavItem {

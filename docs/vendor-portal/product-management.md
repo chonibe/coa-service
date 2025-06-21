@@ -171,6 +171,53 @@ Onboarding tooltips provide contextual guidance to help vendors understand how t
 - Provide clear, specific guidance
 - Focus on helping vendors tell their unique stories
 
+## Product Story Submission
+
+### Feature Overview
+The new product story submission feature allows vendors to create rich, multimedia stories for their products.
+
+### Submission Process
+- Navigate to product edit page
+- Click "Add Story" button
+- Fill out story details:
+  - Descriptive text (10-1000 characters)
+  - Optional tags
+  - Optional location
+  - Optional collaborators
+  - Multiple image uploads
+
+### Technical Implementation
+- API Endpoint: `/api/vendor/submit-story`
+- Validation:
+  - Zod schema validation
+  - Image upload to Supabase storage
+  - Row-level security enforcement
+
+### Submission Workflow
+```mermaid
+graph TD
+    A[Vendor Selects Product] --> B[Open Story Creation Modal]
+    B --> C[Write Story Text]
+    C --> D[Upload Supporting Images]
+    D --> E[Add Optional Metadata]
+    E --> F[Submit Story]
+    F --> G{Validation Check}
+    G --> |Pass| H[Save to Database]
+    G --> |Fail| I[Show Error Messages]
+    H --> J[Update Product Story Status]
+```
+
+### Best Practices
+- Use clear, engaging language
+- Share the inspiration behind the artwork
+- Highlight unique creative processes
+- Be authentic and personal
+
+### Performance Considerations
+- Image uploads optimized for web
+- Lazy loading of story content
+- Efficient database queries
+
 ## Version
-- Last Updated: $(date +"%Y-%m-%d")
-- Version: 1.3.0 
+- Implemented in: v1.4.0
+- Last Updated: $(date +"%Y-%m-%d") 
