@@ -9,11 +9,17 @@ import { toast } from '@/components/ui/use-toast';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { createClient } from '@/lib/supabase/client';
+import { InstagramImageUpload } from '@/components/ui/instagram-image-upload';
+import { HashtagInput } from '@/components/ui/hashtag-input';
+import { MapPin } from 'lucide-react';
 
 const ProductBenefitSchema = z.object({
   title: z.string().min(3, "Title must be at least 3 characters").max(100, "Title must be 100 characters or less"),
   description: z.string().min(20, "Description must be at least 20 characters").max(500, "Description must be 500 characters or less"),
-  category: z.enum(['Artistic', 'Material', 'Emotional', 'Collector', 'Other'])
+  category: z.enum(['Artistic', 'Material', 'Emotional', 'Collector', 'Other']),
+  images: z.array(z.string()).max(5, "Maximum 5 images allowed"),
+  hashtags: z.array(z.string()).max(10, "Maximum 10 hashtags allowed"),
+  location: z.string().optional()
 });
 
 type ProductBenefitData = z.infer<typeof ProductBenefitSchema>;
@@ -22,7 +28,10 @@ export const ProductBenefitWizard: React.FC = () => {
   const [benefitData, setBenefitData] = useState<ProductBenefitData>({
     title: '',
     description: '',
-    category: 'Other'
+    category: 'Other',
+    images: [],
+    hashtags: [],
+    location: ''
   });
 
   const [characterCount, setCharacterCount] = useState({
@@ -31,6 +40,7 @@ export const ProductBenefitWizard: React.FC = () => {
   });
 
   const [previewMode, setPreviewMode] = useState(false);
+  const [locationModalOpen, setLocationModalOpen] = useState(false);
 
   const handleInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -46,11 +56,33 @@ export const ProductBenefitWizard: React.FC = () => {
     }
   }, []);
 
+  const handleImageUpload = useCallback((imageUrls: string[]) => {
+    setBenefitData(prev => ({
+      ...prev,
+      images: imageUrls
+    }));
+  }, []);
+
   const handleCategoryChange = useCallback((category: string) => {
     setBenefitData(prev => ({
       ...prev,
       category: category as ProductBenefitData['category']
     }));
+  }, []);
+
+  const handleHashtagChange = useCallback((hashtags: string[]) => {
+    setBenefitData(prev => ({
+      ...prev,
+      hashtags
+    }));
+  }, []);
+
+  const handleLocationSelect = useCallback((location: string) => {
+    setBenefitData(prev => ({
+      ...prev,
+      location
+    }));
+    setLocationModalOpen(false);
   }, []);
 
   const handleSubmit = async () => {
@@ -71,7 +103,10 @@ export const ProductBenefitWizard: React.FC = () => {
           vendor_id: user.id,
           title: benefitData.title,
           description: benefitData.description,
-          category: benefitData.category
+          category: benefitData.category,
+          images: benefitData.images,
+          hashtags: benefitData.hashtags,
+          location: benefitData.location
         })
         .select()
         .single();
@@ -88,7 +123,10 @@ export const ProductBenefitWizard: React.FC = () => {
       setBenefitData({
         title: '',
         description: '',
-        category: 'Other'
+        category: 'Other',
+        images: [],
+        hashtags: [],
+        location: ''
       });
       setCharacterCount({ title: 0, description: 0 });
 
@@ -108,24 +146,66 @@ export const ProductBenefitWizard: React.FC = () => {
 
   if (previewMode) {
     return (
-      <Card className="w-full max-w-2xl mx-auto">
+      <Card className="w-full max-w-2xl mx-auto instagram-post-preview">
         <CardHeader>
           <CardTitle>Product Benefit Preview</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="bg-muted/20 p-4 rounded-lg">
-            <h2 className="text-xl font-bold mb-2">{benefitData.title}</h2>
-            <p className="text-muted-foreground mb-2">{benefitData.description}</p>
-            <span className="text-sm font-semibold text-primary/70 bg-primary/10 px-2 py-1 rounded">
-              {benefitData.category} Benefit
-            </span>
+          <div className="bg-white rounded-xl shadow-md overflow-hidden">
+            {benefitData.images.length > 0 && (
+              <div className="w-full aspect-square overflow-hidden relative">
+                <img 
+                  src={benefitData.images[0]} 
+                  alt="Benefit Preview" 
+                  className="w-full h-full object-cover"
+                />
+                {benefitData.images.length > 1 && (
+                  <div className="absolute top-2 right-2 bg-black/50 text-white px-2 py-1 rounded-full">
+                    +{benefitData.images.length - 1}
+                  </div>
+                )}
+              </div>
+            )}
+            
+            <div className="p-4">
+              <h2 className="text-xl font-bold mb-2">{benefitData.title}</h2>
+              
+              {benefitData.location && (
+                <div className="text-sm text-muted-foreground flex items-center mb-2">
+                  <MapPin className="w-4 h-4 mr-1" />
+                  {benefitData.location}
+                </div>
+              )}
+              
+              <p className="text-muted-foreground mb-2">{benefitData.description}</p>
+              
+              <div className="flex items-center space-x-2 mb-2">
+                <span className="text-sm font-semibold text-primary/70 bg-primary/10 px-2 py-1 rounded">
+                  {benefitData.category} Benefit
+                </span>
+              </div>
+              
+              {benefitData.hashtags.length > 0 && (
+                <div className="flex flex-wrap gap-1 mt-2">
+                  {benefitData.hashtags.map(tag => (
+                    <span 
+                      key={tag} 
+                      className="text-sm text-blue-600 bg-blue-50 px-2 py-1 rounded-full"
+                    >
+                      #{tag}
+                    </span>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
+          
           <div className="mt-4 flex space-x-2">
             <Button variant="outline" onClick={togglePreview}>
               Edit Benefit
             </Button>
             <Button onClick={handleSubmit}>
-              Save Benefit
+              Share Benefit
             </Button>
           </div>
         </CardContent>
@@ -140,17 +220,32 @@ export const ProductBenefitWizard: React.FC = () => {
       </CardHeader>
       <CardContent>
         <div className="space-y-4">
-          <div>
-            <Input 
-              name="title"
-              value={benefitData.title}
-              onChange={handleInputChange}
-              placeholder="Benefit Title (3-100 characters)"
-              maxLength={100}
-            />
-            <span className="text-sm text-muted-foreground">
-              {characterCount.title}/100 characters
-            </span>
+          <InstagramImageUpload 
+            onUploadComplete={handleImageUpload}
+            maxImages={5}
+            aspectRatio={1}
+          />
+
+          <Input 
+            name="title"
+            value={benefitData.title}
+            onChange={handleInputChange}
+            placeholder="Benefit Title (3-100 characters)"
+            maxLength={100}
+          />
+          <span className="text-sm text-muted-foreground">
+            {characterCount.title}/100 characters
+          </span>
+
+          <div className="flex items-center space-x-2">
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={() => setLocationModalOpen(true)}
+            >
+              <MapPin className="w-4 h-4 mr-2" /> 
+              {benefitData.location ? `📍 ${benefitData.location}` : 'Add Location'}
+            </Button>
           </div>
 
           <Select 
@@ -181,6 +276,11 @@ export const ProductBenefitWizard: React.FC = () => {
             {characterCount.description}/500 characters
           </span>
 
+          <HashtagInput 
+            onHashtagsChange={handleHashtagChange}
+            maxHashtags={10}
+          />
+
           <div className="flex space-x-4">
             <Button 
               variant="outline"
@@ -196,10 +296,11 @@ export const ProductBenefitWizard: React.FC = () => {
               onClick={handleSubmit}
               disabled={
                 benefitData.title.length < 3 || 
-                benefitData.description.length < 20
+                benefitData.description.length < 20 ||
+                benefitData.images.length === 0
               }
             >
-              Save Benefit
+              Share Benefit
             </Button>
           </div>
         </div>
