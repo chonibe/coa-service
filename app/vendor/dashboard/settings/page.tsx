@@ -16,8 +16,7 @@ import { Separator } from "@/components/ui/separator"
 import { useToast } from "@/components/ui/use-toast"
 import { Loader2, AlertCircle, CheckCircle, Save, DollarSign, FileText, User, CreditCard } from "lucide-react"
 import { StripeConnect } from "../components/stripe-connect"
-import { ProfileEdit } from '@/components/vendor/ProfileEdit';
-import { Toaster } from '@/components/ui/toaster';
+import { ProfileEdit } from '@/components/vendor/ProfileEdit'
 
 interface VendorProfile {
   id: string
@@ -63,6 +62,10 @@ const COUNTRIES = [
   "South Africa",
   "Other",
 ]
+
+const getVendorName = (profile: VendorProfile | null) => {
+  return profile?.vendor_name || profile?.contact_name || 'Vendor'
+}
 
 export default function VendorSettingsPage() {
   const [profile, setProfile] = useState<VendorProfile | null>(null)
@@ -207,22 +210,242 @@ export default function VendorSettingsPage() {
     <div className="container mx-auto px-4 py-8">
       <h1 className="text-3xl font-bold mb-8">Vendor Settings</h1>
       
-      <div className="grid md:grid-cols-2 gap-8">
-        {/* Profile Section */}
-        <div className="bg-white shadow-md rounded-lg p-6">
-          <h2 className="text-2xl font-semibold mb-4">Profile</h2>
-          <ProfileEdit />
-        </div>
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+        <TabsList className="grid w-full grid-cols-3">
+          <TabsTrigger value="profile">
+            <User className="mr-2 h-4 w-4" /> Profile
+          </TabsTrigger>
+          <TabsTrigger value="payment">
+            <DollarSign className="mr-2 h-4 w-4" /> Payment
+          </TabsTrigger>
+          <TabsTrigger value="tax">
+            <FileText className="mr-2 h-4 w-4" /> Tax & Legal
+          </TabsTrigger>
+        </TabsList>
 
-        {/* Additional Settings Placeholder */}
-        <div className="bg-white shadow-md rounded-lg p-6">
-          <h2 className="text-2xl font-semibold mb-4">Account Settings</h2>
-          {/* Future: Add account-related settings */}
-          <p className="text-muted-foreground">More settings coming soon</p>
-        </div>
-      </div>
+        {/* Profile Tab */}
+        <TabsContent value="profile">
+          <Card>
+            <CardHeader>
+              <CardTitle>Profile Details</CardTitle>
+              <CardDescription>Manage your vendor profile information</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <ProfileEdit />
+            </CardContent>
+          </Card>
+        </TabsContent>
 
-      <Toaster />
+        {/* Payment Tab */}
+        <TabsContent value="payment">
+          <Card>
+            <CardHeader>
+              <CardTitle>Payment Information</CardTitle>
+              <CardDescription>Set up your payment methods</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <StripeConnect vendorName={getVendorName(profile)} />
+              
+              <form onSubmit={handleSubmit}>
+                <div className="grid gap-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="paypal_email">PayPal Email</Label>
+                      <Input 
+                        id="paypal_email"
+                        name="paypal_email"
+                        type="email"
+                        value={formState.paypal_email}
+                        onChange={handleInputChange}
+                        placeholder="Enter PayPal email"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="bank_account">Bank Account</Label>
+                      <Input 
+                        id="bank_account"
+                        name="bank_account"
+                        type="text"
+                        value={formState.bank_account}
+                        onChange={handleInputChange}
+                        placeholder="Enter bank account details"
+                      />
+                    </div>
+                  </div>
+                </div>
+                <CardFooter className="justify-between border-t pt-6 mt-6">
+                  <div className="flex items-center space-x-2">
+                    {completionSteps.payment ? (
+                      <CheckCircle className="h-5 w-5 text-green-500" />
+                    ) : (
+                      <AlertCircle className="h-5 w-5 text-yellow-500" />
+                    )}
+                    <span>
+                      {completionSteps.payment 
+                        ? "Payment methods configured" 
+                        : "Complete payment setup"}
+                    </span>
+                  </div>
+                  <Button 
+                    type="submit" 
+                    disabled={isSaving}
+                  >
+                    {isSaving ? (
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    ) : (
+                      <Save className="mr-2 h-4 w-4" />
+                    )}
+                    Save Changes
+                  </Button>
+                </CardFooter>
+              </form>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Tax & Legal Tab */}
+        <TabsContent value="tax">
+          <Card>
+            <CardHeader>
+              <CardTitle>Tax & Legal Information</CardTitle>
+              <CardDescription>Provide your tax and legal details</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <form onSubmit={handleSubmit}>
+                <div className="grid gap-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label>Business Type</Label>
+                      <div className="flex items-center space-x-2 mt-2">
+                        <Checkbox 
+                          id="is_company"
+                          checked={formState.is_company}
+                          onCheckedChange={handleCheckboxChange}
+                        />
+                        <Label htmlFor="is_company">Registered Company</Label>
+                      </div>
+                    </div>
+                    <div>
+                      <Label htmlFor="tax_country">Country</Label>
+                      <Select 
+                        value={formState.tax_country} 
+                        onValueChange={handleSelectChange}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select country" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {COUNTRIES.map(country => (
+                            <SelectItem key={country} value={country}>
+                              {country}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                  
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="tax_id">Tax ID / VAT Number</Label>
+                      <Input 
+                        id="tax_id"
+                        name="tax_id"
+                        type="text"
+                        value={formState.tax_id}
+                        onChange={handleInputChange}
+                        placeholder="Enter tax ID"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="contact_name">Contact Name</Label>
+                      <Input 
+                        id="contact_name"
+                        name="contact_name"
+                        type="text"
+                        value={formState.contact_name}
+                        onChange={handleInputChange}
+                        placeholder="Enter contact name"
+                      />
+                    </div>
+                  </div>
+                  
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="contact_email">Contact Email</Label>
+                      <Input 
+                        id="contact_email"
+                        name="contact_email"
+                        type="email"
+                        value={formState.contact_email}
+                        onChange={handleInputChange}
+                        placeholder="Enter contact email"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="phone">Phone Number</Label>
+                      <Input 
+                        id="phone"
+                        name="phone"
+                        type="tel"
+                        value={formState.phone}
+                        onChange={handleInputChange}
+                        placeholder="Enter phone number"
+                      />
+                    </div>
+                  </div>
+                  
+                  <div>
+                    <Label htmlFor="address">Full Address</Label>
+                    <Textarea 
+                      id="address"
+                      name="address"
+                      value={formState.address}
+                      onChange={handleInputChange}
+                      placeholder="Enter full business address"
+                      rows={3}
+                    />
+                  </div>
+                </div>
+                
+                <CardFooter className="justify-between border-t pt-6 mt-6">
+                  <div className="flex items-center space-x-2">
+                    {completionSteps.tax ? (
+                      <CheckCircle className="h-5 w-5 text-green-500" />
+                    ) : (
+                      <AlertCircle className="h-5 w-5 text-yellow-500" />
+                    )}
+                    <span>
+                      {completionSteps.tax 
+                        ? "Tax information complete" 
+                        : "Complete tax setup"}
+                    </span>
+                  </div>
+                  <Button 
+                    type="submit" 
+                    disabled={isSaving}
+                  >
+                    {isSaving ? (
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    ) : (
+                      <Save className="mr-2 h-4 w-4" />
+                    )}
+                    Save Changes
+                  </Button>
+                </CardFooter>
+              </form>
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
+
+      {error && (
+        <Alert variant="destructive" className="mt-4">
+          <AlertCircle className="h-4 w-4" />
+          <AlertTitle>Error</AlertTitle>
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
+      )}
     </div>
   )
 }
