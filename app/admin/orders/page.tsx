@@ -80,7 +80,7 @@ async function OrdersList() {
   // Use a fixed page size and default to first page
   const PAGE_SIZE = 10;
   const page = 1;
-
+    
   const { data: orders, error } = await supabase
     .from('orders')
     .select('*')
@@ -90,7 +90,7 @@ async function OrdersList() {
     return <div>Error loading orders: {error.message}</div>;
   }
 
-  return (
+    return (
     <div>
       {orders.map(order => (
         <div key={order.id}>
@@ -98,9 +98,9 @@ async function OrdersList() {
           <p>{order.id}</p>
         </div>
       ))}
-    </div>
-  );
-}
+      </div>
+    );
+  }
 
 export default function OrdersPage() {
   return (
