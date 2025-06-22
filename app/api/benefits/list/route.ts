@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server"
 
 export async function GET(request: NextRequest) {
   try {
+    const supabase = createClient()
     const searchParams = request.nextUrl.searchParams
     const productId = searchParams.get("product_id")
     const vendorName = searchParams.get("vendor_name")

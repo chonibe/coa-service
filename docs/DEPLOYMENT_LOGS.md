@@ -488,4 +488,31 @@ If issues are encountered:
 - Restart Next.js application
 - Verify API routes functionality
 
+### Deployment 2024-06-10 (v1.4.3)
+
+**Commit Hash**: [Current Commit Hash]
+
+**Database Changes**:
+- Created view `order_line_items` as a compatibility layer for `order_line_items_v2`
+- Added updatable view triggers for seamless data access
+- Fixed Supabase client initialization in benefits API route
+
+**API Improvements**:
+- Corrected Supabase client initialization in benefits list route
+- Resolved database table reference issues
+
+**Deployment Details**:
+- Environment: Development
+- Platform: Local Supabase
+- Migration Status: Successful
+
+**Warnings and Notes**:
+- Temporary view created to maintain backward compatibility
+- Recommend updating all references to use `order_line_items_v2` in future
+
+**Next Steps**:
+- Verify data consistency across view and base table
+- Update application code to use new table/view structure
+- Conduct thorough testing of order-related functionality
+
 --- 
