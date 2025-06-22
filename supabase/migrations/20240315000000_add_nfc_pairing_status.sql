@@ -22,15 +22,15 @@ CREATE INDEX IF NOT EXISTS idx_nfc_tags_pairing_completed
 ON nfc_tags(pairing_completed_at);
 
 -- Add NFC tag pairing status and related fields
-ALTER TABLE order_line_items_v2
+ALTER TABLE order_line_items
 ADD COLUMN nfc_tag_id uuid REFERENCES nfc_tags(id),
 ADD COLUMN nfc_pairing_status text CHECK (nfc_pairing_status IN ('pending', 'paired', 'failed')) DEFAULT 'pending',
 ADD COLUMN nfc_pairing_error text,
 ADD COLUMN nfc_paired_at timestamptz;
 
 -- Add indexes for performance
-CREATE INDEX idx_order_line_items_v2_nfc_tag_id ON order_line_items_v2(nfc_tag_id);
-CREATE INDEX idx_order_line_items_v2_nfc_pairing_status ON order_line_items_v2(nfc_pairing_status);
+CREATE INDEX idx_order_line_items_nfc_tag_id ON order_line_items(nfc_tag_id);
+CREATE INDEX idx_order_line_items_nfc_pairing_status ON order_line_items(nfc_pairing_status);
 
 -- Add trigger to update nfc_paired_at when status changes to 'paired'
 CREATE OR REPLACE FUNCTION update_nfc_paired_at()
@@ -44,7 +44,7 @@ END;
 $$ LANGUAGE plpgsql;
 
 CREATE TRIGGER update_nfc_paired_at_trigger
-BEFORE UPDATE ON order_line_items_v2
+BEFORE UPDATE ON order_line_items
 FOR EACH ROW
 EXECUTE FUNCTION update_nfc_paired_at();
 

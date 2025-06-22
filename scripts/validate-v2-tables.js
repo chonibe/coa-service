@@ -6,7 +6,7 @@ const { execSync } = require('child_process');
 
 // Configuration
 const OLD_TABLE_NAME = 'order_line_items';
-const NEW_TABLE_NAME = 'order_line_items_v2';
+const NEW_TABLE_NAME = 'order_line_items';
 const IGNORE_DIRS = [
   'node_modules',
   '.git',

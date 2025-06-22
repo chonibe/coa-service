@@ -40,7 +40,7 @@ export async function POST(request: Request) {
 
     // Get the current item to check if we need to resequence
     const { data: currentItem, error: fetchError } = await supabase
-      .from("order_line_items_v2")
+      .from("order_line_items")
       .select("*")
       .eq("line_item_id", lineItemId)
       .eq("order_id", orderId)
@@ -72,7 +72,7 @@ export async function POST(request: Request) {
 
     // Update the line item
     const { data: updatedItem, error: updateError } = await supabase
-      .from("order_line_items_v2")
+      .from("order_line_items")
       .update(updateData)
       .eq("line_item_id", lineItemId)
       .eq("order_id", orderId)

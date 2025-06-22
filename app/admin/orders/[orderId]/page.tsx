@@ -149,7 +149,7 @@ async function getOrderData(orderId: string) {
 
   // Fetch line items without join
   const { data: lineItems, error: lineItemsError } = await supabase
-    .from("order_line_items_v2")
+    .from("order_line_items")
     .select("*")
     .eq("order_id", orderId)
     .order("created_at", { ascending: true });

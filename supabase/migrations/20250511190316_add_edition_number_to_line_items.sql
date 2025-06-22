@@ -1,5 +1,5 @@
--- Add edition_number and edition_total columns to order_line_items_v2
-ALTER TABLE "public"."order_line_items_v2" 
+-- Add edition_number and edition_total columns to order_line_items
+ALTER TABLE "public"."order_line_items" 
 ADD COLUMN IF NOT EXISTS "edition_number" INTEGER,
 ADD COLUMN IF NOT EXISTS "edition_total" INTEGER;
 
@@ -13,14 +13,14 @@ DECLARE
     line_item RECORD;
 BEGIN
     -- Clear any existing edition numbers for this product
-    UPDATE "public"."order_line_items_v2"
+    UPDATE "public"."order_line_items"
     SET edition_number = NULL
     WHERE product_id = $1;
 
     -- Get all active line items for this product, ordered by creation date
     FOR line_item IN 
         SELECT id, created_at
-        FROM "public"."order_line_items_v2"
+        FROM "public"."order_line_items"
         WHERE product_id = $1
         AND status = 'active'
         ORDER BY created_at ASC
@@ -28,13 +28,13 @@ BEGIN
         edition_count := edition_count + 1;
         
         -- Update the line item with its edition number
-        UPDATE "public"."order_line_items_v2"
+        UPDATE "public"."order_line_items"
         SET edition_number = edition_count
         WHERE id = line_item.id;
     END LOOP;
 
     -- Update the edition_total for all line items of this product
-    UPDATE "public"."order_line_items_v2"
+    UPDATE "public"."order_line_items"
     SET edition_total = edition_count
     WHERE product_id = $1;
 
@@ -53,7 +53,7 @@ BEGIN
     -- Get the highest edition number for this product
     SELECT COALESCE(MAX(edition_number), 0) + 1
     INTO next_number
-    FROM "public"."order_line_items_v2"
+    FROM "public"."order_line_items"
     WHERE product_id = $1
     AND status = 'active';
 
@@ -72,7 +72,7 @@ BEGIN
     -- Count active line items for this product
     SELECT COUNT(*)
     INTO total
-    FROM "public"."order_line_items_v2"
+    FROM "public"."order_line_items"
     WHERE product_id = $1
     AND status = 'active';
 

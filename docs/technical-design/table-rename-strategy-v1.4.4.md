@@ -1,7 +1,7 @@
 # Table Rename Migration Strategy v1.4.4
 
 ## Overview
-This document outlines the comprehensive strategy for renaming the `order_line_items_v2` table to `order_line_items`.
+This document outlines the comprehensive strategy for renaming the `order_line_items` table to `order_line_items`.
 
 ## Motivation
 - Simplify database schema

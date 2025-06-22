@@ -40,7 +40,7 @@ export async function GET(request: NextRequest) {
         total_price,
         financial_status,
         fulfillment_status,
-        line_items:order_line_items_v2 (
+        line_items:order_line_items (
           id,
           line_item_id,
           product_id,

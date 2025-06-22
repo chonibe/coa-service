@@ -25,7 +25,7 @@ export async function POST(request: Request) {
     if (lineItemId && orderId) {
       // Get the current item to check its status
       const { data: currentItem, error: fetchError } = await supabase
-        .from("order_line_items_v2")
+        .from("order_line_items")
         .select("status, product_id")
         .eq("line_item_id", lineItemId)
         .eq("order_id", orderId)
@@ -41,7 +41,7 @@ export async function POST(request: Request) {
 
       // Update the status in the database
       const { error: updateError, data: updatedItem } = await supabase
-        .from("order_line_items_v2")
+        .from("order_line_items")
         .update({ 
           status,
           // Reset edition number if becoming inactive
@@ -82,7 +82,7 @@ export async function POST(request: Request) {
     else if (itemIds && Array.isArray(itemIds) && itemIds.length > 0) {
       // Update the status for all specified items
       const { error: updateError } = await supabase
-        .from('order_line_items_v2')
+        .from('order_line_items')
         .update({ 
           status,
           // Reset edition numbers if becoming inactive

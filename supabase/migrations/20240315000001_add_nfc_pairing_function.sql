@@ -10,7 +10,7 @@ DECLARE
 BEGIN
   -- Check if the item is available for pairing
   IF NOT EXISTS (
-    SELECT 1 FROM order_line_items_v2
+    SELECT 1 FROM order_line_items
     WHERE id = p_item_id
     AND nfc_pairing_status = 'pending'
   ) THEN
@@ -31,7 +31,7 @@ BEGIN
     -- Check if tag is already paired
     IF EXISTS (
       SELECT 1 FROM nfc_tags t
-      JOIN order_line_items_v2 i ON i.nfc_tag_id = t.id
+      JOIN order_line_items i ON i.nfc_tag_id = t.id
       WHERE t.id = v_tag_id
       AND i.nfc_pairing_status = 'paired'
     ) THEN
@@ -41,7 +41,7 @@ BEGIN
 
   -- Get certificate ID for the item
   SELECT certificate_id INTO v_certificate_id
-  FROM order_line_items_v2
+  FROM order_line_items
   WHERE id = p_item_id;
 
   -- Update NFC tag with certificate
@@ -53,7 +53,7 @@ BEGIN
   WHERE id = v_tag_id;
 
   -- Update order line item
-  UPDATE order_line_items_v2
+  UPDATE order_line_items
   SET
     nfc_tag_id = v_tag_id,
     nfc_pairing_status = 'paired',
@@ -70,7 +70,7 @@ BEGIN
     changes
   ) VALUES (
     'pair_nfc_tag',
-    'order_line_items_v2',
+    'order_line_items',
     p_item_id,
     p_user_id,
     jsonb_build_object(

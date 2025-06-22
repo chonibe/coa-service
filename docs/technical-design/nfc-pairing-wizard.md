@@ -54,7 +54,7 @@ The NFC Pairing Wizard is a multi-step interface that allows administrators to p
 
 ### Order Line Items Table
 ```sql
-ALTER TABLE order_line_items_v2
+ALTER TABLE order_line_items
 ADD COLUMN nfc_tag_id uuid REFERENCES nfc_tags(id),
 ADD COLUMN nfc_pairing_status text CHECK (nfc_pairing_status IN ('pending', 'paired', 'failed')) DEFAULT 'pending',
 ADD COLUMN nfc_pairing_error text,
@@ -63,8 +63,8 @@ ADD COLUMN nfc_paired_at timestamptz;
 
 ### Indexes
 ```sql
-CREATE INDEX idx_order_line_items_v2_nfc_tag_id ON order_line_items_v2(nfc_tag_id);
-CREATE INDEX idx_order_line_items_v2_nfc_pairing_status ON order_line_items_v2(nfc_pairing_status);
+CREATE INDEX idx_order_line_items_nfc_tag_id ON order_line_items(nfc_tag_id);
+CREATE INDEX idx_order_line_items_nfc_pairing_status ON order_line_items(nfc_pairing_status);
 ```
 
 ## State Management

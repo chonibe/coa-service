@@ -31,7 +31,7 @@ export async function POST(request: Request) {
 
     // Get the updated line items
     const { data: lineItems, error: fetchError } = await supabase
-      .from("order_line_items_v2")
+      .from("order_line_items")
       .select("*")
       .eq("product_id", productId)
       .order("edition_number", { ascending: true })

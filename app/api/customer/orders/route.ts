@@ -99,7 +99,7 @@ export async function GET(request: NextRequest) {
       
       // Query line items using shopify_id from orders table (this should work)
       const { data: lineItems, error: lineItemsError } = await supabase
-        .from("order_line_items_v2")
+        .from("order_line_items")
         .select(`
           line_item_id,
           order_id,
@@ -129,7 +129,7 @@ export async function GET(request: NextRequest) {
         console.log('No line items found - checking if table exists and has data');
         // Test query to see if table has any data at all
         const { data: sampleLineItems, error: sampleError } = await supabase
-          .from("order_line_items_v2")
+          .from("order_line_items")
           .select("*")
           .limit(5)
         

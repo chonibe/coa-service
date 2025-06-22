@@ -204,7 +204,7 @@
 ### Completed Tasks
 
 #### Database Schema Optimization [✓ COMPLETED]
-- [x] Rename `order_line_items_v2` to `order_line_items`
+- [x] Rename `order_line_items` to `order_line_items`
 - [x] Create automated table reference replacement script
 - [x] Develop comprehensive migration strategy
 - [x] Preserve existing table indexes and security policies

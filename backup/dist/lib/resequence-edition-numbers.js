@@ -5,7 +5,7 @@ async function resequenceEditionNumbers(supabase, orderId) {
     try {
         // Get all active line items for the order
         const { data: lineItems, error: fetchError } = await supabase
-            .from('order_line_items_v2')
+            .from('order_line_items')
             .select('*')
             .eq('order_id', orderId)
             .eq('status', 'active')
@@ -18,7 +18,7 @@ async function resequenceEditionNumbers(supabase, orderId) {
             const newEditionNumber = i + 1;
             if (lineItems[i].edition_number !== newEditionNumber) {
                 const { error: updateError } = await supabase
-                    .from('order_line_items_v2')
+                    .from('order_line_items')
                     .update({ edition_number: newEditionNumber })
                     .eq('id', lineItems[i].id);
                 if (updateError) {

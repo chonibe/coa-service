@@ -18,7 +18,7 @@ async function updateLineItemStatus(lineItemId, orderId, status, reason) {
         console.log(`Updating line item ${lineItemId} in order ${orderId} to status: ${status} at ${now.toISOString()}`);
         // Get the current status and product ID before updating
         const { data: currentItem, error: fetchError } = await supabase_1.supabase
-            .from("order_line_items_v2")
+            .from("order_line_items")
             .select("status, product_id, created_at")
             .eq("line_item_id", lineItemId)
             .eq("order_id", orderId)
@@ -43,7 +43,7 @@ async function updateLineItemStatus(lineItemId, orderId, status, reason) {
         console.log("Update data:", updateData);
         // Update the line item
         const { error, data } = await supabase_1.supabase
-            .from("order_line_items_v2")
+            .from("order_line_items")
             .update(updateData)
             .eq("line_item_id", lineItemId)
             .eq("order_id", orderId);
@@ -78,7 +78,7 @@ async function resequenceEditionNumbers(productId) {
         console.log(`Resequencing edition numbers for product ${productId}`);
         // Get all active line items for this product, ordered by creation date
         const { data: activeItems, error } = await supabase_1.supabase
-            .from("order_line_items_v2")
+            .from("order_line_items")
             .select("*")
             .eq("product_id", productId)
             .eq("status", "active") // Only select active items, explicitly exclude inactive/removed items
@@ -100,7 +100,7 @@ async function resequenceEditionNumbers(productId) {
             const certificateUrl = `${baseUrl}/certificate/${item.line_item_id}`;
             const certificateToken = crypto_1.default.randomUUID();
             const { error: updateError } = await supabase_1.supabase
-                .from("order_line_items_v2")
+                .from("order_line_items")
                 .update({
                 edition_number: editionCounter,
                 updated_at: new Date().toISOString(),
@@ -133,7 +133,7 @@ async function resequenceEditionNumbersWithNewItem(productId, lineItemId, orderI
         console.log(`Resequencing edition numbers for product ${productId} with new active item ${lineItemId}`);
         // Get all active line items for this product, ordered by creation date
         const { data: activeItems, error } = await supabase_1.supabase
-            .from("order_line_items_v2")
+            .from("order_line_items")
             .select("*")
             .eq("product_id", productId)
             .eq("status", "active")
@@ -159,7 +159,7 @@ async function resequenceEditionNumbersWithNewItem(productId, lineItemId, orderI
             const certificateUrl = `${baseUrl}/certificate/${item.line_item_id}`;
             const certificateToken = crypto_1.default.randomUUID();
             const { error: updateError } = await supabase_1.supabase
-                .from("order_line_items_v2")
+                .from("order_line_items")
                 .update({
                 edition_number: editionCounter,
                 updated_at: new Date().toISOString(),

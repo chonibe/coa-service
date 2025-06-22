@@ -7,7 +7,7 @@ export async function resequenceEditionNumbers(
   try {
     // Get all active line items for the order
     const { data: lineItems, error: fetchError } = await supabase
-      .from('order_line_items_v2')
+      .from('order_line_items')
       .select('*')
       .eq('order_id', orderId)
       .eq('status', 'active')
@@ -24,7 +24,7 @@ export async function resequenceEditionNumbers(
     // Get the total number of editions for each product
     const productIds = [...new Set(lineItems.map(item => item.product_id))];
     const { data: productEditions, error: editionsError } = await supabase
-      .from('order_line_items_v2')
+      .from('order_line_items')
       .select('product_id, count(*)')
       .in('product_id', productIds)
       .eq('status', 'active')
@@ -46,7 +46,7 @@ export async function resequenceEditionNumbers(
 
       if (item.edition_number !== newEditionNumber || item.edition_total !== editionTotal) {
         const { error: updateError } = await supabase
-          .from('order_line_items_v2')
+          .from('order_line_items')
           .update({
             edition_number: newEditionNumber,
             edition_total: editionTotal,

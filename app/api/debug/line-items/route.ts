@@ -10,13 +10,13 @@ export async function GET(request: NextRequest) {
 
     // Check if table exists and get sample data
     const { data: sampleData, error: sampleError } = await supabase
-      .from("order_line_items_v2")
+      .from("order_line_items")
       .select("*")
       .limit(10)
 
     // Get unique order_id values to see the pattern
     const { data: orderIds, error: orderIdError } = await supabase
-      .from("order_line_items_v2")
+      .from("order_line_items")
       .select("order_id, shopify_order_id")
       .limit(20)
 

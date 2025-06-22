@@ -24,7 +24,7 @@ export async function GET(request: NextRequest, { params }: { params: { lineItem
   try {
     // Get the line item data from the database
     const { data: lineItemData, error: lineItemError } = await supabase
-      .from("order_line_items_v2")
+      .from("order_line_items")
       .select("*")
       .eq("line_item_id", lineItemId)
       .single()

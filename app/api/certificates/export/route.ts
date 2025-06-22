@@ -12,7 +12,7 @@ export async function GET(request: NextRequest) {
     const sortDirection = searchParams.get("sortDirection") || "desc"
 
     // Build the query
-    let query = supabaseAdmin.from("order_line_items_v2").select("*")
+    let query = supabaseAdmin.from("order_line_items").select("*")
 
     // Apply filters
     if (productId) {

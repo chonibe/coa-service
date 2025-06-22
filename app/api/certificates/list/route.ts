@@ -23,7 +23,7 @@ export async function GET(request: NextRequest) {
 
     // Build the query with specific columns to reduce data transfer
     let query = supabaseAdmin
-      .from("order_line_items_v2")
+      .from("order_line_items")
       .select(
         "line_item_id, order_id, order_name, product_id, edition_number, edition_total, status, certificate_url, certificate_generated_at, created_at",
         { count: "exact" }

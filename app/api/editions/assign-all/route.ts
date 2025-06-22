@@ -8,9 +8,9 @@ const supabase = createClient(
 
 export async function POST() {
   try {
-    // Get all unique product IDs from order_line_items_v2
+    // Get all unique product IDs from order_line_items
     const { data: products, error: productsError } = await supabase
-      .from('order_line_items_v2')
+      .from('order_line_items')
       .select('product_id')
       .order('product_id')
       .not('product_id', 'is', null)

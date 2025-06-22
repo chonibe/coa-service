@@ -41,7 +41,7 @@ export const POST = createRouteHandler(async (req, supabase) => {
     }
 
     const { error } = await supabase
-      .from('order_line_items_v2')
+      .from('order_line_items')
       .update({ 
         artwork_story: validatedData.artwork_story,
         artwork_story_status: 'completed'

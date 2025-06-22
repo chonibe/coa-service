@@ -9,7 +9,7 @@ export async function GET(
 
   try {
     const { data, error } = await supabase
-      .from('order_line_items_v2')
+      .from('order_line_items')
       .select('artwork_story, artwork_media_urls')
       .eq('line_item_id', params.lineItemId)
       .single()

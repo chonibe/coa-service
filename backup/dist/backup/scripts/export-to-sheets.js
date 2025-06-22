@@ -7,7 +7,7 @@ const supabase_1 = require("../../lib/supabase");
 const TABLES_TO_EXPORT = [
     'products',
     'orders',
-    'order_line_items_v2',
+    'order_line_items',
     'vendors',
     'vendor_payouts',
     'product_vendor_payouts',

@@ -33,7 +33,7 @@ export async function POST(
 
     // Update the status for all specified items
     const { error: updateError } = await supabase
-      .from('order_line_items_v2')
+      .from('order_line_items')
       .update({ 
         status,
         // Reset edition numbers and edition total if becoming inactive

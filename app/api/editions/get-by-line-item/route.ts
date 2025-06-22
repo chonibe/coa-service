@@ -27,7 +27,7 @@ export async function GET(request: Request) {
 
     // Fetch line items from the database
     const { data: lineItems, error } = await supabase
-      .from('order_line_items_v2')
+      .from('order_line_items')
       .select('*')
       .eq('product_id', productId)
       .order('created_at', { ascending: true })

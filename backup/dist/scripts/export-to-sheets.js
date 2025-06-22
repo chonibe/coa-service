@@ -16,7 +16,7 @@ const gunzip = (0, util_1.promisify)(zlib_1.createGunzip);
 const TABLES_TO_EXPORT = [
     'products',
     'orders',
-    'order_line_items_v2',
+    'order_line_items',
     'vendors',
     'vendor_payouts',
     'product_vendor_payouts',

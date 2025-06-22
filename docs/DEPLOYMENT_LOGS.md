@@ -444,7 +444,7 @@ If issues are encountered:
 - Created `/app/api/artist/[id]/route.ts`
 - Created `/app/api/story/[lineItemId]/route.ts`
 - Updated `certificate-modal.tsx` with dynamic tab navigation
-- Added migration for `vendors` and `order_line_items_v2` tables
+- Added migration for `vendors` and `order_line_items` tables
 
 ### Deployment Notes
 - Requires Supabase migration
@@ -493,7 +493,7 @@ If issues are encountered:
 **Commit Hash**: [Current Commit Hash]
 
 **Database Changes**:
-- Created view `order_line_items` as a compatibility layer for `order_line_items_v2`
+- Created view `order_line_items` as a compatibility layer for `order_line_items`
 - Added updatable view triggers for seamless data access
 - Fixed Supabase client initialization in benefits API route
 
@@ -508,11 +508,45 @@ If issues are encountered:
 
 **Warnings and Notes**:
 - Temporary view created to maintain backward compatibility
-- Recommend updating all references to use `order_line_items_v2` in future
+- Recommend updating all references to use `order_line_items` in future
 
 **Next Steps**:
 - Verify data consistency across view and base table
 - Update application code to use new table/view structure
 - Conduct thorough testing of order-related functionality
+
+### Deployment 2024-06-11 (v1.4.4)
+
+**Migration Method**: Manual SQL Migration
+
+**Database Changes**:
+- Renamed `order_line_items_v2` to `order_line_items`
+- Created backup table `order_line_items_backup`
+- Preserved existing indexes and policies
+- Verified data integrity
+
+**Migration Details**:
+- Automated reference replacement
+- Manual SQL migration script
+- Comprehensive backup strategy
+
+**Verification Steps**:
+- Counted records in original and renamed tables
+- Validated row-level security policies
+- Confirmed index and constraint preservation
+
+**Potential Risks Mitigated**:
+- Data loss prevention
+- Minimal downtime
+- Rollback capability
+
+**Next Actions**:
+- Monitor application performance
+- Validate all database interactions
+- Conduct thorough testing
+
+**Deployment Notes**:
+- Migration performed in local development environment
+- Recommended staging and production validation
 
 --- 

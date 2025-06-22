@@ -11,7 +11,7 @@ export async function POST() {
 
     // Get all active line items without certificate URLs
     const { data: activeItems, error: fetchError } = await supabase
-      .from("order_line_items_v2")
+      .from("order_line_items")
       .select("*")
       .eq("status", "active")
       .is("certificate_url", null)
@@ -39,9 +39,9 @@ export async function POST() {
         const certificateToken = crypto.randomUUID()
         const now = new Date().toISOString()
 
-        // Update order_line_items_v2
+        // Update order_line_items
         const { error: updateError } = await supabase
-          .from("order_line_items_v2")
+          .from("order_line_items")
           .update({
             certificate_url: certificateUrl,
             certificate_token: certificateToken,
@@ -52,7 +52,7 @@ export async function POST() {
           .eq("order_id", item.order_id)
 
         if (updateError) {
-          throw new Error(`Error updating order_line_items_v2: ${updateError.message}`)
+          throw new Error(`Error updating order_line_items: ${updateError.message}`)
         }
 
         // Update product_edition_counters
@@ -100,7 +100,7 @@ export async function POST() {
 
     // Get total count of remaining items
     const { count: remainingCount } = await supabase
-      .from("order_line_items_v2")
+      .from("order_line_items")
       .select("*", { count: "exact", head: true })
       .eq("status", "active")
       .is("certificate_url", null)

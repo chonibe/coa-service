@@ -93,7 +93,7 @@ export async function POST(request: NextRequest) {
 
     // Check if the certificate exists
     const { data: certificate, error: certError } = await supabase
-      .from("order_line_items_v2")
+      .from("order_line_items")
       .select("certificate_url, certificate_token, name")
       .eq("line_item_id", lineItemId)
       .eq("order_id", orderId)
@@ -144,9 +144,9 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, message: "Failed to claim NFC tag" }, { status: 500 })
     }
 
-    // Also update the order_line_items_v2 table to mark this certificate as claimed
+    // Also update the order_line_items table to mark this certificate as claimed
     const { error: updateError } = await supabase
-      .from("order_line_items_v2")
+      .from("order_line_items")
       .update({
         nfc_tag_id: tagId,
         nfc_claimed_at: new Date().toISOString(),

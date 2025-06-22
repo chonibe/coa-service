@@ -33,7 +33,7 @@ export async function GET(request: NextRequest) {
 
     // First, ensure all inactive items have null edition numbers
     const { error: removeError } = await supabase
-      .from("order_line_items_v2")
+      .from("order_line_items")
       .update({
         edition_number: null,
         edition_total: null,
@@ -49,7 +49,7 @@ export async function GET(request: NextRequest) {
 
     // Get all active line items for this product, ordered by creation date
     const { data: activeItems, error } = await supabase
-      .from("order_line_items_v2")
+      .from("order_line_items")
       .select("*")
       .eq("product_id", productId)
       .eq("status", "active")
@@ -83,7 +83,7 @@ export async function GET(request: NextRequest) {
       const now = new Date().toISOString()
 
       const { error: updateError } = await supabase
-        .from("order_line_items_v2")
+        .from("order_line_items")
         .update({
           edition_number: editionCounter,
           edition_total: activeItems.length,
@@ -105,7 +105,7 @@ export async function GET(request: NextRequest) {
 
     // Get count of inactive items
     const { count: inactiveCount, error: countError } = await supabase
-      .from("order_line_items_v2")
+      .from("order_line_items")
       .select("*", { count: "exact" })
       .eq("product_id", productId)
       .eq("status", "inactive")

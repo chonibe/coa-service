@@ -15,7 +15,7 @@ BEGIN
     NEW.profile_completed = (
       EXISTS (
         SELECT 1 
-        FROM order_line_items_v2 
+        FROM order_line_items 
         WHERE vendor_id = NEW.id 
         AND artwork_story_status = 'completed'
       )

@@ -91,7 +91,7 @@ export interface Database {
           updated_at?: string | null
         }
       }
-      order_line_items_v2: {
+      order_line_items: {
         Row: {
           id: number
           order_id: string

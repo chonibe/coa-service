@@ -48,7 +48,7 @@ export async function POST() {
 
     // Get the latest synced order timestamp
     const { data: latestSyncedOrder } = await supabase
-      .from('order_line_items_v2')
+      .from('order_line_items')
       .select('created_at')
       .order('created_at', { ascending: false })
       .limit(1);
@@ -91,7 +91,7 @@ export async function POST() {
         // Delete any existing line items for this order (in case of partial sync)
         console.log(`Deleting existing line items for order ${order.id}...`);
         const { error: deleteError } = await supabase
-          .from('order_line_items_v2')
+          .from('order_line_items')
           .delete()
           .eq('order_id', order.id);
 
@@ -147,7 +147,7 @@ export async function POST() {
 
         console.log(`Inserting ${lineItemsWithImages.length} line items for order ${order.id}...`);
         const { error: insertError } = await supabase
-          .from('order_line_items_v2')
+          .from('order_line_items')
           .insert(lineItemsWithImages);
 
         if (insertError) {

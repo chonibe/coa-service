@@ -14,12 +14,12 @@ BEGIN
         v_product_id,
         v_edition_size,
         v_is_limited
-    FROM order_line_items_v2 oli
+    FROM order_line_items oli
     JOIN products p ON p.product_id = oli.product_id
     WHERE oli.id = p_line_item_id;
 
     -- Revoke the edition number for the specified line item
-    UPDATE order_line_items_v2
+    UPDATE order_line_items
     SET edition_number = NULL,
         edition_total = NULL
     WHERE id = p_line_item_id;
@@ -29,12 +29,12 @@ BEGIN
         SELECT 
             id,
             ROW_NUMBER() OVER (ORDER BY created_at) as new_number
-        FROM order_line_items_v2
+        FROM order_line_items
         WHERE product_id = v_product_id
         AND edition_number IS NULL
         AND id != p_line_item_id
     )
-    UPDATE order_line_items_v2 oli
+    UPDATE order_line_items oli
     SET 
         edition_number = ni.new_number,
         edition_total = CASE 

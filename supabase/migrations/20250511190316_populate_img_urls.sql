@@ -5,7 +5,7 @@ BEGIN
     RAISE NOTICE 'Starting img_url population...';
     
     -- Update the records
-    UPDATE "public"."order_line_items_v2" oli
+    UPDATE "public"."order_line_items" oli
     SET img_url = p.image_url
     FROM "public"."products" p
     WHERE oli.product_id::text = p.id::text

@@ -11,7 +11,7 @@ The NFC (Near Field Communication) pairing system allows users to authenticate a
 - NFC Claim API: Backend endpoint for processing NFC tag claims
 - Database Tables: 
   - `nfc_tags`: Tracks NFC tag metadata
-  - `order_line_items_v2`: Stores artwork and order information
+  - `order_line_items`: Stores artwork and order information
 
 ### Tag Lifecycle
 1. **Unassigned**: Initial state of an NFC tag
@@ -87,7 +87,7 @@ CREATE TABLE nfc_tags (
    - Verify tag ID
    - Check if tag is already claimed
    - Validate associated line item and order
-   - Update `nfc_tags` and `order_line_items_v2` tables
+   - Update `nfc_tags` and `order_line_items` tables
 
 ### Web NFC Compatibility
 

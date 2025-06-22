@@ -21,15 +21,15 @@
 ### Database Relationships (CRITICAL ⚠️)
 ```sql
 -- CORRECT RELATIONSHIP - DO NOT CHANGE
-orders (shopify_id) ←→ order_line_items_v2 (order_id)
+orders (shopify_id) ←→ order_line_items (order_id)
 
 -- INCORRECT RELATIONSHIP - NEVER USE
-orders (id) ←→ order_line_items_v2 (order_id)  -- ❌ WRONG!
+orders (id) ←→ order_line_items (order_id)  -- ❌ WRONG!
 ```
 
 **Key Tables:**
 - `orders`: Primary order storage with UUID `id` and Shopify numeric `shopify_id`
-- `order_line_items_v2`: Line items linked via `order_id` to `orders.shopify_id`
+- `order_line_items`: Line items linked via `order_id` to `orders.shopify_id`
 - **NEVER** link using `orders.id` (UUID) - this causes empty results
 
 ### Authentication Flow (CRITICAL ⚠️)
@@ -103,7 +103,7 @@ await ndef.write({
 -- CUSTOMER ORDERS QUERY (PRODUCTION-TESTED)
 SELECT o.*, oli.*
 FROM orders o
-JOIN order_line_items_v2 oli ON oli.order_id = o.shopify_id  -- CRITICAL JOIN!
+JOIN order_line_items oli ON oli.order_id = o.shopify_id  -- CRITICAL JOIN!
 WHERE o.customer_id = $1
 ORDER BY o.processed_at DESC;
 ```
@@ -144,7 +144,7 @@ ORDER BY o.processed_at DESC;
 ## 🚨 CRITICAL FIXES APPLIED
 
 ### 1. Database Relationship Bug (RESOLVED ✅)
-- **Issue**: `orders.id` (UUID) ≠ `order_line_items_v2.order_id` (numeric)
+- **Issue**: `orders.id` (UUID) ≠ `order_line_items.order_id` (numeric)
 - **Fix**: Use `orders.shopify_id` for relationships
 - **Impact**: Customer 22952115175810 now shows 9 orders with line items
 

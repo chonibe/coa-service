@@ -18,7 +18,7 @@ export async function GET(request: Request) {
 
     // Start building the query
     let query = supabase
-      .from('order_line_items_v2')
+      .from('order_line_items')
       .select(`
         id,
         product_id,
@@ -45,7 +45,7 @@ export async function GET(request: Request) {
 
     // Get total count for pagination
     const { count } = await supabase
-      .from('order_line_items_v2')
+      .from('order_line_items')
       .select('*', { count: 'exact', head: true })
       .eq('nfc_pairing_status', 'pending')
 

@@ -98,7 +98,7 @@ export async function POST() {
         // First, delete existing line items for this order in the new table
         console.log(`Deleting existing line items for order ${order.id}...`);
         const { error: deleteError } = await supabase
-          .from('order_line_items_v2')
+          .from('order_line_items')
           .delete()
           .eq('order_id', order.id);
 
@@ -128,7 +128,7 @@ export async function POST() {
 
         console.log(`Inserting ${lineItems.length} line items for order ${order.id}...`);
         const { error: lineItemsError, data: insertedItems } = await supabase
-          .from('order_line_items_v2')
+          .from('order_line_items')
           .insert(lineItems)
           .select();
 

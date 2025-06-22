@@ -31,7 +31,7 @@ BEGIN
         END as has_mismatch
     FROM problematic_ids pi
     LEFT JOIN products p ON p.product_id::TEXT = pi.product_id
-    LEFT JOIN order_line_items_v2 l ON l.product_id::TEXT = pi.product_id
+    LEFT JOIN order_line_items l ON l.product_id::TEXT = pi.product_id
     ORDER BY pi.product_id;
 END;
 $$ LANGUAGE plpgsql; 

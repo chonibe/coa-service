@@ -21,14 +21,14 @@ BEGIN
     END IF;
 
     -- Clear any existing edition numbers for this product
-    UPDATE "public"."order_line_items_v2"
+    UPDATE "public"."order_line_items"
     SET edition_number = NULL
     WHERE "product_id" = p_product_id;
 
     -- Get all active line items for this product, ordered by creation date
     FOR line_item IN 
         SELECT id, created_at
-        FROM "public"."order_line_items_v2"
+        FROM "public"."order_line_items"
         WHERE "product_id" = p_product_id
         AND status = 'active'
         ORDER BY created_at ASC
@@ -41,7 +41,7 @@ BEGIN
         END IF;
 
         -- Update the line item with its edition number
-        UPDATE "public"."order_line_items_v2"
+        UPDATE "public"."order_line_items"
         SET 
             edition_number = edition_count,
             edition_total = v_edition_total

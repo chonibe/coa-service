@@ -15,7 +15,7 @@ BEGIN
         FROM products p
         UNION
         SELECT DISTINCT l.product_id::TEXT as product_id
-        FROM order_line_items_v2 l
+        FROM order_line_items l
     )
     SELECT 
         pi.product_id,
@@ -29,7 +29,7 @@ BEGIN
         END as has_mismatch
     FROM product_ids pi
     LEFT JOIN products p ON p.product_id::TEXT = pi.product_id
-    LEFT JOIN order_line_items_v2 l ON l.product_id::TEXT = pi.product_id
+    LEFT JOIN order_line_items l ON l.product_id::TEXT = pi.product_id
     WHERE p.product_id IS NOT NULL OR l.product_id IS NOT NULL
     ORDER BY pi.product_id;
 END;

@@ -39,7 +39,7 @@ async function backupDatabase(config) {
         const tables = [
             'products',
             'orders',
-            'order_line_items_v2',
+            'order_line_items',
             'vendors',
             'vendor_payouts',
             'product_vendor_payouts',

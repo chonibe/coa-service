@@ -84,7 +84,7 @@ async function updateLineItemStatus(supabaseAdmin: any, params: any) {
 
   // Update the line item
   const { error, data } = await supabaseAdmin
-    .from("order_line_items_v2")
+    .from("order_line_items")
     .update(updateData)
     .eq("line_item_id", lineItemId)
     .eq("order_id", orderId)
@@ -97,7 +97,7 @@ async function updateLineItemStatus(supabaseAdmin: any, params: any) {
   if (status === "inactive") {
     // Get the product ID for this line item
     const { data: lineItemData, error: lineItemError } = await supabaseAdmin
-      .from("order_line_items_v2")
+      .from("order_line_items")
       .select("product_id")
       .eq("line_item_id", lineItemId)
       .eq("order_id", orderId)

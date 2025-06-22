@@ -12,7 +12,7 @@ Implement a comprehensive customer dashboard that links authenticated users to t
 - [x] **CREATED**: Dynamic route `/dashboard/[customerId]/page.tsx` for direct customer access
 
 ### Database Preparation ✅ COMPLETED
-- [x] **CRITICAL FIX**: Database relationship bug between `orders.id` (UUID) and `order_line_items_v2.order_id` (Shopify numeric)
+- [x] **CRITICAL FIX**: Database relationship bug between `orders.id` (UUID) and `order_line_items.order_id` (Shopify numeric)
 - [x] **CORRECTED**: Updated to use `orders.shopify_id` for proper line item relationships
 - [x] **VERIFIED**: Customer 22952115175810 now shows 9 orders with complete line item data
 - [x] **OPTIMIZED**: Query performance for customer-related data fetching

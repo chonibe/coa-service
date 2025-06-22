@@ -66,7 +66,7 @@ export async function POST(req: Request, { params }: { params: { orderId: string
 
     // Get existing line items to preserve their status
     const { data: existingLineItems, error: fetchError } = await supabase
-      .from('order_line_items_v2')
+      .from('order_line_items')
       .select('line_item_id, status, edition_number, edition_total, nfc_tag_id, certificate_url, certificate_token, nfc_claimed_at')
       .eq('order_id', shopifyOrder.id.toString());
 
@@ -153,7 +153,7 @@ export async function POST(req: Request, { params }: { params: { orderId: string
     // Upsert line items one by one to ensure status preservation
     for (const item of lineItems) {
       const { error: upsertError } = await supabase
-        .from('order_line_items_v2')
+        .from('order_line_items')
         .upsert(item, { 
           onConflict: 'order_id,line_item_id',
           ignoreDuplicates: false
@@ -171,7 +171,7 @@ export async function POST(req: Request, { params }: { params: { orderId: string
 
     // Get final state to verify
     const { data: finalLineItems, error: verifyError } = await supabase
-      .from('order_line_items_v2')
+      .from('order_line_items')
       .select('line_item_id, status, edition_number')
       .eq('order_id', shopifyOrder.id.toString());
 
