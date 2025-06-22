@@ -22,7 +22,7 @@ Legacy code and existing integrations rely on specific table names and structure
 ### Example: `order_line_items` View
 ```sql
 CREATE OR REPLACE VIEW "public"."order_line_items" AS 
-SELECT * FROM "public"."order_line_items";
+SELECT * FROM "public"."order_line_items_v2";
 
 -- Create INSTEAD OF triggers to handle INSERT, UPDATE, DELETE
 ```

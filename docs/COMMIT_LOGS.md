@@ -47,7 +47,7 @@
 
 3. Database Migrations
    - Added `bio_status` column to `vendors` table
-   - Added `artwork_story_status` column to `order_line_items` table
+   - Added `artwork_story_status` column to `order_line_items_v2` table
    - Created PostgreSQL triggers for automatic status updates
 
 4. Documentation Updates
@@ -171,7 +171,7 @@
 - [x] [[docs/technical-design/nfc-pairing-wizard.md](../docs/technical-design/nfc-pairing-wizard.md)] Added technical design documentation
 
 ### Migration Notes
-- Added NFC pairing fields to `order_line_items` table
+- Added NFC pairing fields to `order_line_items_v2` table
 - Created indexes for performance optimization
 - Added trigger for automatic timestamp updates
 - Added transaction support functions
@@ -185,7 +185,7 @@
 
 ### Related Issues/PRs
 - Implements NFC pairing wizard feature
-- Updates all references to use `order_line_items` table
+- Updates all references to use `order_line_items_v2` table
 - Adds validation tooling for table migrations
 
 ## 2024-03-15: NFC Pairing Wizard - Item Selection Implementation

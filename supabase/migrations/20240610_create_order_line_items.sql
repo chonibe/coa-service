@@ -1,4 +1,4 @@
--- Create order_line_items table as a view of order_line_items
+-- Create order_line_items table as a view of order_line_items_v2
 CREATE OR REPLACE VIEW "public"."order_line_items" AS 
 SELECT 
     id,
@@ -17,7 +17,7 @@ SELECT
     status,
     created_at,
     updated_at
-FROM "public"."order_line_items";
+FROM "public"."order_line_items_v2";
 
 -- Grant permissions on the view
 GRANT SELECT, INSERT, UPDATE, DELETE ON "public"."order_line_items" TO authenticated, service_role;
@@ -26,7 +26,7 @@ GRANT SELECT, INSERT, UPDATE, DELETE ON "public"."order_line_items" TO authentic
 CREATE OR REPLACE FUNCTION order_line_items_insert_trigger()
 RETURNS TRIGGER AS $$
 BEGIN
-    INSERT INTO "public"."order_line_items" (
+    INSERT INTO "public"."order_line_items_v2" (
         order_id,
         order_name,
         line_item_id,
@@ -62,7 +62,7 @@ $$ LANGUAGE plpgsql;
 CREATE OR REPLACE FUNCTION order_line_items_update_trigger()
 RETURNS TRIGGER AS $$
 BEGIN
-    UPDATE "public"."order_line_items"
+    UPDATE "public"."order_line_items_v2"
     SET 
         order_id = NEW.order_id,
         order_name = NEW.order_name,
@@ -85,7 +85,7 @@ $$ LANGUAGE plpgsql;
 CREATE OR REPLACE FUNCTION order_line_items_delete_trigger()
 RETURNS TRIGGER AS $$
 BEGIN
-    DELETE FROM "public"."order_line_items" WHERE id = OLD.id;
+    DELETE FROM "public"."order_line_items_v2" WHERE id = OLD.id;
     RETURN OLD;
 END;
 $$ LANGUAGE plpgsql;

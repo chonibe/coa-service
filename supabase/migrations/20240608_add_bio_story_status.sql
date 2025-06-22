@@ -3,7 +3,7 @@ ALTER TABLE vendors
 ADD COLUMN bio_status TEXT DEFAULT 'incomplete' 
 CHECK (bio_status IN ('incomplete', 'completed'));
 
-ALTER TABLE order_line_items 
+ALTER TABLE order_line_items_v2 
 ADD COLUMN artwork_story_status TEXT DEFAULT 'incomplete' 
 CHECK (artwork_story_status IN ('incomplete', 'completed'));
 
@@ -39,6 +39,6 @@ END;
 $$ LANGUAGE plpgsql;
 
 CREATE TRIGGER update_order_line_item_artwork_story_status
-BEFORE INSERT OR UPDATE ON order_line_items
+BEFORE INSERT OR UPDATE ON order_line_items_v2
 FOR EACH ROW
 EXECUTE FUNCTION update_artwork_story_status(); 

@@ -38,7 +38,7 @@ export function useVendorProfile() {
             products:products(
               id, 
               name, 
-              order_line_items(artwork_story, artwork_story_status)
+              order_line_items_v2(artwork_story, artwork_story_status)
             )
           `)
           .single();
@@ -49,8 +49,8 @@ export function useVendorProfile() {
         const transformedProducts = vendorData.products.map(product => ({
           id: product.id,
           name: product.name,
-          artwork_story: product.order_line_items[0]?.artwork_story || null,
-          artwork_story_status: product.order_line_items[0]?.artwork_story_status || 'incomplete'
+          artwork_story: product.order_line_items_v2[0]?.artwork_story || null,
+          artwork_story_status: product.order_line_items_v2[0]?.artwork_story_status || 'incomplete'
         }));
 
         const profileData: VendorProfile = {
@@ -99,7 +99,7 @@ export function useVendorProfile() {
     try {
       const supabase = createClient();
       const { error } = await supabase
-        .from('order_line_items')
+        .from('order_line_items_v2')
         .update({ 
           artwork_story: story, 
           artwork_story_status: 'completed' 

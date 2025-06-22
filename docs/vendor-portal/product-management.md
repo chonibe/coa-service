@@ -57,7 +57,7 @@ Vendors can add detailed information about their artwork, including a personal b
 - Supported formats: JPEG, PNG, WebP
 
 ### Technical Implementation
-- Stored in `vendors` and `order_line_items` tables
+- Stored in `vendors` and `order_line_items_v2` tables
 - Columns: 
   - `bio`: TEXT
   - `bio_status`: TEXT (incomplete/completed)
@@ -113,7 +113,7 @@ Vendors can add detailed information about their artwork, including a personal b
 - Enhanced visibility for complete profiles
 
 ### Technical Implementation
-- Stored in `vendors` and `order_line_items` tables
+- Stored in `vendors` and `order_line_items_v2` tables
 - Columns: 
   - `bio`: TEXT
   - `bio_status`: TEXT (incomplete/completed)
