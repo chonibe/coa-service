@@ -12,17 +12,18 @@ export async function GET(request: NextRequest) {
       }, { status: 500 })
     }
 
-    // Get Shopify customer ID from cookies instead of session
-    const shopifyCustomerId = request.cookies.get('shopify_customer_id')?.value
-    
-    if (!shopifyCustomerId) {
+    // Extract customer ID from the URL
+    const pathSegments = request.nextUrl.pathname.split('/')
+    const customerId = pathSegments[pathSegments.length - 1]
+
+    if (!customerId) {
       return NextResponse.json({ 
         success: false, 
-        message: "Not authenticated - please log in via Shopify" 
-      }, { status: 401 })
+        message: "Customer ID is required" 
+      }, { status: 400 })
     }
 
-    // Comprehensive dashboard data retrieval using Shopify customer ID
+    // Comprehensive dashboard data retrieval using customer ID
     const { data: dashboardData, error: dataError } = await supabase
       .from("orders")
       .select(`
@@ -41,7 +42,7 @@ export async function GET(request: NextRequest) {
           certificate_url
         )
       `)
-      .eq("shopify_customer_id", parseInt(shopifyCustomerId))
+      .eq("shopify_customer_id", parseInt(customerId))
       .order("processed_at", { ascending: false })
 
     if (dataError) {
