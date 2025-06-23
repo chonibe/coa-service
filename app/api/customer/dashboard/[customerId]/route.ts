@@ -51,7 +51,7 @@ export async function GET(
         financial_status,
         fulfillment_status,
         shopify_id,
-        shopify_customer_id,
+        customer_id,
         order_line_items_v2 (
           id,
           line_item_id,
@@ -69,13 +69,13 @@ export async function GET(
           status
         )
       `)
-      .eq("shopify_customer_id", customerId)
+      .eq("customer_id", customerId)
       .order("processed_at", { ascending: false })
       .limit(50)
 
     console.log('Supabase Order Query Details:', {
       query: 'orders',
-      filterColumn: 'shopify_customer_id',
+      filterColumn: 'customer_id',
       filterValue: customerId,
       limit: 50,
       queryError: ordersError
@@ -119,7 +119,7 @@ export async function GET(
       firstOrder: orders[0] ? {
         id: orders[0].id,
         orderNumber: orders[0].order_number,
-        shopifyCustomerId: orders[0].shopify_customer_id,
+        customerId: orders[0].customer_id,
         lineItemsCount: orders[0].order_line_items_v2?.length || 0
       } : null
     })
@@ -141,7 +141,7 @@ export async function GET(
       count: transformedOrders.length,
       message: `Retrieved ${transformedOrders.length} orders for customer ${customerId}`,
       customerDetails: {
-        shopifyCustomerId: customerId
+        customerId: customerId
       },
       requestContext: requestDebug
     })
