@@ -5,20 +5,35 @@ const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || ""
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ""
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || ""
 
+// Logging function
+function logSupabaseConfig(type: string) {
+  console.log(\`Supabase \${type} Client Configuration:\`, {
+    url: supabaseUrl ? 'Configured' : 'MISSING',
+    anonKey: supabaseAnonKey ? 'Configured' : 'MISSING',
+    serviceKey: supabaseServiceKey ? 'Configured' : 'MISSING'
+  })
+}
+
 // For client components
 let clientInstance: ReturnType<typeof createClient> | null = null
 
 export function getSupabaseClient() {
   if (typeof window === "undefined") {
-    // We're on the server, don't use client-side supabase
     console.warn("Attempted to use client Supabase instance on server")
     return null
   }
 
+  logSupabaseConfig('Client')
+
   if (!clientInstance && supabaseUrl && supabaseAnonKey) {
-    clientInstance = createClient(supabaseUrl, supabaseAnonKey, {
-      auth: { persistSession: false },
-    })
+    try {
+      clientInstance = createClient(supabaseUrl, supabaseAnonKey, {
+        auth: { persistSession: false },
+      })
+      console.log("Client Supabase instance created successfully")
+    } catch (error) {
+      console.error("Error creating client Supabase instance:", error)
+    }
   }
 
   return clientInstance
@@ -29,15 +44,21 @@ let adminInstance: ReturnType<typeof createClient> | null = null
 
 export function getSupabaseAdmin() {
   if (typeof window !== "undefined") {
-    // We're on the client, don't use admin supabase
     console.warn("Attempted to use admin Supabase instance on client")
     return null
   }
 
+  logSupabaseConfig('Admin')
+
   if (!adminInstance && supabaseUrl && supabaseServiceKey) {
-    adminInstance = createClient(supabaseUrl, supabaseServiceKey, {
-      auth: { persistSession: false },
-    })
+    try {
+      adminInstance = createClient(supabaseUrl, supabaseServiceKey, {
+        auth: { persistSession: false },
+      })
+      console.log("Admin Supabase instance created successfully")
+    } catch (error) {
+      console.error("Error creating admin Supabase instance:", error)
+    }
   }
 
   return adminInstance
