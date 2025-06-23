@@ -3,17 +3,29 @@ import type { NextRequest } from "next/server"
 import { supabase } from "@/lib/supabase"
 
 export async function GET(request: NextRequest) {
+  // Capture full request details for debugging
+  const fullRequestDetails = {
+    method: request.method,
+    url: request.url,
+    headers: Object.fromEntries(request.headers.entries()),
+    cookies: request.cookies ? Object.fromEntries(request.cookies.getAll().map(c => [c.name, c.value])) : {},
+    timestamp: new Date().toISOString()
+  }
+
+  console.log('FULL ORDER REQUEST DEBUG:', JSON.stringify(fullRequestDetails, null, 2))
+
   try {
     if (!supabase) {
       console.error("Supabase connection not available")
       return NextResponse.json({ 
         success: false, 
         message: "Database connection error", 
-        errorCode: "DB_CONNECTION_FAILED" 
+        errorCode: "DB_CONNECTION_FAILED",
+        requestContext: fullRequestDetails
       }, { status: 500 })
     }
 
-    // Enhanced customer ID retrieval
+    // Enhanced customer ID retrieval with extensive logging
     const { searchParams } = new URL(request.url)
     const urlCustomerId = searchParams.get('customerId')
     const cookieCustomerId = request.cookies.get('shopify_customer_id')?.value
@@ -21,18 +33,30 @@ export async function GET(request: NextRequest) {
     
     const shopifyCustomerId = urlCustomerId || cookieCustomerId || headerCustomerId
     
-    // Detailed logging for debugging
-    console.log('Customer Orders API Authentication Debug:', {
+    // Extremely detailed logging for authentication debugging
+    const authenticationDebug = {
       retrievalMethods: {
-        urlParam: !!urlCustomerId,
-        cookie: !!cookieCustomerId,
-        header: !!headerCustomerId
+        urlParam: {
+          exists: !!urlCustomerId,
+          value: urlCustomerId
+        },
+        cookie: {
+          exists: !!cookieCustomerId,
+          value: cookieCustomerId ? 'REDACTED' : null
+        },
+        header: {
+          exists: !!headerCustomerId,
+          value: headerCustomerId ? 'REDACTED' : null
+        }
       },
-      customerIdSource: shopifyCustomerId ? 'Found' : 'Not Found',
-      allCookies: request.headers.get('cookie')
-    });
+      resolvedCustomerId: shopifyCustomerId ? 'FOUND' : 'NOT_FOUND',
+      requestHeaders: Object.fromEntries(request.headers.entries()),
+      requestCookies: request.cookies ? Object.fromEntries(request.cookies.getAll().map(c => [c.name, c.name === 'shopify_customer_id' ? 'REDACTED' : c.value])) : {}
+    }
+
+    console.error('AUTHENTICATION DEBUG:', JSON.stringify(authenticationDebug, null, 2))
     
-    // Enhanced authentication check
+    // Enhanced authentication check with more context
     if (!shopifyCustomerId) {
       return NextResponse.json({ 
         success: false, 
@@ -42,19 +66,24 @@ export async function GET(request: NextRequest) {
           "Not logged in",
           "Session expired",
           "Missing customer identification"
-        ]
+        ],
+        authenticationContext: authenticationDebug
       }, { status: 401 })
     }
 
     // Robust customer ID validation
     const customerIdNumber = parseInt(shopifyCustomerId);
     if (isNaN(customerIdNumber)) {
-      console.error("Invalid customer ID format:", shopifyCustomerId);
+      console.error("Invalid customer ID format:", {
+        providedId: shopifyCustomerId,
+        type: typeof shopifyCustomerId
+      });
       return NextResponse.json({ 
         success: false, 
         message: "Invalid customer ID format", 
         errorCode: "AUTH_INVALID_CUSTOMER_ID",
-        providedId: shopifyCustomerId
+        providedId: shopifyCustomerId,
+        authenticationContext: authenticationDebug
       }, { status: 400 })
     }
 
@@ -78,13 +107,16 @@ export async function GET(request: NextRequest) {
       console.error("Database query error for orders:", {
         errorCode: ordersError.code,
         errorMessage: ordersError.message,
-        errorDetails: ordersError.details
+        errorDetails: ordersError.details,
+        customerIdNumber,
+        authenticationContext: authenticationDebug
       });
       return NextResponse.json({ 
         success: false, 
         message: "Failed to retrieve orders",
         errorCode: "DB_QUERY_FAILED",
-        technicalDetails: ordersError.message
+        technicalDetails: ordersError.message,
+        authenticationContext: authenticationDebug
       }, { status: 500 })
     }
 
@@ -94,7 +126,8 @@ export async function GET(request: NextRequest) {
         success: true,
         orders: [],
         count: 0,
-        message: "No orders found for this customer"
+        message: "No orders found for this customer",
+        authenticationContext: authenticationDebug
       }, { status: 200 })
     }
 
@@ -124,7 +157,9 @@ export async function GET(request: NextRequest) {
     if (lineItemsError) {
       console.error("Line items query error:", {
         errorCode: lineItemsError.code,
-        errorMessage: lineItemsError.message
+        errorMessage: lineItemsError.message,
+        shopifyIds,
+        authenticationContext: authenticationDebug
       });
     }
 
@@ -145,20 +180,37 @@ export async function GET(request: NextRequest) {
       success: true,
       orders: transformedOrders,
       count: transformedOrders.length,
-      message: `Retrieved ${transformedOrders.length} orders`
+      message: `Retrieved ${transformedOrders.length} orders`,
+      authenticationContext: authenticationDebug
     })
   } catch (error: any) {
     console.error("Unexpected error in customer orders API:", {
       errorName: error.name,
       errorMessage: error.message,
-      errorStack: error.stack
+      errorStack: error.stack,
+      requestContext: fullRequestDetails
     });
     
     return NextResponse.json({ 
       success: false, 
       message: "Unexpected server error",
       errorCode: "UNEXPECTED_SERVER_ERROR",
-      technicalDetails: error.message || "An unhandled exception occurred"
+      technicalDetails: error.message || "An unhandled exception occurred",
+      requestContext: fullRequestDetails
     }, { status: 500 })
   }
+}
+
+// Enable CORS for development and testing
+export async function OPTIONS(request: NextRequest) {
+  return new NextResponse(null, {
+    status: 200,
+    headers: {
+      "Access-Control-Allow-Origin": "*",
+      "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+      "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Customer-ID",
+      "Access-Control-Allow-Credentials": "true",
+      "Access-Control-Max-Age": "86400",
+    },
+  })
 } 
