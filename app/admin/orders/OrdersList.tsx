@@ -1,27 +1,22 @@
 "use client";
 
-import { useState, useEffect } from 'react';
-import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { formatCurrency } from '@/lib/utils';
 import { Table, TableHeader, TableBody, TableCell, TableHead, TableRow } from '@/components/ui/table';
-import { ArrowLeft, ExternalLink, AlertCircle } from "lucide-react";
+import { AlertCircle } from "lucide-react";
 
 interface Order {
   id: string;
-  order_number: string;
+  order_number: number;
   processed_at: string;
   financial_status: string;
-  fulfillment_status: string;
+  fulfillment_status: string | null;
   total_price: number;
   currency_code: string;
   customer_email: string;
-  line_items: Array<{
-    id: string;
-    product_id: string;
-  }>;
+  line_items?: any[];
   has_duplicates?: boolean;
 }
 
@@ -29,48 +24,32 @@ interface OrdersListProps {
   orders: Order[];
   currentPage: number;
   totalPages: number;
+  onPageChange?: (page: number) => void;
 }
 
-export default function OrdersList({ orders, currentPage, totalPages }: OrdersListProps) {
-  console.log('OrdersList received props:', { orders, currentPage, totalPages });
+export default function OrdersList({ 
+  orders, 
+  currentPage, 
+  totalPages, 
+  onPageChange 
+}: OrdersListProps) {
+  const processOrderDuplicates = (orders: Order[]) => {
+    return orders.map((order) => {
+      const seen = new Set<string>();
+      const hasDuplicates = order.line_items?.some(item => {
+        if (item.product_id) {
+          if (seen.has(item.product_id)) return true;
+          seen.add(item.product_id);
+        }
+        return false;
+      }) || false;
+      return { ...order, has_duplicates: hasDuplicates };
+    });
+  };
 
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    const fetchOrders = async () => {
-      setLoading(true);
-      try {
-        const res = await fetch('/api/orders');
-        if (!res.ok) throw new Error('Failed to fetch orders');
-        const data = await res.json();
-        
-        // Process orders to identify duplicates
-        const ordersWithDuplicates = data.map((order: Order) => {
-          const seen = new Set<string>();
-          const hasDuplicates = order.line_items.some(item => {
-            if (item.product_id) {
-              if (seen.has(item.product_id)) return true;
-              seen.add(item.product_id);
-            }
-            return false;
-          });
-          return { ...order, has_duplicates: hasDuplicates };
-        });
-
-        setOrders(ordersWithDuplicates);
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to fetch orders');
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchOrders();
-  }, []);
+  const processedOrders = processOrderDuplicates(orders);
 
   if (!orders || orders.length === 0) {
-    console.log('No orders to display');
     return (
       <Card className="p-6">
         <div className="text-center text-muted-foreground">
@@ -95,7 +74,7 @@ export default function OrdersList({ orders, currentPage, totalPages }: OrdersLi
               </TableRow>
             </TableHeader>
             <TableBody>
-              {orders.map((order) => (
+              {processedOrders.map((order) => (
                 <TableRow 
                   key={order.id}
                   className="cursor-pointer hover:bg-muted/50"
@@ -139,29 +118,27 @@ export default function OrdersList({ orders, currentPage, totalPages }: OrdersLi
         </div>
       </Card>
 
-      {totalPages > 1 && (
+      {totalPages > 1 && onPageChange && (
         <div className="flex justify-center gap-2 mt-4">
           <Button
             variant="outline"
             size="sm"
             disabled={currentPage === 1}
-            onClick={() => {
-              const url = new URL(window.location.href);
-              url.searchParams.set('page', (currentPage - 1).toString());
-              window.location.href = url.toString();
-            }}
+            onClick={() => onPageChange(currentPage - 1)}
           >
             Previous
           </Button>
+          <div className="flex items-center gap-2">
+            <span>Page</span>
+            <span className="font-bold">{currentPage}</span>
+            <span>of</span>
+            <span className="font-bold">{totalPages}</span>
+          </div>
           <Button
             variant="outline"
             size="sm"
             disabled={currentPage === totalPages}
-            onClick={() => {
-              const url = new URL(window.location.href);
-              url.searchParams.set('page', (currentPage + 1).toString());
-              window.location.href = url.toString();
-            }}
+            onClick={() => onPageChange(currentPage + 1)}
           >
             Next
           </Button>
