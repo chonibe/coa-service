@@ -214,4 +214,4 @@ export function CertificateModal({
       </DialogContent>
     </Dialog>
   )
-} 
+}
