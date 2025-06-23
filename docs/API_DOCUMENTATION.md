@@ -73,6 +73,122 @@ Base URL: `/api/v1/admin`
 | `/` | Trigger Shopify sync | ADMIN | Sync configuration |
 | `/` | Generate reports | ADMIN | Report parameters |
 
+### Customer Orders API
+
+## Endpoint: `/api/customer/orders`
+
+### Authentication Methods
+The API supports multiple methods for customer authentication:
+1. URL Query Parameter: `?customerId=123`
+2. Cookie: `shopify_customer_id`
+3. Custom Header: `X-Customer-ID`
+
+### Response Formats
+
+#### Successful Response
+```json
+{
+  "success": true,
+  "orders": [
+    {
+      "id": "string",
+      "order_number": 1001,
+      "processed_at": "2023-06-15T10:30:00Z",
+      "total_price": 99.99,
+      "financial_status": "paid",
+      "fulfillment_status": "shipped",
+      "line_items": [...]
+    }
+  ],
+  "count": 1,
+  "message": "Retrieved 1 orders"
+}
+```
+
+#### Error Responses
+
+1. No Customer ID
+```json
+{
+  "success": false,
+  "message": "Authentication failed - customer ID not found",
+  "errorCode": "AUTH_NO_CUSTOMER_ID",
+  "possibleReasons": [
+    "Not logged in",
+    "Session expired",
+    "Missing customer identification"
+  ]
+}
+```
+
+2. Invalid Customer ID
+```json
+{
+  "success": false,
+  "message": "Invalid customer ID format",
+  "errorCode": "AUTH_INVALID_CUSTOMER_ID",
+  "providedId": "invalid_id"
+}
+```
+
+3. No Orders Found
+```json
+{
+  "success": true,
+  "orders": [],
+  "count": 0,
+  "message": "No orders found for this customer"
+}
+```
+
+### Error Codes
+- `AUTH_NO_CUSTOMER_ID`: Customer authentication failed
+- `AUTH_INVALID_CUSTOMER_ID`: Provided customer ID is invalid
+- `DB_CONNECTION_FAILED`: Database connection error
+- `DB_QUERY_FAILED`: Failed to retrieve orders from database
+- `UNEXPECTED_SERVER_ERROR`: Unexpected server-side error
+
+### Recommended Client-Side Handling
+1. Check `response.ok` to determine success
+2. Inspect `errorCode` for specific error scenarios
+3. Provide user-friendly error messages
+4. Implement fallback UI for different error states
+
+### Frontend Example
+```javascript
+async function fetchOrders() {
+  try {
+    const response = await fetch('/api/customer/orders', {
+      headers: {
+        'X-Customer-ID': customerId,
+        'Content-Type': 'application/json'
+      }
+    });
+    
+    const data = await response.json();
+    
+    if (!response.ok) {
+      // Handle specific error codes
+      switch (data.errorCode) {
+        case 'AUTH_NO_CUSTOMER_ID':
+          showLoginPrompt();
+          break;
+        case 'DB_QUERY_FAILED':
+          showRetryMessage();
+          break;
+        default:
+          showGenericError(data.message);
+      }
+      return;
+    }
+    
+    renderOrders(data.orders);
+  } catch (error) {
+    showGenericError('An unexpected error occurred');
+  }
+}
+```
+
 ## Error Handling
 
 ### Standard Error Response
