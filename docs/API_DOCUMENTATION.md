@@ -266,4 +266,90 @@ Supported Events:
 ## Support
 - Email: api-support@streetcollector.com
 - Documentation: [Link to Full Docs]
-- Status Page: [API Status Monitoring Link] 
+- Status Page: [API Status Monitoring Link]
+
+## Customer Dashboard API
+
+### Endpoint: `/api/customer/dashboard/[customerId]`
+
+#### Description
+Retrieves order details for a specific customer using their Shopify Customer ID.
+
+#### Request Method
+- `GET`
+
+#### Path Parameters
+- `customerId` (required): Shopify Customer ID as a string
+
+#### Response
+
+**Success Response (200 OK)**
+```json
+{
+  "success": true,
+  "orders": [
+    {
+      "id": "unique_order_id",
+      "order_number": "1234",
+      "processed_at": "2023-06-15T10:30:00Z",
+      "total_price": 99.99,
+      "financial_status": "paid",
+      "fulfillment_status": "shipped",
+      "line_items": [
+        {
+          "id": "line_item_id",
+          "name": "Product Name",
+          "quantity": 1,
+          "price": 99.99,
+          "nfc_tag_id": "optional_nfc_tag",
+          "certificate_url": "optional_certificate_link"
+        }
+      ]
+    }
+  ],
+  "count": 1,
+  "message": "Retrieved 1 orders for customer shopify_customer_123"
+}
+```
+
+**Error Responses**
+
+1. Missing or Invalid Customer ID (400 Bad Request)
+```json
+{
+  "success": false,
+  "message": "Customer ID is required",
+  "errorCode": "MISSING_CUSTOMER_ID"
+}
+```
+
+2. Customer Not Found (404 Not Found)
+```json
+{
+  "success": false,
+  "message": "Customer not found",
+  "errorCode": "CUSTOMER_NOT_FOUND"
+}
+```
+
+3. Server Error (500 Internal Server Error)
+```json
+{
+  "success": false,
+  "message": "Failed to retrieve orders",
+  "errorCode": "DB_QUERY_FAILED",
+  "technicalDetails": "Detailed error message"
+}
+```
+
+#### Error Codes
+- `MISSING_CUSTOMER_ID`: No customer ID was provided
+- `INVALID_CUSTOMER_ID`: Customer ID is not in the correct format
+- `CUSTOMER_NOT_FOUND`: No customer found with the given ID
+- `DB_QUERY_FAILED`: Database query encountered an error
+- `SUPABASE_CONNECTION_ERROR`: Unable to connect to the database
+
+#### Notes
+- Requires valid authentication
+- Returns up to 50 most recent orders
+- Orders are sorted by `processed_at` in descending order 

@@ -40,28 +40,70 @@ export async function GET(
       }, { status: 400 })
     }
 
-    // Ensure customer ID is a valid number
-    const customerIdNumber = parseInt(customerId, 10)
-    if (isNaN(customerIdNumber)) {
-      return NextResponse.json({ 
-        success: false, 
-        message: "Invalid customer ID format",
-        errorCode: "INVALID_CUSTOMER_ID",
-        requestContext: requestDebug
-      }, { status: 400 })
+    // Comprehensive customer lookup with multiple strategies
+    const customerLookupStrategies = [
+      // Strategy 1: Direct Shopify Customer ID match
+      async () => {
+        const { data, error } = await supabase
+          .from('customers')
+          .select('id, shopify_customer_id, email')
+          .eq('shopify_customer_id', customerId)
+          .single()
+        
+        console.log('Direct Shopify Customer Lookup:', { 
+          data: data ? { id: data.id, email: data.email } : null, 
+          error 
+        })
+        
+        return { data, error }
+      },
+      
+      // Strategy 2: Fallback to Shopify Customers table
+      async () => {
+        const { data, error } = await supabase
+          .from('shopify_customers')
+          .select('customer_id, shopify_customer_id, email')
+          .eq('shopify_customer_id', customerId)
+          .single()
+        
+        console.log('Shopify Customers Lookup:', { 
+          data: data ? { id: data.customer_id, email: data.email } : null, 
+          error 
+        })
+        
+        return { data, error }
+      },
+      
+      // Strategy 3: Partial match or fuzzy search
+      async () => {
+        const { data, error } = await supabase
+          .from('customers')
+          .select('id, shopify_customer_id, email')
+          .like('shopify_customer_id', `%${customerId}%`)
+          .limit(1)
+        
+        console.log('Partial Shopify Customer Lookup:', { 
+          data: data?.[0] ? { id: data[0].id, email: data[0].email } : null, 
+          error 
+        })
+        
+        return { data: data?.[0], error }
+      }
+    ]
+
+    let customerData = null
+    for (const strategy of customerLookupStrategies) {
+      const result = await strategy()
+      if (result.data) {
+        customerData = result.data
+        break
+      }
     }
 
-    // Debug: Check customer existence first
-    const { data: customerCheck, error: customerCheckError } = await supabase
-      .from('customers')
-      .select('id, shopify_customer_id')
-      .eq('shopify_customer_id', customerId)
-      .single()
-
-    if (customerCheckError) {
-      console.error('Customer Check Error:', {
-        error: customerCheckError,
+    if (!customerData) {
+      console.error('Customer Lookup Failed:', {
         customerId: customerId,
+        lookupStrategies: 'All strategies exhausted',
         requestContext: requestDebug
       })
 
@@ -69,15 +111,13 @@ export async function GET(
         success: false, 
         message: "Customer not found",
         errorCode: "CUSTOMER_NOT_FOUND",
-        technicalDetails: customerCheckError.message,
+        technicalDetails: {
+          searchedId: customerId,
+          searchStrategies: ['Direct Match', 'Shopify Customers', 'Partial Match']
+        },
         requestContext: requestDebug
       }, { status: 404 })
     }
-
-    console.log('Customer Found:', {
-      customerId: customerCheck.id,
-      shopifyCustomerId: customerCheck.shopify_customer_id
-    })
 
     // Fetch orders with comprehensive details
     const { data: orders, error: ordersError } = await supabase
@@ -107,15 +147,19 @@ export async function GET(
           status
         )
       `)
-      .eq("shopify_customer_id", customerId)  // Use string comparison
+      .eq("shopify_customer_id", customerData.shopify_customer_id || customerId)
       .order("processed_at", { ascending: false })
-      .limit(50)  // Limit to 50 most recent orders
+      .limit(50)
 
     console.log('Supabase Query Details:', {
       query: 'orders',
       filterColumn: 'shopify_customer_id',
-      filterValue: customerId,
-      limit: 50
+      filterValue: customerData.shopify_customer_id || customerId,
+      limit: 50,
+      customerDetails: {
+        id: customerData.id,
+        shopifyCustomerId: customerData.shopify_customer_id
+      }
     })
 
     if (ordersError) {
@@ -160,6 +204,11 @@ export async function GET(
       orders: transformedOrders,
       count: transformedOrders.length,
       message: `Retrieved ${transformedOrders.length} orders for customer ${customerId}`,
+      customerDetails: {
+        id: customerData.id,
+        email: customerData.email,
+        shopifyCustomerId: customerData.shopify_customer_id
+      },
       requestContext: requestDebug
     })
   } catch (error: any) {
