@@ -1,30 +1,38 @@
-# Dashboard UI Improvements
+# Customer Dashboard Line Items Rendering Improvement
 
 ## Overview
-This pull request introduces significant improvements to the dashboard's user interface, focusing on responsiveness, readability, and visual hierarchy.
+This pull request updates the customer dashboard line items rendering to match the admin preview page's design and functionality.
 
 ## Key Changes
-- Enhanced mobile and desktop responsiveness
-- Improved Vinyl Artwork Card layout
-- Optimized Certificate Modal sizing
-- Implemented responsive grid system
+- Implemented interactive `FloatingCard` component for line items
+- Enhanced line item display with:
+  - Vendor name
+  - Edition number
+  - Product image
+  - NFC pairing button
+- Improved order status and total price rendering
+- Added hover and interaction effects
 
-## Detailed Modifications
-- Adjusted typography sizes for different screen sizes
-- Implemented responsive padding and margins
-- Created more flexible layout for artwork cards
-- Reduced certificate modal size for better mobile experience
+## Motivation
+Provide a consistent and visually appealing user experience across the admin preview and customer dashboard pages.
 
-## Verification
-- [x] Mobile responsiveness tested
-- [x] Desktop layout verified
-- [x] Certificate modal sizing checked
+## Screenshots
+[TODO: Add before and after screenshots]
 
-## Next Steps
-- Conduct comprehensive cross-device testing
-- Gather user feedback on new layout
+## Verification Steps
+- [ ] Verify line items rendering in customer dashboard
+- [ ] Test NFC pairing functionality
+- [ ] Check responsiveness on different device sizes
+- [ ] Validate order status and total price display
 
-## Performance Impact
-- Maintained existing component structure
-- Minimal impact on page load times
-- Improved visual hierarchy and readability
+## Performance Considerations
+- Minimal performance impact
+- Improved user interaction with floating card effects
+
+## Future Improvements
+- Add more interactive elements
+- Enhance NFC pairing UX
+- Implement lazy loading for images
+
+## Deployment
+- Vercel Preview URL: https://street-collector-78v4psez2-chonibes-projects.vercel.app

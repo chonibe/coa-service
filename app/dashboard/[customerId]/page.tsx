@@ -32,7 +32,6 @@ import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Skeleton } from "@/components/ui/skeleton"
 import { AnimatePresence } from "framer-motion"
-import { NFCWizardDialog } from './nfc-wizard-dialog'
 
 // Type Definitions
 interface LineItem {
@@ -103,11 +102,11 @@ const VinylArtworkCard = ({
     <>
       <div 
         className={`
-          relative w-full h-auto aspect-[1.618/1] rounded-2xl overflow-hidden
+          relative w-full h-auto min-h-[200px] rounded-2xl overflow-hidden
           ${isSelected ? 'ring-2 ring-amber-500/50 shadow-xl shadow-amber-500/10' : 'shadow-lg'}
           bg-gradient-to-br from-zinc-900/90 via-zinc-800/90 to-zinc-900/90 
           backdrop-blur-sm border border-zinc-700/50
-          flex flex-col sm:flex-row
+          flex flex-row
           transition-all duration-300 ease-in-out
           hover:shadow-xl hover:border-zinc-600/50
           group cursor-pointer
@@ -137,7 +136,7 @@ const VinylArtworkCard = ({
         </div>
 
         {/* Artwork Image */}
-        <div className="relative w-full sm:w-[45%] aspect-square sm:aspect-auto">
+        <div className="relative w-[200px] h-[200px] flex-shrink-0">
           {item.img_url ? (
             <img 
               src={item.img_url} 
@@ -178,7 +177,7 @@ const VinylArtworkCard = ({
           </div>
 
           {/* Action Buttons */}
-          <div className="flex flex-col gap-2 mt-4">
+          <div className="flex flex-col sm:flex-row gap-2 mt-4">
             {item.certificate_url && (
               <Button 
                 size="sm" 
@@ -688,24 +687,31 @@ export default function CustomerDashboardById() {
     }
   }
 
-  const itemVariants = {
+  const itemVariants: Variants = {
     hidden: { 
       opacity: 0, 
-      y: 20 
+      y: -50,
+      transition: { 
+        type: 'spring', 
+        stiffness: 300, 
+        damping: 30 
+      }
     },
     visible: { 
       opacity: 1, 
       y: 0,
-      transition: {
-        type: "spring",
-        stiffness: 300,
-        damping: 30
+      transition: { 
+        type: 'spring', 
+        stiffness: 300, 
+        damping: 30 
       }
     },
     exit: { 
-      opacity: 0,
-      y: -20,
-      transition: { duration: 0.2 }
+      opacity: 0, 
+      y: 50,
+      transition: { 
+        duration: 0.2 
+      }
     }
   }
 
