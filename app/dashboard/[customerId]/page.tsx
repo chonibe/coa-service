@@ -87,141 +87,93 @@ const VinylArtworkCard = ({
   onCertificateView: () => void,
   onNFCPaired: () => void
 }) => {
-  const [isNFCWizardOpen, setIsNFCWizardOpen] = useState(false)
+  const [isHovered, setIsHovered] = useState(false)
 
   const getCertificationStatus = () => {
-    if (item.nfc_claimed_at) return "nfc-paired";
-    if (!item.certificate_url) return "no-certificate";
-    return "unpaired";
+    if (item.nfc_claimed_at) return 'Authenticated'
+    return 'Pending Authentication'
   }
 
-  const status = getCertificationStatus()
-  const price = item.price ? new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(item.price) : null
-
   return (
-    <>
-      <div 
-        className={`
-          relative w-full h-auto min-h-[200px] rounded-2xl overflow-hidden
-          ${isSelected ? 'ring-2 ring-amber-500/50 shadow-xl shadow-amber-500/10' : 'shadow-lg'}
-          bg-gradient-to-br from-zinc-900/90 via-zinc-800/90 to-zinc-900/90 
-          backdrop-blur-sm border border-zinc-700/50
-          flex flex-row
-          transition-all duration-300 ease-in-out
-          hover:shadow-xl hover:border-zinc-600/50
-          group cursor-pointer
-        `}
-        onClick={() => onSelect()}
-      >
-        {/* Status Badge - Top Right */}
-        <div className="absolute top-3 right-3 z-20">
-          {status === "nfc-paired" && (
-            <Badge variant="outline" className="bg-green-500/10 text-green-400 border-green-500/20 gap-1 whitespace-nowrap">
-              <Wifi className="h-3 w-3" />
-              Authenticated
-            </Badge>
-          )}
-          {status === "unpaired" && (
-            <Badge variant="outline" className="bg-orange-500/10 text-orange-400 border-orange-500/20 gap-1 whitespace-nowrap">
-              <WifiOff className="h-3 w-3" />
-              Ready to Pair
-            </Badge>
-          )}
-          {status === "no-certificate" && (
-            <Badge variant="outline" className="bg-zinc-500/10 text-zinc-400 border-zinc-500/20 gap-1 whitespace-nowrap">
-              <CertificateIcon className="h-3 w-3" />
-              No Certificate
-            </Badge>
-          )}
-        </div>
-
-        {/* Artwork Image */}
-        <div className="relative w-[200px] h-[200px] flex-shrink-0">
-          {item.img_url ? (
-            <img 
-              src={item.img_url} 
-              alt={item.name} 
-              className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105" 
-            />
-          ) : (
-            <div className="w-full h-full bg-zinc-800/50 flex items-center justify-center">
-              <Album className="w-16 h-16 text-zinc-600" />
-            </div>
-          )}
-          {item.edition_number && item.edition_total && (
-            <Badge 
-              className="absolute bottom-2 left-2 bg-black/60 text-white border-zinc-700"
-            >
-              Edition #{item.edition_number}/{item.edition_total}
-            </Badge>
-          )}
-        </div>
-
-        {/* Content Container */}
-        <div className="relative flex-1 p-4 sm:p-6 flex flex-col justify-between min-w-0">
-          {/* Top Section - Title, Artist, and Price */}
-          <div className="space-y-2">
-            <h3 className="text-lg sm:text-xl font-bold text-white truncate pr-24">
-              {item.name}
-            </h3>
-            <div className="flex justify-between items-start gap-4">
-              <p className="text-sm text-zinc-400 truncate max-w-[70%]">
-                {item.vendor_name || "Street Collector"}
-              </p>
-              {price && item.quantity && (
-                <p className="text-sm text-zinc-400 whitespace-nowrap">
-                  {price} × {item.quantity}
-                </p>
-              )}
-            </div>
-          </div>
-
-          {/* Action Buttons */}
-          <div className="flex flex-col sm:flex-row gap-2 mt-4">
-            {item.certificate_url && (
-              <Button 
-                size="sm" 
-                variant="outline" 
-                className="w-full justify-start text-amber-400 border-amber-500/20 bg-amber-500/5 hover:bg-amber-500/10 hover:border-amber-500/30 transition-colors"
-                onClick={(e) => {
-                  e.stopPropagation()
-                  onCertificateView()
-                }}
-              >
-                <CertificateIcon className="h-4 w-4 mr-2 flex-shrink-0" />
-                <span className="flex-1">View Certificate</span>
-                <ArrowRight className="h-4 w-4 text-amber-500/50" />
-              </Button>
-            )}
-            {status === "unpaired" && (
-              <Button 
-                size="sm" 
-                variant="outline" 
-                className="w-full justify-start text-blue-400 border-blue-500/20 bg-blue-500/5 hover:bg-blue-500/10 hover:border-blue-500/30 transition-colors"
-                onClick={(e) => {
-                  e.stopPropagation()
-                  setIsNFCWizardOpen(true)
-                }}
-              >
-                <Wifi className="h-4 w-4 mr-2 flex-shrink-0" />
-                <span className="flex-1">Pair NFC Tag</span>
-                <ArrowRight className="h-4 w-4 text-blue-500/50" />
-              </Button>
-            )}
-          </div>
-        </div>
+    <div 
+      className={`
+        relative w-full flex items-center space-x-4 p-4 rounded-xl transition-all duration-300 ease-in-out
+        ${isSelected 
+          ? 'bg-amber-500/10 border border-amber-500/30' 
+          : 'bg-zinc-800/50 hover:bg-zinc-700/50'
+        }
+        cursor-pointer
+      `}
+      onClick={onSelect}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+    >
+      {/* Artwork Image */}
+      <div className="flex-shrink-0 w-24 h-24 md:w-32 md:h-32 rounded-lg overflow-hidden">
+        <img 
+          src={item.img_url || '/placeholder-logo.png'} 
+          alt={item.name} 
+          className="w-full h-full object-cover"
+        />
       </div>
 
-      <NFCWizardDialog
-        isOpen={isNFCWizardOpen}
-        onClose={() => setIsNFCWizardOpen(false)}
-        item={item}
-        onSuccess={() => {
-          onNFCPaired()
-          setIsNFCWizardOpen(false)
-        }}
-      />
-    </>
+      {/* Artwork Details */}
+      <div className="flex-grow space-y-2">
+        <div className="flex justify-between items-start">
+          <div>
+            <h3 className="text-base font-semibold text-white truncate max-w-[70%]">
+              {item.name}
+            </h3>
+            <p className="text-sm text-zinc-400">
+              {item.vendor_name || 'Unknown Artist'}
+            </p>
+          </div>
+
+          {/* Edition and Status */}
+          <div className="text-right">
+            <p className="text-sm text-zinc-300">
+              #{item.edition_number} / {item.edition_total}
+            </p>
+            <div className={`
+              inline-flex items-center text-xs px-2 py-1 rounded-full
+              ${item.nfc_claimed_at 
+                ? 'bg-green-500/20 text-green-300' 
+                : 'bg-yellow-500/20 text-yellow-300'
+              }
+            `}>
+              {getCertificationStatus()}
+            </div>
+          </div>
+        </div>
+
+        {/* Actions */}
+        <div className="flex space-x-2 mt-2">
+          {item.certificate_url && (
+            <button 
+              onClick={(e) => {
+                e.stopPropagation()
+                onCertificateView()
+              }}
+              className="glass-effect rounded-lg px-3 py-1 text-xs text-white hover:bg-zinc-700/50 transition"
+            >
+              View Certificate
+            </button>
+          )}
+
+          {!item.nfc_claimed_at && (
+            <button 
+              onClick={(e) => {
+                e.stopPropagation()
+                onNFCPaired()
+              }}
+              className="glass-effect rounded-lg px-3 py-1 text-xs text-white hover:bg-zinc-700/50 transition"
+            >
+              Pair NFC
+            </button>
+          )}
+        </div>
+      </div>
+    </div>
   )
 }
 
@@ -865,99 +817,45 @@ export default function CustomerDashboardById() {
           </div>
         )}
 
-        {/* Grid View */}
-        {!isLoading && view === 'grid' && (
-          <AnimatePresence mode="wait">
-            <motion.div
-              key="grid"
-              variants={containerVariants}
-              initial="hidden"
-              animate="visible"
-              exit="exit"
-              className="grid grid-cols-1 gap-4 sm:gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 2xl:grid-cols-4"
+        {/* Artwork Grid/List */}
+        <motion.div 
+          variants={containerVariants[view]}
+          initial="hidden"
+          animate="visible"
+          exit="exit"
+          className={`
+            ${view === 'grid' 
+              ? 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4' 
+              : 'space-y-4 w-full'
+            }
+          `}
+        >
+          {filteredLineItems.map((item, index) => (
+            <motion.div 
+              key={item.line_item_id} 
+              variants={itemVariants}
+              className="w-full"
             >
-              {filteredLineItems.map((item, index) => (
-                <motion.div
-                  key={item.line_item_id}
-                  variants={itemVariants}
-                  layoutId={item.line_item_id}
-                >
-                  <VinylArtworkCard
-                    item={item}
-                    isSelected={selectedArtworkIndex === index}
-                    onSelect={() => setSelectedArtworkIndex(index)}
-                    onCertificateView={() => {
-                      setSelectedLineItem(item)
-                      setSelectedArtworkIndex(index)
-                    }}
-                    onNFCPaired={() => {
-                      window.location.reload()
-                    }}
-                  />
-                </motion.div>
-              ))}
+              <VinylArtworkCard
+                item={item}
+                isSelected={selectedLineItem?.line_item_id === item.line_item_id}
+                onSelect={() => {
+                  setSelectedLineItem(item)
+                  setSelectedArtworkIndex(index)
+                }}
+                onCertificateView={() => {
+                  if (item.certificate_url) {
+                    window.open(item.certificate_url, '_blank')
+                  }
+                }}
+                onNFCPaired={() => {
+                  // Open NFC wizard for this item
+                  setSelectedLineItem(item)
+                }}
+              />
             </motion.div>
-          </AnimatePresence>
-        )}
-
-        {/* Timeline View */}
-        {!isLoading && view === 'timeline' && (
-          <AnimatePresence mode="wait">
-            <motion.div
-              key="timeline"
-              variants={containerVariants}
-              initial="hidden"
-              animate="visible"
-              exit="exit"
-              className="space-y-8"
-            >
-              {orders.map((order) => {
-                const orderItems = order.line_items.filter(item => {
-                  if (filter === 'authenticated') return item.nfc_claimed_at
-                  if (filter === 'pending') return !item.nfc_claimed_at
-                  return true
-                })
-
-                if (orderItems.length === 0) return null
-
-                return (
-                  <div key={order.id} className="glass-effect rounded-xl p-6">
-                    <div className="flex items-center justify-between mb-4">
-                      <div>
-                        <h3 className="text-lg font-semibold text-white">
-                          Order #{order.order_number}
-                        </h3>
-                        <p className="text-sm text-zinc-400">
-                          {new Date(order.processed_at).toLocaleDateString()}
-                        </p>
-                      </div>
-                      <Badge variant="outline">
-                        {orderItems.length} {orderItems.length === 1 ? 'Artwork' : 'Artworks'}
-                      </Badge>
-                    </div>
-                    <div className="grid grid-cols-1 gap-4 sm:gap-6 md:grid-cols-2 lg:grid-cols-3">
-                      {orderItems.map((item, index) => (
-                        <VinylArtworkCard
-                          key={item.line_item_id}
-                          item={item}
-                          isSelected={selectedArtworkIndex === index}
-                          onSelect={() => setSelectedArtworkIndex(index)}
-                          onCertificateView={() => {
-                            setSelectedLineItem(item)
-                            setSelectedArtworkIndex(index)
-                          }}
-                          onNFCPaired={() => {
-                            window.location.reload()
-                          }}
-                        />
-                      ))}
-                    </div>
-                  </div>
-                )
-              })}
-            </motion.div>
-          </AnimatePresence>
-        )}
+          ))}
+        </motion.div>
 
         {/* Empty State */}
         {!isLoading && filteredLineItems.length === 0 && (
