@@ -20,58 +20,74 @@ export interface CertificationVerificationResult {
   };
 }
 
+export interface CustomerData {
+  id: string;
+  name: string;
+  email: string;
+}
+
 export interface DigitalArtCertification {
   id: string;
   artworkTitle: string;
   artistName: string;
-  certificationDate: Date;
-  nfcTagId?: string;
-  verificationStatus: 'verified' | 'pending' | 'rejected';
+  verificationStatus: 'Pending' | 'Verified' | 'Rejected';
+  issuedDate: Date;
+  certificateUrl?: string;
 }
 
-export interface CustomerData {
-  id: string;
-  email: string;
-  name?: string;
-  first_name?: string;
-  last_name?: string;
-}
+export default class CertificationService {
+  private static baseUrl = '/api/certifications'; // Adjust based on your actual API endpoint
 
-class CertificationService {
-  private baseUrl: string;
-
-  constructor() {
-    // TODO: Replace with actual backend URL
-    this.baseUrl = process.env.REACT_APP_CERTIFICATION_API || 'https://api.streetcollector.com';
-  }
-
-  // Public method to fetch customer data
-  public async fetchCustomerData(customerId: string): Promise<CustomerData> {
+  static async fetchCustomerData(customerId: string): Promise<CustomerData> {
     try {
-      const response = await axios.get(`${this.baseUrl}/customers/${customerId}`);
-      const customerData = response.data as CustomerData;
+      const response = await fetch(`${this.baseUrl}/customer/${customerId}`);
       
-      if (!customerData || !customerData.id) {
-        throw new Error('Invalid customer data');
+      if (!response.ok) {
+        throw new Error('Failed to fetch customer data');
       }
 
-      return customerData;
+      return await response.json();
     } catch (error) {
-      console.error('Failed to fetch customer data', error);
+      console.error('Error fetching customer data:', error);
       throw error;
     }
   }
 
-  // Public method to get certifications
-  public async getCertifications(customerId: string): Promise<DigitalArtCertification[]> {
+  static async getCertifications(customerId: string): Promise<DigitalArtCertification[]> {
     try {
-      const response = await axios.get(`${this.baseUrl}/customers/${customerId}/certifications`);
-      const certifications = response.data as DigitalArtCertification[];
+      const response = await fetch(`${this.baseUrl}/customer/${customerId}/certifications`);
       
-      return certifications || [];
+      if (!response.ok) {
+        throw new Error('Failed to fetch certifications');
+      }
+
+      const certifications: DigitalArtCertification[] = await response.json();
+      
+      // Transform dates and add default values
+      return certifications.map(cert => ({
+        ...cert,
+        issuedDate: new Date(cert.issuedDate),
+        verificationStatus: cert.verificationStatus || 'Pending',
+        certificateUrl: cert.certificateUrl || '#'
+      }));
     } catch (error) {
-      console.error('Failed to fetch certifications', error);
-      return [];
+      console.error('Error retrieving certifications:', error);
+      return []; // Return empty array instead of throwing
+    }
+  }
+
+  static async downloadCertificate(certificationId: string): Promise<Blob | null> {
+    try {
+      const response = await fetch(`${this.baseUrl}/certificate/${certificationId}/download`);
+      
+      if (!response.ok) {
+        throw new Error('Failed to download certificate');
+      }
+
+      return await response.blob();
+    } catch (error) {
+      console.error('Certificate download error:', error);
+      return null;
     }
   }
 
@@ -148,6 +164,4 @@ class CertificationService {
       };
     }
   }
-}
-
-export default new CertificationService(); 
+} 

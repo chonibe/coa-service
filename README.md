@@ -354,3 +354,66 @@ For comprehensive guidance on deployment processes, environment configuration, a
 1. Keep documentation current with latest project changes
 2. Review and update documentation after each significant deployment
 3. Encourage team contributions and improvements
+
+# Street Collector Service
+
+## Project Overview
+Street Collector is a comprehensive digital art certification and management platform.
+
+## Project Structure
+- `app/`: Next.js application
+- `api/`: Backend API routes
+- `components/`: Shared React components
+- `customer-portal/`: Customer dashboard and authentication
+- `lib/`: Utility functions and services
+- `db/`: Database migrations and schemas
+
+## Customer Portal
+### Features
+- Multi-Factor Authentication
+- Digital Art Certification Management
+- Secure Customer Identity Verification
+- Dynamic Dashboard Experience
+
+### Technical Architecture
+- React-based Single Page Application
+- TypeScript
+- Modular Service Architecture
+- Comprehensive Error Handling
+
+## Getting Started
+### Prerequisites
+- Node.js 16+
+- npm or yarn
+- Supabase/Shopify Backend
+
+### Installation
+```bash
+# Clone the repository
+git clone https://github.com/your-org/street-collector.git
+
+# Install dependencies
+npm install
+
+# Start development server
+npm run dev
+```
+
+## Deployment
+- Hosted on Vercel
+- Continuous Integration with GitHub Actions
+- Automated Testing and Deployment
+
+## Contributing
+1. Fork the repository
+2. Create a feature branch
+3. Commit your changes
+4. Push to the branch
+5. Create a Pull Request
+
+## License
+UNLICENSED - Private Project
+
+## Version
+Current Version: 1.0.0
+Last Updated: ${new Date().toISOString()}

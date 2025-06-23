@@ -1,23 +1,37 @@
 {
-  "name": "street-collector-customer-portal",
+  "name": "@streetlamp/customer-portal",
   "version": "1.0.0",
-  "private": true,
-  "homepage": ".",
+  "description": "Street Collector Customer Dashboard for Digital Art Certification",
+  "main": "src/index.tsx",
   "scripts": {
     "start": "react-scripts start",
     "build": "react-scripts build",
     "test": "react-scripts test",
-    "eject": "react-scripts eject"
+    "test:coverage": "react-scripts test --coverage",
+    "eject": "react-scripts eject",
+    "lint": "eslint src/**/*.{ts,tsx}",
+    "format": "prettier --write src/**/*.{ts,tsx,md}"
   },
   "dependencies": {
-    "react": "^18.3.1",
-    "react-dom": "^18.3.1",
-    "react-scripts": "^5.0.1"
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "typescript": "^4.9.5"
   },
   "devDependencies": {
-    "@types/react": "^18.2.0",
-    "@types/react-dom": "^18.2.0",
-    "typescript": "^4.9.5"
+    "@testing-library/react": "^14.0.0",
+    "@types/jest": "^29.5.1",
+    "@types/react": "^18.2.6",
+    "eslint": "^8.40.0",
+    "jest": "^29.5.0",
+    "prettier": "^2.8.8",
+    "react-scripts": "^5.0.1",
+    "ts-jest": "^29.1.0"
+  },
+  "eslintConfig": {
+    "extends": [
+      "react-app",
+      "react-app/jest"
+    ]
   },
   "browserslist": {
     "production": [
@@ -31,13 +45,13 @@
       "last 1 safari version"
     ]
   },
-  "description": "## Overview A Shopify Customer Account Extension for digital art certification and management.",
-  "main": "index.js",
-  "directories": {
-    "doc": "docs",
-    "test": "tests"
-  },
-  "keywords": [],
-  "author": "",
-  "license": "ISC"
+  "keywords": [
+    "street-collector",
+    "customer-portal",
+    "digital-art",
+    "certification"
+  ],
+  "author": "Street Collector Team",
+  "license": "UNLICENSED",
+  "private": true
 }

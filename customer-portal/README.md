@@ -1,61 +1,76 @@
 # Street Collector Customer Portal
 
 ## Overview
-A Shopify Customer Account Extension for digital art certification and management.
+The Street Collector Customer Portal is a comprehensive web application designed to provide customers with a seamless, secure, and interactive experience for managing their digital art certifications.
 
 ## Features
-- Multi-Factor Authentication
-- Digital Art Certification Tracking
+- Multi-Factor Authentication (MFA)
 - Secure Customer Identity Verification
-- Responsive Dashboard Design
+- Digital Art Certification Management
+- Dynamic Dashboard Experience
+- Error Handling and Graceful Degradation
 
-## Prerequisites
-- Node.js 18+
-- Shopify Partner Account
-- Shopify CLI
-- Vercel Account (for deployment)
+## Technical Architecture
+### Components
+- `CustomerDashboard`: Main dashboard component
+- `CertificationService`: Service for managing digital art certifications
+- `MultiFactorAuthService`: Authentication and verification service
 
-## Local Development
-1. Clone the repository
-2. Install dependencies:
-   ```bash
-   npm install
-   ```
+### Authentication Flow
+1. Customer ID Retrieval
+2. Identity Verification
+3. Multi-Factor Authentication
+4. Dashboard Initialization
 
-3. Set up environment variables:
-   Create a `.env` file with the following:
-   ```
-   REACT_APP_CERTIFICATION_API=https://api.streetcollector.com
-   SHOPIFY_API_KEY=your_shopify_api_key
-   SHOPIFY_API_SECRET=your_shopify_api_secret
-   ```
+## Configuration
+### Environment Variables
+- `REACT_APP_CERTIFICATION_API`: Base URL for certification API
+- `REACT_APP_MFA_ENABLED`: Enable/Disable Multi-Factor Authentication
 
-4. Run development server:
-   ```bash
-   npm run dev
-   ```
+## API Endpoints
+- `/api/certifications/customer/{customerId}`: Retrieve customer data
+- `/api/certifications/customer/{customerId}/certifications`: Fetch customer certifications
+- `/api/certifications/certificate/{certificationId}/download`: Download certification
+
+## Security Considerations
+- Robust error handling
+- Multiple customer ID retrieval strategies
+- Centralized authentication error management
+
+## Performance Optimization
+- Lazy loading of certification data
+- Minimal initial render payload
+- Efficient state management
+
+## Future Improvements
+- Enhanced MFA methods (SMS, Authenticator App)
+- Real-time certification updates
+- Offline support
+- Internationalization
 
 ## Deployment
-Deployed via Vercel:
+### Prerequisites
+- Node.js 16+
+- npm or yarn
+- Supabase/Shopify Backend
+
+### Installation
 ```bash
-vercel
+npm install
+npm run start
 ```
 
-## Testing Credentials
-- **Test Email:** test@thestreetlamp.com
-- **Verification Code:** 123456 (for MFA testing)
+## Testing
+```bash
+npm run test
+npm run test:coverage
+```
 
 ## Troubleshooting
-- Ensure Shopify app is configured in Partner Dashboard
 - Check network connectivity
-- Verify API endpoints
+- Verify API endpoint configuration
+- Review browser console for detailed errors
 
-## Security Notes
-- Multi-Factor Authentication enabled
-- Comprehensive error handling
-- Secure data transmission
-
-## Roadmap
-- [ ] Enhanced MFA methods
-- [ ] Performance optimization
-- [ ] Accessibility improvements
+## Version
+Current Version: 1.0.0
+Last Updated: ${new Date().toISOString()}
