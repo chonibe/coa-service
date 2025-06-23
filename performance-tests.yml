@@ -1,0 +1,46 @@
+config:
+  target: "http://localhost:3000"
+  phases:
+    - duration: 60
+      arrivalRate: 5
+      name: Warm up
+    - duration: 120
+      arrivalRate: 5
+      rampTo: 50
+      name: Sustained load
+  defaults:
+    headers:
+      Content-Type: "application/json"
+
+scenarios:
+  - name: "GraphQL Performance Test"
+    flow:
+      - post:
+          url: "/api/graphql"
+          json:
+            query: |
+              query {
+                artworks(status: AVAILABLE) {
+                  id
+                  title
+                  price
+                  artist {
+                    id
+                    name
+                  }
+                }
+              }
+          capture:
+            - json: "$.data.artworks"
+              as: "artworks"
+
+  - name: "Authentication Performance Test"
+    flow:
+      - post:
+          url: "/api/auth/login"
+          json:
+            email: "test@example.com"
+            password: "testpassword"
+          capture:
+            - json: "$.token"
+              as: "authToken"
