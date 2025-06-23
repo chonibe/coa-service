@@ -40,86 +40,7 @@ export async function GET(
       }, { status: 400 })
     }
 
-    // Comprehensive customer lookup with multiple strategies
-    const customerLookupStrategies = [
-      // Strategy 1: Direct Shopify Customer ID match
-      async () => {
-        const { data, error } = await supabase
-          .from('customers')
-          .select('id, shopify_customer_id, email')
-          .eq('shopify_customer_id', customerId)
-          .single()
-        
-        console.log('Direct Shopify Customer Lookup:', { 
-          data: data ? { id: data.id, email: data.email } : null, 
-          error 
-        })
-        
-        return { data, error }
-      },
-      
-      // Strategy 2: Fallback to Shopify Customers table
-      async () => {
-        const { data, error } = await supabase
-          .from('shopify_customers')
-          .select('customer_id, shopify_customer_id, email')
-          .eq('shopify_customer_id', customerId)
-          .single()
-        
-        console.log('Shopify Customers Lookup:', { 
-          data: data ? { id: data.customer_id, email: data.email } : null, 
-          error 
-        })
-        
-        return { data, error }
-      },
-      
-      // Strategy 3: Partial match or fuzzy search
-      async () => {
-        const { data, error } = await supabase
-          .from('customers')
-          .select('id, shopify_customer_id, email')
-          .like('shopify_customer_id', `%${customerId}%`)
-          .limit(1)
-        
-        console.log('Partial Shopify Customer Lookup:', { 
-          data: data?.[0] ? { id: data[0].id, email: data[0].email } : null, 
-          error 
-        })
-        
-        return { data: data?.[0], error }
-      }
-    ]
-
-    let customerData = null
-    for (const strategy of customerLookupStrategies) {
-      const result = await strategy()
-      if (result.data) {
-        customerData = result.data
-        break
-      }
-    }
-
-    if (!customerData) {
-      console.error('Customer Lookup Failed:', {
-        customerId: customerId,
-        lookupStrategies: 'All strategies exhausted',
-        requestContext: requestDebug
-      })
-
-      return NextResponse.json({ 
-        success: false, 
-        message: "Customer not found",
-        errorCode: "CUSTOMER_NOT_FOUND",
-        technicalDetails: {
-          searchedId: customerId,
-          searchStrategies: ['Direct Match', 'Shopify Customers', 'Partial Match']
-        },
-        requestContext: requestDebug
-      }, { status: 404 })
-    }
-
-    // Fetch orders with comprehensive details
+    // Fetch orders directly from orders table
     const { data: orders, error: ordersError } = await supabase
       .from("orders")
       .select(`
@@ -130,6 +51,7 @@ export async function GET(
         financial_status,
         fulfillment_status,
         shopify_id,
+        shopify_customer_id,
         order_line_items_v2 (
           id,
           line_item_id,
@@ -147,19 +69,16 @@ export async function GET(
           status
         )
       `)
-      .eq("shopify_customer_id", customerData.shopify_customer_id || customerId)
+      .eq("shopify_customer_id", customerId)
       .order("processed_at", { ascending: false })
       .limit(50)
 
-    console.log('Supabase Query Details:', {
+    console.log('Supabase Order Query Details:', {
       query: 'orders',
       filterColumn: 'shopify_customer_id',
-      filterValue: customerData.shopify_customer_id || customerId,
+      filterValue: customerId,
       limit: 50,
-      customerDetails: {
-        id: customerData.id,
-        shopifyCustomerId: customerData.shopify_customer_id
-      }
+      queryError: ordersError
     })
 
     if (ordersError) {
@@ -178,12 +97,29 @@ export async function GET(
       }, { status: 500 })
     }
 
+    // Check if any orders exist
+    if (!orders || orders.length === 0) {
+      console.warn('No orders found for customer', {
+        customerId: customerId,
+        requestContext: requestDebug
+      })
+
+      return NextResponse.json({ 
+        success: true,
+        orders: [],
+        count: 0,
+        message: `No orders found for customer ${customerId}`,
+        requestContext: requestDebug
+      })
+    }
+
     // Log raw orders data for debugging
     console.log('Raw Orders Data:', {
       orderCount: orders.length,
       firstOrder: orders[0] ? {
         id: orders[0].id,
         orderNumber: orders[0].order_number,
+        shopifyCustomerId: orders[0].shopify_customer_id,
         lineItemsCount: orders[0].order_line_items_v2?.length || 0
       } : null
     })
@@ -205,9 +141,7 @@ export async function GET(
       count: transformedOrders.length,
       message: `Retrieved ${transformedOrders.length} orders for customer ${customerId}`,
       customerDetails: {
-        id: customerData.id,
-        email: customerData.email,
-        shopifyCustomerId: customerData.shopify_customer_id
+        shopifyCustomerId: customerId
       },
       requestContext: requestDebug
     })

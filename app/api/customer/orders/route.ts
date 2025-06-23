@@ -134,25 +134,25 @@ export async function GET(request: NextRequest) {
     // Fetch line items for these orders
     const shopifyIds = orders.map(order => order.shopify_id).filter(id => id)
     
-    const { data: lineItems, error: lineItemsError } = await supabase
-      .from("order_line_items_v2")
-      .select(`
-        line_item_id,
-        order_id,
-        name,
-        description,
-        quantity,
-        price,
-        img_url,
-        nfc_tag_id,
-        nfc_claimed_at,
-        certificate_url,
-        certificate_token,
-        edition_number,
-        vendor_name,
-        status
-      `)
-      .in("order_id", shopifyIds)
+      const { data: lineItems, error: lineItemsError } = await supabase
+        .from("order_line_items_v2")
+        .select(`
+          line_item_id,
+          order_id,
+          name,
+          description,
+          quantity,
+          price,
+          img_url,
+          nfc_tag_id,
+          nfc_claimed_at,
+          certificate_url,
+          certificate_token,
+          edition_number,
+          vendor_name,
+          status
+        `)
+        .in("order_id", shopifyIds)
 
     if (lineItemsError) {
       console.error("Line items query error:", {
@@ -165,16 +165,16 @@ export async function GET(request: NextRequest) {
 
     // Transform orders with their line items
     const transformedOrders = orders.map(order => ({
-      id: order.id as string,
-      order_number: order.order_number as number,
-      processed_at: order.processed_at as string,
-      total_price: order.total_price as number,
-      financial_status: order.financial_status as string,
-      fulfillment_status: order.fulfillment_status as string | null,
+        id: order.id as string,
+        order_number: order.order_number as number,
+        processed_at: order.processed_at as string,
+        total_price: order.total_price as number,
+        financial_status: order.financial_status as string,
+        fulfillment_status: order.fulfillment_status as string | null,
       line_items: (lineItems || []).filter(item => 
-        item.order_id?.toString() === order.shopify_id
-      ) || []
-    }))
+          item.order_id?.toString() === order.shopify_id
+        ) || []
+      }))
 
     return NextResponse.json({
       success: true,
