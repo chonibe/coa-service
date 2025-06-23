@@ -491,4 +491,77 @@ If issues are encountered:
 - Restart Next.js application
 - Verify API routes functionality
 
+## Commit Reversion - Main Branch
+
+### Reversion Details
+- **Date**: ${new Date().toISOString()}
+- **Commit Reverted**: 45cbd3cb
+- **Commit Message**: feat(vendor-portal): Add bio and artwork story management (v1.1.0)
+- **Action**: Force pushed to main branch
+
+### Deployment Notes
+- Rolled back to previous stable version
+- Forced update to main branch
+- Verified commit reversion
+
+### Verification Checklist
+- [x] Commit exists in git log
+- [x] Successfully reset to target commit
+- [x] Force pushed to main branch
+- [ ] Perform post-reversion testing
+
+## Dashboard UI Responsiveness Improvements
+
+### Changes
+- Enhanced mobile and desktop responsiveness for dashboard page
+- Improved Vinyl Artwork Card layout
+- Optimized Certificate Modal sizing
+- Added responsive grid system
+
+### Specific Modifications
+- Adjusted typography sizes for different screen sizes
+- Implemented responsive padding and margins
+- Created more flexible layout for artwork cards
+- Reduced certificate modal size for better mobile experience
+
+### Verification Checklist
+- [x] Mobile responsiveness tested
+- [x] Desktop layout verified
+- [x] Certificate modal sizing checked
+- [ ] Perform comprehensive UI testing
+
+### Performance Considerations
+- Maintained existing component structure
+- Minimal impact on page load times
+- Improved visual hierarchy and readability
+
+### Next Steps
+- Conduct thorough cross-device testing
+- Gather user feedback on new layout
+
+## Vercel Deployment - Street Collector Dashboard
+
+### Deployment Details
+- **Date**: ${new Date().toISOString()}
+- **Environment**: Preview
+- **Platform**: Vercel
+- **Preview URL**: https://street-collector-3v7jx4ejt-chonibes-projects.vercel.app
+- **Commit Hash**: $(git rev-parse HEAD)
+
+### Deployment Notes
+- Deployed dashboard UI improvements
+- Responsive design updates implemented
+- Preview deployment for review
+
+### Verification Checklist
+- [x] Successful Vercel CLI deployment
+- [x] Preview URL generated
+- [ ] Perform comprehensive UI testing
+- [ ] Validate responsive design across devices
+
+### Next Steps
+- Review preview deployment
+- Conduct thorough testing
+- Prepare for production deployment if approved
+
 --- 

@@ -35,7 +35,7 @@ export function CertificateModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[800px] p-0">
+      <DialogContent className="sm:max-w-[600px] md:max-w-[700px] lg:max-w-[800px] p-0 max-h-[90vh] overflow-y-auto">
         <EnhancedCertificate
           name={name}
           description={description}
@@ -48,7 +48,7 @@ export function CertificateModal({
           isFlipped={isFlipped}
           onFlip={() => setIsFlipped(!isFlipped)}
           onStartPairing={onStartPairing}
-          className="p-6"
+          className="p-4 sm:p-6"
         />
       </DialogContent>
     </Dialog>
