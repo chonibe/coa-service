@@ -19,7 +19,7 @@ import {
   LayoutGrid, 
   ArrowRight 
 } from "lucide-react"
-import { NfcTagScanner } from '@/components/NfcTagScanner'
+import { NfcTagScanner } from '@/src/components/NfcTagScanner'
 import { toast } from "@/components/ui/use-toast"
 import { Toaster } from "@/components/ui/toaster"
 import { CertificateModal } from './certificate-modal'
