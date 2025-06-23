@@ -17,9 +17,17 @@ import {
   WifiOff, 
   FileText, 
   ExternalLink, 
-  Album 
+  Album,
+  Nfc 
 } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { 
+  Dialog, 
+  DialogContent, 
+  DialogHeader, 
+  DialogTitle, 
+  DialogDescription 
+} from "@/components/ui/dialog"
 
 export interface ArtworkCardProps {
   artwork: {
@@ -37,6 +45,7 @@ export interface ArtworkCardProps {
   variant?: 'default' | 'compact' | 'detailed'
   onCertificateView?: () => void
   onSelect?: () => void
+  onNfcPair?: () => Promise<void>
   isSelected?: boolean
 }
 
@@ -45,9 +54,68 @@ export function ArtworkCard({
   variant = 'default',
   onCertificateView,
   onSelect,
+  onNfcPair,
   isSelected = false
 }: ArtworkCardProps) {
   const [isHovered, setIsHovered] = useState(false)
+  const [isNfcPairingModalOpen, setIsNfcPairingModalOpen] = useState(false)
+  const [isNfcPairing, setIsNfcPairing] = useState(false)
+
+  const handleNfcPair = async () => {
+    if (!onNfcPair) return
+
+    setIsNfcPairing(true)
+    try {
+      await onNfcPair()
+      setIsNfcPairingModalOpen(false)
+    } catch (error) {
+      console.error('NFC Pairing Error:', error)
+      // TODO: Add error toast or notification
+    } finally {
+      setIsNfcPairing(false)
+    }
+  }
+
+  const renderNfcPairingModal = () => (
+    <Dialog open={isNfcPairingModalOpen} onOpenChange={setIsNfcPairingModalOpen}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Pair NFC Tag</DialogTitle>
+          <DialogDescription>
+            Hold your NFC tag close to the device to pair with this artwork.
+          </DialogDescription>
+        </DialogHeader>
+        <div className="flex flex-col items-center space-y-4 p-4">
+          <Nfc className="w-24 h-24 text-primary animate-pulse" />
+          <Button 
+            onClick={handleNfcPair} 
+            disabled={isNfcPairing}
+            className="w-full"
+          >
+            {isNfcPairing ? 'Pairing...' : 'Start Pairing'}
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
+  )
+
+  const renderNfcPairingIcon = () => {
+    if (artwork.nfcClaimedAt) return null
+
+    return (
+      <Button
+        variant="ghost"
+        size="icon"
+        className="absolute top-4 left-4 z-10 bg-background/50 backdrop-blur-sm"
+        onClick={(e) => {
+          e.stopPropagation()
+          setIsNfcPairingModalOpen(true)
+        }}
+      >
+        <Nfc className="w-5 h-5 text-primary" />
+      </Button>
+    )
+  }
 
   const calculateRarityScore = () => {
     if (!artwork.editionNumber || !artwork.editionTotal) return 'Limited'
@@ -173,6 +241,7 @@ export function ArtworkCard({
             )}
             onClick={onSelect}
           >
+            {renderNfcPairingIcon()}
             <Card>
               <div className="relative aspect-square overflow-hidden">
                 {artwork.imageUrl ? (
@@ -252,5 +321,10 @@ export function ArtworkCard({
     }
   }
 
-  return renderCardContent()
+  return (
+    <>
+      {renderCardContent()}
+      {renderNfcPairingModal()}
+    </>
+  )
 } 
