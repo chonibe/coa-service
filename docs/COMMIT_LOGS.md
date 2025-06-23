@@ -478,4 +478,60 @@
 - Zero downtime update
 - Maintained existing functionality
 
+## Commit: Enhance Certificate Modal and NFC Pairing Wizard [2025-06-23]
+
+### 🎨 UI/UX Improvements
+- **Certificate Modal Redesign**
+  - Implemented multi-tab view for certificates
+  - Added dedicated tabs for:
+    - Certificate document
+    - Artwork details
+    - Artist biography
+    - Artwork story
+  - Enhanced visual presentation with badges and responsive layout
+  - Improved information display and user interaction
+
+### 🔧 NFC Pairing Functionality
+- **NFC Pairing Wizard**
+  - Created comprehensive step-by-step NFC tag pairing process
+  - Implemented multi-stage pairing workflow:
+    1. Introduction
+    2. Scanning
+    3. Verification
+    4. Success/Error handling
+  - Added progress tracking
+  - Robust error management
+  - Web NFC API integration
+
+### 📝 Documentation
+- Created detailed README for NFC Pairing Wizard
+- Documented component props, usage, and technical implementation
+- Added accessibility and compatibility notes
+
+### 🚀 Deployment
+- Successfully deployed to Vercel
+- Verified component functionality
+- Minimal build warnings
+
+### 🔍 Key Enhancements
+- Improved user experience for certificate viewing
+- Streamlined NFC tag pairing process
+- Enhanced information presentation
+- Added comprehensive error handling
+
+### 🌟 Future Improvements
+- Expand NFC tag verification methods
+- Add more detailed artist and artwork information
+- Implement advanced error logging
+
+### 📊 Performance
+- Lightweight component implementation
+- Efficient state management
+- Minimal additional bundle size
+
+### 🔒 Security Considerations
+- Secure NFC tag verification
+- Comprehensive error handling
+- Graceful degradation for unsupported browsers
+
 --- 
