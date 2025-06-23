@@ -13,7 +13,7 @@
     "SUPABASE_SERVICE_ROLE_KEY": "@supabase_service_role_key",
     "JWT_SECRET": "@jwt_secret"
   },
-  "regions": ["all"],
+  "regions": ["sfo1"],
   "github": {
     "enabled": true,
     "autoDeploy": true
