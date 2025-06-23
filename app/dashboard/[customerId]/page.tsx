@@ -49,7 +49,6 @@ interface LineItem {
   nfc_tag_id?: string
   nfc_claimed_at?: string
   status?: string
-  description?: string
 }
 
 interface Order {
@@ -104,34 +103,33 @@ const VinylArtworkCard = ({
     <>
       <div 
         className={`
-          relative w-full h-auto aspect-[1.618/1] rounded-xl sm:rounded-2xl overflow-hidden
-          ${isSelected ? 'ring-2 ring-amber-500/40 shadow-lg' : 'shadow-md'}
-          bg-gradient-to-br from-zinc-900/80 via-zinc-800/80 to-zinc-900/80 
-          backdrop-blur-sm border border-zinc-700/40
+          relative w-full h-auto aspect-[1.618/1] rounded-2xl overflow-hidden
+          ${isSelected ? 'ring-2 ring-amber-500/50 shadow-xl shadow-amber-500/10' : 'shadow-lg'}
+          bg-gradient-to-br from-zinc-900/90 via-zinc-800/90 to-zinc-900/90 
+          backdrop-blur-sm border border-zinc-700/50
           flex flex-col sm:flex-row
           transition-all duration-300 ease-in-out
-          hover:shadow-xl hover:border-zinc-600/40
+          hover:shadow-xl hover:border-zinc-600/50
           group cursor-pointer
-          space-y-2 sm:space-y-0 sm:space-x-4
         `}
         onClick={() => onSelect()}
       >
         {/* Status Badge - Top Right */}
-        <div className="absolute top-2 right-2 z-20">
+        <div className="absolute top-3 right-3 z-20">
           {status === "nfc-paired" && (
-            <Badge variant="outline" className="bg-green-500/10 text-green-400 border-green-500/20 gap-1 whitespace-nowrap text-xs sm:text-sm">
+            <Badge variant="outline" className="bg-green-500/10 text-green-400 border-green-500/20 gap-1 whitespace-nowrap">
               <Wifi className="h-3 w-3" />
               Authenticated
             </Badge>
           )}
           {status === "unpaired" && (
-            <Badge variant="outline" className="bg-orange-500/10 text-orange-400 border-orange-500/20 gap-1 whitespace-nowrap text-xs sm:text-sm">
+            <Badge variant="outline" className="bg-orange-500/10 text-orange-400 border-orange-500/20 gap-1 whitespace-nowrap">
               <WifiOff className="h-3 w-3" />
               Ready to Pair
             </Badge>
           )}
           {status === "no-certificate" && (
-            <Badge variant="outline" className="bg-zinc-500/10 text-zinc-400 border-zinc-500/20 gap-1 whitespace-nowrap text-xs sm:text-sm">
+            <Badge variant="outline" className="bg-zinc-500/10 text-zinc-400 border-zinc-500/20 gap-1 whitespace-nowrap">
               <CertificateIcon className="h-3 w-3" />
               No Certificate
             </Badge>
@@ -148,12 +146,12 @@ const VinylArtworkCard = ({
             />
           ) : (
             <div className="w-full h-full bg-zinc-800/50 flex items-center justify-center">
-              <Album className="w-10 sm:w-16 h-10 sm:h-16 text-zinc-600" />
+              <Album className="w-16 h-16 text-zinc-600" />
             </div>
           )}
           {item.edition_number && item.edition_total && (
             <Badge 
-              className="absolute bottom-2 left-2 bg-black/60 text-white border-zinc-700 text-xs sm:text-sm"
+              className="absolute bottom-2 left-2 bg-black/60 text-white border-zinc-700"
             >
               Edition #{item.edition_number}/{item.edition_total}
             </Badge>
@@ -161,18 +159,18 @@ const VinylArtworkCard = ({
         </div>
 
         {/* Content Container */}
-        <div className="relative flex-1 p-3 sm:p-6 flex flex-col justify-between min-w-0">
+        <div className="relative flex-1 p-4 sm:p-6 flex flex-col justify-between min-w-0">
           {/* Top Section - Title, Artist, and Price */}
-          <div className="space-y-1 sm:space-y-2">
-            <h3 className="text-base sm:text-lg md:text-xl font-bold text-white truncate">
+          <div className="space-y-2">
+            <h3 className="text-lg sm:text-xl font-bold text-white truncate pr-24">
               {item.name}
             </h3>
-            <div className="flex justify-between items-start gap-2 sm:gap-4">
-              <p className="text-xs sm:text-sm text-zinc-400 truncate max-w-[70%]">
+            <div className="flex justify-between items-start gap-4">
+              <p className="text-sm text-zinc-400 truncate max-w-[70%]">
                 {item.vendor_name || "Street Collector"}
               </p>
               {price && item.quantity && (
-                <p className="text-xs sm:text-sm text-zinc-400 whitespace-nowrap">
+                <p className="text-sm text-zinc-400 whitespace-nowrap">
                   {price} × {item.quantity}
                 </p>
               )}
@@ -180,35 +178,35 @@ const VinylArtworkCard = ({
           </div>
 
           {/* Action Buttons */}
-          <div className="flex flex-col sm:flex-row gap-2 mt-2 sm:mt-4">
+          <div className="flex flex-col gap-2 mt-4">
             {item.certificate_url && (
               <Button 
                 size="sm" 
                 variant="outline" 
-                className="w-full sm:w-auto justify-start text-amber-400 border-amber-500/20 bg-amber-500/5 hover:bg-amber-500/10 hover:border-amber-500/30 transition-colors"
+                className="w-full justify-start text-amber-400 border-amber-500/20 bg-amber-500/5 hover:bg-amber-500/10 hover:border-amber-500/30 transition-colors"
                 onClick={(e) => {
                   e.stopPropagation()
                   onCertificateView()
                 }}
               >
-                <CertificateIcon className="h-3 w-3 sm:h-4 sm:w-4 mr-2 flex-shrink-0" />
-                <span className="text-xs sm:text-sm flex-1">View Certificate</span>
-                <ArrowRight className="h-3 w-3 sm:h-4 sm:w-4 text-amber-500/50" />
+                <CertificateIcon className="h-4 w-4 mr-2 flex-shrink-0" />
+                <span className="flex-1">View Certificate</span>
+                <ArrowRight className="h-4 w-4 text-amber-500/50" />
               </Button>
             )}
             {status === "unpaired" && (
               <Button 
                 size="sm" 
                 variant="outline" 
-                className="w-full sm:w-auto justify-start text-blue-400 border-blue-500/20 bg-blue-500/5 hover:bg-blue-500/10 hover:border-blue-500/30 transition-colors"
+                className="w-full justify-start text-blue-400 border-blue-500/20 bg-blue-500/5 hover:bg-blue-500/10 hover:border-blue-500/30 transition-colors"
                 onClick={(e) => {
                   e.stopPropagation()
                   setIsNFCWizardOpen(true)
                 }}
               >
-                <Wifi className="h-3 w-3 sm:h-4 sm:w-4 mr-2 flex-shrink-0" />
-                <span className="text-xs sm:text-sm flex-1">Pair NFC Tag</span>
-                <ArrowRight className="h-3 w-3 sm:h-4 sm:w-4 text-blue-500/50" />
+                <Wifi className="h-4 w-4 mr-2 flex-shrink-0" />
+                <span className="flex-1">Pair NFC Tag</span>
+                <ArrowRight className="h-4 w-4 text-blue-500/50" />
               </Button>
             )}
           </div>
@@ -574,7 +572,8 @@ export default function CustomerDashboardById() {
   const params = useParams()
   const [error, setError] = useState<string | null>(null)
   const [orders, setOrders] = useState<Order[]>([])
-  const [selectedItem, setSelectedItem] = useState<LineItem | null>(null)
+  const [selectedLineItem, setSelectedLineItem] = useState<LineItem>()
+  const [selectedArtworkIndex, setSelectedArtworkIndex] = useState<number>(-1)
   const [view, setView] = useState<'grid' | 'timeline'>('grid')
   const [filter, setFilter] = useState<'all' | 'authenticated' | 'pending'>('all')
   const [isLoading, setIsLoading] = useState(true)
@@ -879,10 +878,11 @@ export default function CustomerDashboardById() {
                 >
                   <VinylArtworkCard
                     item={item}
-                    isSelected={selectedItem?.line_item_id === item.line_item_id}
-                    onSelect={() => setSelectedItem(item)}
+                    isSelected={selectedArtworkIndex === index}
+                    onSelect={() => setSelectedArtworkIndex(index)}
                     onCertificateView={() => {
-                      setSelectedItem(item)
+                      setSelectedLineItem(item)
+                      setSelectedArtworkIndex(index)
                     }}
                     onNFCPaired={() => {
                       window.location.reload()
@@ -934,10 +934,11 @@ export default function CustomerDashboardById() {
                         <VinylArtworkCard
                           key={item.line_item_id}
                           item={item}
-                          isSelected={selectedItem?.line_item_id === item.line_item_id}
-                          onSelect={() => setSelectedItem(item)}
+                          isSelected={selectedArtworkIndex === index}
+                          onSelect={() => setSelectedArtworkIndex(index)}
                           onCertificateView={() => {
-                            setSelectedItem(item)
+                            setSelectedLineItem(item)
+                            setSelectedArtworkIndex(index)
                           }}
                           onNFCPaired={() => {
                             window.location.reload()
@@ -975,21 +976,10 @@ export default function CustomerDashboardById() {
       </div>
 
       {/* Certificate Modal */}
-      {selectedItem && (
+      {selectedLineItem && (
         <CertificateModal
-          open={true}
-          onOpenChange={() => setSelectedItem(null)}
-          name={selectedItem.name}
-          description={selectedItem.description || ''}
-          artistName={selectedItem.vendor_name || "Street Collector"}
-          editionInfo={`${selectedItem.edition_number || 'N/A'}/${selectedItem.edition_total || 'N/A'}`}
-          nfcTagId={selectedItem.nfc_tag_id}
-          nfcClaimedAt={selectedItem.nfc_claimed_at}
-          imgUrl={selectedItem.img_url}
-          certificateUrl={selectedItem.certificate_url}
-          onStartPairing={() => {
-            console.log('Start NFC Pairing')
-          }}
+          lineItem={selectedLineItem}
+          onClose={() => setSelectedLineItem(undefined)}
         />
       )}
     </div>

@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, useRef } from "react"
 import { useRouter } from "next/navigation"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -39,6 +39,44 @@ interface Order {
   financial_status: string
   fulfillment_status: string | null
   line_items: LineItem[]
+}
+
+function FloatingCard({ children, className = "", ...props }: React.HTMLAttributes<HTMLDivElement>) {
+  const cardRef = useRef<HTMLDivElement>(null)
+  
+  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    const card = cardRef.current
+    if (!card) return
+    
+    const rect = card.getBoundingClientRect()
+    const x = e.clientX - rect.left
+    const y = e.clientY - rect.top
+    const centerX = rect.width / 2
+    const centerY = rect.height / 2
+    const rotateX = ((y - centerY) / centerY) * 5
+    const rotateY = ((x - centerX) / centerX) * -5
+    
+    card.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale3d(1.02,1.02,1.02)`
+  }
+  
+  const handleMouseLeave = () => {
+    const card = cardRef.current
+    if (!card) return
+    card.style.transform = ""
+  }
+  
+  return (
+    <div
+      ref={cardRef}
+      className={`relative bg-zinc-900/50 backdrop-blur-sm border border-zinc-800/50 rounded-xl shadow-lg transition-all duration-300 hover:shadow-xl hover:border-zinc-700/50 overflow-hidden ${className}`}
+      style={{ willChange: "transform" }}
+      onMouseMove={handleMouseMove}
+      onMouseLeave={handleMouseLeave}
+      {...props}
+    >
+      {children}
+    </div>
+  )
 }
 
 export default function CustomerDashboard() {
@@ -288,87 +326,79 @@ export default function CustomerDashboard() {
             ) : (
               <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {orders.map((order) => (
-                  <Card key={order.id}>
-                    <CardHeader>
-                      <CardTitle>Order #{order.order_number}</CardTitle>
-                      <CardDescription>
-                        {new Date(order.processed_at).toLocaleDateString()} • {order.financial_status}
-                      </CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                      {order.line_items.map((item) => {
-                        const nfcStatus = getNfcStatus(item)
-                        return (
-                          <div 
-                            key={item.line_item_id} 
-                            className="relative group cursor-pointer rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-all duration-300"
+                  <div
+                    key={order.id}
+                    className="bg-zinc-900 rounded-xl border border-zinc-800 overflow-hidden"
+                  >
+                    <div className="p-4 sm:p-6">
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
+                        <div>
+                          <h2 className="text-lg sm:text-xl font-semibold">Order #{order.order_number}</h2>
+                          <p className="text-sm text-zinc-400">
+                            {new Date(order.processed_at).toLocaleDateString()}
+                          </p>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className={`px-3 py-1 rounded-full text-sm ${
+                            order.fulfillment_status === 'fulfilled' ? 'bg-green-500/20 text-green-400' :
+                            order.fulfillment_status === 'partial' ? 'bg-yellow-500/20 text-yellow-400' :
+                            'bg-blue-500/20 text-blue-400'
+                          }`}>
+                            {order.fulfillment_status?.charAt(0).toUpperCase() + order.fulfillment_status?.slice(1) || 'Processing'}
+                          </span>
+                          <span className="text-lg font-semibold">
+                            ${order.total_price?.toFixed(2) || '0.00'}
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="space-y-4">
+                        {order.line_items.map((item) => (
+                          <FloatingCard
+                            key={item.line_item_id}
+                            className="group relative flex items-start gap-4 p-4 cursor-pointer"
+                            onClick={() => handleCertificateClick(item)}
                           >
-                            <div 
-                              className="absolute inset-0 bg-gradient-to-r from-primary/10 to-primary/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
-                              onClick={() => handleCertificateClick(item)}
-                            />
-                            <div className="p-4 flex flex-col sm:flex-row items-start sm:items-center space-y-3 sm:space-y-0 sm:space-x-4">
-                              <div className="flex-shrink-0">
-                                {item.img_url ? (
-                                  <img 
-                                    src={item.img_url} 
-                                    alt={item.name} 
-                                    className="w-20 h-20 object-cover rounded-md"
-                                  />
-                                ) : (
-                                  <div className="w-20 h-20 bg-gray-200 rounded-md flex items-center justify-center">
-                                    <Album className="w-10 h-10 text-gray-500" />
-                                  </div>
+                            {item.img_url && (
+                              <div className="relative w-24 h-24 flex-shrink-0">
+                                <img
+                                  src={item.img_url}
+                                  alt={item.name}
+                                  className="w-full h-full object-cover rounded-lg"
+                                />
+                              </div>
+                            )}
+                            <div className="flex-1 min-w-0">
+                              <h3 className="font-medium text-white truncate">{item.name}</h3>
+                              {item.vendor_name && (
+                                <p className="text-sm text-zinc-400 mt-1">{item.vendor_name}</p>
+                              )}
+                              {item.edition_number && item.edition_total && (
+                                <div className="flex items-center gap-2 mt-2">
+                                  <Hash className="h-4 w-4 text-indigo-400" />
+                                  <span className="text-sm text-indigo-400">
+                                    Edition #{item.edition_number} of {item.edition_total}
+                                  </span>
+                                </div>
+                              )}
+                              <div className="flex items-center gap-2 mt-2">
+                                {item.nfc_tag_id && (
+                                  <Button 
+                                    variant="outline" 
+                                    size="sm" 
+                                    onClick={() => handleNfcPairing(item)}
+                                  >
+                                    <Wifi className="h-4 w-4 mr-2" /> 
+                                    {getNfcStatus(item).label}
+                                  </Button>
                                 )}
                               </div>
-                              <div className="flex-grow space-y-1">
-                                <div className="flex justify-between items-center">
-                                  <h3 className="font-semibold text-sm sm:text-base">{item.name}</h3>
-                                  <Badge 
-                                    variant={nfcStatus.variant} 
-                                    className="hidden sm:inline-flex"
-                                  >
-                                    {nfcStatus.label}
-                                  </Badge>
-                                </div>
-                                <p className="text-xs sm:text-sm text-muted-foreground">
-                                  {item.vendor_name || 'Unknown Vendor'} • Edition {item.edition_number || 'N/A'}/{item.edition_total || 'N/A'}
-                                </p>
-                                <Badge 
-                                  variant={nfcStatus.variant} 
-                                  className="sm:hidden mt-2"
-                                >
-                                  {nfcStatus.label}
-                                </Badge>
-                              </div>
                             </div>
-                            <div className="absolute bottom-0 left-0 right-0 bg-background/80 backdrop-blur-sm p-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex justify-between items-center">
-                              <Button 
-                                size="sm" 
-                                variant="outline" 
-                                className="w-1/2 mr-2"
-                                onClick={() => handleCertificateClick(item)}
-                              >
-                                View Certificate
-                              </Button>
-                              {!item.nfc_claimed_at && item.nfc_tag_id && (
-                                <Button 
-                                  size="sm" 
-                                  className="w-1/2"
-                                  onClick={() => {
-                                    setSelectedLineItem(item)
-                                    handleNfcPairing(item)
-                                  }}
-                                >
-                                  Authenticate NFC
-                                </Button>
-                              )}
-                            </div>
-                          </div>
-                        )
-                      })}
-                    </CardContent>
-                  </Card>
+                          </FloatingCard>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
                 ))}
               </div>
             )}

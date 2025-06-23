@@ -510,58 +510,24 @@ If issues are encountered:
 - [x] Force pushed to main branch
 - [ ] Perform post-reversion testing
 
-## Dashboard UI Responsiveness Improvements
-
-### Changes
-- Enhanced mobile and desktop responsiveness for dashboard page
-- Improved Vinyl Artwork Card layout
-- Optimized Certificate Modal sizing
-- Added responsive grid system
-
-### Specific Modifications
-- Adjusted typography sizes for different screen sizes
-- Implemented responsive padding and margins
-- Created more flexible layout for artwork cards
-- Reduced certificate modal size for better mobile experience
-
-### Verification Checklist
-- [x] Mobile responsiveness tested
-- [x] Desktop layout verified
-- [x] Certificate modal sizing checked
-- [ ] Perform comprehensive UI testing
-
-### Performance Considerations
-- Maintained existing component structure
-- Minimal impact on page load times
-- Improved visual hierarchy and readability
-
-### Next Steps
-- Conduct thorough cross-device testing
-- Gather user feedback on new layout
-
-## Vercel Deployment - Street Collector Dashboard
+## Vercel CLI Deployment - Street Collector
 
 ### Deployment Details
 - **Date**: ${new Date().toISOString()}
 - **Environment**: Preview
 - **Platform**: Vercel
-- **Preview URL**: https://street-collector-3v7jx4ejt-chonibes-projects.vercel.app
-- **Commit Hash**: $(git rev-parse HEAD)
+- **URL**: https://street-collector-78v4psez2-chonibes-projects.vercel.app
+- **Deployment ID**: cZhhxjG4NwHEfQX
 
 ### Deployment Notes
-- Deployed dashboard UI improvements
-- Responsive design updates implemented
-- Preview deployment for review
+- Deployed latest changes to preview environment
+- Customer dashboard line items updated
+- Vercel CLI deployment successful
 
 ### Verification Checklist
 - [x] Successful Vercel CLI deployment
-- [x] Preview URL generated
-- [ ] Perform comprehensive UI testing
-- [ ] Validate responsive design across devices
-
-### Next Steps
-- Review preview deployment
-- Conduct thorough testing
-- Prepare for production deployment if approved
+- [x] Preview URL accessible
+- [ ] Perform post-deployment testing
+- [ ] Review changes in preview environment
 
 --- 
