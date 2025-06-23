@@ -19,7 +19,9 @@ import {
   ArrowRight,
   Search,
   SortAsc,
-  SortDesc
+  SortDesc,
+  FileText,
+  Filter
 } from "lucide-react"
 import { NfcTagScanner } from '@/src/components/NfcTagScanner'
 import { toast } from "@/components/ui/use-toast"
@@ -27,11 +29,13 @@ import { Toaster } from "@/components/ui/toaster"
 import { CertificateModal } from '../../customer/dashboard/certificate-modal'
 import { useNFCScan } from '@/hooks/use-nfc-scan'
 import { motion, LayoutGroup, Variants, useScroll } from "framer-motion"
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Skeleton } from "@/components/ui/skeleton"
 import { AnimatePresence } from "framer-motion"
+import { Label } from "@/components/ui/label"
+import { Checkbox } from "@/components/ui/checkbox"
 
 // Type Definitions
 interface LineItem {
@@ -73,6 +77,16 @@ interface SortOption {
   direction: 'asc' | 'desc'
 }
 
+// Add type for advanced filters
+interface AdvancedFilters {
+  minEdition: number
+  maxEdition: number
+  minValue: number
+  maxValue: number
+  rarityLevels: string[]
+  authenticatedOnly: boolean
+}
+
 // Vinyl-like artwork card component
 const VinylArtworkCard = ({ 
   item, 
@@ -88,37 +102,89 @@ const VinylArtworkCard = ({
   onNFCPaired: () => void
 }) => {
   const [isHovered, setIsHovered] = useState(false)
+  const [isExpanded, setIsExpanded] = useState(false)
 
-  const getCertificationStatus = () => {
-    if (item.nfc_claimed_at) return 'Authenticated'
-    return 'Pending Authentication'
+  const calculateRarityScore = () => {
+    // Simple rarity calculation based on edition number and total
+    const totalEditions = item.edition_total || 1
+    const editionNumber = item.edition_number || 1
+    const rarityPercentage = ((totalEditions - editionNumber + 1) / totalEditions) * 100
+    
+    if (rarityPercentage > 90) return 'Ultra Rare'
+    if (rarityPercentage > 70) return 'Rare'
+    if (rarityPercentage > 50) return 'Limited'
+    return 'Common'
+  }
+
+  const estimateArtworkValue = () => {
+    // Placeholder value estimation logic
+    const basePrice = item.price || 0
+    const rarityMultiplier = {
+      'Ultra Rare': 3,
+      'Rare': 2,
+      'Limited': 1.5,
+      'Common': 1
+    }[calculateRarityScore()]
+    
+    return basePrice * (rarityMultiplier || 1)
   }
 
   return (
-    <div 
-      className={`
-        relative w-full flex items-center space-x-4 p-4 rounded-xl transition-all duration-300 ease-in-out
-        ${isSelected 
-          ? 'bg-amber-500/10 border border-amber-500/30' 
-          : 'bg-zinc-800/50 hover:bg-zinc-700/50'
+    <motion.div 
+      layout
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ 
+        opacity: 1, 
+        y: 0,
+        scale: isHovered ? 1.02 : 1,
+        transition: { 
+          type: 'spring', 
+          stiffness: 300, 
+          damping: 20 
         }
-        cursor-pointer
+      }}
+      className={`
+        relative w-full flex items-center space-x-4 p-4 rounded-xl 
+        transition-all duration-300 ease-in-out cursor-pointer
+        ${isSelected 
+          ? 'bg-amber-500/10 border border-amber-500/30 shadow-lg' 
+          : 'bg-zinc-800/50 hover:bg-zinc-700/50 hover:shadow-md'
+        }
+        group
       `}
-      onClick={onSelect}
+      onClick={() => {
+        onSelect()
+        setIsExpanded(!isExpanded)
+      }}
       onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
+      onMouseLeave={() => {
+        setIsHovered(false)
+        setIsExpanded(false)
+      }}
     >
-      {/* Artwork Image */}
-      <div className="flex-shrink-0 w-24 h-24 md:w-32 md:h-32 rounded-lg overflow-hidden">
+      {/* Artwork Image with Rarity Indicator */}
+      <div className="relative flex-shrink-0 w-24 h-24 md:w-32 md:h-32 rounded-lg overflow-hidden">
         <img 
           src={item.img_url || '/placeholder-logo.png'} 
           alt={item.name} 
-          className="w-full h-full object-cover"
+          className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105" 
         />
+        <div className={`
+          absolute bottom-1 left-1 px-2 py-0.5 text-xs rounded-full
+          ${
+            calculateRarityScore() === 'Ultra Rare' 
+              ? 'bg-purple-500/80 text-white' 
+              : calculateRarityScore() === 'Rare'
+              ? 'bg-amber-500/80 text-white'
+              : 'bg-zinc-700/80 text-zinc-300'
+          }
+        `}>
+          {calculateRarityScore()}
+        </div>
       </div>
 
       {/* Artwork Details */}
-      <div className="flex-grow space-y-2">
+      <div className="flex-grow space-y-2 relative">
         <div className="flex justify-between items-start">
           <div>
             <h3 className="text-base font-semibold text-white truncate max-w-[70%]">
@@ -141,10 +207,36 @@ const VinylArtworkCard = ({
                 : 'bg-yellow-500/20 text-yellow-300'
               }
             `}>
-              {getCertificationStatus()}
+              {item.nfc_claimed_at ? 'Authenticated' : 'Pending'}
             </div>
           </div>
         </div>
+
+        {/* Expanded Details */}
+        {isExpanded && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ 
+              opacity: 1, 
+              height: 'auto',
+              transition: { duration: 0.3 }
+            }}
+            className="mt-2 space-y-2 bg-zinc-700/30 rounded-lg p-3"
+          >
+            <div className="flex justify-between text-xs">
+              <span className="text-zinc-400">Estimated Value</span>
+              <span className="font-semibold text-white">
+                ${estimateArtworkValue().toFixed(2)}
+              </span>
+            </div>
+            <div className="flex justify-between text-xs">
+              <span className="text-zinc-400">Rarity</span>
+              <span className="font-semibold text-white">
+                {calculateRarityScore()}
+              </span>
+            </div>
+          </motion.div>
+        )}
 
         {/* Actions */}
         <div className="flex space-x-2 mt-2">
@@ -154,9 +246,10 @@ const VinylArtworkCard = ({
                 e.stopPropagation()
                 onCertificateView()
               }}
-              className="glass-effect rounded-lg px-3 py-1 text-xs text-white hover:bg-zinc-700/50 transition"
+              className="glass-effect rounded-lg px-3 py-1 text-xs text-white hover:bg-zinc-700/50 transition flex items-center space-x-1"
             >
-              View Certificate
+              <FileText className="w-3 h-3" />
+              <span>Certificate</span>
             </button>
           )}
 
@@ -166,14 +259,15 @@ const VinylArtworkCard = ({
                 e.stopPropagation()
                 onNFCPaired()
               }}
-              className="glass-effect rounded-lg px-3 py-1 text-xs text-white hover:bg-zinc-700/50 transition"
+              className="glass-effect rounded-lg px-3 py-1 text-xs text-white hover:bg-zinc-700/50 transition flex items-center space-x-1"
             >
-              Pair NFC
+              <Wifi className="w-3 h-3" />
+              <span>Pair NFC</span>
             </button>
           )}
         </div>
       </div>
-    </div>
+    </motion.div>
   )
 }
 
@@ -518,6 +612,94 @@ const ArtworkCardSkeleton = () => (
   </div>
 )
 
+// Modify the filtering logic to be a separate function
+const createFilteredLineItems = (
+  orders: Order[], 
+  filter: 'all' | 'authenticated' | 'pending', 
+  searchQuery: string, 
+  sortOption: SortOption, 
+  advancedFilters: AdvancedFilters
+) => {
+  let items = orders.flatMap((order: Order) => 
+    order.line_items.filter((item: LineItem) => {
+      // Basic status filter
+      if (advancedFilters.authenticatedOnly && !item.nfc_claimed_at) return false
+
+      // Rarity filter
+      const rarityScore = (() => {
+        const totalEditions = item.edition_total || 1
+        const editionNumber = item.edition_number || 1
+        const rarityPercentage = ((totalEditions - editionNumber + 1) / totalEditions) * 100
+        
+        if (rarityPercentage > 90) return 'Ultra Rare'
+        if (rarityPercentage > 70) return 'Rare'
+        if (rarityPercentage > 50) return 'Limited'
+        return 'Common'
+      })()
+
+      if (advancedFilters.rarityLevels.length > 0 && 
+          !advancedFilters.rarityLevels.includes(rarityScore)) return false
+
+      // Edition number filter
+      if (item.edition_number) {
+        if (item.edition_number < advancedFilters.minEdition) return false
+        if (item.edition_number > advancedFilters.maxEdition) return false
+      }
+
+      // Value filter
+      const estimatedValue = (() => {
+        const basePrice = item.price || 0
+        const rarityMultiplier = {
+          'Ultra Rare': 3,
+          'Rare': 2,
+          'Limited': 1.5,
+          'Common': 1
+        }[rarityScore] || 1
+        
+        return basePrice * rarityMultiplier
+      })()
+
+      if (estimatedValue < advancedFilters.minValue) return false
+      if (estimatedValue > advancedFilters.maxValue) return false
+
+      // Existing search and status filters
+      if (filter === 'authenticated') return item.nfc_claimed_at
+      if (filter === 'pending') return !item.nfc_claimed_at
+
+      return true
+    }).map((item: LineItem) => ({
+      ...item,
+      order_date: new Date(order.processed_at)
+    }))
+  )
+
+  // Apply search filter
+  if (searchQuery) {
+    const query = searchQuery.toLowerCase()
+    items = items.filter((item: LineItem & { order_date: Date }) => 
+      item.name.toLowerCase().includes(query) ||
+      (item.vendor_name && item.vendor_name.toLowerCase().includes(query))
+    )
+  }
+
+  // Apply sorting
+  items.sort((a: LineItem & { order_date: Date }, b: LineItem & { order_date: Date }) => {
+    const direction = sortOption.direction === 'asc' ? 1 : -1
+    switch (sortOption.value) {
+      case 'name':
+        return direction * a.name.localeCompare(b.name)
+      case 'date':
+        return direction * (a.order_date.getTime() - b.order_date.getTime())
+      case 'price':
+        return direction * ((a.price || 0) - (b.price || 0))
+      default:
+        return 0
+    }
+  })
+
+  return items
+}
+
 export default function CustomerDashboardById() {
   const router = useRouter()
   const params = useParams()
@@ -535,6 +717,15 @@ export default function CustomerDashboardById() {
     direction: 'asc'
   })
   const { scrollYProgress } = useScroll()
+  const [isAdvancedFilterOpen, setIsAdvancedFilterOpen] = useState(false)
+  const [advancedFilters, setAdvancedFilters] = useState<AdvancedFilters>({
+    minEdition: 0,
+    maxEdition: Infinity,
+    minValue: 0,
+    maxValue: Infinity,
+    rarityLevels: [],
+    authenticatedOnly: false
+  })
 
   // Fetch orders
   useEffect(() => {
@@ -565,58 +756,16 @@ export default function CustomerDashboardById() {
   }, [params.customerId])
 
   // Filtered and sorted line items
-  const filteredLineItems = useMemo(() => {
-    let items = orders.flatMap(order => 
-      order.line_items.filter(item => {
-        // Apply status filter
-        if (filter === 'authenticated') return item.nfc_claimed_at
-        if (filter === 'pending') return !item.nfc_claimed_at
-        return true
-      }).map(item => ({
-        ...item,
-        order_date: new Date(order.processed_at)
-      }))
-    )
-
-    // Apply search filter
-    if (searchQuery) {
-      const query = searchQuery.toLowerCase()
-      items = items.filter(item => 
-        item.name.toLowerCase().includes(query) ||
-        (item.vendor_name && item.vendor_name.toLowerCase().includes(query))
-      )
-    }
-
-    // Apply sorting
-    items.sort((a, b) => {
-      const direction = sortOption.direction === 'asc' ? 1 : -1
-      switch (sortOption.value) {
-        case 'name':
-          return direction * a.name.localeCompare(b.name)
-        case 'date':
-          return direction * (a.order_date.getTime() - b.order_date.getTime())
-        case 'price':
-          return direction * ((a.price || 0) - (b.price || 0))
-        default:
-          return 0
-      }
-    })
-
-    return items
-  }, [orders, filter, searchQuery, sortOption])
-
-  // Error handling
-  if (error) {
-    return (
-      <div className="min-h-screen bg-zinc-950 text-white flex items-center justify-center">
-        <div className="text-center">
-          <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
-          <h2 className="text-xl font-bold mb-2">Error Loading Dashboard</h2>
-          <p className="text-zinc-400">{error}</p>
-        </div>
-      </div>
-    )
-  }
+  const filteredLineItems = useMemo(() => 
+    createFilteredLineItems(
+      orders, 
+      filter, 
+      searchQuery, 
+      sortOption, 
+      advancedFilters
+    ), 
+    [orders, filter, searchQuery, sortOption, advancedFilters]
+  )
 
   // Stats calculation
   const stats = useMemo(() => {
@@ -665,6 +814,131 @@ export default function CustomerDashboardById() {
         duration: 0.2 
       }
     }
+  }
+
+  // Advanced Filter Modal Component
+  const AdvancedFilterModal = ({ 
+    isOpen, 
+    onClose, 
+    filters, 
+    onApplyFilters 
+  }: { 
+    isOpen: boolean, 
+    onClose: () => void, 
+    filters: AdvancedFilters,
+    onApplyFilters: (filters: AdvancedFilters) => void
+  }) => {
+    const [localFilters, setLocalFilters] = useState(filters)
+
+    const handleApply = () => {
+      onApplyFilters(localFilters)
+      onClose()
+    }
+
+    return (
+      <Dialog open={isOpen} onOpenChange={onClose}>
+        <DialogContent className="bg-zinc-900 text-white">
+          <DialogHeader>
+            <DialogTitle>Advanced Filters</DialogTitle>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            {/* Edition Range */}
+            <div>
+              <Label>Edition Number Range</Label>
+              <div className="flex space-x-2">
+                <Input 
+                  type="number" 
+                  placeholder="Min" 
+                  value={localFilters.minEdition || ''} 
+                  onChange={(e) => setLocalFilters(prev => ({
+                    ...prev, 
+                    minEdition: Number(e.target.value)
+                  }))}
+                  className="bg-zinc-800 border-zinc-700"
+                />
+                <Input 
+                  type="number" 
+                  placeholder="Max" 
+                  value={localFilters.maxEdition === Infinity ? '' : localFilters.maxEdition} 
+                  onChange={(e) => setLocalFilters(prev => ({
+                    ...prev, 
+                    maxEdition: e.target.value ? Number(e.target.value) : Infinity
+                  }))}
+                  className="bg-zinc-800 border-zinc-700"
+                />
+              </div>
+            </div>
+
+            {/* Value Range */}
+            <div>
+              <Label>Estimated Value Range</Label>
+              <div className="flex space-x-2">
+                <Input 
+                  type="number" 
+                  placeholder="Min" 
+                  value={localFilters.minValue || ''} 
+                  onChange={(e) => setLocalFilters(prev => ({
+                    ...prev, 
+                    minValue: Number(e.target.value)
+                  }))}
+                  className="bg-zinc-800 border-zinc-700"
+                />
+                <Input 
+                  type="number" 
+                  placeholder="Max" 
+                  value={localFilters.maxValue === Infinity ? '' : localFilters.maxValue} 
+                  onChange={(e) => setLocalFilters(prev => ({
+                    ...prev, 
+                    maxValue: e.target.value ? Number(e.target.value) : Infinity
+                  }))}
+                  className="bg-zinc-800 border-zinc-700"
+                />
+              </div>
+            </div>
+
+            {/* Rarity Levels */}
+            <div>
+              <Label>Rarity Levels</Label>
+              <div className="flex space-x-2">
+                {['Ultra Rare', 'Rare', 'Limited', 'Common'].map(rarity => (
+                  <Button
+                    key={rarity}
+                    variant={localFilters.rarityLevels.includes(rarity) ? 'default' : 'outline'}
+                    onClick={() => setLocalFilters(prev => ({
+                      ...prev,
+                      rarityLevels: prev.rarityLevels.includes(rarity)
+                        ? prev.rarityLevels.filter(r => r !== rarity)
+                        : [...prev.rarityLevels, rarity]
+                    }))}
+                    className="text-xs"
+                  >
+                    {rarity}
+                  </Button>
+                ))}
+              </div>
+            </div>
+
+            {/* Authenticated Only */}
+            <div className="flex items-center space-x-2">
+              <Checkbox 
+                checked={localFilters.authenticatedOnly}
+                onCheckedChange={(checked) => setLocalFilters(prev => ({
+                  ...prev,
+                  authenticatedOnly: !!checked
+                }))}
+              />
+              <Label>Authenticated Only</Label>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={onClose}>Cancel</Button>
+            <Button onClick={handleApply}>Apply Filters</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    )
   }
 
   return (
@@ -807,6 +1081,37 @@ export default function CustomerDashboardById() {
             </div>
           </div>
         </div>
+
+        {/* Search and Filter Section */}
+        <div className="flex items-center space-x-4 mb-4">
+          <div className="relative flex-grow">
+            <Input 
+              type="text"
+              placeholder="Search artworks..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="bg-zinc-800 border-zinc-700 text-white pl-10"
+            />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400" />
+          </div>
+          
+          <Button 
+            variant="outline" 
+            size="icon"
+            onClick={() => setIsAdvancedFilterOpen(true)}
+            className="text-white border-zinc-700 hover:bg-zinc-700"
+          >
+            <Filter className="w-5 h-5" />
+          </Button>
+        </div>
+
+        {/* Advanced Filter Modal */}
+        <AdvancedFilterModal 
+          isOpen={isAdvancedFilterOpen}
+          onClose={() => setIsAdvancedFilterOpen(false)}
+          filters={advancedFilters}
+          onApplyFilters={setAdvancedFilters}
+        />
 
         {/* Loading State */}
         {isLoading && (
