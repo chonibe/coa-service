@@ -1,0 +1,62 @@
+type User {
+  id: ID!
+  email: String!
+  name: String
+  role: UserRole!
+}
+
+type Artwork {
+  id: ID!
+  title: String!
+  artist: User!
+  description: String
+  price: Float!
+  status: ArtworkStatus!
+}
+
+type Order {
+  id: ID!
+  user: User!
+  artworks: [Artwork!]!
+  total: Float!
+  status: OrderStatus!
+  createdAt: String!
+}
+
+enum UserRole {
+  ARTIST
+  COLLECTOR
+  ADMIN
+}
+
+enum ArtworkStatus {
+  AVAILABLE
+  SOLD
+  RESERVED
+}
+
+enum OrderStatus {
+  PENDING
+  COMPLETED
+  CANCELLED
+}
+
+type Query {
+  user(id: ID!): User
+  artwork(id: ID!): Artwork
+  order(id: ID!): Order
+  artworks(status: ArtworkStatus): [Artwork!]!
+}
+
+type Mutation {
+  createArtwork(
+    title: String!
+    description: String
+    price: Float!
+  ): Artwork
+
+  createOrder(
+    userId: ID!
+    artworkIds: [ID!]!
+  ): Order
+} 

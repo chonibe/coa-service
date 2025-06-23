@@ -36,6 +36,7 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { AnimatePresence } from "framer-motion"
 import { Label } from "@/components/ui/label"
 import { Checkbox } from "@/components/ui/checkbox"
+import { ArtworkCard } from "@/components/ui/artwork-card"
 
 // Type Definitions
 interface LineItem {
@@ -85,190 +86,6 @@ interface AdvancedFilters {
   maxValue: number
   rarityLevels: string[]
   authenticatedOnly: boolean
-}
-
-// Vinyl-like artwork card component
-const VinylArtworkCard = ({ 
-  item, 
-  isSelected, 
-  onSelect, 
-  onCertificateView,
-  onNFCPaired
-}: { 
-  item: LineItem, 
-  isSelected: boolean, 
-  onSelect: () => void, 
-  onCertificateView: () => void,
-  onNFCPaired: () => void
-}) => {
-  const [isHovered, setIsHovered] = useState(false)
-  const [isExpanded, setIsExpanded] = useState(false)
-
-  const calculateRarityScore = () => {
-    // Simple rarity calculation based on edition number and total
-    const totalEditions = item.edition_total || 1
-    const editionNumber = item.edition_number || 1
-    const rarityPercentage = ((totalEditions - editionNumber + 1) / totalEditions) * 100
-    
-    if (rarityPercentage > 90) return 'Ultra Rare'
-    if (rarityPercentage > 70) return 'Rare'
-    if (rarityPercentage > 50) return 'Limited'
-    return 'Common'
-  }
-
-  const estimateArtworkValue = () => {
-    // Placeholder value estimation logic
-    const basePrice = item.price || 0
-    const rarityMultiplier = {
-      'Ultra Rare': 3,
-      'Rare': 2,
-      'Limited': 1.5,
-      'Common': 1
-    }[calculateRarityScore()]
-    
-    return basePrice * (rarityMultiplier || 1)
-  }
-
-  return (
-    <motion.div 
-      layout
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ 
-        opacity: 1, 
-        y: 0,
-        scale: isHovered ? 1.02 : 1,
-        transition: { 
-          type: 'spring', 
-          stiffness: 300, 
-          damping: 20 
-        }
-      }}
-      className={`
-        relative w-full flex items-center space-x-4 p-4 rounded-xl 
-        transition-all duration-300 ease-in-out cursor-pointer
-        ${isSelected 
-          ? 'bg-amber-500/10 border border-amber-500/30 shadow-lg' 
-          : 'bg-zinc-800/50 hover:bg-zinc-700/50 hover:shadow-md'
-        }
-        group
-      `}
-      onClick={() => {
-        onSelect()
-        setIsExpanded(!isExpanded)
-      }}
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => {
-        setIsHovered(false)
-        setIsExpanded(false)
-      }}
-    >
-      {/* Artwork Image with Rarity Indicator */}
-      <div className="relative flex-shrink-0 w-24 h-24 md:w-32 md:h-32 rounded-lg overflow-hidden">
-        <img 
-          src={item.img_url || '/placeholder-logo.png'} 
-          alt={item.name} 
-          className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105" 
-        />
-        <div className={`
-          absolute bottom-1 left-1 px-2 py-0.5 text-xs rounded-full
-          ${
-            calculateRarityScore() === 'Ultra Rare' 
-              ? 'bg-purple-500/80 text-white' 
-              : calculateRarityScore() === 'Rare'
-              ? 'bg-amber-500/80 text-white'
-              : 'bg-zinc-700/80 text-zinc-300'
-          }
-        `}>
-          {calculateRarityScore()}
-        </div>
-      </div>
-
-      {/* Artwork Details */}
-      <div className="flex-grow space-y-2 relative">
-        <div className="flex justify-between items-start">
-          <div>
-            <h3 className="text-base font-semibold text-white truncate max-w-[70%]">
-              {item.name}
-            </h3>
-            <p className="text-sm text-zinc-400">
-              {item.vendor_name || 'Unknown Artist'}
-            </p>
-          </div>
-
-          {/* Edition and Status */}
-          <div className="text-right">
-            <p className="text-sm text-zinc-300">
-              #{item.edition_number} / {item.edition_total}
-            </p>
-            <div className={`
-              inline-flex items-center text-xs px-2 py-1 rounded-full
-              ${item.nfc_claimed_at 
-                ? 'bg-green-500/20 text-green-300' 
-                : 'bg-yellow-500/20 text-yellow-300'
-              }
-            `}>
-              {item.nfc_claimed_at ? 'Authenticated' : 'Pending'}
-            </div>
-          </div>
-        </div>
-
-        {/* Expanded Details */}
-        {isExpanded && (
-          <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ 
-              opacity: 1, 
-              height: 'auto',
-              transition: { duration: 0.3 }
-            }}
-            className="mt-2 space-y-2 bg-zinc-700/30 rounded-lg p-3"
-          >
-            <div className="flex justify-between text-xs">
-              <span className="text-zinc-400">Estimated Value</span>
-              <span className="font-semibold text-white">
-                ${estimateArtworkValue().toFixed(2)}
-              </span>
-            </div>
-            <div className="flex justify-between text-xs">
-              <span className="text-zinc-400">Rarity</span>
-              <span className="font-semibold text-white">
-                {calculateRarityScore()}
-              </span>
-            </div>
-          </motion.div>
-        )}
-
-        {/* Actions */}
-        <div className="flex space-x-2 mt-2">
-          {item.certificate_url && (
-            <button 
-              onClick={(e) => {
-                e.stopPropagation()
-                onCertificateView()
-              }}
-              className="glass-effect rounded-lg px-3 py-1 text-xs text-white hover:bg-zinc-700/50 transition flex items-center space-x-1"
-            >
-              <FileText className="w-3 h-3" />
-              <span>Certificate</span>
-            </button>
-          )}
-
-          {!item.nfc_claimed_at && (
-            <button 
-              onClick={(e) => {
-                e.stopPropagation()
-                onNFCPaired()
-              }}
-              className="glass-effect rounded-lg px-3 py-1 text-xs text-white hover:bg-zinc-700/50 transition flex items-center space-x-1"
-            >
-              <Wifi className="w-3 h-3" />
-              <span>Pair NFC</span>
-            </button>
-          )}
-        </div>
-      </div>
-    </motion.div>
-  )
 }
 
 // Timeline Component
@@ -1141,8 +958,19 @@ export default function CustomerDashboardById() {
               variants={itemVariants}
               className="w-full"
             >
-              <VinylArtworkCard
-                item={item}
+              <ArtworkCard
+                artwork={{
+                  id: item.line_item_id,
+                  name: item.name,
+                  imageUrl: item.img_url,
+                  vendorName: item.vendor_name,
+                  editionNumber: item.edition_number,
+                  editionTotal: item.edition_total,
+                  price: item.price,
+                  certificateUrl: item.certificate_url,
+                  nfcClaimedAt: item.nfc_claimed_at,
+                  nfcTagId: item.nfc_tag_id
+                }}
                 isSelected={selectedLineItem?.line_item_id === item.line_item_id}
                 onSelect={() => {
                   setSelectedLineItem(item)
@@ -1152,10 +980,6 @@ export default function CustomerDashboardById() {
                   if (item.certificate_url) {
                     window.open(item.certificate_url, '_blank')
                   }
-                }}
-                onNFCPaired={() => {
-                  // Open NFC wizard for this item
-                  setSelectedLineItem(item)
                 }}
               />
             </motion.div>

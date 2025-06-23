@@ -1,3 +1,4 @@
+import { ArtworkCard } from "@/components/ui/artwork-card"
 "use client"
 
 import { useEffect } from "react"
