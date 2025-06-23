@@ -1,16 +1,21 @@
 {
   "version": 2,
+  "name": "street-collector",
+  "builds": [
+    { "src": "next.config.js", "use": "@vercel/next" }
+  ],
+  "routes": [
+    { "src": "/api/(.*)", "dest": "/app/api/$1" },
+    { "src": "/graphql", "dest": "/app/api/graphql" }
+  ],
   "env": {
-    "NODE_ENV": "production",
-    "NEXT_PUBLIC_STREET_LAMP_CLIENT_ID": "594cf36a-179f-4227-821d-1dd00f778900",
-    "NEXT_PUBLIC_SUPABASE_URL": "https://ldmppmnpgdxueebkkpid.supabase.co",
-    "NEXT_PUBLIC_SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxkbXBwbW5wZ2R4dWVlYmtrcGlkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDE2MzEwMjAsImV4cCI6MjA1NzIwNzAyMH0.4iAEQ9IrrxatqlR9S5YzWc5B-I34CahtqgzKtooz0rE"
+    "NEXT_PUBLIC_SUPABASE_URL": "@supabase_url",
+    "SUPABASE_SERVICE_ROLE_KEY": "@supabase_service_role_key",
+    "JWT_SECRET": "@jwt_secret"
   },
-  "build": {
-    "env": {
-      "NEXT_PUBLIC_STREET_LAMP_CLIENT_ID": "594cf36a-179f-4227-821d-1dd00f778900",
-      "NEXT_PUBLIC_SUPABASE_URL": "https://ldmppmnpgdxueebkkpid.supabase.co",
-      "NEXT_PUBLIC_SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxkbXBwbW5wZ2R4dWVlYmtrcGlkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDE2MzEwMjAsImV4cCI6MjA1NzIwNzAyMH0.4iAEQ9IrrxatqlR9S5YzWc5B-I34CahtqgzKtooz0rE"
-    }
+  "regions": ["all"],
+  "github": {
+    "enabled": true,
+    "autoDeploy": true
   }
 }
