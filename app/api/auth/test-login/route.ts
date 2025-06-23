@@ -9,7 +9,8 @@ export async function GET(request: NextRequest) {
     
     console.log('Test Login Debug:', {
       customerId,
-      origin: request.nextUrl.origin
+      origin: request.nextUrl.origin,
+      fullUrl: request.url
     });
 
     // Redirect to customer dashboard
@@ -30,8 +31,12 @@ export async function GET(request: NextRequest) {
       maxAge: 60 * 60 * 24 * 7 // 1 week
     });
 
-    // Set login flag
-    response.cookies.set('shopify_customer_login', 'true', {
+    // Set login flag with more comprehensive information
+    response.cookies.set('shopify_customer_login', JSON.stringify({
+      customerId,
+      timestamp: new Date().toISOString(),
+      loginMethod: 'test_login'
+    }), {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
@@ -44,7 +49,8 @@ export async function GET(request: NextRequest) {
     console.error('Test login error:', error);
     return NextResponse.json({ 
       error: 'Test login failed',
-      details: error instanceof Error ? error.message : 'Unknown error'
+      details: error instanceof Error ? error.message : 'Unknown error',
+      stackTrace: error instanceof Error ? error.stack : null
     }, { status: 500 });
   }
 } 
