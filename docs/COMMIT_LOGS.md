@@ -388,4 +388,47 @@
 - Version: 1.1.0
 - Timestamp: ${new Date().toISOString()}
 
+## Commit Log
+
+### 2025-06-23 - Vercel Deployment Preparation
+
+**Commit Hash:** e0a58309
+
+**Detailed Changes:**
+- [x] Added utility functions to `lib/utils.ts`
+  - Implemented `formatCurrency()`
+  - Implemented `formatDate()`
+  - Added `truncateText()` and `capitalizeFirstLetter()` helpers
+
+- [x] Created Vercel deployment configuration
+  - Updated `vercel.json` with deployment settings
+  - Configured environment variables
+  - Set single region deployment (sfo1)
+
+- [x] Prepared environment configuration
+  - Created `.env` file for staging environment
+  - Added `.env` to `.gitignore`
+
+- [x] Updated deployment documentation
+  - Documented staging deployment details in `DEPLOYMENT_LOGS.md`
+  - Added deployment warnings and recommended actions
+
+**Deployment Preparation Checklist:**
+- [x] Utility function implementation
+- [x] Vercel configuration
+- [x] Environment setup
+- [x] Documentation update
+- [ ] Perform comprehensive testing
+- [ ] Validate all routes and endpoints
+
+**Potential Improvements:**
+- Investigate dynamic server usage in orders page
+- Optimize static generation for dynamic routes
+- Enhance error handling and logging
+
+**Next Steps:**
+1. Conduct thorough testing of staging deployment
+2. Review and validate application functionality
+3. Prepare for production deployment
+
 --- 
