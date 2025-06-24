@@ -149,31 +149,47 @@ interface LineItem {
 }
 
 interface CertificateModalProps {
-  lineItem: LineItem | null
+  lineItem: LineItem
   onClose: () => void
 }
 
 export function CertificateModal({ lineItem, onClose }: CertificateModalProps) {
-  const [isOpen, setIsOpen] = useState(false)
+  const [isOpen, setIsOpen] = useState(true)
   const [isFlipped, setIsFlipped] = useState(false)
   const [isNfcPairing, setIsNfcPairing] = useState(false)
 
+  // Ensure lineItem has default values
+  const safeLineItem: LineItem = {
+    line_item_id: lineItem.line_item_id || '',
+    name: lineItem.name || 'Untitled Artwork',
+    description: lineItem.description || '',
+    img_url: lineItem.img_url || undefined,
+    vendor_name: lineItem.vendor_name || 'Unknown Artist',
+    edition_number: lineItem.edition_number ?? null,
+    edition_total: lineItem.edition_total ?? null,
+    price: lineItem.price ?? undefined,
+    certificate_url: lineItem.certificate_url || undefined,
+    certificate_token: lineItem.certificate_token || undefined,
+    nfc_tag_id: lineItem.nfc_tag_id ?? null,
+    nfc_claimed_at: lineItem.nfc_claimed_at || undefined,
+    status: lineItem.status || undefined,
+    order_id: lineItem.order_id || undefined
+  }
+
   useEffect(() => {
-    setIsOpen(!!lineItem)
+    setIsOpen(true)
     setIsFlipped(false)
-  }, [lineItem])
+  }, [safeLineItem.line_item_id])
 
-  if (!lineItem) return null
-
-  const artistName = lineItem.vendor_name || "Street Collector"
-  const editionInfo = lineItem.edition_number && lineItem.edition_total
-    ? `${lineItem.edition_number} of ${lineItem.edition_total}`
-    : lineItem.edition_number 
-    ? `${lineItem.edition_number}`
+  const artistName = safeLineItem.vendor_name
+  const editionInfo = safeLineItem.edition_number && safeLineItem.edition_total
+    ? `${safeLineItem.edition_number} of ${safeLineItem.edition_total}`
+    : safeLineItem.edition_number 
+    ? `${safeLineItem.edition_number}`
     : "Limited Edition"
 
-  const nfcStatus = lineItem.nfc_tag_id 
-    ? (lineItem.nfc_claimed_at ? "paired" : "unpaired")
+  const nfcStatus = safeLineItem.nfc_tag_id 
+    ? (safeLineItem.nfc_claimed_at ? "paired" : "unpaired")
     : "no-nfc"
 
   const handleNfcPairing = async () => {
@@ -194,8 +210,8 @@ export function CertificateModal({ lineItem, onClose }: CertificateModalProps) {
                                 },
                                 body: JSON.stringify({
                 tagId: serialNumber,
-                lineItemId: lineItem?.line_item_id,
-                orderId: lineItem?.order_id,
+                lineItemId: safeLineItem?.line_item_id,
+                orderId: safeLineItem?.order_id,
                 customerId: null // TODO: Get actual customer ID
                                 })
                               })
@@ -283,30 +299,28 @@ export function CertificateModal({ lineItem, onClose }: CertificateModalProps) {
               onClick={() => onClose()}
             >
               <X className="w-5 h-5" />
-                        </Button>
-                    </div>
+            </Button>
+          </div>
 
           <div className="grid md:grid-cols-2 h-full">
-            {/* Artwork Image Side */}
             <div className="relative overflow-hidden">
-              {lineItem.img_url ? (
+              {safeLineItem.img_url ? (
                 <img 
-                  src={lineItem.img_url} 
-                  alt={lineItem.name} 
+                  src={safeLineItem.img_url} 
+                  alt={safeLineItem.name} 
                   className="w-full h-full object-cover"
                 />
               ) : (
                 <div className="w-full h-full bg-gradient-to-br from-zinc-800 to-zinc-900 flex items-center justify-center">
                   <Album className="w-24 h-24 text-zinc-600" />
-                      </div>
-                    )}
+                </div>
+              )}
               <div className="absolute bottom-0 left-0 right-0 bg-black/50 p-4 text-white">
-                <h2 className="text-2xl font-bold">{lineItem.name}</h2>
+                <h2 className="text-2xl font-bold">{safeLineItem.name}</h2>
                 <p className="text-sm text-zinc-300">{artistName}</p>
               </div>
             </div>
 
-            {/* Certificate Details Side */}
             <div className="p-8 flex flex-col justify-between">
               <div>
                 <div className="flex justify-between items-center mb-6">
@@ -324,24 +338,24 @@ export function CertificateModal({ lineItem, onClose }: CertificateModalProps) {
                   >
                     {isFlipped ? "View Artwork" : "View Certificate"}
                   </Button>
-                  </div>
+                </div>
 
                 <div className="space-y-4">
                   <div className="flex items-center gap-3">
                     <Signature className="w-5 h-5 text-muted-foreground" />
                     <span>Artist: {artistName}</span>
-                    </div>
+                  </div>
                   <div className="flex items-center gap-3">
                     <Calendar className="w-5 h-5 text-muted-foreground" />
                     <span>
                       Issued: {new Date().toLocaleDateString()}
                     </span>
-                      </div>
-                  {lineItem.certificate_url && (
+                  </div>
+                  {safeLineItem.certificate_url && (
                     <div className="flex items-center gap-3">
                       <ExternalLink className="w-5 h-5 text-muted-foreground" />
                       <a 
-                        href={lineItem.certificate_url} 
+                        href={safeLineItem.certificate_url} 
                         target="_blank" 
                         rel="noopener noreferrer"
                         className="text-blue-500 hover:underline"
@@ -351,7 +365,7 @@ export function CertificateModal({ lineItem, onClose }: CertificateModalProps) {
                     </div>
                   )}
                 </div>
-                    </div>
+              </div>
 
               <div className="mt-6">
                 {nfcStatus === "unpaired" && (
@@ -393,10 +407,8 @@ export function CertificateModal({ lineItem, onClose }: CertificateModalProps) {
             </div>
           </div>
 
-          {/* Modify the back side of the certificate when isFlipped is true */}
           {isFlipped && (
             <div className="absolute inset-0 bg-white text-black p-8 flex flex-col justify-between">
-              {/* Certificate Header */}
               <div>
                 <div className="flex justify-between items-center border-b pb-4 mb-6">
                   <h1 className="text-3xl font-bold text-gray-900">Certificate of Authenticity</h1>
@@ -406,11 +418,10 @@ export function CertificateModal({ lineItem, onClose }: CertificateModalProps) {
                   </div>
                 </div>
 
-                {/* Artwork Details */}
                 <div className="space-y-4">
                   <div>
                     <p className="text-sm text-gray-500 uppercase tracking-wider">Artwork Title</p>
-                    <h2 className="text-2xl font-semibold text-gray-900">{lineItem.name}</h2>
+                    <h2 className="text-2xl font-semibold text-gray-900">{safeLineItem.name}</h2>
                   </div>
 
                   <div className="grid grid-cols-2 gap-4">
@@ -422,14 +433,13 @@ export function CertificateModal({ lineItem, onClose }: CertificateModalProps) {
                     <div>
                       <p className="text-sm text-gray-500 uppercase tracking-wider">Edition</p>
                       <p className="text-xl font-medium text-gray-800">
-                        {lineItem.edition_number && lineItem.edition_total
-                          ? `${lineItem.edition_number} of ${lineItem.edition_total}`
+                        {safeLineItem.edition_number && safeLineItem.edition_total
+                          ? `${safeLineItem.edition_number} of ${safeLineItem.edition_total}`
                           : "Limited Edition"}
                       </p>
                     </div>
                   </div>
 
-                  {/* NFC Authentication */}
                   <div className="mt-6 border-t pt-4">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-3">
@@ -440,9 +450,9 @@ export function CertificateModal({ lineItem, onClose }: CertificateModalProps) {
                             : "NFC Authentication Pending"}
                         </span>
                       </div>
-                      {lineItem.nfc_claimed_at && (
+                      {safeLineItem.nfc_claimed_at && (
                         <p className="text-sm text-gray-500">
-                          Authenticated on: {new Date(lineItem.nfc_claimed_at).toLocaleDateString()}
+                          Authenticated on: {new Date(safeLineItem.nfc_claimed_at).toLocaleDateString()}
                         </p>
                       )}
                     </div>
@@ -450,12 +460,11 @@ export function CertificateModal({ lineItem, onClose }: CertificateModalProps) {
                 </div>
               </div>
 
-              {/* Certificate Footer */}
               <div className="mt-6 border-t pt-4 flex justify-between items-center">
                 <div>
                   <p className="text-xs text-gray-500">Certificate Number</p>
                   <p className="font-mono text-sm text-gray-800">
-                    {lineItem.certificate_token?.slice(0, 12) || 'N/A'}
+                    {safeLineItem.certificate_token?.slice(0, 12) || 'N/A'}
                   </p>
                 </div>
                 <div className="text-right">
@@ -468,8 +477,8 @@ export function CertificateModal({ lineItem, onClose }: CertificateModalProps) {
                     })}
                   </p>
                 </div>
-          </div>
-        </div>
+              </div>
+            </div>
           )}
         </PostcardCertificate>
       </DialogContent>

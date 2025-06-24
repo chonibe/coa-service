@@ -14,22 +14,20 @@ import { Toaster } from "@/components/ui/toaster"
 import { CertificateModal } from './certificate-modal'
 
 interface LineItem {
-  id: string
   line_item_id: string
   name: string
   description?: string
-  quantity: number
-  price?: number
   img_url?: string
-  nfc_tag_id: string | null
-  certificate_url: string
-  certificate_token?: string
-  nfc_claimed_at?: string | null
-  order_id?: string
+  vendor_name?: string
   edition_number?: number | null
   edition_total?: number | null
-  vendor_name?: string
+  price?: number
+  certificate_url?: string
+  certificate_token?: string
+  nfc_tag_id?: string | null
+  nfc_claimed_at?: string | null
   status?: string
+  order_id?: string
 }
 
 interface Order {
@@ -201,13 +199,63 @@ export default function CustomerDashboard() {
     return { status: "unpaired", label: "Unpaired", variant: "destructive" as const }
   }
 
+  // Enhanced LineItem type guard
+  function isValidLineItem(item: any): item is LineItem {
+    return (
+      item !== null && 
+      typeof item === 'object' && 
+      typeof item.line_item_id === 'string' && 
+      item.line_item_id.trim() !== '' &&
+      typeof item.name === 'string' && 
+      item.name.trim() !== ''
+    )
+  }
+
+  // Safe line item selection function
+  const selectLineItem = (lineItem: LineItem) => {
+    try {
+      // Validate line item before setting
+      if (isValidLineItem(lineItem)) {
+        console.log('🔍 Selecting Line Item:', {
+          id: lineItem.line_item_id,
+          name: lineItem.name
+        })
+        setSelectedLineItem(lineItem)
+      } else {
+        console.warn('❌ Invalid Line Item:', lineItem)
+      }
+    } catch (error) {
+      console.error('Error selecting line item:', error)
+    }
+  }
+
   const handleCertificateClick = (lineItem: LineItem) => {
-    // Debug logging
-    console.log('Certificate Click Debug:', {
-      lineItem,
-      nfcStatus: getNfcStatus(lineItem)
+    console.log('🔍 Line Item Clicked:', {
+      id: lineItem.line_item_id,
+      name: lineItem.name,
+      nfcStatus: getNfcStatus(lineItem),
+      fullLineItem: lineItem
     })
-    setSelectedLineItem(lineItem)
+    
+    // Robust type checking and selection
+    selectLineItem(lineItem)
+  }
+
+  // Safe modal rendering
+  const renderCertificateModal = () => {
+    if (!selectedLineItem) return null
+
+    try {
+      return (
+        <CertificateModal 
+          lineItem={selectedLineItem} 
+          onClose={() => setSelectedLineItem(null)} 
+        />
+      )
+    } catch (error) {
+      console.error('Modal rendering error:', error)
+      return null
+    }
   }
 
   const handleNfcTagScanned = async (tagId: string) => {
@@ -413,10 +461,12 @@ export default function CustomerDashboard() {
       </div>
       
       {/* Certificate Modal */}
-      <CertificateModal 
-        lineItem={selectedLineItem} 
-        onClose={() => setSelectedLineItem(null)} 
-      />
+      {selectedLineItem && (
+        <CertificateModal 
+          lineItem={selectedLineItem} 
+          onClose={() => setSelectedLineItem(null)} 
+        />
+      )}
       
       <Toaster />
     </>
