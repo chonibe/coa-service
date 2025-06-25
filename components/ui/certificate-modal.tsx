@@ -108,62 +108,145 @@ export function CertificateModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md">
-        <div className="space-y-4">
-          <div className="flex justify-between items-center mb-6">
-            <h3 className="text-xl font-semibold flex items-center gap-2">
-              <ScrollText className="w-6 h-6 text-amber-500" />
-              Certificate of Authenticity
-            </h3>
-          </div>
-
-          <div className="space-y-4">
-            <div className="flex items-center gap-3">
-              <UserCircle className="w-5 h-5 text-muted-foreground" />
-              <span>{finalVendorName}</span>
+      <DialogContent 
+        className={`
+          max-w-5xl 
+          ${isFullscreen ? 'h-screen w-screen max-w-full max-h-full' : ''}
+        `}
+      >
+        <DialogHeader>
+          <DialogTitle>{finalArtworkName} - Certificate of Authenticity</DialogTitle>
+          <DialogDescription>
+            {finalVendorName && `By ${finalVendorName}`}
+            {editionNumber && editionTotal && ` | Edition ${editionNumber} of ${editionTotal}`}
+            {` | NFC Tag: ${nfcTagStatus}`}
+          </DialogDescription>
+        </DialogHeader>
+        
+        <Tabs 
+          value={activeTab} 
+          onValueChange={setActiveTab} 
+          className="w-full"
+        >
+          <TabsList className="grid w-full grid-cols-4 mb-4">
+            <TabsTrigger value="certificate" className="flex items-center gap-2">
+              <ScrollText className="h-4 w-4" /> Certificate
+            </TabsTrigger>
+            <TabsTrigger value="artwork" className="flex items-center gap-2">
+              <ImageIcon className="h-4 w-4" /> Artwork
+            </TabsTrigger>
+            <TabsTrigger value="artist" className="flex items-center gap-2">
+              <UserCircle className="h-4 w-4" /> Artist
+            </TabsTrigger>
+            <TabsTrigger value="story" className="flex items-center gap-2">
+              <BookOpen className="h-4 w-4" /> Story
+            </TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="certificate" className="h-[60vh] overflow-auto">
+            <div className="relative w-full h-full flex items-center justify-center">
+              {finalCertificateUrl ? (
+                <Image 
+                  src={finalCertificateUrl} 
+                  alt={`Certificate for ${finalArtworkName}`}
+                  fill
+                  className="object-contain"
+                  priority
+                />
+              ) : (
+                <p className="text-muted-foreground">No certificate available</p>
+              )}
             </div>
-            
-            <div className="flex items-center gap-3">
-              <Album className="w-5 h-5 text-muted-foreground" />
-              <span>{finalArtworkName}</span>
-            </div>
-
-            {editionNumber && editionTotal && (
-              <div className="flex items-center gap-3">
-                <Hash className="w-5 h-5 text-muted-foreground" />
-                <span>Edition {editionNumber} of {editionTotal}</span>
+          </TabsContent>
+          
+          <TabsContent value="artwork" className="h-[60vh] overflow-auto p-4">
+            <div className="grid md:grid-cols-2 gap-6">
+              {finalArtworkImageUrl && (
+                <div className="relative aspect-square">
+                  <Image 
+                    src={finalArtworkImageUrl} 
+                    alt={finalArtworkName}
+                    fill
+                    className="object-cover rounded-lg"
+                  />
+                </div>
+              )}
+              <div>
+                <h3 className="text-xl font-semibold mb-4">{finalArtworkName}</h3>
+                {artworkDescription && (
+                  <p className="text-muted-foreground">{artworkDescription}</p>
+                )}
+                <div className="mt-4 space-y-2">
+                  {finalVendorName && (
+                    <Badge variant="secondary">Artist: {finalVendorName}</Badge>
+                  )}
+                  {editionNumber && editionTotal && (
+                    <Badge variant="outline">
+                      Edition: {editionNumber} of {editionTotal}
+                    </Badge>
+                  )}
+                  <Badge variant="outline">NFC Tag: {nfcTagStatus}</Badge>
+                </div>
               </div>
-            )}
-
-            <div className="flex items-center gap-3">
-              <Calendar className="w-5 h-5 text-muted-foreground" />
-              <span>Issued: {new Date().toLocaleDateString()}</span>
             </div>
-
-            <div className="flex items-center gap-3">
-              <Nfc className="w-5 h-5 text-muted-foreground" />
-              <span>NFC Tag: {nfcTagStatus}</span>
+          </TabsContent>
+          
+          <TabsContent value="artist" className="h-[60vh] overflow-auto p-4">
+            <div className="max-w-2xl mx-auto">
+              <h3 className="text-2xl font-bold mb-4">{finalVendorName}</h3>
+              {artistBio ? (
+                <p className="text-muted-foreground">{artistBio}</p>
+              ) : (
+                <p className="text-muted-foreground italic">
+                  Artist biography not available
+                </p>
+              )}
             </div>
-
-            {finalCertificateUrl && (
-              <div className="flex items-center gap-3">
-                <ExternalLink className="w-5 h-5 text-muted-foreground" />
-                <a 
-                  href={finalCertificateUrl} 
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  className="text-blue-500 hover:underline"
-                >
-                  View Online Certificate
-                </a>
-              </div>
+          </TabsContent>
+          
+          <TabsContent value="story" className="h-[60vh] overflow-auto p-4">
+            <div className="max-w-2xl mx-auto">
+              <h3 className="text-2xl font-bold mb-4">Artwork Story</h3>
+              {artworkStory ? (
+                <p className="text-muted-foreground">{artworkStory}</p>
+              ) : (
+                <p className="text-muted-foreground italic">
+                  Artwork story not available
+                </p>
+              )}
+            </div>
+          </TabsContent>
+        </Tabs>
+        
+        <div className="flex justify-between items-center p-4">
+          <div className="flex space-x-2">
+            <Button 
+              variant="outline" 
+              onClick={handleDownload}
+              disabled={!finalCertificateUrl}
+            >
+              <Download className="mr-2 h-4 w-4" /> Download
+            </Button>
+            <Button 
+              variant="outline" 
+              onClick={handleShare}
+              disabled={!finalCertificateUrl}
+            >
+              <Share2 className="mr-2 h-4 w-4" /> Share
+            </Button>
+          </div>
+          
+          <Button 
+            variant="ghost" 
+            size="icon"
+            onClick={() => setIsFullscreen(!isFullscreen)}
+          >
+            {isFullscreen ? (
+              <Minimize className="h-4 w-4" />
+            ) : (
+              <Maximize className="h-4 w-4" />
             )}
-          </div>
-
-          <div className="mt-6 flex justify-between">
-            <Button variant="outline" size="sm">View Certificate</Button>
-            <Button variant="outline" size="sm">Artists</Button>
-          </div>
+          </Button>
         </div>
       </DialogContent>
     </Dialog>
