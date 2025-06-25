@@ -1,0 +1,24 @@
+{
+  "version": "1.0.0",
+  "last_updated": "${new Date().toISOString()}",
+  "documentation_categories": [
+    {
+      "name": "Deployment",
+      "files": [
+        {
+          "path": "/docs/DEPLOYMENT_WORKFLOW.md",
+          "title": "Deployment Workflow and Best Practices",
+          "description": "Comprehensive guide for deployment configuration, environment management, and troubleshooting",
+          "tags": ["vercel", "configuration", "environment", "troubleshooting"]
+        }
+      ]
+    }
+  ],
+  "search_keywords": [
+    "deployment",
+    "environment variables",
+    "vercel",
+    "supabase",
+    "configuration"
+  ]
+} 

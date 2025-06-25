@@ -85,7 +85,7 @@ export function useVendorData(): UseVendorDataReturn {
         salesByDate: salesAnalyticsData.salesByDate || [],
         salesByProduct: salesAnalyticsData.salesByProduct || [],
         recentActivity: statsData.recentActivity || []
-      }
+          }
 
       setSalesData(salesData)
     } catch (err) {

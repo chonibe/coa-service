@@ -1,0 +1,206 @@
+{% layout 'theme' %}
+
+<div class="container mx-auto px-4 py-8 max-w-7xl">
+  {% if customer %}
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+      {%- comment -%} Main Dashboard Content {%- endcomment -%}
+      <div class="md:col-span-2 space-y-8">
+        {%- comment -%} Welcome Header {%- endcomment -%}
+        <div class="bg-gradient-to-r from-primary/10 to-primary/5 rounded-xl p-6 shadow-sm">
+          <div class="flex flex-col md:flex-row items-center justify-between space-y-4 md:space-y-0">
+            <h1 class="text-3xl font-bold tracking-tight text-primary-foreground dark:text-primary-foreground">
+              Welcome, {{ customer.first_name }}
+            </h1>
+            <div class="flex items-center space-x-4">
+              <a href="/account" class="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring border border-primary/50 bg-transparent text-primary-foreground shadow-sm hover:bg-primary/10 h-10 px-4 py-2">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mr-2">
+                  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                  <circle cx="12" cy="7" r="4"></circle>
+                </svg>
+                Account Settings
+              </a>
+              <a href="/account/logout" class="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring border border-destructive bg-destructive text-destructive-foreground shadow-sm hover:bg-destructive/90 h-10 px-4 py-2">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mr-2">
+                  <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                  <polyline points="16 17 21 12 16 7"></polyline>
+                  <line x1="21" x2="9" y1="12" y2="12"></line>
+                </svg>
+                Logout
+              </a>
+            </div>
+          </div>
+        </div>
+
+        {%- comment -%} Digital Art Collection {%- endcomment -%}
+        <div class="space-y-6">
+          <h2 class="text-2xl font-semibold tracking-tight border-b pb-3 border-border">Your Digital Art Collection</h2>
+          
+          {% if customer.orders.size > 0 %}
+            <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {% for order in customer.orders %}
+                <div class="group rounded-xl border border-border bg-card text-card-foreground shadow-sm overflow-hidden transition-all duration-300 hover:shadow-md hover:border-primary/50">
+                  <div class="p-6 pb-0">
+                    <div class="flex items-center justify-between mb-4">
+                      <h3 class="text-lg font-semibold leading-none tracking-tight text-primary">
+                        Order #{{ order.order_number }}
+                      </h3>
+                      <span class="text-sm text-muted-foreground">
+                        {{ order.created_at | date: "%B %d, %Y" }}
+                      </span>
+                    </div>
+                  </div>
+                  
+                  <div class="p-6 pt-0 space-y-4">
+                    {% for line_item in order.line_items %}
+                      <div class="flex items-center space-x-4 pb-4 border-b border-border last:border-b-0 last:pb-0">
+                        <img 
+                          src="{{ line_item.image.src | img_url: 'medium' }}" 
+                          alt="{{ line_item.title }}" 
+                          class="rounded-md object-cover w-24 h-24 transition-transform duration-300 group-hover:scale-105"
+                        >
+                        <div class="flex-1 space-y-2">
+                          <h4 class="text-base font-medium">{{ line_item.title }}</h4>
+                          <div class="flex items-center space-x-3">
+                            <a 
+                              href="/pages/certificate?line_item_id={{ line_item.id }}" 
+                              class="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring border border-primary/50 bg-transparent text-primary shadow-sm hover:bg-primary/10 h-9 px-3 py-1"
+                            >
+                              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mr-2">
+                                <path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"></path>
+                                <path d="m9 12 2 2 4-4"></path>
+                              </svg>
+                              View Certificate
+                            </a>
+                          </div>
+                        </div>
+                      </div>
+                    {% endfor %}
+                  </div>
+                </div>
+              {% endfor %}
+            </div>
+          {% else %}
+            <div class="rounded-xl border border-dashed border-border bg-background p-8 text-center space-y-4">
+              <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="mx-auto text-muted-foreground">
+                <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"></path>
+                <polyline points="14 2 14 8 20 8"></polyline>
+                <line x1="12" x2="12" y1="18" y2="12"></line>
+                <line x1="9" x2="15" y1="15" y2="15"></line>
+              </svg>
+              <p class="text-lg text-muted-foreground">No digital art certifications found.</p>
+              <a 
+                href="/collections/digital-art" 
+                class="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring border border-primary bg-primary text-primary-foreground shadow-sm hover:bg-primary/90 h-10 px-4 py-2"
+              >
+                Explore Digital Art
+              </a>
+            </div>
+          {% endif %}
+        </div>
+      </div>
+
+      {%- comment -%} NFC Scanner Sidebar {%- endcomment -%}
+      <div class="md:col-span-1">
+        <div class="sticky top-8 rounded-xl border border-border bg-card text-card-foreground shadow-sm">
+          <div class="p-6 border-b border-border">
+            <h3 class="text-lg font-semibold leading-none tracking-tight flex items-center">
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" class="mr-3 h-6 w-6 text-primary">
+                <path d="M12 3v16" />
+                <rect x="9" y="7" width="6" height="6" rx="1" />
+                <path d="m16 17-4 4-4-4" />
+              </svg>
+              NFC Tag Scanner
+            </h3>
+            <p class="text-sm text-muted-foreground mt-2">
+              Scan your digital art NFC tag to verify authenticity
+            </p>
+          </div>
+          
+          <div class="p-6">
+            <div 
+              id="nfc-scan-container" 
+              class="rounded-md border border-input bg-background p-4 text-center text-sm"
+            >
+              <p id="nfc-status-message" class="text-muted-foreground">
+                Web NFC is not supported on this device
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  {% else %}
+    <div class="flex min-h-[500px] flex-col items-center justify-center space-y-6 rounded-xl border border-dashed border-border p-12 text-center bg-background/50">
+      <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="text-muted-foreground">
+        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+        <circle cx="12" cy="7" r="4"></circle>
+      </svg>
+      <h2 class="text-3xl font-bold tracking-tight text-primary-foreground">Please log in to access your dashboard</h2>
+      <p class="text-muted-foreground max-w-md">
+        Sign in to view your digital art collection, certificates, and manage your NFC tags.
+      </p>
+      <a 
+        href="/account/login" 
+        class="inline-flex items-center justify-center whitespace-nowrap rounded-xl text-base font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring border border-primary bg-primary text-primary-foreground shadow-md hover:bg-primary/90 h-12 px-6 py-2"
+      >
+        Log In
+      </a>
+    </div>
+  {% endif %}
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  const nfcContainer = document.getElementById('nfc-scan-container');
+  const statusMessage = document.getElementById('nfc-status-message');
+
+  // Feature detection for Web NFC
+  if ('NDEFReader' in window) {
+    // Create a scan button dynamically
+    const scanButton = document.createElement('button');
+    scanButton.innerHTML = `
+      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mr-2 inline-block">
+        <path d="M12 3v16" />
+        <rect x="9" y="7" width="6" height="6" rx="1" />
+        <path d="m16 17-4 4-4-4" />
+      </svg>
+      Scan NFC Tag
+    `;
+    scanButton.className = 'inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 border border-primary bg-primary/10 text-primary shadow-sm hover:bg-primary/20 h-10 px-4 py-2 w-full';
+    
+    scanButton.addEventListener('click', async () => {
+      try {
+        const ndef = new NDEFReader();
+        await ndef.scan();
+
+        statusMessage.textContent = 'Hold your NFC tag near the device';
+        statusMessage.className = 'text-primary font-medium';
+        scanButton.disabled = true;
+
+        ndef.addEventListener("reading", (event) => {
+          const tagId = event.serialNumber || 'unknown';
+          
+          statusMessage.textContent = `Tag detected: ${tagId}`;
+          statusMessage.className = 'text-green-600 font-medium';
+          
+          scanButton.disabled = false;
+        });
+
+        ndef.addEventListener("error", (error) => {
+          statusMessage.textContent = 'NFC scanning error: ' + error.message;
+          statusMessage.className = 'text-destructive font-medium';
+          scanButton.disabled = false;
+        });
+
+      } catch (error) {
+        statusMessage.textContent = 'Unable to start NFC scanning: ' + error.message;
+        statusMessage.className = 'text-destructive font-medium';
+      }
+    });
+
+    // Replace the status message with the scan button
+    nfcContainer.innerHTML = '';
+    nfcContainer.appendChild(scanButton);
+  }
+});
+</script> 

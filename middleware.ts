@@ -1,82 +1,62 @@
-import { NextResponse } from "next/server"
-import type { NextRequest } from "next/server"
+import { NextResponse } from 'next/server'
+import type { NextRequest } from 'next/server'
 
-// Simple in-memory store for rate limiting
-const rateLimit = new Map<string, { count: number; resetTime: number }>()
+export async function middleware(req: NextRequest) {
+  // Development mode flag
+  const isDevelopment = process.env.NODE_ENV === 'development'
 
-// Rate limit configuration
-const RATE_LIMIT_WINDOW = 60 * 1000 // 1 minute
-const MAX_REQUESTS = 60 // 60 requests per minute
-
-export function middleware(request: NextRequest) {
-  // Skip middleware for API routes except customer orders
-  if (request.nextUrl.pathname.startsWith('/api/') && 
-      !request.nextUrl.pathname.startsWith('/api/customer/orders')) {
-    return NextResponse.next()
+  // Comprehensive authentication logging
+  const authenticationDebug = {
+    timestamp: new Date().toISOString(),
+    path: req.nextUrl.pathname,
+    method: req.method,
+    cookies: Object.fromEntries(req.cookies.getAll().map(c => [c.name, c.name === 'shopify_customer_id' ? 'REDACTED' : c.value])),
+    headers: Object.fromEntries(req.headers.entries())
   }
 
-  // Apply rate limiting for customer orders API
-  if (request.nextUrl.pathname.startsWith('/api/customer/orders')) {
-    // Get IP from headers or use a fallback
-    const forwardedFor = request.headers.get('x-forwarded-for')
-    const ip = forwardedFor ? forwardedFor.split(',')[0] : 'unknown'
-    const now = Date.now()
-    const windowStart = now - RATE_LIMIT_WINDOW
+  console.log('MIDDLEWARE AUTHENTICATION DEBUG:', JSON.stringify(authenticationDebug, null, 2))
 
-    // Clean up old entries
-    for (const [key, value] of rateLimit.entries()) {
-      if (value.resetTime < windowStart) {
-        rateLimit.delete(key)
+  const res = NextResponse.next()
+
+  // Check for Shopify customer authentication
+  const shopifyCustomerId = req.cookies.get('shopify_customer_id')
+  const shopifyCustomerAccessToken = req.cookies.get('shopify_customer_access_token')
+
+  // More detailed logging for authentication
+  console.log('Authentication Check:', {
+    hasCustomerId: !!shopifyCustomerId,
+    hasAccessToken: !!shopifyCustomerAccessToken,
+    isDevelopment
+  })
+
+  // Redirect to Shopify OAuth if no authentication for customer routes
+  if ((!shopifyCustomerId || !shopifyCustomerAccessToken) && req.nextUrl.pathname.startsWith('/customer')) {
+    // More flexible in development mode
+    if (!isDevelopment) {
+      console.warn('Redirecting to Shopify authentication', { path: req.nextUrl.pathname })
+      return NextResponse.redirect(new URL('/api/auth/shopify', req.url))
+    } else {
+      console.warn('Development mode: Bypassing customer authentication', { path: req.nextUrl.pathname })
+    }
+  }
+
+  // For customer dashboard routes, ensure user is properly authenticated
+  if (req.nextUrl.pathname.startsWith('/customer/dashboard')) {
+    if (!shopifyCustomerId) {
+      // More flexible in development mode
+      if (!isDevelopment) {
+        console.warn('Redirecting to Shopify authentication for dashboard', { path: req.nextUrl.pathname })
+        return NextResponse.redirect(new URL('/api/auth/shopify', req.url))
+      } else {
+        console.warn('Development mode: Bypassing dashboard authentication', { path: req.nextUrl.pathname })
       }
     }
-
-    // Get or create rate limit entry
-    const rateLimitEntry = rateLimit.get(ip) || { count: 0, resetTime: now }
-    
-    // Check if rate limit is exceeded
-    if (rateLimitEntry.count >= MAX_REQUESTS) {
-      return NextResponse.json(
-        { success: false, message: 'Too many requests. Please try again later.' },
-        { status: 429 }
-      )
-    }
-
-    // Update rate limit
-    rateLimitEntry.count++
-    rateLimit.set(ip, rateLimitEntry)
-
-    // Add rate limit headers
-    const response = NextResponse.next()
-    response.headers.set('X-RateLimit-Limit', MAX_REQUESTS.toString())
-    response.headers.set('X-RateLimit-Remaining', (MAX_REQUESTS - rateLimitEntry.count).toString())
-    response.headers.set('X-RateLimit-Reset', (rateLimitEntry.resetTime + RATE_LIMIT_WINDOW).toString())
-    
-    return response
   }
 
-  // Check if the request is for an admin page (except the login page)
-  if (request.nextUrl.pathname.startsWith("/admin") && !request.nextUrl.pathname.startsWith("/admin/login")) {
-    // Check if the user is authenticated
-    const isAuthenticated = request.cookies.has("admin_session")
-
-    if (!isAuthenticated) {
-      // Redirect to the login page
-      const loginUrl = new URL("/admin/login", request.url)
-      return NextResponse.redirect(loginUrl)
-    }
-  }
-
-  return NextResponse.next()
+  return res
 }
 
-// Update the matcher to properly exclude API routes
+// Specify which routes this middleware should run on
 export const config = {
-  matcher: [
-    // Match admin routes except login and API routes
-    "/admin/:path*",
-    // Match customer orders API
-    "/api/customer/orders",
-    // Exclude API routes, certificate routes, and static files
-    "/((?!api|certificate|_next/static|_next/image|favicon.ico).*)",
-  ],
+  matcher: ['/customer/:path*']
 }

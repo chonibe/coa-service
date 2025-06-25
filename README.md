@@ -1,3 +1,91 @@
+# COA Service (Certificate of Authenticity Platform)
+
+## Overview
+
+COA Service is a comprehensive digital art authentication and management platform that leverages NFC technology to provide secure, verifiable certificates for digital artworks.
+
+## Key Features
+
+### 🖼️ Digital Art Management
+- Secure artwork tracking
+- Edition management
+- Certificate generation
+
+### 🏷️ NFC Authentication
+- Web NFC tag scanning
+- Digital artwork verification
+- Secure claim process
+
+### 🔒 Security Highlights
+- Unique certificate generation
+- NFC tag pairing
+- Ownership verification
+
+## NFC Pairing Technology
+
+### How It Works
+- Scan NFC tag using Web NFC API
+- Verify artwork authenticity
+- Claim digital certificate
+
+### Compatibility
+- Supported Browsers: Chrome, Edge, Opera
+- Platforms: Web-based
+
+[📖 Full NFC Pairing Documentation](/docs/NFC_PAIRING.md)
+
+## Technical Stack
+
+- Frontend: Next.js, React
+- Backend: Supabase
+- Authentication: Shopify OAuth
+- NFC Technology: Web NFC API
+
+## Getting Started
+
+### Prerequisites
+- Node.js 16+
+- Supabase Account
+- Shopify Developer Account
+
+### Installation
+```bash
+git clone https://github.com/chonibe/coa-service.git
+cd coa-service
+npm install
+```
+
+### Configuration
+1. Copy `.env.example` to `.env`
+2. Fill in Supabase and Shopify credentials
+
+### Running the Application
+```bash
+npm run dev
+```
+
+## Documentation
+
+- [NFC Pairing](/docs/NFC_PAIRING.md)
+- [Authentication](/docs/authentication/README.md)
+- [Dashboard Guides](/docs/README.md)
+
+## Contributing
+
+1. Fork the repository
+2. Create your feature branch
+3. Commit changes
+4. Push to the branch
+5. Create a Pull Request
+
+## License
+
+Proprietary - Street Collector
+
+## Support
+
+Contact: support@streetcollector.com
+
 # Order Lookup & Vendor Portal
 
 A Next.js application for managing product editions, certificates, and vendor payouts, evolving into an intelligent eCommerce optimization platform.
@@ -241,6 +329,229 @@ The edition number assignment system allows for automatic assignment of edition 
 - Added type checking endpoints
 - Standardized database column types
 - Enhanced UI components for better user experience
-\`\`\`
 
-Now, let's create a README file specifically for the vendor dashboard to help explain its functionality:
+## Recent Updates
+
+### Authentication and Performance Cleanup (ef00c42c)
+- Removed deprecated NFC authentication files
+- Streamlined customer dashboard authentication flow
+- Updated Vercel deployment configuration
+- Improved overall project structure and code organization
+
+### Project Status
+- Current Focus: Enhancing authentication reliability
+- Ongoing Improvements: Simplifying integration with Shopify and Supabase
+
+## Deployment
+
+### Vercel Production
+- **URL:** https://street-collector-lymtrdiem-chonibes-projects.vercel.app
+- **Latest Commit:** 8432db33
+- **Environment:** Production
+
+### Deployment Notes
+- Configured production-specific environment variables
+- Resolved build and configuration challenges
+- Continuous integration and deployment (CI/CD) enabled
+
+## 📦 Project Documentation
+
+### Deployment Workflow
+For comprehensive guidance on deployment processes, environment configuration, and troubleshooting, please refer to our [Deployment Workflow Documentation](/docs/DEPLOYMENT_WORKFLOW.md).
+
+#### Key Documentation Resources
+- [Deployment Workflow](/docs/DEPLOYMENT_WORKFLOW.md) - Detailed guide for deployment configuration and best practices
+- [Environment Configuration](/docs/DEPLOYMENT_WORKFLOW.md#environment-configuration-management)
+- [Troubleshooting Guide](/docs/DEPLOYMENT_WORKFLOW.md#deployment-troubleshooting-workflow)
+
+### Documentation Update Process
+1. Keep documentation current with latest project changes
+2. Review and update documentation after each significant deployment
+3. Encourage team contributions and improvements
+
+### Vendor Portal Enhancements (v1.1.0)
+- Added comprehensive bio and artwork story management
+- Implemented status tracking for vendor profiles
+- New API routes for updating vendor information
+- Enhanced product edit page with bio and story inputs
+- Database migrations to support new feature
+
+#### Key Features
+- 500-character artist bio
+- 1000-character artwork story
+- Status tracking (incomplete/completed)
+- Validation and error handling
+- Seamless integration with vendor dashboard
+
+## Remaining Checklist
+- [ ] Add UI indicators for bio/story completion status
+- [ ] Implement frontend fetching of existing bio/story
+- [ ] Create comprehensive test suite
+- [ ] Add performance monitoring for new endpoints
+
+## Documentation
+- [Vendor Portal Product Management Guide](/docs/vendor-portal/product-management.md)
+
+## Version
+- Current Version: 1.1.0
+- Last Updated: $(date +"%Y-%m-%d")
+
+# Street Collector Platform
+
+## Overview
+
+Street Collector is a comprehensive digital art platform designed to revolutionize art collection, authentication, and distribution.
+
+## Key Features
+
+- Headless, API-driven architecture
+- Robust authentication system
+- Advanced webhook integration
+- Comprehensive monitoring and logging
+- Secure, scalable infrastructure
+
+## System Architecture
+
+### Core Components
+
+1. **Authentication**: Role-based access control
+2. **API Management**: Microservices-based approach
+3. **Monitoring**: Advanced logging and performance tracking
+4. **Webhook Integration**: Event-driven external system communication
+
+## Monitoring and Observability
+
+### Logging System
+
+Our monitoring strategy provides comprehensive visibility into platform operations:
+
+- **Log Levels**: DEBUG, INFO, WARN, ERROR, CRITICAL
+- **Performance Tracking**: Detailed operation metrics
+- **Error Tracking**: Comprehensive error logging
+- **Webhook Monitoring**: Event delivery tracking
+
+### Key Monitoring Features
+
+- Persistent logging in Supabase
+- Admin-only access to monitoring data
+- Performance and error metrics
+- Webhook delivery tracking
+
+## Technology Stack
+
+- **Backend**: Next.js API Routes
+- **Database**: Supabase
+- **Authentication**: Supabase Auth
+- **Monitoring**: Custom logging system
+- **Webhooks**: Event-driven integration
+
+## Getting Started
+
+### Prerequisites
+
+- Node.js 18+
+- Supabase Account
+- Environment Configuration
+
+### Installation
+
+```bash
+# Clone the repository
+git clone https://github.com/your-org/street-collector.git
+
+# Install dependencies
+npm install
+
+# Set up environment variables
+cp .env.example .env.local
+
+# Run database migrations
+npm run db:migrate
+
+# Start development server
+npm run dev
+```
+
+## Configuration
+
+### Environment Variables
+
+- `NEXT_PUBLIC_SUPABASE_URL`: Supabase project URL
+- `SUPABASE_SERVICE_ROLE_KEY`: Supabase service role key
+- `WEBHOOK_SECRET`: Webhook integration secret
+
+## Documentation
+
+- [API Documentation](/docs/API_DOCUMENTATION.md)
+- [Authentication Guide](/docs/authentication/README.md)
+- [Monitoring Strategy](/docs/MONITORING_STRATEGY.md)
+- [Webhook Integration](/docs/WEBHOOK_INTEGRATION.md)
+
+## Monitoring and Logging
+
+Detailed monitoring information can be found in [MONITORING_STRATEGY.md](/docs/MONITORING_STRATEGY.md)
+
+## Contributing
+
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add some amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
+
+## License
+
+Distributed under the MIT License. See `LICENSE` for more information.
+
+## Contact
+
+- Project Link: [https://github.com/your-org/street-collector](https://github.com/your-org/street-collector)
+- Engineering Team: engineering@streetcollector.com
+
+## Version
+
+- Current Version: 1.0.0
+- Last Updated: ${new Date().toISOString()}
+
+# Street Collector - Headless Platform
+
+## Architecture Overview
+Fully decoupled, API-first platform for digital art collection and management.
+
+### Key Components
+- Next.js API Routes
+- Supabase Backend
+- GraphQL API Layer
+- Microservices Architecture
+
+## Implementation Status
+- [x] Authentication Middleware
+- [x] Webhook Integration
+- [x] Monitoring System
+- [x] Microservices Decomposition
+- [ ] GraphQL API (In Progress)
+- [ ] Multi-Region Deployment (Planned)
+
+## Getting Started
+
+### Prerequisites
+- Node.js 18+
+- Supabase Account
+- GraphQL Playground
+
+### Installation
+```bash
+npm install
+npm run dev
+```
+
+## Documentation
+- [Headless Architecture](/docs/HEADLESS_ARCHITECTURE.md)
+- [Deployment Strategy](/docs/DEPLOYMENT_STRATEGY.md)
+- [API Documentation](/docs/API_DOCUMENTATION.md)
+
+## Contributing
+Please read our [Contribution Guidelines](/CONTRIBUTING.md)
+
+## License
+MIT License

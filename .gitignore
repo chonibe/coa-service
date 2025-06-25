@@ -42,3 +42,4 @@ next-env.d.ts
 
 # large files
 postgresql-installer.exe
+.env.production

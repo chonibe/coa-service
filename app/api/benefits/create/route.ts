@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server"
 import type { NextRequest } from "next/request"
-import { supabase } from "@/lib/supabase"
+import { createClient } from "@/lib/supabase/server"
 
 export async function POST(request: NextRequest) {
   try {
@@ -26,6 +26,8 @@ export async function POST(request: NextRequest) {
     }
 
     // Create the benefit
+    const supabase = createClient()
+
     const { data, error } = await supabase
       .from("product_benefits")
       .insert({

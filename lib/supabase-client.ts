@@ -3,6 +3,14 @@
  * Use these functions in client components instead of direct Supabase access
  */
 
+import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
+import { Database } from '@/types/supabase'
+
+export const supabase = createClientComponentClient<Database>({
+  supabaseUrl: process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  supabaseKey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+})
+
 export async function getEditionInfo(orderId: string, lineItemId: string) {
   try {
     const response = await fetch("/api/supabase-proxy", {

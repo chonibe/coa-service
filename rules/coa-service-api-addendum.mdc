@@ -1,0 +1,62 @@
+---
+description:
+globs:
+alwaysApply: false
+---
+# COA Service API Rules Addendum
+
+## Vendor-Specific API Guidelines
+
+### Authentication
+- requireVendorSpecificAuth: true [always]
+  - Enforce Supabase authentication for vendor endpoints
+  - Implement strict role-based access control (RBAC)
+  - Validate vendor-specific permissions for each API call
+
+### Data Isolation
+- requireVendorDataIsolation: true [always]
+  - Ensure API endpoints only return data for the authenticated vendor
+  - Implement Row Level Security (RLS) checks
+  - Prevent cross-vendor data access
+
+### Analytics API
+- requireAnalyticsEndpointDocumentation: true [always]
+  - Document all sales analytics API endpoints
+  - Provide clear calculation method explanations
+  - Include performance metric definitions
+  - Specify data aggregation techniques
+
+### Performance Monitoring
+- requireAnalyticsPerformanceTracking: true [always]
+  - Implement detailed performance logging for analytics endpoints
+  - Track query execution times
+  - Monitor data retrieval efficiency
+  - Log complex calculation performance
+
+### Vendor Dashboard API
+- requireDashboardAPIStandards: true [always]
+  - Standardize dashboard data retrieval methods
+  - Implement consistent error handling
+  - Provide comprehensive endpoint documentation
+  - Define clear data response formats
+
+### Financial Reporting API
+- requireFinancialAPICompliance: true [always]
+  - Secure financial data endpoints
+  - Implement audit trail mechanisms
+  - Ensure transparent payout calculations
+  - Protect sensitive financial information
+
+### Integration Specifications
+- requireSupabaseIntegrationGuidelines: true [always]
+  - Document Supabase-specific API interaction patterns
+  - Explain real-time subscription mechanisms
+  - Provide database query optimization strategies
+  - Detail authentication flow implementations
+
+## Compliance Statement
+These additional API rules are specific to the COA Service Vendor Portal and Analytics Platform, ensuring secure, performant, and well-documented API interactions.
+
+**Version**: 1.0.0
+**Last Updated**: [Current Date]
+**Project**: COA Service Vendor Portal and Analytics Platform
