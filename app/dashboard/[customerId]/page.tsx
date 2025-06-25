@@ -26,7 +26,7 @@ import {
 import { NfcTagScanner } from '@/src/components/NfcTagScanner'
 import { toast } from "@/components/ui/use-toast"
 import { Toaster } from "@/components/ui/toaster"
-import { CertificateModal } from '../../customer/dashboard/certificate-modal'
+import { CertificateModal } from '@/components/ui/certificate-modal'
 import { useNFCScan } from '@/hooks/use-nfc-scan'
 import { motion, LayoutGroup, Variants, useScroll } from "framer-motion"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
@@ -53,6 +53,7 @@ interface LineItem {
   nfc_tag_id?: string
   nfc_claimed_at?: string
   status?: string
+  description?: string
 }
 
 interface Order {
@@ -1010,9 +1011,22 @@ export default function CustomerDashboardById() {
 
       {/* Certificate Modal */}
       {selectedLineItem && (
-        <CertificateModal
-          lineItem={selectedLineItem}
-          onClose={() => setSelectedLineItem(undefined)}
+        <CertificateModal 
+          open={true}
+          onOpenChange={() => setSelectedLineItem(null)}
+          lineItem={{
+            line_item_id: selectedLineItem.line_item_id,
+            name: selectedLineItem.name,
+            img_url: selectedLineItem.img_url,
+            vendor_name: selectedLineItem.vendor_name,
+            description: selectedLineItem.description,
+            certificate_url: null
+          }}
+          artworkName={selectedLineItem.name}
+          editionNumber={selectedLineItem.edition_number ?? undefined}
+          editionTotal={selectedLineItem.edition_total ?? undefined}
+          vendorName={selectedLineItem.vendor_name}
+          artworkImageUrl={selectedLineItem.img_url}
         />
       )}
     </div>

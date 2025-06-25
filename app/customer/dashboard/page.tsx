@@ -11,7 +11,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { NfcTagScanner } from '@/src/components/NfcTagScanner'
 import { toast } from "@/components/ui/use-toast"
 import { Toaster } from "@/components/ui/toaster"
-import { CertificateModal } from './certificate-modal'
+import { CertificateModal } from '@/components/ui/certificate-modal'
 
 interface LineItem {
   line_item_id: string
@@ -248,8 +248,22 @@ export default function CustomerDashboard() {
     try {
       return (
         <CertificateModal 
-          lineItem={selectedLineItem} 
-          onClose={() => setSelectedLineItem(null)} 
+          open={true}
+          onOpenChange={() => setSelectedLineItem(null)}
+          lineItem={{
+            line_item_id: selectedLineItem.line_item_id,
+            name: selectedLineItem.name,
+            img_url: selectedLineItem.img_url,
+            vendor_name: selectedLineItem.vendor_name,
+            description: selectedLineItem.description,
+            certificate_url: selectedLineItem.certificate_url
+          }}
+          artworkName={selectedLineItem.name}
+          editionNumber={selectedLineItem.edition_number ?? undefined}
+          editionTotal={selectedLineItem.edition_total ?? undefined}
+          vendorName={selectedLineItem.vendor_name}
+          artworkImageUrl={selectedLineItem.img_url}
+          certificateUrl={selectedLineItem.certificate_url}
         />
       )
     } catch (error) {
@@ -463,8 +477,22 @@ export default function CustomerDashboard() {
       {/* Certificate Modal */}
       {selectedLineItem && (
         <CertificateModal 
-          lineItem={selectedLineItem} 
-          onClose={() => setSelectedLineItem(null)} 
+          open={true}
+          onOpenChange={() => setSelectedLineItem(null)}
+          lineItem={{
+            line_item_id: selectedLineItem.line_item_id,
+            name: selectedLineItem.name,
+            img_url: selectedLineItem.img_url,
+            vendor_name: selectedLineItem.vendor_name,
+            description: selectedLineItem.description,
+            certificate_url: selectedLineItem.certificate_url
+          }}
+          artworkName={selectedLineItem.name}
+          editionNumber={selectedLineItem.edition_number ?? undefined}
+          editionTotal={selectedLineItem.edition_total ?? undefined}
+          vendorName={selectedLineItem.vendor_name}
+          artworkImageUrl={selectedLineItem.img_url}
+          certificateUrl={selectedLineItem.certificate_url}
         />
       )}
       

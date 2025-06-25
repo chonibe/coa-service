@@ -11,7 +11,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { AlertCircle, CheckCircle, Clock, ShoppingBag, User, BadgeIcon as Certificate, Tag } from "lucide-react"
 import { toast } from "sonner"
 import { useRouter } from "next/navigation"
-import { CertificateModal } from "./certificate-modal"
+import { CertificateModal } from '@/components/ui/certificate-modal'
 import { motion, useMotionValue, useSpring, useTransform } from "framer-motion"
 
 // Utility functions
@@ -308,17 +308,24 @@ export default function CustomerPreviewPage() {
         </div>
       </div>
 
-      <CertificateModal
-        lineItem={selectedLineItem ? {
-          line_item_id: selectedLineItem.id,
-          title: selectedLineItem.name,
-          image_url: selectedLineItem.img_url,
-          vendor: selectedLineItem.vendor_name,
-          edition_number: selectedLineItem.edition_number,
-          edition_total: selectedLineItem.edition_total
-        } : null}
-        onClose={() => setSelectedLineItem(null)}
-      />
+      {selectedLineItem && (
+        <CertificateModal 
+          open={true}
+          onOpenChange={() => setSelectedLineItem(null)}
+          lineItem={{
+            line_item_id: selectedLineItem.id,
+            name: selectedLineItem.name,
+            img_url: selectedLineItem.img_url,
+            vendor_name: selectedLineItem.vendor_name,
+            certificate_url: null
+          }}
+          artworkName={selectedLineItem.name}
+          editionNumber={selectedLineItem.edition_number ?? undefined}
+          editionTotal={selectedLineItem.edition_total ?? undefined}
+          vendorName={selectedLineItem.vendor_name}
+          artworkImageUrl={selectedLineItem.img_url}
+        />
+      )}
     </div>
   )
 } 

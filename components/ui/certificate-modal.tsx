@@ -24,55 +24,72 @@ import {
 import { Badge } from "@/components/ui/badge"
 
 interface CertificateModalProps {
-  certificateUrl: string
-  artworkName: string
-  editionNumber?: number
-  editionTotal?: number
-  vendorName?: string
-  artistBio?: string
-  artworkStory?: string
-  artworkDescription?: string
-  artworkImageUrl?: string
+  certificateUrl?: string
+  artworkName?: string
+  editionNumber?: number | null
+  editionTotal?: number | null
+  vendorName?: string | null
+  artistBio?: string | null
+  artworkStory?: string | null
+  artworkDescription?: string | null
+  artworkImageUrl?: string | null
+  lineItem?: {
+    line_item_id?: string
+    name?: string
+    img_url?: string | null
+    vendor_name?: string | null
+    description?: string | null
+    certificate_url?: string | null
+  } | null
   open: boolean
   onOpenChange: (open: boolean) => void
 }
 
 export function CertificateModal({
-  certificateUrl, 
-  artworkName,
-  editionNumber,
-  editionTotal,
-  vendorName,
-  artistBio,
-  artworkStory,
-  artworkDescription,
-  artworkImageUrl,
+  certificateUrl = '', 
+  artworkName = 'Untitled Artwork',
+  editionNumber = null,
+  editionTotal = null,
+  vendorName = null,
+  artistBio = null,
+  artworkStory = null,
+  artworkDescription = null,
+  artworkImageUrl = null,
+  lineItem = null,
   open,
   onOpenChange
 }: CertificateModalProps) {
+  // Use lineItem props if provided, with fallbacks
+  const finalArtworkName = lineItem?.name || artworkName
+  const finalVendorName = lineItem?.vendor_name || vendorName || 'Unknown Artist'
+  const finalArtworkImageUrl = lineItem?.img_url || artworkImageUrl
+  const finalCertificateUrl = lineItem?.certificate_url || certificateUrl
+
   const [isFullscreen, setIsFullscreen] = useState(false)
   const [activeTab, setActiveTab] = useState('certificate')
 
   const handleDownload = () => {
+    if (!finalCertificateUrl) return
     const link = document.createElement('a')
-    link.href = certificateUrl
-    link.download = `${artworkName}_Certificate.pdf`
+    link.href = finalCertificateUrl
+    link.download = `${finalArtworkName}_Certificate.pdf`
     link.click()
   }
 
   const handleShare = async () => {
+    if (!finalCertificateUrl) return
     if (navigator.share) {
       try {
         await navigator.share({
-          title: `Certificate for ${artworkName}`,
-          text: `Certificate of Authenticity for ${artworkName}`,
-          url: certificateUrl
+          title: `Certificate for ${finalArtworkName}`,
+          text: `Certificate of Authenticity for ${finalArtworkName}`,
+          url: finalCertificateUrl
         })
       } catch (error) {
         console.error('Share failed:', error)
       }
     } else {
-      navigator.clipboard.writeText(certificateUrl)
+      navigator.clipboard.writeText(finalCertificateUrl)
       alert('Certificate link copied to clipboard')
     }
   }
@@ -86,9 +103,9 @@ export function CertificateModal({
         `}
       >
         <DialogHeader>
-          <DialogTitle>{artworkName} - Certificate of Authenticity</DialogTitle>
+          <DialogTitle>{finalArtworkName} - Certificate of Authenticity</DialogTitle>
           <DialogDescription>
-            {vendorName && `By ${vendorName}`}
+            {finalVendorName && `By ${finalVendorName}`}
             {editionNumber && editionTotal && ` | Edition ${editionNumber} of ${editionTotal}`}
           </DialogDescription>
         </DialogHeader>
@@ -115,36 +132,40 @@ export function CertificateModal({
           
           <TabsContent value="certificate" className="h-[60vh] overflow-auto">
             <div className="relative w-full h-full flex items-center justify-center">
-              <Image 
-                src={certificateUrl} 
-                alt={`Certificate for ${artworkName}`}
-                fill
-                className="object-contain"
-                priority
-              />
+              {finalCertificateUrl ? (
+                <Image 
+                  src={finalCertificateUrl} 
+                  alt={`Certificate for ${finalArtworkName}`}
+                  fill
+                  className="object-contain"
+                  priority
+                />
+              ) : (
+                <p className="text-muted-foreground">No certificate available</p>
+              )}
             </div>
           </TabsContent>
           
           <TabsContent value="artwork" className="h-[60vh] overflow-auto p-4">
             <div className="grid md:grid-cols-2 gap-6">
-              {artworkImageUrl && (
+              {finalArtworkImageUrl && (
                 <div className="relative aspect-square">
                   <Image 
-                    src={artworkImageUrl} 
-                    alt={artworkName}
+                    src={finalArtworkImageUrl} 
+                    alt={finalArtworkName}
                     fill
                     className="object-cover rounded-lg"
                   />
                 </div>
               )}
               <div>
-                <h3 className="text-xl font-semibold mb-4">{artworkName}</h3>
+                <h3 className="text-xl font-semibold mb-4">{finalArtworkName}</h3>
                 {artworkDescription && (
                   <p className="text-muted-foreground">{artworkDescription}</p>
                 )}
                 <div className="mt-4 space-y-2">
-                  {vendorName && (
-                    <Badge variant="secondary">Artist: {vendorName}</Badge>
+                  {finalVendorName && (
+                    <Badge variant="secondary">Artist: {finalVendorName}</Badge>
                   )}
                   {editionNumber && editionTotal && (
                     <Badge variant="outline">
@@ -158,7 +179,7 @@ export function CertificateModal({
           
           <TabsContent value="artist" className="h-[60vh] overflow-auto p-4">
             <div className="max-w-2xl mx-auto">
-              <h3 className="text-2xl font-bold mb-4">{vendorName}</h3>
+              <h3 className="text-2xl font-bold mb-4">{finalVendorName}</h3>
               {artistBio ? (
                 <p className="text-muted-foreground">{artistBio}</p>
               ) : (
@@ -188,12 +209,14 @@ export function CertificateModal({
             <Button 
               variant="outline" 
               onClick={handleDownload}
+              disabled={!finalCertificateUrl}
             >
               <Download className="mr-2 h-4 w-4" /> Download
             </Button>
             <Button 
               variant="outline" 
               onClick={handleShare}
+              disabled={!finalCertificateUrl}
             >
               <Share2 className="mr-2 h-4 w-4" /> Share
             </Button>
