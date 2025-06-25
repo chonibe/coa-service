@@ -144,6 +144,7 @@ export function ImmersiveArtworkExperience({
           animate={{ opacity: 1 }}
           transition={{ duration: 1 }}
           className="relative min-h-screen flex items-center justify-center"
+          data-section="intro"
         >
           <Image 
             src={mainArtworkImage}
@@ -161,7 +162,163 @@ export function ImmersiveArtworkExperience({
         </motion.div>
       )
     },
-    // More sections will be added here...
+    {
+      key: 'certificate',
+      title: 'Digital Certificate',
+      component: () => (
+        <motion.div 
+          initial={{ opacity: 0, y: 50 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8 }}
+          className="min-h-screen flex flex-col items-center justify-center p-8"
+          data-section="certificate"
+        >
+          <div className="max-w-4xl bg-white/10 backdrop-blur-lg rounded-xl p-8 shadow-2xl">
+            <h2 className="text-4xl font-bold text-center mb-8 text-white">
+              Certificate of Authenticity
+            </h2>
+            
+            {certificateUrl ? (
+              <div className="flex justify-center mb-8">
+                <Image 
+                  src={certificateUrl}
+                  alt="Digital Certificate"
+                  width={800}
+                  height={600}
+                  className="rounded-lg shadow-lg"
+                />
+              </div>
+            ) : (
+              <div className="text-center text-yellow-200">
+                <p className="text-xl mb-4">Digital Certificate Pending</p>
+                <p>Certificate will be generated upon final verification</p>
+              </div>
+            )}
+
+            <div className="grid grid-cols-2 gap-4 text-white">
+              <div>
+                <strong>Artwork:</strong> {artworkName}
+              </div>
+              <div>
+                <strong>Artist:</strong> {artistName}
+              </div>
+              <div>
+                <strong>Edition:</strong> {editionNumber} of {totalEditions}
+              </div>
+              <div>
+                <strong>Blockchain Verification:</strong> 
+                <Badge 
+                  variant={verifyBlockchainCertificate() === 'verified' ? 'default' : 'destructive'}
+                  className="ml-2"
+                >
+                  {verifyBlockchainCertificate()}
+                </Badge>
+              </div>
+            </div>
+          </div>
+        </motion.div>
+      )
+    },
+    {
+      key: 'artist-journey',
+      title: 'Artist Journey',
+      component: () => (
+        <motion.div 
+          initial={{ opacity: 0, x: -50 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.8 }}
+          className="min-h-screen flex items-center justify-center p-8"
+          data-section="artist-journey"
+        >
+          <div className="max-w-5xl grid md:grid-cols-2 gap-12 items-center">
+            {artistPortrait && (
+              <div className="relative aspect-square">
+                <Image 
+                  src={artistPortrait}
+                  alt={`Portrait of ${artistName}`}
+                  fill
+                  className="object-cover rounded-full shadow-2xl"
+                />
+              </div>
+            )}
+            <div>
+              <h2 className="text-4xl font-bold mb-6">Artist's Journey</h2>
+              <p className="text-lg mb-4">{artistBio}</p>
+              
+              {artistInterviewVideo && (
+                <div className="mt-6">
+                  <h3 className="text-2xl font-semibold mb-4">Artist Interview</h3>
+                  <div className="relative aspect-video">
+                    <video 
+                      ref={videoRef}
+                      src={artistInterviewVideo}
+                      className="w-full rounded-lg"
+                      controls
+                    />
+                    <button 
+                      onClick={toggleVideoPlayback}
+                      className="absolute top-4 right-4 bg-white/20 p-2 rounded-full"
+                    >
+                      {isVideoPlaying ? <Pause /> : <Play />}
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </motion.div>
+      )
+    },
+    {
+      key: 'nfc-pairing',
+      title: 'NFC Pairing',
+      component: () => (
+        <motion.div 
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.8 }}
+          className="min-h-screen flex items-center justify-center p-8 bg-blue-50"
+          data-section="nfc-pairing"
+        >
+          <div className="text-center max-w-2xl">
+            <h2 className="text-4xl font-bold mb-6">Unlock Your Digital Artwork</h2>
+            
+            <div className="bg-white rounded-xl p-8 shadow-lg">
+              <div className="flex justify-center mb-6">
+                {nfcTagStatus === 'paired' ? (
+                  <Unlock className="w-24 h-24 text-green-500" />
+                ) : (
+                  <Nfc className="w-24 h-24 text-blue-500" />
+                )}
+              </div>
+
+              <p className="text-xl mb-4">
+                {nfcTagStatus === 'paired' 
+                  ? "Your artwork is successfully paired!" 
+                  : "Pair your NFC tag to unlock exclusive digital experiences"}
+              </p>
+
+              {nfcTagStatus !== 'paired' && (
+                <Button 
+                  onClick={handleNfcPairing}
+                  className="mt-4 bg-blue-600 hover:bg-blue-700"
+                >
+                  <QrCode className="mr-2" /> Pair NFC Tag
+                </Button>
+              )}
+
+              {nfcTagStatus === 'paired' && (
+                <div className="mt-6 bg-green-50 p-4 rounded-lg">
+                  <p className="text-green-700">
+                    You've unlocked special digital content and provenance tracking!
+                  </p>
+                </div>
+              )}
+            </div>
+          </div>
+        </motion.div>
+      )
+    }
   ]
 
   return (
