@@ -70,13 +70,36 @@ export function CertificateModal({
   const finalArtworkName = lineItem?.name || artworkName
   const finalVendorName = lineItem?.vendor_name || vendorName || 'Unknown Artist'
   const finalArtworkImageUrl = lineItem?.img_url || artworkImageUrl
-  const finalCertificateUrl = lineItem?.certificate_url || certificateUrl || ''
+  
+  // Enhanced certificate URL resolution
+  const finalCertificateUrl = (() => {
+    // Priority order: 
+    // 1. Line item certificate URL
+    // 2. Prop passed certificate URL
+    // 3. Fallback to empty string
+    const url = lineItem?.certificate_url || certificateUrl || ''
+    
+    // Additional validation
+    if (url && (url.startsWith('http') || url.startsWith('https'))) {
+      return url
+    }
+    
+    console.warn('Invalid certificate URL:', {
+      lineItemUrl: lineItem?.certificate_url,
+      propUrl: certificateUrl,
+      resolvedUrl: url
+    })
+    
+    return ''
+  })()
 
   // Debug logging for certificate URL
-  console.log('Certificate Modal Debug:', {
+  console.log('Certificate Modal Detailed Debug:', {
+    lineItem: lineItem,
     inputCertificateUrl: certificateUrl,
     lineItemCertificateUrl: lineItem?.certificate_url,
-    finalCertificateUrl
+    finalCertificateUrl,
+    isValidUrl: finalCertificateUrl.startsWith('http')
   })
 
   // NFC Tag Status
@@ -93,7 +116,7 @@ export function CertificateModal({
       label: 'Certificate',
       icon: ScrollText,
       content: () => (
-        <div className="relative w-full h-full flex items-center justify-center">
+        <div className="relative w-full h-full flex flex-col items-center justify-center p-4 text-center">
           {finalCertificateUrl ? (
             <Image 
               src={finalCertificateUrl} 
@@ -102,12 +125,35 @@ export function CertificateModal({
               className="object-contain"
               priority
               onError={(e) => {
-                console.error('Certificate Image Load Error:', e)
+                console.error('Certificate Image Load Error:', {
+                  url: finalCertificateUrl,
+                  event: e
+                })
                 e.currentTarget.style.display = 'none'
               }}
             />
           ) : (
-            <p className="text-muted-foreground">No certificate URL available</p>
+            <div className="space-y-4">
+              <p className="text-xl font-semibold text-muted-foreground">
+                No Certificate Available
+              </p>
+              <div className="bg-yellow-50 border border-yellow-200 p-4 rounded-lg">
+                <p className="text-yellow-700">
+                  This artwork does not have a digital certificate at the moment.
+                </p>
+                <p className="text-sm text-yellow-600 mt-2">
+                  Certificates are generated after successful order completion.
+                </p>
+              </div>
+              <div className="flex justify-center gap-4 mt-4">
+                <Button variant="outline" disabled>
+                  <Download className="mr-2 h-4 w-4" /> Download
+                </Button>
+                <Button variant="outline" disabled>
+                  <Share2 className="mr-2 h-4 w-4" /> Share
+                </Button>
+              </div>
+            </div>
           )}
         </div>
       )
