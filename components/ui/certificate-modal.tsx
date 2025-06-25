@@ -70,15 +70,119 @@ export function CertificateModal({
   const finalArtworkName = lineItem?.name || artworkName
   const finalVendorName = lineItem?.vendor_name || vendorName || 'Unknown Artist'
   const finalArtworkImageUrl = lineItem?.img_url || artworkImageUrl
-  const finalCertificateUrl = lineItem?.certificate_url || certificateUrl
+  const finalCertificateUrl = lineItem?.certificate_url || certificateUrl || ''
+
+  // Debug logging for certificate URL
+  console.log('Certificate Modal Debug:', {
+    inputCertificateUrl: certificateUrl,
+    lineItemCertificateUrl: lineItem?.certificate_url,
+    finalCertificateUrl
+  })
 
   // NFC Tag Status
   const nfcTagStatus = lineItem?.nfc_tag_id 
     ? (lineItem.nfc_claimed_at ? 'Paired' : 'Unpaired') 
     : 'No NFC Tag'
 
-  const [isFullscreen, setIsFullscreen] = useState(false)
   const [activeTab, setActiveTab] = useState('certificate')
+  const [isFullscreen, setIsFullscreen] = useState(false)
+
+  const tabConfig = [
+    {
+      value: 'certificate',
+      label: 'Certificate',
+      icon: ScrollText,
+      content: () => (
+        <div className="relative w-full h-full flex items-center justify-center">
+          {finalCertificateUrl ? (
+            <Image 
+              src={finalCertificateUrl} 
+              alt={`Certificate for ${finalArtworkName}`}
+              fill
+              className="object-contain"
+              priority
+              onError={(e) => {
+                console.error('Certificate Image Load Error:', e)
+                e.currentTarget.style.display = 'none'
+              }}
+            />
+          ) : (
+            <p className="text-muted-foreground">No certificate URL available</p>
+          )}
+        </div>
+      )
+    },
+    {
+      value: 'artwork',
+      label: 'Artwork',
+      icon: ImageIcon,
+      content: () => (
+        <div className="grid md:grid-cols-2 gap-6">
+          {finalArtworkImageUrl && (
+            <div className="relative aspect-square">
+              <Image 
+                src={finalArtworkImageUrl} 
+                alt={finalArtworkName}
+                fill
+                className="object-cover rounded-lg"
+              />
+            </div>
+          )}
+          <div>
+            <h3 className="text-xl font-semibold mb-4">{finalArtworkName}</h3>
+            {artworkDescription && (
+              <p className="text-muted-foreground">{artworkDescription}</p>
+            )}
+            <div className="mt-4 space-y-2">
+              {finalVendorName && (
+                <Badge variant="secondary">Artist: {finalVendorName}</Badge>
+              )}
+              {editionNumber && editionTotal && (
+                <Badge variant="outline">
+                  Edition: {editionNumber} of {editionTotal}
+                </Badge>
+              )}
+              <Badge variant="outline">NFC Tag: {nfcTagStatus}</Badge>
+            </div>
+          </div>
+        </div>
+      )
+    },
+    {
+      value: 'artist',
+      label: 'Artist',
+      icon: UserCircle,
+      content: () => (
+        <div className="max-w-2xl mx-auto">
+          <h3 className="text-2xl font-bold mb-4">{finalVendorName}</h3>
+          {artistBio ? (
+            <p className="text-muted-foreground">{artistBio}</p>
+          ) : (
+            <p className="text-muted-foreground italic">
+              Artist biography not available
+            </p>
+          )}
+        </div>
+      )
+    },
+    {
+      value: 'story',
+      label: 'Story',
+      icon: BookOpen,
+      content: () => (
+        <div className="max-w-2xl mx-auto">
+          <h3 className="text-2xl font-bold mb-4">Artwork Story</h3>
+          {artworkStory ? (
+            <p className="text-muted-foreground">{artworkStory}</p>
+          ) : (
+            <p className="text-muted-foreground italic">
+              Artwork story not available
+            </p>
+          )}
+        </div>
+      )
+    }
+  ]
 
   const handleDownload = () => {
     if (!finalCertificateUrl) return
@@ -129,93 +233,18 @@ export function CertificateModal({
           className="w-full"
         >
           <TabsList className="grid w-full grid-cols-4 mb-4">
-            <TabsTrigger value="certificate" className="flex items-center gap-2">
-              <ScrollText className="h-4 w-4" /> Certificate
-            </TabsTrigger>
-            <TabsTrigger value="artwork" className="flex items-center gap-2">
-              <ImageIcon className="h-4 w-4" /> Artwork
-            </TabsTrigger>
-            <TabsTrigger value="artist" className="flex items-center gap-2">
-              <UserCircle className="h-4 w-4" /> Artist
-            </TabsTrigger>
-            <TabsTrigger value="story" className="flex items-center gap-2">
-              <BookOpen className="h-4 w-4" /> Story
-            </TabsTrigger>
+            {tabConfig.map((tab) => (
+              <TabsTrigger key={tab.value} value={tab.value} className="flex items-center gap-2">
+                <tab.icon className="h-4 w-4" /> {tab.label}
+              </TabsTrigger>
+            ))}
           </TabsList>
           
-          <TabsContent value="certificate" className="h-[60vh] overflow-auto">
-            <div className="relative w-full h-full flex items-center justify-center">
-              {finalCertificateUrl ? (
-                <Image 
-                  src={finalCertificateUrl} 
-                  alt={`Certificate for ${finalArtworkName}`}
-                  fill
-                  className="object-contain"
-                  priority
-                />
-              ) : (
-                <p className="text-muted-foreground">No certificate available</p>
-              )}
-            </div>
-          </TabsContent>
-          
-          <TabsContent value="artwork" className="h-[60vh] overflow-auto p-4">
-            <div className="grid md:grid-cols-2 gap-6">
-              {finalArtworkImageUrl && (
-                <div className="relative aspect-square">
-                  <Image 
-                    src={finalArtworkImageUrl} 
-                    alt={finalArtworkName}
-                    fill
-                    className="object-cover rounded-lg"
-                  />
-                </div>
-              )}
-              <div>
-                <h3 className="text-xl font-semibold mb-4">{finalArtworkName}</h3>
-                {artworkDescription && (
-                  <p className="text-muted-foreground">{artworkDescription}</p>
-                )}
-                <div className="mt-4 space-y-2">
-                  {finalVendorName && (
-                    <Badge variant="secondary">Artist: {finalVendorName}</Badge>
-                  )}
-                  {editionNumber && editionTotal && (
-                    <Badge variant="outline">
-                      Edition: {editionNumber} of {editionTotal}
-                    </Badge>
-                  )}
-                  <Badge variant="outline">NFC Tag: {nfcTagStatus}</Badge>
-                </div>
-              </div>
-            </div>
-          </TabsContent>
-          
-          <TabsContent value="artist" className="h-[60vh] overflow-auto p-4">
-            <div className="max-w-2xl mx-auto">
-              <h3 className="text-2xl font-bold mb-4">{finalVendorName}</h3>
-              {artistBio ? (
-                <p className="text-muted-foreground">{artistBio}</p>
-              ) : (
-                <p className="text-muted-foreground italic">
-                  Artist biography not available
-                </p>
-              )}
-            </div>
-          </TabsContent>
-          
-          <TabsContent value="story" className="h-[60vh] overflow-auto p-4">
-            <div className="max-w-2xl mx-auto">
-              <h3 className="text-2xl font-bold mb-4">Artwork Story</h3>
-              {artworkStory ? (
-                <p className="text-muted-foreground">{artworkStory}</p>
-              ) : (
-                <p className="text-muted-foreground italic">
-                  Artwork story not available
-                </p>
-              )}
-            </div>
-          </TabsContent>
+          {tabConfig.map((tab) => (
+            <TabsContent key={tab.value} value={tab.value} className="h-[60vh] overflow-auto">
+              {tab.content()}
+            </TabsContent>
+          ))}
         </Tabs>
         
         <div className="flex justify-between items-center p-4">
