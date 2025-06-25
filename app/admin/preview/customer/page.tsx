@@ -1194,6 +1194,7 @@ export default function CustomerDashboardById() {
             description: selectedLineItem.description,
             certificate_url: null
           }}
+          certificateUrl={selectedLineItem.certificate_url || ''}
           artworkName={selectedLineItem.name}
           editionNumber={selectedLineItem.edition_number ?? undefined}
           editionTotal={selectedLineItem.edition_total ?? undefined}

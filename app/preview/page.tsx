@@ -58,6 +58,11 @@ interface LineItem {
   edition_total: number | null
   nfc_tag_id: string | null
   nfc_claimed_at: string | null
+  line_item_id: string
+  title: string
+  image_url: string
+  vendor: string
+  certificate_url: string | null
 }
 
 interface Order {
@@ -313,17 +318,18 @@ export default function CustomerPreviewPage() {
           open={true}
           onOpenChange={() => setSelectedLineItem(null)}
           lineItem={{
-            line_item_id: selectedLineItem.id,
-            name: selectedLineItem.name,
-            img_url: selectedLineItem.img_url,
-            vendor_name: selectedLineItem.vendor_name,
+            line_item_id: selectedLineItem.line_item_id,
+            name: selectedLineItem.title,
+            img_url: selectedLineItem.image_url,
+            vendor_name: selectedLineItem.vendor,
             certificate_url: null
           }}
-          artworkName={selectedLineItem.name}
+          certificateUrl={selectedLineItem.certificate_url || ''}
+          artworkName={selectedLineItem.title}
           editionNumber={selectedLineItem.edition_number ?? undefined}
           editionTotal={selectedLineItem.edition_total ?? undefined}
-          vendorName={selectedLineItem.vendor_name}
-          artworkImageUrl={selectedLineItem.img_url}
+          vendorName={selectedLineItem.vendor}
+          artworkImageUrl={selectedLineItem.image_url}
         />
       )}
     </div>

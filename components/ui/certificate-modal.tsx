@@ -65,6 +65,14 @@ export function CertificateModal({
   const finalArtworkImageUrl = lineItem?.img_url || artworkImageUrl
   const finalCertificateUrl = lineItem?.certificate_url || certificateUrl
 
+  // Debug logging
+  console.log('Certificate Modal Debug:', {
+    certificateUrl,
+    lineItemCertificateUrl: lineItem?.certificate_url,
+    finalCertificateUrl,
+    lineItem
+  })
+
   const [isFullscreen, setIsFullscreen] = useState(false)
   const [activeTab, setActiveTab] = useState('certificate')
 
