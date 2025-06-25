@@ -78,19 +78,23 @@ export function ArtworkCard({
 
   const renderNfcPairingModal = () => (
     <Dialog open={isNfcPairingModalOpen} onOpenChange={setIsNfcPairingModalOpen}>
-      <DialogContent>
+      <DialogContent aria-describedby="nfc-pairing-description">
         <DialogHeader>
           <DialogTitle>Pair NFC Tag</DialogTitle>
-          <DialogDescription>
+          <DialogDescription id="nfc-pairing-description">
             Hold your NFC tag close to the device to pair with this artwork.
           </DialogDescription>
         </DialogHeader>
         <div className="flex flex-col items-center space-y-4 p-4">
-          <Nfc className="w-24 h-24 text-primary animate-pulse" />
+          <Nfc 
+            className="w-24 h-24 text-primary animate-pulse" 
+            aria-hidden="true" 
+          />
           <Button 
             onClick={handleNfcPair} 
             disabled={isNfcPairing}
             className="w-full"
+            aria-label={isNfcPairing ? 'Pairing in progress' : 'Start NFC Pairing'}
           >
             {isNfcPairing ? 'Pairing...' : 'Start Pairing'}
           </Button>
