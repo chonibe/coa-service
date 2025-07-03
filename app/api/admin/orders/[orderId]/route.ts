@@ -10,7 +10,9 @@ export async function GET(
   try {
     // Create Supabase client with service role key
     const supabase = createClient(
-      getSupabaseUrl(), 
+            getSupabaseUrl(),
+            getSupabaseKey('service')
+          ), 
       getSupabaseKey('service')
     )
 

@@ -26,7 +26,9 @@ const defaultSettings = {
 
 // Create Supabase client with service role key for admin operations
 const supabase = createClient(
-  getSupabaseUrl(),
+            getSupabaseUrl(),
+            getSupabaseKey('service')
+          ),
   getSupabaseKey('service')
 )
 

@@ -5,7 +5,9 @@ import { getSupabaseUrl, getSupabaseKey } from '@/lib/supabase/client-utils'
 export async function GET() {
   try {
     const supabase = createClient(
-      getSupabaseUrl(),
+            getSupabaseUrl(),
+            getSupabaseKey('anon')
+          ),
       getSupabaseKey('anon')
     )
 

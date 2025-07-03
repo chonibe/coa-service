@@ -14,7 +14,9 @@ export async function GET(request: NextRequest) {
 
     // Create Supabase client with service role key
     const supabase = createClient(
-      getSupabaseUrl(), 
+            getSupabaseUrl(),
+            getSupabaseKey('service')
+          ), 
       getSupabaseKey('service')
     )
 

@@ -1,3 +1,4 @@
+import { getSupabaseUrl, getSupabaseKey } from '@/lib/supabase/client-utils'
 import { createClient } from '@supabase/supabase-js'
 import { NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
@@ -5,7 +6,10 @@ import { cookies } from 'next/headers'
 // Initialize Supabase client with service role key
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
-const supabase = createClient(supabaseUrl, supabaseServiceKey)
+const supabase = createClient(
+            getSupabaseUrl(),
+            getSupabaseKey('service')
+          )
 
 export async function GET(request: Request) {
   try {

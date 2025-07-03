@@ -1,3 +1,4 @@
+import { getSupabaseUrl, getSupabaseKey } from '@/lib/supabase/client-utils'
 import { NextResponse } from "next/server"
 import { cookies } from "next/headers"
 import { createClient } from "@/lib/supabase-server"

@@ -1,3 +1,4 @@
+import { getSupabaseUrl, getSupabaseKey } from '@/lib/supabase/client-utils'
 console.log('[API] /api/vendor/sales-analytics/route.ts loaded');
 
 import { NextResponse } from "next/server"
