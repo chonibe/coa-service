@@ -1,5 +1,7 @@
 # COA Service (Certificate of Authenticity Platform)
 
+<!-- Dashboard development work in progress - latest updates to customer authentication flow -->
+
 ## Overview
 
 COA Service is a comprehensive digital art authentication and management platform that leverages NFC technology to provide secure, verifiable certificates for digital artworks.
