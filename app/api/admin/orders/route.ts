@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
-import { createClient } from "@/lib/supabase/server"
+import { createClient } from "@supabase/supabase-js"
+import { getSupabaseUrl, getSupabaseKey } from '@/lib/supabase/client-utils'
 
 export async function GET(request: NextRequest) {
   try {
@@ -12,7 +13,10 @@ export async function GET(request: NextRequest) {
     }
 
     // Create Supabase client with service role key
-    const supabase = createClient()
+    const supabase = createClient(
+      getSupabaseUrl(), 
+      getSupabaseKey('service')
+    )
 
     // Fetch line items from the database
     const { data: lineItems, error } = await supabase

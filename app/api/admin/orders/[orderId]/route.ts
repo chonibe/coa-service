@@ -1,15 +1,18 @@
 import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
-import { supabase } from "@/lib/supabase"
+import { createClient } from "@supabase/supabase-js"
+import { getSupabaseUrl, getSupabaseKey } from '@/lib/supabase/client-utils'
 
 export async function GET(
   request: NextRequest,
   { params }: { params: { orderId: string } }
 ) {
   try {
-    if (!supabase) {
-      return NextResponse.json({ success: false, message: "Database connection error" }, { status: 500 })
-    }
+    // Create Supabase client with service role key
+    const supabase = createClient(
+      getSupabaseUrl(), 
+      getSupabaseKey('service')
+    )
 
     const { orderId } = params
 
