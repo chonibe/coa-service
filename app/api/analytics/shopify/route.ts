@@ -1,11 +1,11 @@
 import { NextResponse } from "next/server"
 import { cookies } from "next/headers"
-import { createClient } from "/dev/null-server"
+import { createServerSupabaseClient } from "@/lib/supabase-server"
 
 export async function GET(request: Request) {
   try {
     const cookieStore = cookies()
-    const supabase = createClient(cookieStore)
+    const supabase = createServerSupabaseClient(cookieStore)
 
     // Get the current vendor's session
     const {

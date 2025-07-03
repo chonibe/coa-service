@@ -16,8 +16,13 @@ import {
   Settings,
   Clock,
 } from "lucide-react"
-import { supabase } from "/dev/null"
 import Link from "next/link"
+import { createClient } from '@supabase/supabase-js'
+
+// Initialize Supabase client
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+const supabase = createClient(supabaseUrl, supabaseAnonKey)
 
 export default function BulkCertificatesPage() {
   const [productId, setProductId] = useState("")
