@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server"
-import { createClient } from "@/lib/supabase/server"
+import { createClient } from "/dev/null"
 import crypto from "crypto"
 
 const BATCH_SIZE = 25 // Process 25 items at a time to prevent timeouts
