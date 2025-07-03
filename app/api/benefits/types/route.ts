@@ -1,8 +1,14 @@
 import { NextResponse } from "next/server"
-import { supabase } from "@/lib/supabase"
+import { createClient } from "@supabase/supabase-js"
+import { getSupabaseUrl, getSupabaseKey } from '@/lib/supabase/client-utils'
 
 export async function GET() {
   try {
+    const supabase = createClient(
+      getSupabaseUrl(),
+      getSupabaseKey('service')
+    )
+
     const { data, error } = await supabase.from("benefit_types").select("*").order("name", { ascending: true })
 
     if (error) {

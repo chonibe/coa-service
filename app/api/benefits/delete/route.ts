@@ -1,9 +1,15 @@
 import { NextResponse } from "next/server"
-import type { NextRequest } from "next/request"
-import { supabase } from "@/lib/supabase"
+import type { NextRequest } from "next/server"
+import { createClient } from "@supabase/supabase-js"
+import { getSupabaseUrl, getSupabaseKey } from '@/lib/supabase/client-utils'
 
 export async function DELETE(request: NextRequest) {
   try {
+    const supabase = createClient(
+      getSupabaseUrl(),
+      getSupabaseKey('service')
+    )
+
     const searchParams = request.nextUrl.searchParams
     const id = searchParams.get("id")
 

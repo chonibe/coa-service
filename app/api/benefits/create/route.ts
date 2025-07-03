@@ -1,9 +1,15 @@
 import { NextResponse } from "next/server"
-import type { NextRequest } from "next/request"
-import { supabase } from "@/lib/supabase"
+import type { NextRequest } from "next/server"
+import { createClient } from "@supabase/supabase-js"
+import { getSupabaseUrl, getSupabaseKey } from '@/lib/supabase/client-utils'
 
 export async function POST(request: NextRequest) {
   try {
+    const supabase = createClient(
+      getSupabaseUrl(),
+      getSupabaseKey('service')
+    )
+
     const body = await request.json()
     const {
       product_id,

@@ -1,10 +1,16 @@
 import { NextResponse } from "next/server"
-import { supabase } from "@/lib/supabase"
+import { createClient } from "@supabase/supabase-js"
+import { getSupabaseUrl, getSupabaseKey } from '@/lib/supabase/client-utils'
 import fs from "fs"
 import path from "path"
 
 export async function POST() {
   try {
+    const supabase = createClient(
+      getSupabaseUrl(),
+      getSupabaseKey('service')
+    )
+
     // Read the SQL file
     const sqlContent = fs.readFileSync(path.join(process.cwd(), "db", "collector_benefits_tables.sql"), "utf8")
 

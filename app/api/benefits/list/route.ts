@@ -1,9 +1,15 @@
 import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
-import { supabase } from "@/lib/supabase"
+import { createClient } from "@supabase/supabase-js"
+import { getSupabaseUrl, getSupabaseKey } from '@/lib/supabase/client-utils'
 
 export async function GET(request: NextRequest) {
   try {
+    const supabase = createClient(
+      getSupabaseUrl(),
+      getSupabaseKey('service')
+    )
+
     const searchParams = request.nextUrl.searchParams
     const productId = searchParams.get("product_id")
     const vendorName = searchParams.get("vendor_name")
