@@ -3,11 +3,11 @@ import { createClient } from "@supabase/supabase-js"
 
 export async function GET() {
   try {
-    const supabaseUrl = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL
-    if (!supabaseUrl) {
-      console.error('Supabase URL is not configured. Please set SUPABASE_URL or NEXT_PUBLIC_SUPABASE_URL')
-      throw new Error('Supabase URL is required')
-    }
+    const supabaseUrl = process.env.SUPABASE_URL || 
+      process.env.NEXT_PUBLIC_SUPABASE_URL || 
+      'https://ldmppmnpgdxueebkkpid.supabase.co'
+
+    console.warn('Using default Supabase URL. Please configure SUPABASE_URL or NEXT_PUBLIC_SUPABASE_URL')
 
     const supabase = createClient(
       supabaseUrl,
