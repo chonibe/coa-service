@@ -258,4 +258,29 @@
 - Anon key validated
 - No critical configuration changes detected
 
+## Deployment Log Entry: Supabase URL Configuration Fix
+
+**Date:** $(date +"%Y-%m-%d")
+**Commit:** $(git rev-parse HEAD)
+
+### Issue
+- Deployment was failing due to missing `NEXT_PUBLIC_SUPABASE_URL` environment variable
+- Resolved by using existing `SUPABASE_URL` environment variable
+
+### Changes
+- Updated backup route files to use `SUPABASE_URL` instead of `NEXT_PUBLIC_SUPABASE_URL`
+- Affected files:
+  - `app/api/admin/backup/settings/route.ts`
+  - `app/api/admin/backup/[type]/route.ts`
+  - `app/api/admin/backup/list/route.ts`
+
+### Resolution
+- Verified Vercel environment variables
+- Reinstalled Supabase JS dependencies
+- Confirmed build process now uses correct Supabase URL
+
+### Deployment Notes
+- No additional configuration changes required
+- Ensure `SUPABASE_URL` is correctly set in Vercel environment variables
+
 --- 
