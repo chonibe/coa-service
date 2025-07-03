@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
-import { supabase } from "@/lib/supabase"
+import { createClient } from "@supabase/supabase-js"
+import { getSupabaseUrl, getSupabaseKey } from '@/lib/supabase/client-utils'
 import { SHOPIFY_SHOP, SHOPIFY_ACCESS_TOKEN, CERTIFICATE_METAFIELD_ID } from "@/lib/env"
 
 export async function GET(request: NextRequest, { params }: { params: { lineItemId: string } }) {
@@ -14,12 +15,10 @@ export async function GET(request: NextRequest, { params }: { params: { lineItem
     "Access-Control-Allow-Headers": "Content-Type, Authorization, x-preview-mode",
   }
 
-  if (!supabase) {
-    return NextResponse.json(
-      { success: false, message: "Database connection not available" },
-      { status: 500, headers: corsHeaders },
-    )
-  }
+  const supabase = createClient(
+    getSupabaseUrl(),
+    getSupabaseKey('service')
+  )
 
   try {
     // Get the line item data from the database

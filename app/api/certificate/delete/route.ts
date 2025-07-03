@@ -1,9 +1,15 @@
 import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
-import { supabaseAdmin } from "@/lib/supabase"
+import { createClient } from "@supabase/supabase-js"
+import { getSupabaseUrl, getSupabaseKey } from '@/lib/supabase/client-utils'
 
 export async function POST(request: NextRequest) {
   try {
+    const supabase = createClient(
+      getSupabaseUrl(),
+      getSupabaseKey('service')
+    )
+
     const body = await request.json()
     const { lineItemId, orderId } = body
 
@@ -12,7 +18,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Update the line item to remove certificate fields
-    const { error } = await supabaseAdmin
+    const { error } = await supabase
       .from("order_line_items")
       .update({
         certificate_url: null,

@@ -1,9 +1,15 @@
 import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
-import { supabase } from "@/lib/supabase"
+import { createClient } from "@supabase/supabase-js"
+import { getSupabaseUrl, getSupabaseKey } from '@/lib/supabase/client-utils'
 
 export async function GET(request: NextRequest) {
   try {
+    const supabase = createClient(
+      getSupabaseUrl(),
+      getSupabaseKey('service')
+    )
+
     const { searchParams } = new URL(request.url)
     const lineItemId = searchParams.get("lineItemId")
     const page = Number.parseInt(searchParams.get("page") || "1")
