@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
 import { z } from "zod"
 import { createClient } from "@supabase/supabase-js"
+import { getSupabaseUrl, getSupabaseKey } from '@/lib/supabase/client-utils'
 
 const backupSettingsSchema = z.object({
   google_drive_enabled: z.boolean(),
@@ -24,15 +25,9 @@ const defaultSettings = {
 }
 
 // Create Supabase client with service role key for admin operations
-const supabaseUrl = process.env.SUPABASE_URL || 
-  process.env.NEXT_PUBLIC_SUPABASE_URL || 
-  'https://ldmppmnpgdxueebkkpid.supabase.co'
-
-console.warn('Using default Supabase URL. Please configure SUPABASE_URL or NEXT_PUBLIC_SUPABASE_URL')
-
 const supabase = createClient(
-  supabaseUrl,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
+  getSupabaseUrl(),
+  getSupabaseKey('service')
 )
 
 export async function POST(req: Request) {
