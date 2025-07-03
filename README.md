@@ -1,5 +1,7 @@
 # Order Lookup & Vendor Portal
 
+<!-- Hello - Starting development work on this working production deployment -->
+
 A Next.js application for managing product editions, certificates, and vendor payouts.
 
 ## Project Overview
