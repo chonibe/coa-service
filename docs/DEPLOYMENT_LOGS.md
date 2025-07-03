@@ -283,4 +283,34 @@
 - No additional configuration changes required
 - Ensure `SUPABASE_URL` is correctly set in Vercel environment variables
 
+## Deployment Log Entry: Supabase URL Configuration Utility
+
+**Date:** $(date +"%Y-%m-%d")
+**Commit:** $(git rev-parse HEAD)
+
+### Issue
+- Multiple routes were experiencing Supabase client initialization failures
+- Inconsistent handling of Supabase URL and key configuration
+
+### Changes
+- Created `lib/supabase/client-utils.ts` with utility functions:
+  - `getSupabaseUrl()`: Retrieves Supabase URL with fallback
+  - `getSupabaseKey()`: Retrieves Supabase key with fallback
+- Updated backup routes to use new utility functions
+- Added console warnings for missing configuration
+
+### Resolution
+- Centralized Supabase URL and key configuration
+- Provided default values to prevent build failures
+- Improved logging for configuration issues
+
+### Deployment Notes
+- Utility functions allow easier configuration management
+- Warnings help identify missing environment variables
+- Fallback mechanism prevents unexpected build failures
+
+### Recommended Actions
+- Configure `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` in all environments
+- Review and update other routes using Supabase client initialization
+
 --- 
