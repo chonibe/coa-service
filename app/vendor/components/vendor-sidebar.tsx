@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Toaster } from "@/components/ui/toaster"
 import { useMobile } from "@/hooks/use-mobile"
-import { LogOut, Menu, Home, BarChart, Settings, Award, Package, DollarSign, MessageSquare, X } from "lucide-react"
+import { LogOut, Menu, Home, BarChart, Settings, Award, Package, DollarSign, MessageSquare, X, User } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 interface NavItem {
@@ -55,6 +55,11 @@ export function VendorSidebar() {
       title: "Messages",
       href: "/vendor/dashboard/messages",
       icon: <MessageSquare className="h-5 w-5" />,
+    },
+    {
+      title: "Profile",
+      href: "/vendor/dashboard/profile",
+      icon: <User className="h-5 w-5" />,
     },
     {
       title: "Settings",
@@ -108,7 +113,7 @@ export function VendorSidebar() {
     navItems[1], // Products
     navItems[2], // Analytics
     navItems[3], // Payouts
-    navItems[6], // Settings
+    navItems[6], // Profile
   ]
 
   // Check if a path is active (exact match or starts with for section pages)
