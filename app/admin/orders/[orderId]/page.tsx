@@ -1,9 +1,7 @@
-import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
 import { notFound } from 'next/navigation';
 import type { Database } from '@/types/supabase';
 import OrderDetails from '../OrderDetails';
-
 // Define interfaces for the order structure from Shopify API
 interface ShopifyAddress {
   address1: string;
@@ -14,7 +12,6 @@ interface ShopifyAddress {
   name?: string;
   phone?: string;
 }
-
 interface ShopifyCustomer {
   id: number;
   first_name: string;
@@ -22,7 +19,6 @@ interface ShopifyCustomer {
   email: string;
   default_address?: ShopifyAddress;
 }
-
 interface ShopifyLineItem {
   id: number;
   title: string;
@@ -35,7 +31,6 @@ interface ShopifyLineItem {
   fulfillment_status: string | null; // e.g., null, "fulfilled", "partial"
   // Add other line item properties you need
 }
-
 interface ShopifyOrderData {
   id: number;
   name: string;
@@ -61,11 +56,9 @@ interface ShopifyOrderData {
   billing_address?: ShopifyAddress;
   order_status_url: string;
 }
-
 interface ApiResponse {
   order: ShopifyOrderData;
 }
-
 interface OrderLineItem {
   id: string;
   title: string;
@@ -81,7 +74,6 @@ interface OrderLineItem {
   edition_number?: number;
   edition_size?: number;
 }
-
 interface Order {
   id: string;
   order_number: string;
@@ -101,7 +93,6 @@ interface Order {
     type: string;
   }>;
 }
-
 interface DatabaseOrderLineItem {
   line_item_id: string;
   title: string;
@@ -112,7 +103,6 @@ interface DatabaseOrderLineItem {
   product_id: string;
   variant_id: string | null;
 }
-
 async function getOrderData(orderId: string) {
   // First get the order from Supabase to get the Shopify ID and line items
   const cookieStore = await cookies();
@@ -129,30 +119,25 @@ async function getOrderData(orderId: string) {
       },
     }
   );
-
   const { data: orderData } = await supabase
     .from('orders')
     .select('*')
     .eq('id', orderId)
     .single();
-
   if (!orderData) {
     console.error('Order not found in Supabase');
     return null;
   }
-
   // Fetch line items without join
   const { data: lineItems, error: lineItemsError } = await supabase
     .from("order_line_items_v2")
     .select("*")
     .eq("order_id", orderId)
     .order("created_at", { ascending: true });
-
   if (lineItemsError) {
     console.error("Error fetching line items:", lineItemsError);
     throw new Error("Failed to fetch line items");
   }
-
   // Collect unique product IDs (as bigint)
   const productIds = Array.from(new Set((lineItems || []).map(item => item.product_id).filter(Boolean)));
   let productDetails: Record<string, { sku?: string | null; edition_number?: number; edition_size?: number; image_url?: string }> = {};
@@ -162,13 +147,11 @@ async function getOrderData(orderId: string) {
       .from('products')
       .select('shopify_id, sku, image_url')
       .in('shopify_id', productIds);
-
     // Fetch edition counters if needed
     const { data: editionCounters } = await supabase
       .from('product_edition_counters')
       .select('product_id, edition_total')
       .in('product_id', productIds);
-
     if (products) {
       productDetails = Object.fromEntries(products.map(p => [p.shopify_id, {
         sku: p.sku,
@@ -179,17 +162,14 @@ async function getOrderData(orderId: string) {
       }]));
     }
   }
-
   // Merge product data into line items
   const mappedLineItems = lineItems?.map(item => ({
     ...item,
     sku: productDetails[item.product_id]?.sku || null,
     image_url: productDetails[item.product_id]?.image_url || null,
   })) || [];
-
   console.log('DEBUG productDetails:', productDetails);
   console.log('DEBUG lineItems before mapping:', lineItems);
-
   // Try to fetch additional details from Shopify
   try {
     const shop = process.env.SHOPIFY_SHOP;
@@ -201,14 +181,12 @@ async function getOrderData(orderId: string) {
       console.error('No Shopify ID found in order data');
       return null;
     }
-
     const res = await fetch(`https://${shop}/admin/api/2023-10/orders/${shopifyOrderId}.json`, {
       headers: {
         'X-Shopify-Access-Token': token!,
         'Content-Type': 'application/json',
       },
     });
-
     if (res.ok) {
       const { order: shopifyOrder } = await res.json();
       const shopifyMappedLineItems = mappedLineItems.map(item => ({
@@ -250,7 +228,6 @@ async function getOrderData(orderId: string) {
   } catch (err) {
     console.error('Error fetching order from Shopify:', err);
   }
-
   // If Shopify fetch fails, return data from Supabase
   console.log('DEBUG mappedLineItems:', mappedLineItems);
   return {
@@ -273,7 +250,6 @@ async function getOrderData(orderId: string) {
     line_items: mappedLineItems
   };
 }
-
 export default async function OrderDetailsPage({
   params,
 }: {
@@ -284,13 +260,10 @@ export default async function OrderDetailsPage({
   
   const order = await getOrderData(orderId);
   console.log('Order data:', order);
-
   if (!order) {
     console.log('Order not found, redirecting to 404');
     notFound();
   }
-
   console.log('Order line items:', order.line_items);
-
   return <OrderDetails order={order} />;
 } 

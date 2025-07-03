@@ -1,11 +1,8 @@
 import { NextResponse } from "next/server"
-import { createClient } from '@supabase/supabase-js'
-
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 )
-
 export async function POST() {
   try {
     // Get all unique product IDs from order_line_items_v2
@@ -14,11 +11,9 @@ export async function POST() {
       .select('product_id')
       .order('product_id')
       .not('product_id', 'is', null)
-
     if (productsError) {
       throw new Error('Failed to fetch products')
     }
-
     // Get unique product IDs, filter out null/empty ones
     const uniqueProducts = [
       ...new Set(
@@ -27,15 +22,12 @@ export async function POST() {
           .filter(id => id && id.trim() !== '')
       )
     ]
-
     const results = []
     let totalAssigned = 0
-
     // Assign edition numbers for each product
     for (const productId of uniqueProducts) {
       const { data, error } = await supabase
         .rpc('assign_edition_numbers', { p_product_id: String(productId) })
-
       if (error) {
         console.error(`Error assigning numbers for product ${productId}:`, error)
         results.push({
@@ -52,7 +44,6 @@ export async function POST() {
         })
       }
     }
-
     return NextResponse.json({
       success: true,
       message: `Assigned ${totalAssigned} edition numbers across ${uniqueProducts.length} products`,

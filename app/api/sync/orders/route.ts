@@ -1,8 +1,6 @@
-import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
 import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
 import type { Database } from '@/types/supabase';
-
 interface ShopifyLineItem {
   id: number;
   title: string;
@@ -15,12 +13,10 @@ interface ShopifyLineItem {
   fulfillment_status: string | null;
   total_discount: string;
 }
-
 export async function POST() {
   try {
     const cookieStore = cookies();
     const supabase = createRouteHandlerClient<Database>({ cookies: () => cookieStore });
-
     // Fetch orders from Shopify
     const shop = process.env.SHOPIFY_SHOP;
     const token = process.env.SHOPIFY_ACCESS_TOKEN;
@@ -28,7 +24,6 @@ export async function POST() {
     if (!shop || !token) {
       return NextResponse.json({ error: 'Shopify credentials not set' }, { status: 500 });
     }
-
     const response = await fetch(
       `https://${shop}/admin/api/2023-10/orders.json?status=any&limit=250`,
       {
@@ -38,16 +33,13 @@ export async function POST() {
         },
       }
     );
-
     if (!response.ok) {
       throw new Error(`Failed to fetch orders: ${response.statusText}`);
     }
-
     const { orders } = await response.json();
     let syncedOrders = 0;
     let syncedLineItems = 0;
     let errors = 0;
-
     for (const order of orders) {
       try {
         // Prepare order data
@@ -63,20 +55,16 @@ export async function POST() {
           raw_shopify_order_data: order,
           updated_at: new Date().toISOString(),
         };
-
         // Upsert order
         const { error: orderError } = await supabase
           .from('orders')
           .upsert(orderData, { onConflict: 'id' });
-
         if (orderError) {
           console.error('Error upserting order:', orderError);
           errors++;
           continue;
         }
-
         syncedOrders++;
-
         // Handle line items
         if (order.line_items && order.line_items.length > 0) {
           // First, delete existing line items for this order
@@ -84,7 +72,6 @@ export async function POST() {
             .from('order_line_items')
             .delete()
             .eq('order_id', order.id.toString());
-
           // Then insert new line items
           const lineItems = order.line_items.map((item: ShopifyLineItem) => ({
             order_id: order.id.toString(),
@@ -103,11 +90,9 @@ export async function POST() {
             created_at: new Date().toISOString(),
             updated_at: new Date().toISOString(),
           }));
-
           const { error: lineItemsError } = await supabase
             .from('order_line_items')
             .insert(lineItems);
-
           if (lineItemsError) {
             console.error('Error inserting line items:', lineItemsError);
             errors++;
@@ -120,7 +105,6 @@ export async function POST() {
         errors++;
       }
     }
-
     return NextResponse.json({ 
       success: true, 
       message: `Synced ${syncedOrders} orders and ${syncedLineItems} line items`,
@@ -131,7 +115,6 @@ export async function POST() {
         errors
       }
     });
-
   } catch (error) {
     console.error('Error syncing orders:', error);
     return NextResponse.json(

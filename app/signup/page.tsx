@@ -1,14 +1,11 @@
 "use client"
-
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { AlertCircle } from 'lucide-react'
-
 export default function SignupPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -17,19 +14,16 @@ export default function SignupPage() {
   const [isLoading, setIsLoading] = useState(false)
   const router = useRouter()
   const supabase = createClientComponentClient()
-
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault()
     setError(null)
     setIsLoading(true)
-
     // Basic password validation
     if (password !== confirmPassword) {
       setError('Passwords do not match')
       setIsLoading(false)
       return
     }
-
     try {
       const { error } = await supabase.auth.signUp({
         email,
@@ -38,12 +32,10 @@ export default function SignupPage() {
           emailRedirectTo: `${window.location.origin}/auth/callback`
         }
       })
-
       if (error) {
         setError(error.message)
         return
       }
-
       // Redirect to Shopify OAuth instead of login
       router.push('/api/auth/shopify')
     } catch (err: any) {
@@ -52,7 +44,6 @@ export default function SignupPage() {
       setIsLoading(false)
     }
   }
-
   return (
     <div className="flex justify-center items-center min-h-screen bg-gray-100">
       <Card className="w-full max-w-md">
@@ -119,7 +110,6 @@ export default function SignupPage() {
               {isLoading ? 'Creating Account...' : 'Sign Up'}
             </Button>
           </form>
-
           <div className="mt-4 text-center text-sm">
             <p>
               Already have an account? {' '}

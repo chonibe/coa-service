@@ -1,9 +1,6 @@
-import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
-import { createClient } from '@supabase/supabase-js';
 import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
 import type { Database } from '@/types/supabase';
-
 interface ShopifyLineItem {
   id: number;
   title: string;
@@ -16,22 +13,18 @@ interface ShopifyLineItem {
   fulfillment_status: string | null;
   total_discount: string;
 }
-
 interface ShopifyOrder {
   id: string;
   name: string;
   created_at: string;
   line_items: ShopifyLineItem[];
 }
-
 interface OrderWithData {
   id: string;
   raw_shopify_order_data: ShopifyOrder;
 }
-
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
-
 export async function POST() {
   try {
     console.log('Starting line items sync...');
@@ -47,12 +40,10 @@ export async function POST() {
         }
       }
     );
-
     let allOrders: OrderWithData[] = [];
     let page = 0;
     const pageSize = 100;
     let hasMore = true;
-
     // Fetch all orders with pagination
     while (hasMore) {
       console.log(`Fetching orders page ${page + 1}...`);
@@ -61,7 +52,6 @@ export async function POST() {
         .select('id, raw_shopify_order_data')
         .range(page * pageSize, (page + 1) * pageSize - 1)
         .returns<OrderWithData[]>();
-
       if (ordersError) {
         console.error('Error fetching orders:', ordersError);
         return NextResponse.json(
@@ -69,7 +59,6 @@ export async function POST() {
           { status: 500 }
         );
       }
-
       if (!orders || orders.length === 0) {
         hasMore = false;
       } else {
@@ -77,12 +66,9 @@ export async function POST() {
         page++;
       }
     }
-
     console.log(`Found total of ${allOrders.length} orders to process`);
-
     let syncedLineItems = 0;
     let errors = 0;
-
     // Process each order
     for (const order of allOrders) {
       try {
@@ -92,20 +78,16 @@ export async function POST() {
           console.log(`No line items found for order ${order.id}`);
           continue;
         }
-
         console.log(`Found ${order.raw_shopify_order_data.line_items.length} line items for order ${order.id}`);
-
         // First, delete existing line items for this order in the new table
         console.log(`Deleting existing line items for order ${order.id}...`);
         const { error: deleteError } = await supabase
           .from('order_line_items_v2')
           .delete()
           .eq('order_id', order.id);
-
         if (deleteError) {
           console.error(`Error deleting existing line items for order ${order.id}:`, deleteError);
         }
-
         // Then insert new line items
         const lineItems = order.raw_shopify_order_data.line_items.map((item: ShopifyLineItem) => {
           console.log(`Mapping line item ${item.id} for order ${order.id}`);
@@ -125,13 +107,11 @@ export async function POST() {
             updated_at: new Date().toISOString()
           };
         });
-
         console.log(`Inserting ${lineItems.length} line items for order ${order.id}...`);
         const { error: lineItemsError, data: insertedItems } = await supabase
           .from('order_line_items_v2')
           .insert(lineItems)
           .select();
-
         if (lineItemsError) {
           console.error(`Error inserting line items for order ${order.id}:`, lineItemsError);
           errors++;
@@ -144,13 +124,11 @@ export async function POST() {
         errors++;
       }
     }
-
     console.log('Sync completed. Summary:', {
       totalOrders: allOrders.length,
       syncedLineItems,
       errors
     });
-
     return NextResponse.json({ 
       success: true, 
       message: `Synced ${syncedLineItems} line items from ${allOrders.length} orders`,
@@ -160,7 +138,6 @@ export async function POST() {
         errors
       }
     });
-
   } catch (error) {
     console.error('Error syncing line items:', error);
     return NextResponse.json(

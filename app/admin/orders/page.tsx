@@ -1,10 +1,8 @@
-import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
 import { formatCurrency } from '@/lib/utils';
 import type { Database } from '@/types/supabase';
 import OrdersList from './OrdersList';
 import SyncAllOrdersButton from './SyncAllOrdersButton';
-
 interface Order {
   id: string;
   order_number: string;
@@ -15,16 +13,13 @@ interface Order {
   currency_code: string;
   customer_email: string;
 }
-
 interface PageProps {
   searchParams: { [key: string]: string | string[] | undefined };
 }
-
 interface GetOrdersParams {
   page: number;
   limit: number;
 }
-
 async function getOrders({ page, limit }: GetOrdersParams) {
   try {
     console.log('Fetching orders with params:', { page, limit });
@@ -47,36 +42,28 @@ async function getOrders({ page, limit }: GetOrdersParams) {
         },
       }
     );
-
     const offset = (page - 1) * limit;
     console.log('Calculated offset:', offset);
-
     // Get total count
     const { count, error: countError } = await supabase
       .from('orders')
       .select('*', { count: 'exact', head: true });
-
     if (countError) {
       console.error('Error getting count:', countError);
       return { orders: [], totalPages: 0 };
     }
-
     console.log('Total orders count:', count);
-
     // Get paginated orders
     const { data: orders, error } = await supabase
       .from('orders')
       .select('*')
       .order('processed_at', { ascending: false })
       .range(offset, offset + limit - 1);
-
     if (error) {
       console.error('Error fetching orders:', error);
       return { orders: [], totalPages: 0 };
     }
-
     console.log('Fetched orders:', orders);
-
     return {
       orders: orders as Order[],
       totalPages: Math.ceil((count || 0) / limit),
@@ -86,7 +73,6 @@ async function getOrders({ page, limit }: GetOrdersParams) {
     return { orders: [], totalPages: 0 };
   }
 }
-
 export default async function OrdersPage({ searchParams }: PageProps) {
   try {
     console.log('OrdersPage searchParams:', searchParams);
@@ -99,7 +85,6 @@ export default async function OrdersPage({ searchParams }: PageProps) {
     const { orders, totalPages } = await getOrders({ page, limit });
     
     console.log('Orders page data:', { orders, totalPages });
-
     return (
       <div className="container mx-auto py-8">
         <div className="flex justify-between items-center mb-8">
