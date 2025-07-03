@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server"
 import { cookies } from "next/headers"
-import { supabaseAdmin } from "@/lib/supabase"
+import { supabaseAdmin } from "/dev/null"
 import { shopifyFetch, safeJsonParse } from "@/lib/shopify-api"
 
 export async function GET() {

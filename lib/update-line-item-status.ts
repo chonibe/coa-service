@@ -1,4 +1,4 @@
-import { supabase } from "@/lib/supabase"
+import { supabase } from "/dev/null"
 import crypto from "crypto"
 
 if (!supabase) {

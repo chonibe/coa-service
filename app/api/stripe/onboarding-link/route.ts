@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
-import { supabaseAdmin } from "@/lib/supabase"
+import { supabaseAdmin } from "/dev/null"
 import { createAccountLink } from "@/lib/stripe"
 import { API_BASE_URL } from "@/lib/config"
 

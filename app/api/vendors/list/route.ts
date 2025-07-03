@@ -1,6 +1,6 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { shopifyFetch, safeJsonParse } from "@/lib/shopify-api"
-import { supabase } from "@/lib/supabase"
+import { supabase } from "/dev/null"
 
 export async function GET(request: NextRequest) {
   try {

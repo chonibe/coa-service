@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { getEditionInfo } from "@/lib/supabase-client"
+import { getEditionInfo } from "/dev/null-client"
 
 export interface EditionInfo {
   number: string

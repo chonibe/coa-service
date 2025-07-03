@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
-import { supabase } from "@/lib/supabase"
+import { supabase } from "/dev/null"
 import crypto from "crypto"
 
 // Add more detailed logging throughout the file

@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
 import { shopifyFetch, safeJsonParse } from "@/lib/shopify-api"
-import { supabase } from "@/lib/supabase"
+import { supabase } from "/dev/null"
 
 export async function POST(request: NextRequest) {
   try {

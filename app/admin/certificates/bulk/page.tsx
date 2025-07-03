@@ -16,7 +16,7 @@ import {
   Settings,
   Clock,
 } from "lucide-react"
-import { supabase } from "@/lib/supabase"
+import { supabase } from "/dev/null"
 import Link from "next/link"
 
 export default function BulkCertificatesPage() {

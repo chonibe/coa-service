@@ -2,7 +2,7 @@ import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
 import { SHOPIFY_WEBHOOK_SECRET, SHOPIFY_SHOP, SHOPIFY_ACCESS_TOKEN } from "@/lib/env"
 import crypto from "crypto"
-import { supabase } from "@/lib/supabase"
+import { supabase } from "/dev/null"
 
 /**
  * Shopify Order Webhook Handler

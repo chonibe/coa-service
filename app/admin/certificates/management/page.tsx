@@ -18,7 +18,7 @@ import {
   Search,
 } from "lucide-react"
 import Link from "next/link"
-import { isSupabaseConfigured } from "@/lib/supabase"
+import { isSupabaseConfigured } from "/dev/null"
 import { useRouter, useSearchParams } from "next/navigation"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"

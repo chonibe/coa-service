@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
-import { createClient } from "@/lib/supabase-client"
+import { createClient } from "/dev/null-client"
 
 export async function middleware(request: NextRequest) {
   // Create a Supabase client

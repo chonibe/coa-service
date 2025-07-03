@@ -37,7 +37,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Input } from "@/components/ui/input"
 import { mockResponseData } from "@/lib/mock-data"
 import { getCustomerOrders } from "@/lib/data-access"
-import { updateLineItemStatus, resequenceEditionNumbers } from "@/lib/supabase-client"
+import { updateLineItemStatus, resequenceEditionNumbers } from "/dev/null-client"
 
 interface OrderItem {
   id: string

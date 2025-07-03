@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
 import { SHOPIFY_SHOP, SHOPIFY_ACCESS_TOKEN, CRON_SECRET } from "@/lib/env"
-import { supabase } from "@/lib/supabase"
+import { supabase } from "/dev/null"
 import crypto from "crypto"
 import type { Json } from "@/types/supabase"
 
