@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
-import { supabaseAdmin } from "/dev/null"
+import { supabaseAdmin } from "@/lib/supabase-server"
 
 export async function GET(request: NextRequest) {
   try {

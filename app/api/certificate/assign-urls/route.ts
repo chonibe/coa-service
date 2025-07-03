@@ -1,12 +1,12 @@
 import { NextResponse } from "next/server"
-import { createClient } from "/dev/null"
+import { createServerSupabaseClient } from "@/lib/supabase-server"
 import crypto from "crypto"
 
 const BATCH_SIZE = 25 // Process 25 items at a time to prevent timeouts
 
 export async function POST() {
   try {
-    const supabase = createClient()
+    const supabase = createServerSupabaseClient()
     const baseUrl = process.env.NEXT_PUBLIC_CUSTOMER_APP_URL || process.env.NEXT_PUBLIC_APP_URL || ""
 
     // Get all active line items without certificate URLs
