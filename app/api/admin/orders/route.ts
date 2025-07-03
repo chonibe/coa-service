@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
-import { createClient } from "/dev/null"
+import { createServerSupabaseClient } from "@/lib/supabase-server"
 
 export async function GET(request: NextRequest) {
   try {
@@ -17,7 +17,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Create Supabase client with service role key
-    const supabase = createClient()
+    const supabase = createServerSupabaseClient()
 
     // Fetch line items from the database
     const { data: lineItems, error } = await supabase

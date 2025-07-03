@@ -1,5 +1,5 @@
 import { mockResponseData } from "@/lib/mock-data"
-import { fetchOrderLineItems } from "/dev/null-client"
+import { fetchOrderLineItems } from "@/lib/supabase-client"
 
 /**
  * Client-side data access helper that either uses API calls to the proxy
