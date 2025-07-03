@@ -2,15 +2,13 @@ import { NextResponse } from "next/server"
 import { createClient } from "@supabase/supabase-js"
 import { getSupabaseUrl, getSupabaseKey } from '@/lib/supabase/client-utils'
 
+const supabase = createClient(
+  getSupabaseUrl(),
+  getSupabaseKey('anon')
+)
+
 export async function GET() {
   try {
-    const supabase = createClient(
-            getSupabaseUrl(),
-            getSupabaseKey('anon')
-          ),
-      getSupabaseKey('anon')
-    )
-
     const { data, error } = await supabase
       .from("backups")
       .select("*")

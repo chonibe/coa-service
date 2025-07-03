@@ -15,9 +15,7 @@ interface BackupResult {
 
 // Create Supabase client with service role key for admin operations
 const supabase = createClient(
-            getSupabaseUrl(),
-            getSupabaseKey('service')
-          ),
+  getSupabaseUrl(),
   getSupabaseKey('service')
 )
 

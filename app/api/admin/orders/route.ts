@@ -3,6 +3,11 @@ import type { NextRequest } from "next/server"
 import { createClient } from "@supabase/supabase-js"
 import { getSupabaseUrl, getSupabaseKey } from '@/lib/supabase/client-utils'
 
+const supabase = createClient(
+  getSupabaseUrl(),
+  getSupabaseKey('service')
+)
+
 export async function GET(request: NextRequest) {
   try {
     // Check for admin session cookie
@@ -11,14 +16,6 @@ export async function GET(request: NextRequest) {
       console.log("No admin session found")
       return NextResponse.json({ success: false, message: "Unauthorized" }, { status: 401 })
     }
-
-    // Create Supabase client with service role key
-    const supabase = createClient(
-            getSupabaseUrl(),
-            getSupabaseKey('service')
-          ), 
-      getSupabaseKey('service')
-    )
 
     // Fetch line items from the database
     const { data: lineItems, error } = await supabase

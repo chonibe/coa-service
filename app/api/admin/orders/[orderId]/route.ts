@@ -3,19 +3,16 @@ import type { NextRequest } from "next/server"
 import { createClient } from "@supabase/supabase-js"
 import { getSupabaseUrl, getSupabaseKey } from '@/lib/supabase/client-utils'
 
+const supabase = createClient(
+  getSupabaseUrl(),
+  getSupabaseKey('service')
+)
+
 export async function GET(
   request: NextRequest,
   { params }: { params: { orderId: string } }
 ) {
   try {
-    // Create Supabase client with service role key
-    const supabase = createClient(
-            getSupabaseUrl(),
-            getSupabaseKey('service')
-          ), 
-      getSupabaseKey('service')
-    )
-
     const { orderId } = params
 
     // Get order details
