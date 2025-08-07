@@ -1,4 +1,4 @@
-# Sprint: Customer Dashboard Implementation ✅ COMPLETED
+#å` Sprint: Customer Dashboard Implementation ✅ COMPLETED
 
 ## Objective
 Implement a comprehensive customer dashboard that links authenticated users to their order line items, NFC tags, and digital certificates.
