@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server"
-import { createClient } from "@supabase/supabase-js"
+import { createClient } from "@/lib/supabase/server"
 import { backupDatabase } from "@/backup/scripts/backup-database"
 import { exportToSheets } from "@/backup/scripts/export-to-sheets"
 import { BackupConfig } from "@/backup/config/backup-config"
@@ -18,10 +18,9 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 )
 
-export async function POST(
-  req: Request,
-  { params }: { params: { type: string } }
-) {
+export async function POST() {
+  const supabase = createClient()
+  
   try {
     // Get backup settings
     const { data: settings, error: settingsError } = await supabase
@@ -114,10 +113,9 @@ export async function POST(
   }
 }
 
-export async function DELETE(
-  req: Request,
-  { params }: { params: { type: string } }
-) {
+export async function DELETE() {
+  const supabase = createClient()
+  
   try {
     const { error } = await supabase
       .from("backups")

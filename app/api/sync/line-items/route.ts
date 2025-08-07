@@ -1,5 +1,5 @@
 import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
-import { createClient } from '@supabase/supabase-js';
+import { createClient } from '@/lib/supabase/server';
 import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
 import type { Database } from '@/types/supabase';
@@ -33,6 +33,8 @@ export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
 export async function POST() {
+  const supabase = createClient()
+  
   try {
     console.log('Starting line items sync...');
     

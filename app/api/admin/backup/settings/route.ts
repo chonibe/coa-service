@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server"
 import { z } from "zod"
-import { createClient } from "@supabase/supabase-js"
+import { createClient } from "@/lib/supabase/server"
 
 const backupSettingsSchema = z.object({
   google_drive_enabled: z.boolean(),
@@ -29,7 +29,9 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 )
 
-export async function POST(req: Request) {
+export async function POST() {
+  const supabase = createClient()
+  
   try {
     console.log("API: Received POST request for backup settings")
     const body = await req.json()
@@ -85,6 +87,8 @@ export async function POST(req: Request) {
 }
 
 export async function GET() {
+  const supabase = createClient()
+  
   try {
     console.log("API: Received GET request for backup settings")
     console.log("API: Fetching settings from Supabase...")

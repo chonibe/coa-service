@@ -1,14 +1,11 @@
-import { createClient } from '@supabase/supabase-js'
 import { NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
-
-// Initialize Supabase client with service role key
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
-const supabase = createClient(supabaseUrl, supabaseServiceKey)
+import { createClient } from '@/lib/supabase/server'
 
 export async function GET() {
   try {
+    const supabase = createClient()
+    
     // Check for admin session cookie
     const cookieStore = await cookies()
     const adminSession = cookieStore.get('admin_session')

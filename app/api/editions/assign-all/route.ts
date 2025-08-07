@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server"
-import { createClient } from '@supabase/supabase-js'
+import { createClient } from '@/lib/supabase/server'
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -7,6 +7,8 @@ const supabase = createClient(
 )
 
 export async function POST() {
+  const supabase = createClient()
+  
   try {
     // Get all unique product IDs from order_line_items_v2
     const { data: products, error: productsError } = await supabase

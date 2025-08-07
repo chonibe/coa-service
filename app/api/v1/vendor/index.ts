@@ -1,6 +1,6 @@
 import { NextApiResponse } from 'next'
 import { withAuth, UserRole, AuthenticatedRequest } from '@/lib/api-middleware/auth'
-import { createClient } from '@supabase/supabase-js'
+import { createClient } from '@/lib/supabase/server'
 
 // Initialize Supabase client
 const supabase = createClient(

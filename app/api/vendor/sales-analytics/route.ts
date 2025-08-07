@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server"
 import { cookies } from "next/headers"
-import { createClient } from "@supabase/supabase-js"
+import { createClient } from "@/lib/supabase/server"
 import type { Database } from "@/types/supabase"
 
 interface LineItem {
@@ -32,6 +32,8 @@ interface SalesByProduct {
 }
 
 export async function GET() {
+  const supabase = createClient()
+  
   try {
     // Get vendor name from cookie
     const cookieStore = await cookies()

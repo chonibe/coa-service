@@ -1,4 +1,4 @@
-import { createClient } from '@supabase/supabase-js'
+import { createClient } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
 
 const supabase = createClient(
@@ -7,6 +7,8 @@ const supabase = createClient(
 )
 
 export async function GET() {
+  const supabase = createClient()
+  
   try {
     const { data, error } = await supabase
       .rpc('check_product_id_types')
