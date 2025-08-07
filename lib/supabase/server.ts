@@ -9,5 +9,18 @@ export const createClient = () => {
     throw new Error('Missing Supabase environment variables')
   }
 
-  return createSupabaseClient<Database>(supabaseUrl, supabaseKey)
+  return createSupabaseClient<Database>(supabaseUrl, supabaseKey, {
+    auth: {
+      persistSession: false,
+      autoRefreshToken: false,
+    },
+    db: {
+      schema: 'public'
+    },
+    global: {
+      headers: {
+        'x-application-name': 'coa-service'
+      }
+    }
+  })
 } 

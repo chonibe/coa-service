@@ -5,25 +5,29 @@ import fs from "fs"
 import path from "path"
 
 export async function POST() {
-  const supabase = createClient()
-  
   try {
+    const supabase = createClient()
+    
     // First, create the exec_sql function if it doesn't exist
     const createFunctionSql = fs.readFileSync(path.join(process.cwd(), "db", "create_exec_sql_function.sql"), "utf8")
 
     // Execute the SQL directly to create the function
-    const { error: functionError } = await supabase
-      .rpc("exec_sql", {
+    let functionError = null
+    try {
+      const { error } = await supabase.rpc("exec_sql", {
         sql_query: createFunctionSql,
       })
-      .catch(() => {
-        // If the function doesn't exist yet, we need to create it directly
-        return supabase
-          .from("_temp_exec_sql")
-          .select()
-          .limit(1)
-          .then(() => ({ error: null }))
-      })
+      functionError = error
+    } catch (error) {
+      // If the function doesn't exist yet, we need to create it directly
+      console.log("exec_sql function not found, creating it...")
+      try {
+        await supabase.from("_temp_exec_sql").select().limit(1)
+        functionError = null
+      } catch (fallbackError) {
+        functionError = fallbackError
+      }
+    }
 
     if (functionError) {
       console.error("Error creating exec_sql function:", functionError)
