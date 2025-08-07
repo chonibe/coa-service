@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
-import { supabaseAdmin } from "@/lib/supabase"
+import { createClient } from "@/lib/supabase/server"
 import Stripe from "stripe"
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || "", {
@@ -9,7 +9,9 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || "", {
 
 const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET
 
-export async function POST(request: NextRequest) {
+export async function POST() {
+  const supabase = createClient()
+  
   try {
     const body = await request.text()
     const sig = request.headers.get("stripe-signature") || ""
@@ -51,7 +53,7 @@ export async function POST(request: NextRequest) {
 async function handleAccountUpdated(account: Stripe.Account) {
   try {
     // Find the vendor with this Stripe account ID
-    const { data: vendor, error } = await supabaseAdmin
+    const { data: vendor, error } = await supabase
       .from("vendors")
       .select("vendor_name")
       .eq("stripe_account_id", account.id)
@@ -66,7 +68,7 @@ async function handleAccountUpdated(account: Stripe.Account) {
     const isOnboardingComplete =
       account.details_submitted && account.payouts_enabled && !account.requirements?.currently_due?.length
 
-    await supabaseAdmin
+    await supabase
       .from("vendors")
       .update({
         stripe_onboarding_complete: isOnboardingComplete,
@@ -93,7 +95,7 @@ async function handleTransferCreated(transfer: Stripe.Transfer) {
     const payoutId = transfer.metadata.payout_id
 
     // Update the payout record with the transfer ID
-    await supabaseAdmin
+    await supabase
       .from("vendor_payouts")
       .update({
         stripe_transfer_id: transfer.id,
@@ -119,7 +121,7 @@ async function handleTransferFailed(transfer: Stripe.Transfer) {
     const payoutId = transfer.metadata.payout_id
 
     // Update the payout record with the failed status
-    await supabaseAdmin
+    await supabase
       .from("vendor_payouts")
       .update({
         stripe_transfer_id: transfer.id,

@@ -1,8 +1,10 @@
 import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
-import { supabaseAdmin } from "@/lib/supabase"
+import { createClient } from "@/lib/supabase/server"
 
-export async function POST(request: NextRequest) {
+export async function POST() {
+  const supabase = createClient()
+  
   try {
     const body = await request.json()
     const { productIds, vendorNames } = body
@@ -14,7 +16,7 @@ export async function POST(request: NextRequest) {
     console.log(`Fetching payouts for ${productIds.length} products from Supabase`)
 
     // Fetch all payout settings from the product_vendor_payouts table
-    const { data, error } = await supabaseAdmin.from("product_vendor_payouts").select("*").in("product_id", productIds)
+    const { data, error } = await supabase.from("product_vendor_payouts").select("*").in("product_id", productIds)
 
     if (error) {
       console.error("Error fetching vendor payouts:", error)

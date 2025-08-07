@@ -1,8 +1,10 @@
 import { NextResponse } from "next/server"
 import { cookies } from "next/headers"
-import { supabaseAdmin } from "@/lib/supabase"
+import { createClient } from "@/lib/supabase/server"
 
 export async function GET() {
+  const supabase = createClient()
+  
   try {
     // Get vendor name from cookie
     const cookieStore = cookies()
@@ -15,7 +17,7 @@ export async function GET() {
     console.log(`Fetching payouts for vendor: ${vendorName}`)
 
     // First try to get payouts from the vendor_payouts table
-    const { data: payouts, error } = await supabaseAdmin
+    const { data: payouts, error } = await supabase
       .from("vendor_payouts")
       .select("*")
       .eq("vendor_name", vendorName)
@@ -41,7 +43,7 @@ export async function GET() {
 
     // If no payouts found, calculate pending payout from sales data
     // First get the vendor's sales data
-    const { data: lineItems } = await supabaseAdmin
+    const { data: lineItems } = await supabase
       .from("order_line_items")
       .select("*")
       .eq("vendor_name", vendorName)
@@ -52,7 +54,7 @@ export async function GET() {
     const productIds = products.map((p) => p.id)
 
     // Get payout settings
-    const { data: payoutSettings } = await supabaseAdmin
+    const { data: payoutSettings } = await supabase
       .from("product_vendor_payouts")
       .select("*")
       .eq("vendor_name", vendorName)

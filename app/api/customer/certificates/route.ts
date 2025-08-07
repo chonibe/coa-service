@@ -1,9 +1,11 @@
 import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
-import { supabase } from "@/lib/supabase"
+import { createClient } from "@/lib/supabase/server"
 import { SHOPIFY_SHOP, SHOPIFY_ACCESS_TOKEN } from "@/lib/env"
 
-export async function GET(request: NextRequest) {
+export async function GET() {
+  const supabase = createClient()
+  
   try {
     const { searchParams } = new URL(request.url)
     const customerId = searchParams.get("customerId")

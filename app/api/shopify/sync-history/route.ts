@@ -1,8 +1,10 @@
 import { NextResponse } from "next/server"
 import type { NextRequest } from "next/request"
-import { supabase } from "@/lib/supabase"
+import { createClient } from "@/lib/supabase/server"
 
-export async function GET(request: NextRequest) {
+export async function GET() {
+  const supabase = createClient()
+  
   try {
     const { searchParams } = new URL(request.url)
     const limit = Number.parseInt(searchParams.get("limit") || "10")

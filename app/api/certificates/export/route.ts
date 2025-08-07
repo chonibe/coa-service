@@ -1,8 +1,10 @@
 import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
-import { supabaseAdmin } from "@/lib/supabase"
+import { createClient } from "@/lib/supabase/server"
 
-export async function GET(request: NextRequest) {
+export async function GET() {
+  const supabase = createClient()
+  
   try {
     const { searchParams } = new URL(request.url)
     const productId = searchParams.get("productId")
@@ -12,7 +14,7 @@ export async function GET(request: NextRequest) {
     const sortDirection = searchParams.get("sortDirection") || "desc"
 
     // Build the query
-    let query = supabaseAdmin.from("order_line_items_v2").select("*")
+    let query = supabase.from("order_line_items_v2").select("*")
 
     // Apply filters
     if (productId) {

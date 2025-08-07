@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
-import { supabase } from "@/lib/supabase"
+import { createClient } from "@/lib/supabase/server"
 import crypto from "crypto"
 
 // Add more detailed logging throughout the file
@@ -42,7 +42,9 @@ async function fetchLineItemDetails(lineItems: any[]) {
   return details
 }
 
-export async function POST(request: NextRequest) {
+export async function POST() {
+  const supabase = createClient()
+  
   console.log("==== SYNC ALL PRODUCTS API CALLED ====")
   console.log("Received sync request to /api/sync-all-products")
   console.log("Request headers:", Object.fromEntries(request.headers.entries()))

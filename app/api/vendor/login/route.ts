@@ -1,9 +1,11 @@
 import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
 import { cookies } from "next/headers"
-import { supabaseAdmin } from "@/lib/supabase"
+import { createClient } from "@/lib/supabase/server"
 
-export async function POST(request: NextRequest) {
+export async function POST() {
+  const supabase = createClient()
+  
   try {
     const body = await request.json()
     const { vendorName } = body
@@ -13,7 +15,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Check if the vendor exists
-    const { data: vendor, error } = await supabaseAdmin
+    const { data: vendor, error } = await supabase
       .from("vendors")
       .select("*")
       .eq("vendor_name", vendorName)
@@ -25,7 +27,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Update last login timestamp
-    await supabaseAdmin.from("vendors").update({ last_login: new Date().toISOString() }).eq("vendor_name", vendorName)
+    await supabase.from("vendors").update({ last_login: new Date().toISOString() }).eq("vendor_name", vendorName)
 
     // Set a cookie to maintain the vendor session
     const cookieStore = cookies()

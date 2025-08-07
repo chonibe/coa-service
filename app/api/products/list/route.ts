@@ -1,12 +1,14 @@
 import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
-import { supabaseAdmin } from "@/lib/supabase"
+import { createClient } from "@/lib/supabase/server"
 import { SHOPIFY_SHOP, SHOPIFY_ACCESS_TOKEN } from "@/lib/env"
 
-export async function GET(request: NextRequest) {
+export async function GET() {
+  const supabase = createClient()
+  
   try {
     // First, get unique product IDs from the database
-    const { data: productIds, error: productIdsError } = await supabaseAdmin
+    const { data: productIds, error: productIdsError } = await supabase
       .from("order_line_items")
       .select("product_id")
       .is("product_id", "not.null")

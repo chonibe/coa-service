@@ -1,8 +1,10 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { shopifyFetch, safeJsonParse } from "@/lib/shopify-api"
-import { supabase } from "@/lib/supabase"
+import { createClient } from "@/lib/supabase/server"
 
-export async function GET(request: NextRequest) {
+export async function GET() {
+  const supabase = createClient()
+  
   try {
     // Get query parameters
     const searchParams = request.nextUrl.searchParams

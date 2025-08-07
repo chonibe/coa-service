@@ -1,9 +1,11 @@
 import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
 import { cookies } from "next/headers"
-import { supabaseAdmin } from "@/lib/supabase"
+import { createClient } from "@/lib/supabase/server"
 
-export async function POST(request: NextRequest) {
+export async function POST() {
+  const supabase = createClient()
+  
   try {
     // Get the vendor name from the cookie
     const cookieStore = cookies()
@@ -22,7 +24,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Update the vendor's PayPal email
-    const { error } = await supabaseAdmin
+    const { error } = await supabase
       .from("vendors")
       .update({ paypal_email: paypalEmail })
       .eq("vendor_name", vendorName)

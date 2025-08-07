@@ -1,9 +1,11 @@
 import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
-import { supabaseAdmin } from "@/lib/supabase"
+import { createClient } from "@/lib/supabase/server"
 import crypto from "crypto"
 
-export async function POST(request: NextRequest) {
+export async function POST() {
+  const supabase = createClient()
+  
   try {
     // Check for admin authentication
     // This would normally check for admin authentication, but we're skipping it for brevity
@@ -46,7 +48,7 @@ export async function POST(request: NextRequest) {
         const taxAmount = 0
 
         // Insert the payout record
-        const { data, error } = await supabaseAdmin
+        const { data, error } = await supabase
           .from("vendor_payouts")
           .insert({
             vendor_name,
@@ -77,7 +79,7 @@ export async function POST(request: NextRequest) {
         const payoutId = data[0].id
 
         // Get all pending line items for this vendor
-        const { data: lineItems, error: lineItemsError } = await supabaseAdmin.rpc("get_vendor_pending_line_items", {
+        const { data: lineItems, error: lineItemsError } = await supabase.rpc("get_vendor_pending_line_items", {
           p_vendor_name: vendor_name,
         })
 
@@ -95,7 +97,7 @@ export async function POST(request: NextRequest) {
             created_at: new Date().toISOString(),
           }))
 
-          const { error: insertError } = await supabaseAdmin.from("vendor_payout_items").insert(payoutItems)
+          const { error: insertError } = await supabase.from("vendor_payout_items").insert(payoutItems)
 
           if (insertError) {
             console.error(`Error associating line items with payout for ${vendor_name}:`, insertError)
@@ -111,7 +113,7 @@ export async function POST(request: NextRequest) {
 
           if (paypalSuccess) {
             // Update the payout status to completed
-            await supabaseAdmin
+            await supabase
               .from("vendor_payouts")
               .update({
                 status: "completed",
@@ -131,7 +133,7 @@ export async function POST(request: NextRequest) {
             processedCount++
           } else {
             // Update the payout status to failed
-            await supabaseAdmin
+            await supabase
               .from("vendor_payouts")
               .update({
                 status: "failed",
@@ -148,7 +150,7 @@ export async function POST(request: NextRequest) {
           }
         } else {
           // For other payment methods, mark as processing
-          await supabaseAdmin
+          await supabase
             .from("vendor_payouts")
             .update({
               status: "processing",

@@ -1,8 +1,10 @@
 import { NextResponse } from "next/server"
-import { supabaseAdmin } from "@/lib/supabase"
+import { createClient } from "@/lib/supabase/server"
 
 export async function GET() {
-  if (!supabaseAdmin) {
+  const supabase = createClient()
+  
+  if (!supabase) {
     return NextResponse.json(
       { success: false, error: "Supabase client not initialized" },
       { status: 500 }
@@ -10,7 +12,7 @@ export async function GET() {
   }
 
   try {
-    const { data, error } = await supabaseAdmin
+    const { data, error } = await supabase
       .from("orders")
       .select("*")
       .limit(1)

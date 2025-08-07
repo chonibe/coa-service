@@ -2,14 +2,16 @@ import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
 import { SHOPIFY_WEBHOOK_SECRET, SHOPIFY_SHOP, SHOPIFY_ACCESS_TOKEN } from "@/lib/env"
 import crypto from "crypto"
-import { supabase } from "@/lib/supabase"
+import { createClient } from "@/lib/supabase/server"
 
 /**
  * Shopify Order Webhook Handler
  * This endpoint receives webhook notifications from Shopify when orders are created or updated
  * It processes the orders and updates the edition numbers accordingly
  */
-export async function POST(request: NextRequest) {
+export async function POST() {
+  const supabase = createClient()
+  
   try {
     // Verify the webhook is from Shopify
     const hmacHeader = request.headers.get("x-shopify-hmac-sha256")

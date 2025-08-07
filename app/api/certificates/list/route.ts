@@ -1,10 +1,12 @@
 import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
-import { supabaseAdmin } from "@/lib/supabase"
+import { createClient } from "@/lib/supabase/server"
 
-export async function GET(request: NextRequest) {
+export async function GET() {
+  const supabase = createClient()
+  
   try {
-    if (!supabaseAdmin) {
+    if (!supabase) {
       throw new Error("Supabase client not initialized")
     }
 
@@ -22,7 +24,7 @@ export async function GET(request: NextRequest) {
     const to = from + pageSize - 1
 
     // Build the query with specific columns to reduce data transfer
-    let query = supabaseAdmin
+    let query = supabase
       .from("order_line_items_v2")
       .select(
         "line_item_id, order_id, order_name, product_id, edition_number, edition_total, status, certificate_url, certificate_generated_at, created_at",

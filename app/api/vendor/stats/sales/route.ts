@@ -1,10 +1,12 @@
 import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
 import { cookies } from "next/headers"
-import { supabaseAdmin } from "@/lib/supabase"
+import { createClient } from "@/lib/supabase/server"
 import { SHOPIFY_SHOP, SHOPIFY_ACCESS_TOKEN } from "@/lib/env"
 
-export async function GET(request: NextRequest) {
+export async function GET() {
+  const supabase = createClient()
+  
   try {
     // Get the vendor name from the cookie
     const cookieStore = cookies()
@@ -17,7 +19,7 @@ export async function GET(request: NextRequest) {
     console.log(`Fetching sales data for vendor: ${vendorName}`)
 
     // Query database for line items with active certificates for this vendor
-    const { data: lineItems, error: lineItemsError } = await supabaseAdmin
+    const { data: lineItems, error: lineItemsError } = await supabase
       .from("order_line_items")
       .select(`
         id,

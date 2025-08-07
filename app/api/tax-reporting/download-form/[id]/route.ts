@@ -1,8 +1,10 @@
 import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
-import { supabaseAdmin } from "@/lib/supabase"
+import { createClient } from "@/lib/supabase/server"
 
-export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
+export async function GET() {
+  const supabase = createClient()
+  
   try {
     const formId = params.id
 
@@ -11,7 +13,7 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
     }
 
     // Get the tax form
-    const { data: taxForm, error } = await supabaseAdmin.from("tax_forms").select("*").eq("id", formId).single()
+    const { data: taxForm, error } = await supabase.from("tax_forms").select("*").eq("id", formId).single()
 
     if (error) {
       console.error("Error fetching tax form:", error)
@@ -23,7 +25,7 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
     }
 
     // Get vendor information
-    const { data: vendor, error: vendorError } = await supabaseAdmin
+    const { data: vendor, error: vendorError } = await supabase
       .from("vendors")
       .select("*")
       .eq("vendor_name", taxForm.vendor_name)

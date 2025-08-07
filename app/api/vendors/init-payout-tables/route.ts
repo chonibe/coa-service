@@ -1,7 +1,9 @@
 import { NextResponse } from "next/server"
-import { supabaseAdmin } from "@/lib/supabase"
+import { createClient } from "@/lib/supabase/server"
 
-export async function POST(request: Request) {
+export async function POST() {
+  const supabase = createClient()
+  
   try {
     // Read the SQL file content
     const sqlQuery = `
@@ -69,7 +71,7 @@ export async function POST(request: Request) {
     `
 
     // Execute the SQL query
-    const { error } = await supabaseAdmin.rpc("exec_sql", { sql_query: sqlQuery })
+    const { error } = await supabase.rpc("exec_sql", { sql_query: sqlQuery })
 
     if (error) {
       console.error("Error initializing payout tables:", error)

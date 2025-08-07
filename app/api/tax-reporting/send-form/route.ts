@@ -1,8 +1,10 @@
 import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
-import { supabaseAdmin } from "@/lib/supabase"
+import { createClient } from "@/lib/supabase/server"
 
-export async function POST(request: NextRequest) {
+export async function POST() {
+  const supabase = createClient()
+  
   try {
     const body = await request.json()
     const { formId } = body
@@ -12,7 +14,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Get the tax form
-    const { data: taxForm, error } = await supabaseAdmin.from("tax_forms").select("*").eq("id", formId).single()
+    const { data: taxForm, error } = await supabase.from("tax_forms").select("*").eq("id", formId).single()
 
     if (error) {
       console.error("Error fetching tax form:", error)
@@ -24,7 +26,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Get vendor information
-    const { data: vendor, error: vendorError } = await supabaseAdmin
+    const { data: vendor, error: vendorError } = await supabase
       .from("vendors")
       .select("*")
       .eq("vendor_name", taxForm.vendor_name)
@@ -38,7 +40,7 @@ export async function POST(request: NextRequest) {
     // In a real implementation, we would send an email to the vendor with the tax form
     // For now, we'll just update the tax form record to mark it as sent
 
-    const { error: updateError } = await supabaseAdmin
+    const { error: updateError } = await supabase
       .from("tax_forms")
       .update({
         sent_to_vendor: true,

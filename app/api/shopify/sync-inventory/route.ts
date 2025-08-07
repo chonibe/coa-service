@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
 import { SHOPIFY_SHOP, SHOPIFY_ACCESS_TOKEN } from "@/lib/env"
-import { supabase } from "@/lib/supabase"
+import { createClient } from "@/lib/supabase/server"
 import type { Json } from "@/types/supabase"
 
 interface ShopifyInventoryItem {
@@ -63,7 +63,9 @@ async function fetchInventoryLevels(): Promise<ShopifyInventoryItem[]> {
   return allItems;
 }
 
-export async function POST(request: NextRequest) {
+export async function POST() {
+  const supabase = createClient()
+  
   try {
     if (!supabase) {
       throw new Error("Database client not initialized");

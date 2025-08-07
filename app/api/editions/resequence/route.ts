@@ -1,13 +1,15 @@
 import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
-import { supabase } from "@/lib/supabase"
+import { createClient } from "@/lib/supabase/server"
 
 /**
  * This endpoint manually resequences edition numbers for a product
  * It will set all active items to sequential numbers starting from 1
  * and ensure removed items have null edition numbers
  */
-export async function GET(request: NextRequest) {
+export async function GET() {
+  const supabase = createClient()
+  
   const { searchParams } = new URL(request.url)
   const productId = searchParams.get("productId")
 

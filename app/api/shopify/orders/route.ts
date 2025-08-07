@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
-import { supabase } from "@/lib/supabase"
+import { createClient } from "@/lib/supabase/server"
 import { SHOPIFY_SHOP, SHOPIFY_ACCESS_TOKEN } from "@/lib/env"
 import type { Json } from "@/types/supabase"; // Assuming Json type is exported from supabase types
 
@@ -86,7 +86,9 @@ interface LineItemData {
   product_id?: string;
 }
 
-export async function GET(request: NextRequest) {
+export async function GET() {
+  const supabase = createClient()
+  
   try {
     const searchParams = request.nextUrl.searchParams;
     const status = searchParams.get("status") || "all";
@@ -157,7 +159,9 @@ export async function GET(request: NextRequest) {
 }
 
 // New endpoint for checking updates
-export async function POST(request: NextRequest) {
+export async function POST() {
+  const supabase = createClient()
+  
   try {
     const { lastUpdated } = await request.json();
     

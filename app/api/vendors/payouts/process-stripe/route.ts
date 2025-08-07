@@ -1,9 +1,11 @@
 import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
-import { supabaseAdmin } from "@/lib/supabase"
+import { createClient } from "@/lib/supabase/server"
 import { createPayout } from "@/lib/stripe"
 
-export async function POST(request: NextRequest) {
+export async function POST() {
+  const supabase = createClient()
+  
   try {
     const body = await request.json()
     const { payoutId } = body
@@ -13,7 +15,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Get payout details from database
-    const { data: payout, error: payoutError } = await supabaseAdmin
+    const { data: payout, error: payoutError } = await supabase
       .from("vendor_payouts")
       .select("*")
       .eq("id", payoutId)
@@ -33,7 +35,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Get vendor details
-    const { data: vendor, error: vendorError } = await supabaseAdmin
+    const { data: vendor, error: vendorError } = await supabase
       .from("vendors")
       .select("*")
       .eq("vendor_name", payout.vendor_name)
@@ -73,7 +75,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Update payout record with Stripe transfer ID
-    const { error: updateError } = await supabaseAdmin
+    const { error: updateError } = await supabase
       .from("vendor_payouts")
       .update({
         stripe_transfer_id: result.transferId,

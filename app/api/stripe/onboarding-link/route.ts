@@ -1,10 +1,12 @@
 import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
-import { supabaseAdmin } from "@/lib/supabase"
+import { createClient } from "@/lib/supabase/server"
 import { createAccountLink } from "@/lib/stripe"
 import { API_BASE_URL } from "@/lib/config"
 
-export async function POST(request: NextRequest) {
+export async function POST() {
+  const supabase = createClient()
+  
   try {
     const body = await request.json()
     const { vendorName } = body
@@ -14,7 +16,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Get vendor details from database
-    const { data: vendor, error: vendorError } = await supabaseAdmin
+    const { data: vendor, error: vendorError } = await supabase
       .from("vendors")
       .select("*")
       .eq("vendor_name", vendorName)

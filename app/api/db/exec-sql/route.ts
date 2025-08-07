@@ -1,10 +1,12 @@
 import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
-import { supabase } from "@/lib/supabase"
+import { createClient } from "@/lib/supabase/server"
 import fs from "fs"
 import path from "path"
 
-export async function POST(request: NextRequest) {
+export async function POST() {
+  const supabase = createClient()
+  
   try {
     // First, create the exec_sql function if it doesn't exist
     const createFunctionSql = fs.readFileSync(path.join(process.cwd(), "db", "create_exec_sql_function.sql"), "utf8")

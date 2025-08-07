@@ -1,13 +1,15 @@
 import { NextResponse } from "next/server"
-import { supabaseAdmin } from "@/lib/supabase"
+import { createClient } from "@/lib/supabase/server"
 
 export async function GET() {
+  const supabase = createClient()
+  
   try {
     // Check for admin authentication
     // This would normally check for admin authentication, but we're skipping it for brevity
 
     // Get all payout history
-    const { data: payouts, error } = await supabaseAdmin
+    const { data: payouts, error } = await supabase
       .from("vendor_payouts")
       .select("*")
       .order("created_at", { ascending: false })

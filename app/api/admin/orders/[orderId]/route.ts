@@ -1,11 +1,10 @@
 import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
-import { supabase } from "@/lib/supabase"
+import { createClient } from "@/lib/supabase/server"
 
-export async function GET(
-  request: NextRequest,
-  { params }: { params: { orderId: string } }
-) {
+export async function GET() {
+  const supabase = createClient()
+  
   try {
     if (!supabase) {
       return NextResponse.json({ success: false, message: "Database connection error" }, { status: 500 })

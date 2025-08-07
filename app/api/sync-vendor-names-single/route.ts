@@ -1,12 +1,14 @@
 import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
 import { SHOPIFY_SHOP, SHOPIFY_ACCESS_TOKEN } from "@/lib/env"
-import { supabase } from "@/lib/supabase"
+import { createClient } from "@/lib/supabase/server"
 
 // Set a reasonable timeout for the API route
 export const maxDuration = 30 // 30 seconds max duration
 
-export async function POST(request: NextRequest) {
+export async function POST() {
+  const supabase = createClient()
+  
   try {
     // Check for admin authentication
     const authHeader = request.headers.get("authorization")

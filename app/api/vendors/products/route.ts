@@ -1,10 +1,12 @@
 import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
 import { shopifyFetch, safeJsonParse } from "@/lib/shopify-api"
-import { supabaseAdmin } from "@/lib/supabase"
+import { createClient } from "@/lib/supabase/server"
 import { cookies } from "next/headers"
 
-export async function GET(request: NextRequest) {
+export async function GET() {
+  const supabase = createClient()
+  
   try {
     // Get query parameters
     const searchParams = request.nextUrl.searchParams
@@ -61,7 +63,7 @@ export async function GET(request: NextRequest) {
 
       // Fetch payout settings for these products
       const productIds = products.map((p) => p.id)
-      const { data: payouts, error: payoutsError } = await supabaseAdmin
+      const { data: payouts, error: payoutsError } = await supabase
         .from("product_vendor_payouts")
         .select("product_id, payout_amount, is_percentage")
         .eq("vendor_name", vendor)

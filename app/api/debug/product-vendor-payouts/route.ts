@@ -1,10 +1,12 @@
 import { NextResponse } from "next/server"
-import { supabaseAdmin } from "@/lib/supabase"
+import { createClient } from "@/lib/supabase/server"
 
 export async function GET() {
+  const supabase = createClient()
+  
   try {
     // Check if the table exists
-    const { data: tables, error: tablesError } = await supabaseAdmin.rpc("exec_sql", {
+    const { data: tables, error: tablesError } = await supabase.rpc("exec_sql", {
       sql_query: "SELECT table_name FROM information_schema.tables WHERE table_schema = 'public'",
     })
 
@@ -25,7 +27,7 @@ export async function GET() {
     }
 
     // Get table structure
-    const { data: columns, error: columnsError } = await supabaseAdmin.rpc("exec_sql", {
+    const { data: columns, error: columnsError } = await supabase.rpc("exec_sql", {
       sql_query:
         "SELECT column_name, data_type FROM information_schema.columns WHERE table_name = 'product_vendor_payouts'",
     })
@@ -35,7 +37,7 @@ export async function GET() {
     }
 
     // Get all records
-    const { data, error } = await supabaseAdmin.from("product_vendor_payouts").select("*").limit(100)
+    const { data, error } = await supabase.from("product_vendor_payouts").select("*").limit(100)
 
     if (error) {
       return NextResponse.json({ error: error.message, step: "fetching data" }, { status: 500 })

@@ -1,9 +1,11 @@
 import { NextResponse } from "next/server"
 import { cookies } from "next/headers"
-import { supabaseAdmin } from "@/lib/supabase"
+import { createClient } from "@/lib/supabase/server"
 import { shopifyFetch, safeJsonParse } from "@/lib/shopify-api"
 
 export async function GET() {
+  const supabase = createClient()
+  
   try {
     // Get vendor name from cookie
     const cookieStore = cookies()
@@ -21,7 +23,7 @@ export async function GET() {
     console.log(`Found ${totalProducts} products for vendor ${vendorName}`)
 
     // 2. Query for line items from this vendor in our database
-    const { data: lineItems, error } = await supabaseAdmin
+    const { data: lineItems, error } = await supabase
       .from("order_line_items")
       .select("*")
       .eq("vendor_name", vendorName)
@@ -43,7 +45,7 @@ export async function GET() {
 
     // First fetch payout settings
     const productIds = products.map((p) => p.id)
-    const { data: payouts, error: payoutsError } = await supabaseAdmin
+    const { data: payouts, error: payoutsError } = await supabase
       .from("product_vendor_payouts")
       .select("*")
       .eq("vendor_name", vendorName)

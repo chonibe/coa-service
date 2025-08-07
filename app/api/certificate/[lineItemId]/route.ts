@@ -1,9 +1,11 @@
 import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
-import { supabase } from "@/lib/supabase"
+import { createClient } from "@/lib/supabase/server"
 import { SHOPIFY_SHOP, SHOPIFY_ACCESS_TOKEN, CERTIFICATE_METAFIELD_ID } from "@/lib/env"
 
-export async function GET(request: NextRequest, { params }: { params: { lineItemId: string } }) {
+export async function GET() {
+  const supabase = createClient()
+  
   const lineItemId = params.lineItemId
   const isPreview = request.headers.get("x-preview-mode") === "true"
 
@@ -203,6 +205,8 @@ async function fetchOrderData(orderId: string) {
 
 // Handle OPTIONS requests for CORS
 export async function OPTIONS() {
+  const supabase = createClient()
+  
   return NextResponse.json(
     {},
     {

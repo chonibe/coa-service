@@ -1,8 +1,10 @@
 import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
-import { supabaseAdmin } from "@/lib/supabase"
+import { createClient } from "@/lib/supabase/server"
 
-export async function POST(request: NextRequest) {
+export async function POST() {
+  const supabase = createClient()
+  
   try {
     const body = await request.json()
     const { payouts } = body
@@ -40,7 +42,7 @@ export async function POST(request: NextRequest) {
         }
 
         // Check if a record already exists
-        const { data: existingData, error: checkError } = await supabaseAdmin
+        const { data: existingData, error: checkError } = await supabase
           .from("product_vendor_payouts")
           .select("*")
           .eq("product_id", product_id)
@@ -63,7 +65,7 @@ export async function POST(request: NextRequest) {
         if (existingData) {
           // Update existing record
           console.log(`Updating existing payout for product ${product_id} with amount ${amount}`)
-          result = await supabaseAdmin
+          result = await supabase
             .from("product_vendor_payouts")
             .update({
               payout_amount: amount,
@@ -74,7 +76,7 @@ export async function POST(request: NextRequest) {
         } else {
           // Insert new record
           console.log(`Creating new payout for product ${product_id} with amount ${amount}`)
-          result = await supabaseAdmin.from("product_vendor_payouts").insert({
+          result = await supabase.from("product_vendor_payouts").insert({
             product_id,
             vendor_name,
             payout_amount: amount,

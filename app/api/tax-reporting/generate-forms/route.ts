@@ -1,9 +1,11 @@
 import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
-import { supabaseAdmin } from "@/lib/supabase"
+import { createClient } from "@/lib/supabase/server"
 import crypto from "crypto"
 
-export async function POST(request: NextRequest) {
+export async function POST() {
+  const supabase = createClient()
+  
   try {
     const body = await request.json()
     const { year, vendorNames, formType } = body
@@ -18,7 +20,7 @@ export async function POST(request: NextRequest) {
     for (const vendorName of vendorNames) {
       try {
         // Get vendor information
-        const { data: vendor, error: vendorError } = await supabaseAdmin
+        const { data: vendor, error: vendorError } = await supabase
           .from("vendors")
           .select("*")
           .eq("vendor_name", vendorName)
@@ -35,7 +37,7 @@ export async function POST(request: NextRequest) {
         }
 
         // Get all payouts for this vendor in the specified year
-        const { data: payouts, error: payoutsError } = await supabaseAdmin
+        const { data: payouts, error: payoutsError } = await supabase
           .from("vendor_payouts")
           .select("*")
           .eq("vendor_name", vendorName)
@@ -71,7 +73,7 @@ export async function POST(request: NextRequest) {
           .toUpperCase()}`
 
         // Create tax form record
-        const { data: taxForm, error: taxFormError } = await supabaseAdmin
+        const { data: taxForm, error: taxFormError } = await supabase
           .from("tax_forms")
           .insert({
             vendor_name: vendorName,
@@ -101,7 +103,7 @@ export async function POST(request: NextRequest) {
         }
 
         // Update all payouts to mark them as having tax forms generated
-        const { error: updateError } = await supabaseAdmin
+        const { error: updateError } = await supabase
           .from("vendor_payouts")
           .update({
             tax_form_generated: true,

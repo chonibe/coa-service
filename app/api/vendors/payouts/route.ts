@@ -1,8 +1,10 @@
 import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
-import { supabaseAdmin } from "@/lib/supabase"
+import { createClient } from "@/lib/supabase/server"
 
-export async function POST(request: NextRequest) {
+export async function POST() {
+  const supabase = createClient()
+  
   try {
     const body = await request.json()
     const { productIds, vendorName } = body
@@ -12,7 +14,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Fetch payout settings for these products
-    const { data, error } = await supabaseAdmin
+    const { data, error } = await supabase
       .from("vendor_payouts")
       .select("*")
       .eq("vendor_name", vendorName)

@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
-import { supabase } from "@/lib/supabase"
+import { createClient } from "@/lib/supabase/server"
 import { z } from "zod"  // Add zod for validation
 
 // Input validation schema
@@ -26,7 +26,9 @@ async function logNfcTagAction(action: string, details: Record<string, any>) {
   }
 }
 
-export async function POST(request: NextRequest) {
+export async function POST() {
+  const supabase = createClient()
+  
   try {
     // Parse and validate input
     const body = await request.json()

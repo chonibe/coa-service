@@ -1,8 +1,10 @@
 import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
-import { supabaseAdmin } from "@/lib/supabase"
+import { createClient } from "@/lib/supabase/server"
 
-export async function POST(request: NextRequest, { params }: { params: { id: string } }) {
+export async function POST() {
+  const supabase = createClient()
+  
   try {
     const payoutId = params.id
 
@@ -11,7 +13,7 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
     }
 
     // Get the payout details
-    const { data: payout, error } = await supabaseAdmin.from("vendor_payouts").select("*").eq("id", payoutId).single()
+    const { data: payout, error } = await supabase.from("vendor_payouts").select("*").eq("id", payoutId).single()
 
     if (error) {
       console.error("Error fetching payout:", error)
@@ -23,7 +25,7 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
     }
 
     // Get vendor details
-    const { data: vendor, error: vendorError } = await supabaseAdmin
+    const { data: vendor, error: vendorError } = await supabase
       .from("vendors")
       .select("*")
       .eq("vendor_name", payout.vendor_name)
@@ -40,7 +42,7 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
     if (!payout.invoice_number) {
       const invoiceNumber = `INV-${Date.now()}-${payout.vendor_name.substring(0, 3).toUpperCase()}`
 
-      const { error: updateError } = await supabaseAdmin
+      const { error: updateError } = await supabase
         .from("vendor_payouts")
         .update({
           invoice_number: invoiceNumber,
