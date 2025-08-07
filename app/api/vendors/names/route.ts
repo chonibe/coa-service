@@ -1,8 +1,10 @@
 import { NextResponse } from "next/server"
-import { supabase } from "@/lib/supabase"
+import { createClient } from "@/lib/supabase/server"
 
 export async function GET() {
   try {
+    const supabase = createClient()
+    
     const { data, error } = await supabase.from("vendors").select("vendor_name").order("vendor_name")
 
     if (error) {
