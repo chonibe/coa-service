@@ -4,7 +4,7 @@ import { SHOPIFY_SHOP, SHOPIFY_ACCESS_TOKEN, CRON_SECRET } from "@/lib/env"
 import { createClient } from "@/lib/supabase/server"
 import type { Json } from "@/types/supabase"
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   const supabase = createClient()
   
   try {

@@ -2,7 +2,7 @@ import { type NextRequest, NextResponse } from "next/server"
 import { shopifyFetch, safeJsonParse } from "@/lib/shopify-api"
 import { createClient } from "@/lib/supabase/server"
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   const supabase = createClient()
   
   try {
@@ -64,7 +64,7 @@ export async function GET() {
   }
 }
 
-async function fetchVendorsFromProducts(query = "", limit = 100, cursor = null) {
+async function fetchVendorsFromProducts(query = "", limit = 100, cursor: string | null = null) {
   try {
     // Build the GraphQL query to fetch products and extract vendor information
     const graphqlQuery = `

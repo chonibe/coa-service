@@ -86,7 +86,7 @@ interface LineItemData {
   product_id?: string;
 }
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   const supabase = createClient()
   
   try {
@@ -159,7 +159,7 @@ export async function GET() {
 }
 
 // New endpoint for checking updates
-export async function POST() {
+export async function POST(request: NextRequest) {
   const supabase = createClient()
   
   try {

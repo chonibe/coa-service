@@ -4,7 +4,7 @@ import { shopifyFetch, safeJsonParse } from "@/lib/shopify-api"
 import { createClient } from "@/lib/supabase/server"
 import { cookies } from "next/headers"
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   const supabase = createClient()
   
   try {

@@ -3,7 +3,7 @@ import type { NextRequest } from "next/server"
 import { createClient } from "@/lib/supabase/server"
 import { SHOPIFY_SHOP, SHOPIFY_ACCESS_TOKEN, CERTIFICATE_METAFIELD_ID } from "@/lib/env"
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   const supabase = createClient()
   
   const lineItemId = params.lineItemId
