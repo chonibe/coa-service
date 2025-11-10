@@ -37,8 +37,8 @@ COA Service is a comprehensive digital art authentication and management platfor
 ## Technical Stack
 
 - Frontend: Next.js, React
-- Backend: Supabase
-- Authentication: Shopify OAuth
+- Backend: Supabase (Postgres + Edge Functions)
+- Authentication: Supabase Auth (Google OAuth) with signed vendor sessions
 - NFC Technology: Web NFC API
 
 ## Getting Started
@@ -57,7 +57,7 @@ npm install
 
 ### Configuration
 1. Copy `.env.example` to `.env`
-2. Fill in Supabase and Shopify credentials
+2. Fill in Supabase, Google OAuth, Shopify, and Stripe credentials
 
 ### Running the Application
 ```bash
@@ -174,7 +174,9 @@ This application provides several key functionalities:
 
 #### Vendor APIs
 
-- `/app/api/vendor/login/route.ts`: Vendor login
+- `/app/api/auth/google/start/route.ts`: Initiate Supabase Google OAuth flow
+- `/app/api/auth/status/route.ts`: Return Supabase session and vendor context
+- `/app/api/auth/impersonate/route.ts`: Allow admins to assume a vendor session
 - `/app/api/vendor/profile/route.ts`: Get vendor profile
 - `/app/api/vendor/update-paypal/route.ts`: Update vendor PayPal
 - `/app/api/vendor/stats/route.ts`: Get vendor stats
@@ -201,13 +203,28 @@ This application provides several key functionalities:
 
 ## Environment Variables
 
-The application requires several environment variables to function properly:
+Set the following variables in `.env.local` (or your deployment environment):
 
-- Shopify API credentials
-- Supabase credentials
-- Stripe API keys
-- Email service credentials
-- Various configuration options
+| Variable | Description |
+| --- | --- |
+| `NEXT_PUBLIC_SUPABASE_URL` | Supabase project URL |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase anon key (client-side) |
+| `SUPABASE_SERVICE_ROLE_KEY` | Supabase service role key (server-only) |
+| `SUPABASE_GOOGLE_CLIENT_ID` | Google OAuth client ID configured for Supabase Auth |
+| `SUPABASE_GOOGLE_CLIENT_SECRET` | Google OAuth client secret |
+| `VENDOR_SESSION_SECRET` | 32+ byte secret for signing `vendor_session` cookies |
+| `SUPABASE_AUTH_ADDITIONAL_REDIRECTS` (optional) | Comma-separated list of extra OAuth redirect URLs |
+| Shopify credentials | Used for product sync and customer flows |
+| Stripe credentials | Used for vendor payouts |
+| Email/SMS credentials | Required for transactional messaging where applicable |
+
+After defining the Google credentials you can synchronise Supabase Auth settings locally and remotely:
+
+```bash
+npm run supabase:enable-google
+```
+
+This script enables the Google provider and applies the redirect URLs declared in `supabase/config.toml`.
 
 ## Getting Started
 
@@ -241,6 +258,8 @@ The vendor portal allows vendors to:
 - Manage their payouts
 - Update their settings
 - View analytics
+- Sign in with Google (Supabase Auth) and receive a signed `vendor_session` cookie to isolate access
+- Admins can impersonate any vendor via `/api/auth/impersonate` to debug dashboard experiences safely
 
 ## Stripe Integration
 

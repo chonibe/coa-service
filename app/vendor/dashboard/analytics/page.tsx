@@ -48,6 +48,13 @@ export default function AnalyticsPage() {
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc")
   const { toast } = useToast()
 
+  const formatCurrency = (value: number) =>
+    new Intl.NumberFormat("en-GB", {
+      style: "currency",
+      currency: "GBP",
+      minimumFractionDigits: 2,
+    }).format(value)
+
   const fetchAnalyticsData = async () => {
     try {
       setIsLoading(true)
@@ -190,8 +197,8 @@ export default function AnalyticsPage() {
                 <YAxis yAxisId="right" orientation="right" stroke="#82ca9d" />
                 <Tooltip
                   formatter={(value, name) => {
-                    if (name === "Revenue ($)") {
-                      return [`£${Number(value).toFixed(2)}`, "Revenue (£)"]
+                    if (name === "Revenue (£)") {
+                      return [formatCurrency(Number(value)), "Revenue (£)"]
                     }
                     return [value, name]
                   }}
@@ -271,7 +278,7 @@ export default function AnalyticsPage() {
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis dataKey="month" />
                   <YAxis />
-                  <Tooltip formatter={(value) => [`£${Number(value).toFixed(2)}`, "Revenue"]} />
+                  <Tooltip formatter={(value) => [formatCurrency(Number(value)), "Revenue"]} />
                   <Line type="monotone" dataKey="revenue" stroke="#82ca9d" activeDot={{ r: 8 }} />
                 </LineChart>
               </ResponsiveContainer>
@@ -329,7 +336,7 @@ export default function AnalyticsPage() {
                       </span>
                     </div>
                     <div className="text-sm font-medium">
-                      {product.sales} sales (£{product.revenue.toFixed(2)})
+                      {product.sales} sales ({formatCurrency(product.revenue)})
                     </div>
                   </div>
                 ))}
@@ -403,7 +410,7 @@ export default function AnalyticsPage() {
                       <TableRow key={sale.id}>
                         <TableCell>{formatDate(sale.date)}</TableCell>
                         <TableCell className="font-medium">{sale.title}</TableCell>
-                        <TableCell className="text-right">£{sale.price.toFixed(2)}</TableCell>
+                        <TableCell className="text-right">{formatCurrency(sale.price)}</TableCell>
                       </TableRow>
                     ))}
                   </TableBody>

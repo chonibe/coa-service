@@ -52,6 +52,13 @@
 2. Comprehensive Log Analysis
 3. Enhanced Security Controls
 
+## Completed Tasks Archive
+
+### Sprint: Vendor Portal Reliability
+- **Epic**: Session Security Hardening
+  - **Story**: [Vendor Dashboard Hardening](./docs/features/vendor-dashboard/README.md) — Completed 2025-11-10. Introduced signed vendor sessions, Supabase-aligned analytics, and GBP-consistent dashboards.
+  - **Story**: [Google SSO & Admin Impersonation](./docs/features/vendor-dashboard/README.md#api-endpoints--usage) — Completed 2025-11-10. Migrated vendor login to Supabase Google OAuth and enabled admin impersonation flows.
+
 ## Development Metrics
 
 ### Code Quality

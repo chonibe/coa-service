@@ -1,3 +1,61 @@
+## Commit: Supabase Google SSO for Vendor Portal (2025-11-10)
+
+### ✅ Implementation Checklist
+- [x] [`app/api/auth/google/start/route.ts`](../app/api/auth/google/start/route.ts) – Initiate Supabase OAuth flow and persist post-login redirect.
+- [x] [`app/auth/callback/route.ts`](../app/auth/callback/route.ts) – Exchange Supabase codes, link vendors, and set signed `vendor_session` cookies.
+- [x] [`app/api/auth/status/route.ts`](../app/api/auth/status/route.ts) – Expose session, admin flag, and vendor context to the client.
+- [x] [`app/api/auth/impersonate/route.ts`](../app/api/auth/impersonate/route.ts) – Allow whitelisted admins to assume vendor sessions.
+- [x] [`app/api/vendor/logout/route.ts`](../app/api/vendor/logout/route.ts) – Revoke Supabase session and clear vendor cookies.
+- [x] [`app/vendor/login/page.tsx`](../app/vendor/login/page.tsx) – Replace dropdown login with Google OAuth + admin impersonation UI.
+- [x] [`lib/vendor-auth.ts`](../lib/vendor-auth.ts) – Shared helpers for admin detection, vendor linking, and redirect sanitisation.
+- [x] [`supabase/migrations/20251110160000_add_auth_id_to_vendors.sql`](../supabase/migrations/20251110160000_add_auth_id_to_vendors.sql) – Link vendors to Supabase user IDs.
+- [x] [`scripts/enable-google-provider.js`](../scripts/enable-google-provider.js) & `npm run supabase:enable-google` for provider configuration.
+- [x] Documentation updates (`README.md`, `docs/README.md`, `docs/API_DOCUMENTATION.md`, `docs/features/vendor-dashboard/README.md`).
+
+### 🔐 Highlights
+- Google OAuth replaces manual vendor selection; Supabase session exchange issues signed `vendor_session` cookies.
+- Admins (`choni@thestreetlamp.com`, `chonibe@gmail.com`) can impersonate vendors without modifying the database.
+- Vendors auto-link to Supabase accounts via new `auth_id` column to prevent duplicate onboarding.
+
+### 🧪 Verification
+- Automated: `npm run test -- vendor-session vendor-auth`.
+- Manual:
+  1. Sign in with Google as an existing vendor → redirect to `/vendor/dashboard`.
+  2. Sign in with a new Google account → redirect to `/vendor/onboarding`, complete profile, confirm vendor record.
+  3. Use admin account to impersonate an arbitrary vendor and verify dashboard data.
+  4. Logout ensures Supabase session + `vendor_session` cookies are cleared.
+
+### 📌 Deployment Notes
+- Configure `SUPABASE_GOOGLE_CLIENT_ID`, `SUPABASE_GOOGLE_CLIENT_SECRET`, and `VENDOR_SESSION_SECRET` before deploying.
+- Run `npm run supabase:enable-google` after changing redirect URLs in Supabase.
+
+## Commit: Vendor Dashboard Hardening (2025-11-10)
+
+### ✅ Implementation Checklist
+- [x] [`lib/vendor-session.ts`](../lib/vendor-session.ts) — Added HMAC-signed vendor session helpers.
+- [x] [`app/api/vendor/login/route.ts`](../app/api/vendor/login/route.ts) — Issues signed cookies on successful login.
+- [x] [`app/api/vendor/stats/route.ts`](../app/api/vendor/stats/route.ts) — Rebuilt stats endpoint using `order_line_items_v2` and payout settings.
+- [x] [`app/api/vendor/sales-analytics/route.ts`](../app/api/vendor/sales-analytics/route.ts) — Normalised analytics with payout metadata.
+- [x] [`app/vendor/dashboard/page.tsx`](../app/vendor/dashboard/page.tsx) — Displays server totals with consistent GBP formatting.
+- [x] [`app/vendor/dashboard/components/vendor-sales-chart.tsx`](../app/vendor/dashboard/components/vendor-sales-chart.tsx) — Aligns chart currency with stats payload.
+- [x] [`hooks/use-vendor-data.ts`](../hooks/use-vendor-data.ts) — Provides unified stats/analytics data model.
+- [x] [`docs/features/vendor-dashboard/README.md`](../docs/features/vendor-dashboard/README.md) — Documented feature overview, data sources, testing.
+- [x] [`docs/API_DOCUMENTATION.md`](../docs/API_DOCUMENTATION.md) — Updated vendor endpoint contracts and session notes.
+- [x] [`README.md`](../README.md) — Added `VENDOR_SESSION_SECRET` requirement and vendor session summary.
+
+### 🔐 Highlights
+- Signed vendor sessions prevent cookie forgery and cross-account access.
+- Vendor metrics derive from authoritative Supabase data with Shopify fallbacks.
+- Dashboard UI renders vendor payouts and analytics consistently in GBP.
+
+### 📌 Deployment Notes
+- Configure `VENDOR_SESSION_SECRET` (>=32 random bytes) before deploying.
+- Rotating the secret invalidates existing sessions; vendors must re-authenticate.
+
+### 🧪 Verification
+- Automated: `npm run test -- vendor-session`.
+- Manual: Login/logout flow, tampered cookie rejection, dashboard totals vs Supabase.
+
 ## Commit: Certificate Modal Artist & Story Integration
 
 ### 🚀 Feature Enhancements

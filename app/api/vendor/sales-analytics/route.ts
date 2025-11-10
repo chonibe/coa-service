@@ -1,68 +1,40 @@
 import { NextResponse } from "next/server"
 import { cookies } from "next/headers"
 import { createClient } from "@/lib/supabase/server"
-import type { Database } from "@/types/supabase"
+import { getVendorFromCookieStore } from "@/lib/vendor-session"
 
-interface LineItem {
+const DEFAULT_CURRENCY = "GBP"
+
+type SupabaseLineItem = {
   id?: string
   product_id?: string
   title?: string
   created_at?: string
-  updated_at?: string
-  price?: number | string
-  quantity?: number
-  vendor_name?: string
-  status?: string
+  price?: number | string | null
+  quantity?: number | string | null
+  status?: string | null
 }
 
-interface SalesByMonth {
-  [key: string]: {
-    sales: number
-    revenue: number
-  }
-}
-
-interface SalesByProduct {
-  [key: string]: {
-    productId: string
-    title: string
-    sales: number
-    revenue: number
-  }
+type PayoutSetting = {
+  product_id: string
+  payout_amount: number | string | null
+  is_percentage: boolean | null
 }
 
 export async function GET() {
   const supabase = createClient()
   
   try {
-    // Get vendor name from cookie
-    const cookieStore = await cookies()
-    const vendorName = cookieStore.get("vendor_session")?.value
+    const cookieStore = cookies()
+    const vendorName = getVendorFromCookieStore(cookieStore)
 
     if (!vendorName) {
       return NextResponse.json({ error: "Not authenticated" }, { status: 401 })
     }
 
-    console.log(`Fetching sales analytics for vendor: ${vendorName}`)
-
-    // Create Supabase client with service role key
-    const supabase = createClient<Database>(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!,
-      {
-        auth: {
-          persistSession: false,
-        },
-        global: {
-          headers: { "Content-Type": "application/json" },
-        },
-      }
-    )
-
-    // Query for line items from this vendor
     const { data: lineItems, error } = await supabase
       .from("order_line_items_v2")
-      .select("*")
+      .select("id, product_id, title, created_at, price, quantity, status")
       .eq("vendor_name", vendorName)
       .eq("status", "active")
 
@@ -71,33 +43,20 @@ export async function GET() {
       return NextResponse.json({ error: "Database error" }, { status: 500 })
     }
 
-    console.log(`Found ${lineItems?.length || 0} active line items for vendor ${vendorName}`)
-    if (lineItems && lineItems.length > 0) {
-      console.log("Sample line item:", JSON.stringify(lineItems[0], null, 2))
-    }
+    const items = lineItems ?? []
+    const productIds = Array.from(new Set(items.map((item) => item.product_id).filter(Boolean)))
 
-    // Process line items to get sales by date
-    const salesByDate = processSalesByDate(lineItems || [])
+    const payoutSettings: PayoutSetting[] = productIds.length
+      ? await fetchPayoutSettings(supabase, vendorName, productIds)
+      : []
 
-    // Get sales by product
-    const salesByProduct = processSalesByProduct(lineItems || [])
-
-    // Create sales history array
-    const salesHistory = (lineItems || []).map((item: LineItem) => ({
-      id: item.id || `item-${Math.random().toString(36).substring(2, 9)}`,
-      product_id: item.product_id || "",
-      title: item.title || "Unknown Product",
-      date: item.created_at || new Date().toISOString(),
-      price: typeof item.price === "string" ? Number.parseFloat(item.price) : item.price || 0,
-      currency: "GBP",
-      quantity: item.quantity || 1,
-    }))
+    const analytics = buildAnalytics(items, payoutSettings)
 
     return NextResponse.json({
-      salesByDate,
-      salesByProduct,
-      salesHistory,
-      totalItems: lineItems?.length || 0,
+      salesByDate: analytics.salesByDate,
+      salesByProduct: analytics.salesByProduct,
+      salesHistory: analytics.salesHistory,
+      totalItems: items.length,
     })
   } catch (error) {
     console.error("Unexpected error in vendor sales analytics API:", error)
@@ -105,90 +64,171 @@ export async function GET() {
   }
 }
 
-function processSalesByDate(lineItems: LineItem[]) {
-  const salesByMonth: SalesByMonth = {}
+async function fetchPayoutSettings(
+  supabase: ReturnType<typeof createClient>,
+  vendorName: string,
+  productIds: string[],
+) {
+  const { data, error } = await supabase
+    .from("product_vendor_payouts")
+    .select("product_id, payout_amount, is_percentage")
+    .eq("vendor_name", vendorName)
+    .in("product_id", productIds)
 
-  lineItems.forEach((item) => {
-    // Ensure we have a valid date
-    let date
-    try {
-      date = new Date(item.created_at || item.updated_at || Date.now())
-      if (isNaN(date.getTime())) {
-        console.warn(`Invalid date for item ${item.id}:`, item.created_at)
-        return
-      }
-    } catch (e) {
-      console.warn(`Error parsing date for item ${item.id}:`, e)
-      return
-    }
+  if (error) {
+    console.error("Error fetching payout settings:", error)
+    return []
+  }
 
-    const monthYear = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`
-
-    if (!salesByMonth[monthYear]) {
-      salesByMonth[monthYear] = { sales: 0, revenue: 0 }
-    }
-
-    // Use quantity instead of incrementing by 1
-    const quantity = item.quantity || 1
-    salesByMonth[monthYear].sales += quantity
-
-    // Add to revenue - fixed to prevent NaN and type issues
-    if (item.price !== null && item.price !== undefined) {
-      const price = typeof item.price === "string" ? Number.parseFloat(item.price) : Number(item.price)
-      if (!isNaN(price)) {
-        // Calculate revenue based on quantity
-        salesByMonth[monthYear].revenue += price * quantity
-      }
-    }
-  })
-
-  // Convert to array and sort by date
-  return Object.entries(salesByMonth)
-    .map(([date, data]) => ({
-      date,
-      month: getMonthName(date),
-      sales: data.sales,
-      revenue: Number(data.revenue.toFixed(2)),
-    }))
-    .sort((a, b) => a.date.localeCompare(b.date))
+  return data ?? []
 }
 
-function processSalesByProduct(lineItems: LineItem[]) {
-  const salesByProduct: SalesByProduct = {}
+const parseNumber = (value: unknown): number => {
+  if (typeof value === "number") {
+    return Number.isFinite(value) ? value : 0
+  }
+  if (typeof value === "string") {
+    const parsed = Number.parseFloat(value)
+    return Number.isFinite(parsed) ? parsed : 0
+  }
+  return 0
+}
 
-  lineItems.forEach((item) => {
-    const productId = item.product_id || "unknown"
+const parseQuantity = (value: unknown): number => {
+  if (typeof value === "number" && Number.isFinite(value)) {
+    return value
+  }
+  if (typeof value === "string") {
+    const parsed = Number.parseInt(value, 10)
+    return Number.isFinite(parsed) ? parsed : 1
+  }
+  return 1
+}
+
+const formatMonthLabel = (period: string) => {
+  const [year, month] = period.split("-")
+  const date = new Date(Number(year), Number(month) - 1, 1)
+  return date.toLocaleString("default", { month: "short", year: "numeric" })
+}
+
+const getPeriodKey = (value: string | undefined) => {
+  const date = value ? new Date(value) : new Date()
+  if (Number.isNaN(date.getTime())) {
+    return new Date().toISOString().slice(0, 7)
+  }
+  return date.toISOString().slice(0, 7)
+}
+
+const buildAnalytics = (items: SupabaseLineItem[], payoutSettings: PayoutSetting[]) => {
+  const payoutMap = new Map(
+    payoutSettings.map((setting) => [
+      setting.product_id,
+      {
+        amount: parseNumber(setting.payout_amount),
+        isPercentage: Boolean(setting.is_percentage),
+      },
+    ]),
+  )
+
+  const salesByPeriod = new Map<
+    string,
+    {
+      sales: number
+      revenue: number
+    }
+  >()
+
+  const salesByProduct = new Map<
+    string,
+    {
+      productId: string
+      title: string
+      sales: number
+      revenue: number
+      payoutType: "percentage" | "flat"
+      payoutAmount: number
+    }
+  >()
+
+  const salesHistory = []
+
+  for (const item of items) {
+    const quantity = parseQuantity(item.quantity)
+    const unitPrice = parseNumber(item.price)
+    const productId = item.product_id ?? "unknown"
     const title = item.title || `Product ${productId}`
+    const period = getPeriodKey(item.created_at)
 
-    if (!salesByProduct[productId]) {
-      salesByProduct[productId] = {
+    const payout = payoutMap.get(productId)
+    const payoutAmount = payout ? payout.amount : 0
+    const payoutType = payout?.isPercentage ? "percentage" : "flat"
+    const revenue = payout
+      ? payout.isPercentage
+        ? unitPrice * quantity * (payout.amount / 100)
+        : payout.amount * quantity
+      : unitPrice * quantity * 0.1
+
+    const periodEntry = salesByPeriod.get(period) ?? { sales: 0, revenue: 0 }
+    periodEntry.sales += quantity
+    periodEntry.revenue += revenue
+    salesByPeriod.set(period, periodEntry)
+
+    const productEntry =
+      salesByProduct.get(productId) ??
+      {
         productId,
         title,
         sales: 0,
         revenue: 0,
+        payoutType,
+        payoutAmount,
       }
-    }
 
-    // Use quantity instead of incrementing by 1
-    const quantity = item.quantity || 1
-    salesByProduct[productId].sales += quantity
+    productEntry.sales += quantity
+    productEntry.revenue += revenue
+    productEntry.payoutType = payoutType
+    productEntry.payoutAmount = payoutAmount
+    salesByProduct.set(productId, productEntry)
 
-    // Add to revenue - fixed to prevent NaN and type issues
-    if (item.price !== null && item.price !== undefined) {
-      const price = typeof item.price === "string" ? Number.parseFloat(item.price) : Number(item.price)
-      if (!isNaN(price)) {
-        // Calculate revenue based on quantity
-        salesByProduct[productId].revenue += price * quantity
-      }
-    }
-  })
+    salesHistory.push({
+      id: item.id || `item-${Math.random().toString(36).substring(2, 9)}`,
+      product_id: productId,
+      title,
+      date: item.created_at || new Date().toISOString(),
+      price: unitPrice,
+      quantity,
+      revenue: Number(revenue.toFixed(2)),
+      currency: DEFAULT_CURRENCY,
+      payout: payout
+        ? {
+            type: payoutType,
+            amount: payoutAmount,
+          }
+        : null,
+    })
+  }
 
-  // Convert to array and sort by sales
-  return Object.values(salesByProduct).sort((a, b) => b.sales - a.sales)
-}
+  const salesByDate = Array.from(salesByPeriod.entries())
+    .map(([period, data]) => ({
+      period,
+      month: formatMonthLabel(period),
+      sales: data.sales,
+      revenue: Number(data.revenue.toFixed(2)),
+    }))
+    .sort((a, b) => a.period.localeCompare(b.period))
 
-function getMonthName(dateStr: string): string {
-  const [year, month] = dateStr.split("-")
-  const date = new Date(Number.parseInt(year), Number.parseInt(month) - 1, 1)
-  return date.toLocaleString("default", { month: "short", year: "numeric" })
+  const salesByProductArray = Array.from(salesByProduct.values())
+    .map((product) => ({
+      ...product,
+      revenue: Number(product.revenue.toFixed(2)),
+    }))
+    .sort((a, b) => b.sales - a.sales)
+
+  const history = salesHistory.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+
+  return {
+    salesByDate,
+    salesByProduct: salesByProductArray,
+    salesHistory: history,
+  }
 }

@@ -6,15 +6,175 @@ The Street Collector API provides a comprehensive, headless backend for managing
 ## Authentication
 
 ### Authentication Mechanism
-- JWT-based authentication
-- Role-based access control
-- Secure token management
+- Supabase Auth (Google OAuth) for vendors and admins.
+- Supabase sessions exchanged via `/auth/callback` and persisted in HTTP-only cookies.
+- Signed `vendor_session` cookie isolates vendor access and is required for protected endpoints.
 
 #### User Roles
 - `ADMIN`: Full system access
 - `VENDOR`: Product and sales management
 - `CUSTOMER`: Personal dashboard and order interactions
 - `GUEST`: Limited access
+
+## Vendor Portal (App Router)
+
+### Session Model
+- Vendors initiate Google OAuth via `GET /api/auth/google/start`. Supabase handles the consent screen and redirects to `/auth/callback`.
+- The callback exchanges the Supabase code for a server session and issues a signed `vendor_session` cookie (`HMAC-SHA256` using `VENDOR_SESSION_SECRET`).
+- Admin emails (`choni@thestreetlamp.com`, `chonibe@gmail.com`) retain Supabase access and can impersonate vendors with `/api/auth/impersonate`.
+- All vendor endpoints reject requests without a valid signed cookie, preventing cross-vendor session bleed.
+
+### Endpoint: `GET /api/auth/google/start`
+- **Description**: Initiates Supabase Google OAuth and stores the post-login redirect path for the session.
+- **Query Params**: `redirect` (optional) relative path to return to after sign-in.
+- **Response**: Redirect (302) to Supabase Auth consent URL. Sets `vendor_post_login_redirect` cookie.
+- **Errors**: Returns `400` JSON when Supabase cannot generate an OAuth URL.
+
+### Endpoint: `/auth/callback`
+- **Description**: Supabase OAuth callback. Exchanges the authorization code for a Supabase session, links the user to a vendor record, and issues the `vendor_session` cookie.
+- **Redirect Flow**:
+  - Vendors with linked records → `/vendor/dashboard` (or stored redirect).
+  - New vendors → `/vendor/onboarding`.
+  - Admins without vendor record → `/vendor/login?admin=1`.
+
+### Endpoint: `GET /api/auth/status`
+- **Description**: Returns Supabase session metadata and vendor context for the current request.
+- **Success (200)**:
+  ```json
+  {
+    "authenticated": true,
+    "isAdmin": false,
+    "vendorSession": "my-vendor",
+    "vendor": {
+      "id": 42,
+      "vendor_name": "my-vendor"
+    },
+    "user": {
+      "id": "uuid",
+      "email": "artist@example.com",
+      "app_metadata": { "provider": "google" }
+    }
+  }
+  ```
+- **Notes**: Response caching is disabled; route uses Supabase session cookies.
+
+### Endpoint: `POST /api/auth/impersonate`
+- **Description**: Allows whitelisted admin emails to assume a vendor session for diagnostics.
+- **Headers**: `Content-Type: application/json`
+- **Body**:
+  ```json
+  { "vendorName": "Example Vendor" }
+  ```
+- **Success (200)**: `{ "success": true, "vendor": { "id": 12, "vendor_name": "Example Vendor" } }` and sets a new `vendor_session`.
+- **Errors**:
+  - `401` if the Supabase session is missing.
+  - `403` if the user is not an admin.
+  - `404` if the vendor cannot be located.
+
+### Endpoint: `POST /api/vendor/logout`
+- **Description**: Signs out of Supabase and clears vendor cookies.
+- **Success (200)**: `{ "success": true }`
+- **Side Effects**: Calls `supabase.auth.signOut()` and clears `vendor_session`, `vendor_post_login_redirect`, and `pending_vendor_email`.
+
+### Endpoint: `GET /api/vendor/stats`
+- **Description**: Returns vendor sales totals, payout totals, and 30-day daily chart.
+- **Response (200)**:
+  ```json
+  {
+    "totalProducts": 12,
+    "totalSales": 48,
+    "totalRevenue": 1260.5,
+    "totalPayout": 378.15,
+    "currency": "GBP",
+    "salesByDate": [
+      { "date": "2025-10-12", "sales": 4, "revenue": 95.4 }
+    ],
+    "recentActivity": [
+      {
+        "id": "123",
+        "date": "2025-10-12T10:15:00.000Z",
+        "product_id": "987654321",
+        "price": 64.5,
+        "quantity": 1
+      }
+    ]
+  }
+  ```
+- **Data Sources**:
+  - Supabase `order_line_items_v2` primary source.
+  - Supabase `product_vendor_payouts` for payout percentages/amounts.
+  - Shopify GraphQL fallback (`orders` + `products`) when Supabase data is absent.
+
+### Endpoint: `GET /api/vendor/sales-analytics`
+- **Description**: Returns monthly analytics, product revenue breakdown, and detailed sales history.
+- **Response (200)**:
+  ```json
+  {
+    "salesByDate": [
+      { "period": "2025-10", "month": "Oct 2025", "sales": 12, "revenue": 210.25 }
+    ],
+    "salesByProduct": [
+      {
+        "productId": "987654321",
+        "title": "Limited Edition Print",
+        "sales": 8,
+        "revenue": 168.2,
+        "payoutType": "percentage",
+        "payoutAmount": 25
+      }
+    ],
+    "salesHistory": [
+      {
+        "id": "123",
+        "product_id": "987654321",
+        "title": "Limited Edition Print",
+        "date": "2025-10-12T10:15:00.000Z",
+        "price": 64.5,
+        "quantity": 1,
+        "revenue": 16.12,
+        "currency": "GBP",
+        "payout": {
+          "type": "percentage",
+          "amount": 25
+        }
+      }
+    ],
+    "totalItems": 24
+  }
+  ```
+- **Notes**: Aggregates quantities, revenue, and payout metadata server-side to maintain consistency.
+
+### Endpoint: `GET /api/vendors/products`
+- **Description**: Lists vendor products, combining Shopify catalog data with Supabase payout settings.
+- **Query Parameters**:
+  - `vendor` (optional): Overrides cookie vendor (requires same value as authenticated vendor; falls back to cookie when omitted).
+- **Response (200)**:
+  ```json
+  {
+    "products": [
+      {
+        "id": "987654321",
+        "title": "Limited Edition Print",
+        "handle": "limited-edition-print",
+        "vendor": "Example Vendor",
+        "productType": "Print",
+        "inventory": 5,
+        "price": "64.50",
+        "currency": "GBP",
+        "image": "https://cdn.shopify.com/product.jpg",
+        "status": "active",
+        "payout_amount": 25,
+        "is_percentage": true
+      }
+    ]
+  }
+  ```
+- **Fallback**: Returns mock products if both cookie and `vendor` query param are absent (development aid).
+
+### Error Handling
+- Missing or invalid `vendor_session` cookie → `401 { "error": "Not authenticated" }`.
+- Unexpected Supabase/Shopify failures → `500 { "error": "Failed to fetch vendor stats" }`.
+- All vendor endpoints log detailed errors server-side for observability.
 
 ### Authentication Endpoints
 | Endpoint | Method | Description | Roles Allowed |

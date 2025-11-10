@@ -29,6 +29,13 @@ export default function PayoutsPage() {
   const [isRefreshing, setIsRefreshing] = useState(false)
   const { toast } = useToast()
 
+  const formatCurrency = (amount: number) =>
+    new Intl.NumberFormat("en-GB", {
+      style: "currency",
+      currency: "GBP",
+      minimumFractionDigits: 2,
+    }).format(amount)
+
   const fetchPayouts = async () => {
     try {
       setIsLoading(true)
@@ -133,7 +140,7 @@ export default function PayoutsPage() {
             {isLoading ? (
               <Skeleton className="h-7 w-20" />
             ) : (
-              <div className="text-2xl font-bold">${totalPaid.toFixed(2)}</div>
+              <div className="text-2xl font-bold">{formatCurrency(totalPaid)}</div>
             )}
           </CardContent>
         </Card>
@@ -147,7 +154,7 @@ export default function PayoutsPage() {
             {isLoading ? (
               <Skeleton className="h-7 w-20" />
             ) : (
-              <div className="text-2xl font-bold">${pendingAmount.toFixed(2)}</div>
+              <div className="text-2xl font-bold">{formatCurrency(pendingAmount)}</div>
             )}
           </CardContent>
         </Card>
@@ -183,7 +190,7 @@ export default function PayoutsPage() {
                   {payouts.map((payout) => (
                     <TableRow key={payout.id}>
                       <TableCell>{format(new Date(payout.date), "MMM d, yyyy")}</TableCell>
-                      <TableCell className="font-medium">${payout.amount.toFixed(2)}</TableCell>
+                      <TableCell className="font-medium">{formatCurrency(payout.amount)}</TableCell>
                       <TableCell>{payout.products}</TableCell>
                       <TableCell>{payout.reference || "-"}</TableCell>
                       <TableCell>{getStatusBadge(payout.status)}</TableCell>

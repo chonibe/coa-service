@@ -6,7 +6,8 @@ interface VendorStats {
   totalProducts: number
   totalSales: number
   totalRevenue: number
-  pendingPayout: number
+  totalPayout: number
+  currency: string
   revenueGrowth?: number
   salesGrowth?: number
   newProducts?: number
@@ -27,6 +28,8 @@ interface Product {
 interface SalesData {
   totalSales: number
   totalRevenue: number
+  totalPayout: number
+  currency: string
   salesByDate: any[]
   salesByProduct: any[]
   recentActivity: any[]
@@ -75,16 +78,27 @@ export function useVendorData(): UseVendorDataReturn {
       const productsData = await productsResponse.json()
       const salesAnalyticsData = await salesResponse.json()
 
-      setStats(statsData)
+      setStats({
+        totalProducts: statsData.totalProducts ?? 0,
+        totalSales: statsData.totalSales ?? 0,
+        totalRevenue: statsData.totalRevenue ?? 0,
+        totalPayout: statsData.totalPayout ?? statsData.totalRevenue ?? 0,
+        currency: statsData.currency || "GBP",
+        revenueGrowth: statsData.revenueGrowth,
+        salesGrowth: statsData.salesGrowth,
+        newProducts: statsData.newProducts,
+      })
       setProducts(productsData.products || [])
 
       // Use real sales data from the analytics endpoint
       const salesData = {
-        totalSales: statsData.totalSales || 0,
-        totalRevenue: statsData.totalRevenue || 0,
+        totalSales: statsData.totalSales ?? 0,
+        totalRevenue: statsData.totalRevenue ?? 0,
+        totalPayout: statsData.totalPayout ?? statsData.totalRevenue ?? 0,
+        currency: statsData.currency || "GBP",
         salesByDate: salesAnalyticsData.salesByDate || [],
         salesByProduct: salesAnalyticsData.salesByProduct || [],
-        recentActivity: statsData.recentActivity || []
+        recentActivity: statsData.recentActivity || [],
           }
 
       setSalesData(salesData)

@@ -1,81 +1,98 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { cookies } from 'next/headers'
-import { createClient } from '@supabase/supabase-js'
+import { NextRequest, NextResponse } from "next/server"
+import { cookies } from "next/headers"
+import { createClient as createRouteClient } from "@/lib/supabase-server"
+import { buildVendorSessionCookie, VENDOR_SESSION_COOKIE_NAME } from "@/lib/vendor-session"
+import {
+  linkSupabaseUserToVendor,
+  isAdminEmail,
+  POST_LOGIN_REDIRECT_COOKIE,
+  PENDING_VENDOR_EMAIL_COOKIE,
+  sanitizeRedirectTarget,
+} from "@/lib/vendor-auth"
 
-// Initialize Supabase client
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!, 
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-)
+const DEFAULT_VENDOR_REDIRECT = "/vendor/dashboard"
+const ONBOARDING_REDIRECT = "/vendor/onboarding"
+const ADMIN_REDIRECT = "/vendor/login?admin=1"
 
-function sanitizeRedirectUri(baseUrl: string, path: string): string {
-  // Remove trailing and leading slashes, then join with a single slash
-  const cleanBaseUrl = baseUrl.replace(/\/+$/, '')
-  const cleanPath = path.replace(/^\/+/, '')
-  return `${cleanBaseUrl}/${cleanPath}`
-}
-
-function getRedirectUri(): string {
-  // Prioritize environment-specific redirect URIs for Street Lamp
-  const redirectUris = [
-    process.env.NEXT_PUBLIC_VERCEL_REDIRECT_URI,
-    process.env.NEXT_PUBLIC_PROD_REDIRECT_URI,
-    process.env.NEXT_PUBLIC_LOCAL_REDIRECT_URI
-  ].filter(Boolean)
-
-  // Determine current environment with nuanced detection
-  const isVercel = process.env.VERCEL === '1'
-  const isProduction = process.env.NODE_ENV === 'production'
-  const hasVercelUrl = !!process.env.VERCEL_URL
-
-  let selectedRedirectUri: string | undefined
-
-  // Prioritize based on environment
-  if (isVercel || hasVercelUrl) {
-    selectedRedirectUri = process.env.NEXT_PUBLIC_VERCEL_REDIRECT_URI
-  } else if (isProduction) {
-    selectedRedirectUri = process.env.NEXT_PUBLIC_PROD_REDIRECT_URI
-  } else {
-    // Default to local for development
-    selectedRedirectUri = process.env.NEXT_PUBLIC_LOCAL_REDIRECT_URI
-  }
-
-  // Fallback and validation
-  if (!selectedRedirectUri) {
-    console.warn('No valid redirect URI could be determined')
-    throw new Error('No valid redirect URI could be generated')
-  }
-
-  return selectedRedirectUri
+const deleteCookie = (response: NextResponse, name: string) => {
+  response.cookies.set(name, "", { path: "/", maxAge: 0 })
 }
 
 export async function GET(request: NextRequest) {
-  try {
-    // Check for custom redirect from query parameters
-    const { searchParams } = new URL(request.url)
-    const customRedirect = searchParams.get('redirect')
+  const cookieStore = cookies()
+  const supabase = createRouteClient(cookieStore)
 
-    // Retrieve the stored redirect URL from cookies or use default
-    const redirectUrl = customRedirect || 
-      request.cookies.get('shopify_login_redirect')?.value || 
-      'https://dashboard.thestreetlamp.com/customer/dashboard';
+  const { searchParams, origin } = request.nextUrl
+  const code = searchParams.get("code")
+  const redirectTarget = sanitizeRedirectTarget(
+    cookieStore.get(POST_LOGIN_REDIRECT_COOKIE)?.value,
+    origin,
+    DEFAULT_VENDOR_REDIRECT,
+  )
 
-    console.log('Callback Route Redirect:', {
-      redirectUrl,
-      customRedirect,
-      requestUrl: request.url
-    });
+  const response = NextResponse.redirect(new URL(DEFAULT_VENDOR_REDIRECT, origin))
 
-    // Construct a response that will redirect to the dashboard
-    const response = NextResponse.redirect(new URL(redirectUrl));
+  deleteCookie(response, POST_LOGIN_REDIRECT_COOKIE)
 
-    // Clear the redirect cookie
-    response.cookies.delete('shopify_login_redirect');
-
-    return response;
-
-  } catch (error) {
-    console.error('Authentication Redirect Error:', error)
-    return NextResponse.redirect(new URL('https://dashboard.thestreetlamp.com/customer/dashboard'))
+  if (!code) {
+    deleteCookie(response, VENDOR_SESSION_COOKIE_NAME)
+    response.cookies.set("auth_error", "missing_code", { path: "/", maxAge: 60 })
+    return response
   }
+
+  const { error: exchangeError } = await supabase.auth.exchangeCodeForSession(code)
+
+  if (exchangeError) {
+    console.error("Failed to exchange Supabase auth code:", exchangeError)
+    deleteCookie(response, VENDOR_SESSION_COOKIE_NAME)
+    response.cookies.set("auth_error", "exchange_failed", { path: "/", maxAge: 60 })
+    response.headers.set("Location", new URL("/vendor/login?error=oauth_exchange_failed", origin).toString())
+    return response
+  }
+
+  const {
+    data: { session },
+    error: sessionError,
+  } = await supabase.auth.getSession()
+
+  if (sessionError || !session?.user) {
+    console.error("Unable to fetch Supabase session after exchange:", sessionError)
+    deleteCookie(response, VENDOR_SESSION_COOKIE_NAME)
+    response.headers.set("Location", new URL("/vendor/login?error=session_missing", origin).toString())
+    return response
+  }
+
+  const user = session.user
+  const email = user.email?.toLowerCase() ?? null
+  const vendor = await linkSupabaseUserToVendor(user)
+
+  deleteCookie(response, PENDING_VENDOR_EMAIL_COOKIE)
+
+  if (vendor) {
+    const sessionCookie = buildVendorSessionCookie(vendor.vendor_name)
+    response.cookies.set(sessionCookie.name, sessionCookie.value, sessionCookie.options)
+    response.headers.set(
+      "Location",
+      new URL(redirectTarget || DEFAULT_VENDOR_REDIRECT, origin).toString(),
+    )
+    return response
+  }
+
+  // No vendor linked – route admins to impersonation flow or vendors to onboarding.
+  deleteCookie(response, VENDOR_SESSION_COOKIE_NAME)
+
+  if (email) {
+    response.cookies.set(PENDING_VENDOR_EMAIL_COOKIE, email, {
+      path: "/",
+      httpOnly: true,
+      sameSite: "lax",
+      secure: process.env.NODE_ENV === "production",
+      maxAge: 60 * 10,
+    })
+  }
+
+  const nextPath = isAdminEmail(email) ? ADMIN_REDIRECT : ONBOARDING_REDIRECT
+  response.headers.set("Location", new URL(nextPath, origin).toString())
+
+  return response
 } 

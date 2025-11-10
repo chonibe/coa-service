@@ -26,6 +26,14 @@
 - [ ] Optimize performance for large order lists
 - [ ] Implement advanced filtering options
 
+### Vendor Dashboard Hardening
+- [x] [Deploy signed vendor session cookies](./features/vendor-dashboard/README.md) – HMAC-backed sessions prevent cross-vendor access.
+- [x] [Align vendor stats with `order_line_items_v2`](./features/vendor-dashboard/README.md#technical-implementation-details) – Server totals now match authoritative Supabase data.
+- [x] [Update vendor analytics documentation](./features/vendor-dashboard/README.md#api-endpoints--usage) – Frontend charts consume normalised GBP analytics.
+- [x] [Enable Supabase Google OAuth for vendors](./features/vendor-dashboard/README.md#session-security) – Google sign-in replaces manual dropdown login.
+- [x] [Implement admin vendor impersonation](./features/vendor-dashboard/README.md#api-endpoints--usage) – Admins can assume vendor context securely.
+- [x] [Refresh onboarding flow for new Supabase accounts](./features/vendor-dashboard/README.md#uiux-considerations) – Newly linked vendors are guided through profile completion.
+
 ### Ongoing Monitoring
 - [ ] Track user engagement metrics
 - [ ] Monitor load times and responsiveness

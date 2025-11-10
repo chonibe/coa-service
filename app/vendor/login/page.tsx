@@ -1,111 +1,161 @@
 "use client"
 
-import { CardFooter } from "@/components/ui/card"
-
-import type React from "react"
-import { useState, useEffect } from "react"
-import { useRouter } from "next/navigation"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
+import { Suspense, useEffect, useState } from "react"
+import { useRouter, useSearchParams } from "next/navigation"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
-import { AlertCircle, Loader2, Store } from "lucide-react"
+import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { AlertCircle, Loader2, LogIn, Store } from "lucide-react"
 
-export default function VendorLoginPage() {
-  const [vendorName, setVendorName] = useState("")
-  const [isLoading, setIsLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-  const [vendors, setVendors] = useState<string[]>([])
+interface AuthStatusResponse {
+  authenticated: boolean
+  isAdmin: boolean
+  vendorSession: string | null
+  vendor: { id: number; vendor_name: string } | null
+  user: { id: string; email: string | null } | null
+}
+
+function VendorLoginContent() {
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const [status, setStatus] = useState<AuthStatusResponse | null>(null)
+  const [vendors, setVendors] = useState<string[]>([])
+  const [selectedVendor, setSelectedVendor] = useState<string>("")
+  const [loading, setLoading] = useState(true)
+  const [impersonating, setImpersonating] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  const oauthError = searchParams.get("error")
 
   useEffect(() => {
-    const fetchVendors = async () => {
-      setIsLoading(true)
-      setError(null)
-
+    const loadStatus = async () => {
+      setLoading(true)
       try {
-        const response = await fetch("/api/vendors/names")
-
+        const response = await fetch("/api/auth/status", { cache: "no-store" })
         if (!response.ok) {
-          throw new Error("Failed to fetch vendors")
+          throw new Error("Failed to load authentication status")
         }
 
-        const data = await response.json()
-        setVendors(data.vendors)
-      } catch (err: any) {
-        console.error("Error fetching vendors:", err)
-        setError(err.message || "Failed to fetch vendors")
+        const data = (await response.json()) as AuthStatusResponse
+        setStatus(data)
+
+        if (data.vendorSession || data.vendor) {
+          router.replace("/vendor/dashboard")
+          return
+        }
+
+        if (data.authenticated && !data.isAdmin) {
+          router.replace("/vendor/onboarding")
+          return
+        }
+
+        if (data.isAdmin) {
+          await fetchVendors()
+        }
+      } catch (err) {
+        console.error("Vendor login status error:", err)
+        setError(err instanceof Error ? err.message : "Unable to determine login status")
       } finally {
-        setIsLoading(false)
+        setLoading(false)
       }
     }
 
-    fetchVendors()
+    const fetchVendors = async () => {
+      try {
+        const response = await fetch("/api/vendors/names", { cache: "no-store" })
+        if (!response.ok) {
+          throw new Error("Failed to fetch vendor list")
+        }
+        const data = await response.json()
+        setVendors(data.vendors || [])
+      } catch (err) {
+        console.error("Error fetching vendor list:", err)
+        setError("Unable to load vendor directory for impersonation.")
+      }
+    }
+
+    loadStatus()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault()
+  const startGoogleSignIn = () => {
+    const redirect = encodeURIComponent("/vendor/dashboard")
+    window.location.href = `/api/auth/google/start?redirect=${redirect}`
+  }
 
-    if (!vendorName.trim()) {
-      setError("Please select your vendor name")
+  const handleImpersonation = async () => {
+    if (!selectedVendor) {
+      setError("Select a vendor to impersonate.")
       return
     }
 
-    setIsLoading(true)
+    setImpersonating(true)
     setError(null)
-
     try {
-      const response = await fetch("/api/vendor/login", {
+      const response = await fetch("/api/auth/impersonate", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ vendorName }),
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ vendorName: selectedVendor }),
       })
 
-      const data = await response.json()
-
       if (!response.ok) {
-        throw new Error(data.message || "Login failed")
+        const payload = await response.json().catch(() => ({}))
+        throw new Error(payload.error || "Unable to impersonate vendor")
       }
 
-      // Redirect to vendor dashboard
-      router.push("/vendor/dashboard")
-    } catch (err: any) {
-      console.error("Login error:", err)
-      setError(err.message || "Failed to log in. Please check your vendor name and try again.")
+      router.replace("/vendor/dashboard")
+    } catch (err) {
+      console.error("Impersonation failed:", err)
+      setError(err instanceof Error ? err.message : "Impersonation failed")
     } finally {
-      setIsLoading(false)
+      setImpersonating(false)
     }
   }
 
+  const isAdmin = status?.isAdmin ?? false
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
-      <Card className="w-full max-w-md">
-        <CardHeader className="space-y-1">
-          <div className="flex justify-center mb-4">
+      <Card className="w-full max-w-lg">
+        <CardHeader className="space-y-3 text-center">
+          <div className="flex justify-center">
             <Store className="h-12 w-12 text-primary" />
           </div>
-          <CardTitle className="text-2xl text-center">Vendor Portal</CardTitle>
-          <CardDescription className="text-center">Select your vendor name to access your dashboard</CardDescription>
+          <CardTitle className="text-2xl">Vendor Portal</CardTitle>
+          <CardDescription>Sign in with Google to access your vendor dashboard.</CardDescription>
         </CardHeader>
-        <CardContent>
-          {error && (
-            <Alert variant="destructive" className="mb-4">
+        <CardContent className="space-y-4">
+          {(error || oauthError) && (
+            <Alert variant="destructive">
               <AlertCircle className="h-4 w-4" />
-              <AlertTitle>Error</AlertTitle>
-              <AlertDescription>{error}</AlertDescription>
+              <AlertTitle>Authentication Error</AlertTitle>
+              <AlertDescription>{error || `OAuth error: ${oauthError}`}</AlertDescription>
             </Alert>
           )}
 
-          <form onSubmit={handleLogin}>
-            <div className="grid gap-4">
-              <div className="grid gap-2">
-                <Label htmlFor="vendor-name">Vendor Name</Label>
-                <Select value={vendorName} onValueChange={setVendorName} disabled={isLoading}>
-                  <SelectTrigger id="vendor-name">
-                    <SelectValue placeholder="Select your vendor name" />
+          <Button
+            onClick={startGoogleSignIn}
+            disabled={loading}
+            className="w-full flex items-center justify-center gap-2"
+            size="lg"
+          >
+            {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <LogIn className="h-4 w-4" />}
+            Continue with Google
+          </Button>
+
+          {isAdmin && (
+            <div className="rounded-lg border p-4 space-y-3">
+              <div>
+                <Label htmlFor="impersonate-select">Admin tools</Label>
+                <p className="text-sm text-muted-foreground">
+                  Impersonate a vendor to review their dashboard experience.
+                </p>
+              </div>
+              <Select value={selectedVendor} onValueChange={setSelectedVendor} disabled={impersonating || loading}>
+                <SelectTrigger id="impersonate-select">
+                  <SelectValue placeholder="Select a vendor to impersonate" />
                   </SelectTrigger>
                   <SelectContent>
                     {vendors.map((vendor) => (
@@ -115,24 +165,51 @@ export default function VendorLoginPage() {
                     ))}
                   </SelectContent>
                 </Select>
-              </div>
-              <Button type="submit" disabled={isLoading}>
-                {isLoading ? (
+              <Button
+                variant="outline"
+                className="w-full"
+                disabled={!selectedVendor || impersonating}
+                onClick={handleImpersonation}
+              >
+                {impersonating ? (
                   <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Logging in...
+                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                    Switching...
                   </>
                 ) : (
-                  "Log In"
+                  "View as Vendor"
                 )}
               </Button>
             </div>
-          </form>
+          )}
+
+          <p className="text-sm text-muted-foreground text-center">
+            Need help? Contact <a href="mailto:support@streetcollector.com">support@streetcollector.com</a>
+          </p>
         </CardContent>
-        <CardFooter className="flex justify-center">
-          <p className="text-sm text-muted-foreground">Contact the administrator if you need assistance.</p>
-        </CardFooter>
       </Card>
     </div>
+  )
+}
+
+export default function VendorLoginPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
+          <Card className="w-full max-w-sm">
+            <CardHeader className="space-y-2 text-center">
+              <CardTitle>Loading login...</CardTitle>
+              <CardDescription>Please wait while we prepare the vendor portal.</CardDescription>
+            </CardHeader>
+            <CardContent className="flex justify-center">
+              <Loader2 className="h-6 w-6 animate-spin text-primary" />
+            </CardContent>
+          </Card>
+        </div>
+      }
+    >
+      <VendorLoginContent />
+    </Suspense>
   )
 }

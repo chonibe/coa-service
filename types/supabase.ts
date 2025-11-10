@@ -91,6 +91,92 @@ export interface Database {
           updated_at?: string | null
         }
       }
+      vendors: {
+        Row: {
+          id: number
+          vendor_name: string
+          instagram_url: string | null
+          notes: string | null
+          created_at: string
+          updated_at: string
+          paypal_email: string | null
+          payout_method: string | null
+          password_hash: string | null
+          tax_id: string | null
+          tax_country: string | null
+          is_company: boolean | null
+          contact_name: string | null
+          contact_email: string | null
+          phone: string | null
+          address: string | null
+          website: string | null
+          bio: string | null
+          bank_account: string | null
+          notify_on_sale: boolean | null
+          notify_on_payout: boolean | null
+          notify_on_message: boolean | null
+          onboarding_completed: boolean | null
+          onboarding_completed_at: string | null
+          last_login: string | null
+          auth_id: string | null
+        }
+        Insert: {
+          id?: number
+          vendor_name: string
+          instagram_url?: string | null
+          notes?: string | null
+          created_at?: string
+          updated_at?: string
+          paypal_email?: string | null
+          payout_method?: string | null
+          password_hash?: string | null
+          tax_id?: string | null
+          tax_country?: string | null
+          is_company?: boolean | null
+          contact_name?: string | null
+          contact_email?: string | null
+          phone?: string | null
+          address?: string | null
+          website?: string | null
+          bio?: string | null
+          bank_account?: string | null
+          notify_on_sale?: boolean | null
+          notify_on_payout?: boolean | null
+          notify_on_message?: boolean | null
+          onboarding_completed?: boolean | null
+          onboarding_completed_at?: string | null
+          last_login?: string | null
+          auth_id?: string | null
+        }
+        Update: {
+          id?: number
+          vendor_name?: string
+          instagram_url?: string | null
+          notes?: string | null
+          created_at?: string
+          updated_at?: string
+          paypal_email?: string | null
+          payout_method?: string | null
+          password_hash?: string | null
+          tax_id?: string | null
+          tax_country?: string | null
+          is_company?: boolean | null
+          contact_name?: string | null
+          contact_email?: string | null
+          phone?: string | null
+          address?: string | null
+          website?: string | null
+          bio?: string | null
+          bank_account?: string | null
+          notify_on_sale?: boolean | null
+          notify_on_payout?: boolean | null
+          notify_on_message?: boolean | null
+          onboarding_completed?: boolean | null
+          onboarding_completed_at?: string | null
+          last_login?: string | null
+          auth_id?: string | null
+        }
+      }
     }
     Views: {
       [_ in never]: never

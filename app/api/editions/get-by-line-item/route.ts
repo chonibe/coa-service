@@ -1,45 +1,40 @@
-import { createClient } from '@/lib/supabase/server'
-import { NextResponse } from 'next/server'
-import { cookies } from 'next/headers'
+import { NextResponse } from "next/server"
+import type { NextRequest } from "next/server"
+import { cookies } from "next/headers"
+import { createClient } from "@/lib/supabase/server"
 
-// Initialize Supabase client with service role key
-
-
-export async function GET() {
+export async function GET(request: NextRequest) {
   const supabase = createClient()
   
   try {
-    // Get the productId from the query parameters
     const { searchParams } = new URL(request.url)
-    const productId = searchParams.get('productId')
+    const productId = searchParams.get("productId")
 
     if (!productId) {
-      return NextResponse.json({ error: 'Product ID is required' }, { status: 400 })
+      return NextResponse.json({ error: "Product ID is required" }, { status: 400 })
     }
 
-    // Check for admin session cookie
-    const cookieStore = await cookies()
-    const adminSession = cookieStore.get('admin_session')
+    const cookieStore = cookies()
+    const adminSession = cookieStore.get("admin_session")
 
     if (!adminSession) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    // Fetch line items from the database
     const { data: lineItems, error } = await supabase
-      .from('order_line_items_v2')
-      .select('*')
-      .eq('product_id', productId)
-      .order('created_at', { ascending: true })
+      .from("order_line_items_v2")
+      .select("*")
+      .eq("product_id", productId)
+      .order("created_at", { ascending: true })
 
     if (error) {
-      console.error('Error fetching line items:', error)
-      return NextResponse.json({ error: 'Failed to fetch line items' }, { status: 500 })
+      console.error("Error fetching line items:", error)
+      return NextResponse.json({ error: "Failed to fetch line items" }, { status: 500 })
     }
 
     return NextResponse.json(lineItems || [])
   } catch (error) {
-    console.error('Error in get-by-line-item route:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    console.error("Error in get-by-line-item route:", error)
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }
 }

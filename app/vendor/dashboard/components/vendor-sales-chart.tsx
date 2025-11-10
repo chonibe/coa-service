@@ -19,6 +19,7 @@ export function VendorSalesChart({ vendorName }: VendorSalesChartProps) {
   const [salesData, setSalesData] = useState<SalesDataPoint[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [currency, setCurrency] = useState<string>("GBP")
 
   useEffect(() => {
     const fetchSalesData = async () => {
@@ -34,6 +35,7 @@ export function VendorSalesChart({ vendorName }: VendorSalesChartProps) {
 
         const data = await response.json()
         setSalesData(data.salesByDate || [])
+        setCurrency(data.currency || "GBP")
       } catch (err: any) {
         console.error("Error fetching sales data:", err)
         setError(err.message || "Failed to load sales data")
@@ -53,9 +55,9 @@ export function VendorSalesChart({ vendorName }: VendorSalesChartProps) {
 
   // Format currency for tooltip
   const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat("en-US", {
+    return new Intl.NumberFormat("en-GB", {
       style: "currency",
-      currency: "USD",
+      currency,
       minimumFractionDigits: 2,
     }).format(value)
   }
@@ -112,7 +114,7 @@ export function VendorSalesChart({ vendorName }: VendorSalesChartProps) {
         <YAxis
           yAxisId="right"
           orientation="right"
-          tickFormatter={(value) => `$${value}`}
+          tickFormatter={(value) => formatCurrency(Number(value))}
           label={{ value: "Revenue", angle: 90, position: "insideRight" }}
         />
         <Tooltip content={customTooltip} />

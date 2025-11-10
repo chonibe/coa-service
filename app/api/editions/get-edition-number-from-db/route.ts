@@ -3,7 +3,7 @@ import type { NextRequest } from "next/server"
 import { createClient } from "@/lib/supabase/server"
 import { SHOPIFY_SHOP, SHOPIFY_ACCESS_TOKEN } from "@/lib/env"
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   const supabase = createClient()
   
   const { searchParams } = new URL(request.url)
@@ -14,10 +14,8 @@ export async function GET() {
   }
 
   try {
-    // First, get product information from Shopify
     const productInfo = await getProductInfo(productId)
 
-    // Then, get all line items with edition numbers for this product from Supabase
     const { data: lineItems, error } = await supabase
       .from("order_line_items_v2")
       .select("*")
@@ -29,12 +27,10 @@ export async function GET() {
       throw new Error("Failed to fetch line items from database")
     }
 
-    // Get the current highest edition number from active items only
     const activeItems = lineItems.filter((item) => item.status === "active")
     const currentEditionNumber =
       activeItems.length > 0 ? Math.max(...activeItems.map((item) => Number(item.edition_number) || 0)) : 0
 
-    // This ensures the frontend still gets the edition_total even if it's not in the database
     const lineItemsWithTotal = (lineItems || []).map((item) => ({
       ...item,
       edition_total: productInfo.editionTotal || null,
