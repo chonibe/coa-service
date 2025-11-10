@@ -27,16 +27,18 @@ The Street Collector API provides a comprehensive, headless backend for managing
 
 ### Endpoint: `GET /api/auth/google/start`
 - **Description**: Initiates Supabase Google OAuth and stores the post-login redirect path for the session.
-- **Query Params**: `redirect` (optional) relative path to return to after sign-in.
+- **Query Params**:
+  - `redirect` (optional) relative path to return to after sign-in; sanitized to same-origin routes.
+  - `mode` (optional) `vendor` or `admin`; helps UI preselect the correct tab post-auth.
 - **Response**: Redirect (302) to Supabase Auth consent URL. Sets `vendor_post_login_redirect` cookie.
 - **Errors**: Returns `400` JSON when Supabase cannot generate an OAuth URL.
 
 ### Endpoint: `/auth/callback`
 - **Description**: Supabase OAuth callback. Exchanges the authorization code for a Supabase session, links the user to a vendor record, and issues the `vendor_session` cookie.
 - **Redirect Flow**:
-  - Vendors with linked records → `/vendor/dashboard` (or stored redirect).
+  - Vendors with linked records → `/vendor/dashboard` (or sanitized stored redirect).
   - New vendors → `/vendor/onboarding`.
-  - Admins without vendor record → `/vendor/login?admin=1`.
+  - Admins without vendor record → `/vendor/login?tab=admin` (unless a safe redirect override is provided).
 
 ### Endpoint: `GET /api/auth/status`
 - **Description**: Returns Supabase session metadata and vendor context for the current request.

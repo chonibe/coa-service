@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { createClient } from "@supabase/supabase-js"
+import { POST_LOGIN_REDIRECT_COOKIE, sanitizeRedirectTarget } from "@/lib/vendor-auth"
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
@@ -15,12 +16,12 @@ const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   },
 })
 
-const POST_LOGIN_COOKIE = "vendor_post_login_redirect"
 const DEFAULT_REDIRECT = "/vendor/dashboard"
 
 export async function GET(request: NextRequest) {
   const { searchParams, origin } = request.nextUrl
-  const redirect = searchParams.get("redirect") || DEFAULT_REDIRECT
+  const requestedRedirect = searchParams.get("redirect")
+  const redirect = sanitizeRedirectTarget(requestedRedirect, origin, DEFAULT_REDIRECT)
 
   const redirectTo = `${origin}/auth/callback`
 
@@ -38,7 +39,7 @@ export async function GET(request: NextRequest) {
   }
 
   const response = NextResponse.redirect(data.url)
-  response.cookies.set(POST_LOGIN_COOKIE, redirect, {
+  response.cookies.set(POST_LOGIN_REDIRECT_COOKIE, redirect, {
     path: "/",
     httpOnly: true,
     sameSite: "lax",

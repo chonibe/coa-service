@@ -42,8 +42,9 @@
 - Vendor endpoints now require a signed `vendor_session` cookie generated with `VENDOR_SESSION_SECRET`.
 - Ensure Shopify and Supabase credentials remain configured for fallback analytics.
 - Configure Supabase Google OAuth (`SUPABASE_GOOGLE_CLIENT_ID` / `SUPABASE_GOOGLE_CLIENT_SECRET`) and run `npm run supabase:enable-google` after updating redirect URLs.
-- Admin accounts (`choni@thestreetlamp.com`, `chonibe@gmail.com`) can approve pending signups via the admin vendors dashboard.
+- Vendor login/signup surfaces share the [`AuthShell`](../components/vendor/AuthShell.tsx) layout; update this shell for global styling tweaks.
+- Admin accounts (`choni@thestreetlamp.com`, `chonibe@gmail.com`) can approve pending signups via the admin vendors dashboard. OAuth redirects respect `redirect` parameters set by the login tabs.
 
 ## Version
-**Documentation Version**: 1.3.0  
+**Documentation Version**: 1.4.0  
 **Last Updated**: 2025-11-10

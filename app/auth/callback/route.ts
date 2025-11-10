@@ -11,7 +11,7 @@ import {
 } from "@/lib/vendor-auth"
 
 const DEFAULT_VENDOR_REDIRECT = "/vendor/dashboard"
-const ADMIN_REDIRECT = "/vendor/login?admin=1"
+const ADMIN_REDIRECT = "/vendor/login?tab=admin"
 
 const deleteCookie = (response: NextResponse, name: string) => {
   response.cookies.set(name, "", { path: "/", maxAge: 0 })
@@ -23,11 +23,8 @@ export async function GET(request: NextRequest) {
 
   const { searchParams, origin } = request.nextUrl
   const code = searchParams.get("code")
-  const redirectTarget = sanitizeRedirectTarget(
-    cookieStore.get(POST_LOGIN_REDIRECT_COOKIE)?.value,
-    origin,
-    DEFAULT_VENDOR_REDIRECT,
-  )
+  const storedRedirect = cookieStore.get(POST_LOGIN_REDIRECT_COOKIE)?.value
+  const redirectTarget = sanitizeRedirectTarget(storedRedirect, origin, DEFAULT_VENDOR_REDIRECT)
 
   const response = NextResponse.redirect(new URL(DEFAULT_VENDOR_REDIRECT, origin))
 
@@ -95,7 +92,7 @@ export async function GET(request: NextRequest) {
 
   let nextPath = "/vendor/signup"
   if (resolution.status === "admin") {
-    nextPath = ADMIN_REDIRECT
+    nextPath = redirectTarget !== DEFAULT_VENDOR_REDIRECT ? redirectTarget : ADMIN_REDIRECT
   } else if (resolution.status === "pending") {
     nextPath = "/vendor/signup?status=pending"
   }

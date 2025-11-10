@@ -7,6 +7,7 @@
 
 ## Implementation Summary
 - Implementation: [`app/vendor/dashboard/page.tsx`](../../../app/vendor/dashboard/page.tsx)
+- Login Experience: [`app/vendor/login/page.tsx`](../../../app/vendor/login/page.tsx)
 - Core APIs:
   - [`app/api/auth/google/start/route.ts`](../../../app/api/auth/google/start/route.ts)
   - [`app/auth/callback/route.ts`](../../../app/auth/callback/route.ts)
@@ -21,6 +22,7 @@
 - Admin Tools:
   - [`app/api/admin/vendors/pending/route.ts`](../../../app/api/admin/vendors/pending/route.ts)
   - [`app/api/admin/vendors/link-auth/route.ts`](../../../app/api/admin/vendors/link-auth/route.ts)
+- Shared Auth Layout: [`components/vendor/AuthShell.tsx`](../../../components/vendor/AuthShell.tsx)
 - Tests:
   - [`tests/vendor-session.test.ts`](../../../tests/vendor-session.test.ts)
   - [`tests/vendor-auth.test.ts`](../../../tests/vendor-auth.test.ts)
@@ -77,7 +79,8 @@
 - Overview cards reflect server-computed totals and GBP formatting.
 - Charts auto-adjust to signed data and share currency format with tooltips.
 - Payouts table and analytics modals highlight vendor share instead of gross revenue.
-- Login page offers Google OAuth entrypoint and admin impersonation controls.
+- Auth screens share a unified split-layout shell with branding via `AuthShell`.
+- Login page uses vendor/admin tabs: vendors receive a primary Google CTA; admins get pairing controls post-login.
 - `/vendor/signup` allows newly authenticated emails to:
   - Create a fresh vendor profile (linked immediately with `signup_status = approved`; onboarding completion promotes to `completed`).
   - Submit an invite code to claim an existing vendor; admins finish the pairing.
@@ -112,9 +115,10 @@
 - Build E2E tests covering login/session flows.
 
 ## Version & Change Log
-- **Version**: 1.4.0
+- **Version**: 1.5.0
 - **Last Updated**: 2025-11-10
 - **Change Log**:
+  - 2025-11-10: Introduced `AuthShell`, refreshed `/vendor/login` and `/vendor/signup` UX with tabbed vendor/admin flow and sanitized redirects.
   - 2025-11-10: Added self-serve `/vendor/signup`, admin pending-signup management UI, and Supabase pairing endpoints.
 
 ## Verification Checklist

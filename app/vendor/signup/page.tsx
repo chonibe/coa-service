@@ -4,10 +4,10 @@ import { Suspense, useEffect, useState } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { AlertCircle, CheckCircle2, Loader2 } from "lucide-react"
+import { AuthShell } from "@/components/vendor/AuthShell"
 
 interface AuthStatusResponse {
   authenticated: boolean
@@ -127,17 +127,16 @@ const SignupContent = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-muted/20 p-6">
-        <Card className="max-w-sm w-full">
-          <CardHeader className="text-center space-y-2">
-            <CardTitle>Checking your account…</CardTitle>
-            <CardDescription>Preparing your vendor signup experience.</CardDescription>
-          </CardHeader>
-          <CardContent className="flex justify-center">
-            <Loader2 className="h-6 w-6 animate-spin text-primary" />
-          </CardContent>
-        </Card>
-      </div>
+      <AuthShell
+        title="Checking your account…"
+        description="Preparing your vendor signup experience."
+        heroTitle="Link your Google account"
+        heroSubtitle="We’re confirming your access so you can manage your storefront."
+      >
+        <div className="flex justify-center py-12">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
+      </AuthShell>
     )
   }
 
@@ -146,118 +145,116 @@ const SignupContent = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-3xl mx-auto space-y-8">
-        <Card>
-          <CardHeader className="space-y-3 text-center">
-            <CardTitle className="text-3xl">Complete Your Vendor Signup</CardTitle>
-            <CardDescription>
-              Sign in detected for <strong>{authStatus.user?.email}</strong>. Choose one of the options below
-              to continue.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            {error && (
-              <Alert variant="destructive">
-                <AlertCircle className="h-4 w-4" />
-                <AlertTitle>Something went wrong</AlertTitle>
-                <AlertDescription>{error}</AlertDescription>
-              </Alert>
+    <AuthShell
+      title="Complete your vendor signup"
+      description={`Signed in as ${authStatus.user?.email ?? "your Google account"}.`}
+      heroTitle="Finalize your access"
+      heroSubtitle="Create a new vendor workspace or connect with an existing one to unlock the dashboard."
+      footer={
+        <p className="text-center">
+          Need help?{" "}
+          <a className="font-medium text-primary" href="mailto:support@streetcollector.com">
+            support@streetcollector.com
+          </a>
+        </p>
+      }
+    >
+      {error && (
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertTitle>Something went wrong</AlertTitle>
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
+      )}
+
+      {(claimSuccess || searchParams.get("status") === "pending") && (
+        <Alert>
+          <CheckCircle2 className="h-4 w-4 text-green-600" />
+          <AlertTitle>Request submitted</AlertTitle>
+          <AlertDescription>
+            {claimSuccess ||
+              "Your pairing request is pending. An administrator will review and confirm access shortly."}
+          </AlertDescription>
+        </Alert>
+      )}
+
+      <section className="space-y-4 rounded-xl border border-slate-200 bg-slate-50 p-6">
+        <div className="space-y-1">
+          <h2 className="text-lg font-semibold text-slate-900">Create a new vendor profile</h2>
+          <p className="text-sm text-slate-600">
+            Start fresh with a dedicated vendor workspace. You can complete your storefront details after onboarding.
+          </p>
+        </div>
+        <form onSubmit={handleCreateVendor} className="space-y-3">
+          <div className="space-y-2">
+            <Label htmlFor="vendor-name">Vendor name</Label>
+            <Input
+              id="vendor-name"
+              placeholder="e.g. Sunset Studio Collective"
+              value={vendorName}
+              onChange={(event) => setVendorName(event.target.value)}
+              required
+            />
+          </div>
+          <Button type="submit" disabled={createLoading} className="w-full sm:w-auto">
+            {createLoading ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                Creating…
+              </>
+            ) : (
+              "Create vendor"
             )}
+          </Button>
+        </form>
+      </section>
 
-            {(claimSuccess || searchParams.get("status") === "pending") && (
-              <Alert>
-                <CheckCircle2 className="h-4 w-4 text-green-600" />
-                <AlertTitle>Request submitted</AlertTitle>
-                <AlertDescription>
-                  {claimSuccess ||
-                    "Your pairing request is pending. An administrator will review and confirm access shortly."}
-                </AlertDescription>
-              </Alert>
+      <section className="space-y-4 rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+        <div className="space-y-1">
+          <h2 className="text-lg font-semibold text-slate-900">Claim an existing vendor</h2>
+          <p className="text-sm text-slate-600">
+            Already on Street Collector? Enter the invite code shared by your administrator to request access.
+          </p>
+        </div>
+
+        <form onSubmit={handleClaimVendor} className="space-y-3">
+          <div className="space-y-2">
+            <Label htmlFor="invite-code">Invite code</Label>
+            <Input
+              id="invite-code"
+              placeholder="Enter invite code"
+              value={inviteCode}
+              onChange={(event) => setInviteCode(event.target.value)}
+              required
+            />
+          </div>
+          <Button type="submit" variant="outline" disabled={claimLoading} className="w-full sm:w-auto">
+            {claimLoading ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                Submitting…
+              </>
+            ) : (
+              "Submit pairing request"
             )}
-
-            <section className="space-y-4">
-              <div>
-                <h2 className="text-lg font-semibold">Create a new vendor profile</h2>
-                <p className="text-sm text-muted-foreground">
-                  Start fresh with a new vendor workspace. You can update all details after onboarding.
-                </p>
-              </div>
-              <form onSubmit={handleCreateVendor} className="space-y-3">
-                <div className="space-y-2">
-                  <Label htmlFor="vendor-name">Vendor name</Label>
-                  <Input
-                    id="vendor-name"
-                    placeholder="e.g. Sunset Studio Collective"
-                    value={vendorName}
-                    onChange={(event) => setVendorName(event.target.value)}
-                    required
-                  />
-                </div>
-                <Button type="submit" disabled={createLoading} className="w-full sm:w-auto">
-                  {createLoading ? (
-                    <>
-                      <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                      Creating…
-                    </>
-                  ) : (
-                    "Create vendor"
-                  )}
-                </Button>
-              </form>
-            </section>
-
-            <div className="border-t pt-6 space-y-4">
-              <div>
-                <h2 className="text-lg font-semibold">Claim an existing vendor</h2>
-                <p className="text-sm text-muted-foreground">
-                  Already have a vendor profile? Enter the invite code shared by your administrator to request
-                  access.
-                </p>
-              </div>
-
-              <form onSubmit={handleClaimVendor} className="space-y-3">
-                <div className="space-y-2">
-                  <Label htmlFor="invite-code">Invite code</Label>
-                  <Input
-                    id="invite-code"
-                    placeholder="Enter invite code"
-                    value={inviteCode}
-                    onChange={(event) => setInviteCode(event.target.value)}
-                    required
-                  />
-                </div>
-                <Button type="submit" variant="outline" disabled={claimLoading} className="w-full sm:w-auto">
-                  {claimLoading ? (
-                    <>
-                      <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                      Submitting…
-                    </>
-                  ) : (
-                    "Submit pairing request"
-                  )}
-                </Button>
-              </form>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-    </div>
+          </Button>
+        </form>
+      </section>
+    </AuthShell>
   )
 }
 
 const PendingSignupFallback = () => (
-  <div className="min-h-screen flex items-center justify-center bg-muted/20 p-6">
-    <Card className="max-w-sm w-full">
-      <CardHeader className="text-center space-y-2">
-        <CardTitle>Preparing signup…</CardTitle>
-        <CardDescription>Loading signup options.</CardDescription>
-      </CardHeader>
-      <CardContent className="flex justify-center">
-        <Loader2 className="h-6 w-6 animate-spin text-primary" />
-      </CardContent>
-    </Card>
-  </div>
+  <AuthShell
+    title="Preparing signup…"
+    description="Loading signup options."
+    heroTitle="Street Collector"
+    heroSubtitle="We’re getting your workspace ready."
+  >
+    <div className="flex justify-center py-12">
+      <Loader2 className="h-8 w-8 animate-spin text-primary" />
+    </div>
+  </AuthShell>
 )
 
 const SignupPage = () => {
