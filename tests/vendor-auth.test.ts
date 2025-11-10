@@ -1,4 +1,4 @@
-import { isAdminEmail, sanitizeRedirectTarget } from "@/lib/vendor-auth"
+import { isAdminEmail, sanitizeRedirectTarget, resolveVendorAuthState } from "@/lib/vendor-auth"
 
 describe("vendor auth helpers", () => {
   describe("isAdminEmail", () => {
@@ -33,6 +33,13 @@ describe("vendor auth helpers", () => {
 
     it("falls back for malformed URLs", () => {
       expect(sanitizeRedirectTarget("http://%%%", origin)).toBe("/vendor/dashboard")
+    })
+  })
+
+  describe("resolveVendorAuthState", () => {
+    it("identifies admin users without querying Supabase", async () => {
+      const result = await resolveVendorAuthState({ id: "admin-user", email: "choni@thestreetlamp.com" } as any)
+      expect(result).toEqual({ status: "admin", email: "choni@thestreetlamp.com" })
     })
   })
 })

@@ -177,6 +177,7 @@ This application provides several key functionalities:
 - `/app/api/auth/google/start/route.ts`: Initiate Supabase Google OAuth flow
 - `/app/api/auth/status/route.ts`: Return Supabase session and vendor context
 - `/app/api/auth/impersonate/route.ts`: Allow admins to assume a vendor session
+- `/app/api/vendor/signup/route.ts`: Create a vendor signup or submit an invite claim
 - `/app/api/vendor/profile/route.ts`: Get vendor profile
 - `/app/api/vendor/update-paypal/route.ts`: Update vendor PayPal
 - `/app/api/vendor/stats/route.ts`: Get vendor stats
@@ -192,6 +193,8 @@ This application provides several key functionalities:
 - `/app/api/certificate/[lineItemId]/route.ts`: Get certificate
 - `/app/api/nfc-tags/verify/route.ts`: Verify NFC tag
 - `/app/api/nfc-tags/claim/route.ts`: Claim NFC tag
+- `/app/api/admin/vendors/pending/route.ts`: List pending vendor signup requests
+- `/app/api/admin/vendors/link-auth/route.ts`: Assign a Google email/user to an existing vendor
 
 ### Utility Libraries
 
@@ -259,7 +262,11 @@ The vendor portal allows vendors to:
 - Update their settings
 - View analytics
 - Sign in with Google (Supabase Auth) and receive a signed `vendor_session` cookie to isolate access
+- Complete self-service onboarding via `/vendor/signup` when an email is not yet paired to a vendor
+- Request pairing for an existing vendor using invite codes, with admins approving requests in the dashboard
 - Admins can impersonate any vendor via `/api/auth/impersonate` to debug dashboard experiences safely
+- New `/vendor/signup` flow walks unpaired Google accounts through creating a vendor profile or requesting access to an existing one.
+- Pending signup requests surface in the admin dashboard for approval and pairing.
 
 ## Stripe Integration
 

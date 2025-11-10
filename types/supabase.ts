@@ -119,6 +119,9 @@ export interface Database {
           onboarding_completed_at: string | null
           last_login: string | null
           auth_id: string | null
+          signup_status: string
+          auth_pending_email: string | null
+          invite_code: string | null
         }
         Insert: {
           id?: number
@@ -147,6 +150,9 @@ export interface Database {
           onboarding_completed_at?: string | null
           last_login?: string | null
           auth_id?: string | null
+          signup_status?: string
+          auth_pending_email?: string | null
+          invite_code?: string | null
         }
         Update: {
           id?: number
@@ -175,6 +181,9 @@ export interface Database {
           onboarding_completed_at?: string | null
           last_login?: string | null
           auth_id?: string | null
+          signup_status?: string
+          auth_pending_email?: string | null
+          invite_code?: string | null
         }
       }
     }

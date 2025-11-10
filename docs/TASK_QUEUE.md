@@ -33,6 +33,9 @@
 - [x] [Enable Supabase Google OAuth for vendors](./features/vendor-dashboard/README.md#session-security) – Google sign-in replaces manual dropdown login.
 - [x] [Implement admin vendor impersonation](./features/vendor-dashboard/README.md#api-endpoints--usage) – Admins can assume vendor context securely.
 - [x] [Refresh onboarding flow for new Supabase accounts](./features/vendor-dashboard/README.md#uiux-considerations) – Newly linked vendors are guided through profile completion.
+- [x] [Add self-service vendor signup & invite claims](./features/vendor-dashboard/README.md#vendor-signup--claim-page) – `/vendor/signup` guides new Google accounts and invite-code claims.
+- [x] [Expose admin review endpoints for pending signups](./features/vendor-dashboard/README.md#api-endpoints--usage) – `/api/admin/vendors/pending` and `/api/admin/vendors/link-auth` streamline approvals.
+- [x] [Ship vendor signup & admin pairing workflow](./features/vendor-dashboard/README.md#uiux-considerations) – `/vendor/signup` onboarding plus admin pending queue ensure every email maps to the correct vendor.
 
 ### Ongoing Monitoring
 - [ ] Track user engagement metrics

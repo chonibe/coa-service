@@ -1,21 +1,23 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useEffect, useState } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import {
-  Loader2,
-  Search,
   AlertCircle,
-  RefreshCw,
-  Package,
   ArrowDownUp,
-  Instagram,
-  Pencil,
+  CheckCircle2,
   ExternalLink,
+  Instagram,
+  Loader2,
+  Mail,
+  Package,
+  Pencil,
+  RefreshCw,
+  Search,
 } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { VendorDialog } from "./vendor-dialog"
@@ -36,6 +38,12 @@ export default function VendorsPage() {
   const [selectedVendor, setSelectedVendor] = useState<any>(null)
   const [dialogOpen, setDialogOpen] = useState(false)
   const [isTableInitialized, setIsTableInitialized] = useState(false)
+  const [pendingVendors, setPendingVendors] = useState<any[]>([])
+  const [pendingLoading, setPendingLoading] = useState(true)
+  const [pendingError, setPendingError] = useState<string | null>(null)
+  const [pendingSuccess, setPendingSuccess] = useState<string | null>(null)
+  const [linkingVendorId, setLinkingVendorId] = useState<number | null>(null)
+  const [emailInputs, setEmailInputs] = useState<Record<number, string>>({})
 
   // Initialize the vendors table
   const initializeVendorsTable = async () => {
@@ -60,6 +68,36 @@ export default function VendorsPage() {
   useEffect(() => {
     initializeVendorsTable()
   }, [])
+
+  const loadPendingVendors = async () => {
+    setPendingLoading(true)
+    setPendingError(null)
+    setPendingSuccess(null)
+    try {
+      const response = await fetch("/api/admin/vendors/pending")
+      if (!response.ok) {
+        const payload = await response.json().catch(() => ({}))
+        throw new Error(payload.error || "Failed to load pending signups")
+      }
+
+      const data = await response.json()
+      setPendingVendors(data.vendors || [])
+
+      const initialEmails: Record<number, string> = {}
+      ;(data.vendors || []).forEach((vendor: any) => {
+        const value = vendor.auth_pending_email || vendor.contact_email || ""
+        if (value) {
+          initialEmails[vendor.id] = value
+        }
+      })
+      setEmailInputs(initialEmails)
+    } catch (err) {
+      console.error("Error loading pending vendors:", err)
+      setPendingError(err instanceof Error ? err.message : "Unable to load pending signups")
+    } finally {
+      setPendingLoading(false)
+    }
+  }
 
   // Fetch vendors directly from Shopify
   const fetchVendors = async (refresh = false) => {
@@ -114,6 +152,7 @@ export default function VendorsPage() {
   useEffect(() => {
     if (isTableInitialized) {
       fetchVendors()
+      loadPendingVendors()
     }
   }, [isTableInitialized])
 
@@ -132,6 +171,7 @@ export default function VendorsPage() {
   // Handle refresh
   const handleRefresh = () => {
     fetchVendors(true)
+    loadPendingVendors()
   }
 
   // Toggle sort order
@@ -167,9 +207,131 @@ export default function VendorsPage() {
     }
   }
 
+  const handleEmailInputChange = (vendorId: number, value: string) => {
+    setEmailInputs((prev) => ({ ...prev, [vendorId]: value }))
+  }
+
+  const handleLinkVendor = async (vendorId: number) => {
+    const email = (emailInputs[vendorId] || "").trim()
+    if (!email) {
+      setPendingError("Email is required to link a vendor.")
+      return
+    }
+
+    setLinkingVendorId(vendorId)
+    setPendingError(null)
+    setPendingSuccess(null)
+    try {
+      const response = await fetch("/api/admin/vendors/link-auth", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ vendorId, email }),
+      })
+
+      if (!response.ok) {
+        const payload = await response.json().catch(() => ({}))
+        throw new Error(payload.error || "Failed to link vendor")
+      }
+
+      setPendingSuccess(`Vendor #${vendorId} linked successfully.`)
+      await loadPendingVendors()
+      await fetchVendors(true)
+    } catch (err) {
+      console.error("Link vendor error:", err)
+      setPendingError(err instanceof Error ? err.message : "Failed to link vendor")
+    } finally {
+      setLinkingVendorId(null)
+    }
+  }
+
   return (
     <div className="container mx-auto py-10 max-w-6xl">
       <div className="flex flex-col space-y-8">
+        <Card>
+          <CardHeader>
+            <CardTitle>Pending vendor signups</CardTitle>
+            <CardDescription>Review new signups and approve email pairing.</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {pendingError && (
+              <Alert variant="destructive">
+                <AlertCircle className="h-4 w-4" />
+                <AlertTitle>Unable to load pending vendors</AlertTitle>
+                <AlertDescription>{pendingError}</AlertDescription>
+              </Alert>
+            )}
+
+            {pendingSuccess && (
+              <Alert>
+                <CheckCircle2 className="h-4 w-4 text-green-600" />
+                <AlertTitle>Update successful</AlertTitle>
+                <AlertDescription>{pendingSuccess}</AlertDescription>
+              </Alert>
+            )}
+
+            {pendingLoading ? (
+              <div className="flex justify-center py-6">
+                <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+              </div>
+            ) : pendingVendors.length === 0 ? (
+              <p className="text-sm text-muted-foreground">No pending vendor signups 🎉</p>
+            ) : (
+              <div className="space-y-3">
+                {pendingVendors.map((vendor) => (
+                  <div
+                    key={vendor.id}
+                    className="border rounded-md p-4 flex flex-col md:flex-row md:items-center md:justify-between gap-3"
+                  >
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-2">
+                        <h3 className="text-base font-semibold">{vendor.vendor_name}</h3>
+                        <Badge variant={vendor.signup_status === "pending" ? "secondary" : "outline"}>
+                          {vendor.signup_status}
+                        </Badge>
+                      </div>
+                      <p className="text-sm text-muted-foreground">
+                        Pending email: {vendor.auth_pending_email || "—"} • Contact:{' '}
+                        {vendor.contact_email || "—"}
+                      </p>
+                      {vendor.invite_code && (
+                        <p className="text-xs text-muted-foreground">
+                          Invite code: <code>{vendor.invite_code}</code>
+                        </p>
+                      )}
+                    </div>
+                    <div className="flex flex-col sm:flex-row gap-2 sm:items-center">
+                      <div className="flex items-center gap-2">
+                        <Mail className="h-4 w-4 text-muted-foreground" />
+                        <Input
+                          className="w-60"
+                          placeholder="email@example.com"
+                          value={emailInputs[vendor.id] ?? ""}
+                          onChange={(event) => handleEmailInputChange(vendor.id, event.target.value)}
+                        />
+                      </div>
+                      <Button
+                        onClick={() => handleLinkVendor(vendor.id)}
+                        disabled={linkingVendorId === vendor.id}
+                      >
+                        {linkingVendorId === vendor.id ? (
+                          <>
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            Linking…
+                          </>
+                        ) : (
+                          "Link email"
+                        )}
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
             <h1 className="text-3xl font-bold tracking-tight">Vendors</h1>

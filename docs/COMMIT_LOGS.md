@@ -29,6 +29,30 @@
 - Configure `SUPABASE_GOOGLE_CLIENT_ID`, `SUPABASE_GOOGLE_CLIENT_SECRET`, and `VENDOR_SESSION_SECRET` before deploying.
 - Run `npm run supabase:enable-google` after changing redirect URLs in Supabase.
 
+## Commit: Vendor Signup Workflow & Admin Pairing (2025-11-10)
+
+### ✅ Implementation Checklist
+- [x] [`supabase/migrations/20251110180000_vendor_signup_fields.sql`](../supabase/migrations/20251110180000_vendor_signup_fields.sql) – Added `signup_status`, `auth_pending_email`, and `invite_code`.
+- [x] [`lib/vendor-auth.ts`](../lib/vendor-auth.ts) – Added auth state resolution, signup helpers, and admin pairing utilities.
+- [x] [`app/vendor/signup/page.tsx`](../app/vendor/signup/page.tsx) – New self-serve signup/claim experience for Google-authenticated vendors.
+- [x] [`app/api/vendor/signup/route.ts`](../app/api/vendor/signup/route.ts) – Handles vendor creation and invite claim requests.
+- [x] [`app/api/admin/vendors/pending/route.ts`](../app/api/admin/vendors/pending/route.ts) – Lists vendors awaiting approval or pairing.
+- [x] [`app/api/admin/vendors/link-auth/route.ts`](../app/api/admin/vendors/link-auth/route.ts) – Admin endpoint to assign Google emails to vendor records.
+- [x] [`app/api/vendor/update-profile/route.ts`](../app/api/vendor/update-profile/route.ts) – Marks signup status as completed after onboarding.
+- [x] [`app/admin/vendors/page.tsx`](../app/admin/vendors/page.tsx) – Added pending signup management UI.
+- [x] Documentation: `README.md`, `docs/README.md`, `docs/API_DOCUMENTATION.md`, `docs/features/vendor-dashboard/README.md`, and commit log updates.
+
+### 🔄 Behaviour Changes
+- Unpaired Google accounts now land on `/vendor/signup` to create a vendor profile or submit an invite claim.
+- Admins can review pending signups, adjust contact emails, and link vendors directly from the dashboard.
+- Signup status transitions (`pending` → `approved`/`completed`) occur automatically after admin approval or onboarding completion.
+
+### 🧪 Verification
+- Manual:
+  1. Google login with a brand-new email → `/vendor/signup` → create profile → redirected to onboarding → status set to `completed`.
+  2. Invite claim flow → submit code → admin links email → subsequent login reaches dashboard.
+  3. Admin dashboard displays pending queue, and “Link email” updates clear pending state.
+
 ## Commit: Vendor Dashboard Hardening (2025-11-10)
 
 ### ✅ Implementation Checklist

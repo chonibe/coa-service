@@ -22,6 +22,7 @@ The Street Collector API provides a comprehensive, headless backend for managing
 - Vendors initiate Google OAuth via `GET /api/auth/google/start`. Supabase handles the consent screen and redirects to `/auth/callback`.
 - The callback exchanges the Supabase code for a server session and issues a signed `vendor_session` cookie (`HMAC-SHA256` using `VENDOR_SESSION_SECRET`).
 - Admin emails (`choni@thestreetlamp.com`, `chonibe@gmail.com`) retain Supabase access and can impersonate vendors with `/api/auth/impersonate`.
+- `vendors.signup_status` tracks onboarding: `"pending"` (awaiting approval), `"approved"` (email paired), `"completed"` (onboarding finished). Pending accounts are redirected to `/vendor/signup`.
 - All vendor endpoints reject requests without a valid signed cookie, preventing cross-vendor session bleed.
 
 ### Endpoint: `GET /api/auth/google/start`
@@ -71,10 +72,49 @@ The Street Collector API provides a comprehensive, headless backend for managing
   - `403` if the user is not an admin.
   - `404` if the vendor cannot be located.
 
+### Endpoint: `POST /api/vendor/signup`
+- **Description**: Handles self-serve vendor onboarding and invite-based claims for Google-authenticated users.
+- **Headers**: `Content-Type: application/json`
+- **Body**:
+  ```json
+  { "action": "create", "vendorName": "Sunset Collective" }
+  ```
+  or
+  ```json
+  { "action": "claim", "inviteCode": "abc123" }
+  ```
+- **Success (200)**:
+  - Create: `{ "success": true, "status": "pending", "vendor": { "id": 42, "vendor_name": "Sunset Collective" }, "inviteCode": "4f1a9c" }`
+  - Claim: `{ "success": true, "status": "pending", "vendor": { "id": 7, "vendor_name": "Legacy Vendor" } }`
+- **Notes**: Requires an authenticated Google session. New vendors start with `signup_status = pending` until onboarding completes.
+
 ### Endpoint: `POST /api/vendor/logout`
 - **Description**: Signs out of Supabase and clears vendor cookies.
 - **Success (200)**: `{ "success": true }`
 - **Side Effects**: Calls `supabase.auth.signOut()` and clears `vendor_session`, `vendor_post_login_redirect`, and `pending_vendor_email`.
+
+### Endpoint: `POST /api/vendor/signup`
+- **Description**: Supports the self-service signup page.
+- **Body**:
+  - `{ "action": "create", "vendorName": "My Studio" }` — creates a new vendor profile, sets `signup_status` to `"approved"`, and issues a `vendor_session` cookie.
+  - `{ "action": "claim", "inviteCode": "abc123" }` — submits a pairing request for an existing vendor; admins approve via `/api/admin/vendors/link-auth`.
+- **Responses**:
+  - **201/200**: `{ "success": true, "status": "approved", "vendor": {...}, "inviteCode": "..." }` (create) or `{ "status": "pending" }` (claim).
+  - **4xx** on validation errors; **401** when unauthenticated.
+
+### Endpoint: `GET /api/admin/vendors/pending`
+- **Description**: Lists vendors whose `signup_status` is not `"completed"` for administrative review.
+- **Auth**: Admin emails only.
+- **Response (200)**: `{ "vendors": [ { "id": 12, "vendor_name": "...", "signup_status": "pending", "auth_pending_email": "artist@example.com" } ] }`
+
+### Endpoint: `POST /api/admin/vendors/link-auth`
+- **Description**: Admin approval endpoint to pair a Supabase user (by email) with an existing vendor.
+- **Body**:
+  ```json
+  { "vendorId": 12, "email": "artist@example.com" }
+  ```
+- **Behavior**: Looks up the Supabase user by email, updates the vendor’s `auth_id`, clears `auth_pending_email`, and sets `signup_status` to `"approved"` (or `"completed"` when already onboarded).
+- **Errors**: `403` for non-admins, `404` when vendor or user not found, `500` on unexpected failures.
 
 ### Endpoint: `GET /api/vendor/stats`
 - **Description**: Returns vendor sales totals, payout totals, and 30-day daily chart.
@@ -175,6 +215,10 @@ The Street Collector API provides a comprehensive, headless backend for managing
 - Missing or invalid `vendor_session` cookie → `401 { "error": "Not authenticated" }`.
 - Unexpected Supabase/Shopify failures → `500 { "error": "Failed to fetch vendor stats" }`.
 - All vendor endpoints log detailed errors server-side for observability.
+
+### Admin Endpoints
+- `GET /api/admin/vendors/pending` — Lists vendors whose `signup_status` is not `completed`. Restricted to admin emails.
+- `POST /api/admin/vendors/link-auth` — Body: `{ "vendorId": 12, "email": "artist@example.com" }`. Links a Supabase user (by email) to an existing vendor and clears pending state.
 
 ### Authentication Endpoints
 | Endpoint | Method | Description | Roles Allowed |

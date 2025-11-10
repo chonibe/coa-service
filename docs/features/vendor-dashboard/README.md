@@ -17,6 +17,10 @@
   - [`app/api/vendors/products/route.ts`](../../../app/api/vendors/products/route.ts)
 - Session Utility: [`lib/vendor-session.ts`](../../../lib/vendor-session.ts)
 - Auth Helpers: [`lib/vendor-auth.ts`](../../../lib/vendor-auth.ts)
+- Signup Experience: [`app/vendor/signup/page.tsx`](../../../app/vendor/signup/page.tsx)
+- Admin Tools:
+  - [`app/api/admin/vendors/pending/route.ts`](../../../app/api/admin/vendors/pending/route.ts)
+  - [`app/api/admin/vendors/link-auth/route.ts`](../../../app/api/admin/vendors/link-auth/route.ts)
 - Tests:
   - [`tests/vendor-session.test.ts`](../../../tests/vendor-session.test.ts)
   - [`tests/vendor-auth.test.ts`](../../../tests/vendor-auth.test.ts)
@@ -49,10 +53,13 @@
 | `/auth/callback` | GET | Exchange Supabase code, link vendor, set `vendor_session`. | Supabase OAuth redirect |
 | `/api/auth/status` | GET | Report Supabase session, admin flag, vendor context. | Signed Supabase session |
 | `/api/auth/impersonate` | POST | Allow admins to assume a vendor session. | Admin Supabase session |
+| `/api/vendor/signup` | POST | Create a new vendor profile or submit an invite claim. | Signed Supabase session |
 | `/api/vendor/logout` | POST | Sign out of Supabase and clear vendor cookies. | Supabase session |
 | `/api/vendor/stats` | GET | Totals, recent activity, 30-day chart. | Signed vendor session |
 | `/api/vendor/sales-analytics` | GET | Monthly analytics, product rollups, sales history. | Signed vendor session |
 | `/api/vendors/products` | GET | Vendor products + payout settings with Shopify fallback. | Signed vendor session |
+| `/api/admin/vendors/pending` | GET | List vendor records waiting for approval/pairing. | Admin Supabase session |
+| `/api/admin/vendors/link-auth` | POST | Pair a pending signup to a Google email/user. | Admin Supabase session |
 
 **Notes**
 - All vendor endpoints require a valid signed `vendor_session` cookie (issued by `/auth/callback` or `/api/auth/impersonate`).
@@ -60,6 +67,7 @@
 
 ## Database Schema Changes
 - [`supabase/migrations/20251110160000_add_auth_id_to_vendors.sql`](../../../supabase/migrations/20251110160000_add_auth_id_to_vendors.sql) adds `auth_id UUID` with a partial unique index so each Supabase user maps to at most one vendor.
+- [`supabase/migrations/20251110180000_vendor_signup_fields.sql`](../../../supabase/migrations/20251110180000_vendor_signup_fields.sql) adds onboarding fields: `signup_status`, `auth_pending_email`, and `invite_code`.
 - Relies on existing:
   - `order_line_items_v2` for sales history.
   - `product_vendor_payouts` for vendor share configuration.
@@ -70,7 +78,10 @@
 - Charts auto-adjust to signed data and share currency format with tooltips.
 - Payouts table and analytics modals highlight vendor share instead of gross revenue.
 - Login page offers Google OAuth entrypoint and admin impersonation controls.
-- Onboarding flow triggers automatically for newly created vendors with pending Supabase accounts.
+- `/vendor/signup` allows newly authenticated emails to:
+  - Create a fresh vendor profile (linked immediately with `signup_status = approved`; onboarding completion promotes to `completed`).
+  - Submit an invite code to claim an existing vendor; admins finish the pairing.
+- Admin vendors page surfaces pending signups, pre-fills pending emails, and provides a one-click “Link email” workflow.
 
 ## Testing Requirements
 - Automated: `npm run test -- vendor-session vendor-auth`
@@ -101,10 +112,10 @@
 - Build E2E tests covering login/session flows.
 
 ## Version & Change Log
-- **Version**: 1.3.0
+- **Version**: 1.4.0
 - **Last Updated**: 2025-11-10
 - **Change Log**:
-  - 2025-11-10: Migrated vendor auth to Supabase Google OAuth, added admin impersonation, and linked vendors to Supabase user IDs.
+  - 2025-11-10: Added self-serve `/vendor/signup`, admin pending-signup management UI, and Supabase pairing endpoints.
 
 ## Verification Checklist
 - [x] Implementation file referenced

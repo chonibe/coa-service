@@ -1,6 +1,7 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { createClient } from "@/lib/supabase-server"
 import { cookies } from "next/headers"
+import { SIGNUP_STATUS_COMPLETED } from "@/lib/vendor-auth"
 
 export async function POST(request: NextRequest) {
   try {
@@ -52,6 +53,8 @@ export async function POST(request: NextRequest) {
         notify_on_message: formData.notify_on_message,
         onboarding_completed: true,
         onboarding_completed_at: new Date().toISOString(),
+        signup_status: SIGNUP_STATUS_COMPLETED,
+        auth_pending_email: null,
         updated_at: new Date().toISOString(),
       })
       .eq("id", vendor.id)

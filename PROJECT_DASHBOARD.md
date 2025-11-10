@@ -58,6 +58,8 @@
 - **Epic**: Session Security Hardening
   - **Story**: [Vendor Dashboard Hardening](./docs/features/vendor-dashboard/README.md) — Completed 2025-11-10. Introduced signed vendor sessions, Supabase-aligned analytics, and GBP-consistent dashboards.
   - **Story**: [Google SSO & Admin Impersonation](./docs/features/vendor-dashboard/README.md#api-endpoints--usage) — Completed 2025-11-10. Migrated vendor login to Supabase Google OAuth and enabled admin impersonation flows.
+  - **Story**: [Vendor Email Pairing & Signup Enhancements](./docs/features/vendor-dashboard/README.md#vendor-signup--claim-page) — Completed 2025-11-10. Delivered self-service vendor signup, invite-code claims, and admin pairing workflows.
+  - **Story**: [Vendor Signup & Admin Pairing](./docs/features/vendor-dashboard/README.md#uiux-considerations) — Completed 2025-11-10. Delivered `/vendor/signup`, pending signup tracking, and admin email-linking workflows.
 
 ## Development Metrics
 

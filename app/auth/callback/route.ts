@@ -3,15 +3,14 @@ import { cookies } from "next/headers"
 import { createClient as createRouteClient } from "@/lib/supabase-server"
 import { buildVendorSessionCookie, VENDOR_SESSION_COOKIE_NAME } from "@/lib/vendor-session"
 import {
-  linkSupabaseUserToVendor,
-  isAdminEmail,
+  linkVendorByKnownEmail,
+  resolveVendorAuthState,
   POST_LOGIN_REDIRECT_COOKIE,
   PENDING_VENDOR_EMAIL_COOKIE,
   sanitizeRedirectTarget,
 } from "@/lib/vendor-auth"
 
 const DEFAULT_VENDOR_REDIRECT = "/vendor/dashboard"
-const ONBOARDING_REDIRECT = "/vendor/onboarding"
 const ADMIN_REDIRECT = "/vendor/login?admin=1"
 
 const deleteCookie = (response: NextResponse, name: string) => {
@@ -63,12 +62,13 @@ export async function GET(request: NextRequest) {
   }
 
   const user = session.user
-  const email = user.email?.toLowerCase() ?? null
-  const vendor = await linkSupabaseUserToVendor(user)
+  await linkVendorByKnownEmail(user)
+  const resolution = await resolveVendorAuthState(user)
 
   deleteCookie(response, PENDING_VENDOR_EMAIL_COOKIE)
 
-  if (vendor) {
+  if (resolution.status === "linked") {
+    const vendor = resolution.vendor
     const sessionCookie = buildVendorSessionCookie(vendor.vendor_name)
     response.cookies.set(sessionCookie.name, sessionCookie.value, sessionCookie.options)
     response.headers.set(
@@ -81,6 +81,8 @@ export async function GET(request: NextRequest) {
   // No vendor linked – route admins to impersonation flow or vendors to onboarding.
   deleteCookie(response, VENDOR_SESSION_COOKIE_NAME)
 
+  const email = user.email?.toLowerCase() ?? null
+
   if (email) {
     response.cookies.set(PENDING_VENDOR_EMAIL_COOKIE, email, {
       path: "/",
@@ -91,7 +93,13 @@ export async function GET(request: NextRequest) {
     })
   }
 
-  const nextPath = isAdminEmail(email) ? ADMIN_REDIRECT : ONBOARDING_REDIRECT
+  let nextPath = "/vendor/signup"
+  if (resolution.status === "admin") {
+    nextPath = ADMIN_REDIRECT
+  } else if (resolution.status === "pending") {
+    nextPath = "/vendor/signup?status=pending"
+  }
+
   response.headers.set("Location", new URL(nextPath, origin).toString())
 
   return response
