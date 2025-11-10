@@ -34,6 +34,7 @@ import LogoutButton from "./logout-button"
 import { useMobile } from "@/hooks/use-mobile"
 import { BottomNav } from "./components/bottom-nav"
 import { Breadcrumb } from "./components/breadcrumb"
+import { VendorSwitcher } from "./components/vendor-switcher"
 
 interface NavItem {
   title: string
@@ -269,6 +270,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               </div>
               <ScrollArea className="flex-1">
                 <div className="px-2 py-4">
+                  <VendorSwitcher className="mb-4 flex flex-col gap-2" />
                   <nav className="flex flex-col gap-2">
                     {navItems.map((item, index) => (
                       <div key={item.href} className="flex flex-col">
@@ -348,8 +350,12 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           <Award className="h-6 w-6" />
           <span className={isMobile ? "sr-only" : "inline-block"}>Admin Dashboard</span>
         </Link>
-        <div className="ml-auto flex items-center gap-2">
+        <div className="ml-auto hidden items-center gap-4 md:flex">
+          <VendorSwitcher className="flex flex-col gap-2" />
           <LogoutButton className="hidden md:flex" />
+        </div>
+        <div className="ml-auto flex items-center gap-2 md:hidden">
+          <LogoutButton />
         </div>
       </header>
       <div className="flex flex-1">

@@ -56,7 +56,11 @@ export function AuthShell({
           </div>
         </aside>
 
-        <main className="flex flex-1 items-center justify-center bg-white px-6 py-16 text-slate-900 shadow-2xl shadow-cyan-500/10 lg:min-h-screen lg:px-12">
+        <main className="relative flex flex-1 items-center justify-center bg-white px-6 py-16 text-slate-900 shadow-2xl shadow-cyan-500/10 lg:min-h-screen lg:px-12">
+          <div className="pointer-events-none absolute inset-x-6 top-6 z-10 flex items-center justify-between text-xs font-medium uppercase tracking-[0.3em] text-slate-400 lg:top-10">
+            <span>Street Collector</span>
+            <span>Secure Login</span>
+          </div>
           <div
             className={cn(
               "w-full max-w-md space-y-8 rounded-3xl border border-slate-200 bg-white/90 p-8 shadow-xl backdrop-blur",
@@ -70,7 +74,9 @@ export function AuthShell({
 
             <div className="space-y-6">{children}</div>
 
-            {footer ? <div className="border-t border-slate-100 pt-6 text-sm text-slate-500">{footer}</div> : null}
+            {footer ? (
+              <div className="border-t border-slate-100 pt-6 text-sm text-slate-500">{footer}</div>
+            ) : null}
           </div>
         </main>
       </div>

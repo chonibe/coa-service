@@ -11,7 +11,7 @@ import {
 } from "@/lib/vendor-auth"
 
 const DEFAULT_VENDOR_REDIRECT = "/vendor/dashboard"
-const ADMIN_REDIRECT = "/vendor/login?tab=admin"
+const DEFAULT_ADMIN_REDIRECT = "/admin/dashboard"
 
 const deleteCookie = (response: NextResponse, name: string) => {
   response.cookies.set(name, "", { path: "/", maxAge: 0 })
@@ -24,7 +24,7 @@ export async function GET(request: NextRequest) {
   const { searchParams, origin } = request.nextUrl
   const code = searchParams.get("code")
   const storedRedirect = cookieStore.get(POST_LOGIN_REDIRECT_COOKIE)?.value
-  const redirectTarget = sanitizeRedirectTarget(storedRedirect, origin, DEFAULT_VENDOR_REDIRECT)
+  const defaultRedirect = sanitizeRedirectTarget(storedRedirect, origin, DEFAULT_VENDOR_REDIRECT)
 
   const response = NextResponse.redirect(new URL(DEFAULT_VENDOR_REDIRECT, origin))
 
@@ -68,10 +68,7 @@ export async function GET(request: NextRequest) {
     const vendor = resolution.vendor
     const sessionCookie = buildVendorSessionCookie(vendor.vendor_name)
     response.cookies.set(sessionCookie.name, sessionCookie.value, sessionCookie.options)
-    response.headers.set(
-      "Location",
-      new URL(redirectTarget || DEFAULT_VENDOR_REDIRECT, origin).toString(),
-    )
+    response.headers.set("Location", new URL(defaultRedirect, origin).toString())
     return response
   }
 
@@ -92,7 +89,8 @@ export async function GET(request: NextRequest) {
 
   let nextPath = "/vendor/signup"
   if (resolution.status === "admin") {
-    nextPath = redirectTarget !== DEFAULT_VENDOR_REDIRECT ? redirectTarget : ADMIN_REDIRECT
+    const adminRedirect = sanitizeRedirectTarget(storedRedirect, origin, DEFAULT_ADMIN_REDIRECT)
+    nextPath = adminRedirect
   } else if (resolution.status === "pending") {
     nextPath = "/vendor/signup?status=pending"
   }
