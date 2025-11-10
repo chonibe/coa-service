@@ -15,6 +15,7 @@ interface AuthStatusResponse {
   vendorSession: string | null
   vendor: { id: number; vendor_name: string } | null
   user: { id: string; email: string | null } | null
+  state: "admin" | "linked" | "pending" | "unlinked" | null
 }
 
 const SignupContent = () => {
@@ -44,7 +45,11 @@ const SignupContent = () => {
           router.replace("/vendor/login")
           return
         }
-        if (data.vendorSession || data.vendor) {
+        if (data.state === "admin") {
+          router.replace("/admin/dashboard?state=admin")
+          return
+        }
+        if (data.state === "linked") {
           router.replace("/vendor/dashboard")
           return
         }
@@ -167,13 +172,23 @@ const SignupContent = () => {
         </Alert>
       )}
 
-      {(claimSuccess || searchParams.get("status") === "pending") && (
+      {(claimSuccess || searchParams.get("status") === "pending" || authStatus.state === "pending") && (
         <Alert>
           <CheckCircle2 className="h-4 w-4 text-green-600" />
           <AlertTitle>Request submitted</AlertTitle>
           <AlertDescription>
             {claimSuccess ||
               "Your pairing request is pending. An administrator will review and confirm access shortly."}
+          </AlertDescription>
+        </Alert>
+      )}
+
+      {(searchParams.get("status") === "unlinked" || authStatus.state === "unlinked") && (
+        <Alert>
+          <AlertTitle>No vendor profile linked yet</AlertTitle>
+          <AlertDescription>
+            We couldn’t match your Google email to a vendor. Create a new vendor profile below or use an invite code to
+            request access to an existing vendor. If you believe this is a mistake, contact support.
           </AlertDescription>
         </Alert>
       )}

@@ -19,10 +19,11 @@ The Street Collector API provides a comprehensive, headless backend for managing
 ## Vendor Portal (App Router)
 
 ### Session Model
+- Landing selector (`GET /`) routes admins to `/vendor/login?mode=admin` and vendors to `/vendor/login`.
 - Vendors initiate Google OAuth via `GET /api/auth/google/start`. Supabase handles the consent screen and redirects to `/auth/callback`.
 - The callback exchanges the Supabase code for a server session and issues a signed `vendor_session` cookie (`HMAC-SHA256` using `VENDOR_SESSION_SECRET`).
 - Admin emails (`choni@thestreetlamp.com`, `chonibe@gmail.com`) retain Supabase access and can impersonate vendors with `/api/auth/impersonate`.
-- `vendors.signup_status` tracks onboarding: `"pending"` (awaiting approval), `"approved"` (email paired), `"completed"` (onboarding finished). Pending accounts are redirected to `/vendor/signup`.
+- `resolveVendorAuthState` emits state flags: `"admin"`, `"linked"`, `"pending"`, `"unlinked"`. `"pending"` and `"unlinked"` users are redirected to `/vendor/signup` with contextual messaging.
 - All vendor endpoints reject requests without a valid signed cookie, preventing cross-vendor session bleed.
 
 ### Endpoint: `GET /api/auth/google/start`
@@ -36,21 +37,24 @@ The Street Collector API provides a comprehensive, headless backend for managing
 ### Endpoint: `/auth/callback`
 - **Description**: Supabase OAuth callback. Exchanges the authorization code for a Supabase session, links the user to a vendor record, and issues the `vendor_session` cookie.
 - **Redirect Flow**:
-  - Vendors with linked records → `/vendor/dashboard` (or sanitized stored redirect).
-  - New vendors → `/vendor/onboarding`.
-  - Admins → `/admin/dashboard` (or sanitized admin redirect when explicitly provided).
+  - `linked` vendors → `/vendor/dashboard` (or sanitized stored redirect).
+  - `pending` vendors → `/vendor/signup?status=pending&state=pending`.
+  - `unlinked` emails → `/vendor/signup?status=unlinked&state=unlinked`.
+  - `admin` accounts → `/admin/dashboard?login=admin&state=admin` (or sanitized admin redirect).
+- **Notes**: `state` query params surface the post-auth outcome to client UIs.
 
 ### Endpoint: `GET /api/auth/status`
-- **Description**: Returns Supabase session metadata and vendor context for the current request.
+- **Description**: Returns Supabase session metadata, vendor context, and derived auth state for the current request.
 - **Success (200)**:
   ```json
   {
     "authenticated": true,
     "isAdmin": false,
-    "vendorSession": "my-vendor",
+    "state": "pending",
+    "vendorSession": null,
     "vendor": {
       "id": 42,
-      "vendor_name": "my-vendor"
+      "vendor_name": "sunset-collective"
     },
     "user": {
       "id": "uuid",
@@ -59,7 +63,7 @@ The Street Collector API provides a comprehensive, headless backend for managing
     }
   }
   ```
-- **Notes**: Response caching is disabled; route uses Supabase session cookies.
+- **Notes**: `state` mirrors `resolveVendorAuthState` (`admin`, `linked`, `pending`, `unlinked`). Response caching is disabled; route uses Supabase session cookies.
 
 ### Endpoint: `POST /api/auth/impersonate`
 - **Description**: Allows whitelisted admin emails to assume a vendor session for diagnostics. Triggered by the admin header vendor switcher.

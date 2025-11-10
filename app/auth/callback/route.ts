@@ -24,7 +24,6 @@ export async function GET(request: NextRequest) {
   const { searchParams, origin } = request.nextUrl
   const code = searchParams.get("code")
   const storedRedirect = cookieStore.get(POST_LOGIN_REDIRECT_COOKIE)?.value
-  const defaultRedirect = sanitizeRedirectTarget(storedRedirect, origin, DEFAULT_VENDOR_REDIRECT)
 
   const response = NextResponse.redirect(new URL(DEFAULT_VENDOR_REDIRECT, origin))
 
@@ -68,7 +67,8 @@ export async function GET(request: NextRequest) {
     const vendor = resolution.vendor
     const sessionCookie = buildVendorSessionCookie(vendor.vendor_name)
     response.cookies.set(sessionCookie.name, sessionCookie.value, sessionCookie.options)
-    response.headers.set("Location", new URL(defaultRedirect, origin).toString())
+    const vendorRedirect = sanitizeRedirectTarget(storedRedirect, origin, DEFAULT_VENDOR_REDIRECT)
+    response.headers.set("Location", new URL(vendorRedirect, origin).toString())
     return response
   }
 
@@ -87,15 +87,28 @@ export async function GET(request: NextRequest) {
     })
   }
 
-  let nextPath = "/vendor/signup"
-  if (resolution.status === "admin") {
-    const adminRedirect = sanitizeRedirectTarget(storedRedirect, origin, DEFAULT_ADMIN_REDIRECT)
-    nextPath = adminRedirect
-  } else if (resolution.status === "pending") {
-    nextPath = "/vendor/signup?status=pending"
+  const buildRedirect = (target: string, params: Record<string, string | null | undefined>) => {
+    const url = new URL(target, origin)
+    Object.entries(params).forEach(([key, value]) => {
+      if (value != null) {
+        url.searchParams.set(key, value)
+      }
+    })
+    return url
   }
 
-  response.headers.set("Location", new URL(nextPath, origin).toString())
+  let nextUrl = buildRedirect("/vendor/signup", {})
+
+  if (resolution.status === "admin") {
+    const adminRedirect = sanitizeRedirectTarget(storedRedirect, origin, DEFAULT_ADMIN_REDIRECT)
+    nextUrl = buildRedirect(adminRedirect, { state: "admin", login: "admin" })
+  } else if (resolution.status === "pending") {
+    nextUrl = buildRedirect("/vendor/signup", { status: "pending", state: "pending" })
+  } else if (resolution.status === "unlinked") {
+    nextUrl = buildRedirect("/vendor/signup", { status: "unlinked", state: "unlinked" })
+  }
+
+  response.headers.set("Location", nextUrl.toString())
 
   return response
 } 

@@ -7,6 +7,7 @@
 
 ## Implementation Summary
 - Implementation: [`app/vendor/dashboard/page.tsx`](../../../app/vendor/dashboard/page.tsx)
+- Landing Selector: [`app/page.tsx`](../../../app/page.tsx)
 - Login Experience: [`app/vendor/login/page.tsx`](../../../app/vendor/login/page.tsx)
 - Admin Switcher: [`app/admin/components/vendor-switcher.tsx`](../../../app/admin/components/vendor-switcher.tsx)
 - Core APIs:
@@ -81,10 +82,12 @@
 - Charts auto-adjust to signed data and share currency format with tooltips.
 - Payouts table and analytics modals highlight vendor share instead of gross revenue.
 - Auth screens share a unified split-layout shell with branding via `AuthShell`.
-- Login page presents a single Google CTA. Admin detection happens automatically and they are redirected to the admin dashboard with access to the vendor switcher.
+- Landing portal offers explicit “Admin” vs “Vendor” entry points, both funnelling through Google SSO.
+- Login page presents a single Google CTA with mode-aware messaging (admin vs vendor) and surfaces state-specific notices (`admin`, `pending`, `unlinked`, `forbidden`).
 - `/vendor/signup` allows newly authenticated emails to:
   - Create a fresh vendor profile (linked immediately with `signup_status = approved`; onboarding completion promotes to `completed`).
   - Submit an invite code to claim an existing vendor; admins finish the pairing.
+- Signup page distinguishes between pending approvals and unlinked emails, guiding users to the correct next action.
 - Admin vendors page surfaces pending signups, pre-fills pending emails, and provides a one-click “Link email” workflow.
 - Admin header now includes a vendor switcher enabling quick jumps into vendor dashboards via `/api/auth/impersonate`.
 
@@ -117,9 +120,10 @@
 - Build E2E tests covering login/session flows.
 
 ## Version & Change Log
-- **Version**: 1.6.0
+- **Version**: 1.7.0
 - **Last Updated**: 2025-11-10
 - **Change Log**:
+  - 2025-11-10: Added landing selector, mode-aware login messaging, auth state flags (`admin`, `pending`, `unlinked`), and guarded vendor switcher rendering.
   - 2025-11-10: Streamlined `/vendor/login` into a single Google CTA, defaulted admins to `/admin/dashboard`, added admin vendor switcher, and removed sidebar from auth routes.
   - 2025-11-10: Introduced `AuthShell`, refreshed `/vendor/login` and `/vendor/signup` UX with tabbed vendor/admin flow and sanitized redirects.
   - 2025-11-10: Added self-serve `/vendor/signup`, admin pending-signup management UI, and Supabase pairing endpoints.

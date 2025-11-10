@@ -17,8 +17,26 @@ export function VendorSwitcher({ className }: VendorSwitcherProps) {
   const [loading, setLoading] = useState(true)
   const [switching, setSwitching] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [isAdmin, setIsAdmin] = useState<boolean | null>(null)
 
   useEffect(() => {
+    const loadStatus = async () => {
+      try {
+        const response = await fetch("/api/auth/status", { cache: "no-store" })
+        if (!response.ok) {
+          throw new Error("Unable to confirm admin status")
+        }
+        const data = await response.json()
+        setIsAdmin(data.isAdmin ?? false)
+        return data.isAdmin
+      } catch (statusError) {
+        console.error("Vendor switcher status error:", statusError)
+        setIsAdmin(false)
+        setError("Unable to load admin status.")
+        return false
+      }
+    }
+
     const loadVendors = async () => {
       setLoading(true)
       setError(null)
@@ -37,7 +55,14 @@ export function VendorSwitcher({ className }: VendorSwitcherProps) {
       }
     }
 
-    loadVendors().catch((err) => console.error("Failed to initialise vendor switcher:", err))
+    loadStatus()
+      .then((admin) => {
+        if (admin) {
+          return loadVendors()
+        }
+        return null
+      })
+      .catch((err) => console.error("Failed to initialise vendor switcher:", err))
   }, [])
 
   const handleSwitch = async () => {
@@ -64,6 +89,21 @@ export function VendorSwitcher({ className }: VendorSwitcherProps) {
     } finally {
       setSwitching(false)
     }
+  }
+
+  if (isAdmin === false) {
+    return null
+  }
+
+  if (isAdmin === null) {
+    return (
+      <div className={className}>
+        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+          <Loader2 className="h-3 w-3 animate-spin" />
+          Checking admin status…
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -106,6 +146,9 @@ export function VendorSwitcher({ className }: VendorSwitcherProps) {
         </Button>
       </div>
       {error ? <p className="mt-2 text-xs text-destructive">{error}</p> : null}
+      {!loading && !vendors.length && !error && (
+        <p className="mt-2 text-xs text-muted-foreground">No vendors available yet.</p>
+      )}
     </div>
   )
 }
