@@ -19,7 +19,7 @@ The Street Collector API provides a comprehensive, headless backend for managing
 ## Vendor Portal (App Router)
 
 ### Session Model
-- Landing selector (`GET /`) routes admins to `/vendor/login?mode=admin` and vendors to `/vendor/login`.
+- Landing selector (`GET /`) routes admins to `/admin/login` and vendors to `/vendor/login`.
 - Vendors initiate Google OAuth via `GET /api/auth/google/start`. Supabase handles the consent screen and redirects to `/auth/callback`.
 - The callback exchanges the Supabase code for a server session and issues a signed `vendor_session` cookie (`HMAC-SHA256` using `VENDOR_SESSION_SECRET`).
 - Admin emails (`choni@thestreetlamp.com`, `chonibe@gmail.com`) retain Supabase access and can impersonate vendors with `/api/auth/impersonate`.
@@ -77,6 +77,11 @@ The Street Collector API provides a comprehensive, headless backend for managing
   - `401` if the Supabase session is missing.
   - `403` if the user is not an admin.
   - `404` if the vendor cannot be located.
+
+### Endpoint: `POST /api/auth/impersonate/exit`
+- **Description**: Clears the vendor impersonation session while preserving the admin Supabase session. Used by the “Return to admin” banner.
+- **Response (200)**: `{ "success": true }` and clears the `vendor_session` cookie.
+- **Notes**: No request body required. After calling, clients should redirect to `/admin/dashboard`.
 
 ### Endpoint: `POST /api/vendor/signup`
 - **Description**: Handles self-serve vendor onboarding and invite-based claims for Google-authenticated users.

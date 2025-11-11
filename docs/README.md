@@ -10,6 +10,7 @@
 - [Admin Dashboard](/app/admin/dashboard/README.md)
 - Admin vendor switcher (`app/admin/components/vendor-switcher.tsx`) for quick impersonation.
 - Landing selector (`app/page.tsx`) guides admins vs vendors into Google SSO.
+- Dedicated admin login (`/admin/login`) enforces Google-based administrator sign-in.
 
 ### Technical Design
 - [Project Overview](/technical-design/overview.md)
@@ -49,5 +50,5 @@
 - Auth status endpoint exposes `state` (`admin`, `linked`, `pending`, `unlinked`) for clients to drive tailored UX.
 
 ## Version
-**Documentation Version**: 1.6.0  
+**Documentation Version**: 1.7.0  
 **Last Updated**: 2025-11-10

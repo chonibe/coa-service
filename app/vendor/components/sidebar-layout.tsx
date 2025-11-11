@@ -3,6 +3,7 @@ import type { ReactNode } from "react"
 import { VendorSidebar } from "./vendor-sidebar"
 import { PullToRefresh } from "@/components/pull-to-refresh"
 import { Breadcrumb } from "./breadcrumb"
+import { ImpersonationBanner } from "./impersonation-banner"
 
 interface SidebarLayoutProps {
   children: ReactNode
@@ -24,10 +25,10 @@ export function SidebarLayout({ children }: SidebarLayoutProps) {
       {/* Main content takes full width */}
       <div className="w-full">
         <PullToRefresh onRefresh={handleRefresh}>
-          <main className="p-4 md:p-8 max-w-7xl mx-auto pb-24 pt-20">
-            {/* Add breadcrumbs */}
+          <main className="p-4 md:p-8 max-w-7xl mx-auto pb-24 pt-20 space-y-4">
+            <ImpersonationBanner />
             <Breadcrumb />
-            {children}
+            <div>{children}</div>
           </main>
         </PullToRefresh>
       </div>

@@ -90,6 +90,7 @@
 - Signup page distinguishes between pending approvals and unlinked emails, guiding users to the correct next action.
 - Admin vendors page surfaces pending signups, pre-fills pending emails, and provides a one-click “Link email” workflow.
 - Admin header now includes a vendor switcher enabling quick jumps into vendor dashboards via `/api/auth/impersonate`.
+- When impersonating, admins see a banner with a one-click “Return to admin” action that calls `/api/auth/impersonate/exit`.
 
 ## Testing Requirements
 - Automated: `npm run test -- vendor-session vendor-auth`
@@ -120,9 +121,10 @@
 - Build E2E tests covering login/session flows.
 
 ## Version & Change Log
-- **Version**: 1.7.0
+- **Version**: 1.8.0
 - **Last Updated**: 2025-11-10
 - **Change Log**:
+  - 2025-11-10: Split `/admin/login` from vendor login, enforced state-based redirects (`pending`, `unlinked`), and added impersonation banner with exit control.
   - 2025-11-10: Added landing selector, mode-aware login messaging, auth state flags (`admin`, `pending`, `unlinked`), and guarded vendor switcher rendering.
   - 2025-11-10: Streamlined `/vendor/login` into a single Google CTA, defaulted admins to `/admin/dashboard`, added admin vendor switcher, and removed sidebar from auth routes.
   - 2025-11-10: Introduced `AuthShell`, refreshed `/vendor/login` and `/vendor/signup` UX with tabbed vendor/admin flow and sanitized redirects.
