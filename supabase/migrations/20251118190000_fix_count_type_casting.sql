@@ -1,6 +1,7 @@
--- Function to calculate pending payouts for vendors
--- Only includes line items with fulfillment_status = 'fulfilled'
--- Default payout percentage is 25% if not specified in product_vendor_payouts
+-- Fix COUNT() type casting to match function return types
+-- COUNT() returns bigint but functions expect INTEGER
+
+-- Update get_pending_vendor_payouts function
 CREATE OR REPLACE FUNCTION get_pending_vendor_payouts()
 RETURNS TABLE (
   vendor_name TEXT,
@@ -15,13 +16,11 @@ RETURNS TABLE (
 BEGIN
   RETURN QUERY
   WITH paid_line_items AS (
-    -- Get all line items that have already been paid
     SELECT DISTINCT vpi.line_item_id
     FROM vendor_payout_items vpi
     WHERE vpi.payout_id IS NOT NULL
   ),
   pending_items AS (
-    -- Get all fulfilled line items that haven't been paid yet
     SELECT 
       oli.vendor_name,
       oli.line_item_id,
@@ -38,7 +37,6 @@ BEGIN
       AND oli.line_item_id::TEXT NOT IN (SELECT pli.line_item_id::TEXT FROM paid_line_items pli)
   ),
   vendor_totals AS (
-    -- Calculate the payout amount for each vendor
     SELECT 
       pi.vendor_name,
       COUNT(DISTINCT pi.line_item_id)::INTEGER as product_count,
@@ -52,11 +50,10 @@ BEGIN
     GROUP BY pi.vendor_name
   ),
   all_vendors_with_totals AS (
-    -- Get all vendors and their totals (including $0)
     SELECT 
       COALESCE(v.vendor_name, vt.vendor_name) as vendor_name,
       COALESCE(vt.amount, 0) as amount,
-      COALESCE(vt.product_count, 0) as product_count,
+      COALESCE(vt.product_count, 0)::INTEGER as product_count,
       v.paypal_email,
       v.tax_id,
       v.tax_country,
@@ -79,59 +76,11 @@ BEGIN
       WHERE vp.vendor_name = avt.vendor_name AND vp.status = 'completed'
     ) as last_payout_date
   FROM all_vendors_with_totals avt
-  -- Include all vendors, even if they have $0 pending (they might have paid items or historical data)
   ORDER BY avt.amount DESC;
 END;
 $$ LANGUAGE plpgsql;
 
--- Function to get line items for a specific vendor that haven't been paid yet
--- Only returns fulfilled line items
--- Default payout percentage is 25% if not specified
-CREATE OR REPLACE FUNCTION get_vendor_pending_line_items(p_vendor_name TEXT)
-RETURNS TABLE (
-  line_item_id TEXT,
-  order_id TEXT,
-  order_name TEXT,
-  product_id TEXT,
-  product_title TEXT,
-  price DECIMAL,
-  created_at TIMESTAMP WITH TIME ZONE,
-  payout_amount DECIMAL,
-  is_percentage BOOLEAN,
-  fulfillment_status TEXT
-) AS $$
-BEGIN
-  RETURN QUERY
-  WITH paid_line_items AS (
-    -- Get all line items that have already been paid
-    SELECT DISTINCT vpi.line_item_id
-    FROM vendor_payout_items vpi
-    WHERE vpi.payout_id IS NOT NULL
-  )
-  SELECT 
-    oli.line_item_id,
-    oli.order_id,
-    oli.order_name,
-    oli.product_id,
-    COALESCE(p.name, p.product_id) as product_title,
-    COALESCE(oli.price, 0) as price,
-    oli.created_at,
-    COALESCE(pvp.payout_amount, 25) as payout_amount,
-    COALESCE(pvp.is_percentage, true) as is_percentage,
-    oli.fulfillment_status
-  FROM order_line_items_v2 oli
-  LEFT JOIN products p ON oli.product_id::TEXT = COALESCE(p.product_id::TEXT, p.id::TEXT)
-  LEFT JOIN product_vendor_payouts pvp ON oli.product_id::TEXT = pvp.product_id::TEXT AND oli.vendor_name = pvp.vendor_name
-  WHERE 
-    oli.vendor_name = p_vendor_name
-    AND oli.fulfillment_status = 'fulfilled'
-    AND oli.line_item_id::TEXT NOT IN (SELECT pli.line_item_id::TEXT FROM paid_line_items pli)
-  ORDER BY oli.order_id, oli.created_at DESC;
-END;
-$$ LANGUAGE plpgsql;
-
--- Function to calculate payout by order for a specific vendor
--- Returns order-level payout breakdown
+-- Update get_vendor_payout_by_order function
 CREATE OR REPLACE FUNCTION get_vendor_payout_by_order(
   p_vendor_name TEXT,
   p_order_id TEXT DEFAULT NULL
@@ -235,3 +184,4 @@ BEGIN
   ORDER BY os.order_date DESC;
 END;
 $$ LANGUAGE plpgsql;
+

@@ -1,6 +1,8 @@
--- Function to calculate pending payouts for vendors
--- Only includes line items with fulfillment_status = 'fulfilled'
--- Default payout percentage is 25% if not specified in product_vendor_payouts
+-- Standalone SQL to update payout functions
+-- Apply this directly in Supabase Dashboard -> SQL Editor or via CLI
+-- This includes all vendors (even $0 pending) and all orders
+
+-- Update get_pending_vendor_payouts function to include ALL vendors
 CREATE OR REPLACE FUNCTION get_pending_vendor_payouts()
 RETURNS TABLE (
   vendor_name TEXT,
@@ -22,6 +24,7 @@ BEGIN
   ),
   pending_items AS (
     -- Get all fulfilled line items that haven't been paid yet
+    -- Removed status = 'active' filter to include closed/completed orders
     SELECT 
       oli.vendor_name,
       oli.line_item_id,
@@ -56,7 +59,7 @@ BEGIN
     SELECT 
       COALESCE(v.vendor_name, vt.vendor_name) as vendor_name,
       COALESCE(vt.amount, 0) as amount,
-      COALESCE(vt.product_count, 0) as product_count,
+      COALESCE(vt.product_count, 0)::INTEGER as product_count,
       v.paypal_email,
       v.tax_id,
       v.tax_country,
@@ -84,9 +87,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
--- Function to get line items for a specific vendor that haven't been paid yet
--- Only returns fulfilled line items
--- Default payout percentage is 25% if not specified
+-- Update get_vendor_pending_line_items function
 CREATE OR REPLACE FUNCTION get_vendor_pending_line_items(p_vendor_name TEXT)
 RETURNS TABLE (
   line_item_id TEXT,
@@ -130,8 +131,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
--- Function to calculate payout by order for a specific vendor
--- Returns order-level payout breakdown
+-- Update get_vendor_payout_by_order function
 CREATE OR REPLACE FUNCTION get_vendor_payout_by_order(
   p_vendor_name TEXT,
   p_order_id TEXT DEFAULT NULL

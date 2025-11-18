@@ -44,7 +44,7 @@ BEGIN
     -- Calculate the payout amount for each vendor
     SELECT 
       pi.vendor_name,
-      COUNT(DISTINCT pi.line_item_id) as product_count,
+      COUNT(DISTINCT pi.line_item_id)::INTEGER as product_count,
       SUM(
         CASE 
           WHEN pi.is_percentage THEN (COALESCE(pi.price, 0) * pi.payout_amount / 100)
@@ -186,10 +186,10 @@ BEGIN
       order_id,
       order_name,
       MIN(created_at) as order_date,
-      COUNT(*) as total_line_items,
-      COUNT(*) FILTER (WHERE fulfillment_status = 'fulfilled') as fulfilled_line_items,
-      COUNT(*) FILTER (WHERE is_paid = true) as paid_line_items,
-      COUNT(*) FILTER (WHERE is_paid = false) as pending_line_items,
+      COUNT(*)::INTEGER as total_line_items,
+      COUNT(*) FILTER (WHERE fulfillment_status = 'fulfilled')::INTEGER as fulfilled_line_items,
+      COUNT(*) FILTER (WHERE is_paid = true)::INTEGER as paid_line_items,
+      COUNT(*) FILTER (WHERE is_paid = false)::INTEGER as pending_line_items,
       SUM(price) as order_total,
       SUM(
         CASE 
