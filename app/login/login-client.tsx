@@ -13,6 +13,7 @@ import { AlertCircle, LogIn, Mail, LockKeyhole, Loader2, LifeBuoy, ArrowUpRight 
 interface AuthStatusResponse {
   authenticated: boolean
   isAdmin: boolean
+  hasAdminSession?: boolean
   vendorSession: string | null
   vendor: { id: number; vendor_name: string } | null
 }
