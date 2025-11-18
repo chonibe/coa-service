@@ -840,7 +840,7 @@ export default function AdminPayoutsPage() {
                       </Table>
                       
                       {/* Pagination Controls */}
-                      {pagination.totalPages > 1 && (
+                      {pagination.total > 0 && (
                         <div className="flex items-center justify-between px-4 py-4 border-t">
                           <div className="text-sm text-muted-foreground">
                             Showing {((pagination.page - 1) * pagination.pageSize) + 1} to {Math.min(pagination.page * pagination.pageSize, pagination.total)} of {pagination.total} vendors

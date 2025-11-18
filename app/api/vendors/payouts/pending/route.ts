@@ -43,11 +43,11 @@ export async function GET(request: NextRequest) {
 
       // Fallback to direct query if function doesn't exist
       // Updated to filter by fulfillment_status = 'fulfilled' and use default 25% payout
-      // Get all fulfilled line items
+      // Get all fulfilled line items - include all order statuses (active, closed, completed, etc.)
+      // We only filter by fulfillment_status, not order status
       const { data: lineItems, error: lineItemsError } = await supabase
         .from("order_line_items_v2")
         .select("vendor_name, line_item_id, order_id, product_id, price")
-        .eq("status", "active")
         .not("vendor_name", "is", null)
         .eq("fulfillment_status", "fulfilled")
 

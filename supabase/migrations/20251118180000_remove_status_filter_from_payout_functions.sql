@@ -1,6 +1,8 @@
--- Function to calculate pending payouts for vendors
--- Only includes line items with fulfillment_status = 'fulfilled'
--- Default payout percentage is 25% if not specified in product_vendor_payouts
+-- Remove status = 'active' filter from payout functions
+-- This allows closed/completed orders from the past to be included in payouts
+-- We only filter by fulfillment_status = 'fulfilled', not order status
+
+-- Update get_pending_vendor_payouts function
 CREATE OR REPLACE FUNCTION get_pending_vendor_payouts()
 RETURNS TABLE (
   vendor_name TEXT,
@@ -22,6 +24,7 @@ BEGIN
   ),
   pending_items AS (
     -- Get all fulfilled line items that haven't been paid yet
+    -- Removed status = 'active' filter to include closed/completed orders
     SELECT 
       oli.vendor_name,
       oli.line_item_id,
@@ -71,9 +74,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
--- Function to get line items for a specific vendor that haven't been paid yet
--- Only returns fulfilled line items
--- Default payout percentage is 25% if not specified
+-- Update get_vendor_pending_line_items function
 CREATE OR REPLACE FUNCTION get_vendor_pending_line_items(p_vendor_name TEXT)
 RETURNS TABLE (
   line_item_id TEXT,
@@ -117,8 +118,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
--- Function to calculate payout by order for a specific vendor
--- Returns order-level payout breakdown
+-- Update get_vendor_payout_by_order function
 CREATE OR REPLACE FUNCTION get_vendor_payout_by_order(
   p_vendor_name TEXT,
   p_order_id TEXT DEFAULT NULL
@@ -222,3 +222,4 @@ BEGIN
   ORDER BY os.order_date DESC;
 END;
 $$ LANGUAGE plpgsql;
+

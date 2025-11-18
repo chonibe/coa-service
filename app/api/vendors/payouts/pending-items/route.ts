@@ -13,10 +13,10 @@ export async function POST(request: Request) {
 
     // Fallback to direct query - Get ALL fulfilled line items for this vendor (not just pending)
     // Note: Supabase has a default limit of 1000 rows, so we need to fetch in batches if needed
+    // Include all statuses (active, closed, completed, etc.) - we only care about fulfillment_status
     let query = supabase
       .from("order_line_items_v2")
       .select("line_item_id, order_id, order_name, product_id, price, created_at, fulfillment_status", { count: 'exact' })
-      .eq("status", "active")
       .eq("vendor_name", vendorName)
       .eq("fulfillment_status", "fulfilled")
       .order("created_at", { ascending: false }) // Order by date descending to get all items
