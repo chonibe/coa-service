@@ -27,39 +27,75 @@ export async function POST(request: Request) {
 
       // Fallback to direct query if function doesn't exist
       // Updated to filter by fulfillment_status = 'fulfilled' and use default 25% payout
-      const { data, error } = await supabase.query(
-        `
-        WITH paid_line_items AS (
-          SELECT DISTINCT line_item_id FROM vendor_payout_items WHERE payout_id IS NOT NULL
-        )
-        SELECT 
-          oli.line_item_id,
-          oli.order_id,
-          oli.order_name,
-          oli.product_id,
-          p.title AS product_title,
-          COALESCE(oli.price, 0) AS price,
-          oli.created_at,
-          COALESCE(pvp.payout_amount, 25) AS payout_amount,
-          COALESCE(pvp.is_percentage, true) AS is_percentage,
-          oli.fulfillment_status
-        FROM order_line_items_v2 oli
-        LEFT JOIN products p ON oli.product_id = p.id
-        LEFT JOIN product_vendor_payouts pvp ON oli.product_id = pvp.product_id AND oli.vendor_name = pvp.vendor_name
-        WHERE 
-          oli.status = 'active'
-          AND oli.vendor_name = $1
-          AND oli.fulfillment_status = 'fulfilled'
-          AND oli.line_item_id NOT IN (SELECT line_item_id FROM paid_line_items)
-        ORDER BY oli.order_id, oli.created_at DESC
-      `,
-        [vendorName],
-      )
+      // Get all fulfilled line items for this vendor
+      const { data: lineItems, error: lineItemsError } = await supabase
+        .from("order_line_items_v2")
+        .select("line_item_id, order_id, order_name, product_id, price, created_at, fulfillment_status")
+        .eq("status", "active")
+        .eq("vendor_name", vendorName)
+        .eq("fulfillment_status", "fulfilled")
 
-      if (error) {
-        console.error("Error in fallback query:", error)
-        return NextResponse.json({ error: error.message }, { status: 500 })
+      if (lineItemsError) {
+        console.error("Error fetching line items:", lineItemsError)
+        return NextResponse.json({ error: lineItemsError.message }, { status: 500 })
       }
+
+      // Get paid line items
+      const { data: paidItems } = await supabase
+        .from("vendor_payout_items")
+        .select("line_item_id")
+        .not("payout_id", "is", null)
+
+      const paidLineItemIds = new Set(paidItems?.map((item: any) => item.line_item_id) || [])
+
+      // Filter out paid items
+      const unpaidItems = lineItems?.filter((item: any) => !paidLineItemIds.has(item.line_item_id)) || []
+
+      // Get product titles and payout settings
+      const productIds = [...new Set(unpaidItems.map((item: any) => item.product_id))]
+      
+      const { data: products } = await supabase
+        .from("products")
+        .select("id, title")
+        .in("id", productIds)
+
+      const { data: payoutSettings } = await supabase
+        .from("product_vendor_payouts")
+        .select("product_id, vendor_name, payout_amount, is_percentage")
+        .in("product_id", productIds)
+        .eq("vendor_name", vendorName)
+
+      const productMap = new Map<string, any>()
+      products?.forEach((product: any) => {
+        productMap.set(product.id, product.title)
+      })
+
+      const payoutMap = new Map<string, any>()
+      payoutSettings?.forEach((setting: any) => {
+        payoutMap.set(setting.product_id, setting)
+      })
+
+      // Build response
+      const data = unpaidItems.map((item: any) => {
+        const payoutSetting = payoutMap.get(item.product_id)
+        return {
+          line_item_id: item.line_item_id,
+          order_id: item.order_id,
+          order_name: item.order_name,
+          product_id: item.product_id,
+          product_title: productMap.get(item.product_id) || null,
+          price: item.price || 0,
+          created_at: item.created_at,
+          payout_amount: payoutSetting?.payout_amount ?? 25,
+          is_percentage: payoutSetting?.is_percentage ?? true,
+          fulfillment_status: item.fulfillment_status,
+        }
+      }).sort((a, b) => {
+        if (a.order_id !== b.order_id) {
+          return a.order_id.localeCompare(b.order_id)
+        }
+        return new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+      })
 
       return NextResponse.json({ lineItems: data })
     }

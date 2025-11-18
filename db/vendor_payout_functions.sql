@@ -16,9 +16,9 @@ BEGIN
   RETURN QUERY
   WITH paid_line_items AS (
     -- Get all line items that have already been paid
-    SELECT DISTINCT line_item_id
-    FROM vendor_payout_items
-    WHERE payout_id IS NOT NULL
+    SELECT DISTINCT vpi.line_item_id
+    FROM vendor_payout_items vpi
+    WHERE vpi.payout_id IS NOT NULL
   ),
   pending_items AS (
     -- Get all fulfilled line items that haven't been paid yet
@@ -31,12 +31,12 @@ BEGIN
       COALESCE(pvp.payout_amount, 25) as payout_amount,
       COALESCE(pvp.is_percentage, true) as is_percentage
     FROM order_line_items_v2 oli
-    LEFT JOIN product_vendor_payouts pvp ON oli.product_id = pvp.product_id AND oli.vendor_name = pvp.vendor_name
+    LEFT JOIN product_vendor_payouts pvp ON oli.product_id::TEXT = pvp.product_id::TEXT AND oli.vendor_name = pvp.vendor_name
     WHERE 
       oli.status = 'active' 
       AND oli.vendor_name IS NOT NULL
       AND oli.fulfillment_status = 'fulfilled'
-      AND oli.line_item_id::TEXT NOT IN (SELECT line_item_id::TEXT FROM paid_line_items)
+      AND oli.line_item_id::TEXT NOT IN (SELECT pli.line_item_id::TEXT FROM paid_line_items pli)
   ),
   vendor_totals AS (
     -- Calculate the payout amount for each vendor
@@ -92,9 +92,9 @@ BEGIN
   RETURN QUERY
   WITH paid_line_items AS (
     -- Get all line items that have already been paid
-    SELECT DISTINCT line_item_id
-    FROM vendor_payout_items
-    WHERE payout_id IS NOT NULL
+    SELECT DISTINCT vpi.line_item_id
+    FROM vendor_payout_items vpi
+    WHERE vpi.payout_id IS NOT NULL
   )
   SELECT 
     oli.line_item_id,
@@ -108,13 +108,13 @@ BEGIN
     COALESCE(pvp.is_percentage, true) as is_percentage,
     oli.fulfillment_status
   FROM order_line_items_v2 oli
-  LEFT JOIN products p ON oli.product_id = p.id
-  LEFT JOIN product_vendor_payouts pvp ON oli.product_id = pvp.product_id AND oli.vendor_name = pvp.vendor_name
+  LEFT JOIN products p ON oli.product_id::TEXT = p.id::TEXT
+  LEFT JOIN product_vendor_payouts pvp ON oli.product_id::TEXT = pvp.product_id::TEXT AND oli.vendor_name = pvp.vendor_name
   WHERE 
     oli.status = 'active' 
     AND oli.vendor_name = p_vendor_name
     AND oli.fulfillment_status = 'fulfilled'
-    AND oli.line_item_id::TEXT NOT IN (SELECT line_item_id::TEXT FROM paid_line_items)
+    AND oli.line_item_id::TEXT NOT IN (SELECT pli.line_item_id::TEXT FROM paid_line_items pli)
   ORDER BY oli.order_id, oli.created_at DESC;
 END;
 $$ LANGUAGE plpgsql;
@@ -140,9 +140,9 @@ RETURNS TABLE (
 BEGIN
   RETURN QUERY
   WITH paid_line_items AS (
-    SELECT DISTINCT line_item_id
-    FROM vendor_payout_items
-    WHERE payout_id IS NOT NULL
+    SELECT DISTINCT vpi.line_item_id
+    FROM vendor_payout_items vpi
+    WHERE vpi.payout_id IS NOT NULL
   ),
   order_line_items_data AS (
     SELECT 
@@ -162,8 +162,8 @@ BEGIN
         ELSE false
       END as is_paid
     FROM order_line_items_v2 oli
-    LEFT JOIN products p ON oli.product_id = p.id
-    LEFT JOIN product_vendor_payouts pvp ON oli.product_id = pvp.product_id AND oli.vendor_name = pvp.vendor_name
+    LEFT JOIN products p ON oli.product_id::TEXT = p.id::TEXT
+    LEFT JOIN product_vendor_payouts pvp ON oli.product_id::TEXT = pvp.product_id::TEXT AND oli.vendor_name = pvp.vendor_name
     LEFT JOIN vendor_payout_items vpi ON oli.line_item_id::TEXT = vpi.line_item_id::TEXT AND vpi.payout_id IS NOT NULL
     WHERE 
       oli.status = 'active'
