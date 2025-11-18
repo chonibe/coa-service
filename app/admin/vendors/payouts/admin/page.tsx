@@ -20,6 +20,7 @@ import {
   ChevronDown,
   ChevronUp,
   Eye,
+  ExternalLink,
 } from "lucide-react"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Badge } from "@/components/ui/badge"
@@ -35,6 +36,7 @@ import {
 import { Checkbox } from "@/components/ui/checkbox"
 import { format } from "date-fns"
 import { useToast } from "@/components/ui/use-toast"
+import { convertGBPToUSD, formatUSD } from "@/lib/utils"
 
 interface Vendor {
   id: string
@@ -67,6 +69,7 @@ interface PendingLineItem {
   payout_amount: number
   is_percentage: boolean
   fulfillment_status?: string | null
+  is_paid?: boolean
 }
 
 interface PayoutHistory {
@@ -100,6 +103,11 @@ export default function AdminPayoutsPage() {
   const [expandedVendor, setExpandedVendor] = useState<string | null>(null)
   const [vendorLineItems, setVendorLineItems] = useState<Record<string, PendingLineItem[]>>({})
   const [loadingLineItems, setLoadingLineItems] = useState<string | null>(null)
+  const [dateRange, setDateRange] = useState<{ start: string; end: string }>({
+    start: "",
+    end: "",
+  })
+  const [includePaid, setIncludePaid] = useState(false)
   const { toast } = useToast()
 
   // Initialize tables and fetch data
@@ -271,8 +279,8 @@ export default function AdminPayoutsPage() {
   }
 
   // Fetch line items for a vendor
-  const fetchVendorLineItems = async (vendorName: string) => {
-    if (vendorLineItems[vendorName]) {
+  const fetchVendorLineItems = async (vendorName: string, forceRefresh = false) => {
+    if (!forceRefresh && vendorLineItems[vendorName]) {
       // Already loaded
       return
     }
@@ -284,7 +292,12 @@ export default function AdminPayoutsPage() {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ vendorName }),
+        body: JSON.stringify({
+          vendorName,
+          startDate: dateRange.start || undefined,
+          endDate: dateRange.end || undefined,
+          includePaid,
+        }),
       })
 
       if (!response.ok) {
@@ -307,6 +320,13 @@ export default function AdminPayoutsPage() {
       setLoadingLineItems(null)
     }
   }
+
+  // Refresh line items when date range or includePaid changes
+  useEffect(() => {
+    if (expandedVendor) {
+      fetchVendorLineItems(expandedVendor, true)
+    }
+  }, [dateRange, includePaid])
 
   // Toggle vendor expansion
   const toggleVendorExpansion = (vendorName: string) => {
@@ -363,12 +383,22 @@ export default function AdminPayoutsPage() {
     }
   }
 
-  // Calculate payout amount for a line item
+  // Calculate payout amount for a line item (converting GBP to USD)
   const calculatePayoutAmount = (item: PendingLineItem) => {
+    // Convert price from GBP to USD first
+    const priceUSD = convertGBPToUSD(item.price)
+    
     if (item.is_percentage) {
-      return (item.price * item.payout_amount) / 100
+      // Calculate payout in USD
+      return (priceUSD * item.payout_amount) / 100
     }
-    return item.payout_amount
+    // If fixed amount, assume it's in GBP and convert to USD
+    return convertGBPToUSD(item.payout_amount)
+  }
+
+  // Convert vendor payout amount from GBP to USD
+  const convertPayoutAmount = (gbpAmount: number): number => {
+    return convertGBPToUSD(gbpAmount)
   }
 
   return (
@@ -422,6 +452,42 @@ export default function AdminPayoutsPage() {
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
                       />
+                    </div>
+                    <div className="flex gap-2">
+                      <div className="flex items-center gap-2">
+                        <Input
+                          type="date"
+                          placeholder="Start Date"
+                          value={dateRange.start}
+                          onChange={(e) => setDateRange({ ...dateRange, start: e.target.value })}
+                          className="w-[150px]"
+                        />
+                        <span className="text-muted-foreground">to</span>
+                        <Input
+                          type="date"
+                          placeholder="End Date"
+                          value={dateRange.end}
+                          onChange={(e) => setDateRange({ ...dateRange, end: e.target.value })}
+                          className="w-[150px]"
+                        />
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setDateRange({ start: "", end: "" })}
+                        >
+                          Clear
+                        </Button>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Checkbox
+                          id="include-paid"
+                          checked={includePaid}
+                          onCheckedChange={(checked) => setIncludePaid(checked === true)}
+                        />
+                        <label htmlFor="include-paid" className="text-sm cursor-pointer">
+                          Include Paid
+                        </label>
+                      </div>
                     </div>
                     <div>
                       {selectedPayouts.length > 0 && (
@@ -516,7 +582,7 @@ export default function AdminPayoutsPage() {
                                     </Badge>
                                   )}
                                 </TableCell>
-                                <TableCell className="text-right font-medium">£{payout.amount.toFixed(2)}</TableCell>
+                                <TableCell className="text-right font-medium">{formatUSD(convertPayoutAmount(payout.amount))}</TableCell>
                                 <TableCell>{payout.product_count}</TableCell>
                                 <TableCell>
                                   {payout.last_payout_date ? (
@@ -555,44 +621,97 @@ export default function AdminPayoutsPage() {
                                           <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
                                         </div>
                                       ) : vendorLineItems[payout.vendor_name]?.length > 0 ? (
-                                        <div className="border rounded-md bg-background">
-                                          <Table>
-                                            <TableHeader>
-                                              <TableRow>
-                                                <TableHead>Order</TableHead>
-                                                <TableHead>Product</TableHead>
-                                                <TableHead>Date</TableHead>
-                                                <TableHead>Fulfillment</TableHead>
-                                                <TableHead className="text-right">Price</TableHead>
-                                                <TableHead className="text-right">Payout</TableHead>
-                                                <TableHead className="w-[100px]">Actions</TableHead>
-                                              </TableRow>
-                                            </TableHeader>
-                                            <TableBody>
-                                              {Object.entries(
-                                                vendorLineItems[payout.vendor_name].reduce(
-                                                  (acc, item) => {
-                                                    const orderId = item.order_id
-                                                    if (!acc[orderId]) {
-                                                      acc[orderId] = []
-                                                    }
-                                                    acc[orderId].push(item)
-                                                    return acc
-                                                  },
-                                                  {} as Record<string, typeof vendorLineItems[payout.vendor_name]>
-                                                )
-                                              ).map(([orderId, items]) => (
-                                                <React.Fragment key={orderId}>
-                                                  {items.map((item, idx) => (
-                                                    <TableRow key={item.line_item_id}>
-                                                      {idx === 0 && (
-                                                        <TableCell
-                                                          rowSpan={items.length}
-                                                          className="text-xs font-medium border-r"
-                                                        >
-                                                          {item.order_name || orderId}
-                                                        </TableCell>
-                                                      )}
+                                        <div className="space-y-6">
+                                          {Object.entries(
+                                            // Group by month first
+                                            vendorLineItems[payout.vendor_name].reduce(
+                                              (acc, item) => {
+                                                const date = new Date(item.created_at)
+                                                const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`
+                                                if (!acc[monthKey]) {
+                                                  acc[monthKey] = []
+                                                }
+                                                acc[monthKey].push(item)
+                                                return acc
+                                              },
+                                              {} as Record<string, typeof vendorLineItems[payout.vendor_name]>
+                                            )
+                                          )
+                                            .sort(([a], [b]) => b.localeCompare(a)) // Sort months descending
+                                            .map(([monthKey, monthItems]) => {
+                                              const [year, month] = monthKey.split('-')
+                                              const monthName = new Date(parseInt(year), parseInt(month) - 1).toLocaleString('en-US', { month: 'long', year: 'numeric' })
+                                              const monthTotal = monthItems.reduce((sum, item) => sum + calculatePayoutAmount(item), 0)
+                                              const monthPaidTotal = monthItems
+                                                .filter(item => item.is_paid)
+                                                .reduce((sum, item) => sum + calculatePayoutAmount(item), 0)
+                                              const monthPendingTotal = monthTotal - monthPaidTotal
+
+                                              // Group by order within month
+                                              const ordersByMonth = monthItems.reduce(
+                                                (acc, item) => {
+                                                  const orderId = item.order_id
+                                                  if (!acc[orderId]) {
+                                                    acc[orderId] = []
+                                                  }
+                                                  acc[orderId].push(item)
+                                                  return acc
+                                                },
+                                                {} as Record<string, typeof monthItems>
+                                              )
+
+                                              return (
+                                                <div key={monthKey} className="border rounded-md bg-background">
+                                                  <div className="p-4 border-b bg-muted/30">
+                                                    <div className="flex justify-between items-center">
+                                                      <h5 className="font-semibold">{monthName}</h5>
+                                                      <div className="text-sm space-x-4">
+                                                        <span className="text-muted-foreground">
+                                                          Total: <span className="font-medium text-foreground">{formatUSD(monthTotal)}</span>
+                                                        </span>
+                                                        <span className="text-green-600">
+                                                          Paid: <span className="font-medium">{formatUSD(monthPaidTotal)}</span>
+                                                        </span>
+                                                        <span className="text-amber-600">
+                                                          Pending: <span className="font-medium">{formatUSD(monthPendingTotal)}</span>
+                                                        </span>
+                                                      </div>
+                                                    </div>
+                                                  </div>
+                                                  <Table>
+                                                    <TableHeader>
+                                                      <TableRow>
+                                                        <TableHead>Order</TableHead>
+                                                        <TableHead>Product</TableHead>
+                                                        <TableHead>Date</TableHead>
+                                                        <TableHead>Fulfillment</TableHead>
+                                                        <TableHead>Status</TableHead>
+                                                        <TableHead className="text-right">Price</TableHead>
+                                                        <TableHead className="text-right">Payout</TableHead>
+                                                        <TableHead className="w-[100px]">Actions</TableHead>
+                                                      </TableRow>
+                                                    </TableHeader>
+                                                    <TableBody>
+                                                      {Object.entries(ordersByMonth).map(([orderId, items]) => (
+                                                        <React.Fragment key={orderId}>
+                                                          {items.map((item, idx) => (
+                                                            <TableRow key={item.line_item_id}>
+                                                              {idx === 0 && (
+                                                                <TableCell
+                                                                  rowSpan={items.length}
+                                                                  className="text-xs font-medium border-r"
+                                                                >
+                                                                  <a
+                                                                    href={`/admin/orders/${orderId}`}
+                                                                    target="_blank"
+                                                                    rel="noopener noreferrer"
+                                                                    className="flex items-center gap-1 hover:text-primary transition-colors"
+                                                                  >
+                                                                    {item.order_name || orderId}
+                                                                    <ExternalLink className="h-3 w-3" />
+                                                                  </a>
+                                                                </TableCell>
+                                                              )}
                                                       <TableCell>
                                                         <div className="text-sm font-medium">
                                                           {item.product_title || "Unknown Product"}
@@ -601,77 +720,93 @@ export default function AdminPayoutsPage() {
                                                           {item.product_id}
                                                         </div>
                                                       </TableCell>
-                                                      <TableCell>{formatDate(item.created_at)}</TableCell>
-                                                      <TableCell>
-                                                        <Badge
-                                                          variant={
-                                                            item.fulfillment_status === "fulfilled"
-                                                              ? "default"
-                                                              : "outline"
-                                                          }
-                                                        >
-                                                          {item.fulfillment_status || "Unknown"}
-                                                        </Badge>
-                                                      </TableCell>
-                                                      <TableCell className="text-right">
-                                                        £{item.price.toFixed(2)}
-                                                      </TableCell>
-                                                      <TableCell className="text-right">
-                                                        <div className="font-medium">
-                                                          £{calculatePayoutAmount(item).toFixed(2)}
-                                                        </div>
-                                                        <div className="text-xs text-muted-foreground">
-                                                          {item.is_percentage ? `${item.payout_amount}%` : "Fixed"}
-                                                        </div>
-                                                      </TableCell>
-                                                      <TableCell>
-                                                        <Button
-                                                          variant="outline"
-                                                          size="sm"
-                                                          onClick={async () => {
-                                                            try {
-                                                              const response = await fetch("/api/admin/payouts/mark-paid", {
-                                                                method: "POST",
-                                                                headers: {
-                                                                  "Content-Type": "application/json",
-                                                                },
-                                                                body: JSON.stringify({
-                                                                  lineItemIds: [item.line_item_id],
-                                                                  vendorName: payout.vendor_name,
-                                                                  createPayoutRecord: false,
-                                                                }),
-                                                              })
+                                                              <TableCell>{formatDate(item.created_at)}</TableCell>
+                                                              <TableCell>
+                                                                <Badge
+                                                                  variant={
+                                                                    item.fulfillment_status === "fulfilled"
+                                                                      ? "default"
+                                                                      : "outline"
+                                                                  }
+                                                                >
+                                                                  {item.fulfillment_status || "Unknown"}
+                                                                </Badge>
+                                                              </TableCell>
+                                                              <TableCell>
+                                                                {item.is_paid ? (
+                                                                  <Badge variant="default" className="bg-green-600">
+                                                                    Paid
+                                                                  </Badge>
+                                                                ) : (
+                                                                  <Badge variant="outline" className="text-amber-600">
+                                                                    Pending
+                                                                  </Badge>
+                                                                )}
+                                                              </TableCell>
+                                                              <TableCell className="text-right">
+                                                                {formatUSD(convertGBPToUSD(item.price))}
+                                                              </TableCell>
+                                                              <TableCell className="text-right">
+                                                                <div className="font-medium">
+                                                                  {formatUSD(calculatePayoutAmount(item))}
+                                                                </div>
+                                                                <div className="text-xs text-muted-foreground">
+                                                                  {item.is_percentage ? `${item.payout_amount}%` : "Fixed"}
+                                                                </div>
+                                                              </TableCell>
+                                                              <TableCell>
+                                                                {!item.is_paid && (
+                                                                  <Button
+                                                                    variant="outline"
+                                                                    size="sm"
+                                                                    onClick={async () => {
+                                                                      try {
+                                                                        const response = await fetch("/api/admin/payouts/mark-paid", {
+                                                                          method: "POST",
+                                                                          headers: {
+                                                                            "Content-Type": "application/json",
+                                                                          },
+                                                                          body: JSON.stringify({
+                                                                            lineItemIds: [item.line_item_id],
+                                                                            vendorName: payout.vendor_name,
+                                                                            createPayoutRecord: false,
+                                                                          }),
+                                                                        })
 
-                                                              if (!response.ok) {
-                                                                throw new Error("Failed to mark as paid")
-                                                              }
+                                                                        if (!response.ok) {
+                                                                          throw new Error("Failed to mark as paid")
+                                                                        }
 
-                                                              toast({
-                                                                title: "Success",
-                                                                description: "Line item marked as paid",
-                                                              })
+                                                                        toast({
+                                                                          title: "Success",
+                                                                          description: "Line item marked as paid",
+                                                                        })
 
-                                                              // Refresh data
-                                                              await fetchPayoutData()
-                                                              await fetchVendorLineItems(payout.vendor_name)
-                                                            } catch (err: any) {
-                                                              toast({
-                                                                variant: "destructive",
-                                                                title: "Error",
-                                                                description: err.message || "Failed to mark as paid",
-                                                              })
-                                                            }
-                                                          }}
-                                                        >
-                                                          Mark Paid
-                                                        </Button>
-                                                      </TableCell>
-                                                    </TableRow>
-                                                  ))}
-                                                </React.Fragment>
-                                              ))}
-                                            </TableBody>
-                                          </Table>
+                                                                        // Refresh data
+                                                                        await fetchPayoutData()
+                                                                        await fetchVendorLineItems(payout.vendor_name, true)
+                                                                      } catch (err: any) {
+                                                                        toast({
+                                                                          variant: "destructive",
+                                                                          title: "Error",
+                                                                          description: err.message || "Failed to mark as paid",
+                                                                        })
+                                                                      }
+                                                                    }}
+                                                                  >
+                                                                    Mark Paid
+                                                                  </Button>
+                                                                )}
+                                                              </TableCell>
+                                                            </TableRow>
+                                                          ))}
+                                                        </React.Fragment>
+                                                      ))}
+                                                    </TableBody>
+                                                  </Table>
+                                                </div>
+                                              )
+                                            })}
                                         </div>
                                       ) : (
                                         <Alert>
@@ -760,7 +895,7 @@ export default function AdminPayoutsPage() {
                             <TableRow key={payout.id}>
                               <TableCell>{formatDate(payout.payout_date || payout.created_at)}</TableCell>
                               <TableCell className="font-medium">{payout.vendor_name}</TableCell>
-                              <TableCell>£{payout.amount.toFixed(2)}</TableCell>
+                              <TableCell>{formatUSD(convertPayoutAmount(payout.amount))}</TableCell>
                               <TableCell className="capitalize">{payout.payment_method}</TableCell>
                               <TableCell>
                                 <span className="text-xs text-muted-foreground">{payout.reference || "-"}</span>
