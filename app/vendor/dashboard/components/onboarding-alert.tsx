@@ -27,7 +27,9 @@ export function OnboardingAlert() {
   useEffect(() => {
     const fetchProfile = async () => {
       try {
-        const response = await fetch("/api/vendor/profile")
+        const response = await fetch("/api/vendor/profile", {
+          credentials: "include",
+        })
         if (response.ok) {
           const data = await response.json()
           setProfile(data.vendor)

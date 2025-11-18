@@ -41,7 +41,9 @@ export default function PayoutsPage() {
       setIsLoading(true)
       setError(null)
 
-      const response = await fetch("/api/vendor/payouts")
+      const response = await fetch("/api/vendor/payouts", {
+        credentials: "include",
+      })
 
       if (!response.ok) {
         throw new Error(`Failed to fetch payouts: ${response.status}`)

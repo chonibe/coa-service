@@ -45,7 +45,9 @@ export function NotificationCenter({ className }: NotificationCenterProps) {
     unreadCount: number
   }>(
     async () => {
-      const response = await fetch("/api/vendor/notifications?unread_only=false&limit=20")
+      const response = await fetch("/api/vendor/notifications?unread_only=false&limit=20", {
+        credentials: "include",
+      })
       if (!response.ok) throw new Error("Failed to fetch notifications")
       return response.json()
     },
@@ -59,6 +61,7 @@ export function NotificationCenter({ className }: NotificationCenterProps) {
     try {
       const response = await fetch(`/api/vendor/notifications/${id}/read`, {
         method: "PUT",
+        credentials: "include",
       })
 
       if (!response.ok) {
@@ -79,6 +82,7 @@ export function NotificationCenter({ className }: NotificationCenterProps) {
     try {
       const response = await fetch("/api/vendor/notifications/read-all", {
         method: "PUT",
+        credentials: "include",
       })
 
       if (!response.ok) {

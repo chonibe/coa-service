@@ -75,7 +75,9 @@ export function VendorSidebar() {
   useEffect(() => {
     const fetchVendorProfile = async () => {
       try {
-        const response = await fetch("/api/vendor/profile")
+        const response = await fetch("/api/vendor/profile", {
+          credentials: "include",
+        })
         if (response.ok) {
           const data = await response.json()
           setVendorName(data.vendor?.vendor_name || "Vendor")
@@ -101,8 +103,8 @@ export function VendorSidebar() {
     const fetchUnreadCounts = async () => {
       try {
         const [messagesResponse, notificationsResponse] = await Promise.all([
-          fetch("/api/vendor/messages").catch(() => null),
-          fetch("/api/vendor/notifications?unread_only=true").catch(() => null),
+          fetch("/api/vendor/messages", { credentials: "include" }).catch(() => null),
+          fetch("/api/vendor/notifications?unread_only=true", { credentials: "include" }).catch(() => null),
         ])
 
         if (messagesResponse?.ok) {
@@ -123,7 +125,7 @@ export function VendorSidebar() {
 
   const handleLogout = async () => {
     try {
-      await fetch("/api/vendor/logout", { method: "POST" })
+      await fetch("/api/vendor/logout", { method: "POST", credentials: "include" })
       router.push("/login")
     } catch (err) {
       console.error("Logout error:", err)

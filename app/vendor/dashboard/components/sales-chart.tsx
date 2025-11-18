@@ -29,7 +29,9 @@ export function SalesChart({ vendorName, onRefresh }: SalesChartProps) {
 
     try {
       // Fetch sales data from the vendor stats API
-      const response = await fetch("/api/vendor/stats/sales")
+      const response = await fetch("/api/vendor/stats/sales", {
+        credentials: "include",
+      })
 
       if (!response.ok) {
         throw new Error(`Failed to fetch sales data: ${response.status} ${response.statusText}`)

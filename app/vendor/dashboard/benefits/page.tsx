@@ -70,7 +70,9 @@ export default function BenefitsPage() {
     try {
       setIsLoading(true)
       // Fetch vendor data
-      const vendorResponse = await fetch("/api/vendor/profile")
+      const vendorResponse = await fetch("/api/vendor/profile", {
+        credentials: "include",
+      })
       if (!vendorResponse.ok) {
         if (vendorResponse.status === 401) {
           router.push("/login")

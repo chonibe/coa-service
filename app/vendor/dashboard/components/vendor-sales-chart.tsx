@@ -27,7 +27,9 @@ export function VendorSalesChart({ vendorName }: VendorSalesChartProps) {
       setError(null)
 
       try {
-        const response = await fetch("/api/vendor/stats")
+        const response = await fetch("/api/vendor/stats", {
+          credentials: "include",
+        })
 
         if (!response.ok) {
           throw new Error(`Failed to fetch sales data: ${response.status}`)

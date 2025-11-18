@@ -39,7 +39,9 @@ export default function MessagesPage() {
     try {
       setIsLoading(true)
       setError(null)
-      const response = await fetch("/api/vendor/messages")
+      const response = await fetch("/api/vendor/messages", {
+        credentials: "include",
+      })
 
       if (!response.ok) {
         throw new Error("Failed to fetch messages")
@@ -72,6 +74,7 @@ export default function MessagesPage() {
       const response = await fetch("/api/vendor/messages", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify({
           subject: "New Conversation",
           body: "Hello, I have a question.",

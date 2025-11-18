@@ -91,7 +91,9 @@ export default function VendorSettingsPage() {
     const fetchVendorProfile = async () => {
       try {
         setIsLoading(true)
-        const response = await fetch("/api/vendor/profile")
+        const response = await fetch("/api/vendor/profile", {
+          credentials: "include",
+        })
         if (!response.ok) {
           throw new Error("Failed to fetch vendor profile")
         }
@@ -157,6 +159,8 @@ export default function VendorSettingsPage() {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+        },
+        credentials: "include",
         },
         body: JSON.stringify(formState),
       })

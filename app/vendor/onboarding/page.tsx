@@ -16,7 +16,9 @@ export default function VendorOnboardingPage() {
   useEffect(() => {
     const fetchVendorProfile = async () => {
       try {
-        const response = await fetch("/api/vendor/profile")
+        const response = await fetch("/api/vendor/profile", {
+          credentials: "include",
+        })
 
         if (!response.ok) {
           if (response.status === 401) {

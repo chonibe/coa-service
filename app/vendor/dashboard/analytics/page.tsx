@@ -78,7 +78,9 @@ export default function AnalyticsPage() {
         }
       }
 
-      const response = await fetch(`/api/vendor/sales-analytics?${params.toString()}`)
+          const response = await fetch(`/api/vendor/sales-analytics?${params.toString()}`, {
+            credentials: "include",
+          })
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}))
