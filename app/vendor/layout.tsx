@@ -64,7 +64,13 @@ export default async function VendorLayout({ children }: VendorLayoutProps) {
         console.log("[vendor/layout] No Supabase session found, redirecting to login")
         redirect("/login")
       }
-    } catch (error) {
+    } catch (error: any) {
+      // NEXT_REDIRECT is expected behavior when redirect() is called
+      // Don't log it as an error
+      if (error?.digest?.startsWith('NEXT_REDIRECT')) {
+        // Re-throw to allow Next.js to handle the redirect
+        throw error
+      }
       console.error("[vendor/layout] Error checking Supabase session:", error)
       redirect("/login")
     }
