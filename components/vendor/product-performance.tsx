@@ -10,6 +10,7 @@ import { Package } from "lucide-react"
 interface ProductPerformance {
   productId: string
   title: string
+  imageUrl?: string | null
   sales: number
   revenue: number
   trend?: number // Percentage change
@@ -107,11 +108,22 @@ export function ProductPerformance({ products, isLoading, className }: ProductPe
                 className="flex items-center justify-between p-3 rounded-lg border bg-card"
               >
                 <div className="flex items-center gap-3">
-                  <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-primary font-semibold">
+                  {product.imageUrl ? (
+                    <img
+                      src={product.imageUrl}
+                      alt={product.title}
+                      className="w-10 h-10 rounded object-cover flex-shrink-0"
+                      onError={(e) => {
+                        e.currentTarget.style.display = 'none'
+                        e.currentTarget.nextElementSibling?.classList.remove('hidden')
+                      }}
+                    />
+                  ) : null}
+                  <div className={`flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-primary font-semibold flex-shrink-0 ${product.imageUrl ? 'hidden' : ''}`}>
                     {index + 1}
                   </div>
-                  <div>
-                    <p className="font-medium">{product.title}</p>
+                  <div className="min-w-0 flex-1">
+                    <p className="font-medium truncate">{product.title}</p>
                     <p className="text-sm text-muted-foreground">
                       {product.sales} {product.sales === 1 ? "sale" : "sales"}
                     </p>
@@ -156,11 +168,22 @@ export function ProductPerformance({ products, isLoading, className }: ProductPe
                   className="flex items-center justify-between p-3 rounded-lg border bg-card"
                 >
                   <div className="flex items-center gap-3">
-                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-muted">
+                    {product.imageUrl ? (
+                      <img
+                        src={product.imageUrl}
+                        alt={product.title}
+                        className="w-10 h-10 rounded object-cover flex-shrink-0"
+                        onError={(e) => {
+                          e.currentTarget.style.display = 'none'
+                          e.currentTarget.nextElementSibling?.classList.remove('hidden')
+                        }}
+                      />
+                    ) : null}
+                    <div className={`flex h-10 w-10 items-center justify-center rounded-full bg-muted flex-shrink-0 ${product.imageUrl ? 'hidden' : ''}`}>
                       <Package className="h-4 w-4 text-muted-foreground" />
                     </div>
-                    <div>
-                      <p className="font-medium">{product.title}</p>
+                    <div className="min-w-0 flex-1">
+                      <p className="font-medium truncate">{product.title}</p>
                       <p className="text-sm text-muted-foreground">
                         {product.sales} {product.sales === 1 ? "sale" : "sales"}
                       </p>

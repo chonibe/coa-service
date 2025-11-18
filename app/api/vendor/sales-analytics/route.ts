@@ -9,11 +9,18 @@ const DEFAULT_CURRENCY = "GBP"
 type SupabaseLineItem = {
   id?: string
   product_id?: string
-  title?: string
+  name?: string
   created_at?: string
   price?: number | string | null
   quantity?: number | string | null
   status?: string | null
+  img_url?: string | null
+}
+
+type ProductDetail = {
+  id: string
+  title?: string | null
+  img_url?: string | null
 }
 
 type PayoutSetting = {
@@ -75,7 +82,7 @@ export async function GET(request: NextRequest) {
     // Build query with date filtering
     let query = supabase
       .from("order_line_items_v2")
-      .select("id, product_id, name, created_at, price, quantity, status")
+      .select("id, product_id, name, created_at, price, quantity, status, img_url")
       .eq("vendor_name", vendorName)
       .eq("status", "active")
 
@@ -96,11 +103,14 @@ export async function GET(request: NextRequest) {
     const items = lineItems ?? []
     const productIds = Array.from(new Set(items.map((item) => item.product_id).filter(Boolean)))
 
+    // Fetch product details (name and image) from products table
+    const productDetails = await fetchProductDetails(supabase, productIds)
+
     const payoutSettings: PayoutSetting[] = productIds.length
       ? await fetchPayoutSettings(supabase, vendorName, productIds)
       : []
 
-    const analytics = buildAnalytics(items, payoutSettings)
+    const analytics = buildAnalytics(items, payoutSettings, productDetails)
 
     return NextResponse.json({
       salesByDate: analytics.salesByDate,
@@ -131,6 +141,42 @@ async function fetchPayoutSettings(
   }
 
   return data ?? []
+}
+
+async function fetchProductDetails(
+  supabase: ReturnType<typeof createClient>,
+  productIds: string[],
+): Promise<Map<string, ProductDetail>> {
+  if (productIds.length === 0) {
+    return new Map()
+  }
+
+  try {
+    // Try to fetch from products table first
+    const { data: products, error } = await supabase
+      .from("products")
+      .select("id, title, img_url")
+      .in("id", productIds.map(id => id.toString()))
+
+    if (error) {
+      console.error("Error fetching product details:", error)
+      return new Map()
+    }
+
+    const productMap = new Map<string, ProductDetail>()
+    products?.forEach((product) => {
+      productMap.set(product.id.toString(), {
+        id: product.id.toString(),
+        title: product.title || null,
+        img_url: product.img_url || null,
+      })
+    })
+
+    return productMap
+  } catch (error) {
+    console.error("Error in fetchProductDetails:", error)
+    return new Map()
+  }
 }
 
 const parseNumber = (value: unknown): number => {
@@ -169,7 +215,11 @@ const getPeriodKey = (value: string | undefined) => {
   return date.toISOString().slice(0, 7)
 }
 
-const buildAnalytics = (items: SupabaseLineItem[], payoutSettings: PayoutSetting[]) => {
+const buildAnalytics = (
+  items: SupabaseLineItem[],
+  payoutSettings: PayoutSetting[],
+  productDetails: Map<string, ProductDetail> = new Map(),
+) => {
   const payoutMap = new Map(
     payoutSettings.map((setting) => [
       setting.product_id,
@@ -193,6 +243,7 @@ const buildAnalytics = (items: SupabaseLineItem[], payoutSettings: PayoutSetting
     {
       productId: string
       title: string
+      imageUrl: string | null
       sales: number
       revenue: number
       payoutType: "percentage" | "flat"
@@ -206,7 +257,12 @@ const buildAnalytics = (items: SupabaseLineItem[], payoutSettings: PayoutSetting
     const quantity = parseQuantity(item.quantity)
     const unitPrice = parseNumber(item.price)
     const productId = item.product_id ?? "unknown"
-    const title = item.title || `Product ${productId}`
+    
+    // Get product name and image from productDetails map or fallback to line item name
+    const productDetail = productDetails.get(productId)
+    const title = productDetail?.title || item.name || `Product ${productId}`
+    const imageUrl = productDetail?.img_url || item.img_url || null
+    
     const period = getPeriodKey(item.created_at)
 
     const payout = payoutMap.get(productId)
@@ -228,6 +284,7 @@ const buildAnalytics = (items: SupabaseLineItem[], payoutSettings: PayoutSetting
       {
         productId,
         title,
+        imageUrl,
         sales: 0,
         revenue: 0,
         payoutType,
@@ -238,12 +295,17 @@ const buildAnalytics = (items: SupabaseLineItem[], payoutSettings: PayoutSetting
     productEntry.revenue += revenue
     productEntry.payoutType = payoutType
     productEntry.payoutAmount = payoutAmount
+    // Update imageUrl if we have a better one
+    if (imageUrl && !productEntry.imageUrl) {
+      productEntry.imageUrl = imageUrl
+    }
     salesByProduct.set(productId, productEntry)
 
     salesHistory.push({
       id: item.id || `item-${Math.random().toString(36).substring(2, 9)}`,
       product_id: productId,
       title,
+      imageUrl,
       date: item.created_at || new Date().toISOString(),
       price: unitPrice,
       quantity,

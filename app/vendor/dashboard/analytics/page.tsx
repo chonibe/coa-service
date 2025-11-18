@@ -35,6 +35,7 @@ interface SaleItem {
   id: string
   product_id: string
   title: string
+  imageUrl?: string | null
   date: string
   price: number
   currency: string
@@ -378,40 +379,55 @@ export default function AnalyticsPage() {
           ) : salesByProduct.length > 0 ? (
             <div className="grid md:grid-cols-2 gap-4">
               <div className="h-[300px]">
-                <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
-                    <Pie
-                      data={salesByProduct}
-                      cx="50%"
-                      cy="50%"
-                      labelLine={false}
-                      label={({ name, percent }) => `${percent ? (percent * 100).toFixed(0) : 0}%`}
-                      outerRadius={80}
-                      fill="#8884d8"
-                      dataKey="sales"
-                      nameKey="title"
-                    >
-                      {salesByProduct.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                      ))}
-                    </Pie>
-                    <Tooltip content={<CustomTooltip />} />
-                  </PieChart>
-                </ResponsiveContainer>
-              </div>
+                    <Suspense fallback={<LoadingSkeleton variant="chart" />}>
+                      <ResponsiveContainer width="100%" height="100%">
+                        <PieChart>
+                          <Pie
+                            data={salesByProduct}
+                            cx="50%"
+                            cy="50%"
+                            labelLine={false}
+                            label={({ name, percent }) => `${percent ? (percent * 100).toFixed(0) : 0}%`}
+                            outerRadius={80}
+                            fill="#8884d8"
+                            dataKey="sales"
+                            nameKey="title"
+                          >
+                            {salesByProduct.map((entry, index) => (
+                              <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                            ))}
+                          </Pie>
+                          <Tooltip content={<CustomTooltip />} />
+                        </PieChart>
+                      </ResponsiveContainer>
+                    </Suspense>
+                  </div>
               <div className="space-y-2">
                 {salesByProduct.map((product, index) => (
                   <div key={index} className="flex items-center justify-between">
-                    <div className="flex items-center">
-                      <div
-                        className="w-3 h-3 rounded-full mr-2"
-                        style={{ backgroundColor: COLORS[index % COLORS.length] }}
-                      ></div>
-                      <span className="text-sm truncate max-w-[200px]" title={product.title}>
+                    <div className="flex items-center gap-2 flex-1 min-w-0">
+                      {product.imageUrl ? (
+                        <img
+                          src={product.imageUrl}
+                          alt={product.title}
+                          className="w-8 h-8 rounded object-cover flex-shrink-0"
+                          onError={(e) => {
+                            e.currentTarget.style.display = 'none'
+                          }}
+                        />
+                      ) : (
+                        <div
+                          className="w-8 h-8 rounded flex-shrink-0 flex items-center justify-center text-xs font-medium text-white"
+                          style={{ backgroundColor: COLORS[index % COLORS.length] }}
+                        >
+                          {product.title.charAt(0).toUpperCase()}
+                        </div>
+                      )}
+                      <span className="text-sm truncate" title={product.title}>
                         {product.title}
                       </span>
                     </div>
-                    <div className="text-sm font-medium">
+                    <div className="text-sm font-medium flex-shrink-0 ml-2">
                       {product.sales} sales ({formatCurrency(product.revenue)})
                     </div>
                   </div>
@@ -485,7 +501,21 @@ export default function AnalyticsPage() {
                     {sortedSalesHistory.map((sale) => (
                       <TableRow key={sale.id}>
                         <TableCell>{formatDate(sale.date)}</TableCell>
-                        <TableCell className="font-medium">{sale.title}</TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-2">
+                            {sale.imageUrl ? (
+                              <img
+                                src={sale.imageUrl}
+                                alt={sale.title}
+                                className="w-8 h-8 rounded object-cover"
+                                onError={(e) => {
+                                  e.currentTarget.style.display = 'none'
+                                }}
+                              />
+                            ) : null}
+                            <span className="font-medium">{sale.title}</span>
+                          </div>
+                        </TableCell>
                         <TableCell className="text-right">{formatCurrency(sale.price)}</TableCell>
                       </TableRow>
                     ))}

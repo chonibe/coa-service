@@ -35,6 +35,7 @@ DROP POLICY IF EXISTS "Allow authenticated users to insert backups" ON backups;
 DROP POLICY IF EXISTS "Allow authenticated users to delete backups" ON backups;
 
 -- Create new policies with proper permissions
+DROP POLICY IF EXISTS "Enable all access for authenticated users on backup_settings" ON backup_settings;
 CREATE POLICY "Enable all access for authenticated users on backup_settings"
   ON backup_settings
   FOR ALL

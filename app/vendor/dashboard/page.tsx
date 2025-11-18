@@ -30,6 +30,7 @@ interface SalesData {
   salesByProduct: Array<{
     productId: string
     title: string
+    imageUrl?: string | null
     sales: number
     revenue: number
     payoutType: "percentage" | "flat"
@@ -328,6 +329,7 @@ export default function VendorDashboardPage() {
               products={salesData.salesByProduct?.map((p) => ({
                 productId: p.productId,
                 title: p.title,
+                imageUrl: p.imageUrl,
                 sales: p.sales,
                 revenue: p.revenue,
               })) || []}
