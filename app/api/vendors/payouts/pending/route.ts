@@ -1,19 +1,43 @@
 import { NextResponse } from "next/server"
+import { NextRequest } from "next/server"
 import { createClient } from "@/lib/supabase-server"
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
     const supabase = createClient()
+    
+    // Get pagination parameters from query string
+    const searchParams = request.nextUrl.searchParams
+    const page = parseInt(searchParams.get("page") || "1")
+    const pageSize = parseInt(searchParams.get("pageSize") || "50")
+    const from = (page - 1) * pageSize
+    const to = from + pageSize - 1
 
     // Try to use the function if it exists
     try {
+      // For RPC functions, we need to get all data and paginate in memory
+      // since Supabase RPC doesn't support range directly
       const { data, error } = await supabase.rpc("get_pending_vendor_payouts")
 
       if (error) {
         throw error
       }
 
-      return NextResponse.json({ payouts: data })
+      // Paginate the results
+      const total = data?.length || 0
+      const paginatedData = data?.slice(from, to + 1) || []
+
+      return NextResponse.json({ 
+        payouts: paginatedData,
+        pagination: {
+          page,
+          pageSize,
+          total,
+          totalPages: Math.ceil(total / pageSize),
+          hasNext: to < total - 1,
+          hasPrev: page > 1
+        }
+      })
     } catch (funcError) {
       console.error("Error using get_pending_vendor_payouts function:", funcError)
 
@@ -118,7 +142,21 @@ export async function GET() {
         }
       }).sort((a, b) => b.amount - a.amount)
 
-      return NextResponse.json({ payouts })
+      // Paginate the results
+      const total = payouts.length
+      const paginatedPayouts = payouts.slice(from, to + 1)
+
+      return NextResponse.json({ 
+        payouts: paginatedPayouts,
+        pagination: {
+          page,
+          pageSize,
+          total,
+          totalPages: Math.ceil(total / pageSize),
+          hasNext: to < total - 1,
+          hasPrev: page > 1
+        }
+      })
     }
   } catch (error: any) {
     console.error("Error in pending payouts API:", error)
