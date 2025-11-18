@@ -53,24 +53,37 @@ BEGIN
       ) as amount
     FROM pending_items pi
     GROUP BY pi.vendor_name
+  ),
+  all_vendors_with_totals AS (
+    -- Get all vendors and their totals (including $0)
+    SELECT 
+      COALESCE(v.vendor_name, vt.vendor_name) as vendor_name,
+      COALESCE(vt.amount, 0) as amount,
+      COALESCE(vt.product_count, 0) as product_count,
+      v.paypal_email,
+      v.tax_id,
+      v.tax_country,
+      v.is_company
+    FROM vendors v
+    FULL OUTER JOIN vendor_totals vt ON v.vendor_name = vt.vendor_name
+    WHERE v.vendor_name IS NOT NULL
   )
   SELECT 
-    vt.vendor_name,
-    vt.amount,
-    vt.product_count,
-    v.paypal_email,
-    v.tax_id,
-    v.tax_country,
-    v.is_company,
+    avt.vendor_name,
+    avt.amount,
+    avt.product_count,
+    avt.paypal_email,
+    avt.tax_id,
+    avt.tax_country,
+    avt.is_company,
     (
       SELECT MAX(vp.payout_date) 
       FROM vendor_payouts vp
-      WHERE vp.vendor_name = vt.vendor_name AND vp.status = 'completed'
+      WHERE vp.vendor_name = avt.vendor_name AND vp.status = 'completed'
     ) as last_payout_date
-  FROM vendor_totals vt
-  LEFT JOIN vendors v ON vt.vendor_name = v.vendor_name
-  WHERE vt.amount > 0
-  ORDER BY vt.amount DESC;
+  FROM all_vendors_with_totals avt
+  -- Include all vendors, even if they have $0 pending (they might have paid items or historical data)
+  ORDER BY avt.amount DESC;
 END;
 $$ LANGUAGE plpgsql;
 
