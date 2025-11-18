@@ -66,6 +66,7 @@ interface PendingLineItem {
   created_at: string
   payout_amount: number
   is_percentage: boolean
+  fulfillment_status?: string | null
 }
 
 interface PayoutHistory {
@@ -561,33 +562,113 @@ export default function AdminPayoutsPage() {
                                                 <TableHead>Order</TableHead>
                                                 <TableHead>Product</TableHead>
                                                 <TableHead>Date</TableHead>
+                                                <TableHead>Fulfillment</TableHead>
                                                 <TableHead className="text-right">Price</TableHead>
                                                 <TableHead className="text-right">Payout</TableHead>
+                                                <TableHead className="w-[100px]">Actions</TableHead>
                                               </TableRow>
                                             </TableHeader>
                                             <TableBody>
-                                              {vendorLineItems[payout.vendor_name].map((item) => (
-                                                <TableRow key={item.line_item_id}>
-                                                  <TableCell className="text-xs">{item.order_name}</TableCell>
-                                                  <TableCell>
-                                                    <div className="text-sm font-medium">
-                                                      {item.product_title || "Unknown Product"}
-                                                    </div>
-                                                    <div className="text-xs text-muted-foreground">
-                                                      {item.product_id}
-                                                    </div>
-                                                  </TableCell>
-                                                  <TableCell>{formatDate(item.created_at)}</TableCell>
-                                                  <TableCell className="text-right">£{item.price.toFixed(2)}</TableCell>
-                                                  <TableCell className="text-right">
-                                                    <div className="font-medium">
-                                                      £{calculatePayoutAmount(item).toFixed(2)}
-                                                    </div>
-                                                    <div className="text-xs text-muted-foreground">
-                                                      {item.is_percentage ? `${item.payout_amount}%` : "Fixed"}
-                                                    </div>
-                                                  </TableCell>
-                                                </TableRow>
+                                              {Object.entries(
+                                                vendorLineItems[payout.vendor_name].reduce(
+                                                  (acc, item) => {
+                                                    const orderId = item.order_id
+                                                    if (!acc[orderId]) {
+                                                      acc[orderId] = []
+                                                    }
+                                                    acc[orderId].push(item)
+                                                    return acc
+                                                  },
+                                                  {} as Record<string, typeof vendorLineItems[payout.vendor_name]>
+                                                )
+                                              ).map(([orderId, items]) => (
+                                                <React.Fragment key={orderId}>
+                                                  {items.map((item, idx) => (
+                                                    <TableRow key={item.line_item_id}>
+                                                      {idx === 0 && (
+                                                        <TableCell
+                                                          rowSpan={items.length}
+                                                          className="text-xs font-medium border-r"
+                                                        >
+                                                          {item.order_name || orderId}
+                                                        </TableCell>
+                                                      )}
+                                                      <TableCell>
+                                                        <div className="text-sm font-medium">
+                                                          {item.product_title || "Unknown Product"}
+                                                        </div>
+                                                        <div className="text-xs text-muted-foreground">
+                                                          {item.product_id}
+                                                        </div>
+                                                      </TableCell>
+                                                      <TableCell>{formatDate(item.created_at)}</TableCell>
+                                                      <TableCell>
+                                                        <Badge
+                                                          variant={
+                                                            item.fulfillment_status === "fulfilled"
+                                                              ? "default"
+                                                              : "outline"
+                                                          }
+                                                        >
+                                                          {item.fulfillment_status || "Unknown"}
+                                                        </Badge>
+                                                      </TableCell>
+                                                      <TableCell className="text-right">
+                                                        £{item.price.toFixed(2)}
+                                                      </TableCell>
+                                                      <TableCell className="text-right">
+                                                        <div className="font-medium">
+                                                          £{calculatePayoutAmount(item).toFixed(2)}
+                                                        </div>
+                                                        <div className="text-xs text-muted-foreground">
+                                                          {item.is_percentage ? `${item.payout_amount}%` : "Fixed"}
+                                                        </div>
+                                                      </TableCell>
+                                                      <TableCell>
+                                                        <Button
+                                                          variant="outline"
+                                                          size="sm"
+                                                          onClick={async () => {
+                                                            try {
+                                                              const response = await fetch("/api/admin/payouts/mark-paid", {
+                                                                method: "POST",
+                                                                headers: {
+                                                                  "Content-Type": "application/json",
+                                                                },
+                                                                body: JSON.stringify({
+                                                                  lineItemIds: [item.line_item_id],
+                                                                  vendorName: payout.vendor_name,
+                                                                  createPayoutRecord: false,
+                                                                }),
+                                                              })
+
+                                                              if (!response.ok) {
+                                                                throw new Error("Failed to mark as paid")
+                                                              }
+
+                                                              toast({
+                                                                title: "Success",
+                                                                description: "Line item marked as paid",
+                                                              })
+
+                                                              // Refresh data
+                                                              await fetchPayoutData()
+                                                              await fetchVendorLineItems(payout.vendor_name)
+                                                            } catch (err: any) {
+                                                              toast({
+                                                                variant: "destructive",
+                                                                title: "Error",
+                                                                description: err.message || "Failed to mark as paid",
+                                                              })
+                                                            }
+                                                          }}
+                                                        >
+                                                          Mark Paid
+                                                        </Button>
+                                                      </TableCell>
+                                                    </TableRow>
+                                                  ))}
+                                                </React.Fragment>
                                               ))}
                                             </TableBody>
                                           </Table>

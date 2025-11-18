@@ -399,6 +399,181 @@ The Street Collector API provides a comprehensive, headless backend for managing
   ```
 - **Notes**: Action is logged to `admin_actions` table with updated fields.
 
+## Payout Management API
+
+### Vendor Payout Endpoints
+
+#### Endpoint: `GET /api/vendors/payouts/pending`
+- **Description**: Get pending payouts for all vendors. Only includes fulfilled line items.
+- **Auth**: Admin session required
+- **Response (200)**:
+  ```json
+  {
+    "payouts": [
+      {
+        "vendor_name": "Example Vendor",
+        "amount": 1250.50,
+        "product_count": 15,
+        "paypal_email": "vendor@example.com",
+        "tax_id": "GB123456789",
+        "tax_country": "GB",
+        "is_company": false,
+        "last_payout_date": "2024-11-01T00:00:00Z"
+      }
+    ]
+  }
+  ```
+- **Notes**: Uses default 25% payout if product-specific setting not found. Filters by `fulfillment_status = 'fulfilled'`.
+
+#### Endpoint: `POST /api/vendors/payouts/pending-items`
+- **Description**: Get pending line items for a specific vendor. Only returns fulfilled items.
+- **Auth**: Admin session required
+- **Request Body**:
+  ```json
+  {
+    "vendorName": "Example Vendor"
+  }
+  ```
+- **Response (200)**:
+  ```json
+  {
+    "lineItems": [
+      {
+        "line_item_id": "12345",
+        "order_id": "67890",
+        "order_name": "#1001",
+        "product_id": "prod_123",
+        "product_title": "Example Product",
+        "price": 100.00,
+        "created_at": "2024-11-15T10:00:00Z",
+        "payout_amount": 25,
+        "is_percentage": true,
+        "fulfillment_status": "fulfilled"
+      }
+    ]
+  }
+  ```
+
+#### Endpoint: `POST /api/vendors/payouts/process`
+- **Description**: Process payouts for selected vendors. Only processes fulfilled line items.
+- **Auth**: Admin session required
+- **Request Body**:
+  ```json
+  {
+    "payouts": [
+      {
+        "vendor_name": "Example Vendor",
+        "amount": 1250.50,
+        "product_count": 15
+      }
+    ],
+    "payment_method": "paypal",
+    "generate_invoices": true,
+    "notes": "Monthly payout"
+  }
+  ```
+- **Response (200)**:
+  ```json
+  {
+    "success": true,
+    "processed": 1,
+    "total": 1,
+    "results": [
+      {
+        "vendor_name": "Example Vendor",
+        "success": true,
+        "payout_id": 42,
+        "reference": "PAY-1234567890-ABCD"
+      }
+    ]
+  }
+  ```
+- **Notes**: Groups line items by order. Creates payout record and associates line items.
+
+### Admin Payout Endpoints
+
+#### Endpoint: `POST /api/admin/payouts/mark-paid`
+- **Description**: Manually mark line items or orders as paid. Creates audit trail.
+- **Auth**: Admin session required
+- **Request Body**:
+  ```json
+  {
+    "lineItemIds": ["12345", "67890"],
+    "orderIds": ["order_123"],
+    "vendorName": "Example Vendor",
+    "payoutReference": "PAY-2024-001",
+    "createPayoutRecord": true,
+    "skipValidation": false
+  }
+  ```
+- **Response (200)**:
+  ```json
+  {
+    "success": true,
+    "message": "Successfully marked 2 line item(s) as paid",
+    "payoutId": 42,
+    "lineItemIds": ["12345", "67890"],
+    "vendorName": "Example Vendor"
+  }
+  ```
+- **Errors**:
+  - `400`: Validation failed (unfulfilled items, duplicates, etc.)
+  - `401`: Unauthorized
+  - `500`: Server error
+- **Notes**: Validates fulfillment status and prevents duplicates. Records admin email and timestamp.
+
+#### Endpoint: `GET /api/admin/payouts/calculate`
+- **Description**: Calculate detailed payout breakdown by order for a vendor.
+- **Auth**: Admin session required
+- **Query Parameters**:
+  - `vendorName` (required): Vendor name
+  - `orderId` (optional): Specific order ID
+  - `includePaid` (optional): Include already-paid items (default: false)
+  - `fulfillmentStatus` (optional): Filter by status (default: "fulfilled")
+- **Response (200)**:
+  ```json
+  {
+    "type": "vendor",
+    "vendorName": "Example Vendor",
+    "payout": {
+      "vendor_name": "Example Vendor",
+      "total_orders": 5,
+      "total_line_items": 12,
+      "fulfilled_line_items": 10,
+      "paid_line_items": 2,
+      "pending_line_items": 8,
+      "total_revenue": 5000.00,
+      "total_payout_amount": 1250.00,
+      "orders": [
+        {
+          "order_id": "67890",
+          "order_name": "#1001",
+          "order_date": "2024-11-15T10:00:00Z",
+          "total_line_items": 3,
+          "fulfilled_line_items": 3,
+          "paid_line_items": 0,
+          "pending_line_items": 3,
+          "order_total": 300.00,
+          "payout_amount": 75.00,
+          "line_items": [
+            {
+              "line_item_id": "12345",
+              "product_id": "prod_123",
+              "product_title": "Example Product",
+              "price": 100.00,
+              "payout_percentage": 25,
+              "payout_amount": 25.00,
+              "is_percentage": true,
+              "is_paid": false,
+              "fulfillment_status": "fulfilled"
+            }
+          ]
+        }
+      ]
+    }
+  }
+  ```
+
 ## API Endpoints
 
 ### Dashboard API

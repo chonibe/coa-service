@@ -1,15 +1,18 @@
 import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
+import { guardAdminRequest } from "@/lib/auth-guards"
 import { createClient } from "@/lib/supabase/server"
 import crypto from "crypto"
 
-export async function POST() {
+export async function POST(request: NextRequest) {
+  const auth = guardAdminRequest(request)
+  if (auth.kind !== "ok") {
+    return auth.response
+  }
+
   const supabase = createClient()
   
   try {
-    // Check for admin authentication
-    // This would normally check for admin authentication, but we're skipping it for brevity
-
     // Get the request body
     const body = await request.json()
     const { payouts, payment_method, generate_invoices, notes } = body
@@ -78,26 +81,52 @@ export async function POST() {
 
         const payoutId = data[0].id
 
-        // Get all pending line items for this vendor
+        // Get all pending fulfilled line items for this vendor
+        // The RPC function now filters by fulfillment_status = 'fulfilled'
         const { data: lineItems, error: lineItemsError } = await supabase.rpc("get_vendor_pending_line_items", {
           p_vendor_name: vendor_name,
         })
 
         if (lineItemsError) {
           console.error(`Error fetching line items for ${vendor_name}:`, lineItemsError)
-          // Continue with the payout even if we can't fetch line items
-        } else if (lineItems && lineItems.length > 0) {
-          // Associate line items with this payout
-          const payoutItems = lineItems.map((item) => ({
-            payout_id: payoutId,
-            line_item_id: item.line_item_id,
-            order_id: item.order_id,
-            product_id: item.product_id,
-            amount: item.is_percentage ? (item.price * item.payout_amount) / 100 : item.payout_amount,
-            created_at: new Date().toISOString(),
-          }))
+          results.push({
+            vendor_name,
+            success: false,
+            error: `Failed to fetch line items: ${lineItemsError.message}`,
+          })
+          continue
+        }
 
-          const { error: insertError } = await supabase.from("vendor_payout_items").insert(payoutItems)
+        if (!lineItems || lineItems.length === 0) {
+          results.push({
+            vendor_name,
+            success: false,
+            error: "No fulfilled line items found for payout",
+          })
+          continue
+        }
+
+        // Group line items by order for better tracking
+        const orderGroups = new Map<string, typeof lineItems>()
+        lineItems.forEach((item: any) => {
+          const orderId = item.order_id
+          if (!orderGroups.has(orderId)) {
+            orderGroups.set(orderId, [])
+          }
+          orderGroups.get(orderId)!.push(item)
+        })
+
+        // Associate line items with this payout, grouped by order
+        const payoutItems = lineItems.map((item: any) => ({
+          payout_id: payoutId,
+          line_item_id: item.line_item_id,
+          order_id: item.order_id,
+          product_id: item.product_id,
+          amount: item.is_percentage ? (item.price * item.payout_amount) / 100 : item.payout_amount,
+          created_at: new Date().toISOString(),
+        }))
+
+        const { error: insertError } = await supabase.from("vendor_payout_items").insert(payoutItems)
 
           if (insertError) {
             console.error(`Error associating line items with payout for ${vendor_name}:`, insertError)
