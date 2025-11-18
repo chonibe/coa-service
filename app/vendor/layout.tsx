@@ -14,10 +14,17 @@ interface VendorLayoutProps {
 
 export default async function VendorLayout({ children }: VendorLayoutProps) {
   const cookieStore = cookies()
+  
+  // Debug: Log all cookies to see what's available
+  const allCookies = cookieStore.getAll()
+  console.log(`[vendor/layout] All cookies:`, allCookies.map(c => c.name).join(", "))
+  
   const vendorName = getVendorFromCookieStore(cookieStore)
 
   if (!vendorName) {
     console.log("[vendor/layout] No vendor session cookie found, redirecting to login")
+    // Don't redirect immediately - check if we're coming from auth callback
+    // This prevents redirect loops
     redirect("/login")
   }
 

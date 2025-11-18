@@ -81,16 +81,20 @@ export const buildVendorSessionCookie = (
 ) => {
   const token = createVendorSessionToken(vendorName)
 
+  const cookieOptions = {
+    path: "/",
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax" as const, // Changed from "strict" to "lax" to allow cookies on redirects
+    maxAge: options.maxAge ?? DEFAULT_MAX_AGE_SECONDS,
+  }
+  
+  // In production, ensure secure cookies work with HTTPS
+  // Don't set domain - let browser handle it automatically
   return {
     name: SESSION_COOKIE_NAME,
     value: token,
-    options: {
-      path: "/",
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "lax" as const, // Changed from "strict" to "lax" to allow cookies on redirects
-      maxAge: options.maxAge ?? DEFAULT_MAX_AGE_SECONDS,
-    },
+    options: cookieOptions,
   }
 }
 

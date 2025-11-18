@@ -110,7 +110,21 @@ export async function GET(request: NextRequest) {
   if (vendor) {
     console.log(`[auth/callback] Vendor linked: ${vendor.vendor_name}, status: ${vendor.status}, email: ${email}`)
     const sessionCookie = buildVendorSessionCookie(vendor.vendor_name)
-    response.cookies.set(sessionCookie.name, sessionCookie.value, sessionCookie.options)
+    
+    // Set cookie with explicit options to ensure it's set correctly
+    response.cookies.set(sessionCookie.name, sessionCookie.value, {
+      ...sessionCookie.options,
+      // Ensure cookie is set for the current domain
+      domain: undefined, // Let browser set domain automatically
+    })
+    
+    console.log(`[auth/callback] Set vendor session cookie: ${sessionCookie.name} with options:`, {
+      path: sessionCookie.options.path,
+      httpOnly: sessionCookie.options.httpOnly,
+      secure: sessionCookie.options.secure,
+      sameSite: sessionCookie.options.sameSite,
+      maxAge: sessionCookie.options.maxAge,
+    })
     
     // Clear admin session cookie - vendor login should not have admin access
     response.cookies.set(ADMIN_SESSION_COOKIE_NAME, "", clearAdminSessionCookie().options)
