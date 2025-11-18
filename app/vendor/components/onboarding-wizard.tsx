@@ -256,7 +256,6 @@ export function OnboardingWizard({ initialData, onComplete }: OnboardingWizardPr
           "Content-Type": "application/json",
         },
         credentials: "include",
-        },
         body: JSON.stringify(formData),
       })
 
