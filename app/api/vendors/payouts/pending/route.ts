@@ -45,13 +45,13 @@ export async function GET() {
 
       // Get payout settings for products
       const productIds = [...new Set(unpaidItems.map((item: any) => item.product_id))]
-      const vendorNames = [...new Set(unpaidItems.map((item: any) => item.vendor_name).filter(Boolean))]
+      const uniqueVendorNames = [...new Set(unpaidItems.map((item: any) => item.vendor_name).filter(Boolean))]
 
       const { data: payoutSettings } = await supabase
         .from("product_vendor_payouts")
         .select("product_id, vendor_name, payout_amount, is_percentage")
         .in("product_id", productIds)
-        .in("vendor_name", vendorNames)
+        .in("vendor_name", uniqueVendorNames)
 
       const payoutMap = new Map<string, any>()
       payoutSettings?.forEach((setting: any) => {
