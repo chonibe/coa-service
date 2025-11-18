@@ -1,150 +1,164 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
+import { useRouter } from "next/navigation"
 
 // Query keys for vendor data
 export const vendorQueryKeys = {
   all: ["vendor"] as const,
   profile: () => [...vendorQueryKeys.all, "profile"] as const,
   stats: () => [...vendorQueryKeys.all, "stats"] as const,
-  salesAnalytics: (range?: string, from?: string, to?: string) =>
-    [...vendorQueryKeys.all, "sales-analytics", range, from, to] as const,
-  messages: () => [...vendorQueryKeys.all, "messages"] as const,
-  messagesThread: (threadId: string) => [...vendorQueryKeys.messages(), threadId] as const,
-  notifications: (unreadOnly?: boolean) => [...vendorQueryKeys.all, "notifications", unreadOnly] as const,
-  products: () => [...vendorQueryKeys.all, "products"] as const,
+  salesAnalytics: (params?: { range?: string; from?: string; to?: string }) =>
+    [...vendorQueryKeys.all, "sales-analytics", params] as const,
+  messages: (params?: { threadId?: string; page?: number; limit?: number }) =>
+    [...vendorQueryKeys.all, "messages", params] as const,
+  notifications: (params?: { unreadOnly?: boolean; limit?: number }) =>
+    [...vendorQueryKeys.all, "notifications", params] as const,
   payouts: () => [...vendorQueryKeys.all, "payouts"] as const,
+  products: () => [...vendorQueryKeys.all, "products"] as const,
 }
 
-// Vendor Profile Query
+// Fetch functions
+const fetchWithCredentials = async (url: string, options: RequestInit = {}) => {
+  const response = await fetch(url, {
+    ...options,
+    credentials: "include",
+  })
+  if (!response.ok) {
+    if (response.status === 401) {
+      throw new Error("Unauthorized")
+    }
+    const error = await response.json().catch(() => ({ error: "Unknown error" }))
+    throw new Error(error.error || error.message || "Request failed")
+  }
+  return response.json()
+}
+
+// Vendor profile query
 export function useVendorProfile() {
   return useQuery({
     queryKey: vendorQueryKeys.profile(),
-    queryFn: async () => {
-      const response = await fetch("/api/vendor/profile")
-      if (!response.ok) {
-        throw new Error("Failed to fetch vendor profile")
-      }
-      return response.json()
-    },
-    staleTime: 5 * 60 * 1000, // 5 minutes
+    queryFn: () => fetchWithCredentials("/api/vendor/profile"),
+    staleTime: 5 * 60 * 1000, // 5 minutes - profile doesn't change often
+    retry: 1,
   })
 }
 
-// Vendor Stats Query
+// Vendor stats query
 export function useVendorStats() {
   return useQuery({
     queryKey: vendorQueryKeys.stats(),
-    queryFn: async () => {
-      const response = await fetch("/api/vendor/stats", {
-        cache: "no-store",
-        credentials: "include",
-      })
-      if (!response.ok) {
-        throw new Error("Failed to fetch vendor stats")
-      }
-      return response.json()
-    },
-    staleTime: 30 * 1000, // 30 seconds
+    queryFn: () => fetchWithCredentials("/api/vendor/stats"),
+    staleTime: 30 * 1000, // 30 seconds - stats change more frequently
     refetchInterval: 60 * 1000, // Refetch every minute
   })
 }
 
-// Sales Analytics Query
-export function useSalesAnalytics(range?: string, from?: string, to?: string) {
+// Sales analytics query
+export function useSalesAnalytics(params?: { range?: string; from?: string; to?: string }) {
   return useQuery({
-    queryKey: vendorQueryKeys.salesAnalytics(range, from, to),
-    queryFn: async () => {
-      const params = new URLSearchParams()
-      if (range) params.set("range", range)
-      if (from) params.set("from", from)
-      if (to) params.set("to", to)
+    queryKey: vendorQueryKeys.salesAnalytics(params),
+    queryFn: () => {
+      const searchParams = new URLSearchParams()
+      if (params?.range) searchParams.set("range", params.range)
+      if (params?.from) searchParams.set("from", params.from)
+      if (params?.to) searchParams.set("to", params.to)
+      return fetchWithCredentials(`/api/vendor/sales-analytics?${searchParams.toString()}`)
+    },
+    staleTime: 60 * 1000, // 1 minute
+    enabled: true,
+  })
+}
 
-      const response = await fetch(`/api/vendor/sales-analytics?${params.toString()}`, {
-        cache: "no-store",
-        credentials: "include",
-      })
-      if (!response.ok) {
-        throw new Error("Failed to fetch sales analytics")
-      }
-      return response.json()
+// Messages query
+export function useVendorMessages(params?: { threadId?: string; page?: number; limit?: number }) {
+  return useQuery({
+    queryKey: vendorQueryKeys.messages(params),
+    queryFn: () => {
+      const searchParams = new URLSearchParams()
+      if (params?.threadId) searchParams.set("thread_id", params.threadId)
+      if (params?.page) searchParams.set("page", params.page.toString())
+      if (params?.limit) searchParams.set("limit", params.limit.toString())
+      return fetchWithCredentials(`/api/vendor/messages?${searchParams.toString()}`)
     },
     staleTime: 30 * 1000, // 30 seconds
+    refetchInterval: 30 * 1000, // Poll every 30 seconds for new messages
   })
 }
 
-// Messages Query
-export function useVendorMessages(threadId?: string) {
+// Notifications query
+export function useVendorNotifications(params?: { unreadOnly?: boolean; limit?: number }) {
   return useQuery({
-    queryKey: threadId ? vendorQueryKeys.messagesThread(threadId) : vendorQueryKeys.messages(),
-    queryFn: async () => {
-      const url = threadId
-        ? `/api/vendor/messages?thread_id=${threadId}`
-        : "/api/vendor/messages"
-      const response = await fetch(url)
-      if (!response.ok) {
-        throw new Error("Failed to fetch messages")
-      }
-      return response.json()
+    queryKey: vendorQueryKeys.notifications(params),
+    queryFn: () => {
+      const searchParams = new URLSearchParams()
+      if (params?.unreadOnly) searchParams.set("unread_only", "true")
+      if (params?.limit) searchParams.set("limit", params.limit.toString())
+      return fetchWithCredentials(`/api/vendor/notifications?${searchParams.toString()}`)
     },
-    staleTime: 10 * 1000, // 10 seconds
-    refetchInterval: threadId ? 10 * 1000 : 30 * 1000, // Poll every 10s for threads, 30s for list
+    staleTime: 30 * 1000, // 30 seconds
+    refetchInterval: 30 * 1000, // Poll every 30 seconds for new notifications
   })
 }
 
-// Send Message Mutation
+// Payouts query
+export function useVendorPayouts() {
+  return useQuery({
+    queryKey: vendorQueryKeys.payouts(),
+    queryFn: () => fetchWithCredentials("/api/vendor/payouts"),
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  })
+}
+
+// Send message mutation
 export function useSendMessage() {
   const queryClient = useQueryClient()
+  const router = useRouter()
 
   return useMutation({
-    mutationFn: async (data: { threadId?: string; recipientType?: string; recipientId?: string; subject?: string; body: string }) => {
-      const response = await fetch("/api/vendor/messages", {
+    mutationFn: async (data: { subject: string; body: string; recipientType: string }) => {
+      return fetchWithCredentials("/api/vendor/messages", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),
       })
-      if (!response.ok) {
-        throw new Error("Failed to send message")
-      }
-      return response.json()
     },
-    onSuccess: (data) => {
+    onSuccess: () => {
       // Invalidate messages queries to refetch
       queryClient.invalidateQueries({ queryKey: vendorQueryKeys.messages() })
-      if (data.threadId) {
-        queryClient.invalidateQueries({ queryKey: vendorQueryKeys.messagesThread(data.threadId) })
+    },
+    onError: (error: Error) => {
+      if (error.message === "Unauthorized") {
+        router.push("/login")
       }
     },
   })
 }
 
-// Notifications Query
-export function useVendorNotifications(unreadOnly = false) {
-  return useQuery({
-    queryKey: vendorQueryKeys.notifications(unreadOnly),
-    queryFn: async () => {
-      const response = await fetch(`/api/vendor/notifications?unread_only=${unreadOnly}&limit=20`)
-      if (!response.ok) {
-        throw new Error("Failed to fetch notifications")
-      }
-      return response.json()
+// Mark message as read mutation
+export function useMarkMessageRead() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async (threadId: string) => {
+      return fetchWithCredentials(`/api/vendor/messages/${threadId}/read`, {
+        method: "PUT",
+      })
     },
-    staleTime: 30 * 1000, // 30 seconds
-    refetchInterval: 30 * 1000, // Poll every 30 seconds
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: vendorQueryKeys.messages() })
+      queryClient.invalidateQueries({ queryKey: vendorQueryKeys.notifications() })
+    },
   })
 }
 
-// Mark Notification as Read Mutation
+// Mark notification as read mutation
 export function useMarkNotificationRead() {
   const queryClient = useQueryClient()
 
   return useMutation({
     mutationFn: async (id: string) => {
-      const response = await fetch(`/api/vendor/notifications/${id}/read`, {
+      return fetchWithCredentials(`/api/vendor/notifications/${id}/read`, {
         method: "PUT",
       })
-      if (!response.ok) {
-        throw new Error("Failed to mark notification as read")
-      }
-      return response.json()
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: vendorQueryKeys.notifications() })
@@ -152,19 +166,15 @@ export function useMarkNotificationRead() {
   })
 }
 
-// Mark All Notifications as Read Mutation
+// Mark all notifications as read mutation
 export function useMarkAllNotificationsRead() {
   const queryClient = useQueryClient()
 
   return useMutation({
     mutationFn: async () => {
-      const response = await fetch("/api/vendor/notifications/read-all", {
+      return fetchWithCredentials("/api/vendor/notifications/read-all", {
         method: "PUT",
       })
-      if (!response.ok) {
-        throw new Error("Failed to mark all notifications as read")
-      }
-      return response.json()
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: vendorQueryKeys.notifications() })
@@ -172,24 +182,39 @@ export function useMarkAllNotificationsRead() {
   })
 }
 
-// Mark Thread as Read Mutation
-export function useMarkThreadRead() {
+// Update vendor profile mutation
+export function useUpdateVendorProfile() {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: async (threadId: string) => {
-      const response = await fetch(`/api/vendor/messages/${threadId}/read`, {
-        method: "PUT",
+    mutationFn: async (data: Record<string, any>) => {
+      return fetchWithCredentials("/api/vendor/update-profile", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
       })
-      if (!response.ok) {
-        throw new Error("Failed to mark thread as read")
-      }
-      return response.json()
     },
-    onSuccess: (_, threadId) => {
-      queryClient.invalidateQueries({ queryKey: vendorQueryKeys.messages() })
-      queryClient.invalidateQueries({ queryKey: vendorQueryKeys.messagesThread(threadId) })
+    onSuccess: () => {
+      // Invalidate profile query to refetch updated data
+      queryClient.invalidateQueries({ queryKey: vendorQueryKeys.profile() })
     },
   })
 }
 
+// Update vendor settings mutation
+export function useUpdateVendorSettings() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async (data: Record<string, any>) => {
+      return fetchWithCredentials("/api/vendor/update-settings", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      })
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: vendorQueryKeys.profile() })
+    },
+  })
+}

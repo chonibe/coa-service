@@ -12,6 +12,8 @@ import { LogOut, Menu, Home, BarChart, Settings, Award, Package, DollarSign, Mes
 import { cn } from "@/lib/utils"
 import { NotificationCenter } from "@/components/vendor/notification-center"
 import { Badge } from "@/components/ui/badge"
+import { useSwipeGesture } from "@/components/vendor/mobile-gestures"
+import { useRef } from "react"
 
 interface NavItem {
   title: string
@@ -201,12 +203,13 @@ export function VendorSidebar() {
         onClick={closeSidebar}
       />
 
-      <aside
-        className={cn(
-          "fixed top-0 left-0 z-50 h-full w-[280px] bg-background border-r shadow-lg transition-transform duration-300 ease-in-out transform",
-          sidebarOpen ? "translate-x-0" : "-translate-x-full",
-        )}
-      >
+          <aside
+            ref={sidebarRef}
+            className={cn(
+              "fixed top-0 left-0 z-50 h-full w-[280px] bg-background border-r shadow-lg transition-transform duration-300 ease-in-out transform",
+              sidebarOpen ? "translate-x-0" : "-translate-x-full",
+            )}
+          >
         <div className="flex items-center justify-between h-16 px-6 border-b">
           <Link href="/vendor/dashboard" className="flex items-center gap-2 font-semibold">
             <Award className="h-6 w-6" />
