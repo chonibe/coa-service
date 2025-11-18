@@ -34,7 +34,8 @@ export async function GET(request: NextRequest) {
   const accessToken = searchParams.get("access_token")
   const refreshToken = searchParams.get("refresh_token")
 
-  const response = NextResponse.redirect(new URL(DEFAULT_VENDOR_REDIRECT, origin))
+  // Create redirect response - we'll update the location after setting cookies
+  const response = NextResponse.redirect(new URL(DEFAULT_VENDOR_REDIRECT, origin), { status: 307 })
 
   deleteCookie(response, POST_LOGIN_REDIRECT_COOKIE)
 
@@ -140,7 +141,19 @@ export async function GET(request: NextRequest) {
     }
 
     console.log(`[auth/callback] Redirecting vendor to: ${destination}`)
-    response.headers.set("Location", new URL(destination, origin).toString())
+    
+    // Update the redirect location
+    const redirectUrl = new URL(destination, origin)
+    response.headers.set("Location", redirectUrl.toString())
+    
+    // Verify cookie was set
+    const cookieValue = response.cookies.get(sessionCookie.name)?.value
+    console.log(`[auth/callback] Cookie set verification: ${cookieValue ? "SET" : "NOT SET"}`, {
+      cookieName: sessionCookie.name,
+      hasValue: !!cookieValue,
+      cookieLength: cookieValue?.length || 0,
+    })
+    
     return response
   }
 
