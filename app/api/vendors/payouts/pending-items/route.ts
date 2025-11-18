@@ -12,12 +12,14 @@ export async function POST(request: Request) {
     const supabase = createClient()
 
     // Fallback to direct query - Get ALL fulfilled line items for this vendor (not just pending)
+    // Note: Supabase has a default limit of 1000 rows, so we need to fetch in batches if needed
     let query = supabase
       .from("order_line_items_v2")
-      .select("line_item_id, order_id, order_name, product_id, price, created_at, fulfillment_status")
+      .select("line_item_id, order_id, order_name, product_id, price, created_at, fulfillment_status", { count: 'exact' })
       .eq("status", "active")
       .eq("vendor_name", vendorName)
       .eq("fulfillment_status", "fulfilled")
+      .order("created_at", { ascending: false }) // Order by date descending to get all items
 
     // Apply date range filter if provided
     if (startDate) {
@@ -27,15 +29,33 @@ export async function POST(request: Request) {
       query = query.lte("created_at", endDate)
     }
 
-    const { data: lineItems, error: lineItemsError } = await query
+    // Fetch all items - Supabase default limit is 1000, so we may need to paginate
+    let allLineItems: any[] = []
+    let from = 0
+    const pageSize = 1000
+    let hasMore = true
 
+    while (hasMore) {
+      const { data: lineItems, error: lineItemsError, count } = await query.range(from, from + pageSize - 1)
+      
       if (lineItemsError) {
         console.error("Error fetching line items:", lineItemsError)
         return NextResponse.json({ error: lineItemsError.message }, { status: 500 })
       }
 
-      // Get paid line items to mark them and optionally filter them out
-      const { data: paidItems } = await supabase
+      if (lineItems && lineItems.length > 0) {
+        allLineItems = [...allLineItems, ...lineItems]
+        from += pageSize
+        hasMore = lineItems.length === pageSize && (count === null || from < count)
+      } else {
+        hasMore = false
+      }
+    }
+
+    const lineItems = allLineItems
+
+    // Get paid line items to mark them and optionally filter them out
+    const { data: paidItems } = await supabase
         .from("vendor_payout_items")
         .select("line_item_id, payout_id")
         .not("payout_id", "is", null)
