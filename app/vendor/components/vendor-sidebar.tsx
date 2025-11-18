@@ -26,6 +26,7 @@ export function VendorSidebar() {
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [vendorName, setVendorName] = useState<string>("Vendor")
   const [profileComplete, setProfileComplete] = useState<boolean>(true)
+  const [unreadMessages, setUnreadMessages] = useState(0)
 
   const navItems: NavItem[] = [
     {
