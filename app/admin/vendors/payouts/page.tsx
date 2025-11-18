@@ -50,8 +50,8 @@ export default function VendorPayoutsPage() {
 
   const [selectedProducts, setSelectedProducts] = useState<string[]>([])
   const [bulkEditMode, setBulkEditMode] = useState<boolean>(false)
-  const [bulkEditValue, setBulkEditValue] = useState<number>(0)
-  const [bulkEditType, setBulkEditType] = useState<"fixed" | "percentage">("fixed")
+  const [bulkEditValue, setBulkEditValue] = useState<number>(25)
+  const [bulkEditType, setBulkEditType] = useState<"fixed" | "percentage">("percentage")
 
   // Initialize tables and fetch all data on load
   useEffect(() => {
@@ -120,11 +120,21 @@ export default function VendorPayoutsPage() {
           console.log("Fetched payout settings:", payoutsData.payouts?.length || 0)
 
           // Convert to a map for easier access
+          // Default to 25% percentage if no setting exists
           const payoutsMap: Record<string, PayoutSetting> = {}
-          payoutsData.payouts.forEach((payout: any) => {
-            payoutsMap[payout.product_id] = {
-              amount: payout.payout_amount || 0,
-              isPercentage: payout.is_percentage || false,
+          products.forEach((product: Product) => {
+            const existingPayout = payoutsData.payouts?.find((p: any) => p.product_id === product.id)
+            if (existingPayout) {
+              payoutsMap[product.id] = {
+                amount: existingPayout.payout_amount || 25,
+                isPercentage: existingPayout.is_percentage !== false, // Default to true if not specified
+              }
+            } else {
+              // Default to 25% percentage payout
+              payoutsMap[product.id] = {
+                amount: 25,
+                isPercentage: true,
+              }
             }
           })
 
@@ -454,7 +464,10 @@ export default function VendorPayoutsPage() {
         <Card>
           <CardHeader>
             <CardTitle>Payout Settings</CardTitle>
-            <CardDescription>Define how much vendors get paid for each product</CardDescription>
+            <CardDescription>
+              Define how much vendors get paid for each product. Default payout is 25% of revenue. 
+              Only fulfilled order line items are eligible for payout.
+            </CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
@@ -677,7 +690,8 @@ export default function VendorPayoutsPage() {
                       </TableHeader>
                       <TableBody>
                         {filteredProducts.map((product) => {
-                          const payout = payoutSettings[product.id] || { amount: 0, isPercentage: false }
+                          // Default to 25% if no setting exists
+                          const payout = payoutSettings[product.id] || { amount: 25, isPercentage: true }
                           const productPrice = Number.parseFloat(product.price)
                           const estimatedPayout = payout.isPercentage
                             ? (productPrice * payout.amount) / 100

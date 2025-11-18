@@ -155,14 +155,24 @@ export function AdminShell({ children }: AdminShellProps) {
           icon: <DollarSign className="h-4 w-4" />,
         },
         {
-          title: "Payout History",
-          href: "/admin/vendors/payouts/history",
-          icon: <Clock className="h-4 w-4" />,
+          title: "Manual Payouts",
+          href: "/admin/vendors/payouts/manual",
+          icon: <DollarSign className="h-4 w-4" />,
+        },
+        {
+          title: "Payout Calculator",
+          href: "/admin/vendors/payouts/calculate",
+          icon: <DollarSign className="h-4 w-4" />,
         },
         {
           title: "Payout Settings",
-          href: "/admin/vendors/payouts/settings",
+          href: "/admin/vendors/payouts",
           icon: <Settings className="h-4 w-4" />,
+        },
+        {
+          title: "Payout History",
+          href: "/admin/vendors/payouts/history",
+          icon: <Clock className="h-4 w-4" />,
         },
       ],
       expanded: false,

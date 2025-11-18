@@ -18,65 +18,87 @@ export async function GET() {
       console.error("Error using get_pending_vendor_payouts function:", funcError)
 
       // Fallback to direct query if function doesn't exist
-      const { data, error } = await supabase.query(`
-        WITH paid_line_items AS (
-          SELECT line_item_id FROM vendor_payout_items
-        ),
-        vendor_sales AS (
-          SELECT 
-            v.name AS vendor_name,
-            li.id AS line_item_id,
-            li.order_id,
-            li.product_id,
-            li.price,
-            COALESCE(pvp.payout_amount, 10) AS payout_percentage,
-            COALESCE(pvp.is_percentage, true) AS is_percentage,
-            CASE 
-              WHEN COALESCE(pvp.is_percentage, true) THEN (li.price * COALESCE(pvp.payout_amount, 10) / 100)
-              ELSE COALESCE(pvp.payout_amount, 0)
-            END AS payout_amount
-          FROM line_items li
-          JOIN products p ON li.product_id = p.id
-          JOIN vendors v ON p.vendor_id = v.id
-          LEFT JOIN product_vendor_payouts pvp ON p.id = pvp.product_id
-          WHERE li.id NOT IN (SELECT line_item_id FROM paid_line_items)
-        ),
-        vendor_totals AS (
-          SELECT 
-            vendor_name,
-            SUM(payout_amount) AS amount,
-            COUNT(*) AS product_count
-          FROM vendor_sales
-          GROUP BY vendor_name
-        )
-        SELECT 
-          vt.vendor_name,
-          vt.amount,
-          vt.product_count,
-          v.paypal_email,
-          v.tax_id,
-          v.tax_country,
-          v.is_company,
-          MAX(vp.payout_date) AS last_payout_date
-        FROM vendor_totals vt
-        JOIN vendors v ON vt.vendor_name = v.name
-        LEFT JOIN vendor_payouts vp ON vt.vendor_name = vp.vendor_name
-        GROUP BY 
-          vt.vendor_name, 
-          vt.amount, 
-          vt.product_count, 
-          v.paypal_email, 
-          v.tax_id, 
-          v.tax_country, 
-          v.is_company
-      `)
+      // Updated to filter by fulfillment_status = 'fulfilled' and use default 25% payout
+      const { data, error } = await supabase
+        .from("order_line_items_v2")
+        .select(`
+          vendor_name,
+          line_item_id,
+          order_id,
+          product_id,
+          price,
+          product_vendor_payouts!left(payout_amount, is_percentage),
+          vendor_payout_items!left(payout_id)
+        `)
+        .eq("status", "active")
+        .not("vendor_name", "is", null)
+        .eq("fulfillment_status", "fulfilled")
+        .is("vendor_payout_items.payout_id", null)
 
       if (error) {
         console.error("Error in fallback query:", error)
         return NextResponse.json({ error: error.message }, { status: 500 })
       }
 
-      return NextResponse.json({ payouts: data })
+      // Process the data to calculate payouts
+      const vendorMap = new Map<string, any>()
+      
+      data?.forEach((item: any) => {
+        const vendorName = item.vendor_name
+        if (!vendorMap.has(vendorName)) {
+          vendorMap.set(vendorName, {
+            vendor_name: vendorName,
+            amount: 0,
+            product_count: 0,
+            line_items: [],
+          })
+        }
+        
+        const vendor = vendorMap.get(vendorName)!
+        const payoutSetting = item.product_vendor_payouts?.[0]
+        const payoutAmount = payoutSetting?.payout_amount ?? 25
+        const isPercentage = payoutSetting?.is_percentage ?? true
+        
+        const itemPayout = isPercentage 
+          ? (item.price * payoutAmount / 100)
+          : payoutAmount
+        
+        vendor.amount += itemPayout
+        vendor.product_count += 1
+        vendor.line_items.push(item.line_item_id)
+      })
+
+      // Get vendor details and last payout date
+      const vendorNames = Array.from(vendorMap.keys())
+      const { data: vendors } = await supabase
+        .from("vendors")
+        .select("vendor_name, paypal_email, tax_id, tax_country, is_company")
+        .in("vendor_name", vendorNames)
+
+      const { data: lastPayouts } = await supabase
+        .from("vendor_payouts")
+        .select("vendor_name, payout_date")
+        .in("vendor_name", vendorNames)
+        .eq("status", "completed")
+        .order("payout_date", { ascending: false })
+
+      const payouts = Array.from(vendorMap.values()).map((vendor) => {
+        const vendorInfo = vendors?.find((v: any) => v.vendor_name === vendor.vendor_name)
+        const lastPayout = lastPayouts?.find((p: any) => p.vendor_name === vendor.vendor_name)
+        
+        return {
+          vendor_name: vendor.vendor_name,
+          amount: vendor.amount,
+          product_count: vendor.product_count,
+          paypal_email: vendorInfo?.paypal_email || null,
+          tax_id: vendorInfo?.tax_id || null,
+          tax_country: vendorInfo?.tax_country || null,
+          is_company: vendorInfo?.is_company || false,
+          last_payout_date: lastPayout?.payout_date || null,
+        }
+      }).sort((a, b) => b.amount - a.amount)
+
+      return NextResponse.json({ payouts })
     }
   } catch (error: any) {
     console.error("Error in pending payouts API:", error)
