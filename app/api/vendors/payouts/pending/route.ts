@@ -19,31 +19,50 @@ export async function GET() {
 
       // Fallback to direct query if function doesn't exist
       // Updated to filter by fulfillment_status = 'fulfilled' and use default 25% payout
-      const { data, error } = await supabase
+      // Get all fulfilled line items
+      const { data: lineItems, error: lineItemsError } = await supabase
         .from("order_line_items_v2")
-        .select(`
-          vendor_name,
-          line_item_id,
-          order_id,
-          product_id,
-          price,
-          product_vendor_payouts!left(payout_amount, is_percentage),
-          vendor_payout_items!left(payout_id)
-        `)
+        .select("vendor_name, line_item_id, order_id, product_id, price")
         .eq("status", "active")
         .not("vendor_name", "is", null)
         .eq("fulfillment_status", "fulfilled")
-        .is("vendor_payout_items.payout_id", null)
 
-      if (error) {
-        console.error("Error in fallback query:", error)
-        return NextResponse.json({ error: error.message }, { status: 500 })
+      if (lineItemsError) {
+        console.error("Error fetching line items:", lineItemsError)
+        return NextResponse.json({ error: lineItemsError.message }, { status: 500 })
       }
+
+      // Get paid line items
+      const { data: paidItems } = await supabase
+        .from("vendor_payout_items")
+        .select("line_item_id")
+        .not("payout_id", "is", null)
+
+      const paidLineItemIds = new Set(paidItems?.map((item: any) => item.line_item_id) || [])
+
+      // Filter out paid items
+      const unpaidItems = lineItems?.filter((item: any) => !paidLineItemIds.has(item.line_item_id)) || []
+
+      // Get payout settings for products
+      const productIds = [...new Set(unpaidItems.map((item: any) => item.product_id))]
+      const vendorNames = [...new Set(unpaidItems.map((item: any) => item.vendor_name).filter(Boolean))]
+
+      const { data: payoutSettings } = await supabase
+        .from("product_vendor_payouts")
+        .select("product_id, vendor_name, payout_amount, is_percentage")
+        .in("product_id", productIds)
+        .in("vendor_name", vendorNames)
+
+      const payoutMap = new Map<string, any>()
+      payoutSettings?.forEach((setting: any) => {
+        const key = `${setting.product_id}_${setting.vendor_name}`
+        payoutMap.set(key, setting)
+      })
 
       // Process the data to calculate payouts
       const vendorMap = new Map<string, any>()
       
-      data?.forEach((item: any) => {
+      unpaidItems.forEach((item: any) => {
         const vendorName = item.vendor_name
         if (!vendorMap.has(vendorName)) {
           vendorMap.set(vendorName, {
@@ -55,7 +74,8 @@ export async function GET() {
         }
         
         const vendor = vendorMap.get(vendorName)!
-        const payoutSetting = item.product_vendor_payouts?.[0]
+        const payoutKey = `${item.product_id}_${vendorName}`
+        const payoutSetting = payoutMap.get(payoutKey)
         const payoutAmount = payoutSetting?.payout_amount ?? 25
         const isPercentage = payoutSetting?.is_percentage ?? true
         

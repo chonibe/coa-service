@@ -36,7 +36,7 @@ BEGIN
       oli.status = 'active' 
       AND oli.vendor_name IS NOT NULL
       AND oli.fulfillment_status = 'fulfilled'
-      AND oli.line_item_id NOT IN (SELECT line_item_id FROM paid_line_items)
+      AND oli.line_item_id::TEXT NOT IN (SELECT line_item_id::TEXT FROM paid_line_items)
   ),
   vendor_totals AS (
     -- Calculate the payout amount for each vendor
@@ -114,7 +114,7 @@ BEGIN
     oli.status = 'active' 
     AND oli.vendor_name = p_vendor_name
     AND oli.fulfillment_status = 'fulfilled'
-    AND oli.line_item_id NOT IN (SELECT line_item_id FROM paid_line_items)
+    AND oli.line_item_id::TEXT NOT IN (SELECT line_item_id::TEXT FROM paid_line_items)
   ORDER BY oli.order_id, oli.created_at DESC;
 END;
 $$ LANGUAGE plpgsql;
@@ -164,7 +164,7 @@ BEGIN
     FROM order_line_items_v2 oli
     LEFT JOIN products p ON oli.product_id = p.id
     LEFT JOIN product_vendor_payouts pvp ON oli.product_id = pvp.product_id AND oli.vendor_name = pvp.vendor_name
-    LEFT JOIN vendor_payout_items vpi ON oli.line_item_id = vpi.line_item_id AND vpi.payout_id IS NOT NULL
+    LEFT JOIN vendor_payout_items vpi ON oli.line_item_id::TEXT = vpi.line_item_id::TEXT AND vpi.payout_id IS NOT NULL
     WHERE 
       oli.status = 'active'
       AND oli.vendor_name = p_vendor_name
