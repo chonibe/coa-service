@@ -25,7 +25,7 @@ export function SidebarLayout({ children }: SidebarLayoutProps) {
       {/* Main content takes full width */}
       <div className="w-full">
         <PullToRefresh onRefresh={handleRefresh}>
-          <main className="p-4 md:p-8 max-w-7xl mx-auto pb-24 pt-20">
+          <main id="main-content" className="p-4 md:p-8 max-w-7xl mx-auto pb-24 pt-20" role="main" aria-label="Main content">
             {/* Impersonation context for admins */}
             <ImpersonationBanner />
             {/* Add breadcrumbs */}

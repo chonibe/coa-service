@@ -2,6 +2,40 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Accessibility: Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Accessibility: Enhanced focus indicators */
+*:focus-visible {
+  outline: 2px solid hsl(var(--ring));
+  outline-offset: 2px;
+}
+
+/* Ensure minimum touch target size for mobile (44x44px) */
+button,
+a,
+input[type="button"],
+input[type="submit"],
+[role="button"] {
+  min-height: 44px;
+  min-width: 44px;
+}
+
+/* Exception for icon-only buttons that are already large enough */
+button[aria-label] svg {
+  min-height: 20px;
+  min-width: 20px;
+}
+
 @layer base {
   :root {
     --background: 0 0% 100%;

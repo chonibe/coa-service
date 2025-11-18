@@ -217,12 +217,18 @@ export default function AnalyticsPage() {
             dateRange={dateRange}
             onChange={handleTimeRangeChange}
           />
-          {salesHistory.length > 0 && (
-            <Button onClick={handleExport} variant="outline" size="sm">
-              <Download className="mr-2 h-4 w-4" />
-              Export CSV
-            </Button>
-          )}
+              {salesHistory.length > 0 && (
+                <Button 
+                  onClick={handleExport} 
+                  variant="outline" 
+                  size="sm"
+                  aria-label="Export sales data to CSV"
+                  className="min-h-[44px] focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+                >
+                  <Download className="mr-2 h-4 w-4" aria-hidden="true" />
+                  Export CSV
+                </Button>
+              )}
         </div>
       </div>
 

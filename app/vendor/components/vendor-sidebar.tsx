@@ -224,27 +224,29 @@ export function VendorSidebar() {
               <p className="text-sm font-medium">Logged in as</p>
               <h3 className="font-semibold">{vendorName}</h3>
             </div>
-            <nav className="flex flex-col gap-2">
+            <nav className="flex flex-col gap-2" aria-label="Navigation menu">
               {navItems.map((item) => (
                 <Link
                   key={item.href}
                   href={item.href}
                   onClick={closeSidebar}
-                  className={`flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-all duration-200 hover:bg-accent hover:text-accent-foreground ${
+                  className={`flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-all duration-200 hover:bg-accent hover:text-accent-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 ${
                     isActive(item.href)
                       ? "bg-accent text-accent-foreground"
                       : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
                   }`}
+                  aria-current={isActive(item.href) ? "page" : undefined}
+                  aria-label={item.title === "Messages" && unreadMessages > 0 ? `${item.title}, ${unreadMessages} unread messages` : item.title}
                 >
                   {item.icon}
                   <span>{item.title}</span>
                   {item.title === "Messages" && unreadMessages > 0 && (
-                    <Badge variant="destructive" className="ml-auto h-5 min-w-5 flex items-center justify-center p-0 text-xs">
+                    <Badge variant="destructive" className="ml-auto h-5 min-w-5 flex items-center justify-center p-0 text-xs" aria-label={`${unreadMessages} unread messages`}>
                       {unreadMessages > 99 ? "99+" : unreadMessages}
                     </Badge>
                   )}
                   {item.title === "Settings" && !profileComplete && (
-                    <span className="ml-auto flex h-2 w-2 rounded-full bg-red-500"></span>
+                    <span className="ml-auto flex h-2 w-2 rounded-full bg-red-500" aria-label="Profile incomplete"></span>
                   )}
                 </Link>
               ))}
@@ -255,10 +257,11 @@ export function VendorSidebar() {
         <div className="absolute bottom-0 left-0 right-0 border-t p-4">
           <Button
             variant="outline"
-            className="w-full justify-start text-sm font-medium transition-colors hover:bg-destructive/10"
+            className="w-full justify-start text-sm font-medium transition-colors hover:bg-destructive/10 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
             onClick={handleLogout}
+            aria-label="Logout"
           >
-            <LogOut className="mr-2 h-4 w-4" />
+            <LogOut className="mr-2 h-4 w-4" aria-hidden="true" />
             <span>Logout</span>
           </Button>
         </div>
