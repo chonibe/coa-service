@@ -4,6 +4,7 @@ import { createClient as createRouteClient } from "@/lib/supabase-server"
 import { createClient as createServiceClient } from "@/lib/supabase/server"
 import { getVendorFromCookieStore } from "@/lib/vendor-session"
 import { isAdminEmail } from "@/lib/vendor-auth"
+import { ADMIN_SESSION_COOKIE_NAME, verifyAdminSessionToken } from "@/lib/admin-session"
 
 export async function GET() {
   const cookieStore = cookies()
@@ -23,6 +24,11 @@ export async function GET() {
   const email = user?.email?.toLowerCase() ?? null
   const isAdmin = isAdminEmail(email)
   const vendorSessionName = getVendorFromCookieStore(cookieStore)
+  
+  // Check if admin session cookie exists
+  const adminSessionToken = cookieStore.get(ADMIN_SESSION_COOKIE_NAME)?.value
+  const adminSessionPayload = verifyAdminSessionToken(adminSessionToken)
+  const hasAdminSession = !!adminSessionPayload?.email && isAdminEmail(adminSessionPayload.email)
 
   let vendor = null as null | { id: number; vendor_name: string; status: string | null }
 
@@ -75,6 +81,7 @@ export async function GET() {
         }
       : null,
     isAdmin,
+    hasAdminSession,
     vendorSession: vendorSessionName,
     vendor,
   })

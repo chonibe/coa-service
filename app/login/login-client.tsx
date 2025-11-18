@@ -116,11 +116,19 @@ export default function LoginClient() {
           return
         }
 
-        // Only redirect to admin if explicitly admin and no vendor session
-        if (data.isAdmin) {
-          console.log(`[login-client] Redirecting to admin dashboard: isAdmin=true`)
+        // Only redirect to admin if explicitly admin, has admin session cookie, and no vendor session
+        // Don't redirect if admin session cookie is missing - user needs to log in first
+        if (data.isAdmin && data.hasAdminSession) {
+          console.log(`[login-client] Redirecting to admin dashboard: isAdmin=true, hasAdminSession=true`)
           hasRedirected.current = true
           window.location.replace("/admin/dashboard")
+          return
+        }
+        
+        // If admin but no admin session cookie, don't redirect - let them log in
+        if (data.isAdmin && !data.hasAdminSession) {
+          console.log(`[login-client] Admin user but no admin session cookie - staying on login page`)
+          setCheckingSession(false)
           return
         }
       } catch (error) {
