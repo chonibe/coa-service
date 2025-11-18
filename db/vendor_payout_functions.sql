@@ -61,9 +61,9 @@ BEGIN
     v.tax_country,
     v.is_company,
     (
-      SELECT MAX(payout_date) 
-      FROM vendor_payouts 
-      WHERE vendor_name = vt.vendor_name AND status = 'completed'
+      SELECT MAX(vp.payout_date) 
+      FROM vendor_payouts vp
+      WHERE vp.vendor_name = vt.vendor_name AND vp.status = 'completed'
     ) as last_payout_date
   FROM vendor_totals vt
   LEFT JOIN vendors v ON vt.vendor_name = v.vendor_name
@@ -101,14 +101,14 @@ BEGIN
     oli.order_id,
     oli.order_name,
     oli.product_id,
-    p.title as product_title,
+    COALESCE(p.name, p.product_id) as product_title,
     COALESCE(oli.price, 0) as price,
     oli.created_at,
     COALESCE(pvp.payout_amount, 25) as payout_amount,
     COALESCE(pvp.is_percentage, true) as is_percentage,
     oli.fulfillment_status
   FROM order_line_items_v2 oli
-  LEFT JOIN products p ON oli.product_id::TEXT = p.id::TEXT
+  LEFT JOIN products p ON oli.product_id::TEXT = COALESCE(p.product_id::TEXT, p.id::TEXT)
   LEFT JOIN product_vendor_payouts pvp ON oli.product_id::TEXT = pvp.product_id::TEXT AND oli.vendor_name = pvp.vendor_name
   WHERE 
     oli.status = 'active' 
@@ -156,13 +156,13 @@ BEGIN
       oli.created_at,
       COALESCE(pvp.payout_amount, 25) as payout_amount,
       COALESCE(pvp.is_percentage, true) as is_percentage,
-      p.title as product_title,
+      COALESCE(p.name, p.product_id) as product_title,
       CASE 
         WHEN vpi.line_item_id IS NOT NULL THEN true
         ELSE false
       END as is_paid
     FROM order_line_items_v2 oli
-    LEFT JOIN products p ON oli.product_id::TEXT = p.id::TEXT
+    LEFT JOIN products p ON oli.product_id::TEXT = COALESCE(p.product_id::TEXT, p.id::TEXT)
     LEFT JOIN product_vendor_payouts pvp ON oli.product_id::TEXT = pvp.product_id::TEXT AND oli.vendor_name = pvp.vendor_name
     LEFT JOIN vendor_payout_items vpi ON oli.line_item_id::TEXT = vpi.line_item_id::TEXT AND vpi.payout_id IS NOT NULL
     WHERE 

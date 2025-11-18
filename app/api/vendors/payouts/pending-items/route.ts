@@ -53,7 +53,7 @@ export async function POST(request: Request) {
       
       const { data: products } = await supabase
         .from("products")
-        .select("id, title")
+        .select("id, name, product_id")
         .in("id", productIds)
 
       const { data: payoutSettings } = await supabase
@@ -64,7 +64,7 @@ export async function POST(request: Request) {
 
       const productMap = new Map<string, any>()
       products?.forEach((product: any) => {
-        productMap.set(product.id, product.title)
+        productMap.set(product.id, product.name || product.product_id)
       })
 
       const payoutMap = new Map<string, any>()
@@ -96,7 +96,6 @@ export async function POST(request: Request) {
       })
 
       return NextResponse.json({ lineItems: data })
-    }
   } catch (error: any) {
     console.error("Error in pending line items API:", error)
     return NextResponse.json({ error: error.message || "An unexpected error occurred" }, { status: 500 })
