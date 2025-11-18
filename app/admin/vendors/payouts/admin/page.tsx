@@ -21,6 +21,8 @@ import {
   ChevronUp,
   Eye,
   ExternalLink,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Badge } from "@/components/ui/badge"
@@ -108,6 +110,14 @@ export default function AdminPayoutsPage() {
     end: "",
   })
   const [includePaid, setIncludePaid] = useState(false)
+  const [pagination, setPagination] = useState({
+    page: 1,
+    pageSize: 50,
+    total: 0,
+    totalPages: 0,
+    hasNext: false,
+    hasPrev: false,
+  })
   const { toast } = useToast()
 
   // Initialize tables and fetch data
@@ -141,15 +151,18 @@ export default function AdminPayoutsPage() {
   }, [])
 
   // Fetch payout data
-  const fetchPayoutData = async () => {
+  const fetchPayoutData = async (page: number = pagination.page) => {
     try {
-      // Fetch pending payouts
-      const pendingResponse = await fetch("/api/vendors/payouts/pending")
+      // Fetch pending payouts with pagination
+      const pendingResponse = await fetch(`/api/vendors/payouts/pending?page=${page}&pageSize=${pagination.pageSize}`)
       if (!pendingResponse.ok) {
         throw new Error("Failed to fetch pending payouts")
       }
       const pendingData = await pendingResponse.json()
       setPendingPayouts(pendingData.payouts || [])
+      if (pendingData.pagination) {
+        setPagination(pendingData.pagination)
+      }
 
       // Fetch payout history
       const historyResponse = await fetch("/api/vendors/payouts/history")
@@ -825,6 +838,38 @@ export default function AdminPayoutsPage() {
                           ))}
                         </TableBody>
                       </Table>
+                      
+                      {/* Pagination Controls */}
+                      {pagination.totalPages > 1 && (
+                        <div className="flex items-center justify-between px-4 py-4 border-t">
+                          <div className="text-sm text-muted-foreground">
+                            Showing {((pagination.page - 1) * pagination.pageSize) + 1} to {Math.min(pagination.page * pagination.pageSize, pagination.total)} of {pagination.total} vendors
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => fetchPayoutData(pagination.page - 1)}
+                              disabled={!pagination.hasPrev || isLoading}
+                            >
+                              <ChevronLeft className="h-4 w-4 mr-1" />
+                              Previous
+                            </Button>
+                            <div className="text-sm">
+                              Page {pagination.page} of {pagination.totalPages}
+                            </div>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => fetchPayoutData(pagination.page + 1)}
+                              disabled={!pagination.hasNext || isLoading}
+                            >
+                              Next
+                              <ChevronRight className="h-4 w-4 ml-1" />
+                            </Button>
+                          </div>
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>
