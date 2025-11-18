@@ -153,10 +153,11 @@ async function fetchProductDetails(
 
   try {
     // Try to fetch from products table first
+    // Use product_id to match (not id) and name instead of title
     const { data: products, error } = await supabase
       .from("products")
-      .select("id, title, img_url")
-      .in("id", productIds.map(id => id.toString()))
+      .select("product_id, name, img_url")
+      .in("product_id", productIds.map(id => id.toString()))
 
     if (error) {
       console.error("Error fetching product details:", error)
@@ -165,11 +166,13 @@ async function fetchProductDetails(
 
     const productMap = new Map<string, ProductDetail>()
     products?.forEach((product) => {
-      productMap.set(product.id.toString(), {
-        id: product.id.toString(),
-        title: product.title || null,
-        img_url: product.img_url || null,
-      })
+      if (product.product_id) {
+        productMap.set(product.product_id.toString(), {
+          id: product.product_id.toString(),
+          title: product.name || null,
+          img_url: product.img_url || null,
+        })
+      }
     })
 
     return productMap
