@@ -3,7 +3,7 @@ import { createClient } from "@/lib/supabase-server"
 
 export async function POST(request: Request) {
   try {
-    const { vendorName } = await request.json()
+    const { vendorName, startDate, endDate, includePaid = false } = await request.json()
 
     if (!vendorName) {
       return NextResponse.json({ error: "Vendor name is required" }, { status: 400 })
@@ -11,48 +11,45 @@ export async function POST(request: Request) {
 
     const supabase = createClient()
 
-    // Try to use the function if it exists
-    try {
-      const { data, error } = await supabase.rpc("get_vendor_pending_line_items", {
-        p_vendor_name: vendorName,
-      })
+    // Fallback to direct query - Get ALL fulfilled line items for this vendor (not just pending)
+    let query = supabase
+      .from("order_line_items_v2")
+      .select("line_item_id, order_id, order_name, product_id, price, created_at, fulfillment_status")
+      .eq("status", "active")
+      .eq("vendor_name", vendorName)
+      .eq("fulfillment_status", "fulfilled")
 
-      if (error) {
-        throw error
-      }
+    // Apply date range filter if provided
+    if (startDate) {
+      query = query.gte("created_at", startDate)
+    }
+    if (endDate) {
+      query = query.lte("created_at", endDate)
+    }
 
-      return NextResponse.json({ lineItems: data })
-    } catch (funcError) {
-      console.error("Error using get_vendor_pending_line_items function:", funcError)
-
-      // Fallback to direct query if function doesn't exist
-      // Updated to filter by fulfillment_status = 'fulfilled' and use default 25% payout
-      // Get all fulfilled line items for this vendor
-      const { data: lineItems, error: lineItemsError } = await supabase
-        .from("order_line_items_v2")
-        .select("line_item_id, order_id, order_name, product_id, price, created_at, fulfillment_status")
-        .eq("status", "active")
-        .eq("vendor_name", vendorName)
-        .eq("fulfillment_status", "fulfilled")
+    const { data: lineItems, error: lineItemsError } = await query
 
       if (lineItemsError) {
         console.error("Error fetching line items:", lineItemsError)
         return NextResponse.json({ error: lineItemsError.message }, { status: 500 })
       }
 
-      // Get paid line items
+      // Get paid line items to mark them and optionally filter them out
       const { data: paidItems } = await supabase
         .from("vendor_payout_items")
-        .select("line_item_id")
+        .select("line_item_id, payout_id")
         .not("payout_id", "is", null)
 
       const paidLineItemIds = new Set(paidItems?.map((item: any) => item.line_item_id) || [])
 
-      // Filter out paid items
-      const unpaidItems = lineItems?.filter((item: any) => !paidLineItemIds.has(item.line_item_id)) || []
+      // Filter out paid items if includePaid is false
+      let itemsToProcess = lineItems || []
+      if (!includePaid) {
+        itemsToProcess = lineItems?.filter((item: any) => !paidLineItemIds.has(item.line_item_id)) || []
+      }
 
       // Get product titles and payout settings
-      const productIds = [...new Set(unpaidItems.map((item: any) => item.product_id))]
+      const productIds = [...new Set(itemsToProcess.map((item: any) => item.product_id))]
       
       const { data: products } = await supabase
         .from("products")
@@ -76,7 +73,7 @@ export async function POST(request: Request) {
       })
 
       // Build response
-      const data = unpaidItems.map((item: any) => {
+      const data = itemsToProcess.map((item: any) => {
         const payoutSetting = payoutMap.get(item.product_id)
         return {
           line_item_id: item.line_item_id,
@@ -89,6 +86,7 @@ export async function POST(request: Request) {
           payout_amount: payoutSetting?.payout_amount ?? 25,
           is_percentage: payoutSetting?.is_percentage ?? true,
           fulfillment_status: item.fulfillment_status,
+          is_paid: paidLineItemIds.has(item.line_item_id),
         }
       }).sort((a, b) => {
         if (a.order_id !== b.order_id) {

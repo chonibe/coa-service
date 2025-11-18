@@ -33,6 +33,7 @@ import {
 } from "@/components/ui/dialog"
 import { useToast } from "@/components/ui/use-toast"
 import { format } from "date-fns"
+import { convertGBPToUSD, formatUSD } from "@/lib/utils"
 
 interface LineItem {
   line_item_id: string
@@ -289,7 +290,7 @@ export default function ManualPayoutPage() {
               <SelectContent>
                 {vendors.map((vendor) => (
                   <SelectItem key={vendor.vendor_name} value={vendor.vendor_name}>
-                    {vendor.vendor_name} - £{vendor.amount.toFixed(2)} ({vendor.product_count} items)
+                    {vendor.vendor_name} - {formatUSD(convertGBPToUSD(vendor.amount))} ({vendor.product_count} items)
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -353,8 +354,7 @@ export default function ManualPayoutPage() {
                     <Package className="h-4 w-4" />
                     <AlertTitle>Selection Summary</AlertTitle>
                     <AlertDescription>
-                      {selectedLineItems.size} item(s) selected - Total payout: £
-                      {calculateSelectedTotal().toFixed(2)}
+                      {selectedLineItems.size} item(s) selected - Total payout: {formatUSD(convertGBPToUSD(calculateSelectedTotal()))}
                     </AlertDescription>
                   </Alert>
                 )}
@@ -430,9 +430,9 @@ export default function ManualPayoutPage() {
                             <TableCell>
                               {format(new Date(item.created_at), "MMM dd, yyyy")}
                             </TableCell>
-                            <TableCell className="text-right">£{item.price.toFixed(2)}</TableCell>
+                            <TableCell className="text-right">{formatUSD(convertGBPToUSD(item.price))}</TableCell>
                             <TableCell className="text-right">
-                              <div className="font-medium">£{item.payout_amount.toFixed(2)}</div>
+                              <div className="font-medium">{formatUSD(convertGBPToUSD(item.payout_amount))}</div>
                               <div className="text-xs text-muted-foreground">
                                 {item.is_percentage ? `${item.payout_amount}%` : "Fixed"}
                               </div>
@@ -487,7 +487,7 @@ export default function ManualPayoutPage() {
               <Alert>
                 <AlertCircle className="h-4 w-4" />
                 <AlertTitle>Total Amount</AlertTitle>
-                <AlertDescription>£{calculateSelectedTotal().toFixed(2)}</AlertDescription>
+                <AlertDescription>{formatUSD(convertGBPToUSD(calculateSelectedTotal()))}</AlertDescription>
               </Alert>
             </div>
             <DialogFooter>
