@@ -159,14 +159,16 @@ export function VendorSidebar() {
   return (
     <>
       {/* Fixed header */}
-      <header className="fixed top-0 left-0 right-0 z-40 flex h-16 items-center gap-4 border-b bg-background px-4 sm:px-6">
+      <header className="fixed top-0 left-0 right-0 z-40 flex h-16 items-center gap-4 border-b bg-background px-4 sm:px-6" role="banner">
         <Button
           variant="outline"
           size="icon"
-          className="flex transition-all hover:bg-primary/10"
+          className="flex transition-all hover:bg-primary/10 min-h-[44px] min-w-[44px] focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
           onClick={toggleSidebar}
+          aria-label="Toggle navigation menu"
+          aria-expanded={sidebarOpen}
         >
-          <Menu className="h-6 w-6" />
+          <Menu className="h-6 w-6" aria-hidden="true" />
           <span className="sr-only">Toggle menu</span>
         </Button>
 
@@ -212,9 +214,10 @@ export function VendorSidebar() {
             variant="ghost"
             size="icon"
             onClick={closeSidebar}
-            className="transition-all hover:rotate-90 duration-200"
+            className="transition-all hover:rotate-90 duration-200 min-h-[44px] min-w-[44px] focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+            aria-label="Close sidebar"
           >
-            <X className="h-5 w-5" />
+            <X className="h-5 w-5" aria-hidden="true" />
           </Button>
         </div>
 
@@ -268,16 +271,18 @@ export function VendorSidebar() {
       </aside>
 
       {/* Mobile bottom navigation - improved with better visual indicators */}
-      <div className="fixed bottom-0 left-0 right-0 z-40 bg-background border-t md:hidden">
+      <nav className="fixed bottom-0 left-0 right-0 z-40 bg-background border-t md:hidden" role="navigation" aria-label="Mobile navigation">
         <div className="grid grid-cols-5">
           {mobileNavItems.map((item) => (
             <Link
               key={item.href}
               href={item.href}
               className={cn(
-                "flex flex-col items-center justify-center py-2 relative transition-colors",
+                "flex flex-col items-center justify-center py-2 relative transition-colors min-h-[44px] focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2",
                 isActive(item.href) ? "text-primary" : "text-muted-foreground hover:text-foreground",
               )}
+              aria-current={isActive(item.href) ? "page" : undefined}
+              aria-label={item.title}
             >
               <div
                 className={cn(
@@ -289,7 +294,7 @@ export function VendorSidebar() {
               </div>
               <span className="text-xs font-medium">{item.title}</span>
               {item.title === "Settings" && !profileComplete && (
-                <span className="absolute top-1 right-1/4 flex h-2 w-2 rounded-full bg-red-500"></span>
+                <span className="absolute top-1 right-1/4 flex h-2 w-2 rounded-full bg-red-500" aria-label="Profile incomplete"></span>
               )}
               {isActive(item.href) && (
                 <span className="absolute bottom-0 left-1/2 w-1/2 h-0.5 bg-primary transform -translate-x-1/2"></span>
@@ -297,7 +302,7 @@ export function VendorSidebar() {
             </Link>
           ))}
         </div>
-      </div>
+      </nav>
 
       <Toaster />
     </>

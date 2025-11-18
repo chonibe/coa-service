@@ -135,12 +135,19 @@ export function NotificationCenter({ className }: NotificationCenterProps) {
   return (
     <Popover open={isOpen} onOpenChange={setIsOpen}>
       <PopoverTrigger asChild>
-        <Button variant="ghost" size="icon" className={cn("relative", className)}>
-          <Bell className="h-5 w-5" />
+        <Button 
+          variant="ghost" 
+          size="icon" 
+          className={cn("relative min-h-[44px] min-w-[44px] focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2", className)}
+          aria-label={unreadCount > 0 ? `${unreadCount} unread notifications` : "Notifications"}
+          aria-expanded={isOpen}
+        >
+          <Bell className="h-5 w-5" aria-hidden="true" />
           {unreadCount > 0 && (
             <Badge
               variant="destructive"
               className="absolute -top-1 -right-1 h-5 min-w-5 flex items-center justify-center p-0 text-xs"
+              aria-label={`${unreadCount} unread`}
             >
               {unreadCount > 99 ? "99+" : unreadCount}
             </Badge>
