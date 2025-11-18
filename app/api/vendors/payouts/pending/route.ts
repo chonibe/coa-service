@@ -20,12 +20,17 @@ export async function GET(request: NextRequest) {
       const { data, error } = await supabase.rpc("get_pending_vendor_payouts")
 
       if (error) {
+        console.error("Error calling get_pending_vendor_payouts function:", error)
         throw error
       }
+
+      console.log(`[pending-payouts] Function returned ${data?.length || 0} vendors`)
 
       // Paginate the results
       const total = data?.length || 0
       const paginatedData = data?.slice(from, to + 1) || []
+
+      console.log(`[pending-payouts] Returning page ${page} with ${paginatedData.length} vendors (total: ${total})`)
 
       return NextResponse.json({ 
         payouts: paginatedData,
@@ -38,8 +43,14 @@ export async function GET(request: NextRequest) {
           hasPrev: page > 1
         }
       })
-    } catch (funcError) {
+    } catch (funcError: any) {
       console.error("Error using get_pending_vendor_payouts function:", funcError)
+      console.error("Function error details:", {
+        message: funcError?.message,
+        code: funcError?.code,
+        details: funcError?.details,
+        hint: funcError?.hint
+      })
 
       // Fallback to direct query if function doesn't exist
       // Updated to filter by fulfillment_status = 'fulfilled' and use default 25% payout
