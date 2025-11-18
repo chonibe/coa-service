@@ -161,7 +161,6 @@ export default function VendorSettingsPage() {
           "Content-Type": "application/json",
         },
         credentials: "include",
-        },
         body: JSON.stringify(formState),
       })
 
