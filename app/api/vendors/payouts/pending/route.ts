@@ -45,47 +45,152 @@ export async function GET(request: NextRequest) {
       // Updated to filter by fulfillment_status = 'fulfilled' and use default 25% payout
       // Get all fulfilled line items - include all order statuses (active, closed, completed, etc.)
       // We only filter by fulfillment_status, not order status
-      const { data: lineItems, error: lineItemsError } = await supabase
-        .from("order_line_items_v2")
-        .select("vendor_name, line_item_id, order_id, product_id, price")
-        .not("vendor_name", "is", null)
-        .eq("fulfillment_status", "fulfilled")
+      // Fetch all items with pagination to avoid Supabase default limit
+      let allLineItems: any[] = []
+      let from = 0
+      const pageSize = 1000
+      let hasMore = true
 
-      if (lineItemsError) {
-        console.error("Error fetching line items:", lineItemsError)
-        return NextResponse.json({ error: lineItemsError.message }, { status: 500 })
+      while (hasMore) {
+        const { data: lineItems, error: lineItemsError, count } = await supabase
+          .from("order_line_items_v2")
+          .select("vendor_name, line_item_id, order_id, product_id, price", { count: 'exact' })
+          .not("vendor_name", "is", null)
+          .eq("fulfillment_status", "fulfilled")
+          .range(from, from + pageSize - 1)
+          .order("created_at", { ascending: false })
+        
+        if (lineItemsError) {
+          console.error("Error fetching line items:", lineItemsError)
+          return NextResponse.json({ error: lineItemsError.message }, { status: 500 })
+        }
+
+        if (lineItems && lineItems.length > 0) {
+          allLineItems = [...allLineItems, ...lineItems]
+          from += pageSize
+          hasMore = lineItems.length === pageSize && (count === null || from < count)
+        } else {
+          hasMore = false
+        }
       }
 
       // Get paid line items
-      const { data: paidItems } = await supabase
-        .from("vendor_payout_items")
-        .select("line_item_id")
-        .not("payout_id", "is", null)
+      let allPaidItems: any[] = []
+      let paidFrom = 0
+      let hasMorePaid = true
+      
+      while (hasMorePaid) {
+        const { data: paidItems, error: paidError, count: paidCount } = await supabase
+          .from("vendor_payout_items")
+          .select("line_item_id", { count: 'exact' })
+          .not("payout_id", "is", null)
+          .range(paidFrom, paidFrom + pageSize - 1)
+        
+        if (paidError) {
+          console.error("Error fetching paid items:", paidError)
+          break
+        }
 
-      const paidLineItemIds = new Set(paidItems?.map((item: any) => item.line_item_id) || [])
+        if (paidItems && paidItems.length > 0) {
+          allPaidItems = [...allPaidItems, ...paidItems]
+          paidFrom += pageSize
+          hasMorePaid = paidItems.length === pageSize && (paidCount === null || paidFrom < paidCount)
+        } else {
+          hasMorePaid = false
+        }
+      }
+
+      const paidLineItemIds = new Set(allPaidItems.map((item: any) => item.line_item_id))
 
       // Filter out paid items
-      const unpaidItems = lineItems?.filter((item: any) => !paidLineItemIds.has(item.line_item_id)) || []
+      const unpaidItems = allLineItems.filter((item: any) => !paidLineItemIds.has(item.line_item_id))
+
+      // Get ALL vendors from the vendors table (not just those with unpaid items)
+      let allVendors: any[] = []
+      let vendorFrom = 0
+      let hasMoreVendors = true
+      
+      while (hasMoreVendors) {
+        const { data: vendors, error: vendorsError, count: vendorsCount } = await supabase
+          .from("vendors")
+          .select("vendor_name, paypal_email, tax_id, tax_country, is_company", { count: 'exact' })
+          .range(vendorFrom, vendorFrom + pageSize - 1)
+          .order("vendor_name", { ascending: true })
+        
+        if (vendorsError) {
+          console.error("Error fetching vendors:", vendorsError)
+          break
+        }
+
+        if (vendors && vendors.length > 0) {
+          allVendors = [...allVendors, ...vendors]
+          vendorFrom += pageSize
+          hasMoreVendors = vendors.length === pageSize && (vendorsCount === null || vendorFrom < vendorsCount)
+        } else {
+          hasMoreVendors = false
+        }
+      }
+
+      // Get all unique vendor names from line items AND vendors table
+      const vendorNamesFromItems = [...new Set(unpaidItems.map((item: any) => item.vendor_name).filter(Boolean))]
+      const vendorNamesFromTable = allVendors.map((v: any) => v.vendor_name)
+      const allVendorNames = [...new Set([...vendorNamesFromItems, ...vendorNamesFromTable])]
 
       // Get payout settings for products
       const productIds = [...new Set(unpaidItems.map((item: any) => item.product_id))]
-      const uniqueVendorNames = [...new Set(unpaidItems.map((item: any) => item.vendor_name).filter(Boolean))]
+      
+      let allPayoutSettings: any[] = []
+      if (productIds.length > 0 && allVendorNames.length > 0) {
+        // Fetch payout settings in batches if needed
+        let settingsFrom = 0
+        let hasMoreSettings = true
+        
+        while (hasMoreSettings) {
+          const batchProductIds = productIds.slice(settingsFrom, settingsFrom + 100)
+          if (batchProductIds.length === 0) break
+          
+          const { data: payoutSettings, error: settingsError } = await supabase
+            .from("product_vendor_payouts")
+            .select("product_id, vendor_name, payout_amount, is_percentage")
+            .in("product_id", batchProductIds)
+            .in("vendor_name", allVendorNames)
+          
+          if (settingsError) {
+            console.error("Error fetching payout settings:", settingsError)
+            break
+          }
 
-      const { data: payoutSettings } = await supabase
-        .from("product_vendor_payouts")
-        .select("product_id, vendor_name, payout_amount, is_percentage")
-        .in("product_id", productIds)
-        .in("vendor_name", uniqueVendorNames)
+          if (payoutSettings && payoutSettings.length > 0) {
+            allPayoutSettings = [...allPayoutSettings, ...payoutSettings]
+          }
+          
+          settingsFrom += 100
+          hasMoreSettings = batchProductIds.length === 100
+        }
+      }
 
       const payoutMap = new Map<string, any>()
-      payoutSettings?.forEach((setting: any) => {
+      allPayoutSettings.forEach((setting: any) => {
         const key = `${setting.product_id}_${setting.vendor_name}`
         payoutMap.set(key, setting)
       })
 
-      // Process the data to calculate payouts
+      // Initialize vendor map with ALL vendors (including those with $0 pending)
       const vendorMap = new Map<string, any>()
+      allVendors.forEach((vendor: any) => {
+        vendorMap.set(vendor.vendor_name, {
+          vendor_name: vendor.vendor_name,
+          amount: 0,
+          product_count: 0,
+          line_items: [],
+          paypal_email: vendor.paypal_email || null,
+          tax_id: vendor.tax_id || null,
+          tax_country: vendor.tax_country || null,
+          is_company: vendor.is_company || false,
+        })
+      })
       
+      // Process unpaid items to calculate payouts
       unpaidItems.forEach((item: any) => {
         const vendorName = item.vendor_name
         if (!vendorMap.has(vendorName)) {
@@ -94,6 +199,10 @@ export async function GET(request: NextRequest) {
             amount: 0,
             product_count: 0,
             line_items: [],
+            paypal_email: null,
+            tax_id: null,
+            tax_country: null,
+            is_company: false,
           })
         }
         
@@ -112,35 +221,53 @@ export async function GET(request: NextRequest) {
         vendor.line_items.push(item.line_item_id)
       })
 
-      // Get vendor details and last payout date
-      const vendorNames = Array.from(vendorMap.keys())
-      const { data: vendors } = await supabase
-        .from("vendors")
-        .select("vendor_name, paypal_email, tax_id, tax_country, is_company")
-        .in("vendor_name", vendorNames)
-
-      const { data: lastPayouts } = await supabase
-        .from("vendor_payouts")
-        .select("vendor_name, payout_date")
-        .in("vendor_name", vendorNames)
-        .eq("status", "completed")
-        .order("payout_date", { ascending: false })
-
-      const payouts = Array.from(vendorMap.values()).map((vendor) => {
-        const vendorInfo = vendors?.find((v: any) => v.vendor_name === vendor.vendor_name)
-        const lastPayout = lastPayouts?.find((p: any) => p.vendor_name === vendor.vendor_name)
+      // Get last payout dates for all vendors
+      let allLastPayouts: any[] = []
+      let payoutsFrom = 0
+      let hasMorePayouts = true
+      
+      while (hasMorePayouts) {
+        const { data: lastPayouts, error: payoutsError, count: payoutsCount } = await supabase
+          .from("vendor_payouts")
+          .select("vendor_name, payout_date", { count: 'exact' })
+          .in("vendor_name", allVendorNames)
+          .eq("status", "completed")
+          .order("payout_date", { ascending: false })
+          .range(payoutsFrom, payoutsFrom + pageSize - 1)
         
-        return {
-          vendor_name: vendor.vendor_name,
-          amount: vendor.amount,
-          product_count: vendor.product_count,
-          paypal_email: vendorInfo?.paypal_email || null,
-          tax_id: vendorInfo?.tax_id || null,
-          tax_country: vendorInfo?.tax_country || null,
-          is_company: vendorInfo?.is_company || false,
-          last_payout_date: lastPayout?.payout_date || null,
+        if (payoutsError) {
+          console.error("Error fetching last payouts:", payoutsError)
+          break
         }
-      }).sort((a, b) => b.amount - a.amount)
+
+        if (lastPayouts && lastPayouts.length > 0) {
+          allLastPayouts = [...allLastPayouts, ...lastPayouts]
+          payoutsFrom += pageSize
+          hasMorePayouts = lastPayouts.length === pageSize && (payoutsCount === null || payoutsFrom < payoutsCount)
+        } else {
+          hasMorePayouts = false
+        }
+      }
+
+      // Create a map of vendor name to last payout date
+      const lastPayoutMap = new Map<string, string>()
+      allLastPayouts.forEach((payout: any) => {
+        if (!lastPayoutMap.has(payout.vendor_name)) {
+          lastPayoutMap.set(payout.vendor_name, payout.payout_date)
+        }
+      })
+
+      // Build payouts array with ALL vendors (including $0 pending)
+      const payouts = Array.from(vendorMap.values()).map((vendor) => ({
+        vendor_name: vendor.vendor_name,
+        amount: vendor.amount,
+        product_count: vendor.product_count,
+        paypal_email: vendor.paypal_email,
+        tax_id: vendor.tax_id,
+        tax_country: vendor.tax_country,
+        is_company: vendor.is_company,
+        last_payout_date: lastPayoutMap.get(vendor.vendor_name) || null,
+      })).sort((a, b) => b.amount - a.amount)
 
       // Paginate the results
       const total = payouts.length

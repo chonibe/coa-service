@@ -55,12 +55,33 @@ export async function POST(request: Request) {
     const lineItems = allLineItems
 
     // Get paid line items to mark them and optionally filter them out
-    const { data: paidItems } = await supabase
+    // Fetch all paid items with pagination
+    let allPaidItems: any[] = []
+    let paidFrom = 0
+    let hasMorePaid = true
+    
+    while (hasMorePaid) {
+      const { data: paidItems, error: paidError, count: paidCount } = await supabase
         .from("vendor_payout_items")
-        .select("line_item_id, payout_id")
+        .select("line_item_id, payout_id", { count: 'exact' })
         .not("payout_id", "is", null)
+        .range(paidFrom, paidFrom + pageSize - 1)
+      
+      if (paidError) {
+        console.error("Error fetching paid items:", paidError)
+        break
+      }
 
-      const paidLineItemIds = new Set(paidItems?.map((item: any) => item.line_item_id) || [])
+      if (paidItems && paidItems.length > 0) {
+        allPaidItems = [...allPaidItems, ...paidItems]
+        paidFrom += pageSize
+        hasMorePaid = paidItems.length === pageSize && (paidCount === null || paidFrom < paidCount)
+      } else {
+        hasMorePaid = false
+      }
+    }
+
+    const paidLineItemIds = new Set(allPaidItems.map((item: any) => item.line_item_id))
 
       // Filter out paid items if includePaid is false
       let itemsToProcess = lineItems || []
