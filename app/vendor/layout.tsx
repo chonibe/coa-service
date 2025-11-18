@@ -3,7 +3,10 @@ import { cookies } from "next/headers"
 import { redirect } from "next/navigation"
 import { SidebarLayout } from "./components/sidebar-layout"
 import { createClient as createServiceClient } from "@/lib/supabase/server"
+import { createClient as createRouteClient } from "@/lib/supabase-server"
 import { getVendorFromCookieStore } from "@/lib/vendor-session"
+import { buildVendorSessionCookie } from "@/lib/vendor-session"
+import { linkSupabaseUserToVendor, isAdminEmail } from "@/lib/vendor-auth"
 
 const PENDING_ACCESS_ROUTE = "/vendor/access-pending"
 const ACCESS_DENIED_ROUTE = "/vendor/access-denied"
@@ -19,12 +22,56 @@ export default async function VendorLayout({ children }: VendorLayoutProps) {
   const allCookies = cookieStore.getAll()
   console.log(`[vendor/layout] All cookies:`, allCookies.map(c => c.name).join(", "))
   
-  const vendorName = getVendorFromCookieStore(cookieStore)
+  let vendorName = getVendorFromCookieStore(cookieStore)
+
+  // If no vendor session cookie, try to get vendor from Supabase session
+  if (!vendorName) {
+    console.log("[vendor/layout] No vendor session cookie found, checking Supabase session")
+    
+    try {
+      const supabase = createRouteClient(cookieStore)
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+      
+      if (sessionError) {
+        console.error("[vendor/layout] Error getting Supabase session:", sessionError)
+        redirect("/login")
+      }
+      
+      if (session?.user) {
+        const email = session.user.email?.toLowerCase()
+        
+        // Don't create vendor session for admins
+        if (email && isAdminEmail(email)) {
+          console.log("[vendor/layout] Admin user detected, redirecting to admin dashboard")
+          redirect("/admin/dashboard")
+        }
+        
+        // Try to link vendor from Supabase user
+        const vendor = await linkSupabaseUserToVendor(session.user, { allowCreate: false })
+        
+        if (vendor) {
+          console.log(`[vendor/layout] Linked vendor from Supabase session: ${vendor.vendor_name}`)
+          vendorName = vendor.vendor_name
+          
+          // Create vendor session cookie for future requests
+          // Note: We can't set cookies in a layout, so we'll need to handle this differently
+          // For now, we'll allow the request to proceed and the cookie will be set on next interaction
+        } else {
+          console.log("[vendor/layout] No vendor linked for Supabase user, redirecting to login")
+          redirect("/login")
+        }
+      } else {
+        console.log("[vendor/layout] No Supabase session found, redirecting to login")
+        redirect("/login")
+      }
+    } catch (error) {
+      console.error("[vendor/layout] Error checking Supabase session:", error)
+      redirect("/login")
+    }
+  }
 
   if (!vendorName) {
-    console.log("[vendor/layout] No vendor session cookie found, redirecting to login")
-    // Don't redirect immediately - check if we're coming from auth callback
-    // This prevents redirect loops
+    console.log("[vendor/layout] No vendor name found after all checks, redirecting to login")
     redirect("/login")
   }
 
