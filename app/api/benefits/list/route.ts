@@ -1,9 +1,13 @@
 import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
 import { createClient } from "@/lib/supabase/server"
+import { cookies } from "next/headers"
 
 export async function GET(request: NextRequest) {
   try {
+    const cookieStore = cookies()
+    const supabase = createClient(cookieStore)
+    
     const searchParams = request.nextUrl.searchParams
     const productId = searchParams.get("product_id")
     const vendorName = searchParams.get("vendor_name")

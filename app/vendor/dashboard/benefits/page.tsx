@@ -73,7 +73,7 @@ export default function BenefitsPage() {
       const vendorResponse = await fetch("/api/vendor/profile")
       if (!vendorResponse.ok) {
         if (vendorResponse.status === 401) {
-          router.push("/vendor/login")
+          router.push("/login")
           return
         }
         throw new Error("Failed to fetch vendor data")

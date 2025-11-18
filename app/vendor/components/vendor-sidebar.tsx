@@ -8,8 +8,10 @@ import { Button } from "@/components/ui/button"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Toaster } from "@/components/ui/toaster"
 import { useMobile } from "@/hooks/use-mobile"
-import { LogOut, Menu, Home, BarChart, Settings, Award, Package, DollarSign, MessageSquare, X } from "lucide-react"
+import { LogOut, Menu, Home, BarChart, Settings, Award, Package, DollarSign, MessageSquare, X, HelpCircle } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { NotificationCenter } from "@/components/vendor/notification-center"
+import { Badge } from "@/components/ui/badge"
 
 interface NavItem {
   title: string
@@ -61,9 +63,14 @@ export function VendorSidebar() {
       href: "/vendor/dashboard/settings",
       icon: <Settings className="h-5 w-5" />,
     },
+    {
+      title: "Help",
+      href: "/vendor/dashboard/help",
+      icon: <HelpCircle className="h-5 w-5" />,
+    },
   ]
 
-  // Fetch vendor profile
+  // Fetch vendor profile and unread counts
   useEffect(() => {
     const fetchVendorProfile = async () => {
       try {
@@ -90,13 +97,33 @@ export function VendorSidebar() {
       }
     }
 
+    const fetchUnreadCounts = async () => {
+      try {
+        const [messagesResponse, notificationsResponse] = await Promise.all([
+          fetch("/api/vendor/messages").catch(() => null),
+          fetch("/api/vendor/notifications?unread_only=true").catch(() => null),
+        ])
+
+        if (messagesResponse?.ok) {
+          const messagesData = await messagesResponse.json()
+          setUnreadMessages(messagesData.totalUnread || 0)
+        }
+      } catch (error) {
+        console.error("Error fetching unread counts:", error)
+      }
+    }
+
     fetchVendorProfile()
+    fetchUnreadCounts()
+    // Poll for unread counts every 30 seconds
+    const interval = setInterval(fetchUnreadCounts, 30000)
+    return () => clearInterval(interval)
   }, [])
 
   const handleLogout = async () => {
     try {
       await fetch("/api/vendor/logout", { method: "POST" })
-      router.push("/vendor/login")
+      router.push("/login")
     } catch (err) {
       console.error("Logout error:", err)
     }
@@ -148,6 +175,7 @@ export function VendorSidebar() {
         </Link>
 
         <div className="ml-auto flex items-center gap-2">
+          <NotificationCenter />
           <Button
             variant="outline"
             className="hidden md:flex transition-colors hover:bg-destructive/10"
@@ -209,6 +237,11 @@ export function VendorSidebar() {
                 >
                   {item.icon}
                   <span>{item.title}</span>
+                  {item.title === "Messages" && unreadMessages > 0 && (
+                    <Badge variant="destructive" className="ml-auto h-5 min-w-5 flex items-center justify-center p-0 text-xs">
+                      {unreadMessages > 99 ? "99+" : unreadMessages}
+                    </Badge>
+                  )}
                   {item.title === "Settings" && !profileComplete && (
                     <span className="ml-auto flex h-2 w-2 rounded-full bg-red-500"></span>
                   )}

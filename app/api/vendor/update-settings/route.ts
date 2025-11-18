@@ -1,13 +1,19 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { createClient } from "@/lib/supabase-server"
+import { createClient as createServiceClient } from "@/lib/supabase/server"
 import { cookies } from "next/headers"
+import { getVendorFromCookieStore } from "@/lib/vendor-session"
 
 export async function POST(request: NextRequest) {
   try {
-    // Get the vendor session
     const cookieStore = cookies()
-    const supabase = createClient(cookieStore)
+    const vendorName = getVendorFromCookieStore(cookieStore)
 
+    if (!vendorName) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    }
+
+    const supabase = createClient(cookieStore)
     const {
       data: { session },
     } = await supabase.auth.getSession()
@@ -16,23 +22,25 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    // Get the vendor ID from the session
-    const { data: vendor, error: vendorError } = await supabase
+    const serviceClient = createServiceClient()
+    const { data: vendor, error: vendorError } = await serviceClient
       .from("vendors")
-      .select("id, vendor_name")
-      .eq("auth_id", session.user.id)
-      .single()
+      .select("id, status")
+      .eq("vendor_name", vendorName)
+      .maybeSingle()
 
     if (vendorError || !vendor) {
       console.error("Error fetching vendor:", vendorError)
       return NextResponse.json({ error: "Vendor not found" }, { status: 404 })
     }
 
-    // Get the request body
+    if (vendor.status !== "active") {
+      return NextResponse.json({ error: "Vendor account inactive" }, { status: 403 })
+    }
+
     const { paypalEmail, notifyOnSale, notifyOnPayout, notifyOnMessage } = await request.json()
 
-    // Update the vendor settings
-    const { error: updateError } = await supabase
+    const { error: updateError } = await serviceClient
       .from("vendors")
       .update({
         paypal_email: paypalEmail,

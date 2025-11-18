@@ -2,197 +2,64 @@ import { NextResponse } from "next/server"
 import { cookies } from "next/headers"
 import { createClient } from "@/lib/supabase/server"
 import { shopifyFetch, safeJsonParse } from "@/lib/shopify-api"
+import { getVendorFromCookieStore } from "@/lib/vendor-session"
+
+const DEFAULT_CURRENCY = "GBP"
+const DEFAULT_PAYOUT_PERCENTAGE = 10
+const RECENT_ACTIVITY_LIMIT = 5
+const CHART_WINDOW = 30
 
 export async function GET() {
   const supabase = createClient()
   
   try {
-    // Get vendor name from cookie
     const cookieStore = cookies()
-    const vendorName = cookieStore.get("vendor_session")?.value
+    const vendorName = getVendorFromCookieStore(cookieStore)
 
     if (!vendorName) {
       return NextResponse.json({ error: "Not authenticated" }, { status: 401 })
     }
 
-    console.log(`Fetching stats for vendor: ${vendorName}`)
-
-    // 1. Fetch products from Shopify to get accurate product count
-    const { products } = await fetchProductsByVendor(vendorName)
-    const totalProducts = products.length
-    console.log(`Found ${totalProducts} products for vendor ${vendorName}`)
-
-    // 2. Query for line items from this vendor in our database
-    const { data: lineItems, error } = await supabase
-      .from("order_line_items")
-      .select("*")
+    const [{ products }, lineItemsResult] = await Promise.all([
+      fetchProductsByVendor(vendorName),
+      supabase
+        .from("order_line_items_v2")
+        .select("id, product_id, price, quantity, created_at, status, vendor_name")
       .eq("vendor_name", vendorName)
-      .eq("status", "active")
+        .eq("status", "active"),
+    ])
 
-    if (error) {
-      console.error("Database error when fetching line items:", error)
+    if (lineItemsResult.error) {
+      console.error("Database error when fetching vendor line items:", lineItemsResult.error)
+      return NextResponse.json({ error: "Failed to fetch vendor stats" }, { status: 500 })
     }
 
-    console.log(`Found ${lineItems?.length || 0} active line items for vendor ${vendorName}`)
-    if (lineItems && lineItems.length > 0) {
-      console.log("Sample line item:", JSON.stringify(lineItems[0], null, 2))
-    }
+    let lineItems = lineItemsResult.data ?? []
 
-    // 3. Calculate sales and revenue from line items
-    let salesData = lineItems || []
-    let totalSales = salesData.length
-    let totalRevenue = 0
+    const productIds = Array.from(new Set(lineItems.map((item) => item.product_id).filter(Boolean)))
+    const payoutSettings = productIds.length
+      ? await fetchPayoutSettings(supabase, vendorName, productIds)
+      : []
 
-    // First fetch payout settings
-    const productIds = products.map((p) => p.id)
-    const { data: payouts, error: payoutsError } = await supabase
-      .from("product_vendor_payouts")
-      .select("*")
-      .eq("vendor_name", vendorName)
-      .in("product_id", productIds)
-
-    if (payoutsError) {
-      console.error("Error fetching payouts:", payoutsError)
-    }
-
-    // Process sales by date for chart data
-    const salesByDate: Record<string, { sales: number; revenue: number }> = {}
-    
-    console.log("Starting revenue calculation...")
-    salesData.forEach((item) => {
-      console.log("Processing item:", {
-        id: item.id,
-        product_id: item.product_id,
-        price: item.price,
-        quantity: item.quantity
-      })
-      
-      // Format created_at date to YYYY-MM-DD for chart data
-      const dateStr = new Date(item.created_at).toISOString().split("T")[0]
-      if (!salesByDate[dateStr]) {
-        salesByDate[dateStr] = { sales: 0, revenue: 0 }
-      }
-      
-      const payout = payouts?.find((p) => p.product_id === item.product_id)
-      if (payout) {
-        const price = typeof item.price === "string" ? Number.parseFloat(item.price || "0") : item.price || 0
-        const quantity = item.quantity || 1
-        
-        let itemRevenue
-        if (payout.is_percentage) {
-          itemRevenue = (price * payout.payout_amount / 100) * quantity
-        } else {
-          itemRevenue = payout.payout_amount * quantity
-        }
-        
-        totalRevenue += itemRevenue
-        salesByDate[dateStr].sales += quantity
-        salesByDate[dateStr].revenue += itemRevenue
-        
-        console.log(`Item revenue: $${itemRevenue.toFixed(2)} (payout: ${payout.is_percentage ? payout.payout_amount + '%' : '$' + payout.payout_amount} x price: $${price.toFixed(2)} x quantity: ${quantity})`)
-      } else {
-        // Default payout if no specific setting found (10%)
-        const price = typeof item.price === "string" ? Number.parseFloat(item.price || "0") : item.price || 0
-        const quantity = item.quantity || 1
-        const itemRevenue = (price * 0.1) * quantity // 10% default
-        totalRevenue += itemRevenue
-        salesByDate[dateStr].sales += quantity
-        salesByDate[dateStr].revenue += itemRevenue
-        
-        console.log(`Item revenue (default 10%): $${itemRevenue.toFixed(2)} (price: $${price.toFixed(2)} x quantity: ${quantity})`)
-      }
-    })
-    console.log(`Total revenue calculated: $${totalRevenue.toFixed(2)}`)
-
-    // 4. If no data from database, try fetching from Shopify as fallback
-    if (salesData.length === 0) {
-      console.log("No sales data in database, fetching from Shopify")
+    // Fallback to Shopify orders if Supabase has no data yet
+    if (lineItems.length === 0) {
       try {
-        const shopifyOrders = await fetchVendorOrdersFromShopify(vendorName)
-        if (shopifyOrders && shopifyOrders.length > 0) {
-          salesData = shopifyOrders
-          totalSales = shopifyOrders.length
-
-          // Recalculate revenue from Shopify data using payout settings
-          totalRevenue = 0
-          shopifyOrders.forEach((item) => {
-            const dateStr = new Date(item.created_at).toISOString().split("T")[0]
-            if (!salesByDate[dateStr]) {
-              salesByDate[dateStr] = { sales: 0, revenue: 0 }
-            }
-            
-            const payout = payouts?.find((p) => p.product_id === item.product_id)
-            if (payout) {
-              const price = typeof item.price === "string" ? Number.parseFloat(item.price || "0") : item.price || 0
-              const quantity = item.quantity || 1
-              
-              let itemRevenue
-              if (payout.is_percentage) {
-                itemRevenue = (price * payout.payout_amount / 100) * quantity
-              } else {
-                itemRevenue = payout.payout_amount * quantity
-              }
-              
-              totalRevenue += itemRevenue
-              salesByDate[dateStr].sales += quantity
-              salesByDate[dateStr].revenue += itemRevenue
-            } else {
-              // Default payout if no specific setting found (10%)
-              const price = typeof item.price === "string" ? Number.parseFloat(item.price || "0") : item.price || 0
-              const quantity = item.quantity || 1
-              const itemRevenue = (price * 0.1) * quantity // 10% default
-              totalRevenue += itemRevenue
-              salesByDate[dateStr].sales += quantity
-              salesByDate[dateStr].revenue += itemRevenue
-            }
-          })
-
-          console.log(`Found ${totalSales} orders from Shopify with revenue $${totalRevenue.toFixed(2)}`)
-        }
+        lineItems = await fetchVendorOrdersFromShopify(vendorName)
       } catch (shopifyError) {
-        console.error("Error fetching from Shopify:", shopifyError)
+        console.error("Shopify fallback failed:", shopifyError)
       }
     }
 
-    // Calculate pending payout (this is now the same as total revenue)
-    const pendingPayout = totalRevenue
-
-    // Convert the salesByDate object to an array for the chart
-    const chartSalesData = Object.entries(salesByDate).map(([date, stats]) => ({
-      date,
-      sales: stats.sales,
-      revenue: stats.revenue,
-    }))
-
-    // Sort by date (oldest to newest)
-    chartSalesData.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
-
-    // Only return the last 30 days for the chart
-    const last30Days = chartSalesData.slice(-30)
-
-    // Format recent activity data
-    const recentActivity = salesData
-      .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
-      .slice(0, 5)
-      .map(item => ({
-        id: item.id,
-        date: item.created_at,
-        product_id: item.product_id,
-        price: typeof item.price === "string" ? Number.parseFloat(item.price || "0") : item.price || 0,
-        quantity: item.quantity || 1
-      }))
-
-    console.log(`Final calculations - Total Sales: ${totalSales}, Total Revenue: $${totalRevenue.toFixed(2)}, Pending Payout: $${pendingPayout.toFixed(2)}`)
-    console.log(`Recent activity items: ${recentActivity.length}`)
-    console.log('Recent activity dates:', recentActivity.map(item => new Date(item.date).toISOString()))
+    const stats = buildFinancialSummary(lineItems, payoutSettings)
 
     return NextResponse.json({
-      totalProducts,
-      totalSales,
-      totalRevenue: Number.parseFloat(totalRevenue.toFixed(2)),
-      pendingPayout: Number.parseFloat(pendingPayout.toFixed(2)),
-      salesByDate: last30Days,
-      recentActivity
+      totalProducts: products.length,
+      totalSales: stats.totalSales,
+      totalRevenue: stats.totalRevenue,
+      totalPayout: stats.totalPayout,
+      currency: stats.currency,
+      salesByDate: stats.salesByDate,
+      recentActivity: stats.recentActivity,
     })
   } catch (error) {
     console.error("Unexpected error in vendor stats API:", error)
@@ -346,8 +213,10 @@ async function fetchVendorOrdersFromShopify(vendorName: string) {
             lineItem.product.vendor.toLowerCase() === vendorName.toLowerCase())
 
         if (isVendorItem) {
+          const lineItemId = lineItem.id.split("/").pop()
           vendorLineItems.push({
-            line_item_id: lineItem.id.split("/").pop(),
+            id: lineItemId,
+            line_item_id: lineItemId,
             order_id: order.id.split("/").pop(),
             order_name: order.name,
             product_id: lineItem.product?.id.split("/").pop(),
@@ -366,5 +235,139 @@ async function fetchVendorOrdersFromShopify(vendorName: string) {
   } catch (error) {
     console.error("Error fetching from Shopify:", error)
     throw error
+  }
+}
+
+async function fetchPayoutSettings(
+  supabase: ReturnType<typeof createClient>,
+  vendorName: string,
+  productIds: string[],
+) {
+  const { data, error } = await supabase
+    .from("product_vendor_payouts")
+    .select("product_id, payout_amount, is_percentage")
+    .eq("vendor_name", vendorName)
+    .in("product_id", productIds)
+
+  if (error) {
+    console.error("Error fetching payout settings:", error)
+    return []
+  }
+
+  return data ?? []
+}
+
+const normalisePrice = (price: unknown): number => {
+  if (typeof price === "number") return price
+  if (typeof price === "string") {
+    const parsed = Number.parseFloat(price)
+    return Number.isFinite(parsed) ? parsed : 0
+  }
+  return 0
+}
+
+const normaliseQuantity = (quantity: unknown): number => {
+  if (typeof quantity === "number" && Number.isFinite(quantity)) {
+    return quantity
+  }
+  if (typeof quantity === "string") {
+    const parsed = Number.parseInt(quantity, 10)
+    return Number.isFinite(parsed) ? parsed : 1
+  }
+  return 1
+}
+
+const normaliseDateKey = (value: unknown): string => {
+  const date = value instanceof Date ? value : new Date(value as string)
+  if (Number.isNaN(date.getTime())) {
+    return new Date().toISOString().split("T")[0]
+  }
+  return date.toISOString().split("T")[0]
+}
+
+const buildFinancialSummary = (
+  lineItems: Array<{
+    id?: string
+    created_at?: string
+    product_id?: string
+    price?: number | string | null
+    quantity?: number | string | null
+  }>,
+  payoutSettings: Array<{
+    product_id: string
+    payout_amount: number | string | null
+    is_percentage: boolean | null
+  }>,
+) => {
+  const payoutMap = new Map(
+    payoutSettings.map((setting) => [
+      setting.product_id,
+      {
+        amount: typeof setting.payout_amount === "string"
+          ? Number.parseFloat(setting.payout_amount)
+          : setting.payout_amount ?? 0,
+        isPercentage: Boolean(setting.is_percentage),
+      },
+    ]),
+  )
+
+  const salesByDate = new Map<string, { sales: number; revenue: number }>()
+  const recentActivity = []
+
+  let totalSales = 0
+  let totalRevenue = 0
+
+  for (const item of lineItems) {
+    const quantity = normaliseQuantity(item.quantity)
+    const unitPrice = normalisePrice(item.price)
+    const gross = unitPrice * quantity
+
+    const payout = payoutMap.get(item.product_id ?? "")
+    let vendorShare = 0
+
+    if (payout) {
+      vendorShare = payout.isPercentage ? gross * (payout.amount / 100) : payout.amount * quantity
+    } else {
+      vendorShare = gross * (DEFAULT_PAYOUT_PERCENTAGE / 100)
+    }
+
+    totalSales += quantity
+    totalRevenue += vendorShare
+
+    const dateKey = normaliseDateKey(item.created_at)
+    const existing = salesByDate.get(dateKey) ?? { sales: 0, revenue: 0 }
+    existing.sales += quantity
+    existing.revenue += vendorShare
+    salesByDate.set(dateKey, existing)
+
+    recentActivity.push({
+      id: item.id ?? `activity-${recentActivity.length}`,
+      date: item.created_at ?? new Date().toISOString(),
+      product_id: item.product_id ?? "",
+      price: unitPrice,
+      quantity,
+    })
+  }
+
+  const chartData = Array.from(salesByDate.entries())
+    .map(([date, stats]) => ({
+      date,
+      sales: stats.sales,
+      revenue: Number(stats.revenue.toFixed(2)),
+    }))
+    .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
+    .slice(-CHART_WINDOW)
+
+  const activity = recentActivity
+    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+    .slice(0, RECENT_ACTIVITY_LIMIT)
+
+  return {
+    totalSales,
+    totalRevenue: Number(totalRevenue.toFixed(2)),
+    totalPayout: Number(totalRevenue.toFixed(2)),
+    currency: DEFAULT_CURRENCY,
+    salesByDate: chartData,
+    recentActivity: activity,
   }
 }

@@ -1,13 +1,19 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { createClient } from "@/lib/supabase-server"
+import { createClient as createServiceClient } from "@/lib/supabase/server"
 import { cookies } from "next/headers"
+import { getVendorFromCookieStore } from "@/lib/vendor-session"
 
 export async function POST(request: NextRequest) {
   try {
-    // Get the vendor session
     const cookieStore = cookies()
-    const supabase = createClient(cookieStore)
+    const vendorName = getVendorFromCookieStore(cookieStore)
 
+    if (!vendorName) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    }
+
+    const supabase = createClient(cookieStore)
     const {
       data: { session },
     } = await supabase.auth.getSession()
@@ -16,23 +22,25 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    // Get the vendor ID from the session
-    const { data: vendor, error: vendorError } = await supabase
+    const serviceClient = createServiceClient()
+    const { data: vendor, error: vendorError } = await serviceClient
       .from("vendors")
-      .select("id, vendor_name")
-      .eq("auth_id", session.user.id)
-      .single()
+      .select("id, vendor_name, status")
+      .eq("vendor_name", vendorName)
+      .maybeSingle()
 
     if (vendorError || !vendor) {
       console.error("Error fetching vendor:", vendorError)
       return NextResponse.json({ error: "Vendor not found" }, { status: 404 })
     }
 
-    // Get the request body
+    if (vendor.status !== "active") {
+      return NextResponse.json({ error: "Vendor account inactive" }, { status: 403 })
+    }
+
     const formData = await request.json()
 
-    // Update the vendor profile
-    const { error: updateError } = await supabase
+    const { error: updateError } = await serviceClient
       .from("vendors")
       .update({
         contact_name: formData.contact_name,
@@ -51,8 +59,9 @@ export async function POST(request: NextRequest) {
         notify_on_payout: formData.notify_on_payout,
         notify_on_message: formData.notify_on_message,
         onboarding_completed: true,
-        onboarding_completed_at: new Date().toISOString(),
+        onboarded_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
+        last_login_at: new Date().toISOString(),
       })
       .eq("id", vendor.id)
 
@@ -61,14 +70,13 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Failed to update profile" }, { status: 500 })
     }
 
-    // Fetch the updated vendor profile
-    const { data: updatedVendor, error: fetchError } = await supabase
+    const { data: updatedVendor, error: fetchError } = await serviceClient
       .from("vendors")
       .select("*")
       .eq("id", vendor.id)
-      .single()
+      .maybeSingle()
 
-    if (fetchError) {
+    if (fetchError || !updatedVendor) {
       console.error("Error fetching updated vendor:", fetchError)
       return NextResponse.json({ error: "Failed to fetch updated profile" }, { status: 500 })
     }

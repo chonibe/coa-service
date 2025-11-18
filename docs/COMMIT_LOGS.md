@@ -1,3 +1,106 @@
+## Commit: Admin Portal Access Control (2025-11-11)
+
+### ✅ Implementation Checklist
+- [x] [`lib/admin-session.ts`](../lib/admin-session.ts) – Added signed `admin_session` helpers.
+- [x] [`lib/vendor-auth.ts`](../lib/vendor-auth.ts) – Introduced Street Collector email override and export for tests.
+- [x] [`app/auth/callback/route.ts`](../app/auth/callback/route.ts) – Issued admin cookies and updated redirect handling.
+- [x] [`app/api/admin/login/route.ts`](../app/api/admin/login/route.ts) – Validates Supabase admin session and provisions cookies.
+- [x] [`app/api/admin/logout/route.ts`](../app/api/admin/logout/route.ts) – Clears admin and vendor sessions.
+- [x] [`app/api/get-all-products/route.ts`](../app/api/get-all-products/route.ts) – Restricted Shopify proxy to admins.
+- [x] [`app/api/admin/orders/route.ts`](../app/api/admin/orders/route.ts) & [`app/api/admin/orders/[orderId]/route.ts`](../app/api/admin/orders/%5BorderId%5D/route.ts) – Enforced admin session validation.
+- [x] [`app/api/admin/backup/[type]/route.ts`](../app/api/admin/backup/%5Btype%5D/route.ts), [`list/route.ts`](../app/api/admin/backup/list/route.ts), [`settings/route.ts`](../app/api/admin/backup/settings/route.ts) – Hardened backup endpoints.
+- [x] [`app/api/admin/run-cron/route.ts`](../app/api/admin/run-cron/route.ts) – Required admin session before executing cron jobs.
+- [x] [`app/api/editions/get-by-line-item/route.ts`](../app/api/editions/get-by-line-item/route.ts) – Validated admin cookies for edition lookups.
+- [x] [`app/api/vendors/names/route.ts`](../app/api/vendors/names/route.ts) – Limited vendor directory to admins.
+- [x] [`app/api/auth/impersonate/route.ts`](../app/api/auth/impersonate/route.ts) – Required signed admin cookie alongside Supabase session.
+- [x] [`app/api/vendor/logout/route.ts`](../app/api/vendor/logout/route.ts) – Cleared admin session on vendor logout.
+- [x] [`app/admin/layout.tsx`](../app/admin/layout.tsx) & [`app/admin/admin-shell.tsx`](../app/admin/admin-shell.tsx) – Guarded admin UI and embedded vendor switcher dialog.
+- [x] [`app/admin/login/page.tsx`](../app/admin/login/page.tsx) – Replaced password form with Google OAuth entry.
+- [x] [`app/admin/logout-button.tsx`](../app/admin/logout-button.tsx) – Allowed layout-specific styling.
+- [x] [`docs/features/admin-portal/README.md`](../docs/features/admin-portal/README.md) – Documented admin session model and vendor switcher.
+- [x] [`docs/features/vendor-dashboard/README.md`](../docs/features/vendor-dashboard/README.md) – Captured changed admin redirect behaviour.
+- [x] [`docs/API_DOCUMENTATION.md`](../docs/API_DOCUMENTATION.md) – Updated admin endpoint contracts and session notes.
+- [x] [`README.md`](../README.md) – Added `ADMIN_SESSION_SECRET` and refreshed admin API list.
+- [x] [`docs/TASK_QUEUE.md`](../docs/TASK_QUEUE.md) & [`docs/PROJECT_DASHBOARD.md`](../docs/PROJECT_DASHBOARD.md) – Logged completed tasks.
+- [x] [`tests/vendor-auth.test.ts`](../tests/vendor-auth.test.ts) – Asserts Street Collector override and fallback redirect behaviour.
+
+### 🔐 Highlights
+- Introduced dedicated `admin_session` cookies, enforced across layouts and APIs.
+- Embedded vendor switcher modal within the admin portal, eliminating the split login experience.
+- Explicitly mapped `kinggeorgelamp@gmail.com` to the Street Collector vendor, ensuring correct onboarding.
+
+### 🧪 Verification
+- Automated: `npm run test -- vendor-auth`.
+- Manual:
+  1. Access `/admin` without cookies → redirect to `/admin/login`.
+  2. Complete Google login with admin email → land on `/admin/dashboard` and open vendor switcher.
+  3. Select “street-collector” from vendor switcher → toast confirms impersonation, vendor dashboard opens.
+  4. Hit `/api/get-all-products` without admin cookie → receive `401 Unauthorized`.
+  5. Login as non-admin vendor → redirect straight to `/vendor/dashboard` with no admin UI exposure.
+
+### 📌 Deployment Notes
+- Configure `ADMIN_SESSION_SECRET` (>=32 random bytes) in every environment.
+- Ensure Supabase OAuth redirect whitelist includes `/auth/callback` for admin flows.
+- Rotate legacy admin cookies to enforce the new signed session format.
+
+## Commit: Supabase Google SSO for Vendor Portal (2025-11-10)
+
+### ✅ Implementation Checklist
+- [x] [`app/api/auth/google/start/route.ts`](../app/api/auth/google/start/route.ts) – Initiate Supabase OAuth flow and persist post-login redirect.
+- [x] [`app/auth/callback/route.ts`](../app/auth/callback/route.ts) – Exchange Supabase codes, link vendors, and set signed `vendor_session` cookies.
+- [x] [`app/api/auth/status/route.ts`](../app/api/auth/status/route.ts) – Expose session, admin flag, and vendor context to the client.
+- [x] [`app/api/auth/impersonate/route.ts`](../app/api/auth/impersonate/route.ts) – Allow whitelisted admins to assume vendor sessions.
+- [x] [`app/api/vendor/logout/route.ts`](../app/api/vendor/logout/route.ts) – Revoke Supabase session and clear vendor cookies.
+- [x] [`app/vendor/login/page.tsx`](../app/vendor/login/page.tsx) – Replace dropdown login with Google OAuth + admin impersonation UI.
+- [x] [`lib/vendor-auth.ts`](../lib/vendor-auth.ts) – Shared helpers for admin detection, vendor linking, and redirect sanitisation.
+- [x] [`supabase/migrations/20251110160000_add_auth_id_to_vendors.sql`](../supabase/migrations/20251110160000_add_auth_id_to_vendors.sql) – Link vendors to Supabase user IDs.
+- [x] [`scripts/enable-google-provider.js`](../scripts/enable-google-provider.js) & `npm run supabase:enable-google` for provider configuration.
+- [x] Documentation updates (`README.md`, `docs/README.md`, `docs/API_DOCUMENTATION.md`, `docs/features/vendor-dashboard/README.md`).
+
+### 🔐 Highlights
+- Google OAuth replaces manual vendor selection; Supabase session exchange issues signed `vendor_session` cookies.
+- Admins (`choni@thestreetlamp.com`, `chonibe@gmail.com`) can impersonate vendors without modifying the database.
+- Vendors auto-link to Supabase accounts via new `auth_id` column to prevent duplicate onboarding.
+
+### 🧪 Verification
+- Automated: `npm run test -- vendor-session vendor-auth`.
+- Manual:
+  1. Sign in with Google as an existing vendor → redirect to `/vendor/dashboard`.
+  2. Sign in with a new Google account → redirect to `/vendor/onboarding`, complete profile, confirm vendor record.
+  3. Use admin account to impersonate an arbitrary vendor and verify dashboard data.
+  4. Logout ensures Supabase session + `vendor_session` cookies are cleared.
+
+### 📌 Deployment Notes
+- Configure `SUPABASE_GOOGLE_CLIENT_ID`, `SUPABASE_GOOGLE_CLIENT_SECRET`, and `VENDOR_SESSION_SECRET` before deploying.
+- Run `npm run supabase:enable-google` after changing redirect URLs in Supabase.
+
+## Commit: Vendor Dashboard Hardening (2025-11-10)
+
+### ✅ Implementation Checklist
+- [x] [`lib/vendor-session.ts`](../lib/vendor-session.ts) — Added HMAC-signed vendor session helpers.
+- [x] [`app/api/vendor/login/route.ts`](../app/api/vendor/login/route.ts) — Issues signed cookies on successful login.
+- [x] [`app/api/vendor/stats/route.ts`](../app/api/vendor/stats/route.ts) — Rebuilt stats endpoint using `order_line_items_v2` and payout settings.
+- [x] [`app/api/vendor/sales-analytics/route.ts`](../app/api/vendor/sales-analytics/route.ts) — Normalised analytics with payout metadata.
+- [x] [`app/vendor/dashboard/page.tsx`](../app/vendor/dashboard/page.tsx) — Displays server totals with consistent GBP formatting.
+- [x] [`app/vendor/dashboard/components/vendor-sales-chart.tsx`](../app/vendor/dashboard/components/vendor-sales-chart.tsx) — Aligns chart currency with stats payload.
+- [x] [`hooks/use-vendor-data.ts`](../hooks/use-vendor-data.ts) — Provides unified stats/analytics data model.
+- [x] [`docs/features/vendor-dashboard/README.md`](../docs/features/vendor-dashboard/README.md) — Documented feature overview, data sources, testing.
+- [x] [`docs/API_DOCUMENTATION.md`](../docs/API_DOCUMENTATION.md) — Updated vendor endpoint contracts and session notes.
+- [x] [`README.md`](../README.md) — Added `VENDOR_SESSION_SECRET` requirement and vendor session summary.
+
+### 🔐 Highlights
+- Signed vendor sessions prevent cookie forgery and cross-account access.
+- Vendor metrics derive from authoritative Supabase data with Shopify fallbacks.
+- Dashboard UI renders vendor payouts and analytics consistently in GBP.
+
+### 📌 Deployment Notes
+- Configure `VENDOR_SESSION_SECRET` (>=32 random bytes) before deploying.
+- Rotating the secret invalidates existing sessions; vendors must re-authenticate.
+
+### 🧪 Verification
+- Automated: `npm run test -- vendor-session`.
+- Manual: Login/logout flow, tampered cookie rejection, dashboard totals vs Supabase.
+
 ## Commit: Certificate Modal Artist & Story Integration
 
 ### 🚀 Feature Enhancements

@@ -1,13 +1,15 @@
 import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
+import { clearAdminSessionCookie } from "@/lib/admin-session"
+import { clearVendorSessionCookie } from "@/lib/vendor-session"
 
 export async function POST(request: NextRequest) {
   try {
-    // Create a response that clears the admin_session cookie
     const response = NextResponse.json({ success: true })
-
-    // Clear the cookie
-    response.cookies.delete("admin_session")
+    const clearAdminCookie = clearAdminSessionCookie()
+    const clearVendorCookie = clearVendorSessionCookie()
+    response.cookies.set(clearAdminCookie.name, "", clearAdminCookie.options)
+    response.cookies.set(clearVendorCookie.name, "", clearVendorCookie.options)
 
     return response
   } catch (error: any) {

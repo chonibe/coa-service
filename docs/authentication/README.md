@@ -46,6 +46,7 @@ The Street Collector authentication system provides a secure, Shopify-integrated
 - `SHOPIFY_SHOP`: Shopify store domain
 - `NEXT_PUBLIC_APP_URL`: Application base URL
 - `NODE_ENV`: Deployment environment
+- `VENDOR_SESSION_SECRET`: 32-byte random secret required for signed vendor sessions (enforced via [`lib/env.ts`](../../lib/env.ts))
 
 ### Development Considerations
 - Relaxed state validation in development mode

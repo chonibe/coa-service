@@ -3,8 +3,19 @@
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { LogOut } from "lucide-react"
+import { cn } from "@/lib/utils"
 
-export default function LogoutButton() {
+interface LogoutButtonProps {
+  className?: string
+  variant?: React.ComponentProps<typeof Button>["variant"]
+  size?: React.ComponentProps<typeof Button>["size"]
+}
+
+export default function LogoutButton({
+  className,
+  variant = "outline",
+  size = "default",
+}: LogoutButtonProps) {
   const router = useRouter()
 
   const handleLogout = async () => {
@@ -13,7 +24,6 @@ export default function LogoutButton() {
         method: "POST",
       })
 
-      // Redirect to login page
       router.push("/admin/login")
     } catch (error) {
       console.error("Error logging out:", error)
@@ -21,7 +31,12 @@ export default function LogoutButton() {
   }
 
   return (
-    <Button variant="outline" className="w-full justify-start text-sm font-medium" onClick={handleLogout}>
+    <Button
+      variant={variant}
+      size={size}
+      className={cn("w-full justify-start text-sm font-medium", className)}
+      onClick={handleLogout}
+    >
       <LogOut className="mr-2 h-4 w-4" />
       <span>Logout</span>
     </Button>

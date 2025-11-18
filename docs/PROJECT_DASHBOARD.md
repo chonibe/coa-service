@@ -46,3 +46,16 @@
 - [ ] Verify all critical API integrations
 - [ ] Monitor application performance and error logs
 - [ ] Validate Shopify and Supabase connections 
+
+## Completed Tasks Archive
+
+### Sprint: Session Security Hardening (2025-11-10)
+- **Epic**: Session Security Hardening
+  - **Story**: [Vendor Dashboard Hardening](./features/vendor-dashboard/README.md)
+    - [x] [Enforce vendor session secret configuration](./features/vendor-dashboard/README.md#session-security) — Completed 2025-11-10; administrators now receive actionable remediation guidance.
+
+### Sprint: Admin Access Control (2025-11-11)
+- **Epic**: Admin Portal Security
+  - **Story**: [Admin Portal Access Control](./features/admin-portal/README.md)
+    - [x] [Provision signed admin sessions](./features/admin-portal/README.md#session-security) — Completed 2025-11-11; all admin surfaces now require HMAC cookies.
+    - [x] [Embed vendor switcher modal inside admin UI](./features/admin-portal/README.md#uiux-considerations) — Completed 2025-11-11; vendor impersonation consolidated into the admin portal with search and impersonation safeguards.

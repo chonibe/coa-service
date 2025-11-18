@@ -37,8 +37,8 @@ COA Service is a comprehensive digital art authentication and management platfor
 ## Technical Stack
 
 - Frontend: Next.js, React
-- Backend: Supabase
-- Authentication: Shopify OAuth
+- Backend: Supabase (Postgres + Edge Functions)
+- Authentication: Supabase Auth (Google OAuth) with signed vendor sessions
 - NFC Technology: Web NFC API
 
 ## Getting Started
@@ -57,7 +57,7 @@ npm install
 
 ### Configuration
 1. Copy `.env.example` to `.env`
-2. Fill in Supabase and Shopify credentials
+2. Fill in Supabase, Google OAuth, Shopify, and Stripe credentials
 
 ### Running the Application
 ```bash
@@ -69,6 +69,7 @@ npm run dev
 - [NFC Pairing](/docs/NFC_PAIRING.md)
 - [Authentication](/docs/authentication/README.md)
 - [Dashboard Guides](/docs/README.md)
+- [Vendor Login Funnel](/docs/features/vendor-login/README.md)
 
 ## Contributing
 
@@ -157,6 +158,8 @@ This application provides several key functionalities:
 #### Admin APIs
 
 - `/app/api/get-all-products/route.ts`: Get all products
+- `/app/api/admin/login/route.ts`: Issue signed admin session cookies after Supabase OAuth
+- `/app/api/admin/logout/route.ts`: Clear admin and vendor sessions
 - `/app/api/assign-edition-numbers/route.ts`: Assign edition numbers
 - `/app/api/editions/sync-status/route.ts`: Check edition sync status
 - `/app/api/editions/resequence/route.ts`: Resequence edition numbers
@@ -169,12 +172,21 @@ This application provides several key functionalities:
 - `/app/api/nfc-tags/create/route.ts`: Create NFC tags
 - `/app/api/nfc-tags/assign/route.ts`: Assign NFC tags
 - `/app/api/vendors/list/route.ts`: List vendors
+- `/app/api/vendors/names/route.ts`: Vendor directory for admin vendor switcher
 - `/app/api/vendors/payouts/route.ts`: Manage vendor payouts
 - `/app/api/tax-reporting/generate-forms/route.ts`: Generate tax forms
+- `/app/api/admin/orders/route.ts`: Retrieve orders for admin dashboard
+- `/app/api/admin/orders/[orderId]/route.ts`: Retrieve a single order with nested line items
+- `/app/api/admin/backup/[type]/route.ts`: Trigger or delete backups
+- `/app/api/admin/backup/list/route.ts`: List completed backups
+- `/app/api/admin/backup/settings/route.ts`: Manage backup configuration
+- `/app/api/admin/run-cron/route.ts`: Execute cron jobs with admin authorization
 
 #### Vendor APIs
 
-- `/app/api/vendor/login/route.ts`: Vendor login
+- `/app/api/auth/google/start/route.ts`: Initiate Supabase Google OAuth flow
+- `/app/api/auth/status/route.ts`: Return Supabase session and vendor context
+- `/app/api/auth/impersonate/route.ts`: Allow admins (with `admin_session`) to assume a vendor session
 - `/app/api/vendor/profile/route.ts`: Get vendor profile
 - `/app/api/vendor/update-paypal/route.ts`: Update vendor PayPal
 - `/app/api/vendor/stats/route.ts`: Get vendor stats
@@ -201,13 +213,29 @@ This application provides several key functionalities:
 
 ## Environment Variables
 
-The application requires several environment variables to function properly:
+Set the following variables in `.env.local` (or your deployment environment):
 
-- Shopify API credentials
-- Supabase credentials
-- Stripe API keys
-- Email service credentials
-- Various configuration options
+| Variable | Description |
+| --- | --- |
+| `NEXT_PUBLIC_SUPABASE_URL` | Supabase project URL |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase anon key (client-side) |
+| `SUPABASE_SERVICE_ROLE_KEY` | Supabase service role key (server-only) |
+| `SUPABASE_GOOGLE_CLIENT_ID` | Google OAuth client ID configured for Supabase Auth |
+| `SUPABASE_GOOGLE_CLIENT_SECRET` | Google OAuth client secret |
+| `VENDOR_SESSION_SECRET` | 32+ byte secret for signing `vendor_session` cookies |
+| `ADMIN_SESSION_SECRET` | 32+ byte secret for signing `admin_session` cookies |
+| `SUPABASE_AUTH_ADDITIONAL_REDIRECTS` (optional) | Comma-separated list of extra OAuth redirect URLs |
+| Shopify credentials | Used for product sync and customer flows |
+| Stripe credentials | Used for vendor payouts |
+| Email/SMS credentials | Required for transactional messaging where applicable |
+
+After defining the Google credentials you can synchronise Supabase Auth settings locally and remotely:
+
+```bash
+npm run supabase:enable-google
+```
+
+This script enables the Google provider and applies the redirect URLs declared in `supabase/config.toml`.
 
 ## Getting Started
 
@@ -241,6 +269,8 @@ The vendor portal allows vendors to:
 - Manage their payouts
 - Update their settings
 - View analytics
+- Sign in with Google (Supabase Auth) and receive a signed `vendor_session` cookie to isolate access
+- Admins can impersonate any vendor via `/api/auth/impersonate` to debug dashboard experiences safely
 
 ## Stripe Integration
 
@@ -363,6 +393,7 @@ For comprehensive guidance on deployment processes, environment configuration, a
 - [Deployment Workflow](/docs/DEPLOYMENT_WORKFLOW.md) - Detailed guide for deployment configuration and best practices
 - [Environment Configuration](/docs/DEPLOYMENT_WORKFLOW.md#environment-configuration-management)
 - [Troubleshooting Guide](/docs/DEPLOYMENT_WORKFLOW.md#deployment-troubleshooting-workflow)
+- [Admin Portal Access Control](/docs/features/admin-portal/README.md) - Session security hardening and vendor switcher implementation
 
 ### Documentation Update Process
 1. Keep documentation current with latest project changes

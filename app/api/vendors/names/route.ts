@@ -1,8 +1,18 @@
 import { NextResponse } from "next/server"
 import { createClient } from "@/lib/supabase/server"
+import { cookies } from "next/headers"
+import { ADMIN_SESSION_COOKIE_NAME, verifyAdminSessionToken } from "@/lib/admin-session"
 
 export async function GET() {
   try {
+    const cookieStore = cookies()
+    const token = cookieStore.get(ADMIN_SESSION_COOKIE_NAME)?.value
+    const adminSession = verifyAdminSessionToken(token)
+
+    if (!adminSession?.email) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    }
+
     console.log("Starting vendor names API call...")
     
     // Check environment variables

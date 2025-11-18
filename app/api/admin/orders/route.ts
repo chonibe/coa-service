@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
 import { createClient } from "@/lib/supabase/server"
+import { ADMIN_SESSION_COOKIE_NAME, verifyAdminSessionToken } from "@/lib/admin-session"
 
 export async function GET(request: NextRequest) {
   try {
@@ -9,9 +10,10 @@ export async function GET(request: NextRequest) {
     
     // Only check for admin session if not in preview mode
     if (!isPreview) {
-      const adminSession = request.cookies.get("admin_session")
-      if (!adminSession) {
-        console.log("No admin session found")
+      const adminSessionToken = request.cookies.get(ADMIN_SESSION_COOKIE_NAME)?.value
+      const adminSession = verifyAdminSessionToken(adminSessionToken)
+      if (!adminSession?.email) {
+        console.log("Invalid or missing admin session")
         return NextResponse.json({ success: false, message: "Unauthorized" }, { status: 401 })
       }
     }

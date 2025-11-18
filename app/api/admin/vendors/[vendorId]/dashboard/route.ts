@@ -1,0 +1,404 @@
+import { NextRequest, NextResponse } from "next/server"
+import { guardAdminRequest } from "@/lib/auth-guards"
+import { createClient as createServiceClient } from "@/lib/supabase/server"
+import { shopifyFetch, safeJsonParse } from "@/lib/shopify-api"
+import { logAdminAction } from "@/lib/audit-logger"
+import { ADMIN_SESSION_COOKIE_NAME, verifyAdminSessionToken } from "@/lib/admin-session"
+
+const DEFAULT_CURRENCY = "GBP"
+const DEFAULT_PAYOUT_PERCENTAGE = 10
+const RECENT_ACTIVITY_LIMIT = 5
+const CHART_WINDOW = 30
+
+export async function GET(
+  request: NextRequest,
+  { params }: { params: { vendorId: string } }
+) {
+  const auth = guardAdminRequest(request)
+  if (auth.kind !== "ok") {
+    return auth.response
+  }
+
+  const cookieStore = request.cookies
+  const adminToken = cookieStore.get(ADMIN_SESSION_COOKIE_NAME)?.value
+  const adminSession = verifyAdminSessionToken(adminToken)
+  const adminEmail = adminSession?.email || "unknown"
+
+  const vendorId = Number.parseInt(params.vendorId, 10)
+  if (Number.isNaN(vendorId)) {
+    return NextResponse.json({ error: "Invalid vendor ID" }, { status: 400 })
+  }
+
+  const serviceClient = createServiceClient()
+
+  try {
+    // Fetch vendor details
+    const { data: vendor, error: vendorError } = await serviceClient
+      .from("vendors")
+      .select("id, vendor_name, status, contact_email, onboarding_completed, created_at, last_login_at")
+      .eq("id", vendorId)
+      .maybeSingle()
+
+    if (vendorError || !vendor) {
+      return NextResponse.json({ error: "Vendor not found" }, { status: 404 })
+    }
+
+    // Log admin view action
+    await logAdminAction({
+      adminEmail,
+      actionType: "view",
+      vendorId,
+      details: { viewType: "dashboard" },
+    })
+
+    // Fetch vendor stats (similar to vendor stats API but for admin)
+    const [{ products }, lineItemsResult] = await Promise.all([
+      fetchProductsByVendor(vendor.vendor_name),
+      serviceClient
+        .from("order_line_items_v2")
+        .select("id, product_id, price, quantity, created_at, status, vendor_name")
+        .eq("vendor_name", vendor.vendor_name)
+        .eq("status", "active"),
+    ])
+
+    let lineItems = lineItemsResult.data ?? []
+
+    const productIds = Array.from(new Set(lineItems.map((item) => item.product_id).filter(Boolean)))
+    const payoutSettings = productIds.length
+      ? await fetchPayoutSettings(serviceClient, vendor.vendor_name, productIds)
+      : []
+
+    // Fallback to Shopify orders if Supabase has no data yet
+    if (lineItems.length === 0) {
+      try {
+        lineItems = await fetchVendorOrdersFromShopify(vendor.vendor_name)
+      } catch (shopifyError) {
+        console.error("Shopify fallback failed:", shopifyError)
+      }
+    }
+
+    const stats = buildFinancialSummary(lineItems, payoutSettings)
+
+    return NextResponse.json({
+      vendor: {
+        id: vendor.id,
+        vendor_name: vendor.vendor_name,
+        status: vendor.status,
+        contact_email: vendor.contact_email,
+        onboarding_completed: vendor.onboarding_completed,
+        created_at: vendor.created_at,
+        last_login_at: vendor.last_login_at,
+      },
+      stats: {
+        totalProducts: products.length,
+        totalSales: stats.totalSales,
+        totalRevenue: stats.totalRevenue,
+        totalPayout: stats.totalPayout,
+        currency: stats.currency,
+        salesByDate: stats.salesByDate,
+        recentActivity: stats.recentActivity,
+      },
+    })
+  } catch (error) {
+    console.error("Error fetching vendor dashboard for admin:", error)
+    return NextResponse.json(
+      { error: "Failed to fetch vendor dashboard" },
+      { status: 500 }
+    )
+  }
+}
+
+async function fetchProductsByVendor(vendorName: string) {
+  try {
+    const graphqlQuery = `
+      {
+        products(
+          first: 250
+          query: "vendor:${vendorName}"
+        ) {
+          edges {
+            node {
+              id
+              title
+              handle
+              vendor
+              productType
+              totalInventory
+              priceRangeV2 {
+                minVariantPrice {
+                  amount
+                  currencyCode
+                }
+                maxVariantPrice {
+                  amount
+                  currencyCode
+                }
+              }
+              images(first: 1) {
+                edges {
+                  node {
+                    url
+                    altText
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    `
+
+    const response = await shopifyFetch("graphql.json", {
+      method: "POST",
+      body: JSON.stringify({ query: graphqlQuery }),
+    })
+
+    const data = await safeJsonParse(response)
+
+    if (!data || !data.data || !data.data.products) {
+      console.error("Invalid response from Shopify GraphQL API:", data)
+      throw new Error("Invalid response from Shopify GraphQL API")
+    }
+
+    const products = data.data.products.edges.map((edge: any) => {
+      const product = edge.node
+      const image = product.images.edges.length > 0 ? product.images.edges[0].node.url : null
+
+      return {
+        id: product.id.split("/").pop(),
+        title: product.title,
+        handle: product.handle,
+        vendor: product.vendor,
+        productType: product.productType,
+        inventory: product.totalInventory,
+        price: product.priceRangeV2.minVariantPrice.amount,
+        currency: product.priceRangeV2.minVariantPrice.currencyCode,
+        image,
+      }
+    })
+
+    return { products }
+  } catch (error) {
+    console.error("Error fetching products by vendor:", error)
+    throw error
+  }
+}
+
+async function fetchVendorOrdersFromShopify(vendorName: string) {
+  try {
+    const graphqlQuery = `
+      {
+        orders(first: 50, query: "status:any") {
+          edges {
+            node {
+              id
+              name
+              createdAt
+              lineItems(first: 50) {
+                edges {
+                  node {
+                    id
+                    quantity
+                    vendor
+                    product {
+                      id
+                      vendor
+                    }
+                    variant {
+                      id
+                      price
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    `
+
+    const response = await shopifyFetch("graphql.json", {
+      method: "POST",
+      body: JSON.stringify({ query: graphqlQuery }),
+    })
+
+    const data = await safeJsonParse(response)
+
+    if (!data || !data.data || !data.data.orders) {
+      throw new Error("Invalid response from Shopify GraphQL API")
+    }
+
+    const vendorLineItems = []
+
+    for (const orderEdge of data.data.orders.edges) {
+      const order = orderEdge.node
+
+      for (const lineItemEdge of order.lineItems.edges) {
+        const lineItem = lineItemEdge.node
+
+        const isVendorItem =
+          (lineItem.vendor && lineItem.vendor.toLowerCase() === vendorName.toLowerCase()) ||
+          (lineItem.product &&
+            lineItem.product.vendor &&
+            lineItem.product.vendor.toLowerCase() === vendorName.toLowerCase())
+
+        if (isVendorItem) {
+          const lineItemId = lineItem.id.split("/").pop()
+          vendorLineItems.push({
+            id: lineItemId,
+            line_item_id: lineItemId,
+            order_id: order.id.split("/").pop(),
+            order_name: order.name,
+            product_id: lineItem.product?.id.split("/").pop(),
+            variant_id: lineItem.variant?.id.split("/").pop(),
+            price: lineItem.variant?.price || "0.00",
+            quantity: lineItem.quantity || 1,
+            created_at: order.createdAt,
+            vendor_name: vendorName,
+            status: "active",
+          })
+        }
+      }
+    }
+
+    return vendorLineItems
+  } catch (error) {
+    console.error("Error fetching from Shopify:", error)
+    throw error
+  }
+}
+
+async function fetchPayoutSettings(
+  supabase: ReturnType<typeof createServiceClient>,
+  vendorName: string,
+  productIds: string[],
+) {
+  const { data, error } = await supabase
+    .from("product_vendor_payouts")
+    .select("product_id, payout_amount, is_percentage")
+    .eq("vendor_name", vendorName)
+    .in("product_id", productIds)
+
+  if (error) {
+    console.error("Error fetching payout settings:", error)
+    return []
+  }
+
+  return data ?? []
+}
+
+const normalisePrice = (price: unknown): number => {
+  if (typeof price === "number") return price
+  if (typeof price === "string") {
+    const parsed = Number.parseFloat(price)
+    return Number.isFinite(parsed) ? parsed : 0
+  }
+  return 0
+}
+
+const normaliseQuantity = (quantity: unknown): number => {
+  if (typeof quantity === "number" && Number.isFinite(quantity)) {
+    return quantity
+  }
+  if (typeof quantity === "string") {
+    const parsed = Number.parseInt(quantity, 10)
+    return Number.isFinite(parsed) ? parsed : 1
+  }
+  return 1
+}
+
+const normaliseDateKey = (value: unknown): string => {
+  const date = value instanceof Date ? value : new Date(value as string)
+  if (Number.isNaN(date.getTime())) {
+    return new Date().toISOString().split("T")[0]
+  }
+  return date.toISOString().split("T")[0]
+}
+
+const buildFinancialSummary = (
+  lineItems: Array<{
+    id?: string
+    created_at?: string
+    product_id?: string
+    price?: number | string | null
+    quantity?: number | string | null
+  }>,
+  payoutSettings: Array<{
+    product_id: string
+    payout_amount: number | string | null
+    is_percentage: boolean | null
+  }>,
+) => {
+  const payoutMap = new Map(
+    payoutSettings.map((setting) => [
+      setting.product_id,
+      {
+        amount: typeof setting.payout_amount === "string"
+          ? Number.parseFloat(setting.payout_amount)
+          : setting.payout_amount ?? 0,
+        isPercentage: Boolean(setting.is_percentage),
+      },
+    ]),
+  )
+
+  const salesByDate = new Map<string, { sales: number; revenue: number }>()
+  const recentActivity = []
+
+  let totalSales = 0
+  let totalRevenue = 0
+
+  for (const item of lineItems) {
+    const quantity = normaliseQuantity(item.quantity)
+    const unitPrice = normalisePrice(item.price)
+    const gross = unitPrice * quantity
+
+    const payout = payoutMap.get(item.product_id ?? "")
+    let vendorShare = 0
+
+    if (payout) {
+      vendorShare = payout.isPercentage ? gross * (payout.amount / 100) : payout.amount * quantity
+    } else {
+      vendorShare = gross * (DEFAULT_PAYOUT_PERCENTAGE / 100)
+    }
+
+    totalSales += quantity
+    totalRevenue += vendorShare
+
+    const dateKey = normaliseDateKey(item.created_at)
+    const existing = salesByDate.get(dateKey) ?? { sales: 0, revenue: 0 }
+    existing.sales += quantity
+    existing.revenue += vendorShare
+    salesByDate.set(dateKey, existing)
+
+    recentActivity.push({
+      id: item.id ?? `activity-${recentActivity.length}`,
+      date: item.created_at ?? new Date().toISOString(),
+      product_id: item.product_id ?? "",
+      price: unitPrice,
+      quantity,
+    })
+  }
+
+  const chartData = Array.from(salesByDate.entries())
+    .map(([date, stats]) => ({
+      date,
+      sales: stats.sales,
+      revenue: Number(stats.revenue.toFixed(2)),
+    }))
+    .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
+    .slice(-CHART_WINDOW)
+
+  const activity = recentActivity
+    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+    .slice(0, RECENT_ACTIVITY_LIMIT)
+
+  return {
+    totalSales,
+    totalRevenue: Number(totalRevenue.toFixed(2)),
+    totalPayout: Number(totalRevenue.toFixed(2)),
+    currency: DEFAULT_CURRENCY,
+    salesByDate: chartData,
+    recentActivity: activity,
+  }
+}
+

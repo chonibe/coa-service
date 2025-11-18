@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
 import { CRON_SECRET } from "@/lib/env"
+import { ADMIN_SESSION_COOKIE_NAME, verifyAdminSessionToken } from "@/lib/admin-session"
 
 export async function GET(request: NextRequest) {
   console.log("==== ADMIN CRON RUNNER CALLED ====")
@@ -8,6 +9,13 @@ export async function GET(request: NextRequest) {
   console.log("Request headers:", Object.fromEntries(request.headers.entries()))
 
   try {
+    const token = request.cookies.get(ADMIN_SESSION_COOKIE_NAME)?.value
+    const adminSession = verifyAdminSessionToken(token)
+    if (!adminSession?.email) {
+      console.error("Rejected cron run: missing admin session")
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    }
+
     const { searchParams } = new URL(request.url)
     const secret = searchParams.get("secret")
 

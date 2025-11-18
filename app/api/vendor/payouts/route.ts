@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
 import { cookies } from "next/headers"
 import { createClient } from "@/lib/supabase/server"
+import { getVendorFromCookieStore } from "@/lib/vendor-session"
 
 export async function GET() {
   const supabase = createClient()
@@ -8,7 +9,7 @@ export async function GET() {
   try {
     // Get vendor name from cookie
     const cookieStore = cookies()
-    const vendorName = cookieStore.get("vendor_session")?.value
+    const vendorName = getVendorFromCookieStore(cookieStore)
 
     if (!vendorName) {
       return NextResponse.json({ error: "Not authenticated" }, { status: 401 })

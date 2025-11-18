@@ -1,20 +1,38 @@
+import { cookies } from "next/headers"
 import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
-import { ADMIN_PASSWORD } from "@/lib/env"
+import { createClient as createRouteClient } from "@/lib/supabase-server"
+import { isAdminEmail } from "@/lib/vendor-auth"
+import { buildAdminSessionCookie } from "@/lib/admin-session"
 
-export async function POST(request: NextRequest) {
+export async function POST(_request: NextRequest) {
+  const cookieStore = cookies()
+  const supabase = createRouteClient(cookieStore)
+
   try {
-    const body = await request.json()
-    const { password } = body
+    const {
+      data: { session },
+      error,
+    } = await supabase.auth.getSession()
 
-    console.log("Admin login attempt - Accepting any password")
-
-    if (!password) {
-      return NextResponse.json({ message: "Password is required" }, { status: 400 })
+    if (error) {
+      console.error("Failed to retrieve Supabase session for admin login:", error)
+      return NextResponse.json({ message: "Unable to verify session" }, { status: 500 })
     }
 
-    // Accept any password
-    return NextResponse.json({ success: true })
+    const email = session?.user?.email?.toLowerCase()
+    if (!email) {
+      return NextResponse.json({ message: "Unauthorized" }, { status: 401 })
+    }
+
+    if (!isAdminEmail(email)) {
+      return NextResponse.json({ message: "Forbidden" }, { status: 403 })
+    }
+
+    const response = NextResponse.json({ success: true })
+    const adminCookie = buildAdminSessionCookie(email)
+    response.cookies.set(adminCookie.name, adminCookie.value, adminCookie.options)
+    return response
   } catch (error: any) {
     console.error("Error in admin login:", error)
     return NextResponse.json({ message: error.message || "An error occurred" }, { status: 500 })

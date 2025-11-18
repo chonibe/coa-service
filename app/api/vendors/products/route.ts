@@ -3,6 +3,7 @@ import type { NextRequest } from "next/server"
 import { shopifyFetch, safeJsonParse } from "@/lib/shopify-api"
 import { createClient } from "@/lib/supabase/server"
 import { cookies } from "next/headers"
+import { getVendorFromCookieStore } from "@/lib/vendor-session"
 
 export async function GET(request: NextRequest) {
   const supabase = createClient()
@@ -15,7 +16,7 @@ export async function GET(request: NextRequest) {
     // If no vendor provided in query, try to get from cookie
     if (!vendor) {
       const cookieStore = cookies()
-      vendor = cookieStore.get("vendor_session")?.value
+      vendor = getVendorFromCookieStore(cookieStore) || undefined
     }
 
     if (!vendor) {

@@ -1,16 +1,22 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
+import { useRouter } from "next/navigation"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Skeleton } from "@/components/ui/skeleton"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
+import { Skeleton } from "@/components/ui/skeleton"
 import { AlertCircle, DollarSign, Package, TrendingUp, ShoppingCart } from "lucide-react"
 import { OnboardingAlert } from "./components/onboarding-alert"
 import { OnboardingBanner } from "./components/onboarding-banner"
 import { VendorSalesChart } from "./components/vendor-sales-chart"
 import { useVendorData } from "@/hooks/use-vendor-data"
 import { BarChart, CartesianGrid, XAxis, YAxis, Tooltip, Legend, Bar, ResponsiveContainer } from "recharts"
+import { MetricCard } from "@/components/vendor/metric-card"
+import { LoadingSkeleton } from "@/components/vendor/loading-skeleton"
+import { EmptyState } from "@/components/vendor/empty-state"
+import { ProductPerformance } from "@/components/vendor/product-performance"
+import { KeyboardShortcutsManager, defaultShortcuts } from "@/lib/keyboard-shortcuts"
 
 interface SalesData {
   totalSales: number
@@ -22,9 +28,12 @@ interface SalesData {
     revenue: number
   }>
   salesByProduct: Array<{
-    product_id: string
+    productId: string
+    title: string
     sales: number
     revenue: number
+    payoutType: "percentage" | "flat"
+    payoutAmount: number
   }>
   recentActivity?: Array<{
     id: string
@@ -33,9 +42,12 @@ interface SalesData {
     price: number
     quantity: number
   }>
+  currency: string
 }
 
 export default function VendorDashboardPage() {
+  const router = useRouter()
+  const shortcutsManagerRef = useRef<KeyboardShortcutsManager | null>(null)
   const [vendorName, setVendorName] = useState<string>("Vendor")
   const [onboardingCompleted, setOnboardingCompleted] = useState<boolean>(true)
   const [isLoading, setIsLoading] = useState(true)
@@ -46,8 +58,58 @@ export default function VendorDashboardPage() {
     totalPayout: 0,
     salesByDate: [],
     salesByProduct: [],
-    recentActivity: []
+    recentActivity: [],
+    currency: "GBP",
   })
+
+  // Setup keyboard shortcuts
+  useEffect(() => {
+    const manager = new KeyboardShortcutsManager()
+    shortcutsManagerRef.current = manager
+
+    // Register default shortcuts
+    defaultShortcuts.forEach((shortcut) => {
+      manager.register({
+        ...shortcut,
+        handler: () => {
+          switch (shortcut.action) {
+            case "dashboard":
+              router.push("/vendor/dashboard")
+              break
+            case "products":
+              router.push("/vendor/dashboard/products")
+              break
+            case "analytics":
+              router.push("/vendor/dashboard/analytics")
+              break
+            case "payouts":
+              router.push("/vendor/dashboard/payouts")
+              break
+            case "benefits":
+              router.push("/vendor/dashboard/benefits")
+              break
+            case "messages":
+              router.push("/vendor/dashboard/messages")
+              break
+            case "settings":
+              router.push("/vendor/dashboard/settings")
+              break
+            case "search":
+              // Focus search if available, or show command palette
+              const searchInput = document.querySelector('input[type="search"]') as HTMLInputElement
+              if (searchInput) {
+                searchInput.focus()
+              }
+              break
+          }
+        },
+      })
+    })
+
+    return () => {
+      manager.destroy()
+    }
+  }, [router])
 
   useEffect(() => {
     const fetchVendorProfile = async () => {
@@ -56,7 +118,14 @@ export default function VendorDashboardPage() {
         if (response.ok) {
           const data = await response.json()
           setVendorName(data.vendor?.vendor_name || "Vendor")
-          setOnboardingCompleted(data.vendor?.onboarding_completed || false)
+          const completed = data.vendor?.onboarding_completed || false
+          setOnboardingCompleted(completed)
+          
+          // Redirect to onboarding if not completed
+          if (!completed) {
+            router.replace("/vendor/onboarding")
+            return
+          }
         }
       } catch (error) {
         console.error("Error fetching vendor profile:", error)
@@ -64,56 +133,46 @@ export default function VendorDashboardPage() {
     }
 
     fetchVendorProfile()
-  }, [])
+  }, [router])
 
   useEffect(() => {
     const fetchSalesData = async () => {
       try {
         setIsLoading(true)
         const [statsResponse, analyticsResponse] = await Promise.all([
-          fetch("/api/vendor/stats"),
-          fetch("/api/vendor/sales-analytics")
+          fetch("/api/vendor/stats", {
+            cache: "no-store",
+            credentials: "include",
+          }),
+          fetch("/api/vendor/sales-analytics", {
+            cache: "no-store",
+            credentials: "include",
+          })
         ])
 
         if (!statsResponse.ok) {
           const errorData = await statsResponse.json().catch(() => ({}))
-          throw new Error(errorData.message || "Failed to fetch sales data")
+          throw new Error(errorData.error || errorData.message || `Failed to fetch sales data: ${statsResponse.status}`)
         }
 
         if (!analyticsResponse.ok) {
           const errorData = await analyticsResponse.json().catch(() => ({}))
-          throw new Error(errorData.message || "Failed to fetch analytics data")
+          throw new Error(errorData.error || errorData.message || `Failed to fetch analytics data: ${analyticsResponse.status}`)
         }
 
         const statsData = await statsResponse.json()
         const analyticsData = await analyticsResponse.json()
 
-        // Calculate total sales and revenue from analytics data
-        const totalSales = analyticsData.salesByProduct.reduce((total: number, product: any) => total + product.sales, 0)
-        const totalRevenue = analyticsData.salesByProduct.reduce((total: number, product: any) => total + product.revenue, 0)
-
-        // Calculate total payout amount
-        const totalPayout = analyticsData.salesByProduct.reduce((total: number, product: any) => {
-          const payoutPercentage = product.payout_percentage || 0
-          return total + (product.revenue * (payoutPercentage / 100))
-        }, 0)
-
-        // Create recent activity from sales history
-        const recentActivity = analyticsData.salesHistory?.map((sale: any) => ({
-          id: sale.id,
-          date: sale.date,
-          product_id: sale.product_id,
-          price: sale.price,
-          quantity: sale.quantity
-        })) || []
+        const currency = statsData.currency || "GBP"
 
         setSalesData({
-          totalSales,
-          totalRevenue,
-          totalPayout,
+          totalSales: statsData.totalSales ?? 0,
+          totalRevenue: statsData.totalRevenue ?? 0,
+          totalPayout: statsData.totalPayout ?? statsData.totalRevenue ?? 0,
           salesByDate: analyticsData.salesByDate || [],
           salesByProduct: analyticsData.salesByProduct || [],
-          recentActivity
+          recentActivity: statsData.recentActivity || [],
+          currency,
         })
       } catch (err) {
         console.error("Error fetching sales data:", err)
@@ -123,23 +182,34 @@ export default function VendorDashboardPage() {
       }
     }
 
-    fetchSalesData()
+    void fetchSalesData()
   }, [])
 
   // Format currency
-  const formatCurrency = (amount: number) => {
+  const formatCurrency = (amount: number, currency?: string) => {
     return new Intl.NumberFormat("en-GB", {
       style: "currency",
-      currency: "GBP",
+      currency: currency || salesData.currency || "GBP",
       minimumFractionDigits: 2,
     }).format(amount)
   }
 
+  // Calculate trends (mock data for now - would come from API)
+  const calculateTrend = (current: number, previous: number) => {
+    if (previous === 0) return current > 0 ? 100 : 0
+    return ((current - previous) / previous) * 100
+  }
+
+  // Mock previous period data (in real app, fetch from API)
+  const previousSales = salesData.totalSales * 0.9 // 10% less for demo
+  const previousRevenue = salesData.totalRevenue * 0.95
+  const previousPayout = salesData.totalPayout * 0.95
+
   return (
-    <div className="p-6">
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold">Dashboard</h1>
-        <p className="text-muted-foreground">Welcome back, {vendorName}</p>
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
+        <p className="text-muted-foreground mt-1">Welcome back, {vendorName}</p>
       </div>
 
       {!onboardingCompleted && <OnboardingBanner vendorName={vendorName} />}
@@ -147,78 +217,71 @@ export default function VendorDashboardPage() {
       <OnboardingAlert />
 
       {error ? (
-        <Alert variant="destructive" className="mb-6">
+        <Alert variant="destructive">
           <AlertCircle className="h-4 w-4" />
           <AlertTitle>Error</AlertTitle>
           <AlertDescription>{error}</AlertDescription>
         </Alert>
       ) : null}
 
-      <Tabs defaultValue="overview" className="space-y-4">
+      <Tabs defaultValue="overview" className="space-y-6">
         <TabsList>
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="analytics">Analytics</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="overview" className="space-y-4">
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Total Sales</CardTitle>
-                <ShoppingCart className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                {isLoading ? (
-                  <Skeleton className="h-8 w-[100px]" />
-                ) : (
-                  <div className="text-2xl font-bold">{salesData?.totalSales || "0"}</div>
-                )}
-                <p className="text-xs text-muted-foreground">
-                  {isLoading ? <Skeleton className="h-4 w-[160px]" /> : "Total number of sales"}
-                </p>
-              </CardContent>
-            </Card>
+        <TabsContent value="overview" className="space-y-6">
+          {isLoading ? (
+            <LoadingSkeleton variant="metric" count={3} />
+          ) : (
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+              <MetricCard
+                title="Total Sales"
+                value={salesData?.totalSales || 0}
+                icon={ShoppingCart}
+                trend={{
+                  value: calculateTrend(salesData.totalSales, previousSales),
+                  label: "vs last period",
+                  isPositive: salesData.totalSales >= previousSales,
+                }}
+                description="Total number of sales"
+                variant="elevated"
+              />
 
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Total Revenue</CardTitle>
-                <DollarSign className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                {isLoading ? (
-                  <Skeleton className="h-8 w-[100px]" />
-                ) : (
-                  <div className="text-2xl font-bold">{formatCurrency(salesData?.totalRevenue || 0)}</div>
-                )}
-                <p className="text-xs text-muted-foreground">
-                  {isLoading ? <Skeleton className="h-4 w-[160px]" /> : "Total revenue generated"}
-                </p>
-              </CardContent>
-            </Card>
+              <MetricCard
+                title="Total Revenue"
+                value={formatCurrency(salesData?.totalRevenue || 0, salesData.currency)}
+                icon={DollarSign}
+                trend={{
+                  value: calculateTrend(salesData.totalRevenue, previousRevenue),
+                  label: "vs last period",
+                  isPositive: salesData.totalRevenue >= previousRevenue,
+                }}
+                description="Total revenue generated"
+                variant="elevated"
+              />
 
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Total Payout</CardTitle>
-                <DollarSign className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                {isLoading ? (
-                  <Skeleton className="h-8 w-[100px]" />
-                ) : (
-                  <div className="text-2xl font-bold">{formatCurrency(salesData?.totalPayout || 0)}</div>
-                )}
-                <p className="text-xs text-muted-foreground">
-                  {isLoading ? <Skeleton className="h-4 w-[160px]" /> : "Total payout amount"}
-                </p>
-              </CardContent>
-            </Card>
-          </div>
+              <MetricCard
+                title="Total Payout"
+                value={formatCurrency(salesData?.totalPayout || 0, salesData.currency)}
+                icon={DollarSign}
+                trend={{
+                  value: calculateTrend(salesData.totalPayout, previousPayout),
+                  label: "vs last period",
+                  isPositive: salesData.totalPayout >= previousPayout,
+                }}
+                description="Total payout amount"
+                variant="elevated"
+              />
+            </div>
+          )}
 
-          <Card>
-            <CardHeader>
-              <CardTitle>Recent Activity</CardTitle>
-              <CardDescription>Your latest sales and transactions</CardDescription>
-            </CardHeader>
+          <div className="grid gap-6 md:grid-cols-2">
+            <Card>
+              <CardHeader>
+                <CardTitle>Recent Activity</CardTitle>
+                <CardDescription>Your latest sales and transactions</CardDescription>
+              </CardHeader>
             <CardContent>
               {isLoading ? (
                 <div className="space-y-4">
@@ -227,9 +290,11 @@ export default function VendorDashboardPage() {
                   <Skeleton className="h-4 w-full" />
                 </div>
               ) : !salesData?.recentActivity || salesData.recentActivity.length === 0 ? (
-                <div className="text-center text-muted-foreground py-4">
-                  No sales activity yet
-                </div>
+                <EmptyState
+                  icon={Package}
+                  title="No sales activity yet"
+                  description="Your recent sales and transactions will appear here once you start making sales."
+                />
               ) : (
                 <div className="space-y-4">
                   {salesData.recentActivity.map((sale, index) => {
@@ -257,6 +322,18 @@ export default function VendorDashboardPage() {
               )}
             </CardContent>
           </Card>
+
+            {/* Product Performance */}
+            <ProductPerformance
+              products={salesData.salesByProduct?.map((p) => ({
+                productId: p.productId,
+                title: p.title,
+                sales: p.sales,
+                revenue: p.revenue,
+              })) || []}
+              isLoading={isLoading}
+            />
+          </div>
         </TabsContent>
 
         <TabsContent value="analytics" className="space-y-4">

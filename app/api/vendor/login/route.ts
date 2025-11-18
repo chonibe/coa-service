@@ -2,8 +2,9 @@ import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
 import { cookies } from "next/headers"
 import { createClient } from "@/lib/supabase/server"
+import { buildVendorSessionCookie } from "@/lib/vendor-session"
 
-export async function POST() {
+export async function POST(request: NextRequest) {
   const supabase = createClient()
   
   try {
@@ -29,15 +30,10 @@ export async function POST() {
     // Update last login timestamp
     await supabase.from("vendors").update({ last_login: new Date().toISOString() }).eq("vendor_name", vendorName)
 
-    // Set a cookie to maintain the vendor session
+    // Set a signed cookie to maintain the vendor session
     const cookieStore = cookies()
-    cookieStore.set("vendor_session", vendorName, {
-      path: "/",
-      maxAge: 60 * 60 * 24, // 24 hours
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "strict",
-    })
+    const sessionCookie = buildVendorSessionCookie(vendor.vendor_name)
+    cookieStore.set(sessionCookie.name, sessionCookie.value, sessionCookie.options)
 
     return NextResponse.json({ success: true, vendor: { name: vendor.vendor_name } })
   } catch (error: any) {

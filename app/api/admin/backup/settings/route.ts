@@ -1,6 +1,7 @@
-import { NextResponse } from "next/server"
+import { NextRequest, NextResponse } from "next/server"
 import { z } from "zod"
 import { createClient } from "@/lib/supabase/server"
+import { ADMIN_SESSION_COOKIE_NAME, verifyAdminSessionToken } from "@/lib/admin-session"
 
 const backupSettingsSchema = z.object({
   google_drive_enabled: z.boolean(),
@@ -23,18 +24,20 @@ const defaultSettings = {
   updated_at: new Date().toISOString(),
 }
 
-// Create Supabase client with service role key for admin operations
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-)
+const unauthorized = () => NextResponse.json({ error: "Unauthorized" }, { status: 401 })
 
-export async function POST() {
+export async function POST(request: NextRequest) {
+  const token = request.cookies.get(ADMIN_SESSION_COOKIE_NAME)?.value
+  const adminSession = verifyAdminSessionToken(token)
+  if (!adminSession?.email) {
+    return unauthorized()
+  }
+
   const supabase = createClient()
   
   try {
     console.log("API: Received POST request for backup settings")
-    const body = await req.json()
+    const body = await request.json()
     console.log("API: Request body:", body)
     
     console.log("API: Validating settings against schema...")
@@ -86,7 +89,13 @@ export async function POST() {
   }
 }
 
-export async function GET() {
+export async function GET(request: NextRequest) {
+  const token = request.cookies.get(ADMIN_SESSION_COOKIE_NAME)?.value
+  const adminSession = verifyAdminSessionToken(token)
+  if (!adminSession?.email) {
+    return unauthorized()
+  }
+
   const supabase = createClient()
   
   try {

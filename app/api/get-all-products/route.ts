@@ -1,9 +1,15 @@
 import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
 import { SHOPIFY_SHOP, SHOPIFY_ACCESS_TOKEN } from "@/lib/env"
+import { guardAdminRequest } from "@/lib/auth-guards"
 
 export async function GET(request: NextRequest) {
   try {
+    const guard = guardAdminRequest(request)
+    if (guard.kind !== "ok") {
+      return guard.response
+    }
+
     // Get query parameters
     const { searchParams } = new URL(request.url)
     const limit = searchParams.get("limit") || "10"

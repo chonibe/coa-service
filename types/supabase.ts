@@ -91,6 +91,190 @@ export interface Database {
           updated_at?: string | null
         }
       }
+      vendors: {
+        Row: {
+          id: number
+          vendor_name: string
+          instagram_url: string | null
+          notes: string | null
+          created_at: string
+          updated_at: string
+          paypal_email: string | null
+          payout_method: string | null
+          password_hash: string | null
+          tax_id: string | null
+          tax_country: string | null
+          is_company: boolean | null
+          contact_name: string | null
+          contact_email: string | null
+          phone: string | null
+          address: string | null
+          website: string | null
+          bio: string | null
+          bank_account: string | null
+          notify_on_sale: boolean | null
+          notify_on_payout: boolean | null
+          notify_on_message: boolean | null
+          onboarding_completed: boolean | null
+          onboarding_completed_at: string | null
+          onboarded_at: string | null
+          last_login_at: string | null
+          auth_id: string | null
+          status: Database["public"]["Enums"]["vendor_status"] | null
+        }
+        Insert: {
+          id?: number
+          vendor_name: string
+          instagram_url?: string | null
+          notes?: string | null
+          created_at?: string
+          updated_at?: string
+          paypal_email?: string | null
+          payout_method?: string | null
+          password_hash?: string | null
+          tax_id?: string | null
+          tax_country?: string | null
+          is_company?: boolean | null
+          contact_name?: string | null
+          contact_email?: string | null
+          phone?: string | null
+          address?: string | null
+          website?: string | null
+          bio?: string | null
+          bank_account?: string | null
+          notify_on_sale?: boolean | null
+          notify_on_payout?: boolean | null
+          notify_on_message?: boolean | null
+          onboarding_completed?: boolean | null
+          onboarding_completed_at?: string | null
+          onboarded_at?: string | null
+          last_login_at?: string | null
+          auth_id?: string | null
+          status?: Database["public"]["Enums"]["vendor_status"] | null
+        }
+        Update: {
+          id?: number
+          vendor_name?: string
+          instagram_url?: string | null
+          notes?: string | null
+          created_at?: string
+          updated_at?: string
+          paypal_email?: string | null
+          payout_method?: string | null
+          password_hash?: string | null
+          tax_id?: string | null
+          tax_country?: string | null
+          is_company?: boolean | null
+          contact_name?: string | null
+          contact_email?: string | null
+          phone?: string | null
+          address?: string | null
+          website?: string | null
+          bio?: string | null
+          bank_account?: string | null
+          notify_on_sale?: boolean | null
+          notify_on_payout?: boolean | null
+          notify_on_message?: boolean | null
+          onboarding_completed?: boolean | null
+          onboarding_completed_at?: string | null
+          onboarded_at?: string | null
+          last_login_at?: string | null
+          auth_id?: string | null
+          status?: Database["public"]["Enums"]["vendor_status"] | null
+        }
+      }
+      vendor_users: {
+        Row: {
+          id: string
+          vendor_id: number
+          auth_id: string | null
+          email: string | null
+          created_at: string | null
+        }
+        Insert: {
+          id?: string
+          vendor_id: number
+          auth_id?: string | null
+          email?: string | null
+          created_at?: string | null
+        }
+        Update: {
+          id?: string
+          vendor_id?: number
+          auth_id?: string | null
+          email?: string | null
+          created_at?: string | null
+        }
+      }
+      admin_accounts: {
+        Row: {
+          id: string
+          auth_id: string | null
+          email: string
+          created_at: string | null
+        }
+        Insert: {
+          id?: string
+          auth_id?: string | null
+          email: string
+          created_at?: string | null
+        }
+        Update: {
+          id?: string
+          auth_id?: string | null
+          email?: string
+          created_at?: string | null
+        }
+      }
+      impersonation_logs: {
+        Row: {
+          id: string
+          admin_email: string
+          vendor_id: number | null
+          vendor_name: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          admin_email: string
+          vendor_id?: number | null
+          vendor_name?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          admin_email?: string
+          vendor_id?: number | null
+          vendor_name?: string | null
+          created_at?: string
+        }
+      }
+      failed_login_attempts: {
+        Row: {
+          id: string
+          email: string | null
+          method: string
+          reason: string | null
+          ip_address: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          email?: string | null
+          method: string
+          reason?: string | null
+          ip_address?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          email?: string | null
+          method?: string
+          reason?: string | null
+          ip_address?: string | null
+          created_at?: string
+        }
+      }
     }
     Views: {
       [_ in never]: never
@@ -99,7 +283,7 @@ export interface Database {
       [_ in never]: never
     }
     Enums: {
-      [_ in never]: never
+      vendor_status: "pending" | "active" | "review" | "disabled" | "suspended"
     }
     CompositeTypes: {
       [_ in never]: never

@@ -3,10 +3,14 @@
 import { useState, useEffect } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
-import { AlertCircle } from "lucide-react"
+import { AlertCircle, Download } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
 import { useToast } from "@/components/ui/use-toast"
+import { TimeRangeSelector, type TimeRange, type DateRange } from "@/components/vendor/time-range-selector"
+import { LoadingSkeleton } from "@/components/vendor/loading-skeleton"
+import { EmptyState } from "@/components/vendor/empty-state"
+import { BarChart3 } from "lucide-react"
 import {
   ResponsiveContainer,
   BarChart,
@@ -46,14 +50,34 @@ export default function AnalyticsPage() {
   const [totalItems, setTotalItems] = useState(0)
   const [sortField, setSortField] = useState<string>("date")
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc")
+  const [timeRange, setTimeRange] = useState<TimeRange>("30d")
+  const [dateRange, setDateRange] = useState<DateRange | undefined>()
   const { toast } = useToast()
 
-  const fetchAnalyticsData = async () => {
+  const formatCurrency = (value: number) =>
+    new Intl.NumberFormat("en-GB", {
+      style: "currency",
+      currency: "GBP",
+      minimumFractionDigits: 2,
+    }).format(value)
+
+  const fetchAnalyticsData = async (range?: TimeRange, customRange?: DateRange) => {
     try {
       setIsLoading(true)
       setError(null)
 
-      const response = await fetch("/api/vendor/sales-analytics")
+      // Build query parameters
+      const params = new URLSearchParams()
+      params.set("range", range || timeRange)
+      if (customRange || dateRange) {
+        const rangeToUse = customRange || dateRange
+        if (rangeToUse) {
+          params.set("from", rangeToUse.from.toISOString())
+          params.set("to", rangeToUse.to.toISOString())
+        }
+      }
+
+      const response = await fetch(`/api/vendor/sales-analytics?${params.toString()}`)
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}))
@@ -82,6 +106,52 @@ export default function AnalyticsPage() {
   useEffect(() => {
     fetchAnalyticsData()
   }, [])
+
+  const handleTimeRangeChange = (range: TimeRange, customRange?: DateRange) => {
+    setTimeRange(range)
+    if (customRange) {
+      setDateRange(customRange)
+    } else {
+      setDateRange(undefined)
+    }
+    fetchAnalyticsData(range, customRange)
+  }
+
+  const handleExport = () => {
+    try {
+      // Create CSV content
+      const headers = ["Date", "Product", "Price", "Quantity", "Revenue"]
+      const rows = salesHistory.map((sale) => [
+        formatDate(sale.date),
+        sale.title,
+        sale.price.toString(),
+        (sale.quantity || 1).toString(),
+        ((sale.price * (sale.quantity || 1)) / 1).toFixed(2),
+      ])
+
+      const csvContent = [headers.join(","), ...rows.map((row) => row.join(","))].join("\n")
+      const blob = new Blob([csvContent], { type: "text/csv" })
+      const url = window.URL.createObjectURL(blob)
+      const a = document.createElement("a")
+      a.href = url
+      a.download = `sales-analytics-${new Date().toISOString().split("T")[0]}.csv`
+      document.body.appendChild(a)
+      a.click()
+      document.body.removeChild(a)
+      window.URL.revokeObjectURL(url)
+
+      toast({
+        title: "Export successful",
+        description: "Sales data has been exported to CSV",
+      })
+    } catch (err) {
+      toast({
+        variant: "destructive",
+        title: "Export failed",
+        description: err instanceof Error ? err.message : "Failed to export data",
+      })
+    }
+  }
 
   // Custom tooltip for the pie chart to show product titles
   const CustomTooltip = ({ active, payload }: any) => {
@@ -135,9 +205,24 @@ export default function AnalyticsPage() {
 
   return (
     <div className="space-y-6 pb-20 px-1">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight">Sales Analytics</h1>
-        <p className="text-muted-foreground">View your sales performance over time</p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">Sales Analytics</h1>
+          <p className="text-muted-foreground">View your sales performance over time</p>
+        </div>
+        <div className="flex items-center gap-3">
+          <TimeRangeSelector
+            value={timeRange}
+            dateRange={dateRange}
+            onChange={handleTimeRangeChange}
+          />
+          {salesHistory.length > 0 && (
+            <Button onClick={handleExport} variant="outline" size="sm">
+              <Download className="mr-2 h-4 w-4" />
+              Export CSV
+            </Button>
+          )}
+        </div>
       </div>
 
       {error && (
@@ -156,13 +241,11 @@ export default function AnalyticsPage() {
       )}
 
       {totalItems === 0 && !isLoading && !error && (
-        <Alert>
-          <AlertCircle className="h-4 w-4" />
-          <AlertTitle>No Sales Data</AlertTitle>
-          <AlertDescription>
-            There is no sales data available yet. Sales data will appear here once orders are processed.
-          </AlertDescription>
-        </Alert>
+        <EmptyState
+          icon={BarChart3}
+          title="No Sales Data"
+          description="There is no sales data available for the selected time range. Sales data will appear here once orders are processed."
+        />
       )}
 
       <Card className="w-full">
@@ -172,7 +255,7 @@ export default function AnalyticsPage() {
         </CardHeader>
         <CardContent>
           {isLoading ? (
-            <Skeleton className="h-[300px] w-full" />
+            <LoadingSkeleton variant="chart" />
           ) : salesByDate.length > 0 ? (
             <ResponsiveContainer width="100%" height={300}>
               <BarChart
@@ -190,8 +273,8 @@ export default function AnalyticsPage() {
                 <YAxis yAxisId="right" orientation="right" stroke="#82ca9d" />
                 <Tooltip
                   formatter={(value, name) => {
-                    if (name === "Revenue ($)") {
-                      return [`£${Number(value).toFixed(2)}`, "Revenue (£)"]
+                    if (name === "Revenue (£)") {
+                      return [formatCurrency(Number(value)), "Revenue (£)"]
                     }
                     return [value, name]
                   }}
@@ -271,7 +354,7 @@ export default function AnalyticsPage() {
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis dataKey="month" />
                   <YAxis />
-                  <Tooltip formatter={(value) => [`£${Number(value).toFixed(2)}`, "Revenue"]} />
+                  <Tooltip formatter={(value) => [formatCurrency(Number(value)), "Revenue"]} />
                   <Line type="monotone" dataKey="revenue" stroke="#82ca9d" activeDot={{ r: 8 }} />
                 </LineChart>
               </ResponsiveContainer>
@@ -329,7 +412,7 @@ export default function AnalyticsPage() {
                       </span>
                     </div>
                     <div className="text-sm font-medium">
-                      {product.sales} sales (£{product.revenue.toFixed(2)})
+                      {product.sales} sales ({formatCurrency(product.revenue)})
                     </div>
                   </div>
                 ))}
@@ -403,7 +486,7 @@ export default function AnalyticsPage() {
                       <TableRow key={sale.id}>
                         <TableCell>{formatDate(sale.date)}</TableCell>
                         <TableCell className="font-medium">{sale.title}</TableCell>
-                        <TableCell className="text-right">£{sale.price.toFixed(2)}</TableCell>
+                        <TableCell className="text-right">{formatCurrency(sale.price)}</TableCell>
                       </TableRow>
                     ))}
                   </TableBody>

@@ -1,21 +1,24 @@
 import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
 import { createClient } from "@/lib/supabase/server"
+import { ADMIN_SESSION_COOKIE_NAME, verifyAdminSessionToken } from "@/lib/admin-session"
 
-export async function GET() {
+export async function GET(request: NextRequest, { params }: { params: { orderId: string } }) {
+  const token = request.cookies.get(ADMIN_SESSION_COOKIE_NAME)?.value
+  const adminSession = verifyAdminSessionToken(token)
+  if (!adminSession?.email) {
+    return NextResponse.json({ success: false, message: "Unauthorized" }, { status: 401 })
+  }
+
   const supabase = createClient()
   
   try {
-    if (!supabase) {
-      return NextResponse.json({ success: false, message: "Database connection error" }, { status: 500 })
-    }
-
     const { orderId } = params
 
-    // Get order details
     const { data: order, error: orderError } = await supabase
       .from("orders")
-      .select(`
+      .select(
+        `
         id,
         name,
         created_at,
@@ -30,7 +33,8 @@ export async function GET() {
           nfc_claimed_at,
           certificate_url
         )
-      `)
+      `,
+      )
       .eq("id", orderId)
       .single()
 
@@ -43,17 +47,16 @@ export async function GET() {
       return NextResponse.json({ success: false, message: "Order not found" }, { status: 404 })
     }
 
-    // Transform the data to match the expected format
     const transformedOrder = {
       id: order.id,
       name: order.name,
       created_at: order.created_at,
-      line_items: order.order_line_items
+      line_items: order.order_line_items,
     }
 
     return NextResponse.json({
       success: true,
-      order: transformedOrder
+      order: transformedOrder,
     })
   } catch (error: any) {
     console.error("Error in order API:", error)
