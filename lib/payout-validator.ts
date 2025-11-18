@@ -29,7 +29,7 @@ export async function validateFulfillmentStatus(
 
   try {
     const { data, error } = await client
-      .from("order_line_items")
+      .from("order_line_items_v2")
       .select("line_item_id, fulfillment_status, order_id, order_name")
       .in("line_item_id", lineItemIds)
 

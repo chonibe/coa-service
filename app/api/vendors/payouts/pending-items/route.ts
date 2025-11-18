@@ -43,7 +43,7 @@ export async function POST(request: Request) {
           COALESCE(pvp.payout_amount, 25) AS payout_amount,
           COALESCE(pvp.is_percentage, true) AS is_percentage,
           oli.fulfillment_status
-        FROM order_line_items oli
+        FROM order_line_items_v2 oli
         LEFT JOIN products p ON oli.product_id = p.id
         LEFT JOIN product_vendor_payouts pvp ON oli.product_id = pvp.product_id AND oli.vendor_name = pvp.vendor_name
         WHERE 

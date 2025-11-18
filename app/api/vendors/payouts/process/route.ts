@@ -128,10 +128,9 @@ export async function POST(request: NextRequest) {
 
         const { error: insertError } = await supabase.from("vendor_payout_items").insert(payoutItems)
 
-          if (insertError) {
-            console.error(`Error associating line items with payout for ${vendor_name}:`, insertError)
-            // Continue with the payout even if we can't associate line items
-          }
+        if (insertError) {
+          console.error(`Error associating line items with payout for ${vendor_name}:`, insertError)
+          // Continue with the payout even if we can't associate line items
         }
 
         // If using PayPal, we would initiate the PayPal payout here

@@ -58,7 +58,7 @@ export async function POST(request: NextRequest) {
       }
 
       const { data: orderLineItems, error: orderError } = await supabase
-        .from("order_line_items")
+        .from("order_line_items_v2")
         .select("line_item_id")
         .in("order_id", orderIds)
         .eq("vendor_name", vendorName)
@@ -129,7 +129,7 @@ export async function POST(request: NextRequest) {
 
     // Fetch line items to calculate payout amounts
     const { data: lineItems, error: fetchError } = await supabase
-      .from("order_line_items")
+      .from("order_line_items_v2")
       .select("line_item_id, order_id, product_id, price, vendor_name")
       .in("line_item_id", finalLineItemIds)
 

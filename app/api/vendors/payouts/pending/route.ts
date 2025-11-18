@@ -36,7 +36,7 @@ export async function GET() {
               WHEN COALESCE(pvp.is_percentage, true) THEN (oli.price * COALESCE(pvp.payout_amount, 25) / 100)
               ELSE COALESCE(pvp.payout_amount, 0)
             END AS payout_amount
-          FROM order_line_items oli
+          FROM order_line_items_v2 oli
           LEFT JOIN product_vendor_payouts pvp ON oli.product_id = pvp.product_id AND oli.vendor_name = pvp.vendor_name
           WHERE 
             oli.status = 'active'

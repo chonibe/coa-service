@@ -30,7 +30,7 @@ BEGIN
       oli.order_id,
       COALESCE(pvp.payout_amount, 25) as payout_amount,
       COALESCE(pvp.is_percentage, true) as is_percentage
-    FROM order_line_items oli
+    FROM order_line_items_v2 oli
     LEFT JOIN product_vendor_payouts pvp ON oli.product_id = pvp.product_id AND oli.vendor_name = pvp.vendor_name
     WHERE 
       oli.status = 'active' 
@@ -107,7 +107,7 @@ BEGIN
     COALESCE(pvp.payout_amount, 25) as payout_amount,
     COALESCE(pvp.is_percentage, true) as is_percentage,
     oli.fulfillment_status
-  FROM order_line_items oli
+  FROM order_line_items_v2 oli
   LEFT JOIN products p ON oli.product_id = p.id
   LEFT JOIN product_vendor_payouts pvp ON oli.product_id = pvp.product_id AND oli.vendor_name = pvp.vendor_name
   WHERE 
@@ -161,7 +161,7 @@ BEGIN
         WHEN vpi.line_item_id IS NOT NULL THEN true
         ELSE false
       END as is_paid
-    FROM order_line_items oli
+    FROM order_line_items_v2 oli
     LEFT JOIN products p ON oli.product_id = p.id
     LEFT JOIN product_vendor_payouts pvp ON oli.product_id = pvp.product_id AND oli.vendor_name = pvp.vendor_name
     LEFT JOIN vendor_payout_items vpi ON oli.line_item_id = vpi.line_item_id AND vpi.payout_id IS NOT NULL
