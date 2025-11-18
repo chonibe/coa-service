@@ -58,3 +58,6 @@ CREATE INDEX IF NOT EXISTS vendor_payout_items_manually_marked_idx ON vendor_pay
 -- Add comment to table
 COMMENT ON TABLE vendor_payout_items IS 'Tracks individual line items included in vendor payouts, with support for manual payout marking and audit trail';
 
+
+
+

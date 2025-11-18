@@ -53,16 +53,17 @@ BEGIN
   ),
   all_vendors_with_totals AS (
     -- Get all vendors and their totals (including $0)
+    -- Start from vendors table to ensure ALL vendors are included
     SELECT 
-      COALESCE(v.vendor_name, vt.vendor_name) as vendor_name,
+      v.vendor_name,
       COALESCE(vt.amount, 0) as amount,
-      COALESCE(vt.product_count, 0) as product_count,
+      COALESCE(vt.product_count, 0)::INTEGER as product_count,
       v.paypal_email,
       v.tax_id,
       v.tax_country,
       v.is_company
     FROM vendors v
-    FULL OUTER JOIN vendor_totals vt ON v.vendor_name = vt.vendor_name
+    LEFT JOIN vendor_totals vt ON v.vendor_name = vt.vendor_name
     WHERE v.vendor_name IS NOT NULL
   )
   SELECT 
