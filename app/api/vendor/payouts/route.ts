@@ -43,12 +43,12 @@ export async function GET() {
     }
 
     // If no payouts found, calculate pending payout from sales data
-    // First get the vendor's sales data
+    // Use order_line_items_v2 and filter by fulfillment_status = 'fulfilled'
     const { data: lineItems } = await supabase
-      .from("order_line_items")
+      .from("order_line_items_v2")
       .select("*")
       .eq("vendor_name", vendorName)
-      .eq("status", "active")
+      .eq("fulfillment_status", "fulfilled")
 
     // Get the vendor's products
     const { products } = await fetchProductsByVendor(vendorName)
@@ -76,9 +76,9 @@ export async function GET() {
           pendingAmount += payout.payout_amount
         }
       } else {
-        // Default payout if no specific setting found (10%)
+        // Default payout if no specific setting found (25%)
         const price = typeof item.price === "string" ? Number.parseFloat(item.price || "0") : item.price || 0
-        pendingAmount += price * 0.1 // 10% default
+        pendingAmount += price * 0.25 // 25% default
       }
     })
 
