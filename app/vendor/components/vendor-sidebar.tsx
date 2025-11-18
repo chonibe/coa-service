@@ -29,6 +29,17 @@ export function VendorSidebar() {
   const [vendorName, setVendorName] = useState<string>("Vendor")
   const [profileComplete, setProfileComplete] = useState<boolean>(true)
   const [unreadMessages, setUnreadMessages] = useState(0)
+  const sidebarRef = useRef<HTMLElement>(null)
+  
+  // Enable swipe right to open sidebar on mobile
+  useSwipeGesture(sidebarRef, {
+    onSwipeRight: () => {
+      if (isMobile && !sidebarOpen) {
+        setSidebarOpen(true)
+      }
+    },
+    threshold: 100,
+  })
 
   const navItems: NavItem[] = [
     {
