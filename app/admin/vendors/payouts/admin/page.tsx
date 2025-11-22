@@ -23,6 +23,7 @@ import {
   ExternalLink,
   ChevronLeft,
   ChevronRight,
+  CheckCircle,
 } from "lucide-react"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Badge } from "@/components/ui/badge"
@@ -743,21 +744,86 @@ export default function AdminPayoutsPage() {
                                                 {} as Record<string, typeof monthItems>
                                               )
 
+                                              const hasUnpaidItems = monthItems.some(item => !item.is_paid)
+                                              
                                               return (
                                                 <div key={monthKey} className="border rounded-md bg-background">
                                                   <div className="p-4 border-b bg-muted/30">
                                                     <div className="flex justify-between items-center">
                                                       <h5 className="font-semibold">{monthName}</h5>
-                                                      <div className="text-sm space-x-4">
-                                                        <span className="text-muted-foreground">
-                                                          Total: <span className="font-medium text-foreground">{formatUSD(monthTotal)}</span>
-                                                        </span>
-                                                        <span className="text-green-600">
-                                                          Paid: <span className="font-medium">{formatUSD(monthPaidTotal)}</span>
-                                                        </span>
-                                                        <span className="text-amber-600">
-                                                          Pending: <span className="font-medium">{formatUSD(monthPendingTotal)}</span>
-                                                        </span>
+                                                      <div className="flex items-center gap-4">
+                                                        <div className="text-sm space-x-4">
+                                                          <span className="text-muted-foreground">
+                                                            Total: <span className="font-medium text-foreground">{formatUSD(monthTotal)}</span>
+                                                          </span>
+                                                          <span className="text-green-600">
+                                                            Paid: <span className="font-medium">{formatUSD(monthPaidTotal)}</span>
+                                                          </span>
+                                                          <span className="text-amber-600">
+                                                            Pending: <span className="font-medium">{formatUSD(monthPendingTotal)}</span>
+                                                          </span>
+                                                        </div>
+                                                        {hasUnpaidItems && (
+                                                          <Button
+                                                            variant="outline"
+                                                            size="sm"
+                                                            onClick={async () => {
+                                                              if (!confirm(`Mark all unpaid items for ${monthName} as paid? This will mark ${monthItems.filter(item => !item.is_paid).length} items.`)) {
+                                                                return
+                                                              }
+                                                              
+                                                              try {
+                                                                setIsProcessing(true)
+                                                                const response = await fetch("/api/admin/payouts/mark-month-paid", {
+                                                                  method: "POST",
+                                                                  headers: {
+                                                                    "Content-Type": "application/json",
+                                                                  },
+                                                                  body: JSON.stringify({
+                                                                    vendorName: payout.vendor_name,
+                                                                    year: parseInt(year),
+                                                                    month: parseInt(month),
+                                                                    createPayoutRecord: true,
+                                                                  }),
+                                                                })
+
+                                                                if (!response.ok) {
+                                                                  const error = await response.json()
+                                                                  throw new Error(error.error || "Failed to mark month as paid")
+                                                                }
+
+                                                                toast({
+                                                                  title: "Success",
+                                                                  description: `Successfully marked all items for ${monthName} as paid`,
+                                                                })
+
+                                                                // Refresh data
+                                                                fetchPendingPayouts()
+                                                              } catch (error: any) {
+                                                                toast({
+                                                                  title: "Error",
+                                                                  description: error.message || "Failed to mark month as paid",
+                                                                  variant: "destructive",
+                                                                })
+                                                              } finally {
+                                                                setIsProcessing(false)
+                                                              }
+                                                            }}
+                                                            disabled={isProcessing}
+                                                          >
+                                                            {isProcessing ? (
+                                                              <>
+                                                                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                                                                Processing...
+                                                              </>
+                                                            ) : (
+                                                              <>
+                                                                <CheckCircle className="h-4 w-4 mr-2" />
+                                                                Mark Month as Paid
+                                                              </>
+                                                            )}
+                                                          </Button>
+                                                        )}
                                                       </div>
                                                     </div>
                                                   </div>
