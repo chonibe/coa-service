@@ -47,7 +47,9 @@ export async function POST(request: NextRequest) {
     // Start: first day of the month at 00:00:00
     const startDate = new Date(year, month - 1, 1).toISOString()
     // End: last day of the month at 23:59:59.999
-    // new Date(year, month, 0) gives last day of (month-1), so use month+1 to get last day of month
+    // new Date(year, month, 0) gives last day of (month-1) in 0-indexed months
+    // So for 1-indexed month, use month (which becomes month-1 in 0-indexed) + 1 = month in 0-indexed
+    // Then day 0 of next month = last day of current month
     const endDate = new Date(year, month, 0, 23, 59, 59, 999).toISOString()
 
     // Get all fulfilled line items for this vendor in this month that are not yet paid
