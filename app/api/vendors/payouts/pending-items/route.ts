@@ -9,23 +9,32 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Vendor name is required" }, { status: 400 })
     }
 
+    console.log(`[pending-items] Fetching line items for vendor: ${vendorName}`)
+    console.log(`[pending-items] Date filters - startDate: ${startDate || 'none'}, endDate: ${endDate || 'none'}`)
+    console.log(`[pending-items] Include paid: ${includePaid}`)
+
     const supabase = createClient()
 
-    // Fallback to direct query - Get ALL fulfilled line items for this vendor (not just pending)
+    // Get line items for this vendor that meet one of these criteria:
+    // 1. fulfillment_status = 'fulfilled' or 'partially_fulfilled' (will be filtered by financial_status later)
+    // 2. Has an active edition number (edition_number IS NOT NULL AND status = 'active')
     // Note: Supabase has a default limit of 1000 rows, so we need to fetch in batches if needed
-    // Include all statuses (active, closed, completed, etc.) - we only care about fulfillment_status
+    // Exclude restocked items (restocked = false or null)
     let query = supabase
       .from("order_line_items_v2")
-      .select("line_item_id, order_id, order_name, product_id, price, created_at, fulfillment_status", { count: 'exact' })
+      .select("line_item_id, order_id, order_name, product_id, price, created_at, fulfillment_status, edition_number, status, restocked, name", { count: 'exact' })
       .eq("vendor_name", vendorName)
-      .eq("fulfillment_status", "fulfilled")
-      .order("created_at", { ascending: false }) // Order by date descending to get all items
+      .or("fulfillment_status.in.(fulfilled,partially_fulfilled),and(edition_number.not.is.null,status.eq.active)") // Either fulfilled/partially_fulfilled OR has active edition number
+      .eq("restocked", false) // Exclude restocked items
+      .order("created_at", { ascending: false }) // Order by date descending (newest first for display)
 
-    // Apply date range filter if provided
+    // Apply date range filter ONLY if explicitly provided
     if (startDate) {
+      console.log(`[pending-items] Applying startDate filter: ${startDate}`)
       query = query.gte("created_at", startDate)
     }
     if (endDate) {
+      console.log(`[pending-items] Applying endDate filter: ${endDate}`)
       query = query.lte("created_at", endDate)
     }
 
@@ -39,17 +48,96 @@ export async function POST(request: Request) {
       const { data: lineItems, error: lineItemsError, count } = await query.range(from, from + pageSize - 1)
       
       if (lineItemsError) {
-        console.error("Error fetching line items:", lineItemsError)
+        console.error("[pending-items] Error fetching line items:", lineItemsError)
         return NextResponse.json({ error: lineItemsError.message }, { status: 500 })
       }
 
+      console.log(`[pending-items] Fetched batch: ${lineItems?.length || 0} items (total count: ${count})`)
+
       if (lineItems && lineItems.length > 0) {
+        // Log date range for this batch
+        const dates = lineItems.map((item: any) => item.created_at).filter(Boolean).sort()
+        if (dates.length > 0) {
+          console.log(`[pending-items] Batch date range: ${dates[0]} to ${dates[dates.length - 1]}`)
+        }
+        
         allLineItems = [...allLineItems, ...lineItems]
         from += pageSize
         hasMore = lineItems.length === pageSize && (count === null || from < count)
       } else {
         hasMore = false
       }
+    }
+
+    // Log overall date range
+    if (allLineItems.length > 0) {
+      const allDates = allLineItems.map((item: any) => item.created_at).filter(Boolean).sort()
+      if (allDates.length > 0) {
+        console.log(`[pending-items] Total items fetched: ${allLineItems.length}`)
+        console.log(`[pending-items] Overall date range: ${allDates[0]} to ${allDates[allDates.length - 1]}`)
+      }
+    } else {
+      console.log(`[pending-items] No items found for vendor: ${vendorName}`)
+    }
+
+    // Separate items into two groups:
+    // 1. Items with active edition numbers (always include these, but exclude cancelled orders)
+    // 2. Items that need financial_status check (fulfilled/partially_fulfilled)
+    const itemsWithActiveEdition = allLineItems.filter((item: any) => 
+      item.edition_number !== null && item.edition_number !== undefined && item.status === 'active'
+    )
+    const itemsNeedingFinancialCheck = allLineItems.filter((item: any) => 
+      !(item.edition_number !== null && item.edition_number !== undefined && item.status === 'active')
+    )
+    
+    console.log(`[pending-items] Items with active edition numbers: ${itemsWithActiveEdition.length}`)
+    console.log(`[pending-items] Items needing financial_status check: ${itemsNeedingFinancialCheck.length}`)
+    
+    // Get all order IDs to check financial_status
+    const allOrderIds = [...new Set(allLineItems.map((item: any) => item.order_id))]
+    const { data: orders, error: ordersError } = await supabase
+      .from("orders")
+      .select("id, financial_status")
+      .in("id", allOrderIds)
+    
+    if (ordersError) {
+      console.error("[pending-items] Error fetching orders:", ordersError)
+    } else {
+      // Exclude cancelled orders (financial_status = 'voided')
+      const cancelledOrderIds = new Set(
+        orders?.filter((order: any) => order.financial_status === 'voided').map((order: any) => order.id) || []
+      )
+      console.log(`[pending-items] Found ${cancelledOrderIds.size} cancelled orders (financial_status = 'voided')`)
+      
+      // Filter items with active edition numbers - exclude cancelled orders
+      // Note: Cancelled orders should not have edition numbers, but we verify this here
+      const validItemsWithActiveEdition = itemsWithActiveEdition.filter((item: any) => {
+        const isFromCancelledOrder = cancelledOrderIds.has(item.order_id)
+        if (isFromCancelledOrder) {
+          console.warn(`[pending-items] WARNING: Item ${item.line_item_id} has edition number ${item.edition_number} but is from cancelled order ${item.order_id}`)
+        }
+        return !isFromCancelledOrder
+      })
+      console.log(`[pending-items] Items with active edition (excluding cancelled): ${validItemsWithActiveEdition.length}`)
+      
+      // Filter items needing financial_status check - only include orders with financial_status = 'paid', 'refunded', or 'complete' (and not cancelled)
+      const validOrderIds = new Set(
+        orders?.filter((order: any) => 
+          (order.financial_status === 'paid' || 
+           order.financial_status === 'refunded' || 
+           order.financial_status === 'complete') &&
+          order.financial_status !== 'voided' // Extra check (should already be excluded but just to be safe)
+        ).map((order: any) => order.id) || []
+      )
+      
+      const validItemsFromFinancialCheck = itemsNeedingFinancialCheck.filter((item: any) => 
+        validOrderIds.has(item.order_id)
+      )
+      console.log(`[pending-items] Items passing financial_status check: ${validItemsFromFinancialCheck.length}`)
+      
+      // Combine both groups
+      allLineItems = [...validItemsWithActiveEdition, ...validItemsFromFinancialCheck]
+      console.log(`[pending-items] Final total items: ${allLineItems.length} (${validItemsWithActiveEdition.length} with active edition + ${validItemsFromFinancialCheck.length} from financial check)`)
     }
 
     const lineItems = allLineItems
@@ -90,12 +178,12 @@ export async function POST(request: Request) {
       }
 
       // Get product titles and payout settings
-      const productIds = [...new Set(itemsToProcess.map((item: any) => item.product_id))]
+      const productIds = [...new Set(itemsToProcess.map((item: any) => item.product_id).filter(Boolean))]
       
       const { data: products } = await supabase
         .from("products")
-        .select("id, name, product_id")
-        .in("id", productIds)
+        .select("product_id, name")
+        .in("product_id", productIds)
 
       const { data: payoutSettings } = await supabase
         .from("product_vendor_payouts")
@@ -105,7 +193,9 @@ export async function POST(request: Request) {
 
       const productMap = new Map<string, any>()
       products?.forEach((product: any) => {
-        productMap.set(product.id, product.name || product.product_id)
+        if (product.product_id) {
+          productMap.set(product.product_id, product.name || 'Unknown Product')
+        }
       })
 
       const payoutMap = new Map<string, any>()
@@ -113,19 +203,47 @@ export async function POST(request: Request) {
         payoutMap.set(setting.product_id, setting)
       })
 
-      // Build response
+      // Build response - include ALL items, even with $0 price
       const data = itemsToProcess.map((item: any) => {
         const payoutSetting = payoutMap.get(item.product_id)
+        const itemPrice = item.price || 0
+        
+        // If no payout setting exists, use default logic:
+        // - Items under $30: $10 fixed payout
+        // - Items $30 and above: 25% percentage payout
+        let payoutAmount: number
+        let isPercentage: boolean
+        
+        if (payoutSetting) {
+          // Use the configured payout setting
+          payoutAmount = payoutSetting.payout_amount
+          isPercentage = payoutSetting.is_percentage ?? true
+        } else {
+          // Default logic based on price
+          if (itemPrice < 30) {
+            payoutAmount = 10
+            isPercentage = false // Fixed $10 amount
+          } else {
+            payoutAmount = 25
+            isPercentage = true // 25% percentage
+          }
+        }
+        
+        const calculatedPayout = isPercentage 
+          ? (itemPrice * payoutAmount / 100)
+          : payoutAmount
+        
         return {
           line_item_id: item.line_item_id,
           order_id: item.order_id,
           order_name: item.order_name,
           product_id: item.product_id,
-          product_title: productMap.get(item.product_id) || null,
+          product_title: productMap.get(item.product_id) || item.name || 'Unknown Product',
           price: item.price || 0,
           created_at: item.created_at,
-          payout_amount: payoutSetting?.payout_amount ?? 25,
-          is_percentage: payoutSetting?.is_percentage ?? true,
+          payout_amount: payoutAmount,
+          is_percentage: isPercentage,
+          calculated_payout: calculatedPayout, // Actual payout amount (will be $0 if price is $0)
           fulfillment_status: item.fulfillment_status,
           is_paid: paidLineItemIds.has(item.line_item_id),
         }
@@ -135,6 +253,10 @@ export async function POST(request: Request) {
         }
         return new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
       })
+
+      console.log(`[pending-items] Returning ${data.length} line items for ${vendorName}`)
+      console.log(`[pending-items] Items with $0 price: ${data.filter((item: any) => item.price === 0).length}`)
+      console.log(`[pending-items] Items with $0 calculated payout: ${data.filter((item: any) => item.calculated_payout === 0).length}`)
 
       return NextResponse.json({ lineItems: data })
   } catch (error: any) {

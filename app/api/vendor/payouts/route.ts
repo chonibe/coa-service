@@ -37,6 +37,7 @@ export async function GET() {
         date: payout.payout_date || payout.created_at,
         products: payout.product_count || 0,
         reference: payout.reference,
+        invoice_number: payout.invoice_number,
       }))
 
       return NextResponse.json({ payouts: formattedPayouts })
@@ -44,6 +45,14 @@ export async function GET() {
 
     // If no payouts found, calculate pending payout from sales data
     // Use order_line_items_v2 and filter by fulfillment_status = 'fulfilled'
+    // Also exclude items that have already been paid
+    const { data: paidItems } = await supabase
+      .from("vendor_payout_items")
+      .select("line_item_id")
+      .not("payout_id", "is", null)
+    
+    const paidLineItemIds = new Set((paidItems || []).map((item: any) => item.line_item_id))
+    
     const { data: lineItems } = await supabase
       .from("order_line_items_v2")
       .select("*")
@@ -62,8 +71,10 @@ export async function GET() {
       .in("product_id", productIds)
 
     // Calculate pending payout
+    // Filter out items that have already been paid
+    const unpaidItems = (lineItems || []).filter((item: any) => !paidLineItemIds.has(item.line_item_id))
     let pendingAmount = 0
-    const salesData = lineItems || []
+    const salesData = unpaidItems
 
     salesData.forEach((item) => {
       const payout = payoutSettings?.find((p) => p.product_id === item.product_id)

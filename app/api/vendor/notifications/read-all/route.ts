@@ -1,38 +1,41 @@
 import { NextResponse } from "next/server"
-import type { NextRequest } from "next/server"
-import { cookies } from "next/headers"
-import { createClient as createServiceClient } from "@/lib/supabase/server"
-import { getVendorFromCookieStore } from "@/lib/vendor-session"
+import { createClient } from "@/lib/supabase/server"
+import { getVendorFromSession } from "@/lib/vendor-session"
 
-export async function PUT(request: NextRequest) {
+/**
+ * POST /api/vendor/notifications/read-all
+ * Mark all notifications as read for the current vendor
+ */
+export async function POST() {
   try {
-    const cookieStore = cookies()
-    const vendorName = getVendorFromCookieStore(cookieStore)
-
-    if (!vendorName) {
-      return NextResponse.json({ error: "Not authenticated" }, { status: 401 })
+    const vendor = await getVendorFromSession()
+    if (!vendor) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    const supabase = createServiceClient()
-
+    const supabase = createClient()
     const { error } = await supabase
       .from("vendor_notifications")
       .update({
         is_read: true,
         read_at: new Date().toISOString(),
       })
-      .eq("vendor_name", vendorName)
+      .eq("vendor_name", vendor.vendor_name)
       .eq("is_read", false)
 
     if (error) {
       console.error("Error marking all notifications as read:", error)
-      return NextResponse.json({ error: "Failed to mark notifications as read" }, { status: 500 })
+      return NextResponse.json(
+        { error: "Failed to mark notifications as read" },
+        { status: 500 }
+      )
     }
 
     return NextResponse.json({ success: true })
-  } catch (error) {
-    console.error("Unexpected error in mark all as read API:", error)
-    return NextResponse.json({ error: "An unexpected error occurred" }, { status: 500 })
+  } catch (error: any) {
+    return NextResponse.json(
+      { error: error.message || "An unexpected error occurred" },
+      { status: 500 }
+    )
   }
 }
-

@@ -88,6 +88,7 @@ export async function updateLineItemStatus(
 
 /**
  * Resequences edition numbers for a product after items have been removed or marked inactive
+ * Preserves edition numbers for authenticated items (nfc_claimed_at IS NOT NULL)
  */
 async function resequenceEditionNumbers(productId: string) {
   try {
@@ -111,12 +112,35 @@ async function resequenceEditionNumbers(productId: string) {
       return
     }
 
-    console.log(`Found ${activeItems.length} active items to resequence`)
+    // Find the highest edition number among authenticated items
+    const authenticatedItems = activeItems.filter(item => item.nfc_claimed_at !== null)
+    const authenticatedEditionNumbers = authenticatedItems
+      .map(item => item.edition_number)
+      .filter(num => num !== null && num !== undefined) as number[]
+    
+    const maxAuthenticatedEdition = authenticatedEditionNumbers.length > 0 
+      ? Math.max(...authenticatedEditionNumbers) 
+      : 0
 
-    // Assign new sequential edition numbers starting from 1
-    let editionCounter = 1
+    console.log(`Found ${activeItems.length} active items, ${authenticatedItems.length} authenticated (preserving their edition numbers)`)
+
+    // Start from the next available number after authenticated items
+    let nextAvailableNumber = maxAuthenticatedEdition + 1
+    const usedNumbers = new Set(authenticatedEditionNumbers)
+    let assignedCount = 0
 
     for (const item of activeItems) {
+      // Skip authenticated items - they keep their existing edition number
+      if (item.nfc_claimed_at !== null && item.nfc_claimed_at !== undefined) {
+        console.log(`Skipping authenticated item ${item.line_item_id} (edition #${item.edition_number})`)
+        continue
+      }
+
+      // Find next available number that's not used by authenticated items
+      while (usedNumbers.has(nextAvailableNumber)) {
+        nextAvailableNumber++
+      }
+
       // Generate certificate URL if it doesn't exist
       const baseUrl = process.env.NEXT_PUBLIC_CUSTOMER_APP_URL || process.env.NEXT_PUBLIC_APP_URL || ""
       const certificateUrl = `${baseUrl}/certificate/${item.line_item_id}`
@@ -125,7 +149,7 @@ async function resequenceEditionNumbers(productId: string) {
       const { error: updateError } = await supabase
         .from("order_line_items_v2")
         .update({
-          edition_number: editionCounter,
+          edition_number: nextAvailableNumber,
           updated_at: new Date().toISOString(),
           // Only set certificate fields if they don't exist yet
           certificate_url: item.certificate_url || certificateUrl,
@@ -138,12 +162,14 @@ async function resequenceEditionNumbers(productId: string) {
       if (updateError) {
         console.error(`Error updating edition number for item ${item.line_item_id}:`, updateError)
       } else {
-        console.log(`Updated item ${item.line_item_id} with new edition number ${editionCounter}`)
-        editionCounter++
+        console.log(`Updated item ${item.line_item_id} with new edition number ${nextAvailableNumber}`)
+        usedNumbers.add(nextAvailableNumber)
+        nextAvailableNumber++
+        assignedCount++
       }
     }
 
-    console.log(`Resequencing complete. Assigned edition numbers 1 through ${editionCounter - 1}`)
+    console.log(`Resequencing complete. Assigned ${assignedCount} edition numbers (preserved ${authenticatedItems.length} authenticated editions)`)
   } catch (error) {
     console.error("Error in resequenceEditionNumbers:", error)
   }
@@ -151,6 +177,7 @@ async function resequenceEditionNumbers(productId: string) {
 
 /**
  * Resequences edition numbers for a product when a previously inactive item becomes active
+ * Preserves edition numbers for authenticated items (nfc_claimed_at IS NOT NULL)
  */
 async function resequenceEditionNumbersWithNewItem(
   productId: string,
@@ -179,15 +206,38 @@ async function resequenceEditionNumbersWithNewItem(
       return
     }
 
-    console.log(`Found ${activeItems.length} active items to resequence`)
+    // Find the highest edition number among authenticated items
+    const authenticatedItems = activeItems.filter(item => item.nfc_claimed_at !== null)
+    const authenticatedEditionNumbers = authenticatedItems
+      .map(item => item.edition_number)
+      .filter(num => num !== null && num !== undefined) as number[]
+    
+    const maxAuthenticatedEdition = authenticatedEditionNumbers.length > 0 
+      ? Math.max(...authenticatedEditionNumbers) 
+      : 0
 
-    // Assign new sequential edition numbers starting from 1
-    let editionCounter = 1
+    console.log(`Found ${activeItems.length} active items, ${authenticatedItems.length} authenticated (preserving their edition numbers)`)
+
+    // Start from the next available number after authenticated items
+    let nextAvailableNumber = maxAuthenticatedEdition + 1
+    const usedNumbers = new Set(authenticatedEditionNumbers)
+    let assignedCount = 0
 
     for (const item of activeItems) {
+      // Skip authenticated items - they keep their existing edition number
+      if (item.nfc_claimed_at !== null && item.nfc_claimed_at !== undefined) {
+        console.log(`Skipping authenticated item ${item.line_item_id} (edition #${item.edition_number})`)
+        continue
+      }
+
       // Skip the item we're updating if it's not in the correct position yet
       if (item.line_item_id === lineItemId && item.created_at !== created_at) {
         continue
+      }
+
+      // Find next available number that's not used by authenticated items
+      while (usedNumbers.has(nextAvailableNumber)) {
+        nextAvailableNumber++
       }
 
       // Generate certificate URL if it doesn't exist
@@ -198,7 +248,7 @@ async function resequenceEditionNumbersWithNewItem(
       const { error: updateError } = await supabase
         .from("order_line_items_v2")
         .update({
-          edition_number: editionCounter,
+          edition_number: nextAvailableNumber,
           updated_at: new Date().toISOString(),
           // Only set certificate fields if they don't exist yet
           certificate_url: item.certificate_url || certificateUrl,
@@ -211,12 +261,14 @@ async function resequenceEditionNumbersWithNewItem(
       if (updateError) {
         console.error(`Error updating edition number for item ${item.line_item_id}:`, updateError)
       } else {
-        console.log(`Updated item ${item.line_item_id} with new edition number ${editionCounter}`)
-        editionCounter++
+        console.log(`Updated item ${item.line_item_id} with new edition number ${nextAvailableNumber}`)
+        usedNumbers.add(nextAvailableNumber)
+        nextAvailableNumber++
+        assignedCount++
       }
     }
 
-    console.log(`Resequencing complete. Assigned edition numbers 1 through ${editionCounter - 1}`)
+    console.log(`Resequencing complete. Assigned ${assignedCount} edition numbers (preserved ${authenticatedItems.length} authenticated editions)`)
   } catch (error) {
     console.error("Error in resequenceEditionNumbersWithNewItem:", error)
   }

@@ -42,7 +42,7 @@ async function fetchLineItemDetails(lineItems: any[]) {
   return details
 }
 
-export async function POST() {
+export async function POST(request: NextRequest) {
   const supabase = createClient()
   
   console.log("==== SYNC ALL PRODUCTS API CALLED ====")

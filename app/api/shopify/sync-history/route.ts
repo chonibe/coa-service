@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server"
-import type { NextRequest } from "next/request"
+import type { NextRequest } from "next/server"
 import { createClient } from "@/lib/supabase/server"
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   const supabase = createClient()
   
   try {
@@ -10,7 +10,7 @@ export async function GET() {
     const limit = Number.parseInt(searchParams.get("limit") || "10")
 
     // Initialize arrays to store history data
-    let combinedHistory = []
+    let combinedHistory: any[] = []
 
     // Try to get sync history from sync_status table
     try {

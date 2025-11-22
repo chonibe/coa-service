@@ -21,7 +21,7 @@ export async function GET(request: NextRequest) {
     // Create Supabase client with service role key
     const supabase = createClient()
 
-    // Fetch line items from the database
+    // Fetch line items from the database with product names
     const { data: lineItems, error } = await supabase
       .from("order_line_items_v2")
       .select(`
@@ -39,9 +39,27 @@ export async function GET(request: NextRequest) {
         edition_number,
         edition_total,
         nfc_tag_id,
-        nfc_claimed_at
+        nfc_claimed_at,
+        product_id
       `)
       .order("created_at", { ascending: false })
+    
+    // Fetch product names for all unique product IDs
+    const productIds = Array.from(new Set((lineItems || []).map(item => item.product_id).filter(Boolean)))
+    let productNames: Record<string, string> = {}
+    
+    if (productIds.length > 0) {
+      const { data: products } = await supabase
+        .from("products")
+        .select("product_id, name")
+        .in("product_id", productIds)
+      
+      if (products) {
+        productNames = Object.fromEntries(
+          products.map(p => [p.product_id, p.name || 'Unknown Product'])
+        )
+      }
+    }
 
     if (error) {
       console.error("Error fetching line items:", error)
@@ -68,6 +86,7 @@ export async function GET(request: NextRequest) {
         id: item.id,
         order_id: item.order_id,
         name: item.name,
+        product_name: productNames[item.product_id] || item.name || 'Unknown Product',
         description: item.description,
         price: item.price,
         quantity: item.quantity,
@@ -78,7 +97,8 @@ export async function GET(request: NextRequest) {
         edition_number: item.edition_number,
         edition_total: item.edition_total,
         nfc_tag_id: item.nfc_tag_id,
-        nfc_claimed_at: item.nfc_claimed_at
+        nfc_claimed_at: item.nfc_claimed_at,
+        product_id: item.product_id
       })
       return acc
     }, {})

@@ -155,12 +155,12 @@ async function getOrderData(orderId: string) {
 
   // Collect unique product IDs (as bigint)
   const productIds = Array.from(new Set((lineItems || []).map(item => item.product_id).filter(Boolean)));
-  let productDetails: Record<string, { sku?: string | null; edition_number?: number; edition_size?: number; image_url?: string }> = {};
+  let productDetails: Record<string, { sku?: string | null; edition_number?: number; edition_size?: number; image_url?: string; name?: string }> = {};
   if (productIds.length > 0) {
     // Fetch product details using the correct field (shopify_id or id as bigint)
     const { data: products } = await supabase
       .from('products')
-      .select('shopify_id, sku, image_url')
+      .select('shopify_id, product_id, sku, image_url, name')
       .in('shopify_id', productIds);
 
     // Fetch edition counters if needed
@@ -173,6 +173,7 @@ async function getOrderData(orderId: string) {
       productDetails = Object.fromEntries(products.map(p => [p.shopify_id, {
         sku: p.sku,
         image_url: p.image_url,
+        name: p.name || null,
         edition_size: editionCounters?.find(ec => ec.product_id === p.shopify_id)?.edition_total ? 
           Number.parseInt(editionCounters.find(ec => ec.product_id === p.shopify_id)?.edition_total || '0', 10) : 
           undefined
@@ -185,6 +186,7 @@ async function getOrderData(orderId: string) {
     ...item,
     sku: productDetails[item.product_id]?.sku || null,
     image_url: productDetails[item.product_id]?.image_url || null,
+    product_name: productDetails[item.product_id]?.name || item.name || 'Unknown Product',
   })) || [];
 
   console.log('DEBUG productDetails:', productDetails);
@@ -214,6 +216,7 @@ async function getOrderData(orderId: string) {
       const shopifyMappedLineItems = mappedLineItems.map(item => ({
         id: item.line_item_id,
         title: item.name,
+        product_name: item.product_name || item.name,
         quantity: item.quantity || 1,
         price: item.price,
         sku: item.sku || null,

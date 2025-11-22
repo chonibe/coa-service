@@ -5,7 +5,10 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, ExternalLink, ChevronLeft, ChevronRight, ChevronUp, ChevronDown, AlertCircle } from "lucide-react";
+import { ArrowLeft, ExternalLink, ChevronLeft, ChevronRight, ChevronUp, ChevronDown, AlertCircle, RotateCcw } from "lucide-react";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { formatCurrency } from '@/lib/utils';
 import { useState, useEffect } from 'react';
 import DuplicateItemsBox from '../DuplicateItemsBox';
@@ -17,6 +20,7 @@ import Image from "next/image"
 interface OrderLineItem {
   id: string;
   title: string;
+  product_name?: string;
   quantity: number;
   price: number;
   sku: string | null;
@@ -31,6 +35,9 @@ interface OrderLineItem {
   edition_number?: number;
   edition_size?: number;
   edition_total?: number;
+  line_item_id?: string;
+  refund_status?: string;
+  refunded_amount?: number;
 }
 
 interface Order {
@@ -73,6 +80,11 @@ export default function OrderDetails({ order }: OrderDetailsProps) {
     nextOrderId: null
   });
   const [duplicateItems, setDuplicateItems] = useState<Map<string, string[]>>(new Map());
+  const [refundDialogOpen, setRefundDialogOpen] = useState(false);
+  const [selectedItemForRefund, setSelectedItemForRefund] = useState<OrderLineItem | null>(null);
+  const [refundType, setRefundType] = useState<"full" | "partial">("full");
+  const [refundAmount, setRefundAmount] = useState<string>("");
+  const [processingRefund, setProcessingRefund] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
@@ -221,6 +233,60 @@ export default function OrderDetails({ order }: OrderDetailsProps) {
     }
   };
 
+  const handleRefund = async () => {
+    if (!selectedItemForRefund) return;
+
+    setProcessingRefund(true);
+    try {
+      const response = await fetch("/api/admin/orders/refund", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          line_item_id: selectedItemForRefund.line_item_id || selectedItemForRefund.id,
+          refund_status: refundType,
+          refunded_amount: refundType === "partial" ? parseFloat(refundAmount) : undefined,
+          order_id: order.id,
+        }),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || "Failed to process refund");
+      }
+
+      const result = await response.json();
+      toast.success(`Refund processed successfully. Deduction: $${result.deduction_amount?.toFixed(2) || 0}`);
+      
+      // Refresh the page to show updated refund status
+      router.refresh();
+      setRefundDialogOpen(false);
+      setSelectedItemForRefund(null);
+      setRefundAmount("");
+      setRefundType("full");
+    } catch (err: any) {
+      toast.error(err.message || "Failed to process refund");
+    } finally {
+      setProcessingRefund(false);
+    }
+  };
+
+  const openRefundDialog = (item: OrderLineItem) => {
+    setSelectedItemForRefund(item);
+    setRefundType("full");
+    setRefundAmount("");
+    setRefundDialogOpen(true);
+  };
+
+  const getRefundStatusBadge = (item: OrderLineItem) => {
+    if (!item.refund_status || item.refund_status === "none") return null;
+    
+    return (
+      <Badge variant={item.refund_status === "full" ? "destructive" : "outline"} className="ml-2">
+        {item.refund_status === "full" ? "Full Refund" : `Partial: $${item.refunded_amount?.toFixed(2) || 0}`}
+      </Badge>
+    );
+  };
+
   const getStatusBadgeVariant = (status: string) => {
     switch (status) {
       case 'active':
@@ -356,6 +422,7 @@ export default function OrderDetails({ order }: OrderDetailsProps) {
                   <TableHead className="w-[10%] text-right">Price</TableHead>
                   <TableHead className="w-[10%] text-right">Total</TableHead>
                   <TableHead className="w-[10%] text-right">Edition Size</TableHead>
+                  <TableHead className="w-[10%] text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -378,25 +445,30 @@ export default function OrderDetails({ order }: OrderDetailsProps) {
                       )}
                     </TableCell>
                     <TableCell className="font-medium">
-                      <div className="flex items-center gap-2">
-                        {item.product_id ? (
-                          <Link 
-                            href={`/admin/product-editions/${item.product_id}`}
-                            className="flex items-center gap-1 hover:text-primary transition-colors"
-                          >
-                            {item.title}
-                            <ExternalLink className="h-3 w-3" />
-                          </Link>
-                        ) : (
-                          <span>{item.title}</span>
-                        )}
-                        {duplicateItems.has(item.id) && (
-                          <div className="flex items-center gap-1">
-                            <AlertCircle className="h-4 w-4 text-yellow-500" />
-                            <span className="text-xs text-muted-foreground">
-                              ({duplicateItems.get(item.id)?.length})
-                            </span>
-                          </div>
+                      <div className="flex flex-col gap-1">
+                        <div className="flex items-center gap-2">
+                          {item.product_id ? (
+                            <Link 
+                              href={`/admin/product-editions/${item.product_id}`}
+                              className="flex items-center gap-1 hover:text-primary transition-colors"
+                            >
+                              {item.product_name || item.title}
+                              <ExternalLink className="h-3 w-3" />
+                            </Link>
+                          ) : (
+                            <span>{item.product_name || item.title}</span>
+                          )}
+                          {duplicateItems.has(item.id) && (
+                            <div className="flex items-center gap-1">
+                              <AlertCircle className="h-4 w-4 text-yellow-500" />
+                              <span className="text-xs text-muted-foreground">
+                                ({duplicateItems.get(item.id)?.length})
+                              </span>
+                            </div>
+                          )}
+                        </div>
+                        {item.product_name && item.product_name !== item.title && (
+                          <span className="text-xs text-muted-foreground">{item.title}</span>
                         )}
                       </div>
                     </TableCell>
@@ -426,6 +498,22 @@ export default function OrderDetails({ order }: OrderDetailsProps) {
                     </TableCell>
                     <TableCell className="text-right font-medium">
                       {typeof item.edition_size === 'number' ? item.edition_size : '-'}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex items-center justify-end gap-2">
+                        {getRefundStatusBadge(item)}
+                        {item.vendor_name && item.fulfillment_status === 'fulfilled' && (!item.refund_status || item.refund_status === 'none') && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => openRefundDialog(item)}
+                            className="gap-1"
+                          >
+                            <RotateCcw className="h-3 w-3" />
+                            Refund
+                          </Button>
+                        )}
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))}
@@ -714,6 +802,63 @@ export default function OrderDetails({ order }: OrderDetailsProps) {
       </div>
         </CardContent>
       </Card>
+
+      {/* Refund Dialog */}
+      <Dialog open={refundDialogOpen} onOpenChange={setRefundDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Process Refund</DialogTitle>
+            <DialogDescription>
+              Process a refund for {selectedItemForRefund?.title}. This will automatically deduct the vendor's share from their next payout.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label>Refund Type</Label>
+              <Select value={refundType} onValueChange={(value: "full" | "partial") => setRefundType(value)}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="full">Full Refund</SelectItem>
+                  <SelectItem value="partial">Partial Refund</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            {refundType === "partial" && (
+              <div className="space-y-2">
+                <Label>Refunded Amount</Label>
+                <Input
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  max={selectedItemForRefund?.price || 0}
+                  value={refundAmount}
+                  onChange={(e) => setRefundAmount(e.target.value)}
+                  placeholder={`Max: ${formatCurrency(selectedItemForRefund?.price || 0, order.currency_code)}`}
+                />
+              </div>
+            )}
+            {selectedItemForRefund && (
+              <div className="p-3 bg-muted rounded-md">
+                <div className="text-sm space-y-1">
+                  <div><strong>Item:</strong> {selectedItemForRefund.title}</div>
+                  <div><strong>Price:</strong> {formatCurrency(selectedItemForRefund.price, order.currency_code)}</div>
+                  <div><strong>Vendor:</strong> {selectedItemForRefund.vendor_name || "N/A"}</div>
+                </div>
+              </div>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setRefundDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleRefund} disabled={processingRefund || (refundType === "partial" && !refundAmount)}>
+              {processingRefund ? "Processing..." : "Process Refund"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 } 

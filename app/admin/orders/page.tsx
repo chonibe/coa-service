@@ -5,6 +5,7 @@ import { createClient } from '@supabase/supabase-js';
 import type { Database } from '@/types/supabase';
 import OrdersList from './OrdersList';
 import SyncAllOrdersButton from './SyncAllOrdersButton';
+import SyncOrderStatusesButton from './SyncOrderStatusesButton';
 
 interface Order {
   id: string;
@@ -75,7 +76,10 @@ export default function OrdersPage() {
       <div className="container mx-auto py-8">
         <div className="flex justify-between items-center mb-8">
           <h1 className="text-3xl font-bold">Orders</h1>
-          <SyncAllOrdersButton />
+          <div className="flex gap-2">
+            <SyncOrderStatusesButton />
+            <SyncAllOrdersButton />
+          </div>
         </div>
         <div className="text-center">Loading orders...</div>
       </div>
@@ -87,7 +91,10 @@ export default function OrdersPage() {
       <div className="container mx-auto py-8">
         <div className="flex justify-between items-center mb-8">
           <h1 className="text-3xl font-bold">Orders</h1>
-          <SyncAllOrdersButton />
+          <div className="flex gap-2">
+            <SyncOrderStatusesButton />
+            <SyncAllOrdersButton />
+          </div>
         </div>
         <div className="text-red-500">{error}</div>
       </div>

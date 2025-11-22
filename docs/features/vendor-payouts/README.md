@@ -13,6 +13,13 @@ The Vendor Payout System is a comprehensive solution for calculating and process
 - ✅ **Comprehensive Validation**: Prevents duplicate payments and validates fulfillment status
 - ✅ **Admin Portal Integration**: Full UI for managing payouts and settings
 - ✅ **Audit Trail**: Complete logging of all payout actions
+- ✅ **PayPal Integration**: Real PayPal Payouts API integration for automated payments
+- ✅ **Automatic Refund Deduction**: Automatically deducts vendor share when orders are refunded
+- ✅ **PDF Invoice Generation**: Professional self-billing invoices for tax compliance
+- ✅ **USD Currency Support**: All payouts processed in USD
+- ✅ **Refund Processing UI**: Admin interface for processing refunds from order details
+- ✅ **Negative Balance Warnings**: Alerts for vendors who owe money from refunds
+- ✅ **PayPal Status Checking**: Manual status check for PayPal batch payouts
 
 ## Technical Implementation
 
@@ -20,14 +27,19 @@ The Vendor Payout System is a comprehensive solution for calculating and process
 
 #### Core Tables
 
-- **`order_line_items`**: Stores order line items with fulfillment status
+- **`order_line_items_v2`**: Stores order line items with fulfillment and refund status
 - **`product_vendor_payouts`**: Per-product payout configuration
-- **`vendor_payouts`**: Payout batch records
+- **`vendor_payouts`**: Payout batch records with PayPal tracking
 - **`vendor_payout_items`**: Individual line item payment tracking
+- **`vendor_ledger_entries`**: Complete transaction ledger (payouts, refunds, adjustments)
 
 #### Key Fields
 
 - `fulfillment_status`: Must be 'fulfilled' for payout eligibility
+- `refund_status`: 'none', 'partial', or 'full' - tracks refund state
+- `refunded_amount`: Amount refunded for partial refunds
+- `refunded_at`: Timestamp when refund was processed
+- `payout_batch_id`: PayPal batch ID for tracking
 - `manually_marked_paid`: Boolean flag for manual payments
 - `marked_by`: Admin email for audit trail
 - `marked_at`: Timestamp of manual payment
@@ -44,17 +56,24 @@ The Vendor Payout System is a comprehensive solution for calculating and process
 
 - `POST /api/admin/payouts/mark-paid`: Manually mark items as paid
 - `GET /api/admin/payouts/calculate`: Calculate detailed payout breakdown
+- `POST /api/admin/orders/refund`: Process refunds for order line items
+- `GET /api/vendors/payouts/[id]/invoice`: Generate PDF invoice for payout
+- `GET /api/vendors/payouts/check-status`: Check PayPal batch payout status
 
 ### Database Functions
 
-- `get_pending_vendor_payouts()`: Calculate pending payouts (fulfilled items only)
-- `get_vendor_pending_line_items(vendor_name)`: Get pending line items for vendor
+- `get_pending_vendor_payouts()`: Calculate pending payouts (fulfilled items only, includes refund deductions)
+- `get_vendor_pending_line_items(vendor_name)`: Get pending line items for vendor (excludes refunded items)
 - `get_vendor_payout_by_order(vendor_name, order_id)`: Order-level payout calculation
+- `get_vendor_balance(vendor_name)`: Get vendor balance including refund deductions
 
 ### Libraries
 
 - **`lib/payout-calculator.ts`**: Core calculation logic
 - **`lib/payout-validator.ts`**: Validation and integrity checks
+- **`lib/paypal/client.ts`**: PayPal OAuth authentication
+- **`lib/paypal/payouts.ts`**: PayPal Payouts API integration
+- **`lib/invoices/generator.ts`**: PDF invoice generation
 
 ## Admin User Guide
 
@@ -80,9 +99,12 @@ The Vendor Payout System is a comprehensive solution for calculating and process
 1. Select vendors from pending payouts list
 2. Click "Process Selected"
 3. Choose payment method (PayPal, Bank Transfer, etc.)
-4. Optionally generate invoices
-5. Add notes if needed
-6. Confirm and process
+4. For PayPal: System automatically creates batch payout via PayPal API
+5. Optionally generate invoices
+6. Add notes if needed
+7. Confirm and process
+8. PayPal payouts will show "processing" status until PayPal completes
+9. Use "Check Status" button to manually refresh PayPal batch status
 
 ### Manual Payout Marking
 
@@ -94,6 +116,17 @@ The Vendor Payout System is a comprehensive solution for calculating and process
 6. Enter optional payout reference
 7. Confirm to mark as paid
 
+### Processing Refunds
+
+1. Navigate to **Admin → Orders → [Order ID]**
+2. Find the line item to refund
+3. Click "Refund" button (only visible for fulfilled items with vendors)
+4. Choose refund type: Full or Partial
+5. For partial refunds, enter the refunded amount
+6. Confirm refund
+7. System automatically deducts vendor's share from their next payout
+8. Refund status is displayed on the line item
+
 ### Calculating Payouts
 
 1. Navigate to **Admin → Payouts → Payout Calculator**
@@ -101,7 +134,16 @@ The Vendor Payout System is a comprehensive solution for calculating and process
 3. Toggle "Include paid items" if needed
 4. View detailed breakdown by order
 5. Expand orders to see line item details
-6. Export report if needed
+6. Note: Negative balances from refunds are automatically included
+7. Export report if needed
+
+### Viewing Payout History
+
+1. Navigate to **Admin → Payouts → Payout Manager → Payout History**
+2. Filter by status, search vendors
+3. For PayPal payouts with "processing" status, click refresh icon to check PayPal status
+4. Download invoices for completed payouts
+5. View PayPal batch IDs for tracking
 
 ## Calculation Examples
 
@@ -192,25 +234,121 @@ Fulfillment status is synced from Shopify via:
 ### Database
 - `supabase/migrations/20251118042456_payout_enhancements.sql`
 - `supabase/migrations/20251118042457_order_payout_tracking.sql`
+- `supabase/migrations/20251121120000_pro_payout_system_upgrade.sql` - Pro upgrade (refunds, PayPal, invoices)
 - `db/vendor_payout_functions.sql`
+- `db/vendor_payout_functions_with_refunds.sql` - Updated with refund logic
 
 ### API Routes
 - `app/api/vendors/payouts/pending/route.ts`
-- `app/api/vendors/payouts/process/route.ts`
+- `app/api/vendors/payouts/process/route.ts` - Updated with PayPal integration
+- `app/api/vendors/payouts/[id]/invoice/route.ts` - PDF invoice generation
+- `app/api/vendors/payouts/check-status/route.ts` - PayPal status checking
 - `app/api/admin/payouts/mark-paid/route.ts`
 - `app/api/admin/payouts/calculate/route.ts`
+- `app/api/admin/orders/refund/route.ts` - Refund processing
 
 ### Admin Pages
 - `app/admin/vendors/payouts/page.tsx` - Payout settings
-- `app/admin/vendors/payouts/admin/page.tsx` - Payout manager
+- `app/admin/vendors/payouts/admin/page.tsx` - Payout manager (with warnings, PayPal status)
 - `app/admin/vendors/payouts/manual/page.tsx` - Manual payout management
 - `app/admin/vendors/payouts/calculate/page.tsx` - Payout calculator
+- `app/admin/orders/[orderId]/OrderDetails.tsx` - Order details with refund UI
+
+### Vendor Pages
+- `app/vendor/dashboard/payouts/page.tsx` - Vendor payout history with invoice downloads
 
 ### Libraries
 - `lib/payout-calculator.ts`
 - `lib/payout-validator.ts`
+- `lib/paypal/client.ts` - PayPal authentication
+- `lib/paypal/payouts.ts` - PayPal Payouts API
+- `lib/invoices/generator.ts` - PDF invoice generation
+
+## PayPal Integration
+
+### Setup
+
+1. Get PayPal API credentials from PayPal Developer Dashboard
+2. Add to environment variables:
+   ```
+   PAYPAL_CLIENT_ID=your_client_id
+   PAYPAL_CLIENT_SECRET=your_client_secret
+   PAYPAL_ENVIRONMENT=sandbox  # or 'production'
+   ```
+3. Ensure all vendors have valid PayPal emails in their profile
+
+### How It Works
+
+1. Admin selects vendors and processes payout
+2. System validates PayPal emails
+3. Creates PayPal batch payout via API
+4. Stores `payout_batch_id` for tracking
+5. Status updates automatically or can be checked manually
+6. Completed payouts marked with completion date
+
+### Status Checking
+
+- PayPal processes payouts asynchronously
+- Use "Check Status" button in payout history to refresh
+- Statuses: PENDING → PROCESSING → SUCCESS/FAILED
+- Failed payouts can be retried manually
+
+## Refund Processing
+
+### Automatic Deduction
+
+When an order is refunded:
+1. Admin marks line item as refunded (full or partial)
+2. System checks if item was previously paid
+3. If paid, calculates vendor's share that was paid
+4. Creates negative ledger entry
+5. Deducts from vendor's next payout automatically
+
+### Refund Types
+
+- **Full Refund**: Deducts entire vendor payout amount
+- **Partial Refund**: Deducts proportional amount based on refunded amount
+
+### Negative Balances
+
+- Vendors with negative balances are highlighted in red
+- Cannot be selected for payout until balance is positive
+- System shows warning alert for all vendors with negative balances
+
+## Invoice Generation
+
+### Features
+
+- Professional PDF invoices with company branding
+- Self-billing invoices for tax compliance
+- Includes vendor details, line items, tax breakdown
+- Downloadable from vendor dashboard and admin payout history
+- Automatic invoice number generation
+
+### Access
+
+- **Vendors**: Download from `/vendor/dashboard/payouts` for completed payouts
+- **Admins**: Download from payout history table
+
+## Currency
+
+- All payouts processed in **USD**
+- Database defaults to USD
+- PayPal payouts sent in USD
+- Invoices display USD amounts
+- Vendor dashboard shows USD formatting
 
 ## Version History
+
+- **v2.0.0** (2024-11-21): Pro Payout System Upgrade
+  - PayPal Payouts API integration
+  - Automatic refund deduction
+  - PDF invoice generation
+  - USD currency support
+  - Admin refund processing UI
+  - Negative balance warnings
+  - PayPal status checking
+  - Enhanced vendor ledger tracking
 
 - **v1.0.0** (2024-11-18): Initial comprehensive payout system implementation
   - Fulfillment-based calculations

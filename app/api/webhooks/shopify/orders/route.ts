@@ -9,7 +9,7 @@ import { createClient } from "@/lib/supabase/server"
  * This endpoint receives webhook notifications from Shopify when orders are created or updated
  * It processes the orders and updates the edition numbers accordingly
  */
-export async function POST() {
+export async function POST(request: NextRequest) {
   const supabase = createClient()
   
   try {
@@ -34,9 +34,15 @@ export async function POST() {
 
     // Parse the webhook body
     const webhookData = JSON.parse(rawBody)
-    console.log("Received Shopify order webhook:", webhookData.id)
+    console.log("Received Shopify order webhook:", webhookData.id, "financial_status:", webhookData.financial_status)
 
-    // Process the order
+    // Update order status in database first (especially important for cancelled orders)
+    await updateOrderStatus(webhookData, supabase)
+
+    // Sync the entire order to database (all orders, not just limited edition)
+    await syncOrderToDatabase(webhookData, supabase)
+
+    // Also process limited edition items for the old system (if needed)
     await processShopifyOrder(webhookData)
 
     // Log the webhook event
@@ -65,7 +71,207 @@ export async function POST() {
 }
 
 /**
- * Process a Shopify order and update edition numbers
+ * Update order status in database from Shopify webhook data
+ */
+async function updateOrderStatus(order: any, supabase: any) {
+  try {
+    const orderId = order.id.toString()
+    
+    // Update the order's financial_status and fulfillment_status
+    const { error: updateError } = await supabase
+      .from('orders')
+      .update({
+        financial_status: order.financial_status,
+        fulfillment_status: order.fulfillment_status || 'pending',
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', orderId)
+
+    if (updateError) {
+      console.error(`Error updating order status for ${orderId}:`, updateError)
+    } else {
+      console.log(`Updated order ${orderId} status: financial_status=${order.financial_status}, fulfillment_status=${order.fulfillment_status || 'pending'}`)
+    }
+
+    // If order is cancelled (voided), clear edition numbers from line items
+    if (order.financial_status === 'voided') {
+      console.log(`Order ${orderId} is cancelled (voided), clearing edition numbers...`)
+      
+      const { error: clearEditionError } = await supabase
+        .from('order_line_items_v2')
+        .update({
+          edition_number: null,
+          edition_total: null,
+          status: 'inactive',
+          updated_at: new Date().toISOString(),
+        })
+        .eq('order_id', orderId)
+
+      if (clearEditionError) {
+        console.error(`Error clearing edition numbers for cancelled order ${orderId}:`, clearEditionError)
+      } else {
+        console.log(`Cleared edition numbers for cancelled order ${orderId}`)
+      }
+    }
+  } catch (error) {
+    console.error(`Error updating order status:`, error)
+    // Don't throw - continue processing even if status update fails
+  }
+}
+
+/**
+ * Sync order to database - syncs ALL orders, not just limited edition
+ */
+async function syncOrderToDatabase(order: any, supabase: any) {
+  try {
+    console.log(`[webhook] Syncing order ${order.id} (${order.name}) to database`)
+
+    // Upsert order
+    const orderData: any = {
+      id: order.id.toString(),
+      order_number: order.name.replace('#', ''),
+      financial_status: order.financial_status,
+      fulfillment_status: order.fulfillment_status || 'pending',
+      total_price: parseFloat(order.current_total_price || order.total_price || '0'),
+      currency_code: order.currency || 'USD',
+      customer_email: order.email || null,
+      updated_at: new Date().toISOString(),
+      raw_shopify_order_data: order,
+    }
+
+    // Use processed_at if available, otherwise use created_at
+    if (order.processed_at) {
+      orderData.processed_at = order.processed_at
+    } else if (order.created_at) {
+      orderData.processed_at = order.created_at
+    } else {
+      orderData.processed_at = new Date().toISOString()
+    }
+
+    // Use created_at if available
+    if (order.created_at) {
+      orderData.created_at = order.created_at
+    } else {
+      orderData.created_at = orderData.processed_at
+    }
+
+    const { error: orderError } = await supabase
+      .from('orders')
+      .upsert(orderData, { onConflict: 'id' })
+
+    if (orderError) {
+      console.error(`[webhook] Error upserting order ${order.name}:`, orderError)
+      return
+    }
+
+    // Sync line items to order_line_items_v2
+    if (order.line_items && order.line_items.length > 0) {
+      // Check for restocked items from refund data
+      const restockedLineItemIds = new Set<number>()
+      if (order.refunds && Array.isArray(order.refunds)) {
+        order.refunds.forEach((refund: any) => {
+          if (refund.refund_line_items && Array.isArray(refund.refund_line_items)) {
+            refund.refund_line_items.forEach((refundItem: any) => {
+              if (refundItem.restock === true) {
+                restockedLineItemIds.add(refundItem.line_item_id)
+              }
+            })
+          }
+        })
+      }
+
+      // Delete existing line items for this order
+      await supabase
+        .from('order_line_items_v2')
+        .delete()
+        .eq('order_id', order.id.toString())
+
+      // Insert new line items
+      const lineItems = order.line_items.map((item: any) => {
+        const isRestocked = restockedLineItemIds.has(item.id)
+        const isCancelled = order.financial_status === 'voided'
+        const isFulfilled = item.fulfillment_status === 'fulfilled'
+        const isOrderPaid = ['paid', 'authorized', 'pending', 'partially_paid'].includes(order.financial_status)
+        
+        // Determine status:
+        // - inactive if restocked or cancelled
+        // - active if order is paid/in-progress (even if not fulfilled yet)
+        // - active if fulfilled
+        const status = (isRestocked || isCancelled) ? 'inactive' : (isOrderPaid || isFulfilled ? 'active' : 'inactive')
+        
+        // Edition numbers will be assigned by assign_edition_numbers function for all active items
+        // Set to undefined so it gets assigned, or null if restocked/cancelled
+        const shouldClearEdition = isRestocked || isCancelled
+        
+        return {
+          order_id: order.id.toString(),
+          order_name: order.name,
+          line_item_id: item.id.toString(),
+          product_id: item.product_id?.toString() || '',
+          variant_id: item.variant_id?.toString() || null,
+          name: item.title,
+          description: item.title,
+          quantity: item.quantity || 1,
+          price: parseFloat(item.price || '0'),
+          sku: item.sku || null,
+          vendor_name: item.vendor || null,
+          fulfillment_status: item.fulfillment_status || null,
+          restocked: isRestocked,
+          status: status,
+          edition_number: shouldClearEdition ? null : undefined, // Will be assigned by assign_edition_numbers for active items
+          edition_total: shouldClearEdition ? null : undefined, // Will be set by assign_edition_numbers
+          created_at: orderData.created_at,
+          updated_at: new Date().toISOString(),
+        }
+      })
+
+      const { error: lineItemsError } = await supabase
+        .from('order_line_items_v2')
+        .insert(lineItems)
+
+      if (lineItemsError) {
+        console.error(`[webhook] Error inserting line items for order ${order.name}:`, lineItemsError)
+      } else {
+        console.log(`[webhook] Synced ${lineItems.length} line items for order ${order.name}`)
+        
+        // Collect product IDs for edition number assignment
+        // Assign edition numbers to all active items (not just fulfilled ones)
+        // This ensures edition numbers are visible even for in-progress orders
+        const productIdsToResequence = new Set<string>()
+        lineItems.forEach((item: any) => {
+          if (item.status === 'active' && item.product_id) {
+            productIdsToResequence.add(item.product_id)
+          }
+          if (item.restocked && item.product_id) {
+            productIdsToResequence.add(item.product_id)
+          }
+        })
+
+        // Assign edition numbers
+        for (const productId of productIdsToResequence) {
+          try {
+            const { error: assignError } = await supabase
+              .rpc('assign_edition_numbers', { p_product_id: productId })
+            
+            if (assignError) {
+              console.error(`[webhook] Error assigning edition numbers for product ${productId}:`, assignError)
+            }
+          } catch (error) {
+            console.error(`[webhook] Error in edition assignment for product ${productId}:`, error)
+          }
+        }
+      }
+    }
+
+    console.log(`[webhook] Successfully synced order ${order.name} to database`)
+  } catch (error) {
+    console.error(`[webhook] Error syncing order ${order.name} to database:`, error)
+    // Don't throw - continue processing even if sync fails
+  }
+}
+
+/**
+ * Process a Shopify order and update edition numbers (legacy - for old order_line_items table)
  */
 async function processShopifyOrder(order: any) {
   try {
@@ -233,7 +439,7 @@ async function processLineItem(order: any, lineItem: any) {
       edition_total: editionSize, // Add the edition_total from the metafield
       created_at: new Date(order.created_at).toISOString(),
       updated_at: now,
-      status: "active",
+      status: lineItem.fulfillment_status === 'fulfilled' ? 'active' : 'inactive',
       certificate_url: certificateUrl,
       certificate_token: certificateToken,
       certificate_generated_at: now,

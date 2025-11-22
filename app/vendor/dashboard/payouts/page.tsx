@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Skeleton } from "@/components/ui/skeleton"
 import { Badge } from "@/components/ui/badge"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { DollarSign, RefreshCw, AlertCircle } from "lucide-react"
+import { DollarSign, RefreshCw, AlertCircle, Download } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { format } from "date-fns"
@@ -14,10 +14,11 @@ import { useToast } from "@/components/ui/use-toast"
 interface Payout {
   id: string
   amount: number
-  status: "pending" | "paid" | "failed"
+  status: "pending" | "paid" | "failed" | "completed" | "processing"
   date: string
   products: number
   reference?: string
+  invoice_number?: string
 }
 
 export default function PayoutsPage() {
@@ -30,9 +31,9 @@ export default function PayoutsPage() {
   const { toast } = useToast()
 
   const formatCurrency = (amount: number) =>
-    new Intl.NumberFormat("en-GB", {
+    new Intl.NumberFormat("en-US", {
       style: "currency",
-      currency: "GBP",
+      currency: "USD",
       minimumFractionDigits: 2,
     }).format(amount)
 
@@ -54,11 +55,11 @@ export default function PayoutsPage() {
 
       // Calculate totals
       const paid = data.payouts
-        .filter((p: Payout) => p.status === "paid")
+        .filter((p: Payout) => p.status === "paid" || p.status === "completed")
         .reduce((sum: number, p: Payout) => sum + p.amount, 0)
 
       const pending = data.payouts
-        .filter((p: Payout) => p.status === "pending")
+        .filter((p: Payout) => p.status === "pending" || p.status === "processing")
         .reduce((sum: number, p: Payout) => sum + p.amount, 0)
 
       setTotalPaid(paid)
@@ -88,11 +89,13 @@ export default function PayoutsPage() {
   const getStatusBadge = (status: string) => {
     switch (status) {
       case "paid":
+      case "completed":
         return <Badge className="bg-green-500">Paid</Badge>
       case "pending":
+      case "processing":
         return (
           <Badge variant="outline" className="text-amber-500 border-amber-500">
-            Pending
+            {status === "processing" ? "Processing" : "Pending"}
           </Badge>
         )
       case "failed":
@@ -186,6 +189,7 @@ export default function PayoutsPage() {
                     <TableHead>Products</TableHead>
                     <TableHead>Reference</TableHead>
                     <TableHead>Status</TableHead>
+                    <TableHead>Invoice</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -196,6 +200,24 @@ export default function PayoutsPage() {
                       <TableCell>{payout.products}</TableCell>
                       <TableCell>{payout.reference || "-"}</TableCell>
                       <TableCell>{getStatusBadge(payout.status)}</TableCell>
+                      <TableCell>
+                        {(payout.status === "paid" || payout.status === "completed") && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              const link = document.createElement("a")
+                              link.href = `/api/vendors/payouts/${payout.id}/invoice`
+                              link.download = `invoice-${payout.invoice_number || payout.id}.pdf`
+                              link.click()
+                            }}
+                            className="flex items-center gap-1"
+                          >
+                            <Download className="h-3 w-3" />
+                            Download
+                          </Button>
+                        )}
+                      </TableCell>
                     </TableRow>
                   ))}
                 </TableBody>

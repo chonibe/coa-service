@@ -43,6 +43,7 @@ CREATE POLICY "Enable all access for authenticated users on backup_settings"
   USING (true)
   WITH CHECK (true);
 
+DROP POLICY IF EXISTS "Enable all access for authenticated users on backups" ON backups;
 CREATE POLICY "Enable all access for authenticated users on backups"
   ON backups
   FOR ALL

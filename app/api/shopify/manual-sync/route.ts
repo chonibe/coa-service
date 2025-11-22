@@ -4,7 +4,7 @@ import { SHOPIFY_SHOP, SHOPIFY_ACCESS_TOKEN } from "@/lib/env"
 import { createClient } from "@/lib/supabase/server"
 import crypto from "crypto"
 
-export async function POST() {
+export async function POST(request: NextRequest) {
   const supabase = createClient()
   
   try {
@@ -18,17 +18,179 @@ export async function POST() {
     const orders = await fetchOrdersFromShopify()
     console.log(`Fetched ${orders.length} orders from Shopify`)
 
-    // Process each order
+    // Process each order - sync ALL orders to database, not just limited edition
     let processedCount = 0
     let skippedCount = 0
     let lastProcessedOrder = null
+    let syncedOrders = 0
+    let syncedLineItems = 0
+    let errors = 0
+    const productIdsToResequence = new Set<string>()
+
     for (const order of orders) {
-      const result = await processShopifyOrder(order)
-      if (result.processed) {
+      try {
+        // First, upsert the order to the orders table
+        const orderData: any = {
+          id: order.id.toString(),
+          order_number: order.name.replace('#', ''),
+          financial_status: order.financial_status,
+          fulfillment_status: order.fulfillment_status || 'pending',
+          total_price: parseFloat(order.current_total_price || order.total_price || '0'),
+          currency_code: order.currency || 'USD',
+          customer_email: order.email || null,
+          updated_at: new Date().toISOString(),
+          raw_shopify_order_data: order,
+        }
+
+        // Use processed_at if available, otherwise use created_at
+        if (order.processed_at) {
+          orderData.processed_at = order.processed_at
+        } else if (order.created_at) {
+          orderData.processed_at = order.created_at
+        } else {
+          orderData.processed_at = new Date().toISOString()
+        }
+
+        // Use created_at if available
+        if (order.created_at) {
+          orderData.created_at = order.created_at
+        } else {
+          orderData.created_at = orderData.processed_at
+        }
+
+        const { error: orderError } = await supabase
+          .from('orders')
+          .upsert(orderData, { onConflict: 'id' })
+
+        if (orderError) {
+          console.error(`Error upserting order ${order.name}:`, orderError)
+          errors++
+          skippedCount++
+          continue
+        }
+
+        syncedOrders++
         processedCount++
         lastProcessedOrder = order
-      } else {
+
+        // Now sync line items to order_line_items_v2
+        if (order.line_items && order.line_items.length > 0) {
+          // Check for restocked items from refund data
+          const restockedLineItemIds = new Set<number>()
+          if (order.refunds && Array.isArray(order.refunds)) {
+            order.refunds.forEach((refund: any) => {
+              if (refund.refund_line_items && Array.isArray(refund.refund_line_items)) {
+                refund.refund_line_items.forEach((refundItem: any) => {
+                  if (refundItem.restock === true) {
+                    restockedLineItemIds.add(refundItem.line_item_id)
+                  }
+                })
+              }
+            })
+          }
+
+          // Delete existing line items for this order
+          await supabase
+            .from('order_line_items_v2')
+            .delete()
+            .eq('order_id', order.id.toString())
+
+          // Insert new line items
+          const lineItems = order.line_items.map((item: any) => {
+            const isRestocked = restockedLineItemIds.has(item.id)
+            const isCancelled = order.financial_status === 'voided'
+            const isFulfilled = item.fulfillment_status === 'fulfilled'
+            const isOrderPaid = ['paid', 'authorized', 'pending', 'partially_paid'].includes(order.financial_status)
+            
+            // Determine status:
+            // - inactive if restocked or cancelled
+            // - active if order is paid/in-progress (even if not fulfilled yet)
+            // - active if fulfilled
+            const status = (isRestocked || isCancelled) ? 'inactive' : (isOrderPaid || isFulfilled ? 'active' : 'inactive')
+            
+            // Edition numbers will be assigned by assign_edition_numbers function for all active items
+            // Set to undefined so it gets assigned, or null if restocked/cancelled
+            const shouldClearEdition = isRestocked || isCancelled
+            
+            return {
+              order_id: order.id.toString(),
+              order_name: order.name,
+              line_item_id: item.id.toString(),
+              product_id: item.product_id?.toString() || '',
+              variant_id: item.variant_id?.toString() || null,
+              name: item.title,
+              description: item.title,
+              quantity: item.quantity || 1,
+              price: parseFloat(item.price || '0'),
+              sku: item.sku || null,
+              vendor_name: item.vendor || null,
+              fulfillment_status: item.fulfillment_status || null,
+              restocked: isRestocked,
+              status: status,
+              edition_number: shouldClearEdition ? null : undefined, // Will be assigned by assign_edition_numbers for active items
+              edition_total: shouldClearEdition ? null : undefined, // Will be set by assign_edition_numbers
+              created_at: orderData.created_at,
+              updated_at: new Date().toISOString(),
+            }
+          })
+
+          const { error: lineItemsError } = await supabase
+            .from('order_line_items_v2')
+            .insert(lineItems)
+
+          if (lineItemsError) {
+            console.error(`Error inserting line items for order ${order.name}:`, lineItemsError)
+            errors++
+          } else {
+            syncedLineItems += lineItems.length
+            
+            // Collect product IDs for edition number assignment
+            lineItems.forEach((item: any) => {
+              if (item.status === 'active' && item.product_id) {
+                productIdsToResequence.add(item.product_id)
+              }
+              if (item.restocked && item.product_id) {
+                productIdsToResequence.add(item.product_id)
+              }
+            })
+          }
+        }
+
+        // Also process limited edition items for the old system (if needed)
+        const result = await processShopifyOrder(order)
+        if (!result.processed) {
+          // Order was synced but doesn't have limited edition items - that's fine
+        }
+      } catch (error) {
+        console.error(`Error processing order ${order.name}:`, error)
+        errors++
         skippedCount++
+      }
+    }
+
+    // Assign edition numbers for all products with active items
+    let editionAssignmentErrors = 0
+    let editionAssignments = 0
+    
+    if (productIdsToResequence.size > 0) {
+      console.log(`Assigning edition numbers for ${productIdsToResequence.size} products...`)
+      
+      for (const productId of productIdsToResequence) {
+        try {
+          const { data, error: assignError } = await supabase
+            .rpc('assign_edition_numbers', { p_product_id: productId })
+          
+          if (assignError) {
+            console.error(`Error assigning edition numbers for product ${productId}:`, assignError)
+            editionAssignmentErrors++
+          } else {
+            console.log(`Assigned ${data} edition numbers for product ${productId}`)
+            editionAssignments++
+          }
+        } catch (error) {
+          console.error(`Error in edition assignment for product ${productId}:`, error)
+          editionAssignmentErrors++
+        }
       }
     }
 
@@ -61,9 +223,15 @@ export async function POST() {
 
     return NextResponse.json({
       success: true,
+      message: `Synced ${syncedOrders} orders and ${syncedLineItems} line items. Assigned edition numbers for ${editionAssignments} products.`,
       ordersProcessed: processedCount,
       ordersSkipped: skippedCount,
       totalOrders: orders.length,
+      syncedOrders,
+      syncedLineItems,
+      errors,
+      productsWithEditionsAssigned: editionAssignments,
+      editionAssignmentErrors,
       timestamp: now,
     })
   } catch (error: any) {
@@ -87,10 +255,13 @@ async function fetchOrdersFromShopify() {
   try {
     while (hasMore) {
       pageCount++
-      // Create URL with pagination
-      let url = `https://${SHOPIFY_SHOP}/admin/api/2023-10/orders.json?limit=500&status=any`
+      // Create URL with pagination (Shopify max limit is 250)
+      // Note: When using page_info, we cannot include status parameter
+      let url = `https://${SHOPIFY_SHOP}/admin/api/2023-10/orders.json?limit=250`
       if (pageInfo) {
         url += `&page_info=${pageInfo}`
+      } else {
+        url += `&status=any` // Only include status on first page
       }
 
       console.log(`[Page ${pageCount}] Fetching orders from: ${url}`)
@@ -240,7 +411,7 @@ async function processLineItem(order: any, lineItem: any) {
       vendor_name: vendorName,
       created_at: new Date(order.created_at).toISOString(),
       updated_at: now,
-      status: "active",
+      status: lineItem.fulfillment_status === 'fulfilled' ? 'active' : 'inactive',
       certificate_url: certificateUrl,
       certificate_token: certificateToken,
       certificate_generated_at: now,

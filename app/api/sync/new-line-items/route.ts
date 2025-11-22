@@ -77,6 +77,7 @@ export async function POST() {
 
     let syncedLineItems = 0;
     let errors = 0;
+    const productIdsToResequence = new Set<string>();
 
     // Process each new order
     for (const order of newOrders || []) {
@@ -101,9 +102,39 @@ export async function POST() {
           console.error(`Error deleting existing line items for order ${order.id}:`, deleteError);
         }
 
+        // Check for restocked items from refund data
+        const restockedLineItemIds = new Set<number>();
+        if (order.raw_shopify_order_data.refunds && Array.isArray(order.raw_shopify_order_data.refunds)) {
+          order.raw_shopify_order_data.refunds.forEach((refund: any) => {
+            if (refund.refund_line_items && Array.isArray(refund.refund_line_items)) {
+              refund.refund_line_items.forEach((refundItem: any) => {
+                if (refundItem.restock === true) {
+                  restockedLineItemIds.add(refundItem.line_item_id);
+                }
+              });
+            }
+          });
+        }
+
         // Insert new line items
+        const orderFinancialStatus = order.raw_shopify_order_data?.financial_status || 'pending';
         const lineItems = order.raw_shopify_order_data.line_items.map((item: ShopifyLineItem) => {
           console.log(`Mapping line item ${item.id} for order ${order.id}`);
+          const isRestocked = restockedLineItemIds.has(item.id);
+          const isCancelled = orderFinancialStatus === 'voided';
+          const isFulfilled = item.fulfillment_status === 'fulfilled';
+          const isOrderPaid = ['paid', 'authorized', 'pending', 'partially_paid'].includes(orderFinancialStatus);
+          
+          // Determine status:
+          // - inactive if restocked or cancelled
+          // - active if order is paid/in-progress (even if not fulfilled yet)
+          // - active if fulfilled
+          const status = (isRestocked || isCancelled) ? 'inactive' : (isOrderPaid || isFulfilled ? 'active' : 'inactive');
+          
+          // Edition numbers will be assigned by assign_edition_numbers function for all active items
+          // Set to undefined so it gets assigned, or null if restocked/cancelled
+          const shouldClearEdition = isRestocked || isCancelled;
+          
           return {
             order_id: order.id,
             order_name: order.raw_shopify_order_data.name,
@@ -115,7 +146,10 @@ export async function POST() {
             price: parseFloat(item.price),
             vendor_name: item.vendor || null,
             fulfillment_status: item.fulfillment_status,
-            status: 'active',
+            restocked: isRestocked,
+            status: status,
+            edition_number: shouldClearEdition ? null : undefined, // Will be assigned by assign_edition_numbers for active items
+            edition_total: shouldClearEdition ? null : undefined, // Will be set by assign_edition_numbers
             created_at: new Date(order.raw_shopify_order_data.created_at).toISOString(),
             updated_at: new Date().toISOString()
           };
@@ -149,6 +183,18 @@ export async function POST() {
         } else {
           console.log(`Successfully inserted ${lineItemsWithImages.length} line items for order ${order.id}`);
           syncedLineItems += lineItemsWithImages.length;
+          
+          // Collect product IDs that have active items for edition number assignment
+          // Also collect products that had restocked items (need resequencing)
+          lineItemsWithImages.forEach((item: any) => {
+            if (item.status === 'active' && item.product_id) {
+              productIdsToResequence.add(item.product_id);
+            }
+            // If item was restocked, we need to resequence the product
+            if (item.restocked && item.product_id) {
+              productIdsToResequence.add(item.product_id);
+            }
+          });
         }
       } catch (error) {
         console.error(`Error processing order ${order.id}:`, error);
@@ -156,19 +202,49 @@ export async function POST() {
       }
     }
 
+    // Assign edition numbers for all products with active items
+    let editionAssignmentErrors = 0;
+    let editionAssignments = 0;
+    
+    if (productIdsToResequence.size > 0) {
+      console.log(`Assigning edition numbers for ${productIdsToResequence.size} products...`);
+      
+      for (const productId of productIdsToResequence) {
+        try {
+          const { data, error: assignError } = await supabase
+            .rpc('assign_edition_numbers', { p_product_id: productId });
+          
+          if (assignError) {
+            console.error(`Error assigning edition numbers for product ${productId}:`, assignError);
+            editionAssignmentErrors++;
+          } else {
+            console.log(`Assigned ${data} edition numbers for product ${productId}`);
+            editionAssignments++;
+          }
+        } catch (error) {
+          console.error(`Error in edition assignment for product ${productId}:`, error);
+          editionAssignmentErrors++;
+        }
+      }
+    }
+
     console.log('Sync completed. Summary:', {
       totalNewOrders: newOrders?.length || 0,
       syncedLineItems,
-      errors
+      errors,
+      productsWithEditionsAssigned: editionAssignments,
+      editionAssignmentErrors
     });
 
     return NextResponse.json({ 
       success: true, 
-      message: `Synced ${syncedLineItems} line items from ${newOrders?.length || 0} new orders`,
+      message: `Synced ${syncedLineItems} line items from ${newOrders?.length || 0} new orders. Assigned edition numbers for ${editionAssignments} products.`,
       stats: {
         totalNewOrders: newOrders?.length || 0,
         syncedLineItems,
-        errors
+        errors,
+        productsWithEditionsAssigned: editionAssignments,
+        editionAssignmentErrors
       }
     });
 

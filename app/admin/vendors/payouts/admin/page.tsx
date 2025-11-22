@@ -87,6 +87,7 @@ interface PayoutHistory {
   invoice_number: string | null
   tax_amount: number
   processed_by: string | null
+  payout_batch_id?: string | null
 }
 
 export default function AdminPayoutsPage() {
@@ -351,10 +352,46 @@ export default function AdminPayoutsPage() {
     }
   }
 
+  // Check PayPal batch status
+  const checkPayPalStatus = async (payoutBatchId: string, payoutId: number) => {
+    try {
+      const response = await fetch(`/api/vendors/payouts/check-status?batchId=${payoutBatchId}&payoutId=${payoutId}`, {
+        method: "GET",
+      })
+
+      if (!response.ok) {
+        throw new Error("Failed to check PayPal status")
+      }
+
+      const result = await response.json()
+      
+      toast({
+        title: "Status Updated",
+        description: `Payout status: ${result.status}`,
+      })
+
+      // Refresh data
+      await fetchPayoutData()
+    } catch (err: any) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: err.message || "Failed to check PayPal status",
+      })
+    }
+  }
+
   // Filter pending payouts based on search query
   const filteredPendingPayouts = pendingPayouts.filter((payout) =>
     payout.vendor_name.toLowerCase().includes(searchQuery.toLowerCase()),
   )
+
+  // Separate vendors with negative balances and missing PayPal emails
+  const vendorsWithIssues = filteredPendingPayouts.filter(
+    (payout) => payout.amount < 0 || !payout.paypal_email
+  )
+  const vendorsWithNegativeBalance = filteredPendingPayouts.filter((payout) => payout.amount < 0)
+  const vendorsWithoutPayPal = filteredPendingPayouts.filter((payout) => !payout.paypal_email)
 
   // Filter payout history based on search query and status
   const filteredPayoutHistory = payoutHistory.filter((payout) => {
@@ -435,6 +472,30 @@ export default function AdminPayoutsPage() {
             <AlertCircle className="h-4 w-4" />
             <AlertTitle>Error</AlertTitle>
             <AlertDescription>{error}</AlertDescription>
+          </Alert>
+        )}
+
+        {/* Warnings for vendors with issues */}
+        {vendorsWithNegativeBalance.length > 0 && (
+          <Alert variant="destructive">
+            <AlertCircle className="h-4 w-4" />
+            <AlertTitle>Negative Balances Detected</AlertTitle>
+            <AlertDescription>
+              {vendorsWithNegativeBalance.length} vendor(s) have negative balances due to refunds. 
+              They owe money that will be deducted from their next payout:{" "}
+              {vendorsWithNegativeBalance.map((v) => `${v.vendor_name} (${formatUSD(Math.abs(v.amount))})`).join(", ")}
+            </AlertDescription>
+          </Alert>
+        )}
+
+        {vendorsWithoutPayPal.length > 0 && (
+          <Alert>
+            <AlertCircle className="h-4 w-4" />
+            <AlertTitle>Missing PayPal Emails</AlertTitle>
+            <AlertDescription>
+              {vendorsWithoutPayPal.length} vendor(s) are missing PayPal email addresses and cannot receive payouts:{" "}
+              {vendorsWithoutPayPal.map((v) => v.vendor_name).join(", ")}
+            </AlertDescription>
           </Alert>
         )}
 
@@ -540,7 +601,7 @@ export default function AdminPayoutsPage() {
                             <TableHead>Vendor</TableHead>
                             <TableHead>PayPal Email</TableHead>
                             <TableHead>Tax Info</TableHead>
-                            <TableHead className="text-right">Amount</TableHead>
+                            <TableHead className="text-right">Amount (USD)</TableHead>
                             <TableHead>Products</TableHead>
                             <TableHead>Last Payout</TableHead>
                             <TableHead className="w-[100px]">Actions</TableHead>
@@ -549,16 +610,17 @@ export default function AdminPayoutsPage() {
                         <TableBody>
                           {filteredPendingPayouts.map((payout) => (
                             <React.Fragment key={payout.vendor_name}>
-                              <TableRow>
+                              <TableRow className={payout.amount < 0 ? "bg-red-50 dark:bg-red-950/20" : ""}>
                                 <TableCell>
                                   <Checkbox
                                     checked={selectedPayouts.includes(payout.vendor_name)}
                                     onCheckedChange={() => togglePayoutSelection(payout.vendor_name)}
                                     aria-label={`Select ${payout.vendor_name}`}
+                                    disabled={payout.amount < 0 || !payout.paypal_email}
                                   />
                                 </TableCell>
                                 <TableCell className="font-medium">
-                                  <div className="flex items-center">
+                                  <div className="flex items-center gap-2">
                                     <Button
                                       variant="ghost"
                                       size="sm"
@@ -572,6 +634,11 @@ export default function AdminPayoutsPage() {
                                       )}
                                     </Button>
                                     {payout.vendor_name}
+                                    {payout.amount < 0 && (
+                                      <Badge variant="destructive" className="text-xs">
+                                        Owing {formatUSD(Math.abs(payout.amount))}
+                                      </Badge>
+                                    )}
                                   </div>
                                 </TableCell>
                                 <TableCell>
@@ -635,6 +702,9 @@ export default function AdminPayoutsPage() {
                                         </div>
                                       ) : vendorLineItems[payout.vendor_name]?.length > 0 ? (
                                         <div className="space-y-6">
+                                          <div className="text-sm text-muted-foreground mb-4">
+                                            Showing {vendorLineItems[payout.vendor_name]?.length || 0} total line items
+                                          </div>
                                           {Object.entries(
                                             // Group by month first
                                             vendorLineItems[payout.vendor_name].reduce(
@@ -959,17 +1029,29 @@ export default function AdminPayoutsPage() {
                               </TableCell>
                               <TableCell>
                                 <div className="flex items-center gap-2">
+                                  {payout.payment_method === "paypal" && payout.payout_batch_id && (payout.status === "processing" || payout.status === "pending") && (
+                                    <Button
+                                      variant="outline"
+                                      size="icon"
+                                      onClick={() => checkPayPalStatus(payout.payout_batch_id!, payout.id)}
+                                      title="Check PayPal Status"
+                                    >
+                                      <RefreshCw className="h-4 w-4" />
+                                    </Button>
+                                  )}
                                   <Button
                                     variant="outline"
                                     size="icon"
-                                    onClick={() => generateInvoice(payout.id)}
+                                    onClick={() => {
+                                      const link = document.createElement("a")
+                                      link.href = `/api/vendors/payouts/${payout.id}/invoice`
+                                      link.download = `invoice-${payout.invoice_number || payout.id}.pdf`
+                                      link.click()
+                                    }}
                                     disabled={payout.status !== "completed"}
-                                    title="Generate Invoice"
+                                    title="Download Invoice"
                                   >
                                     <FileText className="h-4 w-4" />
-                                  </Button>
-                                  <Button variant="outline" size="icon" title="Download Details">
-                                    <Download className="h-4 w-4" />
                                   </Button>
                                 </div>
                               </TableCell>

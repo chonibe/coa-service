@@ -3,7 +3,7 @@ CREATE TABLE IF NOT EXISTS vendor_payouts (
     id SERIAL PRIMARY KEY,
     vendor_name TEXT NOT NULL REFERENCES vendors(vendor_name),
     amount DECIMAL(10, 2) NOT NULL,
-    currency TEXT DEFAULT 'GBP',
+    currency TEXT DEFAULT 'USD',
     status TEXT NOT NULL DEFAULT 'pending',
     payout_date TIMESTAMP WITH TIME ZONE,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),

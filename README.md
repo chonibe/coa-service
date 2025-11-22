@@ -70,6 +70,7 @@ npm run dev
 - [Authentication](/docs/authentication/README.md)
 - [Dashboard Guides](/docs/README.md)
 - [Vendor Login Funnel](/docs/features/vendor-login/README.md)
+- [MCP Servers](/docs/mcp/README.md) - Model Context Protocol servers for Cursor agents
 
 ## Contributing
 
@@ -243,6 +244,29 @@ This script enables the Google provider and applies the redirect URLs declared i
 2. Install dependencies: `npm install`
 3. Set up environment variables
 4. Run the development server: `npm run dev`
+
+## MCP Servers (Model Context Protocol)
+
+This project includes custom MCP servers that enable Cursor agents to directly access the Supabase database and Shopify store for faster development.
+
+### Features
+
+- **Supabase MCP Server**: Read-only database access with schema inspection, table queries, and relationship discovery
+- **Shopify MCP Server**: Read-only API access for product catalog and order information
+
+### Quick Start
+
+1. Install MCP server dependencies:
+   ```bash
+   cd mcp-servers/supabase-server && npm install && npm run build
+   cd ../shopify-server && npm install && npm run build
+   ```
+
+2. Configure Cursor (already set up in `~/.cursor/mcp.json`)
+
+3. Restart Cursor to load the MCP servers
+
+For detailed setup instructions, usage examples, and security guidelines, see [MCP Documentation](/docs/mcp/README.md).
 
 ## Database Setup
 
