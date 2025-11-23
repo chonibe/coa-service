@@ -129,24 +129,27 @@ export default function MessagesPage() {
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold tracking-tight">Messages</h1>
+            <h1 className="text-3xl font-bold tracking-tight bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">Messages</h1>
             <p className="text-muted-foreground">Communicate with customers and the platform team</p>
           </div>
-          <Button onClick={handleNewMessage}>
+          <Button 
+            onClick={handleNewMessage}
+            className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-lg"
+          >
             <Plus className="mr-2 h-4 w-4" />
             New Message
           </Button>
         </div>
 
         {error && (
-          <Card>
+          <Card className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-0 shadow-xl">
             <CardContent className="pt-6">
               <p className="text-destructive">{error}</p>
             </CardContent>
           </Card>
         )}
 
-        <Card>
+        <Card className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-0 shadow-xl">
           <CardHeader>
             <div className="flex items-center justify-between">
               <div>

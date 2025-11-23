@@ -217,14 +217,19 @@ export function VendorSidebar() {
           <aside
             ref={sidebarRef}
             className={cn(
-              "fixed top-0 left-0 z-50 h-full w-[280px] bg-background border-r shadow-lg transition-transform duration-300 ease-in-out transform",
+              "fixed top-0 left-0 z-50 h-full w-[280px] bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl border-r border-slate-200/50 dark:border-slate-800/50 shadow-2xl transition-transform duration-300 ease-in-out transform",
               sidebarOpen ? "translate-x-0" : "-translate-x-full",
             )}
           >
-        <div className="flex items-center justify-between h-16 px-6 border-b">
+        <div className="flex items-center justify-between h-16 px-6 border-b border-slate-200/50 dark:border-slate-800/50">
           <Link href="/vendor/dashboard" className="flex items-center gap-2 font-semibold">
-            <Award className="h-6 w-6" />
-            <span className="font-medium">Vendor Portal</span>
+            <div className="relative">
+              <div className="absolute inset-0 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-lg blur-md opacity-50 animate-pulse" />
+              <div className="relative bg-gradient-to-br from-blue-500 to-indigo-600 p-1.5 rounded-lg">
+                <Award className="h-5 w-5 text-white" />
+              </div>
+            </div>
+            <span className="font-medium bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">Vendor Portal</span>
           </Link>
           <Button
             variant="ghost"

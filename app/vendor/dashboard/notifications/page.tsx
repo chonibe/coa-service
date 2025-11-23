@@ -110,13 +110,17 @@ export default function NotificationsPage() {
     <div className="p-6 space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-bold">Notifications</h1>
+          <h1 className="text-3xl font-bold tracking-tight bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">Notifications</h1>
           <p className="text-muted-foreground mt-1">
             {unreadCount > 0 ? `${unreadCount} unread notification${unreadCount !== 1 ? "s" : ""}` : "All caught up!"}
           </p>
         </div>
         {unreadCount > 0 && (
-          <Button onClick={markAllAsRead} variant="outline">
+          <Button 
+            onClick={markAllAsRead} 
+            variant="outline"
+            className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm"
+          >
             Mark All as Read
           </Button>
         )}
@@ -124,7 +128,7 @@ export default function NotificationsPage() {
 
       <div className="space-y-4">
         {notifications.length === 0 ? (
-          <Card>
+          <Card className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-0 shadow-xl">
             <CardContent className="py-12 text-center">
               <Bell className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
               <p className="text-muted-foreground">No notifications yet</p>
@@ -134,7 +138,7 @@ export default function NotificationsPage() {
           notifications.map((notification) => (
             <Card
               key={notification.id}
-              className={notification.is_read ? "opacity-75" : "border-l-4 border-l-primary"}
+              className={`bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-0 shadow-xl ${notification.is_read ? "opacity-75" : "border-l-4 border-l-blue-600"}`}
             >
               <CardContent className="p-4">
                 <div className="flex items-start gap-4">
@@ -164,6 +168,7 @@ export default function NotificationsPage() {
                             variant="ghost"
                             size="sm"
                             onClick={() => markAsRead(notification.id)}
+                            className="bg-white/50 dark:bg-slate-900/50 backdrop-blur-sm"
                           >
                             Mark Read
                           </Button>

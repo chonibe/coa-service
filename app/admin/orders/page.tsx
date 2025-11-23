@@ -75,7 +75,7 @@ export default function OrdersPage() {
     return (
       <div className="container mx-auto py-8">
         <div className="flex justify-between items-center mb-8">
-          <h1 className="text-3xl font-bold">Orders</h1>
+          <h1 className="text-3xl font-bold tracking-tight bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">Orders</h1>
           <div className="flex gap-2">
             <SyncOrderStatusesButton />
             <SyncAllOrdersButton />
@@ -90,7 +90,7 @@ export default function OrdersPage() {
     return (
       <div className="container mx-auto py-8">
         <div className="flex justify-between items-center mb-8">
-          <h1 className="text-3xl font-bold">Orders</h1>
+          <h1 className="text-3xl font-bold tracking-tight bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">Orders</h1>
           <div className="flex gap-2">
             <SyncOrderStatusesButton />
             <SyncAllOrdersButton />
@@ -104,7 +104,7 @@ export default function OrdersPage() {
   return (
     <div className="container mx-auto py-8">
       <div className="flex justify-between items-center mb-8">
-        <h1 className="text-3xl font-bold">Orders</h1>
+        <h1 className="text-3xl font-bold tracking-tight bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">Orders</h1>
         <SyncAllOrdersButton />
       </div>
       <OrdersList 

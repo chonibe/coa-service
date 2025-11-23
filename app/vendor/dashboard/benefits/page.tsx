@@ -286,11 +286,11 @@ export default function BenefitsPage() {
       <PullToRefresh onRefresh={handleRefresh}>
         <div className="p-6">
           <div className="mb-6">
-            <h1 className="text-2xl font-bold">Collector Benefits</h1>
+            <h1 className="text-3xl font-bold tracking-tight bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">Collector Benefits</h1>
             <p className="text-muted-foreground">Create and manage benefits for collectors of your limited editions</p>
           </div>
 
-          <Card className="mb-6">
+          <Card className="mb-6 bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-0 shadow-xl">
             <CardHeader>
               <CardTitle>Manage Benefits</CardTitle>
               <CardDescription>Create and manage benefits for collectors of your limited editions</CardDescription>
@@ -425,7 +425,12 @@ export default function BenefitsPage() {
                         <Button type="button" variant="outline" onClick={() => handleDialogOpen(false)}>
                           Cancel
                         </Button>
-                        <Button type="button" onClick={handleSubmit} disabled={isSubmitting}>
+                        <Button 
+                          type="button" 
+                          onClick={handleSubmit} 
+                          disabled={isSubmitting}
+                          className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-lg"
+                        >
                           {isSubmitting ? (
                             <>
                               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -456,7 +461,7 @@ export default function BenefitsPage() {
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                   {benefits.map((benefit) => (
-                    <Card key={benefit.id} className="overflow-hidden">
+                    <Card key={benefit.id} className="overflow-hidden bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-0 shadow-xl">
                       <CardHeader className="p-4 pb-2 flex flex-row items-start justify-between">
                         <div>
                           <div className="flex items-center mb-1">
@@ -522,7 +527,7 @@ export default function BenefitsPage() {
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-0 shadow-xl">
             <CardHeader>
               <CardTitle>About Collector Benefits</CardTitle>
               <CardDescription>Learn how to use benefits to add value to your limited editions</CardDescription>

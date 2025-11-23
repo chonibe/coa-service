@@ -29,7 +29,7 @@ import {
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 
-const COLORS = ["#0088FE", "#00C49F", "#FFBB28", "#FF8042", "#8884D8", "#82ca9d"]
+const COLORS = ["#3b82f6", "#6366f1", "#8b5cf6", "#a855f7", "#ec4899", "#f43f5e"]
 
 interface SaleItem {
   id: string
@@ -210,7 +210,7 @@ export default function AnalyticsPage() {
     <div className="space-y-6 pb-20 px-1">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Sales Analytics</h1>
+          <h1 className="text-3xl font-bold tracking-tight bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">Sales Analytics</h1>
           <p className="text-muted-foreground">View your sales performance over time</p>
         </div>
         <div className="flex items-center gap-3">
@@ -235,13 +235,18 @@ export default function AnalyticsPage() {
       </div>
 
       {error && (
-        <Alert variant="destructive">
+        <Alert variant="destructive" className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-0 shadow-lg">
           <AlertCircle className="h-4 w-4" />
           <AlertTitle>Error</AlertTitle>
           <AlertDescription>
             {error}
             <div className="mt-2">
-              <Button variant="outline" size="sm" onClick={fetchAnalyticsData}>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={fetchAnalyticsData}
+                className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm"
+              >
                 Try Again
               </Button>
             </div>
@@ -257,7 +262,7 @@ export default function AnalyticsPage() {
         />
       )}
 
-      <Card className="w-full">
+      <Card className="w-full bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-0 shadow-xl">
         <CardHeader>
           <CardTitle>Sales Over Time</CardTitle>
           <CardDescription>Monthly sales and revenue trends</CardDescription>
@@ -278,8 +283,8 @@ export default function AnalyticsPage() {
               >
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="month" />
-                <YAxis yAxisId="left" orientation="left" stroke="#8884d8" />
-                <YAxis yAxisId="right" orientation="right" stroke="#82ca9d" />
+                <YAxis yAxisId="left" orientation="left" stroke="#3b82f6" />
+                <YAxis yAxisId="right" orientation="right" stroke="#6366f1" />
                 <Tooltip
                   formatter={(value, name) => {
                     if (name === "Revenue (£)") {
@@ -290,12 +295,12 @@ export default function AnalyticsPage() {
                 />
                 <Legend
                   payload={[
-                    { value: "Sales (Units)", type: "square", color: "#8884d8" },
-                    { value: "Revenue (£)", type: "square", color: "#82ca9d" },
+                    { value: "Sales (Units)", type: "square", color: "#3b82f6" },
+                    { value: "Revenue (£)", type: "square", color: "#6366f1" },
                   ]}
                 />
-                <Bar yAxisId="left" dataKey="sales" fill="#8884d8" name="Sales (Units)" />
-                <Bar yAxisId="right" dataKey="revenue" fill="#82ca9d" name="Revenue (£)" />
+                <Bar yAxisId="left" dataKey="sales" fill="#3b82f6" name="Sales (Units)" />
+                <Bar yAxisId="right" dataKey="revenue" fill="#6366f1" name="Revenue (£)" />
               </BarChart>
             </ResponsiveContainer>
           ) : (
@@ -307,7 +312,7 @@ export default function AnalyticsPage() {
       </Card>
 
       <div className="grid gap-4 md:grid-cols-2">
-        <Card className="w-full">
+        <Card className="w-full bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-0 shadow-xl">
           <CardHeader>
             <CardTitle>Sales Trend</CardTitle>
             <CardDescription>Monthly sales trend</CardDescription>
@@ -330,7 +335,7 @@ export default function AnalyticsPage() {
                   <XAxis dataKey="month" />
                   <YAxis />
                   <Tooltip />
-                  <Line type="monotone" dataKey="sales" stroke="#8884d8" activeDot={{ r: 8 }} />
+                  <Line type="monotone" dataKey="sales" stroke="#3b82f6" activeDot={{ r: 8 }} />
                 </LineChart>
               </ResponsiveContainer>
             ) : (
@@ -341,7 +346,7 @@ export default function AnalyticsPage() {
           </CardContent>
         </Card>
 
-        <Card className="w-full">
+        <Card className="w-full bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-0 shadow-xl">
           <CardHeader>
             <CardTitle>Revenue Trend</CardTitle>
             <CardDescription>Monthly revenue trend</CardDescription>
@@ -364,7 +369,7 @@ export default function AnalyticsPage() {
                   <XAxis dataKey="month" />
                   <YAxis />
                   <Tooltip formatter={(value) => [formatCurrency(Number(value)), "Revenue"]} />
-                  <Line type="monotone" dataKey="revenue" stroke="#82ca9d" activeDot={{ r: 8 }} />
+                  <Line type="monotone" dataKey="revenue" stroke="#6366f1" activeDot={{ r: 8 }} />
                 </LineChart>
               </ResponsiveContainer>
             ) : (
@@ -376,7 +381,7 @@ export default function AnalyticsPage() {
         </Card>
       </div>
 
-      <Card className="w-full">
+      <Card className="w-full bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-0 shadow-xl">
         <CardHeader>
           <CardTitle>Sales by Product</CardTitle>
           <CardDescription>Distribution of sales across products</CardDescription>
@@ -397,7 +402,7 @@ export default function AnalyticsPage() {
                             labelLine={false}
                             label={({ name, percent }) => `${percent ? (percent * 100).toFixed(0) : 0}%`}
                             outerRadius={80}
-                            fill="#8884d8"
+                            fill="#3b82f6"
                             dataKey="sales"
                             nameKey="title"
                           >
@@ -451,7 +456,7 @@ export default function AnalyticsPage() {
       </Card>
 
       {/* Sales History Table */}
-      <Card className="w-full">
+      <Card className="w-full bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-0 shadow-xl">
         <CardHeader>
           <CardTitle>Sales History</CardTitle>
           <CardDescription>Detailed record of individual sales</CardDescription>

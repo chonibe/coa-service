@@ -334,7 +334,7 @@ export default function SyncProductsPage() {
 
                       <div className="divide-y">
                         {products.map((product) => (
-                          <div key={product.id} className="flex items-center p-4 hover:bg-muted/50">
+                          <div key={product.id} className="flex items-center p-4 hover:bg-white/50 dark:hover:bg-slate-900/50 backdrop-blur-sm transition-colors">
                             <div className="flex items-center flex-1">
                               <Checkbox
                                 id={`product-${product.id}`}

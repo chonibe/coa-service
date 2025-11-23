@@ -35,6 +35,16 @@ export async function POST() {
       console.error("Error creating vendor_payout_items table:", tableError)
     }
 
+    // Drop function first to avoid return type conflicts
+    const dropFunctionSQL = `
+      DROP FUNCTION IF EXISTS get_vendor_pending_line_items(TEXT);
+    `
+    const { error: dropError } = await supabase.rpc('exec_sql', { sql_query: dropFunctionSQL })
+    
+    if (dropError) {
+      console.warn("Warning dropping function (may not exist):", dropError)
+    }
+
     // Execute the SQL functions
     const { error } = await supabase.rpc('exec_sql', { sql_query: sqlContent })
 

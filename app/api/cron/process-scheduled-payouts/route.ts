@@ -1,174 +1,170 @@
-import { NextResponse } from "next/server"
-import type { NextRequest } from "next/server"
+import { NextRequest, NextResponse } from "next/server"
 import { createClient } from "@/lib/supabase/server"
-import { CRON_SECRET } from "@/lib/env"
 
-/**
- * Cron job to process scheduled payouts
- * Runs daily at 9 AM UTC (configured in vercel.json)
- */
+// Verify this is a valid Vercel cron request
+function isValidCronRequest(request: Request): boolean {
+  const authHeader = request.headers.get("authorization")
+  return authHeader === `Bearer ${process.env.CRON_SECRET}`
+}
+
 export async function GET(request: NextRequest) {
   // Verify cron secret
-  const authHeader = request.headers.get("authorization")
-  if (authHeader !== `Bearer ${CRON_SECRET}`) {
+  if (!isValidCronRequest(request)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
 
-  const supabase = createClient()
-  const results = {
-    processed: 0,
-    skipped: 0,
-    errors: [] as string[],
-  }
-
   try {
+    const supabase = createClient()
+
     // Get all enabled schedules that are due
     const now = new Date()
     const { data: schedules, error: schedulesError } = await supabase
       .from("payout_schedules")
       .select("*")
       .eq("enabled", true)
-      .neq("schedule_type", "manual")
       .lte("next_run", now.toISOString())
 
     if (schedulesError) {
       console.error("Error fetching schedules:", schedulesError)
-      return NextResponse.json(
-        { error: "Failed to fetch schedules", details: schedulesError.message },
-        { status: 500 }
-      )
+      return NextResponse.json({ error: "Failed to fetch schedules" }, { status: 500 })
     }
 
     if (!schedules || schedules.length === 0) {
-      return NextResponse.json({
-        success: true,
-        message: "No scheduled payouts due",
-        results,
-      })
+      return NextResponse.json({ message: "No schedules due for processing", processed: 0 })
     }
 
-    // Process each scheduled payout
+    let processed = 0
+    const results = []
+
     for (const schedule of schedules) {
       try {
-        // Get pending payout for this vendor
-        const { data: pendingPayouts, error: payoutError } = await supabase.rpc(
-          "get_pending_vendor_payouts"
-        )
+        // Get pending payouts for this vendor (or all vendors if vendor_name is null)
+        let payoutQuery = supabase
+          .from("vendor_payouts")
+          .select("id, vendor_name, amount")
+          .in("status", ["pending", "processing"])
 
-        if (payoutError) {
-          results.errors.push(`Error fetching pending payouts: ${payoutError.message}`)
+        if (schedule.vendor_name) {
+          payoutQuery = payoutQuery.eq("vendor_name", schedule.vendor_name)
+        }
+
+        // Apply threshold if set
+        if (schedule.threshold) {
+          payoutQuery = payoutQuery.gte("amount", schedule.threshold)
+        }
+
+        const { data: payouts, error: payoutsError } = await payoutQuery
+
+        if (payoutsError) {
+          console.error(`Error fetching payouts for schedule ${schedule.id}:`, payoutsError)
           continue
         }
 
-        const vendorPayout = pendingPayouts?.find(
-          (p: any) => p.vendor_name === schedule.vendor_name
-        )
-
-        if (!vendorPayout || vendorPayout.amount <= 0) {
-          // No pending payout or amount is 0/negative
-          results.skipped++
+        if (!payouts || payouts.length === 0) {
+          // Update next run date even if no payouts
+          await updateNextRun(supabase, schedule)
           continue
         }
 
-        // Check minimum amount threshold
-        if (schedule.minimum_amount && vendorPayout.amount < schedule.minimum_amount) {
-          results.skipped++
-          continue
-        }
-
-        // Check if vendor has PayPal email
-        if (!vendorPayout.paypal_email) {
-          results.errors.push(
-            `Vendor ${schedule.vendor_name} has no PayPal email configured`
+        // If auto_process is enabled, process the payouts
+        if (schedule.auto_process) {
+          // Call the payout processing endpoint
+          const processResponse = await fetch(
+            `${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/api/vendors/payouts/process`,
+            {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                "Authorization": `Bearer ${process.env.CRON_SECRET}`,
+              },
+              body: JSON.stringify({
+                payouts: payouts.map((p) => ({
+                  vendor_name: p.vendor_name,
+                  amount: p.amount,
+                })),
+                payment_method: "paypal",
+                generate_invoices: true,
+                notes: `Automated payout via schedule: ${schedule.name}`,
+              }),
+            }
           )
-          continue
-        }
 
-        // Process the payout
-        const payoutResponse = await fetch(
-          `${request.nextUrl.origin}/api/vendors/payouts/process`,
-          {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              // Use service role for internal API calls
-              Cookie: request.headers.get("Cookie") || "",
-            },
-            body: JSON.stringify({
-              payouts: [
-                {
-                  vendor_name: vendorPayout.vendor_name,
-                  amount: vendorPayout.amount,
-                  product_count: vendorPayout.product_count,
-                },
-              ],
-              payment_method: "paypal",
-              generate_invoices: true,
-              notes: `Automated payout - ${schedule.schedule_type} schedule`,
-            }),
+          if (processResponse.ok) {
+            processed += payouts.length
+            results.push({
+              scheduleId: schedule.id,
+              scheduleName: schedule.name,
+              payoutsProcessed: payouts.length,
+              success: true,
+            })
+          } else {
+            results.push({
+              scheduleId: schedule.id,
+              scheduleName: schedule.name,
+              error: "Failed to process payouts",
+              success: false,
+            })
           }
-        )
-
-        if (!payoutResponse.ok) {
-          const errorData = await payoutResponse.json()
-          results.errors.push(
-            `Failed to process payout for ${schedule.vendor_name}: ${errorData.error || "Unknown error"}`
-          )
-          continue
         }
 
-        // Update schedule last_run and next_run
-        const { error: updateError } = await supabase
-          .from("payout_schedules")
-          .update({
-            last_run: now.toISOString(),
-            next_run: await calculateNextRun(schedule),
-            updated_at: now.toISOString(),
-          })
-          .eq("id", schedule.id)
-
-        if (updateError) {
-          console.error(`Error updating schedule for ${schedule.vendor_name}:`, updateError)
-        }
-
-        results.processed++
-      } catch (err: any) {
-        console.error(`Error processing schedule for ${schedule.vendor_name}:`, err)
-        results.errors.push(`Error processing ${schedule.vendor_name}: ${err.message}`)
+        // Update next run date
+        await updateNextRun(supabase, schedule)
+      } catch (error) {
+        console.error(`Error processing schedule ${schedule.id}:`, error)
+        results.push({
+          scheduleId: schedule.id,
+          scheduleName: schedule.name,
+          error: error instanceof Error ? error.message : "Unknown error",
+          success: false,
+        })
       }
     }
 
-    // Update next_run for all schedules (in case some were skipped)
-    await supabase.rpc("update_payout_schedule_next_runs")
-
     return NextResponse.json({
-      success: true,
-      message: `Processed ${results.processed} payouts, skipped ${results.skipped}`,
+      message: "Scheduled payout processing completed",
+      processed,
       results,
     })
-  } catch (error: any) {
-    console.error("Error in scheduled payout cron:", error)
+  } catch (error) {
+    console.error("Error in scheduled payout processing:", error)
     return NextResponse.json(
-      {
-        success: false,
-        error: error.message || "An unexpected error occurred",
-        results,
-      },
+      { error: "Internal server error", details: error instanceof Error ? error.message : "Unknown error" },
       { status: 500 }
     )
   }
 }
 
-/**
- * Calculate next run time for a schedule
- */
-async function calculateNextRun(schedule: any): Promise<string> {
-  const supabase = createClient()
-  const { data } = await supabase.rpc("calculate_next_payout_run", {
-    p_schedule_type: schedule.schedule_type,
-    p_day_of_week: schedule.day_of_week,
-    p_day_of_month: schedule.day_of_month,
-  })
-  return data || new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString() // Default: 7 days
-}
+async function updateNextRun(supabase: any, schedule: any) {
+  const now = new Date()
+  let nextRun = new Date()
 
+  switch (schedule.frequency) {
+    case "weekly":
+      if (schedule.day_of_week) {
+        const daysUntil = (schedule.day_of_week - now.getDay() + 7) % 7 || 7
+        nextRun.setDate(now.getDate() + daysUntil)
+      } else {
+        nextRun.setDate(now.getDate() + 7)
+      }
+      break
+    case "bi-weekly":
+      nextRun.setDate(now.getDate() + 14)
+      break
+    case "monthly":
+      if (schedule.day_of_month) {
+        nextRun.setMonth(now.getMonth() + 1)
+        nextRun.setDate(schedule.day_of_month)
+      } else {
+        nextRun.setMonth(now.getMonth() + 1)
+      }
+      break
+  }
+
+  await supabase
+    .from("payout_schedules")
+    .update({
+      last_run: now.toISOString(),
+      next_run: nextRun.toISOString(),
+    })
+    .eq("id", schedule.id)
+}

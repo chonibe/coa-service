@@ -92,13 +92,9 @@ export const guardVendorRequest = async (request: NextRequest): Promise<GuardRes
     }
   }
 
-  if (!vendor.onboarding_completed && !isOnboardingPath && request.nextUrl.pathname !== VENDOR_LOGIN_ROUTE) {
-    return {
-      kind: "redirect",
-      response: buildRedirectResponse(request, "/vendor/onboarding"),
-    }
-  }
-
+  // Allow access to dashboard even if onboarding is not completed
+  // Contextual onboarding will handle prompting for missing information
+  // Only redirect away from onboarding page if already completed
   if (vendor.onboarding_completed && isOnboardingPath) {
     return {
       kind: "redirect",

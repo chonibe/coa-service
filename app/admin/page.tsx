@@ -253,11 +253,11 @@ export default function AdminDashboard() {
     <div className="container mx-auto py-10 max-w-5xl">
       <div className="flex flex-col space-y-8">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Edition Number Sync</h1>
+          <h1 className="text-3xl font-bold tracking-tight bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">Edition Number Sync</h1>
           <p className="text-muted-foreground mt-2">Synchronize edition numbers for products</p>
         </div>
 
-        <Card>
+        <Card className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-0 shadow-xl">
           <CardHeader>
             <CardTitle>Select Products</CardTitle>
             <CardDescription>Choose which products should be assigned sequential edition numbers.</CardDescription>
@@ -285,7 +285,11 @@ export default function AdminDashboard() {
                       <SelectItem value="tag">Tag</SelectItem>
                     </SelectContent>
                   </Select>
-                  <Button onClick={handleSearch} disabled={isFetchingProducts}>
+                  <Button 
+                    onClick={handleSearch} 
+                    disabled={isFetchingProducts}
+                    className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-lg"
+                  >
                     <Search className="h-4 w-4 mr-2" />
                     Search
                   </Button>
@@ -293,7 +297,7 @@ export default function AdminDashboard() {
               </div>
 
               {error && (
-                <Alert variant="destructive">
+                <Alert variant="destructive" className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-0 shadow-lg">
                   <AlertCircle className="h-4 w-4" />
                   <AlertTitle>Error</AlertTitle>
                   <AlertDescription>{error}</AlertDescription>
@@ -307,7 +311,7 @@ export default function AdminDashboard() {
               ) : (
                 <>
                   {products.length === 0 ? (
-                    <Alert>
+                    <Alert className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-0 shadow-lg">
                       <AlertCircle className="h-4 w-4" />
                       <AlertTitle>No products found</AlertTitle>
                       <AlertDescription>
@@ -351,7 +355,7 @@ export default function AdminDashboard() {
 
                       <div className="divide-y">
                         {products.map((product) => (
-                          <div key={product.id} className="flex items-center p-4 hover:bg-muted/50">
+                          <div key={product.id} className="flex items-center p-4 hover:bg-white/50 dark:hover:bg-slate-900/50 backdrop-blur-sm transition-colors">
                             <div className="flex items-center flex-1">
                               <Checkbox
                                 id={`product-${product.id}`}
@@ -440,7 +444,7 @@ export default function AdminDashboard() {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-0 shadow-xl">
           <CardHeader>
             <CardTitle>Sync Selected Products</CardTitle>
             <CardDescription>This will assign sequential edition numbers based on order creation time.</CardDescription>
@@ -471,7 +475,7 @@ export default function AdminDashboard() {
             )}
 
             {isLoading && (
-              <div className="mb-6 max-h-40 overflow-y-auto border rounded-md p-2 bg-muted/50 text-xs">
+              <div className="mb-6 max-h-40 overflow-y-auto border rounded-md p-2 bg-white/50 dark:bg-slate-900/50 backdrop-blur-sm text-xs">
                 {progressMessages.map((message, index) => (
                   <div key={index} className="py-1 border-b border-border/20 last:border-0">
                     <span className="text-muted-foreground">{new Date().toLocaleTimeString()}: </span>
@@ -482,7 +486,7 @@ export default function AdminDashboard() {
             )}
 
             {error && (
-              <Alert variant="destructive" className="mb-6">
+              <Alert variant="destructive" className="mb-6 bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-0 shadow-lg">
                 <AlertCircle className="h-4 w-4" />
                 <AlertTitle>Error</AlertTitle>
                 <AlertDescription>{error}</AlertDescription>
@@ -490,7 +494,7 @@ export default function AdminDashboard() {
             )}
 
             {syncResults && (
-              <Alert className="mb-6">
+              <Alert className="mb-6 bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-0 shadow-lg">
                 <CheckCircle className="h-4 w-4" />
                 <AlertTitle>Sync Complete</AlertTitle>
                 <AlertDescription>Successfully processed {syncResults.totalProducts} products.</AlertDescription>
@@ -534,7 +538,7 @@ export default function AdminDashboard() {
             <Button
               onClick={handleSync}
               disabled={isLoading || selectedProductIds.length === 0}
-              className="w-full sm:w-auto"
+              className="w-full sm:w-auto bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-lg"
             >
               {isLoading ? (
                 <>
@@ -552,11 +556,11 @@ export default function AdminDashboard() {
         </Card>
 
         {syncResults && syncResults.syncResults && syncResults.syncResults.length > 0 && (
-          <Card>
+          <Card className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-0 shadow-xl">
             <CardHeader>
               <CardTitle>Sync Results</CardTitle>
               <Tabs defaultValue="all" className="w-full" onValueChange={setActiveTab}>
-                <TabsList className="grid w-full grid-cols-3 mb-4">
+                <TabsList className="grid w-full grid-cols-3 mb-4 bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-0 shadow-lg">
                   <TabsTrigger value="all">
                     All Products
                     <Badge variant="secondary" className="ml-2">

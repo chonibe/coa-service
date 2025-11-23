@@ -51,7 +51,7 @@ export default function OrdersList({
 
   if (!orders || orders.length === 0) {
     return (
-      <Card className="p-6">
+      <Card className="p-6 bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-0 shadow-xl">
         <div className="text-center text-muted-foreground">
           No orders found. Try syncing orders from Shopify.
         </div>
@@ -61,7 +61,7 @@ export default function OrdersList({
 
   return (
     <div className="space-y-4">
-      <Card>
+      <Card className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-0 shadow-xl">
         <div className="overflow-x-auto">
           <Table>
             <TableHeader>
@@ -77,7 +77,7 @@ export default function OrdersList({
               {processedOrders.map((order) => (
                 <TableRow 
                   key={order.id}
-                  className="cursor-pointer hover:bg-muted/50"
+                  className="cursor-pointer hover:bg-white/50 dark:hover:bg-slate-900/50 backdrop-blur-sm transition-colors"
                   onClick={() => window.location.href = `/admin/orders/${order.id}`}
                 >
                   <TableCell className="font-medium">
@@ -125,6 +125,7 @@ export default function OrdersList({
             size="sm"
             disabled={currentPage === 1}
             onClick={() => onPageChange(currentPage - 1)}
+            className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm"
           >
             Previous
           </Button>
@@ -139,6 +140,7 @@ export default function OrdersList({
             size="sm"
             disabled={currentPage === totalPages}
             onClick={() => onPageChange(currentPage + 1)}
+            className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm"
           >
             Next
           </Button>

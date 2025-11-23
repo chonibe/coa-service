@@ -1,8 +1,7 @@
 "use client"
 
 import type React from "react"
-
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef, useCallback } from "react"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -11,8 +10,24 @@ import { Textarea } from "@/components/ui/textarea"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
+import { Progress } from "@/components/ui/progress"
 import { useToast } from "@/components/ui/use-toast"
-import { CheckCircle, ChevronLeft, ChevronRight, Loader2, AlertCircle } from "lucide-react"
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
+import {
+  CheckCircle,
+  ChevronLeft,
+  ChevronRight,
+  Loader2,
+  AlertCircle,
+  Info,
+  Save,
+  Clock,
+  Sparkles,
+  ArrowRight,
+  Circle,
+  CheckCircle2,
+} from "lucide-react"
+import { cn } from "@/lib/utils"
 
 interface OnboardingWizardProps {
   initialData?: any
@@ -37,46 +52,122 @@ const COUNTRIES = [
   "Other",
 ]
 
+interface Step {
+  title: string
+  description: string
+  fields: string[]
+  icon?: React.ReactNode
+}
+
 export function OnboardingWizard({ initialData, onComplete }: OnboardingWizardProps) {
   const [currentStep, setCurrentStep] = useState(0)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [autoSaveStatus, setAutoSaveStatus] = useState<"idle" | "saving" | "saved">("idle")
+  const [stepStartTime, setStepStartTime] = useState<number>(Date.now())
+  const [completedSteps, setCompletedSteps] = useState<Set<number>>(new Set())
   const { toast } = useToast()
+  const autoSaveTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+  const stepTimeRef = useRef<number>(Date.now())
 
   // Form state
   const [formData, setFormData] = useState({
-    // Basic info
     vendor_name: "",
     contact_name: "",
     contact_email: "",
     phone: "",
-
-    // Business details
     address: "",
     website: "",
     instagram_url: "",
     bio: "",
-
-    // Payment info
     paypal_email: "",
     bank_account: "",
-
-    // Tax info
     is_company: false,
     tax_id: "",
     tax_country: "",
-
-    // Notification preferences
     notify_on_sale: true,
     notify_on_payout: true,
     notify_on_message: true,
   })
 
-  // Validation state
+  // Field validation state (for real-time validation)
+  const [fieldValidation, setFieldValidation] = useState<Record<string, { isValid: boolean; error?: string }>>({})
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({})
 
-  // Initialize form data from props
+  // Define wizard steps
+  const steps: Step[] = [
+    {
+      title: "Welcome",
+      description: "Let's get started with your vendor profile",
+      fields: [],
+      icon: <Sparkles className="h-5 w-5" />,
+    },
+    {
+      title: "Basic Information",
+      description: "Tell us about yourself",
+      fields: ["contact_name", "contact_email", "phone"],
+      icon: <Circle className="h-5 w-5" />,
+    },
+    {
+      title: "Business Details",
+      description: "Share your business information",
+      fields: ["address", "website", "instagram_url", "bio"],
+      icon: <Circle className="h-5 w-5" />,
+    },
+    {
+      title: "Payment Information",
+      description: "How would you like to get paid",
+      fields: ["paypal_email", "bank_account"],
+      icon: <Circle className="h-5 w-5" />,
+    },
+    {
+      title: "Tax Information",
+      description: "Required for tax compliance",
+      fields: ["is_company", "tax_id", "tax_country"],
+      icon: <Circle className="h-5 w-5" />,
+    },
+    {
+      title: "Notification Preferences",
+      description: "Choose how you want to be notified",
+      fields: ["notify_on_sale", "notify_on_payout", "notify_on_message"],
+      icon: <Circle className="h-5 w-5" />,
+    },
+    {
+      title: "Complete",
+      description: "Your profile is now set up",
+      fields: [],
+      icon: <CheckCircle2 className="h-5 w-5" />,
+    },
+  ]
+
+  // Load saved progress on mount
   useEffect(() => {
+    const loadProgress = async () => {
+      try {
+        const response = await fetch("/api/vendor/onboarding/progress", {
+          credentials: "include",
+        })
+        if (response.ok) {
+          const data = await response.json()
+          if (data.formData) {
+            setFormData((prev) => ({ ...prev, ...data.formData }))
+          }
+          if (data.step !== undefined && data.step > 0) {
+            setCurrentStep(data.step)
+            // Mark previous steps as completed
+            const completed = new Set<number>()
+            for (let i = 0; i < data.step; i++) {
+              completed.add(i)
+            }
+            setCompletedSteps(completed)
+          }
+        }
+      } catch (err) {
+        console.error("Error loading progress:", err)
+      }
+    }
+
+    // Also load from initialData
     if (initialData) {
       setFormData((prev) => ({
         ...prev,
@@ -98,52 +189,133 @@ export function OnboardingWizard({ initialData, onComplete }: OnboardingWizardPr
         notify_on_message: initialData.notify_on_message !== undefined ? initialData.notify_on_message : true,
       }))
     }
+
+    loadProgress()
   }, [initialData])
 
-  // Define wizard steps
-  const steps = [
-    {
-      title: "Welcome",
-      description: "Let's get started with your vendor profile",
-      fields: [],
-    },
-    {
-      title: "Basic Information",
-      description: "Tell us about yourself",
-      fields: ["contact_name", "contact_email", "phone"],
-    },
-    {
-      title: "Business Details",
-      description: "Share your business information",
-      fields: ["address", "website", "instagram_url", "bio"],
-    },
-    {
-      title: "Payment Information",
-      description: "How would you like to get paid",
-      fields: ["paypal_email", "bank_account"],
-    },
-    {
-      title: "Tax Information",
-      description: "Required for tax compliance",
-      fields: ["is_company", "tax_id", "tax_country"],
-    },
-    {
-      title: "Notification Preferences",
-      description: "Choose how you want to be notified",
-      fields: ["notify_on_sale", "notify_on_payout", "notify_on_message"],
-    },
-    {
-      title: "Complete",
-      description: "Your profile is now set up",
-      fields: [],
-    },
-  ]
+  // Track step time
+  useEffect(() => {
+    stepTimeRef.current = Date.now()
+    return () => {
+      const timeSpent = Math.floor((Date.now() - stepTimeRef.current) / 1000)
+      if (timeSpent > 0 && currentStep > 0 && currentStep < steps.length - 1) {
+        // Track analytics
+        fetch("/api/vendor/onboarding/track", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify({
+            stepNumber: currentStep,
+            stepName: steps[currentStep].title,
+            timeSpentSeconds: timeSpent,
+            completed: completedSteps.has(currentStep),
+          }),
+        }).catch(console.error)
+      }
+    }
+  }, [currentStep])
+
+  // Auto-save functionality
+  const autoSave = useCallback(async () => {
+    if (currentStep === 0 || currentStep === steps.length - 1) return
+
+    setAutoSaveStatus("saving")
+    try {
+      const response = await fetch("/api/vendor/onboarding/auto-save", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({
+          formData,
+          currentStep,
+        }),
+      })
+
+      if (response.ok) {
+        setAutoSaveStatus("saved")
+        setTimeout(() => setAutoSaveStatus("idle"), 2000)
+      } else {
+        setAutoSaveStatus("idle")
+      }
+    } catch (err) {
+      console.error("Auto-save error:", err)
+      setAutoSaveStatus("idle")
+    }
+  }, [formData, currentStep])
+
+  // Debounced auto-save
+  useEffect(() => {
+    if (autoSaveTimeoutRef.current) {
+      clearTimeout(autoSaveTimeoutRef.current)
+    }
+
+    if (currentStep > 0 && currentStep < steps.length - 1) {
+      autoSaveTimeoutRef.current = setTimeout(() => {
+        autoSave()
+      }, 2000)
+    }
+
+    return () => {
+      if (autoSaveTimeoutRef.current) {
+        clearTimeout(autoSaveTimeoutRef.current)
+      }
+    }
+  }, [formData, currentStep, autoSave])
+
+  // Real-time field validation
+  const validateField = useCallback((name: string, value: any): { isValid: boolean; error?: string } => {
+    switch (name) {
+      case "contact_name":
+        if (!value?.trim()) return { isValid: false, error: "Contact name is required" }
+        return { isValid: true }
+      case "contact_email":
+        if (!value?.trim()) return { isValid: false, error: "Contact email is required" }
+        if (!/\S+@\S+\.\S+/.test(value)) return { isValid: false, error: "Please enter a valid email address" }
+        return { isValid: true }
+      case "phone":
+        if (!value?.trim()) return { isValid: false, error: "Phone number is required" }
+        return { isValid: true }
+      case "address":
+        if (!value?.trim()) return { isValid: false, error: "Business address is required" }
+        return { isValid: true }
+      case "paypal_email":
+        if (!value?.trim() && !formData.bank_account?.trim()) {
+          return { isValid: false, error: "Either PayPal email or bank account is required" }
+        }
+        if (value?.trim() && !/\S+@\S+\.\S+/.test(value)) {
+          return { isValid: false, error: "Please enter a valid email address" }
+        }
+        return { isValid: true }
+      case "tax_id":
+        if (!value?.trim()) return { isValid: false, error: "Tax ID is required" }
+        return { isValid: true }
+      case "tax_country":
+        if (!value) return { isValid: false, error: "Tax country is required" }
+        return { isValid: true }
+      case "website":
+        if (value?.trim() && !/^https?:\/\/.+/.test(value)) {
+          return { isValid: false, error: "Please enter a valid URL (starting with http:// or https://)" }
+        }
+        return { isValid: true }
+      case "instagram_url":
+        if (value?.trim() && !/^https?:\/\/.+/.test(value)) {
+          return { isValid: false, error: "Please enter a valid URL (starting with http:// or https://)" }
+        }
+        return { isValid: true }
+      default:
+        return { isValid: true }
+    }
+  }, [formData.bank_account])
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target
     setFormData((prev) => ({ ...prev, [name]: value }))
 
-    // Clear validation error when field is edited
+    // Real-time validation
+    const validation = validateField(name, value)
+    setFieldValidation((prev) => ({ ...prev, [name]: validation }))
+
+    // Clear validation error
     if (validationErrors[name]) {
       setValidationErrors((prev) => {
         const updated = { ...prev }
@@ -160,7 +332,11 @@ export function OnboardingWizard({ initialData, onComplete }: OnboardingWizardPr
   const handleSelectChange = (name: string, value: string) => {
     setFormData((prev) => ({ ...prev, [name]: value }))
 
-    // Clear validation error when field is edited
+    // Real-time validation
+    const validation = validateField(name, value)
+    setFieldValidation((prev) => ({ ...prev, [name]: validation }))
+
+    // Clear validation error
     if (validationErrors[name]) {
       setValidationErrors((prev) => {
         const updated = { ...prev }
@@ -174,54 +350,14 @@ export function OnboardingWizard({ initialData, onComplete }: OnboardingWizardPr
     const currentFields = steps[currentStep].fields
     const errors: Record<string, string> = {}
 
-    // Skip validation for welcome and complete steps
     if (currentStep === 0 || currentStep === steps.length - 1) {
       return true
     }
 
-    // Validate required fields based on the current step
     currentFields.forEach((field) => {
-      switch (field) {
-        case "contact_name":
-          if (!formData.contact_name.trim()) {
-            errors.contact_name = "Contact name is required"
-          }
-          break
-        case "contact_email":
-          if (!formData.contact_email.trim()) {
-            errors.contact_email = "Contact email is required"
-          } else if (!/\S+@\S+\.\S+/.test(formData.contact_email)) {
-            errors.contact_email = "Please enter a valid email address"
-          }
-          break
-        case "phone":
-          if (!formData.phone.trim()) {
-            errors.phone = "Phone number is required"
-          }
-          break
-        case "address":
-          if (!formData.address.trim()) {
-            errors.address = "Business address is required"
-          }
-          break
-        case "paypal_email":
-          // Only validate if bank_account is empty
-          if (!formData.paypal_email.trim() && !formData.bank_account.trim()) {
-            errors.paypal_email = "Either PayPal email or bank account is required"
-          } else if (formData.paypal_email.trim() && !/\S+@\S+\.\S+/.test(formData.paypal_email)) {
-            errors.paypal_email = "Please enter a valid email address"
-          }
-          break
-        case "tax_id":
-          if (!formData.tax_id.trim()) {
-            errors.tax_id = "Tax ID is required"
-          }
-          break
-        case "tax_country":
-          if (!formData.tax_country) {
-            errors.tax_country = "Tax country is required"
-          }
-          break
+      const validation = validateField(field, formData[field as keyof typeof formData])
+      if (!validation.isValid && validation.error) {
+        errors[field] = validation.error
       }
     })
 
@@ -231,9 +367,10 @@ export function OnboardingWizard({ initialData, onComplete }: OnboardingWizardPr
 
   const handleNext = () => {
     if (validateStep()) {
+      setCompletedSteps((prev) => new Set([...prev, currentStep]))
       if (currentStep < steps.length - 1) {
         setCurrentStep(currentStep + 1)
-        window.scrollTo(0, 0)
+        window.scrollTo({ top: 0, behavior: "smooth" })
       }
     }
   }
@@ -241,7 +378,15 @@ export function OnboardingWizard({ initialData, onComplete }: OnboardingWizardPr
   const handleBack = () => {
     if (currentStep > 0) {
       setCurrentStep(currentStep - 1)
-      window.scrollTo(0, 0)
+      window.scrollTo({ top: 0, behavior: "smooth" })
+    }
+  }
+
+  const handleStepClick = (stepIndex: number) => {
+    // Allow navigation to completed steps or next step
+    if (stepIndex <= currentStep || completedSteps.has(stepIndex)) {
+      setCurrentStep(stepIndex)
+      window.scrollTo({ top: 0, behavior: "smooth" })
     }
   }
 
@@ -252,9 +397,7 @@ export function OnboardingWizard({ initialData, onComplete }: OnboardingWizardPr
 
       const response = await fetch("/api/vendor/update-profile", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         credentials: "include",
         body: JSON.stringify(formData),
       })
@@ -264,8 +407,14 @@ export function OnboardingWizard({ initialData, onComplete }: OnboardingWizardPr
         throw new Error(errorData.error || "Failed to update profile")
       }
 
-      // Move to completion step
+      // Mark onboarding as complete
+      await fetch("/api/vendor/onboarding/complete", {
+        method: "POST",
+        credentials: "include",
+      })
+
       setCurrentStep(steps.length - 1)
+      setCompletedSteps((prev) => new Set([...prev, currentStep]))
 
       toast({
         title: "Profile updated",
@@ -274,7 +423,6 @@ export function OnboardingWizard({ initialData, onComplete }: OnboardingWizardPr
     } catch (err) {
       console.error("Error updating profile:", err)
       setError(err instanceof Error ? err.message : "Failed to update profile")
-
       toast({
         variant: "destructive",
         title: "Error",
@@ -285,27 +433,213 @@ export function OnboardingWizard({ initialData, onComplete }: OnboardingWizardPr
     }
   }
 
+  const progressPercentage = (currentStep / (steps.length - 1)) * 100
+
+  // Step Indicator Component
+  const StepIndicator = () => {
+    return (
+      <div className="w-full mb-6">
+        {/* Desktop: Full step indicator */}
+        <div className="hidden md:block">
+          <div className="flex items-center justify-between mb-4">
+            {steps.map((step, index) => {
+              const isCompleted = completedSteps.has(index)
+              const isCurrent = index === currentStep
+              const isAccessible = index <= currentStep || completedSteps.has(index)
+
+              return (
+                <div key={index} className="flex items-center flex-1">
+                  <div className="flex flex-col items-center flex-1">
+                    <button
+                      onClick={() => handleStepClick(index)}
+                      disabled={!isAccessible}
+                      className={cn(
+                        "flex items-center justify-center w-10 h-10 rounded-full border-2 transition-all",
+                        isCompleted && "bg-green-500 border-green-500 text-white",
+                        isCurrent && !isCompleted && "bg-primary border-primary text-white",
+                        !isCurrent && !isCompleted && isAccessible && "bg-gray-100 border-gray-300 text-gray-600",
+                        !isAccessible && "bg-gray-50 border-gray-200 text-gray-400 cursor-not-allowed",
+                        isAccessible && "hover:scale-110 cursor-pointer"
+                      )}
+                    >
+                      {isCompleted ? (
+                        <CheckCircle2 className="h-5 w-5" />
+                      ) : (
+                        <span className="text-sm font-medium">{index + 1}</span>
+                      )}
+                    </button>
+                    <div className="mt-2 text-center max-w-[100px]">
+                      <p
+                        className={cn(
+                          "text-xs font-medium",
+                          isCurrent && "text-primary",
+                          !isCurrent && "text-gray-500"
+                        )}
+                      >
+                        {step.title}
+                      </p>
+                    </div>
+                  </div>
+                  {index < steps.length - 1 && (
+                    <div
+                      className={cn(
+                        "h-0.5 flex-1 mx-2",
+                        isCompleted ? "bg-green-500" : "bg-gray-200"
+                      )}
+                    />
+                  )}
+                </div>
+              )
+            })}
+          </div>
+        </div>
+
+        {/* Mobile: Horizontal scrollable indicator */}
+        <div className="md:hidden overflow-x-auto pb-2">
+          <div className="flex items-center gap-2 min-w-max px-2">
+            {steps.map((step, index) => {
+              const isCompleted = completedSteps.has(index)
+              const isCurrent = index === currentStep
+
+              return (
+                <button
+                  key={index}
+                  onClick={() => handleStepClick(index)}
+                  className={cn(
+                    "flex flex-col items-center gap-1 px-3 py-2 rounded-lg transition-all min-w-[80px]",
+                    isCurrent && "bg-primary/10"
+                  )}
+                >
+                  <div
+                    className={cn(
+                      "w-8 h-8 rounded-full flex items-center justify-center text-xs font-medium",
+                      isCompleted && "bg-green-500 text-white",
+                      isCurrent && !isCompleted && "bg-primary text-white",
+                      !isCurrent && !isCompleted && "bg-gray-200 text-gray-600"
+                    )}
+                  >
+                    {isCompleted ? <CheckCircle2 className="h-4 w-4" /> : index + 1}
+                  </div>
+                  <span className="text-xs font-medium text-center">{step.title}</span>
+                </button>
+              )
+            })}
+          </div>
+        </div>
+
+        {/* Progress bar */}
+        <div className="mt-4">
+          <div className="flex items-center justify-between mb-1">
+            <span className="text-sm text-gray-600">Progress</span>
+            <span className="text-sm font-medium text-gray-900">{Math.round(progressPercentage)}%</span>
+          </div>
+          <Progress value={progressPercentage} className="h-2" />
+        </div>
+      </div>
+    )
+  }
+
+  // Auto-save indicator
+  const AutoSaveIndicator = () => {
+    if (currentStep === 0 || currentStep === steps.length - 1) return null
+
+    return (
+      <div className="flex items-center gap-2 text-sm text-gray-500 mb-4">
+        {autoSaveStatus === "saving" && (
+          <>
+            <Loader2 className="h-4 w-4 animate-spin" />
+            <span>Saving...</span>
+          </>
+        )}
+        {autoSaveStatus === "saved" && (
+          <>
+            <Save className="h-4 w-4 text-green-500" />
+            <span className="text-green-500">Saved</span>
+          </>
+        )}
+        {autoSaveStatus === "idle" && (
+          <>
+            <Clock className="h-4 w-4" />
+            <span>Auto-saving...</span>
+          </>
+        )}
+      </div>
+    )
+  }
+
+  // Field with validation and tooltip
+  const FormField = ({
+    label,
+    name,
+    required,
+    children,
+    tooltip,
+    hint,
+  }: {
+    label: string
+    name: string
+    required?: boolean
+    children: React.ReactNode
+    tooltip?: string
+    hint?: string
+  }) => {
+    const validation = fieldValidation[name]
+    const hasError = validationErrors[name] || (validation && !validation.isValid)
+
+    return (
+      <div className="space-y-2">
+        <div className="flex items-center gap-2">
+          <Label htmlFor={name} className={cn(hasError && "text-red-500")}>
+            {label} {required && <span className="text-red-500">*</span>}
+          </Label>
+          {tooltip && (
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Info className="h-4 w-4 text-gray-400 cursor-help" />
+                </TooltipTrigger>
+                <TooltipContent className="max-w-xs">
+                  <p>{tooltip}</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          )}
+          {validation?.isValid && !hasError && (
+            <CheckCircle className="h-4 w-4 text-green-500" />
+          )}
+        </div>
+        {children}
+        {hint && !hasError && <p className="text-sm text-gray-500">{hint}</p>}
+        {hasError && (
+          <p className="text-sm text-red-500">
+            {validationErrors[name] || validation?.error}
+          </p>
+        )}
+      </div>
+    )
+  }
+
   const renderStepContent = () => {
     switch (currentStep) {
       case 0: // Welcome step
         return (
-          <div className="space-y-4">
+          <div className="space-y-6 text-center">
             <div className="flex justify-center mb-6">
-              <div className="w-24 h-24 bg-primary/10 rounded-full flex items-center justify-center">
-                <CheckCircle className="h-12 w-12 text-primary" />
+              <div className="w-32 h-32 bg-gradient-to-br from-primary/20 to-primary/5 rounded-full flex items-center justify-center animate-pulse">
+                <Sparkles className="h-16 w-16 text-primary" />
               </div>
             </div>
 
-            <h3 className="text-xl font-medium text-center">Welcome to the Vendor Portal!</h3>
+            <div>
+              <h3 className="text-2xl font-bold mb-2">Welcome to the Vendor Portal!</h3>
+              <p className="text-gray-600 text-lg">
+                Let's set up your vendor profile in just a few minutes
+              </p>
+            </div>
 
-            <p className="text-center text-gray-600">
-              This wizard will guide you through setting up your vendor profile. Complete all steps to ensure you can
-              receive payments and comply with tax regulations.
-            </p>
-
-            <div className="bg-blue-50 p-4 rounded-md border border-blue-100">
-              <h4 className="font-medium text-blue-800 mb-2">What you'll need:</h4>
-              <ul className="list-disc pl-5 text-blue-700 space-y-1">
+            <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-6 rounded-lg border border-blue-100">
+              <h4 className="font-semibold text-blue-900 mb-3 text-left">What you'll need:</h4>
+              <ul className="list-disc pl-5 text-blue-800 space-y-2 text-left">
                 <li>Your contact information</li>
                 <li>Business address</li>
                 <li>Payment details (PayPal or bank account)</li>
@@ -313,106 +647,196 @@ export function OnboardingWizard({ initialData, onComplete }: OnboardingWizardPr
               </ul>
             </div>
 
-            <p className="text-center text-gray-600 mt-4">Let's get started by clicking the "Next" button below.</p>
+            <div className="flex items-center justify-center gap-2 text-gray-600">
+              <Clock className="h-4 w-4" />
+              <span className="text-sm">Estimated time: 5-7 minutes</span>
+            </div>
+
+            <div className="bg-green-50 p-4 rounded-lg border border-green-100">
+              <h4 className="font-semibold text-green-900 mb-2">Benefits of completing:</h4>
+              <ul className="list-disc pl-5 text-green-800 space-y-1 text-left text-sm">
+                <li>Receive payments faster</li>
+                <li>Stay tax compliant</li>
+                <li>Get important notifications</li>
+                <li>Access all vendor features</li>
+              </ul>
+            </div>
           </div>
         )
 
       case 1: // Basic Information
         return (
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="contact_name">
-                Contact Name <span className="text-red-500">*</span>
-              </Label>
+          <div className="space-y-6">
+            <FormField
+              label="Contact Name"
+              name="contact_name"
+              required
+              tooltip="This is the name we'll use to contact you about your vendor account"
+            >
               <Input
                 id="contact_name"
                 name="contact_name"
-                placeholder="Full Name"
+                placeholder="John Doe"
                 value={formData.contact_name}
                 onChange={handleInputChange}
-                className={validationErrors.contact_name ? "border-red-500" : ""}
+                onBlur={() => {
+                  const validation = validateField("contact_name", formData.contact_name)
+                  setFieldValidation((prev) => ({ ...prev, contact_name: validation }))
+                }}
+                className={cn(
+                  validationErrors.contact_name || (fieldValidation.contact_name && !fieldValidation.contact_name.isValid)
+                    ? "border-red-500"
+                    : fieldValidation.contact_name?.isValid
+                    ? "border-green-500"
+                    : ""
+                )}
               />
-              {validationErrors.contact_name && <p className="text-sm text-red-500">{validationErrors.contact_name}</p>}
-            </div>
+            </FormField>
 
-            <div className="space-y-2">
-              <Label htmlFor="contact_email">
-                Contact Email <span className="text-red-500">*</span>
-              </Label>
+            <FormField
+              label="Contact Email"
+              name="contact_email"
+              required
+              tooltip="We'll send important notifications and updates to this email address"
+              hint="This will be used for account communications"
+            >
               <Input
                 id="contact_email"
                 name="contact_email"
                 type="email"
-                placeholder="email@example.com"
+                placeholder="john.doe@example.com"
                 value={formData.contact_email}
                 onChange={handleInputChange}
-                className={validationErrors.contact_email ? "border-red-500" : ""}
+                onBlur={() => {
+                  const validation = validateField("contact_email", formData.contact_email)
+                  setFieldValidation((prev) => ({ ...prev, contact_email: validation }))
+                }}
+                className={cn(
+                  validationErrors.contact_email || (fieldValidation.contact_email && !fieldValidation.contact_email.isValid)
+                    ? "border-red-500"
+                    : fieldValidation.contact_email?.isValid
+                    ? "border-green-500"
+                    : ""
+                )}
               />
-              {validationErrors.contact_email && (
-                <p className="text-sm text-red-500">{validationErrors.contact_email}</p>
-              )}
-            </div>
+            </FormField>
 
-            <div className="space-y-2">
-              <Label htmlFor="phone">
-                Phone Number <span className="text-red-500">*</span>
-              </Label>
+            <FormField
+              label="Phone Number"
+              name="phone"
+              required
+              tooltip="We may need to contact you by phone for urgent matters"
+            >
               <Input
                 id="phone"
                 name="phone"
                 placeholder="+1 (555) 123-4567"
                 value={formData.phone}
                 onChange={handleInputChange}
-                className={validationErrors.phone ? "border-red-500" : ""}
+                onBlur={() => {
+                  const validation = validateField("phone", formData.phone)
+                  setFieldValidation((prev) => ({ ...prev, phone: validation }))
+                }}
+                className={cn(
+                  validationErrors.phone || (fieldValidation.phone && !fieldValidation.phone.isValid)
+                    ? "border-red-500"
+                    : fieldValidation.phone?.isValid
+                    ? "border-green-500"
+                    : ""
+                )}
               />
-              {validationErrors.phone && <p className="text-sm text-red-500">{validationErrors.phone}</p>}
-            </div>
+            </FormField>
           </div>
         )
 
       case 2: // Business Details
         return (
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="address">
-                Business Address <span className="text-red-500">*</span>
-              </Label>
+          <div className="space-y-6">
+            <FormField
+              label="Business Address"
+              name="address"
+              required
+              tooltip="Required for tax reporting and compliance purposes"
+              hint="This will be used for tax reporting"
+            >
               <Textarea
                 id="address"
                 name="address"
-                placeholder="Enter your full business address"
+                placeholder="123 Main Street, City, State, ZIP Code"
                 value={formData.address}
                 onChange={handleInputChange}
-                className={validationErrors.address ? "border-red-500" : ""}
+                onBlur={() => {
+                  const validation = validateField("address", formData.address)
+                  setFieldValidation((prev) => ({ ...prev, address: validation }))
+                }}
+                className={cn(
+                  validationErrors.address || (fieldValidation.address && !fieldValidation.address.isValid)
+                    ? "border-red-500"
+                    : fieldValidation.address?.isValid
+                    ? "border-green-500"
+                    : ""
+                )}
                 rows={3}
               />
-              {validationErrors.address && <p className="text-sm text-red-500">{validationErrors.address}</p>}
-            </div>
+            </FormField>
 
-            <div className="space-y-2">
-              <Label htmlFor="website">Website (Optional)</Label>
+            <FormField
+              label="Website"
+              name="website"
+              tooltip="Your business website URL (optional)"
+              hint="Include http:// or https://"
+            >
               <Input
                 id="website"
                 name="website"
                 placeholder="https://www.yourwebsite.com"
                 value={formData.website}
                 onChange={handleInputChange}
+                onBlur={() => {
+                  const validation = validateField("website", formData.website)
+                  setFieldValidation((prev) => ({ ...prev, website: validation }))
+                }}
+                className={cn(
+                  fieldValidation.website && !fieldValidation.website.isValid
+                    ? "border-red-500"
+                    : fieldValidation.website?.isValid
+                    ? "border-green-500"
+                    : ""
+                )}
               />
-            </div>
+            </FormField>
 
-            <div className="space-y-2">
-              <Label htmlFor="instagram_url">Instagram URL (Optional)</Label>
+            <FormField
+              label="Instagram URL"
+              name="instagram_url"
+              tooltip="Your Instagram profile URL (optional)"
+              hint="Include http:// or https://"
+            >
               <Input
                 id="instagram_url"
                 name="instagram_url"
                 placeholder="https://instagram.com/yourusername"
                 value={formData.instagram_url}
                 onChange={handleInputChange}
+                onBlur={() => {
+                  const validation = validateField("instagram_url", formData.instagram_url)
+                  setFieldValidation((prev) => ({ ...prev, instagram_url: validation }))
+                }}
+                className={cn(
+                  fieldValidation.instagram_url && !fieldValidation.instagram_url.isValid
+                    ? "border-red-500"
+                    : fieldValidation.instagram_url?.isValid
+                    ? "border-green-500"
+                    : ""
+                )}
               />
-            </div>
+            </FormField>
 
-            <div className="space-y-2">
-              <Label htmlFor="bio">Bio / About Your Business (Optional)</Label>
+            <FormField
+              label="Bio / About Your Business"
+              name="bio"
+              tooltip="Tell us about your business and what you create (optional)"
+            >
               <Textarea
                 id="bio"
                 name="bio"
@@ -420,22 +844,31 @@ export function OnboardingWizard({ initialData, onComplete }: OnboardingWizardPr
                 value={formData.bio}
                 onChange={handleInputChange}
                 rows={4}
+                maxLength={500}
               />
-            </div>
+              <p className="text-xs text-gray-500 text-right mt-1">
+                {formData.bio.length}/500 characters
+              </p>
+            </FormField>
           </div>
         )
 
       case 3: // Payment Information
         return (
-          <div className="space-y-4">
-            <div className="bg-amber-50 p-4 rounded-md border border-amber-100 mb-4">
-              <p className="text-amber-800">
+          <div className="space-y-6">
+            <Alert className="bg-amber-50 border-amber-200">
+              <AlertCircle className="h-4 w-4 text-amber-600" />
+              <AlertDescription className="text-amber-800">
                 You must provide either a PayPal email or bank account details to receive payments.
-              </p>
-            </div>
+              </AlertDescription>
+            </Alert>
 
-            <div className="space-y-2">
-              <Label htmlFor="paypal_email">PayPal Email (Recommended)</Label>
+            <FormField
+              label="PayPal Email"
+              name="paypal_email"
+              tooltip="We primarily use PayPal for vendor payments. This is the fastest way to receive your funds."
+              hint="Recommended: Fastest payment method"
+            >
               <Input
                 id="paypal_email"
                 name="paypal_email"
@@ -443,13 +876,19 @@ export function OnboardingWizard({ initialData, onComplete }: OnboardingWizardPr
                 placeholder="paypal@example.com"
                 value={formData.paypal_email}
                 onChange={handleInputChange}
-                className={validationErrors.paypal_email ? "border-red-500" : ""}
+                onBlur={() => {
+                  const validation = validateField("paypal_email", formData.paypal_email)
+                  setFieldValidation((prev) => ({ ...prev, paypal_email: validation }))
+                }}
+                className={cn(
+                  validationErrors.paypal_email || (fieldValidation.paypal_email && !fieldValidation.paypal_email.isValid)
+                    ? "border-red-500"
+                    : fieldValidation.paypal_email?.isValid
+                    ? "border-green-500"
+                    : ""
+                )}
               />
-              {validationErrors.paypal_email && <p className="text-sm text-red-500">{validationErrors.paypal_email}</p>}
-              <p className="text-sm text-gray-500">
-                We primarily use PayPal for vendor payments. This is the fastest way to receive your funds.
-              </p>
-            </div>
+            </FormField>
 
             <div className="relative my-6">
               <div className="absolute inset-0 flex items-center">
@@ -460,8 +899,12 @@ export function OnboardingWizard({ initialData, onComplete }: OnboardingWizardPr
               </div>
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="bank_account">Bank Account Details (Alternative)</Label>
+            <FormField
+              label="Bank Account Details"
+              name="bank_account"
+              tooltip="Only provide bank details if you cannot use PayPal. Additional verification may be required."
+              hint="Alternative payment method"
+            >
               <Textarea
                 id="bank_account"
                 name="bank_account"
@@ -470,24 +913,22 @@ export function OnboardingWizard({ initialData, onComplete }: OnboardingWizardPr
                 onChange={handleInputChange}
                 rows={3}
               />
-              <p className="text-sm text-gray-500">
-                Only provide bank details if you cannot use PayPal. Additional verification may be required.
-              </p>
-            </div>
+            </FormField>
           </div>
         )
 
       case 4: // Tax Information
         return (
-          <div className="space-y-4">
-            <div className="bg-blue-50 p-4 rounded-md border border-blue-100 mb-4">
-              <p className="text-blue-800">
+          <div className="space-y-6">
+            <Alert className="bg-blue-50 border-blue-200">
+              <AlertCircle className="h-4 w-4 text-blue-600" />
+              <AlertDescription className="text-blue-800">
                 Tax information is required for compliance with tax regulations. This information will be used for tax
                 reporting purposes.
-              </p>
-            </div>
+              </AlertDescription>
+            </Alert>
 
-            <div className="flex items-center space-x-2 mb-4">
+            <div className="flex items-center space-x-2 p-4 bg-gray-50 rounded-lg">
               <Checkbox
                 id="is_company"
                 checked={formData.is_company}
@@ -495,34 +936,59 @@ export function OnboardingWizard({ initialData, onComplete }: OnboardingWizardPr
               />
               <label
                 htmlFor="is_company"
-                className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                className="text-sm font-medium leading-none cursor-pointer"
               >
                 I am registering as a business/company (not an individual)
               </label>
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="tax_id">
-                {formData.is_company ? "Business Tax ID / VAT Number" : "Tax ID / SSN / National Insurance Number"}
-                <span className="text-red-500">*</span>
-              </Label>
+            <FormField
+              label={formData.is_company ? "Business Tax ID / VAT Number" : "Tax ID / SSN / National Insurance Number"}
+              name="tax_id"
+              required
+              tooltip="Required for tax reporting. This information is kept secure and only used for compliance purposes."
+              hint="This will be used for tax reporting"
+            >
               <Input
                 id="tax_id"
                 name="tax_id"
                 placeholder={formData.is_company ? "e.g. 123456789" : "e.g. XXX-XX-XXXX"}
                 value={formData.tax_id}
                 onChange={handleInputChange}
-                className={validationErrors.tax_id ? "border-red-500" : ""}
+                onBlur={() => {
+                  const validation = validateField("tax_id", formData.tax_id)
+                  setFieldValidation((prev) => ({ ...prev, tax_id: validation }))
+                }}
+                className={cn(
+                  validationErrors.tax_id || (fieldValidation.tax_id && !fieldValidation.tax_id.isValid)
+                    ? "border-red-500"
+                    : fieldValidation.tax_id?.isValid
+                    ? "border-green-500"
+                    : ""
+                )}
               />
-              {validationErrors.tax_id && <p className="text-sm text-red-500">{validationErrors.tax_id}</p>}
-            </div>
+            </FormField>
 
-            <div className="space-y-2">
-              <Label htmlFor="tax_country">
-                Tax Residence Country <span className="text-red-500">*</span>
-              </Label>
-              <Select value={formData.tax_country} onValueChange={(value) => handleSelectChange("tax_country", value)}>
-                <SelectTrigger id="tax_country" className={validationErrors.tax_country ? "border-red-500" : ""}>
+            <FormField
+              label="Tax Residence Country"
+              name="tax_country"
+              required
+              tooltip="The country where you are tax resident. This determines tax reporting requirements."
+            >
+              <Select
+                value={formData.tax_country}
+                onValueChange={(value) => handleSelectChange("tax_country", value)}
+              >
+                <SelectTrigger
+                  id="tax_country"
+                  className={cn(
+                    validationErrors.tax_country || (fieldValidation.tax_country && !fieldValidation.tax_country.isValid)
+                      ? "border-red-500"
+                      : fieldValidation.tax_country?.isValid
+                      ? "border-green-500"
+                      : ""
+                  )}
+                >
                   <SelectValue placeholder="Select country" />
                 </SelectTrigger>
                 <SelectContent>
@@ -533,8 +999,7 @@ export function OnboardingWizard({ initialData, onComplete }: OnboardingWizardPr
                   ))}
                 </SelectContent>
               </Select>
-              {validationErrors.tax_country && <p className="text-sm text-red-500">{validationErrors.tax_country}</p>}
-            </div>
+            </FormField>
 
             <Alert className="mt-4">
               <AlertCircle className="h-4 w-4" />
@@ -564,16 +1029,17 @@ export function OnboardingWizard({ initialData, onComplete }: OnboardingWizardPr
             </p>
 
             <div className="space-y-4">
-              <div className="flex items-center space-x-2">
+              <div className="flex items-start space-x-3 p-4 border rounded-lg hover:bg-gray-50 transition-colors">
                 <Checkbox
                   id="notify_on_sale"
                   checked={formData.notify_on_sale}
                   onCheckedChange={(checked) => handleCheckboxChange("notify_on_sale", checked === true)}
+                  className="mt-1"
                 />
-                <div className="grid gap-1.5">
+                <div className="flex-1">
                   <label
                     htmlFor="notify_on_sale"
-                    className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                    className="text-sm font-medium leading-none cursor-pointer block mb-1"
                   >
                     Sales Notifications
                   </label>
@@ -581,16 +1047,17 @@ export function OnboardingWizard({ initialData, onComplete }: OnboardingWizardPr
                 </div>
               </div>
 
-              <div className="flex items-center space-x-2">
+              <div className="flex items-start space-x-3 p-4 border rounded-lg hover:bg-gray-50 transition-colors">
                 <Checkbox
                   id="notify_on_payout"
                   checked={formData.notify_on_payout}
                   onCheckedChange={(checked) => handleCheckboxChange("notify_on_payout", checked === true)}
+                  className="mt-1"
                 />
-                <div className="grid gap-1.5">
+                <div className="flex-1">
                   <label
                     htmlFor="notify_on_payout"
-                    className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                    className="text-sm font-medium leading-none cursor-pointer block mb-1"
                   >
                     Payout Notifications
                   </label>
@@ -598,16 +1065,17 @@ export function OnboardingWizard({ initialData, onComplete }: OnboardingWizardPr
                 </div>
               </div>
 
-              <div className="flex items-center space-x-2">
+              <div className="flex items-start space-x-3 p-4 border rounded-lg hover:bg-gray-50 transition-colors">
                 <Checkbox
                   id="notify_on_message"
                   checked={formData.notify_on_message}
                   onCheckedChange={(checked) => handleCheckboxChange("notify_on_message", checked === true)}
+                  className="mt-1"
                 />
-                <div className="grid gap-1.5">
+                <div className="flex-1">
                   <label
                     htmlFor="notify_on_message"
-                    className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                    className="text-sm font-medium leading-none cursor-pointer block mb-1"
                   >
                     Message Notifications
                   </label>
@@ -620,32 +1088,43 @@ export function OnboardingWizard({ initialData, onComplete }: OnboardingWizardPr
 
       case 6: // Complete
         return (
-          <div className="space-y-4 text-center">
+          <div className="space-y-6 text-center">
             <div className="flex justify-center mb-6">
-              <div className="w-24 h-24 bg-green-100 rounded-full flex items-center justify-center">
-                <CheckCircle className="h-12 w-12 text-green-600" />
+              <div className="relative">
+                <div className="w-32 h-32 bg-gradient-to-br from-green-400 to-green-600 rounded-full flex items-center justify-center animate-bounce">
+                  <CheckCircle className="h-16 w-16 text-white" />
+                </div>
+                <div className="absolute -top-2 -right-2 w-8 h-8 bg-yellow-400 rounded-full flex items-center justify-center animate-pulse">
+                  <Sparkles className="h-5 w-5 text-yellow-900" />
+                </div>
               </div>
             </div>
 
-            <h3 className="text-xl font-medium">Profile Setup Complete!</h3>
-
-            <p className="text-gray-600">
+            <div>
+              <h3 className="text-2xl font-bold mb-2">Profile Setup Complete! 🎉</h3>
+              <p className="text-gray-600 text-lg">
               Thank you for completing your vendor profile. You're now ready to start selling your products.
             </p>
+            </div>
 
-            <div className="bg-green-50 p-4 rounded-md border border-green-100 mt-4">
-              <h4 className="font-medium text-green-800 mb-2">What's Next:</h4>
-              <ul className="list-disc pl-5 text-green-700 space-y-1">
+            <div className="bg-gradient-to-r from-green-50 to-emerald-50 p-6 rounded-lg border border-green-200">
+              <h4 className="font-semibold text-green-900 mb-3">What's Next:</h4>
+              <ul className="list-disc pl-5 text-green-800 space-y-2 text-left">
                 <li>Explore your vendor dashboard</li>
                 <li>Check your product listings</li>
                 <li>Review your payment settings</li>
-                <li>Set up your tax information</li>
+                <li>Start uploading your products</li>
               </ul>
             </div>
 
-            <Button onClick={onComplete} className="mt-6">
-              Go to Dashboard
+            <div className="flex flex-col sm:flex-row gap-3 justify-center pt-4">
+              <Button onClick={onComplete} size="lg" className="gap-2">
+                Go to Dashboard <ArrowRight className="h-4 w-4" />
+              </Button>
+              <Button variant="outline" size="lg" onClick={() => window.location.href = "/vendor/dashboard/settings"}>
+                Review Settings
             </Button>
+            </div>
           </div>
         )
 
@@ -655,62 +1134,87 @@ export function OnboardingWizard({ initialData, onComplete }: OnboardingWizardPr
   }
 
   return (
-    <Card className="w-full">
-      {/* Progress bar */}
-      <div className="w-full bg-gray-200 h-1">
-        <div
-          className="bg-primary h-1 transition-all duration-300"
-          style={{ width: `${(currentStep / (steps.length - 1)) * 100}%` }}
-        ></div>
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950 flex items-center justify-center p-4 md:p-8">
+      {/* Background decorative elements */}
+      <div className="fixed inset-0 overflow-hidden pointer-events-none z-0">
+        <div className="absolute top-0 left-1/4 w-96 h-96 bg-blue-200/20 dark:bg-blue-900/10 rounded-full blur-3xl animate-pulse" />
+        <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-indigo-200/20 dark:bg-indigo-900/10 rounded-full blur-3xl animate-pulse delay-1000" />
       </div>
 
-      <CardHeader>
-        <div className="flex items-center justify-between">
-          <div>
-            <CardTitle>{steps[currentStep].title}</CardTitle>
-            <CardDescription>{steps[currentStep].description}</CardDescription>
-          </div>
-          <div className="flex items-center gap-1 text-sm font-medium">
-            Step {currentStep + 1} of {steps.length}
-          </div>
-        </div>
-      </CardHeader>
+      <TooltipProvider>
+        <Card className="w-full max-w-4xl shadow-2xl border-0 bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl relative z-10">
+          {/* Decorative gradient background */}
+          <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 via-indigo-500/5 to-transparent pointer-events-none" />
+          
+          {/* Glow effect */}
+          <div className="absolute -top-1 -right-1 w-32 h-32 bg-blue-500/20 rounded-full blur-2xl animate-pulse" />
+          
+          <CardHeader className="border-b border-slate-200/50 dark:border-slate-800/50 relative z-10">
+            <StepIndicator />
+            <AutoSaveIndicator />
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle className="text-2xl bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
+                  {steps[currentStep].title}
+                </CardTitle>
+                <CardDescription className="mt-1">{steps[currentStep].description}</CardDescription>
+              </div>
+            </div>
+          </CardHeader>
 
-      <CardContent>
-        {error && (
-          <Alert variant="destructive" className="mb-6">
-            <AlertCircle className="h-4 w-4" />
-            <AlertTitle>Error</AlertTitle>
-            <AlertDescription>{error}</AlertDescription>
-          </Alert>
-        )}
-
-        {renderStepContent()}
-      </CardContent>
-
-      <CardFooter className="flex justify-between">
-        <Button variant="outline" onClick={handleBack} disabled={currentStep === 0 || currentStep === steps.length - 1}>
-          <ChevronLeft className="mr-2 h-4 w-4" /> Back
-        </Button>
-
-        {currentStep < steps.length - 2 ? (
-          <Button onClick={handleNext}>
-            Next <ChevronRight className="ml-2 h-4 w-4" />
-          </Button>
-        ) : currentStep === steps.length - 2 ? (
-          <Button onClick={handleSubmit} disabled={isSubmitting}>
-            {isSubmitting ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Saving...
-              </>
-            ) : (
-              <>
-                Complete <CheckCircle className="ml-2 h-4 w-4" />
-              </>
+          <CardContent className="pt-6 relative z-10">
+            {error && (
+              <Alert variant="destructive" className="mb-6 bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm">
+                <AlertCircle className="h-4 w-4" />
+                <AlertTitle>Error</AlertTitle>
+                <AlertDescription>{error}</AlertDescription>
+              </Alert>
             )}
-          </Button>
-        ) : null}
-      </CardFooter>
-    </Card>
+
+            <div className="min-h-[400px]">
+              {renderStepContent()}
+            </div>
+          </CardContent>
+
+          <CardFooter className="flex justify-between border-t border-slate-200/50 dark:border-slate-800/50 pt-6 relative z-10">
+            <Button
+              variant="outline"
+              onClick={handleBack}
+              disabled={currentStep === 0 || currentStep === steps.length - 1}
+              className="bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm"
+            >
+              <ChevronLeft className="mr-2 h-4 w-4" /> Back
+            </Button>
+
+            {currentStep < steps.length - 2 ? (
+              <Button 
+                onClick={handleNext} 
+                size="lg"
+                className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-lg"
+              >
+                Next <ChevronRight className="ml-2 h-4 w-4" />
+              </Button>
+            ) : currentStep === steps.length - 2 ? (
+              <Button 
+                onClick={handleSubmit} 
+                disabled={isSubmitting} 
+                size="lg"
+                className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-lg"
+              >
+                {isSubmitting ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Saving...
+                  </>
+                ) : (
+                  <>
+                    Complete <CheckCircle className="ml-2 h-4 w-4" />
+                  </>
+                )}
+              </Button>
+            ) : null}
+          </CardFooter>
+        </Card>
+      </TooltipProvider>
+    </div>
   )
 }

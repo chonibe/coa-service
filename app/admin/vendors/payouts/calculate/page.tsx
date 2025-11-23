@@ -260,7 +260,7 @@ export default function CalculatePayoutPage() {
                     payoutData.orders.map((order) => (
                       <div key={order.order_id} className="border rounded-lg">
                         <div
-                          className="p-4 cursor-pointer hover:bg-muted/50 flex items-center justify-between"
+                          className="p-4 cursor-pointer hover:bg-white/50 dark:hover:bg-slate-900/50 backdrop-blur-sm transition-colors flex items-center justify-between"
                           onClick={() => toggleOrderExpansion(order.order_id)}
                         >
                           <div className="flex-1">

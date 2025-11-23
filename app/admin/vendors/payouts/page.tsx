@@ -570,7 +570,7 @@ export default function VendorPayoutsPage() {
 
               {/* Bulk Edit Panel */}
               {selectedProducts.length > 0 && (
-                <div className="bg-muted/50 border rounded-md p-4 mb-4">
+                <div className="bg-white/50 dark:bg-slate-900/50 backdrop-blur-sm border border-white/20 dark:border-slate-700/20 rounded-md p-4 mb-4">
                   <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                     <div>
                       <h3 className="font-medium">Bulk Edit {selectedProducts.length} Selected Products</h3>

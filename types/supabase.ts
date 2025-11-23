@@ -275,6 +275,88 @@ export interface Database {
           created_at?: string
         }
       }
+      vendor_product_submissions: {
+        Row: {
+          id: string
+          vendor_id: number
+          vendor_name: string
+          status: Database["public"]["Enums"]["product_submission_status"]
+          shopify_product_id: string | null
+          product_data: Json
+          admin_notes: string | null
+          rejection_reason: string | null
+          submitted_at: string
+          approved_at: string | null
+          published_at: string | null
+          approved_by: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          vendor_id: number
+          vendor_name: string
+          status?: Database["public"]["Enums"]["product_submission_status"]
+          shopify_product_id?: string | null
+          product_data: Json
+          admin_notes?: string | null
+          rejection_reason?: string | null
+          submitted_at?: string
+          approved_at?: string | null
+          published_at?: string | null
+          approved_by?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          vendor_id?: number
+          vendor_name?: string
+          status?: Database["public"]["Enums"]["product_submission_status"]
+          shopify_product_id?: string | null
+          product_data?: Json
+          admin_notes?: string | null
+          rejection_reason?: string | null
+          submitted_at?: string
+          approved_at?: string | null
+          published_at?: string | null
+          approved_by?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+      }
+      vendor_collections: {
+        Row: {
+          id: string
+          vendor_id: number
+          vendor_name: string
+          shopify_collection_id: string | null
+          shopify_collection_handle: string
+          collection_title: string
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          vendor_id: number
+          vendor_name: string
+          shopify_collection_id?: string | null
+          shopify_collection_handle: string
+          collection_title: string
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          vendor_id?: number
+          vendor_name?: string
+          shopify_collection_id?: string | null
+          shopify_collection_handle?: string
+          collection_title?: string
+          created_at?: string
+          updated_at?: string
+        }
+      }
     }
     Views: {
       [_ in never]: never
@@ -284,6 +366,7 @@ export interface Database {
     }
     Enums: {
       vendor_status: "pending" | "active" | "review" | "disabled" | "suspended"
+      product_submission_status: "pending" | "approved" | "rejected" | "published"
     }
     CompositeTypes: {
       [_ in never]: never

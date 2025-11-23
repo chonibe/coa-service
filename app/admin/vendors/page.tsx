@@ -172,18 +172,23 @@ export default function VendorsPage() {
       <div className="flex flex-col space-y-8">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <h1 className="text-3xl font-bold tracking-tight">Vendors</h1>
+            <h1 className="text-3xl font-bold tracking-tight bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">Vendors</h1>
             <p className="text-muted-foreground mt-2">View all vendors from your Shopify products</p>
           </div>
           <div className="flex gap-2">
-            <Button variant="outline" onClick={handleRefresh} disabled={isRefreshing}>
+            <Button 
+              variant="outline" 
+              onClick={handleRefresh} 
+              disabled={isRefreshing}
+              className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm"
+            >
               <RefreshCw className={`h-4 w-4 mr-2 ${isRefreshing ? "animate-spin" : ""}`} />
               Refresh
             </Button>
           </div>
         </div>
 
-        <Card>
+        <Card className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-0 shadow-xl">
           <CardHeader>
             <CardTitle>Vendor List</CardTitle>
             <CardDescription>All vendors from your Shopify products</CardDescription>
@@ -200,7 +205,11 @@ export default function VendorsPage() {
                   />
                 </div>
                 <div className="flex space-x-2">
-                  <Button onClick={handleSearch} disabled={isLoading || isRefreshing}>
+                  <Button 
+                    onClick={handleSearch} 
+                    disabled={isLoading || isRefreshing}
+                    className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-lg"
+                  >
                     <Search className="h-4 w-4 mr-2" />
                     Search
                   </Button>

@@ -9,6 +9,7 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { AlertCircle, DollarSign, Package, TrendingUp, ShoppingCart } from "lucide-react"
 import { OnboardingAlert } from "./components/onboarding-alert"
 import { OnboardingBanner } from "./components/onboarding-banner"
+import { ContextualOnboarding } from "../components/contextual-onboarding"
 import { VendorSalesChart } from "./components/vendor-sales-chart"
 import { useVendorData } from "@/hooks/use-vendor-data"
 import { BarChart, CartesianGrid, XAxis, YAxis, Tooltip, Legend, Bar, ResponsiveContainer } from "recharts"
@@ -123,12 +124,7 @@ export default function VendorDashboardPage() {
           setVendorName(data.vendor?.vendor_name || "Vendor")
           const completed = data.vendor?.onboarding_completed || false
           setOnboardingCompleted(completed)
-          
-          // Redirect to onboarding if not completed
-          if (!completed) {
-            router.replace("/vendor/onboarding")
-            return
-          }
+          // Don't redirect - allow access to dashboard with contextual onboarding
         }
       } catch (error) {
         console.error("Error fetching vendor profile:", error)
@@ -210,17 +206,20 @@ export default function VendorDashboardPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
-        <p className="text-muted-foreground mt-1">Welcome back, {vendorName}</p>
-      </div>
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
+              Dashboard
+            </h1>
+            <p className="text-muted-foreground mt-1">Welcome back, {vendorName}</p>
+          </div>
+        </div>
 
-      {!onboardingCompleted && <OnboardingBanner vendorName={vendorName} />}
-
-      <OnboardingAlert />
+        {/* Contextual onboarding - floating card */}
+        <ContextualOnboarding context="settings" />
 
       {error ? (
-        <Alert variant="destructive">
+        <Alert variant="destructive" className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-0 shadow-lg">
           <AlertCircle className="h-4 w-4" />
           <AlertTitle>Error</AlertTitle>
           <AlertDescription>{error}</AlertDescription>
@@ -228,7 +227,7 @@ export default function VendorDashboardPage() {
       ) : null}
 
       <Tabs defaultValue="overview" className="space-y-6">
-        <TabsList>
+        <TabsList className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-0 shadow-lg">
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="analytics">Analytics</TabsTrigger>
         </TabsList>
@@ -280,7 +279,7 @@ export default function VendorDashboardPage() {
           )}
 
           <div className="grid gap-6 md:grid-cols-2">
-            <Card>
+            <Card className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-0 shadow-xl">
               <CardHeader>
                 <CardTitle>Recent Activity</CardTitle>
                 <CardDescription>Your latest sales and transactions</CardDescription>
@@ -341,7 +340,7 @@ export default function VendorDashboardPage() {
         </TabsContent>
 
         <TabsContent value="analytics" className="space-y-4">
-          <Card>
+          <Card className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-0 shadow-xl">
             <CardHeader>
               <CardTitle>Sales Analytics</CardTitle>
               <CardDescription>Detailed analytics for your products</CardDescription>
@@ -358,8 +357,8 @@ export default function VendorDashboardPage() {
                       <BarChart data={salesData.salesByDate}>
                         <CartesianGrid strokeDasharray="3 3" />
                         <XAxis dataKey="month" />
-                        <YAxis yAxisId="left" orientation="left" stroke="#8884d8" />
-                        <YAxis yAxisId="right" orientation="right" stroke="#82ca9d" />
+                        <YAxis yAxisId="left" orientation="left" stroke="#3b82f6" />
+                        <YAxis yAxisId="right" orientation="right" stroke="#6366f1" />
                         <Tooltip
                           formatter={(value, name) => {
                             if (name === "Revenue") {
@@ -369,8 +368,8 @@ export default function VendorDashboardPage() {
                           }}
                         />
                         <Legend />
-                        <Bar yAxisId="left" dataKey="sales" name="Sales" fill="#8884d8" />
-                        <Bar yAxisId="right" dataKey="revenue" name="Revenue" fill="#82ca9d" />
+                        <Bar yAxisId="left" dataKey="sales" name="Sales" fill="#3b82f6" />
+                        <Bar yAxisId="right" dataKey="revenue" name="Revenue" fill="#6366f1" />
                       </BarChart>
                     </ResponsiveContainer>
                   </div>

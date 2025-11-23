@@ -28,17 +28,65 @@ export async function GET() {
       console.error("Error fetching vendor payouts:", error)
     }
 
-    // If we have payouts data, format and return it
+    // If we have payouts data, format and return it with items
     if (payouts && payouts.length > 0) {
-      const formattedPayouts = payouts.map((payout) => ({
-        id: payout.id,
-        amount: payout.amount,
-        status: payout.status,
-        date: payout.payout_date || payout.created_at,
-        products: payout.product_count || 0,
-        reference: payout.reference,
-        invoice_number: payout.invoice_number,
-      }))
+      const formattedPayouts = await Promise.all(
+        payouts.map(async (payout) => {
+          // Get payout items with product details and payment reference
+          const { data: payoutItems, error: itemsError } = await supabase
+            .from("vendor_payout_items")
+            .select(`
+              line_item_id,
+              amount,
+              payout_reference,
+              marked_at,
+              marked_by,
+              order_line_items_v2 (
+                name,
+                created_at,
+                product_id
+              )
+            `)
+            .eq("payout_id", payout.id)
+
+          // Get product names
+          const items = await Promise.all(
+            (payoutItems || []).map(async (item: any) => {
+              const lineItem = item.order_line_items_v2
+              if (!lineItem) return null
+
+              // Get product name
+              const { data: product } = await supabase
+                .from("products")
+                .select("name, product_id")
+                .or(`product_id.eq.${lineItem.product_id},id.eq.${lineItem.product_id}`)
+                .maybeSingle()
+
+              return {
+                item_name: product?.name || lineItem.name || `Product ${lineItem.product_id}`,
+                date: lineItem.created_at,
+                amount: item.amount,
+                payout_reference: item.payout_reference || payout.reference,
+                marked_at: item.marked_at,
+                marked_by: item.marked_by,
+                is_paid: true,
+              }
+            })
+          )
+
+          return {
+            id: payout.id,
+            amount: payout.amount,
+            status: payout.status,
+            date: payout.payout_date || payout.created_at,
+            products: payout.product_count || 0,
+            reference: payout.reference,
+            invoice_number: payout.invoice_number,
+            payout_batch_id: payout.payout_batch_id,
+            items: items.filter((item) => item !== null),
+          }
+        })
+      )
 
       return NextResponse.json({ payouts: formattedPayouts })
     }

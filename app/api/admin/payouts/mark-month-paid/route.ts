@@ -53,26 +53,103 @@ export async function POST(request: NextRequest) {
     const endDate = new Date(year, month, 0, 23, 59, 59, 999).toISOString()
 
     // Get all fulfilled line items for this vendor in this month that are not yet paid
-    const { data: lineItems, error: lineItemsError } = await supabase
+    // Match the same logic as pending-items: fulfilled/partially_fulfilled OR items with active edition numbers
+    // First, get items that match fulfillment/edition criteria
+    const { data: allItems, error: allItemsError } = await supabase
       .from("order_line_items_v2")
       .select("*")
       .eq("vendor_name", vendorName)
       .eq("status", "active")
-      .eq("fulfillment_status", "fulfilled")
+      .eq("restocked", false) // Exclude restocked items
+      .or("fulfillment_status.in.(fulfilled,partially_fulfilled),and(edition_number.not.is.null,status.eq.active)")
       .gte("created_at", startDate)
       .lte("created_at", endDate)
-      .is("refund_status", null) // Exclude refunded items
 
-    if (lineItemsError) {
+    if (allItemsError) {
       return NextResponse.json(
-        { error: `Failed to fetch line items: ${lineItemsError.message}` },
+        { error: `Failed to fetch line items: ${allItemsError.message}` },
         { status: 500 }
       )
     }
 
-    if (!lineItems || lineItems.length === 0) {
+    if (!allItems || allItems.length === 0) {
       return NextResponse.json(
-        { error: "No fulfilled line items found for this month" },
+        { 
+          error: `No eligible line items found for ${year}-${String(month).padStart(2, "0")}`,
+          details: `Checked for items with fulfillment_status='fulfilled' or 'partially_fulfilled', or items with active edition numbers, between ${startDate} and ${endDate}`
+        },
+        { status: 400 }
+      )
+    }
+
+    // Filter out refunded items (only include null or 'none')
+    let filteredItems = (allItems || []).filter(
+      (item: any) => !item.refund_status || item.refund_status === 'none'
+    )
+
+    // Separate items into two groups (same as pending-items):
+    // 1. Items with active edition numbers (always include these, but exclude cancelled orders)
+    // 2. Items that need financial_status check (fulfilled/partially_fulfilled)
+    const itemsWithActiveEdition = filteredItems.filter((item: any) => 
+      item.edition_number !== null && item.edition_number !== undefined && item.status === 'active'
+    )
+    const itemsNeedingFinancialCheck = filteredItems.filter((item: any) => 
+      !(item.edition_number !== null && item.edition_number !== undefined && item.status === 'active')
+    )
+
+    // Get all order IDs to check financial_status
+    const allOrderIds = [...new Set(filteredItems.map((item: any) => item.order_id))]
+    const { data: orders, error: ordersError } = await supabase
+      .from("orders")
+      .select("id, financial_status")
+      .in("id", allOrderIds)
+
+    if (ordersError) {
+      return NextResponse.json(
+        { error: `Failed to fetch orders: ${ordersError.message}` },
+        { status: 500 }
+      )
+    }
+
+    // Exclude cancelled orders (financial_status = 'voided')
+    const cancelledOrderIds = new Set(
+      orders?.filter((order: any) => order.financial_status === 'voided').map((order: any) => order.id) || []
+    )
+
+    // Filter items with active edition numbers - exclude cancelled orders
+    const validItemsWithActiveEdition = itemsWithActiveEdition.filter((item: any) => 
+      !cancelledOrderIds.has(item.order_id)
+    )
+
+    // Filter items needing financial_status check - only include orders with financial_status = 'paid', 'refunded', or 'complete'
+    const validOrderIds = new Set(
+      orders?.filter((order: any) => 
+        (order.financial_status === 'paid' || 
+         order.financial_status === 'refunded' || 
+         order.financial_status === 'complete') &&
+        order.financial_status !== 'voided'
+      ).map((order: any) => order.id) || []
+    )
+
+    const validItemsFromFinancialCheck = itemsNeedingFinancialCheck.filter((item: any) => 
+      validOrderIds.has(item.order_id)
+    )
+
+    // Combine both groups (same as pending-items logic)
+    const lineItems = [...validItemsWithActiveEdition, ...validItemsFromFinancialCheck]
+
+    console.log(`[mark-month-paid] Found ${lineItems.length} eligible items for ${vendorName} in ${year}-${String(month).padStart(2, "0")}`)
+    console.log(`[mark-month-paid] Date range: ${startDate} to ${endDate}`)
+    console.log(`[mark-month-paid] Items with active edition: ${validItemsWithActiveEdition.length}`)
+    console.log(`[mark-month-paid] Items from financial check: ${validItemsFromFinancialCheck.length}`)
+
+    if (!lineItems || lineItems.length === 0) {
+      console.error(`[mark-month-paid] No eligible items found for ${vendorName} in ${year}-${String(month).padStart(2, "0")}`)
+      return NextResponse.json(
+        { 
+          error: `No eligible line items found for ${year}-${String(month).padStart(2, "0")}`,
+          details: `Checked for items with fulfillment_status='fulfilled' or 'partially_fulfilled', or items with active edition numbers, between ${startDate} and ${endDate}. Found ${allItems?.length || 0} total items before filtering.`
+        },
         { status: 400 }
       )
     }
@@ -94,7 +171,11 @@ export async function POST(request: NextRequest) {
     const paidItemIds = new Set(paidItems?.map((item) => item.line_item_id) || [])
     const unpaidLineItems = lineItems.filter((item) => !paidItemIds.has(item.line_item_id))
 
+    console.log(`[mark-month-paid] Found ${paidItemIds.size} already paid items`)
+    console.log(`[mark-month-paid] Unpaid items: ${unpaidLineItems.length} out of ${lineItems.length} total`)
+
     if (unpaidLineItems.length === 0) {
+      console.log(`[mark-month-paid] All items for ${vendorName} in ${year}-${String(month).padStart(2, "0")} are already paid`)
       return NextResponse.json(
         { error: "All items for this month are already paid" },
         { status: 400 }

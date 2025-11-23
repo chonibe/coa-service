@@ -183,7 +183,10 @@ END;
 $$ LANGUAGE plpgsql;
 
 -- Update function to get vendor pending line items (exclude refunded items)
-CREATE OR REPLACE FUNCTION get_vendor_pending_line_items(p_vendor_name TEXT)
+-- Drop function first to avoid return type conflicts
+DROP FUNCTION IF EXISTS get_vendor_pending_line_items(TEXT);
+
+CREATE FUNCTION get_vendor_pending_line_items(p_vendor_name TEXT)
 RETURNS TABLE (
   line_item_id TEXT,
   order_id TEXT,

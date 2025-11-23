@@ -58,7 +58,7 @@ export default function ProductEditionsPage() {
           <div className="rounded-md border">
             <table className="w-full">
               <thead>
-                <tr className="border-b bg-muted/50">
+                <tr className="border-b bg-white/50 dark:bg-slate-900/50 backdrop-blur-sm">
                   <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground">
                     Product
                   </th>

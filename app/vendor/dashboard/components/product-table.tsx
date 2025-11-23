@@ -71,7 +71,7 @@ export function ProductTable({ products }: ProductTableProps) {
   }
 
   const SortHeader = ({ field, label }: { field: keyof Product; label: string }) => (
-    <TableHead className="cursor-pointer hover:bg-muted/30 transition-colors" onClick={() => handleSort(field)}>
+    <TableHead className="cursor-pointer hover:bg-white/30 dark:hover:bg-slate-900/30 backdrop-blur-sm transition-colors" onClick={() => handleSort(field)}>
       <div className="flex items-center space-x-1">
         <span>{label}</span>
         {sortField === field && (

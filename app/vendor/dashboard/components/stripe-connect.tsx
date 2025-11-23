@@ -271,7 +271,7 @@ export function StripeConnect({ vendorName }: StripeConnectProps) {
             <span>Your Stripe account is fully set up and ready to receive payouts</span>
           </div>
 
-          <div className="bg-muted/50 p-4 rounded-md">
+          <div className="bg-white/50 dark:bg-slate-900/50 backdrop-blur-sm border border-white/20 dark:border-slate-700/20 p-4 rounded-md">
             <div className="grid grid-cols-2 gap-2 text-sm">
               <div className="text-muted-foreground">Account ID:</div>
               <div className="font-mono">{accountStatus.accountId.slice(0, 8)}...</div>

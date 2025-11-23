@@ -56,7 +56,19 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Failed to update settings" }, { status: 500 })
     }
 
-    return NextResponse.json({ success: true })
+    // Fetch and return the updated vendor data
+    const { data: updatedVendor, error: fetchError } = await serviceClient
+      .from("vendors")
+      .select("*")
+      .eq("id", vendor.id)
+      .maybeSingle()
+
+    if (fetchError || !updatedVendor) {
+      console.error("Error fetching updated vendor:", fetchError)
+      return NextResponse.json({ error: "Failed to fetch updated vendor" }, { status: 500 })
+    }
+
+    return NextResponse.json({ success: true, vendor: updatedVendor })
   } catch (error) {
     console.error("Error updating vendor settings:", error)
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })

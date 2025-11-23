@@ -55,8 +55,8 @@ export default function VendorOnboardingPage() {
 
   if (isLoading) {
     return (
-      <div className="flex min-h-screen items-center justify-center">
-        <Card className="p-8 flex flex-col items-center">
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950 flex items-center justify-center">
+        <Card className="p-8 flex flex-col items-center bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl border-0 shadow-2xl">
           <Loader2 className="h-8 w-8 animate-spin text-primary mb-4" />
           <p className="text-lg font-medium">Loading your profile...</p>
         </Card>
@@ -64,18 +64,5 @@ export default function VendorOnboardingPage() {
     )
   }
 
-  return (
-    <div className="min-h-screen bg-gray-50 py-8 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-3xl mx-auto">
-        <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold">Welcome to the Vendor Portal</h1>
-          <p className="mt-2 text-lg text-gray-600">
-            Let's set up your profile to get you started with selling your products
-          </p>
-        </div>
-
-        <OnboardingWizard initialData={profileData} onComplete={handleComplete} />
-      </div>
-    </div>
-  )
+  return <OnboardingWizard initialData={profileData} onComplete={handleComplete} />
 }

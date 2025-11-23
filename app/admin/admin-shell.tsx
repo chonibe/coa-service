@@ -96,6 +96,11 @@ export function AdminShell({ children }: AdminShellProps) {
           icon: <Package className="h-4 w-4" />,
         },
         {
+          title: "Product Submissions",
+          href: "/admin/products/submissions",
+          icon: <Upload className="h-4 w-4" />,
+        },
+        {
           title: "Product Editions",
           href: "/admin/product-editions",
           icon: <Award className="h-4 w-4" />,
@@ -653,8 +658,8 @@ export function AdminShell({ children }: AdminShellProps) {
   )
 
   return (
-    <div className="flex min-h-screen flex-col">
-      <header className="sticky top-0 z-30 flex h-16 items-center gap-4 border-b bg-background px-4 sm:px-6">
+    <div className="flex min-h-screen flex-col bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950">
+      <header className="sticky top-0 z-30 flex h-16 items-center gap-4 border-b border-slate-200/50 dark:border-slate-800/50 bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl px-4 sm:px-6">
         <Sheet open={open} onOpenChange={setOpen}>
           <SheetTrigger asChild>
             <Button variant="outline" size="icon" className="md:hidden">
@@ -662,12 +667,17 @@ export function AdminShell({ children }: AdminShellProps) {
               <span className="sr-only">Toggle menu</span>
             </Button>
           </SheetTrigger>
-          <SheetContent side="left" className="w-[300px] sm:w-[400px] pr-0">
+          <SheetContent side="left" className="w-[300px] sm:w-[400px] pr-0 bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl border-r border-slate-200/50 dark:border-slate-800/50">
             <div className="flex flex-col h-full">
-              <div className="flex items-center border-b h-16 px-6">
+              <div className="flex items-center border-b border-slate-200/50 dark:border-slate-800/50 h-16 px-6">
                 <Link href="/admin" className="flex items-center gap-2 font-semibold">
-                  <Award className="h-6 w-6" />
-                  {isMobile ? <span className="font-medium">{currentSection}</span> : <span>Admin Dashboard</span>}
+                  <div className="relative">
+                    <div className="absolute inset-0 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-lg blur-md opacity-50 animate-pulse" />
+                    <div className="relative bg-gradient-to-br from-blue-500 to-indigo-600 p-1.5 rounded-lg">
+                      <Award className="h-5 w-5 text-white" />
+                    </div>
+                  </div>
+                  {isMobile ? <span className="font-medium bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">{currentSection}</span> : <span className="bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">Admin Dashboard</span>}
                 </Link>
                 <Button variant="ghost" size="icon" className="ml-auto" onClick={() => setOpen(false)}>
                   <X className="h-5 w-5" />
@@ -753,8 +763,13 @@ export function AdminShell({ children }: AdminShellProps) {
           </SheetContent>
         </Sheet>
         <Link href="/admin" className="flex items-center gap-2 font-semibold">
-          <Award className="h-6 w-6" />
-          <span className={isMobile ? "sr-only" : "inline-block"}>Admin Dashboard</span>
+          <div className="relative">
+            <div className="absolute inset-0 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-lg blur-md opacity-50 animate-pulse" />
+            <div className="relative bg-gradient-to-br from-blue-500 to-indigo-600 p-1.5 rounded-lg">
+              <Award className="h-5 w-5 text-white" />
+            </div>
+          </div>
+          <span className={`${isMobile ? "sr-only" : "inline-block"} bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent`}>Admin Dashboard</span>
         </Link>
         <div className="ml-auto flex items-center gap-2">
           <div className="hidden md:flex gap-2">
@@ -768,7 +783,7 @@ export function AdminShell({ children }: AdminShellProps) {
         </div>
       </header>
       <div className="flex flex-1">
-        <aside className="hidden w-[250px] flex-col border-r md:flex">
+        <aside className="hidden w-[250px] flex-col border-r border-slate-200/50 dark:border-slate-800/50 bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl md:flex">
           <ScrollArea className="flex-1">
             <div className="flex flex-col gap-2 p-4">
               <nav className="grid gap-2">

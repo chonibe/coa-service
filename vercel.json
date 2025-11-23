@@ -13,10 +13,19 @@
       "NEXT_PUBLIC_SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxkbXBwbW5wZ2R4dWVlYmtrcGlkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDE2MzEwMjAsImV4cCI6MjA1NzIwNzAyMH0.4iAEQ9IrrxatqlR9S5YzWc5B-I34CahtqgzKtooz0rE"
     }
   },
+  "functions": {
+    "app/api/payouts/notifications/stream/route.ts": {
+      "maxDuration": 60
+    }
+  },
   "crons": [
     {
       "path": "/api/cron/process-scheduled-payouts",
       "schedule": "0 9 * * *"
+    },
+    {
+      "path": "/api/cron/process-scheduled-payouts",
+      "schedule": "0 */6 * * *"
     }
   ]
 }

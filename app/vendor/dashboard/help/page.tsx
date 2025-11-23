@@ -136,12 +136,12 @@ export default function HelpPage() {
     <SidebarLayout>
       <div className="space-y-6">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Help Center</h1>
+          <h1 className="text-3xl font-bold tracking-tight bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">Help Center</h1>
           <p className="text-muted-foreground">Find answers and learn how to use the Vendor Portal</p>
         </div>
 
         {/* Search */}
-        <Card>
+        <Card className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-0 shadow-xl">
           <CardContent className="pt-6">
             <div className="relative">
               <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
@@ -176,46 +176,58 @@ export default function HelpPage() {
 
         {/* Quick Actions */}
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-          <Card className="cursor-pointer hover:bg-accent transition-colors">
+          <Card className="cursor-pointer hover:bg-accent transition-colors bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-0 shadow-xl">
             <CardHeader>
               <Mail className="h-8 w-8 mb-2" />
               <CardTitle className="text-lg">Contact Support</CardTitle>
               <CardDescription>Get help from our team</CardDescription>
             </CardHeader>
             <CardContent>
-              <Button variant="outline" className="w-full" asChild>
+              <Button 
+                variant="outline" 
+                className="w-full bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm" 
+                asChild
+              >
                 <a href="/vendor/dashboard/messages">Send Message</a>
               </Button>
             </CardContent>
           </Card>
 
-          <Card className="cursor-pointer hover:bg-accent transition-colors">
+          <Card className="cursor-pointer hover:bg-accent transition-colors bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-0 shadow-xl">
             <CardHeader>
               <BookOpen className="h-8 w-8 mb-2" />
               <CardTitle className="text-lg">Documentation</CardTitle>
               <CardDescription>Detailed guides and tutorials</CardDescription>
             </CardHeader>
             <CardContent>
-              <Button variant="outline" className="w-full" disabled>
+              <Button 
+                variant="outline" 
+                className="w-full bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm" 
+                disabled
+              >
                 Coming Soon
               </Button>
             </CardContent>
           </Card>
 
-          <Card className="cursor-pointer hover:bg-accent transition-colors">
+          <Card className="cursor-pointer hover:bg-accent transition-colors bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-0 shadow-xl">
             <CardHeader>
               <Video className="h-8 w-8 mb-2" />
               <CardTitle className="text-lg">Video Tutorials</CardTitle>
               <CardDescription>Watch step-by-step guides</CardDescription>
             </CardHeader>
             <CardContent>
-              <Button variant="outline" className="w-full" disabled>
+              <Button 
+                variant="outline" 
+                className="w-full bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm" 
+                disabled
+              >
                 Coming Soon
               </Button>
             </CardContent>
           </Card>
 
-          <Card className="cursor-pointer hover:bg-accent transition-colors">
+          <Card className="cursor-pointer hover:bg-accent transition-colors bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-0 shadow-xl">
             <CardHeader>
               <Keyboard className="h-8 w-8 mb-2" />
               <CardTitle className="text-lg">Keyboard Shortcuts</CardTitle>
@@ -233,7 +245,7 @@ export default function HelpPage() {
         </div>
 
         {/* Help Articles */}
-        <Card>
+        <Card className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-0 shadow-xl">
           <CardHeader>
             <CardTitle>Help Articles</CardTitle>
             <CardDescription>Step-by-step guides and tutorials</CardDescription>
@@ -248,7 +260,7 @@ export default function HelpPage() {
             ) : (
               <div className="space-y-4">
                 {filteredArticles.map((article) => (
-                  <Card key={article.id}>
+                  <Card key={article.id} className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-0 shadow-xl">
                     <CardHeader>
                       <div className="flex items-center justify-between">
                         <div>
@@ -276,7 +288,7 @@ export default function HelpPage() {
         </Card>
 
         {/* FAQs */}
-        <Card>
+        <Card className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-0 shadow-xl">
           <CardHeader>
             <CardTitle>Frequently Asked Questions</CardTitle>
             <CardDescription>Common questions and answers</CardDescription>
@@ -304,7 +316,7 @@ export default function HelpPage() {
         </Card>
 
         {/* Keyboard Shortcuts */}
-        <Card id="keyboard-shortcuts">
+        <Card id="keyboard-shortcuts" className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-0 shadow-xl">
           <CardHeader>
             <div className="flex items-center gap-2">
               <Keyboard className="h-5 w-5" />

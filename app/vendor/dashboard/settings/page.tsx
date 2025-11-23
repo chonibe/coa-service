@@ -155,7 +155,7 @@ export default function VendorSettingsPage() {
     setError(null)
 
     try {
-      const response = await fetch("/api/vendor/update-settings", {
+      const response = await fetch("/api/vendor/update-profile", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -169,9 +169,25 @@ export default function VendorSettingsPage() {
         throw new Error(errorData.error || "Failed to update settings")
       }
 
-      const updatedProfile = await response.json()
-      setProfile(updatedProfile.vendor)
-      updateCompletionSteps(updatedProfile.vendor)
+      const result = await response.json()
+      
+      if (result.vendor) {
+        setProfile(result.vendor)
+        updateCompletionSteps(result.vendor)
+        // Update form state with fresh data from server
+        setFormState((prev) => ({
+          ...prev,
+          contact_name: result.vendor.contact_name || "",
+          contact_email: result.vendor.contact_email || "",
+          phone: result.vendor.phone || "",
+          address: result.vendor.address || "",
+          paypal_email: result.vendor.paypal_email || "",
+          bank_account: result.vendor.bank_account || "",
+          tax_id: result.vendor.tax_id || "",
+          tax_country: result.vendor.tax_country || "",
+          is_company: result.vendor.is_company || false,
+        }))
+      }
 
       toast({
         title: "Settings updated",
@@ -207,12 +223,12 @@ export default function VendorSettingsPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold tracking-tight">Vendor Settings</h1>
+        <h1 className="text-3xl font-bold tracking-tight bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">Vendor Settings</h1>
         <p className="text-muted-foreground">Manage your vendor profile and payment information</p>
       </div>
 
       {error && (
-        <Alert variant="destructive">
+        <Alert variant="destructive" className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-0 shadow-lg">
           <AlertCircle className="h-4 w-4" />
           <AlertTitle>Error</AlertTitle>
           <AlertDescription>{error}</AlertDescription>
@@ -222,7 +238,7 @@ export default function VendorSettingsPage() {
       <div className="grid gap-6 md:grid-cols-7">
         <div className="md:col-span-5">
           <Tabs value={activeTab} onValueChange={setActiveTab}>
-            <TabsList className="grid w-full grid-cols-4">
+            <TabsList className="grid w-full grid-cols-4 bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-0 shadow-lg">
               <TabsTrigger value="profile" className="flex items-center gap-2">
                 <User className="h-4 w-4" />
                 <span>Profile</span>
@@ -246,7 +262,7 @@ export default function VendorSettingsPage() {
 
             <form onSubmit={handleSubmit}>
               <TabsContent value="profile" className="space-y-4 mt-4">
-                <Card>
+                <Card className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-0 shadow-xl">
                   <CardHeader>
                     <CardTitle>Profile Information</CardTitle>
                     <CardDescription>Update your contact information and business details</CardDescription>
@@ -301,7 +317,7 @@ export default function VendorSettingsPage() {
               </TabsContent>
 
               <TabsContent value="payment" className="space-y-4 mt-4">
-                <Card>
+                <Card className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-0 shadow-xl">
                   <CardHeader>
                     <CardTitle>Payment Information</CardTitle>
                     <CardDescription>Set up how you would like to receive payments</CardDescription>
@@ -343,7 +359,7 @@ export default function VendorSettingsPage() {
               </TabsContent>
 
               <TabsContent value="tax" className="space-y-4 mt-4">
-                <Card>
+                <Card className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-0 shadow-xl">
                   <CardHeader>
                     <CardTitle>Tax Information</CardTitle>
                     <CardDescription>Provide your tax details for compliance and reporting</CardDescription>
@@ -417,7 +433,11 @@ export default function VendorSettingsPage() {
 
               {activeTab !== "stripe" && (
                 <div className="mt-6 flex justify-end">
-                  <Button type="submit" disabled={isSaving} className="flex items-center gap-2">
+                  <Button 
+                    type="submit" 
+                    disabled={isSaving} 
+                    className="flex items-center gap-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-lg"
+                  >
                     {isSaving ? (
                       <>
                         <Loader2 className="h-4 w-4 animate-spin" />
@@ -437,7 +457,7 @@ export default function VendorSettingsPage() {
         </div>
 
         <div className="md:col-span-2">
-          <Card>
+          <Card className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-0 shadow-xl">
             <CardHeader>
               <CardTitle>Profile Completion</CardTitle>
               <CardDescription>Complete your profile to ensure timely payouts</CardDescription>

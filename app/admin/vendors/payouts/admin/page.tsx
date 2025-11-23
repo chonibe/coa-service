@@ -24,6 +24,7 @@ import {
   ChevronLeft,
   ChevronRight,
   CheckCircle,
+  X,
 } from "lucide-react"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Badge } from "@/components/ui/badge"
@@ -91,7 +92,25 @@ interface PayoutHistory {
   payout_batch_id?: string | null
 }
 
+interface RedemptionRequest {
+  id: number
+  vendorName: string
+  amount: number
+  currency: string
+  reference: string
+  productCount: number
+  invoiceNumber: string | null
+  notes: string | null
+  createdAt: string
+  updatedAt: string
+  paypalEmail: string | null
+  contactName: string | null
+  contactEmail: string | null
+}
+
 export default function AdminPayoutsPage() {
+  const [redemptionRequests, setRedemptionRequests] = useState<RedemptionRequest[]>([])
+  const [isLoadingRequests, setIsLoadingRequests] = useState(false)
   const [pendingPayouts, setPendingPayouts] = useState<PendingPayout[]>([])
   const [payoutHistory, setPayoutHistory] = useState<PayoutHistory[]>([])
   const [isLoading, setIsLoading] = useState(true)
@@ -122,8 +141,71 @@ export default function AdminPayoutsPage() {
   })
   const { toast } = useToast()
 
+  // Fetch redemption requests
+  const fetchRedemptionRequests = async () => {
+    setIsLoadingRequests(true)
+    try {
+      const response = await fetch("/api/admin/payouts/requests")
+      if (!response.ok) {
+        throw new Error("Failed to fetch redemption requests")
+      }
+      const data = await response.json()
+      setRedemptionRequests(data.requests || [])
+    } catch (err: any) {
+      console.error("Error fetching redemption requests:", err)
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: err.message || "Failed to fetch redemption requests",
+      })
+    } finally {
+      setIsLoadingRequests(false)
+    }
+  }
+
+  // Handle approve/reject redemption request
+  const handleRedemptionAction = async (payoutId: number, action: "approve" | "reject", reason?: string) => {
+    try {
+      const response = await fetch("/api/admin/payouts/approve", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          payoutId,
+          action,
+          reason,
+        }),
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || "Failed to process request")
+      }
+
+      const data = await response.json()
+
+      toast({
+        title: action === "approve" ? "Request Approved" : "Request Rejected",
+        description: data.message || `Payout request ${action}d successfully`,
+      })
+
+      // Refresh requests and payout data
+      await fetchRedemptionRequests()
+      await fetchPayoutData()
+    } catch (err: any) {
+      console.error(`Error ${action}ing redemption request:`, err)
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: err.message || `Failed to ${action} request`,
+      })
+    }
+  }
+
   // Initialize tables and fetch data
   useEffect(() => {
+    fetchRedemptionRequests()
     const initializeAndFetchData = async () => {
       setIsLoading(true)
       setError(null)
@@ -457,11 +539,15 @@ export default function AdminPayoutsPage() {
       <div className="flex flex-col space-y-8">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <h1 className="text-3xl font-bold tracking-tight">Vendor Payouts</h1>
+            <h1 className="text-3xl font-bold tracking-tight bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">Vendor Payouts</h1>
             <p className="text-muted-foreground mt-2">Manage and process payments to vendors</p>
           </div>
           <div className="flex gap-2">
-            <Button variant="outline" onClick={handleRefresh} disabled={isLoading}>
+            <Button 
+              variant="outline" 
+              onClick={handleRefresh} 
+              disabled={isLoading}
+            >
               <RefreshCw className={`h-4 w-4 mr-2 ${isLoading ? "animate-spin" : ""}`} />
               Refresh
             </Button>
@@ -500,8 +586,12 @@ export default function AdminPayoutsPage() {
           </Alert>
         )}
 
-        <Tabs defaultValue="pending">
+        <Tabs defaultValue="requests">
           <TabsList>
+            <TabsTrigger value="requests" className="flex items-center">
+              <AlertCircle className="h-4 w-4 mr-2" />
+              Redemption Requests
+            </TabsTrigger>
             <TabsTrigger value="pending" className="flex items-center">
               <Clock className="h-4 w-4 mr-2" />
               Pending Payouts
@@ -511,6 +601,101 @@ export default function AdminPayoutsPage() {
               Payout History
             </TabsTrigger>
           </TabsList>
+
+          <TabsContent value="requests">
+            <Card>
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle>Redemption Requests</CardTitle>
+                    <CardDescription>Vendor payout requests awaiting approval</CardDescription>
+                  </div>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={fetchRedemptionRequests} 
+                    disabled={isLoadingRequests}
+                  >
+                    <RefreshCw className={`h-4 w-4 mr-2 ${isLoadingRequests ? "animate-spin" : ""}`} />
+                    Refresh
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent>
+                {isLoadingRequests ? (
+                  <div className="flex justify-center py-8">
+                    <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                  </div>
+                ) : redemptionRequests.length === 0 ? (
+                  <Alert>
+                    <AlertCircle className="h-4 w-4" />
+                    <AlertTitle>No redemption requests</AlertTitle>
+                    <AlertDescription>There are no pending redemption requests at this time.</AlertDescription>
+                  </Alert>
+                ) : (
+                  <div className="border rounded-md">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Vendor</TableHead>
+                          <TableHead>Amount</TableHead>
+                          <TableHead>Products</TableHead>
+                          <TableHead>PayPal Email</TableHead>
+                          <TableHead>Requested</TableHead>
+                          <TableHead>Reference</TableHead>
+                          <TableHead className="text-right">Actions</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {redemptionRequests.map((request) => (
+                          <TableRow key={request.id}>
+                            <TableCell className="font-medium">{request.vendorName}</TableCell>
+                            <TableCell>{formatUSD(convertGBPToUSD(request.amount))}</TableCell>
+                            <TableCell>{request.productCount}</TableCell>
+                            <TableCell>
+                              {request.paypalEmail ? (
+                                <span className="text-sm">{request.paypalEmail}</span>
+                              ) : (
+                                <Badge variant="destructive">Missing</Badge>
+                              )}
+                            </TableCell>
+                            <TableCell>{format(new Date(request.createdAt), "MMM d, yyyy HH:mm")}</TableCell>
+                            <TableCell>
+                              <code className="text-xs bg-muted px-2 py-1 rounded">{request.reference}</code>
+                            </TableCell>
+                            <TableCell className="text-right">
+                              <div className="flex justify-end gap-2">
+                                <Button
+                                  variant="default"
+                                  size="sm"
+                                  onClick={() => handleRedemptionAction(request.id, "approve")}
+                                  className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white shadow-lg"
+                                >
+                                  <CheckCircle className="h-4 w-4 mr-1" />
+                                  Approve
+                                </Button>
+                                <Button
+                                  variant="destructive"
+                                  size="sm"
+                                  onClick={() => {
+                                    const reason = prompt("Reason for rejection (optional):")
+                                    handleRedemptionAction(request.id, "reject", reason || undefined)
+                                  }}
+                                >
+                                  <X className="h-4 w-4 mr-1" />
+                                  Reject
+                                </Button>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
 
           <TabsContent value="pending">
             <Card>
@@ -566,7 +751,9 @@ export default function AdminPayoutsPage() {
                     </div>
                     <div>
                       {selectedPayouts.length > 0 && (
-                        <Button onClick={() => setIsPayoutDialogOpen(true)}>
+                        <Button 
+                          onClick={() => setIsPayoutDialogOpen(true)}
+                        >
                           <Send className="h-4 w-4 mr-2" />
                           Process Selected ({selectedPayouts.length})
                         </Button>
@@ -695,7 +882,7 @@ export default function AdminPayoutsPage() {
                               {expandedVendor === payout.vendor_name && (
                                 <TableRow>
                                   <TableCell colSpan={8} className="p-0">
-                                    <div className="bg-muted/50 p-4">
+                                    <div className="bg-white/50 dark:bg-slate-900/50 backdrop-blur-sm border border-white/20 dark:border-slate-700/20 p-4 rounded-lg">
                                       <h4 className="font-medium mb-2">Line Items for {payout.vendor_name}</h4>
                                       {loadingLineItems === payout.vendor_name ? (
                                         <div className="flex justify-center py-4">
@@ -748,7 +935,7 @@ export default function AdminPayoutsPage() {
                                               
                                               return (
                                                 <div key={monthKey} className="border rounded-md bg-background">
-                                                  <div className="p-4 border-b bg-muted/30">
+                                                  <div className="p-4 border-b bg-white/30 dark:bg-slate-900/30 backdrop-blur-sm">
                                                     <div className="flex justify-between items-center">
                                                       <h5 className="font-semibold">{monthName}</h5>
                                                       <div className="flex items-center gap-4">
@@ -883,9 +1070,27 @@ export default function AdminPayoutsPage() {
                                                               </TableCell>
                                                               <TableCell>
                                                                 {item.is_paid ? (
-                                                                  <Badge variant="default" className="bg-green-600">
-                                                                    Paid
-                                                                  </Badge>
+                                                                  <div className="flex items-center gap-2">
+                                                                    <Badge variant="default" className="bg-green-600">
+                                                                      Paid
+                                                                    </Badge>
+                                                                    {item.payout_reference && (
+                                                                      <Button
+                                                                        variant="ghost"
+                                                                        size="sm"
+                                                                        onClick={() => {
+                                                                          toast({
+                                                                            title: "Payment Reference",
+                                                                            description: `Reference: ${item.payout_reference}${item.payout_id ? `\nPayout ID: ${item.payout_id}` : ""}`,
+                                                                          })
+                                                                        }}
+                                                                        className="h-6 px-2 text-xs"
+                                                                      >
+                                                                        <ExternalLink className="h-3 w-3 mr-1" />
+                                                                        {item.payout_reference}
+                                                                      </Button>
+                                                                    )}
+                                                                  </div>
                                                                 ) : (
                                                                   <Badge variant="outline" className="text-amber-600">
                                                                     Pending
@@ -1193,10 +1398,16 @@ export default function AdminPayoutsPage() {
           </div>
 
           <DialogFooter>
-            <Button variant="outline" onClick={() => setIsPayoutDialogOpen(false)}>
+            <Button 
+              variant="outline" 
+              onClick={() => setIsPayoutDialogOpen(false)}
+            >
               Cancel
             </Button>
-            <Button onClick={processSelectedPayouts} disabled={isProcessing}>
+            <Button 
+              onClick={processSelectedPayouts} 
+              disabled={isProcessing}
+            >
               {isProcessing ? (
                 <>
                   <Loader2 className="h-4 w-4 mr-2 animate-spin" />

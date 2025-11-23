@@ -71,10 +71,10 @@ export function VendorSalesChart({ vendorName }: VendorSalesChartProps) {
         <div className="bg-background border border-border p-3 rounded-md shadow-md">
           <p className="font-medium">{formatDate(label)}</p>
           <p className="text-sm">
-            <span className="text-[#8884d8]">●</span> Sales: {payload[0].value}
+            <span className="text-[#3b82f6]">●</span> Sales: {payload[0].value}
           </p>
           <p className="text-sm">
-            <span className="text-[#82ca9d]">●</span> Revenue: {formatCurrency(payload[1].value)}
+            <span className="text-[#6366f1]">●</span> Revenue: {formatCurrency(payload[1].value)}
           </p>
         </div>
       )
@@ -92,7 +92,7 @@ export function VendorSalesChart({ vendorName }: VendorSalesChartProps) {
 
   if (error) {
     return (
-      <Alert variant="destructive">
+      <Alert variant="destructive" className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-0 shadow-lg">
         <AlertCircle className="h-4 w-4" />
         <AlertDescription>{error}</AlertDescription>
       </Alert>
@@ -121,8 +121,8 @@ export function VendorSalesChart({ vendorName }: VendorSalesChartProps) {
         />
         <Tooltip content={customTooltip} />
         <Legend />
-        <Bar dataKey="sales" name="Sales" fill="#8884d8" yAxisId="left" />
-        <Bar dataKey="revenue" name="Revenue" fill="#82ca9d" yAxisId="right" />
+        <Bar dataKey="sales" name="Sales" fill="#3b82f6" yAxisId="left" />
+        <Bar dataKey="revenue" name="Revenue" fill="#6366f1" yAxisId="right" />
       </BarChart>
     </ResponsiveContainer>
   )

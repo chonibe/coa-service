@@ -143,7 +143,7 @@ export async function POST(request: Request) {
     const lineItems = allLineItems
 
     // Get paid line items to mark them and optionally filter them out
-    // Fetch all paid items with pagination
+    // Fetch all paid items with pagination, including payout reference
     let allPaidItems: any[] = []
     let paidFrom = 0
     let hasMorePaid = true
@@ -151,7 +151,7 @@ export async function POST(request: Request) {
     while (hasMorePaid) {
       const { data: paidItems, error: paidError, count: paidCount } = await supabase
         .from("vendor_payout_items")
-        .select("line_item_id, payout_id", { count: 'exact' })
+        .select("line_item_id, payout_id, payout_reference, marked_at, marked_by", { count: 'exact' })
         .not("payout_id", "is", null)
         .range(paidFrom, paidFrom + pageSize - 1)
       
@@ -170,11 +170,20 @@ export async function POST(request: Request) {
     }
 
     const paidLineItemIds = new Set(allPaidItems.map((item: any) => item.line_item_id))
+    const paidItemsMap = new Map<string, any>()
+    allPaidItems.forEach((item: any) => {
+      paidItemsMap.set(item.line_item_id, item)
+    })
+    console.log(`[pending-items] Found ${paidLineItemIds.size} already paid line items`)
+    console.log(`[pending-items] Total eligible items before filtering paid: ${lineItems.length}`)
 
       // Filter out paid items if includePaid is false
       let itemsToProcess = lineItems || []
       if (!includePaid) {
         itemsToProcess = lineItems?.filter((item: any) => !paidLineItemIds.has(item.line_item_id)) || []
+        console.log(`[pending-items] Items after filtering paid: ${itemsToProcess.length}`)
+      } else {
+        console.log(`[pending-items] Including paid items, total: ${itemsToProcess.length}`)
       }
 
       // Get product titles and payout settings
@@ -233,6 +242,7 @@ export async function POST(request: Request) {
           ? (itemPrice * payoutAmount / 100)
           : payoutAmount
         
+        const paidItem = paidItemsMap.get(item.line_item_id)
         return {
           line_item_id: item.line_item_id,
           order_id: item.order_id,
@@ -246,6 +256,10 @@ export async function POST(request: Request) {
           calculated_payout: calculatedPayout, // Actual payout amount (will be $0 if price is $0)
           fulfillment_status: item.fulfillment_status,
           is_paid: paidLineItemIds.has(item.line_item_id),
+          payout_reference: paidItem?.payout_reference || null,
+          payout_id: paidItem?.payout_id || null,
+          marked_at: paidItem?.marked_at || null,
+          marked_by: paidItem?.marked_by || null,
         }
       }).sort((a, b) => {
         if (a.order_id !== b.order_id) {

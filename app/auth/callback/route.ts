@@ -112,7 +112,7 @@ export async function GET(request: NextRequest) {
     console.log(`[auth/callback] Vendor linked: ${vendor.vendor_name}, status: ${vendor.status}, email: ${email}`)
     const sessionCookie = buildVendorSessionCookie(vendor.vendor_name)
     
-    // Always redirect vendors to vendor dashboard
+    // Determine redirect destination
     let destination = DEFAULT_VENDOR_REDIRECT
     if (vendor.status && vendor.status !== "active") {
       if (vendor.status === "pending" || vendor.status === "review") {
@@ -121,6 +121,7 @@ export async function GET(request: NextRequest) {
         destination = DENIED_VENDOR_REDIRECT
       }
     }
+    // Don't redirect for incomplete onboarding - contextual onboarding will handle it
 
     // Create new redirect response with cookies set BEFORE redirect
     const redirectUrl = new URL(destination, origin)
