@@ -30,6 +30,18 @@ function validateProductSubmission(data: any): { valid: boolean; errors: string[
     errors.push("Vendor is required")
   }
 
+  // Validate edition size metafield
+  if (!data.metafields || !Array.isArray(data.metafields)) {
+    errors.push("Edition size is required")
+  } else {
+    const editionSizeMetafield = data.metafields.find(
+      (m: any) => m.namespace === "custom" && m.key === "edition_size"
+    )
+    if (!editionSizeMetafield || !editionSizeMetafield.value) {
+      errors.push("Edition size is required")
+    }
+  }
+
   if (!data.variants || !Array.isArray(data.variants) || data.variants.length === 0) {
     errors.push("At least one variant is required")
   } else {
@@ -40,6 +52,10 @@ function validateProductSubmission(data: any): { valid: boolean; errors: string[
       // Validate price format
       if (variant.price && !/^\d+(\.\d{1,2})?$/.test(variant.price)) {
         errors.push(`Variant ${index + 1}: Price must be a valid number`)
+      }
+      // Validate SKU is present (should be auto-generated)
+      if (!variant.sku || typeof variant.sku !== "string" || variant.sku.trim().length === 0) {
+        errors.push(`Variant ${index + 1}: SKU is required`)
       }
     })
   }
