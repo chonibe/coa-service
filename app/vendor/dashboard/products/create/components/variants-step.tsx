@@ -15,29 +15,33 @@ interface VariantsStepProps {
 
 export function VariantsStep({ formData, setFormData }: VariantsStepProps) {
   const updateVariant = (index: number, field: keyof ProductVariant, value: any) => {
-    const variants = [...formData.variants]
-    variants[index] = { ...variants[index], [field]: value }
-    setFormData({ ...formData, variants })
+    setFormData((prev) => {
+      const variants = [...prev.variants]
+      variants[index] = { ...variants[index], [field]: value }
+      return { ...prev, variants }
+    })
   }
 
   const addVariant = () => {
-    setFormData({
-      ...formData,
+    setFormData((prev) => ({
+      ...prev,
       variants: [
-        ...formData.variants,
+        ...prev.variants,
         {
           price: "",
           sku: "",
           requires_shipping: true,
         },
       ],
-    })
+    }))
   }
 
   const removeVariant = (index: number) => {
     if (formData.variants.length > 1) {
-      const variants = formData.variants.filter((_, i) => i !== index)
-      setFormData({ ...formData, variants })
+      setFormData((prev) => {
+        const variants = prev.variants.filter((_, i) => i !== index)
+        return { ...prev, variants }
+      })
     }
   }
 
@@ -169,16 +173,17 @@ export function VariantsStep({ formData, setFormData }: VariantsStepProps) {
               <Label htmlFor={`inventory_management-${index}`}>Inventory Management</Label>
               <Select
                 value={variant.inventory_management || "shopify"}
-                onValueChange={(value) =>
-                  updateVariant(index, "inventory_management", value as "shopify" | null)
-                }
+                onValueChange={(value) => {
+                  const finalValue = value === "none" ? null : (value as "shopify")
+                  updateVariant(index, "inventory_management", finalValue)
+                }}
               >
                 <SelectTrigger>
-                  <SelectValue />
+                  <SelectValue placeholder="Select inventory management" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="shopify">Shopify</SelectItem>
-                  <SelectItem value="">None</SelectItem>
+                  <SelectItem value="none">None</SelectItem>
                 </SelectContent>
               </Select>
             </div>
