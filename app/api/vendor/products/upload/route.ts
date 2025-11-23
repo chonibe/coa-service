@@ -55,21 +55,15 @@ export async function POST(request: NextRequest) {
     // Determine bucket based on file type
     const bucket = fileType === "pdf" ? "print-files" : "product-images"
 
-    // Upload file to Supabase Storage with timeout handling
-    const uploadPromise = supabase.storage.from(bucket).upload(filePath, file, {
-      contentType: file.type,
-      upsert: false,
-    })
-
-    // Set a timeout for the upload (4 minutes to be safe)
-    const timeoutPromise = new Promise((_, reject) => {
-      setTimeout(() => reject(new Error("Upload timeout - file may be too large")), 240000)
-    })
-
-    const { data: uploadData, error: uploadError } = await Promise.race([
-      uploadPromise,
-      timeoutPromise,
-    ]) as Awaited<ReturnType<typeof uploadPromise>>
+    // Upload file directly to Supabase Storage
+    // Supabase storage supports File objects directly
+    const { data: uploadData, error: uploadError } = await supabase.storage
+      .from(bucket)
+      .upload(filePath, file, {
+        contentType: file.type,
+        upsert: false,
+        cacheControl: "3600",
+      })
 
     if (uploadError) {
       console.error("Error uploading file:", uploadError)
