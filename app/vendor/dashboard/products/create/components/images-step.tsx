@@ -1,12 +1,11 @@
 "use client"
 
-import { useState, useRef } from "react"
+import { useState, useRef, useEffect } from "react"
 import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Plus, Trash2, Image as ImageIcon, Upload, Link as LinkIcon, FileText, Folder } from "lucide-react"
-import { Separator } from "@/components/ui/separator"
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
+import { Plus, Trash2, Image as ImageIcon, Upload, X, GripVertical } from "lucide-react"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { ImageMaskEditor } from "./image-mask-editor"
 import type { ProductSubmissionData, ProductImage } from "@/types/product-submission"
@@ -16,13 +15,47 @@ interface ImagesStepProps {
   setFormData: (data: ProductSubmissionData) => void
 }
 
+interface VendorImage {
+  url: string
+  path: string
+  name: string
+  created_at?: string
+  size?: number
+}
+
 export function ImagesStep({ formData, setFormData }: ImagesStepProps) {
-  const [uploading, setUploading] = useState<Record<number | string, boolean>>({})
-  const fileInputRefs = useRef<Record<number, HTMLInputElement | null>>({})
+  const [uploading, setUploading] = useState(false)
+  const [draggedIndex, setDraggedIndex] = useState<number | null>(null)
+  const [vendorImages, setVendorImages] = useState<VendorImage[]>([])
+  const [showImageLibrary, setShowImageLibrary] = useState(false)
+  const [loadingImages, setLoadingImages] = useState(false)
+  const fileInputRef = useRef<HTMLInputElement>(null)
+  const dragOverIndex = useRef<number | null>(null)
 
   const images = formData.images || []
 
-  const handleFileUpload = async (index: number, file: File) => {
+  // Fetch vendor's past images
+  useEffect(() => {
+    const fetchVendorImages = async () => {
+      setLoadingImages(true)
+      try {
+        const response = await fetch("/api/vendor/products/images", {
+          credentials: "include",
+        })
+        if (response.ok) {
+          const data = await response.json()
+          setVendorImages(data.images || [])
+        }
+      } catch (error) {
+        console.error("Error fetching vendor images:", error)
+      } finally {
+        setLoadingImages(false)
+      }
+    }
+    fetchVendorImages()
+  }, [])
+
+  const handleFileUpload = async (file: File) => {
     // Validate file type
     if (!file.type.startsWith("image/")) {
       alert("Please select an image file (JPG, PNG, GIF, etc.)")
@@ -36,7 +69,7 @@ export function ImagesStep({ formData, setFormData }: ImagesStepProps) {
       return
     }
 
-    setUploading((prev) => ({ ...prev, [index]: true }))
+    setUploading(true)
 
     try {
       const formData = new FormData()
@@ -63,22 +96,22 @@ export function ImagesStep({ formData, setFormData }: ImagesStepProps) {
 
       const data = await response.json()
 
-      // Update image at index
-      const updatedImages = [...images]
-      if (updatedImages[index]) {
-        updatedImages[index] = {
-          ...updatedImages[index],
-          src: data.url,
-        }
-      } else {
-        updatedImages[index] = {
-          src: data.url,
-          alt: "",
-          position: index + 1,
-        }
+      // Add image to the list
+      const newImage: ProductImage = {
+        src: data.url,
+        alt: "",
+        position: images.length + 1,
       }
+      setFormData({ ...formData, images: [...images, newImage] })
 
-      setFormData({ ...formData, images: updatedImages })
+      // Refresh vendor images list
+      const imagesResponse = await fetch("/api/vendor/products/images", {
+        credentials: "include",
+      })
+      if (imagesResponse.ok) {
+        const imagesData = await imagesResponse.json()
+        setVendorImages(imagesData.images || [])
+      }
     } catch (error: any) {
       console.error("Error uploading image:", error)
       if (error.name === "AbortError") {
@@ -87,27 +120,18 @@ export function ImagesStep({ formData, setFormData }: ImagesStepProps) {
         alert(error.message || "Failed to upload image. Please try again.")
       }
     } finally {
-      setUploading((prev) => ({ ...prev, [index]: false }))
+      setUploading(false)
     }
   }
 
-  const updateImage = (index: number, updates: Partial<ProductImage>) => {
-    const updatedImages = [...images]
-    if (updatedImages[index]) {
-      updatedImages[index] = { ...updatedImages[index], ...updates }
-    } else {
-      updatedImages[index] = {
-        src: "",
-        alt: "",
-        position: index + 1,
-        ...updates,
-      }
+  const handleImageSelect = (vendorImage: VendorImage) => {
+    const newImage: ProductImage = {
+      src: vendorImage.url,
+      alt: "",
+      position: images.length + 1,
     }
-    setFormData({ ...formData, images: updatedImages })
-  }
-
-  const updateMaskSettings = (index: number, maskSettings: ProductImage["maskSettings"]) => {
-    updateImage(index, { maskSettings })
+    setFormData({ ...formData, images: [...images, newImage] })
+    setShowImageLibrary(false)
   }
 
   const removeImage = (index: number) => {
@@ -119,174 +143,239 @@ export function ImagesStep({ formData, setFormData }: ImagesStepProps) {
     setFormData({ ...formData, images: updatedImages })
   }
 
-  const addImage = () => {
-    const newImages = [
-      ...images,
-      {
-        src: "",
-        alt: "",
-        position: images.length + 1,
-      },
-    ]
-    setFormData({ ...formData, images: newImages })
+  const handleDragStart = (index: number) => {
+    setDraggedIndex(index)
   }
+
+  const handleDragOver = (e: React.DragEvent, index: number) => {
+    e.preventDefault()
+    dragOverIndex.current = index
+  }
+
+  const handleDrop = (e: React.DragEvent, dropIndex: number) => {
+    e.preventDefault()
+    if (draggedIndex === null || draggedIndex === dropIndex) {
+      setDraggedIndex(null)
+      dragOverIndex.current = null
+      return
+    }
+
+    const updatedImages = [...images]
+    const draggedImage = updatedImages[draggedIndex]
+    updatedImages.splice(draggedIndex, 1)
+    updatedImages.splice(dropIndex, 0, draggedImage)
+
+    // Reindex positions
+    updatedImages.forEach((img, i) => {
+      img.position = i + 1
+    })
+
+    setFormData({ ...formData, images: updatedImages })
+    setDraggedIndex(null)
+    dragOverIndex.current = null
+  }
+
+  const handleDragEnd = () => {
+    setDraggedIndex(null)
+    dragOverIndex.current = null
+  }
+
+  const updateMaskSettings = (maskSettings: ProductImage["maskSettings"]) => {
+    if (images.length > 0) {
+      const updatedImages = [...images]
+      updatedImages[0] = { ...updatedImages[0], maskSettings }
+      setFormData({ ...formData, images: updatedImages })
+    }
+  }
+
+  const firstImage = images.length > 0 ? images[0] : null
 
   return (
     <div className="space-y-6">
       <div>
         <h3 className="text-lg font-semibold mb-2">Product Images</h3>
         <p className="text-sm text-muted-foreground">
-          Upload images or add image URLs. The first image will have a positioning tool with a
-          mask overlay.
+          Upload images or select from your image library. The first image will be used as the product preview with mask positioning.
         </p>
       </div>
 
-      <div className="space-y-4">
-        {images.map((image, index) => {
-          const isFirstImage = index === 0
-          const hasImage = image.src && image.src.trim().length > 0
+      {/* Upload Button */}
+      <div className="flex gap-2">
+        <Button
+          type="button"
+          variant="outline"
+          onClick={() => fileInputRef.current?.click()}
+          disabled={uploading}
+        >
+          <Upload className="h-4 w-4 mr-2" />
+          {uploading ? "Uploading..." : "Upload Images"}
+        </Button>
+        <Dialog open={showImageLibrary} onOpenChange={setShowImageLibrary}>
+          <DialogTrigger asChild>
+            <Button type="button" variant="outline">
+              <ImageIcon className="h-4 w-4 mr-2" />
+              Select from Library
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Your Image Library</DialogTitle>
+              <DialogDescription>
+                Select images from your previously uploaded images
+              </DialogDescription>
+            </DialogHeader>
+            {loadingImages ? (
+              <div className="flex items-center justify-center py-12">
+                <p className="text-muted-foreground">Loading images...</p>
+              </div>
+            ) : vendorImages.length === 0 ? (
+              <div className="flex items-center justify-center py-12">
+                <p className="text-muted-foreground">No images found in your library</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-4 gap-4 mt-4">
+                {vendorImages.map((vendorImage, index) => (
+                  <div
+                    key={index}
+                    className="relative group cursor-pointer border rounded-md overflow-hidden aspect-square bg-muted"
+                    onClick={() => handleImageSelect(vendorImage)}
+                  >
+                    <img
+                      src={vendorImage.url}
+                      alt={vendorImage.name}
+                      className="w-full h-full object-cover"
+                      onError={(e) => {
+                        e.currentTarget.style.display = "none"
+                      }}
+                    />
+                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center">
+                      <Button size="sm" variant="secondary" className="opacity-0 group-hover:opacity-100">
+                        Select
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/*"
+          multiple
+          className="hidden"
+          onChange={(e) => {
+            const files = Array.from(e.target.files || [])
+            files.forEach((file) => handleFileUpload(file))
+          }}
+        />
+      </div>
 
-          return (
-            <div key={index} className="border rounded-lg p-4 space-y-4">
+      {/* Image Grid - Shopify Style */}
+      {images.length > 0 && (
+        <div className="space-y-4">
+          {/* First Image - Product Preview with Mask */}
+          {firstImage && (
+            <div className="border rounded-lg p-4 space-y-4 bg-muted/50">
               <div className="flex items-center justify-between">
-                <Label>
-                  {isFirstImage ? "Primary Image" : `Image ${index + 1}`}
-                  {isFirstImage && <span className="text-muted-foreground ml-2">(with mask)</span>}
-                </Label>
+                <div>
+                  <Label className="text-base font-semibold">Product Preview Image</Label>
+                  <p className="text-xs text-muted-foreground">
+                    This is your primary product image with mask positioning
+                  </p>
+                </div>
                 <Button
                   type="button"
                   variant="ghost"
                   size="sm"
-                  onClick={() => removeImage(index)}
+                  onClick={() => removeImage(0)}
                 >
                   <Trash2 className="h-4 w-4 text-destructive" />
                 </Button>
               </div>
+              <ImageMaskEditor
+                image={firstImage}
+                onUpdate={updateMaskSettings}
+              />
+            </div>
+          )}
 
-              <Tabs defaultValue="upload" className="w-full">
-                <TabsList className="grid w-full grid-cols-2">
-                  <TabsTrigger value="upload">
-                    <Upload className="h-4 w-4 mr-2" />
-                    Upload
-                  </TabsTrigger>
-                  <TabsTrigger value="url">
-                    <LinkIcon className="h-4 w-4 mr-2" />
-                    URL
-                  </TabsTrigger>
-                </TabsList>
-
-                <TabsContent value="upload" className="space-y-3">
-                  <div className="space-y-2">
-                    <Label htmlFor={`file-${index}`}>Upload Image</Label>
-                    <Input
-                      id={`file-${index}`}
-                      type="file"
-                      accept="image/*"
-                      ref={(el) => {
-                        fileInputRefs.current[index] = el
-                      }}
-                      onChange={(e) => {
-                        const file = e.target.files?.[0]
-                        if (file) {
-                          handleFileUpload(index, file)
-                        }
-                      }}
-                      className="cursor-pointer"
-                    />
-                    {uploading[index] && (
-                      <p className="text-sm text-muted-foreground">Uploading...</p>
-                    )}
-                  </div>
-                </TabsContent>
-
-                <TabsContent value="url" className="space-y-3">
-                  <div className="space-y-2">
-                    <Label htmlFor={`image-url-${index}`}>Image URL</Label>
-                    <Input
-                      id={`image-url-${index}`}
-                      value={image.src || ""}
-                      onChange={(e) => updateImage(index, { src: e.target.value })}
-                      placeholder="https://example.com/image.jpg"
-                      type="url"
-                    />
-                  </div>
-                </TabsContent>
-              </Tabs>
-
-              <div className="space-y-2">
-                <Label htmlFor={`image-alt-${index}`}>Alt Text</Label>
-                <Input
-                  id={`image-alt-${index}`}
-                  value={image.alt || ""}
-                  onChange={(e) => updateImage(index, { alt: e.target.value })}
-                  placeholder="Product image description"
-                />
-              </div>
-
-              {hasImage && (
-                <div className="space-y-4">
-                  {isFirstImage ? (
-                    <>
-                      <div className="space-y-2">
-                        <Label>Image Positioning & Mask</Label>
-                        <p className="text-xs text-muted-foreground">
-                          Position your image within the product frame. The visible area is 827x1197
-                          with rounded corners.
-                        </p>
-                        <ImageMaskEditor
-                          image={image}
-                          onUpdate={(maskSettings) => updateMaskSettings(index, maskSettings)}
-                        />
-                      </div>
-                    </>
-                  ) : (
-                    <div className="mt-2">
-                      <div className="relative w-full h-48 border rounded-md overflow-hidden bg-muted flex items-center justify-center">
-                        <img
-                          src={image.src}
-                          alt={image.alt || "Product preview"}
-                          className="max-w-full max-h-full object-contain"
-                          onError={(e) => {
-                            e.currentTarget.style.display = "none"
-                            e.currentTarget.nextElementSibling?.classList.remove("hidden")
-                          }}
-                        />
-                        <div className="hidden absolute inset-0 flex items-center justify-center">
-                          <div className="text-center text-muted-foreground">
-                            <ImageIcon className="h-12 w-12 mx-auto mb-2 opacity-50" />
-                            <p className="text-sm">Failed to load image</p>
-                          </div>
+          {/* Additional Images - Grid View */}
+          {images.length > 1 && (
+            <div>
+              <Label className="text-base font-semibold mb-3 block">Additional Images</Label>
+              <div className="grid grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-4">
+                {images.slice(1).map((image, index) => {
+                  const actualIndex = index + 1
+                  return (
+                    <div
+                      key={actualIndex}
+                      draggable
+                      onDragStart={() => handleDragStart(actualIndex)}
+                      onDragOver={(e) => handleDragOver(e, actualIndex)}
+                      onDrop={(e) => handleDrop(e, actualIndex)}
+                      onDragEnd={handleDragEnd}
+                      className={`relative group border rounded-md overflow-hidden aspect-square bg-muted cursor-move ${
+                        draggedIndex === actualIndex ? "opacity-50" : ""
+                      } ${dragOverIndex.current === actualIndex ? "ring-2 ring-primary" : ""}`}
+                    >
+                      <img
+                        src={image.src}
+                        alt={image.alt || `Image ${actualIndex + 1}`}
+                        className="w-full h-full object-cover"
+                        onError={(e) => {
+                          e.currentTarget.style.display = "none"
+                        }}
+                      />
+                      {/* Drag Handle */}
+                      <div className="absolute top-1 left-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <div className="bg-black/50 rounded p-1">
+                          <GripVertical className="h-3 w-3 text-white" />
                         </div>
                       </div>
+                      {/* Remove Button */}
+                      <div className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <Button
+                          type="button"
+                          variant="destructive"
+                          size="sm"
+                          className="h-6 w-6 p-0"
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            removeImage(actualIndex)
+                          }}
+                        >
+                          <X className="h-3 w-3" />
+                        </Button>
+                      </div>
+                      {/* Image Number Badge */}
+                      <div className="absolute bottom-1 left-1 bg-black/70 text-white text-xs px-2 py-0.5 rounded">
+                        {actualIndex + 1}
+                      </div>
                     </div>
-                  )}
-                </div>
-              )}
-
-              {!hasImage && (
-                <Alert>
-                  <ImageIcon className="h-4 w-4" />
-                  <AlertDescription>
-                    {isFirstImage
-                      ? "Upload or enter a URL for the primary product image. You'll be able to position it with the mask tool."
-                      : "Upload or enter a URL to add this image."}
-                  </AlertDescription>
-                </Alert>
-              )}
+                  )
+                })}
+              </div>
+              <p className="text-xs text-muted-foreground mt-2">
+                Drag images to reorder them
+              </p>
             </div>
-          )
-        })}
+          )}
+        </div>
+      )}
 
-        <Button type="button" variant="outline" onClick={addImage} className="w-full">
-          <Plus className="h-4 w-4 mr-2" />
-          Add Image
-        </Button>
-      </div>
-
-      <Separator className="my-6" />
+      {images.length === 0 && (
+        <Alert>
+          <ImageIcon className="h-4 w-4" />
+          <AlertDescription>
+            Upload images or select from your library to get started. The first image will be used as the product preview.
+          </AlertDescription>
+        </Alert>
+      )}
 
       {/* Print Files Section */}
-      <div className="space-y-4">
+      <div className="space-y-4 pt-6 border-t">
         <div>
           <h3 className="text-lg font-semibold mb-2">Print Files</h3>
           <p className="text-sm text-muted-foreground">
@@ -298,7 +387,7 @@ export function ImagesStep({ formData, setFormData }: ImagesStepProps) {
           {/* PDF Upload */}
           <div className="space-y-2">
             <Label htmlFor="pdf-upload">
-              <FileText className="h-4 w-4 inline mr-2" />
+              <ImageIcon className="h-4 w-4 inline mr-2" />
               High-Resolution PDF
             </Label>
             <Input
@@ -308,7 +397,7 @@ export function ImagesStep({ formData, setFormData }: ImagesStepProps) {
               onChange={async (e) => {
                 const file = e.target.files?.[0]
                 if (file) {
-                  setUploading({ ...uploading, pdf: true })
+                  setUploading(true)
                   try {
                     const formData = new FormData()
                     formData.append("file", file)
@@ -335,15 +424,14 @@ export function ImagesStep({ formData, setFormData }: ImagesStepProps) {
                   } catch (error: any) {
                     alert(error.message || "Failed to upload PDF")
                   } finally {
-                    setUploading({ ...uploading, pdf: false })
+                    setUploading(false)
                   }
                 }
               }}
             />
-            {uploading.pdf && <p className="text-sm text-muted-foreground">Uploading PDF...</p>}
             {formData.print_files?.pdf_url && (
               <div className="flex items-center gap-2 text-sm text-green-600">
-                <FileText className="h-4 w-4" />
+                <ImageIcon className="h-4 w-4" />
                 <a
                   href={formData.print_files.pdf_url}
                   target="_blank"
@@ -374,10 +462,7 @@ export function ImagesStep({ formData, setFormData }: ImagesStepProps) {
 
           {/* Google Drive Link */}
           <div className="space-y-2">
-            <Label htmlFor="drive-link">
-              <Folder className="h-4 w-4 inline mr-2" />
-              Google Drive Link (Alternative)
-            </Label>
+            <Label htmlFor="drive-link">Google Drive Link (Alternative)</Label>
             <Input
               id="drive-link"
               value={formData.print_files?.drive_link || ""}
@@ -393,9 +478,6 @@ export function ImagesStep({ formData, setFormData }: ImagesStepProps) {
               placeholder="https://drive.google.com/file/d/..."
               type="url"
             />
-            <p className="text-xs text-muted-foreground">
-              Provide a Google Drive link if you prefer not to upload a PDF directly.
-            </p>
           </div>
         </div>
       </div>
