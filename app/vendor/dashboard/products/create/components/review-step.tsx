@@ -1,9 +1,8 @@
 "use client"
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Separator } from "@/components/ui/separator"
-import { Image as ImageIcon, Package, DollarSign, Tag, FileText } from "lucide-react"
+import { Image as ImageIcon, DollarSign } from "lucide-react"
 import type { ProductSubmissionData, ProductCreationFields } from "@/types/product-submission"
 
 interface ReviewStepProps {
@@ -12,6 +11,13 @@ interface ReviewStepProps {
 }
 
 export function ReviewStep({ formData, fieldsConfig }: ReviewStepProps) {
+  const editionSizeMetafield = formData.metafields?.find(
+    (m) => m.namespace === "custom" && m.key === "edition_size",
+  )
+  const variant = formData.variants[0]
+  const firstImage = formData.images && formData.images.length > 0 ? formData.images[0] : null
+  const additionalImages = formData.images?.slice(1) || []
+
   return (
     <div className="space-y-6">
       <div>
@@ -21,151 +27,99 @@ export function ReviewStep({ formData, fieldsConfig }: ReviewStepProps) {
         </p>
       </div>
 
-      {/* Basic Information */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Package className="h-5 w-5" />
-            Basic Information
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          <div>
-            <div className="text-sm font-medium text-muted-foreground">Title</div>
-            <div className="text-base font-semibold">{formData.title}</div>
-          </div>
-          {formData.description && (
-            <div>
-              <div className="text-sm font-medium text-muted-foreground">Description</div>
-              <div
-                className="text-sm prose prose-sm max-w-none"
-                dangerouslySetInnerHTML={{ __html: formData.description }}
+      {/* Unified Product Preview Card */}
+      <Card className="overflow-hidden">
+        <div className="grid md:grid-cols-2 gap-0">
+          {/* Image Section */}
+          <div className="relative bg-muted aspect-square">
+            {firstImage ? (
+              <img
+                src={firstImage.src}
+                alt={formData.title}
+                className="w-full h-full object-contain"
+                onError={(e) => {
+                  e.currentTarget.style.display = "none"
+                }}
               />
-            </div>
-          )}
-          {formData.product_type && (
-            <div>
-              <div className="text-sm font-medium text-muted-foreground">Product Type</div>
-              <div className="text-sm">{formData.product_type}</div>
-            </div>
-          )}
-          <div>
-            <div className="text-sm font-medium text-muted-foreground">Handle</div>
-            <div className="text-sm font-mono">{formData.handle || "Auto-generated"}</div>
-          </div>
-          <div>
-            <div className="text-sm font-medium text-muted-foreground">Vendor</div>
-            <div className="text-sm">{formData.vendor}</div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Variants & Pricing */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <DollarSign className="h-5 w-5" />
-            Variants & Pricing
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            {formData.variants.map((variant, index) => (
-              <div key={index} className="border rounded-lg p-4 space-y-2">
-                <div className="font-medium">Variant {index + 1}</div>
-                <div className="grid grid-cols-2 gap-4 text-sm">
-                  <div>
-                    <span className="text-muted-foreground">Price: </span>
-                    <span className="font-semibold">${variant.price}</span>
-                  </div>
-                  {variant.compare_at_price && (
-                    <div>
-                      <span className="text-muted-foreground">Compare at: </span>
-                      <span className="line-through">${variant.compare_at_price}</span>
-                    </div>
-                  )}
-                  {variant.sku && (
-                    <div>
-                      <span className="text-muted-foreground">SKU: </span>
-                      <span>{variant.sku}</span>
-                    </div>
-                  )}
-                  {(() => {
-                    const editionSizeMetafield = formData.metafields?.find(
-                      (m) => m.namespace === "custom" && m.key === "edition_size",
-                    )
-                    return editionSizeMetafield ? (
-                      <div>
-                        <span className="text-muted-foreground">Edition Size: </span>
-                        <span>{editionSizeMetafield.value} editions</span>
-                      </div>
-                    ) : null
-                  })()}
-                </div>
-                <div className="text-sm">
-                  <span className="text-muted-foreground">Requires shipping: </span>
-                  <span>{variant.requires_shipping !== false ? "Yes" : "No"}</span>
-                </div>
+            ) : (
+              <div className="w-full h-full flex items-center justify-center">
+                <ImageIcon className="h-16 w-16 text-muted-foreground opacity-50" />
               </div>
-            ))}
+            )}
+            {firstImage && (
+              <Badge className="absolute top-3 left-3">Primary Image</Badge>
+            )}
+            {additionalImages.length > 0 && (
+              <Badge variant="secondary" className="absolute top-3 right-3">
+                +{additionalImages.length} more
+              </Badge>
+            )}
           </div>
-        </CardContent>
-      </Card>
 
-      {/* Images */}
-      {formData.images && formData.images.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <ImageIcon className="h-5 w-5" />
-              Images ({formData.images.length})
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-3 gap-4">
-              {formData.images.map((image, index) => (
-                <div key={index} className="relative aspect-square border rounded-md overflow-hidden bg-muted">
-                  <img
-                    src={image.src}
-                    alt={image.alt || `Product image ${index + 1}`}
-                    className="w-full h-full object-contain"
-                    onError={(e) => {
-                      e.currentTarget.style.display = "none"
-                    }}
+          {/* Product Details Section */}
+          <CardContent className="p-6 flex flex-col justify-between">
+            <div className="space-y-4">
+              {/* Title */}
+              <div>
+                <h2 className="text-2xl font-bold">{formData.title}</h2>
+                {formData.vendor && (
+                  <p className="text-sm text-muted-foreground mt-1">by {formData.vendor}</p>
+                )}
+              </div>
+
+              {/* Description */}
+              {formData.description && (
+                <div>
+                  <div
+                    className="text-sm prose prose-sm max-w-none line-clamp-3"
+                    dangerouslySetInnerHTML={{ __html: formData.description }}
                   />
-                  {index === 0 && (
-                    <Badge className="absolute top-2 left-2">Primary</Badge>
+                </div>
+              )}
+
+              {/* Pricing & Edition Info */}
+              <div className="flex items-center gap-4 flex-wrap pt-2 border-t">
+                <div>
+                  <div className="text-xs text-muted-foreground">Price</div>
+                  <div className="text-2xl font-bold">£{variant?.price || "0.00"}</div>
+                </div>
+                {editionSizeMetafield && (
+                  <div>
+                    <div className="text-xs text-muted-foreground">Edition Size</div>
+                    <div className="text-xl font-semibold">{editionSizeMetafield.value} editions</div>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Additional Images Preview */}
+            {additionalImages.length > 0 && (
+              <div className="pt-4 border-t mt-4">
+                <div className="text-xs text-muted-foreground mb-2">Additional Images</div>
+                <div className="grid grid-cols-4 gap-2">
+                  {additionalImages.slice(0, 4).map((image, index) => (
+                    <div key={index} className="aspect-square border rounded overflow-hidden bg-muted">
+                      <img
+                        src={image.src}
+                        alt={`Image ${index + 2}`}
+                        className="w-full h-full object-cover"
+                        onError={(e) => {
+                          e.currentTarget.style.display = "none"
+                        }}
+                      />
+                    </div>
+                  ))}
+                  {additionalImages.length > 4 && (
+                    <div className="aspect-square border rounded flex items-center justify-center bg-muted text-xs text-muted-foreground">
+                      +{additionalImages.length - 4}
+                    </div>
                   )}
                 </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Edition Size (from metafields) */}
-      {(() => {
-        const editionSizeMetafield = formData.metafields?.find(
-          (m) => m.namespace === "custom" && m.key === "edition_size",
-        )
-        return editionSizeMetafield ? (
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <FileText className="h-5 w-5" />
-                Edition Size
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-sm">
-                <span className="text-muted-foreground">Edition Size: </span>
-                <span className="font-semibold">{editionSizeMetafield.value} editions</span>
               </div>
-            </CardContent>
-          </Card>
-        ) : null
-      })()}
+            )}
+          </CardContent>
+        </div>
+      </Card>
     </div>
   )
 }
-

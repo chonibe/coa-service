@@ -76,7 +76,7 @@ export function ProductWizard({ onComplete, onCancel, initialData, submissionId 
   const [formData, setFormData] = useState<ProductSubmissionData>({
     title: initialData?.title || "",
     description: initialData?.description || "",
-    product_type: initialData?.product_type || "",
+    product_type: initialData?.product_type || "Art Prints", // Default to Art Prints
     vendor: "",
     handle: initialData?.handle || "",
     tags: [], // Tags will be managed by admin

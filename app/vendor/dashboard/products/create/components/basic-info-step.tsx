@@ -73,19 +73,6 @@ export function BasicInfoStep({ formData, setFormData, fieldsConfig }: BasicInfo
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="product_type">Product Type</Label>
-        <Input
-          id="product_type"
-          value={formData.product_type || ""}
-          onChange={(e) => updateField("product_type", e.target.value)}
-          placeholder="e.g., Art Print, Photography, Digital Art"
-        />
-        <p className="text-xs text-muted-foreground">
-          The type or category of your product
-        </p>
-      </div>
-
-      <div className="space-y-2">
         <Label htmlFor="handle">URL Handle</Label>
         <Input
           id="handle"
