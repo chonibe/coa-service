@@ -8,9 +8,11 @@ import type { OrderTrackListItem } from '@/lib/chinadivision/client'
 
 interface TrackingTimelineProps {
   trackingData: OrderTrackListItem
+  logoUrl?: string | null
+  primaryColor?: string
 }
 
-export function TrackingTimeline({ trackingData }: TrackingTimelineProps) {
+export function TrackingTimeline({ trackingData, logoUrl, primaryColor = '#8217ff' }: TrackingTimelineProps) {
   const getTrackStatusBadge = (trackStatus: number, trackStatusName: string) => {
     const trackStatusMap: Record<number, { label: string; variant: 'default' | 'secondary' | 'destructive' | 'outline' }> = {
       0: { label: 'To be updated', variant: 'outline' },
@@ -58,7 +60,11 @@ export function TrackingTimeline({ trackingData }: TrackingTimelineProps) {
         <div className="flex items-start justify-between">
           <div>
             <CardTitle className="flex items-center gap-2">
-              <Truck className="h-5 w-5" />
+              {logoUrl ? (
+                <img src={logoUrl} alt="Logo" className="h-5 w-auto" />
+              ) : (
+                <Truck className="h-5 w-5" />
+              )}
               Tracking Timeline
             </CardTitle>
             <CardDescription>
@@ -100,11 +106,14 @@ export function TrackingTimeline({ trackingData }: TrackingTimelineProps) {
                   return (
                     <div key={index} className="relative flex items-start gap-4">
                       {/* Timeline dot */}
-                      <div className={`relative z-10 flex items-center justify-center w-8 h-8 rounded-full ${
-                        isLatest 
-                          ? 'bg-primary text-primary-foreground' 
-                          : 'bg-muted border-2 border-background'
-                      }`}>
+                      <div 
+                        className={`relative z-10 flex items-center justify-center w-8 h-8 rounded-full ${
+                          isLatest 
+                            ? 'text-white' 
+                            : 'bg-muted border-2 border-background'
+                        }`}
+                        style={isLatest ? { backgroundColor: primaryColor } : {}}
+                      >
                         <StatusIcon className="h-4 w-4" />
                       </div>
 
