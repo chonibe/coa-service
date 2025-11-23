@@ -10,14 +10,17 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { WarehouseOrderCard } from './components/WarehouseOrderCard'
 import { PackageTracker } from './components/PackageTracker'
+import { TrackingTimeline } from './components/TrackingTimeline'
 import { AlertCircle, Calendar, Search, RefreshCw } from 'lucide-react'
-import type { ChinaDivisionOrderInfo } from '@/lib/chinadivision/client'
+import type { ChinaDivisionOrderInfo, OrderTrackListItem } from '@/lib/chinadivision/client'
 
 export default function WarehouseOrdersPage() {
   const [orders, setOrders] = useState<ChinaDivisionOrderInfo[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [selectedOrder, setSelectedOrder] = useState<ChinaDivisionOrderInfo | null>(null)
+  const [trackingData, setTrackingData] = useState<OrderTrackListItem | null>(null)
+  const [isLoadingTracking, setIsLoadingTracking] = useState(false)
   const [isDetailsOpen, setIsDetailsOpen] = useState(false)
   
   // Date range filters
@@ -65,6 +68,7 @@ export default function WarehouseOrdersPage() {
 
   const handleViewDetails = async (orderId: string) => {
     try {
+      // Fetch order details
       const response = await fetch(`/api/warehouse/orders/${orderId}`)
       const data = await response.json()
 
@@ -74,6 +78,27 @@ export default function WarehouseOrdersPage() {
 
       setSelectedOrder(data.order)
       setIsDetailsOpen(true)
+      setTrackingData(null)
+
+      // Fetch tracking timeline using customer order ID
+      if (data.order?.order_id) {
+        setIsLoadingTracking(true)
+        try {
+          const trackResponse = await fetch(
+            `/api/warehouse/orders/track-list?order_ids=${encodeURIComponent(data.order.order_id)}`
+          )
+          const trackData = await trackResponse.json()
+
+          if (trackResponse.ok && trackData.tracking && trackData.tracking.length > 0) {
+            setTrackingData(trackData.tracking[0])
+          }
+        } catch (trackErr) {
+          console.error('Error fetching tracking data:', trackErr)
+          // Don't show error for tracking - it's optional
+        } finally {
+          setIsLoadingTracking(false)
+        }
+      }
     } catch (err: any) {
       console.error('Error fetching order details:', err)
       setError(err.message || 'Failed to load order details')
@@ -219,6 +244,16 @@ export default function WarehouseOrdersPage() {
           {selectedOrder && (
             <div className="space-y-4">
               <WarehouseOrderCard order={selectedOrder} />
+              {trackingData && (
+                <TrackingTimeline trackingData={trackingData} />
+              )}
+              {isLoadingTracking && (
+                <Card>
+                  <CardContent className="py-8 text-center text-muted-foreground">
+                    Loading tracking information...
+                  </CardContent>
+                </Card>
+              )}
               {selectedOrder.info && selectedOrder.info.length > 0 && (
                 <PackageTracker
                   packages={selectedOrder.info}
