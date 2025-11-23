@@ -12,10 +12,6 @@ interface BasicInfoStepProps {
 }
 
 export function BasicInfoStep({ formData, setFormData, fieldsConfig }: BasicInfoStepProps) {
-  const updateField = (field: keyof ProductSubmissionData, value: any) => {
-    setFormData({ ...formData, [field]: value })
-  }
-
   // Generate handle from title
   const generateHandle = (title: string) => {
     return title
@@ -26,11 +22,21 @@ export function BasicInfoStep({ formData, setFormData, fieldsConfig }: BasicInfo
   }
 
   const handleTitleChange = (value: string) => {
-    updateField("title", value)
-    // Auto-generate handle if not manually set
-    if (!formData.handle || formData.handle === generateHandle(formData.title)) {
-      updateField("handle", generateHandle(value))
-    }
+    setFormData((prev) => {
+      const newHandle = generateHandle(value)
+      // Auto-generate handle if not manually set or if handle matches the old title
+      const shouldUpdateHandle = !prev.handle || prev.handle === generateHandle(prev.title)
+      
+      return {
+        ...prev,
+        title: value,
+        handle: shouldUpdateHandle ? newHandle : prev.handle,
+      }
+    })
+  }
+  
+  const updateField = (field: keyof ProductSubmissionData, value: any) => {
+    setFormData((prev) => ({ ...prev, [field]: value }))
   }
 
   return (
