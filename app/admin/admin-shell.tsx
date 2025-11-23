@@ -27,6 +27,7 @@ import {
   Users,
   Mail,
   Pencil,
+  Warehouse,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { ScrollArea } from "@/components/ui/scroll-area"
@@ -79,7 +80,8 @@ export function AdminShell({ children }: AdminShellProps) {
   const [open, setOpen] = useState(false)
   const [currentSection, setCurrentSection] = useState("Dashboard")
   const [activeView, setActiveView] = useState<AdminView>("admin")
-  const [navItems, setNavItems] = useState<NavItem[]>([
+  // Initialize nav items with auto-expansion based on current path
+  const initialNavItems: NavItem[] = [
     {
       title: "Dashboard",
       href: "/admin/dashboard",
@@ -132,6 +134,24 @@ export function AdminShell({ children }: AdminShellProps) {
           title: "Shopify Sync",
           href: "/admin/shopify-sync",
           icon: <Store className="h-4 w-4" />,
+        },
+      ],
+      expanded: false,
+    },
+    {
+      title: "Warehouse",
+      href: "/admin/warehouse/orders",
+      icon: <Warehouse className="h-5 w-5" />,
+      submenu: [
+        {
+          title: "Warehouse Orders",
+          href: "/admin/warehouse/orders",
+          icon: <Warehouse className="h-4 w-4" />,
+        },
+        {
+          title: "Manage Links",
+          href: "/admin/warehouse/links",
+          icon: <FileText className="h-4 w-4" />,
         },
       ],
       expanded: false,
@@ -247,7 +267,18 @@ export function AdminShell({ children }: AdminShellProps) {
       href: "/admin/settings",
       icon: <Settings className="h-5 w-5" />,
     },
-  ])
+  ]
+
+  // Initialize nav items with auto-expansion based on current path
+  const [navItems, setNavItems] = useState<NavItem[]>(() => {
+    return initialNavItems.map(item => {
+      if (item.submenu) {
+        const isOnSubmenuPage = item.submenu.some(subItem => pathname === subItem.href)
+        return { ...item, expanded: isOnSubmenuPage }
+      }
+      return item
+    })
+  })
 
   const [isLoadingVendors, setIsLoadingVendors] = useState(false)
   const [vendorRecords, setVendorRecords] = useState<VendorRecord[]>([])
@@ -308,13 +339,18 @@ export function AdminShell({ children }: AdminShellProps) {
         } else {
           setCurrentSection(currentNavItem.title)
         }
+        // Auto-expand the submenu if we're on one of its pages
+        const itemIndex = navItems.findIndex(item => item === currentNavItem)
+        if (itemIndex !== -1) {
+          setNavItems((prev) => prev.map((item, i) => (i === itemIndex ? { ...item, expanded: true } : item)))
+        }
       } else {
         setCurrentSection(currentNavItem.title)
       }
     } else {
       setCurrentSection("Dashboard")
     }
-  }, [pathname, navItems])
+  }, [pathname])
 
   useEffect(() => {
     if (activeView !== "chooser" || vendorsLoaded) return

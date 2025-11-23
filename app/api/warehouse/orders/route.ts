@@ -24,6 +24,8 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url)
     const start = searchParams.get('start')
     const end = searchParams.get('end')
+    const page = parseInt(searchParams.get('page') || '1', 10)
+    const pageSize = parseInt(searchParams.get('pageSize') || '200', 10)
 
     // Validate date parameters
     if (!start || !end) {
@@ -49,14 +51,39 @@ export async function GET(request: NextRequest) {
     }
 
     // Create ChinaDivision client and fetch orders
-    const client = createChinaDivisionClient()
-    const orders = await client.getOrdersInfo(start, end)
+    try {
+      const client = createChinaDivisionClient()
+      console.log(`[Warehouse Orders] Fetching orders from ChinaDivision API: ${start} to ${end}`)
+      const orders = await client.getOrdersInfo(start, end)
+      console.log(`[Warehouse Orders] Successfully fetched ${orders.length} orders`)
 
-    return NextResponse.json({
-      success: true,
-      orders,
-      count: orders.length,
-    })
+      // Don't group orders - keep them separate if Platform Order ID (order_id) is different
+      // The client already handles this, so we just return the orders as-is
+      const ordersArray = Array.isArray(orders) ? orders : []
+      
+      // Log status distribution for debugging
+      const statusCounts = {
+        total: ordersArray.length,
+        status0: ordersArray.filter(o => o.status === 0).length,
+        status3: ordersArray.filter(o => o.status === 3).length,
+        status11: ordersArray.filter(o => o.status === 11).length,
+        status23: ordersArray.filter(o => o.status === 23).length,
+        other: ordersArray.filter(o => o.status !== 0 && o.status !== 3 && o.status !== 11 && o.status !== 23).length,
+      }
+      console.log(`[Warehouse Orders] Status distribution:`, statusCounts)
+      console.log(`[Warehouse Orders] Returning ${ordersArray.length} orders (separated by Platform Order ID)`)
+
+      // Return all orders - pagination will be handled on client side
+      return NextResponse.json({
+        success: true,
+        orders: ordersArray,
+        count: ordersArray.length,
+        totalCount: ordersArray.length,
+      })
+    } catch (apiError: any) {
+      console.error('[Warehouse Orders] ChinaDivision API error:', apiError)
+      throw apiError
+    }
   } catch (error: any) {
     console.error('Error fetching warehouse orders:', error)
     return NextResponse.json(

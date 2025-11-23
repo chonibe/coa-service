@@ -81,15 +81,55 @@ export async function GET(request: NextRequest) {
     const client = createChinaDivisionClient()
     const allOrders = await client.getOrdersInfo(start, end)
 
-    // Filter orders by customer email (case-insensitive)
-    const customerOrders = allOrders.filter(
-      (order) => order.ship_email?.toLowerCase() === customerEmail.toLowerCase()
-    )
+    // Filter orders by customer email (case-insensitive) and group by sys_order_id
+    // Keep orders separate if Platform Order ID (order_id) is different
+    const customerOrders = allOrders.filter((order) => {
+      return order.ship_email?.toLowerCase() === customerEmail.toLowerCase()
+    })
+
+    // Collect all SKUs from all packages in customer orders
+    const allSkus = new Set<string>()
+    customerOrders.forEach(order => {
+      order.info?.forEach(pkg => {
+        if (pkg.sku) allSkus.add(pkg.sku)
+        if (pkg.sku_code) allSkus.add(pkg.sku_code)
+      })
+    })
+
+    // Fetch product names from Supabase by SKU
+    const productNameMap = new Map<string, string>()
+    if (allSkus.size > 0) {
+      const { data: products } = await supabase
+        .from('products')
+        .select('sku, name')
+        .in('sku', Array.from(allSkus))
+
+      if (products) {
+        products.forEach(product => {
+          if (product.sku && product.name) {
+            productNameMap.set(product.sku, product.name)
+          }
+        })
+      }
+    }
+
+    // Enrich orders with product names
+    const enrichedOrders = customerOrders.map(order => ({
+      ...order,
+      info: order.info?.map(pkg => ({
+        ...pkg,
+        product_name: productNameMap.get(pkg.sku || '') || 
+                     productNameMap.get(pkg.sku_code || '') || 
+                     pkg.product_name || 
+                     pkg.sku || 
+                     'Unknown Product'
+      }))
+    }))
 
     return NextResponse.json({
       success: true,
-      orders: customerOrders,
-      count: customerOrders.length,
+      orders: enrichedOrders,
+      count: enrichedOrders.length,
       email: customerEmail, // For debugging
     })
   } catch (error: any) {

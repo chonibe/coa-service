@@ -62,31 +62,9 @@ export async function POST(request: NextRequest) {
     // Determine bucket
     const bucket = fileType === "pdf" ? "print-files" : "product-images"
 
-    console.log(`[${uploadId}] Initializing Supabase client for bucket: ${bucket}, path: ${filePath}`)
-    const supabase = createClient()
-
-    // Create a signed upload URL that allows the client to upload directly
-    // Signed URLs are valid for 1 hour (3600 seconds)
-    console.log(`[${uploadId}] Creating signed URL...`)
-    const { data: signedUrlData, error: signedUrlError } = await supabase.storage
-      .from(bucket)
-      .createSignedUploadUrl(filePath, {
-        upsert: false,
-      })
-
-    if (signedUrlError) {
-      console.error(`[${uploadId}] Error creating signed URL:`, signedUrlError)
-      return NextResponse.json(
-        { error: "Failed to create upload URL", message: signedUrlError.message, uploadId },
-        { status: 500 },
-      )
-    }
-
-    console.log(`[${uploadId}] Signed URL created successfully`)
-    console.log(`[${uploadId}] Token: ${signedUrlData.token?.substring(0, 20)}...`)
-
-    // Note: Supabase Storage doesn't have createSignedUploadUrl - we'll use direct upload
-    // Return the path and bucket so the client can upload directly using the anon key
+    // Note: We don't need to create a signed URL - the client will upload directly
+    // using the Supabase client with the anon key. We just need to return the path
+    // and bucket so the client knows where to upload.
     console.log(`[${uploadId}] Returning upload path for direct client upload`)
 
     return NextResponse.json({

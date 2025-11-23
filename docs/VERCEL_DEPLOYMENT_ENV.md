@@ -63,6 +63,18 @@ SHOPIFY_SHOP=your-shop.myshopify.com
 PAYPAL_WEBHOOK_SECRET=your_webhook_secret
 ```
 
+### ChinaDivision Warehouse API (Required for Warehouse Order Tracking)
+```
+CHINADIVISION_API_KEY=your_chinadivision_api_key
+```
+
+**How to get:**
+- Log in to your ChinaDivision account at https://www.chinadivision.com
+- Navigate to Settings → API
+- Copy your API key
+- Your API key: `5f91972f8d59ec8039cecfec3adcead5`
+
+
 ## 🚀 Quick Setup Steps
 
 1. **Go to Vercel Dashboard**
@@ -115,6 +127,7 @@ PAYPAL_ENVIRONMENT=sandbox
 NEXT_PUBLIC_APP_URL=https://dashboard.thestreetlamp.com
 CRON_SECRET=
 SUPABASE_SERVICE_ROLE_KEY=
+CHINADIVISION_API_KEY=5f91972f8d59ec8039cecfec3adcead5
 ```
 
 Replace empty values with your actual credentials!
