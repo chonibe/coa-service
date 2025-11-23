@@ -42,15 +42,28 @@ async function shopifyFetch2024(url: string, options: RequestInit = {}, retries 
 
 /**
  * Fetches all metafield definitions from Shopify
+ * Returns default metafields if API is unavailable or returns 404
  */
 export async function fetchMetafieldDefinitions(): Promise<ShopifyMetafieldDefinition[]> {
+  // Default metafields that are commonly used
+  const defaultMetafields: ShopifyMetafieldDefinition[] = [
+    {
+      namespace: "custom",
+      key: "edition_size",
+      name: "Edition Size",
+      type: "number_integer",
+      description: "The total number of editions for this product",
+    },
+  ]
+
   try {
     const metafieldDefinitions: ShopifyMetafieldDefinition[] = []
     let hasNextPage = true
     let pageInfo: string | null = null
 
     while (hasNextPage) {
-      let url = `https://${SHOPIFY_SHOP}/admin/api/${API_VERSION}/metafield_definitions.json?owner_type=product&limit=250`
+      // Use relative URL - shopifyFetch2024 will add the base URL
+      let url = `metafield_definitions.json?owner_type=product&limit=250`
       
       if (pageInfo) {
         url += `&page_info=${pageInfo}`
@@ -59,13 +72,24 @@ export async function fetchMetafieldDefinitions(): Promise<ShopifyMetafieldDefin
       const response = await shopifyFetch2024(url, { method: "GET" })
 
       if (!response.ok) {
-        const errorText = await response.text()
-        console.error("Failed to fetch metafield definitions:", errorText)
-        break
+        // If 404 or API not available, return defaults gracefully
+        if (response.status === 404) {
+          console.log("Metafield definitions endpoint not available, using defaults")
+          return defaultMetafields
+        }
+        // For other errors, log but continue to return defaults
+        const errorText = await response.text().catch(() => "Unknown error")
+        console.error(`Failed to fetch metafield definitions (${response.status}):`, errorText)
+        return defaultMetafields
       }
 
       const data = await safeJsonParse(response)
       const definitions = data.metafield_definitions || []
+
+      // If no definitions returned, use defaults
+      if (definitions.length === 0 && metafieldDefinitions.length === 0 && !pageInfo) {
+        return defaultMetafields
+      }
 
       for (const def of definitions) {
         metafieldDefinitions.push({
@@ -89,19 +113,12 @@ export async function fetchMetafieldDefinitions(): Promise<ShopifyMetafieldDefin
       }
     }
 
-    return metafieldDefinitions
+    // Return definitions if found, otherwise return defaults
+    return metafieldDefinitions.length > 0 ? metafieldDefinitions : defaultMetafields
   } catch (error) {
     console.error("Error fetching metafield definitions:", error)
-    // Return common metafields if API call fails
-    return [
-      {
-        namespace: "custom",
-        key: "edition_size",
-        name: "Edition Size",
-        type: "number_integer",
-        description: "The total number of editions for this product",
-      },
-    ]
+    // Always return default metafields if API call fails
+    return defaultMetafields
   }
 }
 

@@ -35,14 +35,28 @@ export async function GET(request: NextRequest) {
     let metafieldDefinitions
     const now = Date.now()
     
-    if (metafieldCache && now - metafieldCache.timestamp < CACHE_DURATION) {
-      metafieldDefinitions = metafieldCache.definitions
-    } else {
-      metafieldDefinitions = await fetchMetafieldDefinitions()
-      metafieldCache = {
-        definitions: metafieldDefinitions,
-        timestamp: now,
+    try {
+      if (metafieldCache && now - metafieldCache.timestamp < CACHE_DURATION) {
+        metafieldDefinitions = metafieldCache.definitions
+      } else {
+        metafieldDefinitions = await fetchMetafieldDefinitions()
+        metafieldCache = {
+          definitions: metafieldDefinitions,
+          timestamp: now,
+        }
       }
+    } catch (error) {
+      console.error("Error fetching metafield definitions, using defaults:", error)
+      // Use default metafields if fetch fails
+      metafieldDefinitions = [
+        {
+          namespace: "custom",
+          key: "edition_size",
+          name: "Edition Size",
+          type: "number_integer",
+          description: "The total number of editions for this product",
+        },
+      ]
     }
 
     // Standard Shopify product fields
