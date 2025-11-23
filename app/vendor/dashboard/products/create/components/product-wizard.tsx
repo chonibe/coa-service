@@ -31,6 +31,7 @@ interface ProductWizardProps {
   onComplete: () => void
   onCancel: () => void
   initialData?: ProductSubmissionData
+  submissionId?: string // For editing existing submissions
 }
 
 interface Step {
@@ -73,7 +74,7 @@ const steps: Step[] = [
   },
 ]
 
-export function ProductWizard({ onComplete, onCancel, initialData }: ProductWizardProps) {
+export function ProductWizard({ onComplete, onCancel, initialData, submissionId }: ProductWizardProps) {
   const [currentStep, setCurrentStep] = useState(0)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -171,8 +172,14 @@ export function ProductWizard({ onComplete, onCancel, initialData }: ProductWiza
     setError(null)
 
     try {
-      const response = await fetch("/api/vendor/products/submit", {
-        method: "POST",
+      // If submissionId exists, update existing submission; otherwise create new
+      const url = submissionId
+        ? `/api/vendor/products/submissions/${submissionId}`
+        : "/api/vendor/products/submit"
+      const method = submissionId ? "PUT" : "POST"
+
+      const response = await fetch(url, {
+        method,
         headers: {
           "Content-Type": "application/json",
         },
@@ -189,8 +196,10 @@ export function ProductWizard({ onComplete, onCancel, initialData }: ProductWiza
       }
 
       toast({
-        title: "Product Submitted",
-        description: "Your product has been submitted for admin approval.",
+        title: submissionId ? "Product Updated" : "Product Submitted",
+        description: submissionId
+          ? "Your product submission has been updated and reset to pending status."
+          : "Your product has been submitted for admin approval.",
       })
 
       onComplete()
@@ -322,7 +331,7 @@ export function ProductWizard({ onComplete, onCancel, initialData }: ProductWiza
                   Submitting...
                 </>
               ) : (
-                "Submit for Approval"
+                {submissionId ? "Update Submission" : "Submit for Approval"}
               )}
             </Button>
           )}

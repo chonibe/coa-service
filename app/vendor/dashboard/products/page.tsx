@@ -218,42 +218,58 @@ export default function ProductsPage() {
                 </div>
               ) : (
                 <div className="space-y-4">
-                  {submissions.map((submission) => (
-                    <div
-                      key={submission.id}
-                      className="border rounded-lg p-4 hover:bg-muted/50 transition-colors cursor-pointer"
-                      onClick={() => router.push(`/vendor/dashboard/products/submissions/${submission.id}`)}
-                    >
-                      <div className="flex items-center justify-between">
-                        <div className="flex-1">
-                          <div className="flex items-center gap-3">
-                            <h3 className="font-semibold">
-                              {(submission.product_data as any)?.title || "Untitled Product"}
-                            </h3>
-                            {getStatusBadge(submission.status)}
+                  {submissions.map((submission) => {
+                    const canEdit = submission.status === "pending" || submission.status === "rejected"
+                    return (
+                      <div
+                        key={submission.id}
+                        className="border rounded-lg p-4 hover:bg-muted/50 transition-colors"
+                      >
+                        <div className="flex items-center justify-between">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-3">
+                              <h3 className="font-semibold">
+                                {(submission.product_data as any)?.title || "Untitled Product"}
+                              </h3>
+                              {getStatusBadge(submission.status)}
+                            </div>
+                            <p className="text-sm text-muted-foreground mt-1">
+                              Submitted {new Date(submission.submitted_at).toLocaleDateString()}
+                            </p>
+                            {submission.rejection_reason && (
+                              <p className="text-sm text-destructive mt-2">
+                                {submission.rejection_reason}
+                              </p>
+                            )}
+                            {submission.admin_notes && (
+                              <p className="text-sm text-muted-foreground mt-2">
+                                Admin notes: {submission.admin_notes}
+                              </p>
+                            )}
                           </div>
-                          <p className="text-sm text-muted-foreground mt-1">
-                            Submitted {new Date(submission.submitted_at).toLocaleDateString()}
-                          </p>
-                          {submission.rejection_reason && (
-                            <p className="text-sm text-destructive mt-2">
-                              {submission.rejection_reason}
-                            </p>
-                          )}
-                          {submission.admin_notes && (
-                            <p className="text-sm text-muted-foreground mt-2">
-                              Admin notes: {submission.admin_notes}
-                            </p>
-                          )}
-                        </div>
-                        <div className="text-right text-sm text-muted-foreground">
-                          {submission.shopify_product_id && (
-                            <div>Published to Shopify</div>
-                          )}
+                          <div className="flex items-center gap-2">
+                            <div className="text-right text-sm text-muted-foreground">
+                              {submission.shopify_product_id && (
+                                <div>Published to Shopify</div>
+                              )}
+                            </div>
+                            {canEdit && (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  router.push(`/vendor/dashboard/products/edit/${submission.id}`)
+                                }}
+                              >
+                                Edit
+                              </Button>
+                            )}
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  ))}
+                    )
+                  })}
                 </div>
               )}
             </CardContent>
