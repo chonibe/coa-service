@@ -439,29 +439,63 @@ export function ImagesStep({ formData, setFormData }: ImagesStepProps) {
 
                   setUploading(true)
                   try {
-                    // Use server-side upload route
-                    const formData = new FormData()
-                    formData.append("file", file)
-                    formData.append("type", "pdf")
-
-                    const uploadResponse = await fetch("/api/vendor/products/upload", {
+                    console.log(`[PDF Upload] Starting upload for file: ${file.name} (${(file.size / 1024 / 1024).toFixed(2)}MB)`)
+                    
+                    // Step 1: Get upload path from server
+                    const urlResponse = await fetch("/api/vendor/products/upload-url", {
                       method: "POST",
                       credentials: "include",
-                      body: formData,
+                      headers: {
+                        "Content-Type": "application/json",
+                      },
+                      body: JSON.stringify({
+                        fileName: file.name,
+                        fileType: "pdf",
+                        fileSize: file.size,
+                      }),
                     })
 
-                    if (!uploadResponse.ok) {
-                      const errorData = await uploadResponse.json()
-                      throw new Error(errorData.error || "Failed to upload PDF")
+                    if (!urlResponse.ok) {
+                      const errorData = await urlResponse.json().catch(() => ({ error: "Unknown error" }))
+                      console.error(`[PDF Upload] Failed to get upload path:`, errorData)
+                      throw new Error(errorData.error || "Failed to get upload path")
                     }
 
-                    const uploadResult = await uploadResponse.json()
+                    const urlData = await urlResponse.json()
+                    console.log(`[PDF Upload] Got upload path, uploadId: ${urlData.uploadId}`)
+
+                    // Step 2: Upload directly to Supabase using client-side Supabase client
+                    const { getSupabaseClient } = await import("@/lib/supabase")
+                    const supabase = getSupabaseClient()
+                    
+                    if (!supabase) {
+                      throw new Error("Failed to initialize Supabase client")
+                    }
+
+                    const { data: uploadResult, error: uploadError } = await supabase.storage
+                      .from(urlData.bucket)
+                      .upload(urlData.path, file, {
+                        contentType: file.type,
+                        upsert: false,
+                        cacheControl: "3600",
+                      })
+
+                    if (uploadError) {
+                      console.error(`[PDF Upload] Direct upload failed:`, uploadError)
+                      throw new Error(uploadError.message || "Failed to upload PDF")
+                    }
+
+                    // Step 3: Get public URL
+                    const { data: urlData2 } = supabase.storage.from(urlData.bucket).getPublicUrl(urlData.path)
+                    const publicUrl = urlData2.publicUrl
+
+                    console.log(`[PDF Upload] Upload successful! Public URL: ${publicUrl}`)
 
                     setFormData({
                       ...formData,
                       print_files: {
                         ...formData.print_files,
-                        pdf_url: uploadResult.url,
+                        pdf_url: publicUrl,
                       },
                     })
                   } catch (error: any) {
