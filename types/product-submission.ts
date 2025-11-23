@@ -18,6 +18,12 @@ export interface ProductImage {
   src: string // URL or base64
   alt?: string | null
   position?: number
+  maskSettings?: {
+    x?: number // Position X
+    y?: number // Position Y
+    scale?: number // Scale factor
+    rotation?: number // Rotation in degrees
+  }
 }
 
 export interface ProductMetafield {
@@ -25,6 +31,11 @@ export interface ProductMetafield {
   key: string
   value: string
   type: string
+}
+
+export interface PrintFiles {
+  pdf_url?: string | null // Uploaded PDF URL
+  drive_link?: string | null // Google Drive link
 }
 
 export interface ProductSubmissionData {
@@ -37,6 +48,7 @@ export interface ProductSubmissionData {
   variants: ProductVariant[]
   images?: ProductImage[]
   metafields?: ProductMetafield[]
+  print_files?: PrintFiles
 }
 
 export interface VendorProductSubmission {
