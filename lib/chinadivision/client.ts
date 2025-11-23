@@ -80,6 +80,23 @@ interface ChinaDivisionTrackResponse {
   } | null
 }
 
+interface OrderTrackListItem {
+  sys_order_id: string
+  tracking_number: string
+  order_id: string
+  track_list: Array<[string, string]> // [timestamp, status_message]
+  track_status: number
+  track_status_name: string
+  error_code: number
+  error_msg: string
+}
+
+interface ChinaDivisionOrderTrackListResponse {
+  code: number
+  msg: string
+  data: OrderTrackListItem[]
+}
+
 export class ChinaDivisionClient {
   private config: ChinaDivisionConfig
 
@@ -403,6 +420,60 @@ export class ChinaDivisionClient {
 
     return data.data
   }
+
+  /**
+   * Get tracking information for multiple orders by customer order IDs
+   * @param orderIds - Comma-delimited customer order IDs (e.g., "#1000101,#1000102")
+   * @returns Array of tracking information for each order
+   */
+  async getOrderTrackList(orderIds: string): Promise<OrderTrackListItem[]> {
+    // Validate order IDs format
+    if (!orderIds || orderIds.trim().length === 0) {
+      throw new Error('Order IDs cannot be empty')
+    }
+
+    // Check if exceeds 40 orders limit
+    const orderIdArray = orderIds.split(',').map(id => id.trim()).filter(id => id.length > 0)
+    if (orderIdArray.length > 40) {
+      throw new Error('Cannot request tracking for more than 40 orders at once')
+    }
+
+    // Build URL with order_ids parameter
+    const url = new URL(`${this.config.baseUrl}/order-track-list`)
+    url.searchParams.set('order_ids', orderIds)
+
+    const response = await fetch(url.toString(), {
+      method: 'GET',
+      headers: {
+        'apikey': this.config.apiKey,
+        'User-Agent': 'Mozilla/5.0 (compatible; MSIE 5.01; Windows NT 5.0)',
+      },
+    })
+
+    if (!response.ok) {
+      throw new Error(`ChinaDivision API error: ${response.status} ${response.statusText}`)
+    }
+
+    const data: ChinaDivisionOrderTrackListResponse = await response.json()
+
+    // Handle API error codes
+    if (data.code !== 0) {
+      const errorMessages: Record<number, string> = {
+        1: 'Apikey can not be empty',
+        2: 'Apikey does not exist',
+        7001: 'Invalid order id',
+        7002: 'Exceed 40 numbers',
+        7003: 'Error order ids',
+        7004: 'Not found order info',
+        7005: 'Get track info fail',
+      }
+
+      const errorMessage = errorMessages[data.code] || data.msg
+      throw new Error(`ChinaDivision API error: ${errorMessage} (code: ${data.code})`)
+    }
+
+    return data.data || []
+  }
 }
 
 /**
@@ -422,5 +493,12 @@ export function createChinaDivisionClient(): ChinaDivisionClient {
   })
 }
 
-export type { ChinaDivisionOrderInfo, ChinaDivisionOrderResponse, ChinaDivisionOrdersResponse, ChinaDivisionTrackResponse }
+export type { 
+  ChinaDivisionOrderInfo, 
+  ChinaDivisionOrderResponse, 
+  ChinaDivisionOrdersResponse, 
+  ChinaDivisionTrackResponse,
+  OrderTrackListItem,
+  ChinaDivisionOrderTrackListResponse
+}
 
