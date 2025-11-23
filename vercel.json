@@ -16,6 +16,9 @@
   "functions": {
     "app/api/payouts/notifications/stream/route.ts": {
       "maxDuration": 60
+    },
+    "app/api/vendor/products/upload/route.ts": {
+      "maxDuration": 60
     }
   },
   "crons": [

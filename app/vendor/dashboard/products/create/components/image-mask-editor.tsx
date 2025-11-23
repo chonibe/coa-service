@@ -76,7 +76,7 @@ export function ImageMaskEditor({ image, onUpdate }: ImageMaskEditorProps) {
   // Draw the masked image
   useEffect(() => {
     const canvas = canvasRef.current
-    if (!canvas || !image.src) return
+    if (!canvas) return
 
     const ctx = canvas.getContext("2d")
     if (!ctx) return
@@ -99,10 +99,45 @@ export function ImageMaskEditor({ image, onUpdate }: ImageMaskEditorProps) {
     ctx.fillStyle = "#f3f4f6"
     ctx.fillRect(0, 0, MASK_OUTER_SIZE, MASK_OUTER_SIZE)
 
+    // Draw the frame (outer border) - always visible
+    ctx.strokeStyle = "#e5e7eb"
+    ctx.lineWidth = 4
+    ctx.strokeRect(2, 2, MASK_OUTER_SIZE - 4, MASK_OUTER_SIZE - 4)
+
+    // Draw the inner rectangle outline - always visible
+    ctx.strokeStyle = "#9ca3af"
+    ctx.lineWidth = 2
+    drawRoundRect(ctx, MASK_INNER_X, MASK_INNER_Y, MASK_INNER_WIDTH, MASK_INNER_HEIGHT, MASK_CORNER_RADIUS)
+    ctx.stroke()
+
+    // If no image, show placeholder text
+    if (!image.src || image.src.trim().length === 0) {
+      ctx.fillStyle = "#9ca3af"
+      ctx.font = "18px Arial"
+      ctx.textAlign = "center"
+      ctx.fillText("Upload an image to position it", MASK_OUTER_SIZE / 2, MASK_OUTER_SIZE / 2 - 10)
+      ctx.font = "14px Arial"
+      ctx.fillText("within the frame above", MASK_OUTER_SIZE / 2, MASK_OUTER_SIZE / 2 + 15)
+      return
+    }
+
     // Load and draw image
     const img = new Image()
-    img.crossOrigin = "anonymous"
+    // Only set crossOrigin if loading from external URL (when window is available)
+    if (
+      typeof window !== "undefined" &&
+      image.src &&
+      !image.src.startsWith("data:") &&
+      !image.src.includes(window.location.hostname)
+    ) {
+      img.crossOrigin = "anonymous"
+    }
+    
     img.onload = () => {
+      // Clear and redraw everything
+      ctx.fillStyle = "#f3f4f6"
+      ctx.fillRect(0, 0, MASK_OUTER_SIZE, MASK_OUTER_SIZE)
+
       ctx.save()
 
       // Create clipping path for the inner rectangle with rounded corners
@@ -110,19 +145,12 @@ export function ImageMaskEditor({ image, onUpdate }: ImageMaskEditorProps) {
       ctx.clip()
 
       // Apply transformations
-      // Translate to center of canvas
       const centerX = MASK_OUTER_SIZE / 2
       const centerY = MASK_OUTER_SIZE / 2
       
       ctx.translate(centerX, centerY)
-      
-      // Apply rotation
       ctx.rotate((currentRotation * Math.PI) / 180)
-      
-      // Apply scale
       ctx.scale(currentScale, currentScale)
-      
-      // Apply position offset
       ctx.translate(currentX, currentY)
       
       // Draw image centered at origin (after all transforms)
@@ -130,12 +158,11 @@ export function ImageMaskEditor({ image, onUpdate }: ImageMaskEditorProps) {
 
       ctx.restore()
 
-      // Draw the frame (outer border)
+      // Redraw the frame borders
       ctx.strokeStyle = "#e5e7eb"
       ctx.lineWidth = 4
       ctx.strokeRect(2, 2, MASK_OUTER_SIZE - 4, MASK_OUTER_SIZE - 4)
 
-      // Draw the inner rectangle outline
       ctx.strokeStyle = "#9ca3af"
       ctx.lineWidth = 2
       drawRoundRect(ctx, MASK_INNER_X, MASK_INNER_Y, MASK_INNER_WIDTH, MASK_INNER_HEIGHT, MASK_CORNER_RADIUS)
@@ -144,10 +171,23 @@ export function ImageMaskEditor({ image, onUpdate }: ImageMaskEditorProps) {
     
     img.onerror = () => {
       // Show error state
+      ctx.fillStyle = "#f3f4f6"
+      ctx.fillRect(0, 0, MASK_OUTER_SIZE, MASK_OUTER_SIZE)
+      
       ctx.fillStyle = "#ef4444"
       ctx.font = "16px Arial"
       ctx.textAlign = "center"
       ctx.fillText("Failed to load image", MASK_OUTER_SIZE / 2, MASK_OUTER_SIZE / 2)
+      
+      // Redraw borders
+      ctx.strokeStyle = "#e5e7eb"
+      ctx.lineWidth = 4
+      ctx.strokeRect(2, 2, MASK_OUTER_SIZE - 4, MASK_OUTER_SIZE - 4)
+      
+      ctx.strokeStyle = "#9ca3af"
+      ctx.lineWidth = 2
+      drawRoundRect(ctx, MASK_INNER_X, MASK_INNER_Y, MASK_INNER_WIDTH, MASK_INNER_HEIGHT, MASK_CORNER_RADIUS)
+      ctx.stroke()
     }
     
     img.src = image.src
@@ -193,14 +233,15 @@ export function ImageMaskEditor({ image, onUpdate }: ImageMaskEditorProps) {
 
   return (
     <div className="space-y-4">
-      <div className="relative border rounded-lg overflow-hidden bg-gray-100" ref={containerRef}>
+      <div className="relative border rounded-lg overflow-hidden bg-gray-100">
         <div className="flex items-center justify-center w-full bg-gray-50 rounded-lg p-4">
           <canvas
             ref={canvasRef}
-            className="max-w-full cursor-move border rounded-md shadow-sm"
+            className="max-w-full cursor-move border rounded-md shadow-sm bg-white"
             style={{
               maxWidth: "600px",
               aspectRatio: "1/1",
+              display: "block",
             }}
             onMouseDown={handleMouseDown}
             onMouseMove={handleMouseMove}

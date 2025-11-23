@@ -405,26 +405,6 @@ export function VariantsStep({ formData, setFormData }: VariantsStepProps) {
               </div>
             </div>
 
-            {/* Inventory Management */}
-            <div className="space-y-2">
-              <Label htmlFor={`inventory_management-${index}`}>Inventory Management</Label>
-              <Select
-                value={variant.inventory_management || "shopify"}
-                onValueChange={(value) => {
-                  const finalValue = value === "none" ? null : (value as "shopify")
-                  updateVariant(index, "inventory_management", finalValue)
-                }}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select inventory management" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="shopify">Shopify</SelectItem>
-                  <SelectItem value="none">None</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
             {/* Requires Shipping */}
             <div className="flex items-center space-x-2">
               <Checkbox
