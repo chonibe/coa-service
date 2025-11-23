@@ -15,15 +15,12 @@ import {
   Package,
   DollarSign,
   Image as ImageIcon,
-  Tag,
-  FileText,
   Eye,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { BasicInfoStep } from "./basic-info-step"
 import { VariantsStep } from "./variants-step"
 import { ImagesStep } from "./images-step"
-import { MetafieldsStep } from "./metafields-step"
 import { ReviewStep } from "./review-step"
 import type { ProductSubmissionData, ProductCreationFields } from "@/types/product-submission"
 
@@ -51,7 +48,7 @@ const steps: Step[] = [
   {
     id: "variants",
     title: "Variants & Pricing",
-    description: "Price, SKU, and inventory details",
+    description: "Edition size and pricing",
     icon: <DollarSign className="h-5 w-5" />,
   },
   {
@@ -59,12 +56,6 @@ const steps: Step[] = [
     title: "Images",
     description: "Upload product images",
     icon: <ImageIcon className="h-5 w-5" />,
-  },
-  {
-    id: "metafields",
-    title: "Additional Details",
-    description: "Tags, collections, and metafields",
-    icon: <Tag className="h-5 w-5" />,
   },
   {
     id: "review",
@@ -88,7 +79,7 @@ export function ProductWizard({ onComplete, onCancel, initialData, submissionId 
     product_type: initialData?.product_type || "",
     vendor: "",
     handle: initialData?.handle || "",
-    tags: initialData?.tags || [],
+    tags: [], // Tags will be managed by admin
     variants: initialData?.variants || [
       {
         price: "",
@@ -97,7 +88,7 @@ export function ProductWizard({ onComplete, onCancel, initialData, submissionId 
       },
     ],
     images: initialData?.images || [],
-    metafields: initialData?.metafields || [],
+    metafields: initialData?.metafields || [], // Edition size will be set in variants step, other metafields managed by admin
   })
 
   // Fetch field configuration
@@ -139,9 +130,7 @@ export function ProductWizard({ onComplete, onCancel, initialData, submissionId 
         )
       case 2: // Images
         return true // Images are optional
-      case 3: // Metafields
-        return true
-      case 4: // Review
+      case 3: // Review
         return true
       default:
         return false
@@ -303,13 +292,6 @@ export function ProductWizard({ onComplete, onCancel, initialData, submissionId 
             <ImagesStep formData={formData} setFormData={setFormData} />
           )}
           {currentStep === 3 && (
-            <MetafieldsStep
-              formData={formData}
-              setFormData={setFormData}
-              fieldsConfig={fieldsConfig}
-            />
-          )}
-          {currentStep === 4 && (
             <ReviewStep formData={formData} fieldsConfig={fieldsConfig} />
           )}
         </CardContent>
