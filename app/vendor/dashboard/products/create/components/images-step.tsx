@@ -72,10 +72,15 @@ export function ImagesStep({ formData, setFormData }: ImagesStepProps) {
     setUploading(true)
 
     try {
+      console.log(`[Upload] Starting upload for file: ${file.name} (${(file.size / 1024 / 1024).toFixed(2)}MB)`)
+      
       // Use server-side upload route (simpler and more reliable)
       const formData = new FormData()
       formData.append("file", file)
       formData.append("type", "image")
+
+      const uploadStartTime = Date.now()
+      console.log(`[Upload] Sending request to /api/vendor/products/upload at ${new Date().toISOString()}`)
 
       const uploadResponse = await fetch("/api/vendor/products/upload", {
         method: "POST",
@@ -83,12 +88,21 @@ export function ImagesStep({ formData, setFormData }: ImagesStepProps) {
         body: formData,
       })
 
+      const uploadDuration = Date.now() - uploadStartTime
+      console.log(`[Upload] Received response after ${uploadDuration}ms (${(uploadDuration / 1000).toFixed(2)}s), status: ${uploadResponse.status}`)
+
       if (!uploadResponse.ok) {
-        const errorData = await uploadResponse.json()
-        throw new Error(errorData.error || "Failed to upload file")
+        const errorData = await uploadResponse.json().catch(() => ({ error: "Unknown error" }))
+        console.error(`[Upload] Upload failed:`, errorData)
+        throw new Error(errorData.error || `Upload failed: ${uploadResponse.status} ${uploadResponse.statusText}`)
       }
 
       const uploadResult = await uploadResponse.json()
+      console.log(`[Upload] Upload successful:`, {
+        url: uploadResult.url,
+        uploadId: uploadResult.uploadId,
+        duration: uploadResult.duration,
+      })
 
       // Add image to the list
       const newImage: ProductImage = {
