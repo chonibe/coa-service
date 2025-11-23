@@ -72,33 +72,56 @@ export function ImagesStep({ formData, setFormData }: ImagesStepProps) {
     setUploading(true)
 
     try {
-      const formData = new FormData()
-      formData.append("file", file)
-      formData.append("type", "image")
-
-      // Create AbortController for timeout handling
-      const controller = new AbortController()
-      const timeoutId = setTimeout(() => controller.abort(), 240000) // 4 minute timeout
-
-      const response = await fetch("/api/vendor/products/upload", {
+      // Get upload path from API
+      const pathResponse = await fetch("/api/vendor/products/upload-url", {
         method: "POST",
         credentials: "include",
-        body: formData,
-        signal: controller.signal,
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          fileName: file.name,
+          fileType: "image",
+        }),
       })
 
-      clearTimeout(timeoutId)
-
-      if (!response.ok) {
-        const data = await response.json()
-        throw new Error(data.error || `Upload failed: ${response.statusText}`)
+      if (!pathResponse.ok) {
+        const errorData = await pathResponse.json()
+        throw new Error(errorData.error || "Failed to get upload path")
       }
 
-      const data = await response.json()
+      const { path, bucket } = await pathResponse.json()
+
+      // Upload directly to Supabase Storage from client
+      const { createClient } = await import("@supabase/supabase-js")
+      const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+      const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+
+      if (!supabaseUrl || !supabaseAnonKey) {
+        throw new Error("Supabase configuration is missing")
+      }
+
+      const supabase = createClient(supabaseUrl, supabaseAnonKey)
+
+      // Upload file directly to Supabase Storage
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from(bucket)
+        .upload(path, file, {
+          contentType: file.type,
+          upsert: false,
+          cacheControl: "3600",
+        })
+
+      if (uploadError) {
+        throw new Error(uploadError.message || "Failed to upload file")
+      }
+
+      // Get public URL
+      const { data: urlData } = supabase.storage.from(bucket).getPublicUrl(path)
 
       // Add image to the list
       const newImage: ProductImage = {
-        src: data.url,
+        src: urlData.publicUrl,
         alt: "",
         position: images.length + 1,
       }
@@ -114,11 +137,7 @@ export function ImagesStep({ formData, setFormData }: ImagesStepProps) {
       }
     } catch (error: any) {
       console.error("Error uploading image:", error)
-      if (error.name === "AbortError") {
-        alert("Upload timed out. Please try again with a smaller file or better connection.")
-      } else {
-        alert(error.message || "Failed to upload image. Please try again.")
-      }
+      alert(error.message || "Failed to upload image. Please try again.")
     } finally {
       setUploading(false)
     }
