@@ -18,7 +18,7 @@
       "maxDuration": 60
     },
     "app/api/vendor/products/upload/route.ts": {
-      "maxDuration": 60
+      "maxDuration": 300
     }
   },
   "crons": [

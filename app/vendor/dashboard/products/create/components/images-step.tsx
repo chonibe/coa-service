@@ -23,29 +23,45 @@ export function ImagesStep({ formData, setFormData }: ImagesStepProps) {
   const images = formData.images || []
 
   const handleFileUpload = async (index: number, file: File) => {
+    // Validate file type
     if (!file.type.startsWith("image/")) {
-      alert("Please select an image file")
+      alert("Please select an image file (JPG, PNG, GIF, etc.)")
       return
     }
 
-    setUploading({ ...uploading, [index]: true })
+    // Validate file size (10MB max for images)
+    const MAX_IMAGE_SIZE = 10 * 1024 * 1024 // 10MB
+    if (file.size > MAX_IMAGE_SIZE) {
+      alert(`Image file is too large. Maximum size is 10MB. Your file is ${(file.size / (1024 * 1024)).toFixed(2)}MB.`)
+      return
+    }
+
+    setUploading((prev) => ({ ...prev, [index]: true }))
 
     try {
       const formData = new FormData()
       formData.append("file", file)
       formData.append("type", "image")
 
+      // Create AbortController for timeout handling
+      const controller = new AbortController()
+      const timeoutId = setTimeout(() => controller.abort(), 240000) // 4 minute timeout
+
       const response = await fetch("/api/vendor/products/upload", {
         method: "POST",
         credentials: "include",
         body: formData,
+        signal: controller.signal,
       })
 
-      const data = await response.json()
+      clearTimeout(timeoutId)
 
       if (!response.ok) {
-        throw new Error(data.error || "Failed to upload image")
+        const data = await response.json()
+        throw new Error(data.error || `Upload failed: ${response.statusText}`)
       }
+
+      const data = await response.json()
 
       // Update image at index
       const updatedImages = [...images]
@@ -65,9 +81,13 @@ export function ImagesStep({ formData, setFormData }: ImagesStepProps) {
       setFormData({ ...formData, images: updatedImages })
     } catch (error: any) {
       console.error("Error uploading image:", error)
-      alert(error.message || "Failed to upload image")
+      if (error.name === "AbortError") {
+        alert("Upload timed out. Please try again with a smaller file or better connection.")
+      } else {
+        alert(error.message || "Failed to upload image. Please try again.")
+      }
     } finally {
-      setUploading({ ...uploading, [index]: false })
+      setUploading((prev) => ({ ...prev, [index]: false }))
     }
   }
 
