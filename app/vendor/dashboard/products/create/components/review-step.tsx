@@ -90,12 +90,17 @@ export function ReviewStep({ formData, fieldsConfig }: ReviewStepProps) {
                       <span>{variant.sku}</span>
                     </div>
                   )}
-                  {variant.inventory_quantity !== undefined && (
-                    <div>
-                      <span className="text-muted-foreground">Inventory: </span>
-                      <span>{variant.inventory_quantity}</span>
-                    </div>
-                  )}
+                  {(() => {
+                    const editionSizeMetafield = formData.metafields?.find(
+                      (m) => m.namespace === "custom" && m.key === "edition_size",
+                    )
+                    return editionSizeMetafield ? (
+                      <div>
+                        <span className="text-muted-foreground">Edition Size: </span>
+                        <span>{editionSizeMetafield.value} editions</span>
+                      </div>
+                    ) : null
+                  })()}
                 </div>
                 <div className="text-sm">
                   <span className="text-muted-foreground">Requires shipping: </span>
@@ -138,61 +143,28 @@ export function ReviewStep({ formData, fieldsConfig }: ReviewStepProps) {
         </Card>
       )}
 
-      {/* Tags & Collections */}
-      {(formData.tags?.length || fieldsConfig?.vendor_collections?.length) && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Tag className="h-5 w-5" />
-              Tags & Collections
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            {formData.tags && formData.tags.length > 0 && (
-              <div>
-                <div className="text-sm font-medium text-muted-foreground mb-2">Tags</div>
-                <div className="flex flex-wrap gap-2">
-                  {formData.tags.map((tag) => (
-                    <Badge key={tag} variant="secondary">
-                      {tag}
-                    </Badge>
-                  ))}
-                </div>
+      {/* Edition Size (from metafields) */}
+      {(() => {
+        const editionSizeMetafield = formData.metafields?.find(
+          (m) => m.namespace === "custom" && m.key === "edition_size",
+        )
+        return editionSizeMetafield ? (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <FileText className="h-5 w-5" />
+                Edition Size
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-sm">
+                <span className="text-muted-foreground">Edition Size: </span>
+                <span className="font-semibold">{editionSizeMetafield.value} editions</span>
               </div>
-            )}
-            {fieldsConfig?.vendor_collections?.[0] && (
-              <div>
-                <div className="text-sm font-medium text-muted-foreground">Collection</div>
-                <div className="text-sm">{fieldsConfig.vendor_collections[0].collection_title}</div>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Metafields */}
-      {formData.metafields && formData.metafields.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <FileText className="h-5 w-5" />
-              Metafields ({formData.metafields.length})
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-2">
-              {formData.metafields.map((metafield, index) => (
-                <div key={index} className="text-sm">
-                  <span className="font-mono text-muted-foreground">
-                    {metafield.namespace}.{metafield.key}:
-                  </span>{" "}
-                  <span>{metafield.value}</span>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      )}
+            </CardContent>
+          </Card>
+        ) : null
+      })()}
     </div>
   )
 }
