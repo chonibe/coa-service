@@ -23,7 +23,6 @@ const MASK_INNER_Y = (MASK_OUTER_SIZE - MASK_INNER_HEIGHT) / 2
 
 export function ImageMaskEditor({ image, onUpdate }: ImageMaskEditorProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
-  const containerRef = useRef<HTMLDivElement>(null)
   const [isDragging, setIsDragging] = useState(false)
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 })
 
@@ -34,11 +33,18 @@ export function ImageMaskEditor({ image, onUpdate }: ImageMaskEditorProps) {
     rotation: 0,
   }
 
-  // Default scale to fit the inner mask rectangle
-  const defaultScale = Math.max(
-    MASK_INNER_WIDTH / (typeof window !== "undefined" ? window.innerWidth : 800),
-    MASK_INNER_HEIGHT / (typeof window !== "undefined" ? window.innerHeight : 800),
-  )
+  // Default scale to fit the inner mask rectangle - calculate in useEffect
+  const [defaultScale, setDefaultScale] = useState(0.5)
+  
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const calcDefaultScale = Math.max(
+        MASK_INNER_WIDTH / Math.max(window.innerWidth, 800),
+        MASK_INNER_HEIGHT / Math.max(window.innerHeight, 800),
+      )
+      setDefaultScale(Math.min(calcDefaultScale, 1))
+    }
+  }, [])
 
   const currentScale = settings.scale || defaultScale
   const currentX = settings.x || 0
@@ -76,8 +82,11 @@ export function ImageMaskEditor({ image, onUpdate }: ImageMaskEditorProps) {
     if (!ctx) return
 
     // Set canvas size for high DPI displays
-    const dpr = window.devicePixelRatio || 1
-    const displaySize = Math.min(600, typeof window !== "undefined" ? window.innerWidth - 100 : 600)
+    const dpr = typeof window !== "undefined" ? window.devicePixelRatio || 1 : 1
+    const displaySize = Math.min(
+      600,
+      typeof window !== "undefined" ? Math.min(600, window.innerWidth - 100) : 600,
+    )
     
     canvas.width = MASK_OUTER_SIZE * dpr
     canvas.height = MASK_OUTER_SIZE * dpr
