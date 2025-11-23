@@ -74,39 +74,68 @@ export function ImagesStep({ formData, setFormData }: ImagesStepProps) {
     try {
       console.log(`[Upload] Starting upload for file: ${file.name} (${(file.size / 1024 / 1024).toFixed(2)}MB)`)
       
-      // Use server-side upload route (simpler and more reliable)
-      const formData = new FormData()
-      formData.append("file", file)
-      formData.append("type", "image")
-
-      const uploadStartTime = Date.now()
-      console.log(`[Upload] Sending request to /api/vendor/products/upload at ${new Date().toISOString()}`)
-
-      const uploadResponse = await fetch("/api/vendor/products/upload", {
+      // Step 1: Get upload path from server
+      const urlRequestStart = Date.now()
+      console.log(`[Upload] Requesting upload path...`)
+      
+      const urlResponse = await fetch("/api/vendor/products/upload-url", {
         method: "POST",
         credentials: "include",
-        body: formData,
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          fileName: file.name,
+          fileType: "image",
+          fileSize: file.size,
+        }),
       })
 
-      const uploadDuration = Date.now() - uploadStartTime
-      console.log(`[Upload] Received response after ${uploadDuration}ms (${(uploadDuration / 1000).toFixed(2)}s), status: ${uploadResponse.status}`)
-
-      if (!uploadResponse.ok) {
-        const errorData = await uploadResponse.json().catch(() => ({ error: "Unknown error" }))
-        console.error(`[Upload] Upload failed:`, errorData)
-        throw new Error(errorData.error || `Upload failed: ${uploadResponse.status} ${uploadResponse.statusText}`)
+      if (!urlResponse.ok) {
+        const errorData = await urlResponse.json().catch(() => ({ error: "Unknown error" }))
+        console.error(`[Upload] Failed to get upload path:`, errorData)
+        throw new Error(errorData.error || "Failed to get upload path")
       }
 
-      const uploadResult = await uploadResponse.json()
-      console.log(`[Upload] Upload successful:`, {
-        url: uploadResult.url,
-        uploadId: uploadResult.uploadId,
-        duration: uploadResult.duration,
-      })
+      const urlData = await urlResponse.json()
+      console.log(`[Upload] Got upload path in ${Date.now() - urlRequestStart}ms, uploadId: ${urlData.uploadId}`)
+
+      // Step 2: Upload directly to Supabase using client-side Supabase client
+      const uploadStartTime = Date.now()
+      console.log(`[Upload] Uploading file directly to Supabase at ${new Date().toISOString()}`)
+      
+      const { getSupabaseClient } = await import("@/lib/supabase")
+      const supabase = getSupabaseClient()
+      
+      if (!supabase) {
+        throw new Error("Failed to initialize Supabase client")
+      }
+
+      const { data: uploadResult, error: uploadError } = await supabase.storage
+        .from(urlData.bucket)
+        .upload(urlData.path, file, {
+          contentType: file.type,
+          upsert: false,
+          cacheControl: "3600",
+        })
+
+      const uploadDuration = Date.now() - uploadStartTime
+      console.log(`[Upload] Direct upload completed in ${uploadDuration}ms (${(uploadDuration / 1000).toFixed(2)}s)`)
+
+      if (uploadError) {
+        console.error(`[Upload] Direct upload failed:`, uploadError)
+        throw new Error(uploadError.message || "Failed to upload file")
+      }
+
+      // Step 3: Get public URL
+      const { data: urlData2 } = supabase.storage.from(urlData.bucket).getPublicUrl(urlData.path)
+      const publicUrl = urlData2.publicUrl
+
+      console.log(`[Upload] Upload successful! Public URL: ${publicUrl}`)
 
       // Add image to the list
       const newImage: ProductImage = {
-        src: uploadResult.url,
+        src: publicUrl,
         alt: "",
         position: images.length + 1,
       }
