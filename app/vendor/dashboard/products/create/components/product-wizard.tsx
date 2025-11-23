@@ -331,7 +331,7 @@ export function ProductWizard({ onComplete, onCancel, initialData, submissionId 
                   Submitting...
                 </>
               ) : (
-                {submissionId ? "Update Submission" : "Submit for Approval"}
+                submissionId ? "Update Submission" : "Submit for Approval"
               )}
             </Button>
           )}
