@@ -416,30 +416,69 @@ export function ImagesStep({ formData, setFormData }: ImagesStepProps) {
               onChange={async (e) => {
                 const file = e.target.files?.[0]
                 if (file) {
+                  // Validate file size (50MB max for PDFs)
+                  const MAX_PDF_SIZE = 50 * 1024 * 1024 // 50MB
+                  if (file.size > MAX_PDF_SIZE) {
+                    alert(`PDF file is too large. Maximum size is 50MB. Your file is ${(file.size / (1024 * 1024)).toFixed(2)}MB.`)
+                    return
+                  }
+
                   setUploading(true)
                   try {
-                    const formData = new FormData()
-                    formData.append("file", file)
-                    formData.append("type", "pdf")
-
-                    const response = await fetch("/api/vendor/products/upload", {
+                    // Get upload path from API
+                    const pathResponse = await fetch("/api/vendor/products/upload-url", {
                       method: "POST",
                       credentials: "include",
-                      body: formData,
+                      headers: {
+                        "Content-Type": "application/json",
+                      },
+                      body: JSON.stringify({
+                        fileName: file.name,
+                        fileType: "pdf",
+                      }),
                     })
 
-                    const data = await response.json()
-                    if (response.ok) {
-                      setFormData({
-                        ...formData,
-                        print_files: {
-                          ...formData.print_files,
-                          pdf_url: data.url,
-                        },
-                      })
-                    } else {
-                      alert(data.error || "Failed to upload PDF")
+                    if (!pathResponse.ok) {
+                      const errorData = await pathResponse.json()
+                      throw new Error(errorData.error || "Failed to get upload path")
                     }
+
+                    const { path, bucket } = await pathResponse.json()
+
+                    // Upload directly to Supabase Storage from client
+                    const { createClient } = await import("@supabase/supabase-js")
+                    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+                    const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+
+                    if (!supabaseUrl || !supabaseAnonKey) {
+                      throw new Error("Supabase configuration is missing")
+                    }
+
+                    const supabase = createClient(supabaseUrl, supabaseAnonKey)
+
+                    // Upload file directly to Supabase Storage
+                    const { error: uploadError } = await supabase.storage
+                      .from(bucket)
+                      .upload(path, file, {
+                        contentType: file.type,
+                        upsert: false,
+                        cacheControl: "3600",
+                      })
+
+                    if (uploadError) {
+                      throw new Error(uploadError.message || "Failed to upload PDF")
+                    }
+
+                    // Get public URL
+                    const { data: urlData } = supabase.storage.from(bucket).getPublicUrl(path)
+
+                    setFormData({
+                      ...formData,
+                      print_files: {
+                        ...formData.print_files,
+                        pdf_url: urlData.publicUrl,
+                      },
+                    })
                   } catch (error: any) {
                     alert(error.message || "Failed to upload PDF")
                   } finally {
