@@ -5,7 +5,8 @@ import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Plus, Trash2, Image as ImageIcon, Upload, Link as LinkIcon } from "lucide-react"
+import { Plus, Trash2, Image as ImageIcon, Upload, Link as LinkIcon, FileText, Folder } from "lucide-react"
+import { Separator } from "@/components/ui/separator"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { ImageMaskEditor } from "./image-mask-editor"
 import type { ProductSubmissionData, ProductImage } from "@/types/product-submission"
@@ -16,7 +17,7 @@ interface ImagesStepProps {
 }
 
 export function ImagesStep({ formData, setFormData }: ImagesStepProps) {
-  const [uploading, setUploading] = useState<Record<number, boolean>>({})
+  const [uploading, setUploading] = useState<Record<number | string, boolean>>({})
   const fileInputRefs = useRef<Record<number, HTMLInputElement | null>>({})
 
   const images = formData.images || []
@@ -260,6 +261,123 @@ export function ImagesStep({ formData, setFormData }: ImagesStepProps) {
           <Plus className="h-4 w-4 mr-2" />
           Add Image
         </Button>
+      </div>
+
+      <Separator className="my-6" />
+
+      {/* Print Files Section */}
+      <div className="space-y-4">
+        <div>
+          <h3 className="text-lg font-semibold mb-2">Print Files</h3>
+          <p className="text-sm text-muted-foreground">
+            Upload high-resolution PDF files or provide Google Drive links for print production.
+          </p>
+        </div>
+
+        <div className="space-y-4">
+          {/* PDF Upload */}
+          <div className="space-y-2">
+            <Label htmlFor="pdf-upload">
+              <FileText className="h-4 w-4 inline mr-2" />
+              High-Resolution PDF
+            </Label>
+            <Input
+              id="pdf-upload"
+              type="file"
+              accept=".pdf,application/pdf"
+              onChange={async (e) => {
+                const file = e.target.files?.[0]
+                if (file) {
+                  setUploading({ ...uploading, pdf: true })
+                  try {
+                    const formData = new FormData()
+                    formData.append("file", file)
+                    formData.append("type", "pdf")
+
+                    const response = await fetch("/api/vendor/products/upload", {
+                      method: "POST",
+                      credentials: "include",
+                      body: formData,
+                    })
+
+                    const data = await response.json()
+                    if (response.ok) {
+                      setFormData({
+                        ...formData,
+                        print_files: {
+                          ...formData.print_files,
+                          pdf_url: data.url,
+                        },
+                      })
+                    } else {
+                      alert(data.error || "Failed to upload PDF")
+                    }
+                  } catch (error: any) {
+                    alert(error.message || "Failed to upload PDF")
+                  } finally {
+                    setUploading({ ...uploading, pdf: false })
+                  }
+                }
+              }}
+            />
+            {uploading.pdf && <p className="text-sm text-muted-foreground">Uploading PDF...</p>}
+            {formData.print_files?.pdf_url && (
+              <div className="flex items-center gap-2 text-sm text-green-600">
+                <FileText className="h-4 w-4" />
+                <a
+                  href={formData.print_files.pdf_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="underline"
+                >
+                  PDF uploaded successfully
+                </a>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    setFormData({
+                      ...formData,
+                      print_files: {
+                        ...formData.print_files,
+                        pdf_url: null,
+                      },
+                    })
+                  }}
+                >
+                  Remove
+                </Button>
+              </div>
+            )}
+          </div>
+
+          {/* Google Drive Link */}
+          <div className="space-y-2">
+            <Label htmlFor="drive-link">
+              <Folder className="h-4 w-4 inline mr-2" />
+              Google Drive Link (Alternative)
+            </Label>
+            <Input
+              id="drive-link"
+              value={formData.print_files?.drive_link || ""}
+              onChange={(e) =>
+                setFormData({
+                  ...formData,
+                  print_files: {
+                    ...formData.print_files,
+                    drive_link: e.target.value || null,
+                  },
+                })
+              }
+              placeholder="https://drive.google.com/file/d/..."
+              type="url"
+            />
+            <p className="text-xs text-muted-foreground">
+              Provide a Google Drive link if you prefer not to upload a PDF directly.
+            </p>
+          </div>
+        </div>
       </div>
     </div>
   )
