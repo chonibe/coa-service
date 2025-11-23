@@ -72,79 +72,27 @@ export function ImagesStep({ formData, setFormData }: ImagesStepProps) {
     setUploading(true)
 
     try {
-      // Get upload path from API
-      const pathResponse = await fetch("/api/vendor/products/upload-url", {
+      // Use server-side upload route (simpler and more reliable)
+      const formData = new FormData()
+      formData.append("file", file)
+      formData.append("type", "image")
+
+      const uploadResponse = await fetch("/api/vendor/products/upload", {
         method: "POST",
         credentials: "include",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          fileName: file.name,
-          fileType: "image",
-          fileSize: file.size,
-        }),
+        body: formData,
       })
 
-      if (!pathResponse.ok) {
-        const errorData = await pathResponse.json()
-        throw new Error(errorData.error || "Failed to get upload path")
+      if (!uploadResponse.ok) {
+        const errorData = await uploadResponse.json()
+        throw new Error(errorData.error || "Failed to upload file")
       }
 
-      const uploadData = await pathResponse.json()
-
-      // Check if we got a signed URL or need to use direct upload
-      if (uploadData.signedUrl) {
-        // Use signed URL for upload
-        const uploadResponse = await fetch(uploadData.signedUrl, {
-          method: "PUT",
-          body: file,
-          headers: {
-            "Content-Type": file.type,
-            "x-upsert": "false",
-          },
-        })
-
-        if (!uploadResponse.ok) {
-          throw new Error(`Upload failed: ${uploadResponse.statusText}`)
-        }
-      } else {
-        // Fallback: use server-side upload route
-        const formData = new FormData()
-        formData.append("file", file)
-        formData.append("type", "image")
-
-        const uploadResponse = await fetch("/api/vendor/products/upload", {
-          method: "POST",
-          credentials: "include",
-          body: formData,
-        })
-
-        if (!uploadResponse.ok) {
-          const errorData = await uploadResponse.json()
-          throw new Error(errorData.error || "Failed to upload file")
-        }
-
-        const uploadResult = await uploadResponse.json()
-        uploadData.url = uploadResult.url
-        uploadData.path = uploadResult.path
-      }
-
-      // Get public URL - use the path from upload data
-      const { getSupabaseClient } = await import("@/lib/supabase")
-      const supabase = getSupabaseClient()
-      const urlData = supabase
-        ? supabase.storage.from(uploadData.bucket).getPublicUrl(uploadData.path)
-        : { data: { publicUrl: uploadData.url || uploadData.signedUrl } }
+      const uploadResult = await uploadResponse.json()
 
       // Add image to the list
-      const publicUrl = urlData.data?.publicUrl || urlData.publicUrl
-      if (!publicUrl) {
-        throw new Error("Failed to get public URL for uploaded image")
-      }
-
       const newImage: ProductImage = {
-        src: publicUrl,
+        src: uploadResult.url,
         alt: "",
         position: images.length + 1,
       }
@@ -448,81 +396,29 @@ export function ImagesStep({ formData, setFormData }: ImagesStepProps) {
 
                   setUploading(true)
                   try {
-                    // Get upload path from API
-                    const pathResponse = await fetch("/api/vendor/products/upload-url", {
+                    // Use server-side upload route
+                    const formData = new FormData()
+                    formData.append("file", file)
+                    formData.append("type", "pdf")
+
+                    const uploadResponse = await fetch("/api/vendor/products/upload", {
                       method: "POST",
                       credentials: "include",
-                      headers: {
-                        "Content-Type": "application/json",
-                      },
-                      body: JSON.stringify({
-                        fileName: file.name,
-                        fileType: "pdf",
-                        fileSize: file.size,
-                      }),
+                      body: formData,
                     })
 
-                    if (!pathResponse.ok) {
-                      const errorData = await pathResponse.json()
-                      throw new Error(errorData.error || "Failed to get upload path")
+                    if (!uploadResponse.ok) {
+                      const errorData = await uploadResponse.json()
+                      throw new Error(errorData.error || "Failed to upload PDF")
                     }
 
-                    const uploadData = await pathResponse.json()
-
-                    // Check if we got a signed URL or need to use direct upload
-                    if (uploadData.signedUrl) {
-                      // Use signed URL for upload
-                      const uploadResponse = await fetch(uploadData.signedUrl, {
-                        method: "PUT",
-                        body: file,
-                        headers: {
-                          "Content-Type": file.type,
-                          "x-upsert": "false",
-                        },
-                      })
-
-                      if (!uploadResponse.ok) {
-                        throw new Error(`Upload failed: ${uploadResponse.statusText}`)
-                      }
-                    } else {
-                      // Fallback: use server-side upload route
-                      const formData = new FormData()
-                      formData.append("file", file)
-                      formData.append("type", "pdf")
-
-                      const uploadResponse = await fetch("/api/vendor/products/upload", {
-                        method: "POST",
-                        credentials: "include",
-                        body: formData,
-                      })
-
-                      if (!uploadResponse.ok) {
-                        const errorData = await uploadResponse.json()
-                        throw new Error(errorData.error || "Failed to upload PDF")
-                      }
-
-                      const uploadResult = await uploadResponse.json()
-                      uploadData.url = uploadResult.url
-                      uploadData.path = uploadResult.path
-                    }
-
-                    // Get public URL
-                    const { getSupabaseClient } = await import("@/lib/supabase")
-                    const supabase = getSupabaseClient()
-                    const urlData = supabase
-                      ? supabase.storage.from(uploadData.bucket).getPublicUrl(uploadData.path)
-                      : { data: { publicUrl: uploadData.url || uploadData.signedUrl } }
-
-                    const publicUrl = urlData.data?.publicUrl || urlData.publicUrl
-                    if (!publicUrl) {
-                      throw new Error("Failed to get public URL for uploaded PDF")
-                    }
+                    const uploadResult = await uploadResponse.json()
 
                     setFormData({
                       ...formData,
                       print_files: {
                         ...formData.print_files,
-                        pdf_url: publicUrl,
+                        pdf_url: uploadResult.url,
                       },
                     })
                   } catch (error: any) {
