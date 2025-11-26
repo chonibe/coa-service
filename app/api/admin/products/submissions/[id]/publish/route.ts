@@ -92,11 +92,22 @@ export async function POST(
     // Set Street Design PDF metafield if PDF URL exists
     if (productData.print_files?.pdf_url) {
       try {
-        const { setStreetDesignPdfMetafield } = await import("@/lib/shopify/product-creation")
+        const { setStreetDesignPdfMetafield, setProductMetafield } = await import("@/lib/shopify/product-creation")
+        
+        // Set the Street Design PDF metafield (by definition ID)
         await setStreetDesignPdfMetafield(shopifyProductId, productData.print_files.pdf_url)
         console.log(`Set Street Design PDF metafield for product ${shopifyProductId}`)
+        
+        // Also set custom.pdf_link metafield with the Supabase PDF URL
+        await setProductMetafield(shopifyProductId, {
+          namespace: "custom",
+          key: "pdf_link",
+          value: productData.print_files.pdf_url,
+          type: "url",
+        })
+        console.log(`Set custom.pdf_link metafield for product ${shopifyProductId}`)
       } catch (error) {
-        console.error("Failed to set Street Design PDF metafield, but product was created:", error)
+        console.error("Failed to set PDF metafields, but product was created:", error)
         // Continue - product was created successfully
       }
     }
