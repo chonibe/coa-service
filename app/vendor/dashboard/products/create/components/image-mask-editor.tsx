@@ -3,13 +3,13 @@
 import { useState, useRef, useEffect, useCallback, useMemo } from "react"
 import { Button } from "@/components/ui/button"
 import { Slider } from "@/components/ui/slider"
-import { RotateCcw, ZoomIn, Move } from "lucide-react"
+import { RotateCcw, ZoomIn, Move, Save, CheckCircle2, Loader2 } from "lucide-react"
 import type { ProductImage } from "@/types/product-submission"
 
 interface ImageMaskEditorProps {
   image: ProductImage
   onUpdate: (settings: ProductImage["maskSettings"]) => void
-  onGenerateMask?: (generateFunction: () => Promise<string>) => void
+  onMaskSaved?: (maskedImageUrl: string) => void // Callback when masked image is saved
 }
 
 // Mask dimensions
@@ -50,7 +50,7 @@ const canvasHelpers = {
 // Export for external access if needed
 export const drawRoundRect = canvasHelpers.drawRoundRect
 
-export function ImageMaskEditor({ image, onUpdate, onGenerateMask }: ImageMaskEditorProps) {
+export function ImageMaskEditor({ image, onUpdate, onMaskSaved }: ImageMaskEditorProps) {
   const renderCountRef = useRef(0)
   const renderStartTime = useRef(performance.now())
   
@@ -88,6 +88,8 @@ export function ImageMaskEditor({ image, onUpdate, onGenerateMask }: ImageMaskEd
   const [isDragging, setIsDragging] = useState(false)
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 })
   const [imageLoaded, setImageLoaded] = useState(false)
+  const [isSavingMask, setIsSavingMask] = useState(false)
+  const [maskSaved, setMaskSaved] = useState(false)
 
   const settings = image.maskSettings || {
     x: 0,
@@ -352,6 +354,7 @@ export function ImageMaskEditor({ image, onUpdate, onGenerateMask }: ImageMaskEd
       console.log("[MaskEditor] Clearing image - no src")
       imageRef.current = null
       setImageLoaded(false)
+      setMaskSaved(false) // Reset saved state when image is cleared
       scheduleRedraw()
       return
     }
@@ -364,6 +367,7 @@ export function ImageMaskEditor({ image, onUpdate, onGenerateMask }: ImageMaskEd
 
     console.log("[MaskEditor] Loading new image...")
     setImageLoaded(false)
+    setMaskSaved(false) // Reset saved state when new image is loaded
     const imgLoadStartTime = performance.now()
     const img = new Image()
     
@@ -682,12 +686,30 @@ export function ImageMaskEditor({ image, onUpdate, onGenerateMask }: ImageMaskEd
     }
   }, [defaultScale])
 
-  // Expose generate function to parent
-  useEffect(() => {
-    if (onGenerateMask && imageLoaded) {
-      onGenerateMask(generateMaskedImage)
+  // Handle manual save of masked image
+  const handleSaveMaskedImage = useCallback(async () => {
+    if (!imageLoaded || !imageRef.current) {
+      console.error("[MaskEditor] Cannot save masked image - image not loaded")
+      return
     }
-  }, [onGenerateMask, imageLoaded, generateMaskedImage])
+
+    setIsSavingMask(true)
+    try {
+      console.log("[MaskEditor] Generating masked image on manual save...")
+      const maskedImageUrl = await generateMaskedImage()
+      setMaskSaved(true)
+      if (onMaskSaved) {
+        onMaskSaved(maskedImageUrl)
+      }
+      console.log("[MaskEditor] Masked image saved successfully")
+    } catch (error) {
+      console.error("[MaskEditor] Error saving masked image:", error)
+      setMaskSaved(false)
+      // Don't call onMaskSaved on error
+    } finally {
+      setIsSavingMask(false)
+    }
+  }, [imageLoaded, generateMaskedImage, onMaskSaved])
 
   // Component mount/unmount logging
   useEffect(() => {
@@ -801,9 +823,42 @@ export function ImageMaskEditor({ image, onUpdate, onGenerateMask }: ImageMaskEd
           </Button>
         </div>
 
+        {/* Save Masked Image Button */}
+        <div className="pt-2 border-t">
+          <Button
+            type="button"
+            onClick={handleSaveMaskedImage}
+            disabled={!imageLoaded || isSavingMask}
+            className="w-full"
+            variant={maskSaved ? "default" : "default"}
+          >
+            {isSavingMask ? (
+              <>
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                Saving Masked Image...
+              </>
+            ) : maskSaved ? (
+              <>
+                <CheckCircle2 className="h-4 w-4 mr-2" />
+                Masked Image Saved
+              </>
+            ) : (
+              <>
+                <Save className="h-4 w-4 mr-2" />
+                Save Masked Image
+              </>
+            )}
+          </Button>
+          {maskSaved && (
+            <p className="text-xs text-green-600 mt-2 text-center">
+              Masked image has been saved. You can continue to the next step.
+            </p>
+          )}
+        </div>
+
         <p className="text-xs text-muted-foreground">
           Click and drag the image to reposition it within the frame. Use the sliders to adjust
-          scale and rotation. The masked image will be automatically applied when you proceed to the next step.
+          scale and rotation. Click "Save Masked Image" when you're ready to proceed.
         </p>
       </div>
     </div>

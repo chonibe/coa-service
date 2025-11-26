@@ -137,28 +137,8 @@ export function ProductWizard({ onComplete, onCancel, initialData, submissionId 
     }
   }
 
-  const [applyMaskFn, setApplyMaskFn] = useState<(() => Promise<void>) | null>(null)
-
-  const handleNext = async () => {
+  const handleNext = () => {
     if (!canProceed() || currentStep >= steps.length - 1) return
-    
-    // If we're on the images step (step 2), generate the masked image ONLY when moving to review step
-    // This prevents any mask generation during preview which could cause performance issues
-    if (currentStep === 2 && applyMaskFn) {
-      try {
-        setIsSubmitting(true) // Show loading state
-        setError(null)
-        await applyMaskFn()
-        setIsSubmitting(false)
-        // Mask generation successful, proceed to next step
-      } catch (error) {
-        console.error("Error generating masked image:", error)
-        setIsSubmitting(false)
-        setError("Failed to generate masked image. Please try adjusting the image position.")
-        return // Don't proceed if mask generation fails
-      }
-    }
-    
     setCurrentStep(currentStep + 1)
     setError(null)
   }
@@ -316,7 +296,6 @@ export function ProductWizard({ onComplete, onCancel, initialData, submissionId 
             <ImagesStep 
               formData={formData} 
               setFormData={setFormData}
-              onMaskReady={setApplyMaskFn}
             />
           )}
           {currentStep === 3 && (
@@ -333,17 +312,8 @@ export function ProductWizard({ onComplete, onCancel, initialData, submissionId 
               onClick={handleNext} 
               disabled={!canProceed() || isSubmitting}
             >
-              {isSubmitting && currentStep === 2 ? (
-                <>
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  Generating Mask...
-                </>
-              ) : (
-                <>
-                  Next
-                  <ChevronRight className="h-4 w-4 ml-2" />
-                </>
-              )}
+              Next
+              <ChevronRight className="h-4 w-4 ml-2" />
             </Button>
           ) : (
             <Button onClick={handleSubmit} disabled={isSubmitting || !canProceed()}>
