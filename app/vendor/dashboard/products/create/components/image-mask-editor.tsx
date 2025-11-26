@@ -187,7 +187,6 @@ export function ImageMaskEditor({ image, onUpdate, onGenerateMask }: ImageMaskEd
       })
       
       try {
-      try {
         const ctx = canvas.getContext("2d", { alpha: false })
         if (!ctx) {
           isRedrawingRef.current = false
