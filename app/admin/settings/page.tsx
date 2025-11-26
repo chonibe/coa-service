@@ -10,7 +10,7 @@ import { Separator } from "@/components/ui/separator"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Save } from "lucide-react"
 import { SettingsLayout } from "@/components/settings-layout"
-import { Database, Users, Bell, Shield, HardDrive } from "lucide-react"
+import { DatabaseIcon, UsersIcon, BellIcon, ShieldCheckIcon, HardDriveIcon } from "@heroicons/react/24/outline"
 
 const settingsConfig = [
   {
@@ -19,27 +19,27 @@ const settingsConfig = [
       {
         title: "Database",
         href: "/admin/settings/database",
-        icon: Database,
+        icon: DatabaseIcon,
       },
       {
         title: "Users",
         href: "/admin/settings/users",
-        icon: Users,
+        icon: UsersIcon,
       },
       {
         title: "Notifications",
         href: "/admin/settings/notifications",
-        icon: Bell,
+        icon: BellIcon,
       },
       {
         title: "Security",
         href: "/admin/settings/security",
-        icon: Shield,
+        icon: ShieldCheckIcon,
       },
       {
         title: "Backup",
         href: "/admin/settings/backup",
-        icon: HardDrive,
+        icon: HardDriveIcon,
       },
     ],
   },

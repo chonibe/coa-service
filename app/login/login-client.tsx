@@ -177,7 +177,18 @@ export default function LoginClient() {
       <Card className="w-full max-w-md shadow-2xl border-0 bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl relative z-10">
         <CardHeader className="space-y-4 text-center pb-6">
           <div className="flex justify-center">
-            <div className="relative">
+            <img 
+              src="https://www.thestreetlamp.com/cdn/shop/files/Logo_b6785991-7284-43f7-ba3c-95cd7b22041a.png?v=1737462053&width=140" 
+              alt="Street Lamp Logo" 
+              className="h-16 w-auto object-contain"
+              onError={(e) => {
+                // Fallback to icon if image fails to load
+                e.currentTarget.style.display = 'none'
+                const fallback = e.currentTarget.nextElementSibling as HTMLElement
+                if (fallback) fallback.style.display = 'block'
+              }}
+            />
+            <div className="relative hidden">
               <div className="absolute inset-0 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-2xl blur-lg opacity-50 animate-pulse" />
               <div className="relative bg-gradient-to-br from-blue-500 to-indigo-600 p-4 rounded-2xl">
                 <Shield className="h-8 w-8 text-white" />

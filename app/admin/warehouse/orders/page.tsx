@@ -11,7 +11,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { WarehouseOrderCard } from './components/WarehouseOrderCard'
 import { PackageTracker } from './components/PackageTracker'
 import { TrackingTimeline } from './components/TrackingTimeline'
-import { AlertCircle, Calendar, Search, RefreshCw, Share2, Check, Copy, ChevronLeft, ChevronRight, ChevronDown, ChevronUp } from 'lucide-react'
+import { AlertCircle, Calendar, Search, RefreshCw, Share2, Check, Copy, ChevronLeft, ChevronRight, ChevronDown, ChevronUp, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 import { Badge } from '@/components/ui/badge'
@@ -38,6 +38,10 @@ export default function WarehouseOrdersPage() {
   const [hasNext, setHasNext] = useState(false)
   const [hasPrev, setHasPrev] = useState(false)
   
+  // Sorting state
+  const [sortField, setSortField] = useState<'tag' | null>(null)
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc')
+  
   // Date range filters - Default to last 365 days to capture all orders including shipped
   const [startDate, setStartDate] = useState(() => {
     const date = new Date()
@@ -53,6 +57,8 @@ export default function WarehouseOrdersPage() {
   
   // Status filter
   const [statusFilter, setStatusFilter] = useState<string>('all')
+  // Tag filter
+  const [tagFilter, setTagFilter] = useState<string>('all')
 
   const fetchOrders = async () => {
     try {
@@ -247,6 +253,32 @@ export default function WarehouseOrdersPage() {
     }
   }
 
+  // Helper function to get last event tag for an order
+  const getLastEventTag = (order: ChinaDivisionOrderInfo): string => {
+    // Use track_status_name if available (e.g., "Delivered", "In Transit", etc.)
+    if (order.track_status_name) {
+      return order.track_status_name
+    }
+    
+    // Map track_status codes to tag names
+    const tagMap: Record<number, string> = {
+      0: 'To be updated',
+      101: 'In Transit',
+      111: 'Pick Up',
+      112: 'Out For Delivery',
+      121: 'Delivered',
+      131: 'Alert',
+      132: 'Expired',
+    }
+    
+    if (order.track_status !== undefined && tagMap[order.track_status]) {
+      return tagMap[order.track_status]
+    }
+    
+    // Fallback to status name or default
+    return order.status_name || 'Pending'
+  }
+
   // Calculate status counts
   const statusCounts = {
     all: orders.length,
@@ -255,6 +287,7 @@ export default function WarehouseOrdersPage() {
     uploaded: orders.filter(o => o.status === 11).length,
     shipped: orders.filter(o => o.status === 3 || o.track_status === 121 || (o.track_status && o.track_status >= 101 && o.track_status <= 121)).length,
     canceled: orders.filter(o => o.status === 23).length,
+    in_transit: orders.filter(o => getLastEventTag(o) === 'In Transit').length,
   }
 
   // Filter orders by search query and status
@@ -275,26 +308,49 @@ export default function WarehouseOrdersPage() {
     }
 
     // Status filter
-    if (statusFilter === 'all') return true
-    if (statusFilter === 'approving' && (order.status === 0 || order.order_detail_status === '0')) return true
-    if (statusFilter === 'error' && (order.track_status === 131 || order.track_status === 132)) return true
-    if (statusFilter === 'uploaded' && order.status === 11) return true
-    if (statusFilter === 'shipped' && (order.status === 3 || order.track_status === 121 || (order.track_status && order.track_status >= 101 && order.track_status <= 121))) return true
-    if (statusFilter === 'canceled' && order.status === 23) return true
+    if (statusFilter !== 'all') {
+      if (statusFilter === 'approving' && !(order.status === 0 || order.order_detail_status === '0')) return false
+      if (statusFilter === 'error' && !(order.track_status === 131 || order.track_status === 132)) return false
+      if (statusFilter === 'uploaded' && order.status !== 11) return false
+      if (statusFilter === 'shipped' && !(order.status === 3 || order.track_status === 121 || (order.track_status && order.track_status >= 101 && order.track_status <= 121))) return false
+      if (statusFilter === 'canceled' && order.status !== 23) return false
+      if (statusFilter === 'in_transit' && getLastEventTag(order) !== 'In Transit') return false
+    }
+
+    // Tag filter
+    if (tagFilter !== 'all') {
+      const orderTag = getLastEventTag(order)
+      if (orderTag.toLowerCase() !== tagFilter.toLowerCase()) return false
+    }
     
-    return false
+    return true
+  })
+
+  // Sort orders by tag if sorting is enabled
+  const sortedFilteredOrders = [...allFilteredOrders].sort((a, b) => {
+    if (sortField === 'tag') {
+      const tagA = getLastEventTag(a).toLowerCase()
+      const tagB = getLastEventTag(b).toLowerCase()
+      
+      if (sortDirection === 'asc') {
+        return tagA.localeCompare(tagB)
+      } else {
+        return tagB.localeCompare(tagA)
+      }
+    }
+    return 0
   })
 
   // Apply client-side pagination to filtered results
-  const filteredTotalPages = Math.ceil(allFilteredOrders.length / pageSize)
+  const filteredTotalPages = Math.ceil(sortedFilteredOrders.length / pageSize)
   const filteredStartIndex = (currentPage - 1) * pageSize
   const filteredEndIndex = filteredStartIndex + pageSize
-  const filteredOrders = allFilteredOrders.slice(filteredStartIndex, filteredEndIndex)
+  const filteredOrders = sortedFilteredOrders.slice(filteredStartIndex, filteredEndIndex)
   
   // Reset to page 1 when filters change
   useEffect(() => {
     setCurrentPage(1)
-  }, [searchQuery, statusFilter])
+  }, [searchQuery, statusFilter, tagFilter, sortField, sortDirection])
 
   return (
     <div className="container mx-auto py-8 space-y-6">
@@ -330,7 +386,7 @@ export default function WarehouseOrdersPage() {
       <Card className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-0 shadow-lg">
         <CardContent className="pt-6">
           <Tabs value={statusFilter} onValueChange={setStatusFilter} className="w-full">
-            <TabsList className="grid w-full grid-cols-6 bg-muted">
+            <TabsList className="grid w-full grid-cols-7 bg-muted">
               <TabsTrigger value="all" className="flex items-center gap-2">
                 All Orders
                 <Badge variant="secondary" className="ml-1">
@@ -361,6 +417,12 @@ export default function WarehouseOrdersPage() {
                   {statusCounts.shipped}
                 </Badge>
               </TabsTrigger>
+              <TabsTrigger value="in_transit" className="flex items-center gap-2">
+                In Transit
+                <Badge variant="default" className="ml-1">
+                  {statusCounts.in_transit}
+                </Badge>
+              </TabsTrigger>
               <TabsTrigger value="canceled" className="flex items-center gap-2">
                 Canceled
                 <Badge variant="destructive" className="ml-1">
@@ -379,7 +441,7 @@ export default function WarehouseOrdersPage() {
           <CardDescription>Filter orders by date range and search</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
             <div className="space-y-2">
               <Label htmlFor="start-date">Start Date</Label>
               <Input
@@ -397,6 +459,26 @@ export default function WarehouseOrdersPage() {
                 value={endDate}
                 onChange={(e) => setEndDate(e.target.value)}
               />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="tag-filter">Last Event Tag</Label>
+              <select
+                id="tag-filter"
+                value={tagFilter}
+                onChange={(e) => setTagFilter(e.target.value)}
+                className="w-full h-10 px-3 rounded-md border bg-background text-sm"
+              >
+                <option value="all">All Tags</option>
+                {Array.from(
+                  new Set(
+                    orders.map(order => getLastEventTag(order))
+                  )
+                ).sort().map((tag) => (
+                  <option key={tag} value={tag}>
+                    {tag}
+                  </option>
+                ))}
+              </select>
             </div>
             <div className="space-y-2 md:col-span-2">
               <Label htmlFor="search">Search</Label>
@@ -513,6 +595,32 @@ export default function WarehouseOrdersPage() {
                     <TableHead>Email</TableHead>
                     <TableHead>Location</TableHead>
                     <TableHead>Status</TableHead>
+                    <TableHead>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-8 px-2 -ml-2"
+                        onClick={() => {
+                          if (sortField === 'tag') {
+                            setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc')
+                          } else {
+                            setSortField('tag')
+                            setSortDirection('asc')
+                          }
+                        }}
+                      >
+                        Last Event Tag
+                        {sortField === 'tag' ? (
+                          sortDirection === 'asc' ? (
+                            <ArrowUp className="ml-2 h-4 w-4" />
+                          ) : (
+                            <ArrowDown className="ml-2 h-4 w-4" />
+                          )
+                        ) : (
+                          <ArrowUpDown className="ml-2 h-4 w-4 opacity-50" />
+                        )}
+                      </Button>
+                    </TableHead>
                     <TableHead>Tracking</TableHead>
                     <TableHead>Date</TableHead>
                     <TableHead className="text-right">Actions</TableHead>
@@ -593,7 +701,14 @@ export default function WarehouseOrdersPage() {
                           </div>
                         </TableCell>
                         <TableCell>
-                          {getStatusBadge()}
+                          <div className="flex flex-col gap-1">
+                            {getStatusBadge()}
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant="outline" className="text-xs">
+                            {getLastEventTag(order)}
+                          </Badge>
                         </TableCell>
                         <TableCell>
                           {order.tracking_number ? (
@@ -654,6 +769,8 @@ export default function WarehouseOrdersPage() {
                               <TrackingTimeline 
                                 orderId={apiOrderId}
                                 trackingNumber={order.tracking_number}
+                                carrier={order.carrier}
+                                lastMileTracking={order.last_mile_tracking}
                               />
                             </div>
                           </TableCell>
@@ -740,6 +857,8 @@ export default function WarehouseOrdersPage() {
                 <TrackingTimeline
                   orderId={selectedOrder.order_id}
                   trackingNumber={selectedOrder.tracking_number}
+                  carrier={selectedOrder.carrier}
+                  lastMileTracking={selectedOrder.last_mile_tracking}
                 />
               )}
               {selectedOrder.info && selectedOrder.info.length > 0 && (

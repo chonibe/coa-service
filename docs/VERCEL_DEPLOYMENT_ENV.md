@@ -74,6 +74,40 @@ CHINADIVISION_API_KEY=your_chinadivision_api_key
 - Copy your API key
 - Your API key: `5f91972f8d59ec8039cecfec3adcead5`
 
+### Resend Email Service (Required for Email Notifications)
+```
+RESEND_API_KEY=re_your_resend_api_key
+EMAIL_FROM=noreply@yourdomain.com  # Optional, defaults to noreply@coa-service.com
+```
+
+**How to get:**
+1. **Sign up for Resend:**
+   - Go to https://resend.com
+   - Click "Sign Up" and create a free account
+   - Free tier includes 3,000 emails/month
+
+2. **Get your API key:**
+   - After signing up, go to https://resend.com/api-keys
+   - Click "Create API Key"
+   - Give it a name (e.g., "Production")
+   - Copy the API key (starts with `re_`)
+   - ⚠️ **Important:** Copy it immediately - you won't see it again!
+
+3. **Verify your domain (Optional but Recommended):**
+   - Go to https://resend.com/domains
+   - Click "Add Domain"
+   - Add your domain (e.g., `yourdomain.com`)
+   - Add the DNS records provided by Resend to your domain's DNS
+   - Once verified, you can use `noreply@yourdomain.com` as your FROM address
+
+4. **Add to Vercel:**
+   - Go to Vercel Dashboard → Your Project → Settings → Environment Variables
+   - Add `RESEND_API_KEY` with your API key value
+   - (Optional) Add `EMAIL_FROM` with your verified domain email
+   - Set environment to "Production" (and Preview/Development if needed)
+
+**Note:** If you don't verify a domain, Resend will use their default domain for sending, which may have lower deliverability.
+
 
 ## 🚀 Quick Setup Steps
 
@@ -128,6 +162,8 @@ NEXT_PUBLIC_APP_URL=https://dashboard.thestreetlamp.com
 CRON_SECRET=
 SUPABASE_SERVICE_ROLE_KEY=
 CHINADIVISION_API_KEY=5f91972f8d59ec8039cecfec3adcead5
+RESEND_API_KEY=re_your_api_key_here
+EMAIL_FROM=noreply@yourdomain.com
 ```
 
 Replace empty values with your actual credentials!

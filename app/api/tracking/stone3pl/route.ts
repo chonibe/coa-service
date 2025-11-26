@@ -61,7 +61,9 @@ export async function GET(request: NextRequest) {
       // Single order tracking
       try {
         const client = createSTONE3PLClient()
-        const tracking = await client.getTracking(orderId)
+        // Try to get tracking number from query params if available
+        const trackingNumber = searchParams.get('tracking_number') || undefined
+        const tracking = await client.getTracking(orderId, trackingNumber)
 
         // Format response with timeline
         const timeline = client.getTrackingTimeline(tracking)

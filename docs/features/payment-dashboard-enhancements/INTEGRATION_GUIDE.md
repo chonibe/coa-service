@@ -133,3 +133,4 @@ See SQL migration scripts in the database migrations folder.
 - Real-time updates use Server-Sent Events (SSE)
 - Mobile components are touch-optimized
 
+

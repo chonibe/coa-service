@@ -101,11 +101,22 @@ export default function ManageLinksPage() {
       const response = await fetch('/api/admin/warehouse-orders/share')
       const data = await response.json()
 
+      console.log('[Manage Links] API Response:', { 
+        ok: response.ok, 
+        status: response.status,
+        hasLinks: !!data.links,
+        linksCount: data.links?.length || 0,
+        dataKeys: Object.keys(data)
+      })
+
       if (!response.ok) {
         throw new Error(data.message || 'Failed to fetch tracking links')
       }
 
-      setLinks(data.links || [])
+      // Handle both response formats: { success: true, links } or { links }
+      const linksArray = data.links || []
+      console.log('[Manage Links] Setting links:', linksArray.length)
+      setLinks(linksArray)
     } catch (err: any) {
       console.error('Error fetching links:', err)
       setError(err.message || 'Failed to load tracking links')
@@ -865,25 +876,43 @@ export default function ManageLinksPage() {
                   {editOrderIds.length === 0 ? (
                     <p className="text-sm text-muted-foreground text-center py-4">No orders added</p>
                   ) : (
-                    editOrderIds.map((orderId) => (
-                      <div 
-                        key={orderId}
-                        className="flex items-center justify-between p-2 bg-muted rounded text-sm"
-                      >
-                        <span className="font-mono">{orderId}</span>
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => {
-                            setEditOrderIds(editOrderIds.filter(id => id !== orderId))
-                          }}
-                          className="h-6 w-6 p-0 text-destructive hover:text-destructive"
+                    editOrderIds.map((orderId) => {
+                      // Find the order in availableOrders to get the Platform Order ID
+                      const order = availableOrders.find(o => 
+                        (o.sys_order_id || o.order_id) === orderId
+                      )
+                      const platformOrderId = order?.order_id || 'N/A'
+                      const recipientName = order ? `${order.first_name || ''} ${order.last_name || ''}`.trim() : ''
+                      
+                      return (
+                        <div 
+                          key={orderId}
+                          className="flex items-center justify-between p-2 bg-muted rounded text-sm"
                         >
-                          <Trash2 className="h-3 w-3" />
-                        </Button>
-                      </div>
-                    ))
+                          <div className="flex-1 min-w-0">
+                            {recipientName && (
+                              <p className="text-sm font-medium truncate">{recipientName}</p>
+                            )}
+                            <div className="flex items-center gap-2">
+                              <span className="text-xs text-muted-foreground">Platform ID:</span>
+                              <span className="font-mono text-xs">{platformOrderId}</span>
+                            </div>
+                            <span className="text-xs text-muted-foreground font-mono">System ID: {orderId}</span>
+                          </div>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => {
+                              setEditOrderIds(editOrderIds.filter(id => id !== orderId))
+                            }}
+                            className="h-6 w-6 p-0 text-destructive hover:text-destructive"
+                          >
+                            <Trash2 className="h-3 w-3" />
+                          </Button>
+                        </div>
+                      )
+                    })
                   )}
                 </div>
 
@@ -926,6 +955,7 @@ export default function ManageLinksPage() {
                         .slice(0, 20) // Limit to 20 results for performance
                         .map((order) => {
                           const orderId = order.sys_order_id || order.order_id || ''
+                          const platformOrderId = order.order_id || 'N/A'
                           const recipientName = `${order.first_name || ''} ${order.last_name || ''}`.trim()
                           return (
                             <div
@@ -940,9 +970,13 @@ export default function ManageLinksPage() {
                             >
                               <div className="flex-1 min-w-0">
                                 <p className="text-sm font-medium truncate">{recipientName || 'Unknown'}</p>
-                                <p className="text-xs text-muted-foreground font-mono truncate">{orderId}</p>
+                                <div className="flex items-center gap-2 mt-1">
+                                  <span className="text-xs text-muted-foreground">Platform ID:</span>
+                                  <span className="text-xs font-mono font-medium">{platformOrderId}</span>
+                                </div>
+                                <span className="text-xs text-muted-foreground font-mono">System ID: {orderId}</span>
                                 {order.ship_email && (
-                                  <p className="text-xs text-muted-foreground truncate">{order.ship_email}</p>
+                                  <p className="text-xs text-muted-foreground truncate mt-1">{order.ship_email}</p>
                                 )}
                               </div>
                               <Button

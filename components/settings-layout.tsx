@@ -1,7 +1,7 @@
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { cn } from "@/lib/utils"
-import { LucideIcon } from "lucide-react"
+import type { ComponentType, SVGProps } from "react"
 
 interface SettingsLayoutProps {
   config: {
@@ -9,7 +9,7 @@ interface SettingsLayoutProps {
     items: {
       title: string
       href: string
-      icon: LucideIcon
+      icon: ComponentType<SVGProps<SVGSVGElement> & { className?: string }>
     }[]
   }[]
   children?: React.ReactNode

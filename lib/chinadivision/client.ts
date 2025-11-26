@@ -474,6 +474,33 @@ export class ChinaDivisionClient {
 
     return data.data || []
   }
+
+  /**
+   * Get all SKU inventory from ChinaDivision
+   * @returns Array of SKU inventory items
+   */
+  async getAllSkuInventory(): Promise<any[]> {
+    const response = await fetch(`${this.config.baseUrl}/sku-inventory-all`, {
+      method: 'GET',
+      headers: {
+        'apikey': this.config.apiKey,
+      },
+    })
+
+    if (!response.ok) {
+      throw new Error(`ChinaDivision API error: ${response.status} ${response.statusText}`)
+    }
+
+    // Read response as text first to avoid "Body has already been read" error
+    const responseText = await response.text()
+    const data = JSON.parse(responseText)
+
+    if (data.code !== 0) {
+      throw new Error(`ChinaDivision API error: ${data.msg} (code: ${data.code})`)
+    }
+
+    return data.data || []
+  }
 }
 
 /**

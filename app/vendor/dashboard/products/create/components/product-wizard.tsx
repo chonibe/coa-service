@@ -137,11 +137,23 @@ export function ProductWizard({ onComplete, onCancel, initialData, submissionId 
     }
   }
 
-  const handleNext = () => {
-    if (canProceed() && currentStep < steps.length - 1) {
-      setCurrentStep(currentStep + 1)
-      setError(null)
+  const [applyMaskFn, setApplyMaskFn] = useState<(() => Promise<void>) | null>(null)
+
+  const handleNext = async () => {
+    if (!canProceed() || currentStep >= steps.length - 1) return
+    
+    // If we're on the images step (step 2), apply the mask before proceeding
+    if (currentStep === 2 && applyMaskFn) {
+      try {
+        await applyMaskFn()
+      } catch (error) {
+        console.error("Error applying mask:", error)
+        // Continue anyway - mask application failure shouldn't block progression
+      }
     }
+    
+    setCurrentStep(currentStep + 1)
+    setError(null)
   }
 
   const handleBack = () => {
@@ -294,7 +306,11 @@ export function ProductWizard({ onComplete, onCancel, initialData, submissionId 
             <VariantsStep formData={formData} setFormData={setFormData} />
           )}
           {currentStep === 2 && (
-            <ImagesStep formData={formData} setFormData={setFormData} />
+            <ImagesStep 
+              formData={formData} 
+              setFormData={setFormData}
+              onMaskReady={setApplyMaskFn}
+            />
           )}
           {currentStep === 3 && (
             <ReviewStep formData={formData} fieldsConfig={fieldsConfig} />

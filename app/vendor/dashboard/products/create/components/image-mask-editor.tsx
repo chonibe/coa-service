@@ -3,13 +3,13 @@
 import { useState, useRef, useEffect, useCallback, useMemo } from "react"
 import { Button } from "@/components/ui/button"
 import { Slider } from "@/components/ui/slider"
-import { RotateCcw, ZoomIn, Move, Check } from "lucide-react"
+import { RotateCcw, ZoomIn, Move } from "lucide-react"
 import type { ProductImage } from "@/types/product-submission"
 
 interface ImageMaskEditorProps {
   image: ProductImage
   onUpdate: (settings: ProductImage["maskSettings"]) => void
-  onApplyMask?: (maskedImageUrl: string) => void // Callback to save masked image
+  onGenerateMask?: (generateFunction: () => Promise<string>) => void // Callback to expose generate function
 }
 
 // Mask dimensions
@@ -22,13 +22,12 @@ const MASK_CORNER_RADIUS = 138
 const MASK_INNER_X = (MASK_OUTER_SIZE - MASK_INNER_WIDTH) / 2
 const MASK_INNER_Y = (MASK_OUTER_SIZE - MASK_INNER_HEIGHT) / 2
 
-export function ImageMaskEditor({ image, onUpdate, onApplyMask }: ImageMaskEditorProps) {
+export function ImageMaskEditor({ image, onUpdate, onGenerateMask }: ImageMaskEditorProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const imageRef = useRef<HTMLImageElement | null>(null)
   const animationFrameRef = useRef<number | null>(null)
   const [isDragging, setIsDragging] = useState(false)
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 })
-  const [isGenerating, setIsGenerating] = useState(false)
   const [imageLoaded, setImageLoaded] = useState(false)
 
   const settings = image.maskSettings || {
@@ -76,6 +75,50 @@ export function ImageMaskEditor({ image, onUpdate, onApplyMask }: ImageMaskEdito
     ctx.quadraticCurveTo(x, y, x + radius, y)
     ctx.closePath()
   }, [])
+
+  // Helper function to create inner shadow with blur effect
+  const drawInnerShadow = useCallback((ctx: CanvasRenderingContext2D) => {
+    ctx.save()
+    
+    // Create inner shadow inside the rectangle
+    // We'll draw a gradient from the edges inward
+    const gradient = ctx.createRadialGradient(
+      MASK_OUTER_SIZE / 2, // center X
+      MASK_OUTER_SIZE / 2, // center Y
+      Math.min(MASK_INNER_WIDTH, MASK_INNER_HEIGHT) / 2, // inner radius
+      MASK_OUTER_SIZE / 2, // center X
+      MASK_OUTER_SIZE / 2, // center Y
+      Math.min(MASK_INNER_WIDTH, MASK_INNER_HEIGHT) / 2 + 30 // outer radius (with blur)
+    )
+    
+    // Create shadow using multiple overlapping strokes for blur effect
+    const blurRadius = 30
+    const steps = 10
+    
+    for (let i = 0; i < steps; i++) {
+      const progress = i / steps
+      const offset = blurRadius * progress
+      const opacity = 0.3 * (1 - progress) // Fade from 30% to 0%
+      
+      ctx.globalAlpha = opacity / steps
+      ctx.strokeStyle = "rgba(0, 0, 0, 1)"
+      ctx.lineWidth = 2
+      
+      // Draw inset rounded rectangle for inner shadow
+      drawRoundRect(
+        ctx,
+        MASK_INNER_X + offset,
+        MASK_INNER_Y + offset,
+        MASK_INNER_WIDTH - (offset * 2),
+        MASK_INNER_HEIGHT - (offset * 2),
+        Math.max(0, MASK_CORNER_RADIUS - offset)
+      )
+      ctx.stroke()
+    }
+    
+    ctx.globalAlpha = 1
+    ctx.restore()
+  }, [drawRoundRect])
 
   // Optimized draw function using requestAnimationFrame
   const drawCanvas = useCallback(() => {
@@ -149,6 +192,9 @@ export function ImageMaskEditor({ image, onUpdate, onApplyMask }: ImageMaskEdito
 
       ctx.restore()
 
+      // Add inner shadow effect
+      drawInnerShadow(ctx)
+
       // Redraw borders on top
       ctx.strokeStyle = "#e5e7eb"
       ctx.lineWidth = 4
@@ -159,7 +205,7 @@ export function ImageMaskEditor({ image, onUpdate, onApplyMask }: ImageMaskEdito
       drawRoundRect(ctx, MASK_INNER_X, MASK_INNER_Y, MASK_INNER_WIDTH, MASK_INNER_HEIGHT, MASK_CORNER_RADIUS)
       ctx.stroke()
     })
-  }, [currentScale, currentX, currentY, currentRotation, image.src, imageLoaded, drawRoundRect])
+  }, [currentScale, currentX, currentY, currentRotation, image.src, imageLoaded, drawRoundRect, drawInnerShadow])
 
   // Load and cache image
   useEffect(() => {
@@ -268,53 +314,55 @@ export function ImageMaskEditor({ image, onUpdate, onApplyMask }: ImageMaskEdito
   }, [defaultScale, handleUpdate])
 
   // Generate and export masked image
-  const handleApplyMask = useCallback(async () => {
-    if (!imageRef.current || !onApplyMask) return
-
-    setIsGenerating(true)
-    
-    try {
-      // Create a new canvas for the final masked image
-      const exportCanvas = document.createElement("canvas")
-      exportCanvas.width = MASK_OUTER_SIZE
-      exportCanvas.height = MASK_OUTER_SIZE
-      const exportCtx = exportCanvas.getContext("2d", { alpha: false })
-      
-      if (!exportCtx) {
-        throw new Error("Failed to create export canvas context")
-      }
-
-      // Fill white background
-      exportCtx.fillStyle = "#ffffff"
-      exportCtx.fillRect(0, 0, MASK_OUTER_SIZE, MASK_OUTER_SIZE)
-
-      // Create clipping path for the inner rectangle
-      drawRoundRect(exportCtx, MASK_INNER_X, MASK_INNER_Y, MASK_INNER_WIDTH, MASK_INNER_HEIGHT, MASK_CORNER_RADIUS)
-      exportCtx.clip()
-
-      // Apply transformations and draw image
-      const centerX = MASK_OUTER_SIZE / 2
-      const centerY = MASK_OUTER_SIZE / 2
-      
-      exportCtx.translate(centerX, centerY)
-      exportCtx.rotate((currentRotation * Math.PI) / 180)
-      exportCtx.scale(currentScale, currentScale)
-      exportCtx.translate(currentX, currentY)
-      
-      exportCtx.drawImage(imageRef.current, -imageRef.current.width / 2, -imageRef.current.height / 2)
-
-      // Export as base64 data URL
-      const maskedImageUrl = exportCanvas.toDataURL("image/png", 0.95)
-      
-      // Call the callback to save the masked image
-      onApplyMask(maskedImageUrl)
-      
-      setIsGenerating(false)
-    } catch (error) {
-      console.error("Error generating masked image:", error)
-      setIsGenerating(false)
+  const generateMaskedImage = useCallback(async (): Promise<string> => {
+    if (!imageRef.current) {
+      throw new Error("Image not loaded")
     }
-  }, [currentScale, currentX, currentY, currentRotation, onApplyMask, drawRoundRect])
+    
+    // Create a new canvas for the final masked image
+    const exportCanvas = document.createElement("canvas")
+    exportCanvas.width = MASK_OUTER_SIZE
+    exportCanvas.height = MASK_OUTER_SIZE
+    const exportCtx = exportCanvas.getContext("2d", { alpha: false })
+    
+    if (!exportCtx) {
+      throw new Error("Failed to create export canvas context")
+    }
+
+    // Fill white background
+    exportCtx.fillStyle = "#ffffff"
+    exportCtx.fillRect(0, 0, MASK_OUTER_SIZE, MASK_OUTER_SIZE)
+
+    // Create clipping path for the inner rectangle
+    drawRoundRect(exportCtx, MASK_INNER_X, MASK_INNER_Y, MASK_INNER_WIDTH, MASK_INNER_HEIGHT, MASK_CORNER_RADIUS)
+    exportCtx.clip()
+
+    // Apply transformations and draw image
+    const centerX = MASK_OUTER_SIZE / 2
+    const centerY = MASK_OUTER_SIZE / 2
+    
+    exportCtx.save()
+    exportCtx.translate(centerX, centerY)
+    exportCtx.rotate((currentRotation * Math.PI) / 180)
+    exportCtx.scale(currentScale, currentScale)
+    exportCtx.translate(currentX, currentY)
+    
+    exportCtx.drawImage(imageRef.current, -imageRef.current.width / 2, -imageRef.current.height / 2)
+    exportCtx.restore()
+
+    // Add inner shadow effect to exported image
+    drawInnerShadow(exportCtx)
+
+    // Export as base64 data URL
+    return exportCanvas.toDataURL("image/png", 0.95)
+  }, [currentScale, currentX, currentY, currentRotation, drawRoundRect, drawInnerShadow])
+
+  // Expose generate function to parent
+  useEffect(() => {
+    if (onGenerateMask && imageLoaded) {
+      onGenerateMask(generateMaskedImage)
+    }
+  }, [onGenerateMask, imageLoaded, generateMaskedImage])
 
   // Cleanup
   useEffect(() => {
@@ -404,27 +452,14 @@ export function ImageMaskEditor({ image, onUpdate, onApplyMask }: ImageMaskEdito
           <span>
             Position: X: {Math.round(currentX)}, Y: {Math.round(currentY)}
           </span>
-          <div className="flex gap-2">
-            <Button variant="outline" size="sm" onClick={handleReset}>
-              Reset
-            </Button>
-            {onApplyMask && imageLoaded && (
-              <Button 
-                variant="default" 
-                size="sm" 
-                onClick={handleApplyMask}
-                disabled={isGenerating}
-              >
-                <Check className="h-4 w-4 mr-2" />
-                {isGenerating ? "Generating..." : "Apply Mask"}
-              </Button>
-            )}
-          </div>
+          <Button variant="outline" size="sm" onClick={handleReset}>
+            Reset
+          </Button>
         </div>
 
         <p className="text-xs text-muted-foreground">
           Click and drag the image to reposition it within the frame. Use the sliders to adjust
-          scale and rotation. Click "Apply Mask" to save the masked image as your primary product image.
+          scale and rotation. The masked image will be automatically applied when you proceed to the next step.
         </p>
       </div>
     </div>

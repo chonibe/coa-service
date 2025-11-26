@@ -69,42 +69,43 @@ export class STONE3PLClient {
 
   /**
    * Get tracking information for a single order
-   * Uses ChinaDivision's order-track endpoint which provides STONE3PL tracking
-   * @param orderId - The Platform Order No. (e.g., "#1000101" or "1000101" - will be normalized)
+   * Uses ChinaDivision's order-track-list endpoint which provides STONE3PL tracking
+   * @param orderId - The Platform Order No. (e.g., "#1000101", "1000101", or "1260A" - will be normalized)
+   * @param trackingNumber - Optional tracking number to use as fallback
    */
-  async getTracking(orderId: string): Promise<STONE3PLTrackingInfo> {
-    const url = `${this.config.baseUrl}/order-track`
-    
-    // Normalize order ID: ensure it has # prefix if it's a number
+  async getTracking(orderId: string, trackingNumber?: string): Promise<STONE3PLTrackingInfo> {
+    // Normalize order ID: ensure it has # prefix if it doesn't already have one
+    // Handle both numeric (1237) and alphanumeric (1260A) order IDs
     const normalizedOrderId = orderId.startsWith('#') 
       ? orderId 
-      : /^\d+$/.test(orderId.trim()) 
-        ? `#${orderId.trim()}`
-        : orderId
+      : `#${orderId.trim()}`
     
-    console.log(`[STONE3PL] Fetching tracking for order: ${normalizedOrderId} (original: ${orderId})`)
+    console.log(`[STONE3PL] Fetching tracking for order: ${normalizedOrderId} (original: ${orderId})${trackingNumber ? `, tracking: ${trackingNumber}` : ''}`)
 
-    const response = await fetch(url, {
-      method: 'POST',
+    // Use order-track-list API which is more reliable
+    const url = new URL(`${this.config.baseUrl}/order-track-list`)
+    url.searchParams.set('order_ids', normalizedOrderId)
+
+    const response = await fetch(url.toString(), {
+      method: 'GET',
       headers: {
-        'Content-Type': 'application/json',
         'apikey': this.config.apiKey,
+        'User-Agent': 'Mozilla/5.0 (compatible; MSIE 5.01; Windows NT 5.0)',
       },
-      body: JSON.stringify({ order_id: normalizedOrderId }),
     })
 
     if (!response.ok) {
       const errorText = await response.text()
       // Handle 404 gracefully - tracking might not be available yet
       if (response.status === 404) {
-        console.log(`[STONE3PL] Tracking not found for order ${orderId} (404) - this is normal if order hasn't been shipped yet`)
+        console.log(`[STONE3PL] Tracking not found for order ${normalizedOrderId} (404) - this is normal if order hasn't been shipped yet`)
         throw new Error(`Tracking not found for order ${orderId}`)
       }
       console.error(`[STONE3PL] HTTP error ${response.status}:`, errorText)
       throw new Error(`STONE3PL API error: ${response.status} ${response.statusText}`)
     }
 
-    const data: STONE3PLTrackResponse = await response.json()
+    const data: STONE3PLTrackListResponse = await response.json()
 
     if (data.code !== 0) {
       // Handle case where order tracking doesn't exist yet
@@ -114,11 +115,12 @@ export class STONE3PLClient {
       throw new Error(`STONE3PL API error: ${data.msg} (code: ${data.code})`)
     }
 
-    if (!data.data) {
-      throw new Error('No tracking data returned from STONE3PL API')
+    if (!data.data || data.data.length === 0) {
+      throw new Error(`Tracking not found for order ${orderId}`)
     }
 
-    return data.data
+    // Return the first tracking result (should only be one for single order lookup)
+    return data.data[0]
   }
 
   /**

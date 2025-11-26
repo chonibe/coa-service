@@ -84,8 +84,18 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Generate the shareable URL
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
+    // Generate the shareable URL using custom domain
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL
+    if (!baseUrl) {
+      console.error('NEXT_PUBLIC_APP_URL is not set. Please configure your custom domain in environment variables.')
+      return NextResponse.json(
+        {
+          success: false,
+          message: 'Application URL not configured. Please set NEXT_PUBLIC_APP_URL environment variable.',
+        },
+        { status: 500 }
+      )
+    }
     const trackingUrl = `${baseUrl}/track/${token}`
 
     return NextResponse.json({
@@ -147,7 +157,18 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
+    // Use custom domain for all links
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL
+    if (!baseUrl) {
+      console.error('NEXT_PUBLIC_APP_URL is not set. Please configure your custom domain in environment variables.')
+      return NextResponse.json(
+        {
+          success: false,
+          message: 'Application URL not configured. Please set NEXT_PUBLIC_APP_URL environment variable.',
+        },
+        { status: 500 }
+      )
+    }
     const links = (data || []).map((link) => ({
       id: link.id,
       token: link.token,

@@ -2,7 +2,8 @@
 
 import { usePathname } from "next/navigation"
 import Link from "next/link"
-import { Home, Package, ShoppingCart, Award, Settings, FileText } from "lucide-react"
+import { HomeIcon, CubeIcon, ShoppingCartIcon, AcademicCapIcon, Cog6ToothIcon, DocumentTextIcon } from "@heroicons/react/24/outline"
+import { Icon } from "@/components/icon"
 import { cn } from "@/lib/utils"
 
 export function BottomNav() {
@@ -12,32 +13,32 @@ export function BottomNav() {
     {
       title: "Home",
       href: "/admin/dashboard",
-      icon: <Home className="h-5 w-5" />,
+      icon: <Icon size="md"><HomeIcon className="h-5 w-5" /></Icon>,
     },
     {
       title: "Products",
       href: "/admin/sync-products",
-      icon: <Package className="h-5 w-5" />,
+      icon: <Icon size="md"><CubeIcon className="h-5 w-5" /></Icon>,
     },
     {
       title: "Orders",
       href: "/admin/missing-orders",
-      icon: <ShoppingCart className="h-5 w-5" />,
+      icon: <Icon size="md"><ShoppingCartIcon className="h-5 w-5" /></Icon>,
     },
     {
       title: "Certs",
       href: "/admin/certificates",
-      icon: <Award className="h-5 w-5" />,
+      icon: <Icon size="md"><AcademicCapIcon className="h-5 w-5" /></Icon>,
     },
     {
       title: "Settings",
       href: "/admin/settings",
-      icon: <Settings className="h-5 w-5" />,
+      icon: <Icon size="md"><Cog6ToothIcon className="h-5 w-5" /></Icon>,
     },
     {
       title: "Tax Reporting",
       href: "/admin/tax-reporting",
-      icon: <FileText className="h-5 w-5" />,
+      icon: <Icon size="md"><DocumentTextIcon className="h-5 w-5" /></Icon>,
     },
   ]
 

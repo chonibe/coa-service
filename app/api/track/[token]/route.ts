@@ -9,10 +9,10 @@ import { createChinaDivisionClient } from '@/lib/chinadivision/client'
  */
 export async function GET(
   request: NextRequest,
-  { params }: { params: { token: string } }
+  { params }: { params: Promise<{ token: string }> | { token: string } }
 ) {
   try {
-    const { token } = params
+    const { token } = await Promise.resolve(params)
 
     if (!token) {
       return NextResponse.json(

@@ -6,29 +6,30 @@ import { useEffect, useMemo, useState } from "react"
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
 import {
-  BarChart,
-  Settings,
-  Package,
-  ShoppingCart,
-  Award,
-  Menu,
-  X,
-  Home,
-  Store,
-  Truck,
-  DollarSign,
-  RefreshCw,
-  FileText,
-  Clock,
-  Upload,
-  Smartphone,
-  Eye,
-  User,
-  Users,
-  Mail,
-  Pencil,
-  Warehouse,
-} from "lucide-react"
+  ChartBarIcon,
+  Cog6ToothIcon,
+  CubeIcon,
+  ShoppingCartIcon,
+  AcademicCapIcon,
+  Bars3Icon,
+  XMarkIcon,
+  HomeIcon,
+  BuildingStorefrontIcon,
+  TruckIcon,
+  CurrencyDollarIcon,
+  ArrowPathIcon,
+  DocumentTextIcon,
+  ClockIcon,
+  ArrowUpTrayIcon,
+  DevicePhoneMobileIcon,
+  EyeIcon,
+  UserIcon,
+  UsersIcon,
+  EnvelopeIcon,
+  PencilIcon,
+  BuildingOffice2Icon,
+} from "@heroicons/react/24/outline"
+import { Icon } from "@/components/icon"
 import { Button } from "@/components/ui/button"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
@@ -48,6 +49,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { ThemeToggle } from "@/components/theme-toggle"
 
 interface NavItem {
   title: string
@@ -85,32 +87,32 @@ export function AdminShell({ children }: AdminShellProps) {
     {
       title: "Dashboard",
       href: "/admin/dashboard",
-      icon: <Home className="h-5 w-5" />,
+      icon: <Icon size="md"><HomeIcon className="h-5 w-5" /></Icon>,
     },
     {
       title: "Products",
       href: "/admin/sync-products",
-      icon: <Package className="h-5 w-5" />,
+      icon: <Icon size="md"><CubeIcon className="h-5 w-5" /></Icon>,
       submenu: [
         {
           title: "Sync Products",
           href: "/admin/sync-products",
-          icon: <Package className="h-4 w-4" />,
+          icon: <Icon size="sm"><CubeIcon className="h-4 w-4" /></Icon>,
         },
         {
           title: "Product Submissions",
           href: "/admin/products/submissions",
-          icon: <Upload className="h-4 w-4" />,
+          icon: <Icon size="sm"><ArrowUpTrayIcon className="h-4 w-4" /></Icon>,
         },
         {
           title: "Product Editions",
           href: "/admin/product-editions",
-          icon: <Award className="h-4 w-4" />,
+          icon: <Icon size="sm"><AcademicCapIcon className="h-4 w-4" /></Icon>,
         },
         {
           title: "Sync Vendor Names",
           href: "/admin/sync-vendor-names",
-          icon: <RefreshCw className="h-4 w-4" />,
+          icon: <Icon size="sm"><ArrowPathIcon className="h-4 w-4" /></Icon>,
         },
       ],
       expanded: false,
@@ -118,22 +120,22 @@ export function AdminShell({ children }: AdminShellProps) {
     {
       title: "Orders",
       href: "/admin/missing-orders",
-      icon: <ShoppingCart className="h-5 w-5" />,
+      icon: <Icon size="md"><ShoppingCartIcon className="h-5 w-5" /></Icon>,
       submenu: [
         {
           title: "All Orders",
           href: "/admin/orders",
-          icon: <ShoppingCart className="h-4 w-4" />,
+          icon: <Icon size="sm"><ShoppingCartIcon className="h-4 w-4" /></Icon>,
         },
         {
           title: "Missing Orders",
           href: "/admin/missing-orders",
-          icon: <ShoppingCart className="h-4 w-4" />,
+          icon: <Icon size="sm"><ShoppingCartIcon className="h-4 w-4" /></Icon>,
         },
         {
           title: "Shopify Sync",
           href: "/admin/shopify-sync",
-          icon: <Store className="h-4 w-4" />,
+          icon: <Icon size="sm"><BuildingStorefrontIcon className="h-4 w-4" /></Icon>,
         },
       ],
       expanded: false,
@@ -141,30 +143,35 @@ export function AdminShell({ children }: AdminShellProps) {
     {
       title: "Warehouse",
       href: "/admin/warehouse/orders",
-      icon: <Warehouse className="h-5 w-5" />,
+      icon: <Icon size="md"><BuildingOffice2Icon className="h-5 w-5" /></Icon>,
       submenu: [
         {
           title: "Warehouse Orders",
           href: "/admin/warehouse/orders",
-          icon: <Warehouse className="h-4 w-4" />,
+          icon: <Icon size="sm"><BuildingOffice2Icon className="h-4 w-4" /></Icon>,
+        },
+        {
+          title: "Inventory",
+          href: "/admin/warehouse/inventory",
+          icon: <Icon size="sm"><CubeIcon className="h-4 w-4" /></Icon>,
         },
         {
           title: "Manage Links",
           href: "/admin/warehouse/links",
-          icon: <FileText className="h-4 w-4" />,
+          icon: <Icon size="sm"><DocumentTextIcon className="h-4 w-4" /></Icon>,
         },
       ],
-      expanded: false,
+      expanded: pathname?.startsWith('/admin/warehouse') || false,
     },
     {
       title: "Vendors",
       href: "/admin/vendors",
-      icon: <Truck className="h-5 w-5" />,
+      icon: <Icon size="md"><TruckIcon className="h-5 w-5" /></Icon>,
       submenu: [
         {
           title: "Vendor List",
           href: "/admin/vendors",
-          icon: <Truck className="h-4 w-4" />,
+          icon: <Icon size="sm"><TruckIcon className="h-4 w-4" /></Icon>,
         },
       ],
       expanded: false,
@@ -172,32 +179,32 @@ export function AdminShell({ children }: AdminShellProps) {
     {
       title: "Payouts",
       href: "/admin/vendors/payouts",
-      icon: <DollarSign className="h-5 w-5" />,
+      icon: <Icon size="md"><CurrencyDollarIcon className="h-5 w-5" /></Icon>,
       submenu: [
         {
           title: "Payout Manager",
           href: "/admin/vendors/payouts/admin",
-          icon: <DollarSign className="h-4 w-4" />,
+          icon: <Icon size="sm"><CurrencyDollarIcon className="h-4 w-4" /></Icon>,
         },
         {
           title: "Manual Payouts",
           href: "/admin/vendors/payouts/manual",
-          icon: <DollarSign className="h-4 w-4" />,
+          icon: <Icon size="sm"><CurrencyDollarIcon className="h-4 w-4" /></Icon>,
         },
         {
           title: "Payout Calculator",
           href: "/admin/vendors/payouts/calculate",
-          icon: <DollarSign className="h-4 w-4" />,
+          icon: <Icon size="sm"><CurrencyDollarIcon className="h-4 w-4" /></Icon>,
         },
         {
           title: "Payout Settings",
           href: "/admin/vendors/payouts",
-          icon: <Settings className="h-4 w-4" />,
+          icon: <Icon size="sm"><Cog6ToothIcon className="h-4 w-4" /></Icon>,
         },
         {
           title: "Payout History",
           href: "/admin/vendors/payouts/history",
-          icon: <Clock className="h-4 w-4" />,
+          icon: <Icon size="sm"><ClockIcon className="h-4 w-4" /></Icon>,
         },
       ],
       expanded: false,
@@ -205,67 +212,67 @@ export function AdminShell({ children }: AdminShellProps) {
     {
       title: "Reports",
       href: "/admin/tax-reporting",
-      icon: <FileText className="h-5 w-5" />,
+      icon: <Icon size="md"><DocumentTextIcon className="h-5 w-5" /></Icon>,
       submenu: [
         {
           title: "Tax Reporting",
           href: "/admin/tax-reporting",
-          icon: <FileText className="h-4 w-4" />,
+          icon: <Icon size="sm"><DocumentTextIcon className="h-4 w-4" /></Icon>,
         },
         {
           title: "Sales Reports",
           href: "/admin/reports/sales",
-          icon: <BarChart className="h-4 w-4" />,
+          icon: <Icon size="sm"><ChartBarIcon className="h-4 w-4" /></Icon>,
         },
       ],
       expanded: false,
     },
     {
       title: "Certificates",
-      icon: <FileText className="h-4 w-4" />,
+      icon: <Icon size="sm"><DocumentTextIcon className="h-4 w-4" /></Icon>,
       submenu: [
         {
           title: "Management",
           href: "/admin/certificates/management",
-          icon: <Settings className="h-4 w-4" />,
+          icon: <Icon size="sm"><Cog6ToothIcon className="h-4 w-4" /></Icon>,
         },
         {
           title: "Sync",
           href: "/admin/certificates/sync",
-          icon: <RefreshCw className="h-4 w-4" />,
+          icon: <Icon size="sm"><ArrowPathIcon className="h-4 w-4" /></Icon>,
         },
         {
           title: "Bulk Operations",
           href: "/admin/certificates/bulk",
-          icon: <Upload className="h-4 w-4" />,
+          icon: <Icon size="sm"><ArrowUpTrayIcon className="h-4 w-4" /></Icon>,
         },
         {
           title: "NFC Tags",
           href: "/admin/certificates/nfc",
-          icon: <Smartphone className="h-4 w-4" />,
+          icon: <Icon size="sm"><DevicePhoneMobileIcon className="h-4 w-4" /></Icon>,
         },
         {
           title: "Preview",
           href: "/admin/certificates/preview",
-          icon: <Eye className="h-4 w-4" />,
+          icon: <Icon size="sm"><EyeIcon className="h-4 w-4" /></Icon>,
         },
       ],
     },
     {
       title: "Preview",
-      icon: <Eye className="h-4 w-4" />,
+      icon: <Icon size="sm"><EyeIcon className="h-4 w-4" /></Icon>,
       submenu: [
         {
           title: "Customer View",
           href: "/admin/preview/customer",
-          icon: <User className="h-4 w-4" />,
+          icon: <Icon size="sm"><UserIcon className="h-4 w-4" /></Icon>,
         },
       ],
     },
     {
       title: "Settings",
       href: "/admin/settings",
-      icon: <Settings className="h-5 w-5" />,
+      icon: <Icon size="md"><Cog6ToothIcon className="h-5 w-5" /></Icon>,
     },
   ]
 
@@ -476,7 +483,7 @@ export function AdminShell({ children }: AdminShellProps) {
         onClick={openVendorChooser}
         className="flex items-center gap-2"
       >
-        <Users className="h-4 w-4" />
+        <Icon size="sm"><UsersIcon className="h-4 w-4" /></Icon>
         Vendor Explorer
       </Button>
     </div>
@@ -634,7 +641,7 @@ export function AdminShell({ children }: AdminShellProps) {
             </p>
             <div className="space-y-2">
               <label htmlFor="vendor-email" className="text-sm font-medium flex items-center gap-2">
-                <Mail className="h-4 w-4 text-muted-foreground" />
+                <Icon size="sm"><EnvelopeIcon className="h-4 w-4 text-muted-foreground" /></Icon>
                 Vendor email
               </label>
               <Input
@@ -698,8 +705,10 @@ export function AdminShell({ children }: AdminShellProps) {
       <header className="sticky top-0 z-30 flex h-16 items-center gap-4 border-b border-slate-200/50 dark:border-slate-800/50 bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl px-4 sm:px-6">
         <Sheet open={open} onOpenChange={setOpen}>
           <SheetTrigger asChild>
-            <Button variant="outline" size="icon" className="md:hidden">
-              <Menu className="h-6 w-6" />
+            <Button variant="outline" size="icon" className="md:hidden flex items-center justify-center">
+              <Icon size="lg">
+                <Bars3Icon className="h-6 w-6" />
+              </Icon>
               <span className="sr-only">Toggle menu</span>
             </Button>
           </SheetTrigger>
@@ -710,13 +719,15 @@ export function AdminShell({ children }: AdminShellProps) {
                   <div className="relative">
                     <div className="absolute inset-0 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-lg blur-md opacity-50 animate-pulse" />
                     <div className="relative bg-gradient-to-br from-blue-500 to-indigo-600 p-1.5 rounded-lg">
-                      <Award className="h-5 w-5 text-white" />
+                      <AcademicCapIcon className="h-5 w-5 text-white" />
                     </div>
                   </div>
                   {isMobile ? <span className="font-medium bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">{currentSection}</span> : <span className="bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">Admin Dashboard</span>}
                 </Link>
-                <Button variant="ghost" size="icon" className="ml-auto" onClick={() => setOpen(false)}>
-                  <X className="h-5 w-5" />
+                <Button variant="ghost" size="icon" className="ml-auto flex items-center justify-center" onClick={() => setOpen(false)}>
+                  <Icon size="md">
+                    <XMarkIcon className="h-5 w-5" />
+                  </Icon>
                   <span className="sr-only">Close</span>
                 </Button>
               </div>
@@ -799,10 +810,21 @@ export function AdminShell({ children }: AdminShellProps) {
           </SheetContent>
         </Sheet>
         <Link href="/admin" className="flex items-center gap-2 font-semibold">
-          <div className="relative">
+          <img 
+            src="https://www.thestreetlamp.com/cdn/shop/files/Logo_b6785991-7284-43f7-ba3c-95cd7b22041a.png?v=1737462053&width=140" 
+            alt="Street Lamp Logo" 
+            className="h-8 w-auto object-contain"
+            onError={(e) => {
+              // Fallback to icon if image fails to load
+              e.currentTarget.style.display = 'none'
+              const fallback = e.currentTarget.nextElementSibling as HTMLElement
+              if (fallback) fallback.style.display = 'block'
+            }}
+          />
+          <div className="relative hidden">
             <div className="absolute inset-0 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-lg blur-md opacity-50 animate-pulse" />
             <div className="relative bg-gradient-to-br from-blue-500 to-indigo-600 p-1.5 rounded-lg">
-              <Award className="h-5 w-5 text-white" />
+              <Icon size="md"><AcademicCapIcon className="h-5 w-5 text-white" /></Icon>
             </div>
           </div>
           <span className={`${isMobile ? "sr-only" : "inline-block"} bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent`}>Admin Dashboard</span>
@@ -812,9 +834,10 @@ export function AdminShell({ children }: AdminShellProps) {
             {renderViewToggle("hidden md:flex")}
           </div>
           <Button variant="outline" size="sm" className="md:hidden" onClick={openVendorChooser}>
-            <Users className="h-4 w-4 mr-2" />
+            <Icon size="sm"><UsersIcon className="h-4 w-4 mr-2" /></Icon>
             Vendor Chooser
           </Button>
+          <ThemeToggle />
           <LogoutButton className="hidden md:flex" />
         </div>
       </header>

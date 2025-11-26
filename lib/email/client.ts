@@ -28,6 +28,7 @@ export interface EmailResult {
   success: boolean
   messageId?: string
   error?: string
+  errorDetails?: any
 }
 
 /**
@@ -43,7 +44,14 @@ export async function sendEmail(options: EmailOptions): Promise<EmailResult> {
   }
 
   try {
-    const fromEmail = options.from || process.env.EMAIL_FROM || 'noreply@coa-service.com'
+    const fromEmail = options.from || process.env.EMAIL_FROM || 'onboarding@resend.dev'
+    
+    console.log('[Email] Attempting to send email:', {
+      from: fromEmail,
+      to: Array.isArray(options.to) ? options.to : [options.to],
+      subject: options.subject,
+      hasHtml: !!options.html,
+    })
     
     const result = await resend.emails.send({
       from: fromEmail,
@@ -59,19 +67,33 @@ export async function sendEmail(options: EmailOptions): Promise<EmailResult> {
     })
 
     if (result.error) {
-      console.error('Resend API error:', result.error)
+      console.error('[Email] Resend API error:', {
+        error: result.error,
+        message: result.error.message,
+        name: result.error.name,
+      })
       return {
         success: false,
         error: result.error.message || 'Failed to send email',
+        errorDetails: result.error,
       }
     }
+
+    console.log('[Email] Email sent successfully:', {
+      messageId: result.data?.id,
+      to: Array.isArray(options.to) ? options.to : [options.to],
+    })
 
     return {
       success: true,
       messageId: result.data?.id,
     }
   } catch (error: any) {
-    console.error('Error sending email:', error)
+    console.error('[Email] Exception sending email:', {
+      error: error,
+      message: error.message,
+      stack: error.stack,
+    })
     return {
       success: false,
       error: error.message || 'Unknown error sending email',

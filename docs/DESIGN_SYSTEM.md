@@ -14,9 +14,9 @@ Our design system is built using Shadcn/UI with a unified glassmorphism and grad
 
 ### Glassmorphism
 All cards, alerts, and containers use glassmorphism by default:
-- **Cards**: `bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-0 shadow-xl`
-- **Containers**: `bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm`
-- **Hover States**: `hover:bg-white/50 dark:hover:bg-slate-900/50 backdrop-blur-sm`
+- **Cards**: `bg-white/95 dark:bg-slate-900/80 backdrop-blur-xl border border-slate-200/50 dark:border-slate-700/50 shadow-xl`
+- **Containers**: `bg-white/90 dark:bg-slate-900/80 backdrop-blur-sm`
+- **Hover States**: `hover:bg-slate-50/80 dark:hover:bg-slate-900/50 backdrop-blur-sm`
 
 ### Gradients
 - **Primary Actions**: `bg-gradient-to-r from-blue-600 to-indigo-600`
@@ -71,9 +71,9 @@ All buttons automatically use the design system:
 
 ### Card (Unified)
 All cards automatically use glassmorphism:
-- Background: `bg-white/80 dark:bg-slate-900/80`
+- Background: `bg-white/95 dark:bg-slate-900/80`
 - Backdrop: `backdrop-blur-xl`
-- Border: `border-0` (no border, shadow provides depth)
+- Border: `border border-slate-200/50 dark:border-slate-700/50` (subtle border for light mode clarity)
 - Shadow: `shadow-xl`
 
 ### Alert (Unified)
@@ -112,9 +112,29 @@ All tabs automatically use glassmorphism:
 - High Contrast Mode
 
 ## Dark/Light Mode
-- Seamless theme switching
-- Persistent theme preference
-- System theme detection
+- **Default Theme**: Light mode (bright, clean interface)
+- **Seamless Theme Switching**: Use the `ThemeToggle` component for easy switching
+- **Persistent Theme Preference**: User preferences are saved automatically
+- **System Theme Detection**: Supports system preference detection
+- **Light Mode Features**:
+  - Bright white backgrounds with subtle transparency
+  - Clear borders and shadows for depth
+  - High contrast text for readability
+  - Vibrant gradient accents
+- **Dark Mode Features**:
+  - Deep slate backgrounds
+  - Reduced eye strain for low-light environments
+  - Maintains all design system consistency
+
+### Theme Toggle Component
+Use the `ThemeToggle` component to allow users to switch between light, dark, and system themes:
+
+```typescript
+import { ThemeToggle } from "@/components/theme-toggle"
+
+// Add to your navigation or header
+<ThemeToggle />
+```
 
 ## Performance Considerations
 - Minimal CSS overhead

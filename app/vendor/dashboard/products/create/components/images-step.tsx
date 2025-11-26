@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useRef, useEffect } from "react"
+import { useState, useRef, useEffect, useImperativeHandle, forwardRef } from "react"
 import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
@@ -13,6 +13,7 @@ import type { ProductSubmissionData, ProductImage } from "@/types/product-submis
 interface ImagesStepProps {
   formData: ProductSubmissionData
   setFormData: (data: ProductSubmissionData) => void
+  onMaskReady?: (applyMask: () => Promise<void>) => void // Expose apply mask function to parent
 }
 
 interface VendorImage {
@@ -23,7 +24,7 @@ interface VendorImage {
   size?: number
 }
 
-export function ImagesStep({ formData, setFormData }: ImagesStepProps) {
+export function ImagesStep({ formData, setFormData, onMaskReady }: ImagesStepProps) {
   const [uploading, setUploading] = useState(false)
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null)
   const [vendorImages, setVendorImages] = useState<VendorImage[]>([])
@@ -31,6 +32,7 @@ export function ImagesStep({ formData, setFormData }: ImagesStepProps) {
   const [loadingImages, setLoadingImages] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const dragOverIndex = useRef<number | null>(null)
+  const generateMaskRef = useRef<(() => Promise<string>) | null>(null)
 
   const images = formData.images || []
 
@@ -186,18 +188,33 @@ export function ImagesStep({ formData, setFormData }: ImagesStepProps) {
     }
   }
 
-  const handleApplyMask = (maskedImageUrl: string) => {
-    if (images.length > 0) {
-      const updatedImages = [...images]
-      // Replace the primary image src with the masked image
-      updatedImages[0] = {
-        ...updatedImages[0],
-        src: maskedImageUrl,
-        maskSettings: updatedImages[0].maskSettings, // Keep mask settings for reference
-      }
-      setFormData({ ...formData, images: updatedImages })
-    }
+  const handleGenerateMask = (generateFn: () => Promise<string>) => {
+    generateMaskRef.current = generateFn
   }
+
+  // Expose applyMask function to parent
+  useEffect(() => {
+    if (onMaskReady) {
+      const applyMask = async () => {
+        if (images.length > 0 && generateMaskRef.current && images[0].maskSettings) {
+          try {
+            const maskedImageUrl = await generateMaskRef.current()
+            const updatedImages = [...images]
+            updatedImages[0] = {
+              ...updatedImages[0],
+              src: maskedImageUrl,
+              maskSettings: updatedImages[0].maskSettings, // Keep mask settings for reference
+            }
+            setFormData({ ...formData, images: updatedImages })
+          } catch (error) {
+            console.error("Error applying mask:", error)
+            throw error
+          }
+        }
+      }
+      onMaskReady(applyMask)
+    }
+  }, [onMaskReady, images, formData, setFormData])
 
   const firstImage = images.length > 0 ? images[0] : null
 
@@ -293,7 +310,7 @@ export function ImagesStep({ formData, setFormData }: ImagesStepProps) {
                 <div>
                   <Label className="text-base font-semibold">Product Preview Image</Label>
                   <p className="text-xs text-muted-foreground">
-                    Position your image within the mask frame. Click "Apply Mask" to save the masked image as your primary product image.
+                    Position your image within the mask frame. The masked image will be automatically applied when you proceed to the next step.
                   </p>
                 </div>
                 <Button
@@ -308,7 +325,7 @@ export function ImagesStep({ formData, setFormData }: ImagesStepProps) {
               <ImageMaskEditor
                 image={firstImage}
                 onUpdate={updateMaskSettings}
-                onApplyMask={handleApplyMask}
+                onGenerateMask={handleGenerateMask}
               />
             </div>
           )}

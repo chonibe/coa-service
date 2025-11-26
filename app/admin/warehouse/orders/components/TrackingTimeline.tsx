@@ -5,7 +5,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Alert, AlertDescription } from '@/components/ui/alert'
-import { Truck, Clock, CheckCircle2, AlertCircle, RefreshCw, MapPin } from 'lucide-react'
+import { TruckIcon, ClockIcon, CheckCircleIcon, ExclamationCircleIcon, ArrowPathIcon, MapPinIcon } from '@heroicons/react/24/outline'
+import { Icon } from '@/components/icon'
 import { Button } from '@/components/ui/button'
 
 interface TrackingTimelineProps {
@@ -13,6 +14,8 @@ interface TrackingTimelineProps {
   trackingNumber?: string
   compact?: boolean
   primaryColor?: string
+  carrier?: string
+  lastMileTracking?: string
 }
 
 interface TrackingEvent {
@@ -40,6 +43,8 @@ interface TrackingData {
   track_status_name?: string
   error_code?: number
   error_msg?: string
+  carrier?: string
+  last_mile_tracking?: string
   timeline?: {
     events: TrackingEvent[]
     currentStatus: {
@@ -64,7 +69,7 @@ interface TrackingData {
   }
 }
 
-export function TrackingTimeline({ orderId, trackingNumber, compact = false, primaryColor }: TrackingTimelineProps) {
+export function TrackingTimeline({ orderId, trackingNumber, compact = false, primaryColor, carrier, lastMileTracking }: TrackingTimelineProps) {
   const [trackingData, setTrackingData] = useState<TrackingData | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -76,7 +81,11 @@ export function TrackingTimeline({ orderId, trackingNumber, compact = false, pri
       setIsLoading(true)
       setError(null)
 
-      const response = await fetch(`/api/tracking/stone3pl?order_id=${encodeURIComponent(orderId)}`)
+      // Include tracking number if available for better lookup
+      const url = trackingNumber 
+        ? `/api/tracking/stone3pl?order_id=${encodeURIComponent(orderId)}&tracking_number=${encodeURIComponent(trackingNumber)}`
+        : `/api/tracking/stone3pl?order_id=${encodeURIComponent(orderId)}`
+      const response = await fetch(url)
       const data = await response.json()
 
       if (!response.ok) {
@@ -89,7 +98,12 @@ export function TrackingTimeline({ orderId, trackingNumber, compact = false, pri
         throw new Error(data.message || 'Failed to fetch tracking')
       }
 
-      setTrackingData(data.tracking)
+      // Merge carrier and last_mile_tracking from props if available
+      setTrackingData({
+        ...data.tracking,
+        carrier: data.tracking?.carrier || carrier,
+        last_mile_tracking: data.tracking?.last_mile_tracking || lastMileTracking,
+      })
     } catch (err: any) {
       console.error('Error fetching tracking:', err)
       // Don't show error for 404s - tracking might not be available yet
@@ -123,7 +137,7 @@ export function TrackingTimeline({ orderId, trackingNumber, compact = false, pri
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <Truck className="h-5 w-5" />
+            <Icon size="md"><TruckIcon className="h-5 w-5" /></Icon>
             Tracking Timeline
           </CardTitle>
         </CardHeader>
@@ -143,13 +157,13 @@ export function TrackingTimeline({ orderId, trackingNumber, compact = false, pri
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <Truck className="h-5 w-5" />
+            <Icon size="md"><TruckIcon className="h-5 w-5" /></Icon>
             Tracking Timeline
           </CardTitle>
         </CardHeader>
         <CardContent>
           <Alert variant="destructive">
-            <AlertCircle className="h-4 w-4" />
+            <Icon size="sm"><ExclamationCircleIcon className="h-4 w-4" /></Icon>
             <AlertDescription>
               {error}
               <Button
@@ -158,7 +172,7 @@ export function TrackingTimeline({ orderId, trackingNumber, compact = false, pri
                 className="mt-2"
                 onClick={fetchTracking}
               >
-                <RefreshCw className="h-4 w-4 mr-2" />
+                <Icon size="sm"><ArrowPathIcon className="h-4 w-4 mr-2" /></Icon>
                 Retry
               </Button>
             </AlertDescription>
@@ -172,7 +186,7 @@ export function TrackingTimeline({ orderId, trackingNumber, compact = false, pri
     if (compact) {
       return (
         <div className="text-xs text-center text-muted-foreground py-2">
-          <Clock className="h-4 w-4 mx-auto mb-1 opacity-50" />
+          <Icon size="sm"><ClockIcon className="h-4 w-4 mx-auto mb-1 opacity-50" /></Icon>
           <p>Tracking not available yet</p>
         </div>
       )
@@ -184,10 +198,10 @@ export function TrackingTimeline({ orderId, trackingNumber, compact = false, pri
   const statusInfo = trackingData.status_info || trackingData.timeline?.currentStatus
 
   const getStatusIcon = (statusCode?: number) => {
-    if (!statusCode) return <Clock className="h-4 w-4" />
-    if (statusCode === 121) return <CheckCircle2 className="h-4 w-4 text-green-500" />
-    if (statusCode === 131 || statusCode === 132) return <AlertCircle className="h-4 w-4 text-red-500" />
-    return <Truck className="h-4 w-4 text-blue-500" />
+    if (!statusCode) return <Icon size="sm"><ClockIcon className="h-4 w-4" /></Icon>
+    if (statusCode === 121) return <Icon size="sm"><CheckCircleIcon className="h-4 w-4 text-green-500" /></Icon>
+    if (statusCode === 131 || statusCode === 132) return <Icon size="sm"><ExclamationCircleIcon className="h-4 w-4 text-red-500" /></Icon>
+    return <Icon size="sm"><TruckIcon className="h-4 w-4 text-blue-500" /></Icon>
   }
 
   const getStatusBadge = (statusCode?: number) => {
@@ -236,6 +250,15 @@ export function TrackingTimeline({ orderId, trackingNumber, compact = false, pri
       return description
     }
     
+    // Check if latest event is a last mile event
+    const isLatestLastMile = latestEvent && (() => {
+      const desc = latestEvent.description.toLowerCase()
+      return desc.includes('out for delivery') || 
+             desc.includes('delivered') || 
+             desc.includes('delivery') ||
+             (latestEvent.country && latestEvent.country !== 'China' && latestEvent.country !== 'CN')
+    })()
+    
     return (
       <div className="space-y-2">
         {/* Latest Event - STONE3PL Style */}
@@ -256,6 +279,23 @@ export function TrackingTimeline({ orderId, trackingNumber, compact = false, pri
                     {latestEvent.parsedTime.stone3plFormat}
                   </div>
                 )}
+                {/* Last Mile Courier Info for Latest Event */}
+                {isLatestLastMile && trackingData && (trackingData.carrier || trackingData.last_mile_tracking) && (
+                  <div className="mt-1.5 pt-1.5 border-t space-y-0.5" style={{ borderColor: 'var(--brand-primary-alpha-20)' }}>
+                    {trackingData.carrier && (
+                      <div className="text-[10px]">
+                        <span className="text-muted-foreground">Courier: </span>
+                        <span className="font-semibold">{trackingData.carrier}</span>
+                      </div>
+                    )}
+                    {trackingData.last_mile_tracking && (
+                      <div className="text-[10px]">
+                        <span className="text-muted-foreground">Tracking: </span>
+                        <span className="font-mono">{trackingData.last_mile_tracking}</span>
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -268,6 +308,11 @@ export function TrackingTimeline({ orderId, trackingNumber, compact = false, pri
               {events.slice(0, 3).map((event, index) => {
                 const locationStr = getLocationString(event)
                 const statusStr = getStatusFromDescription(event.description)
+                const desc = event.description.toLowerCase()
+                const isLastMileEvent = desc.includes('out for delivery') || 
+                                       desc.includes('delivered') || 
+                                       desc.includes('delivery') ||
+                                       (event.country && event.country !== 'China' && event.country !== 'CN')
                 
                 return (
                   <div key={index} className="flex items-start gap-2 text-xs">
@@ -280,6 +325,23 @@ export function TrackingTimeline({ orderId, trackingNumber, compact = false, pri
                       {event.parsedTime?.stone3plFormat && (
                         <div className="text-muted-foreground mt-0.5 text-xs">
                           {event.parsedTime.stone3plFormat}
+                        </div>
+                      )}
+                      {/* Last Mile Courier Info in Compact View */}
+                      {isLastMileEvent && index === 0 && (trackingData.carrier || trackingData.last_mile_tracking) && (
+                        <div className="mt-1.5 pt-1.5 border-t space-y-0.5" style={{ borderColor: 'var(--brand-primary-alpha-20)' }}>
+                          {trackingData.carrier && (
+                            <div className="text-[10px]">
+                              <span className="text-muted-foreground">Courier: </span>
+                              <span className="font-semibold">{trackingData.carrier}</span>
+                            </div>
+                          )}
+                          {trackingData.last_mile_tracking && (
+                            <div className="text-[10px]">
+                              <span className="text-muted-foreground">Tracking: </span>
+                              <span className="font-mono">{trackingData.last_mile_tracking}</span>
+                            </div>
+                          )}
                         </div>
                       )}
                     </div>
@@ -297,7 +359,7 @@ export function TrackingTimeline({ orderId, trackingNumber, compact = false, pri
         
         {events.length === 0 && (
           <div className="text-xs text-center text-muted-foreground py-2">
-            <Clock className="h-4 w-4 mx-auto mb-1 opacity-50" />
+            <Icon size="sm"><ClockIcon className="h-4 w-4 mx-auto mb-1 opacity-50" /></Icon>
             <p>No tracking updates yet</p>
           </div>
         )}
@@ -312,7 +374,7 @@ export function TrackingTimeline({ orderId, trackingNumber, compact = false, pri
         <div className="flex items-center justify-between">
           <div>
             <CardTitle className="flex items-center gap-2">
-              <Truck className="h-5 w-5" />
+              <Icon size="md"><TruckIcon className="h-5 w-5" /></Icon>
               STONE3PL Tracking Timeline
             </CardTitle>
             <CardDescription>
@@ -325,7 +387,7 @@ export function TrackingTimeline({ orderId, trackingNumber, compact = false, pri
             onClick={fetchTracking}
             disabled={isLoading}
           >
-            <RefreshCw className={`h-4 w-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
+              <Icon size="sm"><ArrowPathIcon className={`h-4 w-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} /></Icon>
             Refresh
           </Button>
         </div>
@@ -428,7 +490,7 @@ export function TrackingTimeline({ orderId, trackingNumber, compact = false, pri
         {/* Error Message */}
         {trackingData.timeline?.hasError && trackingData.timeline.errorMessage && (
           <Alert variant="destructive" className="mb-4">
-            <AlertCircle className="h-4 w-4" />
+            <Icon size="sm"><ExclamationCircleIcon className="h-4 w-4" /></Icon>
             <AlertDescription>{trackingData.timeline.errorMessage}</AlertDescription>
           </Alert>
         )}
@@ -446,6 +508,15 @@ export function TrackingTimeline({ orderId, trackingNumber, compact = false, pri
                   const isFirst = index === 0
                   const isLast = index === events.length - 1
                   
+                  // Detect if this is a last mile event
+                  const isLastMileEvent = (() => {
+                    const desc = event.description.toLowerCase()
+                    return desc.includes('out for delivery') || 
+                           desc.includes('delivered') || 
+                           desc.includes('delivery') ||
+                           (event.country && event.country !== 'China' && event.country !== 'CN')
+                  })()
+                  
                   return (
                     <div key={index} className="relative pl-12">
                       {/* Timeline dot */}
@@ -457,7 +528,7 @@ export function TrackingTimeline({ orderId, trackingNumber, compact = false, pri
                         }`}
                       >
                         {isFirst ? (
-                          <Truck className="h-5 w-5" />
+                          <Icon size="md"><TruckIcon className="h-5 w-5" /></Icon>
                         ) : (
                           <div className="w-2 h-2 rounded-full bg-current" />
                         )}
@@ -473,7 +544,7 @@ export function TrackingTimeline({ orderId, trackingNumber, compact = false, pri
                               <div className="mt-2 space-y-1">
                                 {event.location && (
                                   <div className="flex items-start gap-1.5 text-xs">
-                                    <MapPin className="h-3.5 w-3.5 mt-0.5 flex-shrink-0 text-muted-foreground" />
+                                    <Icon size="xs"><MapPinIcon className="h-3.5 w-3.5 mt-0.5 flex-shrink-0 text-muted-foreground" /></Icon>
                                     <div className="flex-1">
                                       <span className="font-medium text-muted-foreground">Location: </span>
                                       <span className="text-foreground">
@@ -486,7 +557,7 @@ export function TrackingTimeline({ orderId, trackingNumber, compact = false, pri
                                 )}
                                 {event.facility && (
                                   <div className="flex items-start gap-1.5 text-xs">
-                                    <Truck className="h-3.5 w-3.5 mt-0.5 flex-shrink-0 text-muted-foreground" />
+                                    <Icon size="xs"><TruckIcon className="h-3.5 w-3.5 mt-0.5 flex-shrink-0 text-muted-foreground" /></Icon>
                                     <div className="flex-1">
                                       <span className="font-medium text-muted-foreground">Facility: </span>
                                       <span className="text-foreground">{event.facility}</span>
@@ -495,9 +566,33 @@ export function TrackingTimeline({ orderId, trackingNumber, compact = false, pri
                                 )}
                                 {event.city && !event.location && (
                                   <div className="flex items-start gap-1.5 text-xs">
-                                    <MapPin className="h-3.5 w-3.5 mt-0.5 flex-shrink-0 text-muted-foreground" />
+                                    <Icon size="xs"><MapPinIcon className="h-3.5 w-3.5 mt-0.5 flex-shrink-0 text-muted-foreground" /></Icon>
                                     <span className="text-foreground">{event.city}</span>
                                     {event.country && <span className="text-muted-foreground">, {event.country}</span>}
+                                  </div>
+                                )}
+                                
+                                {/* Last Mile Courier Information */}
+                                {isLastMileEvent && (trackingData.carrier || trackingData.last_mile_tracking) && (
+                                  <div className="mt-2 pt-2 border-t space-y-1">
+                                    {trackingData.carrier && (
+                                      <div className="flex items-start gap-1.5 text-xs">
+                                        <Icon size="xs"><TruckIcon className="h-3.5 w-3.5 mt-0.5 flex-shrink-0 text-muted-foreground" /></Icon>
+                                        <div className="flex-1">
+                                          <span className="font-medium text-muted-foreground">Last Mile Courier: </span>
+                                          <span className="text-foreground font-semibold">{trackingData.carrier}</span>
+                                        </div>
+                                      </div>
+                                    )}
+                                    {trackingData.last_mile_tracking && (
+                                      <div className="flex items-start gap-1.5 text-xs">
+                                        <Icon size="xs"><TruckIcon className="h-3.5 w-3.5 mt-0.5 flex-shrink-0 text-muted-foreground" /></Icon>
+                                        <div className="flex-1">
+                                          <span className="font-medium text-muted-foreground">Last Mile Tracking: </span>
+                                          <span className="text-foreground font-mono">{trackingData.last_mile_tracking}</span>
+                                        </div>
+                                      </div>
+                                    )}
                                   </div>
                                 )}
                               </div>
@@ -534,7 +629,7 @@ export function TrackingTimeline({ orderId, trackingNumber, compact = false, pri
           </div>
         ) : (
           <div className="text-center py-8 text-muted-foreground">
-            <Truck className="h-12 w-12 mx-auto mb-4 opacity-50" />
+            <Icon size="xl"><TruckIcon className="h-12 w-12 mx-auto mb-4 opacity-50" /></Icon>
             <p>No tracking events available yet</p>
             <p className="text-xs mt-2">Tracking information will appear here once the package is in transit</p>
           </div>

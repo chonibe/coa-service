@@ -11,10 +11,10 @@
 export const designSystem = {
   // Glassmorphism styles
   glassmorphism: {
-    card: "bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-0 shadow-xl",
-    cardSubtle: "bg-white/50 dark:bg-slate-900/50 backdrop-blur-sm border border-white/20 dark:border-slate-700/20",
-    container: "bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm",
-    hover: "hover:bg-white/50 dark:hover:bg-slate-900/50 backdrop-blur-sm",
+    card: "bg-white/95 dark:bg-slate-900/80 backdrop-blur-xl border border-slate-200/50 dark:border-slate-700/50 shadow-xl",
+    cardSubtle: "bg-white/80 dark:bg-slate-900/50 backdrop-blur-sm border border-slate-200/30 dark:border-slate-700/20",
+    container: "bg-white/90 dark:bg-slate-900/80 backdrop-blur-sm",
+    hover: "hover:bg-slate-50/80 dark:hover:bg-slate-900/50 backdrop-blur-sm",
   },
 
   // Gradient styles
@@ -28,8 +28,8 @@ export const designSystem = {
   // Button variants (automatically applied via button.tsx)
   buttons: {
     default: "bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-lg",
-    outline: "border border-input bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm hover:bg-white/90 dark:hover:bg-slate-900/90",
-    ghost: "hover:bg-white/50 dark:hover:bg-slate-900/50 backdrop-blur-sm",
+    outline: "border border-slate-300 dark:border-slate-700 bg-white/90 dark:bg-slate-900/80 backdrop-blur-sm hover:bg-slate-50 dark:hover:bg-slate-900/90",
+    ghost: "hover:bg-slate-100/80 dark:hover:bg-slate-900/50 backdrop-blur-sm",
   },
 
   // Chart colors
