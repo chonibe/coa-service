@@ -59,25 +59,59 @@ export function getVendorCollectionTitle(vendorName: string): string {
 
 /**
  * Searches for an existing collection by handle
+ * Searches both custom and smart collections
  */
 async function findCollectionByHandle(handle: string): Promise<string | null> {
   try {
-    const response = await shopifyFetch2024(
+    // Try custom collections first
+    let response = await shopifyFetch2024(
+      `custom_collections.json?handle=${encodeURIComponent(handle)}`,
+      {
+        method: "GET",
+      },
+    )
+
+    if (response.ok) {
+      const data = await safeJsonParse(response)
+      const collections = data.custom_collections || []
+      
+      if (collections.length > 0) {
+        return collections[0].id?.toString() || null
+      }
+    }
+
+    // Try smart collections as well
+    response = await shopifyFetch2024(
+      `smart_collections.json?handle=${encodeURIComponent(handle)}`,
+      {
+        method: "GET",
+      },
+    )
+
+    if (response.ok) {
+      const data = await safeJsonParse(response)
+      const collections = data.smart_collections || []
+      
+      if (collections.length > 0) {
+        return collections[0].id?.toString() || null
+      }
+    }
+
+    // Fallback: try the generic collections endpoint
+    response = await shopifyFetch2024(
       `collections.json?handle=${encodeURIComponent(handle)}`,
       {
         method: "GET",
       },
     )
 
-    if (!response.ok) {
-      return null
-    }
-
-    const data = await safeJsonParse(response)
-    const collections = data.collections || []
-    
-    if (collections.length > 0) {
-      return collections[0].id?.toString() || null
+    if (response.ok) {
+      const data = await safeJsonParse(response)
+      const collections = data.collections || []
+      
+      if (collections.length > 0) {
+        return collections[0].id?.toString() || null
+      }
     }
 
     return null
@@ -89,6 +123,7 @@ async function findCollectionByHandle(handle: string): Promise<string | null> {
 
 /**
  * Creates a new collection in Shopify
+ * Uses custom_collections endpoint for manual collections
  */
 async function createShopifyCollection(
   title: string,
@@ -96,13 +131,14 @@ async function createShopifyCollection(
 ): Promise<string | null> {
   try {
     const response = await shopifyFetch2024(
-      `collections.json`,
+      `custom_collections.json`,
       {
         method: "POST",
         body: JSON.stringify({
-          collection: {
+          custom_collection: {
             title,
             handle,
+            published: true,
           },
         }),
       },
@@ -110,13 +146,46 @@ async function createShopifyCollection(
 
     if (!response.ok) {
       const errorText = await response.text()
-      console.error(`Failed to create collection: ${response.status}`, errorText)
-      throw new Error(`Failed to create collection: ${response.status}`)
+      let errorData: any = {}
+      try {
+        errorData = JSON.parse(errorText)
+      } catch {
+        // If parsing fails, use raw text
+      }
+      
+      console.error(`Failed to create collection: ${response.status}`, {
+        status: response.status,
+        statusText: response.statusText,
+        errorText,
+        errorData,
+        title,
+        handle,
+      })
+      
+      // If collection already exists (422) or conflict (409), try to find it
+      if (response.status === 422 || response.status === 409 || response.status === 406) {
+        // Check if error indicates collection already exists
+        const errorMessage = errorData?.errors?.handle?.[0] || errorData?.error || errorText
+        if (errorMessage?.includes("already exists") || errorMessage?.includes("taken")) {
+          console.log(`Collection with handle "${handle}" may already exist, attempting to find it...`)
+          const existingId = await findCollectionByHandle(handle)
+          if (existingId) {
+            console.log(`Found existing collection with handle "${handle}": ${existingId}`)
+            return existingId
+          }
+        }
+      }
+      
+      throw new Error(`Failed to create collection: ${response.status} - ${errorText}`)
     }
 
     const data = await safeJsonParse(response)
-    return data.collection?.id?.toString() || null
-  } catch (error) {
+    return data.custom_collection?.id?.toString() || null
+  } catch (error: any) {
+    // If it's our custom error, re-throw it
+    if (error.message?.includes("Failed to create collection")) {
+      throw error
+    }
     console.error(`Error creating collection ${title}:`, error)
     throw error
   }
@@ -142,11 +211,19 @@ export async function ensureVendorCollection(
     .maybeSingle()
 
   if (existingCollection?.shopify_collection_id) {
-    // Verify it still exists in Shopify
-    const response = await shopifyFetch2024(
-      `collections/${existingCollection.shopify_collection_id}.json`,
+    // Verify it still exists in Shopify (try custom_collections first)
+    let response = await shopifyFetch2024(
+      `custom_collections/${existingCollection.shopify_collection_id}.json`,
       { method: "GET" },
     )
+
+    if (!response.ok) {
+      // Fallback to smart_collections
+      response = await shopifyFetch2024(
+        `smart_collections/${existingCollection.shopify_collection_id}.json`,
+        { method: "GET" },
+      )
+    }
 
     if (response.ok) {
       return {
@@ -162,7 +239,18 @@ export async function ensureVendorCollection(
 
   if (!shopifyCollectionId) {
     // Create new collection in Shopify
-    shopifyCollectionId = await createShopifyCollection(title, handle)
+    // This will throw an error if it fails, which we want to bubble up
+    try {
+      shopifyCollectionId = await createShopifyCollection(title, handle)
+    } catch (error: any) {
+      // If creation fails but might be due to existing collection, try one more search
+      console.error(`Failed to create collection, retrying search:`, error.message)
+      shopifyCollectionId = await findCollectionByHandle(handle)
+      if (!shopifyCollectionId) {
+        // Re-throw the original error if we still can't find it
+        throw error
+      }
+    }
   }
 
   if (!shopifyCollectionId) {
@@ -252,17 +340,26 @@ export async function getCollectionDetails(
   collectionId: string,
 ): Promise<any> {
   try {
-    const response = await shopifyFetch2024(
-      `collections/${collectionId}.json`,
+    // Try custom_collections first
+    let response = await shopifyFetch2024(
+      `custom_collections/${collectionId}.json`,
       { method: "GET" },
     )
+
+    if (!response.ok) {
+      // Fallback to smart_collections
+      response = await shopifyFetch2024(
+        `smart_collections/${collectionId}.json`,
+        { method: "GET" },
+      )
+    }
 
     if (!response.ok) {
       throw new Error(`Failed to get collection: ${response.status}`)
     }
 
     const data = await safeJsonParse(response)
-    return data.collection
+    return data.custom_collection || data.smart_collection || data.collection
   } catch (error) {
     console.error(`Error getting collection ${collectionId}:`, error)
     throw error
