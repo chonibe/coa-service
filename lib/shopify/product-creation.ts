@@ -180,6 +180,78 @@ export async function setProductMetafields(
 }
 
 /**
+ * Fetches a metafield definition by ID to get namespace and key
+ */
+async function fetchMetafieldDefinition(metafieldDefinitionId: number): Promise<{ namespace: string; key: string; type: string } | null> {
+  try {
+    const response = await shopifyFetch2024(
+      `metafield_definitions/${metafieldDefinitionId}.json`,
+      { method: "GET" },
+    )
+
+    if (!response.ok) {
+      console.error(`Failed to fetch metafield definition ${metafieldDefinitionId}: ${response.status}`)
+      return null
+    }
+
+    const data = await safeJsonParse(response)
+    const definition = data.metafield_definition
+    
+    if (!definition) {
+      return null
+    }
+
+    return {
+      namespace: definition.namespace || "custom",
+      key: definition.key || "",
+      type: definition.type?.name || "url",
+    }
+  } catch (error) {
+    console.error(`Error fetching metafield definition ${metafieldDefinitionId}:`, error)
+    return null
+  }
+}
+
+/**
+ * Sets PDF URL metafield for Street Design PDF
+ * Metafield Definition ID: 244948926850
+ */
+export async function setStreetDesignPdfMetafield(
+  productId: string,
+  pdfUrl: string,
+): Promise<any> {
+  const STREET_DESIGN_PDF_METAFIELD_DEFINITION_ID = 244948926850
+  
+  try {
+    // Fetch the metafield definition to get namespace and key
+    const definition = await fetchMetafieldDefinition(STREET_DESIGN_PDF_METAFIELD_DEFINITION_ID)
+    
+    if (definition) {
+      // Use the namespace and key from the definition
+      console.log(`Setting Street Design PDF metafield with namespace: ${definition.namespace}, key: ${definition.key}`)
+      return await setProductMetafield(productId, {
+        namespace: definition.namespace,
+        key: definition.key,
+        value: pdfUrl,
+        type: definition.type,
+      })
+    } else {
+      // Fallback: try common namespace/key pattern if definition fetch fails
+      console.log("Could not fetch metafield definition, using fallback pattern")
+      return await setProductMetafield(productId, {
+        namespace: "custom",
+        key: "street_design_pdf",
+        value: pdfUrl,
+        type: "url",
+      })
+    }
+  } catch (error) {
+    console.error(`Error setting Street Design PDF metafield for product ${productId}:`, error)
+    return null
+  }
+}
+
+/**
  * Creates product variants
  * Note: Variants are typically created as part of the product creation
  * This function can be used to update or add variants after initial creation
