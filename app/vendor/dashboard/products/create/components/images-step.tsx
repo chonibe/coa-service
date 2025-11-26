@@ -192,12 +192,14 @@ export function ImagesStep({ formData, setFormData, onMaskReady }: ImagesStepPro
     generateMaskRef.current = generateFn
   }
 
-  // Expose applyMask function to parent
+  // Expose applyMask function to parent - only generate when moving to next step
   useEffect(() => {
     if (onMaskReady) {
       const applyMask = async () => {
+        // Only generate masked image when explicitly called (on Next click)
         if (images.length > 0 && generateMaskRef.current && images[0].maskSettings) {
           try {
+            console.log("Generating masked image before moving to next step...")
             const maskedImageUrl = await generateMaskRef.current()
             const updatedImages = [...images]
             updatedImages[0] = {
@@ -206,6 +208,7 @@ export function ImagesStep({ formData, setFormData, onMaskReady }: ImagesStepPro
               maskSettings: updatedImages[0].maskSettings, // Keep mask settings for reference
             }
             setFormData({ ...formData, images: updatedImages })
+            console.log("Masked image generated and applied successfully")
           } catch (error) {
             console.error("Error applying mask:", error)
             throw error

@@ -142,13 +142,18 @@ export function ProductWizard({ onComplete, onCancel, initialData, submissionId 
   const handleNext = async () => {
     if (!canProceed() || currentStep >= steps.length - 1) return
     
-    // If we're on the images step (step 2), apply the mask before proceeding
+    // If we're on the images step (step 2), generate the masked image ONLY when moving to review step
+    // This prevents any mask generation during preview which could cause performance issues
     if (currentStep === 2 && applyMaskFn) {
       try {
+        // Show loading state during mask generation
+        setError(null)
         await applyMaskFn()
+        // Mask generation successful, proceed to next step
       } catch (error) {
-        console.error("Error applying mask:", error)
-        // Continue anyway - mask application failure shouldn't block progression
+        console.error("Error generating masked image:", error)
+        setError("Failed to generate masked image. Please try adjusting the image position.")
+        return // Don't proceed if mask generation fails
       }
     }
     
