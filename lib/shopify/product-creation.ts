@@ -213,6 +213,41 @@ async function fetchMetafieldDefinition(metafieldDefinitionId: number): Promise<
 }
 
 /**
+ * Updates an existing metafield on a product by metafield ID
+ */
+async function updateProductMetafieldById(
+  productId: string,
+  metafieldId: number,
+  value: string,
+): Promise<any> {
+  try {
+    const response = await shopifyFetch2024(
+      `products/${productId}/metafields/${metafieldId}.json`,
+      {
+        method: "PUT",
+        body: JSON.stringify({
+          metafield: {
+            value: value,
+          },
+        }),
+      },
+    )
+
+    if (!response.ok) {
+      const errorText = await response.text()
+      console.error(`Failed to update metafield ${metafieldId} for product ${productId}:`, errorText)
+      return null
+    }
+
+    const data = await safeJsonParse(response)
+    return data.metafield
+  } catch (error) {
+    console.error(`Error updating metafield ${metafieldId} for product ${productId}:`, error)
+    return null
+  }
+}
+
+/**
  * Sets PDF URL metafield for Street Design PDF
  * Metafield Definition ID: 244948926850
  */
@@ -223,26 +258,36 @@ export async function setStreetDesignPdfMetafield(
   const STREET_DESIGN_PDF_METAFIELD_DEFINITION_ID = 244948926850
   
   try {
-    // Fetch the metafield definition to get namespace and key
+    // First, fetch the metafield definition to get namespace and key
     const definition = await fetchMetafieldDefinition(STREET_DESIGN_PDF_METAFIELD_DEFINITION_ID)
     
-    if (definition) {
-      // Use the namespace and key from the definition
-      console.log(`Setting Street Design PDF metafield with namespace: ${definition.namespace}, key: ${definition.key}`)
+    if (!definition) {
+      console.error("Could not fetch Street Design PDF metafield definition")
+      return null
+    }
+
+    console.log(`Setting Street Design PDF metafield with namespace: ${definition.namespace}, key: ${definition.key}`)
+    
+    // Check if the metafield already exists on the product
+    const { getProductMetafields } = await import("@/lib/shopify/metafields")
+    const existingMetafields = await getProductMetafields(productId)
+    
+    const existingMetafield = existingMetafields.find(
+      (m: any) => m.namespace === definition.namespace && m.key === definition.key
+    )
+    
+    if (existingMetafield) {
+      // Update existing metafield by ID
+      console.log(`Updating existing Street Design PDF metafield (ID: ${existingMetafield.id})`)
+      return await updateProductMetafieldById(productId, existingMetafield.id, pdfUrl)
+    } else {
+      // Create new metafield
+      console.log("Creating new Street Design PDF metafield")
       return await setProductMetafield(productId, {
         namespace: definition.namespace,
         key: definition.key,
         value: pdfUrl,
         type: definition.type,
-      })
-    } else {
-      // Fallback: try common namespace/key pattern if definition fetch fails
-      console.log("Could not fetch metafield definition, using fallback pattern")
-      return await setProductMetafield(productId, {
-        namespace: "custom",
-        key: "street_design_pdf",
-        value: pdfUrl,
-        type: "url",
       })
     }
   } catch (error) {
