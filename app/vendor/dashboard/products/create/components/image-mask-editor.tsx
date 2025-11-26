@@ -115,12 +115,12 @@ export function ImageMaskEditor({ image, onUpdate, onGenerateMask }: ImageMaskEd
   }, [drawRoundRect])
 
   // Single optimized draw function - use refs to avoid dependency issues
+  // This function should be stable and not recreate frequently
   const drawCanvas = useCallback(() => {
     const canvas = canvasRef.current
     if (!canvas) return
 
-    // Prevent multiple simultaneous draws using ref (faster than state)
-    const isDrawingRef = { current: false }
+    // Cancel any pending animation frame
     if (animationFrameRef.current) {
       cancelAnimationFrame(animationFrameRef.current)
     }
@@ -166,9 +166,11 @@ export function ImageMaskEditor({ image, onUpdate, onGenerateMask }: ImageMaskEd
         // Get current values from refs to avoid stale closures
         const img = imageRef.current
         const currentSettings = settingsRef.current
+        const imgSrc = image.src
+        const loaded = imageLoaded
 
         // If no image or not loaded yet
-        if (!image.src || image.src.trim().length === 0 || !img || !imageLoaded) {
+        if (!imgSrc || imgSrc.trim().length === 0 || !img || !loaded) {
           ctx.fillStyle = "#9ca3af"
           ctx.font = "18px Arial"
           ctx.textAlign = "center"
@@ -218,7 +220,7 @@ export function ImageMaskEditor({ image, onUpdate, onGenerateMask }: ImageMaskEd
         console.error("Error drawing canvas:", error)
       }
     })
-  }, [imageLoaded, defaultScale, drawRoundRect, image.src]) // Use refs for settings, only depend on stable values
+  }, [defaultScale, drawRoundRect]) // Only depend on truly stable values - read from refs inside
 
   // Load image only when src changes
   useEffect(() => {
