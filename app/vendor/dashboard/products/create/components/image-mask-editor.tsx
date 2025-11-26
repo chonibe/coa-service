@@ -141,27 +141,7 @@ export function ImageMaskEditor({ image, onUpdate, onGenerateMask }: ImageMaskEd
   const currentY = settings.y || 0
   const currentRotation = settings.rotation || 0
 
-  // Helper function to draw rounded rectangle (stable, no dependencies)
-  const drawRoundRect = (
-    ctx: CanvasRenderingContext2D,
-    x: number,
-    y: number,
-    width: number,
-    height: number,
-    radius: number,
-  ) => {
-    ctx.beginPath()
-    ctx.moveTo(x + radius, y)
-    ctx.lineTo(x + width - radius, y)
-    ctx.quadraticCurveTo(x + width, y, x + width, y + radius)
-    ctx.lineTo(x + width, y + height - radius)
-    ctx.quadraticCurveTo(x + width, y + height, x + width - radius, y + height)
-    ctx.lineTo(x + radius, y + height)
-    ctx.quadraticCurveTo(x, y + height, x, y + height - radius)
-    ctx.lineTo(x, y + radius)
-    ctx.quadraticCurveTo(x, y, x + radius, y)
-    ctx.closePath()
-  }
+  // drawRoundRect is defined outside component (line 26) - use that one
 
   // Single optimized draw function - reads from refs, no dependencies
   const drawCanvas = useCallback(() => {
