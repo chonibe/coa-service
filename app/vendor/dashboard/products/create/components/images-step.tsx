@@ -13,6 +13,7 @@ import type { ProductSubmissionData, ProductImage } from "@/types/product-submis
 interface ImagesStepProps {
   formData: ProductSubmissionData
   setFormData: (data: ProductSubmissionData) => void
+  onMaskSavedStatusChange?: (isSaved: boolean) => void // Callback to notify parent of mask saved status
 }
 
 interface VendorImage {
@@ -23,12 +24,14 @@ interface VendorImage {
   size?: number
 }
 
-export function ImagesStep({ formData, setFormData }: ImagesStepProps) {
+export function ImagesStep({ formData, setFormData, onMaskSavedStatusChange }: ImagesStepProps) {
   const [uploading, setUploading] = useState(false)
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null)
   const [vendorImages, setVendorImages] = useState<VendorImage[]>([])
   const [showImageLibrary, setShowImageLibrary] = useState(false)
   const [loadingImages, setLoadingImages] = useState(false)
+  const [maskSaved, setMaskSaved] = useState(false)
+  const [selectedLibraryImages, setSelectedLibraryImages] = useState<Map<string, { vendorImage: VendorImage; order: number }>>(new Map())
   const fileInputRef = useRef<HTMLInputElement>(null)
   const dragOverIndex = useRef<number | null>(null)
 
@@ -130,15 +133,75 @@ export function ImagesStep({ formData, setFormData }: ImagesStepProps) {
     }
   }
 
-  const handleImageSelect = (vendorImage: VendorImage) => {
-    const newImage: ProductImage = {
+  // Multi-select library images with ordering
+  const toggleLibraryImageSelection = (vendorImage: VendorImage) => {
+    const imageKey = vendorImage.url
+    const newSelected = new Map(selectedLibraryImages)
+    
+    if (newSelected.has(imageKey)) {
+      newSelected.delete(imageKey)
+    } else {
+      // Get the highest order number from current selections, or use current images length
+      const maxOrder = Math.max(
+        ...Array.from(newSelected.values()).map(v => v.order),
+        images.length,
+        0
+      )
+      newSelected.set(imageKey, {
+        vendorImage,
+        order: maxOrder + 1,
+      })
+    }
+    setSelectedLibraryImages(newSelected)
+  }
+
+  const updateLibraryImageOrder = (imageKey: string, order: number) => {
+    const entry = selectedLibraryImages.get(imageKey)
+    if (entry) {
+      const newSelected = new Map(selectedLibraryImages)
+      newSelected.set(imageKey, { ...entry, order: Math.max(1, order) })
+      setSelectedLibraryImages(newSelected)
+    }
+  }
+
+  const handleAcceptLibraryImages = () => {
+    if (selectedLibraryImages.size === 0) {
+      alert("Please select at least one image")
+      return
+    }
+
+    // Sort selected images by order number
+    const sortedSelections = Array.from(selectedLibraryImages.entries())
+      .sort((a, b) => a[1].order - b[1].order)
+      .map(([_, { vendorImage, order }]) => ({ vendorImage, order }))
+
+    // Create ProductImage objects
+    const newImages: ProductImage[] = sortedSelections.map(({ vendorImage, order }) => ({
       src: vendorImage.url,
       alt: "",
-      position: images.length + 1,
-      mediaType: 'image', // Library images are always images
-    }
-    setFormData({ ...formData, images: [...images, newImage] })
+      position: order,
+      mediaType: 'image' as const,
+    }))
+
+    // If there are existing images, merge them
+    const existingImages = images.filter(img => 
+      !newImages.some(newImg => newImg.src === img.src)
+    )
+
+    // Combine and reindex all images
+    const allImages = [...newImages, ...existingImages].map((img, index) => ({
+      ...img,
+      position: index + 1,
+    }))
+
+    setFormData({ ...formData, images: allImages })
+    setSelectedLibraryImages(new Map())
     setShowImageLibrary(false)
+    // Reset mask saved status since we're adding a new artwork image
+    setMaskSaved(false)
+    if (onMaskSavedStatusChange) {
+      onMaskSavedStatusChange(false)
+    }
   }
 
   const removeImage = (index: number) => {
@@ -241,9 +304,32 @@ export function ImagesStep({ formData, setFormData }: ImagesStepProps) {
         maskSettings: updatedImages[0].maskSettings, // Keep mask settings for reference
       }
       setFormData({ ...formData, images: updatedImages })
+      setMaskSaved(true) // Mark mask as saved
+      if (onMaskSavedStatusChange) {
+        onMaskSavedStatusChange(true)
+      }
       console.log("[ImagesStep] First image updated with masked image")
     }
-  }, [images, formData, setFormData])
+  }, [images, formData, setFormData, onMaskSavedStatusChange])
+
+  // Reset mask saved status when artwork image changes
+  useEffect(() => {
+    if (images.length > 0 && images[0]?.src) {
+      // Check if the first image is a masked image (base64 or has maskSettings)
+      const isMasked = images[0].src.startsWith('data:image/') || images[0].maskSettings
+      if (!isMasked && maskSaved) {
+        setMaskSaved(false)
+        if (onMaskSavedStatusChange) {
+          onMaskSavedStatusChange(false)
+        }
+      }
+    } else if (maskSaved) {
+      setMaskSaved(false)
+      if (onMaskSavedStatusChange) {
+        onMaskSavedStatusChange(false)
+      }
+    }
+  }, [images, maskSaved, onMaskSavedStatusChange])
 
   const firstImage = images.length > 0 ? images[0] : null
 
@@ -274,11 +360,11 @@ export function ImagesStep({ formData, setFormData }: ImagesStepProps) {
               Select from Library
             </Button>
           </DialogTrigger>
-          <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+          <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
-              <DialogTitle>Your Image Library</DialogTitle>
+              <DialogTitle>Select Images from Library</DialogTitle>
               <DialogDescription>
-                Select images from your previously uploaded images
+                Select multiple images and set their order. The first selected image will become the artwork image for the mask.
               </DialogDescription>
             </DialogHeader>
             {loadingImages ? (
@@ -290,28 +376,113 @@ export function ImagesStep({ formData, setFormData }: ImagesStepProps) {
                 <p className="text-muted-foreground">No images found in your library</p>
               </div>
             ) : (
-              <div className="grid grid-cols-4 gap-4 mt-4">
-                {vendorImages.map((vendorImage, index) => (
-                  <div
-                    key={index}
-                    className="relative group cursor-pointer border rounded-md overflow-hidden aspect-square bg-muted"
-                    onClick={() => handleImageSelect(vendorImage)}
-                  >
-                    <img
-                      src={vendorImage.url}
-                      alt={vendorImage.name}
-                      className="w-full h-full object-cover"
-                      onError={(e) => {
-                        e.currentTarget.style.display = "none"
-                      }}
-                    />
-                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center">
-                      <Button size="sm" variant="secondary" className="opacity-0 group-hover:opacity-100">
-                        Select
-                      </Button>
+              <div className="space-y-4 mt-4">
+                {/* Selected Images Summary */}
+                {selectedLibraryImages.size > 0 && (
+                  <div className="bg-muted p-4 rounded-lg border">
+                    <div className="text-sm font-semibold mb-2">
+                      Selected Images ({selectedLibraryImages.size})
+                    </div>
+                    <div className="space-y-2">
+                      {Array.from(selectedLibraryImages.entries())
+                        .sort((a, b) => a[1].order - b[1].order)
+                        .map(([url, { vendorImage, order }]) => (
+                          <div key={url} className="flex items-center gap-3 p-2 bg-background rounded">
+                            <img
+                              src={vendorImage.url}
+                              alt={vendorImage.name}
+                              className="w-12 h-12 object-cover rounded"
+                            />
+                            <div className="flex-1 text-sm">{vendorImage.name}</div>
+                            <Label className="text-xs">Order:</Label>
+                            <Input
+                              type="number"
+                              min="1"
+                              value={order}
+                              onChange={(e) => {
+                                const newOrder = parseInt(e.target.value) || 1
+                                updateLibraryImageOrder(url, newOrder)
+                              }}
+                              className="w-20 h-8"
+                            />
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => toggleLibraryImageSelection(vendorImage)}
+                              className="h-8"
+                            >
+                              <X className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        ))}
                     </div>
                   </div>
-                ))}
+                )}
+
+                {/* Image Grid */}
+                <div className="grid grid-cols-4 md:grid-cols-6 gap-4">
+                  {vendorImages.map((vendorImage, index) => {
+                    const isSelected = selectedLibraryImages.has(vendorImage.url)
+                    const order = selectedLibraryImages.get(vendorImage.url)?.order
+                    return (
+                      <div
+                        key={index}
+                        className={`relative group cursor-pointer border-2 rounded-md overflow-hidden aspect-square bg-muted transition-all ${
+                          isSelected ? 'border-primary ring-2 ring-primary' : 'border-border'
+                        }`}
+                        onClick={() => toggleLibraryImageSelection(vendorImage)}
+                      >
+                        <img
+                          src={vendorImage.url}
+                          alt={vendorImage.name}
+                          className="w-full h-full object-cover"
+                          onError={(e) => {
+                            e.currentTarget.style.display = "none"
+                          }}
+                        />
+                        {isSelected && (
+                          <div className="absolute inset-0 bg-primary/20 flex items-center justify-center">
+                            <div className="bg-primary text-primary-foreground rounded-full w-8 h-8 flex items-center justify-center font-bold">
+                              {order}
+                            </div>
+                          </div>
+                        )}
+                        <div className="absolute top-2 left-2">
+                          <div className={`w-5 h-5 rounded border-2 flex items-center justify-center ${
+                            isSelected ? 'bg-primary border-primary' : 'bg-background border-foreground/20'
+                          }`}>
+                            {isSelected && (
+                              <div className="w-2 h-2 rounded-full bg-primary-foreground" />
+                            )}
+                          </div>
+                        </div>
+                        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors" />
+                      </div>
+                    )
+                  })}
+                </div>
+
+                {/* Accept Button */}
+                <div className="flex justify-end gap-2 pt-4 border-t">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => {
+                      setSelectedLibraryImages(new Map())
+                      setShowImageLibrary(false)
+                    }}
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    type="button"
+                    onClick={handleAcceptLibraryImages}
+                    disabled={selectedLibraryImages.size === 0}
+                  >
+                    Accept {selectedLibraryImages.size > 0 && `(${selectedLibraryImages.size})`}
+                  </Button>
+                </div>
               </div>
             )}
           </DialogContent>

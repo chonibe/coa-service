@@ -71,6 +71,7 @@ export function ProductWizard({ onComplete, onCancel, initialData, submissionId 
   const [error, setError] = useState<string | null>(null)
   const [fieldsConfig, setFieldsConfig] = useState<ProductCreationFields | null>(null)
   const [loadingFields, setLoadingFields] = useState(true)
+  const [maskSaved, setMaskSaved] = useState(false) // Track if masked artwork image has been saved
   const { toast } = useToast()
 
   const [formData, setFormData] = useState<ProductSubmissionData>({
@@ -129,6 +130,10 @@ export function ProductWizard({ onComplete, onCancel, initialData, submissionId 
           formData.variants.every((v) => v.price && parseFloat(v.price) > 0)
         )
       case 2: // Images
+        // If there's an artwork image, mask must be saved before proceeding
+        if (formData.images && formData.images.length > 0) {
+          return maskSaved
+        }
         return true // Images are optional
       case 3: // Review
         return true
@@ -268,10 +273,12 @@ export function ProductWizard({ onComplete, onCancel, initialData, submissionId 
       </div>
 
       {/* Error alert */}
-      {error && (
-        <Alert variant="destructive">
+      {(error || (currentStep === 2 && formData.images && formData.images.length > 0 && !maskSaved)) && (
+        <Alert variant={error ? "destructive" : "default"}>
           <AlertCircle className="h-4 w-4" />
-          <AlertDescription>{error}</AlertDescription>
+          <AlertDescription>
+            {error || "Please save the masked artwork image before proceeding to the next step."}
+          </AlertDescription>
         </Alert>
       )}
 
@@ -296,6 +303,7 @@ export function ProductWizard({ onComplete, onCancel, initialData, submissionId 
             <ImagesStep 
               formData={formData} 
               setFormData={setFormData}
+              onMaskSavedStatusChange={setMaskSaved}
             />
           )}
           {currentStep === 3 && (
@@ -311,6 +319,11 @@ export function ProductWizard({ onComplete, onCancel, initialData, submissionId 
             <Button 
               onClick={handleNext} 
               disabled={!canProceed() || isSubmitting}
+              title={
+                currentStep === 2 && formData.images && formData.images.length > 0 && !maskSaved
+                  ? "Please save the masked artwork image before proceeding"
+                  : undefined
+              }
             >
               Next
               <ChevronRight className="h-4 w-4 ml-2" />
