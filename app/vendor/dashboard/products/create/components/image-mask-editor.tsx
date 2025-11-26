@@ -22,6 +22,28 @@ const MASK_CORNER_RADIUS = 138
 const MASK_INNER_X = (MASK_OUTER_SIZE - MASK_INNER_WIDTH) / 2
 const MASK_INNER_Y = (MASK_OUTER_SIZE - MASK_INNER_HEIGHT) / 2
 
+// Helper function to draw rounded rectangle - defined outside component for stable reference
+function drawRoundRect(
+  ctx: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  width: number,
+  height: number,
+  radius: number,
+) {
+  ctx.beginPath()
+  ctx.moveTo(x + radius, y)
+  ctx.lineTo(x + width - radius, y)
+  ctx.quadraticCurveTo(x + width, y, x + width, y + radius)
+  ctx.lineTo(x + width, y + height - radius)
+  ctx.quadraticCurveTo(x + width, y + height, x + width - radius, y + height)
+  ctx.lineTo(x + radius, y + height)
+  ctx.quadraticCurveTo(x, y + height, x, y + height - radius)
+  ctx.lineTo(x, y + radius)
+  ctx.quadraticCurveTo(x, y, x + radius, y)
+  ctx.closePath()
+}
+
 export function ImageMaskEditor({ image, onUpdate, onGenerateMask }: ImageMaskEditorProps) {
   const renderCountRef = useRef(0)
   const renderStartTime = useRef(performance.now())
@@ -540,76 +562,112 @@ export function ImageMaskEditor({ image, onUpdate, onGenerateMask }: ImageMaskEd
 
   // Generate and export masked image - only called when needed
   const generateMaskedImage = useCallback(async (): Promise<string> => {
+    console.log("[MaskEditor] generateMaskedImage called", {
+      timestamp: new Date().toISOString(),
+      hasImageRef: !!imageRef.current,
+      imageLoaded: imageLoadedRef.current,
+    })
+    
     if (!imageRef.current) {
+      console.error("[MaskEditor] generateMaskedImage failed - image not loaded")
       throw new Error("Image not loaded")
     }
     
-    // Create a new canvas for the final masked image
-    const exportCanvas = document.createElement("canvas")
-    exportCanvas.width = MASK_OUTER_SIZE
-    exportCanvas.height = MASK_OUTER_SIZE
-    const exportCtx = exportCanvas.getContext("2d", { alpha: false })
-    
-    if (!exportCtx) {
-      throw new Error("Failed to create export canvas context")
-    }
-
-    // Fill white background
-    exportCtx.fillStyle = "#ffffff"
-    exportCtx.fillRect(0, 0, MASK_OUTER_SIZE, MASK_OUTER_SIZE)
-
-    // Create clipping path for the inner rectangle
-    drawRoundRect(exportCtx, MASK_INNER_X, MASK_INNER_Y, MASK_INNER_WIDTH, MASK_INNER_HEIGHT, MASK_CORNER_RADIUS)
-    exportCtx.clip()
-
-    // Apply transformations using current settings
-    const centerX = MASK_OUTER_SIZE / 2
-    const centerY = MASK_OUTER_SIZE / 2
-    
-    const currentSettings = settingsRef.current
-    const scale = currentSettings.scale || defaultScale
-    const x = currentSettings.x || 0
-    const y = currentSettings.y || 0
-    const rotation = currentSettings.rotation || 0
-    
-    exportCtx.save()
-    exportCtx.translate(centerX, centerY)
-    exportCtx.rotate((rotation * Math.PI) / 180)
-    exportCtx.scale(scale, scale)
-    exportCtx.translate(x, y)
-    
-    exportCtx.drawImage(imageRef.current, -imageRef.current.width / 2, -imageRef.current.height / 2)
-    exportCtx.restore()
-
-    // Add inner shadow effect to exported image only
-    const blurRadius = 30
-    const steps = 6
-    
-    exportCtx.save()
-    for (let i = 0; i < steps; i++) {
-      const progress = i / steps
-      const offset = blurRadius * progress
-      const opacity = (0.3 / steps) * (steps - i)
+    try {
+      // Create a new canvas for the final masked image
+      const exportCanvas = document.createElement("canvas")
+      exportCanvas.width = MASK_OUTER_SIZE
+      exportCanvas.height = MASK_OUTER_SIZE
+      const exportCtx = exportCanvas.getContext("2d", { alpha: false })
       
-      exportCtx.globalAlpha = opacity
-      exportCtx.strokeStyle = "rgba(0, 0, 0, 1)"
-      exportCtx.lineWidth = 2
-      
-      drawRoundRect(
-        exportCtx,
-        MASK_INNER_X + offset,
-        MASK_INNER_Y + offset,
-        MASK_INNER_WIDTH - (offset * 2),
-        MASK_INNER_HEIGHT - (offset * 2),
-        Math.max(0, MASK_CORNER_RADIUS - offset)
-      )
-      exportCtx.stroke()
-    }
-    exportCtx.globalAlpha = 1
-    exportCtx.restore()
+      if (!exportCtx) {
+        console.error("[MaskEditor] generateMaskedImage failed - could not get context")
+        throw new Error("Failed to create export canvas context")
+      }
 
-    // Export as base64 data URL
-    return exportCanvas.toDataURL("image/png", 0.95)
+      console.log("[MaskEditor] Export canvas created", {
+        width: exportCanvas.width,
+        height: exportCanvas.height,
+      })
+
+      // Fill white background
+      exportCtx.fillStyle = "#ffffff"
+      exportCtx.fillRect(0, 0, MASK_OUTER_SIZE, MASK_OUTER_SIZE)
+
+      // Create clipping path for the inner rectangle
+      drawRoundRect(exportCtx, MASK_INNER_X, MASK_INNER_Y, MASK_INNER_WIDTH, MASK_INNER_HEIGHT, MASK_CORNER_RADIUS)
+      exportCtx.clip()
+
+      // Apply transformations using current settings from ref
+      const centerX = MASK_OUTER_SIZE / 2
+      const centerY = MASK_OUTER_SIZE / 2
+      
+      const currentSettings = settingsRef.current
+      const scale = currentSettings.scale || defaultScale
+      const x = currentSettings.x || 0
+      const y = currentSettings.y || 0
+      const rotation = currentSettings.rotation || 0
+      
+      console.log("[MaskEditor] Applying transformations", {
+        scale,
+        x,
+        y,
+        rotation,
+      })
+      
+      exportCtx.save()
+      exportCtx.translate(centerX, centerY)
+      exportCtx.rotate((rotation * Math.PI) / 180)
+      exportCtx.scale(scale, scale)
+      exportCtx.translate(x, y)
+      
+      // Draw image
+      exportCtx.drawImage(imageRef.current, -imageRef.current.width / 2, -imageRef.current.height / 2)
+      exportCtx.restore()
+
+      // Add inner shadow effect to exported image only
+      const blurRadius = 30
+      const steps = 6
+      
+      exportCtx.save()
+      for (let i = 0; i < steps; i++) {
+        const progress = i / steps
+        const offset = blurRadius * progress
+        const opacity = (0.3 / steps) * (steps - i)
+        
+        exportCtx.globalAlpha = opacity
+        exportCtx.strokeStyle = "rgba(0, 0, 0, 1)"
+        exportCtx.lineWidth = 2
+        
+        drawRoundRect(
+          exportCtx,
+          MASK_INNER_X + offset,
+          MASK_INNER_Y + offset,
+          MASK_INNER_WIDTH - (offset * 2),
+          MASK_INNER_HEIGHT - (offset * 2),
+          Math.max(0, MASK_CORNER_RADIUS - offset)
+        )
+        exportCtx.stroke()
+      }
+      exportCtx.globalAlpha = 1
+      exportCtx.restore()
+
+      // Export as base64 data URL
+      console.log("[MaskEditor] Converting canvas to data URL...")
+      const dataUrl = exportCanvas.toDataURL("image/png", 0.95)
+      console.log("[MaskEditor] Masked image generated successfully", {
+        dataUrlLength: dataUrl.length,
+        firstChars: dataUrl.substring(0, 50),
+      })
+      return dataUrl
+    } catch (error) {
+      console.error("[MaskEditor] Error in generateMaskedImage:", error, {
+        errorName: error instanceof Error ? error.name : typeof error,
+        errorMessage: error instanceof Error ? error.message : String(error),
+        stack: error instanceof Error ? error.stack : undefined,
+      })
+      throw error
+    }
   }, [defaultScale])
 
   // Expose generate function to parent
