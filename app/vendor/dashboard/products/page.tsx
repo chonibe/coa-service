@@ -98,9 +98,9 @@ export default function ProductsPage() {
   return (
     <div className="space-y-6 px-1">
       <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">Products</h1>
-          <p className="text-muted-foreground">Manage your product catalog and view performance metrics</p>
+      <div>
+        <h1 className="text-3xl font-bold tracking-tight bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">Products</h1>
+        <p className="text-muted-foreground">Manage your product catalog and view performance metrics</p>
         </div>
         <Button onClick={() => router.push("/vendor/dashboard/products/create")}>
           <Plus className="h-4 w-4 mr-2" />
@@ -165,25 +165,25 @@ export default function ProductsPage() {
         </TabsList>
 
         <TabsContent value="catalog" className="space-y-6">
-          <Card className="overflow-hidden w-full bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-0 shadow-xl">
-            <CardHeader>
-              <CardTitle>Product Catalog</CardTitle>
-              <CardDescription>View and manage all your products</CardDescription>
-            </CardHeader>
-            <CardContent className="p-0 sm:p-2">
-              {isLoading ? (
-                <div className="space-y-2 p-4">
-                  {Array(5)
-                    .fill(0)
-                    .map((_, i) => (
-                      <Skeleton key={i} className="h-12 w-full" />
-                    ))}
-                </div>
-              ) : (
-                <ProductTable products={products || []} />
-              )}
-            </CardContent>
-          </Card>
+      <Card className="overflow-hidden w-full bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-0 shadow-xl">
+        <CardHeader>
+          <CardTitle>Product Catalog</CardTitle>
+          <CardDescription>View and manage all your products</CardDescription>
+        </CardHeader>
+        <CardContent className="p-0 sm:p-2">
+          {isLoading ? (
+            <div className="space-y-2 p-4">
+              {Array(5)
+                .fill(0)
+                .map((_, i) => (
+                  <Skeleton key={i} className="h-12 w-full" />
+                ))}
+            </div>
+          ) : (
+            <ProductTable products={products || []} />
+          )}
+        </CardContent>
+      </Card>
         </TabsContent>
 
         <TabsContent value="submissions" className="space-y-6">

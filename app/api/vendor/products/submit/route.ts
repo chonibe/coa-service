@@ -159,10 +159,11 @@ export async function POST(request: NextRequest) {
       productData.tags.push(vendor.vendor_name)
     }
 
-    // If first image is a base64 data URL (masked image), save it to library
+    // If first image is still a base64 data URL (shouldn't happen after upload), log warning
     if (productData.images && productData.images.length > 0 && productData.images[0].src) {
       const firstImage = productData.images[0]
       if (firstImage.src.startsWith("data:image/")) {
+        console.warn("Masked image is still base64. This should have been uploaded earlier. Attempting to upload now...")
         try {
           // Convert base64 to buffer
           const base64Data = firstImage.src.split(",")[1]

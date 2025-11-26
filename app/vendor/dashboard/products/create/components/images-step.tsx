@@ -293,22 +293,75 @@ export function ImagesStep({ formData, setFormData, onMaskSavedStatusChange }: I
     }
   }, [])
 
-  // Handle masked image saved callback - updates the first image with the masked version
-  const handleMaskSaved = useCallback((maskedImageUrl: string) => {
+  // Handle masked image saved callback - uploads base64 image to storage and updates the first image
+  const handleMaskSaved = useCallback(async (maskedImageBase64: string) => {
     if (images.length > 0) {
-      console.log("[ImagesStep] Masked image saved, updating first image...")
-      const updatedImages = [...images]
-      updatedImages[0] = {
-        ...updatedImages[0],
-        src: maskedImageUrl,
-        maskSettings: updatedImages[0].maskSettings, // Keep mask settings for reference
+      console.log("[ImagesStep] Masked image saved, uploading to storage...")
+      
+      // Check if it's already a URL (not base64)
+      if (!maskedImageBase64.startsWith("data:image/")) {
+        // Already a URL, use it directly
+        const updatedImages = [...images]
+        updatedImages[0] = {
+          ...updatedImages[0],
+          src: maskedImageBase64,
+          maskSettings: updatedImages[0].maskSettings,
+        }
+        setFormData({ ...formData, images: updatedImages })
+        setMaskSaved(true)
+        if (onMaskSavedStatusChange) {
+          onMaskSavedStatusChange(true)
+        }
+        console.log("[ImagesStep] First image updated with masked image URL")
+        return
       }
-      setFormData({ ...formData, images: updatedImages })
-      setMaskSaved(true) // Mark mask as saved
-      if (onMaskSavedStatusChange) {
-        onMaskSavedStatusChange(true)
+
+      // Upload base64 image to storage
+      try {
+        const base64Data = maskedImageBase64.split(",")[1]
+        const blob = await fetch(`data:image/png;base64,${base64Data}`).then(res => res.blob())
+        const file = new File([blob], "masked-artwork.png", { type: "image/png" })
+        
+        // Upload via server-side route
+        const uploadFormData = new FormData()
+        uploadFormData.append("file", file)
+        uploadFormData.append("type", "image")
+
+        const uploadResponse = await fetch("/api/vendor/products/upload", {
+          method: "POST",
+          credentials: "include",
+          body: uploadFormData,
+        })
+
+        if (!uploadResponse.ok) {
+          const errorData = await uploadResponse.json().catch(() => ({ error: "Unknown error" }))
+          throw new Error(errorData.error || errorData.message || "Failed to upload masked image")
+        }
+
+        const uploadData = await uploadResponse.json()
+        console.log("[ImagesStep] Masked image uploaded to storage:", uploadData.url)
+
+        // Update first image with uploaded URL
+        const updatedImages = [...images]
+        updatedImages[0] = {
+          ...updatedImages[0],
+          src: uploadData.url,
+          maskSettings: updatedImages[0].maskSettings, // Keep mask settings for reference
+        }
+        setFormData({ ...formData, images: updatedImages })
+        setMaskSaved(true) // Mark mask as saved
+        if (onMaskSavedStatusChange) {
+          onMaskSavedStatusChange(true)
+        }
+        console.log("[ImagesStep] First image updated with masked image URL")
+      } catch (error: any) {
+        console.error("[ImagesStep] Error uploading masked image:", error)
+        alert(error.message || "Failed to upload masked image. Please try again.")
+        setMaskSaved(false)
+        if (onMaskSavedStatusChange) {
+          onMaskSavedStatusChange(false)
+        }
       }
-      console.log("[ImagesStep] First image updated with masked image")
     }
   }, [images, formData, setFormData, onMaskSavedStatusChange])
 

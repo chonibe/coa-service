@@ -15,18 +15,18 @@ async function shopifyFetch2024(url: string, options: RequestInit = {}, retries 
     ...(options.headers as Record<string, string>),
   }
 
-  try {
-    const response = await fetch(fullUrl, {
+      try {
+        const response = await fetch(fullUrl, {
       ...options,
       headers,
-    })
+        })
 
     if (response.status === 429) {
       const retryAfter = Number.parseInt(response.headers.get("Retry-After") || "1", 10)
       await delay(retryAfter * 1000)
       if (retries > 0) {
         return shopifyFetch2024(url, options, retries - 1)
-      }
+        }
     }
 
     return response
@@ -81,7 +81,7 @@ export async function fetchMetafieldDefinitions(): Promise<ShopifyMetafieldDefin
         const errorText = await response.text().catch(() => "Unknown error")
         console.error(`Failed to fetch metafield definitions (${response.status}):`, errorText)
         return defaultMetafields
-      }
+    }
 
       const data = await safeJsonParse(response)
       const definitions = data.metafield_definitions || []

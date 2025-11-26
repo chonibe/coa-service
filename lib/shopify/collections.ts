@@ -106,9 +106,9 @@ async function findCollectionByHandle(handle: string): Promise<string | null> {
     )
 
     if (response.ok) {
-      const data = await safeJsonParse(response)
-      const collections = data.collections || []
-      
+    const data = await safeJsonParse(response)
+    const collections = data.collections || []
+
       if (collections.length > 0) {
         return collections[0].id?.toString() || null
       }
@@ -133,14 +133,14 @@ async function createShopifyCollection(
     const response = await shopifyFetch2024(
       `custom_collections.json`,
       {
-        method: "POST",
-        body: JSON.stringify({
+      method: "POST",
+      body: JSON.stringify({
           custom_collection: {
-            title,
-            handle,
+          title,
+          handle,
             published: true,
-          },
-        }),
+        },
+      }),
       },
     )
 
@@ -225,12 +225,12 @@ export async function ensureVendorCollection(
       )
     }
 
-    if (response.ok) {
-      return {
+      if (response.ok) {
+        return {
         collectionId: existingCollection.shopify_collection_id,
-        handle: existingCollection.shopify_collection_handle,
-        title: existingCollection.collection_title,
-      }
+          handle: existingCollection.shopify_collection_handle,
+          title: existingCollection.collection_title,
+        }
     }
   }
 
@@ -296,13 +296,13 @@ export async function assignProductToCollection(
     const response = await shopifyFetch2024(
       `collects.json`,
       {
-        method: "POST",
-        body: JSON.stringify({
-          collect: {
-            product_id: productId,
-            collection_id: collectionId,
-          },
-        }),
+      method: "POST",
+      body: JSON.stringify({
+        collect: {
+          product_id: productId,
+          collection_id: collectionId,
+        },
+      }),
       },
     )
 

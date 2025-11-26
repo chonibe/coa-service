@@ -49,12 +49,13 @@ export async function GET() {
         })
       } catch (driveError: any) {
         console.error("Error fetching from Google Drive:", driveError)
+        // Return 404 instead of 503 to match expected behavior
         return NextResponse.json(
           { 
             error: "Template file not available",
             message: "Could not fetch template from Google Drive. Please contact support.",
           },
-          { status: 503 }
+          { status: 404 }
         )
       }
     }
