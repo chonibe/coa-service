@@ -76,31 +76,20 @@ export function ImageMaskEditor({ image, onUpdate, onGenerateMask }: ImageMaskEd
     ctx.closePath()
   }, [])
 
-  // Helper function to create inner shadow with blur effect
-  const drawInnerShadow = useCallback((ctx: CanvasRenderingContext2D) => {
+  // Helper function to create inner shadow - Only used in export
+  const drawInnerShadowExport = useCallback((ctx: CanvasRenderingContext2D) => {
     ctx.save()
     
-    // Create inner shadow inside the rectangle
-    // We'll draw a gradient from the edges inward
-    const gradient = ctx.createRadialGradient(
-      MASK_OUTER_SIZE / 2, // center X
-      MASK_OUTER_SIZE / 2, // center Y
-      Math.min(MASK_INNER_WIDTH, MASK_INNER_HEIGHT) / 2, // inner radius
-      MASK_OUTER_SIZE / 2, // center X
-      MASK_OUTER_SIZE / 2, // center Y
-      Math.min(MASK_INNER_WIDTH, MASK_INNER_HEIGHT) / 2 + 30 // outer radius (with blur)
-    )
-    
-    // Create shadow using multiple overlapping strokes for blur effect
+    // Create inner shadow using simple gradient approach (faster)
     const blurRadius = 30
-    const steps = 10
+    const steps = 6 // Reduced from 10 for better performance
     
     for (let i = 0; i < steps; i++) {
       const progress = i / steps
       const offset = blurRadius * progress
-      const opacity = 0.3 * (1 - progress) // Fade from 30% to 0%
+      const opacity = (0.3 / steps) * (steps - i) // Fade from 30% to 0%
       
-      ctx.globalAlpha = opacity / steps
+      ctx.globalAlpha = opacity
       ctx.strokeStyle = "rgba(0, 0, 0, 1)"
       ctx.lineWidth = 2
       
@@ -134,18 +123,26 @@ export function ImageMaskEditor({ image, onUpdate, onGenerateMask }: ImageMaskEd
     }
 
     animationFrameRef.current = requestAnimationFrame(() => {
-      // Set canvas size for high DPI displays
+      // Set canvas size for high DPI displays (only once)
       const dpr = typeof window !== "undefined" ? window.devicePixelRatio || 1 : 1
       const displaySize = Math.min(600, typeof window !== "undefined" ? Math.min(600, window.innerWidth - 100) : 600)
       
-      canvas.width = MASK_OUTER_SIZE * dpr
-      canvas.height = MASK_OUTER_SIZE * dpr
-      canvas.style.width = `${displaySize}px`
-      canvas.style.height = `${displaySize}px`
+      // Only resize if dimensions changed
+      const expectedWidth = MASK_OUTER_SIZE * dpr
+      const expectedHeight = MASK_OUTER_SIZE * dpr
       
-      ctx.scale(dpr, dpr)
+      if (canvas.width !== expectedWidth || canvas.height !== expectedHeight) {
+        canvas.width = expectedWidth
+        canvas.height = expectedHeight
+        canvas.style.width = `${displaySize}px`
+        canvas.style.height = `${displaySize}px`
+      }
+      
+      // Reset transform and clear
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
+      ctx.clearRect(0, 0, MASK_OUTER_SIZE, MASK_OUTER_SIZE)
 
-      // Clear canvas
+      // Clear canvas background
       ctx.fillStyle = "#f3f4f6"
       ctx.fillRect(0, 0, MASK_OUTER_SIZE, MASK_OUTER_SIZE)
 
@@ -192,8 +189,8 @@ export function ImageMaskEditor({ image, onUpdate, onGenerateMask }: ImageMaskEd
 
       ctx.restore()
 
-      // Add inner shadow effect
-      drawInnerShadow(ctx)
+      // NOTE: Shadow is NOT drawn in preview for performance
+      // Shadow will be applied only in the final export
 
       // Redraw borders on top
       ctx.strokeStyle = "#e5e7eb"
@@ -205,7 +202,7 @@ export function ImageMaskEditor({ image, onUpdate, onGenerateMask }: ImageMaskEd
       drawRoundRect(ctx, MASK_INNER_X, MASK_INNER_Y, MASK_INNER_WIDTH, MASK_INNER_HEIGHT, MASK_CORNER_RADIUS)
       ctx.stroke()
     })
-  }, [currentScale, currentX, currentY, currentRotation, image.src, imageLoaded, drawRoundRect, drawInnerShadow])
+  }, [currentScale, currentX, currentY, currentRotation, image.src, imageLoaded, drawRoundRect])
 
   // Load and cache image
   useEffect(() => {
@@ -247,25 +244,28 @@ export function ImageMaskEditor({ image, onUpdate, onGenerateMask }: ImageMaskEd
     img.src = image.src
   }, [image.src, drawCanvas])
 
-  // Redraw when settings change (debounced)
+  // Redraw when settings change - throttled to prevent excessive redraws
   useEffect(() => {
-    if (imageLoaded) {
+    if (!imageLoaded) return
+    
+    const timeoutId = setTimeout(() => {
       drawCanvas()
-    }
+    }, 50) // Throttle to max 20fps during interaction
+    
+    return () => clearTimeout(timeoutId)
   }, [currentScale, currentX, currentY, currentRotation, imageLoaded, drawCanvas])
 
-  // Debounced update function
-  const debouncedUpdate = useRef<NodeJS.Timeout | null>(null)
+  // Throttled update function for smoother interaction
+  const lastUpdateTime = useRef<number>(0)
   const handleUpdate = useCallback((newSettings: ProductImage["maskSettings"]) => {
     onUpdate(newSettings)
     
-    // Debounce canvas redraw for smoother interaction
-    if (debouncedUpdate.current) {
-      clearTimeout(debouncedUpdate.current)
-    }
-    debouncedUpdate.current = setTimeout(() => {
+    // Throttle updates to prevent excessive redraws
+    const now = Date.now()
+    if (now - lastUpdateTime.current > 50) { // Max 20 updates per second
+      lastUpdateTime.current = now
       drawCanvas()
-    }, 16) // ~60fps
+    }
   }, [onUpdate, drawCanvas])
 
   const displaySize = useMemo(() => {
@@ -350,12 +350,12 @@ export function ImageMaskEditor({ image, onUpdate, onGenerateMask }: ImageMaskEd
     exportCtx.drawImage(imageRef.current, -imageRef.current.width / 2, -imageRef.current.height / 2)
     exportCtx.restore()
 
-    // Add inner shadow effect to exported image
-    drawInnerShadow(exportCtx)
+    // Add inner shadow effect to exported image only
+    drawInnerShadowExport(exportCtx)
 
     // Export as base64 data URL
     return exportCanvas.toDataURL("image/png", 0.95)
-  }, [currentScale, currentX, currentY, currentRotation, drawRoundRect, drawInnerShadow])
+  }, [currentScale, currentX, currentY, currentRotation, drawRoundRect, drawInnerShadowExport])
 
   // Expose generate function to parent
   useEffect(() => {
@@ -369,9 +369,6 @@ export function ImageMaskEditor({ image, onUpdate, onGenerateMask }: ImageMaskEd
     return () => {
       if (animationFrameRef.current) {
         cancelAnimationFrame(animationFrameRef.current)
-      }
-      if (debouncedUpdate.current) {
-        clearTimeout(debouncedUpdate.current)
       }
     }
   }, [])
