@@ -349,8 +349,8 @@ export default function ProductSubmissionsPage() {
               .
               {submissionToDelete?.status === "published" && (
                 <span className="block mt-2 text-destructive font-medium">
-                  Warning: This submission is published and has a Shopify product ID. The
-                  submission will be deleted but the Shopify product will remain.
+              Warning: This submission is published. The product will be unpublished from Shopify
+              and the submission status will be reset to "rejected" so the vendor can see it.
                 </span>
               )}
             </AlertDialogDescription>

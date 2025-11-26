@@ -83,31 +83,72 @@ export async function DELETE(
       )
     }
 
-    // Warn if published (but still allow deletion)
+    // If published, unpublish from Shopify first
     if (submission.status === "published" && submission.shopify_product_id) {
-      console.warn(
-        `Deleting published submission ${params.id} with Shopify product ID ${submission.shopify_product_id}`
-      )
+      try {
+        const { deleteShopifyProduct } = await import("@/lib/shopify/product-creation")
+        const deleted = await deleteShopifyProduct(submission.shopify_product_id)
+        if (deleted) {
+          console.log(`Unpublished product ${submission.shopify_product_id} from Shopify`)
+        } else {
+          console.warn(`Failed to unpublish product ${submission.shopify_product_id} from Shopify`)
+          // Continue anyway - we'll still update the submission status
+        }
+      } catch (error) {
+        console.error("Error unpublishing from Shopify:", error)
+        // Continue anyway
+      }
     }
 
-    // Delete the submission
-    const { error: deleteError } = await supabase
-      .from("vendor_product_submissions")
-      .delete()
-      .eq("id", params.id)
+    // If approved or published, reset to rejected status so vendor can see it
+    // Otherwise, delete the submission completely
+    if (submission.status === "approved" || submission.status === "published") {
+      const { error: updateError } = await supabase
+        .from("vendor_product_submissions")
+        .update({
+          status: "rejected",
+          shopify_product_id: null,
+          published_at: null,
+          rejection_reason: `Removed by admin (${adminEmail}). Product unpublished from Shopify.`,
+          admin_notes: submission.admin_notes 
+            ? `${submission.admin_notes}\n\nRemoved by admin ${adminEmail} on ${new Date().toISOString()}.`
+            : `Removed by admin ${adminEmail} on ${new Date().toISOString()}.`,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", params.id)
 
-    if (deleteError) {
-      console.error("Error deleting submission:", deleteError)
-      return NextResponse.json(
-        { error: "Failed to delete submission", message: deleteError.message },
-        { status: 500 },
-      )
+      if (updateError) {
+        console.error("Error updating submission status:", updateError)
+        return NextResponse.json(
+          { error: "Failed to update submission", message: updateError.message },
+          { status: 500 },
+        )
+      }
+
+      return NextResponse.json({
+        success: true,
+        message: "Product unpublished and status reset to rejected. Vendor can now see it in their submissions.",
+      })
+    } else {
+      // For pending/rejected, delete completely
+      const { error: deleteError } = await supabase
+        .from("vendor_product_submissions")
+        .delete()
+        .eq("id", params.id)
+
+      if (deleteError) {
+        console.error("Error deleting submission:", deleteError)
+        return NextResponse.json(
+          { error: "Failed to delete submission", message: deleteError.message },
+          { status: 500 },
+        )
+      }
+
+      return NextResponse.json({
+        success: true,
+        message: "Submission deleted successfully",
+      })
     }
-
-    return NextResponse.json({
-      success: true,
-      message: "Submission deleted successfully",
-    })
   } catch (error: any) {
     console.error("Error deleting submission:", error)
     return NextResponse.json(

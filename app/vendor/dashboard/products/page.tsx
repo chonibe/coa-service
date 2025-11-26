@@ -9,7 +9,18 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Badge } from "@/components/ui/badge"
 import { ProductTable } from "../components/product-table"
 import { useVendorData } from "@/hooks/use-vendor-data"
-import { Plus, Package, CheckCircle, DollarSign, Clock, XCircle } from "lucide-react"
+import { Plus, Package, CheckCircle, DollarSign, Clock, XCircle, Trash2, Loader2 } from "lucide-react"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
+import { useToast } from "@/components/ui/use-toast"
 
 export default function ProductsPage() {
   const router = useRouter()
@@ -18,6 +29,10 @@ export default function ProductsPage() {
   const [activeProducts, setActiveProducts] = useState(0)
   const [submissions, setSubmissions] = useState<any[]>([])
   const [loadingSubmissions, setLoadingSubmissions] = useState(true)
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
+  const [submissionToDelete, setSubmissionToDelete] = useState<any>(null)
+  const [deleting, setDeleting] = useState(false)
+  const { toast } = useToast()
 
   useEffect(() => {
     if (products) {
@@ -45,6 +60,62 @@ export default function ProductsPage() {
 
     fetchSubmissions()
   }, [])
+
+  const handleDeleteClick = (submission: any, e: React.MouseEvent) => {
+    e.stopPropagation()
+    // Only allow deletion of unpublished submissions
+    if (submission.status === "pending" || submission.status === "rejected") {
+      setSubmissionToDelete(submission)
+      setDeleteDialogOpen(true)
+    } else {
+      toast({
+        title: "Cannot Delete",
+        description: "Only pending or rejected submissions can be deleted. Contact admin to unpublish approved/published products.",
+        variant: "destructive",
+      })
+    }
+  }
+
+  const handleDeleteConfirm = async () => {
+    if (!submissionToDelete) return
+
+    setDeleting(true)
+    try {
+      const response = await fetch(
+        `/api/vendor/products/submissions/${submissionToDelete.id}`,
+        {
+          method: "DELETE",
+          credentials: "include",
+        }
+      )
+
+      if (!response.ok) {
+        const data = await response.json()
+        throw new Error(data.error || "Failed to delete submission")
+      }
+
+      // Remove from list
+      setSubmissions(submissions.filter((s) => s.id !== submissionToDelete.id))
+      setDeleteDialogOpen(false)
+      setSubmissionToDelete(null)
+      
+      toast({
+        title: "Submission Deleted",
+        description: "The product submission has been deleted successfully.",
+      })
+    } catch (err: any) {
+      console.error("Error deleting submission:", err)
+      toast({
+        title: "Error",
+        description: err.message || "Failed to delete submission",
+        variant: "destructive",
+      })
+      setDeleteDialogOpen(false)
+      setSubmissionToDelete(null)
+    } finally {
+      setDeleting(false)
+    }
+  }
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -265,6 +336,16 @@ export default function ProductsPage() {
                                 Edit
                               </Button>
                             )}
+                            {(submission.status === "pending" || submission.status === "rejected") && (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={(e) => handleDeleteClick(submission, e)}
+                                className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            )}
                           </div>
                         </div>
                       </div>
@@ -276,6 +357,45 @@ export default function ProductsPage() {
           </Card>
         </TabsContent>
       </Tabs>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete the product
+              submission
+              {submissionToDelete && (
+                <>
+                  {" "}
+                  <strong>
+                    "{(submissionToDelete.product_data as any)?.title || "Untitled Product"}"
+                  </strong>
+                </>
+              )}
+              .
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleting}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteConfirm}
+              disabled={deleting}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {deleting ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Deleting...
+                </>
+              ) : (
+                "Delete"
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }

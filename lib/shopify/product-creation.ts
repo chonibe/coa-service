@@ -318,6 +318,32 @@ export async function setStreetDesignPdfMetafield(
 }
 
 /**
+ * Deletes a product from Shopify
+ */
+export async function deleteShopifyProduct(productId: string): Promise<boolean> {
+  try {
+    const response = await shopifyFetch2024(
+      `products/${productId}.json`,
+      {
+        method: "DELETE",
+      },
+    )
+
+    if (!response.ok) {
+      const errorText = await response.text()
+      console.error(`Failed to delete product ${productId} from Shopify:`, errorText)
+      return false
+    }
+
+    console.log(`Product ${productId} deleted from Shopify successfully`)
+    return true
+  } catch (error) {
+    console.error(`Error deleting product ${productId} from Shopify:`, error)
+    return false
+  }
+}
+
+/**
  * Sets print files URL metafield for custom.print_files
  * Metafield Definition ID: 270101873026
  */
