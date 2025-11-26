@@ -318,6 +318,60 @@ export async function setStreetDesignPdfMetafield(
 }
 
 /**
+ * Sets print files URL metafield for custom.print_files
+ * Metafield Definition ID: 270101873026
+ */
+export async function setPrintFilesMetafield(
+  productId: string,
+  pdfUrl: string,
+): Promise<any> {
+  const PRINT_FILES_METAFIELD_DEFINITION_ID = 270101873026
+  
+  try {
+    // First, fetch the metafield definition to get namespace and key
+    const definition = await fetchMetafieldDefinition(PRINT_FILES_METAFIELD_DEFINITION_ID)
+    
+    if (!definition) {
+      console.error("Could not fetch print files metafield definition, using default custom.print_files")
+      // Fallback to known namespace/key
+      return await setProductMetafield(productId, {
+        namespace: "custom",
+        key: "print_files",
+        value: pdfUrl,
+        type: "url",
+      })
+    }
+
+    console.log(`Setting print files metafield with namespace: ${definition.namespace}, key: ${definition.key}`)
+    
+    // Check if the metafield already exists on the product
+    const existingMetafields = await getProductMetafieldsFromShopify(productId)
+    
+    const existingMetafield = existingMetafields.find(
+      (m: any) => m.namespace === definition.namespace && m.key === definition.key
+    )
+    
+    if (existingMetafield) {
+      // Update existing metafield by ID
+      console.log(`Updating existing print files metafield (ID: ${existingMetafield.id})`)
+      return await updateProductMetafieldById(productId, existingMetafield.id, pdfUrl)
+    } else {
+      // Create new metafield
+      console.log("Creating new print files metafield")
+      return await setProductMetafield(productId, {
+        namespace: definition.namespace,
+        key: definition.key,
+        value: pdfUrl,
+        type: definition.type,
+      })
+    }
+  } catch (error) {
+    console.error(`Error setting print files metafield for product ${productId}:`, error)
+    return null
+  }
+}
+
+/**
  * Creates product variants
  * Note: Variants are typically created as part of the product creation
  * This function can be used to update or add variants after initial creation
