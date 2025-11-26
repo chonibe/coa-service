@@ -57,9 +57,19 @@ function validateProductSubmission(data: any): { valid: boolean; errors: string[
       if (variant.price && typeof variant.price === "string" && !/^\d+(\.\d{1,2})?$/.test(variant.price)) {
         errors.push(`Variant ${index + 1}: Price must be a valid number`)
       }
-      // Validate SKU is present (should be auto-generated)
+          // Auto-generate SKU if missing
       if (!variant.sku || typeof variant.sku !== "string" || variant.sku.trim().length === 0) {
-        errors.push(`Variant ${index + 1}: SKU is required`)
+        // Generate SKU if missing
+        const vendorPrefix = (data.vendor || "VENDOR")
+          .toUpperCase()
+          .replace(/[^A-Z0-9]/g, "")
+          .substring(0, 6)
+        const productCode = (data.title || "PRODUCT")
+          .toUpperCase()
+          .replace(/[^A-Z0-9]/g, "")
+          .substring(0, 6)
+        const variantSuffix = index > 0 ? `-V${index + 1}` : ""
+        variant.sku = `${vendorPrefix}-${productCode}${variantSuffix}`
       }
     })
   }

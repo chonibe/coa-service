@@ -15,12 +15,14 @@ import {
   Package,
   DollarSign,
   Image as ImageIcon,
+  FileText,
   Eye,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { BasicInfoStep } from "./basic-info-step"
 import { VariantsStep } from "./variants-step"
 import { ImagesStep } from "./images-step"
+import { PrintFilesStep } from "./print-files-step"
 import { ReviewStep } from "./review-step"
 import type { ProductSubmissionData, ProductCreationFields } from "@/types/product-submission"
 
@@ -56,6 +58,12 @@ const steps: Step[] = [
     title: "Images",
     description: "Upload product images",
     icon: <ImageIcon className="h-5 w-5" />,
+  },
+  {
+    id: "print-files",
+    title: "Print Files",
+    description: "Upload PDF files or Google Drive links",
+    icon: <FileText className="h-5 w-5" />,
   },
   {
     id: "review",
@@ -135,7 +143,9 @@ export function ProductWizard({ onComplete, onCancel, initialData, submissionId 
           return maskSaved
         }
         return true // Images are optional
-      case 3: // Review
+      case 3: // Print Files
+        return true // Print files are optional
+      case 4: // Review
         return true
       default:
         return false
@@ -307,6 +317,12 @@ export function ProductWizard({ onComplete, onCancel, initialData, submissionId 
             />
           )}
           {currentStep === 3 && (
+            <PrintFilesStep 
+              formData={formData} 
+              setFormData={setFormData}
+            />
+          )}
+          {currentStep === 4 && (
             <ReviewStep formData={formData} fieldsConfig={fieldsConfig} />
           )}
         </CardContent>
