@@ -26,9 +26,14 @@ export function ImageMaskEditor({ image, onUpdate, onGenerateMask }: ImageMaskEd
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const imageRef = useRef<HTMLImageElement | null>(null)
   const animationFrameRef = useRef<number | null>(null)
+  const redrawTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+  const settingsRef = useRef(settings) // Store settings in ref to avoid callback recreation
   const [isDragging, setIsDragging] = useState(false)
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 })
   const [imageLoaded, setImageLoaded] = useState(false)
+  
+  // Update ref when settings change
+  settingsRef.current = settings
 
   const settings = image.maskSettings || {
     x: 0,
@@ -109,102 +114,113 @@ export function ImageMaskEditor({ image, onUpdate, onGenerateMask }: ImageMaskEd
     ctx.restore()
   }, [drawRoundRect])
 
-  // Optimized draw function using requestAnimationFrame
+  // Single optimized draw function - use refs to avoid dependency issues
   const drawCanvas = useCallback(() => {
     const canvas = canvasRef.current
     if (!canvas) return
 
-    const ctx = canvas.getContext("2d", { alpha: false })
-    if (!ctx) return
-
-    // Cancel any pending animation frame
+    // Prevent multiple simultaneous draws using ref (faster than state)
+    const isDrawingRef = { current: false }
     if (animationFrameRef.current) {
       cancelAnimationFrame(animationFrameRef.current)
     }
 
+    const ctx = canvas.getContext("2d", { alpha: false })
+    if (!ctx) return
+
     animationFrameRef.current = requestAnimationFrame(() => {
-      // Set canvas size for high DPI displays (only once)
-      const dpr = typeof window !== "undefined" ? window.devicePixelRatio || 1 : 1
-      const displaySize = Math.min(600, typeof window !== "undefined" ? Math.min(600, window.innerWidth - 100) : 600)
-      
-      // Only resize if dimensions changed
-      const expectedWidth = MASK_OUTER_SIZE * dpr
-      const expectedHeight = MASK_OUTER_SIZE * dpr
-      
-      if (canvas.width !== expectedWidth || canvas.height !== expectedHeight) {
-        canvas.width = expectedWidth
-        canvas.height = expectedHeight
-        canvas.style.width = `${displaySize}px`
-        canvas.style.height = `${displaySize}px`
+      try {
+        // Set canvas size for high DPI displays
+        const dpr = typeof window !== "undefined" ? window.devicePixelRatio || 1 : 1
+        const displaySize = Math.min(600, typeof window !== "undefined" ? Math.min(600, window.innerWidth - 100) : 600)
+        
+        // Only resize if dimensions changed
+        const expectedWidth = MASK_OUTER_SIZE * dpr
+        const expectedHeight = MASK_OUTER_SIZE * dpr
+        
+        if (canvas.width !== expectedWidth || canvas.height !== expectedHeight) {
+          canvas.width = expectedWidth
+          canvas.height = expectedHeight
+          canvas.style.width = `${displaySize}px`
+          canvas.style.height = `${displaySize}px`
+        }
+        
+        // Reset transform and clear
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
+        ctx.clearRect(0, 0, MASK_OUTER_SIZE, MASK_OUTER_SIZE)
+
+        // Clear canvas background
+        ctx.fillStyle = "#f3f4f6"
+        ctx.fillRect(0, 0, MASK_OUTER_SIZE, MASK_OUTER_SIZE)
+
+        // Draw frame borders (always visible)
+        ctx.strokeStyle = "#e5e7eb"
+        ctx.lineWidth = 4
+        ctx.strokeRect(2, 2, MASK_OUTER_SIZE - 4, MASK_OUTER_SIZE - 4)
+
+        ctx.strokeStyle = "#9ca3af"
+        ctx.lineWidth = 2
+        drawRoundRect(ctx, MASK_INNER_X, MASK_INNER_Y, MASK_INNER_WIDTH, MASK_INNER_HEIGHT, MASK_CORNER_RADIUS)
+        ctx.stroke()
+
+        // Get current values from refs to avoid stale closures
+        const img = imageRef.current
+        const currentSettings = settingsRef.current
+
+        // If no image or not loaded yet
+        if (!image.src || image.src.trim().length === 0 || !img || !imageLoaded) {
+          ctx.fillStyle = "#9ca3af"
+          ctx.font = "18px Arial"
+          ctx.textAlign = "center"
+          ctx.fillText("Upload an image to position it", MASK_OUTER_SIZE / 2, MASK_OUTER_SIZE / 2 - 10)
+          ctx.font = "14px Arial"
+          ctx.fillText("within the frame above", MASK_OUTER_SIZE / 2, MASK_OUTER_SIZE / 2 + 15)
+          return
+        }
+
+        // Draw the masked image
+        ctx.save()
+
+        // Create clipping path for the inner rectangle
+        drawRoundRect(ctx, MASK_INNER_X, MASK_INNER_Y, MASK_INNER_WIDTH, MASK_INNER_HEIGHT, MASK_CORNER_RADIUS)
+        ctx.clip()
+
+        // Apply transformations using current settings from ref
+        const centerX = MASK_OUTER_SIZE / 2
+        const centerY = MASK_OUTER_SIZE / 2
+        
+        // Get fresh settings from ref to avoid stale closure
+        const scale = currentSettings.scale || defaultScale
+        const x = currentSettings.x || 0
+        const y = currentSettings.y || 0
+        const rotation = currentSettings.rotation || 0
+        
+        ctx.translate(centerX, centerY)
+        ctx.rotate((rotation * Math.PI) / 180)
+        ctx.scale(scale, scale)
+        ctx.translate(x, y)
+        
+        // Draw image centered
+        ctx.drawImage(img, -img.width / 2, -img.height / 2)
+
+        ctx.restore()
+
+        // Redraw borders on top
+        ctx.strokeStyle = "#e5e7eb"
+        ctx.lineWidth = 4
+        ctx.strokeRect(2, 2, MASK_OUTER_SIZE - 4, MASK_OUTER_SIZE - 4)
+
+        ctx.strokeStyle = "#9ca3af"
+        ctx.lineWidth = 2
+        drawRoundRect(ctx, MASK_INNER_X, MASK_INNER_Y, MASK_INNER_WIDTH, MASK_INNER_HEIGHT, MASK_CORNER_RADIUS)
+        ctx.stroke()
+      } catch (error) {
+        console.error("Error drawing canvas:", error)
       }
-      
-      // Reset transform and clear
-      ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
-      ctx.clearRect(0, 0, MASK_OUTER_SIZE, MASK_OUTER_SIZE)
-
-      // Clear canvas background
-      ctx.fillStyle = "#f3f4f6"
-      ctx.fillRect(0, 0, MASK_OUTER_SIZE, MASK_OUTER_SIZE)
-
-      // Draw frame borders (always visible)
-      ctx.strokeStyle = "#e5e7eb"
-      ctx.lineWidth = 4
-      ctx.strokeRect(2, 2, MASK_OUTER_SIZE - 4, MASK_OUTER_SIZE - 4)
-
-      ctx.strokeStyle = "#9ca3af"
-      ctx.lineWidth = 2
-      drawRoundRect(ctx, MASK_INNER_X, MASK_INNER_Y, MASK_INNER_WIDTH, MASK_INNER_HEIGHT, MASK_CORNER_RADIUS)
-      ctx.stroke()
-
-      // If no image or not loaded yet
-      const img = imageRef.current
-      if (!image.src || image.src.trim().length === 0 || !img || !imageLoaded) {
-        ctx.fillStyle = "#9ca3af"
-        ctx.font = "18px Arial"
-        ctx.textAlign = "center"
-        ctx.fillText("Upload an image to position it", MASK_OUTER_SIZE / 2, MASK_OUTER_SIZE / 2 - 10)
-        ctx.font = "14px Arial"
-        ctx.fillText("within the frame above", MASK_OUTER_SIZE / 2, MASK_OUTER_SIZE / 2 + 15)
-        return
-      }
-
-      // Draw the masked image
-      ctx.save()
-
-      // Create clipping path for the inner rectangle
-      drawRoundRect(ctx, MASK_INNER_X, MASK_INNER_Y, MASK_INNER_WIDTH, MASK_INNER_HEIGHT, MASK_CORNER_RADIUS)
-      ctx.clip()
-
-      // Apply transformations
-      const centerX = MASK_OUTER_SIZE / 2
-      const centerY = MASK_OUTER_SIZE / 2
-      
-      ctx.translate(centerX, centerY)
-      ctx.rotate((currentRotation * Math.PI) / 180)
-      ctx.scale(currentScale, currentScale)
-      ctx.translate(currentX, currentY)
-      
-      // Draw image centered
-      ctx.drawImage(img, -img.width / 2, -img.height / 2)
-
-      ctx.restore()
-
-      // NOTE: Shadow is NOT drawn in preview for performance
-      // Shadow will be applied only in the final export
-
-      // Redraw borders on top
-      ctx.strokeStyle = "#e5e7eb"
-      ctx.lineWidth = 4
-      ctx.strokeRect(2, 2, MASK_OUTER_SIZE - 4, MASK_OUTER_SIZE - 4)
-
-      ctx.strokeStyle = "#9ca3af"
-      ctx.lineWidth = 2
-      drawRoundRect(ctx, MASK_INNER_X, MASK_INNER_Y, MASK_INNER_WIDTH, MASK_INNER_HEIGHT, MASK_CORNER_RADIUS)
-      ctx.stroke()
     })
-  }, [currentScale, currentX, currentY, currentRotation, image.src, imageLoaded, drawRoundRect])
+  }, [imageLoaded, defaultScale, drawRoundRect, image.src]) // Use refs for settings, only depend on stable values
 
-  // Load and cache image
+  // Load image only when src changes
   useEffect(() => {
     if (!image.src || image.src.trim().length === 0) {
       imageRef.current = null
@@ -232,41 +248,60 @@ export function ImageMaskEditor({ image, onUpdate, onGenerateMask }: ImageMaskEd
     img.onload = () => {
       imageRef.current = img
       setImageLoaded(true)
-      drawCanvas()
     }
     
     img.onerror = () => {
       imageRef.current = null
       setImageLoaded(false)
-      drawCanvas()
     }
     
     img.src = image.src
-  }, [image.src, drawCanvas])
+    
+    // Cleanup
+    return () => {
+      img.onload = null
+      img.onerror = null
+    }
+  }, [image.src]) // Only depend on image.src
 
-  // Redraw when settings change - throttled to prevent excessive redraws
+  // Debounced redraw when settings change - only trigger on actual value changes
   useEffect(() => {
     if (!imageLoaded) return
     
-    const timeoutId = setTimeout(() => {
-      drawCanvas()
-    }, 50) // Throttle to max 20fps during interaction
+    // Clear any pending timeout
+    if (redrawTimeoutRef.current) {
+      clearTimeout(redrawTimeoutRef.current)
+    }
     
-    return () => clearTimeout(timeoutId)
+    // Debounce redraw to prevent excessive updates
+    redrawTimeoutRef.current = setTimeout(() => {
+      drawCanvas()
+    }, 150) // Increased debounce time for better performance
+    
+    return () => {
+      if (redrawTimeoutRef.current) {
+        clearTimeout(redrawTimeoutRef.current)
+      }
+    }
   }, [currentScale, currentX, currentY, currentRotation, imageLoaded, drawCanvas])
+  
+  // Separate effect for image loading state changes
+  useEffect(() => {
+    if (imageLoaded) {
+      // Small delay to ensure image is rendered in DOM
+      const timeout = setTimeout(() => drawCanvas(), 50)
+      return () => clearTimeout(timeout)
+    }
+  }, [imageLoaded, drawCanvas])
 
-  // Throttled update function for smoother interaction
-  const lastUpdateTime = useRef<number>(0)
+  // Optimized update handler - doesn't trigger immediate redraw
   const handleUpdate = useCallback((newSettings: ProductImage["maskSettings"]) => {
+    // Update parent immediately
     onUpdate(newSettings)
     
-    // Throttle updates to prevent excessive redraws
-    const now = Date.now()
-    if (now - lastUpdateTime.current > 50) { // Max 20 updates per second
-      lastUpdateTime.current = now
-      drawCanvas()
-    }
-  }, [onUpdate, drawCanvas])
+    // Redraw will be triggered by the useEffect watching settings changes
+    // No need to call drawCanvas here
+  }, [onUpdate])
 
   const displaySize = useMemo(() => {
     return Math.min(600, typeof window !== "undefined" ? Math.min(600, window.innerWidth - 100) : 600)
@@ -313,7 +348,7 @@ export function ImageMaskEditor({ image, onUpdate, onGenerateMask }: ImageMaskEd
     })
   }, [defaultScale, handleUpdate])
 
-  // Generate and export masked image
+  // Generate and export masked image - only called when needed
   const generateMaskedImage = useCallback(async (): Promise<string> => {
     if (!imageRef.current) {
       throw new Error("Image not loaded")
@@ -369,6 +404,9 @@ export function ImageMaskEditor({ image, onUpdate, onGenerateMask }: ImageMaskEd
     return () => {
       if (animationFrameRef.current) {
         cancelAnimationFrame(animationFrameRef.current)
+      }
+      if (redrawTimeoutRef.current) {
+        clearTimeout(redrawTimeoutRef.current)
       }
     }
   }, [])
