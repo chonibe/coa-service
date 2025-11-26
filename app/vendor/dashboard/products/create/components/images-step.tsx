@@ -180,13 +180,48 @@ export function ImagesStep({ formData, setFormData, onMaskReady }: ImagesStepPro
     dragOverIndex.current = null
   }
 
+  // Throttled update mask settings to prevent excessive re-renders
+  const maskUpdateTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+  const pendingMaskSettingsRef = useRef<ProductImage["maskSettings"] | null>(null)
+  
   const updateMaskSettings = (maskSettings: ProductImage["maskSettings"]) => {
-    if (images.length > 0) {
-      const updatedImages = [...images]
-      updatedImages[0] = { ...updatedImages[0], maskSettings }
-      setFormData({ ...formData, images: updatedImages })
+    console.log("[ImagesStep] updateMaskSettings called", {
+      timestamp: new Date().toISOString(),
+      maskSettings,
+      hasPendingUpdate: !!maskUpdateTimeoutRef.current,
+    })
+    
+    // Store the latest settings
+    pendingMaskSettingsRef.current = maskSettings
+    
+    // Clear any pending update
+    if (maskUpdateTimeoutRef.current) {
+      clearTimeout(maskUpdateTimeoutRef.current)
     }
+    
+    // Throttle updates - only update parent after user stops adjusting
+    maskUpdateTimeoutRef.current = setTimeout(() => {
+      if (images.length > 0 && pendingMaskSettingsRef.current) {
+        console.log("[ImagesStep] Applying mask settings update")
+        const updatedImages = [...images]
+        updatedImages[0] = { ...updatedImages[0], maskSettings: pendingMaskSettingsRef.current }
+        setFormData((prev) => ({ 
+          ...prev, 
+          images: updatedImages 
+        }))
+        pendingMaskSettingsRef.current = null
+      }
+    }, 200) // Wait 200ms after user stops adjusting before updating parent
   }
+  
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (maskUpdateTimeoutRef.current) {
+        clearTimeout(maskUpdateTimeoutRef.current)
+      }
+    }
+  }, [])
 
   const handleGenerateMask = (generateFn: () => Promise<string>) => {
     generateMaskRef.current = generateFn

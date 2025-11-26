@@ -72,13 +72,35 @@ export function ImageMaskEditor({ image, onUpdate, onGenerateMask }: ImageMaskEd
   const settingsRef = useRef(settings)
   const imageSrcRef = useRef(image.src)
   const imageLoadedRef = useRef(imageLoaded)
+  const prevPropsRef = useRef({ imageSrc: image.src, maskSettings: image.maskSettings })
   
-  // Update refs when props change
+  // Update refs when props change and track prop changes
   useEffect(() => {
+    const imageSrcChanged = prevPropsRef.current.imageSrc !== image.src
+    const settingsChanged = JSON.stringify(prevPropsRef.current.maskSettings) !== JSON.stringify(image.maskSettings)
+    
+    if (imageSrcChanged || settingsChanged) {
+      console.log("[MaskEditor] Props changed", {
+        timestamp: new Date().toISOString(),
+        imageSrcChanged,
+        settingsChanged,
+        oldImageSrc: prevPropsRef.current.imageSrc?.substring(0, 50),
+        newImageSrc: image.src?.substring(0, 50),
+        oldSettings: prevPropsRef.current.maskSettings,
+        newSettings: image.maskSettings,
+        renderCount,
+      })
+      
+      prevPropsRef.current = {
+        imageSrc: image.src,
+        maskSettings: image.maskSettings,
+      }
+    }
+    
     settingsRef.current = settings
     imageSrcRef.current = image.src
     imageLoadedRef.current = imageLoaded
-  }, [settings, image.src, imageLoaded])
+  }, [settings, image.src, imageLoaded, image.maskSettings, renderCount])
 
   // Default scale calculation
   const defaultScale = useMemo(() => {
@@ -398,7 +420,7 @@ export function ImageMaskEditor({ image, onUpdate, onGenerateMask }: ImageMaskEd
     scheduleRedraw()
   }, [currentScale, currentX, currentY, currentRotation, imageLoaded, scheduleRedraw])
 
-  // Update handler - updates parent and schedules redraw
+  // Update handler - updates parent (throttled) and schedules redraw
   const handleUpdate = useCallback((newSettings: ProductImage["maskSettings"]) => {
     console.log("[MaskEditor] handleUpdate called", {
       timestamp: new Date().toISOString(),
@@ -406,10 +428,13 @@ export function ImageMaskEditor({ image, onUpdate, onGenerateMask }: ImageMaskEd
       oldSettings: settingsRef.current,
     })
     
-    // Update parent immediately
+    // Update local ref immediately for responsive preview (doesn't trigger re-render)
+    settingsRef.current = newSettings
+    
+    // Update parent (this is throttled in images-step to prevent render loops)
     onUpdate(newSettings)
     
-    // Schedule a throttled redraw
+    // Schedule a throttled redraw using the new settings from ref
     scheduleRedraw()
   }, [onUpdate, scheduleRedraw])
 
