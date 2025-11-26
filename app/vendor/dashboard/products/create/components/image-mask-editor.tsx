@@ -23,11 +23,39 @@ const MASK_INNER_X = (MASK_OUTER_SIZE - MASK_INNER_WIDTH) / 2
 const MASK_INNER_Y = (MASK_OUTER_SIZE - MASK_INNER_HEIGHT) / 2
 
 export function ImageMaskEditor({ image, onUpdate, onGenerateMask }: ImageMaskEditorProps) {
+  const renderCountRef = useRef(0)
+  const renderStartTime = useRef(performance.now())
+  
+  renderCountRef.current += 1
+  const renderCount = renderCountRef.current
+  
+  // Warn if too many renders
+  if (renderCount > 50) {
+    console.warn("[MaskEditor] Excessive renders detected!", {
+      renderCount,
+      timestamp: new Date().toISOString(),
+    })
+  }
+  
+  // Log every 10th render to avoid spam
+  if (renderCount % 10 === 0 || renderCount <= 5) {
+    const timeSinceLastRender = performance.now() - renderStartTime.current
+    console.log("[MaskEditor] Component render", {
+      renderCount,
+      timestamp: new Date().toISOString(),
+      timeSinceLastRender: `${timeSinceLastRender.toFixed(2)}ms`,
+      imageSrc: image.src?.substring(0, 50),
+      maskSettings: image.maskSettings,
+    })
+    renderStartTime.current = performance.now()
+  }
+  
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const imageRef = useRef<HTMLImageElement | null>(null)
   const animationFrameRef = useRef<number | null>(null)
   const redrawTimeoutRef = useRef<NodeJS.Timeout | null>(null)
   const isRedrawingRef = useRef(false)
+  const lastRedrawTimeRef = useRef<number>(0)
   
   const [isDragging, setIsDragging] = useState(false)
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 })
@@ -93,26 +121,50 @@ export function ImageMaskEditor({ image, onUpdate, onGenerateMask }: ImageMaskEd
 
   // Single optimized draw function - reads from refs, no dependencies
   const drawCanvas = useCallback(() => {
+    const startTime = performance.now()
+    console.log("[MaskEditor] drawCanvas called", {
+      timestamp: new Date().toISOString(),
+      isRedrawing: isRedrawingRef.current,
+      hasCanvas: !!canvasRef.current,
+      hasImage: !!imageRef.current,
+      imageLoaded: imageLoadedRef.current,
+    })
+    
     // Prevent concurrent redraws
-    if (isRedrawingRef.current) return
+    if (isRedrawingRef.current) {
+      console.warn("[MaskEditor] drawCanvas skipped - already redrawing")
+      return
+    }
     
     const canvas = canvasRef.current
-    if (!canvas) return
+    if (!canvas) {
+      console.warn("[MaskEditor] drawCanvas skipped - no canvas")
+      return
+    }
 
     // Cancel any pending animation frame
     if (animationFrameRef.current) {
+      console.log("[MaskEditor] Cancelling pending animation frame")
       cancelAnimationFrame(animationFrameRef.current)
     }
 
     // Cancel any pending timeout
     if (redrawTimeoutRef.current) {
+      console.log("[MaskEditor] Cancelling pending timeout")
       clearTimeout(redrawTimeoutRef.current)
       redrawTimeoutRef.current = null
     }
 
     isRedrawingRef.current = true
+    console.log("[MaskEditor] Starting canvas redraw...")
 
     animationFrameRef.current = requestAnimationFrame(() => {
+      const rafStartTime = performance.now()
+      console.log("[MaskEditor] Animation frame started", {
+        timeSinceDrawCall: rafStartTime - startTime,
+      })
+      
+      try {
       try {
         const ctx = canvas.getContext("2d", { alpha: false })
         if (!ctx) {
@@ -206,8 +258,20 @@ export function ImageMaskEditor({ image, onUpdate, onGenerateMask }: ImageMaskEd
         ctx.lineWidth = 2
         drawRoundRect(ctx, MASK_INNER_X, MASK_INNER_Y, MASK_INNER_WIDTH, MASK_INNER_HEIGHT, MASK_CORNER_RADIUS)
         ctx.stroke()
+        
+        const totalTime = performance.now() - startTime
+        const rafTime = performance.now() - rafStartTime
+        console.log("[MaskEditor] Canvas redraw completed", {
+          totalTime: `${totalTime.toFixed(2)}ms`,
+          rafTime: `${rafTime.toFixed(2)}ms`,
+          timestamp: new Date().toISOString(),
+        })
       } catch (error) {
-        console.error("Error drawing canvas:", error)
+        console.error("[MaskEditor] Error drawing canvas:", error, {
+          errorMessage: error instanceof Error ? error.message : String(error),
+          stack: error instanceof Error ? error.stack : undefined,
+          timestamp: new Date().toISOString(),
+        })
       } finally {
         isRedrawingRef.current = false
       }
@@ -216,20 +280,48 @@ export function ImageMaskEditor({ image, onUpdate, onGenerateMask }: ImageMaskEd
 
   // Throttled redraw function - only redraws when actually needed
   const scheduleRedraw = useCallback(() => {
+    const now = performance.now()
+    const timeSinceLastRedraw = now - lastRedrawTimeRef.current
+    
+    // Warn if redraws are being scheduled too frequently
+    if (timeSinceLastRedraw < 50) {
+      console.warn("[MaskEditor] Redraw scheduled too frequently!", {
+        timeSinceLastRedraw: `${timeSinceLastRedraw.toFixed(2)}ms`,
+        timestamp: new Date().toISOString(),
+      })
+    }
+    
+    console.log("[MaskEditor] scheduleRedraw called", {
+      timestamp: new Date().toISOString(),
+      hasPendingTimeout: !!redrawTimeoutRef.current,
+      timeSinceLastRedraw: `${timeSinceLastRedraw.toFixed(2)}ms`,
+    })
+    
     // Clear any pending timeout
     if (redrawTimeoutRef.current) {
+      console.log("[MaskEditor] Clearing pending redraw timeout")
       clearTimeout(redrawTimeoutRef.current)
     }
     
     // Throttle redraws - only redraw after user stops interacting
     redrawTimeoutRef.current = setTimeout(() => {
+      lastRedrawTimeRef.current = performance.now()
+      console.log("[MaskEditor] Executing scheduled redraw")
       drawCanvas()
     }, 100) // Increased throttle for better performance
   }, [drawCanvas])
 
   // Load image only when src changes
   useEffect(() => {
+    console.log("[MaskEditor] Image src effect triggered", {
+      timestamp: new Date().toISOString(),
+      imageSrc: image.src,
+      currentImageSrc: imageRef.current?.src,
+      imageLoaded,
+    })
+    
     if (!image.src || image.src.trim().length === 0) {
+      console.log("[MaskEditor] Clearing image - no src")
       imageRef.current = null
       setImageLoaded(false)
       scheduleRedraw()
@@ -238,10 +330,13 @@ export function ImageMaskEditor({ image, onUpdate, onGenerateMask }: ImageMaskEd
 
     // If image already loaded with same src, skip reloading
     if (imageRef.current?.src === image.src && imageLoaded) {
+      console.log("[MaskEditor] Image already loaded, skipping")
       return
     }
 
+    console.log("[MaskEditor] Loading new image...")
     setImageLoaded(false)
+    const imgLoadStartTime = performance.now()
     const img = new Image()
     
     if (
@@ -253,12 +348,23 @@ export function ImageMaskEditor({ image, onUpdate, onGenerateMask }: ImageMaskEd
     }
     
     img.onload = () => {
+      const loadTime = performance.now() - imgLoadStartTime
+      console.log("[MaskEditor] Image loaded successfully", {
+        loadTime: `${loadTime.toFixed(2)}ms`,
+        imageSize: `${img.width}x${img.height}`,
+        timestamp: new Date().toISOString(),
+      })
       imageRef.current = img
       setImageLoaded(true)
       scheduleRedraw()
     }
     
-    img.onerror = () => {
+    img.onerror = (error) => {
+      console.error("[MaskEditor] Image load failed", {
+        error,
+        imageSrc: image.src,
+        timestamp: new Date().toISOString(),
+      })
       imageRef.current = null
       setImageLoaded(false)
       scheduleRedraw()
@@ -274,7 +380,19 @@ export function ImageMaskEditor({ image, onUpdate, onGenerateMask }: ImageMaskEd
 
   // Single effect to handle settings changes - heavily throttled
   useEffect(() => {
-    if (!imageLoaded) return
+    console.log("[MaskEditor] Settings changed effect triggered", {
+      timestamp: new Date().toISOString(),
+      imageLoaded,
+      currentScale,
+      currentX,
+      currentY,
+      currentRotation,
+    })
+    
+    if (!imageLoaded) {
+      console.log("[MaskEditor] Skipping redraw - image not loaded")
+      return
+    }
     
     // Use scheduleRedraw which has built-in throttling
     scheduleRedraw()
@@ -282,6 +400,12 @@ export function ImageMaskEditor({ image, onUpdate, onGenerateMask }: ImageMaskEd
 
   // Update handler - updates parent and schedules redraw
   const handleUpdate = useCallback((newSettings: ProductImage["maskSettings"]) => {
+    console.log("[MaskEditor] handleUpdate called", {
+      timestamp: new Date().toISOString(),
+      newSettings,
+      oldSettings: settingsRef.current,
+    })
+    
     // Update parent immediately
     onUpdate(newSettings)
     
@@ -312,8 +436,12 @@ export function ImageMaskEditor({ image, onUpdate, onGenerateMask }: ImageMaskEd
   const handleMouseMove = useCallback((e: React.MouseEvent<HTMLCanvasElement>) => {
     if (!isDragging) return
     
+    const moveStartTime = performance.now()
     const rect = canvasRef.current?.getBoundingClientRect()
-    if (!rect) return
+    if (!rect) {
+      console.warn("[MaskEditor] handleMouseMove: no canvas rect")
+      return
+    }
     
     const scale = displaySize / MASK_OUTER_SIZE
     const newX = (e.clientX - rect.left) / scale - dragStart.x
@@ -326,11 +454,16 @@ export function ImageMaskEditor({ image, onUpdate, onGenerateMask }: ImageMaskEd
     
     // Throttle updates during drag to prevent excessive state updates
     dragUpdateTimeoutRef.current = setTimeout(() => {
+      const updateStartTime = performance.now()
       const currentSettings = settingsRef.current
       handleUpdate({
         ...currentSettings,
         x: newX,
         y: newY,
+      })
+      console.log("[MaskEditor] Drag update applied", {
+        timeInQueue: `${(updateStartTime - moveStartTime).toFixed(2)}ms`,
+        newPosition: { x: newX, y: newY },
       })
     }, 50) // Update every 50ms during drag
   }, [isDragging, dragStart, displaySize, handleUpdate])
@@ -357,13 +490,22 @@ export function ImageMaskEditor({ image, onUpdate, onGenerateMask }: ImageMaskEd
   const sliderTimeoutRef = useRef<NodeJS.Timeout | null>(null)
   
   const handleSliderChange = useCallback((field: 'scale' | 'rotation', value: number) => {
+    console.log("[MaskEditor] Slider change triggered", {
+      field,
+      value,
+      timestamp: new Date().toISOString(),
+      hasPendingTimeout: !!sliderTimeoutRef.current,
+    })
+    
     // Clear any pending update
     if (sliderTimeoutRef.current) {
+      console.log("[MaskEditor] Clearing pending slider update")
       clearTimeout(sliderTimeoutRef.current)
     }
     
     // Debounce slider updates
     sliderTimeoutRef.current = setTimeout(() => {
+      console.log("[MaskEditor] Applying slider update", { field, value })
       const currentSettings = settingsRef.current
       handleUpdate({
         ...currentSettings,
@@ -453,23 +595,46 @@ export function ImageMaskEditor({ image, onUpdate, onGenerateMask }: ImageMaskEd
     }
   }, [onGenerateMask, imageLoaded, generateMaskedImage])
 
-  // Cleanup
+  // Component mount/unmount logging
   useEffect(() => {
+    console.log("[MaskEditor] Component mounted", {
+      timestamp: new Date().toISOString(),
+      initialRenderCount: renderCountRef.current,
+    })
+    
     return () => {
+      console.log("[MaskEditor] Component unmounting - cleaning up", {
+        timestamp: new Date().toISOString(),
+        totalRenders: renderCountRef.current,
+      })
+      
       if (animationFrameRef.current) {
+        console.log("[MaskEditor] Cancelling animation frame on unmount")
         cancelAnimationFrame(animationFrameRef.current)
       }
       if (redrawTimeoutRef.current) {
+        console.log("[MaskEditor] Clearing redraw timeout on unmount")
         clearTimeout(redrawTimeoutRef.current)
       }
       if (dragUpdateTimeoutRef.current) {
+        console.log("[MaskEditor] Clearing drag timeout on unmount")
         clearTimeout(dragUpdateTimeoutRef.current)
       }
       if (sliderTimeoutRef.current) {
+        console.log("[MaskEditor] Clearing slider timeout on unmount")
         clearTimeout(sliderTimeoutRef.current)
       }
     }
   }, [])
+  
+  // Track when settings ref changes
+  useEffect(() => {
+    console.log("[MaskEditor] Settings ref updated", {
+      timestamp: new Date().toISOString(),
+      settings: settingsRef.current,
+      renderCount,
+    })
+  }, [settings, renderCount])
 
   return (
     <div className="space-y-4">
