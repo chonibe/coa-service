@@ -4,9 +4,10 @@ import { cookies } from "next/headers"
 import { getVendorFromCookieStore } from "@/lib/vendor-session"
 import { createClient } from "@/lib/supabase/server"
 
-// Maximum file size: 10MB for images, 50MB for PDFs
+// Maximum file size: 10MB for images, 50MB for PDFs and videos
 const MAX_IMAGE_SIZE = 10 * 1024 * 1024 // 10MB
 const MAX_PDF_SIZE = 50 * 1024 * 1024 // 50MB
+const MAX_VIDEO_SIZE = 50 * 1024 * 1024 // 50MB
 
 export async function POST(request: NextRequest) {
   const startTime = Date.now()
@@ -30,7 +31,7 @@ export async function POST(request: NextRequest) {
     console.log(`[${uploadId}] FormData parsed in ${Date.now() - formDataStart}ms`)
 
     const file = formData.get("file") as File | null
-    const fileType = formData.get("type") as string | null // 'image', 'pdf'
+    const fileType = formData.get("type") as string | null // 'image', 'pdf', 'video'
 
     if (!file) {
       console.error(`[${uploadId}] No file provided`)
@@ -40,7 +41,10 @@ export async function POST(request: NextRequest) {
     console.log(`[${uploadId}] File received: ${file.name}, size: ${(file.size / 1024 / 1024).toFixed(2)}MB, type: ${file.type}`)
 
     // Validate file size
-    const maxSize = fileType === "pdf" ? MAX_PDF_SIZE : MAX_IMAGE_SIZE
+    let maxSize = MAX_IMAGE_SIZE
+    if (fileType === "pdf") maxSize = MAX_PDF_SIZE
+    else if (fileType === "video") maxSize = MAX_VIDEO_SIZE
+    
     if (file.size > maxSize) {
       const maxSizeMB = (maxSize / (1024 * 1024)).toFixed(0)
       console.error(`[${uploadId}] File size validation failed: ${(file.size / 1024 / 1024).toFixed(2)}MB > ${maxSizeMB}MB`)
@@ -59,6 +63,10 @@ export async function POST(request: NextRequest) {
       console.error(`[${uploadId}] Invalid file type: expected PDF, got ${file.type}`)
       return NextResponse.json({ error: "File must be a PDF" }, { status: 400 })
     }
+    if (fileType === "video" && !file.type.startsWith("video/")) {
+      console.error(`[${uploadId}] Invalid file type: expected video, got ${file.type}`)
+      return NextResponse.json({ error: "File must be a video" }, { status: 400 })
+    }
 
     console.log(`[${uploadId}] File validation passed, initializing Supabase client...`)
     const supabase = createClient()
@@ -71,7 +79,7 @@ export async function POST(request: NextRequest) {
     const fileName = `${timestamp}_${file.name.replace(/[^a-z0-9.]/gi, "_")}`
     const filePath = `product_submissions/${sanitizedVendorName}/${fileName}`
 
-    // Determine bucket based on file type
+    // Determine bucket based on file type (videos go to product-images bucket)
     const bucket = fileType === "pdf" ? "print-files" : "product-images"
 
     console.log(`[${uploadId}] Uploading to bucket: ${bucket}, path: ${filePath}`)

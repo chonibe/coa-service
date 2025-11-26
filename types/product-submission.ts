@@ -18,6 +18,7 @@ export interface ProductImage {
   src: string // URL or base64
   alt?: string | null
   position?: number
+  mediaType?: 'image' | 'video' // Type of media, defaults to 'image'
   maskSettings?: {
     x?: number // Position X
     y?: number // Position Y

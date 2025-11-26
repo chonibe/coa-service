@@ -2,7 +2,7 @@
 
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Image as ImageIcon, DollarSign } from "lucide-react"
+import { Image as ImageIcon, DollarSign, Video } from "lucide-react"
 import type { ProductSubmissionData, ProductCreationFields } from "@/types/product-submission"
 
 interface ReviewStepProps {
@@ -30,24 +30,35 @@ export function ReviewStep({ formData, fieldsConfig }: ReviewStepProps) {
       {/* Unified Product Preview Card */}
       <Card className="overflow-hidden">
         <div className="grid md:grid-cols-2 gap-0">
-          {/* Image Section */}
-          <div className="relative bg-muted aspect-square">
+          {/* Artwork Image Section - Smaller Display */}
+          <div className="relative bg-muted aspect-square flex items-center justify-center p-6">
             {firstImage ? (
-              <img
-                src={firstImage.src}
-                alt={formData.title}
-                className="w-full h-full object-contain"
-                onError={(e) => {
-                  e.currentTarget.style.display = "none"
-                }}
-              />
+              <div className="w-2/3 max-w-md aspect-square relative">
+                {firstImage.mediaType === 'video' ? (
+                  <video
+                    src={firstImage.src}
+                    className="w-full h-full object-contain rounded-lg"
+                    muted
+                    loop
+                    playsInline
+                    controls
+                  />
+                ) : (
+                  <img
+                    src={firstImage.src}
+                    alt={formData.title}
+                    className="w-full h-full object-contain rounded-lg"
+                    onError={(e) => {
+                      e.currentTarget.style.display = "none"
+                    }}
+                  />
+                )}
+                <Badge className="absolute top-2 left-2">Artwork Image</Badge>
+              </div>
             ) : (
               <div className="w-full h-full flex items-center justify-center">
                 <ImageIcon className="h-16 w-16 text-muted-foreground opacity-50" />
               </div>
-            )}
-            {firstImage && (
-              <Badge className="absolute top-3 left-3">Primary Image</Badge>
             )}
             {additionalImages.length > 0 && (
               <Badge variant="secondary" className="absolute top-3 right-3">
@@ -95,18 +106,33 @@ export function ReviewStep({ formData, fieldsConfig }: ReviewStepProps) {
             {/* Additional Images Preview */}
             {additionalImages.length > 0 && (
               <div className="pt-4 border-t mt-4">
-                <div className="text-xs text-muted-foreground mb-2">Additional Images</div>
+                <div className="text-xs text-muted-foreground mb-2">Additional Images & Videos</div>
                 <div className="grid grid-cols-4 gap-2">
                   {additionalImages.slice(0, 4).map((image, index) => (
-                    <div key={index} className="aspect-square border rounded overflow-hidden bg-muted">
-                      <img
-                        src={image.src}
-                        alt={`Image ${index + 2}`}
-                        className="w-full h-full object-cover"
-                        onError={(e) => {
-                          e.currentTarget.style.display = "none"
-                        }}
-                      />
+                    <div key={index} className="aspect-square border rounded overflow-hidden bg-muted relative">
+                      {image.mediaType === 'video' ? (
+                        <video
+                          src={image.src}
+                          className="w-full h-full object-cover"
+                          muted
+                          loop
+                          playsInline
+                        />
+                      ) : (
+                        <img
+                          src={image.src}
+                          alt={`Image ${index + 2}`}
+                          className="w-full h-full object-cover"
+                          onError={(e) => {
+                            e.currentTarget.style.display = "none"
+                          }}
+                        />
+                      )}
+                      {image.mediaType === 'video' && (
+                        <div className="absolute top-1 left-1 bg-blue-600 text-white text-xs px-1 py-0.5 rounded">
+                          <Video className="h-3 w-3" />
+                        </div>
+                      )}
                     </div>
                   ))}
                   {additionalImages.length > 4 && (

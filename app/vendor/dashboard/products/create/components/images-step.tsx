@@ -5,7 +5,7 @@ import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
-import { Plus, Trash2, Image as ImageIcon, Upload, X, GripVertical } from "lucide-react"
+import { Plus, Trash2, Image as ImageIcon, Upload, X, GripVertical, Video, Film } from "lucide-react"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { ImageMaskEditor } from "./image-mask-editor"
 import type { ProductSubmissionData, ProductImage } from "@/types/product-submission"
@@ -56,16 +56,23 @@ export function ImagesStep({ formData, setFormData }: ImagesStepProps) {
   }, [])
 
   const handleFileUpload = async (file: File) => {
-    // Validate file type
-    if (!file.type.startsWith("image/")) {
-      alert("Please select an image file (JPG, PNG, GIF, etc.)")
+    // Validate file type - support images and videos
+    const isImage = file.type.startsWith("image/")
+    const isVideo = file.type.startsWith("video/")
+    
+    if (!isImage && !isVideo) {
+      alert("Please select an image or video file (JPG, PNG, GIF, MP4, MOV, etc.)")
       return
     }
 
-    // Validate file size (10MB max for images)
+    // Validate file size (10MB max for images, 50MB max for videos)
     const MAX_IMAGE_SIZE = 10 * 1024 * 1024 // 10MB
-    if (file.size > MAX_IMAGE_SIZE) {
-      alert(`Image file is too large. Maximum size is 10MB. Your file is ${(file.size / (1024 * 1024)).toFixed(2)}MB.`)
+    const MAX_VIDEO_SIZE = 50 * 1024 * 1024 // 50MB
+    const maxSize = isImage ? MAX_IMAGE_SIZE : MAX_VIDEO_SIZE
+    const maxSizeLabel = isImage ? "10MB" : "50MB"
+    
+    if (file.size > maxSize) {
+      alert(`${isImage ? 'Image' : 'Video'} file is too large. Maximum size is ${maxSizeLabel}. Your file is ${(file.size / (1024 * 1024)).toFixed(2)}MB.`)
       return
     }
 
@@ -78,7 +85,7 @@ export function ImagesStep({ formData, setFormData }: ImagesStepProps) {
       const uploadStartTime = Date.now()
       const formData = new FormData()
       formData.append("file", file)
-      formData.append("type", "image")
+      formData.append("type", isImage ? "image" : "video")
 
       const uploadResponse = await fetch("/api/vendor/products/upload", {
         method: "POST",
@@ -98,11 +105,12 @@ export function ImagesStep({ formData, setFormData }: ImagesStepProps) {
       const uploadData = await uploadResponse.json()
       console.log(`[Upload] Upload successful! Public URL: ${uploadData.url}`)
 
-      // Add image to the list
+      // Add image or video to the list
       const newImage: ProductImage = {
         src: uploadData.url,
         alt: "",
         position: images.length + 1,
+        mediaType: isImage ? 'image' : 'video',
       }
       setFormData({ ...formData, images: [...images, newImage] })
 
@@ -127,6 +135,7 @@ export function ImagesStep({ formData, setFormData }: ImagesStepProps) {
       src: vendorImage.url,
       alt: "",
       position: images.length + 1,
+      mediaType: 'image', // Library images are always images
     }
     setFormData({ ...formData, images: [...images, newImage] })
     setShowImageLibrary(false)
@@ -243,7 +252,7 @@ export function ImagesStep({ formData, setFormData }: ImagesStepProps) {
       <div>
         <h3 className="text-lg font-semibold mb-2">Product Images</h3>
         <p className="text-sm text-muted-foreground">
-          Upload images or select from your image library. The first image will be used as the product preview with mask positioning.
+          Upload images/videos or select from your library. The first image will be used as the artwork image with mask positioning.
         </p>
       </div>
 
@@ -256,7 +265,7 @@ export function ImagesStep({ formData, setFormData }: ImagesStepProps) {
           disabled={uploading}
         >
           <Upload className="h-4 w-4 mr-2" />
-          {uploading ? "Uploading..." : "Upload Images"}
+          {uploading ? "Uploading..." : "Upload Images/Videos"}
         </Button>
         <Dialog open={showImageLibrary} onOpenChange={setShowImageLibrary}>
           <DialogTrigger asChild>
@@ -310,7 +319,7 @@ export function ImagesStep({ formData, setFormData }: ImagesStepProps) {
         <input
           ref={fileInputRef}
           type="file"
-          accept="image/*"
+          accept="image/*,video/*"
           multiple
           className="hidden"
           onChange={(e) => {
@@ -323,12 +332,12 @@ export function ImagesStep({ formData, setFormData }: ImagesStepProps) {
       {/* Image Grid - Shopify Style */}
       {images.length > 0 && (
         <div className="space-y-4">
-          {/* First Image - Product Preview with Mask */}
+          {/* Artwork Image - Smaller Display with Mask */}
           {firstImage && (
             <div className="border rounded-lg p-4 space-y-4 bg-muted/50">
               <div className="flex items-center justify-between">
                 <div>
-                  <Label className="text-base font-semibold">Product Preview Image</Label>
+                  <Label className="text-base font-semibold">Artwork Image</Label>
                   <p className="text-xs text-muted-foreground">
                     Position your image within the mask frame. Click "Save Masked Image" when you're ready to apply the mask.
                   </p>
@@ -342,18 +351,22 @@ export function ImagesStep({ formData, setFormData }: ImagesStepProps) {
                   <Trash2 className="h-4 w-4 text-destructive" />
                 </Button>
               </div>
-              <ImageMaskEditor
-                image={firstImage}
-                onUpdate={updateMaskSettings}
-                onMaskSaved={handleMaskSaved}
-              />
+              <div className="flex justify-center">
+                <div className="w-3/4 max-w-md">
+                  <ImageMaskEditor
+                    image={firstImage}
+                    onUpdate={updateMaskSettings}
+                    onMaskSaved={handleMaskSaved}
+                  />
+                </div>
+              </div>
             </div>
           )}
 
-          {/* Additional Images - Grid View */}
+          {/* Additional Media - Images and Videos */}
           {images.length > 1 && (
             <div>
-              <Label className="text-base font-semibold mb-3 block">Additional Images</Label>
+              <Label className="text-base font-semibold mb-3 block">Additional Images & Videos</Label>
               <div className="grid grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-4">
                 {images.slice(1).map((image, index) => {
                   const actualIndex = index + 1
@@ -369,14 +382,30 @@ export function ImagesStep({ formData, setFormData }: ImagesStepProps) {
                         draggedIndex === actualIndex ? "opacity-50" : ""
                       } ${dragOverIndex.current === actualIndex ? "ring-2 ring-primary" : ""}`}
                     >
-                      <img
-                        src={image.src}
-                        alt={image.alt || `Image ${actualIndex + 1}`}
-                        className="w-full h-full object-cover"
-                        onError={(e) => {
-                          e.currentTarget.style.display = "none"
-                        }}
-                      />
+                      {image.mediaType === 'video' ? (
+                        <video
+                          src={image.src}
+                          className="w-full h-full object-cover"
+                          muted
+                          loop
+                          playsInline
+                        />
+                      ) : (
+                        <img
+                          src={image.src}
+                          alt={image.alt || `Image ${actualIndex + 1}`}
+                          className="w-full h-full object-cover"
+                          onError={(e) => {
+                            e.currentTarget.style.display = "none"
+                          }}
+                        />
+                      )}
+                      {/* Media Type Badge */}
+                      {image.mediaType === 'video' && (
+                        <div className="absolute top-1 left-1 bg-blue-600 text-white text-xs px-1.5 py-0.5 rounded">
+                          <Video className="h-3 w-3" />
+                        </div>
+                      )}
                       {/* Drag Handle */}
                       <div className="absolute top-1 left-1 opacity-0 group-hover:opacity-100 transition-opacity">
                         <div className="bg-black/50 rounded p-1">
@@ -407,7 +436,7 @@ export function ImagesStep({ formData, setFormData }: ImagesStepProps) {
                 })}
               </div>
               <p className="text-xs text-muted-foreground mt-2">
-                Drag images to reorder them
+                Drag images and videos to reorder them
               </p>
             </div>
           )}
@@ -418,7 +447,7 @@ export function ImagesStep({ formData, setFormData }: ImagesStepProps) {
         <Alert>
           <ImageIcon className="h-4 w-4" />
           <AlertDescription>
-            Upload images or select from your library to get started. The first image will be used as the product preview.
+            Upload images/videos or select from your library to get started. The first image will be used as the artwork image.
           </AlertDescription>
         </Alert>
       )}
