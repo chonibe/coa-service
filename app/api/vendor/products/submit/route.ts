@@ -149,6 +149,49 @@ export async function POST(request: NextRequest) {
       productData.tags.push(vendor.vendor_name)
     }
 
+    // If first image is a base64 data URL (masked image), save it to library
+    if (productData.images && productData.images.length > 0 && productData.images[0].src) {
+      const firstImage = productData.images[0]
+      if (firstImage.src.startsWith("data:image/")) {
+        try {
+          // Convert base64 to buffer
+          const base64Data = firstImage.src.split(",")[1]
+          const buffer = Buffer.from(base64Data, "base64")
+          
+          // Generate file path
+          const timestamp = Date.now()
+          const sanitizedVendorName = vendor.vendor_name.replace(/[^a-z0-9]/gi, "_").toLowerCase()
+          const fileName = `${timestamp}_masked_product_image.png`
+          const filePath = `product_submissions/${sanitizedVendorName}/${fileName}`
+          
+          // Upload to Supabase storage
+          const { data: uploadData, error: uploadError } = await supabase.storage
+            .from("product-images")
+            .upload(filePath, buffer, {
+              contentType: "image/png",
+              upsert: false,
+            })
+          
+          if (uploadError) {
+            console.error("Error uploading masked image to library:", uploadError)
+            // Continue with submission even if upload fails
+          } else {
+            // Get public URL
+            const { data: urlData } = supabase.storage
+              .from("product-images")
+              .getPublicUrl(filePath)
+            
+            // Update image src to use the uploaded URL
+            productData.images[0].src = urlData.publicUrl
+            console.log(`Masked image saved to library: ${urlData.publicUrl}`)
+          }
+        } catch (error) {
+          console.error("Error processing masked image:", error)
+          // Continue with submission even if processing fails
+        }
+      }
+    }
+
     // Create submission record
     const { data: submission, error: submissionError } = await supabase
       .from("vendor_product_submissions")
