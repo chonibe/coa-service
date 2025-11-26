@@ -180,6 +180,28 @@ export async function setProductMetafields(
 }
 
 /**
+ * Gets metafields for a specific product
+ */
+async function getProductMetafieldsFromShopify(productId: string): Promise<any[]> {
+  try {
+    const response = await shopifyFetch2024(
+      `products/${productId}/metafields.json`,
+      { method: "GET" },
+    )
+
+    if (!response.ok) {
+      return []
+    }
+
+    const data = await safeJsonParse(response)
+    return data.metafields || []
+  } catch (error) {
+    console.error(`Error getting metafields for product ${productId}:`, error)
+    return []
+  }
+}
+
+/**
  * Fetches a metafield definition by ID to get namespace and key
  */
 async function fetchMetafieldDefinition(metafieldDefinitionId: number): Promise<{ namespace: string; key: string; type: string } | null> {
@@ -269,8 +291,7 @@ export async function setStreetDesignPdfMetafield(
     console.log(`Setting Street Design PDF metafield with namespace: ${definition.namespace}, key: ${definition.key}`)
     
     // Check if the metafield already exists on the product
-    const { getProductMetafields } = await import("@/lib/shopify/metafields")
-    const existingMetafields = await getProductMetafields(productId)
+    const existingMetafields = await getProductMetafieldsFromShopify(productId)
     
     const existingMetafield = existingMetafields.find(
       (m: any) => m.namespace === definition.namespace && m.key === definition.key
