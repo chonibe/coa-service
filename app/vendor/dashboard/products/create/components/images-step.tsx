@@ -365,18 +365,34 @@ export function ImagesStep({ formData, setFormData, onMaskSavedStatusChange }: I
     }
   }, [images, formData, setFormData, onMaskSavedStatusChange])
 
-  // Reset mask saved status when artwork image changes
+  // Reset mask saved status when artwork image changes (but preserve if it's a saved masked image)
   useEffect(() => {
     if (images.length > 0 && images[0]?.src) {
-      // Check if the first image is a masked image (base64 or has maskSettings)
-      const isMasked = images[0].src.startsWith('data:image/') || images[0].maskSettings
-      if (!isMasked && maskSaved) {
+      const firstImage = images[0]
+      // Check if this is a saved masked image (URL contains "masked_artwork" or has maskSettings)
+      const isSavedMaskedImage = firstImage.src.includes('masked_artwork') || 
+                                  firstImage.src.includes('masked') ||
+                                  firstImage.maskSettings
+      // Check if it's a base64 data URL (being edited)
+      const isBase64Masked = firstImage.src.startsWith('data:image/')
+      
+      // Only reset if the image changed AND it's not a saved masked image
+      // If it's a saved masked image URL, keep maskSaved as true
+      if (!isBase64Masked && !isSavedMaskedImage && maskSaved) {
+        // Image changed to something that's not a masked image
         setMaskSaved(false)
         if (onMaskSavedStatusChange) {
           onMaskSavedStatusChange(false)
         }
+      } else if (isSavedMaskedImage && !maskSaved) {
+        // Image is a saved masked image but maskSaved is false - fix it
+        setMaskSaved(true)
+        if (onMaskSavedStatusChange) {
+          onMaskSavedStatusChange(true)
+        }
       }
     } else if (maskSaved) {
+      // No images, but maskSaved is true - reset it
       setMaskSaved(false)
       if (onMaskSavedStatusChange) {
         onMaskSavedStatusChange(false)
