@@ -4,11 +4,15 @@ import { join } from "path"
 
 /**
  * API route to serve the print file template PDF
- * Place the actual template PDF at: public/templates/print-file-template.pdf
+ * Fetches from Google Drive or serves local file if available
+ * Google Drive file ID: 1zSJedpbpth3X1bW9RhLiOaaFk7W2wRZc
  */
+const GOOGLE_DRIVE_FILE_ID = "1zSJedpbpth3X1bW9RhLiOaaFk7W2wRZc"
+const GOOGLE_DRIVE_DOWNLOAD_URL = `https://drive.google.com/uc?export=download&id=${GOOGLE_DRIVE_FILE_ID}`
+
 export async function GET() {
   try {
-    // Try to read the template file from public directory
+    // First, try to read from local public directory (for caching/offline use)
     const templatePath = join(process.cwd(), "public", "templates", "print-file-template.pdf")
     
     try {
@@ -22,14 +26,37 @@ export async function GET() {
         },
       })
     } catch (fileError) {
-      // If file doesn't exist, return a helpful message
-      return NextResponse.json(
-        { 
-          error: "Template file not found",
-          message: "Please add the template PDF at public/templates/print-file-template.pdf",
-        },
-        { status: 404 }
-      )
+      // If local file doesn't exist, fetch from Google Drive
+      console.log("Local template not found, fetching from Google Drive...")
+      
+      try {
+        const response = await fetch(GOOGLE_DRIVE_DOWNLOAD_URL, {
+          redirect: "follow",
+        })
+        
+        if (!response.ok) {
+          throw new Error(`Failed to fetch template from Google Drive: ${response.status}`)
+        }
+        
+        const fileBuffer = await response.arrayBuffer()
+        
+        return new NextResponse(fileBuffer, {
+          headers: {
+            "Content-Type": "application/pdf",
+            "Content-Disposition": 'attachment; filename="print-file-template.pdf"',
+            "Cache-Control": "public, max-age=3600",
+          },
+        })
+      } catch (driveError: any) {
+        console.error("Error fetching from Google Drive:", driveError)
+        return NextResponse.json(
+          { 
+            error: "Template file not available",
+            message: "Could not fetch template from Google Drive. Please contact support.",
+          },
+          { status: 503 }
+        )
+      }
     }
   } catch (error: any) {
     console.error("Error serving template:", error)
