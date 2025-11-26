@@ -8,12 +8,26 @@ import { Button } from "@/components/ui/button"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Toaster } from "@/components/ui/toaster"
 import { useMobile } from "@/hooks/use-mobile"
-import { LogOut, Menu, Home, BarChart, Settings, Award, Package, DollarSign, MessageSquare, X, HelpCircle } from "lucide-react"
+import {
+  ArrowRightOnRectangleIcon,
+  Bars3Icon,
+  HomeIcon,
+  ChartBarIcon,
+  Cog6ToothIcon,
+  AcademicCapIcon,
+  CubeIcon,
+  CurrencyDollarIcon,
+  ChatBubbleLeftRightIcon,
+  XMarkIcon,
+  QuestionMarkCircleIcon,
+} from "@heroicons/react/24/outline"
+import { Icon } from "@/components/icon"
 import { cn } from "@/lib/utils"
 import { NotificationCenter } from "@/components/vendor/notification-center"
 import { Badge } from "@/components/ui/badge"
 import { useSwipeGesture } from "@/components/vendor/mobile-gestures"
 import { useRef } from "react"
+import { ThemeToggle } from "@/components/theme-toggle"
 
 interface NavItem {
   title: string
@@ -45,42 +59,42 @@ export function VendorSidebar() {
     {
       title: "Dashboard",
       href: "/vendor/dashboard",
-      icon: <Home className="h-5 w-5" />,
+      icon: <Icon size="md"><HomeIcon className="h-5 w-5" /></Icon>,
     },
     {
       title: "Products",
       href: "/vendor/dashboard/products",
-      icon: <Package className="h-5 w-5" />,
+      icon: <Icon size="md"><CubeIcon className="h-5 w-5" /></Icon>,
     },
     {
       title: "Analytics",
       href: "/vendor/dashboard/analytics",
-      icon: <BarChart className="h-5 w-5" />,
+      icon: <Icon size="md"><ChartBarIcon className="h-5 w-5" /></Icon>,
     },
     {
       title: "Payouts",
       href: "/vendor/dashboard/payouts",
-      icon: <DollarSign className="h-5 w-5" />,
+      icon: <Icon size="md"><CurrencyDollarIcon className="h-5 w-5" /></Icon>,
     },
     {
       title: "Benefits",
       href: "/vendor/dashboard/benefits",
-      icon: <Award className="h-5 w-5" />,
+      icon: <Icon size="md"><AcademicCapIcon className="h-5 w-5" /></Icon>,
     },
     {
       title: "Messages",
       href: "/vendor/dashboard/messages",
-      icon: <MessageSquare className="h-5 w-5" />,
+      icon: <Icon size="md"><ChatBubbleLeftRightIcon className="h-5 w-5" /></Icon>,
     },
     {
       title: "Settings",
       href: "/vendor/dashboard/settings",
-      icon: <Settings className="h-5 w-5" />,
+      icon: <Icon size="md"><Cog6ToothIcon className="h-5 w-5" /></Icon>,
     },
     {
       title: "Help",
       href: "/vendor/dashboard/help",
-      icon: <HelpCircle className="h-5 w-5" />,
+      icon: <Icon size="md"><QuestionMarkCircleIcon className="h-5 w-5" /></Icon>,
     },
   ]
 
@@ -178,28 +192,46 @@ export function VendorSidebar() {
         <Button
           variant="outline"
           size="icon"
-          className="flex transition-all hover:bg-primary/10 min-h-[44px] min-w-[44px] focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+          className="flex items-center justify-center transition-all hover:bg-primary/10 min-h-[44px] min-w-[44px] focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
           onClick={toggleSidebar}
           aria-label="Toggle navigation menu"
           aria-expanded={sidebarOpen}
         >
-          <Menu className="h-6 w-6" aria-hidden="true" />
+          <Icon size="lg">
+            <Bars3Icon className="h-6 w-6" aria-hidden="true" />
+          </Icon>
           <span className="sr-only">Toggle menu</span>
         </Button>
 
         <Link href="/vendor/dashboard" className="flex items-center gap-2 font-semibold">
-          <Award className="h-6 w-6" />
+          <img 
+            src="https://www.thestreetlamp.com/cdn/shop/files/Logo_b6785991-7284-43f7-ba3c-95cd7b22041a.png?v=1737462053&width=140" 
+            alt="Street Lamp Logo" 
+            className="h-8 w-auto object-contain"
+            onError={(e) => {
+              // Fallback to icon if image fails to load
+              e.currentTarget.style.display = 'none'
+              const fallback = e.currentTarget.nextElementSibling as HTMLElement
+              if (fallback) fallback.style.display = 'block'
+            }}
+          />
+          <Icon size="lg" className="hidden">
+            <AcademicCapIcon className="h-6 w-6" />
+          </Icon>
           <span className={isMobile ? "sr-only" : "inline-block"}>Vendor Portal</span>
         </Link>
 
         <div className="ml-auto flex items-center gap-2">
+          <ThemeToggle />
           <NotificationCenter />
           <Button
             variant="outline"
-            className="hidden md:flex transition-colors hover:bg-destructive/10"
+            className="hidden md:flex items-center gap-2 transition-colors hover:bg-destructive/10"
             onClick={handleLogout}
           >
-            <LogOut className="mr-2 h-4 w-4" />
+            <Icon size="sm">
+              <ArrowRightOnRectangleIcon className="h-5 w-5" />
+            </Icon>
             Logout
           </Button>
         </div>
@@ -223,10 +255,21 @@ export function VendorSidebar() {
           >
         <div className="flex items-center justify-between h-16 px-6 border-b border-slate-200/50 dark:border-slate-800/50">
           <Link href="/vendor/dashboard" className="flex items-center gap-2 font-semibold">
-            <div className="relative">
+            <img 
+              src="https://www.thestreetlamp.com/cdn/shop/files/Logo_b6785991-7284-43f7-ba3c-95cd7b22041a.png?v=1737462053&width=140" 
+              alt="Street Lamp Logo" 
+              className="h-8 w-auto object-contain"
+              onError={(e) => {
+                // Fallback to icon if image fails to load
+                e.currentTarget.style.display = 'none'
+                const fallback = e.currentTarget.nextElementSibling as HTMLElement
+                if (fallback) fallback.style.display = 'block'
+              }}
+            />
+            <div className="relative hidden">
               <div className="absolute inset-0 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-lg blur-md opacity-50 animate-pulse" />
               <div className="relative bg-gradient-to-br from-blue-500 to-indigo-600 p-1.5 rounded-lg">
-                <Award className="h-5 w-5 text-white" />
+                <Icon size="md"><AcademicCapIcon className="h-5 w-5 text-white" /></Icon>
               </div>
             </div>
             <span className="font-medium bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">Vendor Portal</span>
@@ -238,7 +281,9 @@ export function VendorSidebar() {
             className="transition-all hover:rotate-90 duration-200 min-h-[44px] min-w-[44px] focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
             aria-label="Close sidebar"
           >
-            <X className="h-5 w-5" aria-hidden="true" />
+            <Icon size="md">
+              <XMarkIcon className="h-5 w-5" aria-hidden="true" />
+            </Icon>
           </Button>
         </div>
 
@@ -285,7 +330,9 @@ export function VendorSidebar() {
             onClick={handleLogout}
             aria-label="Logout"
           >
-            <LogOut className="mr-2 h-4 w-4" aria-hidden="true" />
+            <Icon size="sm" className="mr-2">
+              <ArrowRightOnRectangleIcon className="h-4 w-4" aria-hidden="true" />
+            </Icon>
             <span>Logout</span>
           </Button>
         </div>
