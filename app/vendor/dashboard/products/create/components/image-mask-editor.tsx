@@ -27,17 +27,9 @@ export function ImageMaskEditor({ image, onUpdate, onGenerateMask }: ImageMaskEd
   const imageRef = useRef<HTMLImageElement | null>(null)
   const animationFrameRef = useRef<number | null>(null)
   const redrawTimeoutRef = useRef<NodeJS.Timeout | null>(null)
-  const settingsRef = useRef(settings) // Store settings in ref to avoid callback recreation
-  const imageSrcRef = useRef(image.src) // Store image src in ref
-  const imageLoadedRef = useRef(false) // Store image loaded state in ref
   const [isDragging, setIsDragging] = useState(false)
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 })
   const [imageLoaded, setImageLoaded] = useState(false)
-  
-  // Update refs when props change
-  settingsRef.current = settings
-  imageSrcRef.current = image.src
-  imageLoadedRef.current = imageLoaded
 
   const settings = image.maskSettings || {
     x: 0,
@@ -45,6 +37,18 @@ export function ImageMaskEditor({ image, onUpdate, onGenerateMask }: ImageMaskEd
     scale: 1,
     rotation: 0,
   }
+  
+  // Store values in refs to avoid callback recreation
+  const settingsRef = useRef(settings)
+  const imageSrcRef = useRef(image.src)
+  const imageLoadedRef = useRef(imageLoaded)
+  
+  // Update refs when props change (useEffect to avoid issues with render order)
+  useEffect(() => {
+    settingsRef.current = settings
+    imageSrcRef.current = image.src
+    imageLoadedRef.current = imageLoaded
+  }, [settings, image.src, imageLoaded])
 
   // Default scale to fit the inner mask rectangle
   const defaultScale = useMemo(() => {
