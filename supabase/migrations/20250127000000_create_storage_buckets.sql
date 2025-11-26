@@ -1,0 +1,44 @@
+-- Storage buckets cannot be created via SQL migrations
+-- This file documents the required storage buckets that must be created manually
+-- in the Supabase Dashboard > Storage section
+--
+-- Required buckets:
+-- 1. product-images (public)
+--    - Path: Storage > Buckets > New Bucket
+--    - Name: product-images
+--    - Public: Yes (to allow public access to product images)
+--    - File size limit: 10 MB
+--    - Allowed MIME types: image/png, image/jpeg, image/jpg, image/gif, image/webp
+--
+-- 2. print-files (private)
+--    - Path: Storage > Buckets > New Bucket
+--    - Name: print-files
+--    - Public: No (print files should be private)
+--    - File size limit: 50 MB
+--    - Allowed MIME types: application/pdf
+--
+-- Storage Policies (RLS):
+-- These policies must be created in Supabase Dashboard > Storage > Policies
+-- 
+-- For product-images bucket:
+-- - Allow authenticated users to upload: INSERT policy for authenticated users
+-- - Allow public to read: SELECT policy for anon role
+--
+-- For print-files bucket:
+-- - Allow authenticated users to upload: INSERT policy for authenticated users
+-- - Allow authenticated users to read: SELECT policy for authenticated users only
+--
+-- Example policies (create via Dashboard or Supabase CLI):
+--
+-- product-images bucket policies:
+-- INSERT: authenticated users can insert into product-images
+-- SELECT: anon users can select from product-images (public access)
+--
+-- print-files bucket policies:
+-- INSERT: authenticated users can insert into print-files
+-- SELECT: authenticated users can select from print-files
+
+-- Note: This migration file serves as documentation only.
+-- The actual buckets and policies must be created manually in the Supabase Dashboard
+-- or via the Supabase Management API.
+
