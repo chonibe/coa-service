@@ -28,12 +28,16 @@ export function ImageMaskEditor({ image, onUpdate, onGenerateMask }: ImageMaskEd
   const animationFrameRef = useRef<number | null>(null)
   const redrawTimeoutRef = useRef<NodeJS.Timeout | null>(null)
   const settingsRef = useRef(settings) // Store settings in ref to avoid callback recreation
+  const imageSrcRef = useRef(image.src) // Store image src in ref
+  const imageLoadedRef = useRef(false) // Store image loaded state in ref
   const [isDragging, setIsDragging] = useState(false)
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 })
   const [imageLoaded, setImageLoaded] = useState(false)
   
-  // Update ref when settings change
+  // Update refs when props change
   settingsRef.current = settings
+  imageSrcRef.current = image.src
+  imageLoadedRef.current = imageLoaded
 
   const settings = image.maskSettings || {
     x: 0,
@@ -166,8 +170,8 @@ export function ImageMaskEditor({ image, onUpdate, onGenerateMask }: ImageMaskEd
         // Get current values from refs to avoid stale closures
         const img = imageRef.current
         const currentSettings = settingsRef.current
-        const imgSrc = image.src
-        const loaded = imageLoaded
+        const imgSrc = imageSrcRef.current
+        const loaded = imageLoadedRef.current
 
         // If no image or not loaded yet
         if (!imgSrc || imgSrc.trim().length === 0 || !img || !loaded) {
