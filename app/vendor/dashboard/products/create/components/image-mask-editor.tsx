@@ -575,6 +575,14 @@ export function ImageMaskEditor({ image, onUpdate, onGenerateMask }: ImageMaskEd
       exportCtx.fillRect(0, 0, MASK_OUTER_SIZE, MASK_OUTER_SIZE)
 
       // Create clipping path for the inner rectangle
+      // Ensure drawRoundRect is accessible (it's defined outside component)
+      if (typeof drawRoundRect !== 'function') {
+        console.error("[MaskEditor] drawRoundRect is not a function!", {
+          drawRoundRectType: typeof drawRoundRect,
+          drawRoundRectValue: drawRoundRect,
+        })
+        throw new Error("drawRoundRect function is not available")
+      }
       drawRoundRect(exportCtx, MASK_INNER_X, MASK_INNER_Y, MASK_INNER_WIDTH, MASK_INNER_HEIGHT, MASK_CORNER_RADIUS)
       exportCtx.clip()
 
@@ -619,6 +627,8 @@ export function ImageMaskEditor({ image, onUpdate, onGenerateMask }: ImageMaskEd
         exportCtx.strokeStyle = "rgba(0, 0, 0, 1)"
         exportCtx.lineWidth = 2
         
+      // Ensure drawRoundRect is accessible
+      if (typeof drawRoundRect === 'function') {
         drawRoundRect(
           exportCtx,
           MASK_INNER_X + offset,
@@ -627,6 +637,12 @@ export function ImageMaskEditor({ image, onUpdate, onGenerateMask }: ImageMaskEd
           MASK_INNER_HEIGHT - (offset * 2),
           Math.max(0, MASK_CORNER_RADIUS - offset)
         )
+      } else {
+        console.error("[MaskEditor] drawRoundRect is not a function in shadow loop!", {
+          i,
+          drawRoundRectType: typeof drawRoundRect,
+        })
+      }
         exportCtx.stroke()
       }
       exportCtx.globalAlpha = 1
