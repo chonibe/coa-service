@@ -22,27 +22,33 @@ const MASK_CORNER_RADIUS = 138
 const MASK_INNER_X = (MASK_OUTER_SIZE - MASK_INNER_WIDTH) / 2
 const MASK_INNER_Y = (MASK_OUTER_SIZE - MASK_INNER_HEIGHT) / 2
 
-// Helper function to draw rounded rectangle - defined outside component for stable reference
-function drawRoundRect(
-  ctx: CanvasRenderingContext2D,
-  x: number,
-  y: number,
-  width: number,
-  height: number,
-  radius: number,
-) {
-  ctx.beginPath()
-  ctx.moveTo(x + radius, y)
-  ctx.lineTo(x + width - radius, y)
-  ctx.quadraticCurveTo(x + width, y, x + width, y + radius)
-  ctx.lineTo(x + width, y + height - radius)
-  ctx.quadraticCurveTo(x + width, y + height, x + width - radius, y + height)
-  ctx.lineTo(x + radius, y + height)
-  ctx.quadraticCurveTo(x, y + height, x, y + height - radius)
-  ctx.lineTo(x, y + radius)
-  ctx.quadraticCurveTo(x, y, x + radius, y)
-  ctx.closePath()
+// Helper function to draw rounded rectangle - stored in module-level object for stable reference
+// This pattern is more resilient to minification issues
+const canvasHelpers = {
+  drawRoundRect: (
+    ctx: CanvasRenderingContext2D,
+    x: number,
+    y: number,
+    width: number,
+    height: number,
+    radius: number,
+  ): void => {
+    ctx.beginPath()
+    ctx.moveTo(x + radius, y)
+    ctx.lineTo(x + width - radius, y)
+    ctx.quadraticCurveTo(x + width, y, x + width, y + radius)
+    ctx.lineTo(x + width, y + height - radius)
+    ctx.quadraticCurveTo(x + width, y + height, x + width - radius, y + height)
+    ctx.lineTo(x + radius, y + height)
+    ctx.quadraticCurveTo(x, y + height, x, y + height - radius)
+    ctx.lineTo(x, y + radius)
+    ctx.quadraticCurveTo(x, y, x + radius, y)
+    ctx.closePath()
+  },
 }
+
+// Export for external access if needed
+export const drawRoundRect = canvasHelpers.drawRoundRect
 
 export function ImageMaskEditor({ image, onUpdate, onGenerateMask }: ImageMaskEditorProps) {
   const renderCountRef = useRef(0)
@@ -141,9 +147,8 @@ export function ImageMaskEditor({ image, onUpdate, onGenerateMask }: ImageMaskEd
   const currentY = settings.y || 0
   const currentRotation = settings.rotation || 0
 
-  // drawRoundRect is defined outside component (line 26) - use that one
-
   // Single optimized draw function - reads from refs, no dependencies
+  // Note: canvasHelpers.drawRoundRect is used for stable reference after minification
   const drawCanvas = useCallback(() => {
     const startTime = performance.now()
     console.log("[MaskEditor] drawCanvas called", {
@@ -225,7 +230,7 @@ export function ImageMaskEditor({ image, onUpdate, onGenerateMask }: ImageMaskEd
 
         ctx.strokeStyle = "#9ca3af"
         ctx.lineWidth = 2
-        drawRoundRect(ctx, MASK_INNER_X, MASK_INNER_Y, MASK_INNER_WIDTH, MASK_INNER_HEIGHT, MASK_CORNER_RADIUS)
+        canvasHelpers.drawRoundRect(ctx, MASK_INNER_X, MASK_INNER_Y, MASK_INNER_WIDTH, MASK_INNER_HEIGHT, MASK_CORNER_RADIUS)
         ctx.stroke()
 
         // Get current values from refs
@@ -250,7 +255,7 @@ export function ImageMaskEditor({ image, onUpdate, onGenerateMask }: ImageMaskEd
         ctx.save()
 
         // Create clipping path for the inner rectangle
-        drawRoundRect(ctx, MASK_INNER_X, MASK_INNER_Y, MASK_INNER_WIDTH, MASK_INNER_HEIGHT, MASK_CORNER_RADIUS)
+        canvasHelpers.drawRoundRect(ctx, MASK_INNER_X, MASK_INNER_Y, MASK_INNER_WIDTH, MASK_INNER_HEIGHT, MASK_CORNER_RADIUS)
         ctx.clip()
 
         // Apply transformations using current settings from ref
@@ -279,7 +284,7 @@ export function ImageMaskEditor({ image, onUpdate, onGenerateMask }: ImageMaskEd
 
         ctx.strokeStyle = "#9ca3af"
         ctx.lineWidth = 2
-        drawRoundRect(ctx, MASK_INNER_X, MASK_INNER_Y, MASK_INNER_WIDTH, MASK_INNER_HEIGHT, MASK_CORNER_RADIUS)
+        canvasHelpers.drawRoundRect(ctx, MASK_INNER_X, MASK_INNER_Y, MASK_INNER_WIDTH, MASK_INNER_HEIGHT, MASK_CORNER_RADIUS)
         ctx.stroke()
         
         const totalTime = performance.now() - startTime
@@ -575,15 +580,24 @@ export function ImageMaskEditor({ image, onUpdate, onGenerateMask }: ImageMaskEd
       exportCtx.fillRect(0, 0, MASK_OUTER_SIZE, MASK_OUTER_SIZE)
 
       // Create clipping path for the inner rectangle
-      // Ensure drawRoundRect is accessible (it's defined outside component)
-      if (typeof drawRoundRect !== 'function') {
-        console.error("[MaskEditor] drawRoundRect is not a function!", {
-          drawRoundRectType: typeof drawRoundRect,
-          drawRoundRectValue: drawRoundRect,
-        })
-        throw new Error("drawRoundRect function is not available")
-      }
-      drawRoundRect(exportCtx, MASK_INNER_X, MASK_INNER_Y, MASK_INNER_WIDTH, MASK_INNER_HEIGHT, MASK_CORNER_RADIUS)
+      // Inline path drawing to avoid minification issues with function references
+      const clipX = MASK_INNER_X
+      const clipY = MASK_INNER_Y
+      const clipW = MASK_INNER_WIDTH
+      const clipH = MASK_INNER_HEIGHT
+      const clipR = MASK_CORNER_RADIUS
+      
+      exportCtx.beginPath()
+      exportCtx.moveTo(clipX + clipR, clipY)
+      exportCtx.lineTo(clipX + clipW - clipR, clipY)
+      exportCtx.quadraticCurveTo(clipX + clipW, clipY, clipX + clipW, clipY + clipR)
+      exportCtx.lineTo(clipX + clipW, clipY + clipH - clipR)
+      exportCtx.quadraticCurveTo(clipX + clipW, clipY + clipH, clipX + clipW - clipR, clipY + clipH)
+      exportCtx.lineTo(clipX + clipR, clipY + clipH)
+      exportCtx.quadraticCurveTo(clipX, clipY + clipH, clipX, clipY + clipH - clipR)
+      exportCtx.lineTo(clipX, clipY + clipR)
+      exportCtx.quadraticCurveTo(clipX, clipY, clipX + clipR, clipY)
+      exportCtx.closePath()
       exportCtx.clip()
 
       // Apply transformations using current settings from ref
@@ -627,22 +641,24 @@ export function ImageMaskEditor({ image, onUpdate, onGenerateMask }: ImageMaskEd
         exportCtx.strokeStyle = "rgba(0, 0, 0, 1)"
         exportCtx.lineWidth = 2
         
-      // Ensure drawRoundRect is accessible
-      if (typeof drawRoundRect === 'function') {
-        drawRoundRect(
-          exportCtx,
-          MASK_INNER_X + offset,
-          MASK_INNER_Y + offset,
-          MASK_INNER_WIDTH - (offset * 2),
-          MASK_INNER_HEIGHT - (offset * 2),
-          Math.max(0, MASK_CORNER_RADIUS - offset)
-        )
-      } else {
-        console.error("[MaskEditor] drawRoundRect is not a function in shadow loop!", {
-          i,
-          drawRoundRectType: typeof drawRoundRect,
-        })
-      }
+        // Inline path drawing for shadow to avoid minification issues
+        const shadowX = MASK_INNER_X + offset
+        const shadowY = MASK_INNER_Y + offset
+        const shadowW = MASK_INNER_WIDTH - (offset * 2)
+        const shadowH = MASK_INNER_HEIGHT - (offset * 2)
+        const shadowR = Math.max(0, MASK_CORNER_RADIUS - offset)
+        
+        exportCtx.beginPath()
+        exportCtx.moveTo(shadowX + shadowR, shadowY)
+        exportCtx.lineTo(shadowX + shadowW - shadowR, shadowY)
+        exportCtx.quadraticCurveTo(shadowX + shadowW, shadowY, shadowX + shadowW, shadowY + shadowR)
+        exportCtx.lineTo(shadowX + shadowW, shadowY + shadowH - shadowR)
+        exportCtx.quadraticCurveTo(shadowX + shadowW, shadowY + shadowH, shadowX + shadowW - shadowR, shadowY + shadowH)
+        exportCtx.lineTo(shadowX + shadowR, shadowY + shadowH)
+        exportCtx.quadraticCurveTo(shadowX, shadowY + shadowH, shadowX, shadowY + shadowH - shadowR)
+        exportCtx.lineTo(shadowX, shadowY + shadowR)
+        exportCtx.quadraticCurveTo(shadowX, shadowY, shadowX + shadowR, shadowY)
+        exportCtx.closePath()
         exportCtx.stroke()
       }
       exportCtx.globalAlpha = 1
