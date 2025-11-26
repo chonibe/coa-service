@@ -14,7 +14,7 @@ export function ReviewStep({ formData, fieldsConfig }: ReviewStepProps) {
   const editionSizeMetafield = formData.metafields?.find(
     (m) => m.namespace === "custom" && m.key === "edition_size",
   )
-  const variant = formData.variants[0]
+  const variant = formData.variants && formData.variants.length > 0 ? formData.variants[0] : null
   const firstImage = formData.images && formData.images.length > 0 ? formData.images[0] : null
   const additionalImages = formData.images?.slice(1) || []
 
