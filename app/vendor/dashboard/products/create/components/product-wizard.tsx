@@ -146,12 +146,14 @@ export function ProductWizard({ onComplete, onCancel, initialData, submissionId 
     // This prevents any mask generation during preview which could cause performance issues
     if (currentStep === 2 && applyMaskFn) {
       try {
-        // Show loading state during mask generation
+        setIsSubmitting(true) // Show loading state
         setError(null)
         await applyMaskFn()
+        setIsSubmitting(false)
         // Mask generation successful, proceed to next step
       } catch (error) {
         console.error("Error generating masked image:", error)
+        setIsSubmitting(false)
         setError("Failed to generate masked image. Please try adjusting the image position.")
         return // Don't proceed if mask generation fails
       }
@@ -327,9 +329,21 @@ export function ProductWizard({ onComplete, onCancel, initialData, submissionId 
             {currentStep === 0 ? "Cancel" : "Back"}
           </Button>
           {currentStep < steps.length - 1 ? (
-            <Button onClick={handleNext} disabled={!canProceed()}>
-              Next
-              <ChevronRight className="h-4 w-4 ml-2" />
+            <Button 
+              onClick={handleNext} 
+              disabled={!canProceed() || isSubmitting}
+            >
+              {isSubmitting && currentStep === 2 ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Generating Mask...
+                </>
+              ) : (
+                <>
+                  Next
+                  <ChevronRight className="h-4 w-4 ml-2" />
+                </>
+              )}
             </Button>
           ) : (
             <Button onClick={handleSubmit} disabled={isSubmitting || !canProceed()}>
