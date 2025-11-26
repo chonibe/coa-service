@@ -19,7 +19,18 @@ import {
   Filter,
   Loader2,
   AlertCircle,
+  Trash2,
 } from "lucide-react"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 
 export default function ProductSubmissionsPage() {
   const router = useRouter()
@@ -30,6 +41,9 @@ export default function ProductSubmissionsPage() {
   const [searchQuery, setSearchQuery] = useState("")
   const [page, setPage] = useState(1)
   const [totalPages, setTotalPages] = useState(1)
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
+  const [submissionToDelete, setSubmissionToDelete] = useState<any>(null)
+  const [deleting, setDeleting] = useState(false)
 
   useEffect(() => {
     fetchSubmissions()
@@ -108,6 +122,44 @@ export default function ProductSubmissionsPage() {
       vendorName.toLowerCase().includes(searchQuery.toLowerCase())
     )
   })
+
+  const handleDeleteClick = (submission: any, e: React.MouseEvent) => {
+    e.stopPropagation()
+    setSubmissionToDelete(submission)
+    setDeleteDialogOpen(true)
+  }
+
+  const handleDeleteConfirm = async () => {
+    if (!submissionToDelete) return
+
+    setDeleting(true)
+    try {
+      const response = await fetch(
+        `/api/admin/products/submissions/${submissionToDelete.id}`,
+        {
+          method: "DELETE",
+          credentials: "include",
+        }
+      )
+
+      if (!response.ok) {
+        const data = await response.json()
+        throw new Error(data.error || "Failed to delete submission")
+      }
+
+      // Remove from list
+      setSubmissions(submissions.filter((s) => s.id !== submissionToDelete.id))
+      setDeleteDialogOpen(false)
+      setSubmissionToDelete(null)
+    } catch (err: any) {
+      console.error("Error deleting submission:", err)
+      setError(err.message || "Failed to delete submission")
+      setDeleteDialogOpen(false)
+      setSubmissionToDelete(null)
+    } finally {
+      setDeleting(false)
+    }
+  }
 
   return (
     <div className="space-y-6">
@@ -225,17 +277,27 @@ export default function ProductSubmissionsPage() {
                           </p>
                         )}
                       </div>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          router.push(`/admin/products/submissions/${submission.id}`)
-                        }}
-                      >
-                        <Eye className="h-4 w-4 mr-2" />
-                        Review
-                      </Button>
+                      <div className="flex items-center gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            router.push(`/admin/products/submissions/${submission.id}`)
+                          }}
+                        >
+                          <Eye className="h-4 w-4 mr-2" />
+                          Review
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={(e) => handleDeleteClick(submission, e)}
+                          className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
                     </div>
                   </div>
                 ))}
@@ -267,6 +329,51 @@ export default function ProductSubmissionsPage() {
           )}
         </CardContent>
       </Card>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete the product
+              submission
+              {submissionToDelete && (
+                <>
+                  {" "}
+                  <strong>
+                    "{(submissionToDelete.product_data as any)?.title || "Untitled Product"}"
+                  </strong>
+                </>
+              )}
+              .
+              {submissionToDelete?.status === "published" && (
+                <span className="block mt-2 text-destructive font-medium">
+                  Warning: This submission is published and has a Shopify product ID. The
+                  submission will be deleted but the Shopify product will remain.
+                </span>
+              )}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleting}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteConfirm}
+              disabled={deleting}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {deleting ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Deleting...
+                </>
+              ) : (
+                "Delete"
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }

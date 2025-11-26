@@ -19,7 +19,18 @@ import {
   DollarSign,
   Image as ImageIcon,
   Tag,
+  Trash2,
 } from "lucide-react"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 import { useToast } from "@/components/ui/use-toast"
 
 export default function SubmissionDetailPage() {
@@ -32,6 +43,7 @@ export default function SubmissionDetailPage() {
   const [actionLoading, setActionLoading] = useState<string | null>(null)
   const [rejectionReason, setRejectionReason] = useState("")
   const [adminNotes, setAdminNotes] = useState("")
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const submissionId = params.id as string
 
   useEffect(() => {
@@ -179,6 +191,36 @@ export default function SubmissionDetailPage() {
     }
   }
 
+  const handleDelete = async () => {
+    setActionLoading("delete")
+    try {
+      const response = await fetch(`/api/admin/products/submissions/${submissionId}`, {
+        method: "DELETE",
+        credentials: "include",
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.error || "Failed to delete submission")
+      }
+
+      toast({
+        title: "Submission Deleted",
+        description: "The product submission has been deleted successfully.",
+      })
+
+      router.push("/admin/products/submissions")
+    } catch (err: any) {
+      toast({
+        title: "Error",
+        description: err.message || "Failed to delete submission",
+        variant: "destructive",
+      })
+      setActionLoading(null)
+    }
+  }
+
   if (loading) {
     return (
       <div className="space-y-6">
@@ -256,12 +298,11 @@ export default function SubmissionDetailPage() {
       </div>
 
       {/* Actions */}
-      {submission.status === "pending" && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Actions</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
+      <Card>
+        <CardHeader>
+          <CardTitle>Actions</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="admin-notes">Admin Notes (optional)</Label>
               <Textarea
