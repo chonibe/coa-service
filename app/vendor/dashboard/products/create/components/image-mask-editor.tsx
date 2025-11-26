@@ -1,14 +1,15 @@
 "use client"
 
-import { useState, useRef, useEffect } from "react"
+import { useState, useRef, useEffect, useCallback, useMemo } from "react"
 import { Button } from "@/components/ui/button"
 import { Slider } from "@/components/ui/slider"
-import { RotateCcw, ZoomIn, ZoomOut, Move } from "lucide-react"
+import { RotateCcw, ZoomIn, Move, Check } from "lucide-react"
 import type { ProductImage } from "@/types/product-submission"
 
 interface ImageMaskEditorProps {
   image: ProductImage
   onUpdate: (settings: ProductImage["maskSettings"]) => void
+  onApplyMask?: (maskedImageUrl: string) => void // Callback to save masked image
 }
 
 // Mask dimensions
@@ -21,10 +22,14 @@ const MASK_CORNER_RADIUS = 138
 const MASK_INNER_X = (MASK_OUTER_SIZE - MASK_INNER_WIDTH) / 2
 const MASK_INNER_Y = (MASK_OUTER_SIZE - MASK_INNER_HEIGHT) / 2
 
-export function ImageMaskEditor({ image, onUpdate }: ImageMaskEditorProps) {
+export function ImageMaskEditor({ image, onUpdate, onApplyMask }: ImageMaskEditorProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
+  const imageRef = useRef<HTMLImageElement | null>(null)
+  const animationFrameRef = useRef<number | null>(null)
   const [isDragging, setIsDragging] = useState(false)
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 })
+  const [isGenerating, setIsGenerating] = useState(false)
+  const [imageLoaded, setImageLoaded] = useState(false)
 
   const settings = image.maskSettings || {
     x: 0,
@@ -33,17 +38,16 @@ export function ImageMaskEditor({ image, onUpdate }: ImageMaskEditorProps) {
     rotation: 0,
   }
 
-  // Default scale to fit the inner mask rectangle - calculate in useEffect
-  const [defaultScale, setDefaultScale] = useState(0.5)
-  
-  useEffect(() => {
-    if (typeof window !== "undefined") {
-      const calcDefaultScale = Math.max(
+  // Default scale to fit the inner mask rectangle
+  const defaultScale = useMemo(() => {
+    if (typeof window === "undefined") return 0.5
+    return Math.min(
+      Math.max(
         MASK_INNER_WIDTH / Math.max(window.innerWidth, 800),
         MASK_INNER_HEIGHT / Math.max(window.innerHeight, 800),
-      )
-      setDefaultScale(Math.min(calcDefaultScale, 1))
-    }
+      ),
+      1
+    )
   }, [])
 
   const currentScale = settings.scale || defaultScale
@@ -52,7 +56,7 @@ export function ImageMaskEditor({ image, onUpdate }: ImageMaskEditorProps) {
   const currentRotation = settings.rotation || 0
 
   // Helper function to draw rounded rectangle
-  const drawRoundRect = (
+  const drawRoundRect = useCallback((
     ctx: CanvasRenderingContext2D,
     x: number,
     y: number,
@@ -71,76 +75,63 @@ export function ImageMaskEditor({ image, onUpdate }: ImageMaskEditorProps) {
     ctx.lineTo(x, y + radius)
     ctx.quadraticCurveTo(x, y, x + radius, y)
     ctx.closePath()
-  }
+  }, [])
 
-  // Draw the masked image
-  useEffect(() => {
+  // Optimized draw function using requestAnimationFrame
+  const drawCanvas = useCallback(() => {
     const canvas = canvasRef.current
     if (!canvas) return
 
-    const ctx = canvas.getContext("2d")
+    const ctx = canvas.getContext("2d", { alpha: false })
     if (!ctx) return
 
-    // Set canvas size for high DPI displays
-    const dpr = typeof window !== "undefined" ? window.devicePixelRatio || 1 : 1
-    const displaySize = Math.min(
-      600,
-      typeof window !== "undefined" ? Math.min(600, window.innerWidth - 100) : 600,
-    )
-    
-    canvas.width = MASK_OUTER_SIZE * dpr
-    canvas.height = MASK_OUTER_SIZE * dpr
-    canvas.style.width = `${displaySize}px`
-    canvas.style.height = `${displaySize}px`
-    
-    ctx.scale(dpr, dpr)
-
-    // Clear canvas with light gray background
-    ctx.fillStyle = "#f3f4f6"
-    ctx.fillRect(0, 0, MASK_OUTER_SIZE, MASK_OUTER_SIZE)
-
-    // Draw the frame (outer border) - always visible
-    ctx.strokeStyle = "#e5e7eb"
-    ctx.lineWidth = 4
-    ctx.strokeRect(2, 2, MASK_OUTER_SIZE - 4, MASK_OUTER_SIZE - 4)
-
-    // Draw the inner rectangle outline - always visible
-    ctx.strokeStyle = "#9ca3af"
-    ctx.lineWidth = 2
-    drawRoundRect(ctx, MASK_INNER_X, MASK_INNER_Y, MASK_INNER_WIDTH, MASK_INNER_HEIGHT, MASK_CORNER_RADIUS)
-    ctx.stroke()
-
-    // If no image, show placeholder text
-    if (!image.src || image.src.trim().length === 0) {
-      ctx.fillStyle = "#9ca3af"
-      ctx.font = "18px Arial"
-      ctx.textAlign = "center"
-      ctx.fillText("Upload an image to position it", MASK_OUTER_SIZE / 2, MASK_OUTER_SIZE / 2 - 10)
-      ctx.font = "14px Arial"
-      ctx.fillText("within the frame above", MASK_OUTER_SIZE / 2, MASK_OUTER_SIZE / 2 + 15)
-      return
+    // Cancel any pending animation frame
+    if (animationFrameRef.current) {
+      cancelAnimationFrame(animationFrameRef.current)
     }
 
-    // Load and draw image
-    const img = new Image()
-    // Only set crossOrigin if loading from external URL (when window is available)
-    if (
-      typeof window !== "undefined" &&
-      image.src &&
-      !image.src.startsWith("data:") &&
-      !image.src.includes(window.location.hostname)
-    ) {
-      img.crossOrigin = "anonymous"
-    }
-    
-    img.onload = () => {
-      // Clear and redraw everything
+    animationFrameRef.current = requestAnimationFrame(() => {
+      // Set canvas size for high DPI displays
+      const dpr = typeof window !== "undefined" ? window.devicePixelRatio || 1 : 1
+      const displaySize = Math.min(600, typeof window !== "undefined" ? Math.min(600, window.innerWidth - 100) : 600)
+      
+      canvas.width = MASK_OUTER_SIZE * dpr
+      canvas.height = MASK_OUTER_SIZE * dpr
+      canvas.style.width = `${displaySize}px`
+      canvas.style.height = `${displaySize}px`
+      
+      ctx.scale(dpr, dpr)
+
+      // Clear canvas
       ctx.fillStyle = "#f3f4f6"
       ctx.fillRect(0, 0, MASK_OUTER_SIZE, MASK_OUTER_SIZE)
 
+      // Draw frame borders (always visible)
+      ctx.strokeStyle = "#e5e7eb"
+      ctx.lineWidth = 4
+      ctx.strokeRect(2, 2, MASK_OUTER_SIZE - 4, MASK_OUTER_SIZE - 4)
+
+      ctx.strokeStyle = "#9ca3af"
+      ctx.lineWidth = 2
+      drawRoundRect(ctx, MASK_INNER_X, MASK_INNER_Y, MASK_INNER_WIDTH, MASK_INNER_HEIGHT, MASK_CORNER_RADIUS)
+      ctx.stroke()
+
+      // If no image or not loaded yet
+      const img = imageRef.current
+      if (!image.src || image.src.trim().length === 0 || !img || !imageLoaded) {
+        ctx.fillStyle = "#9ca3af"
+        ctx.font = "18px Arial"
+        ctx.textAlign = "center"
+        ctx.fillText("Upload an image to position it", MASK_OUTER_SIZE / 2, MASK_OUTER_SIZE / 2 - 10)
+        ctx.font = "14px Arial"
+        ctx.fillText("within the frame above", MASK_OUTER_SIZE / 2, MASK_OUTER_SIZE / 2 + 15)
+        return
+      }
+
+      // Draw the masked image
       ctx.save()
 
-      // Create clipping path for the inner rectangle with rounded corners
+      // Create clipping path for the inner rectangle
       drawRoundRect(ctx, MASK_INNER_X, MASK_INNER_Y, MASK_INNER_WIDTH, MASK_INNER_HEIGHT, MASK_CORNER_RADIUS)
       ctx.clip()
 
@@ -153,12 +144,12 @@ export function ImageMaskEditor({ image, onUpdate }: ImageMaskEditorProps) {
       ctx.scale(currentScale, currentScale)
       ctx.translate(currentX, currentY)
       
-      // Draw image centered at origin (after all transforms)
+      // Draw image centered
       ctx.drawImage(img, -img.width / 2, -img.height / 2)
 
       ctx.restore()
 
-      // Redraw the frame borders
+      // Redraw borders on top
       ctx.strokeStyle = "#e5e7eb"
       ctx.lineWidth = 4
       ctx.strokeRect(2, 2, MASK_OUTER_SIZE - 4, MASK_OUTER_SIZE - 4)
@@ -167,69 +158,175 @@ export function ImageMaskEditor({ image, onUpdate }: ImageMaskEditorProps) {
       ctx.lineWidth = 2
       drawRoundRect(ctx, MASK_INNER_X, MASK_INNER_Y, MASK_INNER_WIDTH, MASK_INNER_HEIGHT, MASK_CORNER_RADIUS)
       ctx.stroke()
+    })
+  }, [currentScale, currentX, currentY, currentRotation, image.src, imageLoaded, drawRoundRect])
+
+  // Load and cache image
+  useEffect(() => {
+    if (!image.src || image.src.trim().length === 0) {
+      imageRef.current = null
+      setImageLoaded(false)
+      drawCanvas()
+      return
+    }
+
+    // If image already loaded with same src, skip reloading
+    if (imageRef.current?.src === image.src && imageLoaded) {
+      return
+    }
+
+    setImageLoaded(false)
+    const img = new Image()
+    
+    if (
+      typeof window !== "undefined" &&
+      !image.src.startsWith("data:") &&
+      !image.src.includes(window.location.hostname)
+    ) {
+      img.crossOrigin = "anonymous"
+    }
+    
+    img.onload = () => {
+      imageRef.current = img
+      setImageLoaded(true)
+      drawCanvas()
     }
     
     img.onerror = () => {
-      // Show error state
-      ctx.fillStyle = "#f3f4f6"
-      ctx.fillRect(0, 0, MASK_OUTER_SIZE, MASK_OUTER_SIZE)
-      
-      ctx.fillStyle = "#ef4444"
-      ctx.font = "16px Arial"
-      ctx.textAlign = "center"
-      ctx.fillText("Failed to load image", MASK_OUTER_SIZE / 2, MASK_OUTER_SIZE / 2)
-      
-      // Redraw borders
-      ctx.strokeStyle = "#e5e7eb"
-      ctx.lineWidth = 4
-      ctx.strokeRect(2, 2, MASK_OUTER_SIZE - 4, MASK_OUTER_SIZE - 4)
-      
-      ctx.strokeStyle = "#9ca3af"
-      ctx.lineWidth = 2
-      drawRoundRect(ctx, MASK_INNER_X, MASK_INNER_Y, MASK_INNER_WIDTH, MASK_INNER_HEIGHT, MASK_CORNER_RADIUS)
-      ctx.stroke()
+      imageRef.current = null
+      setImageLoaded(false)
+      drawCanvas()
     }
     
     img.src = image.src
-  }, [image.src, currentScale, currentX, currentY, currentRotation])
+  }, [image.src, drawCanvas])
 
-  const handleMouseDown = (e: React.MouseEvent<HTMLCanvasElement>) => {
+  // Redraw when settings change (debounced)
+  useEffect(() => {
+    if (imageLoaded) {
+      drawCanvas()
+    }
+  }, [currentScale, currentX, currentY, currentRotation, imageLoaded, drawCanvas])
+
+  // Debounced update function
+  const debouncedUpdate = useRef<NodeJS.Timeout | null>(null)
+  const handleUpdate = useCallback((newSettings: ProductImage["maskSettings"]) => {
+    onUpdate(newSettings)
+    
+    // Debounce canvas redraw for smoother interaction
+    if (debouncedUpdate.current) {
+      clearTimeout(debouncedUpdate.current)
+    }
+    debouncedUpdate.current = setTimeout(() => {
+      drawCanvas()
+    }, 16) // ~60fps
+  }, [onUpdate, drawCanvas])
+
+  const displaySize = useMemo(() => {
+    return Math.min(600, typeof window !== "undefined" ? Math.min(600, window.innerWidth - 100) : 600)
+  }, [])
+
+  const handleMouseDown = useCallback((e: React.MouseEvent<HTMLCanvasElement>) => {
     setIsDragging(true)
     const rect = canvasRef.current?.getBoundingClientRect()
     if (rect) {
+      const scale = displaySize / MASK_OUTER_SIZE
       setDragStart({
-        x: e.clientX - rect.left - currentX,
-        y: e.clientY - rect.top - currentY,
+        x: (e.clientX - rect.left) / scale - currentX,
+        y: (e.clientY - rect.top) / scale - currentY,
       })
     }
-  }
+  }, [currentX, currentY, displaySize])
 
-  const handleMouseMove = (e: React.MouseEvent<HTMLCanvasElement>) => {
+  const handleMouseMove = useCallback((e: React.MouseEvent<HTMLCanvasElement>) => {
     if (!isDragging) return
     const rect = canvasRef.current?.getBoundingClientRect()
     if (rect) {
-      const newX = e.clientX - rect.left - dragStart.x
-      const newY = e.clientY - rect.top - dragStart.y
-      onUpdate({
+      const scale = displaySize / MASK_OUTER_SIZE
+      const newX = (e.clientX - rect.left) / scale - dragStart.x
+      const newY = (e.clientY - rect.top) / scale - dragStart.y
+      
+      handleUpdate({
         ...settings,
         x: newX,
         y: newY,
       })
     }
-  }
+  }, [isDragging, dragStart, settings, displaySize, handleUpdate])
 
-  const handleMouseUp = () => {
+  const handleMouseUp = useCallback(() => {
     setIsDragging(false)
-  }
+  }, [])
 
-  const handleReset = () => {
-    onUpdate({
+  const handleReset = useCallback(() => {
+    handleUpdate({
       x: 0,
       y: 0,
       scale: defaultScale,
       rotation: 0,
     })
-  }
+  }, [defaultScale, handleUpdate])
+
+  // Generate and export masked image
+  const handleApplyMask = useCallback(async () => {
+    if (!imageRef.current || !onApplyMask) return
+
+    setIsGenerating(true)
+    
+    try {
+      // Create a new canvas for the final masked image
+      const exportCanvas = document.createElement("canvas")
+      exportCanvas.width = MASK_OUTER_SIZE
+      exportCanvas.height = MASK_OUTER_SIZE
+      const exportCtx = exportCanvas.getContext("2d", { alpha: false })
+      
+      if (!exportCtx) {
+        throw new Error("Failed to create export canvas context")
+      }
+
+      // Fill white background
+      exportCtx.fillStyle = "#ffffff"
+      exportCtx.fillRect(0, 0, MASK_OUTER_SIZE, MASK_OUTER_SIZE)
+
+      // Create clipping path for the inner rectangle
+      drawRoundRect(exportCtx, MASK_INNER_X, MASK_INNER_Y, MASK_INNER_WIDTH, MASK_INNER_HEIGHT, MASK_CORNER_RADIUS)
+      exportCtx.clip()
+
+      // Apply transformations and draw image
+      const centerX = MASK_OUTER_SIZE / 2
+      const centerY = MASK_OUTER_SIZE / 2
+      
+      exportCtx.translate(centerX, centerY)
+      exportCtx.rotate((currentRotation * Math.PI) / 180)
+      exportCtx.scale(currentScale, currentScale)
+      exportCtx.translate(currentX, currentY)
+      
+      exportCtx.drawImage(imageRef.current, -imageRef.current.width / 2, -imageRef.current.height / 2)
+
+      // Export as base64 data URL
+      const maskedImageUrl = exportCanvas.toDataURL("image/png", 0.95)
+      
+      // Call the callback to save the masked image
+      onApplyMask(maskedImageUrl)
+      
+      setIsGenerating(false)
+    } catch (error) {
+      console.error("Error generating masked image:", error)
+      setIsGenerating(false)
+    }
+  }, [currentScale, currentX, currentY, currentRotation, onApplyMask, drawRoundRect])
+
+  // Cleanup
+  useEffect(() => {
+    return () => {
+      if (animationFrameRef.current) {
+        cancelAnimationFrame(animationFrameRef.current)
+      }
+      if (debouncedUpdate.current) {
+        clearTimeout(debouncedUpdate.current)
+      }
+    }
+  }, [])
 
   return (
     <div className="space-y-4">
@@ -266,7 +363,7 @@ export function ImageMaskEditor({ image, onUpdate }: ImageMaskEditorProps) {
           <Slider
             value={[currentScale]}
             onValueChange={([value]) =>
-              onUpdate({
+              handleUpdate({
                 ...settings,
                 scale: value,
               })
@@ -290,7 +387,7 @@ export function ImageMaskEditor({ image, onUpdate }: ImageMaskEditorProps) {
           <Slider
             value={[currentRotation]}
             onValueChange={([value]) =>
-              onUpdate({
+              handleUpdate({
                 ...settings,
                 rotation: value,
               })
@@ -302,23 +399,34 @@ export function ImageMaskEditor({ image, onUpdate }: ImageMaskEditorProps) {
           />
         </div>
 
-        {/* Position Info */}
+        {/* Position Info and Controls */}
         <div className="flex items-center justify-between text-sm text-muted-foreground">
           <span>
             Position: X: {Math.round(currentX)}, Y: {Math.round(currentY)}
           </span>
-          <Button variant="outline" size="sm" onClick={handleReset}>
-            Reset
-          </Button>
+          <div className="flex gap-2">
+            <Button variant="outline" size="sm" onClick={handleReset}>
+              Reset
+            </Button>
+            {onApplyMask && imageLoaded && (
+              <Button 
+                variant="default" 
+                size="sm" 
+                onClick={handleApplyMask}
+                disabled={isGenerating}
+              >
+                <Check className="h-4 w-4 mr-2" />
+                {isGenerating ? "Generating..." : "Apply Mask"}
+              </Button>
+            )}
+          </div>
         </div>
 
         <p className="text-xs text-muted-foreground">
           Click and drag the image to reposition it within the frame. Use the sliders to adjust
-          scale and rotation.
+          scale and rotation. Click "Apply Mask" to save the masked image as your primary product image.
         </p>
       </div>
     </div>
   )
 }
-
-

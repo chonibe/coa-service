@@ -186,6 +186,19 @@ export function ImagesStep({ formData, setFormData }: ImagesStepProps) {
     }
   }
 
+  const handleApplyMask = (maskedImageUrl: string) => {
+    if (images.length > 0) {
+      const updatedImages = [...images]
+      // Replace the primary image src with the masked image
+      updatedImages[0] = {
+        ...updatedImages[0],
+        src: maskedImageUrl,
+        maskSettings: updatedImages[0].maskSettings, // Keep mask settings for reference
+      }
+      setFormData({ ...formData, images: updatedImages })
+    }
+  }
+
   const firstImage = images.length > 0 ? images[0] : null
 
   return (
@@ -280,7 +293,7 @@ export function ImagesStep({ formData, setFormData }: ImagesStepProps) {
                 <div>
                   <Label className="text-base font-semibold">Product Preview Image</Label>
                   <p className="text-xs text-muted-foreground">
-                    This is your primary product image with mask positioning
+                    Position your image within the mask frame. Click "Apply Mask" to save the masked image as your primary product image.
                   </p>
                 </div>
                 <Button
@@ -295,6 +308,7 @@ export function ImagesStep({ formData, setFormData }: ImagesStepProps) {
               <ImageMaskEditor
                 image={firstImage}
                 onUpdate={updateMaskSettings}
+                onApplyMask={handleApplyMask}
               />
             </div>
           )}
