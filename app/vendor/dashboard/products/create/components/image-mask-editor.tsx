@@ -9,7 +9,7 @@ import type { ProductImage } from "@/types/product-submission"
 interface ImageMaskEditorProps {
   image: ProductImage
   onUpdate: (settings: ProductImage["maskSettings"]) => void
-  onGenerateMask?: (generateFunction: () => Promise<string>) => void // Callback to expose generate function
+  onGenerateMask?: (generateFunction: () => Promise<string>) => void
 }
 
 // Mask dimensions
@@ -27,6 +27,8 @@ export function ImageMaskEditor({ image, onUpdate, onGenerateMask }: ImageMaskEd
   const imageRef = useRef<HTMLImageElement | null>(null)
   const animationFrameRef = useRef<number | null>(null)
   const redrawTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+  const isRedrawingRef = useRef(false)
+  
   const [isDragging, setIsDragging] = useState(false)
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 })
   const [imageLoaded, setImageLoaded] = useState(false)
@@ -37,20 +39,20 @@ export function ImageMaskEditor({ image, onUpdate, onGenerateMask }: ImageMaskEd
     scale: 1,
     rotation: 0,
   }
-  
-  // Store values in refs to avoid callback recreation
+
+  // Store all dynamic values in refs to avoid callback recreation
   const settingsRef = useRef(settings)
   const imageSrcRef = useRef(image.src)
   const imageLoadedRef = useRef(imageLoaded)
   
-  // Update refs when props change (useEffect to avoid issues with render order)
+  // Update refs when props change
   useEffect(() => {
     settingsRef.current = settings
     imageSrcRef.current = image.src
     imageLoadedRef.current = imageLoaded
   }, [settings, image.src, imageLoaded])
 
-  // Default scale to fit the inner mask rectangle
+  // Default scale calculation
   const defaultScale = useMemo(() => {
     if (typeof window === "undefined") return 0.5
     return Math.min(
@@ -67,8 +69,8 @@ export function ImageMaskEditor({ image, onUpdate, onGenerateMask }: ImageMaskEd
   const currentY = settings.y || 0
   const currentRotation = settings.rotation || 0
 
-  // Helper function to draw rounded rectangle
-  const drawRoundRect = useCallback((
+  // Helper function to draw rounded rectangle (stable, no dependencies)
+  const drawRoundRect = (
     ctx: CanvasRenderingContext2D,
     x: number,
     y: number,
@@ -87,44 +89,13 @@ export function ImageMaskEditor({ image, onUpdate, onGenerateMask }: ImageMaskEd
     ctx.lineTo(x, y + radius)
     ctx.quadraticCurveTo(x, y, x + radius, y)
     ctx.closePath()
-  }, [])
+  }
 
-  // Helper function to create inner shadow - Only used in export
-  const drawInnerShadowExport = useCallback((ctx: CanvasRenderingContext2D) => {
-    ctx.save()
-    
-    // Create inner shadow using simple gradient approach (faster)
-    const blurRadius = 30
-    const steps = 6 // Reduced from 10 for better performance
-    
-    for (let i = 0; i < steps; i++) {
-      const progress = i / steps
-      const offset = blurRadius * progress
-      const opacity = (0.3 / steps) * (steps - i) // Fade from 30% to 0%
-      
-      ctx.globalAlpha = opacity
-      ctx.strokeStyle = "rgba(0, 0, 0, 1)"
-      ctx.lineWidth = 2
-      
-      // Draw inset rounded rectangle for inner shadow
-      drawRoundRect(
-        ctx,
-        MASK_INNER_X + offset,
-        MASK_INNER_Y + offset,
-        MASK_INNER_WIDTH - (offset * 2),
-        MASK_INNER_HEIGHT - (offset * 2),
-        Math.max(0, MASK_CORNER_RADIUS - offset)
-      )
-      ctx.stroke()
-    }
-    
-    ctx.globalAlpha = 1
-    ctx.restore()
-  }, [drawRoundRect])
-
-  // Single optimized draw function - use refs to avoid dependency issues
-  // This function should be stable and not recreate frequently
+  // Single optimized draw function - reads from refs, no dependencies
   const drawCanvas = useCallback(() => {
+    // Prevent concurrent redraws
+    if (isRedrawingRef.current) return
+    
     const canvas = canvasRef.current
     if (!canvas) return
 
@@ -133,11 +104,22 @@ export function ImageMaskEditor({ image, onUpdate, onGenerateMask }: ImageMaskEd
       cancelAnimationFrame(animationFrameRef.current)
     }
 
-    const ctx = canvas.getContext("2d", { alpha: false })
-    if (!ctx) return
+    // Cancel any pending timeout
+    if (redrawTimeoutRef.current) {
+      clearTimeout(redrawTimeoutRef.current)
+      redrawTimeoutRef.current = null
+    }
+
+    isRedrawingRef.current = true
 
     animationFrameRef.current = requestAnimationFrame(() => {
       try {
+        const ctx = canvas.getContext("2d", { alpha: false })
+        if (!ctx) {
+          isRedrawingRef.current = false
+          return
+        }
+
         // Set canvas size for high DPI displays
         const dpr = typeof window !== "undefined" ? window.devicePixelRatio || 1 : 1
         const displaySize = Math.min(600, typeof window !== "undefined" ? Math.min(600, window.innerWidth - 100) : 600)
@@ -161,7 +143,7 @@ export function ImageMaskEditor({ image, onUpdate, onGenerateMask }: ImageMaskEd
         ctx.fillStyle = "#f3f4f6"
         ctx.fillRect(0, 0, MASK_OUTER_SIZE, MASK_OUTER_SIZE)
 
-        // Draw frame borders (always visible)
+        // Draw frame borders
         ctx.strokeStyle = "#e5e7eb"
         ctx.lineWidth = 4
         ctx.strokeRect(2, 2, MASK_OUTER_SIZE - 4, MASK_OUTER_SIZE - 4)
@@ -171,7 +153,7 @@ export function ImageMaskEditor({ image, onUpdate, onGenerateMask }: ImageMaskEd
         drawRoundRect(ctx, MASK_INNER_X, MASK_INNER_Y, MASK_INNER_WIDTH, MASK_INNER_HEIGHT, MASK_CORNER_RADIUS)
         ctx.stroke()
 
-        // Get current values from refs to avoid stale closures
+        // Get current values from refs
         const img = imageRef.current
         const currentSettings = settingsRef.current
         const imgSrc = imageSrcRef.current
@@ -185,6 +167,7 @@ export function ImageMaskEditor({ image, onUpdate, onGenerateMask }: ImageMaskEd
           ctx.fillText("Upload an image to position it", MASK_OUTER_SIZE / 2, MASK_OUTER_SIZE / 2 - 10)
           ctx.font = "14px Arial"
           ctx.fillText("within the frame above", MASK_OUTER_SIZE / 2, MASK_OUTER_SIZE / 2 + 15)
+          isRedrawingRef.current = false
           return
         }
 
@@ -199,7 +182,6 @@ export function ImageMaskEditor({ image, onUpdate, onGenerateMask }: ImageMaskEd
         const centerX = MASK_OUTER_SIZE / 2
         const centerY = MASK_OUTER_SIZE / 2
         
-        // Get fresh settings from ref to avoid stale closure
         const scale = currentSettings.scale || defaultScale
         const x = currentSettings.x || 0
         const y = currentSettings.y || 0
@@ -226,16 +208,31 @@ export function ImageMaskEditor({ image, onUpdate, onGenerateMask }: ImageMaskEd
         ctx.stroke()
       } catch (error) {
         console.error("Error drawing canvas:", error)
+      } finally {
+        isRedrawingRef.current = false
       }
     })
-  }, [defaultScale, drawRoundRect]) // Only depend on truly stable values - read from refs inside
+  }, [defaultScale]) // Only depend on stable defaultScale
+
+  // Throttled redraw function - only redraws when actually needed
+  const scheduleRedraw = useCallback(() => {
+    // Clear any pending timeout
+    if (redrawTimeoutRef.current) {
+      clearTimeout(redrawTimeoutRef.current)
+    }
+    
+    // Throttle redraws - only redraw after user stops interacting
+    redrawTimeoutRef.current = setTimeout(() => {
+      drawCanvas()
+    }, 100) // Increased throttle for better performance
+  }, [drawCanvas])
 
   // Load image only when src changes
   useEffect(() => {
     if (!image.src || image.src.trim().length === 0) {
       imageRef.current = null
       setImageLoaded(false)
-      drawCanvas()
+      scheduleRedraw()
       return
     }
 
@@ -258,94 +255,92 @@ export function ImageMaskEditor({ image, onUpdate, onGenerateMask }: ImageMaskEd
     img.onload = () => {
       imageRef.current = img
       setImageLoaded(true)
+      scheduleRedraw()
     }
     
     img.onerror = () => {
       imageRef.current = null
       setImageLoaded(false)
+      scheduleRedraw()
     }
     
     img.src = image.src
     
-    // Cleanup
     return () => {
       img.onload = null
       img.onerror = null
     }
-  }, [image.src]) // Only depend on image.src
+  }, [image.src, scheduleRedraw])
 
-  // Debounced redraw when settings change - only trigger on actual value changes
+  // Single effect to handle settings changes - heavily throttled
   useEffect(() => {
     if (!imageLoaded) return
     
-    // Clear any pending timeout
-    if (redrawTimeoutRef.current) {
-      clearTimeout(redrawTimeoutRef.current)
-    }
-    
-    // Debounce redraw to prevent excessive updates
-    redrawTimeoutRef.current = setTimeout(() => {
-      drawCanvas()
-    }, 150) // Increased debounce time for better performance
-    
-    return () => {
-      if (redrawTimeoutRef.current) {
-        clearTimeout(redrawTimeoutRef.current)
-      }
-    }
-  }, [currentScale, currentX, currentY, currentRotation, imageLoaded, drawCanvas])
-  
-  // Separate effect for image loading state changes
-  useEffect(() => {
-    if (imageLoaded) {
-      // Small delay to ensure image is rendered in DOM
-      const timeout = setTimeout(() => drawCanvas(), 50)
-      return () => clearTimeout(timeout)
-    }
-  }, [imageLoaded, drawCanvas])
+    // Use scheduleRedraw which has built-in throttling
+    scheduleRedraw()
+  }, [currentScale, currentX, currentY, currentRotation, imageLoaded, scheduleRedraw])
 
-  // Optimized update handler - doesn't trigger immediate redraw
+  // Update handler - updates parent and schedules redraw
   const handleUpdate = useCallback((newSettings: ProductImage["maskSettings"]) => {
     // Update parent immediately
     onUpdate(newSettings)
     
-    // Redraw will be triggered by the useEffect watching settings changes
-    // No need to call drawCanvas here
-  }, [onUpdate])
+    // Schedule a throttled redraw
+    scheduleRedraw()
+  }, [onUpdate, scheduleRedraw])
 
   const displaySize = useMemo(() => {
     return Math.min(600, typeof window !== "undefined" ? Math.min(600, window.innerWidth - 100) : 600)
   }, [])
 
+  // Optimized mouse handlers - use throttling for drag
+  const dragUpdateTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+  
   const handleMouseDown = useCallback((e: React.MouseEvent<HTMLCanvasElement>) => {
     setIsDragging(true)
     const rect = canvasRef.current?.getBoundingClientRect()
     if (rect) {
       const scale = displaySize / MASK_OUTER_SIZE
+      const currentSettings = settingsRef.current
       setDragStart({
-        x: (e.clientX - rect.left) / scale - currentX,
-        y: (e.clientY - rect.top) / scale - currentY,
+        x: (e.clientX - rect.left) / scale - (currentSettings.x || 0),
+        y: (e.clientY - rect.top) / scale - (currentSettings.y || 0),
       })
     }
-  }, [currentX, currentY, displaySize])
+  }, [displaySize])
 
   const handleMouseMove = useCallback((e: React.MouseEvent<HTMLCanvasElement>) => {
     if (!isDragging) return
+    
     const rect = canvasRef.current?.getBoundingClientRect()
-    if (rect) {
-      const scale = displaySize / MASK_OUTER_SIZE
-      const newX = (e.clientX - rect.left) / scale - dragStart.x
-      const newY = (e.clientY - rect.top) / scale - dragStart.y
-      
+    if (!rect) return
+    
+    const scale = displaySize / MASK_OUTER_SIZE
+    const newX = (e.clientX - rect.left) / scale - dragStart.x
+    const newY = (e.clientY - rect.top) / scale - dragStart.y
+    
+    // Clear any pending update
+    if (dragUpdateTimeoutRef.current) {
+      clearTimeout(dragUpdateTimeoutRef.current)
+    }
+    
+    // Throttle updates during drag to prevent excessive state updates
+    dragUpdateTimeoutRef.current = setTimeout(() => {
+      const currentSettings = settingsRef.current
       handleUpdate({
-        ...settings,
+        ...currentSettings,
         x: newX,
         y: newY,
       })
-    }
-  }, [isDragging, dragStart, settings, displaySize, handleUpdate])
+    }, 50) // Update every 50ms during drag
+  }, [isDragging, dragStart, displaySize, handleUpdate])
 
   const handleMouseUp = useCallback(() => {
+    // Clear any pending drag update
+    if (dragUpdateTimeoutRef.current) {
+      clearTimeout(dragUpdateTimeoutRef.current)
+      dragUpdateTimeoutRef.current = null
+    }
     setIsDragging(false)
   }, [])
 
@@ -357,6 +352,25 @@ export function ImageMaskEditor({ image, onUpdate, onGenerateMask }: ImageMaskEd
       rotation: 0,
     })
   }, [defaultScale, handleUpdate])
+
+  // Debounced slider handler to prevent excessive updates
+  const sliderTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+  
+  const handleSliderChange = useCallback((field: 'scale' | 'rotation', value: number) => {
+    // Clear any pending update
+    if (sliderTimeoutRef.current) {
+      clearTimeout(sliderTimeoutRef.current)
+    }
+    
+    // Debounce slider updates
+    sliderTimeoutRef.current = setTimeout(() => {
+      const currentSettings = settingsRef.current
+      handleUpdate({
+        ...currentSettings,
+        [field]: value,
+      })
+    }, 100) // Wait 100ms after user stops sliding
+  }, [handleUpdate])
 
   // Generate and export masked image - only called when needed
   const generateMaskedImage = useCallback(async (): Promise<string> => {
@@ -382,25 +396,55 @@ export function ImageMaskEditor({ image, onUpdate, onGenerateMask }: ImageMaskEd
     drawRoundRect(exportCtx, MASK_INNER_X, MASK_INNER_Y, MASK_INNER_WIDTH, MASK_INNER_HEIGHT, MASK_CORNER_RADIUS)
     exportCtx.clip()
 
-    // Apply transformations and draw image
+    // Apply transformations using current settings
     const centerX = MASK_OUTER_SIZE / 2
     const centerY = MASK_OUTER_SIZE / 2
     
+    const currentSettings = settingsRef.current
+    const scale = currentSettings.scale || defaultScale
+    const x = currentSettings.x || 0
+    const y = currentSettings.y || 0
+    const rotation = currentSettings.rotation || 0
+    
     exportCtx.save()
     exportCtx.translate(centerX, centerY)
-    exportCtx.rotate((currentRotation * Math.PI) / 180)
-    exportCtx.scale(currentScale, currentScale)
-    exportCtx.translate(currentX, currentY)
+    exportCtx.rotate((rotation * Math.PI) / 180)
+    exportCtx.scale(scale, scale)
+    exportCtx.translate(x, y)
     
     exportCtx.drawImage(imageRef.current, -imageRef.current.width / 2, -imageRef.current.height / 2)
     exportCtx.restore()
 
     // Add inner shadow effect to exported image only
-    drawInnerShadowExport(exportCtx)
+    const blurRadius = 30
+    const steps = 6
+    
+    exportCtx.save()
+    for (let i = 0; i < steps; i++) {
+      const progress = i / steps
+      const offset = blurRadius * progress
+      const opacity = (0.3 / steps) * (steps - i)
+      
+      exportCtx.globalAlpha = opacity
+      exportCtx.strokeStyle = "rgba(0, 0, 0, 1)"
+      exportCtx.lineWidth = 2
+      
+      drawRoundRect(
+        exportCtx,
+        MASK_INNER_X + offset,
+        MASK_INNER_Y + offset,
+        MASK_INNER_WIDTH - (offset * 2),
+        MASK_INNER_HEIGHT - (offset * 2),
+        Math.max(0, MASK_CORNER_RADIUS - offset)
+      )
+      exportCtx.stroke()
+    }
+    exportCtx.globalAlpha = 1
+    exportCtx.restore()
 
     // Export as base64 data URL
     return exportCanvas.toDataURL("image/png", 0.95)
-  }, [currentScale, currentX, currentY, currentRotation, drawRoundRect, drawInnerShadowExport])
+  }, [defaultScale])
 
   // Expose generate function to parent
   useEffect(() => {
@@ -417,6 +461,12 @@ export function ImageMaskEditor({ image, onUpdate, onGenerateMask }: ImageMaskEd
       }
       if (redrawTimeoutRef.current) {
         clearTimeout(redrawTimeoutRef.current)
+      }
+      if (dragUpdateTimeoutRef.current) {
+        clearTimeout(dragUpdateTimeoutRef.current)
+      }
+      if (sliderTimeoutRef.current) {
+        clearTimeout(sliderTimeoutRef.current)
       }
     }
   }, [])
@@ -455,12 +505,7 @@ export function ImageMaskEditor({ image, onUpdate, onGenerateMask }: ImageMaskEd
           </div>
           <Slider
             value={[currentScale]}
-            onValueChange={([value]) =>
-              handleUpdate({
-                ...settings,
-                scale: value,
-              })
-            }
+            onValueChange={([value]) => handleSliderChange('scale', value)}
             min={0.1}
             max={3}
             step={0.05}
@@ -479,12 +524,7 @@ export function ImageMaskEditor({ image, onUpdate, onGenerateMask }: ImageMaskEd
           </div>
           <Slider
             value={[currentRotation]}
-            onValueChange={([value]) =>
-              handleUpdate({
-                ...settings,
-                rotation: value,
-              })
-            }
+            onValueChange={([value]) => handleSliderChange('rotation', value)}
             min={-180}
             max={180}
             step={1}
