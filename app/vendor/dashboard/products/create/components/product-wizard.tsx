@@ -181,7 +181,12 @@ export function ProductWizard({ onComplete, onCancel, initialData, submissionId 
       const data = await response.json()
 
       if (!response.ok) {
-        throw new Error(data.error || "Failed to submit product")
+        // Handle validation errors or single error messages
+        let errorMessage = data.error || "Failed to submit product"
+        if (data.errors && Array.isArray(data.errors) && data.errors.length > 0) {
+          errorMessage = data.errors.join(", ")
+        }
+        throw new Error(errorMessage)
       }
 
       toast({

@@ -46,11 +46,15 @@ function validateProductSubmission(data: any): { valid: boolean; errors: string[
     errors.push("At least one variant is required")
   } else {
     data.variants.forEach((variant: any, index: number) => {
+      if (!variant || typeof variant !== "object") {
+        errors.push(`Variant ${index + 1}: Invalid variant data`)
+        return
+      }
       if (!variant.price || typeof variant.price !== "string") {
         errors.push(`Variant ${index + 1}: Price is required`)
       }
       // Validate price format
-      if (variant.price && !/^\d+(\.\d{1,2})?$/.test(variant.price)) {
+      if (variant.price && typeof variant.price === "string" && !/^\d+(\.\d{1,2})?$/.test(variant.price)) {
         errors.push(`Variant ${index + 1}: Price must be a valid number`)
       }
       // Validate SKU is present (should be auto-generated)
@@ -92,10 +96,32 @@ export async function POST(request: NextRequest) {
     const productData: ProductSubmissionData = body.product_data
 
     if (!productData) {
+      console.error("Product submission error: No product data provided")
       return NextResponse.json(
         { error: "Product data is required" },
         { status: 400 },
       )
+    }
+
+    // Ensure arrays are properly initialized
+    if (!Array.isArray(productData.variants)) {
+      console.error("Product submission error: Variants is not an array", productData.variants)
+      return NextResponse.json(
+        { error: "Invalid product data: variants must be an array" },
+        { status: 400 },
+      )
+    }
+    
+    if (!Array.isArray(productData.metafields)) {
+      productData.metafields = []
+    }
+    
+    if (!Array.isArray(productData.images)) {
+      productData.images = []
+    }
+    
+    if (!Array.isArray(productData.tags)) {
+      productData.tags = []
     }
 
     // Ensure vendor is set correctly
@@ -116,7 +142,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Add vendor tag if not already present
-    if (!productData.tags) {
+    if (!productData.tags || !Array.isArray(productData.tags)) {
       productData.tags = []
     }
     if (!productData.tags.includes(vendor.vendor_name)) {
@@ -137,7 +163,17 @@ export async function POST(request: NextRequest) {
       .single()
 
     if (submissionError) {
-      console.error("Error creating submission:", submissionError)
+      console.error("Error creating submission:", {
+        message: submissionError.message,
+        details: submissionError,
+        productData: {
+          title: productData.title,
+          vendor: productData.vendor,
+          variantsCount: productData.variants?.length,
+          metafieldsCount: productData.metafields?.length,
+          imagesCount: productData.images?.length,
+        },
+      })
       return NextResponse.json(
         { error: "Failed to create submission", message: submissionError.message },
         { status: 500 },
