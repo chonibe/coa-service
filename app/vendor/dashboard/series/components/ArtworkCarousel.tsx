@@ -1,0 +1,237 @@
+"use client"
+
+import { useState } from "react"
+import { motion, AnimatePresence } from "framer-motion"
+import { Lock, Check, GripVertical } from "lucide-react"
+import { cn } from "@/lib/utils"
+import type { SeriesMember } from "@/types/artwork-series"
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+} from "@dnd-kit/core"
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+  horizontalListSortingStrategy,
+} from "@dnd-kit/sortable"
+import { CSS } from "@dnd-kit/utilities"
+
+interface ArtworkCarouselProps {
+  members: SeriesMember[]
+  onReorder?: (newOrder: string[]) => void
+  editable?: boolean
+  seriesId?: string
+}
+
+function SortableArtworkItem({
+  member,
+  index,
+  isLocked,
+  editable,
+}: {
+  member: SeriesMember
+  index: number
+  isLocked: boolean
+  editable: boolean
+}) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: member.id, disabled: !editable })
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : isLocked ? 0.6 : 1,
+  }
+
+  return (
+    <motion.div
+      ref={setNodeRef}
+      style={style}
+      className={cn(
+        "relative flex-shrink-0 w-32 group",
+        isDragging && "z-50"
+      )}
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: isLocked ? 0.6 : 1, y: 0 }}
+      transition={{ delay: index * 0.05 }}
+    >
+      <div className="relative aspect-square rounded-lg overflow-hidden bg-muted border-2 border-transparent group-hover:border-primary transition-colors">
+        {member.artwork_image ? (
+          <img
+            src={member.artwork_image}
+            alt={member.artwork_title || "Artwork"}
+            className={cn(
+              "w-full h-full object-cover",
+              isLocked && "blur-sm"
+            )}
+          />
+        ) : (
+          <div className="w-full h-full flex items-center justify-center">
+            <Lock className="h-8 w-8 text-muted-foreground" />
+          </div>
+        )}
+        
+        {/* Lock/Unlock indicator */}
+        <div className="absolute top-2 right-2">
+          {isLocked ? (
+            <div className="h-6 w-6 rounded-full bg-destructive/80 flex items-center justify-center">
+              <Lock className="h-3 w-3 text-white" />
+            </div>
+          ) : (
+            <div className="h-6 w-6 rounded-full bg-primary flex items-center justify-center">
+              <Check className="h-3 w-3 text-primary-foreground" />
+            </div>
+          )}
+        </div>
+
+        {/* Position indicator */}
+        <div className="absolute bottom-2 left-2">
+          <div className="h-6 w-6 rounded-full bg-black/60 backdrop-blur-sm flex items-center justify-center">
+            <span className="text-xs font-semibold text-white">
+              {member.display_order + 1}
+            </span>
+          </div>
+        </div>
+
+        {/* Drag handle */}
+        {editable && (
+          <div
+            {...attributes}
+            {...listeners}
+            className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center cursor-grab active:cursor-grabbing"
+          >
+            <GripVertical className="h-6 w-6 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
+          </div>
+        )}
+      </div>
+      
+      {/* Artwork title */}
+      {member.artwork_title && (
+        <p className="text-xs text-center mt-2 truncate" title={member.artwork_title}>
+          {member.artwork_title}
+        </p>
+      )}
+    </motion.div>
+  )
+}
+
+export function ArtworkCarousel({ members, onReorder, editable = false, seriesId }: ArtworkCarouselProps) {
+  const [items, setItems] = useState<SeriesMember[]>(members)
+  const [isReordering, setIsReordering] = useState(false)
+
+  // Sort by display_order
+  const sortedMembers = [...members].sort((a, b) => a.display_order - b.display_order)
+
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  )
+
+  const handleDragEnd = async (event: DragEndEvent) => {
+    const { active, over } = event
+
+    if (!over || active.id === over.id) {
+      return
+    }
+
+    const oldIndex = sortedMembers.findIndex((item) => item.id === active.id)
+    const newIndex = sortedMembers.findIndex((item) => item.id === over.id)
+
+    const newItems = arrayMove(sortedMembers, oldIndex, newIndex)
+    setItems(newItems)
+    setIsReordering(true)
+
+    // Call onReorder callback with new order
+    if (onReorder) {
+      const newOrder = newItems.map((item) => item.id)
+      await onReorder(newOrder)
+    } else if (seriesId) {
+      // Auto-save if seriesId is provided
+      try {
+        const newOrder = newItems.map((item) => item.id)
+        const response = await fetch(`/api/vendor/series/${seriesId}/reorder`, {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          credentials: "include",
+          body: JSON.stringify({ memberIds: newOrder }),
+        })
+
+        if (!response.ok) {
+          throw new Error("Failed to reorder artworks")
+        }
+
+        // Refresh the page or update state
+        window.location.reload()
+      } catch (error) {
+        console.error("Error reordering artworks:", error)
+        // Revert on error
+        setItems(sortedMembers)
+      }
+    }
+
+    setIsReordering(false)
+  }
+
+  const displayItems = items.length > 0 ? items : sortedMembers
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+        <span>{displayItems.length} artworks in series</span>
+        {editable && (
+          <span className="text-xs">(Drag to reorder)</span>
+        )}
+      </div>
+      <DndContext
+        sensors={sensors}
+        collisionDetection={closestCenter}
+        onDragEnd={handleDragEnd}
+      >
+        <SortableContext
+          items={displayItems.map((item) => item.id)}
+          strategy={horizontalListSortingStrategy}
+        >
+          <div className="flex gap-4 overflow-x-auto pb-4 scrollbar-hide">
+            <AnimatePresence>
+              {displayItems.map((member, index) => {
+                const isLocked = member.is_locked
+                
+                return (
+                  <SortableArtworkItem
+                    key={member.id}
+                    member={member}
+                    index={index}
+                    isLocked={isLocked}
+                    editable={editable}
+                  />
+                )
+              })}
+            </AnimatePresence>
+          </div>
+        </SortableContext>
+      </DndContext>
+      {isReordering && (
+        <div className="text-xs text-muted-foreground text-center">
+          Saving new order...
+        </div>
+      )}
+    </div>
+  )
+}
