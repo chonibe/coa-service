@@ -4,6 +4,46 @@ import { cookies } from "next/headers"
 import { getVendorFromCookieStore } from "@/lib/vendor-session"
 import { createClient } from "@/lib/supabase/server"
 
+export async function GET(
+  request: NextRequest,
+  { params }: { params: { id: string } },
+) {
+  try {
+    const cookieStore = cookies()
+    const vendorName = getVendorFromCookieStore(cookieStore)
+
+    if (!vendorName) {
+      return NextResponse.json({ error: "Not authenticated" }, { status: 401 })
+    }
+
+    const supabase = createClient()
+    const { data: submission, error } = await supabase
+      .from("vendor_product_submissions")
+      .select("*")
+      .eq("id", params.id)
+      .eq("vendor_name", vendorName)
+      .single()
+
+    if (error || !submission) {
+      return NextResponse.json(
+        { error: "Submission not found" },
+        { status: 404 },
+      )
+    }
+
+    return NextResponse.json({
+      success: true,
+      submission,
+    })
+  } catch (error: any) {
+    console.error("Error fetching submission:", error)
+    return NextResponse.json(
+      { error: "Failed to fetch submission", message: error.message },
+      { status: 500 },
+    )
+  }
+}
+
 export async function DELETE(
   request: NextRequest,
   { params }: { params: { id: string } },
@@ -33,12 +73,12 @@ export async function DELETE(
       )
     }
 
-    // Only allow deletion of unpublished submissions (pending, rejected)
-    if (submission.status === "published" || submission.status === "approved") {
+    // Only allow deletion once the submission has been rejected
+    if (submission.status !== "rejected") {
       return NextResponse.json(
-        { 
-          error: "Cannot delete published or approved submissions",
-          message: "Only pending or rejected submissions can be deleted. Contact admin to unpublish approved/published products.",
+        {
+          error: "Cannot delete submission",
+          message: "You can only delete submissions that have been rejected. Contact admin to reject/unpublish approved or pending submissions.",
         },
         { status: 400 },
       )

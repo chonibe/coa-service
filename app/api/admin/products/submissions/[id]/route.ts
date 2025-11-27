@@ -83,38 +83,43 @@ export async function DELETE(
       )
     }
 
-    // If published, unpublish from Shopify first
-    if (submission.status === "published" && submission.shopify_product_id) {
-      try {
-        const { deleteShopifyProduct } = await import("@/lib/shopify/product-creation")
-        const deleted = await deleteShopifyProduct(submission.shopify_product_id)
-        if (deleted) {
-          console.log(`Unpublished product ${submission.shopify_product_id} from Shopify`)
-        } else {
-          console.warn(`Failed to unpublish product ${submission.shopify_product_id} from Shopify`)
-          // Continue anyway - we'll still update the submission status
-        }
-      } catch (error) {
-        console.error("Error unpublishing from Shopify:", error)
-        // Continue anyway
-      }
-    }
-
-    // If approved or published, reset to rejected status so vendor can see it
+    // If approved or published, unpublish from Shopify and reset to rejected status so vendor can see it
     // Otherwise, delete the submission completely
     if (submission.status === "approved" || submission.status === "published") {
+      // Unpublish from Shopify if it has a product ID
+      if (submission.shopify_product_id) {
+        try {
+          const { deleteShopifyProduct } = await import("@/lib/shopify/product-creation")
+          const deleted = await deleteShopifyProduct(submission.shopify_product_id)
+          if (deleted) {
+            console.log(`Unpublished product ${submission.shopify_product_id} from Shopify`)
+          } else {
+            console.warn(`Failed to unpublish product ${submission.shopify_product_id} from Shopify`)
+            // Continue anyway - we'll still update the submission status
+          }
+        } catch (error) {
+          console.error("Error unpublishing from Shopify:", error)
+          // Continue anyway
+        }
+      }
+
+      // Update submission to rejected status and clear all published/approved fields
+      const updateData: any = {
+        status: "rejected",
+        shopify_product_id: null,
+        published_at: null,
+        approved_at: null,
+        approved_by: null,
+        rejection_reason: `Removed by admin (${adminEmail}). Product unpublished from Shopify.`,
+        admin_notes: submission.admin_notes 
+          ? `${submission.admin_notes}\n\nRemoved by admin ${adminEmail} on ${new Date().toISOString()}.`
+          : `Removed by admin ${adminEmail} on ${new Date().toISOString()}.`,
+        updated_at: new Date().toISOString(),
+      }
+
       const { error: updateError } = await supabase
         .from("vendor_product_submissions")
-        .update({
-          status: "rejected",
-          shopify_product_id: null,
-          published_at: null,
-          rejection_reason: `Removed by admin (${adminEmail}). Product unpublished from Shopify.`,
-          admin_notes: submission.admin_notes 
-            ? `${submission.admin_notes}\n\nRemoved by admin ${adminEmail} on ${new Date().toISOString()}.`
-            : `Removed by admin ${adminEmail} on ${new Date().toISOString()}.`,
-          updated_at: new Date().toISOString(),
-        })
+        .update(updateData)
         .eq("id", params.id)
 
       if (updateError) {

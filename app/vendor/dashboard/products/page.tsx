@@ -63,14 +63,14 @@ export default function ProductsPage() {
 
   const handleDeleteClick = (submission: any, e: React.MouseEvent) => {
     e.stopPropagation()
-    // Only allow deletion of unpublished submissions
-    if (submission.status === "pending" || submission.status === "rejected") {
+    // Only allow deletion once submission has been rejected
+    if (submission.status === "rejected") {
       setSubmissionToDelete(submission)
       setDeleteDialogOpen(true)
     } else {
       toast({
         title: "Cannot Delete",
-        description: "Only pending or rejected submissions can be deleted. Contact admin to unpublish approved/published products.",
+        description: "You can delete a submission only after it has been rejected.",
         variant: "destructive",
       })
     }
@@ -336,7 +336,7 @@ export default function ProductsPage() {
                                 Edit
                               </Button>
                             )}
-                            {(submission.status === "pending" || submission.status === "rejected") && (
+                            {submission.status === "rejected" && (
                               <Button
                                 variant="outline"
                                 size="sm"
