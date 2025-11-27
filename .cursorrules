@@ -1,0 +1,39 @@
+# Cursor Rules for COA Service
+
+## Deployment Rule - CRITICAL
+**ALWAYS DEPLOY TO VERCEL WHEN COMPLETING A FEATURE OR TASK**
+
+When you complete any feature, task, or significant change:
+1. Commit all changes with a descriptive commit message
+2. Deploy to Vercel production using: `vercel --prod --yes`
+3. Verify deployment success
+4. Document any deployment notes or issues
+
+This ensures all completed work is immediately available in production.
+
+## Project-Specific Rules
+
+### Code Style
+- Use TypeScript for all new code
+- Follow existing code patterns and conventions
+- Use shadcn/ui components when available
+- Prefer functional components with hooks
+
+### File Organization
+- Components in `/app/[feature]/components/`
+- API routes in `/app/api/[feature]/`
+- Types in `/types/`
+- Documentation in `/docs/features/[feature-name]/`
+
+### Testing
+- Test all new features before marking complete
+- Verify mobile responsiveness
+- Check error handling
+- Test edge cases
+
+### Documentation
+- Update feature README when adding features
+- Document API endpoints
+- Include usage examples
+- Update implementation summaries
+
