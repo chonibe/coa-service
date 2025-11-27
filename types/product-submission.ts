@@ -50,6 +50,10 @@ export interface ProductSubmissionData {
   images?: ProductImage[]
   metafields?: ProductMetafield[]
   print_files?: PrintFiles
+  series_id?: string | null // Series assignment
+  series_name?: string | null // For quick reference
+  is_locked?: boolean // Manual lock toggle
+  unlock_order?: number | null // For sequential unlocks
 }
 
 export interface VendorProductSubmission {

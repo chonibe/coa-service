@@ -40,30 +40,78 @@ export async function POST(request: NextRequest) {
 
     const formData = await request.json()
 
-    const { error: updateError } = await serviceClient
+    // Prepare update data - conditionally include optional fields
+    const updateData: Record<string, any> = {
+      contact_name: formData.contact_name,
+      contact_email: formData.contact_email,
+      phone: formData.phone,
+      address: formData.address,
+      website: formData.website,
+      instagram_url: formData.instagram_url,
+      bio: formData.bio,
+      paypal_email: formData.paypal_email,
+      bank_account: formData.bank_account,
+      is_company: formData.is_company,
+      tax_id: formData.tax_id,
+      tax_country: formData.tax_country,
+      notify_on_sale: formData.notify_on_sale,
+      notify_on_payout: formData.notify_on_payout,
+      notify_on_message: formData.notify_on_message,
+      onboarding_completed: true,
+      onboarded_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+      last_login_at: new Date().toISOString(),
+    }
+
+    // Conditionally include profile_image and artist_history
+    // These fields may not exist if migration hasn't been run
+    if (formData.profile_image !== undefined) {
+      updateData.profile_image = formData.profile_image
+    }
+    if (formData.artist_history !== undefined) {
+      updateData.artist_history = formData.artist_history
+    }
+
+    console.log("Updating vendor profile:", { vendorId: vendor.id, updateData })
+
+    let updateError: any = null
+    const updateResult = await serviceClient
       .from("vendors")
-      .update({
-        contact_name: formData.contact_name,
-        contact_email: formData.contact_email,
-        phone: formData.phone,
-        address: formData.address,
-        website: formData.website,
-        instagram_url: formData.instagram_url,
-        bio: formData.bio,
-        paypal_email: formData.paypal_email,
-        bank_account: formData.bank_account,
-        is_company: formData.is_company,
-        tax_id: formData.tax_id,
-        tax_country: formData.tax_country,
-        notify_on_sale: formData.notify_on_sale,
-        notify_on_payout: formData.notify_on_payout,
-        notify_on_message: formData.notify_on_message,
-        onboarding_completed: true,
-        onboarded_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-        last_login_at: new Date().toISOString(),
-      })
+      .update(updateData)
       .eq("id", vendor.id)
+    
+    updateError = updateResult.error
+
+    // If update failed due to missing columns (PGRST204), retry without those columns
+    if (updateError && updateError.code === "PGRST204") {
+      console.warn("Column not found error detected. Retrying without optional fields:", updateError.message)
+      
+      // Check which column is missing from the error message
+      const missingColumns: string[] = []
+      if (updateError.message?.includes("profile_image")) {
+        missingColumns.push("profile_image")
+      }
+      if (updateError.message?.includes("artist_history")) {
+        missingColumns.push("artist_history")
+      }
+      
+      // Remove fields that don't exist in the database
+      const safeUpdateData = { ...updateData }
+      if (missingColumns.includes("profile_image")) {
+        delete safeUpdateData.profile_image
+      }
+      if (missingColumns.includes("artist_history")) {
+        delete safeUpdateData.artist_history
+      }
+
+      // Retry with only safe fields
+      const retryResult = await serviceClient
+        .from("vendors")
+        .update(safeUpdateData)
+        .eq("id", vendor.id)
+      
+      updateError = retryResult.error
+    }
 
     if (updateError) {
       console.error("Error updating vendor profile:", updateError)

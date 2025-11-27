@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { useRouter } from "next/navigation"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Alert, AlertDescription } from "@/components/ui/alert"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import {
   Package,
   Clock,
@@ -20,6 +21,9 @@ import {
   Loader2,
   AlertCircle,
   Trash2,
+  FileText,
+  Download,
+  ArrowUpDown,
 } from "lucide-react"
 import {
   AlertDialog,
@@ -45,9 +49,40 @@ export default function ProductSubmissionsPage() {
   const [submissionToDelete, setSubmissionToDelete] = useState<any>(null)
   const [deleting, setDeleting] = useState(false)
 
+  // Print Files tab state
+  const [pdfFiles, setPdfFiles] = useState<any[]>([])
+  const [loadingPdfFiles, setLoadingPdfFiles] = useState(false)
+  const [pdfSortBy, setPdfSortBy] = useState<string>("submitted_at")
+  const [pdfSortOrder, setPdfSortOrder] = useState<"asc" | "desc">("desc")
+  const [pdfSearchQuery, setPdfSearchQuery] = useState("")
+
   useEffect(() => {
     fetchSubmissions()
   }, [statusFilter, page])
+
+  const fetchPdfFiles = useCallback(async () => {
+    setLoadingPdfFiles(true)
+    try {
+      const response = await fetch(
+        `/api/admin/products/submissions/print-files?sortBy=${pdfSortBy}&sortOrder=${pdfSortOrder}`,
+        {
+          credentials: "include",
+        }
+      )
+
+      if (!response.ok) {
+        throw new Error("Failed to fetch PDF files")
+      }
+
+      const data = await response.json()
+      setPdfFiles(data.pdfFiles || [])
+    } catch (err: any) {
+      console.error("Error fetching PDF files:", err)
+      setError(err.message || "Failed to fetch PDF files")
+    } finally {
+      setLoadingPdfFiles(false)
+    }
+  }, [pdfSortBy, pdfSortOrder])
 
   const fetchSubmissions = async () => {
     setLoading(true)
@@ -161,6 +196,39 @@ export default function ProductSubmissionsPage() {
     }
   }
 
+  const filteredPdfFiles = pdfFiles.filter((pdf) => {
+    if (!pdfSearchQuery) return true
+    const title = pdf.productTitle || ""
+    const vendorName = pdf.vendorName || ""
+    return (
+      title.toLowerCase().includes(pdfSearchQuery.toLowerCase()) ||
+      vendorName.toLowerCase().includes(pdfSearchQuery.toLowerCase())
+    )
+  })
+
+  const handlePdfSortChange = (newSortBy: string) => {
+    if (pdfSortBy === newSortBy) {
+      setPdfSortOrder(pdfSortOrder === "asc" ? "desc" : "asc")
+    } else {
+      setPdfSortBy(newSortBy)
+      setPdfSortOrder("desc")
+    }
+  }
+
+  useEffect(() => {
+    fetchPdfFiles()
+  }, [fetchPdfFiles])
+
+  const handlePdfDownload = (pdfUrl: string, productTitle: string) => {
+    const link = document.createElement("a")
+    link.href = pdfUrl
+    link.download = `${productTitle.replace(/[^a-z0-9]/gi, "_")}.pdf`
+    link.target = "_blank"
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+  }
+
   return (
     <div className="space-y-6">
       <div>
@@ -177,39 +245,70 @@ export default function ProductSubmissionsPage() {
         </Alert>
       )}
 
-      {/* Filters */}
-      <Card>
-        <CardContent className="pt-6">
-          <div className="flex gap-4">
-            <div className="flex-1">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Search by title or vendor..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-10"
-                />
-              </div>
-            </div>
-            <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-[180px]">
-                <SelectValue placeholder="Filter by status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Statuses</SelectItem>
-                <SelectItem value="pending">Pending</SelectItem>
-                <SelectItem value="approved">Approved</SelectItem>
-                <SelectItem value="rejected">Rejected</SelectItem>
-                <SelectItem value="published">Published</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-        </CardContent>
-      </Card>
+      <Tabs 
+        defaultValue="submissions" 
+        className="w-full space-y-6"
+        onValueChange={(value) => {
+          if (value === "print-files" && pdfFiles.length === 0) {
+            fetchPdfFiles()
+          }
+        }}
+      >
+        <TabsList className="inline-flex h-10 items-center justify-center rounded-md bg-muted p-1 text-muted-foreground mb-6">
+          <TabsTrigger value="submissions" className="flex items-center gap-2">
+            <Package className="h-4 w-4" />
+            Submissions
+            {submissions.length > 0 && (
+              <Badge variant="secondary" className="ml-1">
+                {filteredSubmissions.length}
+              </Badge>
+            )}
+          </TabsTrigger>
+          <TabsTrigger value="print-files" className="flex items-center gap-2">
+            <FileText className="h-4 w-4" />
+            Print Files
+            {pdfFiles.length > 0 && (
+              <Badge variant="secondary" className="ml-1">
+                {filteredPdfFiles.length}
+              </Badge>
+            )}
+          </TabsTrigger>
+        </TabsList>
 
-      {/* Submissions List */}
-      <Card>
+        <TabsContent value="submissions" className="space-y-6">
+          {/* Filters */}
+          <Card>
+            <CardContent className="pt-6">
+              <div className="flex gap-4">
+                <div className="flex-1">
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      placeholder="Search by title or vendor..."
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      className="pl-10"
+                    />
+                  </div>
+                </div>
+                <Select value={statusFilter} onValueChange={setStatusFilter}>
+                  <SelectTrigger className="w-[180px]">
+                    <SelectValue placeholder="Filter by status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Statuses</SelectItem>
+                    <SelectItem value="pending">Pending</SelectItem>
+                    <SelectItem value="approved">Approved</SelectItem>
+                    <SelectItem value="rejected">Rejected</SelectItem>
+                    <SelectItem value="published">Published</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Submissions List */}
+          <Card>
         <CardHeader>
           <CardTitle>Submissions ({filteredSubmissions.length})</CardTitle>
           <CardDescription>
@@ -329,6 +428,140 @@ export default function ProductSubmissionsPage() {
           )}
         </CardContent>
       </Card>
+        </TabsContent>
+
+        <TabsContent value="print-files" className="space-y-6">
+          {/* PDF Files Filters and Sort */}
+          <Card>
+            <CardContent className="pt-6">
+              <div className="flex gap-4">
+                <div className="flex-1">
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      placeholder="Search by product title or vendor..."
+                      value={pdfSearchQuery}
+                      onChange={(e) => setPdfSearchQuery(e.target.value)}
+                      className="pl-10"
+                    />
+                  </div>
+                </div>
+                <Select value={pdfSortBy} onValueChange={(value) => handlePdfSortChange(value)}>
+                  <SelectTrigger className="w-[200px]">
+                    <SelectValue placeholder="Sort by" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="submitted_at">Date Submitted</SelectItem>
+                    <SelectItem value="vendor_name">Vendor Name</SelectItem>
+                    <SelectItem value="product_title">Product Title</SelectItem>
+                  </SelectContent>
+                </Select>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setPdfSortOrder(pdfSortOrder === "asc" ? "desc" : "asc")}
+                  className="w-[120px]"
+                >
+                  <ArrowUpDown className="h-4 w-4 mr-2" />
+                  {pdfSortOrder === "asc" ? "Asc" : "Desc"}
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={fetchPdfFiles}
+                  disabled={loadingPdfFiles}
+                >
+                  {loadingPdfFiles ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    "Refresh"
+                  )}
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* PDF Files List */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Print Files ({filteredPdfFiles.length})</CardTitle>
+              <CardDescription>
+                All uploaded PDF files from product submissions. Click to download.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {loadingPdfFiles ? (
+                <div className="space-y-4">
+                  {Array(5)
+                    .fill(0)
+                    .map((_, i) => (
+                      <Skeleton key={i} className="h-20 w-full" />
+                    ))}
+                </div>
+              ) : filteredPdfFiles.length === 0 ? (
+                <div className="text-center py-12 text-muted-foreground">
+                  <FileText className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                  <p>No PDF files found.</p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {filteredPdfFiles.map((pdf) => (
+                    <div
+                      key={pdf.id}
+                      className="border rounded-lg p-4 hover:bg-muted/50 transition-colors"
+                    >
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-3 mb-2">
+                            <FileText className="h-5 w-5 text-muted-foreground" />
+                            <h3 className="font-semibold text-lg">{pdf.productTitle}</h3>
+                            {getStatusBadge(pdf.status)}
+                          </div>
+                          <div className="space-y-1 text-sm text-muted-foreground ml-8">
+                            <p>
+                              <span className="font-medium">Vendor:</span> {pdf.vendorName}
+                            </p>
+                            <p>
+                              <span className="font-medium">Submitted:</span>{" "}
+                              {new Date(pdf.submittedAt).toLocaleString()}
+                            </p>
+                            {pdf.shopifyProductId && (
+                              <p>
+                                <span className="font-medium">Shopify Product ID:</span>{" "}
+                                {pdf.shopifyProductId}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handlePdfDownload(pdf.pdfUrl, pdf.productTitle)}
+                          >
+                            <Download className="h-4 w-4 mr-2" />
+                            Download
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() =>
+                              router.push(`/admin/products/submissions/${pdf.submissionId}`)
+                            }
+                          >
+                            <Eye className="h-4 w-4 mr-2" />
+                            View Submission
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
 
       {/* Delete Confirmation Dialog */}
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>

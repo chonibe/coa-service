@@ -50,6 +50,7 @@ import {
 } from "@/components/ui/select"
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { ThemeToggle } from "@/components/theme-toggle"
+import { Logo } from "@/components/logo"
 
 interface NavItem {
   title: string
@@ -810,16 +811,9 @@ export function AdminShell({ children }: AdminShellProps) {
           </SheetContent>
         </Sheet>
         <Link href="/admin" className="flex items-center gap-2 font-semibold">
-          <img 
-            src="https://www.thestreetlamp.com/cdn/shop/files/Logo_b6785991-7284-43f7-ba3c-95cd7b22041a.png?v=1737462053&width=140" 
-            alt="Street Lamp Logo" 
+          <Logo 
             className="h-8 w-auto object-contain"
-            onError={(e) => {
-              // Fallback to icon if image fails to load
-              e.currentTarget.style.display = 'none'
-              const fallback = e.currentTarget.nextElementSibling as HTMLElement
-              if (fallback) fallback.style.display = 'block'
-            }}
+            alt="Street Lamp Logo"
           />
           <div className="relative hidden">
             <div className="absolute inset-0 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-lg blur-md opacity-50 animate-pulse" />

@@ -161,10 +161,10 @@ export default function AnalyticsPage() {
     if (active && payload && payload.length) {
       const data = payload[0].payload
       return (
-        <div className="bg-background p-2 border rounded-md shadow-sm">
-          <p className="font-medium">{data.title}</p>
-          <p>Sales: {data.sales}</p>
-          <p>Revenue: £{data.revenue.toFixed(2)}</p>
+        <div className="bg-white/90 dark:bg-slate-900/90 backdrop-blur-md p-3 border border-border/50 rounded-lg shadow-xl">
+          <p className="font-medium text-sm">{data.title}</p>
+          <p className="text-xs text-muted-foreground">Sales: {data.sales}</p>
+          <p className="text-xs text-muted-foreground">Revenue: £{data.revenue.toFixed(2)}</p>
         </div>
       )
     }
@@ -210,8 +210,7 @@ export default function AnalyticsPage() {
     <div className="space-y-6 pb-20 px-1">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">Sales Analytics</h1>
-          <p className="text-muted-foreground">View your sales performance over time</p>
+          <p className="text-muted-foreground text-lg">Your sales performance and insights</p>
         </div>
         <div className="flex items-center gap-3">
           <TimeRangeSelector

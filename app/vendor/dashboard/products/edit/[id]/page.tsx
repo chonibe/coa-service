@@ -50,7 +50,16 @@ export default function EditProductPage() {
             return
           }
 
-          setInitialData(data.submission.product_data)
+          // Merge series data into product_data
+          const productData: ProductSubmissionData = {
+            ...data.submission.product_data,
+            series_id: data.submission.series_id || undefined,
+            series_name: data.submission.series_metadata?.series_name || undefined,
+            is_locked: data.submission.series_metadata?.is_locked || undefined,
+            unlock_order: data.submission.series_metadata?.unlock_order || undefined,
+          }
+
+          setInitialData(productData)
         } else {
           setError("Submission data not found")
         }
@@ -118,10 +127,10 @@ export default function EditProductPage() {
     <div className="space-y-6">
       <div>
         <h1 className="text-3xl font-bold tracking-tight bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
-          Edit Product Submission
+          Edit Artwork Submission
         </h1>
         <p className="text-muted-foreground mt-1">
-          Update your product submission. Changes will reset the status to pending for admin review.
+          Update your artwork submission. Changes will reset the status to pending for admin review.
         </p>
       </div>
 

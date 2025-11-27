@@ -405,7 +405,7 @@ export function ImagesStep({ formData, setFormData, onMaskSavedStatusChange }: I
   return (
     <div className="space-y-6">
       <div>
-        <h3 className="text-lg font-semibold mb-2">Product Images</h3>
+        <h3 className="text-lg font-semibold mb-2">Artwork Images</h3>
         <p className="text-sm text-muted-foreground">
           Upload images/videos or select from your library. The first image will be used as the artwork image with mask positioning.
         </p>

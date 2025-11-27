@@ -3,7 +3,7 @@ import type { NextRequest } from "next/server"
 import { createClient } from "@/lib/supabase/server"
 import { retrieveAccount } from "@/lib/stripe"
 
-export async function POST() {
+export async function POST(request: NextRequest) {
   const supabase = createClient()
   
   try {

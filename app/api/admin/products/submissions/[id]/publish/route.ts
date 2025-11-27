@@ -5,6 +5,12 @@ import { getAdminEmailFromCookieStore } from "@/lib/admin-session"
 import { createClient } from "@/lib/supabase/server"
 import { createShopifyProduct } from "@/lib/shopify/product-creation"
 import { ensureVendorCollection, assignProductToCollection } from "@/lib/shopify/collections"
+import {
+  generateProductDescription,
+  extractEditionSize,
+  extractSeriesSize,
+  extractReleaseDate,
+} from "@/lib/shopify/product-description-generator"
 
 export async function POST(
   request: NextRequest,
@@ -51,10 +57,10 @@ export async function POST(
       )
     }
 
-    // Get vendor info
+    // Get vendor info including bio and instagram_url
     const { data: vendor } = await supabase
       .from("vendors")
-      .select("id, vendor_name")
+      .select("id, vendor_name, bio, instagram_url")
       .eq("id", submission.vendor_id)
       .single()
 
@@ -71,9 +77,35 @@ export async function POST(
       vendor.vendor_name,
     )
 
-    // Create product in Shopify
+    // Prepare product data
     const productData = submission.product_data as any
-    const shopifyProduct = await createShopifyProduct(productData)
+
+    // Extract metafields for edition size, series size, and release date
+    const metafields = productData.metafields || []
+    const editionSize = extractEditionSize(metafields)
+    const seriesSize = extractSeriesSize(metafields)
+    const releaseDate = extractReleaseDate(metafields) || submission.published_at || new Date().toISOString()
+
+    // Generate the product description HTML
+    const generatedDescription = generateProductDescription({
+      title: productData.title,
+      vendorName: vendor.vendor_name,
+      editionSize: editionSize,
+      seriesSize: seriesSize,
+      releaseDate: releaseDate,
+      vendorBio: vendor.bio || null,
+      instagramUrl: vendor.instagram_url || null,
+      existingDescription: productData.description || null,
+    })
+
+    // Update product data with generated description
+    const productDataWithDescription = {
+      ...productData,
+      description: generatedDescription,
+    }
+
+    // Create product in Shopify
+    const shopifyProduct = await createShopifyProduct(productDataWithDescription)
 
     if (!shopifyProduct || !shopifyProduct.id) {
       throw new Error("Failed to create product in Shopify")

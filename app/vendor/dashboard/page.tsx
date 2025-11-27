@@ -208,10 +208,7 @@ export default function VendorDashboardPage() {
     <div className="space-y-6">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold tracking-tight bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
-              Dashboard
-            </h1>
-            <p className="text-muted-foreground mt-1">Welcome back, {vendorName}</p>
+            <p className="text-muted-foreground text-lg">Welcome back, {vendorName}! Here's what's happening with your business.</p>
           </div>
         </div>
 
@@ -246,7 +243,7 @@ export default function VendorDashboardPage() {
                   label: "vs last period",
                   isPositive: salesData.totalSales >= previousSales,
                 }}
-                description="Total number of sales"
+                description="Orders you've received"
                 variant="elevated"
               />
 
@@ -259,7 +256,7 @@ export default function VendorDashboardPage() {
                   label: "vs last period",
                   isPositive: salesData.totalRevenue >= previousRevenue,
                 }}
-                description="Total revenue generated"
+                description="Total sales you've made"
                 variant="elevated"
               />
 
@@ -272,7 +269,7 @@ export default function VendorDashboardPage() {
                   label: "vs last period",
                   isPositive: salesData.totalPayout >= previousPayout,
                 }}
-                description="Total payout amount"
+                description="What you've earned so far"
                 variant="elevated"
               />
             </div>
@@ -282,7 +279,7 @@ export default function VendorDashboardPage() {
             <Card className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-0 shadow-xl">
               <CardHeader>
                 <CardTitle>Recent Activity</CardTitle>
-                <CardDescription>Your latest sales and transactions</CardDescription>
+                <CardDescription>Your latest sales and what's happening</CardDescription>
               </CardHeader>
             <CardContent>
               {isLoading ? (
@@ -295,7 +292,7 @@ export default function VendorDashboardPage() {
                 <EmptyState
                   icon={Package}
                   title="No sales activity yet"
-                  description="Your recent sales and transactions will appear here once you start making sales."
+                  description="Once you start making sales, they'll show up here so you can see what's happening in real-time."
                 />
               ) : (
                 <div className="space-y-4">
@@ -342,8 +339,8 @@ export default function VendorDashboardPage() {
         <TabsContent value="analytics" className="space-y-4">
           <Card className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-0 shadow-xl">
             <CardHeader>
-              <CardTitle>Sales Analytics</CardTitle>
-              <CardDescription>Detailed analytics for your products</CardDescription>
+              <CardTitle>Your Sales Performance</CardTitle>
+              <CardDescription>See how your products are performing and track your growth</CardDescription>
             </CardHeader>
             <CardContent>
               {isLoading ? (

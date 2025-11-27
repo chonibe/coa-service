@@ -17,12 +17,14 @@ import {
   Image as ImageIcon,
   FileText,
   Eye,
+  Lock,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { BasicInfoStep } from "./basic-info-step"
 import { VariantsStep } from "./variants-step"
 import { ImagesStep } from "./images-step"
 import { PrintFilesStep } from "./print-files-step"
+import { SeriesStep } from "./series-step"
 import { ReviewStep } from "./review-step"
 import type { ProductSubmissionData, ProductCreationFields } from "@/types/product-submission"
 
@@ -44,7 +46,7 @@ const steps: Step[] = [
   {
     id: "basic",
     title: "Basic Information",
-    description: "Product title, description, and type",
+    description: "Artwork title, description, and type",
     icon: <Package className="h-5 w-5" />,
   },
   {
@@ -56,7 +58,7 @@ const steps: Step[] = [
   {
     id: "images",
     title: "Images",
-    description: "Upload product images",
+    description: "Upload artwork images",
     icon: <ImageIcon className="h-5 w-5" />,
   },
   {
@@ -66,9 +68,15 @@ const steps: Step[] = [
     icon: <FileText className="h-5 w-5" />,
   },
   {
+    id: "series",
+    title: "Series & Unlocks",
+    description: "Assign to series and configure unlock rules",
+    icon: <Lock className="h-5 w-5" />,
+  },
+  {
     id: "review",
     title: "Review & Submit",
-    description: "Review your product and submit for approval",
+    description: "Review your artwork and submit for approval",
     icon: <Eye className="h-5 w-5" />,
   },
 ]
@@ -115,11 +123,11 @@ export function ProductWizard({ onComplete, onCancel, initialData, submissionId 
             setFormData((prev) => ({ ...prev, vendor: data.vendor_collections[0].vendor_name }))
           }
         } else {
-          setError("Failed to load product fields configuration")
+          setError("Failed to load artwork fields configuration")
         }
       } catch (err) {
         console.error("Error fetching fields:", err)
-        setError("Failed to load product fields configuration")
+        setError("Failed to load artwork fields configuration")
       } finally {
         setLoadingFields(false)
       }
@@ -145,7 +153,9 @@ export function ProductWizard({ onComplete, onCancel, initialData, submissionId 
         return true // Images are optional
       case 3: // Print Files
         return true // Print files are optional
-      case 4: // Review
+      case 4: // Series
+        return true // Series is optional
+      case 5: // Review
         return true
       default:
         return false
@@ -196,7 +206,7 @@ export function ProductWizard({ onComplete, onCancel, initialData, submissionId 
 
       if (!response.ok) {
         // Handle validation errors or single error messages
-        let errorMessage = data.error || "Failed to submit product"
+        let errorMessage = data.error || "Failed to submit artwork"
         if (data.errors && Array.isArray(data.errors) && data.errors.length > 0) {
           errorMessage = data.errors.join(", ")
         }
@@ -204,16 +214,16 @@ export function ProductWizard({ onComplete, onCancel, initialData, submissionId 
       }
 
       toast({
-        title: submissionId ? "Product Updated" : "Product Submitted",
+        title: submissionId ? "Artwork Updated" : "Artwork Submitted",
         description: submissionId
-          ? "Your product submission has been updated and reset to pending status."
-          : "Your product has been submitted for admin approval.",
+          ? "Your artwork submission has been updated and reset to pending status."
+          : "Your artwork has been submitted for admin approval.",
       })
 
       onComplete()
     } catch (err: any) {
-      console.error("Error submitting product:", err)
-      setError(err.message || "Failed to submit product")
+      console.error("Error submitting artwork:", err)
+      setError(err.message || "Failed to submit artwork")
     } finally {
       setIsSubmitting(false)
     }
@@ -323,6 +333,12 @@ export function ProductWizard({ onComplete, onCancel, initialData, submissionId 
             />
           )}
           {currentStep === 4 && (
+            <SeriesStep 
+              formData={formData} 
+              setFormData={setFormData}
+            />
+          )}
+          {currentStep === 5 && (
             <ReviewStep formData={formData} fieldsConfig={fieldsConfig} />
           )}
         </CardContent>

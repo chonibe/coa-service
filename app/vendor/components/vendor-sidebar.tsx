@@ -13,14 +13,15 @@ import {
   Bars3Icon,
   HomeIcon,
   ChartBarIcon,
-  Cog6ToothIcon,
   AcademicCapIcon,
   CubeIcon,
   CurrencyDollarIcon,
   ChatBubbleLeftRightIcon,
   XMarkIcon,
   QuestionMarkCircleIcon,
+  UserCircleIcon,
 } from "@heroicons/react/24/outline"
+import { Lock } from "lucide-react"
 import { Icon } from "@/components/icon"
 import { cn } from "@/lib/utils"
 import { NotificationCenter } from "@/components/vendor/notification-center"
@@ -28,6 +29,7 @@ import { Badge } from "@/components/ui/badge"
 import { useSwipeGesture } from "@/components/vendor/mobile-gestures"
 import { useRef } from "react"
 import { ThemeToggle } from "@/components/theme-toggle"
+import { Logo } from "@/components/logo"
 
 interface NavItem {
   title: string
@@ -67,6 +69,11 @@ export function VendorSidebar() {
       icon: <Icon size="md"><CubeIcon className="h-5 w-5" /></Icon>,
     },
     {
+      title: "Series",
+      href: "/vendor/dashboard/series",
+      icon: <Icon size="md"><Lock className="h-5 w-5" /></Icon>,
+    },
+    {
       title: "Analytics",
       href: "/vendor/dashboard/analytics",
       icon: <Icon size="md"><ChartBarIcon className="h-5 w-5" /></Icon>,
@@ -87,9 +94,9 @@ export function VendorSidebar() {
       icon: <Icon size="md"><ChatBubbleLeftRightIcon className="h-5 w-5" /></Icon>,
     },
     {
-      title: "Settings",
-      href: "/vendor/dashboard/settings",
-      icon: <Icon size="md"><Cog6ToothIcon className="h-5 w-5" /></Icon>,
+      title: "Profile",
+      href: "/vendor/dashboard/profile",
+      icon: <Icon size="md"><UserCircleIcon className="h-5 w-5" /></Icon>,
     },
     {
       title: "Help",
@@ -164,8 +171,8 @@ export function VendorSidebar() {
     navItems[0], // Dashboard
     navItems[1], // Products
     navItems[2], // Analytics
-    navItems[3], // Payouts
-    navItems[6], // Settings
+    navItems[6], // Profile
+    navItems[7], // Help
   ]
 
   // Check if a path is active (exact match or starts with for section pages)
@@ -204,21 +211,13 @@ export function VendorSidebar() {
         </Button>
 
         <Link href="/vendor/dashboard" className="flex items-center gap-2 font-semibold">
-          <img 
-            src="https://www.thestreetlamp.com/cdn/shop/files/Logo_b6785991-7284-43f7-ba3c-95cd7b22041a.png?v=1737462053&width=140" 
-            alt="Street Lamp Logo" 
+          <Logo 
             className="h-8 w-auto object-contain"
-            onError={(e) => {
-              // Fallback to icon if image fails to load
-              e.currentTarget.style.display = 'none'
-              const fallback = e.currentTarget.nextElementSibling as HTMLElement
-              if (fallback) fallback.style.display = 'block'
-            }}
+            alt="Street Lamp Logo"
           />
           <Icon size="lg" className="hidden">
             <AcademicCapIcon className="h-6 w-6" />
           </Icon>
-          <span className={isMobile ? "sr-only" : "inline-block"}>Vendor Portal</span>
         </Link>
 
         <div className="ml-auto flex items-center gap-2">
@@ -255,16 +254,9 @@ export function VendorSidebar() {
           >
         <div className="flex items-center justify-between h-16 px-6 border-b border-slate-200/50 dark:border-slate-800/50">
           <Link href="/vendor/dashboard" className="flex items-center gap-2 font-semibold">
-            <img 
-              src="https://www.thestreetlamp.com/cdn/shop/files/Logo_b6785991-7284-43f7-ba3c-95cd7b22041a.png?v=1737462053&width=140" 
-              alt="Street Lamp Logo" 
+            <Logo 
               className="h-8 w-auto object-contain"
-              onError={(e) => {
-                // Fallback to icon if image fails to load
-                e.currentTarget.style.display = 'none'
-                const fallback = e.currentTarget.nextElementSibling as HTMLElement
-                if (fallback) fallback.style.display = 'block'
-              }}
+              alt="Street Lamp Logo"
             />
             <div className="relative hidden">
               <div className="absolute inset-0 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-lg blur-md opacity-50 animate-pulse" />
@@ -272,7 +264,6 @@ export function VendorSidebar() {
                 <Icon size="md"><AcademicCapIcon className="h-5 w-5 text-white" /></Icon>
               </div>
             </div>
-            <span className="font-medium bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">Vendor Portal</span>
           </Link>
           <Button
             variant="ghost"
@@ -290,8 +281,9 @@ export function VendorSidebar() {
         <ScrollArea className="h-[calc(100vh-4rem)]">
           <div className="px-2 py-4">
             <div className="mb-4 px-4">
-              <p className="text-sm font-medium">Logged in as</p>
-              <h3 className="font-semibold">{vendorName}</h3>
+              <h3 className="font-semibold">
+                Hey {vendorName.split(' ')[0] || vendorName}
+              </h3>
             </div>
             <nav className="flex flex-col gap-2" aria-label="Navigation menu">
               {navItems.map((item) => (
@@ -314,7 +306,7 @@ export function VendorSidebar() {
                       {unreadMessages > 99 ? "99+" : unreadMessages}
                     </Badge>
                   )}
-                  {item.title === "Settings" && !profileComplete && (
+                  {item.title === "Profile" && !profileComplete && (
                     <span className="ml-auto flex h-2 w-2 rounded-full bg-red-500" aria-label="Profile incomplete"></span>
                   )}
                 </Link>
@@ -361,7 +353,7 @@ export function VendorSidebar() {
                 {item.icon}
               </div>
               <span className="text-xs font-medium">{item.title}</span>
-              {item.title === "Settings" && !profileComplete && (
+              {item.title === "Profile" && !profileComplete && (
                 <span className="absolute top-1 right-1/4 flex h-2 w-2 rounded-full bg-red-500" aria-label="Profile incomplete"></span>
               )}
               {isActive(item.href) && (

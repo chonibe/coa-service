@@ -42,12 +42,18 @@ All cards, alerts, and containers use glassmorphism by default:
 
 ## Typography
 ### Font Families
-- Primary: Inter
-- Monospace: JetBrains Mono
+- **Headings/Titles**: Fraunces (serif) - Elegant, sophisticated serif font for all headings
+- **Body Text**: Barlow (sans-serif) - Clean, modern sans-serif for all body text and UI elements
+- **Monospace**: JetBrains Mono (for code and technical content)
+
+### Font Usage
+- All headings (h1-h6) automatically use Fraunces
+- All body text, buttons, inputs, and UI elements use Barlow
+- Fonts are loaded from Google Fonts with optimal performance settings
 
 ### Type Scale
-- Base: 16px
-- Headings: Scaled proportionally
+- Base: 16px (Barlow)
+- Headings: Scaled proportionally (Fraunces)
 - Line Heights: Optimized for readability
 
 ## Spacing System

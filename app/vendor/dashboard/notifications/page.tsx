@@ -110,9 +110,8 @@ export default function NotificationsPage() {
     <div className="p-6 space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">Notifications</h1>
-          <p className="text-muted-foreground mt-1">
-            {unreadCount > 0 ? `${unreadCount} unread notification${unreadCount !== 1 ? "s" : ""}` : "All caught up!"}
+          <p className="text-muted-foreground text-lg mt-1">
+            {unreadCount > 0 ? `You have ${unreadCount} new notification${unreadCount !== 1 ? "s" : ""}` : "All caught up! No new notifications."}
           </p>
         </div>
         {unreadCount > 0 && (
@@ -121,7 +120,7 @@ export default function NotificationsPage() {
             variant="outline"
             className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm"
           >
-            Mark All as Read
+            Mark All Read
           </Button>
         )}
       </div>
@@ -131,7 +130,7 @@ export default function NotificationsPage() {
           <Card className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-0 shadow-xl">
             <CardContent className="py-12 text-center">
               <Bell className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-              <p className="text-muted-foreground">No notifications yet</p>
+              <p className="text-muted-foreground">You're all caught up! No notifications right now.</p>
             </CardContent>
           </Card>
         ) : (

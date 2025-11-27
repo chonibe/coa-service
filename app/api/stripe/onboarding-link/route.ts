@@ -4,7 +4,7 @@ import { createClient } from "@/lib/supabase/server"
 import { createAccountLink } from "@/lib/stripe"
 import { API_BASE_URL } from "@/lib/config"
 
-export async function POST() {
+export async function POST(request: NextRequest) {
   const supabase = createClient()
   
   try {

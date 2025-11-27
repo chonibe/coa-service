@@ -136,8 +136,7 @@ export default function HelpPage() {
     <SidebarLayout>
       <div className="space-y-6">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">Help Center</h1>
-          <p className="text-muted-foreground">Find answers and learn how to use the Vendor Portal</p>
+          <p className="text-muted-foreground text-lg">Need help? We're here for you - find answers and learn how everything works</p>
         </div>
 
         {/* Search */}
@@ -146,7 +145,7 @@ export default function HelpPage() {
             <div className="relative">
               <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
               <Input
-                placeholder="Search help articles and FAQs..."
+                placeholder="What can we help you with?"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="pl-10"
@@ -180,7 +179,7 @@ export default function HelpPage() {
             <CardHeader>
               <Mail className="h-8 w-8 mb-2" />
               <CardTitle className="text-lg">Contact Support</CardTitle>
-              <CardDescription>Get help from our team</CardDescription>
+              <CardDescription>Reach out to us - we're here to help</CardDescription>
             </CardHeader>
             <CardContent>
               <Button 
@@ -197,7 +196,7 @@ export default function HelpPage() {
             <CardHeader>
               <BookOpen className="h-8 w-8 mb-2" />
               <CardTitle className="text-lg">Documentation</CardTitle>
-              <CardDescription>Detailed guides and tutorials</CardDescription>
+              <CardDescription>Step-by-step guides to help you succeed</CardDescription>
             </CardHeader>
             <CardContent>
               <Button 
@@ -214,7 +213,7 @@ export default function HelpPage() {
             <CardHeader>
               <Video className="h-8 w-8 mb-2" />
               <CardTitle className="text-lg">Video Tutorials</CardTitle>
-              <CardDescription>Watch step-by-step guides</CardDescription>
+              <CardDescription>Learn by watching - we'll walk you through it</CardDescription>
             </CardHeader>
             <CardContent>
               <Button 
@@ -231,7 +230,7 @@ export default function HelpPage() {
             <CardHeader>
               <Keyboard className="h-8 w-8 mb-2" />
               <CardTitle className="text-lg">Keyboard Shortcuts</CardTitle>
-              <CardDescription>Power user shortcuts</CardDescription>
+              <CardDescription>Work faster with these time-saving shortcuts</CardDescription>
             </CardHeader>
             <CardContent>
               <Button variant="outline" className="w-full" onClick={() => {
@@ -248,7 +247,7 @@ export default function HelpPage() {
         <Card className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-0 shadow-xl">
           <CardHeader>
             <CardTitle>Help Articles</CardTitle>
-            <CardDescription>Step-by-step guides and tutorials</CardDescription>
+            <CardDescription>Everything you need to know, step by step</CardDescription>
           </CardHeader>
           <CardContent>
             {filteredArticles.length === 0 ? (
@@ -291,7 +290,7 @@ export default function HelpPage() {
         <Card className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-0 shadow-xl">
           <CardHeader>
             <CardTitle>Frequently Asked Questions</CardTitle>
-            <CardDescription>Common questions and answers</CardDescription>
+            <CardDescription>Quick answers to the questions we hear most often</CardDescription>
           </CardHeader>
           <CardContent>
             {filteredFAQs.length === 0 ? (
@@ -322,7 +321,7 @@ export default function HelpPage() {
               <Keyboard className="h-5 w-5" />
               <CardTitle>Keyboard Shortcuts</CardTitle>
             </div>
-            <CardDescription>Speed up your workflow with these shortcuts</CardDescription>
+            <CardDescription>Work faster and smarter with these shortcuts</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="grid gap-4 md:grid-cols-2">

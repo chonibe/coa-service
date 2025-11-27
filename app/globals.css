@@ -119,10 +119,18 @@ button[aria-label] svg {
   * {
     @apply border-border;
   }
+  html {
+    font-family: var(--font-barlow), system-ui, sans-serif;
+  }
   body {
     @apply bg-background text-foreground;
+    font-family: var(--font-barlow), system-ui, sans-serif;
     font-feature-settings: "rlig" 1, "calt" 1;
     overflow-x: hidden;
+  }
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-fraunces), serif !important;
+    font-weight: 600;
   }
   html,
   body {

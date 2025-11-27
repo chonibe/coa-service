@@ -223,8 +223,7 @@ export default function VendorSettingsPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold tracking-tight bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">Vendor Settings</h1>
-        <p className="text-muted-foreground">Manage your vendor profile and payment information</p>
+        <p className="text-muted-foreground text-lg">Your account settings and preferences</p>
       </div>
 
       {error && (
@@ -265,7 +264,7 @@ export default function VendorSettingsPage() {
                 <Card className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-0 shadow-xl">
                   <CardHeader>
                     <CardTitle>Profile Information</CardTitle>
-                    <CardDescription>Update your contact information and business details</CardDescription>
+                    <CardDescription>Keep your contact details current so we can stay in touch</CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-4">
                     <div className="grid gap-4 md:grid-cols-2">
@@ -320,7 +319,7 @@ export default function VendorSettingsPage() {
                 <Card className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-0 shadow-xl">
                   <CardHeader>
                     <CardTitle>Payment Information</CardTitle>
-                    <CardDescription>Set up how you would like to receive payments</CardDescription>
+                    <CardDescription>Tell us how you'd like to receive your earnings</CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-4">
                     <div className="space-y-2">
@@ -362,7 +361,7 @@ export default function VendorSettingsPage() {
                 <Card className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-0 shadow-xl">
                   <CardHeader>
                     <CardTitle>Tax Information</CardTitle>
-                    <CardDescription>Provide your tax details for compliance and reporting</CardDescription>
+                    <CardDescription>Help us keep everything compliant by sharing your tax details</CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-4">
                     <div className="flex items-center space-x-2 mb-4">
@@ -460,7 +459,7 @@ export default function VendorSettingsPage() {
           <Card className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-0 shadow-xl">
             <CardHeader>
               <CardTitle>Profile Completion</CardTitle>
-              <CardDescription>Complete your profile to ensure timely payouts</CardDescription>
+              <CardDescription>Complete your profile to get paid faster and unlock all features</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">

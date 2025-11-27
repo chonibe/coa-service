@@ -20,7 +20,10 @@ export const designTokens = {
   // Typography Scale
   typography: {
     fontFamily: {
-      sans: ['Inter', 'system-ui', 'sans-serif'],
+      heading: ['Fraunces', 'serif'],
+      body: ['Barlow', 'system-ui', 'sans-serif'],
+      sans: ['Barlow', 'system-ui', 'sans-serif'],
+      serif: ['Fraunces', 'serif'],
       mono: ['JetBrains Mono', 'monospace'],
     },
     fontSize: {

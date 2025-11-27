@@ -169,10 +169,10 @@ export default function PayoutsPage() {
   const handleRefresh = async () => {
     setIsRefreshing(true)
     await Promise.all([fetchPayouts(), fetchPendingItems()])
-    toast({
-      title: "Payouts Refreshed",
-      description: "The latest payout data has been loaded.",
-    })
+      toast({
+        title: "Updated!",
+        description: "Your latest earnings information has been refreshed.",
+      })
   }
 
   const toggleMonthExpansion = (monthKey: string) => {
@@ -202,8 +202,8 @@ export default function PayoutsPage() {
       }
 
       toast({
-        title: "Payout Request Submitted!",
-        description: data.note || "Your payout request has been submitted and is awaiting admin approval.",
+        title: "Payment Request Sent!",
+        description: data.note || "We've received your payment request and will process it soon. You'll be notified once it's approved.",
       })
 
       // Refresh payouts
@@ -212,8 +212,8 @@ export default function PayoutsPage() {
       console.error("Error redeeming payout:", err)
       toast({
         variant: "destructive",
-        title: "Redeem Failed",
-        description: err instanceof Error ? err.message : "An unexpected error occurred",
+        title: "Request Failed",
+        description: err instanceof Error ? err.message : "We couldn't process your request. Please try again.",
       })
     } finally {
       setIsRedeeming(false)
@@ -228,7 +228,7 @@ export default function PayoutsPage() {
       case "requested":
         return (
           <Badge variant="outline" className="text-blue-500 border-blue-500">
-            Awaiting Approval
+            Reviewing Your Request
           </Badge>
         )
       case "pending":
@@ -383,8 +383,7 @@ export default function PayoutsPage() {
 
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div>
-            <h1 className="text-3xl font-bold tracking-tight bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">Payouts</h1>
-            <p className="text-muted-foreground">Track your earnings and payment history</p>
+            <p className="text-muted-foreground text-lg">Your earnings and payment history</p>
           </div>
         <div className="flex gap-2 flex-wrap">
           {pendingAmount > 0 && (
@@ -394,7 +393,7 @@ export default function PayoutsPage() {
               className="flex items-center gap-1 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-lg"
             >
               <Wallet className={`h-4 w-4 ${isRedeeming ? "animate-pulse" : ""}`} />
-              {isRedeeming ? "Processing..." : "Redeem Payout"}
+              {isRedeeming ? "Processing..." : "Request Payment"}
             </Button>
           )}
           <Button 
@@ -444,7 +443,7 @@ export default function PayoutsPage() {
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
             <Card className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-0 shadow-xl">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Total Paid</CardTitle>
+                <CardTitle className="text-sm font-medium">Total Earned</CardTitle>
                 <DollarSign className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
@@ -453,13 +452,13 @@ export default function PayoutsPage() {
                 ) : (
                   <div className="text-2xl font-bold">{formatCurrency(totalPaid)}</div>
                 )}
-                <p className="text-xs text-muted-foreground mt-1">Lifetime earnings</p>
+                <p className="text-xs text-muted-foreground mt-1">All-time total you've earned</p>
               </CardContent>
             </Card>
 
             <Card className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-0 shadow-xl">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Pending Payout</CardTitle>
+                <CardTitle className="text-sm font-medium">Ready to Request</CardTitle>
                 <Clock className="h-4 w-4 text-amber-500" />
               </CardHeader>
               <CardContent>
@@ -470,15 +469,15 @@ export default function PayoutsPage() {
                 )}
                 <p className="text-xs text-muted-foreground mt-1">
                   {pendingLineItems.length > 0 
-                    ? `${pendingLineItems.length} fulfilled orders awaiting payout`
-                    : "Awaiting payout"}
+                    ? `${pendingLineItems.length} orders ready for payment`
+                    : "No pending payments"}
                 </p>
               </CardContent>
             </Card>
 
             <Card className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-0 shadow-xl">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Total Payouts</CardTitle>
+                <CardTitle className="text-sm font-medium">Payments Received</CardTitle>
                 <Wallet className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
@@ -489,7 +488,7 @@ export default function PayoutsPage() {
                     {payouts.filter((p) => p.status === "completed" || p.status === "paid").length}
                   </div>
                 )}
-                <p className="text-xs text-muted-foreground mt-1">Completed payouts</p>
+                <p className="text-xs text-muted-foreground mt-1">Payments you've received</p>
               </CardContent>
             </Card>
 
@@ -518,7 +517,7 @@ export default function PayoutsPage() {
                     )}
                   </div>
                 )}
-                <p className="text-xs text-muted-foreground mt-1">Current month earnings</p>
+                <p className="text-xs text-muted-foreground mt-1">What you've earned this month</p>
               </CardContent>
             </Card>
           </div>
@@ -528,10 +527,10 @@ export default function PayoutsPage() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Clock className="h-5 w-5" />
-                Pending Orders Breakdown
+                Ready to Request Payment
               </CardTitle>
               <CardDescription>
-                These are fulfilled orders that haven't been paid out yet. Click "Redeem Payout" to request payment for all pending items.
+                Great news! These orders have been fulfilled and are ready for payment. Click "Request Payment" above to get paid for all of these items.
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -591,15 +590,15 @@ export default function PayoutsPage() {
                   <Alert>
                     <AlertCircle className="h-4 w-4" />
                     <AlertDescription>
-                      <strong>What does "Pending" mean?</strong> These are orders that have been fulfilled and are ready for payout. 
-                      They haven't been included in a payout request yet. Click "Redeem Payout" above to request payment for all pending items.
+                      <strong>Ready for payment!</strong> These are orders that have been successfully fulfilled and are waiting for you to request payment. 
+                      Simply click "Request Payment" above to get paid for all of these items at once.
                     </AlertDescription>
                   </Alert>
                 </div>
               ) : (
                 <div className="py-6 text-center">
-                  <p className="text-muted-foreground">No pending orders</p>
-                  <p className="text-sm text-muted-foreground mt-1">All fulfilled orders have been paid out.</p>
+                  <p className="text-muted-foreground">All caught up!</p>
+                  <p className="text-sm text-muted-foreground mt-1">All your fulfilled orders have been paid out. Great work!</p>
                 </div>
               )}
             </CardContent>
@@ -608,8 +607,8 @@ export default function PayoutsPage() {
           {/* Recent Payouts Preview */}
           <Card>
             <CardHeader>
-              <CardTitle>Recent Payouts</CardTitle>
-              <CardDescription>Your most recent payout activity</CardDescription>
+              <CardTitle>Recent Payments</CardTitle>
+              <CardDescription>Your latest payment activity</CardDescription>
             </CardHeader>
             <CardContent>
               {isLoading ? (
@@ -645,7 +644,7 @@ export default function PayoutsPage() {
                 </Table>
               ) : (
                 <div className="py-6 text-center text-muted-foreground">
-                  No payouts found
+                  No payments yet
                 </div>
               )}
             </CardContent>
@@ -688,7 +687,7 @@ export default function PayoutsPage() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">All Statuses</SelectItem>
-                    <SelectItem value="requested">Awaiting Approval</SelectItem>
+                    <SelectItem value="requested">Reviewing Your Request</SelectItem>
                     <SelectItem value="processing">Processing</SelectItem>
                     <SelectItem value="completed">Completed</SelectItem>
                     <SelectItem value="rejected">Rejected</SelectItem>
@@ -760,9 +759,11 @@ export default function PayoutsPage() {
           {/* Payout History */}
           <Card className="overflow-hidden bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-0 shadow-xl">
             <CardHeader>
-              <CardTitle>Payout History</CardTitle>
+              <CardTitle>Your Payment History</CardTitle>
               <CardDescription>
-                {filteredAndSortedPayouts.length} payout{filteredAndSortedPayouts.length !== 1 ? "s" : ""} found
+                {filteredAndSortedPayouts.length === 0 
+                  ? "Your payment history will appear here"
+                  : `You have ${filteredAndSortedPayouts.length} payment${filteredAndSortedPayouts.length !== 1 ? "s" : ""} in your history`}
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -811,7 +812,7 @@ export default function PayoutsPage() {
                                   )}
                                   {payout.status === "requested" && (
                                     <Badge variant="outline" className="text-blue-500 border-blue-500 text-xs">
-                                      Awaiting Admin Approval
+                                      We're Reviewing Your Request
                                     </Badge>
                                   )}
                                   {(payout.status === "paid" || payout.status === "completed") && (
@@ -881,8 +882,8 @@ export default function PayoutsPage() {
                 </div>
               ) : (
                 <div className="py-6 text-center">
-                  <p className="text-muted-foreground">No payout history available yet.</p>
-                  <p className="text-sm text-muted-foreground mt-1">Payouts will appear here once processed.</p>
+                  <p className="text-muted-foreground">Your payment history will appear here</p>
+                  <p className="text-sm text-muted-foreground mt-1">Once your first payment is processed, you'll see it here.</p>
                 </div>
               )}
             </CardContent>

@@ -43,17 +43,17 @@ export function BasicInfoStep({ formData, setFormData, fieldsConfig }: BasicInfo
     <div className="space-y-6">
       <div className="space-y-2">
         <Label htmlFor="title">
-          Product Title <span className="text-red-500">*</span>
+          Artwork Title <span className="text-red-500">*</span>
         </Label>
         <Input
           id="title"
           value={formData.title}
           onChange={(e) => handleTitleChange(e.target.value)}
-          placeholder="Enter product title"
+          placeholder="Enter artwork title"
           required
         />
         <p className="text-xs text-muted-foreground">
-          The name of your product as it will appear on the store
+          The name of your artwork as it will appear on the store
         </p>
       </div>
 
@@ -63,12 +63,12 @@ export function BasicInfoStep({ formData, setFormData, fieldsConfig }: BasicInfo
           id="description"
           value={formData.description || ""}
           onChange={(e) => updateField("description", e.target.value)}
-          placeholder="Enter product description (HTML supported)"
+          placeholder="Enter artwork description (HTML supported)"
           rows={6}
           className="font-mono text-sm"
         />
         <p className="text-xs text-muted-foreground">
-          Product description. You can use HTML formatting.
+          Artwork description. You can use HTML formatting.
         </p>
       </div>
 
@@ -78,10 +78,10 @@ export function BasicInfoStep({ formData, setFormData, fieldsConfig }: BasicInfo
           id="handle"
           value={formData.handle || ""}
           onChange={(e) => updateField("handle", e.target.value)}
-          placeholder="product-url-handle"
+          placeholder="artwork-url-handle"
         />
         <p className="text-xs text-muted-foreground">
-          The URL-friendly version of your product name. Auto-generated from title if left empty.
+          The URL-friendly version of your artwork name. Auto-generated from title if left empty.
         </p>
       </div>
 

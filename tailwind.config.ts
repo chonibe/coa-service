@@ -17,6 +17,12 @@ const config: Config = {
       },
     },
     extend: {
+      fontFamily: {
+        sans: ["var(--font-barlow)", "system-ui", "sans-serif"],
+        serif: ["var(--font-fraunces)", "serif"],
+        heading: ["var(--font-fraunces)", "serif"],
+        body: ["var(--font-barlow)", "system-ui", "sans-serif"],
+      },
       colors: {
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",

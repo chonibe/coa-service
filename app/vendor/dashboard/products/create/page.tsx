@@ -38,10 +38,10 @@ export default function CreateProductPage() {
     <div className="space-y-6">
       <div>
         <h1 className="text-3xl font-bold tracking-tight bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
-          Create New Product
+          Upload New Artwork
         </h1>
         <p className="text-muted-foreground mt-1">
-          Add a new product to your catalog. Your submission will be reviewed by admin before going live.
+          Add a new artwork to your catalog. Your submission will be reviewed by admin before going live.
         </p>
       </div>
 

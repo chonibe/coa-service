@@ -101,7 +101,7 @@ export default function ProductsPage() {
       
       toast({
         title: "Submission Deleted",
-        description: "The product submission has been deleted successfully.",
+        description: "The artwork submission has been deleted successfully.",
       })
     } catch (err: any) {
       console.error("Error deleting submission:", err)
@@ -157,7 +157,7 @@ export default function ProductsPage() {
       <Card>
         <CardHeader>
           <CardTitle>Error</CardTitle>
-          <CardDescription>Failed to load product data</CardDescription>
+          <CardDescription>Failed to load artwork data</CardDescription>
         </CardHeader>
         <CardContent>
           <p className="text-red-500">{error.message}</p>
@@ -170,19 +170,18 @@ export default function ProductsPage() {
     <div className="space-y-6 px-1">
       <div className="flex items-center justify-between">
       <div>
-        <h1 className="text-3xl font-bold tracking-tight bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">Products</h1>
-        <p className="text-muted-foreground">Manage your product catalog and view performance metrics</p>
+        <p className="text-muted-foreground text-lg">Your artwork catalog and how they're performing</p>
         </div>
-        <Button onClick={() => router.push("/vendor/dashboard/products/create")}>
+          <Button onClick={() => router.push("/vendor/dashboard/products/create")}>
           <Plus className="h-4 w-4 mr-2" />
-          Create Product
-        </Button>
+          Upload New Artwork
+          </Button>
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         <Card className="w-full bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-0 shadow-xl">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Products</CardTitle>
+            <CardTitle className="text-sm font-medium">Your Artworks</CardTitle>
             <Package className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -192,7 +191,7 @@ export default function ProductsPage() {
 
         <Card className="w-full bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-0 shadow-xl">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Active Products</CardTitle>
+            <CardTitle className="text-sm font-medium">Currently Live</CardTitle>
             <CheckCircle className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -224,7 +223,7 @@ export default function ProductsPage() {
 
       <Tabs defaultValue="catalog" className="space-y-6">
         <TabsList>
-          <TabsTrigger value="catalog">Product Catalog</TabsTrigger>
+          <TabsTrigger value="catalog">Artwork Catalog</TabsTrigger>
           <TabsTrigger value="submissions">
             Submissions
             {submissions.length > 0 && (
@@ -238,8 +237,8 @@ export default function ProductsPage() {
         <TabsContent value="catalog" className="space-y-6">
       <Card className="overflow-hidden w-full bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-0 shadow-xl">
         <CardHeader>
-          <CardTitle>Product Catalog</CardTitle>
-          <CardDescription>View and manage all your products</CardDescription>
+          <CardTitle>Your Artworks</CardTitle>
+          <CardDescription>All your artworks in one place - manage and track them here</CardDescription>
         </CardHeader>
         <CardContent className="p-0 sm:p-2">
           {isLoading ? (
@@ -260,9 +259,9 @@ export default function ProductsPage() {
         <TabsContent value="submissions" className="space-y-6">
           <Card className="overflow-hidden w-full bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-0 shadow-xl">
             <CardHeader>
-              <CardTitle>Product Submissions</CardTitle>
+              <CardTitle>Artwork Submissions</CardTitle>
               <CardDescription>
-                View the status of products you've submitted for approval
+                View the status of artworks you've submitted for approval
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -277,14 +276,14 @@ export default function ProductsPage() {
               ) : submissions.length === 0 ? (
                 <div className="text-center py-8 text-muted-foreground">
                   <Package className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                  <p>No product submissions yet.</p>
+                  <p>No artwork submissions yet.</p>
                   <Button
                     variant="outline"
                     className="mt-4"
                     onClick={() => router.push("/vendor/dashboard/products/create")}
                   >
                     <Plus className="h-4 w-4 mr-2" />
-                    Create Your First Product
+                    Upload Your First Artwork
                   </Button>
                 </div>
               ) : (
@@ -298,11 +297,16 @@ export default function ProductsPage() {
                       >
                         <div className="flex items-center justify-between">
                           <div className="flex-1">
-                            <div className="flex items-center gap-3">
+                            <div className="flex items-center gap-3 flex-wrap">
                               <h3 className="font-semibold">
-                                {(submission.product_data as any)?.title || "Untitled Product"}
+                                {(submission.product_data as any)?.title || "Untitled Artwork"}
                               </h3>
                               {getStatusBadge(submission.status)}
+                              {(submission as any).series_metadata?.series_name && (
+                                <Badge variant="secondary">
+                                  Series: {(submission as any).series_metadata.series_name}
+                                </Badge>
+                              )}
                             </div>
                             <p className="text-sm text-muted-foreground mt-1">
                               Submitted {new Date(submission.submitted_at).toLocaleDateString()}
@@ -364,13 +368,13 @@ export default function ProductsPage() {
           <AlertDialogHeader>
             <AlertDialogTitle>Are you sure?</AlertDialogTitle>
             <AlertDialogDescription>
-              This action cannot be undone. This will permanently delete the product
+              This action cannot be undone. This will permanently delete the artwork
               submission
               {submissionToDelete && (
                 <>
                   {" "}
                   <strong>
-                    "{(submissionToDelete.product_data as any)?.title || "Untitled Product"}"
+                    "{(submissionToDelete.product_data as any)?.title || "Untitled Artwork"}"
                   </strong>
                 </>
               )}

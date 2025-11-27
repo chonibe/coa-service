@@ -129,15 +129,14 @@ export default function MessagesPage() {
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold tracking-tight bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">Messages</h1>
-            <p className="text-muted-foreground">Communicate with customers and the platform team</p>
+            <p className="text-muted-foreground text-lg">Your conversations with customers and our team</p>
           </div>
           <Button 
             onClick={handleNewMessage}
             className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-lg"
           >
             <Plus className="mr-2 h-4 w-4" />
-            New Message
+            Start Conversation
           </Button>
         </div>
 
@@ -153,7 +152,7 @@ export default function MessagesPage() {
           <CardHeader>
             <div className="flex items-center justify-between">
               <div>
-                <CardTitle>Inbox</CardTitle>
+                <CardTitle>Your Messages</CardTitle>
                 <CardDescription>
                   {totalUnread > 0 && (
                     <Badge variant="destructive" className="mt-2">

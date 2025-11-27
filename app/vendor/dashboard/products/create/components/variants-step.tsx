@@ -215,7 +215,7 @@ export function VariantsStep({ formData, setFormData }: VariantsStepProps) {
       <div>
         <h3 className="text-lg font-semibold">Pricing & Edition Size</h3>
         <p className="text-sm text-muted-foreground">
-          Select edition size and set pricing for your product
+          Select edition size and set pricing for your artwork
         </p>
       </div>
 

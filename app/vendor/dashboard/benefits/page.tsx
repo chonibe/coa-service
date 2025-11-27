@@ -286,14 +286,13 @@ export default function BenefitsPage() {
       <PullToRefresh onRefresh={handleRefresh}>
         <div className="p-6">
           <div className="mb-6">
-            <h1 className="text-3xl font-bold tracking-tight bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">Collector Benefits</h1>
-            <p className="text-muted-foreground">Create and manage benefits for collectors of your limited editions</p>
+            <p className="text-muted-foreground text-lg">Create special perks and benefits for your collectors</p>
           </div>
 
           <Card className="mb-6 bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-0 shadow-xl">
             <CardHeader>
-              <CardTitle>Manage Benefits</CardTitle>
-              <CardDescription>Create and manage benefits for collectors of your limited editions</CardDescription>
+              <CardTitle>Your Collector Benefits</CardTitle>
+              <CardDescription>Add value to your limited editions by offering exclusive perks to collectors</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
@@ -318,14 +317,14 @@ export default function BenefitsPage() {
                     <DialogTrigger asChild>
                       <Button className="w-full md:w-auto">
                         <Plus className="h-4 w-4 mr-2" />
-                        Add New Benefit
+                        Create Benefit
                       </Button>
                     </DialogTrigger>
                     <DialogContent className="sm:max-w-[550px]">
                       <DialogHeader>
-                        <DialogTitle>Add New Collector Benefit</DialogTitle>
+                        <DialogTitle>Create a New Benefit</DialogTitle>
                         <DialogDescription>
-                          Create a new benefit for collectors of {selectedProduct?.title}
+                          Add something special for collectors of {selectedProduct?.title}
                         </DialogDescription>
                       </DialogHeader>
 
@@ -455,7 +454,7 @@ export default function BenefitsPage() {
                   <FileText className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
                   <h3 className="text-lg font-medium mb-2">No benefits yet</h3>
                   <p className="text-muted-foreground max-w-md mx-auto">
-                    You haven't created any benefits for this product yet. Click "Add New Benefit" to get started.
+                    Start rewarding your collectors! Click "Create Benefit" above to add something special for this product.
                   </p>
                 </div>
               ) : (
@@ -530,7 +529,7 @@ export default function BenefitsPage() {
           <Card className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-0 shadow-xl">
             <CardHeader>
               <CardTitle>About Collector Benefits</CardTitle>
-              <CardDescription>Learn how to use benefits to add value to your limited editions</CardDescription>
+              <CardDescription>Discover how benefits can make your limited editions even more valuable</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">

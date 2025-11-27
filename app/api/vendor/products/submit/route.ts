@@ -203,6 +203,37 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // Validate and handle series assignment
+    let seriesId: string | null = productData.series_id || null
+    const seriesMetadata: any = {
+      series_name: productData.series_name || null,
+      is_locked: productData.is_locked || false,
+      unlock_order: productData.unlock_order || null,
+    }
+
+    if (seriesId) {
+      // Verify series belongs to vendor
+      const { data: series, error: seriesError } = await supabase
+        .from("artwork_series")
+        .select("id, name")
+        .eq("id", seriesId)
+        .eq("vendor_id", vendor.id)
+        .single()
+
+      if (seriesError || !series) {
+        return NextResponse.json(
+          { error: "Series not found or does not belong to vendor" },
+          { status: 400 },
+        )
+      }
+
+      // Update series metadata with actual series name
+      seriesMetadata.series_name = series.name
+    } else {
+      // Clear series metadata if no series
+      seriesId = null
+    }
+
     // Create submission record
     const { data: submission, error: submissionError } = await supabase
       .from("vendor_product_submissions")
@@ -211,6 +242,8 @@ export async function POST(request: NextRequest) {
         vendor_name: vendor.vendor_name,
         status: "pending",
         product_data: productData as any,
+        series_id: seriesId,
+        series_metadata: Object.keys(seriesMetadata).some(k => seriesMetadata[k] !== null && seriesMetadata[k] !== undefined) ? seriesMetadata : null,
         submitted_at: new Date().toISOString(),
       })
       .select()
@@ -226,12 +259,31 @@ export async function POST(request: NextRequest) {
           variantsCount: productData.variants?.length,
           metafieldsCount: productData.metafields?.length,
           imagesCount: productData.images?.length,
+          seriesId: seriesId,
         },
       })
       return NextResponse.json(
         { error: "Failed to create submission", message: submissionError.message },
         { status: 500 },
       )
+    }
+
+    // If series is assigned, create series member entry
+    if (seriesId && submission) {
+      const { error: memberError } = await supabase
+        .from("artwork_series_members")
+        .insert({
+          series_id: seriesId,
+          submission_id: submission.id,
+          is_locked: seriesMetadata.is_locked || false,
+          unlock_order: seriesMetadata.unlock_order || null,
+          display_order: 0, // Will be updated later if needed
+        })
+
+      if (memberError) {
+        console.error("Error creating series member:", memberError)
+        // Don't fail submission if member creation fails - can be fixed later
+      }
     }
 
     return NextResponse.json({

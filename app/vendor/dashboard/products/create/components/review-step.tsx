@@ -2,7 +2,7 @@
 
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Image as ImageIcon, DollarSign, Video } from "lucide-react"
+import { Image as ImageIcon, DollarSign, Video, Lock, LockOpen } from "lucide-react"
 import type { ProductSubmissionData, ProductCreationFields } from "@/types/product-submission"
 
 interface ReviewStepProps {
@@ -21,13 +21,13 @@ export function ReviewStep({ formData, fieldsConfig }: ReviewStepProps) {
   return (
     <div className="space-y-6">
       <div>
-        <h3 className="text-lg font-semibold mb-2">Review Your Product</h3>
+        <h3 className="text-lg font-semibold mb-2">Review Your Artwork</h3>
         <p className="text-sm text-muted-foreground">
           Please review all information before submitting. You can go back to make changes.
         </p>
       </div>
 
-      {/* Unified Product Preview Card */}
+      {/* Unified Artwork Preview Card */}
       <Card className="overflow-hidden">
         <div className="grid md:grid-cols-2 gap-0">
           {/* Artwork Image Section - Smaller Display */}
@@ -67,7 +67,7 @@ export function ReviewStep({ formData, fieldsConfig }: ReviewStepProps) {
             )}
           </div>
 
-          {/* Product Details Section */}
+          {/* Artwork Details Section */}
           <CardContent className="p-6 flex flex-col justify-between">
             <div className="space-y-4">
               {/* Title */}
@@ -101,6 +101,27 @@ export function ReviewStep({ formData, fieldsConfig }: ReviewStepProps) {
                   </div>
                 )}
               </div>
+
+              {/* Series Information */}
+              {formData.series_id && formData.series_name && (
+                <div className="pt-2 border-t">
+                  <div className="text-xs text-muted-foreground mb-1">Series</div>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <Badge variant="secondary">{formData.series_name}</Badge>
+                    {formData.is_locked && (
+                      <Badge variant="destructive" className="flex items-center gap-1">
+                        <Lock className="h-3 w-3" />
+                        Locked
+                      </Badge>
+                    )}
+                    {formData.unlock_order && (
+                      <Badge variant="outline">
+                        Unlock Order: {formData.unlock_order}
+                      </Badge>
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Additional Images Preview */}
