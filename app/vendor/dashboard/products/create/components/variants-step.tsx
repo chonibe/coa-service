@@ -259,7 +259,7 @@ export function VariantsStep({ formData, setFormData }: VariantsStepProps) {
       {/* Edition Size Selection - Button Grid */}
       <div className="space-y-3">
         <Label>
-          Edition Size <span className="text-red-500">*</span>
+          Choose your edition size <span className="text-red-500">*</span>
         </Label>
         <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
           {EDITION_SIZES.map((size) => {
@@ -359,7 +359,7 @@ export function VariantsStep({ formData, setFormData }: VariantsStepProps) {
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
                     <Label>
-                      Set Price <span className="text-red-500">*</span>
+                      Choose your price <span className="text-red-500">*</span>
                     </Label>
                     <Badge variant="outline" className="text-xs">
                       Range: £{priceRange.min} - £{priceRange.max}
@@ -376,36 +376,6 @@ export function VariantsStep({ formData, setFormData }: VariantsStepProps) {
                     max={priceRange.max}
                     recommended={recommendedPrice}
                   />
-
-                  {/* Custom Price Input (Optional) */}
-                  <div className="pt-4 border-t">
-                    <Label htmlFor="custom-price" className="text-sm text-muted-foreground mb-2 block">
-                      Or enter custom price
-                    </Label>
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm font-medium">£</span>
-                      <Input
-                        id="custom-price"
-                        type="number"
-                        step="0.01"
-                        min={priceRange.min}
-                        max={priceRange.max}
-                        value={variant.price || ""}
-                        onChange={(e) => handlePriceChange(0, e.target.value)}
-                        placeholder={recommendedPrice.toString()}
-                        className="flex-1"
-                      />
-                    </div>
-                    {variant.price && (Number.parseFloat(variant.price) < priceRange.min || Number.parseFloat(variant.price) > priceRange.max) && (
-                      <Alert variant="destructive" className="mt-2 py-2">
-                        <AlertDescription className="text-xs">
-                          {Number.parseFloat(variant.price) < priceRange.min
-                            ? `Price must be at least £${priceRange.min} for ${editionSize} edition size`
-                            : `Price cannot exceed £${priceRange.max} for ${editionSize} edition size`}
-                        </AlertDescription>
-                      </Alert>
-                    )}
-                  </div>
                 </div>
               </>
             ) : (

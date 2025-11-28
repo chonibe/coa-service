@@ -99,21 +99,106 @@ export function PrintFilesStep({ formData, setFormData }: PrintFilesStepProps) {
   return (
     <div className="space-y-6">
       <div>
-        <h3 className="text-lg font-semibold mb-2">Print Files</h3>
+        <h3 className="text-lg font-semibold mb-2">Production Files</h3>
         <p className="text-sm text-muted-foreground">
-          Upload high-resolution PDF files or provide Google Drive links for print production. Download the template if you need guidance.
+          Upload high-resolution PDF files for production printing. These files are used for actual printing, not for customer preview.
         </p>
       </div>
 
+      {/* PDF Upload - Central and Clean */}
+      <div className="flex flex-col items-center justify-center space-y-4 max-w-md mx-auto">
+        <div className="w-full">
+          <Label htmlFor="pdf-upload" className="text-base font-semibold mb-3 block text-center">
+            Upload Production PDF
+          </Label>
+          <div className="border-2 border-dashed border-muted-foreground/25 rounded-lg p-8 bg-muted/50 hover:border-primary transition-colors">
+            <div className="flex flex-col items-center justify-center space-y-4">
+              <FileText className="h-12 w-12 text-muted-foreground" />
+              <div className="text-center space-y-2">
+                <p className="text-sm font-medium">Drop your PDF here or click to browse</p>
+                <p className="text-xs text-muted-foreground">High-resolution PDF for production printing</p>
+              </div>
+              <Input
+                id="pdf-upload"
+                type="file"
+                accept=".pdf,application/pdf"
+                onChange={(e) => {
+                  const file = e.target.files?.[0]
+                  if (file) {
+                    handlePDFUpload(file)
+                  }
+                }}
+                disabled={uploading}
+                className="hidden"
+              />
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => document.getElementById("pdf-upload")?.click()}
+                disabled={uploading}
+                className="w-full"
+              >
+                <Upload className="h-4 w-4 mr-2" />
+                {uploading ? "Uploading..." : "Choose PDF File"}
+              </Button>
+              {formData.print_files?.pdf_url && (
+                <div className="flex items-center gap-2 text-sm text-green-600 mt-2">
+                  <CheckCircle2 className="h-4 w-4" />
+                  <span>PDF Uploaded Successfully</span>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+        {formData.print_files?.pdf_url && (
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-2 text-sm mt-4">
+            <a
+              href={formData.print_files.pdf_url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-primary underline flex items-center gap-1"
+            >
+              <FileText className="h-3 w-3" />
+              View uploaded PDF
+            </a>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={() => {
+                setFormData({
+                  ...formData,
+                  print_files: {
+                    ...formData.print_files,
+                    pdf_url: null,
+                  },
+                })
+              }}
+              className="w-full sm:w-auto"
+            >
+              Remove
+            </Button>
+          </div>
+        )}
+        {uploading && (
+          <Alert className="mt-4">
+            <Upload className="h-4 w-4 animate-pulse" />
+            <AlertDescription>
+              Uploading PDF... Please wait.
+            </AlertDescription>
+          </Alert>
+        )}
+      </div>
+
       {/* Template Download */}
-      <div className="border rounded-lg p-4 bg-muted/50">
-        <div className="flex items-center justify-between">
+      <div className="border rounded-lg p-4 bg-muted/50 max-w-md mx-auto">
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
           <div className="flex items-center gap-3">
             <FileText className="h-5 w-5 text-muted-foreground" />
             <div>
               <Label className="text-base font-semibold">Print File Template</Label>
               <p className="text-xs text-muted-foreground mt-1">
-                Download our template file to see the required specifications and format
+                Download template for specifications
               </p>
             </div>
           </div>
@@ -121,115 +206,39 @@ export function PrintFilesStep({ formData, setFormData }: PrintFilesStepProps) {
             type="button"
             variant="outline"
             onClick={handleTemplateDownload}
+            className="w-full sm:w-auto"
           >
             <Download className="h-4 w-4 mr-2" />
-            Download Template
+            Download
           </Button>
         </div>
       </div>
 
-      <div className="space-y-4">
-        {/* PDF Upload */}
-        <div className="space-y-2">
-          <Label htmlFor="pdf-upload" className="flex items-center gap-2">
-            <FileText className="h-4 w-4" />
-            High-Resolution PDF
-          </Label>
-          <div className="flex items-center gap-2">
-            <Input
-              id="pdf-upload"
-              type="file"
-              accept=".pdf,application/pdf"
-              onChange={(e) => {
-                const file = e.target.files?.[0]
-                if (file) {
-                  handlePDFUpload(file)
-                }
-              }}
-              disabled={uploading}
-              className="flex-1"
-            />
-            {formData.print_files?.pdf_url && (
-              <div className="flex items-center gap-2 text-sm text-green-600">
-                <CheckCircle2 className="h-4 w-4" />
-                <span>Uploaded</span>
-              </div>
-            )}
-          </div>
-          {formData.print_files?.pdf_url && (
-            <div className="flex items-center gap-2 text-sm">
-              <a
-                href={formData.print_files.pdf_url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-primary underline flex items-center gap-1"
-              >
-                <FileText className="h-3 w-3" />
-                View uploaded PDF
-              </a>
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                onClick={() => {
-                  setFormData({
-                    ...formData,
-                    print_files: {
-                      ...formData.print_files,
-                      pdf_url: null,
-                    },
-                  })
-                }}
-              >
-                Remove
-              </Button>
-            </div>
-          )}
-          {uploading && (
-            <Alert>
-              <Upload className="h-4 w-4 animate-pulse" />
-              <AlertDescription>
-                Uploading PDF... Please wait.
-              </AlertDescription>
-            </Alert>
-          )}
-        </div>
-
-        {/* Google Drive Link */}
-        <div className="space-y-2">
-          <Label htmlFor="drive-link" className="flex items-center gap-2">
-            <LinkIcon className="h-4 w-4" />
-            Google Drive Link (Alternative)
-          </Label>
-          <Input
-            id="drive-link"
-            value={formData.print_files?.drive_link || ""}
-            onChange={(e) =>
-              setFormData({
-                ...formData,
-                print_files: {
-                  ...formData.print_files,
-                  drive_link: e.target.value || null,
-                },
-              })
-            }
-            placeholder="https://drive.google.com/file/d/..."
-            type="url"
-          />
-          <p className="text-xs text-muted-foreground">
-            Provide a Google Drive link as an alternative to uploading a PDF directly
-          </p>
-        </div>
+      {/* Google Drive Link */}
+      <div className="space-y-2 max-w-md mx-auto">
+        <Label htmlFor="drive-link" className="flex items-center gap-2">
+          <LinkIcon className="h-4 w-4" />
+          Google Drive Link (Alternative)
+        </Label>
+        <Input
+          id="drive-link"
+          value={formData.print_files?.drive_link || ""}
+          onChange={(e) =>
+            setFormData({
+              ...formData,
+              print_files: {
+                ...formData.print_files,
+                drive_link: e.target.value || null,
+              },
+            })
+          }
+          placeholder="https://drive.google.com/file/d/..."
+          type="url"
+        />
+        <p className="text-xs text-muted-foreground">
+          Provide a Google Drive link as an alternative to uploading a PDF directly
+        </p>
       </div>
-
-      {/* Info Alert */}
-      <Alert>
-        <FileText className="h-4 w-4" />
-        <AlertDescription>
-          <strong>Important:</strong> Print files should be high-resolution PDFs suitable for production printing. 
-          Ensure your files meet our quality standards before uploading.
-        </AlertDescription>
-      </Alert>
     </div>
   )
 }

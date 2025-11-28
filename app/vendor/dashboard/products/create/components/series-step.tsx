@@ -429,7 +429,26 @@ export function SeriesStep({ formData, setFormData }: SeriesStepProps) {
             <StepProgress
               currentStep={getStepNumber()}
               totalSteps={getTotalSteps()}
-              stepLabels={["Cover Art", "Name", "Description", "Unlock Type", newSeriesUnlockType === "threshold" ? "Config" : undefined].filter(Boolean) as string[]}
+              stepLabels={[
+                "Cover Art",
+                "Name",
+                "Description",
+                "Unlock Type",
+                newSeriesUnlockType === "threshold"
+                  ? "Config"
+                  : newSeriesUnlockType === "time_based"
+                    ? "Time Config"
+                    : newSeriesUnlockType === "vip"
+                      ? "VIP Config"
+                      : undefined,
+              ].filter(Boolean) as string[]}
+              onStepClick={(step) => {
+                const steps: Step[] = ["cover", "name", "description", "unlock", "config", "time_config", "vip_config"]
+                const targetStep = steps[step - 1]
+                if (targetStep) {
+                  setCurrentStep(targetStep)
+                }
+              }}
             />
 
             {/* Show UnlockGuide on first unlock step */}

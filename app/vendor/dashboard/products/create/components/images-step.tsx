@@ -405,26 +405,27 @@ export function ImagesStep({ formData, setFormData, onMaskSavedStatusChange }: I
   return (
     <div className="space-y-6">
       <div>
-        <h3 className="text-lg font-semibold mb-2">Artwork Images</h3>
+        <h3 className="text-lg font-semibold mb-2">Artwork Preview Images</h3>
         <p className="text-sm text-muted-foreground">
-          Upload images/videos or select from your library. The first image will be used as the artwork image with mask positioning.
+          Upload preview images or videos that customers will see on the product page. The first image will be used as the main artwork preview with mask positioning.
         </p>
       </div>
 
       {/* Upload Button */}
-      <div className="flex gap-2">
+      <div className="flex flex-col sm:flex-row gap-2">
         <Button
           type="button"
           variant="outline"
           onClick={() => fileInputRef.current?.click()}
           disabled={uploading}
+          className="w-full sm:w-auto"
         >
           <Upload className="h-4 w-4 mr-2" />
-          {uploading ? "Uploading..." : "Upload Images/Videos"}
+          {uploading ? "Uploading..." : "Upload Preview Images"}
         </Button>
         <Dialog open={showImageLibrary} onOpenChange={setShowImageLibrary}>
           <DialogTrigger asChild>
-            <Button type="button" variant="outline">
+            <Button type="button" variant="outline" className="w-full sm:w-auto">
               <ImageIcon className="h-4 w-4 mr-2" />
               Select from Library
             </Button>
@@ -587,6 +588,7 @@ export function ImagesStep({ formData, setFormData, onMaskSavedStatusChange }: I
                   variant="ghost"
                   size="sm"
                   onClick={() => removeImage(0)}
+                  className="min-w-[44px] min-h-[44px]"
                 >
                   <Trash2 className="h-4 w-4 text-destructive" />
                 </Button>
@@ -653,18 +655,18 @@ export function ImagesStep({ formData, setFormData, onMaskSavedStatusChange }: I
                         </div>
                       </div>
                       {/* Remove Button */}
-                      <div className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <div className="absolute top-1 right-1 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
                         <Button
                           type="button"
                           variant="destructive"
                           size="sm"
-                          className="h-6 w-6 p-0"
+                          className="h-8 w-8 p-0 min-w-[32px] min-h-[32px]"
                           onClick={(e) => {
                             e.stopPropagation()
                             removeImage(actualIndex)
                           }}
                         >
-                          <X className="h-3 w-3" />
+                          <X className="h-4 w-4" />
                         </Button>
                       </div>
                       {/* Image Number Badge */}

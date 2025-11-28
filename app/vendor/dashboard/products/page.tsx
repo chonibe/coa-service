@@ -169,13 +169,16 @@ export default function ProductsPage() {
   return (
     <div className="space-y-6 px-1">
       <div className="flex items-center justify-between">
-      <div>
-        <p className="text-muted-foreground text-lg">Your artwork catalog and how they're performing</p>
+        <div>
+          <p className="text-muted-foreground text-lg">Your artwork catalog and how they're performing</p>
         </div>
-          <Button onClick={() => router.push("/vendor/dashboard/products/create")}>
+        <Button 
+          onClick={() => router.push("/vendor/dashboard/products/create")}
+          className="hidden md:flex"
+        >
           <Plus className="h-4 w-4 mr-2" />
           Upload New Artwork
-          </Button>
+        </Button>
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">

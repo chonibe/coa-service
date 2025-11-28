@@ -253,43 +253,51 @@ export function ProductWizard({ onComplete, onCancel, initialData, submissionId 
       </div>
 
       {/* Step indicators */}
-      <div className="flex items-center justify-between">
-        {steps.map((step, index) => (
-          <div
-            key={step.id}
-            className={cn(
-              "flex flex-col items-center flex-1",
-              index < steps.length - 1 && "mr-2",
-            )}
-          >
+      <div className="flex items-center justify-between overflow-x-auto pb-2 scrollbar-hide">
+        {steps.map((step, index) => {
+          const isCompleted = index < currentStep
+          const isClickable = isCompleted
+          
+          return (
             <div
+              key={step.id}
               className={cn(
-                "w-10 h-10 rounded-full flex items-center justify-center border-2 transition-colors",
-                index < currentStep
-                  ? "bg-primary border-primary text-primary-foreground"
-                  : index === currentStep
-                    ? "border-primary text-primary"
-                    : "border-muted text-muted-foreground",
+                "flex flex-col items-center flex-1 min-w-[80px]",
+                index < steps.length - 1 && "mr-2",
               )}
             >
-              {index < currentStep ? (
-                <CheckCircle2 className="h-5 w-5" />
-              ) : (
-                step.icon
-              )}
-            </div>
-            <div className="mt-2 text-center">
-              <div
+              <button
+                type="button"
+                onClick={() => isClickable && setCurrentStep(index)}
+                disabled={!isClickable}
                 className={cn(
-                  "text-xs font-medium",
-                  index === currentStep ? "text-foreground" : "text-muted-foreground",
+                  "w-10 h-10 rounded-full flex items-center justify-center border-2 transition-all",
+                  isCompleted
+                    ? "bg-primary border-primary text-primary-foreground cursor-pointer hover:scale-110 active:scale-95"
+                    : index === currentStep
+                      ? "border-primary text-primary cursor-default"
+                      : "border-muted text-muted-foreground cursor-default",
                 )}
               >
-                {step.title}
+                {isCompleted ? (
+                  <CheckCircle2 className="h-5 w-5" />
+                ) : (
+                  step.icon
+                )}
+              </button>
+              <div className="mt-2 text-center">
+                <div
+                  className={cn(
+                    "text-xs font-medium",
+                    index === currentStep ? "text-foreground" : "text-muted-foreground",
+                  )}
+                >
+                  {step.title}
+                </div>
               </div>
             </div>
-          </div>
-        ))}
+          )
+        })}
       </div>
 
       {/* Error alert */}

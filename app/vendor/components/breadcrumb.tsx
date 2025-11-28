@@ -1,11 +1,14 @@
 "use client"
 
-import { usePathname } from "next/navigation"
+import { usePathname, useRouter } from "next/navigation"
 import Link from "next/link"
-import { ChevronRight, Home } from "lucide-react"
+import { ChevronRight, Home, ArrowLeft } from "lucide-react"
+import { Button } from "@/components/ui/button"
+import { cn } from "@/lib/utils"
 
 export function Breadcrumb() {
   const pathname = usePathname()
+  const router = useRouter()
 
   // Skip rendering breadcrumbs on the main dashboard
   if (pathname === "/vendor/dashboard") {
@@ -23,9 +26,35 @@ export function Breadcrumb() {
       .join(" ")
   }
 
+  // Get parent path for back button
+  const getParentPath = () => {
+    const vendorIndex = segments.indexOf("vendor")
+    if (vendorIndex >= 0 && segments.length > vendorIndex + 2) {
+      // Go back one level from current
+      return `/${segments.slice(0, segments.length - 1).join("/")}`
+    }
+    return "/vendor/dashboard"
+  }
+
   return (
     <nav aria-label="Breadcrumb" className="mb-6">
-      <ol className="flex items-center space-x-2 text-sm text-muted-foreground">
+      {/* Mobile: Back button */}
+      <div className="md:hidden">
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => router.push(getParentPath())}
+          className="flex items-center gap-2"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          Back
+        </Button>
+      </div>
+
+      {/* Desktop: Breadcrumbs */}
+      <ol className={cn(
+        "hidden md:flex items-center space-x-2 text-sm text-muted-foreground"
+      )}>
         <li>
           <Link href="/vendor/dashboard" className="flex items-center hover:text-foreground transition-colors">
             <Home className="h-4 w-4" />

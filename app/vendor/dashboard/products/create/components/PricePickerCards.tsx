@@ -30,37 +30,33 @@ export function PricePickerCards({
   recommended,
   disabled = false,
 }: PricePickerCardsProps) {
-  // Calculate 4 price tiers based on range
+  // Calculate 3 price tiers based on range
   const range = max - min
-  const tier1 = Math.round(min + range * 0.2) // Budget
-  const tier2 = Math.round(min + range * 0.5) // Standard
-  const tier3 = Math.round(min + range * 0.8) // Premium
-  const tier4 = max // Exclusive
+  const tier1 = Math.round(min + range * 0.33) // Budget
+  const tier2 = Math.round(min + range * 0.67) // Standard
+  const tier3 = max // Premium
 
   // Adjust tiers to include recommended price if it's not too close to others
   // If recommended is close to tier2, use it; otherwise keep tier2
   const adjustedTier2 = Math.abs(recommended - tier2) < 3 ? recommended : tier2
-  // If recommended is close to tier3, use it; otherwise keep tier3
-  const adjustedTier3 = Math.abs(recommended - tier3) < 3 ? recommended : tier3
   
   // Ensure we don't have duplicate values
-  const uniqueTiers = [tier1, adjustedTier2, adjustedTier3, tier4].filter((v, i, arr) => arr.indexOf(v) === i)
+  const uniqueTiers = [tier1, adjustedTier2, tier3].filter((v, i, arr) => arr.indexOf(v) === i)
   
   // If we lost a tier due to duplicates, add recommended if it's unique
-  if (uniqueTiers.length < 4 && !uniqueTiers.includes(recommended)) {
-    uniqueTiers.splice(2, 0, recommended)
+  if (uniqueTiers.length < 3 && !uniqueTiers.includes(recommended)) {
+    uniqueTiers.splice(1, 0, recommended)
   }
   
-  // Ensure we have exactly 4 tiers, sorted
-  const sortedTiers = [...uniqueTiers].sort((a, b) => a - b).slice(0, 4)
-  while (sortedTiers.length < 4) {
+  // Ensure we have exactly 3 tiers, sorted
+  const sortedTiers = [...uniqueTiers].sort((a, b) => a - b).slice(0, 3)
+  while (sortedTiers.length < 3) {
     sortedTiers.push(max)
   }
   
   const finalTier1 = sortedTiers[0] || tier1
   const finalTier2 = sortedTiers[1] || adjustedTier2
-  const finalTier3 = sortedTiers[2] || adjustedTier3
-  const finalTier4 = sortedTiers[3] || tier4
+  const finalTier3 = sortedTiers[2] || tier3
 
   const priceOptions: PriceOption[] = [
     {
@@ -85,17 +81,10 @@ export function PricePickerCards({
       icon: Star,
       color: "from-purple-500 to-pink-500",
     },
-    {
-      value: finalTier4,
-      label: "Exclusive",
-      description: `£${finalTier4} - Maximum price point`,
-      icon: Sparkles,
-      color: "from-orange-500 to-red-500",
-    },
   ]
 
   return (
-    <div className="grid grid-cols-2 gap-4">
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
       {priceOptions.map((option) => {
         const Icon = option.icon
         const isSelected = value === option.value
