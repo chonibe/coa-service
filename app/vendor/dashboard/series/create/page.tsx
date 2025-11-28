@@ -66,6 +66,18 @@ export default function CreateSeriesPage() {
     if (currentStep === "unlock") return true
     if (currentStep === "config") {
       if (unlockType === "threshold") return requiredCount > 0
+      if (unlockType === "time_based") {
+        // Must have either unlock_at or unlock_schedule
+        return !!(unlockConfig.unlock_at || unlockConfig.unlock_schedule)
+      }
+      if (unlockType === "vip") {
+        // Must have at least one requirement
+        return !!(
+          (unlockConfig.requires_ownership && unlockConfig.requires_ownership.length > 0) ||
+          unlockConfig.vip_tier !== undefined ||
+          unlockConfig.loyalty_points_required !== undefined
+        )
+      }
       return true
     }
     return true
