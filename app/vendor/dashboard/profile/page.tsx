@@ -31,11 +31,14 @@ import {
   Eye,
   HelpCircle,
   Info,
+  LogOut,
 } from "lucide-react"
 import Image from "next/image"
 import { StripeConnect } from "../components/stripe-connect"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { Badge } from "@/components/ui/badge"
+import { ThemeToggle } from "@/components/theme-toggle"
+import { useRouter } from "next/navigation"
 
 interface VendorProfile {
   id: number | string
@@ -1354,6 +1357,38 @@ export default function VendorProfilePage() {
         </CardContent>
       </Card>
       )}
+
+      {/* Settings Section - Theme & Logout */}
+      <Card className="mt-6">
+        <CardHeader>
+          <CardTitle>Preferences</CardTitle>
+          <CardDescription>Manage your account preferences and settings</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          <div className="flex items-center justify-between">
+            <div className="space-y-0.5">
+              <Label className="text-base">Theme</Label>
+              <p className="text-sm text-muted-foreground">Choose your preferred color scheme</p>
+            </div>
+            <ThemeToggle />
+          </div>
+          <Separator />
+          <div className="flex items-center justify-between">
+            <div className="space-y-0.5">
+              <Label className="text-base">Sign Out</Label>
+              <p className="text-sm text-muted-foreground">Sign out of your account</p>
+            </div>
+            <Button
+              variant="destructive"
+              onClick={handleLogout}
+              className="flex items-center gap-2"
+            >
+              <LogOut className="h-4 w-4" />
+              Sign Out
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   )
 }

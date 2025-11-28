@@ -620,12 +620,13 @@ export function SeriesStep({ formData, setFormData }: SeriesStepProps) {
               )}
             </AnimatePresence>
 
-            <div className="flex items-center justify-between mt-8 pt-6 border-t">
+            <div className="flex items-center justify-between mt-8 pt-6 border-t gap-4">
               <Button
                 type="button"
                 variant="outline"
                 onClick={currentStep === "cover" ? () => setShowCreateForm(false) : handleBack}
                 disabled={creatingSeries}
+                className="min-w-[120px]"
               >
                 <ArrowLeft className="h-4 w-4 mr-2" />
                 {currentStep === "cover" ? "Cancel" : "Back"}
@@ -642,6 +643,8 @@ export function SeriesStep({ formData, setFormData }: SeriesStepProps) {
                     : handleNext
                 }
                 disabled={!canProceed() || creatingSeries}
+                className="min-w-[140px] flex-1 max-w-[200px]"
+                size="lg"
               >
                 {creatingSeries ? (
                   <>
@@ -659,7 +662,7 @@ export function SeriesStep({ formData, setFormData }: SeriesStepProps) {
                   </>
                 ) : (
                   <>
-                    Next
+                    Continue
                     <ArrowRight className="h-4 w-4 ml-2" />
                   </>
                 )}
