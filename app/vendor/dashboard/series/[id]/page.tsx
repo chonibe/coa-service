@@ -322,8 +322,8 @@ export default function SeriesDetailPage() {
                 </Badge>
               </div>
 
-              {/* Unlock Progress */}
-              {totalCount > 0 && (
+              {/* Unlock Progress - only show for sequential unlocks */}
+              {totalCount > 0 && series.unlock_type === "sequential" && (
                 <div>
                   <UnlockProgress unlocked={unlockedCount} total={totalCount} />
                 </div>
