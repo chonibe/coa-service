@@ -195,18 +195,19 @@ export function VendorSidebar() {
     <>
       {/* Fixed header */}
       <header className="fixed top-0 left-0 right-0 z-40 flex h-16 items-center gap-4 border-b bg-background px-4 sm:px-6" role="banner">
-        {/* Left: Add Artwork Button */}
+        {/* Left: Menu Button */}
         <Button
-          variant="default"
+          variant="outline"
           size="icon"
-          className="flex items-center justify-center transition-all hover:bg-primary/90 min-h-[44px] min-w-[44px] focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
-          onClick={() => router.push("/vendor/dashboard/products/create")}
-          aria-label="Add new artwork"
+          className="flex items-center justify-center transition-all hover:bg-primary/10 min-h-[44px] min-w-[44px] focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+          onClick={toggleSidebar}
+          aria-label="Toggle navigation menu"
+          aria-expanded={sidebarOpen}
         >
           <Icon size="lg">
-            <Plus className="h-6 w-6" aria-hidden="true" />
+            <Bars3Icon className="h-6 w-6" aria-hidden="true" />
           </Icon>
-          <span className="sr-only">Add artwork</span>
+          <span className="sr-only">Toggle menu</span>
         </Button>
 
         {/* Center: Logo */}
@@ -219,21 +220,20 @@ export function VendorSidebar() {
           </Link>
         </div>
 
-        {/* Right: Menu, Notifications */}
+        {/* Right: Notifications, Add Artwork Button */}
         <div className="flex items-center gap-2">
           <NotificationCenter />
           <Button
-            variant="outline"
+            variant="default"
             size="icon"
-            className="flex items-center justify-center transition-all hover:bg-primary/10 min-h-[44px] min-w-[44px] focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
-            onClick={toggleSidebar}
-            aria-label="Toggle navigation menu"
-            aria-expanded={sidebarOpen}
+            className="flex items-center justify-center transition-all hover:bg-primary/90 min-h-[44px] min-w-[44px] focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+            onClick={() => router.push("/vendor/dashboard/products/create")}
+            aria-label="Add new artwork"
           >
             <Icon size="lg">
-              <Bars3Icon className="h-6 w-6" aria-hidden="true" />
+              <Plus className="h-6 w-6" aria-hidden="true" />
             </Icon>
-            <span className="sr-only">Toggle menu</span>
+            <span className="sr-only">Add artwork</span>
           </Button>
         </div>
       </header>
