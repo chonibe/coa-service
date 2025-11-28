@@ -32,50 +32,63 @@ export function PricePickerCards({
 }: PricePickerCardsProps) {
   // Calculate 4 price tiers based on range
   const range = max - min
-  const tier1 = Math.round(min + range * 0.2) // Low
-  const tier2 = Math.round(min + range * 0.5) // Medium
-  const tier3 = Math.round(min + range * 0.8) // High
-  const tier4 = max // Premium
+  const tier1 = Math.round(min + range * 0.2) // Budget
+  const tier2 = Math.round(min + range * 0.5) // Standard
+  const tier3 = Math.round(min + range * 0.8) // Premium
+  const tier4 = max // Exclusive
 
-  // Adjust tiers to be closer to recommended if it's in a specific range
-  const getClosestTier = (price: number) => {
-    const tiers = [tier1, tier2, tier3, tier4]
-    return tiers.reduce((prev, curr) =>
-      Math.abs(curr - price) < Math.abs(prev - price) ? curr : prev
-    )
+  // Adjust tiers to include recommended price if it's not too close to others
+  // If recommended is close to tier2, use it; otherwise keep tier2
+  const adjustedTier2 = Math.abs(recommended - tier2) < 3 ? recommended : tier2
+  // If recommended is close to tier3, use it; otherwise keep tier3
+  const adjustedTier3 = Math.abs(recommended - tier3) < 3 ? recommended : tier3
+  
+  // Ensure we don't have duplicate values
+  const uniqueTiers = [tier1, adjustedTier2, adjustedTier3, tier4].filter((v, i, arr) => arr.indexOf(v) === i)
+  
+  // If we lost a tier due to duplicates, add recommended if it's unique
+  if (uniqueTiers.length < 4 && !uniqueTiers.includes(recommended)) {
+    uniqueTiers.splice(2, 0, recommended)
   }
-
-  // Use recommended as one of the tiers if it's not too close to others
-  const adjustedTier2 = Math.abs(recommended - tier2) < 5 ? tier2 : recommended
-  const adjustedTier3 = Math.abs(recommended - tier3) < 5 ? tier3 : recommended
+  
+  // Ensure we have exactly 4 tiers, sorted
+  const sortedTiers = [...uniqueTiers].sort((a, b) => a - b).slice(0, 4)
+  while (sortedTiers.length < 4) {
+    sortedTiers.push(max)
+  }
+  
+  const finalTier1 = sortedTiers[0] || tier1
+  const finalTier2 = sortedTiers[1] || adjustedTier2
+  const finalTier3 = sortedTiers[2] || adjustedTier3
+  const finalTier4 = sortedTiers[3] || tier4
 
   const priceOptions: PriceOption[] = [
     {
-      value: tier1,
+      value: finalTier1,
       label: "Budget",
-      description: `£${tier1} - Great for accessibility`,
+      description: `£${finalTier1} - Great for accessibility`,
       icon: PoundSterling,
       color: "from-green-500 to-emerald-500",
     },
     {
-      value: adjustedTier2,
+      value: finalTier2,
       label: "Standard",
-      description: `£${adjustedTier2} - Recommended price`,
+      description: `£${finalTier2} - Recommended price`,
       icon: TrendingUp,
       color: "from-blue-500 to-cyan-500",
       badge: "Recommended",
     },
     {
-      value: adjustedTier3,
+      value: finalTier3,
       label: "Premium",
-      description: `£${adjustedTier3} - Higher value positioning`,
+      description: `£${finalTier3} - Higher value positioning`,
       icon: Star,
       color: "from-purple-500 to-pink-500",
     },
     {
-      value: tier4,
+      value: finalTier4,
       label: "Exclusive",
-      description: `£${tier4} - Maximum price point`,
+      description: `£${finalTier4} - Maximum price point`,
       icon: Sparkles,
       color: "from-orange-500 to-red-500",
     },
