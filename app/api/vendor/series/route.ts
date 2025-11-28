@@ -143,6 +143,26 @@ export async function POST(request: NextRequest) {
       insertData.unlock_milestones = seriesData.unlock_milestones || []
     }
 
+    // Extract time-based unlock fields from unlock_config to separate columns
+    if (seriesData.unlock_type === "time_based" && seriesData.unlock_config) {
+      if (seriesData.unlock_config.unlock_schedule) {
+        insertData.unlock_schedule = seriesData.unlock_config.unlock_schedule
+      }
+      if (seriesData.unlock_config.unlock_at) {
+        insertData.unlock_at = seriesData.unlock_config.unlock_at
+      }
+    }
+
+    // Extract VIP unlock fields from unlock_config to separate columns
+    if (seriesData.unlock_type === "vip" && seriesData.unlock_config) {
+      if (seriesData.unlock_config.requires_ownership !== undefined) {
+        insertData.requires_ownership = seriesData.unlock_config.requires_ownership
+      }
+      if (seriesData.unlock_config.vip_tier !== undefined) {
+        insertData.vip_tier = seriesData.unlock_config.vip_tier
+      }
+    }
+
     const { data: newSeries, error: createError } = await supabase
       .from("artwork_series")
       .insert(insertData)
