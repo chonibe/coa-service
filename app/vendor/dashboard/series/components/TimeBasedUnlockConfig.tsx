@@ -250,39 +250,72 @@ export function TimeBasedUnlockConfig({ value, onChange }: TimeBasedUnlockConfig
                 )}
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="start-date" className="text-sm">Start Date (Optional)</Label>
-                  <Input
-                    id="start-date"
-                    type="date"
-                    value={value.unlock_schedule?.start_date || ""}
-                    onChange={(e) => {
-                      handleRecurringChange({
-                        ...value.unlock_schedule,
-                        start_date: e.target.value || undefined,
-                        type: value.unlock_schedule?.type || "daily",
-                        time: value.unlock_schedule?.time || "12:00",
-                      })
-                    }}
-                  />
-                </div>
+              <div className="space-y-4">
+                <div>
+                  <Label className="text-sm font-semibold mb-3 block">Duration</Label>
+                  <p className="text-xs text-muted-foreground mb-3">
+                    How long should this schedule run?
+                  </p>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                    {[
+                      { label: "1 Week", days: 7 },
+                      { label: "2 Weeks", days: 14 },
+                      { label: "1 Month", days: 30 },
+                      { label: "3 Months", days: 90 },
+                    ].map((option) => {
+                      const isSelected = (() => {
+                        if (!value.unlock_schedule?.start_date || !value.unlock_schedule?.end_date) {
+                          return false
+                        }
+                        const start = new Date(value.unlock_schedule.start_date)
+                        const end = new Date(value.unlock_schedule.end_date)
+                        const diffDays = Math.round((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24))
+                        return diffDays === option.days
+                      })()
 
-                <div className="space-y-2">
-                  <Label htmlFor="end-date" className="text-sm">End Date (Optional)</Label>
-                  <Input
-                    id="end-date"
-                    type="date"
-                    value={value.unlock_schedule?.end_date || ""}
-                    onChange={(e) => {
-                      handleRecurringChange({
-                        ...value.unlock_schedule,
-                        end_date: e.target.value || undefined,
-                        type: value.unlock_schedule?.type || "daily",
-                        time: value.unlock_schedule?.time || "12:00",
-                      })
-                    }}
-                  />
+                      return (
+                        <motion.button
+                          key={option.days}
+                          type="button"
+                          onClick={() => {
+                            const startDate = new Date()
+                            startDate.setHours(0, 0, 0, 0)
+                            const endDate = new Date(startDate)
+                            endDate.setDate(endDate.getDate() + option.days)
+
+                            handleRecurringChange({
+                              ...value.unlock_schedule,
+                              start_date: startDate.toISOString().split('T')[0],
+                              end_date: endDate.toISOString().split('T')[0],
+                              type: value.unlock_schedule?.type || "daily",
+                              time: value.unlock_schedule?.time || "12:00",
+                            })
+                          }}
+                          className={cn(
+                            "p-3 rounded-lg border-2 transition-all text-center",
+                            isSelected
+                              ? "border-green-500 bg-green-100 dark:bg-green-900/30 shadow-sm"
+                              : "border-muted hover:border-green-300 hover:bg-muted/50"
+                          )}
+                          whileHover={{ scale: 1.02 }}
+                          whileTap={{ scale: 0.98 }}
+                        >
+                          <p className="font-semibold text-sm">{option.label}</p>
+                          <p className="text-xs text-muted-foreground mt-0.5">{option.days} days</p>
+                        </motion.button>
+                      )
+                    })}
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-2">
+                    {value.unlock_schedule?.start_date && value.unlock_schedule?.end_date ? (
+                      <>
+                        Starts: {new Date(value.unlock_schedule.start_date).toLocaleDateString()} • 
+                        Ends: {new Date(value.unlock_schedule.end_date).toLocaleDateString()}
+                      </>
+                    ) : (
+                      "Select a duration to set start and end dates"
+                    )}
+                  </p>
                 </div>
               </div>
             </CardContent>
