@@ -198,45 +198,34 @@ export function VendorSidebar() {
       <header className="fixed top-0 left-0 right-0 z-40 flex h-16 items-center gap-4 border-b bg-background px-4 sm:px-6" role="banner">
         {/* Left: Menu Button, Notifications */}
         <div className="flex items-center gap-2">
-          <Button
-            variant="outline"
-            size="icon"
-            className="flex items-center justify-center transition-all hover:bg-primary/10 min-h-[44px] min-w-[44px] focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
-            onClick={toggleSidebar}
-            aria-label="Toggle navigation menu"
-            aria-expanded={sidebarOpen}
-          >
-            <Icon size="lg">
-              <Bars3Icon className="h-6 w-6" aria-hidden="true" />
-            </Icon>
-            <span className="sr-only">Toggle menu</span>
-          </Button>
+        <Button
+          variant="outline"
+          size="icon"
+          className="flex items-center justify-center transition-all hover:bg-primary/10 min-h-[44px] min-w-[44px] focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+          onClick={toggleSidebar}
+          aria-label="Toggle navigation menu"
+          aria-expanded={sidebarOpen}
+        >
+          <Icon size="lg">
+            <Bars3Icon className="h-6 w-6" aria-hidden="true" />
+          </Icon>
+          <span className="sr-only">Toggle menu</span>
+        </Button>
           <NotificationCenter />
         </div>
 
         {/* Center: Logo */}
         <div className="flex-1 flex justify-center">
-          <Link href="/vendor/dashboard" className="flex items-center gap-2 font-semibold">
-            <Logo 
-              className="h-8 w-auto object-contain"
-              alt="Street Lamp Logo"
-            />
-          </Link>
+        <Link href="/vendor/dashboard" className="flex items-center gap-2 font-semibold">
+          <Logo 
+            className="h-8 w-auto object-contain"
+            alt="Street Lamp Logo"
+          />
+        </Link>
         </div>
 
-        {/* Right: Add Artwork Button */}
-        <Button
-          variant="default"
-          size="icon"
-          className="flex items-center justify-center transition-all hover:bg-primary/90 min-h-[44px] min-w-[44px] focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
-          onClick={() => router.push("/vendor/dashboard/products/create")}
-          aria-label="Add new artwork"
-        >
-          <Icon size="lg">
-            <Plus className="h-6 w-6" aria-hidden="true" />
-          </Icon>
-          <span className="sr-only">Add artwork</span>
-        </Button>
+        {/* Right: Create Menu */}
+        <CreateMenu />
       </header>
 
       {/* Overlay sidebar - shown when sidebarOpen is true */}

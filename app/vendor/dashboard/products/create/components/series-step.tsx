@@ -307,23 +307,23 @@ export function SeriesStep({ formData, setFormData }: SeriesStepProps) {
 
   // If selecting existing series, show simple selection
   if (!showCreateForm && formData.series_id) {
-    return (
-      <div className="space-y-6">
-        <div>
-          <h3 className="text-lg font-semibold mb-2">Series & Unlocks</h3>
-          <p className="text-sm text-muted-foreground">
+  return (
+    <div className="space-y-6">
+      <div>
+        <h3 className="text-lg font-semibold mb-2">Series & Unlocks</h3>
+        <p className="text-sm text-muted-foreground">
             This artwork is assigned to a series. Configure unlock settings below.
-          </p>
-        </div>
+        </p>
+      </div>
 
         <Card>
           <CardContent className="pt-6 space-y-4">
-            <Alert>
-              <Info className="h-4 w-4" />
-              <AlertDescription>
+              <Alert>
+                <Info className="h-4 w-4" />
+                <AlertDescription>
                 This artwork is part of the "{selectedSeries?.name || formData.series_name}" series.
-              </AlertDescription>
-            </Alert>
+                </AlertDescription>
+              </Alert>
 
             <div className="flex items-center justify-between">
               <div className="space-y-0.5">
