@@ -1,6 +1,6 @@
 // Type definitions for artwork series and unlock system
 
-export type UnlockType = 'any_purchase' | 'sequential' | 'threshold' | 'time_based' | 'vip' | 'custom'
+export type UnlockType = 'any_purchase' | 'sequential' | 'threshold' | 'time_based' | 'vip'
 
 export interface UnlockConfig {
   order?: string[] // For sequential - array of submission/product IDs in unlock order

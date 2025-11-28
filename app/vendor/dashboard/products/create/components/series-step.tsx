@@ -541,15 +541,8 @@ export function SeriesStep({ formData, setFormData }: SeriesStepProps) {
                   exit={{ opacity: 0, x: -20 }}
                   className="space-y-4"
                 >
-                  <UnlockGuide />
                   <div>
-                    <Label className="text-base font-semibold mb-4 block">Unlock Type</Label>
-                    <p className="text-sm text-muted-foreground mb-2">
-                      Unlockable series turn art into a journey, and journeys create loyalty, repeat purchases, and cultural value.
-                    </p>
-                    <p className="text-xs text-muted-foreground mb-6">
-                      Choose how artworks in this series will be unlocked. Collectors instantly recognize these patterns from games, drops, loyalty programs, and Patreon tiers.
-                    </p>
+                    <Label className="text-base font-semibold mb-4 block">How do artworks unlock?</Label>
                     <UnlockTypeCards
                       value={newSeriesUnlockType}
                       onChange={setNewSeriesUnlockType}

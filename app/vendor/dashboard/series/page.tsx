@@ -147,7 +147,7 @@ export default function SeriesPage() {
   const getUnlockTypeLabel = (type: string) => {
     switch (type) {
       case "any_purchase":
-        return "Any Purchase"
+        return "Open Collection"
       case "sequential":
         return "Finish the Set"
       case "threshold":
@@ -156,8 +156,6 @@ export default function SeriesPage() {
         return "Time-Based"
       case "vip":
         return "VIP"
-      case "custom":
-        return "Custom"
       default:
         return type
     }

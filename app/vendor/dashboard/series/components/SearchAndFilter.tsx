@@ -49,7 +49,6 @@ export function SearchAndFilter({
           <SelectItem value="any_purchase">Any Purchase</SelectItem>
           <SelectItem value="sequential">Sequential</SelectItem>
           <SelectItem value="threshold">Threshold</SelectItem>
-          <SelectItem value="custom">Custom</SelectItem>
         </SelectContent>
       </Select>
     </div>

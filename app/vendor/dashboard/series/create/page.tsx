@@ -226,7 +226,6 @@ export default function CreateSeriesPage() {
             }}
           />
 
-          {currentStep === "unlock" && <UnlockGuide />}
 
           <AnimatePresence mode="wait">
             {currentStep === "cover" && (
@@ -316,7 +315,7 @@ export default function CreateSeriesPage() {
                 className="space-y-4"
               >
                 <div>
-                  <Label className="text-base font-semibold mb-4 block">Unlock Type</Label>
+                  <Label className="text-base font-semibold mb-4 block">How do artworks unlock?</Label>
                   <UnlockTypeCards value={unlockType} onChange={setUnlockType} />
                 </div>
               </motion.div>

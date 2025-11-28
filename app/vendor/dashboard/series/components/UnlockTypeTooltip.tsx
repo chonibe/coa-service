@@ -15,11 +15,11 @@ interface UnlockTypeTooltipProps {
 }
 
 const unlockTypeDescriptions: Record<UnlockType, string> = {
-  any_purchase: "All artworks in this series unlock immediately when any piece is purchased. Perfect for open collections where collectors can access everything right away.",
-  sequential: "Finish the Set - Each purchase unlocks the next artwork, satisfying the collector instinct to complete the series. Like collecting trading cards or completing game achievements.",
-  threshold: "VIP Unlocks - Reward loyalty and make owning earlier pieces matter. Exclusive pieces unlock for collectors who own earlier works, building a hierarchy that keeps collectors engaged. Like Patreon tiers or loyalty programs.",
-  time_based: "Time-Based Unlocks - Create anticipation and daily return behavior. Artworks unlock at specific times or on schedules, driving more attention over more days. Like daily drops or scheduled releases.",
-  custom: "Define your own unlock rules with custom logic. Perfect for special events, time-based unlocks, or complex collection mechanics. Like games, drops, loyalty programs, Patreon tiers - collectors instantly recognize these patterns.",
+  any_purchase: "All artworks unlock immediately when any piece is purchased.",
+  sequential: "Each purchase unlocks the next artwork in order.",
+  threshold: "Exclusive pieces unlock when collectors reach purchase thresholds.",
+  time_based: "Artworks unlock at specific times or on schedules.",
+  vip: "Exclusive pieces unlock for collectors who own earlier works.",
 }
 
 export function UnlockTypeTooltip({ unlockType, children }: UnlockTypeTooltipProps) {
