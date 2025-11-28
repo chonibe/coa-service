@@ -17,6 +17,8 @@ import { CoverArtDesigner } from "@/app/vendor/dashboard/series/components/Cover
 import { UnlockTypeCards } from "@/app/vendor/dashboard/series/components/UnlockTypeCards"
 import { StepProgress } from "@/app/vendor/dashboard/series/components/StepProgress"
 import { UnlockGuide } from "@/app/vendor/dashboard/series/components/UnlockGuide"
+import { TimeBasedUnlockConfig } from "@/app/vendor/dashboard/series/components/TimeBasedUnlockConfig"
+import { VIPUnlockConfig } from "@/app/vendor/dashboard/series/components/VIPUnlockConfig"
 
 interface SeriesStepProps {
   formData: ProductSubmissionData
