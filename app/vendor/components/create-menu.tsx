@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
-import { Plus, Package, Lock } from "lucide-react"
+import { Plus as PlusIcon, Package, Lock } from "lucide-react"
 import { motion, AnimatePresence } from "framer-motion"
 import { useMobile } from "@/hooks/use-mobile"
 import { cn } from "@/lib/utils"
@@ -50,7 +50,7 @@ export function CreateMenu() {
         aria-label="Create new"
         aria-expanded={isOpen}
       >
-        <Plus className="h-6 w-6" />
+        <PlusIcon className="h-6 w-6" />
         <span className="sr-only">Create new</span>
       </Button>
 
