@@ -25,7 +25,8 @@ const unlockTypeGradients: Record<string, string> = {
   any_purchase: "from-blue-500/20 to-cyan-500/20",
   sequential: "from-purple-500/20 to-pink-500/20",
   threshold: "from-orange-500/20 to-red-500/20",
-  custom: "from-gray-500/20 to-slate-500/20",
+  time_based: "from-green-500/20 to-emerald-500/20",
+  vip: "from-orange-500/20 to-red-500/20",
 }
 
 export function SeriesCard({

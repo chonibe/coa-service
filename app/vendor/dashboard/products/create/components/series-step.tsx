@@ -155,8 +155,6 @@ export function SeriesStep({ formData, setFormData }: SeriesStepProps) {
         // Ensure it has either unlock_at or unlock_schedule
       } else if (newSeriesUnlockType === "vip") {
         // VIP config is already set via VIPUnlockConfig component
-      } else if (newSeriesUnlockType === "custom") {
-        unlockConfig.rules = unlockConfig.rules || []
       }
 
       const response = await fetch("/api/vendor/series", {

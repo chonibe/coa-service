@@ -327,7 +327,6 @@ function validateUnlockConfig(unlockType: UnlockType, config: any): string | nul
       }
       break
     case "any_purchase":
-    case "custom":
       // No specific validation required
       break
     default:
