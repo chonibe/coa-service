@@ -368,8 +368,18 @@ export function SeriesStep({ formData, setFormData }: SeriesStepProps) {
           <CardContent className="pt-6 space-y-4">
               <Alert>
                 <Info className="h-4 w-4" />
-                <AlertDescription>
-                This artwork is part of the "{selectedSeries?.name || formData.series_name}" series.
+                <AlertDescription className="space-y-2">
+                  <div>
+                    This artwork is part of the <strong>"{selectedSeries?.name || formData.series_name}"</strong> series.
+                  </div>
+                  {selectedSeries?.unlock_type && (
+                    <div className="flex items-center gap-2 mt-2">
+                      <div className={`inline-flex items-center gap-1.5 px-2 py-1 rounded-md border text-xs font-medium ${getUnlockTypeColor(selectedSeries.unlock_type)}`}>
+                        {getUnlockTypeIcon(selectedSeries.unlock_type)}
+                        {getUnlockTypeLabel(selectedSeries.unlock_type)}
+                      </div>
+                    </div>
+                  )}
                 </AlertDescription>
               </Alert>
 
