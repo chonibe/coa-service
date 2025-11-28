@@ -5,7 +5,6 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Eye, Copy, Trash2 } from "lucide-react"
-import { UnlockProgress } from "./UnlockProgress"
 import { UnlockTypeTooltip } from "./UnlockTypeTooltip"
 import type { ArtworkSeries } from "@/types/artwork-series"
 import { cn } from "@/lib/utils"
@@ -136,14 +135,12 @@ export function SeriesCard({
             </div>
           </div>
 
-          {/* Progress indicator */}
+          {/* Artwork count */}
           {totalCount > 0 && (
             <div className="p-3 border-t">
-              <UnlockProgress
-                unlocked={totalCount}
-                total={totalCount}
-                showLabels={false}
-              />
+              <div className="text-xs text-muted-foreground text-center">
+                {totalCount} {totalCount === 1 ? "artwork" : "artworks"}
+              </div>
             </div>
           )}
         </motion.div>
