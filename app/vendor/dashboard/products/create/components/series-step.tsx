@@ -22,7 +22,7 @@ interface SeriesStepProps {
   setFormData: (data: ProductSubmissionData) => void
 }
 
-type Step = "cover" | "name" | "description" | "unlock" | "config"
+type Step = "cover" | "name" | "description" | "unlock" | "config" | "time_config" | "vip_config"
 
 export function SeriesStep({ formData, setFormData }: SeriesStepProps) {
   const [availableSeries, setAvailableSeries] = useState<Array<{ id: string; name: string; member_count: number }>>([])
@@ -252,9 +252,15 @@ export function SeriesStep({ formData, setFormData }: SeriesStepProps) {
     } else if (currentStep === "unlock") {
       if (newSeriesUnlockType === "threshold") {
         setCurrentStep("config")
+      } else if (newSeriesUnlockType === "time_based") {
+        setCurrentStep("time_config")
+      } else if (newSeriesUnlockType === "vip") {
+        setCurrentStep("vip_config")
       } else {
         handleCreateSeries()
       }
+    } else if (currentStep === "config" || currentStep === "time_config" || currentStep === "vip_config") {
+      handleCreateSeries()
     }
   }
 
@@ -265,7 +271,7 @@ export function SeriesStep({ formData, setFormData }: SeriesStepProps) {
       setCurrentStep("name")
     } else if (currentStep === "unlock") {
       setCurrentStep("description")
-    } else if (currentStep === "config") {
+    } else if (currentStep === "config" || currentStep === "time_config" || currentStep === "vip_config") {
       setCurrentStep("unlock")
     }
   }
@@ -285,7 +291,10 @@ export function SeriesStep({ formData, setFormData }: SeriesStepProps) {
   }
 
   const getTotalSteps = () => {
-    return newSeriesUnlockType === "threshold" ? 5 : 4
+    if (newSeriesUnlockType === "threshold" || newSeriesUnlockType === "time_based" || newSeriesUnlockType === "vip") {
+      return 5
+    }
+    return 4
   }
 
   const selectedSeries = availableSeries.find((s) => s.id === formData.series_id)
@@ -418,6 +427,9 @@ export function SeriesStep({ formData, setFormData }: SeriesStepProps) {
               stepLabels={["Cover Art", "Name", "Description", "Unlock Type", newSeriesUnlockType === "threshold" ? "Config" : undefined].filter(Boolean) as string[]}
             />
 
+            {/* Show UnlockGuide on first unlock step */}
+            {currentStep === "unlock" && <UnlockGuide />}
+
             <AnimatePresence mode="wait">
               {currentStep === "cover" && (
                 <motion.div
@@ -504,10 +516,14 @@ export function SeriesStep({ formData, setFormData }: SeriesStepProps) {
                   exit={{ opacity: 0, x: -20 }}
                   className="space-y-4"
                 >
+                  <UnlockGuide />
                   <div>
                     <Label className="text-base font-semibold mb-4 block">Unlock Type</Label>
-                    <p className="text-sm text-muted-foreground mb-6">
-                      Choose how artworks in this series will be unlocked for collectors.
+                    <p className="text-sm text-muted-foreground mb-2">
+                      Unlockable series turn art into a journey, and journeys create loyalty, repeat purchases, and cultural value.
+                    </p>
+                    <p className="text-xs text-muted-foreground mb-6">
+                      Choose how artworks in this series will be unlocked. Collectors instantly recognize these patterns from games, drops, loyalty programs, and Patreon tiers.
                     </p>
                     <UnlockTypeCards
                       value={newSeriesUnlockType}
@@ -547,6 +563,37 @@ export function SeriesStep({ formData, setFormData }: SeriesStepProps) {
                   </div>
                 </motion.div>
               )}
+
+              {currentStep === "time_config" && (
+                <motion.div
+                  key="time_config"
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -20 }}
+                  className="space-y-4"
+                >
+                  <TimeBasedUnlockConfig
+                    value={newSeriesUnlockConfig}
+                    onChange={setNewSeriesUnlockConfig}
+                  />
+                </motion.div>
+              )}
+
+              {currentStep === "vip_config" && (
+                <motion.div
+                  key="vip_config"
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -20 }}
+                  className="space-y-4"
+                >
+                  <VIPUnlockConfig
+                    value={newSeriesUnlockConfig}
+                    onChange={setNewSeriesUnlockConfig}
+                    seriesMembers={[]}
+                  />
+                </motion.div>
+              )}
             </AnimatePresence>
 
             <div className="flex items-center justify-between mt-8 pt-6 border-t">
@@ -561,7 +608,15 @@ export function SeriesStep({ formData, setFormData }: SeriesStepProps) {
               </Button>
               <Button
                 type="button"
-                onClick={currentStep === "config" || (currentStep === "unlock" && newSeriesUnlockType !== "threshold") ? handleCreateSeries : handleNext}
+                onClick={
+                  currentStep === "config" ||
+                  currentStep === "time_config" ||
+                  currentStep === "vip_config" ||
+                  (currentStep === "unlock" &&
+                    !["threshold", "time_based", "vip"].includes(newSeriesUnlockType))
+                    ? handleCreateSeries
+                    : handleNext
+                }
                 disabled={!canProceed() || creatingSeries}
               >
                 {creatingSeries ? (
@@ -569,7 +624,11 @@ export function SeriesStep({ formData, setFormData }: SeriesStepProps) {
                     <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                     Creating...
                   </>
-                ) : currentStep === "config" || (currentStep === "unlock" && newSeriesUnlockType !== "threshold") ? (
+                ) : currentStep === "config" ||
+                  currentStep === "time_config" ||
+                  currentStep === "vip_config" ||
+                  (currentStep === "unlock" &&
+                    !["threshold", "time_based", "vip"].includes(newSeriesUnlockType)) ? (
                   <>
                     <Check className="h-4 w-4 mr-2" />
                     Create Series

@@ -1,7 +1,7 @@
 "use client"
 
 import { motion } from "framer-motion"
-import { Check, Lock, ArrowRight, Target, Settings } from "lucide-react"
+import { Check, Lock, ArrowRight, Crown, Clock, Settings } from "lucide-react"
 import type { UnlockType } from "@/types/artwork-series"
 import { cn } from "@/lib/utils"
 
@@ -14,28 +14,35 @@ const unlockTypes = [
   {
     value: "any_purchase" as UnlockType,
     label: "Any Purchase",
-    description: "Unlock all artworks when any piece is purchased",
+    description: "Open collections where collectors can access everything right away",
     icon: Lock,
     color: "from-blue-500 to-cyan-500",
   },
   {
     value: "sequential" as UnlockType,
-    label: "Sequential",
-    description: "Unlock artworks one by one in order",
-    icon: ArrowRight,
+    label: "Finish the Set",
+    description: "Satisfy the collector instinct to complete the series. Each purchase naturally leads to the next.",
+    icon: Check,
     color: "from-purple-500 to-pink-500",
   },
   {
     value: "threshold" as UnlockType,
-    label: "Threshold",
-    description: "Unlock after purchasing a set number of artworks",
-    icon: Target,
+    label: "VIP Unlocks",
+    description: "Reward loyalty and make owning earlier pieces matter. Build a hierarchy that keeps collectors inside the ecosystem.",
+    icon: Crown,
     color: "from-orange-500 to-red-500",
+  },
+  {
+    value: "time_based" as UnlockType,
+    label: "Time-Based",
+    description: "Create anticipation and daily return behavior. More attention over more days.",
+    icon: Clock,
+    color: "from-green-500 to-emerald-500",
   },
   {
     value: "custom" as UnlockType,
     label: "Custom",
-    description: "Define your own unlock rules",
+    description: "Define your own unlock rules including time-based schedules and complex mechanics",
     icon: Settings,
     color: "from-gray-500 to-slate-500",
   },
@@ -44,7 +51,7 @@ const unlockTypes = [
 export function UnlockTypeCards({ value, onChange }: UnlockTypeCardsProps) {
   return (
     <div className="grid grid-cols-2 gap-4">
-      {unlockTypes.map((type) => {
+      {availableTypes.map((type) => {
         const Icon = type.icon
         const isSelected = value === type.value
         

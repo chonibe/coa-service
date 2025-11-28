@@ -1,11 +1,22 @@
 // Type definitions for artwork series and unlock system
 
-export type UnlockType = 'any_purchase' | 'sequential' | 'threshold' | 'custom'
+export type UnlockType = 'any_purchase' | 'sequential' | 'threshold' | 'time_based' | 'vip' | 'custom'
 
 export interface UnlockConfig {
   order?: string[] // For sequential - array of submission/product IDs in unlock order
   required_count?: number // For threshold - number of artworks needed to unlock
   unlocks?: string[] // Artwork IDs that get unlocked when threshold is met
+  unlock_at?: string // ISO timestamp for one-time time-based unlock
+  unlock_schedule?: {
+    type: 'daily' | 'weekly' | 'custom'
+    time: string // HH:MM format
+    timezone?: string
+    start_date?: string
+    end_date?: string
+  }
+  requires_ownership?: string[] // Artwork IDs that must be owned for VIP unlocks
+  vip_tier?: number // Minimum tier level required
+  loyalty_points_required?: number
   rules?: any[] // For custom logic
 }
 

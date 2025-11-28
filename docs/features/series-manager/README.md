@@ -101,25 +101,66 @@ The Series Manager is an Instagram-style, visual-first interface for creating an
 
 ## Unlock Types
 
+### Why Unlocks Exist
+
+Unlockable series turn art into a journey, and journeys create loyalty, repeat purchases, and cultural value. We let artists upload their work and define how their drop unlocks because it turns Street Collector into a creator-led collectible system, not a storefront.
+
+Unlockable series make art behave like progression, and progression is the strongest driver of repeat engagement.
+
 ### 1. Any Purchase
-- **Description**: All artworks unlock immediately when any piece is purchased
-- **Use Case**: Open collections where collectors can access everything right away
+- **Label**: Any Purchase
+- **Description**: Open collections where collectors can access everything right away
+- **Use Case**: Starter series, accessible entry points
 - **Config**: Empty config object
 
-### 2. Sequential
-- **Description**: Artworks unlock one by one in order
-- **Use Case**: Creates a journey of discovery
+### 2. Finish the Set (Sequential)
+- **Label**: Finish the Set
+- **Description**: Satisfy the collector instinct to complete the series. Each purchase naturally leads to the next.
+- **Use Case**: Series where you want collectors to experience the full journey in order
 - **Config**: `{ order: [artwork_ids...] }`
+- **Why it works**: Like collecting trading cards or completing game achievements
 
-### 3. Threshold
-- **Description**: After purchasing a set number, exclusive pieces unlock
-- **Use Case**: Encourages building collections to reach milestones
-- **Config**: `{ required_count: number, unlocks: [artwork_ids...] }`
+### 3. VIP Unlocks (Threshold)
+- **Label**: VIP Unlocks
+- **Description**: Reward loyalty and make owning earlier pieces matter. Build a hierarchy that keeps collectors inside the ecosystem.
+- **Use Case**: Rewarding early supporters, creating exclusive tiers, building collector loyalty
+- **Config**: `{ required_count: number, unlocks: [artwork_ids...] }` or VIP config
+- **Why it works**: Like Patreon tiers or loyalty programs
 
-### 4. Custom
-- **Description**: Define custom unlock rules
-- **Use Case**: Special events, time-based unlocks, complex mechanics
+### 4. Time-Based Unlocks
+- **Label**: Time-Based
+- **Description**: Create anticipation and daily return behavior. More attention over more days.
+- **Use Case**: Building daily engagement, creating anticipation for releases, scheduled drops
+- **Config**: `{ unlock_at: string }` or `{ unlock_schedule: {...} }`
+- **Why it works**: Like daily drops or scheduled releases
+
+### 5. Custom
+- **Label**: Custom
+- **Description**: Define your own unlock rules including time-based schedules and complex mechanics
+- **Use Case**: Special events, complex collection mechanics
 - **Config**: `{ rules: [...] }`
+
+## Why Collectors Get It Immediately
+
+These patterns already exist in their world:
+- Games
+- Drops
+- Loyalty programs
+- Patreon tiers
+
+They instantly recognize: "I unlock this by time / by owning / by completing."
+
+**No learning curve.**
+
+## Why It Matters
+
+1. **Scarcity appears automatically.** The structure creates demand — you don't need to manufacture hype.
+
+2. **Retention becomes self-reinforcing.** Collectors who start a series rarely stop midway.
+
+3. **Artists generate their own momentum.** You scale without micromanaging drops.
+
+4. **The platform becomes a world, not a shop.** Collectors follow artists the way people follow stories.
 
 ## User Flow
 

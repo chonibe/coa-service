@@ -149,9 +149,13 @@ export default function SeriesPage() {
       case "any_purchase":
         return "Any Purchase"
       case "sequential":
-        return "Sequential"
+        return "Finish the Set"
       case "threshold":
-        return "Threshold"
+        return "VIP Unlocks"
+      case "time_based":
+        return "Time-Based"
+      case "vip":
+        return "VIP"
       case "custom":
         return "Custom"
       default:
