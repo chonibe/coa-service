@@ -403,6 +403,18 @@ export default function ProductsPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Fixed bottom button for mobile - above mini menu */}
+      <div className="fixed bottom-24 left-0 right-0 z-50 md:hidden px-4 pb-2">
+        <Button
+          onClick={() => router.push("/vendor/dashboard/products/create")}
+          className="w-full shadow-lg h-12"
+          size="lg"
+        >
+          <Plus className="h-5 w-5 mr-2" />
+          Upload New Artwork
+        </Button>
+      </div>
     </div>
   )
 }
