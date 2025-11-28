@@ -28,6 +28,7 @@ interface ArtworkCarouselProps {
   onReorder?: (newOrder: string[]) => void
   editable?: boolean
   seriesId?: string
+  unlockType?: string
 }
 
 function SortableArtworkItem({
@@ -128,7 +129,7 @@ function SortableArtworkItem({
   )
 }
 
-export function ArtworkCarousel({ members, onReorder, editable = false, seriesId }: ArtworkCarouselProps) {
+export function ArtworkCarousel({ members, onReorder, editable = false, seriesId, unlockType }: ArtworkCarouselProps) {
   const [items, setItems] = useState<SeriesMember[]>(members)
   const [isReordering, setIsReordering] = useState(false)
 

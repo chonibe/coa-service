@@ -350,12 +350,12 @@ export function SeriesStep({ formData, setFormData }: SeriesStepProps) {
       {!showCreateForm ? (
         <div className="space-y-4">
           <Label>Select Series</Label>
-          {loadingSeries ? (
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <Loader2 className="h-4 w-4 animate-spin" />
-              Loading series...
-            </div>
-          ) : (
+        {loadingSeries ? (
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <Loader2 className="h-4 w-4 animate-spin" />
+            Loading series...
+          </div>
+        ) : (
             <div className="grid grid-cols-2 gap-4">
               {availableSeries.map((series) => (
                 <Card
@@ -380,9 +380,9 @@ export function SeriesStep({ formData, setFormData }: SeriesStepProps) {
                   <p className="text-sm font-medium">Create New Series</p>
                 </CardContent>
               </Card>
-            </div>
-          )}
-        </div>
+                </div>
+        )}
+      </div>
       ) : (
         <Card>
           <CardContent className="pt-6">
@@ -448,20 +448,20 @@ export function SeriesStep({ formData, setFormData }: SeriesStepProps) {
                 >
                   <div>
                     <Label htmlFor="series-name" className="text-base font-semibold mb-4 block">
-                      Series Name <span className="text-red-500">*</span>
-                    </Label>
-                    <Input
+                Series Name <span className="text-red-500">*</span>
+              </Label>
+              <Input
                       id="series-name"
-                      value={newSeriesName}
-                      onChange={(e) => setNewSeriesName(e.target.value)}
-                      placeholder="Enter series name"
+                value={newSeriesName}
+                onChange={(e) => setNewSeriesName(e.target.value)}
+                placeholder="Enter series name"
                       className="text-lg h-12"
                       maxLength={100}
-                    />
+              />
                     <p className="text-xs text-muted-foreground mt-2">
                       {newSeriesName.length}/100 characters
                     </p>
-                  </div>
+            </div>
                 </motion.div>
               )}
 
@@ -477,18 +477,18 @@ export function SeriesStep({ formData, setFormData }: SeriesStepProps) {
                     <Label htmlFor="series-description" className="text-base font-semibold mb-4 block">
                       Description <span className="text-muted-foreground text-sm font-normal">(Optional)</span>
                     </Label>
-                    <Textarea
+              <Textarea
                       id="series-description"
-                      value={newSeriesDescription}
-                      onChange={(e) => setNewSeriesDescription(e.target.value)}
+                value={newSeriesDescription}
+                onChange={(e) => setNewSeriesDescription(e.target.value)}
                       placeholder="Tell collectors about this series..."
                       rows={6}
                       maxLength={500}
-                    />
+              />
                     <p className="text-xs text-muted-foreground mt-2">
                       {newSeriesDescription.length}/500 characters
                     </p>
-                  </div>
+            </div>
                 </motion.div>
               )}
 
@@ -503,10 +503,10 @@ export function SeriesStep({ formData, setFormData }: SeriesStepProps) {
                   <div>
                     <Label className="text-base font-semibold mb-4 block">How do artworks unlock?</Label>
                     <UnlockTypeCards
-                      value={newSeriesUnlockType}
+                value={newSeriesUnlockType}
                       onChange={setNewSeriesUnlockType}
                     />
-                  </div>
+            </div>
                 </motion.div>
               )}
 
@@ -522,24 +522,24 @@ export function SeriesStep({ formData, setFormData }: SeriesStepProps) {
                     <Label htmlFor="required-count" className="text-base font-semibold mb-4 block">
                       Required Purchases
                     </Label>
-                    <Input
-                      id="required-count"
-                      type="number"
-                      min="1"
-                      value={newSeriesRequiredCount}
-                      onChange={(e) => {
-                        const count = parseInt(e.target.value, 10) || 1
-                        setNewSeriesRequiredCount(count)
-                        setNewSeriesUnlockConfig({ required_count: count, unlocks: [] })
-                      }}
+                <Input
+                  id="required-count"
+                  type="number"
+                  min="1"
+                  value={newSeriesRequiredCount}
+                  onChange={(e) => {
+                    const count = parseInt(e.target.value, 10) || 1
+                    setNewSeriesRequiredCount(count)
+                    setNewSeriesUnlockConfig({ required_count: count, unlocks: [] })
+                  }}
                       className="text-lg h-12"
-                    />
+                />
                     <p className="text-xs text-muted-foreground mt-2">
-                      Number of artworks collectors must purchase to unlock exclusive pieces.
-                    </p>
-                  </div>
+                  Number of artworks collectors must purchase to unlock exclusive pieces.
+                </p>
+              </div>
                 </motion.div>
-              )}
+            )}
 
               {currentStep === "time_config" && (
                 <motion.div

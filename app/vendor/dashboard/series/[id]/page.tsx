@@ -202,10 +202,10 @@ export default function SeriesDetailPage() {
               <Copy className="h-4 w-4 mr-2" />
               Duplicate
             </Button>
-            <Button variant="outline" onClick={() => setIsEditing(true)}>
-              <Edit className="h-4 w-4 mr-2" />
-              Edit Series
-            </Button>
+          <Button variant="outline" onClick={() => setIsEditing(true)}>
+            <Edit className="h-4 w-4 mr-2" />
+            Edit Series
+          </Button>
             <Button
               variant="destructive"
               onClick={() => setDeleteDialogOpen(true)}
@@ -257,49 +257,49 @@ export default function SeriesDetailPage() {
         {/* Series Info */}
         <div className="space-y-6">
           {isEditing ? (
-            <Card>
-              <CardHeader>
-                <div className="flex items-center justify-between">
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between">
                   <CardTitle>Edit Series</CardTitle>
-                  <div className="flex gap-2">
-                    <Button variant="outline" size="sm" onClick={handleCancelEdit} disabled={saving}>
-                      <X className="h-4 w-4 mr-2" />
-                      Cancel
-                    </Button>
-                    <Button size="sm" onClick={handleSave} disabled={saving}>
-                      {saving ? (
-                        <>
-                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                          Saving...
-                        </>
-                      ) : (
-                        <>
-                          <Save className="h-4 w-4 mr-2" />
-                          Save
-                        </>
-                      )}
-                    </Button>
-                  </div>
-                </div>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="edit-name">Series Name</Label>
-                  <Input
-                    id="edit-name"
-                    value={editName}
-                    onChange={(e) => setEditName(e.target.value)}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="edit-description">Description</Label>
-                  <Textarea
-                    id="edit-description"
-                    value={editDescription}
-                    onChange={(e) => setEditDescription(e.target.value)}
+              <div className="flex gap-2">
+                <Button variant="outline" size="sm" onClick={handleCancelEdit} disabled={saving}>
+                  <X className="h-4 w-4 mr-2" />
+                  Cancel
+                </Button>
+                <Button size="sm" onClick={handleSave} disabled={saving}>
+                  {saving ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      Saving...
+                    </>
+                  ) : (
+                    <>
+                      <Save className="h-4 w-4 mr-2" />
+                      Save
+                    </>
+                  )}
+                </Button>
+              </div>
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="edit-name">Series Name</Label>
+                <Input
+                  id="edit-name"
+                  value={editName}
+                  onChange={(e) => setEditName(e.target.value)}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="edit-description">Description</Label>
+                <Textarea
+                  id="edit-description"
+                  value={editDescription}
+                  onChange={(e) => setEditDescription(e.target.value)}
                     rows={4}
-                  />
-                </div>
+                />
+              </div>
               </CardContent>
             </Card>
           ) : (
@@ -327,13 +327,13 @@ export default function SeriesDetailPage() {
                         <Clock className="h-5 w-5" />
                       </div>
                     )}
-                    <div>
+              <div>
                       <h1 className="text-3xl font-bold">{series.name}</h1>
                       <p className="text-muted-foreground text-sm mt-1">{series.vendor_name}</p>
                     </div>
                   </div>
                   
-                  {series.description && (
+                {series.description && (
                     <p className="text-base leading-relaxed mt-3">{series.description}</p>
                   )}
 
@@ -355,17 +355,119 @@ export default function SeriesDetailPage() {
                       {getUnlockTypeLabel(series.unlock_type)}
                     </Badge>
                     <UnlockTypeTooltip unlockType={series.unlock_type} />
-                    <Badge variant="outline">
+                <Badge variant="outline">
                       {totalCount} {totalCount === 1 ? "artwork" : "artworks"}
-                    </Badge>
-                  </div>
+                </Badge>
+              </div>
 
-                  {/* Unlock Progress - only show for sequential unlocks */}
-                  {totalCount > 0 && series.unlock_type === "sequential" && (
-                    <div className="mt-4">
-                      <UnlockProgress unlocked={unlockedCount} total={totalCount} />
-                    </div>
-                  )}
+                  {/* Type-specific information displays */}
+                  <div className="mt-4 space-y-3">
+                    {/* Sequential: Show progress */}
+                    {series.unlock_type === "sequential" && totalCount > 0 && (
+                      <div className="p-4 rounded-lg bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800">
+                        <div className="flex items-center gap-2 mb-2">
+                          <ArrowRight className="h-4 w-4 text-purple-600 dark:text-purple-400" />
+                          <span className="text-sm font-semibold text-purple-900 dark:text-purple-100">
+                            Sequential Unlock Progress
+                          </span>
+                        </div>
+                        <UnlockProgress unlocked={unlockedCount} total={totalCount} />
+                        <p className="text-xs text-purple-700 dark:text-purple-300 mt-2">
+                          Artworks unlock in order: {unlockedCount} of {totalCount} available
+                        </p>
+                      </div>
+                    )}
+
+                    {/* Threshold: Show requirements */}
+                    {series.unlock_type === "threshold" && (
+                      <div className="p-4 rounded-lg bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800">
+                        <div className="flex items-center gap-2 mb-2">
+                          <Crown className="h-4 w-4 text-orange-600 dark:text-orange-400" />
+                          <span className="text-sm font-semibold text-orange-900 dark:text-orange-100">
+                            VIP Unlock Requirements
+                          </span>
+                        </div>
+                        <p className="text-sm text-orange-800 dark:text-orange-200">
+                          Collectors need to purchase <strong>{series.unlock_config?.required_count || 0}</strong> artwork{series.unlock_config?.required_count !== 1 ? 's' : ''} to unlock exclusive pieces
+                        </p>
+                        {series.unlock_config?.unlocks && series.unlock_config.unlocks.length > 0 && (
+                          <p className="text-xs text-orange-700 dark:text-orange-300 mt-1">
+                            {series.unlock_config.unlocks.length} exclusive artwork{series.unlock_config.unlocks.length !== 1 ? 's' : ''} will unlock
+                          </p>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Time-based: Show countdown */}
+                    {series.unlock_type === "time_based" && (
+                      <div className="p-4 rounded-lg bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800">
+                        <div className="flex items-center gap-2 mb-2">
+                          <Clock className="h-4 w-4 text-green-600 dark:text-green-400" />
+                          <span className="text-sm font-semibold text-green-900 dark:text-green-100">
+                            Time-Based Unlock Schedule
+                          </span>
+                        </div>
+                        <UnlockCountdown
+                          unlockAt={series.unlock_config?.unlock_at}
+                          unlockSchedule={series.unlock_config?.unlock_schedule}
+                        />
+                        {series.unlock_config?.unlock_at && (
+                          <p className="text-xs text-green-700 dark:text-green-300 mt-2">
+                            Unlocks at: {new Date(series.unlock_config.unlock_at).toLocaleString()}
+                          </p>
+                        )}
+                        {series.unlock_config?.unlock_schedule && (
+                          <p className="text-xs text-green-700 dark:text-green-300 mt-2">
+                            Schedule: {series.unlock_config.unlock_schedule.type} at {series.unlock_config.unlock_schedule.time}
+                          </p>
+                        )}
+                      </div>
+                    )}
+
+                    {/* VIP: Show requirements */}
+                    {series.unlock_type === "vip" && (
+                      <div className="p-4 rounded-lg bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800">
+                        <div className="flex items-center gap-2 mb-2">
+                          <Crown className="h-4 w-4 text-orange-600 dark:text-orange-400" />
+                          <span className="text-sm font-semibold text-orange-900 dark:text-orange-100">
+                            VIP Unlock Requirements
+                          </span>
+                        </div>
+                        <div className="space-y-1 text-sm text-orange-800 dark:text-orange-200">
+                          {series.unlock_config?.requires_ownership && series.unlock_config.requires_ownership.length > 0 && (
+                            <p>
+                              Must own <strong>{series.unlock_config.requires_ownership.length}</strong> specific artwork{series.unlock_config.requires_ownership.length !== 1 ? 's' : ''}
+                            </p>
+                          )}
+                          {series.unlock_config?.vip_tier !== undefined && (
+                            <p>
+                              Requires VIP Tier <strong>{series.unlock_config.vip_tier}</strong> or higher
+                            </p>
+                          )}
+                          {series.unlock_config?.loyalty_points_required !== undefined && (
+                            <p>
+                              Requires <strong>{series.unlock_config.loyalty_points_required}</strong> loyalty points
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Any Purchase: Show open status */}
+                    {series.unlock_type === "any_purchase" && (
+                      <div className="p-4 rounded-lg bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800">
+                        <div className="flex items-center gap-2">
+                          <Lock className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                          <span className="text-sm font-semibold text-blue-900 dark:text-blue-100">
+                            Open Collection
+                          </span>
+                        </div>
+                        <p className="text-xs text-blue-700 dark:text-blue-300 mt-2">
+                          All artworks are immediately available for purchase. No unlocking required.
+                        </p>
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
             </div>
@@ -399,7 +501,7 @@ export default function SeriesDetailPage() {
               <div className="flex items-center justify-between mb-3">
                 <h3 className="text-sm font-medium text-muted-foreground">Artworks</h3>
                 <span className="text-xs text-muted-foreground">Drag to reorder</span>
-              </div>
+                      </div>
               <ArtworkCarousel members={members} editable={true} seriesId={seriesId} />
             </div>
           )}
