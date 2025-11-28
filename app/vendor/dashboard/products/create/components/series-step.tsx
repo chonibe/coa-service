@@ -67,6 +67,7 @@ export function SeriesStep({ formData, setFormData }: SeriesStepProps) {
                   id: seriesData.series.id,
                   name: seriesData.series.name,
                   member_count: seriesData.series.member_count || 0,
+                  unlock_type: seriesData.series.unlock_type,
                 })
               }
             } catch (error) {
@@ -299,6 +300,55 @@ export function SeriesStep({ formData, setFormData }: SeriesStepProps) {
       return 5
     }
     return 4
+  }
+
+  const getUnlockTypeLabel = (type?: string) => {
+    switch (type) {
+      case "any_purchase":
+        return "Open Collection"
+      case "sequential":
+        return "Finish the Set"
+      case "threshold":
+        return "VIP Unlocks"
+      case "time_based":
+        return "Time-Based"
+      case "vip":
+        return "VIP"
+      default:
+        return type || "Unknown"
+    }
+  }
+
+  const getUnlockTypeIcon = (type?: string) => {
+    switch (type) {
+      case "any_purchase":
+        return <Lock className="h-3 w-3" />
+      case "sequential":
+        return <ArrowRight className="h-3 w-3" />
+      case "threshold":
+      case "vip":
+        return <Crown className="h-3 w-3" />
+      case "time_based":
+        return <Clock className="h-3 w-3" />
+      default:
+        return null
+    }
+  }
+
+  const getUnlockTypeColor = (type?: string) => {
+    switch (type) {
+      case "any_purchase":
+        return "border-blue-400 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300"
+      case "sequential":
+        return "border-purple-400 bg-purple-50 dark:bg-purple-900/20 text-purple-700 dark:text-purple-300"
+      case "threshold":
+      case "vip":
+        return "border-orange-400 bg-orange-50 dark:bg-orange-900/20 text-orange-700 dark:text-orange-300"
+      case "time_based":
+        return "border-green-400 bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-300"
+      default:
+        return "border-gray-400 bg-gray-50 dark:bg-gray-900/20 text-gray-700 dark:text-gray-300"
+    }
   }
 
   const selectedSeries = availableSeries.find((s) => s.id === formData.series_id)
