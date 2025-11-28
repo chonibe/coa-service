@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Switch } from "@/components/ui/switch"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { Loader2, Lock, Plus, Info, X, ArrowRight, ArrowLeft, Check } from "lucide-react"
+import { Loader2, Lock, Plus, Info, X, ArrowRight, ArrowLeft, Check, Crown, Clock } from "lucide-react"
 import { motion, AnimatePresence } from "framer-motion"
 import type { ProductSubmissionData } from "@/types/product-submission"
 import type { UnlockType } from "@/types/artwork-series"
@@ -28,7 +28,7 @@ interface SeriesStepProps {
 type Step = "cover" | "name" | "description" | "unlock" | "config" | "time_config" | "vip_config"
 
 export function SeriesStep({ formData, setFormData }: SeriesStepProps) {
-  const [availableSeries, setAvailableSeries] = useState<Array<{ id: string; name: string; member_count: number }>>([])
+  const [availableSeries, setAvailableSeries] = useState<Array<{ id: string; name: string; member_count: number; unlock_type?: string }>>([])
   const [loadingSeries, setLoadingSeries] = useState(true)
   const [creatingSeries, setCreatingSeries] = useState(false)
   const [showCreateForm, setShowCreateForm] = useState(false)
@@ -365,11 +365,19 @@ export function SeriesStep({ formData, setFormData }: SeriesStepProps) {
                   className="cursor-pointer hover:border-primary transition-colors"
                   onClick={() => handleSeriesSelect(series.id)}
                 >
-                  <CardContent className="pt-6">
+                  <CardContent className="pt-6 space-y-2">
                     <h4 className="font-semibold">{series.name}</h4>
-                    <p className="text-sm text-muted-foreground">
-                      {series.member_count} {series.member_count === 1 ? "artwork" : "artworks"}
-                    </p>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <p className="text-sm text-muted-foreground">
+                        {series.member_count} {series.member_count === 1 ? "artwork" : "artworks"}
+                      </p>
+                      {series.unlock_type && (
+                        <div className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md border text-xs font-medium ${getUnlockTypeColor(series.unlock_type)}`}>
+                          {getUnlockTypeIcon(series.unlock_type)}
+                          {getUnlockTypeLabel(series.unlock_type)}
+                        </div>
+                      )}
+                    </div>
                   </CardContent>
                 </Card>
               ))}
