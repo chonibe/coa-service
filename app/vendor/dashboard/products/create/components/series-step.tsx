@@ -41,7 +41,6 @@ export function SeriesStep({ formData, setFormData }: SeriesStepProps) {
   const [newSeriesUnlockConfig, setNewSeriesUnlockConfig] = useState<any>({})
   const [newSeriesRequiredCount, setNewSeriesRequiredCount] = useState<number>(1)
   const [isLocked, setIsLocked] = useState(false)
-  const [unlockOrder, setUnlockOrder] = useState<number | null>(null)
 
   // Fetch available series
   useEffect(() => {
@@ -204,7 +203,7 @@ export function SeriesStep({ formData, setFormData }: SeriesStepProps) {
         series_id: createdSeriesId,
         series_name: data.series.name,
         is_locked: isLocked,
-        unlock_order: unlockOrder,
+        unlock_order: undefined,
       })
 
       const seriesResponse = await fetch("/api/vendor/series/available", {
@@ -225,7 +224,6 @@ export function SeriesStep({ formData, setFormData }: SeriesStepProps) {
       setShowCreateForm(false)
       setCurrentStep("cover")
       setIsLocked(false)
-      setUnlockOrder(null)
     } catch (error: any) {
       console.error("Error creating series:", error)
       alert(error.message || "Failed to create series")
@@ -322,24 +320,6 @@ export function SeriesStep({ formData, setFormData }: SeriesStepProps) {
                 This artwork is part of the "{selectedSeries?.name || formData.series_name}" series.
                 </AlertDescription>
               </Alert>
-
-            <div className="space-y-2">
-              <Label htmlFor="unlock-order">Unlock Order (Optional)</Label>
-              <Input
-                id="unlock-order"
-                type="number"
-                min="1"
-                value={formData.unlock_order || ""}
-                onChange={(e) => {
-                  const orderNum = e.target.value ? parseInt(e.target.value, 10) : null
-                  setFormData({ ...formData, unlock_order: orderNum })
-                }}
-                placeholder="e.g., 1, 2, 3..."
-              />
-              <p className="text-xs text-muted-foreground">
-                For sequential unlocks, specify the order in which this artwork should be unlocked.
-              </p>
-            </div>
 
             <Button
               variant="outline"
