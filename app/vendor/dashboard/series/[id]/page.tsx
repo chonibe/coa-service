@@ -427,27 +427,41 @@ export default function SeriesDetailPage() {
                     {/* VIP: Show requirements */}
                     {series.unlock_type === "vip" && (
                       <div className="p-4 rounded-lg bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800">
-                        <div className="flex items-center gap-2 mb-2">
+                        <div className="flex items-center gap-2 mb-3">
                           <Crown className="h-4 w-4 text-orange-600 dark:text-orange-400" />
                           <span className="text-sm font-semibold text-orange-900 dark:text-orange-100">
                             VIP Unlock Requirements
                           </span>
                         </div>
-                        <div className="space-y-1 text-sm text-orange-800 dark:text-orange-200">
-                          {series.unlock_config?.requires_ownership && series.unlock_config.requires_ownership.length > 0 && (
-                            <p>
-                              Must own <strong>{series.unlock_config.requires_ownership.length}</strong> specific artwork{series.unlock_config.requires_ownership.length !== 1 ? 's' : ''}
+                        <div className="space-y-2 text-sm text-orange-800 dark:text-orange-200">
+                          {series.unlock_config?.requires_ownership && series.unlock_config.requires_ownership.length > 0 ? (
+                            <div>
+                              <p className="font-medium mb-1">Required Artworks:</p>
+                              <p>
+                                Collectors must own <strong>{series.unlock_config.requires_ownership.length}</strong> specific artwork{series.unlock_config.requires_ownership.length !== 1 ? 's' : ''} to unlock VIP pieces in this series.
+                              </p>
+                              <p className="text-xs text-orange-700 dark:text-orange-300 mt-1">
+                                All other artworks in this series are VIP exclusives.
+                              </p>
+                            </div>
+                          ) : (
+                            <p className="text-xs text-orange-700 dark:text-orange-300">
+                              No specific artwork ownership required. Configure in series settings.
                             </p>
                           )}
-                          {series.unlock_config?.vip_tier !== undefined && (
-                            <p>
-                              Requires VIP Tier <strong>{series.unlock_config.vip_tier}</strong> or higher
-                            </p>
-                          )}
-                          {series.unlock_config?.loyalty_points_required !== undefined && (
-                            <p>
-                              Requires <strong>{series.unlock_config.loyalty_points_required}</strong> loyalty points
-                            </p>
+                          {(series.unlock_config?.vip_tier !== undefined || series.unlock_config?.loyalty_points_required !== undefined) && (
+                            <div className="pt-2 border-t border-orange-300 dark:border-orange-700">
+                              {series.unlock_config?.vip_tier !== undefined && (
+                                <p>
+                                  Requires VIP Tier <strong>{series.unlock_config.vip_tier}</strong> or higher
+                                </p>
+                              )}
+                              {series.unlock_config?.loyalty_points_required !== undefined && (
+                                <p>
+                                  Requires <strong>{series.unlock_config.loyalty_points_required}</strong> loyalty points
+                                </p>
+                              )}
+                            </div>
                           )}
                         </div>
                       </div>

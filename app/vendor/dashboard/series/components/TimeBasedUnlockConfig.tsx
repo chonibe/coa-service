@@ -1,12 +1,14 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
-import { Clock, Calendar } from "lucide-react"
+import { Clock, Calendar, CalendarDays, Repeat } from "lucide-react"
+import { motion } from "framer-motion"
+import { cn } from "@/lib/utils"
 import type { UnlockConfig } from "@/types/artwork-series"
 
 interface TimeBasedUnlockConfigProps {
@@ -18,11 +20,28 @@ export function TimeBasedUnlockConfig({ value, onChange }: TimeBasedUnlockConfig
   const [unlockType, setUnlockType] = useState<"one-time" | "recurring">(
     value.unlock_at ? "one-time" : value.unlock_schedule ? "recurring" : "one-time"
   )
+  const [previewDate, setPreviewDate] = useState<string>("")
+
+  useEffect(() => {
+    if (value.unlock_at) {
+      setPreviewDate(new Date(value.unlock_at).toLocaleString())
+    } else if (value.unlock_schedule) {
+      const now = new Date()
+      const [hours, minutes] = (value.unlock_schedule.time || "12:00").split(":").map(Number)
+      const nextUnlock = new Date(now)
+      nextUnlock.setHours(hours, minutes, 0, 0)
+      if (now >= nextUnlock) {
+        nextUnlock.setDate(nextUnlock.getDate() + 1)
+      }
+      setPreviewDate(`Next unlock: ${nextUnlock.toLocaleString()}`)
+    }
+  }, [value])
 
   const handleOneTimeChange = (dateTime: string) => {
+    const isoString = dateTime ? new Date(dateTime).toISOString() : ""
     onChange({
       ...value,
-      unlock_at: dateTime,
+      unlock_at: isoString,
       unlock_schedule: undefined,
     })
   }
@@ -36,134 +55,240 @@ export function TimeBasedUnlockConfig({ value, onChange }: TimeBasedUnlockConfig
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Clock className="h-5 w-5" />
-          Time-Based Unlock Configuration
-        </CardTitle>
-        <CardDescription>
-          Create anticipation and daily return behavior. More attention over more days.
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-6">
-        <div className="space-y-3">
-          <Label>Unlock Type</Label>
-          <RadioGroup
-            value={unlockType}
-            onValueChange={(val) => setUnlockType(val as "one-time" | "recurring")}
-          >
-            <div className="flex items-center space-x-2">
-              <RadioGroupItem value="one-time" id="one-time" />
-              <Label htmlFor="one-time" className="cursor-pointer">
-                One-Time Unlock
-              </Label>
+    <div className="space-y-6">
+      <div>
+        <h3 className="text-lg font-semibold mb-2 flex items-center gap-2">
+          <Clock className="h-5 w-5 text-green-600" />
+          Time-Based Unlock Schedule
+        </h3>
+        <p className="text-sm text-muted-foreground mb-4">
+          Artworks unlock at specific times. Create anticipation and daily return behavior.
+        </p>
+      </div>
+
+      <div className="grid grid-cols-2 gap-4 mb-6">
+        <motion.button
+          type="button"
+          onClick={() => setUnlockType("one-time")}
+          className={cn(
+            "p-4 rounded-lg border-2 transition-all text-left",
+            unlockType === "one-time"
+              ? "border-green-500 bg-green-50 dark:bg-green-900/20 shadow-md"
+              : "border-muted hover:border-green-300"
+          )}
+          whileHover={{ scale: 1.02 }}
+          whileTap={{ scale: 0.98 }}
+        >
+          <div className="flex items-center gap-3 mb-2">
+            <div className={cn(
+              "p-2 rounded-lg",
+              unlockType === "one-time" ? "bg-green-500 text-white" : "bg-muted"
+            )}>
+              <Calendar className="h-5 w-5" />
             </div>
-            <div className="flex items-center space-x-2">
-              <RadioGroupItem value="recurring" id="recurring" />
-              <Label htmlFor="recurring" className="cursor-pointer">
-                Recurring Schedule
-              </Label>
+            <div>
+              <h4 className="font-semibold">One-Time Unlock</h4>
+              <p className="text-xs text-muted-foreground">Unlock at a specific date & time</p>
             </div>
-          </RadioGroup>
-        </div>
+          </div>
+        </motion.button>
+
+        <motion.button
+          type="button"
+          onClick={() => setUnlockType("recurring")}
+          className={cn(
+            "p-4 rounded-lg border-2 transition-all text-left",
+            unlockType === "recurring"
+              ? "border-green-500 bg-green-50 dark:bg-green-900/20 shadow-md"
+              : "border-muted hover:border-green-300"
+          )}
+          whileHover={{ scale: 1.02 }}
+          whileTap={{ scale: 0.98 }}
+        >
+          <div className="flex items-center gap-3 mb-2">
+            <div className={cn(
+              "p-2 rounded-lg",
+              unlockType === "recurring" ? "bg-green-500 text-white" : "bg-muted"
+            )}>
+              <Repeat className="h-5 w-5" />
+            </div>
+            <div>
+              <h4 className="font-semibold">Recurring Schedule</h4>
+              <p className="text-xs text-muted-foreground">Unlock daily or weekly</p>
+            </div>
+          </div>
+        </motion.button>
+      </div>
 
         {unlockType === "one-time" ? (
-          <div className="space-y-3">
-            <Label htmlFor="unlock-at">Unlock Date & Time</Label>
-            <Input
-              id="unlock-at"
-              type="datetime-local"
-              value={
-                value.unlock_at
-                  ? new Date(value.unlock_at).toISOString().slice(0, 16)
-                  : ""
-              }
-              onChange={(e) => {
-                const dateTime = e.target.value
-                if (dateTime) {
-                  handleOneTimeChange(new Date(dateTime).toISOString())
+          <Card className="border-green-200 dark:border-green-800 bg-green-50/50 dark:bg-green-900/10">
+            <CardContent className="pt-6 space-y-4">
+              <div className="flex items-center gap-2 mb-4">
+                <CalendarDays className="h-5 w-5 text-green-600" />
+                <Label htmlFor="unlock-at" className="text-base font-semibold">Select Date & Time</Label>
+              </div>
+              <Input
+                id="unlock-at"
+                type="datetime-local"
+                value={
+                  value.unlock_at
+                    ? new Date(value.unlock_at).toISOString().slice(0, 16)
+                    : ""
                 }
-              }}
-            />
-            <p className="text-xs text-muted-foreground">
-              Artworks will unlock at this specific date and time.
-            </p>
-          </div>
+                onChange={(e) => {
+                  const dateTime = e.target.value
+                  if (dateTime) {
+                    handleOneTimeChange(dateTime)
+                  }
+                }}
+                className="text-lg h-12"
+              />
+              {value.unlock_at && (
+                <motion.div
+                  initial={{ opacity: 0, y: -5 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="p-3 rounded-lg bg-green-100 dark:bg-green-900/30 border border-green-300 dark:border-green-700"
+                >
+                  <p className="text-sm font-medium text-green-900 dark:text-green-100">
+                    📅 {new Date(value.unlock_at).toLocaleDateString('en-US', { 
+                      weekday: 'long', 
+                      year: 'numeric', 
+                      month: 'long', 
+                      day: 'numeric' 
+                    })}
+                  </p>
+                  <p className="text-sm text-green-700 dark:text-green-300 mt-1">
+                    🕐 {new Date(value.unlock_at).toLocaleTimeString('en-US', { 
+                      hour: 'numeric', 
+                      minute: '2-digit',
+                      hour12: true 
+                    })}
+                  </p>
+                </motion.div>
+              )}
+            </CardContent>
+          </Card>
         ) : (
-          <div className="space-y-4">
-            <div className="space-y-3">
-              <Label htmlFor="schedule-type">Schedule Type</Label>
-              <select
-                id="schedule-type"
-                className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-                value={value.unlock_schedule?.type || "daily"}
-                onChange={(e) => {
-                  handleRecurringChange({
-                    ...value.unlock_schedule,
-                    type: e.target.value,
-                    time: value.unlock_schedule?.time || "12:00",
-                  })
-                }}
-              >
-                <option value="daily">Daily</option>
-                <option value="weekly">Weekly</option>
-              </select>
-            </div>
+          <Card className="border-green-200 dark:border-green-800 bg-green-50/50 dark:bg-green-900/10">
+            <CardContent className="pt-6 space-y-4">
+              <div className="flex items-center gap-2 mb-4">
+                <Repeat className="h-5 w-5 text-green-600" />
+                <Label className="text-base font-semibold">Recurring Schedule</Label>
+              </div>
 
-            <div className="space-y-3">
-              <Label htmlFor="schedule-time">Time (HH:MM)</Label>
-              <Input
-                id="schedule-time"
-                type="time"
-                value={value.unlock_schedule?.time || "12:00"}
-                onChange={(e) => {
-                  handleRecurringChange({
+              <div className="grid grid-cols-2 gap-3 mb-4">
+                <motion.button
+                  type="button"
+                  onClick={() => handleRecurringChange({
                     ...value.unlock_schedule,
-                    time: e.target.value,
-                    type: value.unlock_schedule?.type || "daily",
-                  })
-                }}
-              />
-            </div>
-
-            <div className="space-y-3">
-              <Label htmlFor="start-date">Start Date (Optional)</Label>
-              <Input
-                id="start-date"
-                type="date"
-                value={value.unlock_schedule?.start_date || ""}
-                onChange={(e) => {
-                  handleRecurringChange({
-                    ...value.unlock_schedule,
-                    start_date: e.target.value || undefined,
-                    type: value.unlock_schedule?.type || "daily",
+                    type: "daily",
                     time: value.unlock_schedule?.time || "12:00",
-                  })
-                }}
-              />
-            </div>
+                  })}
+                  className={cn(
+                    "p-3 rounded-lg border-2 transition-all",
+                    value.unlock_schedule?.type === "daily"
+                      ? "border-green-500 bg-green-100 dark:bg-green-900/30"
+                      : "border-muted hover:border-green-300"
+                  )}
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                >
+                  <div className="text-center">
+                    <p className="font-semibold text-sm">Daily</p>
+                    <p className="text-xs text-muted-foreground">Every day</p>
+                  </div>
+                </motion.button>
 
-            <div className="space-y-3">
-              <Label htmlFor="end-date">End Date (Optional)</Label>
-              <Input
-                id="end-date"
-                type="date"
-                value={value.unlock_schedule?.end_date || ""}
-                onChange={(e) => {
-                  handleRecurringChange({
+                <motion.button
+                  type="button"
+                  onClick={() => handleRecurringChange({
                     ...value.unlock_schedule,
-                    end_date: e.target.value || undefined,
-                    type: value.unlock_schedule?.type || "daily",
+                    type: "weekly",
                     time: value.unlock_schedule?.time || "12:00",
-                  })
-                }}
-              />
-            </div>
-          </div>
+                  })}
+                  className={cn(
+                    "p-3 rounded-lg border-2 transition-all",
+                    value.unlock_schedule?.type === "weekly"
+                      ? "border-green-500 bg-green-100 dark:bg-green-900/30"
+                      : "border-muted hover:border-green-300"
+                  )}
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                >
+                  <div className="text-center">
+                    <p className="font-semibold text-sm">Weekly</p>
+                    <p className="text-xs text-muted-foreground">Once per week</p>
+                  </div>
+                </motion.button>
+              </div>
+
+              <div className="space-y-3">
+                <Label htmlFor="schedule-time" className="text-base font-semibold">Unlock Time</Label>
+                <Input
+                  id="schedule-time"
+                  type="time"
+                  value={value.unlock_schedule?.time || "12:00"}
+                  onChange={(e) => {
+                    handleRecurringChange({
+                      ...value.unlock_schedule,
+                      time: e.target.value,
+                      type: value.unlock_schedule?.type || "daily",
+                    })
+                  }}
+                  className="text-lg h-12"
+                />
+                {value.unlock_schedule?.time && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -5 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="p-3 rounded-lg bg-green-100 dark:bg-green-900/30 border border-green-300 dark:border-green-700"
+                  >
+                    <p className="text-sm font-medium text-green-900 dark:text-green-100">
+                      🕐 Unlocks {value.unlock_schedule.type === "daily" ? "daily" : "weekly"} at {new Date(`2000-01-01T${value.unlock_schedule.time}`).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })}
+                    </p>
+                  </motion.div>
+                )}
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="start-date" className="text-sm">Start Date (Optional)</Label>
+                  <Input
+                    id="start-date"
+                    type="date"
+                    value={value.unlock_schedule?.start_date || ""}
+                    onChange={(e) => {
+                      handleRecurringChange({
+                        ...value.unlock_schedule,
+                        start_date: e.target.value || undefined,
+                        type: value.unlock_schedule?.type || "daily",
+                        time: value.unlock_schedule?.time || "12:00",
+                      })
+                    }}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="end-date" className="text-sm">End Date (Optional)</Label>
+                  <Input
+                    id="end-date"
+                    type="date"
+                    value={value.unlock_schedule?.end_date || ""}
+                    onChange={(e) => {
+                      handleRecurringChange({
+                        ...value.unlock_schedule,
+                        end_date: e.target.value || undefined,
+                        type: value.unlock_schedule?.type || "daily",
+                        time: value.unlock_schedule?.time || "12:00",
+                      })
+                    }}
+                  />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
         )}
-      </CardContent>
-    </Card>
+    </div>
   )
 }
 

@@ -29,7 +29,7 @@ export async function GET(request: NextRequest) {
     // Fetch active series for dropdown
     const { data: series, error: seriesError } = await supabase
       .from("artwork_series")
-      .select("id, name")
+      .select("id, name, unlock_type")
       .eq("vendor_id", vendor.id)
       .eq("is_active", true)
       .order("name", { ascending: true })
@@ -51,6 +51,7 @@ export async function GET(request: NextRequest) {
           id: s.id,
           name: s.name,
           member_count: count || 0,
+          unlock_type: s.unlock_type,
         }
       })
     )
