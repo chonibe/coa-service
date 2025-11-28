@@ -323,25 +323,6 @@ export function SeriesStep({ formData, setFormData }: SeriesStepProps) {
                 </AlertDescription>
               </Alert>
 
-            <div className="flex items-center justify-between">
-              <div className="space-y-0.5">
-                <Label htmlFor="is-locked" className="flex items-center gap-2">
-                  <Lock className="h-4 w-4" />
-                  Locked Status
-                </Label>
-                <p className="text-xs text-muted-foreground">
-                  Mark this artwork as locked (not purchasable until unlocked)
-                </p>
-              </div>
-              <Switch
-                id="is-locked"
-                checked={formData.is_locked || false}
-                onCheckedChange={(checked) => {
-                  setFormData({ ...formData, is_locked: checked })
-                }}
-              />
-            </div>
-
             <div className="space-y-2">
               <Label htmlFor="unlock-order">Unlock Order (Optional)</Label>
               <Input

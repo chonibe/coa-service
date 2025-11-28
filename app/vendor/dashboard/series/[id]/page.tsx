@@ -17,7 +17,6 @@ import type { ArtworkSeries, SeriesMember, UnlockType } from "@/types/artwork-se
 import { ArtworkCarousel } from "../components/ArtworkCarousel"
 import { UnlockProgress } from "../components/UnlockProgress"
 import { CoverArtUpload } from "../components/CoverArtUpload"
-import { TrackListing } from "../components/TrackListing"
 import { CoverArtDesigner } from "../components/CoverArtDesigner"
 import { DeleteSeriesDialog } from "../components/DeleteSeriesDialog"
 import { DuplicateSeriesDialog } from "../components/DuplicateSeriesDialog"
@@ -356,18 +355,12 @@ export default function SeriesDetailPage() {
               </Button>
             </div>
           ) : (
-            <div className="space-y-6">
-              {/* Artwork Carousel View */}
-              <div>
-                <h3 className="text-sm font-medium text-muted-foreground mb-3">Gallery View</h3>
-                <ArtworkCarousel members={members} editable={true} seriesId={seriesId} />
+            <div>
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="text-sm font-medium text-muted-foreground">Artworks</h3>
+                <span className="text-xs text-muted-foreground">Drag to reorder</span>
               </div>
-              
-              {/* Track Listing View */}
-              <div className="border-t pt-6">
-                <h3 className="text-sm font-medium text-muted-foreground mb-3">Track Listing</h3>
-                <TrackListing members={members} editable={true} seriesId={seriesId} />
-              </div>
+              <ArtworkCarousel members={members} editable={true} seriesId={seriesId} />
             </div>
           )}
         </CardContent>
