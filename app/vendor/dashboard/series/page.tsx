@@ -206,7 +206,7 @@ export default function SeriesPage() {
             Manage your artwork series and unlock configurations
           </p>
         </div>
-        <Button onClick={() => router.push("/vendor/dashboard/products/create")}>
+        <Button onClick={() => router.push("/vendor/dashboard/series/create")}>
           <Plus className="h-4 w-4 mr-2" />
           Create Series
         </Button>
@@ -228,11 +228,11 @@ export default function SeriesPage() {
             <Lock className="h-12 w-12 text-muted-foreground mb-4" />
             <h3 className="text-lg font-semibold mb-2">No Series Yet</h3>
             <p className="text-sm text-muted-foreground mb-4 text-center">
-              Create your first series by assigning an artwork to a new series during creation.
+              Create your first series to organize your artworks with unlock mechanics.
             </p>
-            <Button onClick={() => router.push("/vendor/dashboard/products/create")}>
+            <Button onClick={() => router.push("/vendor/dashboard/series/create")}>
               <Plus className="h-4 w-4 mr-2" />
-              Create Artwork with Series
+              Create Series
             </Button>
           </CardContent>
         </Card>

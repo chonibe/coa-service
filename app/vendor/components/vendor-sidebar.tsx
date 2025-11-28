@@ -21,7 +21,8 @@ import {
   QuestionMarkCircleIcon,
   UserCircleIcon,
 } from "@heroicons/react/24/outline"
-import { Lock, Plus } from "lucide-react"
+import { Lock } from "lucide-react"
+import { CreateMenu } from "./create-menu"
 import { Icon } from "@/components/icon"
 import { cn } from "@/lib/utils"
 import { NotificationCenter } from "@/components/vendor/notification-center"

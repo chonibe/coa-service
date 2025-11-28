@@ -51,7 +51,7 @@ const unlockTypes = [
 export function UnlockTypeCards({ value, onChange }: UnlockTypeCardsProps) {
   return (
     <div className="grid grid-cols-2 gap-4">
-      {availableTypes.map((type) => {
+      {unlockTypes.map((type) => {
         const Icon = type.icon
         const isSelected = value === type.value
         
