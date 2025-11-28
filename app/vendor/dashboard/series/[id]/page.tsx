@@ -13,6 +13,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Loader2, ArrowLeft, Lock, Edit, Save, X, AlertCircle, ImageIcon, ArrowRight, Crown, Clock } from "lucide-react"
 import { useToast } from "@/components/ui/use-toast"
 import { motion } from "framer-motion"
+import { cn } from "@/lib/utils"
 import type { ArtworkSeries, SeriesMember, UnlockType } from "@/types/artwork-series"
 import { ArtworkCarousel } from "../components/ArtworkCarousel"
 import { UnlockProgress } from "../components/UnlockProgress"
@@ -303,31 +304,70 @@ export default function SeriesDetailPage() {
             </Card>
           ) : (
             <div className="space-y-4">
-              <div>
-                <h1 className="text-3xl font-bold mb-2">{series.name}</h1>
-                <p className="text-muted-foreground">{series.vendor_name}</p>
-              </div>
-              
-              {series.description && (
-                <p className="text-base leading-relaxed">{series.description}</p>
-              )}
+              <div className="flex items-start gap-4">
+                <div className="flex-1">
+                  <div className="flex items-center gap-3 mb-2">
+                    {series.unlock_type === "any_purchase" && (
+                      <div className="p-2 rounded-lg bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400">
+                        <Lock className="h-5 w-5" />
+                      </div>
+                    )}
+                    {series.unlock_type === "sequential" && (
+                      <div className="p-2 rounded-lg bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400">
+                        <ArrowRight className="h-5 w-5" />
+                      </div>
+                    )}
+                    {(series.unlock_type === "threshold" || series.unlock_type === "vip") && (
+                      <div className="p-2 rounded-lg bg-orange-100 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400">
+                        <Crown className="h-5 w-5" />
+                      </div>
+                    )}
+                    {series.unlock_type === "time_based" && (
+                      <div className="p-2 rounded-lg bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400">
+                        <Clock className="h-5 w-5" />
+                      </div>
+                    )}
+                    <div>
+                      <h1 className="text-3xl font-bold">{series.name}</h1>
+                      <p className="text-muted-foreground text-sm mt-1">{series.vendor_name}</p>
+                    </div>
+                  </div>
+                  
+                  {series.description && (
+                    <p className="text-base leading-relaxed mt-3">{series.description}</p>
+                  )}
 
-              <div className="flex items-center gap-2 flex-wrap">
-                <div className="flex items-center gap-1">
-                  <Badge variant="secondary">{getUnlockTypeLabel(series.unlock_type)}</Badge>
-                  <UnlockTypeTooltip unlockType={series.unlock_type} />
-                </div>
-                <Badge variant="outline">
-                  {totalCount} {totalCount === 1 ? "artwork" : "artworks"}
-                </Badge>
-              </div>
+                  <div className="flex items-center gap-2 flex-wrap mt-4">
+                    <Badge 
+                      variant="outline" 
+                      className={cn(
+                        "text-sm border-2",
+                        series.unlock_type === "any_purchase" && "border-blue-400 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300",
+                        series.unlock_type === "sequential" && "border-purple-400 bg-purple-50 dark:bg-purple-900/20 text-purple-700 dark:text-purple-300",
+                        (series.unlock_type === "threshold" || series.unlock_type === "vip") && "border-orange-400 bg-orange-50 dark:bg-orange-900/20 text-orange-700 dark:text-orange-300",
+                        series.unlock_type === "time_based" && "border-green-400 bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-300"
+                      )}
+                    >
+                      {series.unlock_type === "any_purchase" && <Lock className="h-3 w-3 mr-1" />}
+                      {series.unlock_type === "sequential" && <ArrowRight className="h-3 w-3 mr-1" />}
+                      {(series.unlock_type === "threshold" || series.unlock_type === "vip") && <Crown className="h-3 w-3 mr-1" />}
+                      {series.unlock_type === "time_based" && <Clock className="h-3 w-3 mr-1" />}
+                      {getUnlockTypeLabel(series.unlock_type)}
+                    </Badge>
+                    <UnlockTypeTooltip unlockType={series.unlock_type} />
+                    <Badge variant="outline">
+                      {totalCount} {totalCount === 1 ? "artwork" : "artworks"}
+                    </Badge>
+                  </div>
 
-              {/* Unlock Progress - only show for sequential unlocks */}
-              {totalCount > 0 && series.unlock_type === "sequential" && (
-                <div>
-                  <UnlockProgress unlocked={unlockedCount} total={totalCount} />
+                  {/* Unlock Progress - only show for sequential unlocks */}
+                  {totalCount > 0 && series.unlock_type === "sequential" && (
+                    <div className="mt-4">
+                      <UnlockProgress unlocked={unlockedCount} total={totalCount} />
+                    </div>
+                  )}
                 </div>
-              )}
+              </div>
             </div>
           )}
         </div>
