@@ -16,6 +16,8 @@ import { CoverArtDesigner } from "../components/CoverArtDesigner"
 import { UnlockTypeCards } from "../components/UnlockTypeCards"
 import { StepProgress } from "../components/StepProgress"
 import { UnlockGuide } from "../components/UnlockGuide"
+import { TimeBasedUnlockConfig } from "../components/TimeBasedUnlockConfig"
+import { VIPUnlockConfig } from "../components/VIPUnlockConfig"
 
 type Step = "cover" | "name" | "description" | "unlock" | "config" | "time_config" | "vip_config"
 
@@ -337,13 +339,48 @@ export default function CreateSeriesPage() {
                     type="number"
                     min="1"
                     value={requiredCount}
-                    onChange={(e) => setRequiredCount(parseInt(e.target.value, 10) || 1)}
+                    onChange={(e) => {
+                      const count = parseInt(e.target.value, 10) || 1
+                      setRequiredCount(count)
+                      setUnlockConfig({ required_count: count, unlocks: [] })
+                    }}
                     className="text-lg h-12"
                   />
                   <p className="text-xs text-muted-foreground mt-2">
                     Number of purchases required to unlock artworks in this series
                   </p>
                 </div>
+              </motion.div>
+            )}
+
+            {currentStep === "time_config" && unlockType === "time_based" && (
+              <motion.div
+                key="time_config"
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -20 }}
+                className="space-y-4"
+              >
+                <TimeBasedUnlockConfig
+                  value={unlockConfig}
+                  onChange={setUnlockConfig}
+                />
+              </motion.div>
+            )}
+
+            {currentStep === "vip_config" && unlockType === "vip" && (
+              <motion.div
+                key="vip_config"
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -20 }}
+                className="space-y-4"
+              >
+                <VIPUnlockConfig
+                  value={unlockConfig}
+                  onChange={setUnlockConfig}
+                  seriesMembers={[]}
+                />
               </motion.div>
             )}
           </AnimatePresence>
