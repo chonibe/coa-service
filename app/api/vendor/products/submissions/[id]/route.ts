@@ -252,12 +252,12 @@ export async function DELETE(
       )
     }
 
-    // Only allow deletion once the submission has been rejected
-    if (submission.status !== "rejected") {
+    // Only allow deletion for pending or rejected submissions
+    if (submission.status !== "pending" && submission.status !== "rejected") {
       return NextResponse.json(
         {
           error: "Cannot delete submission",
-          message: "You can only delete submissions that have been rejected. Contact admin to reject/unpublish approved or pending submissions.",
+          message: "You can only delete pending or rejected submissions. Contact admin to reject/unpublish approved or published submissions.",
         },
         { status: 400 },
       )
