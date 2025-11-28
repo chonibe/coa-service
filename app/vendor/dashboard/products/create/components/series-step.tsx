@@ -13,6 +13,7 @@ import { motion, AnimatePresence } from "framer-motion"
 import type { ProductSubmissionData } from "@/types/product-submission"
 import type { UnlockType } from "@/types/artwork-series"
 import { CoverArtUpload } from "@/app/vendor/dashboard/series/components/CoverArtUpload"
+import { CoverArtDesigner } from "@/app/vendor/dashboard/series/components/CoverArtDesigner"
 import { UnlockTypeCards } from "@/app/vendor/dashboard/series/components/UnlockTypeCards"
 import { StepProgress } from "@/app/vendor/dashboard/series/components/StepProgress"
 
@@ -427,14 +428,15 @@ export function SeriesStep({ formData, setFormData }: SeriesStepProps) {
                   className="space-y-4"
                 >
                   <div>
-                    <Label className="text-base font-semibold mb-4 block">Upload Cover Art</Label>
+                    <Label className="text-base font-semibold mb-4 block">Cover Art</Label>
                     <p className="text-sm text-muted-foreground mb-4">
-                      Choose a square image that represents your series. This will be the first thing collectors see.
+                      Choose a square image that represents your series. Upload your own, choose a template, or auto-generate from your first artwork.
                     </p>
-                    <CoverArtUpload
+                    <CoverArtDesigner
                       value={newSeriesCoverArt}
                       onChange={setNewSeriesCoverArt}
                       onUpload={handleCoverArtUpload}
+                      firstArtworkImage={formData.images?.[0]?.src || null}
                     />
                   </div>
                 </motion.div>

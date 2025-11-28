@@ -129,6 +129,10 @@ export async function POST(request: NextRequest) {
         unlock_config: seriesData.unlock_config || {},
         display_order: seriesData.display_order || 0,
         is_active: true,
+        release_date: seriesData.release_date || null,
+        genre_tags: seriesData.genre_tags || null,
+        unlock_progress: seriesData.unlock_progress || {},
+        unlock_milestones: seriesData.unlock_milestones || [],
       })
       .select()
       .single()

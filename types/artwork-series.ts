@@ -23,6 +23,10 @@ export interface ArtworkSeries {
   created_at: string
   updated_at: string
   member_count?: number // Computed field
+  release_date?: string | null // Album release date
+  genre_tags?: string[] | null // Series categorization tags
+  unlock_progress?: Record<string, any> | null // Track collector progress
+  unlock_milestones?: Array<{ milestone: string; achieved_at: string; collector_id?: string }> | null // Achievement markers
 }
 
 export interface SeriesMember {
@@ -45,5 +49,9 @@ export interface SeriesFormData {
   unlock_type: UnlockType
   unlock_config: UnlockConfig
   display_order: number
+  release_date?: string | null
+  genre_tags?: string[] | null
+  unlock_progress?: Record<string, any> | null
+  unlock_milestones?: Array<{ milestone: string; achieved_at: string; collector_id?: string }> | null
 }
 

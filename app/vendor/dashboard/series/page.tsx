@@ -11,12 +11,11 @@ import { Loader2, Plus, Lock, Edit, Trash2, Eye, AlertCircle, Copy } from "lucid
 import { useToast } from "@/components/ui/use-toast"
 import { motion } from "framer-motion"
 import type { ArtworkSeries } from "@/types/artwork-series"
-import { UnlockProgress } from "./components/UnlockProgress"
 import { FloatingCreateButton } from "./components/FloatingCreateButton"
 import { SearchAndFilter } from "./components/SearchAndFilter"
 import { DeleteSeriesDialog } from "./components/DeleteSeriesDialog"
 import { DuplicateSeriesDialog } from "./components/DuplicateSeriesDialog"
-import { UnlockTypeTooltip } from "./components/UnlockTypeTooltip"
+import { SeriesCard } from "./components/SeriesCard"
 
 export default function SeriesPage() {
   const router = useRouter()
@@ -251,115 +250,25 @@ export default function SeriesPage() {
         </Card>
       ) : (
         <div className="grid gap-4 grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
-          {filteredSeries.map((s, index) => {
-            const totalCount = s.member_count || 0
-            
-            return (
-              <motion.div
-                key={s.id}
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ delay: index * 0.05 }}
-                className="group relative"
-                onMouseEnter={() => setHoveredId(s.id)}
-                onMouseLeave={() => setHoveredId(null)}
-              >
-                <Card
-                  className="overflow-hidden cursor-pointer hover:shadow-xl transition-all duration-300"
-                  onClick={() => router.push(`/vendor/dashboard/series/${s.id}`)}
-                >
-                  <div className="aspect-square relative overflow-hidden bg-muted">
-                    {s.thumbnail_url ? (
-                      <motion.img
-                        src={s.thumbnail_url}
-                        alt={s.name}
-                        className="w-full h-full object-cover"
-                        whileHover={{ scale: 1.05 }}
-                        transition={{ duration: 0.3 }}
-                      />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center">
-                        <Lock className="h-12 w-12 text-muted-foreground/50" />
-                      </div>
-                    )}
-                    
-                    {/* Hover overlay with actions */}
-                    {hoveredId === s.id && (
-                      <motion.div
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        className="absolute inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center gap-2"
-                        onClick={(e) => e.stopPropagation()}
-                      >
-                        <Button
-                          variant="secondary"
-                          size="sm"
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            router.push(`/vendor/dashboard/series/${s.id}`)
-                          }}
-                        >
-                          <Eye className="h-4 w-4 mr-2" />
-                          View
-                        </Button>
-                        <Button
-                          variant="secondary"
-                          size="sm"
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            setSelectedSeries(s)
-                            setDuplicateDialogOpen(true)
-                          }}
-                        >
-                          <Copy className="h-4 w-4 mr-2" />
-                          Duplicate
-                        </Button>
-                        <Button
-                          variant="destructive"
-                          size="sm"
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            setSelectedSeries(s)
-                            setDeleteDialogOpen(true)
-                          }}
-                        >
-                          <Trash2 className="h-4 w-4 mr-2" />
-                          Delete
-                        </Button>
-                      </motion.div>
-                    )}
-
-                    {/* Series name overlay */}
-                    <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-4">
-                      <h3 className="font-semibold text-white text-sm truncate">{s.name}</h3>
-                      <div className="flex items-center gap-2 mt-1">
-                        <Badge variant="secondary" className="text-xs">
-                          {totalCount} {totalCount === 1 ? "artwork" : "artworks"}
-                        </Badge>
-                        <div className="flex items-center gap-1">
-                          <Badge variant="outline" className="text-xs">
-                            {getUnlockTypeLabel(s.unlock_type)}
-                          </Badge>
-                          <UnlockTypeTooltip unlockType={s.unlock_type} />
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                  
-                  {/* Progress indicator */}
-                  {totalCount > 0 && (
-                    <div className="p-3 border-t">
-                      <UnlockProgress
-                        unlocked={totalCount}
-                        total={totalCount}
-                        showLabels={false}
-                      />
-                    </div>
-                  )}
-                </Card>
-              </motion.div>
-            )
-          })}
+          {filteredSeries.map((s, index) => (
+            <SeriesCard
+              key={s.id}
+              series={s}
+              index={index}
+              isHovered={hoveredId === s.id}
+              onHover={setHoveredId}
+              onView={() => router.push(`/vendor/dashboard/series/${s.id}`)}
+              onDuplicate={() => {
+                setSelectedSeries(s)
+                setDuplicateDialogOpen(true)
+              }}
+              onDelete={() => {
+                setSelectedSeries(s)
+                setDeleteDialogOpen(true)
+              }}
+              getUnlockTypeLabel={getUnlockTypeLabel}
+            />
+          ))}
         </div>
       )}
       

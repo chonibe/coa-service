@@ -179,6 +179,10 @@ export async function PUT(
     if (seriesData.unlock_type) updateData.unlock_type = seriesData.unlock_type
     if (seriesData.unlock_config) updateData.unlock_config = seriesData.unlock_config
     if (seriesData.display_order !== undefined) updateData.display_order = seriesData.display_order
+    if (seriesData.release_date !== undefined) updateData.release_date = seriesData.release_date || null
+    if (seriesData.genre_tags !== undefined) updateData.genre_tags = seriesData.genre_tags || null
+    if (seriesData.unlock_progress !== undefined) updateData.unlock_progress = seriesData.unlock_progress || {}
+    if (seriesData.unlock_milestones !== undefined) updateData.unlock_milestones = seriesData.unlock_milestones || []
 
     const { data: updatedSeries, error: updateError } = await supabase
       .from("artwork_series")
