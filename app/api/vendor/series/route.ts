@@ -144,13 +144,13 @@ export async function POST(request: NextRequest) {
     }
 
     // Extract time-based unlock fields from unlock_config to separate columns
+    // Note: unlock_at is stored per member, not per series
+    // unlock_schedule is stored at the series level for recurring schedules
     if (seriesData.unlock_type === "time_based" && seriesData.unlock_config) {
       if (seriesData.unlock_config.unlock_schedule) {
         insertData.unlock_schedule = seriesData.unlock_config.unlock_schedule
       }
-      if (seriesData.unlock_config.unlock_at) {
-        insertData.unlock_at = seriesData.unlock_config.unlock_at
-      }
+      // unlock_at stays in unlock_config for one-time unlocks (applied per member)
     }
 
     // Extract VIP unlock fields from unlock_config to separate columns
