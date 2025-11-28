@@ -116,24 +116,36 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "A series with this name already exists" }, { status: 400 })
     }
 
-    // Create series
+    // Create series - only include optional fields if they're provided
+    const insertData: any = {
+      vendor_id: vendor.id,
+      vendor_name: vendor.vendor_name,
+      name: seriesData.name.trim(),
+      description: seriesData.description?.trim() || null,
+      thumbnail_url: seriesData.thumbnail_url || null,
+      unlock_type: seriesData.unlock_type,
+      unlock_config: seriesData.unlock_config || {},
+      display_order: seriesData.display_order || 0,
+      is_active: true,
+    }
+
+    // Only include optional fields if they exist in the data
+    if (seriesData.release_date !== undefined) {
+      insertData.release_date = seriesData.release_date || null
+    }
+    if (seriesData.genre_tags !== undefined) {
+      insertData.genre_tags = seriesData.genre_tags || null
+    }
+    if (seriesData.unlock_progress !== undefined) {
+      insertData.unlock_progress = seriesData.unlock_progress || {}
+    }
+    if (seriesData.unlock_milestones !== undefined) {
+      insertData.unlock_milestones = seriesData.unlock_milestones || []
+    }
+
     const { data: newSeries, error: createError } = await supabase
       .from("artwork_series")
-      .insert({
-        vendor_id: vendor.id,
-        vendor_name: vendor.vendor_name,
-        name: seriesData.name.trim(),
-        description: seriesData.description?.trim() || null,
-        thumbnail_url: seriesData.thumbnail_url || null,
-        unlock_type: seriesData.unlock_type,
-        unlock_config: seriesData.unlock_config || {},
-        display_order: seriesData.display_order || 0,
-        is_active: true,
-        release_date: seriesData.release_date || null,
-        genre_tags: seriesData.genre_tags || null,
-        unlock_progress: seriesData.unlock_progress || {},
-        unlock_milestones: seriesData.unlock_milestones || [],
-      })
+      .insert(insertData)
       .select()
       .single()
 
