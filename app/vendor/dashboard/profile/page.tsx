@@ -39,7 +39,6 @@ import { StripeConnect } from "../components/stripe-connect"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { Badge } from "@/components/ui/badge"
 import { ThemeToggle } from "@/components/theme-toggle"
-import { useRouter } from "next/navigation"
 
 interface VendorProfile {
   id: number | string
