@@ -19,12 +19,12 @@ import { UnlockGuide } from "../components/UnlockGuide"
 import { TimeBasedUnlockConfig } from "../components/TimeBasedUnlockConfig"
 import { VIPUnlockConfig } from "../components/VIPUnlockConfig"
 
-type Step = "cover" | "name" | "description" | "unlock" | "config" | "time_config" | "vip_config"
+type Step = "basics" | "unlock" | "config"
 
 export default function CreateSeriesPage() {
   const router = useRouter()
   const { toast } = useToast()
-  const [currentStep, setCurrentStep] = useState<Step>("cover")
+  const [currentStep, setCurrentStep] = useState<Step>("basics")
   const [creatingSeries, setCreatingSeries] = useState(false)
 
   // Form state
@@ -36,54 +36,35 @@ export default function CreateSeriesPage() {
   const [unlockConfig, setUnlockConfig] = useState<any>({})
   const [requiredCount, setRequiredCount] = useState<number>(1)
 
-  const getStepNumber = () => {
-    const steps: Step[] = ["cover", "name", "description", "unlock", "config", "time_config", "vip_config"]
-    return steps.indexOf(currentStep) + 1
-  }
-
-  const getTotalSteps = () => {
-    if (["threshold", "time_based", "vip"].includes(unlockType)) {
-      return 5
-    }
-    return 4
-  }
+  const needsConfigStep = ["threshold", "time_based", "vip"].includes(unlockType)
 
   const handleNext = () => {
-    if (currentStep === "cover") {
-      setCurrentStep("name")
-    } else if (currentStep === "name") {
-      setCurrentStep("description")
-    } else if (currentStep === "description") {
+    if (currentStep === "basics") {
       setCurrentStep("unlock")
     } else if (currentStep === "unlock") {
-      if (unlockType === "threshold") {
+      if (needsConfigStep) {
         setCurrentStep("config")
-      } else if (unlockType === "time_based") {
-        setCurrentStep("time_config")
-      } else if (unlockType === "vip") {
-        setCurrentStep("vip_config")
+      } else {
+        handleCreateSeries()
       }
     }
   }
 
   const handleBack = () => {
-    if (currentStep === "name") {
-      setCurrentStep("cover")
-    } else if (currentStep === "description") {
-      setCurrentStep("name")
-    } else if (currentStep === "unlock") {
-      setCurrentStep("description")
-    } else if (currentStep === "config" || currentStep === "time_config" || currentStep === "vip_config") {
+    if (currentStep === "unlock") {
+      setCurrentStep("basics")
+    } else if (currentStep === "config") {
       setCurrentStep("unlock")
     }
   }
 
   const canProceed = () => {
-    if (currentStep === "cover") return true
-    if (currentStep === "name") return name.trim().length > 0
-    if (currentStep === "description") return true
+    if (currentStep === "basics") return name.trim().length > 0
     if (currentStep === "unlock") return true
-    if (currentStep === "config") return requiredCount > 0
+    if (currentStep === "config") {
+      if (unlockType === "threshold") return requiredCount > 0
+      return true
+    }
     return true
   }
 
@@ -202,44 +183,76 @@ export default function CreateSeriesPage() {
       <Card>
         <CardContent className="pt-6">
           <StepProgress
-            currentStep={getStepNumber()}
-            totalSteps={getTotalSteps()}
+            currentStep={currentStep === "basics" ? 1 : currentStep === "unlock" ? 2 : 3}
+            totalSteps={needsConfigStep ? 3 : 2}
             stepLabels={[
-              "Cover Art",
-              "Name",
-              "Description",
+              "Series Info",
               "Unlock Type",
               unlockType === "threshold"
-                ? "Config"
+                ? "VIP Settings"
                 : unlockType === "time_based"
-                  ? "Time Config"
+                  ? "Schedule"
                   : unlockType === "vip"
-                    ? "VIP Config"
+                    ? "VIP Settings"
                     : undefined,
             ].filter(Boolean) as string[]}
             onStepClick={(step) => {
-              const steps: Step[] = ["cover", "name", "description", "unlock", "config", "time_config", "vip_config"]
-              const targetStep = steps[step - 1]
-              if (targetStep) {
-                setCurrentStep(targetStep)
-              }
+              if (step === 1) setCurrentStep("basics")
+              else if (step === 2) setCurrentStep("unlock")
+              else if (step === 3 && needsConfigStep) setCurrentStep("config")
             }}
           />
 
-
           <AnimatePresence mode="wait">
-            {currentStep === "cover" && (
+            {currentStep === "basics" && (
               <motion.div
-                key="cover"
+                key="basics"
                 initial={{ opacity: 0, x: 20 }}
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: -20 }}
-                className="space-y-4"
+                className="space-y-6"
               >
                 <div>
-                  <Label className="text-base font-semibold mb-4 block">Cover Art</Label>
-                  <p className="text-sm text-muted-foreground mb-4">
-                    Choose a square image that represents your series. Upload your own, choose a template, or skip for now.
+                  <Label htmlFor="series-name" className="text-base font-semibold mb-2 block">
+                    Series Name <span className="text-red-500">*</span>
+                  </Label>
+                  <Input
+                    id="series-name"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    placeholder="e.g., 'Summer Collection 2024'"
+                    className="text-lg h-12"
+                    maxLength={100}
+                  />
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {name.length}/100 characters
+                  </p>
+                </div>
+
+                <div>
+                  <Label htmlFor="series-description" className="text-base font-semibold mb-2 block">
+                    Description <span className="text-muted-foreground text-sm font-normal">(Optional)</span>
+                  </Label>
+                  <Textarea
+                    id="series-description"
+                    value={description}
+                    onChange={(e) => setDescription(e.target.value)}
+                    placeholder="What makes this series special?"
+                    rows={4}
+                    className="resize-none"
+                    maxLength={1000}
+                  />
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {description.length}/1000 characters
+                  </p>
+                </div>
+
+                <div>
+                  <Label className="text-base font-semibold mb-2 block">
+                    Cover Art <span className="text-muted-foreground text-sm font-normal">(Optional)</span>
+                  </Label>
+                  <p className="text-sm text-muted-foreground mb-3">
+                    A square image that represents your series. You can add this later.
                   </p>
                   <CoverArtDesigner
                     value={coverArt}
@@ -251,73 +264,47 @@ export default function CreateSeriesPage() {
               </motion.div>
             )}
 
-            {currentStep === "name" && (
-              <motion.div
-                key="name"
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -20 }}
-                className="space-y-4"
-              >
-                <div>
-                  <Label htmlFor="series-name" className="text-base font-semibold mb-4 block">
-                    Series Name <span className="text-red-500">*</span>
-                  </Label>
-                  <Input
-                    id="series-name"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    placeholder="Enter series name"
-                    className="text-lg h-12"
-                    maxLength={100}
-                  />
-                  <p className="text-xs text-muted-foreground mt-2">
-                    {name.length}/100 characters
-                  </p>
-                </div>
-              </motion.div>
-            )}
-
-            {currentStep === "description" && (
-              <motion.div
-                key="description"
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -20 }}
-                className="space-y-4"
-              >
-                <div>
-                  <Label htmlFor="series-description" className="text-base font-semibold mb-4 block">
-                    Description <span className="text-muted-foreground text-sm font-normal">(Optional)</span>
-                  </Label>
-                  <Textarea
-                    id="series-description"
-                    value={description}
-                    onChange={(e) => setDescription(e.target.value)}
-                    placeholder="Tell collectors about this series..."
-                    rows={6}
-                    className="resize-none"
-                    maxLength={1000}
-                  />
-                  <p className="text-xs text-muted-foreground mt-2">
-                    {description.length}/1000 characters
-                  </p>
-                </div>
-              </motion.div>
-            )}
-
             {currentStep === "unlock" && (
               <motion.div
                 key="unlock"
                 initial={{ opacity: 0, x: 20 }}
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: -20 }}
-                className="space-y-4"
+                className="space-y-6"
               >
                 <div>
                   <Label className="text-base font-semibold mb-4 block">How do artworks unlock?</Label>
                   <UnlockTypeCards value={unlockType} onChange={setUnlockType} />
                 </div>
+
+                {/* Inline config for threshold (simple case) */}
+                {unlockType === "threshold" && (
+                  <motion.div
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: "auto" }}
+                    exit={{ opacity: 0, height: 0 }}
+                    className="pt-4 border-t space-y-4"
+                  >
+                    <Label htmlFor="required-count" className="text-base font-semibold mb-2 block">
+                      How many purchases unlock exclusive pieces?
+                    </Label>
+                    <Input
+                      id="required-count"
+                      type="number"
+                      min="1"
+                      value={requiredCount}
+                      onChange={(e) => {
+                        const count = parseInt(e.target.value, 10) || 1
+                        setRequiredCount(count)
+                        setUnlockConfig({ required_count: count, unlocks: [] })
+                      }}
+                      className="text-lg h-12 max-w-[200px]"
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Collectors need to purchase {requiredCount} {requiredCount === 1 ? "artwork" : "artworks"} to unlock exclusive pieces
+                    </p>
+                  </motion.div>
+                )}
               </motion.div>
             )}
 
@@ -388,21 +375,18 @@ export default function CreateSeriesPage() {
             <Button
               type="button"
               variant="outline"
-              onClick={currentStep === "cover" ? () => router.back() : handleBack}
+              onClick={currentStep === "basics" ? () => router.back() : handleBack}
               disabled={creatingSeries}
               className="min-w-[120px]"
             >
               <ArrowLeft className="h-4 w-4 mr-2" />
-              {currentStep === "cover" ? "Cancel" : "Back"}
+              {currentStep === "basics" ? "Cancel" : "Back"}
             </Button>
             <Button
               type="button"
               onClick={
                 currentStep === "config" ||
-                currentStep === "time_config" ||
-                currentStep === "vip_config" ||
-                (currentStep === "unlock" &&
-                  !["threshold", "time_based", "vip"].includes(unlockType))
+                (currentStep === "unlock" && (unlockType === "threshold" || !needsConfigStep))
                   ? handleCreateSeries
                   : handleNext
               }
@@ -416,10 +400,7 @@ export default function CreateSeriesPage() {
                   Creating...
                 </>
               ) : currentStep === "config" ||
-                currentStep === "time_config" ||
-                currentStep === "vip_config" ||
-                (currentStep === "unlock" &&
-                  !["threshold", "time_based", "vip"].includes(unlockType)) ? (
+                (currentStep === "unlock" && (unlockType === "threshold" || !needsConfigStep)) ? (
                 <>
                   <Check className="h-4 w-4 mr-2" />
                   Create Series
