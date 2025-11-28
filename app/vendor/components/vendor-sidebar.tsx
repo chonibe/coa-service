@@ -224,8 +224,19 @@ export function VendorSidebar() {
         </Link>
         </div>
 
-        {/* Right: Create Menu */}
-        <CreateMenu />
+        {/* Right: Add Artwork Button */}
+          <Button
+          variant="default"
+          size="icon"
+          className="flex items-center justify-center transition-all hover:bg-primary/90 min-h-[44px] min-w-[44px] focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+          onClick={() => router.push("/vendor/dashboard/products/create")}
+          aria-label="Add new artwork"
+          >
+          <Icon size="lg">
+            <Plus className="h-6 w-6" aria-hidden="true" />
+            </Icon>
+          <span className="sr-only">Add artwork</span>
+          </Button>
       </header>
 
       {/* Overlay sidebar - shown when sidebarOpen is true */}
