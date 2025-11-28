@@ -11,6 +11,7 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Lock, TrendingUp, Info } from "lucide-react"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
+import { PricePickerCards } from "./PricePickerCards"
 import type { ProductSubmissionData, ProductVariant } from "@/types/product-submission"
 import {
   EDITION_SIZES,
@@ -352,60 +353,59 @@ export function VariantsStep({ formData, setFormData }: VariantsStepProps) {
         const currentPrice = variant.price ? Number.parseFloat(variant.price) : recommendedPrice
 
         return (
-          <div className="border rounded-lg p-6 space-y-6">
+          <div className="space-y-4">
             {editionSize ? (
               <>
-                {/* Price with Slider */}
-                <div className="space-y-4">
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <Label htmlFor="price">
-                        Price (£) <span className="text-red-500">*</span>
-                      </Label>
-                      <div className="flex items-center gap-2">
-                        <span className="text-sm font-medium">£{currentPrice.toFixed(2)}</span>
-                        <Badge variant="outline" className="text-xs">
-                          Range: £{priceRange.min} - £{priceRange.max}
-                        </Badge>
-                      </div>
-                    </div>
-                    <Slider
-                      value={[currentPrice]}
-                      onValueChange={([value]) => handlePriceChange(0, value)}
-                      min={priceRange.min}
-                      max={priceRange.max}
-                      step={0.50}
-                      className="w-full"
-                    />
-                    <div className="flex items-center justify-between text-xs text-muted-foreground">
-                      <span>£{priceRange.min}</span>
-                      <span className="font-medium text-foreground">
-                        Recommended: £{recommendedPrice}
-                      </span>
-                      <span>£{priceRange.max}</span>
-                    </div>
-                    <Input
-                      id="price"
-                      type="number"
-                      step="0.01"
-                      min={priceRange.min}
-                      max={priceRange.max}
-                      value={variant.price || ""}
-                      onChange={(e) => handlePriceChange(0, e.target.value)}
-                      placeholder={recommendedPrice.toString()}
-                      required
-                      className="text-center font-semibold text-lg"
-                    />
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <Label>
+                      Set Price <span className="text-red-500">*</span>
+                    </Label>
+                    <Badge variant="outline" className="text-xs">
+                      Range: £{priceRange.min} - £{priceRange.max}
+                    </Badge>
                   </div>
-                  {variant.price && (Number.parseFloat(variant.price) < priceRange.min || Number.parseFloat(variant.price) > priceRange.max) && (
-                    <Alert variant="destructive" className="py-2">
-                      <AlertDescription className="text-xs">
-                        {Number.parseFloat(variant.price) < priceRange.min
-                          ? `Price must be at least £${priceRange.min} for ${editionSize} edition size`
-                          : `Price cannot exceed £${priceRange.max} for ${editionSize} edition size`}
-                      </AlertDescription>
-                    </Alert>
-                  )}
+                  <p className="text-sm text-muted-foreground">
+                    Choose a price point that matches your artwork's value and market positioning.
+                  </p>
+                  
+                  <PricePickerCards
+                    value={variant.price ? Number.parseFloat(variant.price) : null}
+                    onChange={(price) => handlePriceChange(0, price)}
+                    min={priceRange.min}
+                    max={priceRange.max}
+                    recommended={recommendedPrice}
+                  />
+
+                  {/* Custom Price Input (Optional) */}
+                  <div className="pt-4 border-t">
+                    <Label htmlFor="custom-price" className="text-sm text-muted-foreground mb-2 block">
+                      Or enter custom price
+                    </Label>
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-medium">£</span>
+                      <Input
+                        id="custom-price"
+                        type="number"
+                        step="0.01"
+                        min={priceRange.min}
+                        max={priceRange.max}
+                        value={variant.price || ""}
+                        onChange={(e) => handlePriceChange(0, e.target.value)}
+                        placeholder={recommendedPrice.toString()}
+                        className="flex-1"
+                      />
+                    </div>
+                    {variant.price && (Number.parseFloat(variant.price) < priceRange.min || Number.parseFloat(variant.price) > priceRange.max) && (
+                      <Alert variant="destructive" className="mt-2 py-2">
+                        <AlertDescription className="text-xs">
+                          {Number.parseFloat(variant.price) < priceRange.min
+                            ? `Price must be at least £${priceRange.min} for ${editionSize} edition size`
+                            : `Price cannot exceed £${priceRange.max} for ${editionSize} edition size`}
+                        </AlertDescription>
+                      </Alert>
+                    )}
+                  </div>
                 </div>
               </>
             ) : (
