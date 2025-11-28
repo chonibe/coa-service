@@ -42,7 +42,10 @@ export default function CreateSeriesPage() {
     if (currentStep === "basics") {
       setCurrentStep("unlock")
     } else if (currentStep === "unlock") {
-      if (needsConfigStep) {
+      // For threshold, config is shown inline, so we can create
+      if (unlockType === "threshold") {
+        handleCreateSeries()
+      } else if (needsConfigStep) {
         setCurrentStep("config")
       } else {
         handleCreateSeries()
@@ -339,7 +342,7 @@ export default function CreateSeriesPage() {
               </motion.div>
             )}
 
-            {currentStep === "time_config" && unlockType === "time_based" && (
+            {currentStep === "config" && unlockType === "time_based" && (
               <motion.div
                 key="time_config"
                 initial={{ opacity: 0, x: 20 }}
@@ -354,7 +357,7 @@ export default function CreateSeriesPage() {
               </motion.div>
             )}
 
-            {currentStep === "vip_config" && unlockType === "vip" && (
+            {currentStep === "config" && unlockType === "vip" && (
               <motion.div
                 key="vip_config"
                 initial={{ opacity: 0, x: 20 }}
