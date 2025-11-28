@@ -115,9 +115,24 @@ export default function VendorProfilePage() {
     tax: false,
   })
   const { toast } = useToast()
+  const router = useRouter()
   const fileInputRef = useRef<HTMLInputElement>(null)
   const dropZoneRef = useRef<HTMLDivElement>(null)
   const autoSaveTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+
+  const handleLogout = async () => {
+    try {
+      await fetch("/api/vendor/logout", { method: "POST", credentials: "include" })
+      router.push("/login")
+    } catch (err) {
+      console.error("Logout error:", err)
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to logout. Please try again.",
+      })
+    }
+  }
 
   const [profileFormState, setProfileFormState] = useState<ProfileFormState>({
     bio: "",
