@@ -197,7 +197,10 @@ export function ArtworkCarousel({ members, onReorder, editable = false, seriesId
       <div className="flex items-center gap-2 text-sm text-muted-foreground">
         <span>{displayItems.length} artworks in series</span>
         {editable && (
-          <span className="text-xs">(Drag to reorder)</span>
+          <span className="text-xs">
+            {unlockType === "sequential" && "(Drag to set unlock order)"}
+            {unlockType !== "sequential" && "(Drag to reorder)"}
+          </span>
         )}
       </div>
       <DndContext
