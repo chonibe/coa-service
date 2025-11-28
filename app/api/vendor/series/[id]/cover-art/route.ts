@@ -44,7 +44,19 @@ export async function POST(
     }
 
     // Get the uploaded file
-    const formData = await request.formData()
+    let formData: FormData
+    try {
+      formData = await request.formData()
+    } catch (error: any) {
+      if (error.message?.includes("413") || error.message?.includes("too large")) {
+        return NextResponse.json({ 
+          error: "File too large", 
+          message: "File size must be less than 5MB. Please compress your image before uploading." 
+        }, { status: 413 })
+      }
+      throw error
+    }
+    
     const file = formData.get("file") as File
 
     if (!file) {
@@ -56,10 +68,13 @@ export async function POST(
       return NextResponse.json({ error: "File must be an image" }, { status: 400 })
     }
 
-    // Validate file size (max 10MB)
-    const maxSize = 10 * 1024 * 1024 // 10MB
+    // Validate file size (max 5MB - reduced from 10MB to avoid 413 errors)
+    const maxSize = 5 * 1024 * 1024 // 5MB
     if (file.size > maxSize) {
-      return NextResponse.json({ error: "File size must be less than 10MB" }, { status: 400 })
+      return NextResponse.json({ 
+        error: "File size must be less than 5MB", 
+        message: "Please compress your image before uploading. Maximum file size is 5MB." 
+      }, { status: 400 })
     }
 
     // Generate file path
