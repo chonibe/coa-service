@@ -143,14 +143,19 @@ export function SeriesStep({ formData, setFormData }: SeriesStepProps) {
 
     setCreatingSeries(true)
     try {
-      const unlockConfig: any = {}
+      const unlockConfig: any = { ...newSeriesUnlockConfig }
       if (newSeriesUnlockType === "threshold") {
         unlockConfig.required_count = newSeriesRequiredCount
-        unlockConfig.unlocks = []
+        unlockConfig.unlocks = unlockConfig.unlocks || []
       } else if (newSeriesUnlockType === "sequential") {
-        unlockConfig.order = []
+        unlockConfig.order = unlockConfig.order || []
+      } else if (newSeriesUnlockType === "time_based") {
+        // Time-based config is already set via TimeBasedUnlockConfig component
+        // Ensure it has either unlock_at or unlock_schedule
+      } else if (newSeriesUnlockType === "vip") {
+        // VIP config is already set via VIPUnlockConfig component
       } else if (newSeriesUnlockType === "custom") {
-        unlockConfig.rules = []
+        unlockConfig.rules = unlockConfig.rules || []
       }
 
       const response = await fetch("/api/vendor/series", {

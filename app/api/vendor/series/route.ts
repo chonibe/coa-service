@@ -174,6 +174,27 @@ function validateUnlockConfig(unlockType: UnlockType, config: any): string | nul
         return "Threshold unlock type requires 'unlocks' to be an array"
       }
       break
+    case "time_based":
+      // Must have either unlock_at or unlock_schedule
+      if (!config.unlock_at && !config.unlock_schedule) {
+        return "Time-based unlock type requires either 'unlock_at' or 'unlock_schedule'"
+      }
+      if (config.unlock_schedule) {
+        if (!config.unlock_schedule.type || !config.unlock_schedule.time) {
+          return "Unlock schedule must have 'type' and 'time' fields"
+        }
+      }
+      break
+    case "vip":
+      // VIP unlocks should have at least one requirement
+      if (
+        (!config.requires_ownership || config.requires_ownership.length === 0) &&
+        config.vip_tier === undefined &&
+        config.loyalty_points_required === undefined
+      ) {
+        return "VIP unlock type requires at least one requirement (ownership, tier, or loyalty points)"
+      }
+      break
     case "any_purchase":
     case "custom":
       // No specific validation required

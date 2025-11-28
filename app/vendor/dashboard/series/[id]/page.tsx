@@ -22,6 +22,8 @@ import { CoverArtDesigner } from "../components/CoverArtDesigner"
 import { DeleteSeriesDialog } from "../components/DeleteSeriesDialog"
 import { DuplicateSeriesDialog } from "../components/DuplicateSeriesDialog"
 import { UnlockTypeTooltip } from "../components/UnlockTypeTooltip"
+import { UnlockCountdown } from "../components/UnlockCountdown"
+import { VIPBadge } from "../components/VIPBadge"
 import { Copy, Trash2 } from "lucide-react"
 
 export default function SeriesDetailPage() {
