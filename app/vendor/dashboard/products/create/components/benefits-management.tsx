@@ -21,10 +21,7 @@ import { HiddenSeriesForm } from "./benefits/hidden-series-form"
 import { BehindScenesForm } from "./benefits/behind-scenes-form"
 import { DigitalContentForm } from "./benefits/digital-content-form"
 import { ArtistCommentaryForm } from "./benefits/artist-commentary-form"
-import { ExclusiveAccessForm } from "./benefits/exclusive-access-form"
-import { DiscountForm } from "./benefits/discount-form"
 import { VIPArtworkUnlockForm } from "./benefits/vip-artwork-unlock-form"
-import { CreditsBonusForm } from "./benefits/credits-bonus-form"
 import { EarlyDropAccessForm } from "./benefits/early-drop-access-form"
 import { ExclusiveVisibilityForm } from "./benefits/exclusive-visibility-form"
 
@@ -71,12 +68,6 @@ export function BenefitsManagement({
       const lowerName = typeName?.toLowerCase() || ""
       if (lowerName.includes("digital") || lowerName.includes("content")) {
         return iconMap.FileText
-      }
-      if (lowerName.includes("exclusive") && lowerName.includes("access")) {
-        return iconMap.Key
-      }
-      if (lowerName.includes("discount")) {
-        return iconMap.Percent
       }
       if (lowerName.includes("behind") || lowerName.includes("scenes")) {
         return iconMap.Eye
