@@ -41,11 +41,31 @@ export async function GET(request: NextRequest) {
       console.log(`[${requestId}] [collector-identifier] Fetching vendor from database:`, { vendorName });
       
       // Get vendor details
+      // Note: auth_id may not exist in all databases - we'll check for it separately
       const { data: vendor, error: vendorError } = await supabase
         .from('vendors')
-        .select('id, vendor_name, auth_id')
+        .select('id, vendor_name')
         .eq('vendor_name', vendorName)
         .single();
+      
+      // Try to get auth_id separately if the column exists
+      let authId: string | null = null;
+      if (vendor && !vendorError) {
+        try {
+          const { data: vendorWithAuth, error: authError } = await supabase
+            .from('vendors')
+            .select('auth_id')
+            .eq('vendor_name', vendorName)
+            .single();
+          
+          if (!authError && vendorWithAuth) {
+            authId = vendorWithAuth.auth_id || null;
+          }
+        } catch (e) {
+          // Column doesn't exist - that's okay, we'll use vendor_name
+          console.log(`[${requestId}] [collector-identifier] auth_id column not available, using vendor_name`);
+        }
+      }
 
       console.log(`[${requestId}] [collector-identifier] Vendor query result:`, {
         found: !!vendor,
@@ -58,8 +78,8 @@ export async function GET(request: NextRequest) {
         vendor: vendor ? {
           id: vendor.id,
           vendor_name: vendor.vendor_name,
-          has_auth_id: !!vendor.auth_id,
-          auth_id: vendor.auth_id ? vendor.auth_id.substring(0, 20) + '...' : null,
+          has_auth_id: !!authId,
+          auth_id: authId ? authId.substring(0, 20) + '...' : null,
         } : null,
       });
 
@@ -84,13 +104,13 @@ export async function GET(request: NextRequest) {
 
       // Use auth_id as collector identifier (as established in the banking system)
       // Fallback to vendor_name if auth_id doesn't exist
-      const collectorIdentifier = vendor.auth_id || vendorName;
+      const collectorIdentifier = authId || vendorName;
       
       console.log(`[${requestId}] [collector-identifier] Success - returning vendor identifier:`, {
         collectorIdentifier: collectorIdentifier.substring(0, 20) + '...',
         accountType: 'vendor',
         vendorId: vendor.id,
-        usedAuthId: !!vendor.auth_id,
+        usedAuthId: !!authId,
         duration: Date.now() - startTime,
       });
 

@@ -46,13 +46,55 @@ export async function GET(request: NextRequest) {
       const supabase = createClient();
       
       // Try to determine account type from the identifier
-      // Check if it's a vendor (by vendor_name or auth_id)
+      // Check if it's a vendor (by vendor_name first, then auth_id if column exists)
       console.log(`[${requestId}] [balance] Checking if identifier is a vendor...`);
-      const { data: vendor, error: vendorCheckError } = await supabase
+      
+      // First try by vendor_name (most reliable)
+      const { data: vendorByName, error: vendorNameError } = await supabase
         .from('vendors')
-        .select('id, auth_id, vendor_name')
-        .or(`vendor_name.eq.${collectorIdentifier},auth_id.eq.${collectorIdentifier}`)
+        .select('id, vendor_name')
+        .eq('vendor_name', collectorIdentifier)
         .maybeSingle();
+      
+      let vendor = vendorByName;
+      let vendorCheckError = vendorNameError;
+      
+      // If not found by name, try by auth_id (if column exists)
+      if (!vendor && !vendorNameError) {
+        try {
+          const { data: vendorByAuthId, error: vendorAuthIdError } = await supabase
+            .from('vendors')
+            .select('id, vendor_name')
+            .eq('auth_id', collectorIdentifier)
+            .maybeSingle();
+          
+          if (!vendorAuthIdError && vendorByAuthId) {
+            vendor = vendorByAuthId;
+          }
+        } catch (e) {
+          // auth_id column doesn't exist - that's okay
+          console.log(`[${requestId}] [balance] auth_id column not available for vendor lookup`);
+        }
+      }
+      
+      // Get auth_id separately if vendor found and column exists
+      let vendorAuthId: string | null = null;
+      if (vendor) {
+        try {
+          const { data: vendorWithAuth, error: authError } = await supabase
+            .from('vendors')
+            .select('auth_id')
+            .eq('vendor_name', vendor.vendor_name)
+            .maybeSingle();
+          
+          if (!authError && vendorWithAuth) {
+            vendorAuthId = vendorWithAuth.auth_id || null;
+          }
+        } catch (e) {
+          // Column doesn't exist - that's okay
+          console.log(`[${requestId}] [balance] auth_id column not available`);
+        }
+      }
       
       console.log(`[${requestId}] [balance] Vendor check result:`, {
         found: !!vendor,
@@ -60,13 +102,13 @@ export async function GET(request: NextRequest) {
         vendor: vendor ? {
           id: vendor.id,
           vendor_name: vendor.vendor_name,
-          has_auth_id: !!vendor.auth_id,
+          has_auth_id: !!vendorAuthId,
         } : null,
       });
       
       if (vendor) {
         // It's a vendor - use auth_id as identifier (or vendor_name as fallback)
-        const vendorCollectorIdentifier = vendor.auth_id || vendor.vendor_name;
+        const vendorCollectorIdentifier = vendorAuthId || vendor.vendor_name;
         console.log(`[${requestId}] [balance] Creating/getting vendor account:`, {
           vendorCollectorIdentifier: vendorCollectorIdentifier.substring(0, 20) + '...',
           vendorId: vendor.id,
