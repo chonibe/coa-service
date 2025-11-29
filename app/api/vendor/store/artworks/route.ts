@@ -25,12 +25,14 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "Vendor not found" }, { status: 404 })
     }
 
-    // Get all approved/published submissions for this vendor
+    // Get all submitted (pending), approved, or published submissions for this vendor
+    // Once submitted, artworks can be selected for proof prints
     const { data: submissions, error: submissionsError } = await supabase
       .from("vendor_product_submissions")
       .select("id, product_data, status, submitted_at")
       .eq("vendor_id", vendor.id)
-      .in("status", ["approved", "published"])
+      .in("status", ["pending", "approved", "published"])
+      .order("submitted_at", { ascending: false })
 
     if (submissionsError) {
       console.error("Error fetching submissions:", submissionsError)
