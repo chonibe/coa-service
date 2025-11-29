@@ -101,7 +101,8 @@ export function PurchaseDialog({
 
       if (response.ok) {
         const data = await response.json()
-        const vendorAddress = data.vendor?.address || ""
+        // Use delivery_address if available, otherwise fall back to address
+        const vendorAddress = data.vendor?.delivery_address || data.vendor?.address || ""
         setAddress(vendorAddress)
         setHasAddress(vendorAddress && vendorAddress.trim() !== "")
       }

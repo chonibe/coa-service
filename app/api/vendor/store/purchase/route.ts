@@ -127,9 +127,11 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Vendor not found" }, { status: 404 })
     }
 
-    // Validate address is required for store purchases (especially for Lamp delivery)
+    // Validate delivery address is required for store purchases (especially for Lamp delivery)
+    // Check delivery_address first, then fall back to address
     // This is now handled in the UI as a payment step, but we still validate here for security
-    if (!vendor.address || vendor.address.trim() === "") {
+    const deliveryAddress = vendor.delivery_address || vendor.address
+    if (!deliveryAddress || deliveryAddress.trim() === "") {
       return NextResponse.json(
         {
           error: "Delivery address required",

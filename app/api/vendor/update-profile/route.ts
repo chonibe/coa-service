@@ -46,6 +46,7 @@ export async function POST(request: NextRequest) {
       contact_email: formData.contact_email,
       phone: formData.phone,
       address: formData.address,
+      delivery_address: formData.delivery_address,
       website: formData.website,
       instagram_url: formData.instagram_url,
       bio: formData.bio,

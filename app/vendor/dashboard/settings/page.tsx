@@ -26,6 +26,7 @@ interface VendorProfile {
   is_company: boolean
   bank_account: string | null
   address: string | null
+  delivery_address: string | null
   phone: string | null
   contact_name: string | null
   contact_email: string | null
@@ -39,6 +40,7 @@ interface FormState {
   is_company: boolean
   bank_account: string
   address: string
+  delivery_address: string
   phone: string
   contact_name: string
   contact_email: string
@@ -82,6 +84,7 @@ export default function VendorSettingsPage() {
     is_company: false,
     bank_account: "",
     address: "",
+    delivery_address: "",
     phone: "",
     contact_name: "",
     contact_email: "",
@@ -109,6 +112,7 @@ export default function VendorSettingsPage() {
             is_company: data.vendor.is_company || false,
             bank_account: data.vendor.bank_account || "",
             address: data.vendor.address || "",
+            delivery_address: data.vendor.delivery_address || "",
             phone: data.vendor.phone || "",
             contact_name: data.vendor.contact_name || "",
             contact_email: data.vendor.contact_email || "",
@@ -181,6 +185,7 @@ export default function VendorSettingsPage() {
           contact_email: result.vendor.contact_email || "",
           phone: result.vendor.phone || "",
           address: result.vendor.address || "",
+          delivery_address: result.vendor.delivery_address || "",
           paypal_email: result.vendor.paypal_email || "",
           bank_account: result.vendor.bank_account || "",
           tax_id: result.vendor.tax_id || "",
@@ -310,6 +315,20 @@ export default function VendorSettingsPage() {
                         onChange={handleInputChange}
                         rows={3}
                       />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="delivery_address">Delivery Address</Label>
+                      <Textarea
+                        id="delivery_address"
+                        name="delivery_address"
+                        placeholder="Enter your delivery address for store purchases (Lamps and proof prints)"
+                        value={formState.delivery_address}
+                        onChange={handleInputChange}
+                        rows={3}
+                      />
+                      <p className="text-sm text-muted-foreground">
+                        This address will be used for shipping store purchases. If not provided, your business address will be used.
+                      </p>
                     </div>
                   </CardContent>
                 </Card>

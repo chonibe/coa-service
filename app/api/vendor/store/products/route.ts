@@ -101,8 +101,10 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "Vendor not found" }, { status: 404 })
     }
 
-    // Check if address is set (required for Lamp purchases)
-    const hasAddress = vendor.address && vendor.address.trim() !== ""
+    // Check if delivery address is set (required for Lamp purchases)
+    // Use delivery_address if available, otherwise fall back to address
+    const deliveryAddress = vendor.delivery_address || vendor.address
+    const hasAddress = deliveryAddress && deliveryAddress.trim() !== ""
 
     // Determine correct SKU based on vendor address country (internal only)
     // streetlamp002 is for US, streetlamp001 is for EU/rest of world
