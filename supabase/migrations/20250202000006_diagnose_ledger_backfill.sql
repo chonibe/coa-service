@@ -8,7 +8,7 @@
 SELECT 
   'Fulfilled Line Items' as check_name,
   COUNT(*) as count,
-  COUNT(DISTINCT vendor_name) as unique_vendors,
+  COUNT(DISTINCT oli.vendor_name) as unique_vendors,
   SUM(
     CASE 
       WHEN pvp.is_percentage THEN (COALESCE(oli.price, 0) * COALESCE(pvp.payout_amount, 25) / 100)
