@@ -70,14 +70,14 @@ LIMIT 20;
 SELECT 
   v.vendor_name,
   v.auth_id,
-  COALESCE(v.auth_id, v.vendor_name) as collector_identifier,
+  COALESCE(v.auth_id::TEXT, v.vendor_name) as collector_identifier,
   CASE 
     WHEN ca.id IS NOT NULL THEN 'HAS ACCOUNT'
     ELSE 'NO ACCOUNT'
   END as account_status
 FROM vendors v
 LEFT JOIN collector_accounts ca 
-  ON ca.collector_identifier = COALESCE(v.auth_id, v.vendor_name)
+  ON ca.collector_identifier = COALESCE(v.auth_id::TEXT, v.vendor_name)
 WHERE v.vendor_name IN (
   SELECT DISTINCT vendor_name 
   FROM order_line_items_v2 
@@ -89,11 +89,11 @@ ORDER BY v.vendor_name;
 -- Check 5: What's the current USD balance for each vendor?
 SELECT 
   v.vendor_name,
-  COALESCE(v.auth_id, v.vendor_name) as collector_identifier,
+  COALESCE(v.auth_id::TEXT, v.vendor_name) as collector_identifier,
   COALESCE(
     (SELECT SUM(amount) 
      FROM collector_ledger_entries 
-     WHERE collector_identifier = COALESCE(v.auth_id, v.vendor_name)
+     WHERE collector_identifier = COALESCE(v.auth_id::TEXT, v.vendor_name)
        AND currency = 'USD'
     ), 
     0
@@ -101,7 +101,7 @@ SELECT
   COALESCE(
     (SELECT SUM(amount) 
      FROM collector_ledger_entries 
-     WHERE collector_identifier = COALESCE(v.auth_id, v.vendor_name)
+     WHERE collector_identifier = COALESCE(v.auth_id::TEXT, v.vendor_name)
        AND currency = 'USD'
        AND transaction_type = 'payout_earned'
     ), 
@@ -110,7 +110,7 @@ SELECT
   COALESCE(
     (SELECT ABS(SUM(amount)) 
      FROM collector_ledger_entries 
-     WHERE collector_identifier = COALESCE(v.auth_id, v.vendor_name)
+     WHERE collector_identifier = COALESCE(v.auth_id::TEXT, v.vendor_name)
        AND currency = 'USD'
        AND transaction_type = 'payout_withdrawal'
     ), 
