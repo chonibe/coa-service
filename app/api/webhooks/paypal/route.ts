@@ -108,6 +108,23 @@ async function handlePayoutSuccess(event: any, supabase: ReturnType<typeof creat
         })
         .eq("id", payout.id)
 
+      // Record withdrawal in collector ledger
+      try {
+        const { recordPayoutWithdrawal } = await import("@/lib/banking/payout-withdrawal")
+        const withdrawalResult = await recordPayoutWithdrawal(
+          payout.vendor_name,
+          payout.id,
+          parseFloat(payout.amount.toString()),
+          supabase
+        )
+        if (!withdrawalResult.success) {
+          console.error(`Failed to record payout withdrawal for payout ${payout.id}:`, withdrawalResult.error)
+        }
+      } catch (error) {
+        console.error(`Error recording payout withdrawal for payout ${payout.id}:`, error)
+        // Don't fail the webhook if withdrawal recording fails
+      }
+
       // Send notifications
       await notifyPayoutProcessed(payout.vendor_name, {
         vendorName: payout.vendor_name,

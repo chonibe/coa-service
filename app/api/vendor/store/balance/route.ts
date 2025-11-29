@@ -17,7 +17,7 @@ export async function GET(request: NextRequest) {
     // Get vendor info
     const { data: vendor, error: vendorError } = await supabase
       .from("vendors")
-      .select("id, vendor_name")
+      .select("id, vendor_name, auth_id")
       .eq("vendor_name", vendorName)
       .single()
 
@@ -25,56 +25,22 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "Vendor not found" }, { status: 404 })
     }
 
-    // Calculate pending payout amount using the EXACT same method as the payout page
-    // This matches the "Ready to Request" amount shown on the payout page
-    const { data: pendingPayouts, error: pendingPayoutsError } = await supabase.rpc(
-      "get_pending_vendor_payouts"
-    )
-
-    if (pendingPayoutsError) {
-      console.error("Error fetching pending payouts:", pendingPayoutsError)
+    // Get vendor's collector identifier (auth_id)
+    const collectorIdentifier = vendor.auth_id || vendorName
+    if (!collectorIdentifier) {
       return NextResponse.json(
-        { error: "Failed to calculate balance", message: pendingPayoutsError.message },
-        { status: 500 }
+        { error: "Vendor does not have an auth_id" },
+        { status: 400 }
       )
     }
 
-    // Find the vendor's pending payout amount (this matches "Ready to Request" on payout page)
-    const vendorPendingPayout = pendingPayouts?.find(
-      (p: any) => p.vendor_name === vendorName
-    )
-    const pendingPayoutAmount = vendorPendingPayout
-      ? Number(vendorPendingPayout.amount)
-      : 0
-
-    // Subtract store purchases made from balance (from ledger entries)
-    // These are the transactions that reduce the available payout amount
-    const { data: storePurchases, error: storePurchasesError } = await supabase
-      .from("vendor_ledger_entries")
-      .select("amount")
-      .eq("vendor_name", vendorName)
-      .eq("entry_type", "store_purchase")
-
-    if (storePurchasesError) {
-      console.error("Error fetching store purchases:", storePurchasesError)
-      // Continue with calculation even if this fails
-    }
-
-    let storePurchasesTotal = 0
-    storePurchases?.forEach((entry) => {
-      // Amount is already negative in ledger, so we add it (subtract from total)
-      storePurchasesTotal += Math.abs(Number(entry.amount)) || 0
-    })
-
-    // Available balance = pending payout amount - store purchases
-    // This matches exactly what's shown in "Ready to Request" minus any store purchases
-    const availableBalance = Math.max(0, pendingPayoutAmount - storePurchasesTotal)
+    // Get USD balance from unified collector banking system
+    const { getUsdBalance } = await import("@/lib/banking/balance-calculator")
+    const usdBalance = await getUsdBalance(collectorIdentifier)
 
     return NextResponse.json({
       success: true,
-      balance: availableBalance,
-      pendingPayoutAmount,
-      storePurchasesTotal,
+      balance: usdBalance,
       currency: "USD",
     })
   } catch (error: any) {

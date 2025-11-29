@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { PaymentMethodSelector } from "./payment-method-selector"
+import { CreditPaymentOption } from "./credit-payment-option"
 import { useToast } from "@/components/ui/use-toast"
 import { Loader2, MapPin, CheckCircle2 } from "lucide-react"
 import Link from "next/link"
@@ -40,7 +41,9 @@ export function PurchaseDialog({
   price,
   onSuccess,
 }: PurchaseDialogProps) {
-  const [paymentMethod, setPaymentMethod] = useState<"payout_balance" | "external">("payout_balance")
+  const [paymentMethod, setPaymentMethod] = useState<"payout_balance" | "external" | "credits">("payout_balance")
+  const [creditAmount, setCreditAmount] = useState(0)
+  const [collectorIdentifier, setCollectorIdentifier] = useState<string | null>(null)
   const [externalPaymentId, setExternalPaymentId] = useState("")
   const [balance, setBalance] = useState<number | null>(null)
   const [address, setAddress] = useState<string>("")
@@ -53,8 +56,25 @@ export function PurchaseDialog({
     if (open) {
       fetchBalance()
       fetchAddress()
+      fetchCollectorIdentifier()
     }
   }, [open])
+
+  const fetchCollectorIdentifier = async () => {
+    try {
+      const response = await fetch("/api/banking/collector-identifier", {
+        credentials: "include",
+      })
+      if (response.ok) {
+        const data = await response.json()
+        if (data.success) {
+          setCollectorIdentifier(data.collectorIdentifier)
+        }
+      }
+    } catch (error) {
+      console.error("Error fetching collector identifier:", error)
+    }
+  }
 
   const fetchBalance = async () => {
     try {
@@ -131,8 +151,9 @@ export function PurchaseDialog({
           purchaseType,
           productSku: purchaseType === "lamp" ? productSku : undefined,
           artworkSubmissionId: purchaseType === "proof_print" ? artworkSubmissionId : undefined,
-          paymentMethod,
+          paymentMethod: paymentMethod === "credits" ? "credits" : paymentMethod,
           externalPaymentId: paymentMethod === "external" ? externalPaymentId : undefined,
+          creditAmount: paymentMethod === "credits" ? creditAmount : undefined,
         }),
       })
 
@@ -239,6 +260,16 @@ export function PurchaseDialog({
             externalPaymentId={externalPaymentId}
             onExternalPaymentIdChange={setExternalPaymentId}
           />
+
+          {/* Credit Payment Option */}
+          {collectorIdentifier && (
+            <CreditPaymentOption
+              collectorIdentifier={collectorIdentifier}
+              price={price}
+              onCreditAmountChange={setCreditAmount}
+              selectedCreditAmount={creditAmount}
+            />
+          )}
         </div>
 
         <DialogFooter>

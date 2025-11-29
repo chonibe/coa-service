@@ -109,9 +109,9 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    if (!paymentMethod || (paymentMethod !== "payout_balance" && paymentMethod !== "external")) {
+    if (!paymentMethod || (paymentMethod !== "payout_balance" && paymentMethod !== "external" && paymentMethod !== "credits")) {
       return NextResponse.json(
-        { error: "Invalid payment method. Must be 'payout_balance' or 'external'" },
+        { error: "Invalid payment method. Must be 'payout_balance', 'external', or 'credits'" },
         { status: 400 }
       )
     }
@@ -223,63 +223,78 @@ export async function POST(request: NextRequest) {
 
     // Check balance if using payout_balance
     let payoutBalanceUsed: number | null = null
+    let collectorIdentifier: string | null = null
     if (paymentMethod === "payout_balance") {
-      // Get pending payout amount (ready to request) using the same function as payout redeem
-      // This function accounts for refunds and other adjustments
-      const { data: pendingPayouts, error: pendingPayoutsError } = await supabase.rpc(
-        "get_pending_vendor_payouts"
-      )
-
-      if (pendingPayoutsError) {
-        console.error("Error fetching pending payouts:", pendingPayoutsError)
+      // Get vendor's collector identifier (auth_id)
+      collectorIdentifier = vendor.auth_id || vendorName
+      if (!collectorIdentifier) {
         return NextResponse.json(
-          { error: "Failed to calculate balance", message: pendingPayoutsError.message },
-          { status: 500 }
+          { error: "Vendor does not have an auth_id" },
+          { status: 400 }
         )
       }
 
-      // Find the vendor's pending payout amount
-      const vendorPendingPayout = pendingPayouts?.find(
-        (p: any) => p.vendor_name === vendorName
-      )
-      const pendingPayoutAmount = vendorPendingPayout
-        ? Number(vendorPendingPayout.amount)
-        : 0
+      // Get USD balance from collector banking system
+      const { getUsdBalance } = await import("@/lib/banking/balance-calculator")
+      const usdBalance = await getUsdBalance(collectorIdentifier)
 
-      // Subtract store purchases made from balance (from ledger entries)
-      const { data: storePurchases, error: storePurchasesError } = await supabase
-        .from("vendor_ledger_entries")
-        .select("amount")
-        .eq("vendor_name", vendorName)
-        .eq("entry_type", "store_purchase")
-
-      if (storePurchasesError) {
-        console.error("Error fetching store purchases:", storePurchasesError)
-        // Continue with calculation even if this fails
-      }
-
-      let storePurchasesTotal = 0
-      storePurchases?.forEach((entry) => {
-        storePurchasesTotal += Math.abs(Number(entry.amount)) || 0
-      })
-
-      // Available balance = pending payout amount - store purchases
-      const availableBalance = Math.max(0, pendingPayoutAmount - storePurchasesTotal)
-
-      if (availableBalance < totalAmount) {
+      if (usdBalance < totalAmount) {
         return NextResponse.json(
           {
-            error: "Insufficient balance",
-            availableBalance,
+            error: "Insufficient payout balance",
+            availableBalance: usdBalance,
             requiredAmount: totalAmount,
-            pendingPayoutAmount,
-            storePurchasesTotal,
           },
           { status: 400 }
         )
       }
 
       payoutBalanceUsed = totalAmount
+    }
+
+    // Check and process credit payment if using credits
+    let creditsUsed: number | null = null
+    let collectorIdentifier: string | null = null
+    if (paymentMethod === "credits") {
+      // Get collector identifier (vendor as collector)
+      // Try to find vendor's customer_id or account_number from orders
+      const { data: vendorOrder } = await supabase
+        .from("orders")
+        .select("customer_id, account_number")
+        .eq("customer_email", vendor.contact_email || '')
+        .limit(1)
+        .maybeSingle()
+
+      // Use account_number if available, otherwise customer_id, otherwise vendor_name as fallback
+      collectorIdentifier = vendorOrder?.account_number || vendorOrder?.customer_id?.toString() || vendorName
+
+      if (!collectorIdentifier) {
+        return NextResponse.json(
+          { error: "Unable to identify collector account" },
+          { status: 400 }
+        )
+      }
+
+      // Convert USD to credits (1 credit = $0.01, so $1 = 100 credits)
+      const creditsNeeded = Math.round(totalAmount * 100)
+
+      // Process credit payment
+      const { processCreditPayment } = await import("@/lib/banking/credit-payment")
+      const paymentResult = await processCreditPayment(
+        collectorIdentifier,
+        creditsNeeded,
+        undefined, // purchase_id will be set after purchase is created
+        `Store purchase: ${purchaseType === "lamp" ? `Lamp ${finalProductSku}` : "Proof print"}`
+      )
+
+      if (!paymentResult.success) {
+        return NextResponse.json(
+          { error: paymentResult.error || "Failed to process credit payment" },
+          { status: 400 }
+        )
+      }
+
+      creditsUsed = paymentResult.creditsUsed
     }
 
     // Create purchase record
@@ -298,6 +313,7 @@ export async function POST(request: NextRequest) {
         payment_method: paymentMethod,
         payout_balance_used: payoutBalanceUsed,
         external_payment_id: paymentMethod === "external" ? externalPaymentId : null,
+        credits_used: creditsUsed || null,
         status: "pending",
       })
       .select()
@@ -311,22 +327,25 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Create ledger entry if using payout balance
-    if (paymentMethod === "payout_balance" && payoutBalanceUsed) {
-      const { error: ledgerEntryError } = await supabase.from("vendor_ledger_entries").insert({
-        vendor_name: vendorName,
+    // Create ledger entry if using payout balance (in collector banking system)
+    if (paymentMethod === "payout_balance" && payoutBalanceUsed && collectorIdentifier) {
+      const { error: ledgerEntryError } = await supabase.from("collector_ledger_entries").insert({
+        collector_identifier: collectorIdentifier,
+        transaction_type: "payout_balance_purchase",
         amount: -Math.abs(payoutBalanceUsed), // Negative amount for deduction
-        entry_type: "store_purchase",
-        description: `Store purchase: ${purchaseType === "lamp" ? `Lamp ${productSku}` : "Proof print"}`,
-        created_by: "system",
+        currency: "USD",
+        purchase_id: purchase.id,
+        description: `Store purchase: ${purchaseType === "lamp" ? `Lamp ${finalProductSku}` : "Proof print"}`,
         metadata: {
-          purchase_id: purchase.id,
+          vendor_name: vendorName,
           purchase_type: purchaseType,
+          product_sku: purchaseType === "lamp" ? finalProductSku : null,
         },
+        created_by: "system",
       })
 
       if (ledgerEntryError) {
-        console.error("Error creating ledger entry:", ledgerEntryError)
+        console.error("Error creating payout balance purchase ledger entry:", ledgerEntryError)
         // Don't fail the purchase, but log the error
       }
     }

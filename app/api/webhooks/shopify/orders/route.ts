@@ -260,6 +260,15 @@ async function syncOrderToDatabase(order: any, supabase: any) {
             console.error(`[webhook] Error in edition assignment for product ${productId}:`, error)
           }
         }
+
+        // Process credit deposits for fulfilled line items
+        try {
+          const { processOrderFulfillmentCredits } = await import('@/lib/banking/fulfillment-credit-processor')
+          await processOrderFulfillmentCredits(order.id.toString(), supabase)
+        } catch (creditError) {
+          console.error(`[webhook] Error processing fulfillment credits for order ${order.name}:`, creditError)
+          // Don't fail the webhook if credit processing fails
+        }
       }
     }
 

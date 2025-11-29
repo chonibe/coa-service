@@ -15,6 +15,7 @@ import { MetricCard } from "@/components/vendor/metric-card"
 import { LoadingSkeleton } from "@/components/vendor/loading-skeleton"
 import { EmptyState } from "@/components/vendor/empty-state"
 import { KeyboardShortcutsManager, defaultShortcuts } from "@/lib/keyboard-shortcuts"
+import { BankingDashboard } from "./components/banking-dashboard"
 
 interface SalesData {
   totalSales: number
@@ -309,8 +310,59 @@ export default function VendorDashboardPage() {
               )}
             </CardContent>
           </Card>
+
+          <Card className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-0 shadow-xl">
+            <CardHeader>
+              <CardTitle>Credit Banking</CardTitle>
+              <CardDescription>Manage your credits and unlock free perks</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <BankingSection vendorName={vendorName} />
+            </CardContent>
+          </Card>
           </div>
       </div>
     </div>
   )
+}
+
+// Banking section component
+function BankingSection({ vendorName }: { vendorName: string }) {
+  const [collectorIdentifier, setCollectorIdentifier] = useState<string | null>(null)
+  const [isLoading, setIsLoading] = useState(true)
+
+  useEffect(() => {
+    const fetchCollectorIdentifier = async () => {
+      try {
+        const response = await fetch("/api/banking/collector-identifier", {
+          credentials: "include",
+        })
+        if (response.ok) {
+          const data = await response.json()
+          if (data.success) {
+            setCollectorIdentifier(data.collectorIdentifier)
+          }
+        }
+      } catch (error) {
+        console.error("Error fetching collector identifier:", error)
+      } finally {
+        setIsLoading(false)
+      }
+    }
+    fetchCollectorIdentifier()
+  }, [])
+
+  if (isLoading) {
+    return <Skeleton className="h-64 w-full" />
+  }
+
+  if (!collectorIdentifier) {
+    return (
+      <div className="text-center py-8 text-muted-foreground">
+        <p>Unable to load banking information</p>
+      </div>
+    )
+  }
+
+  return <BankingDashboard collectorIdentifier={collectorIdentifier} />
 }

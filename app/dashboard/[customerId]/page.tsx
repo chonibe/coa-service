@@ -37,6 +37,7 @@ import { AnimatePresence } from "framer-motion"
 import { Label } from "@/components/ui/label"
 import { Checkbox } from "@/components/ui/checkbox"
 import { ArtworkCard } from "@/components/ui/artwork-card"
+import { BankingDashboard } from "./components/banking-dashboard"
 
 // Type Definitions
 interface LineItem {
@@ -817,6 +818,11 @@ export default function CustomerDashboardById() {
           </div>
         </div>
 
+        {/* Banking Dashboard */}
+        <div className="mb-8">
+          <BankingSection customerId={params.customerId as string} />
+        </div>
+
         {/* Enhanced Controls */}
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex flex-wrap gap-2">
@@ -1017,4 +1023,51 @@ export default function CustomerDashboardById() {
       )}
     </div>
   )
+}
+
+// Banking section component
+function BankingSection({ customerId }: { customerId: string }) {
+  const [collectorIdentifier, setCollectorIdentifier] = useState<string | null>(null)
+  const [isLoading, setIsLoading] = useState(true)
+
+  useEffect(() => {
+    const fetchCollectorIdentifier = async () => {
+      try {
+        // Try to get account_number from orders, otherwise use customer_id
+        const response = await fetch(`/api/customer/dashboard/${customerId}`)
+        if (response.ok) {
+          const data = await response.json()
+          if (data.success && data.orders && data.orders.length > 0) {
+            const order = data.orders[0]
+            // Use account_number if available, otherwise customer_id
+            const identifier = order.account_number || customerId
+            setCollectorIdentifier(identifier)
+          } else {
+            // Fallback to customer_id
+            setCollectorIdentifier(customerId)
+          }
+        } else {
+          // Fallback to customer_id
+          setCollectorIdentifier(customerId)
+        }
+      } catch (error) {
+        console.error("Error fetching collector identifier:", error)
+        // Fallback to customer_id
+        setCollectorIdentifier(customerId)
+      } finally {
+        setIsLoading(false)
+      }
+    }
+    fetchCollectorIdentifier()
+  }, [customerId])
+
+  if (isLoading) {
+    return <div className="animate-pulse h-64 bg-zinc-900/50 rounded-xl" />
+  }
+
+  if (!collectorIdentifier) {
+    return null
+  }
+
+  return <BankingDashboard collectorIdentifier={collectorIdentifier} />
 }

@@ -25,28 +25,6 @@ interface BenefitsManagementProps {
   isEditing?: boolean
 }
 
-// Get icon based on benefit type name
-const getBenefitIcon = (typeName: string) => {
-  switch (typeName?.toLowerCase()) {
-    case "digital content":
-      return <FileText className="h-4 w-4" />
-    case "exclusive access":
-      return <Key className="h-4 w-4" />
-    case "virtual event":
-      return <Video className="h-4 w-4" />
-    case "physical item":
-      return <Package className="h-4 w-4" />
-    case "discount":
-      return <Percent className="h-4 w-4" />
-    case "behind the scenes":
-      return <Eye className="h-4 w-4" />
-    case "hidden series":
-      return <Lock className="h-4 w-4" />
-    default:
-      return <FileText className="h-4 w-4" />
-  }
-}
-
 export function BenefitsManagement({
   benefits = [],
   onBenefitsChange,
@@ -65,6 +43,28 @@ export function BenefitsManagement({
   const [showDescription, setShowDescription] = useState(false)
   const [showLinkCode, setShowLinkCode] = useState(false)
   const [showSchedule, setShowSchedule] = useState(false)
+  
+  // Get icon based on benefit type name
+  const getBenefitIcon = (typeName: string) => {
+    switch (typeName?.toLowerCase()) {
+      case "digital content":
+        return <FileText className="h-4 w-4" />
+      case "exclusive access":
+        return <Key className="h-4 w-4" />
+      case "virtual event":
+        return <Video className="h-4 w-4" />
+      case "physical item":
+        return <Package className="h-4 w-4" />
+      case "discount":
+        return <Percent className="h-4 w-4" />
+      case "behind the scenes":
+        return <Eye className="h-4 w-4" />
+      case "hidden series":
+        return <Lock className="h-4 w-4" />
+      default:
+        return <FileText className="h-4 w-4" />
+    }
+  }
   
   const [formData, setFormData] = useState({
     benefitTypeId: null as number | null,
