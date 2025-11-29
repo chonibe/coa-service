@@ -68,24 +68,35 @@ export function BenefitsManagement({
   // Get icon based on benefit type name
   const getBenefitIcon = (typeName: string) => {
     const IconComponent = (() => {
-      switch (typeName?.toLowerCase()) {
-        case "digital content":
-          return iconMap.FileText
-        case "exclusive access":
-          return iconMap.Key
-        case "virtual event":
-          return iconMap.Video
-        case "physical item":
-          return iconMap.Package
-        case "discount":
-          return iconMap.Percent
-        case "behind the scenes":
-          return iconMap.Eye
-        case "hidden series":
-          return iconMap.Lock
-        default:
-          return iconMap.FileText
+      const lowerName = typeName?.toLowerCase() || ""
+      if (lowerName.includes("digital") || lowerName.includes("content")) {
+        return iconMap.FileText
       }
+      if (lowerName.includes("exclusive") && lowerName.includes("access")) {
+        return iconMap.Key
+      }
+      if (lowerName.includes("discount")) {
+        return iconMap.Percent
+      }
+      if (lowerName.includes("behind") || lowerName.includes("scenes")) {
+        return iconMap.Eye
+      }
+      if (lowerName.includes("hidden") && lowerName.includes("series")) {
+        return iconMap.Lock
+      }
+      if (lowerName.includes("vip") && lowerName.includes("artwork")) {
+        return iconMap.Lock // Using Lock for VIP, could add Crown icon later
+      }
+      if (lowerName.includes("credits") || lowerName.includes("bonus")) {
+        return iconMap.FileText // Using FileText for credits, could add Coins icon later
+      }
+      if (lowerName.includes("early") && lowerName.includes("drop")) {
+        return iconMap.Key // Using Key for early drop
+      }
+      if (lowerName.includes("exclusive") && lowerName.includes("visibility")) {
+        return iconMap.Eye
+      }
+      return iconMap.FileText
     })()
     return <IconComponent className="h-4 w-4" />
   }

@@ -26,7 +26,14 @@ interface VendorProfile {
   is_company: boolean
   bank_account: string | null
   address: string | null
-  delivery_address: string | null
+  delivery_address1: string | null
+  delivery_address2: string | null
+  delivery_city: string | null
+  delivery_province: string | null
+  delivery_country: string | null
+  delivery_zip: string | null
+  delivery_phone: string | null
+  delivery_name: string | null
   phone: string | null
   contact_name: string | null
   contact_email: string | null
@@ -40,7 +47,14 @@ interface FormState {
   is_company: boolean
   bank_account: string
   address: string
-  delivery_address: string
+  delivery_address1: string
+  delivery_address2: string
+  delivery_city: string
+  delivery_province: string
+  delivery_country: string
+  delivery_zip: string
+  delivery_phone: string
+  delivery_name: string
   phone: string
   contact_name: string
   contact_email: string
@@ -84,7 +98,14 @@ export default function VendorSettingsPage() {
     is_company: false,
     bank_account: "",
     address: "",
-    delivery_address: "",
+    delivery_address1: "",
+    delivery_address2: "",
+    delivery_city: "",
+    delivery_province: "",
+    delivery_country: "",
+    delivery_zip: "",
+    delivery_phone: "",
+    delivery_name: "",
     phone: "",
     contact_name: "",
     contact_email: "",
@@ -112,7 +133,14 @@ export default function VendorSettingsPage() {
             is_company: data.vendor.is_company || false,
             bank_account: data.vendor.bank_account || "",
             address: data.vendor.address || "",
-            delivery_address: data.vendor.delivery_address || "",
+            delivery_address1: data.vendor.delivery_address1 || "",
+            delivery_address2: data.vendor.delivery_address2 || "",
+            delivery_city: data.vendor.delivery_city || "",
+            delivery_province: data.vendor.delivery_province || "",
+            delivery_country: data.vendor.delivery_country || "",
+            delivery_zip: data.vendor.delivery_zip || "",
+            delivery_phone: data.vendor.delivery_phone || "",
+            delivery_name: data.vendor.delivery_name || "",
             phone: data.vendor.phone || "",
             contact_name: data.vendor.contact_name || "",
             contact_email: data.vendor.contact_email || "",
