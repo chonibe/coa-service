@@ -56,21 +56,10 @@ export async function POST(request: Request) {
       return response
     }
 
-    // Check if account selection is required (user logged out previously)
-    const requireAccountSelection = cookieStore.get(REQUIRE_ACCOUNT_SELECTION_COOKIE)?.value === "true"
-
     // For non-admins, try to link vendor
     const vendor = await linkSupabaseUserToVendor(user, { allowCreate: false })
 
     if (vendor) {
-      // If account selection is required, redirect to selection page instead of auto-linking
-      if (requireAccountSelection) {
-        const response = NextResponse.json({ redirect: "/vendor/select-account" })
-        response.cookies.set(clearAdminCookie.name, "", clearAdminCookie.options)
-        // Keep the REQUIRE_ACCOUNT_SELECTION_COOKIE so the selection page knows to show it
-        return response
-      }
-      
       const response = NextResponse.json({ redirect: VENDOR_DASHBOARD_REDIRECT })
       response.cookies.set(clearAdminCookie.name, "", clearAdminCookie.options)
       const vendorCookie = buildVendorSessionCookie(vendor.vendor_name)
