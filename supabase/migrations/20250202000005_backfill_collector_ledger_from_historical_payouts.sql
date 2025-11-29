@@ -74,8 +74,8 @@ BEGIN
         CONTINUE;
       END IF;
 
-      -- Get collector identifier
-      v_collector_identifier := COALESCE(v_vendor.auth_id, v_vendor.vendor_name);
+      -- Get collector identifier (cast auth_id to TEXT if it exists)
+      v_collector_identifier := COALESCE(v_vendor.auth_id::TEXT, v_vendor.vendor_name);
 
       -- Ensure collector account exists
       INSERT INTO collector_accounts (collector_identifier, account_type, vendor_id, account_status)
@@ -181,8 +181,8 @@ BEGIN
         CONTINUE;
       END IF;
 
-      -- Get collector identifier
-      v_collector_identifier := COALESCE(v_vendor.auth_id, v_vendor.vendor_name);
+      -- Get collector identifier (cast auth_id to TEXT if it exists)
+      v_collector_identifier := COALESCE(v_vendor.auth_id::TEXT, v_vendor.vendor_name);
 
       -- Ensure collector account exists
       INSERT INTO collector_accounts (collector_identifier, account_type, vendor_id, account_status)
