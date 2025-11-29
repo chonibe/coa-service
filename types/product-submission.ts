@@ -49,6 +49,7 @@ export interface ProductBenefit {
   starts_at?: string | null
   expires_at?: string | null
   is_series_level?: boolean // Whether this benefit applies to series or artwork
+  hidden_series_id?: string | null // For "Hidden Series" benefit type - series only accessible via this benefit
 }
 
 export interface ProductSubmissionData {

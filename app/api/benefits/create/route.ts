@@ -8,6 +8,7 @@ export async function POST(request: NextRequest) {
     const {
       product_id,
       series_id,
+      hidden_series_id,
       vendor_name,
       benefit_type_id,
       title,
@@ -42,6 +43,7 @@ export async function POST(request: NextRequest) {
       .insert({
         product_id: product_id || null,
         series_id: series_id || null,
+        hidden_series_id: hidden_series_id || null,
         vendor_name,
         benefit_type_id,
         title,

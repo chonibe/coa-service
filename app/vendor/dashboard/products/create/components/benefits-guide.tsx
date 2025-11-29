@@ -35,11 +35,11 @@ export function BenefitsGuide({ onDismiss, showDismiss = true }: BenefitsGuidePr
               <div>
                 <CardTitle className="flex items-center gap-2 mb-2">
                   <Sparkles className="h-5 w-5 text-purple-600" />
-                  Why Perks Matter for Your Artwork
+                  Hidden Treasures for Collectors
                 </CardTitle>
                 <CardDescription className="text-base">
-                  Perks turn purchases into experiences. They reward collectors and create lasting value
-                  that goes beyond the artwork itself.
+                  Hidden treasures turn purchases into journeys. Share exclusive knowledge, process insights,
+                  or unlock hidden series that only collectors can access.
                 </CardDescription>
               </div>
               {showDismiss && (
@@ -56,17 +56,17 @@ export function BenefitsGuide({ onDismiss, showDismiss = true }: BenefitsGuidePr
           </CardHeader>
           <CardContent className="space-y-6">
             <div>
-              <h3 className="font-semibold mb-3">Why Add Perks?</h3>
+              <h3 className="font-semibold mb-3">Why Share Hidden Treasures?</h3>
               <div className="space-y-4">
                 <div className="flex items-start gap-3">
                   <div className="p-2 rounded-lg bg-purple-500/10">
                     <Gift className="h-5 w-5 text-purple-600" />
                   </div>
                   <div>
-                    <h4 className="font-medium mb-1">Increase Perceived Value</h4>
+                    <h4 className="font-medium mb-1">Share Your Journey</h4>
                     <p className="text-sm text-muted-foreground">
-                      Exclusive perks make your artwork more valuable. Collectors get more than just
-                      the piece—they get access, content, and experiences.
+                      Give collectors insight into your creative process. Share sketches, iterations,
+                      or stories behind the artwork that only they can access.
                     </p>
                   </div>
                 </div>
@@ -76,10 +76,10 @@ export function BenefitsGuide({ onDismiss, showDismiss = true }: BenefitsGuidePr
                     <Users className="h-5 w-5 text-blue-600" />
                   </div>
                   <div>
-                    <h4 className="font-medium mb-1">Build Collector Loyalty</h4>
+                    <h4 className="font-medium mb-1">Create Exclusive Access</h4>
                     <p className="text-sm text-muted-foreground">
-                      Rewarding collectors creates a community. They feel valued and are more likely
-                      to purchase again and recommend your work.
+                      Unlock hidden series, early access to new works, or exclusive content that
+                      makes collectors feel part of your artistic journey.
                     </p>
                   </div>
                 </div>
@@ -89,10 +89,10 @@ export function BenefitsGuide({ onDismiss, showDismiss = true }: BenefitsGuidePr
                     <TrendingUp className="h-5 w-5 text-green-600" />
                   </div>
                   <div>
-                    <h4 className="font-medium mb-1">Stand Out from Competitors</h4>
+                    <h4 className="font-medium mb-1">Build Deeper Connections</h4>
                     <p className="text-sm text-muted-foreground">
-                      Most artists don't offer perks. Adding them differentiates your work and makes
-                      your editions more attractive to collectors.
+                      When collectors understand your process and story, they become more invested.
+                      Hidden treasures create lasting relationships beyond the purchase.
                     </p>
                   </div>
                 </div>
@@ -100,34 +100,34 @@ export function BenefitsGuide({ onDismiss, showDismiss = true }: BenefitsGuidePr
             </div>
 
             <div>
-              <h3 className="font-semibold mb-3">Popular Perk Types</h3>
+              <h3 className="font-semibold mb-3">Types of Hidden Treasures</h3>
               <div className="grid grid-cols-2 gap-3">
+                <div className="flex items-start gap-2 p-3 rounded-lg bg-background border">
+                  <Eye className="h-4 w-4 text-indigo-600 mt-0.5" />
+                  <div>
+                    <h4 className="text-sm font-medium">Behind the Scenes</h4>
+                    <p className="text-xs text-muted-foreground">Process videos, sketches, iterations</p>
+                  </div>
+                </div>
                 <div className="flex items-start gap-2 p-3 rounded-lg bg-background border">
                   <FileText className="h-4 w-4 text-blue-600 mt-0.5" />
                   <div>
-                    <h4 className="text-sm font-medium">Digital Content</h4>
-                    <p className="text-xs text-muted-foreground">PDFs, videos, exclusive images</p>
+                    <h4 className="text-sm font-medium">Collector Archive</h4>
+                    <p className="text-xs text-muted-foreground">High-res process images, notes</p>
                   </div>
                 </div>
                 <div className="flex items-start gap-2 p-3 rounded-lg bg-background border">
                   <Key className="h-4 w-4 text-purple-600 mt-0.5" />
                   <div>
-                    <h4 className="text-sm font-medium">Exclusive Access</h4>
-                    <p className="text-xs text-muted-foreground">Early access to new releases</p>
+                    <h4 className="text-sm font-medium">Hidden Series</h4>
+                    <p className="text-xs text-muted-foreground">Unlock exclusive series access</p>
                   </div>
                 </div>
                 <div className="flex items-start gap-2 p-3 rounded-lg bg-background border">
                   <Video className="h-4 w-4 text-green-600 mt-0.5" />
                   <div>
-                    <h4 className="text-sm font-medium">Virtual Events</h4>
-                    <p className="text-xs text-muted-foreground">Livestreams, Q&A sessions</p>
-                  </div>
-                </div>
-                <div className="flex items-start gap-2 p-3 rounded-lg bg-background border">
-                  <Gift className="h-4 w-4 text-orange-600 mt-0.5" />
-                  <div>
-                    <h4 className="text-sm font-medium">Physical Items</h4>
-                    <p className="text-xs text-muted-foreground">Signed prints, merchandise</p>
+                    <h4 className="text-sm font-medium">Artist Commentary</h4>
+                    <p className="text-xs text-muted-foreground">Audio/video stories about the work</p>
                   </div>
                 </div>
               </div>
@@ -139,29 +139,29 @@ export function BenefitsGuide({ onDismiss, showDismiss = true }: BenefitsGuidePr
                 <li className="flex items-start gap-2">
                   <span className="text-primary font-bold">•</span>
                   <span>
-                    <strong>Start simple.</strong> You can always add more perks later. Even one
-                    benefit adds value.
+                    <strong>Share knowledge, not fluff.</strong> Focus on insights about your process,
+                    stories behind the artwork, or exclusive access that collectors can't get elsewhere.
                   </span>
                 </li>
                 <li className="flex items-start gap-2">
                   <span className="text-primary font-bold">•</span>
                   <span>
-                    <strong>Be specific.</strong> Clear, detailed perks are more valuable than vague
-                    promises.
+                    <strong>Keep it personal.</strong> This is your chance to connect with collectors.
+                    Share what makes this artwork special to you.
                   </span>
                 </li>
                 <li className="flex items-start gap-2">
                   <span className="text-primary font-bold">•</span>
                   <span>
-                    <strong>Deliver on time.</strong> Set realistic dates and stick to them. Your
-                    reputation depends on it.
+                    <strong>Hidden series are powerful.</strong> Create exclusive series that only unlock
+                    when collectors purchase specific artworks. This creates true exclusivity.
                   </span>
                 </li>
                 <li className="flex items-start gap-2">
                   <span className="text-primary font-bold">•</span>
                   <span>
-                    <strong>Use series-level perks.</strong> When creating a series, you can add
-                    perks that apply to all artworks, saving time and creating consistency.
+                    <strong>Start with one treasure.</strong> You don't need to add everything at once.
+                    Even a simple process video or artist note adds significant value.
                   </span>
                 </li>
               </ul>

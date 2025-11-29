@@ -127,6 +127,17 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Vendor not found" }, { status: 404 })
     }
 
+    // Validate address is required for store purchases (especially for Lamp delivery)
+    if (!vendor.address || vendor.address.trim() === "") {
+      return NextResponse.json(
+        {
+          error: "Delivery address required",
+          message: "Please add a delivery address to your profile before making store purchases. Go to Settings to update your address.",
+        },
+        { status: 400 }
+      )
+    }
+
     let unitPrice = 0
     let discountPercentage: number | null = null
     let totalAmount = 0

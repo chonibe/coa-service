@@ -54,6 +54,7 @@ export async function GET(
           starts_at: b.starts_at,
           expires_at: b.expires_at,
           is_series_level: false,
+          hidden_series_id: b.hidden_series_id || null,
         }))
       }
     }
@@ -79,6 +80,7 @@ export async function GET(
           starts_at: b.starts_at,
           expires_at: b.expires_at,
           is_series_level: true,
+          hidden_series_id: b.hidden_series_id || null,
         }))
         existingBenefits = [...existingBenefits, ...seriesLevelBenefits]
       }
@@ -318,6 +320,7 @@ export async function PUT(
                 access_code: benefit.access_code || null,
                 starts_at: benefit.starts_at || null,
                 expires_at: benefit.expires_at || null,
+                hidden_series_id: (benefit as any).hidden_series_id || null,
                 updated_at: new Date().toISOString(),
               })
               .eq("id", benefit.id)
@@ -326,6 +329,7 @@ export async function PUT(
             await supabase.from("product_benefits").insert({
               series_id: seriesId,
               product_id: null,
+              hidden_series_id: (benefit as any).hidden_series_id || null,
               vendor_name: vendor.vendor_name,
               benefit_type_id: benefit.benefit_type_id,
               title: benefit.title,

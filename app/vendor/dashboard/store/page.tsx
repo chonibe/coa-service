@@ -4,6 +4,10 @@ import { useState, useEffect } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Skeleton } from "@/components/ui/skeleton"
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
+import { Button } from "@/components/ui/button"
+import { AlertCircle, MapPin } from "lucide-react"
+import Link from "next/link"
 import { BalanceDisplay } from "./components/balance-display"
 import { LampPurchaseCard } from "./components/lamp-purchase-card"
 import { ProofPrintGallery } from "./components/proof-print-gallery"
@@ -12,11 +16,26 @@ import { PurchaseHistory } from "./components/purchase-history"
 export default function StorePage() {
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [hasAddress, setHasAddress] = useState<boolean | null>(null)
 
   useEffect(() => {
-    // Initial load
+    fetchAddressStatus()
     setIsLoading(false)
   }, [])
+
+  const fetchAddressStatus = async () => {
+    try {
+      const response = await fetch("/api/vendor/store/products", {
+        credentials: "include",
+      })
+      if (response.ok) {
+        const data = await response.json()
+        setHasAddress(data.hasAddress ?? false)
+      }
+    } catch (error) {
+      console.error("Error fetching address status:", error)
+    }
+  }
 
   if (isLoading) {
     return (
@@ -50,6 +69,25 @@ export default function StorePage() {
       </div>
 
       <BalanceDisplay />
+
+      {hasAddress === false && (
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertTitle>Delivery Address Required</AlertTitle>
+          <AlertDescription className="mt-2">
+            <p className="mb-3">
+              You need to add a delivery address to your profile before making store purchases. 
+              This is required for shipping Lamps and proof prints to your location.
+            </p>
+            <Button asChild variant="outline" size="sm">
+              <Link href="/vendor/dashboard/settings">
+                <MapPin className="h-4 w-4 mr-2" />
+                Add Delivery Address
+              </Link>
+            </Button>
+          </AlertDescription>
+        </Alert>
+      )}
 
       <Tabs defaultValue="products" className="space-y-4">
         <TabsList>

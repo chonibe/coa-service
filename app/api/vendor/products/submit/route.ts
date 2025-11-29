@@ -297,6 +297,7 @@ export async function POST(request: NextRequest) {
           const { error: benefitError } = await supabase.from("product_benefits").insert({
             series_id: seriesId,
             product_id: null,
+            hidden_series_id: (benefit as any).hidden_series_id || null,
             vendor_name: vendor.vendor_name,
             benefit_type_id: benefit.benefit_type_id,
             title: benefit.title,

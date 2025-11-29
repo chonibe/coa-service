@@ -80,6 +80,14 @@ const getBenefitTypeConfig = (name: string) => {
       visual: "👁️",
     }
   }
+  if (normalized.includes("hidden") || normalized.includes("series")) {
+    return {
+      color: "from-amber-500 to-orange-500",
+      bgColor: "bg-amber-50 dark:bg-amber-950/20",
+      borderColor: "border-amber-200 dark:border-amber-800",
+      visual: "🔒",
+    }
+  }
   
   // Default
   return {

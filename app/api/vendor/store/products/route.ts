@@ -101,6 +101,9 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "Vendor not found" }, { status: 404 })
     }
 
+    // Check if address is set (required for Lamp purchases)
+    const hasAddress = vendor.address && vendor.address.trim() !== ""
+
     // Determine correct SKU based on vendor address country (internal only)
     // streetlamp002 is for US, streetlamp001 is for EU/rest of world
     // Check tax_country first, then parse address for country information
@@ -155,6 +158,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
+      hasAddress,
       products: {
         lamps: lampProducts,
         proofPrints: proofPrintProduct,
