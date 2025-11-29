@@ -351,19 +351,107 @@ export default function VendorSettingsPage() {
                         rows={3}
                       />
                     </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="delivery_address">Delivery Address</Label>
-                      <Textarea
-                        id="delivery_address"
-                        name="delivery_address"
-                        placeholder="Enter your delivery address for store purchases (Lamps and proof prints)"
-                        value={formState.delivery_address}
-                        onChange={handleInputChange}
-                        rows={3}
-                      />
-                      <p className="text-sm text-muted-foreground">
-                        This address will be used for shipping store purchases. If not provided, your business address will be used.
-                      </p>
+                    <div className="space-y-4 border-t pt-4 mt-4">
+                      <div>
+                        <Label className="text-base font-semibold">Delivery Address</Label>
+                        <p className="text-sm text-muted-foreground mb-4">
+                          This address will be used for shipping store purchases (Lamps and proof prints). 
+                          Structured format matches Shopify order requirements.
+                        </p>
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="delivery_name">Full Name</Label>
+                        <Input
+                          id="delivery_name"
+                          name="delivery_name"
+                          placeholder="John Doe"
+                          value={formState.delivery_name}
+                          onChange={handleInputChange}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="delivery_address1">Street Address</Label>
+                        <Input
+                          id="delivery_address1"
+                          name="delivery_address1"
+                          placeholder="123 Main Street"
+                          value={formState.delivery_address1}
+                          onChange={handleInputChange}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="delivery_address2">Apartment, Suite, etc. (Optional)</Label>
+                        <Input
+                          id="delivery_address2"
+                          name="delivery_address2"
+                          placeholder="Apt 4B"
+                          value={formState.delivery_address2}
+                          onChange={handleInputChange}
+                        />
+                      </div>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="delivery_city">City</Label>
+                          <Input
+                            id="delivery_city"
+                            name="delivery_city"
+                            placeholder="New York"
+                            value={formState.delivery_city}
+                            onChange={handleInputChange}
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="delivery_province">State/Province</Label>
+                          <Input
+                            id="delivery_province"
+                            name="delivery_province"
+                            placeholder="NY"
+                            value={formState.delivery_province}
+                            onChange={handleInputChange}
+                          />
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="delivery_zip">ZIP/Postal Code</Label>
+                          <Input
+                            id="delivery_zip"
+                            name="delivery_zip"
+                            placeholder="10001"
+                            value={formState.delivery_zip}
+                            onChange={handleInputChange}
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="delivery_country">Country</Label>
+                          <Select 
+                            value={formState.delivery_country} 
+                            onValueChange={(value) => setFormState((prev) => ({ ...prev, delivery_country: value }))}
+                          >
+                            <SelectTrigger id="delivery_country">
+                              <SelectValue placeholder="Select country" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {COUNTRIES.map((country) => (
+                                <SelectItem key={country} value={country}>
+                                  {country}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="delivery_phone">Phone Number</Label>
+                        <Input
+                          id="delivery_phone"
+                          name="delivery_phone"
+                          type="tel"
+                          placeholder="+1 (555) 123-4567"
+                          value={formState.delivery_phone}
+                          onChange={handleInputChange}
+                        />
+                      </div>
                     </div>
                   </CardContent>
                 </Card>
