@@ -58,7 +58,7 @@ export function HiddenSeriesForm({ formData, setFormData, seriesId }: HiddenSeri
     const series = availableSeries.find((s) => s.id === seriesId)
     if (series) {
       setSelectedSeries(series)
-      setFormData({ ...formData, hiddenSeriesId: seriesId })
+      setFormData({ hiddenSeriesId: seriesId })
     }
   }
 
@@ -199,7 +199,7 @@ export function HiddenSeriesForm({ formData, setFormData, seriesId }: HiddenSeri
               id="description"
               placeholder="Tell collectors why this hidden series is exclusive and valuable..."
               value={formData.description}
-              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+              onChange={(e) => setFormData({ description: e.target.value })}
               rows={4}
               maxLength={300}
             />

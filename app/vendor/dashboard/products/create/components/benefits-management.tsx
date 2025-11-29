@@ -17,6 +17,14 @@ import { cn } from "@/lib/utils"
 import type { ProductBenefit } from "@/types/product-submission"
 import { BenefitTypeCards } from "./benefit-type-cards"
 import { BenefitsGuide } from "./benefits-guide"
+import { HiddenSeriesForm } from "./benefits/hidden-series-form"
+import { BehindScenesForm } from "./benefits/behind-scenes-form"
+import { DigitalContentForm } from "./benefits/digital-content-form"
+import { ArtistCommentaryForm } from "./benefits/artist-commentary-form"
+import { ExclusiveAccessForm } from "./benefits/exclusive-access-form"
+import { VirtualEventForm } from "./benefits/virtual-event-form"
+import { PhysicalItemForm } from "./benefits/physical-item-form"
+import { DiscountForm } from "./benefits/discount-form"
 
 interface BenefitsManagementProps {
   benefits: ProductBenefit[]
@@ -245,48 +253,71 @@ export function BenefitsManagement({
 
   const selectedBenefitType = benefitTypes.find((t) => t.id === formData.benefitTypeId)
   const isHiddenSeriesType = selectedBenefitType?.name?.toLowerCase().includes("hidden series")
-  const canSave = formData.benefitTypeId !== null && formData.title.trim().length > 0
+  
+  // Validation: Check if form can be saved based on type-specific requirements
+  const canSave = () => {
+    if (!formData.benefitTypeId || !formData.title.trim()) {
+      return false
+    }
+    // Hidden Series requires a series to be selected
+    if (isHiddenSeriesType && !formData.hiddenSeriesId) {
+      return false
+    }
+    return true
+  }
 
-  // Live Preview Component
-  const LivePreview = () => {
-    if (!formData.benefitTypeId && !formData.title) return null
+  // Get type-specific form component
+  const getTypeSpecificForm = () => {
+    if (!selectedBenefitType) return null
 
-    return (
-      <Card className="bg-muted/30 border-2 border-dashed">
-        <CardContent className="p-4">
-          <div className="flex items-start gap-3">
-            <div className="flex-1">
-              <div className="flex items-center gap-2 mb-2">
-                {formData.benefitTypeId && getBenefitIcon(getBenefitTypeName(formData.benefitTypeId))}
-                {formData.benefitTypeId && (
-                  <Badge variant="outline" className="text-xs">
-                    {getBenefitTypeName(formData.benefitTypeId)}
-                  </Badge>
-                )}
-                {formData.isSeriesLevel && seriesId && (
-                  <Badge variant="secondary" className="text-xs">
-                    Series
-                  </Badge>
-                )}
-                {formData.hiddenSeriesId && (
-                  <Badge variant="default" className="text-xs">
-                    Hidden Series
-                  </Badge>
-                )}
-              </div>
-              <h5 className="font-semibold text-sm mb-1">
-                {formData.title || "Benefit title..."}
-              </h5>
-              {formData.description && (
-                <p className="text-xs text-muted-foreground line-clamp-2">
-                  {formData.description}
-                </p>
-              )}
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-    )
+    const typeName = selectedBenefitType.name.toLowerCase()
+    const commonProps = {
+      formData: {
+        title: formData.title,
+        description: formData.description,
+        contentUrl: formData.contentUrl,
+        accessCode: formData.accessCode,
+        startsAt: formData.startsAt,
+        expiresAt: formData.expiresAt,
+        hiddenSeriesId: formData.hiddenSeriesId,
+      },
+      setFormData: (data: any) => {
+        // Merge the new data with existing formData
+        setFormData((prev: any) => ({
+          ...prev,
+          ...data,
+        }))
+      },
+      seriesId,
+    }
+
+    if (typeName.includes("hidden series")) {
+      return <HiddenSeriesForm {...commonProps} />
+    }
+    if (typeName.includes("behind") || typeName.includes("scenes")) {
+      return <BehindScenesForm {...commonProps} />
+    }
+    if (typeName.includes("digital") || typeName.includes("content")) {
+      return <DigitalContentForm {...commonProps} />
+    }
+    if (typeName.includes("commentary") || typeName.includes("artist")) {
+      return <ArtistCommentaryForm {...commonProps} />
+    }
+    if (typeName.includes("exclusive") || typeName.includes("access")) {
+      return <ExclusiveAccessForm {...commonProps} />
+    }
+    if (typeName.includes("virtual") || typeName.includes("event")) {
+      return <VirtualEventForm {...commonProps} />
+    }
+    if (typeName.includes("physical") || typeName.includes("item")) {
+      return <PhysicalItemForm {...commonProps} />
+    }
+    if (typeName.includes("discount")) {
+      return <DiscountForm {...commonProps} />
+    }
+
+    // Default fallback - use digital content form
+    return <DigitalContentForm {...commonProps} />
   }
 
   if (showForm) {
@@ -295,12 +326,16 @@ export function BenefitsManagement({
         <CardContent className="pt-6">
           <div className="flex items-center justify-between mb-6">
             <div>
-              <h4 className="text-lg font-semibold">
-                {editingIndex !== null ? "Edit Benefit" : "Add Hidden Treasure"}
-              </h4>
-              <p className="text-sm text-muted-foreground">
-                Share something special with collectors who purchase this artwork
-              </p>
+              <div>
+                <h4 className="text-lg font-semibold">
+                  {editingIndex !== null ? "Edit Benefit" : "Create Hidden Treasure"}
+                </h4>
+                <p className="text-sm text-muted-foreground">
+                  {formData.benefitTypeId 
+                    ? `Design the ${selectedBenefitType?.name.toLowerCase()} experience for collectors`
+                    : "Share something special with collectors who purchase this artwork"}
+                </p>
+              </div>
             </div>
             <Button variant="ghost" size="icon" onClick={handleCancel}>
               <X className="h-4 w-4" />
@@ -309,229 +344,121 @@ export function BenefitsManagement({
 
           <div className="space-y-6">
             {/* Benefit Type Selection */}
-            <div>
-              <Label className="text-base font-semibold mb-3 block">
-                What are you sharing? <span className="text-red-500">*</span>
-              </Label>
-              <BenefitTypeCards
-                benefitTypes={benefitTypes}
-                value={formData.benefitTypeId}
-                onChange={(id) => {
-                  setFormData({ ...formData, benefitTypeId: id, hiddenSeriesId: null })
-                }}
-                loading={loadingTypes}
-              />
-            </div>
-
-            {/* Title - Always visible */}
-            <div className="space-y-2">
-              <Label htmlFor="title" className="text-base font-semibold">
-                Title <span className="text-red-500">*</span>
-              </Label>
-              <Input
-                id="title"
-                placeholder="e.g., Process Video, Artist Commentary, Hidden Series Access"
-                value={formData.title}
-                onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                className="text-lg h-12"
-              />
-            </div>
-
-            {/* Hidden Series Selector - Conditional */}
-            {isHiddenSeriesType && (
-              <motion.div
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: "auto" }}
-                className="space-y-2"
-              >
-                <Label htmlFor="hidden-series" className="text-base font-semibold">
-                  Select Hidden Series <span className="text-red-500">*</span>
+            {!formData.benefitTypeId ? (
+              <div>
+                <Label className="text-base font-semibold mb-3 block">
+                  What are you sharing? <span className="text-red-500">*</span>
                 </Label>
-                {loadingSeries ? (
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                    Loading series...
-                  </div>
-                ) : (
-                  <Select
-                    value={formData.hiddenSeriesId || ""}
-                    onValueChange={(value) => setFormData({ ...formData, hiddenSeriesId: value })}
-                  >
-                    <SelectTrigger id="hidden-series" className="h-12">
-                      <SelectValue placeholder="Choose a series to unlock" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {availableSeries.length === 0 ? (
-                        <div className="p-4 text-sm text-muted-foreground text-center">
-                          No series available. Create a series first.
-                        </div>
-                      ) : (
-                        availableSeries.map((series) => (
-                          <SelectItem key={series.id} value={series.id}>
-                            {series.name}
-                          </SelectItem>
-                        ))
-                      )}
-                    </SelectContent>
-                  </Select>
-                )}
-                <p className="text-xs text-muted-foreground">
-                  This series will only be accessible to collectors who purchase this artwork
+                <p className="text-sm text-muted-foreground mb-4">
+                  Choose the type of hidden treasure you want to create for collectors
                 </p>
-              </motion.div>
-            )}
-
-            {/* Series Level Toggle - If series exists */}
-            {seriesId && (
-              <div className="flex items-center justify-between p-4 border rounded-lg bg-muted/30">
-                <div className="space-y-0.5">
-                  <Label htmlFor="series-level" className="text-sm font-semibold">
-                    Apply to all artworks in series
-                  </Label>
-                  <p className="text-xs text-muted-foreground">
-                    This benefit will be available for all artworks in "{seriesId}"
-                  </p>
-                </div>
-                <Switch
-                  id="series-level"
-                  checked={formData.isSeriesLevel}
-                  onCheckedChange={(checked) =>
-                    setFormData({ ...formData, isSeriesLevel: checked })
-                  }
+                <BenefitTypeCards
+                  benefitTypes={benefitTypes}
+                  value={formData.benefitTypeId}
+                  onChange={(id) => {
+                    setFormData({ 
+                      ...formData, 
+                      benefitTypeId: id, 
+                      hiddenSeriesId: null,
+                      title: "",
+                      description: "",
+                      contentUrl: "",
+                      accessCode: "",
+                      startsAt: "",
+                      expiresAt: "",
+                    })
+                  }}
+                  loading={loadingTypes}
                 />
               </div>
+            ) : (
+              <>
+                {/* Show selected type with option to change */}
+                <div className="flex items-center justify-between p-4 border rounded-lg bg-muted/30">
+                  <div className="flex items-center gap-3">
+                    {getBenefitIcon(getBenefitTypeName(formData.benefitTypeId))}
+                    <div>
+                      <p className="font-semibold">{selectedBenefitType?.name}</p>
+                      <p className="text-xs text-muted-foreground">Selected benefit type</p>
+                    </div>
+                  </div>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => {
+                      setFormData({ 
+                        ...formData, 
+                        benefitTypeId: null,
+                        title: "",
+                        description: "",
+                        contentUrl: "",
+                        accessCode: "",
+                        startsAt: "",
+                        expiresAt: "",
+                        hiddenSeriesId: null,
+                      })
+                    }}
+                  >
+                    Change Type
+                  </Button>
+                </div>
+
+                {/* Type-Specific Form */}
+                <motion.div
+                  key={formData.benefitTypeId}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                >
+                  {getTypeSpecificForm()}
+                </motion.div>
+
+                {/* Series Level Toggle - If series exists */}
+                {seriesId && (
+                  <div className="flex items-center justify-between p-4 border rounded-lg bg-muted/30">
+                    <div className="space-y-0.5">
+                      <Label htmlFor="series-level" className="text-sm font-semibold">
+                        Apply to all artworks in series
+                      </Label>
+                      <p className="text-xs text-muted-foreground">
+                        This benefit will be available for all artworks in the series
+                      </p>
+                    </div>
+                    <Switch
+                      id="series-level"
+                      checked={formData.isSeriesLevel}
+                      onCheckedChange={(checked) =>
+                        setFormData({ ...formData, isSeriesLevel: checked })
+                      }
+                    />
+                  </div>
+                )}
+
+                {/* Save Button with Achievement Style */}
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  className="flex justify-end gap-3 pt-4 border-t"
+                >
+                  <Button type="button" variant="outline" onClick={handleCancel}>
+                    Cancel
+                  </Button>
+                  <motion.div
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                  >
+                    <Button
+                      type="button"
+                      onClick={handleSave}
+                      disabled={!canSave()}
+                      className="bg-gradient-to-r from-primary to-primary/80"
+                    >
+                      {editingIndex !== null ? "Update" : "Create"} Treasure
+                    </Button>
+                  </motion.div>
+                </motion.div>
+              </>
             )}
-
-            {/* Live Preview */}
-            <LivePreview />
-
-            {/* Collapsible: Description */}
-            <Collapsible open={showDescription} onOpenChange={setShowDescription}>
-              <CollapsibleTrigger asChild>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  className="w-full justify-between p-3 h-auto"
-                >
-                  <span className="text-sm font-medium">
-                    {showDescription ? "Hide" : "Add"} Description
-                  </span>
-                  {showDescription ? (
-                    <ChevronUp className="h-4 w-4" />
-                  ) : (
-                    <ChevronDown className="h-4 w-4" />
-                  )}
-                </Button>
-              </CollapsibleTrigger>
-              <CollapsibleContent className="space-y-2">
-                <Textarea
-                  placeholder="Briefly describe what collectors will receive..."
-                  value={formData.description}
-                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                  rows={3}
-                  maxLength={200}
-                />
-                <p className="text-xs text-muted-foreground text-right">
-                  {formData.description.length}/200
-                </p>
-              </CollapsibleContent>
-            </Collapsible>
-
-            {/* Collapsible: Link or Code */}
-            <Collapsible open={showLinkCode} onOpenChange={setShowLinkCode}>
-              <CollapsibleTrigger asChild>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  className="w-full justify-between p-3 h-auto"
-                >
-                  <span className="text-sm font-medium">
-                    {showLinkCode ? "Hide" : "Add"} Link or Access Code
-                  </span>
-                  {showLinkCode ? (
-                    <ChevronUp className="h-4 w-4" />
-                  ) : (
-                    <ChevronDown className="h-4 w-4" />
-                  )}
-                </Button>
-              </CollapsibleTrigger>
-              <CollapsibleContent className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="content-url">Content URL</Label>
-                  <Input
-                    id="content-url"
-                    placeholder="https://..."
-                    value={formData.contentUrl}
-                    onChange={(e) => setFormData({ ...formData, contentUrl: e.target.value })}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="access-code">Access Code</Label>
-                  <Input
-                    id="access-code"
-                    placeholder="Optional code"
-                    value={formData.accessCode}
-                    onChange={(e) => setFormData({ ...formData, accessCode: e.target.value })}
-                  />
-                </div>
-              </CollapsibleContent>
-            </Collapsible>
-
-            {/* Collapsible: Schedule */}
-            <Collapsible open={showSchedule} onOpenChange={setShowSchedule}>
-              <CollapsibleTrigger asChild>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  className="w-full justify-between p-3 h-auto"
-                >
-                  <span className="text-sm font-medium">
-                    {showSchedule ? "Hide" : "Add"} Schedule
-                  </span>
-                  {showSchedule ? (
-                    <ChevronUp className="h-4 w-4" />
-                  ) : (
-                    <ChevronDown className="h-4 w-4" />
-                  )}
-                </Button>
-              </CollapsibleTrigger>
-              <CollapsibleContent className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="starts-at">Starts At</Label>
-                    <Input
-                      id="starts-at"
-                      type="datetime-local"
-                      value={formData.startsAt}
-                      onChange={(e) => setFormData({ ...formData, startsAt: e.target.value })}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="expires-at">Expires At</Label>
-                    <Input
-                      id="expires-at"
-                      type="datetime-local"
-                      value={formData.expiresAt}
-                      onChange={(e) => setFormData({ ...formData, expiresAt: e.target.value })}
-                    />
-                  </div>
-                </div>
-              </CollapsibleContent>
-            </Collapsible>
-
-            {/* Save Button */}
-            <div className="flex justify-end gap-3 pt-4 border-t">
-              <Button type="button" variant="outline" onClick={handleCancel}>
-                Cancel
-              </Button>
-              <Button
-                type="button"
-                onClick={handleSave}
-                disabled={!canSave || (isHiddenSeriesType && !formData.hiddenSeriesId)}
-              >
-                {editingIndex !== null ? "Update" : "Add"} Benefit
-              </Button>
-            </div>
           </div>
         </CardContent>
       </Card>
