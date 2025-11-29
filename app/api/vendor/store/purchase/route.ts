@@ -27,12 +27,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    if (purchaseType === "lamp" && !productSku) {
-      return NextResponse.json(
-        { error: "Product SKU is required for Lamp purchases" },
-        { status: 400 }
-      )
-    }
+    // SKU will be determined automatically based on vendor location if not provided
 
     if (purchaseType === "proof_print" && !artworkSubmissionId) {
       return NextResponse.json(
@@ -51,7 +46,7 @@ export async function POST(request: NextRequest) {
     // Get vendor info
     const { data: vendor, error: vendorError } = await supabase
       .from("vendors")
-      .select("id, vendor_name, has_used_lamp_discount")
+      .select("id, vendor_name, has_used_lamp_discount, tax_country, address")
       .eq("vendor_name", vendorName)
       .single()
 
@@ -63,9 +58,34 @@ export async function POST(request: NextRequest) {
     let discountPercentage: number | null = null
     let totalAmount = 0
     const quantity = 1
+    let finalProductSku = productSku
 
     // Calculate pricing based on purchase type
     if (purchaseType === "lamp") {
+      // Determine correct SKU based on vendor location if not provided
+      if (!finalProductSku) {
+        const isUS = vendor.tax_country?.toUpperCase() === "US" || 
+                     vendor.tax_country?.toUpperCase() === "USA" ||
+                     (vendor.address && /united states|usa|us\b/i.test(vendor.address))
+        finalProductSku = isUS ? "streetlamp002" : "streetlamp001"
+      }
+
+      // Validate SKU matches vendor location
+      const isUS = vendor.tax_country?.toUpperCase() === "US" || 
+                   vendor.tax_country?.toUpperCase() === "USA" ||
+                   (vendor.address && /united states|usa|us\b/i.test(vendor.address))
+      const expectedSku = isUS ? "streetlamp002" : "streetlamp001"
+      
+      if (finalProductSku !== expectedSku) {
+        return NextResponse.json(
+          { 
+            error: "Invalid SKU for your location", 
+            message: `Based on your address, you should purchase ${expectedSku} (${isUS ? "US" : "EU"} version)` 
+          },
+          { status: 400 }
+        )
+      }
+
       // For Lamp purchases, we need to get the regular price
       // For now, we'll use a placeholder - this should be fetched from Shopify or configured
       const regularPrice = 100 // TODO: Fetch from Shopify or configuration
@@ -158,7 +178,7 @@ export async function POST(request: NextRequest) {
         vendor_id: vendor.id,
         vendor_name: vendor.vendor_name,
         purchase_type: purchaseType,
-        product_sku: purchaseType === "lamp" ? productSku : null,
+        product_sku: purchaseType === "lamp" ? finalProductSku : null,
         artwork_submission_id: purchaseType === "proof_print" ? artworkSubmissionId : null,
         quantity,
         unit_price: unitPrice,
@@ -217,7 +237,7 @@ export async function POST(request: NextRequest) {
         await supabase.from("vendor_lamp_purchases").insert({
           vendor_id: vendor.id,
           vendor_name: vendor.vendor_name,
-          product_sku: productSku!,
+          product_sku: finalProductSku!,
           purchase_price: totalAmount,
           discount_applied: true,
         })

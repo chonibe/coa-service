@@ -17,10 +17,10 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    // Get vendor info to check discount eligibility
+    // Get vendor info to check discount eligibility and determine correct SKU
     const { data: vendor, error: vendorError } = await supabase
       .from("vendors")
-      .select("id, vendor_name, has_used_lamp_discount")
+      .select("id, vendor_name, has_used_lamp_discount, tax_country, address")
       .eq("vendor_name", vendorName)
       .single()
 
@@ -28,22 +28,26 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "Vendor not found" }, { status: 404 })
     }
 
-    // Lamp products - these are the core products available
-    // Using streetlamp001 and streetlamp002 as the SKUs
+    // Determine correct SKU based on vendor location
+    // streetlamp002 is for US, streetlamp001 is for EU/rest of world
+    const isUS = vendor.tax_country?.toUpperCase() === "US" || 
+                 vendor.tax_country?.toUpperCase() === "USA" ||
+                 (vendor.address && /united states|usa|us\b/i.test(vendor.address))
+    
+    const lampSku = isUS ? "streetlamp002" : "streetlamp001"
+    const lampName = "A Street Lamp"
+
+    // TODO: Fetch actual price from Shopify or configuration
+    // For now, using placeholder - this should be fetched from Shopify product data
+    const regularPrice = 0 // Will need to be configured or fetched from Shopify
+
+    // Lamp product - only show the one appropriate for vendor's location
     const lampProducts = [
       {
-        sku: "streetlamp001",
-        name: "Street Lamp 001",
+        sku: lampSku,
+        name: lampName,
         type: "lamp" as const,
-        regularPrice: 0, // Will need to be configured or fetched from Shopify
-        discountEligible: !vendor.has_used_lamp_discount,
-        discountPercentage: vendor.has_used_lamp_discount ? 0 : 50,
-      },
-      {
-        sku: "streetlamp002",
-        name: "Street Lamp 002",
-        type: "lamp" as const,
-        regularPrice: 0, // Will need to be configured or fetched from Shopify
+        regularPrice,
         discountEligible: !vendor.has_used_lamp_discount,
         discountPercentage: vendor.has_used_lamp_discount ? 0 : 50,
       },

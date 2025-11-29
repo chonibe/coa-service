@@ -71,9 +71,10 @@ export function CreateMenu() {
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: 100 }}
                 transition={{ duration: 0.3, ease: "easeOut" }}
-                className="fixed bottom-0 left-0 right-0 z-[60] rounded-t-2xl border-t border-x bg-background shadow-2xl"
+                className="fixed bottom-0 left-0 right-0 z-[100] rounded-t-2xl border-t border-x bg-background shadow-2xl"
+                style={{ paddingBottom: 'env(safe-area-inset-bottom, 0)' }}
               >
-                <div className="p-4 pb-safe">
+                <div className="p-4" style={{ paddingBottom: 'max(1rem, env(safe-area-inset-bottom, 1rem))' }}>
                   <div className="mx-auto mb-4 h-1.5 w-12 rounded-full bg-muted" />
                   <div className="space-y-2">
                     <button

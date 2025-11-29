@@ -145,6 +145,9 @@ export function LampPurchaseCard() {
                 >
                   Purchase {product.name}
                 </Button>
+                <p className="text-xs text-muted-foreground text-center mt-2">
+                  SKU: {product.sku} ({product.sku === "streetlamp002" ? "US" : "EU"} version)
+                </p>
               </div>
             </CardContent>
           </Card>
