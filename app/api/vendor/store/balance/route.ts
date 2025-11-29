@@ -26,33 +26,26 @@ export async function GET(request: NextRequest) {
     }
 
     // Get pending payout amount (ready to request) using the same function as payout redeem
-    const { data: pendingLineItems, error: lineItemsError } = await supabase.rpc(
-      "get_vendor_pending_line_items",
-      {
-        p_vendor_name: vendorName,
-      }
+    // This function accounts for refunds and other adjustments
+    const { data: pendingPayouts, error: pendingPayoutsError } = await supabase.rpc(
+      "get_pending_vendor_payouts"
     )
 
-    if (lineItemsError) {
-      console.error("Error fetching pending line items:", lineItemsError)
+    if (pendingPayoutsError) {
+      console.error("Error fetching pending payouts:", pendingPayoutsError)
       return NextResponse.json(
-        { error: "Failed to calculate balance", message: lineItemsError.message },
+        { error: "Failed to calculate balance", message: pendingPayoutsError.message },
         { status: 500 }
       )
     }
 
-    // Calculate total pending payout amount
-    let pendingPayoutAmount = 0
-    if (pendingLineItems && pendingLineItems.length > 0) {
-      pendingLineItems.forEach((item: any) => {
-        const price = typeof item.price === "string" ? parseFloat(item.price || "0") : item.price || 0
-        if (item.is_percentage) {
-          pendingPayoutAmount += (price * item.payout_amount) / 100
-        } else {
-          pendingPayoutAmount += item.payout_amount
-        }
-      })
-    }
+    // Find the vendor's pending payout amount
+    const vendorPendingPayout = pendingPayouts?.find(
+      (p: any) => p.vendor_name === vendorName
+    )
+    const pendingPayoutAmount = vendorPendingPayout
+      ? Number(vendorPendingPayout.amount)
+      : 0
 
     // Subtract store purchases made from balance (from ledger entries)
     const { data: storePurchases, error: storePurchasesError } = await supabase
