@@ -21,6 +21,8 @@ DECLARE
   v_ledger_entry_id INTEGER;
   v_count INTEGER := 0;
   v_withdrawal_count INTEGER := 0;
+  v_price_usd DECIMAL;
+  v_gbp_to_usd_rate DECIMAL := 1.27; -- Match convertGBPToUSD rate from lib/utils.ts
 BEGIN
   RAISE NOTICE 'Starting backfill of collector ledger from historical payouts...';
 
@@ -83,10 +85,15 @@ BEGIN
       ON CONFLICT (collector_identifier) DO NOTHING;
 
       -- Calculate payout amount
+      -- Convert GBP to USD first (exchange rate: 1.27) to match pending items display
+      -- This matches the convertGBPToUSD() function used in app/api/vendor/payouts/pending-items/route.ts
+      v_price_usd := COALESCE(v_line_item.price, 0)::DECIMAL * v_gbp_to_usd_rate;
+      
       IF v_line_item.is_percentage THEN
-        v_payout_amount := (COALESCE(v_line_item.price, 0)::DECIMAL * v_line_item.payout_amount::DECIMAL / 100);
+        v_payout_amount := (v_price_usd * v_line_item.payout_amount::DECIMAL / 100);
       ELSE
-        v_payout_amount := v_line_item.payout_amount::DECIMAL;
+        -- For fixed amounts, also convert to USD if needed
+        v_payout_amount := v_line_item.payout_amount::DECIMAL * v_gbp_to_usd_rate;
       END IF;
 
       IF v_payout_amount <= 0 THEN
