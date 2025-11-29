@@ -75,7 +75,7 @@ export function VendorSidebar() {
     },
     {
       title: "Analytics",
-      href: "/vendor/dashboard/profile?tab=analytics",
+      href: "/vendor/dashboard/analytics",
       icon: <Icon size="md"><ChartBarIcon className="h-5 w-5" /></Icon>,
     },
     {

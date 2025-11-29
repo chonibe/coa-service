@@ -1,21 +1,664 @@
 "use client"
 
-import { useEffect } from "react"
-import { useRouter } from "next/navigation"
+import { useState, useEffect, Suspense } from "react"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
+import { AlertCircle, Download, BarChart3 } from "lucide-react"
+import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
+import { useToast } from "@/components/ui/use-toast"
+import { TimeRangeSelector, type TimeRange, type DateRange } from "@/components/vendor/time-range-selector"
+import { LoadingSkeleton } from "@/components/vendor/loading-skeleton"
+import { EmptyState } from "@/components/vendor/empty-state"
+import {
+  ResponsiveContainer,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  LineChart,
+  Line,
+  PieChart,
+  Pie,
+  Cell,
+} from "recharts"
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { ProductPerformance } from "@/components/vendor/product-performance"
+import { PayoutTrendsChart } from "@/components/payouts/payout-trends-chart"
+import { ProductPerformanceHeatmap } from "@/components/payouts/product-performance-heatmap"
+import { PayoutMetricsCards } from "@/components/payouts/payout-metrics-cards"
+import { MetricCard } from "@/components/vendor/metric-card"
+import { ShoppingCart, DollarSign, TrendingUp } from "lucide-react"
+
+const COLORS = ["#3b82f6", "#6366f1", "#8b5cf6", "#a855f7", "#ec4899", "#f43f5e"]
+
+interface SaleItem {
+  id: string
+  product_id: string
+  title: string
+  imageUrl?: string | null
+  date: string
+  price: number
+  currency: string
+  quantity?: number
+}
 
 export default function AnalyticsPage() {
-  const router = useRouter()
-  
-  // Redirect to profile analytics tab
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const [timeRange, setTimeRange] = useState<TimeRange>("30d")
+  const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined)
+  const [salesByDate, setSalesByDate] = useState<any[]>([])
+  const [salesByProduct, setSalesByProduct] = useState<any[]>([])
+  const [salesHistory, setSalesHistory] = useState<SaleItem[]>([])
+  const [totalItems, setTotalItems] = useState(0)
+  const [sortField, setSortField] = useState<string>("date")
+  const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc")
+  const [vendorName, setVendorName] = useState<string | null>(null)
+  const [salesData, setSalesData] = useState({
+    totalSales: 0,
+    totalRevenue: 0,
+    totalPayout: 0,
+    currency: "USD",
+  })
+  const { toast } = useToast()
+
+  const formatCurrency = (value: number) =>
+    new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency: "USD",
+      minimumFractionDigits: 2,
+    }).format(value)
+
+  const fetchAnalyticsData = async (range?: TimeRange, customRange?: DateRange) => {
+    try {
+      setIsLoading(true)
+      setError(null)
+
+      const params = new URLSearchParams()
+      params.set("range", range || timeRange)
+      if (customRange || dateRange) {
+        const rangeToUse = customRange || dateRange
+        if (rangeToUse) {
+          params.set("from", rangeToUse.from.toISOString())
+          params.set("to", rangeToUse.to.toISOString())
+        }
+      }
+
+      const response = await fetch(`/api/vendor/sales-analytics?${params.toString()}`, {
+        credentials: "include",
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}))
+        throw new Error(`Failed to fetch analytics data: ${errorData.error || response.status}`)
+      }
+
+      const data = await response.json()
+
+      setSalesByDate(data.salesByDate || [])
+      setSalesByProduct(data.salesByProduct || [])
+      setSalesHistory(data.salesHistory || [])
+      setTotalItems(data.totalItems || 0)
+    } catch (err) {
+      console.error("Error fetching analytics data:", err)
+      setError(err instanceof Error ? err.message : "Failed to load analytics data")
+      toast({
+        variant: "destructive",
+        title: "Error loading analytics",
+        description: err instanceof Error ? err.message : "Failed to load analytics data",
+      })
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
   useEffect(() => {
-    router.replace("/vendor/dashboard/profile?tab=analytics")
-  }, [router])
-  
-  // Show loading while redirecting
+    fetchAnalyticsData()
+    fetchVendorData()
+  }, [])
+
+  const fetchVendorData = async () => {
+    try {
+      const profileResponse = await fetch("/api/vendor/profile", {
+        credentials: "include",
+      })
+      if (profileResponse.ok) {
+        const profileData = await profileResponse.json()
+        setVendorName(profileData.vendor?.vendor_name || null)
+      }
+
+      const statsResponse = await fetch("/api/vendor/stats", {
+        cache: "no-store",
+        credentials: "include",
+      })
+      if (statsResponse.ok) {
+        const statsData = await statsResponse.json()
+        setSalesData({
+          totalSales: statsData.totalSales ?? 0,
+          totalRevenue: statsData.totalRevenue ?? 0,
+          totalPayout: statsData.totalPayout ?? statsData.totalRevenue ?? 0,
+          currency: statsData.currency || "USD",
+        })
+      }
+    } catch (err) {
+      console.error("Error fetching vendor data:", err)
+    }
+  }
+
+  const handleTimeRangeChange = (range: TimeRange, customRange?: DateRange) => {
+    setTimeRange(range)
+    if (customRange) {
+      setDateRange(customRange)
+    } else {
+      setDateRange(undefined)
+    }
+    fetchAnalyticsData(range, customRange)
+  }
+
+  const handleExport = () => {
+    try {
+      const headers = ["Date", "Product", "Price", "Quantity", "Revenue"]
+      const rows = salesHistory.map((sale) => [
+        formatDate(sale.date),
+        sale.title,
+        sale.price.toString(),
+        (sale.quantity || 1).toString(),
+        ((sale.price * (sale.quantity || 1)) / 1).toFixed(2),
+      ])
+
+      const csvContent = [headers.join(","), ...rows.map((row) => row.join(","))].join("\n")
+      const blob = new Blob([csvContent], { type: "text/csv" })
+      const url = window.URL.createObjectURL(blob)
+      const a = document.createElement("a")
+      a.href = url
+      a.download = `sales-analytics-${new Date().toISOString().split("T")[0]}.csv`
+      document.body.appendChild(a)
+      a.click()
+      document.body.removeChild(a)
+      window.URL.revokeObjectURL(url)
+
+      toast({
+        title: "Export successful",
+        description: "Sales data has been exported to CSV",
+      })
+    } catch (err) {
+      toast({
+        variant: "destructive",
+        title: "Export failed",
+        description: err instanceof Error ? err.message : "Failed to export data",
+      })
+    }
+  }
+
+  const CustomTooltip = ({ active, payload }: any) => {
+    if (active && payload && payload.length) {
+      const data = payload[0].payload
+      return (
+        <div className="bg-white/90 dark:bg-slate-900/90 backdrop-blur-md p-3 border border-border/50 rounded-lg shadow-xl">
+          <p className="font-medium text-sm">{data.title}</p>
+          <p className="text-xs text-muted-foreground">Sales: {data.sales}</p>
+          <p className="text-xs text-muted-foreground">Revenue: £{data.revenue.toFixed(2)}</p>
+        </div>
+      )
+    }
+    return null
+  }
+
+  const sortedSalesHistory = [...(salesHistory || [])].sort((a, b) => {
+    if (sortField === "date") {
+      return sortDirection === "asc"
+        ? new Date(a.date).getTime() - new Date(b.date).getTime()
+        : new Date(b.date).getTime() - new Date(a.date).getTime()
+    }
+    if (sortField === "price") {
+      return sortDirection === "asc" ? a.price - b.price : b.price - a.price
+    }
+    if (sortField === "title") {
+      return sortDirection === "asc" ? a.title.localeCompare(b.title) : b.title.localeCompare(a.title)
+    }
+    return 0
+  })
+
+  const handleSort = (field: string) => {
+    if (sortField === field) {
+      setSortDirection(sortDirection === "asc" ? "desc" : "asc")
+    } else {
+      setSortField(field)
+      setSortDirection("asc")
+    }
+  }
+
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString)
+    return new Intl.DateTimeFormat("en-GB", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+    }).format(date)
+  }
+
+  const calculateTrend = (current: number, previous: number) => {
+    if (previous === 0) return current > 0 ? 100 : 0
+    return ((current - previous) / previous) * 100
+  }
+
+  const previousSales = salesData.totalSales * 0.9
+  const previousRevenue = salesData.totalRevenue * 0.95
+  const previousPayout = salesData.totalPayout * 0.95
+
   return (
-    <div className="flex items-center justify-center min-h-screen">
-      <Skeleton className="h-8 w-64" />
+    <div className="space-y-6 pb-20 px-1">
+      <div className="flex items-center justify-between">
+        <div>
+          <p className="text-muted-foreground text-lg">Your complete analytics and insights</p>
+        </div>
+        <div className="flex items-center gap-3">
+          <TimeRangeSelector
+            value={timeRange}
+            dateRange={dateRange}
+            onChange={handleTimeRangeChange}
+          />
+          {salesHistory.length > 0 && (
+            <Button 
+              onClick={handleExport} 
+              variant="outline" 
+              size="sm"
+              aria-label="Export sales data to CSV"
+              className="min-h-[44px] focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+            >
+              <Download className="mr-2 h-4 w-4" aria-hidden="true" />
+              Export CSV
+            </Button>
+          )}
+        </div>
+      </div>
+
+      {error && (
+        <Alert variant="destructive" className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-0 shadow-lg">
+          <AlertCircle className="h-4 w-4" />
+          <AlertTitle>Error</AlertTitle>
+          <AlertDescription>
+            {error}
+            <div className="mt-2">
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={fetchAnalyticsData}
+                className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm"
+              >
+                Try Again
+              </Button>
+            </div>
+          </AlertDescription>
+        </Alert>
+      )}
+
+      {totalItems === 0 && !isLoading && !error && (
+        <EmptyState
+          icon={BarChart3}
+          title="No Sales Data"
+          description="There is no sales data available for the selected time range. Sales data will appear here once orders are processed."
+        />
+      )}
+
+      <Tabs defaultValue="sales" className="space-y-6">
+        <TabsList className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-0 shadow-lg">
+          <TabsTrigger value="sales">Sales Analytics</TabsTrigger>
+          <TabsTrigger value="payouts">Payout Analytics</TabsTrigger>
+          <TabsTrigger value="products">Product Performance</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="sales" className="space-y-6">
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            <MetricCard
+              title="Total Sales"
+              value={salesData?.totalSales || 0}
+              icon={ShoppingCart}
+              trend={{
+                value: calculateTrend(salesData.totalSales, previousSales),
+                label: "vs last period",
+                isPositive: salesData.totalSales >= previousSales,
+              }}
+              description="Orders you've received"
+              variant="elevated"
+            />
+
+            <MetricCard
+              title="Total Revenue"
+              value={formatCurrency(salesData?.totalRevenue || 0)}
+              icon={DollarSign}
+              trend={{
+                value: calculateTrend(salesData.totalRevenue, previousRevenue),
+                label: "vs last period",
+                isPositive: salesData.totalRevenue >= previousRevenue,
+              }}
+              description="Total sales you've made"
+              variant="elevated"
+            />
+
+            <MetricCard
+              title="Total Payout"
+              value={formatCurrency(salesData?.totalPayout || 0)}
+              icon={DollarSign}
+              trend={{
+                value: calculateTrend(salesData.totalPayout, previousPayout),
+                label: "vs last period",
+                isPositive: salesData.totalPayout >= previousPayout,
+              }}
+              description="What you've earned so far"
+              variant="elevated"
+            />
+          </div>
+
+          <Card className="w-full bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-0 shadow-xl">
+            <CardHeader>
+              <CardTitle>Sales Over Time</CardTitle>
+              <CardDescription>Monthly sales and revenue trends</CardDescription>
+            </CardHeader>
+            <CardContent>
+              {isLoading ? (
+                <LoadingSkeleton variant="chart" />
+              ) : salesByDate.length > 0 ? (
+                <ResponsiveContainer width="100%" height={300}>
+                  <BarChart
+                    data={salesByDate}
+                    margin={{
+                      top: 5,
+                      right: 30,
+                      left: 20,
+                      bottom: 5,
+                    }}
+                  >
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="month" />
+                    <YAxis yAxisId="left" orientation="left" stroke="#3b82f6" />
+                    <YAxis yAxisId="right" orientation="right" stroke="#6366f1" />
+                    <Tooltip
+                      formatter={(value, name) => {
+                        if (name === "Revenue (£)") {
+                          return [formatCurrency(Number(value)), "Revenue (£)"]
+                        }
+                        return [value, name]
+                      }}
+                    />
+                    <Legend
+                      payload={[
+                        { value: "Sales (Units)", type: "square", color: "#3b82f6" },
+                        { value: "Revenue (£)", type: "square", color: "#6366f1" },
+                      ]}
+                    />
+                    <Bar yAxisId="left" dataKey="sales" fill="#3b82f6" name="Sales (Units)" />
+                    <Bar yAxisId="right" dataKey="revenue" fill="#6366f1" name="Revenue (£)" />
+                  </BarChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className="flex items-center justify-center h-[300px]">
+                  <p className="text-muted-foreground">No sales data available</p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          <div className="grid gap-4 md:grid-cols-2">
+            <Card className="w-full bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-0 shadow-xl">
+              <CardHeader>
+                <CardTitle>Sales Trend</CardTitle>
+                <CardDescription>Monthly sales trend</CardDescription>
+              </CardHeader>
+              <CardContent>
+                {isLoading ? (
+                  <Skeleton className="h-[200px] w-full" />
+                ) : salesByDate.length > 0 ? (
+                  <ResponsiveContainer width="100%" height={200}>
+                    <LineChart
+                      data={salesByDate}
+                      margin={{
+                        top: 5,
+                        right: 30,
+                        left: 20,
+                        bottom: 5,
+                      }}
+                    >
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="month" />
+                      <YAxis />
+                      <Tooltip />
+                      <Line type="monotone" dataKey="sales" stroke="#3b82f6" activeDot={{ r: 8 }} />
+                    </LineChart>
+                  </ResponsiveContainer>
+                ) : (
+                  <div className="flex items-center justify-center h-[200px]">
+                    <p className="text-muted-foreground">No sales data available</p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            <Card className="w-full bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-0 shadow-xl">
+              <CardHeader>
+                <CardTitle>Revenue Trend</CardTitle>
+                <CardDescription>Monthly revenue trend</CardDescription>
+              </CardHeader>
+              <CardContent>
+                {isLoading ? (
+                  <Skeleton className="h-[200px] w-full" />
+                ) : salesByDate.length > 0 ? (
+                  <ResponsiveContainer width="100%" height={200}>
+                    <LineChart
+                      data={salesByDate}
+                      margin={{
+                        top: 5,
+                        right: 30,
+                        left: 20,
+                        bottom: 5,
+                      }}
+                    >
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="month" />
+                      <YAxis />
+                      <Tooltip formatter={(value) => [formatCurrency(Number(value)), "Revenue"]} />
+                      <Line type="monotone" dataKey="revenue" stroke="#6366f1" activeDot={{ r: 8 }} />
+                    </LineChart>
+                  </ResponsiveContainer>
+                ) : (
+                  <div className="flex items-center justify-center h-[200px]">
+                    <p className="text-muted-foreground">No revenue data available</p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+
+          <Card className="w-full bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-0 shadow-xl">
+            <CardHeader>
+              <CardTitle>Sales by Product</CardTitle>
+              <CardDescription>Distribution of sales across products</CardDescription>
+            </CardHeader>
+            <CardContent>
+              {isLoading ? (
+                <Skeleton className="h-[300px] w-full" />
+              ) : salesByProduct.length > 0 ? (
+                <div className="grid md:grid-cols-2 gap-4">
+                  <div className="h-[300px]">
+                    <Suspense fallback={<LoadingSkeleton variant="chart" />}>
+                      <ResponsiveContainer width="100%" height="100%">
+                        <PieChart>
+                          <Pie
+                            data={salesByProduct}
+                            cx="50%"
+                            cy="50%"
+                            labelLine={false}
+                            label={({ name, percent }) => `${percent ? (percent * 100).toFixed(0) : 0}%`}
+                            outerRadius={80}
+                            fill="#3b82f6"
+                            dataKey="sales"
+                            nameKey="title"
+                          >
+                            {salesByProduct.map((entry, index) => (
+                              <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                            ))}
+                          </Pie>
+                          <Tooltip content={<CustomTooltip />} />
+                        </PieChart>
+                      </ResponsiveContainer>
+                    </Suspense>
+                  </div>
+                  <div className="space-y-2">
+                    {salesByProduct.map((product, index) => (
+                      <div key={index} className="flex items-center justify-between">
+                        <div className="flex items-center gap-2 flex-1 min-w-0">
+                          {product.imageUrl ? (
+                            <img
+                              src={product.imageUrl}
+                              alt={product.title}
+                              className="w-8 h-8 rounded object-cover flex-shrink-0"
+                              onError={(e) => {
+                                e.currentTarget.style.display = 'none'
+                              }}
+                            />
+                          ) : (
+                            <div
+                              className="w-8 h-8 rounded flex-shrink-0 flex items-center justify-center text-xs font-medium text-white"
+                              style={{ backgroundColor: COLORS[index % COLORS.length] }}
+                            >
+                              {product.title.charAt(0).toUpperCase()}
+                            </div>
+                          )}
+                          <span className="text-sm truncate" title={product.title}>
+                            {product.title}
+                          </span>
+                        </div>
+                        <div className="text-sm font-medium flex-shrink-0 ml-2">
+                          {product.sales} sales ({formatCurrency(product.revenue)})
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ) : (
+                <div className="flex items-center justify-center h-[300px]">
+                  <p className="text-muted-foreground">No product sales data available</p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          <Card className="w-full bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-0 shadow-xl">
+            <CardHeader>
+              <CardTitle>Sales History</CardTitle>
+              <CardDescription>Detailed record of individual sales</CardDescription>
+            </CardHeader>
+            <CardContent>
+              {isLoading ? (
+                <Skeleton className="h-[300px] w-full" />
+              ) : salesHistory && salesHistory.length > 0 ? (
+                <div>
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-medium">Sort by:</span>
+                      <Select
+                        value={sortField}
+                        onValueChange={(value) => {
+                          setSortField(value)
+                          setSortDirection("desc")
+                        }}
+                      >
+                        <SelectTrigger className="w-[180px]">
+                          <SelectValue placeholder="Sort by" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="date">Date</SelectItem>
+                          <SelectItem value="title">Product</SelectItem>
+                          <SelectItem value="price">Price</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setSortDirection(sortDirection === "asc" ? "desc" : "asc")}
+                      >
+                        {sortDirection === "asc" ? "↑ Ascending" : "↓ Descending"}
+                      </Button>
+                    </div>
+                  </div>
+
+                  <div className="rounded-md border">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead className="cursor-pointer" onClick={() => handleSort("date")}>
+                            Date {sortField === "date" && (sortDirection === "asc" ? "↑" : "↓")}
+                          </TableHead>
+                          <TableHead className="cursor-pointer" onClick={() => handleSort("title")}>
+                            Product {sortField === "title" && (sortDirection === "asc" ? "↑" : "↓")}
+                          </TableHead>
+                          <TableHead className="cursor-pointer text-right" onClick={() => handleSort("price")}>
+                            Price {sortField === "price" && (sortDirection === "asc" ? "↑" : "↓")}
+                          </TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {sortedSalesHistory.map((sale) => (
+                          <TableRow key={sale.id}>
+                            <TableCell>{formatDate(sale.date)}</TableCell>
+                            <TableCell>
+                              <div className="flex items-center gap-2">
+                                {sale.imageUrl ? (
+                                  <img
+                                    src={sale.imageUrl}
+                                    alt={sale.title}
+                                    className="w-8 h-8 rounded object-cover"
+                                    onError={(e) => {
+                                      e.currentTarget.style.display = 'none'
+                                    }}
+                                  />
+                                ) : null}
+                                <span className="font-medium">{sale.title}</span>
+                              </div>
+                            </TableCell>
+                            <TableCell className="text-right">{formatCurrency(sale.price)}</TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex items-center justify-center h-[100px]">
+                  <p className="text-muted-foreground">No sales history available</p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="payouts" className="space-y-6">
+          {vendorName && <PayoutMetricsCards vendorName={vendorName} isAdmin={false} />}
+          {vendorName && <PayoutTrendsChart vendorName={vendorName} isAdmin={false} timeRange="30d" />}
+          {vendorName && (
+            <ProductPerformanceHeatmap vendorName={vendorName} isAdmin={false} timeRange="30d" limit={10} />
+          )}
+        </TabsContent>
+
+        <TabsContent value="products" className="space-y-6">
+          <ProductPerformance
+            products={salesByProduct?.map((p) => ({
+              productId: p.productId || p.id || "",
+              title: p.title,
+              imageUrl: p.imageUrl,
+              sales: p.sales,
+              revenue: p.revenue,
+            })) || []}
+            isLoading={isLoading}
+          />
+        </TabsContent>
+      </Tabs>
     </div>
   )
 }

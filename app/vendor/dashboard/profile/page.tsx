@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect, useRef, useCallback, useMemo } from "react"
-import { useRouter, useSearchParams } from "next/navigation"
+import { useRouter } from "next/navigation"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -33,14 +33,12 @@ import {
   HelpCircle,
   Info,
   LogOut,
-  BarChart3,
 } from "lucide-react"
 import Image from "next/image"
 import { StripeConnect } from "../components/stripe-connect"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { Badge } from "@/components/ui/badge"
 import { ThemeToggle } from "@/components/theme-toggle"
-import { AnalyticsInsights } from "./components/analytics-insights"
 
 interface VendorProfile {
   id: number | string
@@ -99,7 +97,6 @@ const COUNTRIES = [
 
 export default function VendorProfilePage() {
   const router = useRouter()
-  const searchParams = useSearchParams()
   const [profile, setProfile] = useState<VendorProfile | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
@@ -712,12 +709,8 @@ export default function VendorProfilePage() {
       )}
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className="grid w-full max-w-2xl grid-cols-6">
+        <TabsList className="grid w-full max-w-2xl grid-cols-5">
           <TabsTrigger value="public-profile">Public Profile</TabsTrigger>
-          <TabsTrigger value="analytics" className="flex items-center gap-2">
-            <BarChart3 className="h-4 w-4" />
-            <span>Insights</span>
-          </TabsTrigger>
           <TabsTrigger value="settings-profile" className="flex items-center gap-2">
             <User className="h-4 w-4" />
             <span>Contact</span>
