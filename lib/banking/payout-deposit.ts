@@ -94,25 +94,43 @@ export async function depositPayoutEarnings(
       };
     }
 
-    // Get order currency to determine if conversion is needed
+    // Get order with currency and raw Shopify data to extract original price
     const { data: order } = await client
       .from('orders')
-      .select('currency_code')
+      .select('currency_code, raw_shopify_order_data')
       .eq('id', lineItem.order_id || orderId)
       .single();
 
-    if (!lineItem) {
-      return {
-        success: false,
-        usdDeposited: 0,
-        newUsdBalance: 0,
-        error: `Line item not found: ${lineItemId}`,
-      };
-    }
-
-    // Get order currency
-    const orderCurrency = (lineItem.orders as any)?.currency_code || 'USD';
+    const orderCurrency = order?.currency_code || 'USD';
     const isGBP = orderCurrency.toUpperCase() === 'GBP';
+
+    // Get the original price (before discount) from Shopify order data
+    // Vendors should be paid based on full price, not discounted price
+    let originalPrice = Number(lineItemPrice) || Number(lineItem.price) || 0;
+    
+    // Try to extract original price from Shopify order data
+    if (order?.raw_shopify_order_data?.line_items) {
+      const shopifyLineItem = order.raw_shopify_order_data.line_items.find(
+        (item: any) => item.id.toString() === lineItemId
+      );
+      
+      if (shopifyLineItem) {
+        // Use original_price if available (price before any discounts)
+        if (shopifyLineItem.original_price) {
+          originalPrice = parseFloat(shopifyLineItem.original_price);
+        } else if (shopifyLineItem.discount_allocations && shopifyLineItem.discount_allocations.length > 0) {
+          // Calculate original price by adding back discounts
+          const totalDiscount = shopifyLineItem.discount_allocations.reduce(
+            (sum: number, disc: any) => sum + parseFloat(disc.amount || '0'), 
+            0
+          );
+          originalPrice = parseFloat(shopifyLineItem.price || '0') + totalDiscount;
+        } else {
+          // If no discounts, use the price as-is
+          originalPrice = parseFloat(shopifyLineItem.price || '0');
+        }
+      }
+    }
 
     // Get payout setting for this product
     const { data: payoutSetting } = await client
@@ -122,14 +140,13 @@ export async function depositPayoutEarnings(
       .eq('vendor_name', vendorName)
       .maybeSingle();
 
-    // Use the actual line item price (already includes discounts)
     // Convert to USD only if order currency is GBP
-    let priceForCalculation = Number(lineItemPrice) || Number(lineItem.price) || 0;
+    let priceForCalculation = originalPrice;
     if (isGBP) {
-      priceForCalculation = convertGBPToUSD(priceForCalculation);
+      priceForCalculation = convertGBPToUSD(originalPrice);
     }
     
-    // Calculate payout amount using the actual price (with discounts applied)
+    // Calculate payout amount using the original price (before discount)
     const payoutAmount = calculateLineItemPayout({
       price: priceForCalculation,
       payout_amount: payoutSetting?.payout_amount ?? null,
