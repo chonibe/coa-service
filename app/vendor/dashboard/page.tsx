@@ -157,7 +157,7 @@ export default function VendorDashboardPage() {
         const statsData = await statsResponse.json()
         const analyticsData = await analyticsResponse.json()
 
-        const currency = statsData.currency || "GBP"
+        const currency = statsData.currency || "USD"
 
         setSalesData({
           totalSales: statsData.totalSales ?? 0,
@@ -408,7 +408,7 @@ function BankingSection({ vendorName }: { vendorName: string }) {
   if (!collectorIdentifier) {
     return (
       <div className="text-center py-8 text-muted-foreground">
-        <p>Unable to load banking information</p>
+        <p>Unable to load account information</p>
       </div>
     )
   }
