@@ -2,6 +2,8 @@ import { NextResponse } from "next/server"
 import { cookies } from "next/headers"
 import { createClient } from "@/lib/supabase/server"
 import { getVendorFromCookieStore } from "@/lib/vendor-session"
+import { getUsdBalance, calculateUnifiedCollectorBalance } from "@/lib/banking/balance-calculator"
+import { ensureCollectorAccount } from "@/lib/banking/account-manager"
 
 export async function GET() {
   const supabase = createClient()
@@ -91,24 +93,66 @@ export async function GET() {
       return NextResponse.json({ payouts: formattedPayouts })
     }
 
-    // If no payouts found, calculate pending amount using the same method as admin
-    // Use the RPC function get_vendor_payout_by_order to match admin calculation
+    // If no payouts found, get pending amount from collector ledger (single source of truth)
     let pendingAmount = 0
     
     try {
-      const { calculateVendorPayout } = await import("@/lib/payout-calculator")
-      const vendorPayout = await calculateVendorPayout(vendorName, {
-        includePaid: false,
-        fulfillmentStatus: "fulfilled",
-      }, supabase)
+      // Get vendor's collector identifier
+      const { data: vendor } = await supabase
+        .from("vendors")
+        .select("id, auth_id, vendor_name")
+        .eq("vendor_name", vendorName)
+        .single()
 
-      if (vendorPayout) {
-        pendingAmount = vendorPayout.total_payout_amount
+      if (vendor) {
+        const collectorIdentifier = vendor.auth_id || vendorName
+        await ensureCollectorAccount(collectorIdentifier, 'vendor', vendor.id)
+        
+        // Get current USD balance from ledger (this is what's available to request)
+        pendingAmount = await getUsdBalance(collectorIdentifier)
       }
     } catch (error) {
-      console.error("Error calculating vendor payout:", error)
-      // If calculation fails, return 0
-      pendingAmount = 0
+      console.error("Error fetching collector balance for payouts:", error)
+      // If ledger lookup fails, fall back to old calculation method
+    const { data: paidItems } = await supabase
+      .from("vendor_payout_items")
+      .select("line_item_id")
+      .not("payout_id", "is", null)
+    
+    const paidLineItemIds = new Set((paidItems || []).map((item: any) => item.line_item_id))
+    
+    const { data: lineItems } = await supabase
+      .from("order_line_items_v2")
+      .select("*")
+      .eq("vendor_name", vendorName)
+      .eq("fulfillment_status", "fulfilled")
+
+    const { products } = await fetchProductsByVendor(vendorName)
+    const productIds = products.map((p) => p.id)
+
+    const { data: payoutSettings } = await supabase
+      .from("product_vendor_payouts")
+      .select("*")
+      .eq("vendor_name", vendorName)
+      .in("product_id", productIds)
+
+    const unpaidItems = (lineItems || []).filter((item: any) => !paidLineItemIds.has(item.line_item_id))
+    const salesData = unpaidItems
+
+    salesData.forEach((item) => {
+      const payout = payoutSettings?.find((p) => p.product_id === item.product_id)
+      if (payout) {
+        const price = typeof item.price === "string" ? Number.parseFloat(item.price || "0") : item.price || 0
+        if (payout.is_percentage) {
+          pendingAmount += (price * payout.payout_amount) / 100
+        } else {
+          pendingAmount += payout.payout_amount
+        }
+      } else {
+        const price = typeof item.price === "string" ? Number.parseFloat(item.price || "0") : item.price || 0
+          pendingAmount += price * 0.25
+      }
+    })
     }
 
     // Create a mock pending payout with balance from ledger
