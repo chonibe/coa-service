@@ -2,7 +2,7 @@ import { createClient } from '@/lib/supabase/server';
 import type { PayoutDepositResult } from './types';
 import { ensureCollectorAccount } from './account-manager';
 import { calculateLineItemPayout } from '@/lib/payout-calculator';
-import { convertGBPToUSD } from '@/lib/utils';
+import { convertGBPToUSD, convertNISToUSD } from '@/lib/utils';
 
 const DEFAULT_PAYOUT_PERCENTAGE = 25;
 
@@ -102,7 +102,9 @@ export async function depositPayoutEarnings(
       .single();
 
     const orderCurrency = order?.currency_code || 'USD';
-    const isGBP = orderCurrency.toUpperCase() === 'GBP';
+    const currencyUpper = orderCurrency.toUpperCase();
+    const isGBP = currencyUpper === 'GBP';
+    const isNIS = currencyUpper === 'ILS' || currencyUpper === 'NIS';
 
     // Get the original price (before discount) from Shopify order data
     // Vendors should be paid based on full price, not discounted price
@@ -140,10 +142,12 @@ export async function depositPayoutEarnings(
       .eq('vendor_name', vendorName)
       .maybeSingle();
 
-    // Convert to USD only if order currency is GBP
+    // Convert to USD if order currency is GBP or NIS
     let priceForCalculation = originalPrice;
     if (isGBP) {
       priceForCalculation = convertGBPToUSD(originalPrice);
+    } else if (isNIS) {
+      priceForCalculation = convertNISToUSD(originalPrice);
     }
     
     // Calculate payout amount using the original price (before discount)

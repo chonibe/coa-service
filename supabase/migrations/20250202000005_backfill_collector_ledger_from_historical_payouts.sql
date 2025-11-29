@@ -23,6 +23,7 @@ DECLARE
   v_withdrawal_count INTEGER := 0;
   v_price_usd DECIMAL;
   v_gbp_to_usd_rate DECIMAL := 1.27; -- Match convertGBPToUSD rate from lib/utils.ts
+  v_nis_to_usd_rate DECIMAL := 0.27; -- Match convertNISToUSD rate from lib/utils.ts
 BEGIN
   RAISE NOTICE 'Starting backfill of collector ledger from historical payouts...';
 
@@ -128,9 +129,11 @@ BEGIN
           END LOOP;
         END IF;
         
-        -- Convert to USD only if currency is GBP
+        -- Convert to USD if currency is GBP or NIS (ILS)
         IF UPPER(v_order_currency) = 'GBP' THEN
           v_price_for_calc := v_original_price * v_gbp_to_usd_rate;
+        ELSIF UPPER(v_order_currency) IN ('ILS', 'NIS') THEN
+          v_price_for_calc := v_original_price * v_nis_to_usd_rate;
         ELSE
           v_price_for_calc := v_original_price;
         END IF;
@@ -139,9 +142,11 @@ BEGIN
         IF v_line_item.is_percentage THEN
           v_payout_amount := (v_price_for_calc * v_line_item.payout_amount::DECIMAL / 100);
         ELSE
-          -- For fixed amounts, convert to USD if order was GBP
+          -- For fixed amounts, convert to USD if order was GBP or NIS
           IF UPPER(v_order_currency) = 'GBP' THEN
             v_payout_amount := v_line_item.payout_amount::DECIMAL * v_gbp_to_usd_rate;
+          ELSIF UPPER(v_order_currency) IN ('ILS', 'NIS') THEN
+            v_payout_amount := v_line_item.payout_amount::DECIMAL * v_nis_to_usd_rate;
           ELSE
             v_payout_amount := v_line_item.payout_amount::DECIMAL;
           END IF;
