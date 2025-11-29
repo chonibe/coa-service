@@ -105,11 +105,15 @@ export default function VendorProfilePage() {
   const [isUploadingImage, setIsUploadingImage] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [isEditingProfile, setIsEditingProfile] = useState(false)
-  const [activeTab, setActiveTab] = useState(() => {
-    // Check if tab is specified in URL
+  const [activeTab, setActiveTab] = useState("public-profile")
+  
+  // Update active tab when URL param changes
+  useEffect(() => {
     const tab = searchParams?.get("tab")
-    return tab || "public-profile"
-  })
+    if (tab) {
+      setActiveTab(tab)
+    }
+  }, [searchParams])
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false)
   const [isDragOver, setIsDragOver] = useState(false)
   const [lastSaved, setLastSaved] = useState<Date | null>(null)
