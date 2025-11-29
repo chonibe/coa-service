@@ -20,8 +20,9 @@ import {
   XMarkIcon,
   QuestionMarkCircleIcon,
   UserCircleIcon,
+  ShoppingBagIcon,
 } from "@heroicons/react/24/outline"
-import { Lock } from "lucide-react"
+import { Lock, Image } from "lucide-react"
 import { CreateMenu } from "./create-menu"
 import { Icon } from "@/components/icon"
 import { cn } from "@/lib/utils"
@@ -64,9 +65,9 @@ export function VendorSidebar() {
       icon: <Icon size="md"><HomeIcon className="h-5 w-5" /></Icon>,
     },
     {
-      title: "Products",
+      title: "Artworks",
       href: "/vendor/dashboard/products",
-      icon: <Icon size="md"><CubeIcon className="h-5 w-5" /></Icon>,
+      icon: <Icon size="md"><Image className="h-5 w-5" /></Icon>,
     },
     {
       title: "Series",
@@ -82,6 +83,11 @@ export function VendorSidebar() {
       title: "Payouts",
       href: "/vendor/dashboard/payouts",
       icon: <Icon size="md"><CurrencyDollarIcon className="h-5 w-5" /></Icon>,
+    },
+    {
+      title: "Store",
+      href: "/vendor/dashboard/store",
+      icon: <Icon size="md"><ShoppingBagIcon className="h-5 w-5" /></Icon>,
     },
     {
       title: "Benefits",

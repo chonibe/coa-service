@@ -121,6 +121,8 @@ export interface Database {
           last_login_at: string | null
           auth_id: string | null
           status: Database["public"]["Enums"]["vendor_status"] | null
+          has_used_lamp_discount: boolean | null
+          store_balance: number | null
         }
         Insert: {
           id?: number
@@ -151,6 +153,8 @@ export interface Database {
           last_login_at?: string | null
           auth_id?: string | null
           status?: Database["public"]["Enums"]["vendor_status"] | null
+          has_used_lamp_discount?: boolean | null
+          store_balance?: number | null
         }
         Update: {
           id?: number
@@ -181,6 +185,8 @@ export interface Database {
           last_login_at?: string | null
           auth_id?: string | null
           status?: Database["public"]["Enums"]["vendor_status"] | null
+          has_used_lamp_discount?: boolean | null
+          store_balance?: number | null
         }
       }
       vendor_users: {
@@ -357,6 +363,132 @@ export interface Database {
           updated_at?: string
         }
       }
+      vendor_store_purchases: {
+        Row: {
+          id: string
+          vendor_id: number
+          vendor_name: string
+          purchase_type: Database["public"]["Enums"]["store_purchase_type"]
+          product_sku: string | null
+          artwork_submission_id: string | null
+          quantity: number
+          unit_price: number
+          discount_percentage: number | null
+          total_amount: number
+          payment_method: Database["public"]["Enums"]["store_payment_method"]
+          payout_balance_used: number | null
+          external_payment_id: string | null
+          status: Database["public"]["Enums"]["store_purchase_status"]
+          fulfilled_at: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          vendor_id: number
+          vendor_name: string
+          purchase_type: Database["public"]["Enums"]["store_purchase_type"]
+          product_sku?: string | null
+          artwork_submission_id?: string | null
+          quantity?: number
+          unit_price: number
+          discount_percentage?: number | null
+          total_amount: number
+          payment_method: Database["public"]["Enums"]["store_payment_method"]
+          payout_balance_used?: number | null
+          external_payment_id?: string | null
+          status?: Database["public"]["Enums"]["store_purchase_status"]
+          fulfilled_at?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          vendor_id?: number
+          vendor_name?: string
+          purchase_type?: Database["public"]["Enums"]["store_purchase_type"]
+          product_sku?: string | null
+          artwork_submission_id?: string | null
+          quantity?: number
+          unit_price?: number
+          discount_percentage?: number | null
+          total_amount?: number
+          payment_method?: Database["public"]["Enums"]["store_payment_method"]
+          payout_balance_used?: number | null
+          external_payment_id?: string | null
+          status?: Database["public"]["Enums"]["store_purchase_status"]
+          fulfilled_at?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+      }
+      vendor_proof_prints: {
+        Row: {
+          id: string
+          vendor_id: number
+          submission_id: string
+          artwork_title: string
+          artwork_image_url: string | null
+          quantity_ordered: number
+          last_ordered_at: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          vendor_id: number
+          submission_id: string
+          artwork_title: string
+          artwork_image_url?: string | null
+          quantity_ordered?: number
+          last_ordered_at?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          vendor_id?: number
+          submission_id?: string
+          artwork_title?: string
+          artwork_image_url?: string | null
+          quantity_ordered?: number
+          last_ordered_at?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+      }
+      vendor_lamp_purchases: {
+        Row: {
+          id: string
+          vendor_id: number
+          vendor_name: string
+          product_sku: string
+          purchase_price: number
+          discount_applied: boolean
+          purchased_at: string
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          vendor_id: number
+          vendor_name: string
+          product_sku: string
+          purchase_price: number
+          discount_applied?: boolean
+          purchased_at?: string
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          vendor_id?: number
+          vendor_name?: string
+          product_sku?: string
+          purchase_price?: number
+          discount_applied?: boolean
+          purchased_at?: string
+          created_at?: string
+        }
+      }
     }
     Views: {
       [_ in never]: never
@@ -367,6 +499,9 @@ export interface Database {
     Enums: {
       vendor_status: "pending" | "active" | "review" | "disabled" | "suspended"
       product_submission_status: "pending" | "approved" | "rejected" | "published"
+      store_purchase_type: "lamp" | "proof_print"
+      store_payment_method: "payout_balance" | "external"
+      store_purchase_status: "pending" | "processing" | "fulfilled" | "cancelled"
     }
     CompositeTypes: {
       [_ in never]: never
