@@ -342,23 +342,14 @@ export function BenefitsManagement({
     if (typeName.includes("commentary") || typeName.includes("artist")) {
       return <ArtistCommentaryForm {...commonProps} />
     }
-    if (typeName.includes("exclusive") || typeName.includes("access")) {
-      return <ExclusiveAccessForm {...commonProps} />
-    }
     if (typeName.includes("vip") && typeName.includes("artwork")) {
       return <VIPArtworkUnlockForm {...commonProps} />
-    }
-    if (typeName.includes("credits") || typeName.includes("bonus")) {
-      return <CreditsBonusForm {...commonProps} />
     }
     if (typeName.includes("early") && typeName.includes("drop")) {
       return <EarlyDropAccessForm {...commonProps} />
     }
     if (typeName.includes("exclusive") && typeName.includes("visibility")) {
       return <ExclusiveVisibilityForm {...commonProps} />
-    }
-    if (typeName.includes("discount")) {
-      return <DiscountForm {...commonProps} />
     }
 
     // Default fallback - use digital content form

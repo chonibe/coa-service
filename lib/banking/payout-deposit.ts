@@ -78,16 +78,27 @@ export async function depositPayoutEarnings(
       };
     }
 
-    // Get line item with order currency info
+    // Get line item and order currency
     const { data: lineItem } = await client
       .from('order_line_items_v2')
-      .select(`
-        product_id, 
-        price,
-        order_id,
-        orders!inner(currency_code)
-      `)
+      .select('product_id, price, order_id')
       .eq('line_item_id', lineItemId)
+      .single();
+
+    if (!lineItem) {
+      return {
+        success: false,
+        usdDeposited: 0,
+        newUsdBalance: 0,
+        error: `Line item not found: ${lineItemId}`,
+      };
+    }
+
+    // Get order currency to determine if conversion is needed
+    const { data: order } = await client
+      .from('orders')
+      .select('currency_code')
+      .eq('id', lineItem.order_id || orderId)
       .single();
 
     if (!lineItem) {
@@ -101,47 +112,7 @@ export async function depositPayoutEarnings(
 
     // Get order currency
     const orderCurrency = (lineItem.orders as any)?.currency_code || 'USD';
-    
-    // Get the original price (before discount) from Shopify order data
-    // For discounted items, we need to use the original price, not the discounted price
-    // Check if we have access to the raw Shopify order data
-    let originalPrice = Number(lineItemPrice) || Number(lineItem.price) || 0;
-    
-    // Try to get original price from raw Shopify order data if available
-    try {
-      const { data: orderData } = await client
-        .from('orders')
-        .select('raw_shopify_order_data')
-        .eq('id', lineItem.order_id)
-        .single();
-      
-      if (orderData?.raw_shopify_order_data?.line_items) {
-        const shopifyLineItem = orderData.raw_shopify_order_data.line_items.find(
-          (item: any) => item.id.toString() === lineItemId
-        );
-        
-        // Shopify provides original_price or we can calculate from price + discount
-        if (shopifyLineItem) {
-          // Use original_price if available, otherwise use price (which might already be discounted)
-          // If there are discounts, original_price should be higher than price
-          originalPrice = shopifyLineItem.original_price 
-            ? parseFloat(shopifyLineItem.original_price) 
-            : parseFloat(shopifyLineItem.price || '0');
-          
-          // If there's a discount allocation, add it back to get original price
-          if (shopifyLineItem.discount_allocations && shopifyLineItem.discount_allocations.length > 0) {
-            const totalDiscount = shopifyLineItem.discount_allocations.reduce(
-              (sum: number, disc: any) => sum + parseFloat(disc.amount || '0'), 
-              0
-            );
-            originalPrice = parseFloat(shopifyLineItem.price || '0') + totalDiscount;
-          }
-        }
-      }
-    } catch (error) {
-      console.warn('Could not fetch original price from Shopify order data, using stored price:', error);
-      // Continue with stored price
-    }
+    const isGBP = orderCurrency.toUpperCase() === 'GBP';
 
     // Get payout setting for this product
     const { data: payoutSetting } = await client
@@ -151,14 +122,16 @@ export async function depositPayoutEarnings(
       .eq('vendor_name', vendorName)
       .maybeSingle();
 
+    // Use the actual line item price (already includes discounts)
     // Convert to USD only if order currency is GBP
-    let priceInUSD = originalPrice;
-    if (orderCurrency === 'GBP') {
-      priceInUSD = convertGBPToUSD(originalPrice);
+    let priceForCalculation = Number(lineItemPrice) || Number(lineItem.price) || 0;
+    if (isGBP) {
+      priceForCalculation = convertGBPToUSD(priceForCalculation);
     }
     
+    // Calculate payout amount using the actual price (with discounts applied)
     const payoutAmount = calculateLineItemPayout({
-      price: priceInUSD, // Use USD price for calculation (original price before discount)
+      price: priceForCalculation,
       payout_amount: payoutSetting?.payout_amount ?? null,
       is_percentage: payoutSetting?.is_percentage ?? null,
     });
