@@ -321,6 +321,10 @@ export async function PUT(
                 starts_at: benefit.starts_at || null,
                 expires_at: benefit.expires_at || null,
                 hidden_series_id: (benefit as any).hidden_series_id || null,
+                vip_artwork_id: (benefit as any).vip_artwork_id || null,
+                credits_amount: (benefit as any).credits_amount || null,
+                drop_date: (benefit as any).drop_date || null,
+                exclusive_visibility_series_id: (benefit as any).exclusive_visibility_series_id || null,
                 updated_at: new Date().toISOString(),
               })
               .eq("id", benefit.id)
@@ -338,6 +342,10 @@ export async function PUT(
               access_code: benefit.access_code || null,
               starts_at: benefit.starts_at || null,
               expires_at: benefit.expires_at || null,
+              vip_artwork_id: (benefit as any).vip_artwork_id || null,
+              credits_amount: (benefit as any).credits_amount || null,
+              drop_date: (benefit as any).drop_date || null,
+              exclusive_visibility_series_id: (benefit as any).exclusive_visibility_series_id || null,
               created_at: new Date().toISOString(),
               updated_at: new Date().toISOString(),
             })

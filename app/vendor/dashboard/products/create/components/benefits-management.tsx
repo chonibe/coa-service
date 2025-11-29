@@ -22,9 +22,11 @@ import { BehindScenesForm } from "./benefits/behind-scenes-form"
 import { DigitalContentForm } from "./benefits/digital-content-form"
 import { ArtistCommentaryForm } from "./benefits/artist-commentary-form"
 import { ExclusiveAccessForm } from "./benefits/exclusive-access-form"
-import { VirtualEventForm } from "./benefits/virtual-event-form"
-import { PhysicalItemForm } from "./benefits/physical-item-form"
 import { DiscountForm } from "./benefits/discount-form"
+import { VIPArtworkUnlockForm } from "./benefits/vip-artwork-unlock-form"
+import { CreditsBonusForm } from "./benefits/credits-bonus-form"
+import { EarlyDropAccessForm } from "./benefits/early-drop-access-form"
+import { ExclusiveVisibilityForm } from "./benefits/exclusive-visibility-form"
 
 interface BenefitsManagementProps {
   benefits: ProductBenefit[]
@@ -187,6 +189,10 @@ export function BenefitsManagement({
       expiresAt: formatDateForInput(benefit.expires_at),
       isSeriesLevel: benefit.is_series_level || false,
       hiddenSeriesId: (benefit as any).hidden_series_id || null,
+      vipArtworkId: (benefit as any).vip_artwork_id || null,
+      creditsAmount: (benefit as any).credits_amount || null,
+      dropDate: formatDateForInput((benefit as any).drop_date),
+      exclusiveVisibilitySeriesId: (benefit as any).exclusive_visibility_series_id || null,
     })
     setShowDescription(!!benefit.description)
     setShowLinkCode(!!(benefit.content_url || benefit.access_code))
@@ -207,6 +213,10 @@ export function BenefitsManagement({
       expiresAt: "",
       isSeriesLevel: false,
       hiddenSeriesId: null,
+      vipArtworkId: null,
+      creditsAmount: null,
+      dropDate: null,
+      exclusiveVisibilitySeriesId: null,
     })
     setShowDescription(false)
     setShowLinkCode(false)
@@ -228,6 +238,10 @@ export function BenefitsManagement({
       expires_at: formData.expiresAt || null,
       is_series_level: formData.isSeriesLevel && !!seriesId,
       ...(formData.hiddenSeriesId && { hidden_series_id: formData.hiddenSeriesId }),
+      ...(formData.vipArtworkId && { vip_artwork_id: formData.vipArtworkId }),
+      ...(formData.creditsAmount && { credits_amount: formData.creditsAmount }),
+      ...(formData.dropDate && { drop_date: formData.dropDate }),
+      ...(formData.exclusiveVisibilitySeriesId && { exclusive_visibility_series_id: formData.exclusiveVisibilitySeriesId }),
     }
 
     const updatedBenefits = [...benefits]
@@ -280,6 +294,10 @@ export function BenefitsManagement({
         startsAt: formData.startsAt,
         expiresAt: formData.expiresAt,
         hiddenSeriesId: formData.hiddenSeriesId,
+        vipArtworkId: formData.vipArtworkId,
+        creditsAmount: formData.creditsAmount,
+        dropDate: formData.dropDate,
+        exclusiveVisibilitySeriesId: formData.exclusiveVisibilitySeriesId,
       },
       setFormData: (data: any) => {
         // Merge the new data with existing formData
@@ -306,11 +324,17 @@ export function BenefitsManagement({
     if (typeName.includes("exclusive") || typeName.includes("access")) {
       return <ExclusiveAccessForm {...commonProps} />
     }
-    if (typeName.includes("virtual") || typeName.includes("event")) {
-      return <VirtualEventForm {...commonProps} />
+    if (typeName.includes("vip") && typeName.includes("artwork")) {
+      return <VIPArtworkUnlockForm {...commonProps} />
     }
-    if (typeName.includes("physical") || typeName.includes("item")) {
-      return <PhysicalItemForm {...commonProps} />
+    if (typeName.includes("credits") || typeName.includes("bonus")) {
+      return <CreditsBonusForm {...commonProps} />
+    }
+    if (typeName.includes("early") && typeName.includes("drop")) {
+      return <EarlyDropAccessForm {...commonProps} />
+    }
+    if (typeName.includes("exclusive") && typeName.includes("visibility")) {
+      return <ExclusiveVisibilityForm {...commonProps} />
     }
     if (typeName.includes("discount")) {
       return <DiscountForm {...commonProps} />

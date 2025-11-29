@@ -306,6 +306,10 @@ export async function POST(request: NextRequest) {
             access_code: benefit.access_code || null,
             starts_at: benefit.starts_at || null,
             expires_at: benefit.expires_at || null,
+            vip_artwork_id: (benefit as any).vip_artwork_id || null,
+            credits_amount: (benefit as any).credits_amount || null,
+            drop_date: (benefit as any).drop_date || null,
+            exclusive_visibility_series_id: (benefit as any).exclusive_visibility_series_id || null,
             created_at: new Date().toISOString(),
             updated_at: new Date().toISOString(),
           })

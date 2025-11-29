@@ -209,6 +209,36 @@ export function HiddenSeriesForm({ formData, setFormData, seriesId }: HiddenSeri
           </div>
         </motion.div>
       )}
+
+      {/* Circular Connection Visualization */}
+      {selectedSeries && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          className="pt-4 border-t"
+        >
+          <div className="flex items-center gap-2 text-sm text-muted-foreground mb-3">
+            <Sparkles className="h-4 w-4" />
+            <span className="font-semibold">Circular Ecosystem</span>
+          </div>
+          <Card className="bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-950/20 dark:to-orange-950/20 border-amber-200">
+            <CardContent className="p-4">
+              <div className="space-y-3">
+                <div className="flex items-center gap-2 text-xs">
+                  <Lock className="h-3 w-3" />
+                  <span className="font-medium">This benefit creates a circular connection:</span>
+                </div>
+                <div className="text-xs space-y-1 pl-5">
+                  <div>• Purchasing this artwork unlocks access to <span className="font-semibold">{selectedSeries.name}</span></div>
+                  <div>• This series is only accessible to collectors who purchase this artwork</div>
+                  <div>• Creates value for both artworks and incentivizes collecting more of your work</div>
+                  <div>• The hidden series can have its own benefits that unlock even more content</div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </motion.div>
+      )}
     </div>
   )
 }

@@ -17,7 +17,6 @@ import {
   CheckCircle2
 } from "lucide-react"
 import { useToast } from "@/components/ui/use-toast"
-import { SubscriptionManager } from "./subscription-manager"
 
 interface BankingData {
   account: {
@@ -145,67 +144,63 @@ export function BankingDashboard({ collectorIdentifier }: BankingDashboardProps)
     )
   }
 
+  // Calculate unified balance: credits + USD (converted to credits)
+  // 1 credit = $0.01, so $1 = 100 credits
+  const usdBalance = data.balance.usdBalance || 0
+  const creditsBalance = data.balance.creditsBalance ?? data.balance.balance
+  const totalBalanceCredits = creditsBalance + (usdBalance * 100) // Convert USD to credits
+  const totalBalanceUSD = totalBalanceCredits * 0.01 // Convert back to USD for display
+  
+  const totalEarnedCredits = (data.balance.totalCreditsEarned ?? data.balance.creditsEarned) + ((data.balance.totalUsdEarned || 0) * 100)
+  const totalEarnedUSD = totalEarnedCredits * 0.01
+
   return (
     <div className="space-y-6">
-      {/* USD Balance (Payout Balance) - for vendors */}
-      {data.account.accountType === 'vendor' && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <CreditCard className="h-5 w-5" />
-              Payout Balance
-            </CardTitle>
-            <CardDescription>Available USD balance from artwork sales</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex items-baseline gap-2">
-              <span className="text-4xl font-bold">
-                {formatCurrency(data.balance.usdBalance || 0)}
-              </span>
-            </div>
-            {data.balance.totalUsdEarned !== undefined && (
-              <div className="pt-4 border-t">
-                <p className="text-sm text-muted-foreground">Total Earned</p>
-                <p className="text-lg font-semibold">
-                  {formatCurrency(data.balance.totalUsdEarned || 0)}
-                </p>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Credit Balance */}
+      {/* Unified Balance */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Wallet className="h-5 w-5" />
-            Credit Balance
+            Account Balance
           </CardTitle>
-          <CardDescription>Your current credit balance and earnings</CardDescription>
+          <CardDescription>Your balance can be used as credits or withdrawn as USD</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="flex items-baseline gap-2">
             <span className="text-4xl font-bold">
-              {formatCredits(data.balance.creditsBalance ?? data.balance.balance)}
+              {formatCurrency(totalBalanceUSD)}
             </span>
-            <span className="text-muted-foreground">credits</span>
             <span className="text-lg text-muted-foreground">
-              ({formatCurrency(creditsToUSD(data.balance.creditsBalance ?? data.balance.balance))})
+              ({formatCredits(totalBalanceCredits)} credits)
             </span>
           </div>
           <div className="grid grid-cols-2 gap-4 pt-4 border-t">
             <div>
               <p className="text-sm text-muted-foreground">Total Earned</p>
               <p className="text-lg font-semibold">
-                {formatCredits(data.balance.totalCreditsEarned ?? data.balance.creditsEarned)}
+                {formatCurrency(totalEarnedUSD)}
+              </p>
+              <p className="text-xs text-muted-foreground">
+                {formatCredits(totalEarnedCredits)} credits
               </p>
             </div>
             <div>
               <p className="text-sm text-muted-foreground">Total Spent</p>
-              <p className="text-lg font-semibold">{formatCredits(data.balance.creditsSpent)}</p>
+              <p className="text-lg font-semibold">
+                {formatCurrency(creditsToUSD(data.balance.creditsSpent))}
+              </p>
+              <p className="text-xs text-muted-foreground">
+                {formatCredits(data.balance.creditsSpent)} credits
+              </p>
             </div>
           </div>
+          {data.account.accountType === 'vendor' && (
+            <div className="pt-4 border-t">
+              <Button className="w-full">
+                Request Payout
+              </Button>
+            </div>
+          )}
         </CardContent>
       </Card>
 
@@ -268,8 +263,8 @@ export function BankingDashboard({ collectorIdentifier }: BankingDashboardProps)
         </CardContent>
       </Card>
 
-      <SubscriptionManager collectorIdentifier={collectorIdentifier} />
     </div>
   )
 }
+
 
