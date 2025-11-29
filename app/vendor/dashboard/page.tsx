@@ -181,9 +181,9 @@ export default function VendorDashboardPage() {
 
   // Format currency
   const formatCurrency = (amount: number, currency?: string) => {
-    return new Intl.NumberFormat("en-GB", {
+    return new Intl.NumberFormat("en-US", {
       style: "currency",
-      currency: currency || salesData.currency || "GBP",
+      currency: currency || salesData.currency || "USD",
       minimumFractionDigits: 2,
     }).format(amount)
   }
@@ -312,10 +312,6 @@ export default function VendorDashboardPage() {
           </Card>
 
           <Card className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-0 shadow-xl">
-            <CardHeader>
-              <CardTitle>Credit Banking</CardTitle>
-              <CardDescription>Manage your credits and unlock free perks</CardDescription>
-            </CardHeader>
             <CardContent>
               <BankingSection vendorName={vendorName} />
             </CardContent>

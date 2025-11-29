@@ -4,7 +4,7 @@ import { cookies } from "next/headers"
 import { createClient } from "@/lib/supabase/server"
 import { getVendorFromCookieStore } from "@/lib/vendor-session"
 
-const DEFAULT_CURRENCY = "GBP"
+const DEFAULT_CURRENCY = "USD"
 
 type SupabaseLineItem = {
   id?: string
