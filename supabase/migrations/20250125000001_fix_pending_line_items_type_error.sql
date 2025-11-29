@@ -29,10 +29,9 @@ BEGIN
     oli.line_item_id::TEXT,
     oli.order_id::TEXT,
     COALESCE(oli.order_name, '')::TEXT,
-    CASE 
-      WHEN oli.product_id IS NULL THEN ''::TEXT
-      ELSE oli.product_id::TEXT
-    END as product_id,
+    -- Handle product_id which might be TEXT or bigint - cast to TEXT
+    -- PostgreSQL can cast bigint directly to text
+    COALESCE(oli.product_id::text, '') as product_id,
     COALESCE(p.name, COALESCE(p.product_id::TEXT, p.id::TEXT)) as product_title,
     COALESCE(oli.price, 0)::DECIMAL as price,
     oli.created_at,
