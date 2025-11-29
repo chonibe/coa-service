@@ -85,18 +85,18 @@ export async function calculateOrderPayout(
     const { data, error } = await client.rpc("get_vendor_payout_by_order", {
       p_vendor_name: vendorName,
       p_order_id: orderId,
-    })
+    } as any)
 
     if (error) {
       console.error("Error calculating order payout:", error)
       return null
     }
 
-    if (!data || data.length === 0) {
+    if (!data || !Array.isArray(data) || data.length === 0) {
       return null
     }
 
-    const orderData = data[0]
+    const orderData = data[0] as any
 
     // Get order currency and raw Shopify data
     const { data: order } = await client
@@ -105,7 +105,7 @@ export async function calculateOrderPayout(
       .eq('id', orderId)
       .single()
 
-    const orderCurrency = order?.currency_code || 'USD'
+    const orderCurrency = (order as any)?.currency_code || 'USD'
     const isGBP = orderCurrency.toUpperCase() === 'GBP'
     const isNIS = orderCurrency.toUpperCase() === 'ILS' || orderCurrency.toUpperCase() === 'NIS'
 
@@ -115,8 +115,8 @@ export async function calculateOrderPayout(
         // Get original price from Shopify order data (before discount)
         let originalPrice = Number(item.price)
         
-        if (order?.raw_shopify_order_data?.line_items) {
-          const shopifyLineItem = order.raw_shopify_order_data.line_items.find(
+        if ((order as any)?.raw_shopify_order_data?.line_items) {
+          const shopifyLineItem = (order as any).raw_shopify_order_data.line_items.find(
             (li: any) => li.id.toString() === item.line_item_id
           )
           
@@ -206,14 +206,14 @@ export async function calculateVendorPayout(
     const { data, error } = await client.rpc("get_vendor_payout_by_order", {
       p_vendor_name: vendorName,
       p_order_id: options.orderId || null,
-    })
+    } as any)
 
     if (error) {
       console.error("Error calculating vendor payout:", error)
       return null
     }
 
-    if (!data || data.length === 0) {
+    if (!data || !Array.isArray(data) || data.length === 0) {
       return {
         vendor_name: vendorName,
         total_orders: 0,
@@ -228,7 +228,7 @@ export async function calculateVendorPayout(
     }
 
     // Get all unique order IDs to fetch order currency and original prices
-    const orderIds = [...new Set(data.map((orderData: any) => orderData.order_id))]
+    const orderIds = [...new Set((data as any[]).map((orderData: any) => orderData.order_id))]
     const { data: ordersData } = await client
       .from('orders')
       .select('id, currency_code, raw_shopify_order_data')
@@ -240,9 +240,9 @@ export async function calculateVendorPayout(
 
     // Filter orders if needed and apply currency conversion + original prices
     let orders = await Promise.all(
-      data.map(async (orderData: any) => {
-        const order = ordersMap.get(orderData.order_id)
-        const orderCurrency = order?.currency_code || 'USD'
+      (data as any[]).map(async (orderData: any) => {
+        const orderInfo = ordersMap.get(orderData.order_id) as any
+        const orderCurrency = orderInfo?.currency_code || 'USD'
         const isGBP = orderCurrency.toUpperCase() === 'GBP'
         const isNIS = orderCurrency.toUpperCase() === 'ILS' || orderCurrency.toUpperCase() === 'NIS'
 
@@ -252,10 +252,11 @@ export async function calculateVendorPayout(
             // Get original price from Shopify order data (before discount)
             let originalPrice = Number(item.price)
             
-            if (order?.raw_shopify_order_data?.line_items) {
-              const shopifyLineItem = order.raw_shopify_order_data.line_items.find(
-                (li: any) => li.id.toString() === item.line_item_id
-              )
+        const orderInfo = ordersMap.get(orderData.order_id) as any
+        if (orderInfo?.raw_shopify_order_data?.line_items) {
+          const shopifyLineItem = orderInfo.raw_shopify_order_data.line_items.find(
+            (li: any) => li.id.toString() === item.line_item_id
+          )
               
               if (shopifyLineItem) {
                 // Use original_price if available
@@ -344,12 +345,12 @@ export async function calculateVendorPayout(
 
     // Calculate totals
     const total_orders = orders.length
-    const total_line_items = orders.reduce((sum, order) => sum + order.total_line_items, 0)
-    const fulfilled_line_items = orders.reduce((sum, order) => sum + order.fulfilled_line_items, 0)
-    const paid_line_items = orders.reduce((sum, order) => sum + order.paid_line_items, 0)
-    const pending_line_items = orders.reduce((sum, order) => sum + order.pending_line_items, 0)
-    const total_revenue = orders.reduce((sum, order) => sum + order.order_total, 0)
-    const total_payout_amount = orders.reduce((sum, order) => sum + order.payout_amount, 0)
+    const total_line_items = orders.reduce((sum: number, order: OrderPayout) => sum + order.total_line_items, 0)
+    const fulfilled_line_items = orders.reduce((sum: number, order: OrderPayout) => sum + order.fulfilled_line_items, 0)
+    const paid_line_items = orders.reduce((sum: number, order: OrderPayout) => sum + order.paid_line_items, 0)
+    const pending_line_items = orders.reduce((sum: number, order: OrderPayout) => sum + order.pending_line_items, 0)
+    const total_revenue = orders.reduce((sum: number, order: OrderPayout) => sum + order.order_total, 0)
+    const total_payout_amount = orders.reduce((sum: number, order: OrderPayout) => sum + order.payout_amount, 0)
 
     return {
       vendor_name: vendorName,
@@ -380,7 +381,7 @@ export async function getPendingLineItems(
   try {
     const { data, error } = await client.rpc("get_vendor_pending_line_items", {
       p_vendor_name: vendorName,
-    })
+    } as any)
 
     if (error) {
       console.error("Error fetching pending line items:", error)
@@ -391,7 +392,7 @@ export async function getPendingLineItems(
       return []
     }
 
-    return data.map((item: any) => ({
+    return (data || []).map((item: any) => ({
       line_item_id: item.line_item_id,
       order_id: item.order_id,
       order_name: item.order_name,
