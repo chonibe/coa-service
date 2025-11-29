@@ -466,7 +466,7 @@ export function SeriesStep({ formData, setFormData }: SeriesStepProps) {
         )}
 
         {/* Benefits Management for standalone artwork */}
-        <Card>
+        <Card className="mt-6">
           <CardContent className="pt-6">
             <BenefitsManagement
               benefits={formData.benefits || []}

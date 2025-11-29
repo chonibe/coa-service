@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
-import { Plus as PlusIcon, Package, Lock } from "lucide-react"
+import { Plus as PlusIcon, Image, Lock } from "lucide-react"
 import { motion, AnimatePresence } from "framer-motion"
 import { useMobile } from "@/hooks/use-mobile"
 import { cn } from "@/lib/utils"
@@ -90,7 +90,7 @@ export function CreateMenu() {
                       style={{ minHeight: '72px' }}
                     >
                       <div className="p-2 rounded-lg bg-blue-500/10 flex-shrink-0">
-                        <Package className="h-5 w-5 text-blue-600" />
+                        <Image className="h-5 w-5 text-blue-600" />
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="font-semibold text-base">Create Artwork</div>

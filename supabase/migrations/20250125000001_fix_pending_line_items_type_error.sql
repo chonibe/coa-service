@@ -26,17 +26,17 @@ BEGIN
     WHERE vpi.payout_id IS NOT NULL
   )
   SELECT 
-    oli.line_item_id,
-    oli.order_id,
-    oli.order_name,
-    oli.product_id,
+    oli.line_item_id::TEXT,
+    oli.order_id::TEXT,
+    oli.order_name::TEXT,
+    oli.product_id::TEXT,
     COALESCE(p.name, COALESCE(p.product_id::TEXT, p.id::TEXT)) as product_title,
     COALESCE(oli.price, 0) as price,
     oli.created_at,
     COALESCE(pvp.payout_amount, 25) as payout_amount,
     COALESCE(pvp.is_percentage, true) as is_percentage,
-    oli.fulfillment_status,
-    COALESCE(oli.refund_status, 'none') as refund_status
+    oli.fulfillment_status::TEXT,
+    COALESCE(oli.refund_status::TEXT, 'none') as refund_status
   FROM order_line_items_v2 oli
   LEFT JOIN products p ON oli.product_id::TEXT = COALESCE(
     NULLIF(p.product_id::TEXT, ''),
