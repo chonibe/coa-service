@@ -243,13 +243,90 @@ export async function DELETE(
       return NextResponse.json({ error: "Series not found" }, { status: 404 })
     }
 
-    // Check if series has members
-    const { count } = await supabase
+    // Check if series has members (via artwork_series_members table)
+    const { data: members, error: membersError } = await supabase
       .from("artwork_series_members")
-      .select("*", { count: "exact", head: true })
+      .select("submission_id, shopify_product_id")
       .eq("series_id", seriesId)
 
-    if (count && count > 0) {
+    if (membersError) {
+      console.error("Error fetching series members:", membersError)
+      return NextResponse.json({ error: "Failed to check series members" }, { status: 500 })
+    }
+
+    // Also check artworks linked via series_id column in vendor_product_submissions
+    const { data: linkedSubmissions, error: linkedError } = await supabase
+      .from("vendor_product_submissions")
+      .select("id, shopify_product_id")
+      .eq("series_id", seriesId)
+      .eq("vendor_id", vendor.id)
+
+    if (linkedError) {
+      console.error("Error fetching linked submissions:", linkedError)
+      return NextResponse.json({ error: "Failed to check linked artworks" }, { status: 500 })
+    }
+
+    // Collect all shopify_product_ids from both sources
+    const shopifyProductIds: string[] = []
+    
+    // From artwork_series_members
+    if (members && members.length > 0) {
+      for (const member of members) {
+        if (member.shopify_product_id) {
+          shopifyProductIds.push(member.shopify_product_id)
+        } else if (member.submission_id) {
+          // Get shopify_product_id from submission
+          const { data: submission } = await supabase
+            .from("vendor_product_submissions")
+            .select("shopify_product_id")
+            .eq("id", member.submission_id)
+            .single()
+          
+          if (submission?.shopify_product_id) {
+            shopifyProductIds.push(submission.shopify_product_id)
+          }
+        }
+      }
+    }
+
+    // From vendor_product_submissions series_id column
+    if (linkedSubmissions && linkedSubmissions.length > 0) {
+      for (const submission of linkedSubmissions) {
+        if (submission.shopify_product_id) {
+          shopifyProductIds.push(submission.shopify_product_id)
+        }
+      }
+    }
+
+    // Check if any of these products have sales
+    if (shopifyProductIds.length > 0) {
+      const { count: salesCount, error: salesError } = await supabase
+        .from("order_line_items_v2")
+        .select("*", { count: "exact", head: true })
+        .in("product_id", shopifyProductIds)
+        .eq("status", "active")
+
+      if (salesError) {
+        console.error("Error checking for sales:", salesError)
+        return NextResponse.json({ error: "Failed to check sales" }, { status: 500 })
+      }
+
+      if (salesCount && salesCount > 0) {
+        return NextResponse.json(
+          {
+            error: "Cannot delete series",
+            message: "This series cannot be deleted because at least one artwork in the series has sold items. Series containing artworks with sales cannot be deleted.",
+          },
+          { status: 400 },
+        )
+      }
+    }
+
+    // Check if series has members (for soft vs hard delete decision)
+    const memberCount = (members?.length || 0) + (linkedSubmissions?.length || 0)
+    
+    if (memberCount > 0) {
+
       // Soft delete - set is_active to false
       const { error: updateError } = await supabase
         .from("artwork_series")

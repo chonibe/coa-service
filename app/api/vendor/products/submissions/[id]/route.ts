@@ -421,6 +421,33 @@ export async function DELETE(
       )
     }
 
+    // Check if artwork has any sales - if it does, prevent deletion
+    if (submission.shopify_product_id) {
+      const { count: salesCount, error: salesError } = await supabase
+        .from("order_line_items_v2")
+        .select("*", { count: "exact", head: true })
+        .eq("product_id", submission.shopify_product_id)
+        .eq("status", "active")
+
+      if (salesError) {
+        console.error("Error checking for sales:", salesError)
+        return NextResponse.json(
+          { error: "Failed to check sales", message: salesError.message },
+          { status: 500 },
+        )
+      }
+
+      if (salesCount && salesCount > 0) {
+        return NextResponse.json(
+          {
+            error: "Cannot delete artwork",
+            message: "This artwork cannot be deleted because it has sold at least one item. Artworks with sales cannot be deleted.",
+          },
+          { status: 400 },
+        )
+      }
+    }
+
     // Delete the submission
     const { error: deleteError } = await supabase
       .from("vendor_product_submissions")

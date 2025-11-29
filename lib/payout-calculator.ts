@@ -85,7 +85,7 @@ export async function calculateOrderPayout(
     const { data, error } = await client.rpc("get_vendor_payout_by_order", {
       p_vendor_name: vendorName,
       p_order_id: orderId,
-    } as any)
+    } as any) as { data: any[] | null; error: any }
 
     if (error) {
       console.error("Error calculating order payout:", error)
@@ -206,7 +206,7 @@ export async function calculateVendorPayout(
     const { data, error } = await client.rpc("get_vendor_payout_by_order", {
       p_vendor_name: vendorName,
       p_order_id: options.orderId || null,
-    } as any)
+    } as any) as { data: any[] | null; error: any }
 
     if (error) {
       console.error("Error calculating vendor payout:", error)
@@ -381,18 +381,18 @@ export async function getPendingLineItems(
   try {
     const { data, error } = await client.rpc("get_vendor_pending_line_items", {
       p_vendor_name: vendorName,
-    } as any)
+    } as any) as { data: any[] | null; error: any }
 
     if (error) {
       console.error("Error fetching pending line items:", error)
       return []
     }
 
-    if (!data) {
+    if (!data || !Array.isArray(data)) {
       return []
     }
 
-    return (data || []).map((item: any) => ({
+    return data.map((item: any) => ({
       line_item_id: item.line_item_id,
       order_id: item.order_id,
       order_name: item.order_name,
