@@ -16,29 +16,72 @@ export function BalanceDisplay() {
   }, [])
 
   const fetchBalance = async () => {
+    const requestId = `balance_display_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    console.log(`[${requestId}] [BalanceDisplay] Starting to fetch balance`, {
+      url: "/api/vendor/store/balance",
+    });
+
     try {
       setIsLoading(true)
+      const startTime = Date.now();
       const response = await fetch("/api/vendor/store/balance", {
         credentials: "include",
       })
 
+      const duration = Date.now() - startTime;
+      console.log(`[${requestId}] [BalanceDisplay] Response received:`, {
+        status: response.status,
+        statusText: response.statusText,
+        ok: response.ok,
+        duration: `${duration}ms`,
+        headers: Object.fromEntries(response.headers.entries()),
+      });
+
       if (!response.ok) {
-        throw new Error("Failed to fetch balance")
+        const errorText = await response.text();
+        let errorData;
+        try {
+          errorData = JSON.parse(errorText);
+        } catch {
+          errorData = { raw: errorText };
+        }
+
+        console.error(`[${requestId}] [BalanceDisplay] Response not OK:`, {
+          status: response.status,
+          statusText: response.statusText,
+          error: errorData,
+        });
+        throw new Error(errorData.error || "Failed to fetch balance")
       }
 
-      const data = await response.json()
+      const data = await response.json();
+      console.log(`[${requestId}] [BalanceDisplay] Response data:`, {
+        success: data.success,
+        balance: data.balance,
+        currency: data.currency,
+        requestId: data.requestId,
+        error: data.error,
+      });
+
       if (data.success) {
         setBalance(data.balance)
+      } else {
+        throw new Error(data.error || "Failed to load balance");
       }
     } catch (error: any) {
-      console.error("Error fetching balance:", error)
+      console.error(`[${requestId}] [BalanceDisplay] Fetch error:`, {
+        error: error.message,
+        stack: error.stack,
+        name: error.name,
+      });
       toast({
         title: "Error",
-        description: "Failed to load balance",
+        description: error.message || "Failed to load balance",
         variant: "destructive",
       })
     } finally {
       setIsLoading(false)
+      console.log(`[${requestId}] [BalanceDisplay] Loading complete`);
     }
   }
 
