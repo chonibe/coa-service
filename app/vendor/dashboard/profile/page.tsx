@@ -33,6 +33,7 @@ import {
   HelpCircle,
   Info,
   LogOut,
+  BarChart3,
 } from "lucide-react"
 import Image from "next/image"
 import { StripeConnect } from "../components/stripe-connect"
