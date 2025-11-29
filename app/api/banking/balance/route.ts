@@ -23,7 +23,17 @@ export async function GET(request: NextRequest) {
     }
 
     // Get account
-    const account = await getCollectorAccount(collectorIdentifier);
+    let account;
+    try {
+      account = await getCollectorAccount(collectorIdentifier);
+    } catch (error: any) {
+      console.error('Error getting collector account:', error);
+      return NextResponse.json(
+        { error: 'Failed to get account', message: error.message },
+        { status: 500 }
+      );
+    }
+
     if (!account) {
       return NextResponse.json(
         { error: 'Account not found' },
@@ -32,13 +42,46 @@ export async function GET(request: NextRequest) {
     }
 
     // Get unified balance (both credits and USD)
-    const unifiedBalance = await calculateUnifiedCollectorBalance(collectorIdentifier);
+    let unifiedBalance;
+    try {
+      unifiedBalance = await calculateUnifiedCollectorBalance(collectorIdentifier);
+    } catch (error: any) {
+      console.error('Error calculating unified balance:', error);
+      // Return default balance if calculation fails
+      unifiedBalance = {
+        creditsBalance: 0,
+        usdBalance: 0,
+        totalCreditsEarned: 0,
+        totalUsdEarned: 0,
+      };
+    }
 
     // Get credits balance (for backward compatibility)
-    const creditsBalance = await calculateCollectorBalance(collectorIdentifier);
+    let creditsBalance;
+    try {
+      creditsBalance = await calculateCollectorBalance(collectorIdentifier);
+    } catch (error: any) {
+      console.error('Error calculating credits balance:', error);
+      // Return default balance if calculation fails
+      creditsBalance = {
+        balance: 0,
+        creditsEarned: 0,
+        creditsSpent: 0,
+      };
+    }
 
     // Get perk unlock status
-    const perkStatus = await checkPerkUnlockStatus(collectorIdentifier);
+    let perkStatus;
+    try {
+      perkStatus = await checkPerkUnlockStatus(collectorIdentifier);
+    } catch (error: any) {
+      console.error('Error checking perk status:', error);
+      // Return empty perk status if check fails
+      perkStatus = {
+        unlockedPerks: [],
+        lockedPerks: [],
+      };
+    }
 
     return NextResponse.json({
       success: true,
