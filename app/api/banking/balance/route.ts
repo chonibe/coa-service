@@ -3,7 +3,7 @@ import type { NextRequest } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { calculateCollectorBalance, calculateUnifiedCollectorBalance, getTotalCreditsEarned } from '@/lib/banking/balance-calculator';
 import { checkPerkUnlockStatus } from '@/lib/banking/perk-redemption';
-import { getCollectorAccount } from '@/lib/banking/account-manager';
+import { getCollectorAccount, getOrCreateCollectorAccount } from '@/lib/banking/account-manager';
 
 /**
  * GET /api/banking/balance
@@ -22,22 +22,44 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Get account
+    // Get or create account
     let account;
     try {
-      account = await getCollectorAccount(collectorIdentifier);
+      const supabase = createClient();
+      
+      // Try to determine account type from the identifier
+      // Check if it's a vendor (by vendor_name or auth_id)
+      const { data: vendor } = await supabase
+        .from('vendors')
+        .select('id, auth_id, vendor_name')
+        .or(`vendor_name.eq.${collectorIdentifier},auth_id.eq.${collectorIdentifier}`)
+        .maybeSingle();
+      
+      if (vendor) {
+        // It's a vendor - use auth_id as identifier (or vendor_name as fallback)
+        const vendorCollectorIdentifier = vendor.auth_id || vendor.vendor_name;
+        account = await getOrCreateCollectorAccount(vendorCollectorIdentifier, 'vendor', vendor.id);
+      } else {
+        // Try to get existing account first
+        account = await getCollectorAccount(collectorIdentifier);
+        
+        // If account doesn't exist, create it as customer
+        if (!account) {
+          account = await getOrCreateCollectorAccount(collectorIdentifier, 'customer');
+        }
+      }
     } catch (error: any) {
-      console.error('Error getting collector account:', error);
+      console.error('Error getting/creating collector account:', error);
+      // If it's a migration error, return a helpful message
+      if (error.message?.includes('Database migration required')) {
+        return NextResponse.json(
+          { error: 'Database migration required', message: error.message },
+          { status: 503 }
+        );
+      }
       return NextResponse.json(
         { error: 'Failed to get account', message: error.message },
         { status: 500 }
-      );
-    }
-
-    if (!account) {
-      return NextResponse.json(
-        { error: 'Account not found' },
-        { status: 404 }
       );
     }
 

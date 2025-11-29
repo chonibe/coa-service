@@ -76,6 +76,8 @@ CREATE INDEX IF NOT EXISTS idx_collector_accounts_status ON collector_accounts(a
 -- ============================================
 -- PART 3: Create collector_ledger_entries table
 -- ============================================
+-- Note: Foreign keys to collector_credit_subscriptions and collector_perk_redemptions
+-- will be added after those tables are created
 
 CREATE TABLE IF NOT EXISTS collector_ledger_entries (
   id SERIAL PRIMARY KEY,
@@ -84,9 +86,9 @@ CREATE TABLE IF NOT EXISTS collector_ledger_entries (
   amount NUMERIC(10,2) NOT NULL, -- positive for credits earned, negative for credits spent
   order_id TEXT, -- for credit_earned transactions
   line_item_id TEXT, -- for credit_earned transactions
-  subscription_id UUID REFERENCES collector_credit_subscriptions(id) ON DELETE SET NULL, -- for subscription_credit
+  subscription_id UUID, -- will add FK constraint after collector_credit_subscriptions is created
   purchase_id UUID REFERENCES vendor_store_purchases(id) ON DELETE SET NULL, -- for purchases
-  perk_redemption_id UUID REFERENCES collector_perk_redemptions(id) ON DELETE SET NULL, -- for perk redemptions
+  perk_redemption_id UUID, -- will add FK constraint after collector_perk_redemptions is created
   description TEXT,
   metadata JSONB,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
@@ -154,6 +156,38 @@ CREATE INDEX IF NOT EXISTS idx_collector_subscriptions_identifier ON collector_c
 CREATE INDEX IF NOT EXISTS idx_collector_subscriptions_status ON collector_credit_subscriptions(subscription_status);
 CREATE INDEX IF NOT EXISTS idx_collector_subscriptions_next_billing ON collector_credit_subscriptions(next_billing_date);
 CREATE INDEX IF NOT EXISTS idx_collector_subscriptions_payment_id ON collector_credit_subscriptions(payment_subscription_id);
+
+-- ============================================
+-- PART 5.5: Add foreign key constraints to collector_ledger_entries
+-- ============================================
+-- Now that all referenced tables exist, add the foreign key constraints
+
+DO $$
+BEGIN
+  -- Add foreign key constraint for subscription_id if it doesn't exist
+  IF NOT EXISTS (
+    SELECT 1 FROM information_schema.table_constraints 
+    WHERE table_schema = 'public' 
+    AND table_name = 'collector_ledger_entries' 
+    AND constraint_name = 'collector_ledger_entries_subscription_id_fkey'
+  ) THEN
+    ALTER TABLE collector_ledger_entries
+    ADD CONSTRAINT collector_ledger_entries_subscription_id_fkey
+    FOREIGN KEY (subscription_id) REFERENCES collector_credit_subscriptions(id) ON DELETE SET NULL;
+  END IF;
+
+  -- Add foreign key constraint for perk_redemption_id if it doesn't exist
+  IF NOT EXISTS (
+    SELECT 1 FROM information_schema.table_constraints 
+    WHERE table_schema = 'public' 
+    AND table_name = 'collector_ledger_entries' 
+    AND constraint_name = 'collector_ledger_entries_perk_redemption_id_fkey'
+  ) THEN
+    ALTER TABLE collector_ledger_entries
+    ADD CONSTRAINT collector_ledger_entries_perk_redemption_id_fkey
+    FOREIGN KEY (perk_redemption_id) REFERENCES collector_perk_redemptions(id) ON DELETE SET NULL;
+  END IF;
+END $$;
 
 -- ============================================
 -- PART 6: Add updated_at triggers

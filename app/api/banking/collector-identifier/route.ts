@@ -21,7 +21,7 @@ export async function GET(request: NextRequest) {
       // Get vendor details
       const { data: vendor, error: vendorError } = await supabase
         .from('vendors')
-        .select('id, vendor_name, contact_email')
+        .select('id, vendor_name, auth_id')
         .eq('vendor_name', vendorName)
         .single();
 
@@ -32,15 +32,9 @@ export async function GET(request: NextRequest) {
         );
       }
 
-      // Try to find vendor's customer_id or account_number from orders
-      const { data: vendorOrder } = await supabase
-        .from('orders')
-        .select('customer_id, account_number')
-        .eq('customer_email', vendor.contact_email || '')
-        .limit(1)
-        .maybeSingle();
-
-      const collectorIdentifier = vendorOrder?.account_number || vendorOrder?.customer_id?.toString() || vendorName;
+      // Use auth_id as collector identifier (as established in the banking system)
+      // Fallback to vendor_name if auth_id doesn't exist
+      const collectorIdentifier = vendor.auth_id || vendorName;
 
       return NextResponse.json({
         success: true,

@@ -44,6 +44,11 @@ export async function getOrCreateCollectorAccount(
     .single();
 
   if (createError || !newAccount) {
+    if (createError?.code === 'PGRST205') {
+      // Table doesn't exist - migration hasn't been run
+      console.error('Error: collector_accounts table does not exist. Please run the base migration: 20250202000000_collector_banking_system.sql');
+      throw new Error('Database migration required: Please run the collector banking system migration first. The collector_accounts table does not exist.');
+    }
     console.error('Error creating collector account:', createError);
     throw new Error(`Failed to create collector account: ${createError?.message || 'Unknown error'}`);
   }
@@ -74,9 +79,26 @@ export async function updateAccountStatus(
     .eq('collector_identifier', collectorIdentifier);
 
   if (error) {
+    if (error.code === 'PGRST205') {
+      // Table doesn't exist - migration hasn't been run
+      console.error('Error: collector_accounts table does not exist. Please run the base migration: 20250202000000_collector_banking_system.sql');
+      throw new Error('Database migration required: Please run the collector banking system migration first. The collector_accounts table does not exist.');
+    }
     console.error('Error updating account status:', error);
     throw new Error(`Failed to update account status: ${error.message}`);
   }
+}
+
+/**
+ * Ensure collector account exists (alias for getOrCreateCollectorAccount)
+ * Creates account if it doesn't exist
+ */
+export async function ensureCollectorAccount(
+  collectorIdentifier: string,
+  accountType: CollectorAccountType,
+  vendorId?: number
+): Promise<CollectorAccount> {
+  return getOrCreateCollectorAccount(collectorIdentifier, accountType, vendorId);
 }
 
 /**
@@ -97,6 +119,11 @@ export async function getCollectorAccount(
     if (error.code === 'PGRST116') {
       // Not found
       return null;
+    }
+    if (error.code === 'PGRST205') {
+      // Table doesn't exist - migration hasn't been run
+      console.error('Error: collector_accounts table does not exist. Please run the base migration: 20250202000000_collector_banking_system.sql');
+      throw new Error('Database migration required: Please run the collector banking system migration first. The collector_accounts table does not exist.');
     }
     console.error('Error getting collector account:', error);
     throw new Error(`Failed to get collector account: ${error.message}`);
