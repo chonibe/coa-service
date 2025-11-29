@@ -22,17 +22,19 @@ dotenv.config()
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
-const SHOPIFY_SHOP = process.env.SHOPIFY_SHOP || process.env.NEXT_PUBLIC_SHOPIFY_SHOP
-const SHOPIFY_ACCESS_TOKEN = process.env.SHOPIFY_ACCESS_TOKEN || process.env.NEXT_PUBLIC_SHOPIFY_ACCESS_TOKEN
+const SHOPIFY_SHOP = process.env.SHOPIFY_SHOP || ''
+const SHOPIFY_ACCESS_TOKEN = process.env.SHOPIFY_ACCESS_TOKEN || ''
 
 if (!supabaseUrl || !supabaseKey) {
   console.error('❌ Missing Supabase environment variables')
+  console.error('   Required: NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY')
   process.exit(1)
 }
 
 if (!SHOPIFY_SHOP || !SHOPIFY_ACCESS_TOKEN) {
   console.error('❌ Missing Shopify environment variables')
   console.error('   Required: SHOPIFY_SHOP and SHOPIFY_ACCESS_TOKEN')
+  console.error('   Check lib/env.ts for variable names')
   process.exit(1)
 }
 

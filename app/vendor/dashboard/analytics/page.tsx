@@ -1,16 +1,8 @@
 "use client"
 
 import { useState, useEffect, Suspense } from "react"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
-import { AlertCircle, Download } from "lucide-react"
-import { Button } from "@/components/ui/button"
+import { useRouter } from "next/navigation"
 import { Skeleton } from "@/components/ui/skeleton"
-import { useToast } from "@/components/ui/use-toast"
-import { TimeRangeSelector, type TimeRange, type DateRange } from "@/components/vendor/time-range-selector"
-import { LoadingSkeleton } from "@/components/vendor/loading-skeleton"
-import { EmptyState } from "@/components/vendor/empty-state"
-import { BarChart3 } from "lucide-react"
 import {
   ResponsiveContainer,
   BarChart,
@@ -50,7 +42,20 @@ interface SaleItem {
 }
 
 export default function AnalyticsPage() {
-  const [isLoading, setIsLoading] = useState(true)
+  const router = useRouter()
+  
+  // Redirect to profile analytics tab
+  useEffect(() => {
+    router.replace("/vendor/dashboard/profile?tab=analytics")
+  }, [router])
+  
+  // Show loading while redirecting
+  return (
+    <div className="flex items-center justify-center min-h-screen">
+      <Skeleton className="h-8 w-64" />
+    </div>
+  )
+}
   const [error, setError] = useState<string | null>(null)
   const [salesByDate, setSalesByDate] = useState<any[]>([])
   const [salesByProduct, setSalesByProduct] = useState<any[]>([])

@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect, useRef, useCallback, useMemo } from "react"
-import { useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -97,13 +97,19 @@ const COUNTRIES = [
 ]
 
 export default function VendorProfilePage() {
+  const router = useRouter()
+  const searchParams = useSearchParams()
   const [profile, setProfile] = useState<VendorProfile | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
   const [isUploadingImage, setIsUploadingImage] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [isEditingProfile, setIsEditingProfile] = useState(false)
-  const [activeTab, setActiveTab] = useState("public-profile")
+  const [activeTab, setActiveTab] = useState(() => {
+    // Check if tab is specified in URL
+    const tab = searchParams?.get("tab")
+    return tab || "public-profile"
+  })
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false)
   const [isDragOver, setIsDragOver] = useState(false)
   const [lastSaved, setLastSaved] = useState<Date | null>(null)
