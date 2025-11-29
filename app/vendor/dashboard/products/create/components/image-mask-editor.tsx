@@ -567,7 +567,7 @@ export function ImageMaskEditor({ image, onUpdate, onMaskSaved }: ImageMaskEdito
       const exportCanvas = document.createElement("canvas")
       exportCanvas.width = MASK_OUTER_SIZE
       exportCanvas.height = MASK_OUTER_SIZE
-      const exportCtx = exportCanvas.getContext("2d", { alpha: false })
+      const exportCtx = exportCanvas.getContext("2d", { alpha: true })
       
       if (!exportCtx) {
         console.error("[MaskEditor] generateMaskedImage failed - could not get context")
@@ -579,9 +579,8 @@ export function ImageMaskEditor({ image, onUpdate, onMaskSaved }: ImageMaskEdito
         height: exportCanvas.height,
       })
 
-      // Fill white background
-      exportCtx.fillStyle = "#ffffff"
-      exportCtx.fillRect(0, 0, MASK_OUTER_SIZE, MASK_OUTER_SIZE)
+      // Clear canvas (transparent background)
+      exportCtx.clearRect(0, 0, MASK_OUTER_SIZE, MASK_OUTER_SIZE)
 
       // Create clipping path for the inner rectangle
       // Inline path drawing to avoid minification issues with function references
