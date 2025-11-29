@@ -43,7 +43,7 @@ export function ArtworkCard({ artwork, onPurchaseSuccess }: ArtworkCardProps) {
 
   return (
     <>
-      <Card className="overflow-hidden">
+      <Card className="overflow-hidden" data-artwork-id={artwork.id}>
         <div className="relative h-48 w-full bg-muted">
           {artwork.imageUrl ? (
             <img

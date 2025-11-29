@@ -24,6 +24,26 @@ export function ProofPrintGallery() {
 
   useEffect(() => {
     fetchArtworks()
+    
+    // Check if we should highlight a specific artwork
+    if (typeof window !== 'undefined') {
+      const highlightId = sessionStorage.getItem('highlightArtwork')
+      if (highlightId) {
+        sessionStorage.removeItem('highlightArtwork')
+        // Scroll to the artwork after a short delay
+        setTimeout(() => {
+          const element = document.querySelector(`[data-artwork-id="${highlightId}"]`)
+          if (element) {
+            element.scrollIntoView({ behavior: 'smooth', block: 'center' })
+            // Add a highlight effect
+            element.classList.add('ring-2', 'ring-primary', 'ring-offset-2')
+            setTimeout(() => {
+              element.classList.remove('ring-2', 'ring-primary', 'ring-offset-2')
+            }, 2000)
+          }
+        }, 500)
+      }
+    }
   }, [])
 
   const fetchArtworks = async () => {

@@ -76,14 +76,12 @@ export async function GET(
             const images = (submission.product_data as any).images || []
             artworkImage = images[0]?.src || ""
             
-            // Check for benefits in product_data
+            // Check for benefits in product_data (for unpublished artworks)
             const productDataBenefits = (submission.product_data as any)?.benefits || []
-            if (productDataBenefits.length > 0) {
-              hasBenefits = true
-              benefitCount = productDataBenefits.length
-            }
+            const productDataBenefitCount = productDataBenefits.filter((b: any) => !b.is_series_level).length
             
-            // Also check for benefits in database if product is published
+            // Check for benefits in database (for published artworks)
+            let dbBenefitCount = 0
             if (submission.shopify_product_id) {
               const { data: dbBenefits } = await supabase
                 .from("product_benefits")
@@ -91,9 +89,15 @@ export async function GET(
                 .eq("product_id", submission.shopify_product_id)
               
               if (dbBenefits && dbBenefits.length > 0) {
-                hasBenefits = true
-                benefitCount = dbBenefits.length
+                dbBenefitCount = dbBenefits.length
               }
+            }
+            
+            // Use whichever has more benefits (should be same, but handle both cases)
+            const totalBenefitCount = Math.max(productDataBenefitCount, dbBenefitCount)
+            if (totalBenefitCount > 0) {
+              hasBenefits = true
+              benefitCount = totalBenefitCount
             }
           }
         }

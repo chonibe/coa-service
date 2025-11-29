@@ -39,6 +39,7 @@ import { StripeConnect } from "../components/stripe-connect"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { Badge } from "@/components/ui/badge"
 import { ThemeToggle } from "@/components/theme-toggle"
+import { AnalyticsInsights } from "./components/analytics-insights"
 
 interface VendorProfile {
   id: number | string
@@ -701,8 +702,12 @@ export default function VendorProfilePage() {
       )}
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className="grid w-full max-w-2xl grid-cols-5">
+        <TabsList className="grid w-full max-w-2xl grid-cols-6">
           <TabsTrigger value="public-profile">Public Profile</TabsTrigger>
+          <TabsTrigger value="analytics" className="flex items-center gap-2">
+            <BarChart3 className="h-4 w-4" />
+            <span>Insights</span>
+          </TabsTrigger>
           <TabsTrigger value="settings-profile" className="flex items-center gap-2">
             <User className="h-4 w-4" />
             <span>Contact</span>
@@ -1282,6 +1287,15 @@ export default function VendorProfilePage() {
         {/* Settings - Stripe Tab */}
         <TabsContent value="settings-stripe" className="space-y-4">
           {profile && <StripeConnect vendorName={profile.vendor_name} />}
+        </TabsContent>
+
+        {/* Analytics Insights Tab - Instagram-style Professional Insights */}
+        <TabsContent value="analytics" className="space-y-4">
+          <Card className="border-2">
+            <CardContent className="pt-6">
+              <AnalyticsInsights />
+            </CardContent>
+          </Card>
         </TabsContent>
       </Tabs>
 

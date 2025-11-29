@@ -9,7 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Badge } from "@/components/ui/badge"
 import { ProductTable } from "../components/product-table"
 import { useVendorData } from "@/hooks/use-vendor-data"
-import { Plus, Package, CheckCircle, DollarSign, Clock, XCircle, Trash2, Loader2 } from "lucide-react"
+import { Plus, Package, CheckCircle, DollarSign, Clock, XCircle, Trash2, Loader2, Sparkles, ShoppingCart } from "lucide-react"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -284,21 +284,47 @@ export default function ProductsPage() {
                 <div className="space-y-4">
                   {submissions.map((submission) => {
                     const canEdit = submission.status === "pending" || submission.status === "rejected"
+                    const productData = submission.product_data as any
+                    const previewImage = productData?.images?.[0]?.src || productData?.images?.[0] || null
+                    const hasBenefits = (productData?.benefits || []).filter((b: any) => !b.is_series_level).length > 0
+                    const benefitCount = (productData?.benefits || []).filter((b: any) => !b.is_series_level).length
+                    
                     return (
                       <div
                         key={submission.id}
                         className="border rounded-lg p-4 hover:bg-muted/50 transition-colors"
                       >
-                        <div className="flex items-center justify-between">
-                          <div className="flex-1">
+                        <div className="flex items-start gap-4">
+                          {/* Preview Image */}
+                          {previewImage ? (
+                            <div className="flex-shrink-0 w-24 h-24 rounded-lg overflow-hidden bg-muted border">
+                              <img
+                                src={previewImage}
+                                alt={productData?.title || "Artwork"}
+                                className="w-full h-full object-cover"
+                              />
+                            </div>
+                          ) : (
+                            <div className="flex-shrink-0 w-24 h-24 rounded-lg bg-muted border flex items-center justify-center">
+                              <Package className="h-8 w-8 text-muted-foreground" />
+                            </div>
+                          )}
+                          
+                          <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-3 flex-wrap">
                               <h3 className="font-semibold">
-                                {(submission.product_data as any)?.title || "Untitled Artwork"}
+                                {productData?.title || "Untitled Artwork"}
                               </h3>
                               {getStatusBadge(submission.status)}
                               {(submission as any).series_metadata?.series_name && (
                                 <Badge variant="secondary">
                                   Series: {(submission as any).series_metadata.series_name}
+                                </Badge>
+                              )}
+                              {hasBenefits && (
+                                <Badge variant="outline" className="bg-purple-50 dark:bg-purple-950/20 border-purple-200 text-purple-700 dark:text-purple-300">
+                                  <Sparkles className="h-3 w-3 mr-1" />
+                                  {benefitCount} {benefitCount === 1 ? "treasure" : "treasures"}
                                 </Badge>
                               )}
                             </div>
@@ -316,12 +342,32 @@ export default function ProductsPage() {
                               </p>
                             )}
                           </div>
-                          <div className="flex items-center gap-2">
+                          <div className="flex items-center gap-2 flex-shrink-0">
                             <div className="text-right text-sm text-muted-foreground">
                               {submission.shopify_product_id && (
                                 <div>Published to Shopify</div>
                               )}
                             </div>
+                            {/* Proof Print Button */}
+                            {(submission.status === "pending" || submission.status === "approved" || submission.status === "published") && (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  // Navigate to store page and scroll to the artwork
+                                  router.push(`/vendor/dashboard/store`)
+                                  // Store the artwork ID in sessionStorage to highlight it
+                                  if (typeof window !== 'undefined') {
+                                    sessionStorage.setItem('highlightArtwork', submission.id)
+                                  }
+                                }}
+                                className="flex items-center gap-1"
+                              >
+                                <ShoppingCart className="h-4 w-4" />
+                                Proof Print
+                              </Button>
+                            )}
                             {canEdit && (
                               <Button
                                 variant="outline"
