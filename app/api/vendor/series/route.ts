@@ -146,6 +146,7 @@ export async function POST(request: NextRequest) {
     // Extract time-based unlock fields from unlock_config to separate columns
     // Note: unlock_at is stored per member, not per series
     // unlock_schedule is stored at the series level for recurring schedules
+    // If columns don't exist (migration not applied), data stays in unlock_config
     if (seriesData.unlock_type === "time_based" && seriesData.unlock_config) {
       if (seriesData.unlock_config.unlock_schedule) {
         insertData.unlock_schedule = seriesData.unlock_config.unlock_schedule
@@ -154,6 +155,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Extract VIP unlock fields from unlock_config to separate columns
+    // If columns don't exist (migration not applied), data stays in unlock_config
     if (seriesData.unlock_type === "vip" && seriesData.unlock_config) {
       if (seriesData.unlock_config.requires_ownership !== undefined) {
         insertData.requires_ownership = seriesData.unlock_config.requires_ownership
@@ -163,11 +165,36 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    const { data: newSeries, error: createError } = await supabase
+    let { data: newSeries, error: createError } = await supabase
       .from("artwork_series")
       .insert(insertData)
       .select()
       .single()
+
+    // If error is due to missing columns (PGRST204), retry without those fields
+    // The data is already in unlock_config, so it will work
+    if (createError && createError.code === "PGRST204") {
+      console.log("Columns not available, retrying with unlock_config only")
+      // Remove the fields that don't exist and retry
+      const retryData = { ...insertData }
+      delete retryData.unlock_schedule
+      delete retryData.requires_ownership
+      delete retryData.vip_tier
+
+      const retryResult = await supabase
+        .from("artwork_series")
+        .insert(retryData)
+        .select()
+        .single()
+
+      if (retryResult.error) {
+        console.error("Error creating series (retry):", retryResult.error)
+        return NextResponse.json({ error: "Failed to create series" }, { status: 500 })
+      }
+
+      newSeries = retryResult.data
+      createError = null
+    }
 
     if (createError) {
       console.error("Error creating series:", createError)
