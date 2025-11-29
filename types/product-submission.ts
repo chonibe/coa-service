@@ -52,9 +52,9 @@ export interface ProductBenefit {
   hidden_series_id?: string | null // For "Hidden Series" benefit type - series only accessible via this benefit
   // Circular benefit fields
   vip_artwork_id?: string | null // For VIP Artwork Unlock - artwork from VIP series to unlock
+  vip_series_id?: string | null // For VIP Series Unlock - entire VIP series to unlock
   credits_amount?: number | null // For Credits Bonus - amount of credits to grant
   drop_date?: string | null // For Early Drop Access - date when collectors get early access
-  exclusive_visibility_series_id?: string | null // For Exclusive Visibility - series only visible to perk holders
 }
 
 export interface ProductSubmissionData {
