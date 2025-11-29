@@ -28,15 +28,18 @@ BEGIN
   SELECT 
     oli.line_item_id::TEXT,
     oli.order_id::TEXT,
-    oli.order_name::TEXT,
-    oli.product_id::TEXT,
+    COALESCE(oli.order_name, '')::TEXT,
+    CASE 
+      WHEN oli.product_id IS NULL THEN ''::TEXT
+      ELSE oli.product_id::TEXT
+    END as product_id,
     COALESCE(p.name, COALESCE(p.product_id::TEXT, p.id::TEXT)) as product_title,
-    COALESCE(oli.price, 0) as price,
+    COALESCE(oli.price, 0)::DECIMAL as price,
     oli.created_at,
-    COALESCE(pvp.payout_amount, 25) as payout_amount,
-    COALESCE(pvp.is_percentage, true) as is_percentage,
-    oli.fulfillment_status::TEXT,
-    COALESCE(oli.refund_status::TEXT, 'none') as refund_status
+    COALESCE(pvp.payout_amount, 25)::DECIMAL as payout_amount,
+    COALESCE(pvp.is_percentage, true)::BOOLEAN as is_percentage,
+    COALESCE(oli.fulfillment_status, '')::TEXT as fulfillment_status,
+    COALESCE(oli.refund_status::TEXT, 'none')::TEXT as refund_status
   FROM order_line_items_v2 oli
   LEFT JOIN products p ON oli.product_id::TEXT = COALESCE(
     NULLIF(p.product_id::TEXT, ''),
