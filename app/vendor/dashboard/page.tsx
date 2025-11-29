@@ -333,24 +333,77 @@ function BankingSection({ vendorName }: { vendorName: string }) {
 
   useEffect(() => {
     const fetchCollectorIdentifier = async () => {
+      const requestId = `frontend_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      console.log(`[${requestId}] [BankingSection] Starting to fetch collector identifier`, {
+        vendorName,
+        url: "/api/banking/collector-identifier",
+      });
+
       try {
+        const startTime = Date.now();
         const response = await fetch("/api/banking/collector-identifier", {
           credentials: "include",
-        })
+        });
+
+        const duration = Date.now() - startTime;
+        console.log(`[${requestId}] [BankingSection] Response received:`, {
+          status: response.status,
+          statusText: response.statusText,
+          ok: response.ok,
+          duration: `${duration}ms`,
+          headers: Object.fromEntries(response.headers.entries()),
+        });
+
         if (response.ok) {
-          const data = await response.json()
+          const data = await response.json();
+          console.log(`[${requestId}] [BankingSection] Response data:`, {
+            success: data.success,
+            collectorIdentifier: data.collectorIdentifier ? data.collectorIdentifier.substring(0, 20) + '...' : null,
+            accountType: data.accountType,
+            vendorId: data.vendorId,
+            requestId: data.requestId,
+            error: data.error,
+          });
+
           if (data.success) {
-            setCollectorIdentifier(data.collectorIdentifier)
+            console.log(`[${requestId}] [BankingSection] Setting collector identifier:`, {
+              collectorIdentifier: data.collectorIdentifier.substring(0, 20) + '...',
+            });
+            setCollectorIdentifier(data.collectorIdentifier);
+          } else {
+            console.error(`[${requestId}] [BankingSection] Response not successful:`, {
+              error: data.error,
+              details: data,
+            });
           }
+        } else {
+          const errorText = await response.text();
+          let errorData;
+          try {
+            errorData = JSON.parse(errorText);
+          } catch {
+            errorData = { raw: errorText };
+          }
+
+          console.error(`[${requestId}] [BankingSection] Response not OK:`, {
+            status: response.status,
+            statusText: response.statusText,
+            error: errorData,
+          });
         }
-      } catch (error) {
-        console.error("Error fetching collector identifier:", error)
+      } catch (error: any) {
+        console.error(`[${requestId}] [BankingSection] Fetch error:`, {
+          error: error.message,
+          stack: error.stack,
+          name: error.name,
+        });
       } finally {
-        setIsLoading(false)
+        setIsLoading(false);
+        console.log(`[${requestId}] [BankingSection] Loading complete`);
       }
-    }
-    fetchCollectorIdentifier()
-  }, [])
+    };
+    fetchCollectorIdentifier();
+  }, [vendorName])
 
   if (isLoading) {
     return <Skeleton className="h-64 w-full" />
