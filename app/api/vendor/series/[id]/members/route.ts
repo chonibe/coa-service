@@ -56,16 +56,18 @@ export async function GET(
       return NextResponse.json({ error: "Failed to fetch members" }, { status: 500 })
     }
 
-    // Enrich with artwork details
+    // Enrich with artwork details and benefits
     const enrichedMembers = await Promise.all(
       (members || []).map(async (member) => {
         let artworkTitle = ""
         let artworkImage = ""
+        let hasBenefits = false
+        let benefitCount = 0
 
         if (member.submission_id) {
           const { data: submission } = await supabase
             .from("vendor_product_submissions")
-            .select("product_data")
+            .select("product_data, shopify_product_id")
             .eq("id", member.submission_id)
             .single()
 
@@ -73,6 +75,26 @@ export async function GET(
             artworkTitle = (submission.product_data as any).title || ""
             const images = (submission.product_data as any).images || []
             artworkImage = images[0]?.src || ""
+            
+            // Check for benefits in product_data
+            const productDataBenefits = (submission.product_data as any)?.benefits || []
+            if (productDataBenefits.length > 0) {
+              hasBenefits = true
+              benefitCount = productDataBenefits.length
+            }
+            
+            // Also check for benefits in database if product is published
+            if (submission.shopify_product_id) {
+              const { data: dbBenefits } = await supabase
+                .from("product_benefits")
+                .select("id")
+                .eq("product_id", submission.shopify_product_id)
+              
+              if (dbBenefits && dbBenefits.length > 0) {
+                hasBenefits = true
+                benefitCount = dbBenefits.length
+              }
+            }
           }
         }
 
@@ -80,6 +102,8 @@ export async function GET(
           ...member,
           artwork_title: artworkTitle,
           artwork_image: artworkImage,
+          has_benefits: hasBenefits,
+          benefit_count: benefitCount,
         }
       })
     )

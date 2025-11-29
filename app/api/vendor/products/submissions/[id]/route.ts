@@ -55,6 +55,10 @@ export async function GET(
           expires_at: b.expires_at,
           is_series_level: false,
           hidden_series_id: b.hidden_series_id || null,
+          vip_artwork_id: b.vip_artwork_id || null,
+          vip_series_id: b.vip_series_id || null,
+          credits_amount: b.credits_amount || null,
+          drop_date: b.drop_date || null,
         }))
       }
     }
@@ -81,6 +85,10 @@ export async function GET(
           expires_at: b.expires_at,
           is_series_level: true,
           hidden_series_id: b.hidden_series_id || null,
+          vip_artwork_id: b.vip_artwork_id || null,
+          vip_series_id: b.vip_series_id || null,
+          credits_amount: b.credits_amount || null,
+          drop_date: b.drop_date || null,
         }))
         existingBenefits = [...existingBenefits, ...seriesLevelBenefits]
       }

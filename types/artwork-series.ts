@@ -103,6 +103,8 @@ export interface SeriesMember {
   unlocked_at?: string | null
   artwork_title?: string // Join data
   artwork_image?: string // Join data
+  has_benefits?: boolean // Whether artwork has benefits/treasures
+  benefit_count?: number // Number of benefits/treasures
 }
 
 export interface SeriesFormData {

@@ -490,9 +490,6 @@ export function BenefitsManagement({
 
   return (
     <div className="space-y-4">
-      {showGuide && benefits.length === 0 && (
-        <BenefitsGuide onDismiss={() => setShowGuide(false)} />
-      )}
 
       <div className="flex items-center justify-between">
         <div>

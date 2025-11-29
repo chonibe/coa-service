@@ -2,7 +2,8 @@
 
 import { useState } from "react"
 import { motion, AnimatePresence } from "framer-motion"
-import { Lock, Check, GripVertical } from "lucide-react"
+import { Lock, Check, GripVertical, Sparkles } from "lucide-react"
+import { Badge } from "@/components/ui/badge"
 import { cn } from "@/lib/utils"
 import type { SeriesMember } from "@/types/artwork-series"
 import {
@@ -86,7 +87,7 @@ function SortableArtworkItem({
         )}
         
         {/* Lock/Unlock indicator */}
-        <div className="absolute top-2 right-2">
+        <div className="absolute top-2 right-2 flex items-center gap-1">
           {isLocked ? (
             <div className="h-6 w-6 rounded-full bg-destructive/80 flex items-center justify-center">
               <Lock className="h-3 w-3 text-white" />
@@ -95,6 +96,12 @@ function SortableArtworkItem({
             <div className="h-6 w-6 rounded-full bg-primary flex items-center justify-center">
               <Check className="h-3 w-3 text-primary-foreground" />
             </div>
+          )}
+          {member.has_benefits && (
+            <Badge variant="outline" className="bg-purple-50 dark:bg-purple-950/20 border-purple-200 text-purple-700 dark:text-purple-300 h-6 px-1.5 flex items-center gap-1">
+              <Sparkles className="h-3 w-3" />
+              <span className="text-xs">{member.benefit_count || 1}</span>
+            </Badge>
           )}
         </div>
 

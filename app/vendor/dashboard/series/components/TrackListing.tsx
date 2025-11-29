@@ -2,7 +2,8 @@
 
 import { useState } from "react"
 import { motion, AnimatePresence } from "framer-motion"
-import { Lock, Check, GripVertical, Play } from "lucide-react"
+import { Lock, Check, GripVertical, Play, Sparkles } from "lucide-react"
+import { Badge } from "@/components/ui/badge"
 import { cn } from "@/lib/utils"
 import type { SeriesMember } from "@/types/artwork-series"
 import {
@@ -120,12 +121,25 @@ function SortableTrackItem({
               <Check className="h-3 w-3 text-primary-foreground" />
             </div>
           )}
+          {member.has_benefits && (
+            <Badge variant="outline" className="bg-purple-50 dark:bg-purple-950/20 border-purple-200 text-purple-700 dark:text-purple-300 flex items-center gap-1">
+              <Sparkles className="h-3 w-3" />
+              {member.benefit_count || 1}
+            </Badge>
+          )}
         </div>
-        {member.unlock_order && (
-          <p className="text-xs text-muted-foreground mt-1">
-            Unlock order: {member.unlock_order}
-          </p>
-        )}
+        <div className="flex items-center gap-2 mt-1">
+          {member.unlock_order && (
+            <p className="text-xs text-muted-foreground">
+              Unlock order: {member.unlock_order}
+            </p>
+          )}
+          {member.has_benefits && (
+            <p className="text-xs text-purple-600 dark:text-purple-400">
+              {member.benefit_count === 1 ? "1 treasure" : `${member.benefit_count} treasures`}
+            </p>
+          )}
+        </div>
       </div>
 
       {/* Play button (visual) */}
