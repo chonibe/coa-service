@@ -104,27 +104,28 @@ BEGIN
         v_original_price := COALESCE(v_line_item.price, 0)::DECIMAL;
         
         -- Extract original price from raw Shopify order data if available
-        IF v_line_item.raw_shopify_order_data IS NOT NULL THEN
+        IF v_line_item.raw_shopify_order_data IS NOT NULL 
+           AND v_line_item.raw_shopify_order_data->'line_items' IS NOT NULL THEN
           -- Find the line item in the Shopify order data
-          v_shopify_line_item := (
-            SELECT jsonb_array_elements(v_line_item.raw_shopify_order_data->'line_items')
+          FOR v_shopify_line_item IN 
+            SELECT * FROM jsonb_array_elements(v_line_item.raw_shopify_order_data->'line_items')
             WHERE (jsonb_array_elements(v_line_item.raw_shopify_order_data->'line_items')->>'id')::TEXT = v_line_item.line_item_id::TEXT
-            LIMIT 1
-          );
-          
-          IF v_shopify_line_item IS NOT NULL THEN
+          LOOP
             -- Use original_price if available, otherwise calculate from price + discounts
             IF v_shopify_line_item->>'original_price' IS NOT NULL THEN
               v_original_price := (v_shopify_line_item->>'original_price')::DECIMAL;
-            ELSIF v_shopify_line_item->'discount_allocations' IS NOT NULL THEN
+              EXIT; -- Found the item, exit loop
+            ELSIF v_shopify_line_item->'discount_allocations' IS NOT NULL 
+                  AND jsonb_array_length(v_shopify_line_item->'discount_allocations') > 0 THEN
               -- Calculate original price by adding back discounts
-              SELECT COALESCE(SUM((disc->>'amount')::DECIMAL), 0)
+              SELECT COALESCE(SUM((value->>'amount')::DECIMAL), 0)
               INTO v_discount_total
-              FROM jsonb_array_elements(v_shopify_line_item->'discount_allocations') AS disc;
+              FROM jsonb_array_elements(v_shopify_line_item->'discount_allocations') AS value;
               
               v_original_price := COALESCE((v_shopify_line_item->>'price')::DECIMAL, v_line_item.price) + v_discount_total;
+              EXIT; -- Found the item, exit loop
             END IF;
-          END IF;
+          END LOOP;
         END IF;
         
         -- Convert to USD only if currency is GBP

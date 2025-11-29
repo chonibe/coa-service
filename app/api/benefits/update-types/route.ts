@@ -52,23 +52,9 @@ export async function POST() {
     await supabase
       .from("benefit_types")
       .update({
-        description: "Early or exclusive access to content, products, or features that connect to your artwork ecosystem",
-      })
-      .eq("name", "Exclusive Access")
-
-    await supabase
-      .from("benefit_types")
-      .update({
         description: "Behind-the-scenes content showing your artistic process and journey",
       })
       .eq("name", "Behind the Scenes")
-
-    await supabase
-      .from("benefit_types")
-      .update({
-        description: "Special discounts on future purchases to encourage repeat collecting",
-      })
-      .eq("name", "Discount")
 
     return NextResponse.json({
       success: true,
