@@ -2,7 +2,6 @@ import { createClient } from '@/lib/supabase/server';
 import type { PayoutDepositResult } from './types';
 import { ensureCollectorAccount } from './account-manager';
 import { calculateLineItemPayout } from '@/lib/payout-calculator';
-import { convertGBPToUSD } from '@/lib/utils';
 
 const DEFAULT_PAYOUT_PERCENTAGE = 25;
 
@@ -103,11 +102,12 @@ export async function depositPayoutEarnings(
       .maybeSingle();
 
     // Calculate payout amount using the same logic as payout calculator
-    // Convert GBP to USD first to match pending items display (Ready to Request Payment)
-    const priceInUSD = convertGBPToUSD(Number(lineItemPrice) || Number(lineItem.price) || 0);
+    // Note: New orders are already in USD, so no conversion needed
+    // Only historical orders (backfilled) needed GBP to USD conversion
+    const price = Number(lineItemPrice) || Number(lineItem.price) || 0;
     
     const payoutAmount = calculateLineItemPayout({
-      price: priceInUSD, // Use USD price for calculation
+      price: price, // Price is already in USD for new orders
       payout_amount: payoutSetting?.payout_amount ?? null,
       is_percentage: payoutSetting?.is_percentage ?? null,
     });
