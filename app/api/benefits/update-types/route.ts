@@ -5,11 +5,11 @@ export async function POST() {
   try {
     const supabase = createClient()
 
-    // Remove Physical Item and Virtual Event
+    // Remove Physical Item, Virtual Event, Exclusive Access, Discount, and Credits Bonus
     await supabase
       .from("benefit_types")
       .delete()
-      .in("name", ["Physical Item", "Virtual Event"])
+      .in("name", ["Physical Item", "Virtual Event", "Exclusive Access", "Discount", "Credits Bonus"])
 
     // Add new circular benefit types
     const newTypes = [
@@ -22,11 +22,6 @@ export async function POST() {
         name: "VIP Artwork Unlock",
         description: "Unlock a specific artwork from a VIP series",
         icon: "crown",
-      },
-      {
-        name: "Credits Bonus",
-        description: "Grant credits towards next artwork or series purchase",
-        icon: "coins",
       },
       {
         name: "Early Drop Access",

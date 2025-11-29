@@ -40,9 +40,12 @@ BEGIN
       oli.product_id,
       oli.price,
       oli.fulfillment_status,
+      o.currency_code,
+      o.raw_shopify_order_data,
       COALESCE(pvp.payout_amount, 25) as payout_amount,
       COALESCE(pvp.is_percentage, true) as is_percentage
     FROM order_line_items_v2 oli
+    LEFT JOIN orders o ON oli.order_id = o.id
     LEFT JOIN product_vendor_payouts pvp 
       ON oli.product_id::TEXT = pvp.product_id::TEXT 
       AND oli.vendor_name = pvp.vendor_name
@@ -85,16 +88,64 @@ BEGIN
       ON CONFLICT (collector_identifier) DO NOTHING;
 
       -- Calculate payout amount
-      -- Convert GBP to USD first (exchange rate: 1.27) to match pending items display
-      -- This matches the convertGBPToUSD() function used in app/api/vendor/payouts/pending-items/route.ts
-      v_price_usd := COALESCE(v_line_item.price, 0)::DECIMAL * v_gbp_to_usd_rate;
-      
-      IF v_line_item.is_percentage THEN
-        v_payout_amount := (v_price_usd * v_line_item.payout_amount::DECIMAL / 100);
-      ELSE
-        -- For fixed amounts, also convert to USD if needed
-        v_payout_amount := v_line_item.payout_amount::DECIMAL * v_gbp_to_usd_rate;
-      END IF;
+      -- Use original price (before discount) for payout calculation
+      -- Convert to USD only if order currency is GBP
+      DECLARE
+        v_order_currency TEXT;
+        v_original_price DECIMAL;
+        v_price_for_calc DECIMAL;
+        v_shopify_line_item JSONB;
+        v_discount_total DECIMAL := 0;
+      BEGIN
+        -- Get order currency (already in v_line_item.currency_code from JOIN)
+        v_order_currency := COALESCE(v_line_item.currency_code, 'USD');
+        
+        -- Try to get original price from Shopify order data (before discount)
+        v_original_price := COALESCE(v_line_item.price, 0)::DECIMAL;
+        
+        -- Extract original price from raw Shopify order data if available
+        IF v_line_item.raw_shopify_order_data IS NOT NULL THEN
+          -- Find the line item in the Shopify order data
+          v_shopify_line_item := (
+            SELECT jsonb_array_elements(v_line_item.raw_shopify_order_data->'line_items')
+            WHERE (jsonb_array_elements(v_line_item.raw_shopify_order_data->'line_items')->>'id')::TEXT = v_line_item.line_item_id::TEXT
+            LIMIT 1
+          );
+          
+          IF v_shopify_line_item IS NOT NULL THEN
+            -- Use original_price if available, otherwise calculate from price + discounts
+            IF v_shopify_line_item->>'original_price' IS NOT NULL THEN
+              v_original_price := (v_shopify_line_item->>'original_price')::DECIMAL;
+            ELSIF v_shopify_line_item->'discount_allocations' IS NOT NULL THEN
+              -- Calculate original price by adding back discounts
+              SELECT COALESCE(SUM((disc->>'amount')::DECIMAL), 0)
+              INTO v_discount_total
+              FROM jsonb_array_elements(v_shopify_line_item->'discount_allocations') AS disc;
+              
+              v_original_price := COALESCE((v_shopify_line_item->>'price')::DECIMAL, v_line_item.price) + v_discount_total;
+            END IF;
+          END IF;
+        END IF;
+        
+        -- Convert to USD only if currency is GBP
+        IF UPPER(v_order_currency) = 'GBP' THEN
+          v_price_for_calc := v_original_price * v_gbp_to_usd_rate;
+        ELSE
+          v_price_for_calc := v_original_price;
+        END IF;
+        
+        -- Calculate payout based on original price (before discount)
+        IF v_line_item.is_percentage THEN
+          v_payout_amount := (v_price_for_calc * v_line_item.payout_amount::DECIMAL / 100);
+        ELSE
+          -- For fixed amounts, convert to USD if order was GBP
+          IF UPPER(v_order_currency) = 'GBP' THEN
+            v_payout_amount := v_line_item.payout_amount::DECIMAL * v_gbp_to_usd_rate;
+          ELSE
+            v_payout_amount := v_line_item.payout_amount::DECIMAL;
+          END IF;
+        END IF;
+      END;
 
       IF v_payout_amount <= 0 THEN
         RAISE NOTICE 'Skipping line item % - payout amount is zero or negative', v_line_item.line_item_id;
