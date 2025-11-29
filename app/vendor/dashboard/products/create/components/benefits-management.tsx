@@ -117,6 +117,16 @@ export function BenefitsManagement({
     const fetchBenefitTypes = async () => {
       try {
         setLoadingTypes(true)
+        
+        // First, ensure benefit types are up to date
+        try {
+          await fetch("/api/benefits/update-types", { method: "POST" })
+        } catch (error) {
+          // Silently fail - types might already be updated
+          console.log("Benefit types update skipped or already up to date")
+        }
+        
+        // Then fetch the updated types
         const response = await fetch("/api/benefits/types")
         if (response.ok) {
           const data = await response.json()
