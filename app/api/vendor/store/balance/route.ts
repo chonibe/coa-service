@@ -25,8 +25,8 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "Vendor not found" }, { status: 404 })
     }
 
-    // Get pending payout amount (ready to request) using the same function as payout redeem
-    // This function accounts for refunds and other adjustments
+    // Calculate pending payout amount using the EXACT same method as the payout page
+    // This matches the "Ready to Request" amount shown on the payout page
     const { data: pendingPayouts, error: pendingPayoutsError } = await supabase.rpc(
       "get_pending_vendor_payouts"
     )
@@ -39,7 +39,7 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    // Find the vendor's pending payout amount
+    // Find the vendor's pending payout amount (this matches "Ready to Request" on payout page)
     const vendorPendingPayout = pendingPayouts?.find(
       (p: any) => p.vendor_name === vendorName
     )
@@ -47,11 +47,8 @@ export async function GET(request: NextRequest) {
       ? Number(vendorPendingPayout.amount)
       : 0
 
-    console.log(`[Store Balance API] Vendor: ${vendorName}`)
-    console.log(`[Store Balance API] Pending payout from RPC:`, vendorPendingPayout)
-    console.log(`[Store Balance API] Pending payout amount: ${pendingPayoutAmount}`)
-
     // Subtract store purchases made from balance (from ledger entries)
+    // These are the transactions that reduce the available payout amount
     const { data: storePurchases, error: storePurchasesError } = await supabase
       .from("vendor_ledger_entries")
       .select("amount")
@@ -65,16 +62,13 @@ export async function GET(request: NextRequest) {
 
     let storePurchasesTotal = 0
     storePurchases?.forEach((entry) => {
+      // Amount is already negative in ledger, so we add it (subtract from total)
       storePurchasesTotal += Math.abs(Number(entry.amount)) || 0
     })
 
-    console.log(`[Store Balance API] Store purchases from ledger:`, storePurchases)
-    console.log(`[Store Balance API] Store purchases total: ${storePurchasesTotal}`)
-
     // Available balance = pending payout amount - store purchases
+    // This matches exactly what's shown in "Ready to Request" minus any store purchases
     const availableBalance = Math.max(0, pendingPayoutAmount - storePurchasesTotal)
-
-    console.log(`[Store Balance API] Final available balance: ${availableBalance}`)
 
     return NextResponse.json({
       success: true,
@@ -82,13 +76,6 @@ export async function GET(request: NextRequest) {
       pendingPayoutAmount,
       storePurchasesTotal,
       currency: "USD",
-      debug: {
-        vendorPendingPayout,
-        pendingPayoutAmount,
-        storePurchases,
-        storePurchasesTotal,
-        availableBalance,
-      },
     })
   } catch (error: any) {
     console.error("Error fetching balance:", error)

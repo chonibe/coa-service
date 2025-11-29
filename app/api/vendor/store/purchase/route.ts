@@ -128,11 +128,12 @@ export async function POST(request: NextRequest) {
     }
 
     // Validate address is required for store purchases (especially for Lamp delivery)
+    // This is now handled in the UI as a payment step, but we still validate here for security
     if (!vendor.address || vendor.address.trim() === "") {
       return NextResponse.json(
         {
           error: "Delivery address required",
-          message: "Please add a delivery address to your profile before making store purchases. Go to Settings to update your address.",
+          message: "Please add a delivery address to your profile before making store purchases.",
         },
         { status: 400 }
       )

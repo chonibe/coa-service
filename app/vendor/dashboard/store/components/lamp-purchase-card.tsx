@@ -60,14 +60,6 @@ export function LampPurchaseCard() {
   }
 
   const handlePurchase = (product: LampProduct) => {
-    if (!hasAddress) {
-      toast({
-        title: "Delivery Address Required",
-        description: "Please add a delivery address to your profile before purchasing. Go to Settings to update your address.",
-        variant: "destructive",
-      })
-      return
-    }
     setSelectedProduct(product)
     setShowPurchaseDialog(true)
   }
@@ -132,14 +124,6 @@ export function LampPurchaseCard() {
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {!hasAddress && (
-                  <Alert variant="destructive" className="mb-4">
-                    <AlertCircle className="h-4 w-4" />
-                    <AlertDescription>
-                      Delivery address required. Please add your address in Settings before purchasing.
-                    </AlertDescription>
-                  </Alert>
-                )}
                 <div>
                   {hasDiscount ? (
                     <div className="flex items-baseline gap-2">
@@ -161,7 +145,6 @@ export function LampPurchaseCard() {
                   onClick={() => handlePurchase(product)}
                   className="w-full"
                   size="lg"
-                  disabled={!hasAddress}
                 >
                   Purchase {product.name}
                 </Button>

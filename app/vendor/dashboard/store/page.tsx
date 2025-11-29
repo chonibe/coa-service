@@ -70,24 +70,6 @@ export default function StorePage() {
 
       <BalanceDisplay />
 
-      {hasAddress === false && (
-        <Alert variant="destructive">
-          <AlertCircle className="h-4 w-4" />
-          <AlertTitle>Delivery Address Required</AlertTitle>
-          <AlertDescription className="mt-2">
-            <p className="mb-3">
-              You need to add a delivery address to your profile before making store purchases. 
-              This is required for shipping Lamps and proof prints to your location.
-            </p>
-            <Button asChild variant="outline" size="sm">
-              <Link href="/vendor/dashboard/settings">
-                <MapPin className="h-4 w-4 mr-2" />
-                Add Delivery Address
-              </Link>
-            </Button>
-          </AlertDescription>
-        </Alert>
-      )}
 
       <Tabs defaultValue="products" className="space-y-4">
         <TabsList>
