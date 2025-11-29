@@ -71,7 +71,7 @@ export function CreateMenu() {
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: 100 }}
                 transition={{ duration: 0.3, ease: "easeOut" }}
-                className="fixed bottom-0 left-0 right-0 z-50 rounded-t-2xl border-t border-x bg-background shadow-2xl"
+                className="fixed bottom-0 left-0 right-0 z-50 rounded-t-2xl border-t border-x bg-background shadow-2xl max-h-[80vh] overflow-y-auto"
               >
                 <div className="p-4 pb-safe">
                   <div className="mx-auto mb-4 h-1.5 w-12 rounded-full bg-muted" />
@@ -80,10 +80,10 @@ export function CreateMenu() {
                       onClick={handleCreateArtwork}
                       className="w-full flex items-center gap-3 px-4 py-4 rounded-lg hover:bg-muted active:bg-muted/80 transition-colors text-left"
                     >
-                      <div className="p-2 rounded-lg bg-blue-500/10">
+                      <div className="p-2 rounded-lg bg-blue-500/10 flex-shrink-0">
                         <Package className="h-5 w-5 text-blue-600" />
                       </div>
-                      <div>
+                      <div className="flex-1 min-w-0">
                         <div className="font-semibold text-base">Create Artwork</div>
                         <div className="text-sm text-muted-foreground">Add a new artwork to your catalog</div>
                       </div>
@@ -93,10 +93,10 @@ export function CreateMenu() {
                       onClick={handleCreateSeries}
                       className="w-full flex items-center gap-3 px-4 py-4 rounded-lg hover:bg-muted active:bg-muted/80 transition-colors text-left"
                     >
-                      <div className="p-2 rounded-lg bg-purple-500/10">
+                      <div className="p-2 rounded-lg bg-purple-500/10 flex-shrink-0">
                         <Lock className="h-5 w-5 text-purple-600" />
                       </div>
-                      <div>
+                      <div className="flex-1 min-w-0">
                         <div className="font-semibold text-base">Create Series</div>
                         <div className="text-sm text-muted-foreground">Start a new unlockable series</div>
                       </div>

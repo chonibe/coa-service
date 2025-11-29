@@ -357,14 +357,14 @@ export function VariantsStep({ formData, setFormData }: VariantsStepProps) {
             {editionSize ? (
               <>
                 <div className="space-y-3">
-                  <div className="flex items-center justify-between">
+                    <div className="flex items-center justify-between">
                     <Label>
                       Choose your price <span className="text-red-500">*</span>
-                    </Label>
-                    <Badge variant="outline" className="text-xs">
-                      Range: £{priceRange.min} - £{priceRange.max}
-                    </Badge>
-                  </div>
+                      </Label>
+                        <Badge variant="outline" className="text-xs">
+                          Range: £{priceRange.min} - £{priceRange.max}
+                        </Badge>
+                      </div>
                   <p className="text-sm text-muted-foreground">
                     Choose a price point that matches your artwork's value and market positioning.
                   </p>
@@ -372,8 +372,8 @@ export function VariantsStep({ formData, setFormData }: VariantsStepProps) {
                   <PricePickerCards
                     value={variant.price ? Number.parseFloat(variant.price) : null}
                     onChange={(price) => handlePriceChange(0, price)}
-                    min={priceRange.min}
-                    max={priceRange.max}
+                      min={priceRange.min}
+                      max={priceRange.max}
                     recommended={recommendedPrice}
                   />
                 </div>

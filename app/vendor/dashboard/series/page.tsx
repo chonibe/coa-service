@@ -11,7 +11,6 @@ import { Loader2, Plus, Lock, Edit, Trash2, Eye, AlertCircle, Copy } from "lucid
 import { useToast } from "@/components/ui/use-toast"
 import { motion } from "framer-motion"
 import type { ArtworkSeries } from "@/types/artwork-series"
-import { FloatingCreateButton } from "./components/FloatingCreateButton"
 import { SearchAndFilter } from "./components/SearchAndFilter"
 import { DeleteSeriesDialog } from "./components/DeleteSeriesDialog"
 import { DuplicateSeriesDialog } from "./components/DuplicateSeriesDialog"
@@ -195,19 +194,13 @@ export default function SeriesPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
-            Artwork Series
-          </h1>
-          <p className="text-muted-foreground mt-1">
-            Manage your artwork series and unlock configurations
-          </p>
-        </div>
-        <Button onClick={() => router.push("/vendor/dashboard/series/create")}>
-          <Plus className="h-4 w-4 mr-2" />
-          Create Series
-        </Button>
+      <div>
+        <h1 className="text-3xl font-bold tracking-tight bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
+          Artwork Series
+        </h1>
+        <p className="text-muted-foreground mt-1">
+          Manage your artwork series and unlock configurations
+        </p>
       </div>
 
       {/* Search and Filter */}
@@ -274,7 +267,6 @@ export default function SeriesPage() {
         </div>
       )}
       
-      <FloatingCreateButton />
 
       {/* Delete Dialog */}
       <DeleteSeriesDialog

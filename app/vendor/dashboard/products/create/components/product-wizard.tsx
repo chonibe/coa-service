@@ -259,43 +259,43 @@ export function ProductWizard({ onComplete, onCancel, initialData, submissionId 
           const isClickable = isCompleted
           
           return (
-            <div
-              key={step.id}
-              className={cn(
+          <div
+            key={step.id}
+            className={cn(
                 "flex flex-col items-center flex-1 min-w-[80px]",
-                index < steps.length - 1 && "mr-2",
-              )}
-            >
+              index < steps.length - 1 && "mr-2",
+            )}
+          >
               <button
                 type="button"
                 onClick={() => isClickable && setCurrentStep(index)}
                 disabled={!isClickable}
-                className={cn(
+              className={cn(
                   "w-10 h-10 rounded-full flex items-center justify-center border-2 transition-all",
                   isCompleted
                     ? "bg-primary border-primary text-primary-foreground cursor-pointer hover:scale-110 active:scale-95"
-                    : index === currentStep
+                  : index === currentStep
                       ? "border-primary text-primary cursor-default"
                       : "border-muted text-muted-foreground cursor-default",
+              )}
+            >
+                {isCompleted ? (
+                <CheckCircle2 className="h-5 w-5" />
+              ) : (
+                step.icon
+              )}
+              </button>
+            <div className="mt-2 text-center">
+              <div
+                className={cn(
+                  "text-xs font-medium",
+                  index === currentStep ? "text-foreground" : "text-muted-foreground",
                 )}
               >
-                {isCompleted ? (
-                  <CheckCircle2 className="h-5 w-5" />
-                ) : (
-                  step.icon
-                )}
-              </button>
-              <div className="mt-2 text-center">
-                <div
-                  className={cn(
-                    "text-xs font-medium",
-                    index === currentStep ? "text-foreground" : "text-muted-foreground",
-                  )}
-                >
-                  {step.title}
-                </div>
+                {step.title}
               </div>
             </div>
+          </div>
           )
         })}
       </div>
