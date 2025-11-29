@@ -48,12 +48,17 @@ BEGIN
       oli.vendor_name IS NOT NULL
       AND oli.fulfillment_status = 'fulfilled'
       -- Exclude line items that already have ledger entries
+      -- Handle both TEXT and numeric line_item_id formats
       AND NOT EXISTS (
         SELECT 1 
         FROM collector_ledger_entries cle
-        WHERE cle.line_item_id = oli.line_item_id::TEXT
-          AND cle.transaction_type = 'payout_earned'
-          AND cle.currency = 'USD'
+        WHERE (
+          cle.line_item_id = oli.line_item_id::TEXT
+          OR cle.line_item_id = oli.line_item_id::BIGINT::TEXT
+          OR cle.line_item_id::BIGINT = oli.line_item_id::BIGINT
+        )
+        AND cle.transaction_type = 'payout_earned'
+        AND cle.currency = 'USD'
       )
   LOOP
     BEGIN
