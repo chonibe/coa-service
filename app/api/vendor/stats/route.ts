@@ -3,6 +3,8 @@ import { cookies } from "next/headers"
 import { createClient } from "@/lib/supabase/server"
 import { shopifyFetch, safeJsonParse } from "@/lib/shopify-api"
 import { getVendorFromCookieStore } from "@/lib/vendor-session"
+import { getUsdBalance, calculateUnifiedCollectorBalance } from "@/lib/banking/balance-calculator"
+import { ensureCollectorAccount } from "@/lib/banking/account-manager"
 
 const DEFAULT_CURRENCY = "GBP"
 const DEFAULT_PAYOUT_PERCENTAGE = 10
@@ -52,11 +54,43 @@ export async function GET() {
 
     const stats = buildFinancialSummary(lineItems, payoutSettings)
 
+    // Get unified balance from collector ledger (single source of truth)
+    let totalPayout = stats.totalPayout // Fallback to calculated value
+    let totalUsdEarned = 0
+    let currentUsdBalance = 0
+    
+    try {
+      // Get vendor's collector identifier
+      const { data: vendor } = await supabase
+        .from("vendors")
+        .select("id, auth_id, vendor_name")
+        .eq("vendor_name", vendorName)
+        .single()
+
+      if (vendor) {
+        const collectorIdentifier = vendor.auth_id || vendorName
+        await ensureCollectorAccount(collectorIdentifier, 'vendor', vendor.id)
+        
+        // Get unified balance from ledger
+        const unifiedBalance = await calculateUnifiedCollectorBalance(collectorIdentifier)
+        totalUsdEarned = unifiedBalance.totalUsdEarned
+        currentUsdBalance = unifiedBalance.usdBalance
+        
+        // Use total USD earned as totalPayout (all-time earnings)
+        totalPayout = totalUsdEarned
+      }
+    } catch (error) {
+      console.error("Error fetching collector balance for stats:", error)
+      // Fall back to calculated value if ledger lookup fails
+    }
+
     return NextResponse.json({
       totalProducts: products.length,
       totalSales: stats.totalSales,
       totalRevenue: stats.totalRevenue,
-      totalPayout: stats.totalPayout,
+      totalPayout: totalPayout, // Now from collector ledger
+      currentUsdBalance: currentUsdBalance, // Available balance
+      totalUsdEarned: totalUsdEarned, // All-time earnings
       currency: stats.currency,
       salesByDate: stats.salesByDate,
       recentActivity: stats.recentActivity,
