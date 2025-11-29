@@ -28,6 +28,13 @@ import {
 } from "recharts"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { ProductPerformance } from "@/components/vendor/product-performance"
+import { PayoutTrendsChart } from "@/components/payouts/payout-trends-chart"
+import { ProductPerformanceHeatmap } from "@/components/payouts/product-performance-heatmap"
+import { PayoutMetricsCards } from "@/components/payouts/payout-metrics-cards"
+import { MetricCard } from "@/components/vendor/metric-card"
+import { ShoppingCart, DollarSign, TrendingUp } from "lucide-react"
 
 const COLORS = ["#3b82f6", "#6366f1", "#8b5cf6", "#a855f7", "#ec4899", "#f43f5e"]
 
@@ -53,6 +60,13 @@ export default function AnalyticsPage() {
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc")
   const [timeRange, setTimeRange] = useState<TimeRange>("30d")
   const [dateRange, setDateRange] = useState<DateRange | undefined>()
+  const [vendorName, setVendorName] = useState<string | null>(null)
+  const [salesData, setSalesData] = useState({
+    totalSales: 0,
+    totalRevenue: 0,
+    totalPayout: 0,
+    currency: "GBP",
+  })
   const { toast } = useToast()
 
   const formatCurrency = (value: number) =>
@@ -108,7 +122,38 @@ export default function AnalyticsPage() {
 
   useEffect(() => {
     fetchAnalyticsData()
+    fetchVendorData()
   }, [])
+
+  const fetchVendorData = async () => {
+    try {
+      // Fetch vendor name
+      const profileResponse = await fetch("/api/vendor/profile", {
+        credentials: "include",
+      })
+      if (profileResponse.ok) {
+        const profileData = await profileResponse.json()
+        setVendorName(profileData.vendor?.vendor_name || null)
+      }
+
+      // Fetch sales stats
+      const statsResponse = await fetch("/api/vendor/stats", {
+        cache: "no-store",
+        credentials: "include",
+      })
+      if (statsResponse.ok) {
+        const statsData = await statsResponse.json()
+        setSalesData({
+          totalSales: statsData.totalSales ?? 0,
+          totalRevenue: statsData.totalRevenue ?? 0,
+          totalPayout: statsData.totalPayout ?? statsData.totalRevenue ?? 0,
+          currency: statsData.currency || "GBP",
+        })
+      }
+    } catch (err) {
+      console.error("Error fetching vendor data:", err)
+    }
+  }
 
   const handleTimeRangeChange = (range: TimeRange, customRange?: DateRange) => {
     setTimeRange(range)
@@ -206,11 +251,22 @@ export default function AnalyticsPage() {
     }).format(date)
   }
 
+  // Calculate trends (mock data for now - would come from API)
+  const calculateTrend = (current: number, previous: number) => {
+    if (previous === 0) return current > 0 ? 100 : 0
+    return ((current - previous) / previous) * 100
+  }
+
+  // Mock previous period data (in real app, fetch from API)
+  const previousSales = salesData.totalSales * 0.9 // 10% less for demo
+  const previousRevenue = salesData.totalRevenue * 0.95
+  const previousPayout = salesData.totalPayout * 0.95
+
   return (
     <div className="space-y-6 pb-20 px-1">
       <div className="flex items-center justify-between">
         <div>
-          <p className="text-muted-foreground text-lg">Your sales performance and insights</p>
+          <p className="text-muted-foreground text-lg">Your complete analytics and insights</p>
         </div>
         <div className="flex items-center gap-3">
           <TimeRangeSelector
@@ -261,7 +317,57 @@ export default function AnalyticsPage() {
         />
       )}
 
-      <Card className="w-full bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-0 shadow-xl">
+      <Tabs defaultValue="sales" className="space-y-6">
+        <TabsList className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-0 shadow-lg">
+          <TabsTrigger value="sales">Sales Analytics</TabsTrigger>
+          <TabsTrigger value="payouts">Payout Analytics</TabsTrigger>
+          <TabsTrigger value="products">Product Performance</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="sales" className="space-y-6">
+          {/* Key Metrics */}
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            <MetricCard
+              title="Total Sales"
+              value={salesData?.totalSales || 0}
+              icon={ShoppingCart}
+              trend={{
+                value: calculateTrend(salesData.totalSales, previousSales),
+                label: "vs last period",
+                isPositive: salesData.totalSales >= previousSales,
+              }}
+              description="Orders you've received"
+              variant="elevated"
+            />
+
+            <MetricCard
+              title="Total Revenue"
+              value={formatCurrency(salesData?.totalRevenue || 0)}
+              icon={DollarSign}
+              trend={{
+                value: calculateTrend(salesData.totalRevenue, previousRevenue),
+                label: "vs last period",
+                isPositive: salesData.totalRevenue >= previousRevenue,
+              }}
+              description="Total sales you've made"
+              variant="elevated"
+            />
+
+            <MetricCard
+              title="Total Payout"
+              value={formatCurrency(salesData?.totalPayout || 0)}
+              icon={DollarSign}
+              trend={{
+                value: calculateTrend(salesData.totalPayout, previousPayout),
+                label: "vs last period",
+                isPositive: salesData.totalPayout >= previousPayout,
+              }}
+              description="What you've earned so far"
+              variant="elevated"
+            />
+          </div>
+
+          <Card className="w-full bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-0 shadow-xl">
         <CardHeader>
           <CardTitle>Sales Over Time</CardTitle>
           <CardDescription>Monthly sales and revenue trends</CardDescription>
@@ -542,6 +648,35 @@ export default function AnalyticsPage() {
           )}
         </CardContent>
       </Card>
+        </TabsContent>
+
+        <TabsContent value="payouts" className="space-y-6">
+          {/* Payout Metrics */}
+          {vendorName && <PayoutMetricsCards vendorName={vendorName} isAdmin={false} />}
+
+          {/* Payout Trends Chart */}
+          {vendorName && <PayoutTrendsChart vendorName={vendorName} isAdmin={false} timeRange="30d" />}
+
+          {/* Product Performance Heatmap */}
+          {vendorName && (
+            <ProductPerformanceHeatmap vendorName={vendorName} isAdmin={false} timeRange="30d" limit={10} />
+          )}
+        </TabsContent>
+
+        <TabsContent value="products" className="space-y-6">
+          {/* Product Performance Component */}
+          <ProductPerformance
+            products={salesByProduct?.map((p) => ({
+              productId: p.productId || p.id || "",
+              title: p.title,
+              imageUrl: p.imageUrl,
+              sales: p.sales,
+              revenue: p.revenue,
+            })) || []}
+            isLoading={isLoading}
+          />
+        </TabsContent>
+      </Tabs>
     </div>
   )
 }

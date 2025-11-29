@@ -13,9 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { format } from "date-fns"
 import { useToast } from "@/components/ui/use-toast"
-import { PayoutTrendsChart } from "@/components/payouts/payout-trends-chart"
 import { PayoutMetricsCards } from "@/components/payouts/payout-metrics-cards"
-import { ProductPerformanceHeatmap } from "@/components/payouts/product-performance-heatmap"
 import { ContextualOnboarding } from "../../components/contextual-onboarding"
 
 interface PayoutItem {
@@ -429,9 +427,8 @@ export default function PayoutsPage() {
       )}
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-        <TabsList className="grid w-full grid-cols-3 bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-0 shadow-lg">
+        <TabsList className="grid w-full grid-cols-2 bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-0 shadow-lg">
           <TabsTrigger value="overview">Overview</TabsTrigger>
-          <TabsTrigger value="analytics">Analytics</TabsTrigger>
           <TabsTrigger value="history">History</TabsTrigger>
         </TabsList>
 
@@ -649,16 +646,6 @@ export default function PayoutsPage() {
               )}
             </CardContent>
           </Card>
-        </TabsContent>
-
-        <TabsContent value="analytics" className="space-y-6">
-          {/* Payout Trends Chart */}
-          {vendorName && <PayoutTrendsChart vendorName={vendorName} isAdmin={false} timeRange="30d" />}
-
-          {/* Product Performance */}
-          {vendorName && (
-            <ProductPerformanceHeatmap vendorName={vendorName} isAdmin={false} timeRange="30d" limit={10} />
-          )}
         </TabsContent>
 
         <TabsContent value="history" className="space-y-6">

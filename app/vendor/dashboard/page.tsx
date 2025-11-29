@@ -3,7 +3,6 @@
 import { useState, useEffect, useRef } from "react"
 import { useRouter } from "next/navigation"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Skeleton } from "@/components/ui/skeleton"
 import { AlertCircle, DollarSign, Package, TrendingUp, ShoppingCart } from "lucide-react"
@@ -12,11 +11,9 @@ import { OnboardingBanner } from "./components/onboarding-banner"
 import { ContextualOnboarding } from "../components/contextual-onboarding"
 import { VendorSalesChart } from "./components/vendor-sales-chart"
 import { useVendorData } from "@/hooks/use-vendor-data"
-import { BarChart, CartesianGrid, XAxis, YAxis, Tooltip, Legend, Bar, ResponsiveContainer } from "recharts"
 import { MetricCard } from "@/components/vendor/metric-card"
 import { LoadingSkeleton } from "@/components/vendor/loading-skeleton"
 import { EmptyState } from "@/components/vendor/empty-state"
-import { ProductPerformance } from "@/components/vendor/product-performance"
 import { KeyboardShortcutsManager, defaultShortcuts } from "@/lib/keyboard-shortcuts"
 
 interface SalesData {
@@ -80,9 +77,6 @@ export default function VendorDashboardPage() {
               break
             case "products":
               router.push("/vendor/dashboard/products")
-              break
-            case "analytics":
-              router.push("/vendor/dashboard/analytics")
               break
             case "payouts":
               router.push("/vendor/dashboard/payouts")
@@ -223,13 +217,7 @@ export default function VendorDashboardPage() {
         </Alert>
       ) : null}
 
-      <Tabs defaultValue="overview" className="space-y-6">
-        <TabsList className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-0 shadow-lg">
-          <TabsTrigger value="overview">Overview</TabsTrigger>
-          <TabsTrigger value="analytics">Analytics</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="overview" className="space-y-6">
+      <div className="space-y-6">
           {isLoading ? (
             <LoadingSkeleton variant="metric" count={3} />
           ) : (
@@ -321,65 +309,8 @@ export default function VendorDashboardPage() {
               )}
             </CardContent>
           </Card>
-
-            {/* Product Performance */}
-            <ProductPerformance
-              products={salesData.salesByProduct?.map((p) => ({
-                productId: p.productId,
-                title: p.title,
-                imageUrl: p.imageUrl,
-                sales: p.sales,
-                revenue: p.revenue,
-              })) || []}
-              isLoading={isLoading}
-            />
           </div>
-        </TabsContent>
-
-        <TabsContent value="analytics" className="space-y-4">
-          <Card className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-0 shadow-xl">
-            <CardHeader>
-              <CardTitle>Your Sales Performance</CardTitle>
-              <CardDescription>See how your products are performing and track your growth</CardDescription>
-            </CardHeader>
-            <CardContent>
-              {isLoading ? (
-                <div className="space-y-4">
-                  <Skeleton className="h-[300px] w-full" />
-                </div>
-              ) : salesData?.salesByDate && salesData.salesByDate.length > 0 ? (
-                <div className="space-y-4">
-                  <div className="h-[300px]">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <BarChart data={salesData.salesByDate}>
-                        <CartesianGrid strokeDasharray="3 3" />
-                        <XAxis dataKey="month" />
-                        <YAxis yAxisId="left" orientation="left" stroke="#3b82f6" />
-                        <YAxis yAxisId="right" orientation="right" stroke="#6366f1" />
-                        <Tooltip
-                          formatter={(value, name) => {
-                            if (name === "Revenue") {
-                              return [formatCurrency(value as number), "Revenue"]
-                            }
-                            return [value, "Sales"]
-                          }}
-                        />
-                        <Legend />
-                        <Bar yAxisId="left" dataKey="sales" name="Sales" fill="#3b82f6" />
-                        <Bar yAxisId="right" dataKey="revenue" name="Revenue" fill="#6366f1" />
-                      </BarChart>
-                    </ResponsiveContainer>
-                  </div>
-                </div>
-              ) : (
-                <div className="text-center text-muted-foreground py-4">
-                  No analytics data available yet
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
+      </div>
     </div>
   )
 }
