@@ -255,7 +255,6 @@ export async function POST(request: NextRequest) {
 
     // Check and process credit payment if using credits
     let creditsUsed: number | null = null
-    let collectorIdentifier: string | null = null
     if (paymentMethod === "credits") {
       // Get collector identifier (vendor as collector)
       // Try to find vendor's customer_id or account_number from orders
