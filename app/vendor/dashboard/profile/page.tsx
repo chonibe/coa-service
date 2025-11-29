@@ -1291,15 +1291,6 @@ export default function VendorProfilePage() {
         <TabsContent value="settings-stripe" className="space-y-4">
           {profile && <StripeConnect vendorName={profile.vendor_name} />}
         </TabsContent>
-
-        {/* Analytics Insights Tab - Instagram-style Professional Insights */}
-        <TabsContent value="analytics" className="space-y-4">
-          <Card className="border-2">
-            <CardContent className="pt-6">
-              <AnalyticsInsights />
-            </CardContent>
-          </Card>
-        </TabsContent>
       </Tabs>
 
       {/* Profile Completion Card - Only show if not 100% complete */}
