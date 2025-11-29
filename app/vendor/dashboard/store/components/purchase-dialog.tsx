@@ -101,10 +101,33 @@ export function PurchaseDialog({
 
       if (response.ok) {
         const data = await response.json()
-        // Use delivery_address if available, otherwise fall back to address
-        const vendorAddress = data.vendor?.delivery_address || data.vendor?.address || ""
-        setAddress(vendorAddress)
-        setHasAddress(vendorAddress && vendorAddress.trim() !== "")
+        const vendor = data.vendor
+        
+        // Check if structured delivery address is complete
+        const hasStructuredAddress = !!(
+          vendor?.delivery_address1 &&
+          vendor?.delivery_city &&
+          vendor?.delivery_province &&
+          vendor?.delivery_country &&
+          vendor?.delivery_zip
+        )
+        
+        if (hasStructuredAddress) {
+          // Format structured address for display
+          const addressParts = [
+            vendor.delivery_address1,
+            vendor.delivery_address2,
+            `${vendor.delivery_city}, ${vendor.delivery_province} ${vendor.delivery_zip}`,
+            vendor.delivery_country,
+          ].filter(Boolean)
+          setAddress(addressParts.join("\n"))
+          setHasAddress(true)
+        } else {
+          // Fall back to business address if delivery address is incomplete
+          const fallbackAddress = vendor?.address || ""
+          setAddress(fallbackAddress)
+          setHasAddress(fallbackAddress && fallbackAddress.trim() !== "")
+        }
       }
     } catch (error) {
       console.error("Error fetching address:", error)

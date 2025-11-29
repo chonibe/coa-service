@@ -128,14 +128,21 @@ export async function POST(request: NextRequest) {
     }
 
     // Validate delivery address is required for store purchases (especially for Lamp delivery)
-    // Check delivery_address first, then fall back to address
+    // Check structured delivery address fields
     // This is now handled in the UI as a payment step, but we still validate here for security
-    const deliveryAddress = vendor.delivery_address || vendor.address
-    if (!deliveryAddress || deliveryAddress.trim() === "") {
+    const hasCompleteDeliveryAddress = !!(
+      vendor.delivery_address1 &&
+      vendor.delivery_city &&
+      vendor.delivery_province &&
+      vendor.delivery_country &&
+      vendor.delivery_zip
+    )
+    
+    if (!hasCompleteDeliveryAddress && !vendor.address) {
       return NextResponse.json(
         {
           error: "Delivery address required",
-          message: "Please add a delivery address to your profile before making store purchases.",
+          message: "Please add a complete delivery address to your profile before making store purchases. Required fields: Street address, City, State/Province, Country, and ZIP code.",
         },
         { status: 400 }
       )
