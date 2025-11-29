@@ -14,6 +14,13 @@ export function CreateMenu() {
   const [isOpen, setIsOpen] = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)
 
+  // Debug: Log mobile state
+  useEffect(() => {
+    if (isOpen) {
+      console.log('CreateMenu open, isMobile:', isMobile)
+    }
+  }, [isOpen, isMobile])
+
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (menuRef.current && !menuRef.current.contains(event.target as Node)) {

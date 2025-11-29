@@ -89,11 +89,6 @@ export function VendorSidebar() {
       icon: <Icon size="md"><ShoppingBagIcon className="h-5 w-5" /></Icon>,
     },
     {
-      title: "Benefits",
-      href: "/vendor/dashboard/benefits",
-      icon: <Icon size="md"><AcademicCapIcon className="h-5 w-5" /></Icon>,
-    },
-    {
       title: "Messages",
       href: "/vendor/dashboard/messages",
       icon: <Icon size="md"><ChatBubbleLeftRightIcon className="h-5 w-5" /></Icon>,

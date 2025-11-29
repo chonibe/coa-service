@@ -282,6 +282,71 @@ export async function PUT(
         .eq("series_id", oldSeriesId)
     }
 
+    // Handle benefits: Update series-level benefits, store artwork-level benefits in product_data
+    if (productData.benefits && Array.isArray(productData.benefits) && productData.benefits.length > 0) {
+      const seriesLevelBenefits = productData.benefits.filter((b: any) => b.is_series_level && seriesId)
+      const artworkLevelBenefits = productData.benefits.filter((b: any) => !b.is_series_level)
+
+      // Get existing series-level benefits from database
+      if (seriesId) {
+        const { data: existingSeriesBenefits } = await supabase
+          .from("product_benefits")
+          .select("id")
+          .eq("series_id", seriesId)
+
+        const existingIds = new Set((existingSeriesBenefits || []).map((b: any) => b.id))
+        const newBenefitIds = new Set(seriesLevelBenefits.filter((b: any) => b.id).map((b: any) => b.id))
+
+        // Delete benefits that were removed
+        for (const existingId of existingIds) {
+          if (!newBenefitIds.has(existingId)) {
+            await supabase.from("product_benefits").delete().eq("id", existingId).eq("series_id", seriesId)
+          }
+        }
+
+        // Create or update series-level benefits
+        for (const benefit of seriesLevelBenefits) {
+          if (benefit.id && existingIds.has(benefit.id)) {
+            // Update existing benefit
+            await supabase
+              .from("product_benefits")
+              .update({
+                benefit_type_id: benefit.benefit_type_id,
+                title: benefit.title,
+                description: benefit.description || null,
+                content_url: benefit.content_url || null,
+                access_code: benefit.access_code || null,
+                starts_at: benefit.starts_at || null,
+                expires_at: benefit.expires_at || null,
+                updated_at: new Date().toISOString(),
+              })
+              .eq("id", benefit.id)
+          } else {
+            // Create new benefit
+            await supabase.from("product_benefits").insert({
+              series_id: seriesId,
+              product_id: null,
+              vendor_name: vendor.vendor_name,
+              benefit_type_id: benefit.benefit_type_id,
+              title: benefit.title,
+              description: benefit.description || null,
+              content_url: benefit.content_url || null,
+              access_code: benefit.access_code || null,
+              starts_at: benefit.starts_at || null,
+              expires_at: benefit.expires_at || null,
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString(),
+            })
+          }
+        }
+      }
+
+      // Artwork-level benefits are stored in product_data and will be created when product is published
+    } else if (seriesId) {
+      // If no benefits provided but series exists, check if we should clear series-level benefits
+      // For now, we'll leave existing benefits intact unless explicitly removed
+    }
+
     return NextResponse.json({
       success: true,
       submission: updatedSubmission,

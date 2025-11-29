@@ -92,14 +92,27 @@ export function BenefitsManagement({
     if (index !== undefined && index !== null) {
       const benefit = benefits[index]
       setEditingIndex(index)
+      // Format dates for datetime-local input (YYYY-MM-DDTHH:mm)
+      const formatDateForInput = (dateStr: string | null | undefined) => {
+        if (!dateStr) return ""
+        try {
+          const date = new Date(dateStr)
+          // Get local timezone offset and adjust
+          const offset = date.getTimezoneOffset()
+          const localDate = new Date(date.getTime() - offset * 60 * 1000)
+          return localDate.toISOString().slice(0, 16)
+        } catch {
+          return ""
+        }
+      }
       setFormData({
         benefitTypeId: benefit.benefit_type_id.toString(),
         title: benefit.title,
         description: benefit.description || "",
         contentUrl: benefit.content_url || "",
         accessCode: benefit.access_code || "",
-        startsAt: benefit.starts_at ? new Date(benefit.starts_at).toISOString().slice(0, 16) : "",
-        expiresAt: benefit.expires_at ? new Date(benefit.expires_at).toISOString().slice(0, 16) : "",
+        startsAt: formatDateForInput(benefit.starts_at),
+        expiresAt: formatDateForInput(benefit.expires_at),
         isSeriesLevel: benefit.is_series_level || false,
       })
     } else {
