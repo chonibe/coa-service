@@ -47,6 +47,10 @@ export async function GET(request: NextRequest) {
       ? Number(vendorPendingPayout.amount)
       : 0
 
+    console.log(`[Store Balance API] Vendor: ${vendorName}`)
+    console.log(`[Store Balance API] Pending payout from RPC:`, vendorPendingPayout)
+    console.log(`[Store Balance API] Pending payout amount: ${pendingPayoutAmount}`)
+
     // Subtract store purchases made from balance (from ledger entries)
     const { data: storePurchases, error: storePurchasesError } = await supabase
       .from("vendor_ledger_entries")
@@ -64,8 +68,13 @@ export async function GET(request: NextRequest) {
       storePurchasesTotal += Math.abs(Number(entry.amount)) || 0
     })
 
+    console.log(`[Store Balance API] Store purchases from ledger:`, storePurchases)
+    console.log(`[Store Balance API] Store purchases total: ${storePurchasesTotal}`)
+
     // Available balance = pending payout amount - store purchases
     const availableBalance = Math.max(0, pendingPayoutAmount - storePurchasesTotal)
+
+    console.log(`[Store Balance API] Final available balance: ${availableBalance}`)
 
     return NextResponse.json({
       success: true,
@@ -73,6 +82,13 @@ export async function GET(request: NextRequest) {
       pendingPayoutAmount,
       storePurchasesTotal,
       currency: "USD",
+      debug: {
+        vendorPendingPayout,
+        pendingPayoutAmount,
+        storePurchases,
+        storePurchasesTotal,
+        availableBalance,
+      },
     })
   } catch (error: any) {
     console.error("Error fetching balance:", error)
