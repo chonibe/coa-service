@@ -14,7 +14,6 @@ import {
   HomeIcon,
   ChartBarIcon,
   AcademicCapIcon,
-  CubeIcon,
   CurrencyDollarIcon,
   ChatBubbleLeftRightIcon,
   XMarkIcon,
@@ -175,7 +174,7 @@ export function VendorSidebar() {
   // Mobile bottom nav items (limited to 5 for space)
   const mobileNavItems = [
     navItems[0], // Dashboard
-    navItems[1], // Products
+    navItems[1], // Artworks
     navItems[2], // Analytics
     navItems[6], // Profile
     navItems[7], // Help

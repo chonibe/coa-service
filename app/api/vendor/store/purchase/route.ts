@@ -3,9 +3,82 @@ import type { NextRequest } from "next/server"
 import { cookies } from "next/headers"
 import { getVendorFromCookieStore } from "@/lib/vendor-session"
 import { createClient } from "@/lib/supabase/server"
+import { SHOPIFY_SHOP, SHOPIFY_ACCESS_TOKEN } from "@/lib/env"
 
 // Proof print price constant
 const PROOF_PRINT_PRICE = 8.00
+
+// Function to fetch product price from Shopify by SKU
+async function fetchProductPriceBySku(sku: string): Promise<number | null> {
+  try {
+    if (!SHOPIFY_SHOP || !SHOPIFY_ACCESS_TOKEN) {
+      console.warn("Shopify credentials not configured, using default price")
+      return null
+    }
+
+    // Search for product by SKU using GraphQL
+    const graphqlQuery = `
+      {
+        products(first: 1, query: "sku:${sku}") {
+          edges {
+            node {
+              id
+              title
+              variants(first: 1) {
+                edges {
+                  node {
+                    sku
+                    price
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    `
+
+    const response = await fetch(`https://${SHOPIFY_SHOP}/admin/api/2024-01/graphql.json`, {
+      method: "POST",
+      headers: {
+        "X-Shopify-Access-Token": SHOPIFY_ACCESS_TOKEN,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ query: graphqlQuery }),
+    })
+
+    if (!response.ok) {
+      console.error(`Failed to fetch product from Shopify: ${response.status}`)
+      return null
+    }
+
+    const data = await response.json()
+
+    if (data.errors) {
+      console.error("Shopify GraphQL errors:", data.errors)
+      return null
+    }
+
+    const products = data.data?.products?.edges
+    if (!products || products.length === 0) {
+      console.warn(`Product with SKU ${sku} not found in Shopify`)
+      return null
+    }
+
+    const product = products[0].node
+    const variant = product.variants?.edges?.[0]?.node
+
+    if (!variant || !variant.price) {
+      console.warn(`No price found for product with SKU ${sku}`)
+      return null
+    }
+
+    return parseFloat(variant.price)
+  } catch (error) {
+    console.error(`Error fetching product price for SKU ${sku}:`, error)
+    return null
+  }
+}
 
 export async function POST(request: NextRequest) {
   const supabase = createClient()
@@ -62,33 +135,40 @@ export async function POST(request: NextRequest) {
 
     // Calculate pricing based on purchase type
     if (purchaseType === "lamp") {
-      // Determine correct SKU based on vendor location if not provided
-      if (!finalProductSku) {
-        const isUS = vendor.tax_country?.toUpperCase() === "US" || 
-                     vendor.tax_country?.toUpperCase() === "USA" ||
-                     (vendor.address && /united states|usa|us\b/i.test(vendor.address))
-        finalProductSku = isUS ? "streetlamp002" : "streetlamp001"
-      }
-
-      // Validate SKU matches vendor location
-      const isUS = vendor.tax_country?.toUpperCase() === "US" || 
-                   vendor.tax_country?.toUpperCase() === "USA" ||
-                   (vendor.address && /united states|usa|us\b/i.test(vendor.address))
+      // Determine correct SKU based on vendor address country (internal only)
+      // Check tax_country first, then parse address for country information
+      const taxCountryUpper = vendor.tax_country?.toUpperCase() || ""
+      const addressLower = (vendor.address || "").toLowerCase()
+      
+      // US country indicators
+      const isUS = 
+        taxCountryUpper === "US" || 
+        taxCountryUpper === "USA" ||
+        taxCountryUpper === "UNITED STATES" ||
+        /united states|usa\b|us\b|u\.s\.a|u\.s\./i.test(vendor.address || "") ||
+        /\b(california|new york|texas|florida|illinois|pennsylvania|ohio|georgia|north carolina|michigan|new jersey|virginia|washington|arizona|massachusetts|tennessee|indiana|missouri|maryland|wisconsin|colorado|minnesota|south carolina|alabama|louisiana|kentucky|oregon|oklahoma|connecticut|utah|iowa|nevada|arkansas|mississippi|kansas|new mexico|nebraska|west virginia|idaho|hawaii|new hampshire|maine|montana|rhode island|delaware|south dakota|north dakota|alaska|vermont|wyoming|district of columbia|dc)\b/i.test(addressLower)
+      
       const expectedSku = isUS ? "streetlamp002" : "streetlamp001"
       
-      if (finalProductSku !== expectedSku) {
+      // Auto-determine SKU if not provided, or validate if provided
+      if (!finalProductSku) {
+        finalProductSku = expectedSku
+      } else if (finalProductSku !== expectedSku) {
+        // If SKU provided doesn't match location, use the correct one
+        // This ensures we always fulfill with the correct product
+        finalProductSku = expectedSku
+      }
+
+      // For Lamp purchases, fetch the regular price from Shopify
+      const regularPrice = await fetchProductPriceBySku(finalProductSku)
+      
+      if (regularPrice === null) {
         return NextResponse.json(
-          { 
-            error: "Invalid SKU for your location", 
-            message: `Based on your address, you should purchase ${expectedSku} (${isUS ? "US" : "EU"} version)` 
-          },
-          { status: 400 }
+          { error: "Unable to fetch product price. Please try again later." },
+          { status: 500 }
         )
       }
 
-      // For Lamp purchases, we need to get the regular price
-      // For now, we'll use a placeholder - this should be fetched from Shopify or configured
-      const regularPrice = 100 // TODO: Fetch from Shopify or configuration
       const isDiscountEligible = !vendor.has_used_lamp_discount
 
       if (isDiscountEligible) {

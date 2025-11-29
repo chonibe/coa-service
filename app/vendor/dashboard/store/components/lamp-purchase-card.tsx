@@ -110,7 +110,6 @@ export function LampPurchaseCard() {
               <div className="flex items-start justify-between">
                 <div>
                   <CardTitle>{product.name}</CardTitle>
-                  <CardDescription>SKU: {product.sku}</CardDescription>
                 </div>
                 {hasDiscount && (
                   <Badge variant="default" className="bg-green-600">
@@ -145,9 +144,6 @@ export function LampPurchaseCard() {
                 >
                   Purchase {product.name}
                 </Button>
-                <p className="text-xs text-muted-foreground text-center mt-2">
-                  SKU: {product.sku} ({product.sku === "streetlamp002" ? "US" : "EU"} version)
-                </p>
               </div>
             </CardContent>
           </Card>
