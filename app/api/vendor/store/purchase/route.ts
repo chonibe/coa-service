@@ -224,6 +224,7 @@ export async function POST(request: NextRequest) {
     // Check balance if using payout_balance
     let payoutBalanceUsed: number | null = null
     let collectorIdentifier: string | null = null
+    
     if (paymentMethod === "payout_balance") {
       // Get vendor's collector identifier (auth_id)
       collectorIdentifier = vendor.auth_id || vendorName
