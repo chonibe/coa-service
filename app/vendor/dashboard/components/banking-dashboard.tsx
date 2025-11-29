@@ -75,21 +75,21 @@ export function BankingDashboard({ collectorIdentifier }: BankingDashboardProps)
       )
 
       if (!response.ok) {
-        throw new Error("Failed to fetch banking data")
+        throw new Error("Failed to fetch account data")
       }
 
       const result = await response.json()
       if (result.success) {
         setData(result)
       } else {
-        throw new Error(result.error || "Failed to load banking data")
+        throw new Error(result.error || "Failed to load account data")
       }
     } catch (err: any) {
-      console.error("Error fetching banking data:", err)
-      setError(err.message || "Failed to load banking data")
+      console.error("Error fetching account data:", err)
+      setError(err.message || "Failed to load account data")
       toast({
         title: "Error",
-        description: err.message || "Failed to load banking data",
+        description: err.message || "Failed to load account data",
         variant: "destructive",
       })
     } finally {
@@ -138,7 +138,7 @@ export function BankingDashboard({ collectorIdentifier }: BankingDashboardProps)
             <AlertCircle className="h-5 w-5 text-destructive" />
             Error
           </CardTitle>
-          <CardDescription>{error || "Failed to load banking data"}</CardDescription>
+              <CardDescription>{error || "Failed to load account data"}</CardDescription>
         </CardHeader>
       </Card>
     )

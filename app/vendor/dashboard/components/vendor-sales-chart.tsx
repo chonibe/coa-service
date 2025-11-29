@@ -19,7 +19,7 @@ export function VendorSalesChart({ vendorName }: VendorSalesChartProps) {
   const [salesData, setSalesData] = useState<SalesDataPoint[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [currency, setCurrency] = useState<string>("GBP")
+  const [currency, setCurrency] = useState<string>("USD")
 
   useEffect(() => {
     const fetchSalesData = async () => {
@@ -37,7 +37,7 @@ export function VendorSalesChart({ vendorName }: VendorSalesChartProps) {
 
         const data = await response.json()
         setSalesData(data.salesByDate || [])
-        setCurrency(data.currency || "GBP")
+        setCurrency(data.currency || "USD")
       } catch (err: any) {
         console.error("Error fetching sales data:", err)
         setError(err.message || "Failed to load sales data")
@@ -57,7 +57,7 @@ export function VendorSalesChart({ vendorName }: VendorSalesChartProps) {
 
   // Format currency for tooltip
   const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat("en-GB", {
+    return new Intl.NumberFormat("en-US", {
       style: "currency",
       currency,
       minimumFractionDigits: 2,

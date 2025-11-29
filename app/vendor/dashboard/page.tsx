@@ -59,7 +59,7 @@ export default function VendorDashboardPage() {
     salesByDate: [],
     salesByProduct: [],
     recentActivity: [],
-    currency: "GBP",
+    currency: "USD",
   })
 
   // Setup keyboard shortcuts

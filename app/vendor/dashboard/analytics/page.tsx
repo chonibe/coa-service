@@ -65,14 +65,14 @@ export default function AnalyticsPage() {
     totalSales: 0,
     totalRevenue: 0,
     totalPayout: 0,
-    currency: "GBP",
+    currency: "USD",
   })
   const { toast } = useToast()
 
   const formatCurrency = (value: number) =>
-    new Intl.NumberFormat("en-GB", {
+    new Intl.NumberFormat("en-US", {
       style: "currency",
-      currency: "GBP",
+      currency: "USD",
       minimumFractionDigits: 2,
     }).format(value)
 
@@ -147,7 +147,7 @@ export default function AnalyticsPage() {
           totalSales: statsData.totalSales ?? 0,
           totalRevenue: statsData.totalRevenue ?? 0,
           totalPayout: statsData.totalPayout ?? statsData.totalRevenue ?? 0,
-          currency: statsData.currency || "GBP",
+          currency: statsData.currency || "USD",
         })
       }
     } catch (err) {
