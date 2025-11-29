@@ -72,7 +72,7 @@ export function CreateMenu() {
                 exit={{ opacity: 0, y: 100 }}
                 transition={{ duration: 0.3, ease: "easeOut" }}
                 className="fixed left-0 right-0 z-[100] rounded-t-2xl border-t border-x bg-background shadow-2xl"
-                style={{ bottom: '64px' }}
+                style={{ bottom: '64px', minHeight: '200px' }}
               >
                 <div className="p-4 pb-6">
                   <div className="mx-auto mb-4 h-1.5 w-12 rounded-full bg-muted" />
@@ -80,6 +80,7 @@ export function CreateMenu() {
                     <button
                       onClick={handleCreateArtwork}
                       className="w-full flex items-center gap-3 px-4 py-4 rounded-lg hover:bg-muted active:bg-muted/80 transition-colors text-left touch-manipulation"
+                      style={{ minHeight: '72px' }}
                     >
                       <div className="p-2 rounded-lg bg-blue-500/10 flex-shrink-0">
                         <Package className="h-5 w-5 text-blue-600" />
@@ -93,6 +94,7 @@ export function CreateMenu() {
                     <button
                       onClick={handleCreateSeries}
                       className="w-full flex items-center gap-3 px-4 py-4 rounded-lg hover:bg-muted active:bg-muted/80 transition-colors text-left touch-manipulation"
+                      style={{ minHeight: '72px' }}
                     >
                       <div className="p-2 rounded-lg bg-purple-500/10 flex-shrink-0">
                         <Lock className="h-5 w-5 text-purple-600" />

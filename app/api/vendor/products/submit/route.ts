@@ -286,6 +286,43 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // Handle benefits: Create series-level benefits immediately, artwork-level benefits will be created when product is published
+    if (productData.benefits && Array.isArray(productData.benefits) && productData.benefits.length > 0) {
+      const seriesLevelBenefits = productData.benefits.filter((b: any) => b.is_series_level && seriesId)
+      const artworkLevelBenefits = productData.benefits.filter((b: any) => !b.is_series_level)
+
+      // Create series-level benefits immediately
+      for (const benefit of seriesLevelBenefits) {
+        try {
+          const { error: benefitError } = await supabase.from("product_benefits").insert({
+            series_id: seriesId,
+            product_id: null,
+            vendor_name: vendor.vendor_name,
+            benefit_type_id: benefit.benefit_type_id,
+            title: benefit.title,
+            description: benefit.description || null,
+            content_url: benefit.content_url || null,
+            access_code: benefit.access_code || null,
+            starts_at: benefit.starts_at || null,
+            expires_at: benefit.expires_at || null,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+          })
+
+          if (benefitError) {
+            console.error("Error creating series-level benefit:", benefitError)
+            // Don't fail submission if benefit creation fails
+          }
+        } catch (error) {
+          console.error("Error processing series-level benefit:", error)
+          // Continue with other benefits
+        }
+      }
+
+      // Artwork-level benefits are stored in product_data and will be created when product is published
+      // (They need product_id which is only available after publication)
+    }
+
     return NextResponse.json({
       success: true,
       submission_id: submission.id,

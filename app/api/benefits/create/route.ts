@@ -7,6 +7,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json()
     const {
       product_id,
+      series_id,
       vendor_name,
       benefit_type_id,
       title,
@@ -17,10 +18,18 @@ export async function POST(request: NextRequest) {
       expires_at,
     } = body
 
-    // Validate required fields
-    if (!product_id || !vendor_name || !benefit_type_id || !title) {
+    // Validate: either product_id OR series_id must be provided (not both)
+    if ((!product_id && !series_id) || (product_id && series_id)) {
       return NextResponse.json(
-        { error: "Product ID, vendor name, benefit type and title are required" },
+        { error: "Either product_id OR series_id must be provided (not both)" },
+        { status: 400 },
+      )
+    }
+
+    // Validate required fields
+    if (!vendor_name || !benefit_type_id || !title) {
+      return NextResponse.json(
+        { error: "Vendor name, benefit type and title are required" },
         { status: 400 },
       )
     }
@@ -31,7 +40,8 @@ export async function POST(request: NextRequest) {
     const { data, error } = await supabase
       .from("product_benefits")
       .insert({
-        product_id,
+        product_id: product_id || null,
+        series_id: series_id || null,
         vendor_name,
         benefit_type_id,
         title,

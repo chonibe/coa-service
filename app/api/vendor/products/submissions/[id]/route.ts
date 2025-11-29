@@ -31,9 +31,82 @@ export async function GET(
       )
     }
 
+    // Load existing benefits from database if product is published
+    let existingBenefits: any[] = []
+    if (submission.shopify_product_id) {
+      // Load artwork-level benefits
+      const { data: productBenefits } = await supabase
+        .from("product_benefits")
+        .select(`
+          *,
+          benefit_types (name, icon)
+        `)
+        .eq("product_id", submission.shopify_product_id)
+      
+      if (productBenefits) {
+        existingBenefits = productBenefits.map((b: any) => ({
+          id: b.id,
+          benefit_type_id: b.benefit_type_id,
+          title: b.title,
+          description: b.description,
+          content_url: b.content_url,
+          access_code: b.access_code,
+          starts_at: b.starts_at,
+          expires_at: b.expires_at,
+          is_series_level: false,
+        }))
+      }
+    }
+
+    // Also load series-level benefits if series is assigned
+    if (submission.series_id) {
+      const { data: seriesBenefits } = await supabase
+        .from("product_benefits")
+        .select(`
+          *,
+          benefit_types (name, icon)
+        `)
+        .eq("series_id", submission.series_id)
+      
+      if (seriesBenefits) {
+        const seriesLevelBenefits = seriesBenefits.map((b: any) => ({
+          id: b.id,
+          benefit_type_id: b.benefit_type_id,
+          title: b.title,
+          description: b.description,
+          content_url: b.content_url,
+          access_code: b.access_code,
+          starts_at: b.starts_at,
+          expires_at: b.expires_at,
+          is_series_level: true,
+        }))
+        existingBenefits = [...existingBenefits, ...seriesLevelBenefits]
+      }
+    }
+
+    // Merge with benefits from product_data (for artwork-level benefits not yet in DB)
+    const productDataBenefits = (submission.product_data as any)?.benefits || []
+    const mergedBenefits = [...existingBenefits]
+    
+    // Add benefits from product_data that don't have an ID (not yet created in DB)
+    for (const benefit of productDataBenefits) {
+      if (!benefit.id && !benefit.is_series_level) {
+        mergedBenefits.push(benefit)
+      }
+    }
+
+    // Update product_data with merged benefits
+    const updatedProductData = {
+      ...submission.product_data,
+      benefits: mergedBenefits,
+    }
+
     return NextResponse.json({
       success: true,
-      submission,
+      submission: {
+        ...submission,
+        product_data: updatedProductData,
+      },
     })
   } catch (error: any) {
     console.error("Error fetching submission:", error)

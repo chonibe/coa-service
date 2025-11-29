@@ -19,6 +19,7 @@ import { StepProgress } from "@/app/vendor/dashboard/series/components/StepProgr
 import { UnlockGuide } from "@/app/vendor/dashboard/series/components/UnlockGuide"
 import { TimeBasedUnlockConfig } from "@/app/vendor/dashboard/series/components/TimeBasedUnlockConfig"
 import { VIPUnlockConfig } from "@/app/vendor/dashboard/series/components/VIPUnlockConfig"
+import { BenefitsManagement } from "./benefits-management"
 
 interface SeriesStepProps {
   formData: ProductSubmissionData
@@ -393,6 +394,17 @@ export function SeriesStep({ formData, setFormData }: SeriesStepProps) {
             </Button>
           </CardContent>
         </Card>
+
+        {/* Benefits Management */}
+        <Card>
+          <CardContent className="pt-6">
+            <BenefitsManagement
+              benefits={formData.benefits || []}
+              onBenefitsChange={(benefits) => setFormData({ ...formData, benefits })}
+              seriesId={formData.series_id}
+            />
+          </CardContent>
+        </Card>
       </div>
     )
   }
@@ -452,6 +464,16 @@ export function SeriesStep({ formData, setFormData }: SeriesStepProps) {
               </Card>
                 </div>
         )}
+
+        {/* Benefits Management for standalone artwork */}
+        <Card>
+          <CardContent className="pt-6">
+            <BenefitsManagement
+              benefits={formData.benefits || []}
+              onBenefitsChange={(benefits) => setFormData({ ...formData, benefits })}
+            />
+          </CardContent>
+        </Card>
       </div>
       ) : (
         <Card>

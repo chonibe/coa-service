@@ -39,6 +39,18 @@ export interface PrintFiles {
   drive_link?: string | null // Google Drive link
 }
 
+export interface ProductBenefit {
+  id?: number // Existing benefit ID (for edits)
+  benefit_type_id: number
+  title: string
+  description?: string
+  content_url?: string
+  access_code?: string
+  starts_at?: string | null
+  expires_at?: string | null
+  is_series_level?: boolean // Whether this benefit applies to series or artwork
+}
+
 export interface ProductSubmissionData {
   title: string
   description?: string
@@ -54,6 +66,7 @@ export interface ProductSubmissionData {
   series_name?: string | null // For quick reference
   is_locked?: boolean // Manual lock toggle
   unlock_order?: number | null // For sequential unlocks
+  benefits?: ProductBenefit[] // Perks for purchased artworks
 }
 
 export interface VendorProductSubmission {

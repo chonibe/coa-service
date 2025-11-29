@@ -10,10 +10,14 @@ export async function GET(request: NextRequest) {
     
     const searchParams = request.nextUrl.searchParams
     const productId = searchParams.get("product_id")
+    const seriesId = searchParams.get("series_id")
     const vendorName = searchParams.get("vendor_name")
 
-    if (!productId && !vendorName) {
-      return NextResponse.json({ error: "Either product_id or vendor_name is required" }, { status: 400 })
+    if (!productId && !seriesId && !vendorName) {
+      return NextResponse.json(
+        { error: "Either product_id, series_id, or vendor_name is required" },
+        { status: 400 },
+      )
     }
 
     let query = supabase.from("product_benefits").select(`
@@ -23,6 +27,10 @@ export async function GET(request: NextRequest) {
 
     if (productId) {
       query = query.eq("product_id", productId)
+    }
+
+    if (seriesId) {
+      query = query.eq("series_id", seriesId)
     }
 
     if (vendorName) {
