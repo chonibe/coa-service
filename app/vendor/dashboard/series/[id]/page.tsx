@@ -62,22 +62,35 @@ export default function SeriesDetailPage() {
     try {
       setLoading(true)
       setError(null)
-      const response = await fetch(`/api/vendor/series/${seriesId}`, {
+      // Fetch series details
+      const seriesResponse = await fetch(`/api/vendor/series/${seriesId}`, {
         credentials: "include",
       })
-      if (response.ok) {
-        const data = await response.json()
-        setSeries(data.series)
-        setMembers(data.members || [])
+      let seriesData: any = null
+      if (seriesResponse.ok) {
+        seriesData = await seriesResponse.json()
+        setSeries(seriesData.series)
         
         // Initialize edit form
-        setEditName(data.series.name)
-        setEditDescription(data.series.description || "")
-        setEditUnlockType(data.series.unlock_type)
-        setEditUnlockConfig(data.series.unlock_config || {})
+        setEditName(seriesData.series.name)
+        setEditDescription(seriesData.series.description || "")
+        setEditUnlockType(seriesData.series.unlock_type)
+        setEditUnlockConfig(seriesData.series.unlock_config || {})
       } else {
-        const errorData = await response.json()
+        const errorData = await seriesResponse.json()
         setError(errorData.error || "Failed to load series")
+      }
+      
+      // Fetch members with connections
+      const membersResponse = await fetch(`/api/vendor/series/${seriesId}/members`, {
+        credentials: "include",
+      })
+      if (membersResponse.ok) {
+        const membersData = await membersResponse.json()
+        setMembers(membersData.members || [])
+      } else {
+        const errorData = await membersResponse.json()
+        console.error("Failed to load members:", errorData.error)
       }
     } catch (err: any) {
       console.error("Error fetching series:", err)
