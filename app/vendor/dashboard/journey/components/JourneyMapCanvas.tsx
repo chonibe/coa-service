@@ -1,135 +1,126 @@
 "use client"
 
-import { useState, useRef, useEffect } from "react"
-import type { ArtworkSeries, JourneyMapSettings, JourneyPosition } from "@/types/artwork-series"
+import { useState, useRef, useEffect, useCallback } from "react"
+import type { ArtworkSeries, JourneyPosition } from "@/types/artwork-series"
 import { SeriesNode } from "./SeriesNode"
-import { cn } from "@/lib/utils"
 
 interface JourneyMapCanvasProps {
   series: ArtworkSeries[]
-  mapSettings: JourneyMapSettings | null
   onSeriesClick: (seriesId: string) => void
   onPositionUpdate: (seriesId: string, position: JourneyPosition) => void
 }
 
+// Grid constants - chess board style
+const GRID_SIZE = 120 // Size of each grid square in pixels
+const CARD_SIZE = 100 // Size of card (slightly smaller than grid for spacing)
+
 export function JourneyMapCanvas({
   series,
-  mapSettings,
   onSeriesClick,
   onPositionUpdate,
 }: JourneyMapCanvasProps) {
   const [draggedNode, setDraggedNode] = useState<string | null>(null)
   const containerRef = useRef<HTMLDivElement>(null)
 
-  // Arrange series in vertical timeline with family tree branching
+  // Snap position to grid
+  const snapToGrid = useCallback((x: number, y: number) => {
+    const gridX = Math.round(x / GRID_SIZE) * GRID_SIZE
+    const gridY = Math.round(y / GRID_SIZE) * GRID_SIZE
+    return { x: gridX, y: gridY }
+  }, [])
+
+  // Check if position is occupied
+  const isPositionOccupied = useCallback(
+    (x: number, y: number, excludeId?: string) => {
+      return series.some((s) => {
+        if (s.id === excludeId) return false
+        const pos = s.journey_position
+        if (!pos || pos.x === undefined || pos.y === undefined) return false
+        return pos.x === x && pos.y === y
+      })
+    },
+    [series]
+  )
+
+  // Find nearest free grid position
+  const findNearestFreePosition = useCallback(
+    (x: number, y: number, excludeId?: string) => {
+      const snapped = snapToGrid(x, y)
+      
+      // If snapped position is free, use it
+      if (!isPositionOccupied(snapped.x, snapped.y, excludeId)) {
+        return snapped
+      }
+
+      // Search nearby grid positions
+      const searchRadius = 5
+      for (let dy = -searchRadius; dy <= searchRadius; dy++) {
+        for (let dx = -searchRadius; dx <= searchRadius; dx++) {
+          const checkX = snapped.x + dx * GRID_SIZE
+          const checkY = snapped.y + dy * GRID_SIZE
+          if (!isPositionOccupied(checkX, checkY, excludeId)) {
+            return { x: checkX, y: checkY }
+          }
+        }
+      }
+
+      // Fallback: find first available position
+      for (let row = 0; row < 20; row++) {
+        for (let col = 0; col < 10; col++) {
+          const checkX = col * GRID_SIZE
+          const checkY = row * GRID_SIZE
+          if (!isPositionOccupied(checkX, checkY, excludeId)) {
+            return { x: checkX, y: checkY }
+          }
+        }
+      }
+
+      return snapped
+    },
+    [snapToGrid, isPositionOccupied]
+  )
+
+  // Auto-arrange series on grid if they don't have positions
   useEffect(() => {
     const seriesWithoutPositions = series.filter(
-      (s) => !s.journey_position || !s.journey_position.x || !s.journey_position.y
+      (s) => !s.journey_position || s.journey_position.x === undefined || s.journey_position.y === undefined
     )
 
     if (seriesWithoutPositions.length === 0) return
 
-    // Sort by milestone_order or display_order for timeline progression
-    const sorted = [...series].sort((a, b) => {
+    // Sort by order
+    const sorted = [...seriesWithoutPositions].sort((a, b) => {
       const orderA = a.milestone_order ?? a.display_order ?? 0
       const orderB = b.milestone_order ?? b.display_order ?? 0
       return orderA - orderB
     })
 
-    // Build tree: find root nodes (series not unlocked by others)
-    const allUnlockedIds = new Set(
-      series.flatMap((s) => s.unlocks_series_ids || [])
-    )
-    const rootNodes = sorted.filter((s) => !allUnlockedIds.has(s.id))
-
-    // Timeline layout constants - vertical progression
-    const cardWidth = 256 // w-64 = 256px
-    const verticalSpacing = 240 // Space between timeline levels (card height + spacing)
-    const horizontalBranchSpacing = 320 // Space for branches
-    const centerX = 400 // Center of timeline (will be adjusted by container width)
-    const startY = 80
-
-    // Track positioned series to calculate next position
-    const positioned = new Set<string>()
-
-    // Recursive function to position series in family tree
-    const positionSeries = (
-      seriesItem: ArtworkSeries,
-      x: number,
-      y: number,
-      level: number
-    ) => {
-      if (positioned.has(seriesItem.id)) return
-      positioned.add(seriesItem.id)
-
-      onPositionUpdate(seriesItem.id, { x, y, level })
-
-      // Get series that this one unlocks or connects to
-      const children = sorted.filter((s) =>
-        seriesItem.unlocks_series_ids?.includes(s.id) ||
-        seriesItem.connected_series_ids?.includes(s.id)
-      )
-
-      if (children.length > 0) {
-        // Arrange children in branches below
-        if (children.length === 1) {
-          // Single child: continue straight down
-          positionSeries(children[0], x, y + verticalSpacing, level + 1)
-        } else {
-          // Multiple children: branch out horizontally
-          const branchStartX = x - ((children.length - 1) * horizontalBranchSpacing) / 2
-          children.forEach((child, index) => {
-            positionSeries(
-              child,
-              branchStartX + index * horizontalBranchSpacing,
-              y + verticalSpacing,
-              level + 1
-            )
-          })
-        }
-      }
-    }
-
-    // Position root nodes at top center
-    if (rootNodes.length === 1) {
-      positionSeries(rootNodes[0], centerX, startY, 0)
-    } else if (rootNodes.length > 1) {
-      // Multiple roots: arrange horizontally at top
-      const rootStartX = centerX - ((rootNodes.length - 1) * horizontalBranchSpacing) / 2
-      rootNodes.forEach((root, index) => {
-        positionSeries(root, rootStartX + index * horizontalBranchSpacing, startY, 0)
-      })
-    }
-
-    // Position any remaining series in timeline order (fallback)
-    sorted.forEach((s) => {
-      if (!positioned.has(s.id)) {
-        const maxY = Math.max(
-          ...series
-            .filter((other) => other.journey_position?.y)
-            .map((other) => other.journey_position!.y || 0),
-          startY
-        )
-        onPositionUpdate(s.id, {
-          x: centerX,
-          y: maxY + verticalSpacing,
-          level: 0,
-        })
-      }
+    // Place each series on grid
+    sorted.forEach((s, index) => {
+      const row = Math.floor(index / 8) // 8 columns
+      const col = index % 8
+      const x = col * GRID_SIZE
+      const y = row * GRID_SIZE
+      
+      // Ensure position is free
+      const freePos = findNearestFreePosition(x, y, s.id)
+      onPositionUpdate(s.id, { x: freePos.x, y: freePos.y, level: row })
     })
-  }, [series, onPositionUpdate])
+  }, [series, onPositionUpdate, findNearestFreePosition])
 
-  // Simple position getter
-  const getPosition = (s: ArtworkSeries) => {
-    return s.journey_position ? { x: s.journey_position.x, y: s.journey_position.y } : { x: 100, y: 100 }
+  // Get grid position
+  const getGridPosition = (s: ArtworkSeries) => {
+    if (s.journey_position?.x !== undefined && s.journey_position?.y !== undefined) {
+      return { x: s.journey_position.x, y: s.journey_position.y }
+    }
+    return { x: 0, y: 0 }
   }
 
-  // Build family tree connections: show all relationships
+  // Build connections
   const connections = series.flatMap((s) => {
     const connections: Array<{ from: { x: number; y: number }; to: { x: number; y: number } }> = []
-    const from = getPosition(s)
+    const from = getGridPosition(s)
 
-    // Combine unlocks and connected series for family tree
     const allConnections = [
       ...(s.unlocks_series_ids || []),
       ...(s.connected_series_ids || [])
@@ -138,16 +129,29 @@ export function JourneyMapCanvas({
     allConnections.forEach((connectedId) => {
       const connected = series.find((cs) => cs.id === connectedId)
       if (connected) {
-        const to = getPosition(connected)
-        // Only show connection if 'to' is below 'from' (timeline progression)
-        if (to.y > from.y) {
-          connections.push({ from, to })
-        }
+        const to = getGridPosition(connected)
+        connections.push({ from, to })
       }
     })
 
     return connections
   })
+
+  // Calculate grid dimensions
+  const maxX = Math.max(
+    ...series
+      .filter((s) => s.journey_position?.x !== undefined)
+      .map((s) => s.journey_position!.x || 0),
+    0
+  )
+  const maxY = Math.max(
+    ...series
+      .filter((s) => s.journey_position?.y !== undefined)
+      .map((s) => s.journey_position!.y || 0),
+    0
+  )
+  const gridWidth = Math.max(maxX + GRID_SIZE * 2, 1000)
+  const gridHeight = Math.max(maxY + GRID_SIZE * 2, 600)
 
   if (series.length === 0) {
     return (
@@ -157,90 +161,88 @@ export function JourneyMapCanvas({
     )
   }
 
-  // Calculate container height based on positioned series
-  const maxY = Math.max(
-    ...series
-      .filter((s) => s.journey_position?.y)
-      .map((s) => s.journey_position!.y || 0),
-    600
-  )
-  const containerHeight = Math.max(maxY + 300, 600)
-
   return (
     <div
       ref={containerRef}
-      className="relative w-full border rounded-lg overflow-y-auto bg-background"
-      style={{ height: '600px', minHeight: '600px' }}
+      className="relative w-full border rounded-lg overflow-auto bg-background"
+      style={{ height: '600px' }}
     >
-      {/* Timeline lines - show family tree connections */}
-      <svg 
-        className="absolute inset-0 w-full pointer-events-none"
-        style={{ height: `${containerHeight}px` }}
+      {/* Grid background */}
+      <div
+        className="absolute inset-0"
+        style={{
+          width: `${gridWidth}px`,
+          height: `${gridHeight}px`,
+          backgroundImage: `
+            linear-gradient(to right, hsl(var(--border)) 1px, transparent 1px),
+            linear-gradient(to bottom, hsl(var(--border)) 1px, transparent 1px)
+          `,
+          backgroundSize: `${GRID_SIZE}px ${GRID_SIZE}px`,
+        }}
+      />
+
+      {/* Connection lines */}
+      <svg
+        className="absolute inset-0 pointer-events-none"
+        style={{ width: `${gridWidth}px`, height: `${gridHeight}px` }}
       >
         {connections.map((conn, index) => {
-          // Calculate connection path for family tree style
-          // Account for card dimensions (card is ~180px tall including content)
-          const cardHeight = 180
-          const fromBottom = conn.from.y + cardHeight / 2
-          const toTop = conn.to.y - cardHeight / 2
-          const midY = (fromBottom + toTop) / 2
-          
+          const fromCenterX = conn.from.x + CARD_SIZE / 2
+          const fromCenterY = conn.from.y + CARD_SIZE / 2
+          const toCenterX = conn.to.x + CARD_SIZE / 2
+          const toCenterY = conn.to.y + CARD_SIZE / 2
+
           return (
-            <g key={index}>
-              {/* Vertical line from parent card bottom */}
-              <line
-                x1={conn.from.x}
-                y1={fromBottom}
-                x2={conn.from.x}
-                y2={midY}
-                stroke="currentColor"
-                strokeWidth="2"
-                className="text-primary/50"
-              />
-              {/* Horizontal branch line */}
-              <line
-                x1={conn.from.x}
-                y1={midY}
-                x2={conn.to.x}
-                y2={midY}
-                stroke="currentColor"
-                strokeWidth="2"
-                className="text-primary/50"
-              />
-              {/* Vertical line to child card top */}
-              <line
-                x1={conn.to.x}
-                y1={midY}
-                x2={conn.to.x}
-                y2={toTop}
-                stroke="currentColor"
-                strokeWidth="2"
-                className="text-primary/50"
-              />
-            </g>
+            <line
+              key={index}
+              x1={fromCenterX}
+              y1={fromCenterY}
+              x2={toCenterX}
+              y2={toCenterY}
+              stroke="currentColor"
+              strokeWidth="2"
+              className="text-primary/40"
+              markerEnd="url(#arrowhead)"
+            />
           )
         })}
+        <defs>
+          <marker
+            id="arrowhead"
+            markerWidth="10"
+            markerHeight="10"
+            refX="9"
+            refY="3"
+            orient="auto"
+          >
+            <polygon points="0 0, 10 3, 0 6" fill="currentColor" className="text-primary/40" />
+          </marker>
+        </defs>
       </svg>
 
-      {/* Series Nodes - Timeline Cards */}
-      <div 
-        className="relative w-full"
-        style={{ height: `${containerHeight}px` }}
+      {/* Series Nodes on Grid */}
+      <div
+        className="relative"
+        style={{ width: `${gridWidth}px`, height: `${gridHeight}px` }}
       >
         {series.map((s) => {
-          const position = getPosition(s)
+          const position = getGridPosition(s)
           return (
             <SeriesNode
               key={s.id}
               series={s}
               position={position}
+              gridSize={GRID_SIZE}
+              cardSize={CARD_SIZE}
               containerRef={containerRef}
               onDragStart={() => setDraggedNode(s.id)}
               onDragEnd={(newPosition) => {
+                // Snap to grid and ensure no overlap
+                const freePos = findNearestFreePosition(newPosition.x, newPosition.y, s.id)
                 onPositionUpdate(s.id, {
                   ...s.journey_position,
-                  x: newPosition.x,
-                  y: newPosition.y,
+                  x: freePos.x,
+                  y: freePos.y,
                 })
                 setDraggedNode(null)
               }}
