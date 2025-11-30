@@ -21,7 +21,6 @@ export default function SeriesPage() {
   const [series, setSeries] = useState<ArtworkSeries[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [hoveredId, setHoveredId] = useState<string | null>(null)
   const [searchQuery, setSearchQuery] = useState("")
   const [unlockTypeFilter, setUnlockTypeFilter] = useState("all")
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
@@ -250,8 +249,8 @@ export default function SeriesPage() {
               key={s.id}
               series={s}
               index={index}
-              isHovered={hoveredId === s.id}
-              onHover={setHoveredId}
+              isHovered={false}
+              onHover={() => {}}
               onView={() => router.push(`/vendor/dashboard/series/${s.id}`)}
               onDuplicate={() => {
                 setSelectedSeries(s)
