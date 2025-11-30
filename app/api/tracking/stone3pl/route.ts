@@ -65,11 +65,13 @@ export async function GET(request: NextRequest) {
         const trackingNumber = searchParams.get('tracking_number') || undefined
         
         let actualOrderId = orderId
+        let lookupAttempted = false
         
         // If we have a tracking number, use it to find the correct Platform Order No. (sys_order_id)
         // that STONE3PL recognizes, as the provided order_id might not match what STONE3PL expects
         if (trackingNumber) {
           console.log('[STONE3PL API] Looking up order by tracking number to find Platform Order No.:', trackingNumber)
+          lookupAttempted = true
           try {
             const { createChinaDivisionClient } = await import('@/lib/chinadivision/client')
             const chinaClient = createChinaDivisionClient()
@@ -97,15 +99,33 @@ export async function GET(request: NextRequest) {
                 usingOrderId: actualOrderId
               })
             } else {
-              console.warn('[STONE3PL API] Could not find order by tracking number, using provided order_id:', trackingNumber, orderId)
+              console.warn('[STONE3PL API] Could not find order by tracking number, will try provided order_id:', trackingNumber, orderId)
             }
           } catch (lookupError) {
-            console.warn('[STONE3PL API] Failed to lookup order by tracking number, using provided order_id:', lookupError)
+            console.warn('[STONE3PL API] Failed to lookup order by tracking number, will try provided order_id:', lookupError)
             // Continue with original orderId
           }
         }
         
-        const tracking = await client.getTracking(actualOrderId, trackingNumber)
+        // Try to get tracking with the found/actual order ID
+        let tracking
+        try {
+          tracking = await client.getTracking(actualOrderId, trackingNumber)
+        } catch (firstAttemptError: any) {
+          // If lookup was attempted and failed, try with the original order_id as fallback
+          if (lookupAttempted && actualOrderId !== orderId && firstAttemptError.message?.includes('not found')) {
+            console.log('[STONE3PL API] First attempt failed, trying with original order_id:', orderId)
+            try {
+              tracking = await client.getTracking(orderId, trackingNumber)
+              actualOrderId = orderId
+            } catch (secondAttemptError: any) {
+              // Both attempts failed, throw the original error
+              throw firstAttemptError
+            }
+          } else {
+            throw firstAttemptError
+          }
+        }
 
         // Format response with timeline
         const timeline = client.getTrackingTimeline(tracking)
