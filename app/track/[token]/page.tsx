@@ -1759,9 +1759,12 @@ export default function TrackOrdersPage() {
                   <Card className="bg-white/50 dark:bg-slate-800/50 backdrop-blur-sm border-0 shadow-lg">
                     <CardHeader className="p-3 sm:p-4 md:p-6">
                       <div className="flex items-start justify-between flex-wrap gap-2">
-                        <div>
-                          <CardTitle className="text-sm sm:text-base">Recipient Information</CardTitle>
-                          <CardDescription className="text-xs sm:text-sm">
+                        <div className="flex-1">
+                          <CardTitle className="text-sm sm:text-base flex items-center gap-2">
+                            <Icon size="sm"><EnvelopeIcon className="h-4 w-4 sm:h-5 sm:w-5" /></Icon>
+                            {selectedOrder.first_name} {selectedOrder.last_name}
+                          </CardTitle>
+                          <CardDescription className="text-xs sm:text-sm mt-1">
                             Order {selectedOrder.order_id} • {selectedOrder.info?.length || 0} items
                           </CardDescription>
                         </div>
@@ -1772,16 +1775,13 @@ export default function TrackOrdersPage() {
                       </div>
                     </CardHeader>
                     <CardContent className="space-y-3 sm:space-y-4 p-3 sm:p-4 md:p-6 pt-0">
-                      {/* Recipient Information - Collapsible */}
+                      {/* Contact & Address Information - Collapsible */}
                       <div>
                         <button
                           onClick={() => toggleSection('recipient')}
-                          className="w-full flex items-center justify-between font-medium mb-1.5 sm:mb-2 text-xs sm:text-sm text-slate-900 dark:text-slate-100 hover:text-slate-700 dark:hover:text-slate-300 transition-colors"
+                          className="w-full flex items-center justify-between font-medium mb-1.5 sm:mb-2 text-xs sm:text-sm text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 transition-colors"
                         >
-                          <div className="flex items-center gap-1.5 sm:gap-2">
-                            <Icon size="sm"><EnvelopeIcon className="h-3.5 w-3.5 sm:h-4 sm:w-4" /></Icon>
-                            {selectedOrder.first_name} {selectedOrder.last_name}
-                          </div>
+                          <span>Contact & Address Details</span>
                           <Icon size="sm">
                             {expandedSections.has('recipient') ? (
                               <ChevronUpIcon className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
@@ -1791,30 +1791,24 @@ export default function TrackOrdersPage() {
                           </Icon>
                         </button>
                         {expandedSections.has('recipient') && (
-                          <div className="text-xs sm:text-sm space-y-1 pl-5 sm:pl-6">
-                            <div className="space-y-1 text-slate-700 dark:text-slate-300">
-                              {selectedOrder.ship_email && (
-                                <p>
-                                  <span className="font-medium">Email:</span> {selectedOrder.ship_email}
-                                </p>
-                              )}
-                              {selectedOrder.ship_email && (
-                                <p>
-                                  <span className="font-medium">Email:</span> {selectedOrder.ship_email}
-                                </p>
-                              )}
-                              {selectedOrder.ship_phone && (
-                                <p>
-                                  <span className="font-medium">Phone:</span> {selectedOrder.ship_phone}
-                                </p>
-                              )}
-                            </div>
-                            <div className="mt-2">
-                              <h5 className="font-medium mb-1 flex items-center gap-1.5 text-xs sm:text-sm text-slate-900 dark:text-slate-100">
-                                <Icon size="sm"><MapPinIcon className="h-3.5 w-3.5 sm:h-4 sm:w-4" /></Icon>
-                                Shipping Address
-                              </h5>
-                              <div className="text-xs sm:text-sm text-slate-600 dark:text-slate-400">
+                          <div className="text-xs sm:text-sm space-y-3 pl-0">
+                            {(selectedOrder.ship_email || selectedOrder.ship_phone) && (
+                              <div className="space-y-1.5 text-slate-700 dark:text-slate-300">
+                                {selectedOrder.ship_email && (
+                                  <p>
+                                    <span className="font-medium">Email:</span> {selectedOrder.ship_email}
+                                  </p>
+                                )}
+                                {selectedOrder.ship_phone && (
+                                  <p>
+                                    <span className="font-medium">Phone:</span> {selectedOrder.ship_phone}
+                                  </p>
+                                )}
+                              </div>
+                            )}
+                            <div>
+                              <div className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 space-y-0.5">
+                                <p className="font-medium text-slate-900 dark:text-slate-100 mb-1">Address</p>
                                 <p>{selectedOrder.ship_address1}</p>
                                 {selectedOrder.ship_address2 && <p>{selectedOrder.ship_address2}</p>}
                                 <p>
@@ -1824,23 +1818,14 @@ export default function TrackOrdersPage() {
                               </div>
                             </div>
                             {(selectedOrder.tracking_number || selectedOrder.last_mile_tracking) && (
-                              <div className="mt-2">
-                                <h5 className="font-medium mb-1 flex items-center gap-1.5 text-xs sm:text-sm text-slate-900 dark:text-slate-100">
-                                  <Icon size="sm"><TruckIcon className="h-3.5 w-3.5 sm:h-4 sm:w-4" /></Icon>
-                                  Tracking Information
-                                </h5>
-                                <div className="text-xs sm:text-sm text-slate-600 dark:text-slate-400">
+                              <div>
+                                <div className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 space-y-0.5">
+                                  <p className="font-medium text-slate-900 dark:text-slate-100 mb-1">Tracking</p>
                                   {selectedOrder.tracking_number && (
-                                    <p>
-                                      <span className="font-medium">Tracking Number:</span>{' '}
-                                      <span className="font-mono break-all">{selectedOrder.tracking_number}</span>
-                                    </p>
+                                    <p className="font-mono break-all">{selectedOrder.tracking_number}</p>
                                   )}
                                   {selectedOrder.last_mile_tracking && (
-                                    <p>
-                                      <span className="font-medium">Last Mile Tracking:</span>{' '}
-                                      <span className="font-mono break-all">{selectedOrder.last_mile_tracking}</span>
-                                    </p>
+                                    <p className="font-mono break-all">{selectedOrder.last_mile_tracking}</p>
                                   )}
                                 </div>
                               </div>
