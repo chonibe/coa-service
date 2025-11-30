@@ -115,3 +115,4 @@ After deployment, test:
 Once all checkboxes are marked, your deployment is ready. The vendor redeem feature will automatically process PayPal payments when vendors click "Redeem Payout".
 
 
+

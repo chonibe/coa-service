@@ -6,7 +6,7 @@ import { getVendorFromCookieStore } from "@/lib/vendor-session"
 import { getUsdBalance, calculateUnifiedCollectorBalance } from "@/lib/banking/balance-calculator"
 import { ensureCollectorAccount } from "@/lib/banking/account-manager"
 
-const DEFAULT_CURRENCY = "GBP"
+const DEFAULT_CURRENCY = "USD"
 const DEFAULT_PAYOUT_PERCENTAGE = 10
 const RECENT_ACTIVITY_LIMIT = 5
 const CHART_WINDOW = 30
@@ -350,6 +350,7 @@ const buildFinancialSummary = (
 
   let totalSales = 0
   let totalRevenue = 0
+  let totalPayout = 0
 
   for (const item of lineItems) {
     const quantity = normaliseQuantity(item.quantity)
@@ -366,12 +367,13 @@ const buildFinancialSummary = (
     }
 
     totalSales += quantity
-    totalRevenue += vendorShare
+    totalRevenue += gross  // Total revenue is gross sales, not vendor share
+    totalPayout += vendorShare  // Vendor share is the payout amount
 
     const dateKey = normaliseDateKey(item.created_at)
     const existing = salesByDate.get(dateKey) ?? { sales: 0, revenue: 0 }
     existing.sales += quantity
-    existing.revenue += vendorShare
+    existing.revenue += gross  // Revenue is gross sales per date
     salesByDate.set(dateKey, existing)
 
     recentActivity.push({
@@ -398,8 +400,8 @@ const buildFinancialSummary = (
 
   return {
     totalSales,
-    totalRevenue: Number(totalRevenue.toFixed(2)),
-    totalPayout: Number(totalRevenue.toFixed(2)),
+    totalRevenue: Number(totalRevenue.toFixed(2)),  // Gross sales
+    totalPayout: Number(totalPayout.toFixed(2)),  // Vendor share
     currency: DEFAULT_CURRENCY,
     salesByDate: chartData,
     recentActivity: activity,

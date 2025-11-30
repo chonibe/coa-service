@@ -74,14 +74,21 @@ export class STONE3PLClient {
    * @param trackingNumber - Optional tracking number to use as fallback
    */
   async getTracking(orderId: string, trackingNumber?: string): Promise<STONE3PLTrackingInfo> {
-    // Normalize order ID: ensure it has # prefix if it doesn't already have one
-    // Handle both numeric (1237) and alphanumeric (1260A) order IDs
-    const normalizedOrderId = orderId.startsWith('#') 
-      ? orderId 
-      : `#${orderId.trim()}`
+    const cleanedOrderId = orderId.trim()
+    const isAlphanumeric = /^[A-Za-z]/.test(cleanedOrderId.replace(/^#/, ''))
     
+    // For alphanumeric order IDs, try without # prefix first, then with # prefix
+    // For numeric order IDs, always use # prefix
+    const orderIdsToTry = isAlphanumeric && !cleanedOrderId.startsWith('#')
+      ? [cleanedOrderId, `#${cleanedOrderId}`]
+      : [cleanedOrderId.startsWith('#') ? cleanedOrderId : `#${cleanedOrderId}`]
+    
+    let lastError: Error | null = null
+    
+    for (const normalizedOrderId of orderIdsToTry) {
     console.log(`[STONE3PL] Fetching tracking for order: ${normalizedOrderId} (original: ${orderId})${trackingNumber ? `, tracking: ${trackingNumber}` : ''}`)
 
+      try {
     // Use order-track-list API which is more reliable
     const url = new URL(`${this.config.baseUrl}/order-track-list`)
     url.searchParams.set('order_ids', normalizedOrderId)
@@ -98,8 +105,9 @@ export class STONE3PLClient {
       const errorText = await response.text()
       // Handle 404 gracefully - tracking might not be available yet
       if (response.status === 404) {
-        console.log(`[STONE3PL] Tracking not found for order ${normalizedOrderId} (404) - this is normal if order hasn't been shipped yet`)
-        throw new Error(`Tracking not found for order ${orderId}`)
+            console.log(`[STONE3PL] Tracking not found for order ${normalizedOrderId} (404) - trying next format if available`)
+            lastError = new Error(`Tracking not found for order ${orderId}`)
+            continue // Try next format
       }
       console.error(`[STONE3PL] HTTP error ${response.status}:`, errorText)
       throw new Error(`STONE3PL API error: ${response.status} ${response.statusText}`)
@@ -110,17 +118,37 @@ export class STONE3PLClient {
     if (data.code !== 0) {
       // Handle case where order tracking doesn't exist yet
       if (data.code === 7004 || data.msg?.toLowerCase().includes('not found')) {
-        throw new Error(`Tracking not found for order ${orderId}`)
+            console.log(`[STONE3PL] Tracking not found for order ${normalizedOrderId} (code: ${data.code}) - trying next format if available`)
+            lastError = new Error(`Tracking not found for order ${orderId}`)
+            continue // Try next format
       }
       throw new Error(`STONE3PL API error: ${data.msg} (code: ${data.code})`)
     }
 
     if (!data.data || data.data.length === 0) {
-      throw new Error(`Tracking not found for order ${orderId}`)
+          console.log(`[STONE3PL] No tracking data for order ${normalizedOrderId} - trying next format if available`)
+          lastError = new Error(`Tracking not found for order ${orderId}`)
+          continue // Try next format
     }
 
-    // Return the first tracking result (should only be one for single order lookup)
-    return data.data[0]
+        // Success! Return the first tracking result
+        return data.data[0]
+      } catch (error: any) {
+        // If it's a "not found" error, try the next format
+        if (error.message?.includes('not found') || error.message?.includes('Tracking not found')) {
+          lastError = error
+          continue
+        }
+        // For other errors, throw immediately
+        throw error
+      }
+    }
+    
+    // All formats failed
+    if (lastError) {
+      throw lastError
+    }
+    throw new Error(`Tracking not found for order ${orderId}`)
   }
 
   /**

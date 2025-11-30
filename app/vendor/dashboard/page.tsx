@@ -59,7 +59,7 @@ export default function VendorDashboardPage() {
     salesByDate: [],
     salesByProduct: [],
     recentActivity: [],
-    currency: "GBP",
+    currency: "USD",
   })
 
   // Setup keyboard shortcuts
@@ -157,7 +157,7 @@ export default function VendorDashboardPage() {
         const statsData = await statsResponse.json()
         const analyticsData = await analyticsResponse.json()
 
-        const currency = statsData.currency || "GBP"
+        const currency = statsData.currency || "USD"
 
         setSalesData({
           totalSales: statsData.totalSales ?? 0,
@@ -181,9 +181,9 @@ export default function VendorDashboardPage() {
 
   // Format currency
   const formatCurrency = (amount: number, currency?: string) => {
-    return new Intl.NumberFormat("en-GB", {
+    return new Intl.NumberFormat("en-US", {
       style: "currency",
-      currency: currency || salesData.currency || "GBP",
+      currency: currency || salesData.currency || "USD",
       minimumFractionDigits: 2,
     }).format(amount)
   }
@@ -312,10 +312,6 @@ export default function VendorDashboardPage() {
           </Card>
 
           <Card className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-0 shadow-xl">
-            <CardHeader>
-              <CardTitle>Credit Banking</CardTitle>
-              <CardDescription>Manage your credits and unlock free perks</CardDescription>
-            </CardHeader>
             <CardContent>
               <BankingSection vendorName={vendorName} />
             </CardContent>
@@ -412,7 +408,7 @@ function BankingSection({ vendorName }: { vendorName: string }) {
   if (!collectorIdentifier) {
     return (
       <div className="text-center py-8 text-muted-foreground">
-        <p>Unable to load banking information</p>
+        <p>Unable to load account information</p>
       </div>
     )
   }

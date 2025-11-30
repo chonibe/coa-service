@@ -51,6 +51,7 @@ export async function GET(request: NextRequest) {
         .from("artwork_series_members")
         .select("submission_id, series_id")
         .in("series_id", vipSeriesIds)
+        .not("submission_id", "is", null)
 
       if (membersError) {
         console.error("Error fetching series members:", membersError)

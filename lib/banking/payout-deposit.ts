@@ -2,6 +2,7 @@ import { createClient } from '@/lib/supabase/server';
 import type { PayoutDepositResult } from './types';
 import { ensureCollectorAccount } from './account-manager';
 import { calculateLineItemPayout } from '@/lib/payout-calculator';
+import { convertGBPToUSD, convertNISToUSD } from '@/lib/utils';
 
 const DEFAULT_PAYOUT_PERCENTAGE = 25;
 
@@ -77,10 +78,10 @@ export async function depositPayoutEarnings(
       };
     }
 
-    // Get payout settings for this product
+    // Get line item and order currency
     const { data: lineItem } = await client
       .from('order_line_items_v2')
-      .select('product_id, price')
+      .select('product_id, price, order_id')
       .eq('line_item_id', lineItemId)
       .single();
 
@@ -93,6 +94,46 @@ export async function depositPayoutEarnings(
       };
     }
 
+    // Get order with currency and raw Shopify data to extract original price
+    const { data: order } = await client
+      .from('orders')
+      .select('currency_code, raw_shopify_order_data')
+      .eq('id', lineItem.order_id || orderId)
+      .single();
+
+    const orderCurrency = order?.currency_code || 'USD';
+    const currencyUpper = orderCurrency.toUpperCase();
+    const isGBP = currencyUpper === 'GBP';
+    const isNIS = currencyUpper === 'ILS' || currencyUpper === 'NIS';
+
+    // Get the original price (before discount) from Shopify order data
+    // Vendors should be paid based on full price, not discounted price
+    let originalPrice = Number(lineItemPrice) || Number(lineItem.price) || 0;
+    
+    // Try to extract original price from Shopify order data
+    if (order?.raw_shopify_order_data?.line_items) {
+      const shopifyLineItem = order.raw_shopify_order_data.line_items.find(
+        (item: any) => item.id.toString() === lineItemId
+      );
+      
+      if (shopifyLineItem) {
+        // Use original_price if available (price before any discounts)
+        if (shopifyLineItem.original_price) {
+          originalPrice = parseFloat(shopifyLineItem.original_price);
+        } else if (shopifyLineItem.discount_allocations && shopifyLineItem.discount_allocations.length > 0) {
+          // Calculate original price by adding back discounts
+          const totalDiscount = shopifyLineItem.discount_allocations.reduce(
+            (sum: number, disc: any) => sum + parseFloat(disc.amount || '0'), 
+            0
+          );
+          originalPrice = parseFloat(shopifyLineItem.price || '0') + totalDiscount;
+        } else {
+          // If no discounts, use the price as-is
+          originalPrice = parseFloat(shopifyLineItem.price || '0');
+        }
+      }
+    }
+
     // Get payout setting for this product
     const { data: payoutSetting } = await client
       .from('product_vendor_payouts')
@@ -101,9 +142,17 @@ export async function depositPayoutEarnings(
       .eq('vendor_name', vendorName)
       .maybeSingle();
 
-    // Calculate payout amount using the same logic as payout calculator
+    // Convert to USD if order currency is GBP or NIS
+    let priceForCalculation = originalPrice;
+    if (isGBP) {
+      priceForCalculation = convertGBPToUSD(originalPrice);
+    } else if (isNIS) {
+      priceForCalculation = convertNISToUSD(originalPrice);
+    }
+    
+    // Calculate payout amount using the original price (before discount)
     const payoutAmount = calculateLineItemPayout({
-      price: Number(lineItemPrice) || Number(lineItem.price) || 0,
+      price: priceForCalculation,
       payout_amount: payoutSetting?.payout_amount ?? null,
       is_percentage: payoutSetting?.is_percentage ?? null,
     });

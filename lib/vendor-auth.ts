@@ -19,6 +19,7 @@ const EMAIL_VENDOR_OVERRIDES: Record<
 
 export const POST_LOGIN_REDIRECT_COOKIE = "vendor_post_login_redirect"
 export const PENDING_VENDOR_EMAIL_COOKIE = "pending_vendor_email"
+export const REQUIRE_ACCOUNT_SELECTION_COOKIE = "require_account_selection"
 
 export const isAdminEmail = (email: string | null | undefined) => {
   if (!email) return false

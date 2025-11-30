@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server"
 import { cookies } from "next/headers"
 import { createClient as createRouteClient } from "@/lib/supabase-server"
-import { linkSupabaseUserToVendor, isAdminEmail } from "@/lib/vendor-auth"
+import { linkSupabaseUserToVendor, isAdminEmail, REQUIRE_ACCOUNT_SELECTION_COOKIE } from "@/lib/vendor-auth"
 import { buildVendorSessionCookie, clearVendorSessionCookie } from "@/lib/vendor-session"
 import {
   buildAdminSessionCookie,
@@ -64,6 +64,8 @@ export async function POST(request: Request) {
       response.cookies.set(clearAdminCookie.name, "", clearAdminCookie.options)
       const vendorCookie = buildVendorSessionCookie(vendor.vendor_name)
       response.cookies.set(vendorCookie.name, vendorCookie.value, vendorCookie.options)
+      // Clear account selection requirement flag after successful login
+      response.cookies.set(REQUIRE_ACCOUNT_SELECTION_COOKIE, "", { path: "/", maxAge: 0 })
       return response
     }
 

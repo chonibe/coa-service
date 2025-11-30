@@ -29,6 +29,10 @@ export function formatDate(date: Date | string, options?: Intl.DateTimeFormatOpt
 // Using a conservative exchange rate (can be updated or made dynamic)
 const GBP_TO_USD_RATE = 1.27
 
+// Currency conversion: NIS (ILS) to USD
+// Using a conservative exchange rate (can be updated or made dynamic)
+const NIS_TO_USD_RATE = 0.27
+
 /**
  * Converts GBP amount to USD
  * @param gbpAmount Amount in GBP
@@ -36,6 +40,15 @@ const GBP_TO_USD_RATE = 1.27
  */
 export function convertGBPToUSD(gbpAmount: number): number {
   return gbpAmount * GBP_TO_USD_RATE
+}
+
+/**
+ * Converts NIS (ILS) amount to USD
+ * @param nisAmount Amount in NIS/ILS
+ * @returns Amount in USD
+ */
+export function convertNISToUSD(nisAmount: number): number {
+  return nisAmount * NIS_TO_USD_RATE
 }
 
 /**

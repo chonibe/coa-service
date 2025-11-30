@@ -1,10 +1,11 @@
 "use client"
 
-import { motion } from "framer-motion"
+import { useState } from "react"
+import { motion, AnimatePresence } from "framer-motion"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Eye, Copy, Trash2, Lock, ArrowRight, Crown, Clock } from "lucide-react"
+import { Eye, Copy, Trash2, Lock, ArrowRight, Crown, Clock, MoreVertical } from "lucide-react"
 import { UnlockTypeTooltip } from "./UnlockTypeTooltip"
 import type { ArtworkSeries } from "@/types/artwork-series"
 import { cn } from "@/lib/utils"
@@ -74,6 +75,7 @@ export function SeriesCard({
   onDelete,
   getUnlockTypeLabel,
 }: SeriesCardProps) {
+  const [menuOpen, setMenuOpen] = useState(false)
   const totalCount = series.member_count || 0
   const config = unlockTypeConfig[series.unlock_type] || {
     gradient: "from-gray-500/20 to-slate-500/20",
@@ -90,8 +92,6 @@ export function SeriesCard({
       animate={{ opacity: 1, scale: 1 }}
       transition={{ delay: index * 0.05 }}
       className="group relative"
-      onMouseEnter={() => onHover(series.id)}
-      onMouseLeave={() => onHover(null)}
     >
       <Card
         className={cn(
@@ -128,47 +128,29 @@ export function SeriesCard({
             
             {/* Unlock type icon indicator */}
             <div className={cn(
-              "absolute top-3 right-3 z-10 p-2 rounded-full backdrop-blur-sm",
+              "absolute top-3 left-3 z-10 p-2 rounded-full backdrop-blur-sm",
               config.badgeBg,
               config.badgeColor
             )}>
               <Icon className="h-4 w-4" />
             </div>
 
-            {/* Hover overlay with actions */}
-            {isHovered && (
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                className="absolute inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center gap-2 z-10"
-                onClick={(e) => e.stopPropagation()}
+            {/* Three-dot menu button */}
+            <div 
+              className="absolute top-3 right-3 z-20"
+              onClick={(e) => {
+                e.stopPropagation()
+                setMenuOpen(true)
+              }}
               >
                 <Button
-                  variant="secondary"
+                variant="ghost"
                   size="sm"
-                  onClick={onView}
+                className="h-8 w-8 p-0 rounded-full bg-black/40 hover:bg-black/60 backdrop-blur-sm border border-white/20"
                 >
-                  <Eye className="h-4 w-4 mr-2" />
-                  View
+                <MoreVertical className="h-4 w-4 text-white" />
                 </Button>
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  onClick={onDuplicate}
-                >
-                  <Copy className="h-4 w-4 mr-2" />
-                  Duplicate
-                </Button>
-                <Button
-                  variant="destructive"
-                  size="sm"
-                  onClick={onDelete}
-                >
-                  <Trash2 className="h-4 w-4 mr-2" />
-                  Delete
-                </Button>
-              </motion.div>
-            )}
+            </div>
 
             {/* Series name overlay */}
             <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/90 via-black/70 to-transparent p-4 z-0">
@@ -206,6 +188,73 @@ export function SeriesCard({
           )}
         </motion.div>
       </Card>
+
+      {/* Slide-up menu */}
+      <AnimatePresence>
+        {menuOpen && (
+          <>
+            {/* Backdrop */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 bg-black/50 z-50"
+              onClick={() => setMenuOpen(false)}
+            />
+            {/* Menu */}
+            <motion.div
+              initial={{ y: "100%" }}
+              animate={{ y: 0 }}
+              exit={{ y: "100%" }}
+              transition={{ type: "spring", damping: 25, stiffness: 200 }}
+              className="fixed bottom-0 left-0 right-0 bg-background border-t rounded-t-2xl z-50 shadow-2xl"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="p-4">
+                {/* Handle bar */}
+                <div className="w-12 h-1 bg-muted-foreground/30 rounded-full mx-auto mb-4" />
+                
+                {/* Menu items */}
+                <div className="space-y-2">
+                  <Button
+                    variant="ghost"
+                    className="w-full justify-start h-12"
+                    onClick={() => {
+                      setMenuOpen(false)
+                      onView()
+                    }}
+                  >
+                    <Eye className="h-5 w-5 mr-3" />
+                    <span className="text-base">View Series</span>
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    className="w-full justify-start h-12"
+                    onClick={() => {
+                      setMenuOpen(false)
+                      onDuplicate()
+                    }}
+                  >
+                    <Copy className="h-5 w-5 mr-3" />
+                    <span className="text-base">Duplicate</span>
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    className="w-full justify-start h-12 text-destructive hover:text-destructive"
+                    onClick={() => {
+                      setMenuOpen(false)
+                      onDelete()
+                    }}
+                  >
+                    <Trash2 className="h-5 w-5 mr-3" />
+                    <span className="text-base">Delete</span>
+                  </Button>
+                </div>
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
     </motion.div>
   )
 }

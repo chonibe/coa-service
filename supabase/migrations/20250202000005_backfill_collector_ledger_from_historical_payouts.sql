@@ -21,6 +21,9 @@ DECLARE
   v_ledger_entry_id INTEGER;
   v_count INTEGER := 0;
   v_withdrawal_count INTEGER := 0;
+  v_price_usd DECIMAL;
+  v_gbp_to_usd_rate DECIMAL := 1.27; -- Match convertGBPToUSD rate from lib/utils.ts
+  v_nis_to_usd_rate DECIMAL := 0.27; -- Match convertNISToUSD rate from lib/utils.ts
 BEGIN
   RAISE NOTICE 'Starting backfill of collector ledger from historical payouts...';
 
@@ -38,9 +41,12 @@ BEGIN
       oli.product_id,
       oli.price,
       oli.fulfillment_status,
+      o.currency_code,
+      o.raw_shopify_order_data,
       COALESCE(pvp.payout_amount, 25) as payout_amount,
       COALESCE(pvp.is_percentage, true) as is_percentage
     FROM order_line_items_v2 oli
+    LEFT JOIN orders o ON oli.order_id = o.id
     LEFT JOIN product_vendor_payouts pvp 
       ON oli.product_id::TEXT = pvp.product_id::TEXT 
       AND oli.vendor_name = pvp.vendor_name
@@ -48,12 +54,17 @@ BEGIN
       oli.vendor_name IS NOT NULL
       AND oli.fulfillment_status = 'fulfilled'
       -- Exclude line items that already have ledger entries
+      -- Handle both TEXT and numeric line_item_id formats
       AND NOT EXISTS (
         SELECT 1 
         FROM collector_ledger_entries cle
-        WHERE cle.line_item_id = oli.line_item_id::TEXT
-          AND cle.transaction_type = 'payout_earned'
-          AND cle.currency = 'USD'
+        WHERE (
+          cle.line_item_id = oli.line_item_id::TEXT
+          OR cle.line_item_id = oli.line_item_id::BIGINT::TEXT
+          OR cle.line_item_id::BIGINT = oli.line_item_id::BIGINT
+        )
+        AND cle.transaction_type = 'payout_earned'
+        AND cle.currency = 'USD'
       )
   LOOP
     BEGIN
@@ -69,8 +80,8 @@ BEGIN
         CONTINUE;
       END IF;
 
-      -- Get collector identifier
-      v_collector_identifier := COALESCE(v_vendor.auth_id, v_vendor.vendor_name);
+      -- Get collector identifier (cast auth_id to TEXT if it exists)
+      v_collector_identifier := COALESCE(v_vendor.auth_id::TEXT, v_vendor.vendor_name);
 
       -- Ensure collector account exists
       INSERT INTO collector_accounts (collector_identifier, account_type, vendor_id, account_status)
@@ -78,11 +89,69 @@ BEGIN
       ON CONFLICT (collector_identifier) DO NOTHING;
 
       -- Calculate payout amount
-      IF v_line_item.is_percentage THEN
-        v_payout_amount := (COALESCE(v_line_item.price, 0)::DECIMAL * v_line_item.payout_amount::DECIMAL / 100);
-      ELSE
-        v_payout_amount := v_line_item.payout_amount::DECIMAL;
-      END IF;
+      -- Use original price (before discount) for payout calculation
+      -- Convert to USD only if order currency is GBP
+      DECLARE
+        v_order_currency TEXT;
+        v_original_price DECIMAL;
+        v_price_for_calc DECIMAL;
+        v_shopify_line_item JSONB;
+        v_discount_total DECIMAL := 0;
+      BEGIN
+        -- Get order currency (already in v_line_item.currency_code from JOIN)
+        v_order_currency := COALESCE(v_line_item.currency_code, 'USD');
+        
+        -- Try to get original price from Shopify order data (before discount)
+        v_original_price := COALESCE(v_line_item.price, 0)::DECIMAL;
+        
+        -- Extract original price from raw Shopify order data if available
+        IF v_line_item.raw_shopify_order_data IS NOT NULL 
+           AND v_line_item.raw_shopify_order_data->'line_items' IS NOT NULL THEN
+          -- Find the line item in the Shopify order data
+          FOR v_shopify_line_item IN 
+            SELECT * FROM jsonb_array_elements(v_line_item.raw_shopify_order_data->'line_items')
+            WHERE (jsonb_array_elements(v_line_item.raw_shopify_order_data->'line_items')->>'id')::TEXT = v_line_item.line_item_id::TEXT
+          LOOP
+            -- Use original_price if available, otherwise calculate from price + discounts
+            IF v_shopify_line_item->>'original_price' IS NOT NULL THEN
+              v_original_price := (v_shopify_line_item->>'original_price')::DECIMAL;
+              EXIT; -- Found the item, exit loop
+            ELSIF v_shopify_line_item->'discount_allocations' IS NOT NULL 
+                  AND jsonb_array_length(v_shopify_line_item->'discount_allocations') > 0 THEN
+              -- Calculate original price by adding back discounts
+              SELECT COALESCE(SUM((value->>'amount')::DECIMAL), 0)
+              INTO v_discount_total
+              FROM jsonb_array_elements(v_shopify_line_item->'discount_allocations') AS value;
+              
+              v_original_price := COALESCE((v_shopify_line_item->>'price')::DECIMAL, v_line_item.price) + v_discount_total;
+              EXIT; -- Found the item, exit loop
+            END IF;
+          END LOOP;
+        END IF;
+        
+        -- Convert to USD if currency is GBP or NIS (ILS)
+        IF UPPER(v_order_currency) = 'GBP' THEN
+          v_price_for_calc := v_original_price * v_gbp_to_usd_rate;
+        ELSIF UPPER(v_order_currency) IN ('ILS', 'NIS') THEN
+          v_price_for_calc := v_original_price * v_nis_to_usd_rate;
+        ELSE
+          v_price_for_calc := v_original_price;
+        END IF;
+        
+        -- Calculate payout based on original price (before discount)
+        IF v_line_item.is_percentage THEN
+          v_payout_amount := (v_price_for_calc * v_line_item.payout_amount::DECIMAL / 100);
+        ELSE
+          -- For fixed amounts, convert to USD if order was GBP or NIS
+          IF UPPER(v_order_currency) = 'GBP' THEN
+            v_payout_amount := v_line_item.payout_amount::DECIMAL * v_gbp_to_usd_rate;
+          ELSIF UPPER(v_order_currency) IN ('ILS', 'NIS') THEN
+            v_payout_amount := v_line_item.payout_amount::DECIMAL * v_nis_to_usd_rate;
+          ELSE
+            v_payout_amount := v_line_item.payout_amount::DECIMAL;
+          END IF;
+        END IF;
+      END;
 
       IF v_payout_amount <= 0 THEN
         RAISE NOTICE 'Skipping line item % - payout amount is zero or negative', v_line_item.line_item_id;
@@ -176,8 +245,8 @@ BEGIN
         CONTINUE;
       END IF;
 
-      -- Get collector identifier
-      v_collector_identifier := COALESCE(v_vendor.auth_id, v_vendor.vendor_name);
+      -- Get collector identifier (cast auth_id to TEXT if it exists)
+      v_collector_identifier := COALESCE(v_vendor.auth_id::TEXT, v_vendor.vendor_name);
 
       -- Ensure collector account exists
       INSERT INTO collector_accounts (collector_identifier, account_type, vendor_id, account_status)

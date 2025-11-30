@@ -7,6 +7,7 @@ import {
   isAdminEmail,
   POST_LOGIN_REDIRECT_COOKIE,
   PENDING_VENDOR_EMAIL_COOKIE,
+  REQUIRE_ACCOUNT_SELECTION_COOKIE,
 } from "@/lib/vendor-auth"
 import {
   buildAdminSessionCookie,
@@ -149,6 +150,9 @@ export async function GET(request: NextRequest) {
     
     // Delete pending vendor email cookie
     deleteCookie(redirectResponse, PENDING_VENDOR_EMAIL_COOKIE)
+    
+    // Clear account selection requirement flag after successful login
+    deleteCookie(redirectResponse, REQUIRE_ACCOUNT_SELECTION_COOKIE)
     
     // Verify cookie was set
     const cookieValue = redirectResponse.cookies.get(sessionCookie.name)?.value

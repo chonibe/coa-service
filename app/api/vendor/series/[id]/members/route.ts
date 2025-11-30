@@ -56,16 +56,75 @@ export async function GET(
       return NextResponse.json({ error: "Failed to fetch members" }, { status: 500 })
     }
 
-    // Enrich with artwork details
+    // Also check for series-level benefits
+    const { data: seriesBenefits } = await supabase
+      .from("product_benefits")
+      .select("hidden_series_id, vip_artwork_id, vip_series_id")
+      .eq("series_id", seriesId)
+      .is("product_id", null)
+
+    let seriesConnections: {
+      hidden_series?: { id: string; name: string } | null
+      vip_artwork?: { id: string; title: string } | null
+      vip_series?: { id: string; name: string } | null
+    } = {}
+
+    // Extract series-level connections
+    if (seriesBenefits && seriesBenefits.length > 0) {
+      for (const benefit of seriesBenefits) {
+        if (benefit.hidden_series_id) {
+          const { data: hiddenSeries } = await supabase
+            .from("artwork_series")
+            .select("id, name")
+            .eq("id", benefit.hidden_series_id)
+            .single()
+          if (hiddenSeries) {
+            seriesConnections.hidden_series = { id: hiddenSeries.id, name: hiddenSeries.name }
+          }
+        }
+        if (benefit.vip_artwork_id) {
+          const { data: vipArtwork } = await supabase
+            .from("vendor_product_submissions")
+            .select("id, product_data")
+            .eq("id", benefit.vip_artwork_id)
+            .single()
+          if (vipArtwork?.product_data) {
+            seriesConnections.vip_artwork = {
+              id: vipArtwork.id,
+              title: (vipArtwork.product_data as any).title || "Untitled"
+            }
+          }
+        }
+        if (benefit.vip_series_id) {
+          const { data: vipSeries } = await supabase
+            .from("artwork_series")
+            .select("id, name")
+            .eq("id", benefit.vip_series_id)
+            .single()
+          if (vipSeries) {
+            seriesConnections.vip_series = { id: vipSeries.id, name: vipSeries.name }
+          }
+        }
+      }
+    }
+
+    // Enrich with artwork details and benefits
     const enrichedMembers = await Promise.all(
       (members || []).map(async (member) => {
         let artworkTitle = ""
         let artworkImage = ""
+        let hasBenefits = false
+        let benefitCount = 0
+        let connections: {
+          hidden_series?: { id: string; name: string } | null
+          vip_artwork?: { id: string; title: string } | null
+          vip_series?: { id: string; name: string } | null
+        } = {}
 
         if (member.submission_id) {
           const { data: submission } = await supabase
             .from("vendor_product_submissions")
-            .select("product_data")
+            .select("product_data, shopify_product_id")
             .eq("id", member.submission_id)
             .single()
 
@@ -73,6 +132,133 @@ export async function GET(
             artworkTitle = (submission.product_data as any).title || ""
             const images = (submission.product_data as any).images || []
             artworkImage = images[0]?.src || ""
+            
+            // Check for benefits in product_data (for unpublished artworks)
+            const productDataBenefits = (submission.product_data as any)?.benefits || []
+            const productDataBenefitCount = productDataBenefits.filter((b: any) => !b.is_series_level).length
+            
+            // Extract connection data from product_data benefits
+            for (const benefit of productDataBenefits) {
+              if (benefit.hidden_series_id) {
+                const { data: hiddenSeries } = await supabase
+                  .from("artwork_series")
+                  .select("id, name")
+                  .eq("id", benefit.hidden_series_id)
+                  .single()
+                if (hiddenSeries) {
+                  connections.hidden_series = { id: hiddenSeries.id, name: hiddenSeries.name }
+                }
+              }
+              if (benefit.vip_artwork_id) {
+                const { data: vipArtwork } = await supabase
+                  .from("vendor_product_submissions")
+                  .select("id, product_data")
+                  .eq("id", benefit.vip_artwork_id)
+                  .single()
+                if (vipArtwork?.product_data) {
+                  connections.vip_artwork = {
+                    id: vipArtwork.id,
+                    title: (vipArtwork.product_data as any).title || "Untitled"
+                  }
+                }
+              }
+              if (benefit.vip_series_id) {
+                const { data: vipSeries } = await supabase
+                  .from("artwork_series")
+                  .select("id, name")
+                  .eq("id", benefit.vip_series_id)
+                  .single()
+                if (vipSeries) {
+                  connections.vip_series = { id: vipSeries.id, name: vipSeries.name }
+                }
+              }
+            }
+            
+            // Check for benefits in database (for published artworks)
+            let dbBenefitCount = 0
+            if (submission.shopify_product_id) {
+              const { data: dbBenefits } = await supabase
+                .from("product_benefits")
+                .select("id, hidden_series_id, vip_artwork_id, vip_series_id")
+                .eq("product_id", submission.shopify_product_id)
+              
+              if (dbBenefits && dbBenefits.length > 0) {
+                dbBenefitCount = dbBenefits.length
+                
+                // Extract connection data from database benefits
+                for (const benefit of dbBenefits) {
+                  if (benefit.hidden_series_id) {
+                    const { data: hiddenSeries } = await supabase
+                      .from("artwork_series")
+                      .select("id, name")
+                      .eq("id", benefit.hidden_series_id)
+                      .single()
+                    if (hiddenSeries) {
+                      connections.hidden_series = { id: hiddenSeries.id, name: hiddenSeries.name }
+                    }
+                  }
+                  if (benefit.vip_artwork_id) {
+                    const { data: vipArtwork } = await supabase
+                      .from("vendor_product_submissions")
+                      .select("id, product_data")
+                      .eq("id", benefit.vip_artwork_id)
+                      .single()
+                    if (vipArtwork?.product_data) {
+                      connections.vip_artwork = {
+                        id: vipArtwork.id,
+                        title: (vipArtwork.product_data as any).title || "Untitled"
+                      }
+                    }
+                  }
+                  if (benefit.vip_series_id) {
+                    const { data: vipSeries } = await supabase
+                      .from("artwork_series")
+                      .select("id, name")
+                      .eq("id", benefit.vip_series_id)
+                      .single()
+                    if (vipSeries) {
+                      connections.vip_series = { id: vipSeries.id, name: vipSeries.name }
+                    }
+                  }
+                }
+              }
+            }
+            
+            // Merge with series-level connections
+            if (seriesConnections.hidden_series) {
+              connections.hidden_series = seriesConnections.hidden_series
+            }
+            if (seriesConnections.vip_artwork) {
+              connections.vip_artwork = seriesConnections.vip_artwork
+            }
+            if (seriesConnections.vip_series) {
+              connections.vip_series = seriesConnections.vip_series
+            }
+            
+            // Use whichever has more benefits (should be same, but handle both cases)
+            const totalBenefitCount = Math.max(productDataBenefitCount, dbBenefitCount)
+            // Also count series-level benefits
+            const seriesBenefitCount = seriesBenefits?.length || 0
+            const finalBenefitCount = totalBenefitCount + seriesBenefitCount
+            if (finalBenefitCount > 0) {
+              hasBenefits = true
+              benefitCount = finalBenefitCount
+            }
+          }
+        } else {
+          // Even without submission, check for series-level connections
+          if (seriesConnections.hidden_series) {
+            connections.hidden_series = seriesConnections.hidden_series
+          }
+          if (seriesConnections.vip_artwork) {
+            connections.vip_artwork = seriesConnections.vip_artwork
+          }
+          if (seriesConnections.vip_series) {
+            connections.vip_series = seriesConnections.vip_series
+          }
+          if (seriesBenefits && seriesBenefits.length > 0) {
+            hasBenefits = true
+            benefitCount = seriesBenefits.length
           }
         }
 
@@ -80,6 +266,9 @@ export async function GET(
           ...member,
           artwork_title: artworkTitle,
           artwork_image: artworkImage,
+          has_benefits: hasBenefits,
+          benefit_count: benefitCount,
+          connections: Object.keys(connections).length > 0 ? connections : undefined,
         }
       })
     )

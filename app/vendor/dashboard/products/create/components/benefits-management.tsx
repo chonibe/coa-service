@@ -21,12 +21,8 @@ import { HiddenSeriesForm } from "./benefits/hidden-series-form"
 import { BehindScenesForm } from "./benefits/behind-scenes-form"
 import { DigitalContentForm } from "./benefits/digital-content-form"
 import { ArtistCommentaryForm } from "./benefits/artist-commentary-form"
-import { ExclusiveAccessForm } from "./benefits/exclusive-access-form"
-import { DiscountForm } from "./benefits/discount-form"
-import { VIPArtworkUnlockForm } from "./benefits/vip-artwork-unlock-form"
-import { CreditsBonusForm } from "./benefits/credits-bonus-form"
+import { VIPUnlockForm } from "./benefits/vip-unlock-form"
 import { EarlyDropAccessForm } from "./benefits/early-drop-access-form"
-import { ExclusiveVisibilityForm } from "./benefits/exclusive-visibility-form"
 
 interface BenefitsManagementProps {
   benefits: ProductBenefit[]
@@ -72,12 +68,6 @@ export function BenefitsManagement({
       if (lowerName.includes("digital") || lowerName.includes("content")) {
         return iconMap.FileText
       }
-      if (lowerName.includes("exclusive") && lowerName.includes("access")) {
-        return iconMap.Key
-      }
-      if (lowerName.includes("discount")) {
-        return iconMap.Percent
-      }
       if (lowerName.includes("behind") || lowerName.includes("scenes")) {
         return iconMap.Eye
       }
@@ -117,6 +107,16 @@ export function BenefitsManagement({
     const fetchBenefitTypes = async () => {
       try {
         setLoadingTypes(true)
+        
+        // First, ensure benefit types are up to date
+        try {
+          await fetch("/api/benefits/update-types", { method: "POST" })
+        } catch (error) {
+          // Silently fail - types might already be updated
+          console.log("Benefit types update skipped or already up to date")
+        }
+        
+        // Then fetch the updated types
         const response = await fetch("/api/benefits/types")
         if (response.ok) {
           const data = await response.json()
@@ -201,9 +201,9 @@ export function BenefitsManagement({
       isSeriesLevel: benefit.is_series_level || false,
       hiddenSeriesId: (benefit as any).hidden_series_id || null,
       vipArtworkId: (benefit as any).vip_artwork_id || null,
+      vipSeriesId: (benefit as any).vip_series_id || null,
       creditsAmount: (benefit as any).credits_amount || null,
       dropDate: formatDateForInput((benefit as any).drop_date),
-      exclusiveVisibilitySeriesId: (benefit as any).exclusive_visibility_series_id || null,
     })
     setShowDescription(!!benefit.description)
     setShowLinkCode(!!(benefit.content_url || benefit.access_code))
@@ -225,9 +225,9 @@ export function BenefitsManagement({
       isSeriesLevel: false,
       hiddenSeriesId: null,
       vipArtworkId: null,
+      vipSeriesId: null,
       creditsAmount: null,
       dropDate: null,
-      exclusiveVisibilitySeriesId: null,
     })
     setShowDescription(false)
     setShowLinkCode(false)
@@ -250,9 +250,9 @@ export function BenefitsManagement({
       is_series_level: formData.isSeriesLevel && !!seriesId,
       ...(formData.hiddenSeriesId && { hidden_series_id: formData.hiddenSeriesId }),
       ...(formData.vipArtworkId && { vip_artwork_id: formData.vipArtworkId }),
+      ...(formData.vipSeriesId && { vip_series_id: formData.vipSeriesId }),
       ...(formData.creditsAmount && { credits_amount: formData.creditsAmount }),
       ...(formData.dropDate && { drop_date: formData.dropDate }),
-      ...(formData.exclusiveVisibilitySeriesId && { exclusive_visibility_series_id: formData.exclusiveVisibilitySeriesId }),
     }
 
     const updatedBenefits = [...benefits]
@@ -306,9 +306,9 @@ export function BenefitsManagement({
         expiresAt: formData.expiresAt,
         hiddenSeriesId: formData.hiddenSeriesId,
         vipArtworkId: formData.vipArtworkId,
+        vipSeriesId: formData.vipSeriesId,
         creditsAmount: formData.creditsAmount,
         dropDate: formData.dropDate,
-        exclusiveVisibilitySeriesId: formData.exclusiveVisibilitySeriesId,
       },
       setFormData: (data: any) => {
         // Merge the new data with existing formData
@@ -332,23 +332,11 @@ export function BenefitsManagement({
     if (typeName.includes("commentary") || typeName.includes("artist")) {
       return <ArtistCommentaryForm {...commonProps} />
     }
-    if (typeName.includes("exclusive") || typeName.includes("access")) {
-      return <ExclusiveAccessForm {...commonProps} />
-    }
-    if (typeName.includes("vip") && typeName.includes("artwork")) {
-      return <VIPArtworkUnlockForm {...commonProps} />
-    }
-    if (typeName.includes("credits") || typeName.includes("bonus")) {
-      return <CreditsBonusForm {...commonProps} />
+    if (typeName.includes("vip")) {
+      return <VIPUnlockForm {...commonProps} />
     }
     if (typeName.includes("early") && typeName.includes("drop")) {
       return <EarlyDropAccessForm {...commonProps} />
-    }
-    if (typeName.includes("exclusive") && typeName.includes("visibility")) {
-      return <ExclusiveVisibilityForm {...commonProps} />
-    }
-    if (typeName.includes("discount")) {
-      return <DiscountForm {...commonProps} />
     }
 
     // Default fallback - use digital content form
@@ -502,9 +490,6 @@ export function BenefitsManagement({
 
   return (
     <div className="space-y-4">
-      {showGuide && benefits.length === 0 && (
-        <BenefitsGuide onDismiss={() => setShowGuide(false)} />
-      )}
 
       <div className="flex items-center justify-between">
         <div>

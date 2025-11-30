@@ -30,7 +30,8 @@ import {
   ArrowUpDown,
   MoreVertical,
   CheckCircle,
-  Package
+  Package,
+  Tags
 } from 'lucide-react'
 import {
   Dialog,
@@ -269,6 +270,43 @@ export default function ManageLinksPage() {
       })
     } finally {
       setIsDeleting(false)
+    }
+  }
+
+  const [isCreatingLabels, setIsCreatingLabels] = useState(false)
+  const [labelCreationLink, setLabelCreationLink] = useState<TrackingLink | null>(null)
+
+  const handleBulkCreateLabels = async (link: TrackingLink) => {
+    try {
+      setIsCreatingLabels(true)
+      setLabelCreationLink(link)
+      
+      const response = await fetch('/api/admin/bulk-create-labels', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token: link.token }),
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.message || 'Failed to create labels')
+      }
+
+      toast({
+        title: "Labels Created",
+        description: `Created ${data.summary.labelsCreated} labels and assigned ${data.summary.ordersAssigned} orders.`,
+      })
+    } catch (err: any) {
+      console.error('Error creating labels:', err)
+      toast({
+        title: "Error",
+        description: err.message || "Failed to create labels.",
+        variant: "destructive",
+      })
+    } finally {
+      setIsCreatingLabels(false)
+      setLabelCreationLink(null)
     }
   }
 
@@ -636,6 +674,19 @@ export default function ManageLinksPage() {
                     onClick={() => handleEditClick(link)}
                   >
                     <Edit className="h-3 w-3" />
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleBulkCreateLabels(link)}
+                    disabled={isCreatingLabels && labelCreationLink?.id === link.id}
+                    title="Bulk create labels for all orders"
+                  >
+                    {isCreatingLabels && labelCreationLink?.id === link.id ? (
+                      <RefreshCw className="h-3 w-3 animate-spin" />
+                    ) : (
+                      <Tags className="h-3 w-3" />
+                    )}
                   </Button>
                   <Button
                     variant="outline"

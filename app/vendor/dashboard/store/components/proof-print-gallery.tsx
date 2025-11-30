@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { Skeleton } from "@/components/ui/skeleton"
+import { Badge } from "@/components/ui/badge"
 import { ArtworkCard } from "./artwork-card"
 import { useToast } from "@/components/ui/use-toast"
 
@@ -23,6 +24,26 @@ export function ProofPrintGallery() {
 
   useEffect(() => {
     fetchArtworks()
+    
+    // Check if we should highlight a specific artwork
+    if (typeof window !== 'undefined') {
+      const highlightId = sessionStorage.getItem('highlightArtwork')
+      if (highlightId) {
+        sessionStorage.removeItem('highlightArtwork')
+        // Scroll to the artwork after a short delay
+        setTimeout(() => {
+          const element = document.querySelector(`[data-artwork-id="${highlightId}"]`)
+          if (element) {
+            element.scrollIntoView({ behavior: 'smooth', block: 'center' })
+            // Add a highlight effect
+            element.classList.add('ring-2', 'ring-primary', 'ring-offset-2')
+            setTimeout(() => {
+              element.classList.remove('ring-2', 'ring-primary', 'ring-offset-2')
+            }, 2000)
+          }
+        }, 500)
+      }
+    }
   }, [])
 
   const fetchArtworks = async () => {
@@ -77,21 +98,57 @@ export function ProofPrintGallery() {
       <div className="text-center py-12">
         <p className="text-muted-foreground">No artworks available for proof prints</p>
         <p className="text-sm text-muted-foreground mt-2">
-          Submit and get your artworks approved to order proof prints
+          Submit your artworks to make them available for proof print orders
         </p>
       </div>
     )
   }
 
+  // Separate artworks by status for better organization
+  const pendingArtworks = artworks.filter(a => a.status === "pending")
+  const approvedArtworks = artworks.filter(a => a.status === "approved" || a.status === "published")
+
   return (
-    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-      {artworks.map((artwork) => (
-        <ArtworkCard
-          key={artwork.id}
-          artwork={artwork}
-          onPurchaseSuccess={handlePurchaseSuccess}
-        />
-      ))}
+    <div className="space-y-6">
+      {pendingArtworks.length > 0 && (
+        <div>
+          <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+            <span>Pending Approval</span>
+            <Badge variant="secondary" className="text-xs">
+              {pendingArtworks.length}
+            </Badge>
+          </h3>
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            {pendingArtworks.map((artwork) => (
+              <ArtworkCard
+                key={artwork.id}
+                artwork={artwork}
+                onPurchaseSuccess={handlePurchaseSuccess}
+              />
+            ))}
+          </div>
+        </div>
+      )}
+
+      {approvedArtworks.length > 0 && (
+        <div>
+          <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+            <span>Approved Artworks</span>
+            <Badge variant="default" className="text-xs">
+              {approvedArtworks.length}
+            </Badge>
+          </h3>
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            {approvedArtworks.map((artwork) => (
+              <ArtworkCard
+                key={artwork.id}
+                artwork={artwork}
+                onPurchaseSuccess={handlePurchaseSuccess}
+              />
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   )
 }

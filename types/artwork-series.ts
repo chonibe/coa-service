@@ -103,6 +103,13 @@ export interface SeriesMember {
   unlocked_at?: string | null
   artwork_title?: string // Join data
   artwork_image?: string // Join data
+  has_benefits?: boolean // Whether artwork has benefits/treasures
+  benefit_count?: number // Number of benefits/treasures
+  connections?: {
+    hidden_series?: { id: string; name: string } | null
+    vip_artwork?: { id: string; title: string } | null
+    vip_series?: { id: string; name: string } | null
+  } // Circular connections from treasures
 }
 
 export interface SeriesFormData {

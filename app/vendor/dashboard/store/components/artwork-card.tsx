@@ -43,7 +43,7 @@ export function ArtworkCard({ artwork, onPurchaseSuccess }: ArtworkCardProps) {
 
   return (
     <>
-      <Card className="overflow-hidden">
+      <Card className="overflow-hidden" data-artwork-id={artwork.id}>
         <div className="relative h-48 w-full bg-muted">
           {artwork.imageUrl ? (
             <img
@@ -58,12 +58,31 @@ export function ArtworkCard({ artwork, onPurchaseSuccess }: ArtworkCardProps) {
           )}
         </div>
         <CardHeader>
-          <div className="flex items-start justify-between">
-            <CardTitle className="text-lg line-clamp-2">{artwork.title}</CardTitle>
-            <Badge variant="secondary">{artwork.status}</Badge>
+          <div className="flex items-start justify-between gap-2">
+            <CardTitle className="text-lg line-clamp-2 flex-1">{artwork.title}</CardTitle>
+            <Badge 
+              variant={
+                artwork.status === "published" ? "default" :
+                artwork.status === "approved" ? "default" :
+                artwork.status === "pending" ? "secondary" :
+                "outline"
+              }
+              className="shrink-0"
+            >
+              {artwork.status === "pending" ? "Pending Approval" : 
+               artwork.status === "approved" ? "Approved" :
+               artwork.status === "published" ? "Published" :
+               artwork.status}
+            </Badge>
           </div>
           <CardDescription>
-            Proof prints ordered: {artwork.proofPrintsOrdered} / 2
+            {artwork.status === "pending" ? (
+              <span className="text-amber-600 dark:text-amber-400">
+                Awaiting approval • Proof prints available
+              </span>
+            ) : (
+              `Proof prints ordered: ${artwork.proofPrintsOrdered} / 2`
+            )}
           </CardDescription>
         </CardHeader>
         <CardContent>

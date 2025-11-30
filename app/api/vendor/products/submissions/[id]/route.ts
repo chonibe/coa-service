@@ -55,6 +55,10 @@ export async function GET(
           expires_at: b.expires_at,
           is_series_level: false,
           hidden_series_id: b.hidden_series_id || null,
+          vip_artwork_id: b.vip_artwork_id || null,
+          vip_series_id: b.vip_series_id || null,
+          credits_amount: b.credits_amount || null,
+          drop_date: b.drop_date || null,
         }))
       }
     }
@@ -81,6 +85,10 @@ export async function GET(
           expires_at: b.expires_at,
           is_series_level: true,
           hidden_series_id: b.hidden_series_id || null,
+          vip_artwork_id: b.vip_artwork_id || null,
+          vip_series_id: b.vip_series_id || null,
+          credits_amount: b.credits_amount || null,
+          drop_date: b.drop_date || null,
         }))
         existingBenefits = [...existingBenefits, ...seriesLevelBenefits]
       }
@@ -322,9 +330,9 @@ export async function PUT(
                 expires_at: benefit.expires_at || null,
                 hidden_series_id: (benefit as any).hidden_series_id || null,
                 vip_artwork_id: (benefit as any).vip_artwork_id || null,
+                vip_series_id: (benefit as any).vip_series_id || null,
                 credits_amount: (benefit as any).credits_amount || null,
                 drop_date: (benefit as any).drop_date || null,
-                exclusive_visibility_series_id: (benefit as any).exclusive_visibility_series_id || null,
                 updated_at: new Date().toISOString(),
               })
               .eq("id", benefit.id)
@@ -343,9 +351,9 @@ export async function PUT(
               starts_at: benefit.starts_at || null,
               expires_at: benefit.expires_at || null,
               vip_artwork_id: (benefit as any).vip_artwork_id || null,
+              vip_series_id: (benefit as any).vip_series_id || null,
               credits_amount: (benefit as any).credits_amount || null,
               drop_date: (benefit as any).drop_date || null,
-              exclusive_visibility_series_id: (benefit as any).exclusive_visibility_series_id || null,
               created_at: new Date().toISOString(),
               updated_at: new Date().toISOString(),
             })
@@ -411,6 +419,33 @@ export async function DELETE(
         },
         { status: 400 },
       )
+    }
+
+    // Check if artwork has any sales - if it does, prevent deletion
+    if (submission.shopify_product_id) {
+      const { count: salesCount, error: salesError } = await supabase
+        .from("order_line_items_v2")
+        .select("*", { count: "exact", head: true })
+        .eq("product_id", submission.shopify_product_id)
+        .eq("status", "active")
+
+      if (salesError) {
+        console.error("Error checking for sales:", salesError)
+        return NextResponse.json(
+          { error: "Failed to check sales", message: salesError.message },
+          { status: 500 },
+        )
+      }
+
+      if (salesCount && salesCount > 0) {
+        return NextResponse.json(
+          {
+            error: "Cannot delete artwork",
+            message: "This artwork cannot be deleted because it has sold at least one item. Artworks with sales cannot be deleted.",
+          },
+          { status: 400 },
+        )
+      }
     }
 
     // Delete the submission

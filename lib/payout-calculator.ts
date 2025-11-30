@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server"
 import type { SupabaseClient } from "@supabase/supabase-js"
 import type { Database } from "@/types/supabase"
+import { convertGBPToUSD, convertNISToUSD } from "@/lib/utils"
 
 const DEFAULT_PAYOUT_PERCENTAGE = 25
 
@@ -84,35 +85,94 @@ export async function calculateOrderPayout(
     const { data, error } = await client.rpc("get_vendor_payout_by_order", {
       p_vendor_name: vendorName,
       p_order_id: orderId,
-    })
+    } as any) as { data: any[] | null; error: any }
 
     if (error) {
       console.error("Error calculating order payout:", error)
       return null
     }
 
-    if (!data || data.length === 0) {
+    if (!data || !Array.isArray(data) || data.length === 0) {
       return null
     }
 
-    const orderData = data[0]
+    const orderData = data[0] as any
 
-    // Transform line items from JSONB to typed array
-    const lineItems: LineItemPayout[] = Array.isArray(orderData.line_items)
-      ? orderData.line_items.map((item: any) => ({
+    // Get order currency and raw Shopify data
+    const { data: order } = await client
+      .from('orders')
+      .select('currency_code, raw_shopify_order_data')
+      .eq('id', orderId)
+      .single()
+
+    const orderCurrency = (order as any)?.currency_code || 'USD'
+    const isGBP = orderCurrency.toUpperCase() === 'GBP'
+    const isNIS = orderCurrency.toUpperCase() === 'ILS' || orderCurrency.toUpperCase() === 'NIS'
+
+    // Transform line items with original prices and currency conversion
+    const lineItems: LineItemPayout[] = await Promise.all(
+      (Array.isArray(orderData.line_items) ? orderData.line_items : []).map(async (item: any) => {
+        // Get original price from Shopify order data (before discount)
+        let originalPrice = Number(item.price)
+        
+        if ((order as any)?.raw_shopify_order_data?.line_items) {
+          const shopifyLineItem = (order as any).raw_shopify_order_data.line_items.find(
+            (li: any) => li.id.toString() === item.line_item_id
+          )
+          
+          if (shopifyLineItem) {
+            // Use original_price if available
+            if (shopifyLineItem.original_price) {
+              originalPrice = parseFloat(shopifyLineItem.original_price)
+            } else if (shopifyLineItem.discount_allocations && shopifyLineItem.discount_allocations.length > 0) {
+              // Calculate original price by adding back discounts
+              const totalDiscount = shopifyLineItem.discount_allocations.reduce(
+                (sum: number, disc: any) => sum + parseFloat(disc.amount || '0'),
+                0
+              )
+              originalPrice = parseFloat(shopifyLineItem.price || '0') + totalDiscount
+            } else {
+              originalPrice = parseFloat(shopifyLineItem.price || '0')
+            }
+          }
+        }
+
+        // Convert to USD if needed
+        let priceForCalculation = originalPrice
+        if (isGBP) {
+          priceForCalculation = convertGBPToUSD(originalPrice)
+        } else if (isNIS) {
+          priceForCalculation = convertNISToUSD(originalPrice)
+        }
+
+        // Recalculate payout amount using original price and converted currency
+        const payoutPercentage = item.payout_percentage ?? DEFAULT_PAYOUT_PERCENTAGE
+        const isPercentage = item.payout_percentage !== null
+        const recalculatedPayoutAmount = isPercentage
+          ? (priceForCalculation * payoutPercentage) / 100
+          : (isGBP ? convertGBPToUSD(payoutPercentage) : isNIS ? convertNISToUSD(payoutPercentage) : payoutPercentage)
+
+        return {
           line_item_id: item.line_item_id,
           order_id: orderData.order_id,
           order_name: orderData.order_name,
           product_id: item.product_id,
           product_title: item.product_title,
-          price: Number(item.price),
-          payout_percentage: item.payout_percentage ?? DEFAULT_PAYOUT_PERCENTAGE,
-          payout_amount: Number(item.payout_amount),
-          is_percentage: item.payout_percentage !== null,
+          price: priceForCalculation, // Use converted price
+          payout_percentage: payoutPercentage,
+          payout_amount: recalculatedPayoutAmount, // Recalculated with original price and conversion
+          is_percentage: isPercentage,
           fulfillment_status: item.fulfillment_status,
           is_paid: Boolean(item.is_paid),
-        }))
-      : []
+        }
+      })
+    )
+
+    // Recalculate order totals
+    const orderTotal = lineItems.reduce((sum, item) => sum + item.price, 0)
+    const payoutAmount = lineItems
+      .filter((item) => !item.is_paid)
+      .reduce((sum, item) => sum + item.payout_amount, 0)
 
     return {
       order_id: orderData.order_id,
@@ -122,8 +182,8 @@ export async function calculateOrderPayout(
       fulfilled_line_items: orderData.fulfilled_line_items,
       paid_line_items: orderData.paid_line_items,
       pending_line_items: orderData.pending_line_items,
-      order_total: Number(orderData.order_total),
-      payout_amount: Number(orderData.payout_amount),
+      order_total: orderTotal, // Recalculated with converted prices
+      payout_amount: payoutAmount, // Recalculated with original prices and conversion
       line_items: lineItems,
     }
   } catch (error) {
@@ -146,14 +206,14 @@ export async function calculateVendorPayout(
     const { data, error } = await client.rpc("get_vendor_payout_by_order", {
       p_vendor_name: vendorName,
       p_order_id: options.orderId || null,
-    })
+    } as any) as { data: any[] | null; error: any }
 
     if (error) {
       console.error("Error calculating vendor payout:", error)
       return null
     }
 
-    if (!data || data.length === 0) {
+    if (!data || !Array.isArray(data) || data.length === 0) {
       return {
         vendor_name: vendorName,
         total_orders: 0,
@@ -167,37 +227,105 @@ export async function calculateVendorPayout(
       }
     }
 
-    // Filter orders if needed
-    let orders = data.map((orderData: any) => {
-      const lineItems: LineItemPayout[] = Array.isArray(orderData.line_items)
-        ? orderData.line_items.map((item: any) => ({
-            line_item_id: item.line_item_id,
-            order_id: orderData.order_id,
-            order_name: orderData.order_name,
-            product_id: item.product_id,
-            product_title: item.product_title,
-            price: Number(item.price),
-            payout_percentage: item.payout_percentage ?? DEFAULT_PAYOUT_PERCENTAGE,
-            payout_amount: Number(item.payout_amount),
-            is_percentage: item.payout_percentage !== null,
-            fulfillment_status: item.fulfillment_status,
-            is_paid: Boolean(item.is_paid),
-          }))
-        : []
+    // Get all unique order IDs to fetch order currency and original prices
+    const orderIds = [...new Set((data as any[]).map((orderData: any) => orderData.order_id))]
+    const { data: ordersData } = await client
+      .from('orders')
+      .select('id, currency_code, raw_shopify_order_data')
+      .in('id', orderIds)
 
-      return {
-        order_id: orderData.order_id,
-        order_name: orderData.order_name,
-        order_date: orderData.order_date,
-        total_line_items: orderData.total_line_items,
-        fulfilled_line_items: orderData.fulfilled_line_items,
-        paid_line_items: orderData.paid_line_items,
-        pending_line_items: orderData.pending_line_items,
-        order_total: Number(orderData.order_total),
-        payout_amount: Number(orderData.payout_amount),
-        line_items: lineItems,
-      }
-    })
+    const ordersMap = new Map(
+      (ordersData || []).map((order: any) => [order.id, order])
+    )
+
+    // Filter orders if needed and apply currency conversion + original prices
+    let orders = await Promise.all(
+      (data as any[]).map(async (orderData: any) => {
+        const orderInfo = ordersMap.get(orderData.order_id) as any
+        const orderCurrency = orderInfo?.currency_code || 'USD'
+        const isGBP = orderCurrency.toUpperCase() === 'GBP'
+        const isNIS = orderCurrency.toUpperCase() === 'ILS' || orderCurrency.toUpperCase() === 'NIS'
+
+        // Process line items with original prices and currency conversion
+        const lineItems: LineItemPayout[] = await Promise.all(
+          (Array.isArray(orderData.line_items) ? orderData.line_items : []).map(async (item: any) => {
+            // Get original price from Shopify order data (before discount)
+            let originalPrice = Number(item.price)
+            
+        const orderInfo = ordersMap.get(orderData.order_id) as any
+        if (orderInfo?.raw_shopify_order_data?.line_items) {
+          const shopifyLineItem = orderInfo.raw_shopify_order_data.line_items.find(
+            (li: any) => li.id.toString() === item.line_item_id
+          )
+              
+              if (shopifyLineItem) {
+                // Use original_price if available
+                if (shopifyLineItem.original_price) {
+                  originalPrice = parseFloat(shopifyLineItem.original_price)
+                } else if (shopifyLineItem.discount_allocations && shopifyLineItem.discount_allocations.length > 0) {
+                  // Calculate original price by adding back discounts
+                  const totalDiscount = shopifyLineItem.discount_allocations.reduce(
+                    (sum: number, disc: any) => sum + parseFloat(disc.amount || '0'),
+                    0
+                  )
+                  originalPrice = parseFloat(shopifyLineItem.price || '0') + totalDiscount
+                } else {
+                  originalPrice = parseFloat(shopifyLineItem.price || '0')
+                }
+              }
+            }
+
+            // Convert to USD if needed
+            let priceForCalculation = originalPrice
+            if (isGBP) {
+              priceForCalculation = convertGBPToUSD(originalPrice)
+            } else if (isNIS) {
+              priceForCalculation = convertNISToUSD(originalPrice)
+            }
+
+            // Recalculate payout amount using original price and converted currency
+            const payoutPercentage = item.payout_percentage ?? DEFAULT_PAYOUT_PERCENTAGE
+            const isPercentage = item.payout_percentage !== null
+            const recalculatedPayoutAmount = isPercentage
+              ? (priceForCalculation * payoutPercentage) / 100
+              : (isGBP ? convertGBPToUSD(payoutPercentage) : isNIS ? convertNISToUSD(payoutPercentage) : payoutPercentage)
+
+            return {
+              line_item_id: item.line_item_id,
+              order_id: orderData.order_id,
+              order_name: orderData.order_name,
+              product_id: item.product_id,
+              product_title: item.product_title,
+              price: priceForCalculation, // Use converted price
+              payout_percentage: payoutPercentage,
+              payout_amount: recalculatedPayoutAmount, // Recalculated with original price and conversion
+              is_percentage: isPercentage,
+              fulfillment_status: item.fulfillment_status,
+              is_paid: Boolean(item.is_paid),
+            }
+          })
+        )
+
+        // Recalculate order totals
+        const orderTotal = lineItems.reduce((sum, item) => sum + item.price, 0)
+        const payoutAmount = lineItems
+          .filter((item) => !item.is_paid)
+          .reduce((sum, item) => sum + item.payout_amount, 0)
+
+        return {
+          order_id: orderData.order_id,
+          order_name: orderData.order_name,
+          order_date: orderData.order_date,
+          total_line_items: orderData.total_line_items,
+          fulfilled_line_items: orderData.fulfilled_line_items,
+          paid_line_items: orderData.paid_line_items,
+          pending_line_items: orderData.pending_line_items,
+          order_total: orderTotal, // Recalculated with converted prices
+          payout_amount: payoutAmount, // Recalculated with original prices and conversion
+          line_items: lineItems,
+        }
+      })
+    )
 
     // Filter by fulfillment status if specified
     if (options.fulfillmentStatus === "fulfilled") {
@@ -217,12 +345,12 @@ export async function calculateVendorPayout(
 
     // Calculate totals
     const total_orders = orders.length
-    const total_line_items = orders.reduce((sum, order) => sum + order.total_line_items, 0)
-    const fulfilled_line_items = orders.reduce((sum, order) => sum + order.fulfilled_line_items, 0)
-    const paid_line_items = orders.reduce((sum, order) => sum + order.paid_line_items, 0)
-    const pending_line_items = orders.reduce((sum, order) => sum + order.pending_line_items, 0)
-    const total_revenue = orders.reduce((sum, order) => sum + order.order_total, 0)
-    const total_payout_amount = orders.reduce((sum, order) => sum + order.payout_amount, 0)
+    const total_line_items = orders.reduce((sum: number, order: OrderPayout) => sum + order.total_line_items, 0)
+    const fulfilled_line_items = orders.reduce((sum: number, order: OrderPayout) => sum + order.fulfilled_line_items, 0)
+    const paid_line_items = orders.reduce((sum: number, order: OrderPayout) => sum + order.paid_line_items, 0)
+    const pending_line_items = orders.reduce((sum: number, order: OrderPayout) => sum + order.pending_line_items, 0)
+    const total_revenue = orders.reduce((sum: number, order: OrderPayout) => sum + order.order_total, 0)
+    const total_payout_amount = orders.reduce((sum: number, order: OrderPayout) => sum + order.payout_amount, 0)
 
     return {
       vendor_name: vendorName,
@@ -253,14 +381,14 @@ export async function getPendingLineItems(
   try {
     const { data, error } = await client.rpc("get_vendor_pending_line_items", {
       p_vendor_name: vendorName,
-    })
+    } as any) as { data: any[] | null; error: any }
 
     if (error) {
       console.error("Error fetching pending line items:", error)
       return []
     }
 
-    if (!data) {
+    if (!data || !Array.isArray(data)) {
       return []
     }
 

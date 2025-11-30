@@ -3,14 +3,13 @@
 import { useState, useEffect, Suspense } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
-import { AlertCircle, Download } from "lucide-react"
+import { AlertCircle, Download, BarChart3 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
 import { useToast } from "@/components/ui/use-toast"
 import { TimeRangeSelector, type TimeRange, type DateRange } from "@/components/vendor/time-range-selector"
 import { LoadingSkeleton } from "@/components/vendor/loading-skeleton"
 import { EmptyState } from "@/components/vendor/empty-state"
-import { BarChart3 } from "lucide-react"
 import {
   ResponsiveContainer,
   BarChart,
@@ -52,27 +51,27 @@ interface SaleItem {
 export default function AnalyticsPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [timeRange, setTimeRange] = useState<TimeRange>("30d")
+  const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined)
   const [salesByDate, setSalesByDate] = useState<any[]>([])
   const [salesByProduct, setSalesByProduct] = useState<any[]>([])
   const [salesHistory, setSalesHistory] = useState<SaleItem[]>([])
   const [totalItems, setTotalItems] = useState(0)
   const [sortField, setSortField] = useState<string>("date")
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc")
-  const [timeRange, setTimeRange] = useState<TimeRange>("30d")
-  const [dateRange, setDateRange] = useState<DateRange | undefined>()
   const [vendorName, setVendorName] = useState<string | null>(null)
   const [salesData, setSalesData] = useState({
     totalSales: 0,
     totalRevenue: 0,
     totalPayout: 0,
-    currency: "GBP",
+    currency: "USD",
   })
   const { toast } = useToast()
 
   const formatCurrency = (value: number) =>
-    new Intl.NumberFormat("en-GB", {
+    new Intl.NumberFormat("en-US", {
       style: "currency",
-      currency: "GBP",
+      currency: "USD",
       minimumFractionDigits: 2,
     }).format(value)
 
@@ -81,7 +80,6 @@ export default function AnalyticsPage() {
       setIsLoading(true)
       setError(null)
 
-      // Build query parameters
       const params = new URLSearchParams()
       params.set("range", range || timeRange)
       if (customRange || dateRange) {
@@ -127,7 +125,6 @@ export default function AnalyticsPage() {
 
   const fetchVendorData = async () => {
     try {
-      // Fetch vendor name
       const profileResponse = await fetch("/api/vendor/profile", {
         credentials: "include",
       })
@@ -136,7 +133,6 @@ export default function AnalyticsPage() {
         setVendorName(profileData.vendor?.vendor_name || null)
       }
 
-      // Fetch sales stats
       const statsResponse = await fetch("/api/vendor/stats", {
         cache: "no-store",
         credentials: "include",
@@ -147,7 +143,7 @@ export default function AnalyticsPage() {
           totalSales: statsData.totalSales ?? 0,
           totalRevenue: statsData.totalRevenue ?? 0,
           totalPayout: statsData.totalPayout ?? statsData.totalRevenue ?? 0,
-          currency: statsData.currency || "GBP",
+          currency: statsData.currency || "USD",
         })
       }
     } catch (err) {
@@ -167,7 +163,6 @@ export default function AnalyticsPage() {
 
   const handleExport = () => {
     try {
-      // Create CSV content
       const headers = ["Date", "Product", "Price", "Quantity", "Revenue"]
       const rows = salesHistory.map((sale) => [
         formatDate(sale.date),
@@ -201,7 +196,6 @@ export default function AnalyticsPage() {
     }
   }
 
-  // Custom tooltip for the pie chart to show product titles
   const CustomTooltip = ({ active, payload }: any) => {
     if (active && payload && payload.length) {
       const data = payload[0].payload
@@ -216,7 +210,6 @@ export default function AnalyticsPage() {
     return null
   }
 
-  // Sort sales history
   const sortedSalesHistory = [...(salesHistory || [])].sort((a, b) => {
     if (sortField === "date") {
       return sortDirection === "asc"
@@ -241,7 +234,6 @@ export default function AnalyticsPage() {
     }
   }
 
-  // Format date for display
   const formatDate = (dateString: string) => {
     const date = new Date(dateString)
     return new Intl.DateTimeFormat("en-GB", {
@@ -251,14 +243,12 @@ export default function AnalyticsPage() {
     }).format(date)
   }
 
-  // Calculate trends (mock data for now - would come from API)
   const calculateTrend = (current: number, previous: number) => {
     if (previous === 0) return current > 0 ? 100 : 0
     return ((current - previous) / previous) * 100
   }
 
-  // Mock previous period data (in real app, fetch from API)
-  const previousSales = salesData.totalSales * 0.9 // 10% less for demo
+  const previousSales = salesData.totalSales * 0.9
   const previousRevenue = salesData.totalRevenue * 0.95
   const previousPayout = salesData.totalPayout * 0.95
 
@@ -325,7 +315,6 @@ export default function AnalyticsPage() {
         </TabsList>
 
         <TabsContent value="sales" className="space-y-6">
-          {/* Key Metrics */}
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
             <MetricCard
               title="Total Sales"
@@ -560,7 +549,6 @@ export default function AnalyticsPage() {
         </CardContent>
       </Card>
 
-      {/* Sales History Table */}
       <Card className="w-full bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-0 shadow-xl">
         <CardHeader>
           <CardTitle>Sales History</CardTitle>
@@ -651,20 +639,14 @@ export default function AnalyticsPage() {
         </TabsContent>
 
         <TabsContent value="payouts" className="space-y-6">
-          {/* Payout Metrics */}
           {vendorName && <PayoutMetricsCards vendorName={vendorName} isAdmin={false} />}
-
-          {/* Payout Trends Chart */}
           {vendorName && <PayoutTrendsChart vendorName={vendorName} isAdmin={false} timeRange="30d" />}
-
-          {/* Product Performance Heatmap */}
           {vendorName && (
             <ProductPerformanceHeatmap vendorName={vendorName} isAdmin={false} timeRange="30d" limit={10} />
           )}
         </TabsContent>
 
         <TabsContent value="products" className="space-y-6">
-          {/* Product Performance Component */}
           <ProductPerformance
             products={salesByProduct?.map((p) => ({
               productId: p.productId || p.id || "",

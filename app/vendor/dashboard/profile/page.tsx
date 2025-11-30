@@ -96,6 +96,7 @@ const COUNTRIES = [
 ]
 
 export default function VendorProfilePage() {
+  const router = useRouter()
   const [profile, setProfile] = useState<VendorProfile | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
@@ -114,7 +115,6 @@ export default function VendorProfilePage() {
     tax: false,
   })
   const { toast } = useToast()
-  const router = useRouter()
   const fileInputRef = useRef<HTMLInputElement>(null)
   const dropZoneRef = useRef<HTMLDivElement>(null)
   const autoSaveTimeoutRef = useRef<NodeJS.Timeout | null>(null)

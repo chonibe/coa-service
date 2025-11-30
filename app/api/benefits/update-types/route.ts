@@ -5,11 +5,11 @@ export async function POST() {
   try {
     const supabase = createClient()
 
-    // Remove Physical Item and Virtual Event
+    // Remove Physical Item, Virtual Event, Exclusive Access, Discount, Credits Bonus, and Exclusive Visibility
     await supabase
       .from("benefit_types")
       .delete()
-      .in("name", ["Physical Item", "Virtual Event"])
+      .in("name", ["Physical Item", "Virtual Event", "Exclusive Access", "Discount", "Credits Bonus", "Exclusive Visibility"])
 
     // Add new circular benefit types
     const newTypes = [
@@ -20,23 +20,13 @@ export async function POST() {
       },
       {
         name: "VIP Artwork Unlock",
-        description: "Unlock a specific artwork from a VIP series",
+        description: "Unlock a specific artwork or entire series from a VIP collection",
         icon: "crown",
-      },
-      {
-        name: "Credits Bonus",
-        description: "Grant credits towards next artwork or series purchase",
-        icon: "coins",
       },
       {
         name: "Early Drop Access",
         description: "Get early access to the next drop date before public release",
         icon: "clock",
-      },
-      {
-        name: "Exclusive Visibility",
-        description: "See series or artwork only visible to perk holders",
-        icon: "eye",
       },
     ]
 
@@ -57,23 +47,9 @@ export async function POST() {
     await supabase
       .from("benefit_types")
       .update({
-        description: "Early or exclusive access to content, products, or features that connect to your artwork ecosystem",
-      })
-      .eq("name", "Exclusive Access")
-
-    await supabase
-      .from("benefit_types")
-      .update({
         description: "Behind-the-scenes content showing your artistic process and journey",
       })
       .eq("name", "Behind the Scenes")
-
-    await supabase
-      .from("benefit_types")
-      .update({
-        description: "Special discounts on future purchases to encourage repeat collecting",
-      })
-      .eq("name", "Discount")
 
     return NextResponse.json({
       success: true,

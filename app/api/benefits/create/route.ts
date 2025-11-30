@@ -18,9 +18,9 @@ export async function POST(request: NextRequest) {
       starts_at,
       expires_at,
       vip_artwork_id,
+      vip_series_id,
       credits_amount,
       drop_date,
-      exclusive_visibility_series_id,
     } = body
 
     // Validate: either product_id OR series_id must be provided (not both)
@@ -57,9 +57,9 @@ export async function POST(request: NextRequest) {
         starts_at: starts_at || null,
         expires_at: expires_at || null,
         vip_artwork_id: vip_artwork_id || null,
+        vip_series_id: vip_series_id || null,
         credits_amount: credits_amount || null,
         drop_date: drop_date || null,
-        exclusive_visibility_series_id: exclusive_visibility_series_id || null,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       })
