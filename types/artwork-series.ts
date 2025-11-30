@@ -20,6 +20,49 @@ export interface UnlockConfig {
   rules?: any[] // For custom logic
 }
 
+// Journey Milestone System Types
+export type CompletionType = 'all_sold' | 'percentage_sold' | 'manual'
+
+export interface MilestoneConfig {
+  completion_type: CompletionType
+  completion_threshold?: number // For percentage_sold
+  auto_complete: boolean
+}
+
+export interface JourneyPosition {
+  x: number
+  y: number
+  level?: number // Depth/tier in journey
+  island_group?: string // Grouping for visual organization
+}
+
+export interface CompletionProgress {
+  total_artworks: number
+  sold_artworks: number
+  percentage_complete: number
+}
+
+export interface JourneyMapSettings {
+  id: string
+  vendor_id: number
+  map_style: 'island' | 'timeline' | 'level' | 'custom'
+  background_image_url?: string | null
+  theme_colors?: Record<string, any>
+  default_series_position?: JourneyPosition
+  created_at: string
+  updated_at: string
+}
+
+export interface SeriesCompletionHistory {
+  id: string
+  series_id: string
+  vendor_id: number
+  completed_at: string
+  completion_type: string
+  final_stats: CompletionProgress
+  created_at: string
+}
+
 export interface ArtworkSeries {
   id: string
   vendor_id: number
@@ -38,6 +81,15 @@ export interface ArtworkSeries {
   genre_tags?: string[] | null // Series categorization tags
   unlock_progress?: Record<string, any> | null // Track collector progress
   unlock_milestones?: Array<{ milestone: string; achieved_at: string; collector_id?: string }> | null // Achievement markers
+  // Journey Milestone System fields
+  milestone_config?: MilestoneConfig | null
+  journey_position?: JourneyPosition | null
+  completed_at?: string | null
+  completion_progress?: CompletionProgress | null
+  connected_series_ids?: string[] | null
+  unlocks_series_ids?: string[] | null
+  is_milestone?: boolean | null
+  milestone_order?: number | null
 }
 
 export interface SeriesMember {

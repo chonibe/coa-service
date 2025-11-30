@@ -24,6 +24,7 @@ import { DuplicateSeriesDialog } from "../components/DuplicateSeriesDialog"
 import { UnlockTypeTooltip } from "../components/UnlockTypeTooltip"
 import { UnlockCountdown } from "../components/UnlockCountdown"
 import { VIPBadge } from "../components/VIPBadge"
+import { CompletionProgress } from "../components/CompletionProgress"
 import { Copy, Trash2 } from "lucide-react"
 
 export default function SeriesDetailPage() {
@@ -36,6 +37,7 @@ export default function SeriesDetailPage() {
   const [members, setMembers] = useState<SeriesMember[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [completionData, setCompletionData] = useState<any>(null)
   const [isEditing, setIsEditing] = useState(false)
   const [saving, setSaving] = useState(false)
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
@@ -52,6 +54,7 @@ export default function SeriesDetailPage() {
   useEffect(() => {
     if (seriesId) {
       fetchSeriesDetails()
+      fetchCompletionProgress()
     }
   }, [seriesId])
 
@@ -81,6 +84,20 @@ export default function SeriesDetailPage() {
       setError(err.message || "Failed to load series")
     } finally {
       setLoading(false)
+    }
+  }
+
+  const fetchCompletionProgress = async () => {
+    try {
+      const response = await fetch(`/api/vendor/series/${seriesId}/completion`, {
+        credentials: "include",
+      })
+      if (response.ok) {
+        const data = await response.json()
+        setCompletionData(data)
+      }
+    } catch (err: any) {
+      console.error("Error fetching completion progress:", err)
     }
   }
 
@@ -488,6 +505,15 @@ export default function SeriesDetailPage() {
           )}
         </div>
       </div>
+
+      {/* Completion Progress */}
+      {completionData?.progress && (
+        <CompletionProgress
+          progress={completionData.progress}
+          milestoneConfig={completionData.milestoneConfig}
+          completedAt={completionData.completedAt}
+        />
+      )}
 
       {/* Artwork Collection */}
       <Card>
