@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import { motion, AnimatePresence } from "framer-motion"
-import { Lock, Check, GripVertical, Sparkles } from "lucide-react"
+import { Lock, Check, GripVertical } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { cn } from "@/lib/utils"
 import type { SeriesMember } from "@/types/artwork-series"
