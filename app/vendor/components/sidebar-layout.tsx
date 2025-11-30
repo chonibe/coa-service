@@ -4,6 +4,7 @@ import { VendorSidebar } from "./vendor-sidebar"
 import { PullToRefresh } from "@/components/pull-to-refresh"
 import { Breadcrumb } from "./breadcrumb"
 import { ImpersonationBanner } from "./impersonation-banner"
+import { PageOnboardingWizard } from "./page-onboarding-wizard"
 
 interface SidebarLayoutProps {
   children: ReactNode
@@ -34,6 +35,9 @@ export function SidebarLayout({ children }: SidebarLayoutProps) {
           </main>
         </PullToRefresh>
       </div>
+      
+      {/* Contextual onboarding wizard */}
+      <PageOnboardingWizard />
     </div>
   )
 }
