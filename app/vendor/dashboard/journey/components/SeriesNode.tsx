@@ -9,8 +9,8 @@ import { cn } from "@/lib/utils"
 interface SeriesNodeProps {
   series: ArtworkSeries
   position: { x: number; y: number }
-  nodeWidth: number
-  nodeHeight: number
+  gridSize: number
+  cardSize: number
   containerRef?: React.RefObject<HTMLDivElement>
   onDragStart: () => void
   onDragEnd: (position: { x: number; y: number }) => void
@@ -20,8 +20,8 @@ interface SeriesNodeProps {
 export function SeriesNode({
   series,
   position,
-  nodeWidth,
-  nodeHeight,
+  gridSize,
+  cardSize,
   containerRef,
   onDragStart,
   onDragEnd,
@@ -53,6 +53,10 @@ export function SeriesNode({
     }
   }
 
+  // Center card in grid square
+  const offsetX = (gridSize - cardSize) / 2
+  const offsetY = (gridSize - cardSize) / 2
+
   return (
     <motion.div
       className={cn(
@@ -60,10 +64,10 @@ export function SeriesNode({
         isDragging && "z-50 cursor-grabbing"
       )}
       style={{
-        left: `${position.x}px`,
-        top: `${position.y}px`,
-        width: `${nodeWidth}px`,
-        height: `${nodeHeight}px`,
+        left: `${position.x + offsetX}px`,
+        top: `${position.y + offsetY}px`,
+        width: `${cardSize}px`,
+        height: `${cardSize}px`,
       }}
       onMouseDown={handleMouseDown}
       onMouseUp={handleMouseUp}
@@ -73,68 +77,60 @@ export function SeriesNode({
           onClick()
         }
       }}
-      whileHover={{ scale: 1.02 }}
-      whileTap={{ scale: 0.98 }}
+      whileHover={{ scale: 1.05 }}
+      whileTap={{ scale: 0.95 }}
     >
-      {/* Flowchart Node Box */}
+      {/* Card */}
       <div
         className={cn(
-          "relative w-full h-full rounded-lg border-2 shadow-lg transition-all",
-          "bg-card overflow-hidden flex flex-col",
+          "relative w-full h-full rounded-lg border-2 shadow-md transition-all",
+          "bg-card overflow-hidden",
           isCompleted && "border-green-500 bg-green-50/50 dark:bg-green-950/50",
           isInProgress && "border-blue-500 bg-blue-50/50 dark:bg-blue-950/50",
           !isCompleted && !isInProgress && "border-border bg-card",
-          "hover:shadow-xl hover:border-primary"
+          "hover:shadow-lg hover:border-primary"
         )}
       >
         {/* Thumbnail */}
-        <div className="relative h-20 w-full overflow-hidden">
-          {series.thumbnail_url ? (
-            <img
-              src={series.thumbnail_url}
-              alt={series.name}
-              className="w-full h-full object-cover"
-            />
-          ) : (
-            <div className="w-full h-full flex items-center justify-center bg-muted">
-              <MapPin className="h-8 w-8 text-muted-foreground" />
-            </div>
-          )}
-        </div>
-
-        {/* Content */}
-        <div className="flex-1 p-2 flex flex-col justify-between">
-          {/* Series Name */}
-          <h3 className="font-semibold text-sm line-clamp-1 mb-1">{series.name}</h3>
-          
-          {/* Progress Info */}
-          {series.completion_progress && (
-            <div className="text-xs text-muted-foreground">
-              {series.completion_progress.sold_artworks} / {series.completion_progress.total_artworks}
-            </div>
-          )}
-        </div>
+        {series.thumbnail_url ? (
+          <img
+            src={series.thumbnail_url}
+            alt={series.name}
+            className="w-full h-full object-cover"
+          />
+        ) : (
+          <div className="w-full h-full flex items-center justify-center bg-muted">
+            <MapPin className="h-8 w-8 text-muted-foreground" />
+          </div>
+        )}
 
         {/* Status Indicator */}
-        <div className="absolute top-2 right-2">
+        <div className="absolute top-1 right-1">
           {isCompleted ? (
-            <div className="h-3 w-3 rounded-full bg-green-500 border-2 border-background shadow-sm" />
+            <div className="h-3 w-3 rounded-full bg-green-500 border border-background shadow-sm" />
           ) : isInProgress ? (
-            <div className="h-3 w-3 rounded-full bg-blue-500 border-2 border-background shadow-sm" />
+            <div className="h-3 w-3 rounded-full bg-blue-500 border border-background shadow-sm" />
           ) : (
-            <div className="h-3 w-3 rounded-full bg-muted-foreground/30 border-2 border-background" />
+            <div className="h-3 w-3 rounded-full bg-muted-foreground/30 border border-background" />
           )}
         </div>
 
         {/* Progress Bar */}
         {isInProgress && (
-          <div className="absolute bottom-0 left-0 right-0 h-1.5 bg-muted/50">
+          <div className="absolute bottom-0 left-0 right-0 h-1 bg-muted/50">
             <div
               className="h-full bg-blue-500 transition-all"
               style={{ width: `${progress}%` }}
             />
           </div>
         )}
+
+        {/* Series Name Tooltip */}
+        <div className="absolute -bottom-8 left-1/2 transform -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap">
+          <div className="bg-background border rounded px-2 py-1 text-xs font-medium shadow-lg">
+            {series.name}
+          </div>
+        </div>
       </div>
     </motion.div>
   )
