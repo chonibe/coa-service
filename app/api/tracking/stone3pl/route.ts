@@ -64,13 +64,12 @@ export async function GET(request: NextRequest) {
         // Try to get tracking number from query params if available
         const trackingNumber = searchParams.get('tracking_number') || undefined
         
-        // Check if orderId looks invalid (like "Simply36a") and we have a tracking number
-        const isInvalidOrderId = orderId.toLowerCase().includes('simply') || !orderId.match(/^#?[A-Za-z0-9]+$/)
-        
         let actualOrderId = orderId
-        if (isInvalidOrderId && trackingNumber) {
-          // Try to find the order by tracking number to get the correct Platform Order No.
-          console.log('[STONE3PL API] Order ID looks invalid, searching for order by tracking number:', trackingNumber)
+        
+        // If we have a tracking number, use it to find the correct Platform Order No. (sys_order_id)
+        // that STONE3PL recognizes, as the provided order_id might not match what STONE3PL expects
+        if (trackingNumber) {
+          console.log('[STONE3PL API] Looking up order by tracking number to find Platform Order No.:', trackingNumber)
           try {
             const { createChinaDivisionClient } = await import('@/lib/chinadivision/client')
             const chinaClient = createChinaDivisionClient()
@@ -87,19 +86,21 @@ export async function GET(request: NextRequest) {
             )
             
             if (foundOrder) {
-              // Use order_id (Platform Order No.) if available, otherwise sys_order_id
-              actualOrderId = foundOrder.order_id || foundOrder.sys_order_id || orderId
+              // sys_order_id is the Platform Order No. that STONE3PL uses
+              // Prefer sys_order_id over order_id as it's what STONE3PL recognizes
+              actualOrderId = foundOrder.sys_order_id || foundOrder.order_id || orderId
               console.log('[STONE3PL API] Found order by tracking number:', {
                 trackingNumber,
+                providedOrderId: orderId,
                 foundOrderId: foundOrder.order_id,
                 foundSysOrderId: foundOrder.sys_order_id,
                 usingOrderId: actualOrderId
               })
             } else {
-              console.warn('[STONE3PL API] Could not find order by tracking number:', trackingNumber)
+              console.warn('[STONE3PL API] Could not find order by tracking number, using provided order_id:', trackingNumber, orderId)
             }
           } catch (lookupError) {
-            console.warn('[STONE3PL API] Failed to lookup order by tracking number:', lookupError)
+            console.warn('[STONE3PL API] Failed to lookup order by tracking number, using provided order_id:', lookupError)
             // Continue with original orderId
           }
         }
