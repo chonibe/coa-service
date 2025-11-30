@@ -23,6 +23,8 @@ import {
   horizontalListSortingStrategy,
 } from "@dnd-kit/sortable"
 import { CSS } from "@dnd-kit/utilities"
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
+import { Link2, Crown } from "lucide-react"
 
 interface ArtworkCarouselProps {
   members: SeriesMember[]
