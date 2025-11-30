@@ -61,7 +61,7 @@ export default function TrackOrdersPage() {
   const [error, setError] = useState<string | null>(null)
   const [selectedOrder, setSelectedOrder] = useState<ChinaDivisionOrderInfo | null>(null)
   const [isDetailsOpen, setIsDetailsOpen] = useState(false)
-  const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set(['items', 'recipient', 'tracking']))
+  const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set(['recipient', 'tracking']))
   
   const toggleSection = (section: string) => {
     setExpandedSections(prev => {
@@ -1780,7 +1780,7 @@ export default function TrackOrdersPage() {
                         >
                           <div className="flex items-center gap-1.5 sm:gap-2">
                             <Icon size="sm"><EnvelopeIcon className="h-3.5 w-3.5 sm:h-4 sm:w-4" /></Icon>
-                            Recipient Information
+                            {selectedOrder.first_name} {selectedOrder.last_name}
                           </div>
                           <Icon size="sm">
                             {expandedSections.has('recipient') ? (
@@ -1793,9 +1793,11 @@ export default function TrackOrdersPage() {
                         {expandedSections.has('recipient') && (
                           <div className="text-xs sm:text-sm space-y-1 pl-5 sm:pl-6">
                             <div className="space-y-1 text-slate-700 dark:text-slate-300">
-                              <p>
-                                <span className="font-medium">Name:</span> {selectedOrder.first_name} {selectedOrder.last_name}
-                              </p>
+                              {selectedOrder.ship_email && (
+                                <p>
+                                  <span className="font-medium">Email:</span> {selectedOrder.ship_email}
+                                </p>
+                              )}
                               {selectedOrder.ship_email && (
                                 <p>
                                   <span className="font-medium">Email:</span> {selectedOrder.ship_email}

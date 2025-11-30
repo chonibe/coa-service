@@ -141,6 +141,7 @@ This application provides several key functionalities:
 
 #### Vendor Pages
 
+- `/app/join-vendor/page.tsx`: Artist vendor landing page (open call)
 - `/app/vendor/login/page.tsx`: Vendor login
 - `/app/vendor/dashboard/page.tsx`: Vendor dashboard
 - `/app/vendor/dashboard/products/page.tsx`: Vendor products
