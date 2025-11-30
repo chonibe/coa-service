@@ -212,15 +212,15 @@ function SortableTrackItem({
                 )}
               </DropdownMenuContent>
             </DropdownMenu>
-          </div>
-        )}
+            </div>
+          )}
         </div>
         <div className="flex items-center gap-2 mt-1">
-          {member.unlock_order && (
+        {member.unlock_order && (
             <p className="text-xs text-muted-foreground">
-              Unlock order: {member.unlock_order}
-            </p>
-          )}
+            Unlock order: {member.unlock_order}
+          </p>
+        )}
           {member.has_benefits && (
             <p className="text-xs text-purple-600 dark:text-purple-400">
               {member.benefit_count === 1 ? "1 treasure" : `${member.benefit_count} treasures`}

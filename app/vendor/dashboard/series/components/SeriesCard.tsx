@@ -142,14 +142,14 @@ export function SeriesCard({
                 e.stopPropagation()
                 setMenuOpen(true)
               }}
-            >
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-8 w-8 p-0 rounded-full bg-black/40 hover:bg-black/60 backdrop-blur-sm border border-white/20"
               >
+                <Button
+                variant="ghost"
+                  size="sm"
+                className="h-8 w-8 p-0 rounded-full bg-black/40 hover:bg-black/60 backdrop-blur-sm border border-white/20"
+                >
                 <MoreVertical className="h-4 w-4 text-white" />
-              </Button>
+                </Button>
             </div>
 
             {/* Series name overlay */}

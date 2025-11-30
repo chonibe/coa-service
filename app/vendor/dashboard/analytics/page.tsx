@@ -90,9 +90,9 @@ export default function AnalyticsPage() {
         }
       }
 
-      const response = await fetch(`/api/vendor/sales-analytics?${params.toString()}`, {
-        credentials: "include",
-      })
+          const response = await fetch(`/api/vendor/sales-analytics?${params.toString()}`, {
+            credentials: "include",
+          })
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}))
@@ -264,18 +264,18 @@ export default function AnalyticsPage() {
             dateRange={dateRange}
             onChange={handleTimeRangeChange}
           />
-          {salesHistory.length > 0 && (
-            <Button 
-              onClick={handleExport} 
-              variant="outline" 
-              size="sm"
-              aria-label="Export sales data to CSV"
-              className="min-h-[44px] focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
-            >
-              <Download className="mr-2 h-4 w-4" aria-hidden="true" />
-              Export CSV
-            </Button>
-          )}
+              {salesHistory.length > 0 && (
+                <Button 
+                  onClick={handleExport} 
+                  variant="outline" 
+                  size="sm"
+                  aria-label="Export sales data to CSV"
+                  className="min-h-[44px] focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+                >
+                  <Download className="mr-2 h-4 w-4" aria-hidden="true" />
+                  Export CSV
+                </Button>
+              )}
         </div>
       </div>
 
@@ -357,135 +357,135 @@ export default function AnalyticsPage() {
           </div>
 
           <Card className="w-full bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-0 shadow-xl">
-            <CardHeader>
-              <CardTitle>Sales Over Time</CardTitle>
-              <CardDescription>Monthly sales and revenue trends</CardDescription>
-            </CardHeader>
-            <CardContent>
-              {isLoading ? (
-                <LoadingSkeleton variant="chart" />
-              ) : salesByDate.length > 0 ? (
-                <ResponsiveContainer width="100%" height={300}>
-                  <BarChart
-                    data={salesByDate}
-                    margin={{
-                      top: 5,
-                      right: 30,
-                      left: 20,
-                      bottom: 5,
-                    }}
-                  >
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="month" />
-                    <YAxis yAxisId="left" orientation="left" stroke="#3b82f6" />
-                    <YAxis yAxisId="right" orientation="right" stroke="#6366f1" />
-                    <Tooltip
-                      formatter={(value, name) => {
-                        if (name === "Revenue (£)") {
-                          return [formatCurrency(Number(value)), "Revenue (£)"]
-                        }
-                        return [value, name]
-                      }}
-                    />
-                    <Legend
-                      payload={[
-                        { value: "Sales (Units)", type: "square", color: "#3b82f6" },
-                        { value: "Revenue (£)", type: "square", color: "#6366f1" },
-                      ]}
-                    />
-                    <Bar yAxisId="left" dataKey="sales" fill="#3b82f6" name="Sales (Units)" />
-                    <Bar yAxisId="right" dataKey="revenue" fill="#6366f1" name="Revenue (£)" />
-                  </BarChart>
-                </ResponsiveContainer>
-              ) : (
-                <div className="flex items-center justify-center h-[300px]">
-                  <p className="text-muted-foreground">No sales data available</p>
-                </div>
-              )}
-            </CardContent>
-          </Card>
+        <CardHeader>
+          <CardTitle>Sales Over Time</CardTitle>
+          <CardDescription>Monthly sales and revenue trends</CardDescription>
+        </CardHeader>
+        <CardContent>
+          {isLoading ? (
+            <LoadingSkeleton variant="chart" />
+          ) : salesByDate.length > 0 ? (
+            <ResponsiveContainer width="100%" height={300}>
+              <BarChart
+                data={salesByDate}
+                margin={{
+                  top: 5,
+                  right: 30,
+                  left: 20,
+                  bottom: 5,
+                }}
+              >
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="month" />
+                <YAxis yAxisId="left" orientation="left" stroke="#3b82f6" />
+                <YAxis yAxisId="right" orientation="right" stroke="#6366f1" />
+                <Tooltip
+                  formatter={(value, name) => {
+                    if (name === "Revenue (£)") {
+                      return [formatCurrency(Number(value)), "Revenue (£)"]
+                    }
+                    return [value, name]
+                  }}
+                />
+                <Legend
+                  payload={[
+                    { value: "Sales (Units)", type: "square", color: "#3b82f6" },
+                    { value: "Revenue (£)", type: "square", color: "#6366f1" },
+                  ]}
+                />
+                <Bar yAxisId="left" dataKey="sales" fill="#3b82f6" name="Sales (Units)" />
+                <Bar yAxisId="right" dataKey="revenue" fill="#6366f1" name="Revenue (£)" />
+              </BarChart>
+            </ResponsiveContainer>
+          ) : (
+            <div className="flex items-center justify-center h-[300px]">
+              <p className="text-muted-foreground">No sales data available</p>
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
-          <div className="grid gap-4 md:grid-cols-2">
-            <Card className="w-full bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-0 shadow-xl">
-              <CardHeader>
-                <CardTitle>Sales Trend</CardTitle>
-                <CardDescription>Monthly sales trend</CardDescription>
-              </CardHeader>
-              <CardContent>
-                {isLoading ? (
-                  <Skeleton className="h-[200px] w-full" />
-                ) : salesByDate.length > 0 ? (
-                  <ResponsiveContainer width="100%" height={200}>
-                    <LineChart
-                      data={salesByDate}
-                      margin={{
-                        top: 5,
-                        right: 30,
-                        left: 20,
-                        bottom: 5,
-                      }}
-                    >
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis dataKey="month" />
-                      <YAxis />
-                      <Tooltip />
-                      <Line type="monotone" dataKey="sales" stroke="#3b82f6" activeDot={{ r: 8 }} />
-                    </LineChart>
-                  </ResponsiveContainer>
-                ) : (
-                  <div className="flex items-center justify-center h-[200px]">
-                    <p className="text-muted-foreground">No sales data available</p>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
+      <div className="grid gap-4 md:grid-cols-2">
+        <Card className="w-full bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-0 shadow-xl">
+          <CardHeader>
+            <CardTitle>Sales Trend</CardTitle>
+            <CardDescription>Monthly sales trend</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {isLoading ? (
+              <Skeleton className="h-[200px] w-full" />
+            ) : salesByDate.length > 0 ? (
+              <ResponsiveContainer width="100%" height={200}>
+                <LineChart
+                  data={salesByDate}
+                  margin={{
+                    top: 5,
+                    right: 30,
+                    left: 20,
+                    bottom: 5,
+                  }}
+                >
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="month" />
+                  <YAxis />
+                  <Tooltip />
+                  <Line type="monotone" dataKey="sales" stroke="#3b82f6" activeDot={{ r: 8 }} />
+                </LineChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="flex items-center justify-center h-[200px]">
+                <p className="text-muted-foreground">No sales data available</p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
 
-            <Card className="w-full bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-0 shadow-xl">
-              <CardHeader>
-                <CardTitle>Revenue Trend</CardTitle>
-                <CardDescription>Monthly revenue trend</CardDescription>
-              </CardHeader>
-              <CardContent>
-                {isLoading ? (
-                  <Skeleton className="h-[200px] w-full" />
-                ) : salesByDate.length > 0 ? (
-                  <ResponsiveContainer width="100%" height={200}>
-                    <LineChart
-                      data={salesByDate}
-                      margin={{
-                        top: 5,
-                        right: 30,
-                        left: 20,
-                        bottom: 5,
-                      }}
-                    >
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis dataKey="month" />
-                      <YAxis />
-                      <Tooltip formatter={(value) => [formatCurrency(Number(value)), "Revenue"]} />
-                      <Line type="monotone" dataKey="revenue" stroke="#6366f1" activeDot={{ r: 8 }} />
-                    </LineChart>
-                  </ResponsiveContainer>
-                ) : (
-                  <div className="flex items-center justify-center h-[200px]">
-                    <p className="text-muted-foreground">No revenue data available</p>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </div>
+        <Card className="w-full bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-0 shadow-xl">
+          <CardHeader>
+            <CardTitle>Revenue Trend</CardTitle>
+            <CardDescription>Monthly revenue trend</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {isLoading ? (
+              <Skeleton className="h-[200px] w-full" />
+            ) : salesByDate.length > 0 ? (
+              <ResponsiveContainer width="100%" height={200}>
+                <LineChart
+                  data={salesByDate}
+                  margin={{
+                    top: 5,
+                    right: 30,
+                    left: 20,
+                    bottom: 5,
+                  }}
+                >
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="month" />
+                  <YAxis />
+                  <Tooltip formatter={(value) => [formatCurrency(Number(value)), "Revenue"]} />
+                  <Line type="monotone" dataKey="revenue" stroke="#6366f1" activeDot={{ r: 8 }} />
+                </LineChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="flex items-center justify-center h-[200px]">
+                <p className="text-muted-foreground">No revenue data available</p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
 
-          <Card className="w-full bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-0 shadow-xl">
-            <CardHeader>
-              <CardTitle>Sales by Product</CardTitle>
-              <CardDescription>Distribution of sales across products</CardDescription>
-            </CardHeader>
-            <CardContent>
-              {isLoading ? (
-                <Skeleton className="h-[300px] w-full" />
-              ) : salesByProduct.length > 0 ? (
-                <div className="grid md:grid-cols-2 gap-4">
-                  <div className="h-[300px]">
+      <Card className="w-full bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-0 shadow-xl">
+        <CardHeader>
+          <CardTitle>Sales by Product</CardTitle>
+          <CardDescription>Distribution of sales across products</CardDescription>
+        </CardHeader>
+        <CardContent>
+          {isLoading ? (
+            <Skeleton className="h-[300px] w-full" />
+          ) : salesByProduct.length > 0 ? (
+            <div className="grid md:grid-cols-2 gap-4">
+              <div className="h-[300px]">
                     <Suspense fallback={<LoadingSkeleton variant="chart" />}>
                       <ResponsiveContainer width="100%" height="100%">
                         <PieChart>
@@ -509,133 +509,133 @@ export default function AnalyticsPage() {
                       </ResponsiveContainer>
                     </Suspense>
                   </div>
-                  <div className="space-y-2">
-                    {salesByProduct.map((product, index) => (
-                      <div key={index} className="flex items-center justify-between">
-                        <div className="flex items-center gap-2 flex-1 min-w-0">
-                          {product.imageUrl ? (
-                            <img
-                              src={product.imageUrl}
-                              alt={product.title}
-                              className="w-8 h-8 rounded object-cover flex-shrink-0"
-                              onError={(e) => {
-                                e.currentTarget.style.display = 'none'
-                              }}
-                            />
-                          ) : (
-                            <div
-                              className="w-8 h-8 rounded flex-shrink-0 flex items-center justify-center text-xs font-medium text-white"
-                              style={{ backgroundColor: COLORS[index % COLORS.length] }}
-                            >
-                              {product.title.charAt(0).toUpperCase()}
-                            </div>
-                          )}
-                          <span className="text-sm truncate" title={product.title}>
-                            {product.title}
-                          </span>
+              <div className="space-y-2">
+                {salesByProduct.map((product, index) => (
+                  <div key={index} className="flex items-center justify-between">
+                    <div className="flex items-center gap-2 flex-1 min-w-0">
+                      {product.imageUrl ? (
+                        <img
+                          src={product.imageUrl}
+                          alt={product.title}
+                          className="w-8 h-8 rounded object-cover flex-shrink-0"
+                          onError={(e) => {
+                            e.currentTarget.style.display = 'none'
+                          }}
+                        />
+                      ) : (
+                        <div
+                          className="w-8 h-8 rounded flex-shrink-0 flex items-center justify-center text-xs font-medium text-white"
+                          style={{ backgroundColor: COLORS[index % COLORS.length] }}
+                        >
+                          {product.title.charAt(0).toUpperCase()}
                         </div>
-                        <div className="text-sm font-medium flex-shrink-0 ml-2">
-                          {product.sales} sales ({formatCurrency(product.revenue)})
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              ) : (
-                <div className="flex items-center justify-center h-[300px]">
-                  <p className="text-muted-foreground">No product sales data available</p>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
-          <Card className="w-full bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-0 shadow-xl">
-            <CardHeader>
-              <CardTitle>Sales History</CardTitle>
-              <CardDescription>Detailed record of individual sales</CardDescription>
-            </CardHeader>
-            <CardContent>
-              {isLoading ? (
-                <Skeleton className="h-[300px] w-full" />
-              ) : salesHistory && salesHistory.length > 0 ? (
-                <div>
-                  <div className="flex items-center justify-between mb-4">
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm font-medium">Sort by:</span>
-                      <Select
-                        value={sortField}
-                        onValueChange={(value) => {
-                          setSortField(value)
-                          setSortDirection("desc")
-                        }}
-                      >
-                        <SelectTrigger className="w-[180px]">
-                          <SelectValue placeholder="Sort by" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="date">Date</SelectItem>
-                          <SelectItem value="title">Product</SelectItem>
-                          <SelectItem value="price">Price</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setSortDirection(sortDirection === "asc" ? "desc" : "asc")}
-                      >
-                        {sortDirection === "asc" ? "↑ Ascending" : "↓ Descending"}
-                      </Button>
+                      )}
+                      <span className="text-sm truncate" title={product.title}>
+                        {product.title}
+                      </span>
+                    </div>
+                    <div className="text-sm font-medium flex-shrink-0 ml-2">
+                      {product.sales} sales ({formatCurrency(product.revenue)})
                     </div>
                   </div>
+                ))}
+              </div>
+            </div>
+          ) : (
+            <div className="flex items-center justify-center h-[300px]">
+              <p className="text-muted-foreground">No product sales data available</p>
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
-                  <div className="rounded-md border">
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead className="cursor-pointer" onClick={() => handleSort("date")}>
-                            Date {sortField === "date" && (sortDirection === "asc" ? "↑" : "↓")}
-                          </TableHead>
-                          <TableHead className="cursor-pointer" onClick={() => handleSort("title")}>
-                            Product {sortField === "title" && (sortDirection === "asc" ? "↑" : "↓")}
-                          </TableHead>
-                          <TableHead className="cursor-pointer text-right" onClick={() => handleSort("price")}>
-                            Price {sortField === "price" && (sortDirection === "asc" ? "↑" : "↓")}
-                          </TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {sortedSalesHistory.map((sale) => (
-                          <TableRow key={sale.id}>
-                            <TableCell>{formatDate(sale.date)}</TableCell>
-                            <TableCell>
-                              <div className="flex items-center gap-2">
-                                {sale.imageUrl ? (
-                                  <img
-                                    src={sale.imageUrl}
-                                    alt={sale.title}
-                                    className="w-8 h-8 rounded object-cover"
-                                    onError={(e) => {
-                                      e.currentTarget.style.display = 'none'
-                                    }}
-                                  />
-                                ) : null}
-                                <span className="font-medium">{sale.title}</span>
-                              </div>
-                            </TableCell>
-                            <TableCell className="text-right">{formatCurrency(sale.price)}</TableCell>
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
-                  </div>
+      <Card className="w-full bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-0 shadow-xl">
+        <CardHeader>
+          <CardTitle>Sales History</CardTitle>
+          <CardDescription>Detailed record of individual sales</CardDescription>
+        </CardHeader>
+        <CardContent>
+          {isLoading ? (
+            <Skeleton className="h-[300px] w-full" />
+          ) : salesHistory && salesHistory.length > 0 ? (
+            <div>
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-medium">Sort by:</span>
+                  <Select
+                    value={sortField}
+                    onValueChange={(value) => {
+                      setSortField(value)
+                      setSortDirection("desc")
+                    }}
+                  >
+                    <SelectTrigger className="w-[180px]">
+                      <SelectValue placeholder="Sort by" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="date">Date</SelectItem>
+                      <SelectItem value="title">Product</SelectItem>
+                      <SelectItem value="price">Price</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setSortDirection(sortDirection === "asc" ? "desc" : "asc")}
+                  >
+                    {sortDirection === "asc" ? "↑ Ascending" : "↓ Descending"}
+                  </Button>
                 </div>
-              ) : (
-                <div className="flex items-center justify-center h-[100px]">
-                  <p className="text-muted-foreground">No sales history available</p>
-                </div>
-              )}
-            </CardContent>
-          </Card>
+              </div>
+
+              <div className="rounded-md border">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="cursor-pointer" onClick={() => handleSort("date")}>
+                        Date {sortField === "date" && (sortDirection === "asc" ? "↑" : "↓")}
+                      </TableHead>
+                      <TableHead className="cursor-pointer" onClick={() => handleSort("title")}>
+                        Product {sortField === "title" && (sortDirection === "asc" ? "↑" : "↓")}
+                      </TableHead>
+                      <TableHead className="cursor-pointer text-right" onClick={() => handleSort("price")}>
+                        Price {sortField === "price" && (sortDirection === "asc" ? "↑" : "↓")}
+                      </TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {sortedSalesHistory.map((sale) => (
+                      <TableRow key={sale.id}>
+                        <TableCell>{formatDate(sale.date)}</TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-2">
+                            {sale.imageUrl ? (
+                              <img
+                                src={sale.imageUrl}
+                                alt={sale.title}
+                                className="w-8 h-8 rounded object-cover"
+                                onError={(e) => {
+                                  e.currentTarget.style.display = 'none'
+                                }}
+                              />
+                            ) : null}
+                            <span className="font-medium">{sale.title}</span>
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-right">{formatCurrency(sale.price)}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            </div>
+          ) : (
+            <div className="flex items-center justify-center h-[100px]">
+              <p className="text-muted-foreground">No sales history available</p>
+            </div>
+          )}
+        </CardContent>
+      </Card>
         </TabsContent>
 
         <TabsContent value="payouts" className="space-y-6">
