@@ -86,50 +86,50 @@ export class STONE3PLClient {
     let lastError: Error | null = null
     
     for (const normalizedOrderId of orderIdsToTry) {
-      console.log(`[STONE3PL] Fetching tracking for order: ${normalizedOrderId} (original: ${orderId})${trackingNumber ? `, tracking: ${trackingNumber}` : ''}`)
+    console.log(`[STONE3PL] Fetching tracking for order: ${normalizedOrderId} (original: ${orderId})${trackingNumber ? `, tracking: ${trackingNumber}` : ''}`)
 
       try {
-        // Use order-track-list API which is more reliable
-        const url = new URL(`${this.config.baseUrl}/order-track-list`)
-        url.searchParams.set('order_ids', normalizedOrderId)
+    // Use order-track-list API which is more reliable
+    const url = new URL(`${this.config.baseUrl}/order-track-list`)
+    url.searchParams.set('order_ids', normalizedOrderId)
 
-        const response = await fetch(url.toString(), {
-          method: 'GET',
-          headers: {
-            'apikey': this.config.apiKey,
-            'User-Agent': 'Mozilla/5.0 (compatible; MSIE 5.01; Windows NT 5.0)',
-          },
-        })
+    const response = await fetch(url.toString(), {
+      method: 'GET',
+      headers: {
+        'apikey': this.config.apiKey,
+        'User-Agent': 'Mozilla/5.0 (compatible; MSIE 5.01; Windows NT 5.0)',
+      },
+    })
 
-        if (!response.ok) {
-          const errorText = await response.text()
-          // Handle 404 gracefully - tracking might not be available yet
-          if (response.status === 404) {
+    if (!response.ok) {
+      const errorText = await response.text()
+      // Handle 404 gracefully - tracking might not be available yet
+      if (response.status === 404) {
             console.log(`[STONE3PL] Tracking not found for order ${normalizedOrderId} (404) - trying next format if available`)
             lastError = new Error(`Tracking not found for order ${orderId}`)
             continue // Try next format
-          }
-          console.error(`[STONE3PL] HTTP error ${response.status}:`, errorText)
-          throw new Error(`STONE3PL API error: ${response.status} ${response.statusText}`)
-        }
+      }
+      console.error(`[STONE3PL] HTTP error ${response.status}:`, errorText)
+      throw new Error(`STONE3PL API error: ${response.status} ${response.statusText}`)
+    }
 
-        const data: STONE3PLTrackListResponse = await response.json()
+    const data: STONE3PLTrackListResponse = await response.json()
 
-        if (data.code !== 0) {
-          // Handle case where order tracking doesn't exist yet
-          if (data.code === 7004 || data.msg?.toLowerCase().includes('not found')) {
+    if (data.code !== 0) {
+      // Handle case where order tracking doesn't exist yet
+      if (data.code === 7004 || data.msg?.toLowerCase().includes('not found')) {
             console.log(`[STONE3PL] Tracking not found for order ${normalizedOrderId} (code: ${data.code}) - trying next format if available`)
             lastError = new Error(`Tracking not found for order ${orderId}`)
             continue // Try next format
-          }
-          throw new Error(`STONE3PL API error: ${data.msg} (code: ${data.code})`)
-        }
+      }
+      throw new Error(`STONE3PL API error: ${data.msg} (code: ${data.code})`)
+    }
 
-        if (!data.data || data.data.length === 0) {
+    if (!data.data || data.data.length === 0) {
           console.log(`[STONE3PL] No tracking data for order ${normalizedOrderId} - trying next format if available`)
           lastError = new Error(`Tracking not found for order ${orderId}`)
           continue // Try next format
-        }
+    }
 
         // Success! Return the first tracking result
         return data.data[0]
