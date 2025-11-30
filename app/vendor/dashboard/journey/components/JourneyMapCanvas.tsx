@@ -1,8 +1,6 @@
 "use client"
 
-import { useState, useRef, useEffect, useCallback } from "react"
-import { motion } from "framer-motion"
-import { Button } from "@/components/ui/button"
+import { useState, useRef, useEffect } from "react"
 import type { ArtworkSeries, JourneyMapSettings, JourneyPosition } from "@/types/artwork-series"
 import { SeriesNode } from "./SeriesNode"
 import { cn } from "@/lib/utils"
@@ -20,105 +18,130 @@ export function JourneyMapCanvas({
   onSeriesClick,
   onPositionUpdate,
 }: JourneyMapCanvasProps) {
-  const [zoom, setZoom] = useState(1)
-  const [pan, setPan] = useState({ x: 0, y: 0 })
-  const [isDragging, setIsDragging] = useState(false)
-  const [dragStart, setDragStart] = useState({ x: 0, y: 0 })
   const [draggedNode, setDraggedNode] = useState<string | null>(null)
   const containerRef = useRef<HTMLDivElement>(null)
-  const svgRef = useRef<SVGSVGElement>(null)
 
-  const mapStyle = mapSettings?.map_style || "island"
-
-  // Auto-arrange series if they don't have positions
+  // Arrange series in a tree/path structure
   useEffect(() => {
     const seriesWithoutPositions = series.filter(
       (s) => !s.journey_position || !s.journey_position.x || !s.journey_position.y
     )
 
-    if (seriesWithoutPositions.length > 0) {
-      // Auto-arrange in a grid or based on milestone_order
-      seriesWithoutPositions.forEach((s, index) => {
-        const level = s.milestone_order || Math.floor(index / 5) // 5 per level
-        const positionInLevel = index % 5
-        const x = positionInLevel * 200 + 100
-        const y = level * 200 + 100
+    if (seriesWithoutPositions.length === 0) return
 
-        // Update position via API
-        onPositionUpdate(s.id, { x, y, level })
-      })
-    }
-  }, [series, onPositionUpdate])
+    // Sort by milestone_order or display_order for path progression
+    const sorted = [...series].sort((a, b) => {
+      const orderA = a.milestone_order ?? a.display_order ?? 0
+      const orderB = b.milestone_order ?? b.display_order ?? 0
+      return orderA - orderB
+    })
 
-  const handleMouseDown = useCallback(
-    (e: React.MouseEvent) => {
-      if (e.button === 0) {
-        // Left mouse button
-        setIsDragging(true)
-        setDragStart({ x: e.clientX - pan.x, y: e.clientY - pan.y })
+    // Build tree: find root nodes (series not unlocked by others)
+    const allUnlockedIds = new Set(
+      series.flatMap((s) => s.unlocks_series_ids || [])
+    )
+    const rootNodes = sorted.filter((s) => !allUnlockedIds.has(s.id))
+
+    // Path layout constants
+    const horizontalSpacing = 200
+    const verticalSpacing = 150
+    const startX = 100
+    const startY = 100
+
+    // Recursive function to position series in tree
+    const positionSeries = (
+      seriesItem: ArtworkSeries,
+      x: number,
+      y: number,
+      level: number
+    ) => {
+      if (seriesItem.journey_position?.x && seriesItem.journey_position?.y) {
+        return // Already positioned
       }
-    },
-    [pan]
-  )
 
-  const handleMouseMove = useCallback(
-    (e: React.MouseEvent) => {
-      if (isDragging && !draggedNode) {
-        // Panning the canvas
-        setPan({
-          x: e.clientX - dragStart.x,
-          y: e.clientY - dragStart.y,
+      onPositionUpdate(seriesItem.id, { x, y, level })
+
+      // Position series that this one unlocks
+      const unlocks = sorted.filter((s) =>
+        seriesItem.unlocks_series_ids?.includes(s.id)
+      )
+
+      if (unlocks.length > 0) {
+        // If multiple unlocks, arrange them horizontally below
+        const branchStartX = x - ((unlocks.length - 1) * horizontalSpacing) / 2
+        unlocks.forEach((unlocked, index) => {
+          positionSeries(
+            unlocked,
+            branchStartX + index * horizontalSpacing,
+            y + verticalSpacing,
+            level + 1
+          )
         })
       }
-    },
-    [isDragging, dragStart, draggedNode]
-  )
-
-  const handleMouseUp = useCallback(() => {
-    setIsDragging(false)
-    setDraggedNode(null)
-  }, [])
-
-  const handleWheel = useCallback(
-    (e: React.WheelEvent) => {
-      e.preventDefault()
-      const delta = e.deltaY > 0 ? 0.9 : 1.1
-      setZoom((prev) => Math.max(0.5, Math.min(2, prev * delta)))
-    },
-    []
-  )
-
-  const getSeriesPosition = (s: ArtworkSeries) => {
-    if (s.journey_position) {
-      return {
-        x: s.journey_position.x,
-        y: s.journey_position.y,
-      }
     }
-    // Default position
-    return { x: 100, y: 100 }
-  }
 
-  const getConnections = () => {
-    const connections: Array<{ from: { x: number; y: number }; to: { x: number; y: number } }> = []
+    // Position root nodes horizontally
+    rootNodes.forEach((root, index) => {
+      positionSeries(root, startX + index * horizontalSpacing, startY, 0)
+    })
 
-    series.forEach((s) => {
-      if (s.connected_series_ids && s.connected_series_ids.length > 0) {
-        const fromPos = getSeriesPosition(s)
-        s.connected_series_ids.forEach((connectedId) => {
-          const connectedSeries = series.find((cs) => cs.id === connectedId)
-          if (connectedSeries) {
-            const toPos = getSeriesPosition(connectedSeries)
-            connections.push({ from: fromPos, to: toPos })
-          }
+    // Position any remaining series in order (fallback for series without unlock relationships)
+    sorted.forEach((s) => {
+      if (!s.journey_position?.x || !s.journey_position?.y) {
+        // Find max X position to continue path
+        const maxX = Math.max(
+          ...series
+            .filter((other) => other.journey_position?.x)
+            .map((other) => other.journey_position!.x || 0),
+          startX
+        )
+        const maxY = Math.max(
+          ...series
+            .filter((other) => other.journey_position?.y)
+            .map((other) => other.journey_position!.y || 0),
+          startY
+        )
+        onPositionUpdate(s.id, {
+          x: maxX + horizontalSpacing,
+          y: maxY,
+          level: 0,
         })
       }
     })
+  }, [series, onPositionUpdate])
 
-    return connections
+  // Simple position getter
+  const getPosition = (s: ArtworkSeries) => {
+    return s.journey_position ? { x: s.journey_position.x, y: s.journey_position.y } : { x: 100, y: 100 }
   }
 
-  const connections = getConnections()
+  // Build path connections: show progression from one series to next
+  const connections = series.flatMap((s) => {
+    const connections: Array<{ from: { x: number; y: number }; to: { x: number; y: number } }> = []
+    const from = getPosition(s)
+
+    // Show unlocks_series_ids as path connections (progression)
+    if (s.unlocks_series_ids?.length) {
+      s.unlocks_series_ids.forEach((unlockedId) => {
+        const unlocked = series.find((cs) => cs.id === unlockedId)
+        if (unlocked) {
+          connections.push({ from, to: getPosition(unlocked) })
+        }
+      })
+    }
+
+    // Also show connected_series_ids (related series)
+    if (s.connected_series_ids?.length) {
+      s.connected_series_ids.forEach((connectedId) => {
+        const connected = series.find((cs) => cs.id === connectedId)
+        if (connected) {
+          connections.push({ from, to: getPosition(connected) })
+        }
+      })
+    }
+
+    return connections
+  })
 
   if (series.length === 0) {
     return (
@@ -131,82 +154,49 @@ export function JourneyMapCanvas({
   return (
     <div
       ref={containerRef}
-      className="relative w-full h-[600px] border rounded-lg overflow-hidden bg-gradient-to-br from-background to-muted/20"
-      onMouseDown={handleMouseDown}
-      onMouseMove={handleMouseMove}
-      onMouseUp={handleMouseUp}
-      onMouseLeave={handleMouseUp}
-      onWheel={handleWheel}
+      className="relative w-full h-[600px] border rounded-lg overflow-auto bg-background"
     >
-      {/* SVG for connections and nodes */}
-      <svg
-        ref={svgRef}
-        className="absolute inset-0 w-full h-full"
-        style={{
-          transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom})`,
-          transformOrigin: "0 0",
-        }}
-      >
-        {/* Background pattern based on map style */}
-        {mapStyle === "island" && (
-          <defs>
-            <pattern id="island-pattern" x="0" y="0" width="100" height="100" patternUnits="userSpaceOnUse">
-              <circle cx="50" cy="50" r="2" fill="currentColor" className="text-muted-foreground/20" />
-            </pattern>
-          </defs>
-        )}
-
-        {/* Connection lines */}
+      {/* Path lines - show progression */}
+      <svg className="absolute inset-0 w-full h-full pointer-events-none">
         {connections.map((conn, index) => (
-          <line
-            key={index}
-            x1={conn.from.x}
-            y1={conn.from.y}
-            x2={conn.to.x}
-            y2={conn.to.y}
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeDasharray="5,5"
-            className="text-muted-foreground/30"
-            markerEnd="url(#arrowhead)"
-          />
+          <g key={index}>
+            {/* Path line */}
+            <line
+              x1={conn.from.x}
+              y1={conn.from.y}
+              x2={conn.to.x}
+              y2={conn.to.y}
+              stroke="currentColor"
+              strokeWidth="2"
+              className="text-primary/40"
+              strokeDasharray="4,4"
+            />
+            {/* Arrow at end */}
+            <polygon
+              points={`${conn.to.x - 8},${conn.to.y - 4} ${conn.to.x},${conn.to.y} ${conn.to.x - 8},${conn.to.y + 4}`}
+              fill="currentColor"
+              className="text-primary/40"
+            />
+          </g>
         ))}
-
-        {/* Arrow marker for connections */}
-        <defs>
-          <marker
-            id="arrowhead"
-            markerWidth="10"
-            markerHeight="10"
-            refX="9"
-            refY="3"
-            orient="auto"
-          >
-            <polygon points="0 0, 10 3, 0 6" fill="currentColor" className="text-muted-foreground/30" />
-          </marker>
-        </defs>
       </svg>
 
       {/* Series Nodes */}
-      <div
-        className="absolute inset-0"
-        style={{
-          transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom})`,
-          transformOrigin: "0 0",
-        }}
-      >
+      <div className="relative w-full h-full">
         {series.map((s) => {
-          const position = getSeriesPosition(s)
+          const position = getPosition(s)
           return (
             <SeriesNode
               key={s.id}
               series={s}
               position={position}
+              containerRef={containerRef}
               onDragStart={() => setDraggedNode(s.id)}
               onDragEnd={(newPosition) => {
                 onPositionUpdate(s.id, {
                   ...s.journey_position,
-                  ...newPosition,
+                  x: newPosition.x,
+                  y: newPosition.y,
                 })
                 setDraggedNode(null)
               }}
@@ -214,37 +204,6 @@ export function JourneyMapCanvas({
             />
           )
         })}
-      </div>
-
-      {/* Zoom controls */}
-      <div className="absolute bottom-4 right-4 flex flex-col gap-2 bg-background/80 backdrop-blur-sm border rounded-lg p-2">
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => setZoom((prev) => Math.min(2, prev + 0.1))}
-          className="h-8"
-        >
-          +
-        </Button>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => setZoom((prev) => Math.max(0.5, prev - 0.1))}
-          className="h-8"
-        >
-          −
-        </Button>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => {
-            setZoom(1)
-            setPan({ x: 0, y: 0 })
-          }}
-          className="h-8 text-xs"
-        >
-          Reset
-        </Button>
       </div>
     </div>
   )
