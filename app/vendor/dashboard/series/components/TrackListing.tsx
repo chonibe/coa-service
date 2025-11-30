@@ -132,22 +132,22 @@ function SortableTrackItem({
             </div>
           )}
           {member.has_benefits && (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-7 w-7 p-0 hover:bg-purple-100 dark:hover:bg-purple-900/30 rounded-full border border-purple-200/50 dark:border-purple-800/50 bg-purple-50/80 dark:bg-purple-950/30"
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  <MoreVertical className="h-3.5 w-3.5 text-purple-600 dark:text-purple-400" />
-                  {member.benefit_count && member.benefit_count > 0 && (
-                    <span className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-purple-600 dark:bg-purple-500 text-white text-[10px] font-semibold flex items-center justify-center">
-                      {member.benefit_count}
-                    </span>
-                  )}
-                </Button>
-              </DropdownMenuTrigger>
+            <div className="ml-auto" onClick={(e) => e.stopPropagation()}>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-7 w-7 p-0 hover:bg-purple-100 dark:hover:bg-purple-900/30 rounded-full border border-purple-200/50 dark:border-purple-800/50 bg-purple-50/80 dark:bg-purple-950/30 pointer-events-auto"
+                  >
+                    <MoreVertical className="h-3.5 w-3.5 text-purple-600 dark:text-purple-400" />
+                    {member.benefit_count && member.benefit_count > 0 && (
+                      <span className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-purple-600 dark:bg-purple-500 text-white text-[10px] font-semibold flex items-center justify-center">
+                        {member.benefit_count}
+                      </span>
+                    )}
+                  </Button>
+                </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-72">
                 <DropdownMenuLabel className="flex items-center gap-2">
                   <Sparkles className="h-4 w-4 text-purple-600 dark:text-purple-400" />
@@ -212,7 +212,8 @@ function SortableTrackItem({
                 )}
               </DropdownMenuContent>
             </DropdownMenu>
-          )}
+          </div>
+        )}
         </div>
         <div className="flex items-center gap-2 mt-1">
           {member.unlock_order && (

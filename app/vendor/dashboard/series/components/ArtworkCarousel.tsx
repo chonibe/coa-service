@@ -96,8 +96,8 @@ function SortableArtworkItem({
           </div>
         )}
         
-        {/* Lock/Unlock indicator and Treasure Menu */}
-        <div className="absolute top-2 right-2 flex items-center gap-1.5 flex-wrap justify-end max-w-[70%]">
+        {/* Lock/Unlock indicator */}
+        <div className="absolute top-2 left-2 z-10">
           {isLocked ? (
             <div className="h-6 w-6 rounded-full bg-destructive/80 flex items-center justify-center">
               <Lock className="h-3 w-3 text-white" />
@@ -107,16 +107,17 @@ function SortableArtworkItem({
               <Check className="h-3 w-3 text-primary-foreground" />
             </div>
           )}
-          
-          {/* Treasure Menu - Only show if artwork has benefits */}
-          {member.has_benefits && (
+        </div>
+        
+        {/* Treasure Menu - Positioned top-right, away from drag area */}
+        {member.has_benefits && (
+          <div className="absolute top-1 right-1 z-20" onClick={(e) => e.stopPropagation()}>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="h-7 w-7 p-0 hover:bg-white/20 dark:hover:bg-black/20 rounded-full border border-purple-200/50 dark:border-purple-800/50 bg-purple-50/80 dark:bg-purple-950/30 backdrop-blur-sm"
-                  onClick={(e) => e.stopPropagation()}
+                  className="h-7 w-7 p-0 hover:bg-white/20 dark:hover:bg-black/20 rounded-full border border-purple-200/50 dark:border-purple-800/50 bg-purple-50/80 dark:bg-purple-950/30 backdrop-blur-sm pointer-events-auto"
                 >
                   <MoreVertical className="h-3.5 w-3.5 text-purple-600 dark:text-purple-400" />
                   {member.benefit_count && member.benefit_count > 0 && (
@@ -190,8 +191,8 @@ function SortableArtworkItem({
                 )}
               </DropdownMenuContent>
             </DropdownMenu>
-          )}
-        </div>
+          </div>
+        )}
 
         {/* Position indicator */}
         <div className="absolute bottom-2 left-2">
