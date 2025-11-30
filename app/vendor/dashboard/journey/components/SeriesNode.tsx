@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useRef } from "react"
+import { useState } from "react"
 import { motion } from "framer-motion"
 import { MapPin } from "lucide-react"
 import type { ArtworkSeries, JourneyPosition } from "@/types/artwork-series"
@@ -45,7 +45,6 @@ export function SeriesNode({ series, position, containerRef, onDragStart, onDrag
 
   return (
     <motion.div
-      ref={nodeRef}
       className={cn(
         "absolute cursor-move group",
         "transform -translate-x-1/2 -translate-y-1/2",
