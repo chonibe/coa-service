@@ -29,20 +29,29 @@ export function JourneyMapCanvas({
     return { x: gridX, y: gridY }
   }, [])
 
-  // Check if position is occupied
+  // Check if position is occupied (strict grid position matching)
   const isPositionOccupied = useCallback(
     (x: number, y: number, excludeId?: string) => {
+      // Normalize to grid coordinates
+      const gridX = Math.round(x / GRID_SIZE) * GRID_SIZE
+      const gridY = Math.round(y / GRID_SIZE) * GRID_SIZE
+      
       return series.some((s) => {
         if (s.id === excludeId) return false
         const pos = s.journey_position
         if (!pos || pos.x === undefined || pos.y === undefined) return false
-        return pos.x === x && pos.y === y
+        
+        // Normalize stored position to grid
+        const storedGridX = Math.round(pos.x / GRID_SIZE) * GRID_SIZE
+        const storedGridY = Math.round(pos.y / GRID_SIZE) * GRID_SIZE
+        
+        return storedGridX === gridX && storedGridY === gridY
       })
     },
     [series]
   )
 
-  // Find nearest free grid position
+  // Find nearest free grid position (guaranteed to find a free square)
   const findNearestFreePosition = useCallback(
     (x: number, y: number, excludeId?: string) => {
       const snapped = snapToGrid(x, y)
@@ -52,21 +61,31 @@ export function JourneyMapCanvas({
         return snapped
       }
 
-      // Search nearby grid positions
-      const searchRadius = 5
-      for (let dy = -searchRadius; dy <= searchRadius; dy++) {
-        for (let dx = -searchRadius; dx <= searchRadius; dx++) {
-          const checkX = snapped.x + dx * GRID_SIZE
-          const checkY = snapped.y + dy * GRID_SIZE
-          if (!isPositionOccupied(checkX, checkY, excludeId)) {
-            return { x: checkX, y: checkY }
+      // Search in expanding spiral pattern for nearest free position
+      const maxRadius = 20
+      for (let radius = 1; radius <= maxRadius; radius++) {
+        // Check all positions at this radius
+        for (let dy = -radius; dy <= radius; dy++) {
+          for (let dx = -radius; dx <= radius; dx++) {
+            // Only check positions on the perimeter of this radius
+            if (Math.abs(dx) === radius || Math.abs(dy) === radius) {
+              const checkX = snapped.x + dx * GRID_SIZE
+              const checkY = snapped.y + dy * GRID_SIZE
+              
+              // Ensure non-negative coordinates
+              if (checkX >= 0 && checkY >= 0) {
+                if (!isPositionOccupied(checkX, checkY, excludeId)) {
+                  return { x: checkX, y: checkY }
+                }
+              }
+            }
           }
         }
       }
 
-      // Fallback: find first available position
-      for (let row = 0; row < 20; row++) {
-        for (let col = 0; col < 10; col++) {
+      // Final fallback: scan entire grid systematically
+      for (let row = 0; row < 50; row++) {
+        for (let col = 0; col < 20; col++) {
           const checkX = col * GRID_SIZE
           const checkY = row * GRID_SIZE
           if (!isPositionOccupied(checkX, checkY, excludeId)) {
@@ -75,10 +94,40 @@ export function JourneyMapCanvas({
         }
       }
 
+      // Last resort: return original snapped position (shouldn't happen)
+      console.warn('Could not find free position, using snapped position')
       return snapped
     },
     [snapToGrid, isPositionOccupied]
   )
+
+  // Validate and fix overlapping positions on load
+  useEffect(() => {
+    // Normalize all existing positions to grid and fix overlaps
+    series.forEach((s) => {
+      if (s.journey_position?.x !== undefined && s.journey_position?.y !== undefined) {
+        const normalized = snapToGrid(s.journey_position.x, s.journey_position.y)
+        
+        // Check if normalized position is occupied by another series
+        if (isPositionOccupied(normalized.x, normalized.y, s.id)) {
+          // Find free position for this series
+          const freePos = findNearestFreePosition(normalized.x, normalized.y, s.id)
+          onPositionUpdate(s.id, {
+            ...s.journey_position,
+            x: freePos.x,
+            y: freePos.y,
+          })
+        } else if (normalized.x !== s.journey_position.x || normalized.y !== s.journey_position.y) {
+          // Position not on grid, normalize it
+          onPositionUpdate(s.id, {
+            ...s.journey_position,
+            x: normalized.x,
+            y: normalized.y,
+          })
+        }
+      }
+    })
+  }, [series, snapToGrid, isPositionOccupied, findNearestFreePosition, onPositionUpdate])
 
   // Auto-arrange series on grid if they don't have positions
   useEffect(() => {
@@ -95,26 +144,48 @@ export function JourneyMapCanvas({
       return orderA - orderB
     })
 
-    // Place each series on grid
+    // Place each series on grid, ensuring no overlaps
     sorted.forEach((s, index) => {
       const row = Math.floor(index / 8) // 8 columns
       const col = index % 8
       const x = col * GRID_SIZE
       const y = row * GRID_SIZE
       
-      // Ensure position is free
+      // Find free position (guaranteed to be unique)
       const freePos = findNearestFreePosition(x, y, s.id)
-      onPositionUpdate(s.id, { x: freePos.x, y: freePos.y, level: row })
+      
+      // Double-check it's actually free before placing
+      if (!isPositionOccupied(freePos.x, freePos.y, s.id)) {
+        onPositionUpdate(s.id, { x: freePos.x, y: freePos.y, level: row })
+      } else {
+        // If somehow still occupied, find another position
+        const alternativePos = findNearestFreePosition(x + GRID_SIZE, y, s.id)
+        onPositionUpdate(s.id, { x: alternativePos.x, y: alternativePos.y, level: row })
+      }
     })
   }, [series, onPositionUpdate, findNearestFreePosition])
 
-  // Get grid position
+  // Get grid position (always normalized to grid)
   const getGridPosition = (s: ArtworkSeries) => {
     if (s.journey_position?.x !== undefined && s.journey_position?.y !== undefined) {
-      return { x: s.journey_position.x, y: s.journey_position.y }
+      // Normalize to ensure it's on grid
+      const x = Math.round(s.journey_position.x / GRID_SIZE) * GRID_SIZE
+      const y = Math.round(s.journey_position.y / GRID_SIZE) * GRID_SIZE
+      return { x, y }
     }
     return { x: 0, y: 0 }
   }
+  
+  // Get all occupied grid positions for visual feedback
+  const getOccupiedPositions = useCallback(() => {
+    const occupied = new Set<string>()
+    series.forEach((s) => {
+      const pos = getGridPosition(s)
+      const key = `${pos.x},${pos.y}`
+      occupied.add(key)
+    })
+    return occupied
+  }, [series])
 
   // Build connections
   const connections = series.flatMap((s) => {
@@ -239,11 +310,30 @@ export function JourneyMapCanvas({
               onDragEnd={(newPosition) => {
                 // Snap to grid and ensure no overlap
                 const freePos = findNearestFreePosition(newPosition.x, newPosition.y, s.id)
-                onPositionUpdate(s.id, {
-                  ...s.journey_position,
-                  x: freePos.x,
-                  y: freePos.y,
-                })
+                
+                // Normalize position to grid and verify it's free
+                const normalizedPos = snapToGrid(freePos.x, freePos.y)
+                
+                // Final check: ensure position is free
+                if (!isPositionOccupied(normalizedPos.x, normalizedPos.y, s.id)) {
+                  onPositionUpdate(s.id, {
+                    ...s.journey_position,
+                    x: normalizedPos.x,
+                    y: normalizedPos.y,
+                  })
+                } else {
+                  // If still occupied, find alternative position
+                  const altPos = findNearestFreePosition(
+                    normalizedPos.x + GRID_SIZE,
+                    normalizedPos.y,
+                    s.id
+                  )
+                  onPositionUpdate(s.id, {
+                    ...s.journey_position,
+                    x: altPos.x,
+                    y: altPos.y,
+                  })
+                }
                 setDraggedNode(null)
               }}
               onClick={() => onSeriesClick(s.id)}
