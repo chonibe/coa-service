@@ -121,6 +121,53 @@ export default function JourneyMapPage() {
                 })
               }
             }}
+            onConnectionUpdate={async (fromSeriesId, toSeriesId) => {
+              try {
+                // Get current series to find existing connections
+                const fromSeries = series.find((s) => s.id === fromSeriesId)
+                if (!fromSeries) return
+
+                // Add to connected_series_ids if not already there
+                const currentConnections = fromSeries.connected_series_ids || []
+                if (currentConnections.includes(toSeriesId)) {
+                  toast({
+                    title: "Already Connected",
+                    description: "These series are already connected",
+                  })
+                  return
+                }
+
+                const updatedConnections = [...currentConnections, toSeriesId]
+
+                const response = await fetch(`/api/vendor/series/${fromSeriesId}/journey-position`, {
+                  method: "PUT",
+                  headers: {
+                    "Content-Type": "application/json",
+                  },
+                  credentials: "include",
+                  body: JSON.stringify({ connected_series_ids: updatedConnections }),
+                })
+
+                if (!response.ok) {
+                  throw new Error("Failed to create connection")
+                }
+
+                toast({
+                  title: "Connection Created",
+                  description: "Series connected successfully",
+                })
+
+                // Refresh data
+                fetchJourneyData()
+              } catch (err: any) {
+                console.error("Error creating connection:", err)
+                toast({
+                  title: "Error",
+                  description: err.message || "Failed to create connection",
+                  variant: "destructive",
+                })
+              }
+            }}
           />
         </CardContent>
       </Card>

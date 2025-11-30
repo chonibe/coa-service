@@ -8,6 +8,7 @@ interface JourneyMapCanvasProps {
   series: ArtworkSeries[]
   onSeriesClick: (seriesId: string) => void
   onPositionUpdate: (seriesId: string, position: JourneyPosition) => void
+  onConnectionUpdate?: (fromSeriesId: string, toSeriesId: string) => void
 }
 
 // Grid constants - chess board style
@@ -18,8 +19,14 @@ export function JourneyMapCanvas({
   series,
   onSeriesClick,
   onPositionUpdate,
+  onConnectionUpdate,
 }: JourneyMapCanvasProps) {
   const [draggedNode, setDraggedNode] = useState<string | null>(null)
+  const [connectionDragging, setConnectionDragging] = useState<{
+    fromSeriesId: string
+    fromPosition: { x: number; y: number }
+    currentPosition: { x: number; y: number }
+  } | null>(null)
   const containerRef = useRef<HTMLDivElement>(null)
 
   // Snap position to grid
@@ -92,6 +99,74 @@ export function JourneyMapCanvas({
     },
     [snapToGrid, isPositionOccupied]
   )
+
+  // Handle connection node drag start
+  const handleConnectionNodeStart = useCallback(
+    (seriesId: string, nodePosition: { x: number; y: number }, side: 'top' | 'bottom' | 'left' | 'right') => {
+      setConnectionDragging({
+        fromSeriesId: seriesId,
+        fromPosition: nodePosition,
+        currentPosition: nodePosition,
+      })
+    },
+    []
+  )
+
+  // Handle mouse move for connection dragging
+  useEffect(() => {
+    if (!connectionDragging) return
+
+    const handleMouseMove = (e: MouseEvent) => {
+      if (containerRef.current) {
+        const containerRect = containerRef.current.getBoundingClientRect()
+        const x = e.clientX - containerRect.left
+        const y = e.clientY - containerRect.top
+        setConnectionDragging((prev) =>
+          prev ? { ...prev, currentPosition: { x, y } } : null
+        )
+      }
+    }
+
+    const handleMouseUp = (e: MouseEvent) => {
+      if (!connectionDragging) return
+
+      // Find which series node we're over
+      if (containerRef.current) {
+        const containerRect = containerRef.current.getBoundingClientRect()
+        const x = e.clientX - containerRect.left
+        const y = e.clientY - containerRect.top
+
+        // Check if we're over any series node
+        const targetSeries = series.find((s) => {
+          if (s.journey_position?.x === undefined || s.journey_position?.y === undefined) return false
+          if (s.id === connectionDragging.fromSeriesId) return false
+
+          const gridPos = getGridPosition(s)
+          const cardX = gridPos.x + GRID_SIZE / 2
+          const cardY = gridPos.y + GRID_SIZE / 2
+          const distance = Math.sqrt(
+            Math.pow(x - cardX, 2) + Math.pow(y - cardY, 2)
+          )
+
+          return distance < GRID_SIZE / 2
+        })
+
+        if (targetSeries && onConnectionUpdate) {
+          onConnectionUpdate(connectionDragging.fromSeriesId, targetSeries.id)
+        }
+      }
+
+      setConnectionDragging(null)
+    }
+
+    window.addEventListener('mousemove', handleMouseMove)
+    window.addEventListener('mouseup', handleMouseUp)
+
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove)
+      window.removeEventListener('mouseup', handleMouseUp)
+    }
+  }, [connectionDragging, series, onConnectionUpdate])
 
   // Validate and fix overlapping positions on load
   useEffect(() => {
@@ -228,6 +303,7 @@ export function JourneyMapCanvas({
         className="absolute inset-0 pointer-events-none"
         style={{ width: `${gridWidth}px`, height: `${gridHeight}px` }}
       >
+        {/* Existing connections */}
         {connections.map((conn, index) => {
           // Calculate connection points at card centers
           const fromCenterX = conn.from.x + GRID_SIZE / 2
@@ -237,7 +313,7 @@ export function JourneyMapCanvas({
 
           return (
             <line
-              key={index}
+              key={`conn-${index}`}
               x1={fromCenterX}
               y1={fromCenterY}
               x2={toCenterX}
@@ -249,6 +325,22 @@ export function JourneyMapCanvas({
             />
           )
         })}
+
+        {/* Temporary wire while dragging */}
+        {connectionDragging && (
+          <line
+            x1={connectionDragging.fromPosition.x}
+            y1={connectionDragging.fromPosition.y}
+            x2={connectionDragging.currentPosition.x}
+            y2={connectionDragging.currentPosition.y}
+            stroke="currentColor"
+            strokeWidth="3"
+            className="text-primary"
+            strokeDasharray="5,5"
+            markerEnd="url(#arrowhead)"
+          />
+        )}
+
         <defs>
           <marker
             id="arrowhead"
@@ -304,6 +396,8 @@ export function JourneyMapCanvas({
                 setDraggedNode(null)
               }}
               onClick={() => onSeriesClick(s.id)}
+              onConnectionNodeStart={handleConnectionNodeStart}
+              isConnectionDragging={!!connectionDragging}
             />
           )
         })}
