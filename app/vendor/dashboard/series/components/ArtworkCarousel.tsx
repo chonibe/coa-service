@@ -87,7 +87,7 @@ function SortableArtworkItem({
         )}
         
         {/* Lock/Unlock indicator */}
-        <div className="absolute top-2 right-2 flex items-center gap-1">
+        <div className="absolute top-2 right-2 flex items-center gap-1 flex-wrap justify-end max-w-[60%]">
           {isLocked ? (
             <div className="h-6 w-6 rounded-full bg-destructive/80 flex items-center justify-center">
               <Lock className="h-3 w-3 text-white" />
@@ -98,10 +98,76 @@ function SortableArtworkItem({
             </div>
           )}
           {member.has_benefits && (
-            <Badge variant="outline" className="bg-purple-50 dark:bg-purple-950/20 border-purple-200 text-purple-700 dark:text-purple-300 h-6 px-1.5 flex items-center gap-1">
-              <Sparkles className="h-3 w-3" />
-              <span className="text-xs">{member.benefit_count || 1}</span>
-            </Badge>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Badge variant="outline" className="bg-purple-50 dark:bg-purple-950/20 border-purple-200 text-purple-700 dark:text-purple-300 h-6 px-1.5 flex items-center gap-1 cursor-help">
+                    <Sparkles className="h-3 w-3" />
+                    <span className="text-xs">{member.benefit_count || 1}</span>
+                  </Badge>
+                </TooltipTrigger>
+                <TooltipContent side="top" className="max-w-xs">
+                  <div className="space-y-1">
+                    <p className="font-semibold text-xs">Treasure Connected</p>
+                    {member.connections?.hidden_series && (
+                      <p className="text-xs">→ Hidden Series: {member.connections.hidden_series.name}</p>
+                    )}
+                    {member.connections?.vip_artwork && (
+                      <p className="text-xs">→ VIP Artwork: {member.connections.vip_artwork.title}</p>
+                    )}
+                    {member.connections?.vip_series && (
+                      <p className="text-xs">→ VIP Series: {member.connections.vip_series.name}</p>
+                    )}
+                    {!member.connections && (
+                      <p className="text-xs text-muted-foreground">This artwork has {member.benefit_count} treasure{member.benefit_count !== 1 ? 's' : ''}</p>
+                    )}
+                  </div>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          )}
+          {member.connections && (member.connections.hidden_series || member.connections.vip_artwork || member.connections.vip_series) && (
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div className="h-6 w-6 rounded-full bg-amber-500/90 dark:bg-amber-600/90 flex items-center justify-center cursor-help border-2 border-white dark:border-gray-800 shadow-lg">
+                    <Link2 className="h-3 w-3 text-white" />
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent side="top" className="max-w-xs">
+                  <div className="space-y-2">
+                    <p className="font-semibold text-xs flex items-center gap-1">
+                      <Link2 className="h-3 w-3" />
+                      Circular Connection
+                    </p>
+                    {member.connections.hidden_series && (
+                      <div className="text-xs space-y-0.5 pl-2 border-l-2 border-amber-400">
+                        <p className="font-medium">Hidden Series</p>
+                        <p className="text-muted-foreground">{member.connections.hidden_series.name}</p>
+                      </div>
+                    )}
+                    {member.connections.vip_artwork && (
+                      <div className="text-xs space-y-0.5 pl-2 border-l-2 border-purple-400">
+                        <p className="font-medium flex items-center gap-1">
+                          <Crown className="h-3 w-3" />
+                          VIP Artwork
+                        </p>
+                        <p className="text-muted-foreground">{member.connections.vip_artwork.title}</p>
+                      </div>
+                    )}
+                    {member.connections.vip_series && (
+                      <div className="text-xs space-y-0.5 pl-2 border-l-2 border-purple-400">
+                        <p className="font-medium flex items-center gap-1">
+                          <Crown className="h-3 w-3" />
+                          VIP Series
+                        </p>
+                        <p className="text-muted-foreground">{member.connections.vip_series.name}</p>
+                      </div>
+                    )}
+                  </div>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
           )}
         </div>
 
