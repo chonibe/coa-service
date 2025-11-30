@@ -269,6 +269,43 @@ async function syncOrderToDatabase(order: any, supabase: any) {
           console.error(`[webhook] Error processing fulfillment credits for order ${order.name}:`, creditError)
           // Don't fail the webhook if credit processing fails
         }
+
+        // Recalculate series completion for any series containing these products
+        // Only recalculate when order is fulfilled
+        if (order.fulfillment_status === 'fulfilled' || order.financial_status === 'paid') {
+          try {
+            const productIds = lineItems
+              .filter((item: any) => item.status === 'active' && item.product_id)
+              .map((item: any) => item.product_id)
+
+            if (productIds.length > 0) {
+              // Find all series that contain these products
+              const { data: seriesMembers, error: membersError } = await supabase
+                .from('artwork_series_members')
+                .select('series_id')
+                .in('shopify_product_id', productIds)
+
+              if (!membersError && seriesMembers && seriesMembers.length > 0) {
+                const uniqueSeriesIds = [...new Set(seriesMembers.map((m: any) => m.series_id))]
+
+                // Recalculate completion for each affected series
+                const { checkAndCompleteSeries } = await import('@/lib/series/completion-calculator')
+                for (const seriesId of uniqueSeriesIds) {
+                  try {
+                    await checkAndCompleteSeries(seriesId)
+                    console.log(`[webhook] Recalculated completion for series ${seriesId}`)
+                  } catch (seriesError) {
+                    console.error(`[webhook] Error recalculating series ${seriesId}:`, seriesError)
+                    // Continue with other series even if one fails
+                  }
+                }
+              }
+            }
+          } catch (completionError) {
+            console.error(`[webhook] Error processing series completion for order ${order.name}:`, completionError)
+            // Don't fail the webhook if completion processing fails
+          }
+        }
       }
     }
 
