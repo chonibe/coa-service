@@ -121,12 +121,7 @@ export function SeriesNode({
         height: `${cardSize}px`,
       }}
       onMouseDown={handleMouseDown}
-      onClick={(e) => {
-        if (!isDragging) {
-          e.stopPropagation()
-          onClick()
-        }
-      }}
+      // Removed onClick from container to prevent navigation when clicking/dragging card
       whileHover={!isDragging ? { scale: 1.05 } : {}}
       whileTap={!isDragging ? { scale: 0.95 } : {}}
     >
@@ -187,10 +182,16 @@ export function SeriesNode({
         </div>
 
         {/* Hover Arrow Indicator - Center Overlay */}
-        <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-black/20 z-20 pointer-events-none rounded-lg">
-          <div className="bg-background/90 p-2 rounded-full shadow-lg transform scale-90 group-hover:scale-100 transition-transform">
+        <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-black/20 z-20 rounded-lg pointer-events-none">
+          <button
+            onClick={(e) => {
+              e.stopPropagation()
+              onClick()
+            }}
+            className="bg-background/90 p-2 rounded-full shadow-lg transform scale-90 group-hover:scale-100 transition-transform cursor-pointer pointer-events-auto hover:bg-background"
+          >
             <ArrowRight className="h-5 w-5 text-foreground" />
-          </div>
+          </button>
         </div>
 
         {/* Progress Bar */}
