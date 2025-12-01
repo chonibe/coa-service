@@ -288,37 +288,59 @@ export default function SeriesPage() {
               </CardContent>
             </Card>
           ) : (
-            <div className="grid gap-2 grid-cols-4 md:grid-cols-6 lg:grid-cols-8 xl:grid-cols-10">
-              {allArtworks.map((artwork) => (
-                <div key={artwork.id} className="relative aspect-square rounded-md overflow-hidden bg-muted group border cursor-pointer hover:border-primary/50 transition-all">
-                  {artwork.image ? (
-                    <img
-                      src={artwork.image}
-                      alt={artwork.title || "Artwork"}
-                      className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
-                    />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center">
-                      <ImageIcon className="h-6 w-6 text-muted-foreground/30" />
-                    </div>
-                  )}
-                  
-                  {/* Overlay Gradient (visible on hover) */}
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex flex-col justify-end p-2">
-                    <p className="text-[10px] font-medium text-white line-clamp-1">
-                      {artwork.title || "Untitled"}
-                    </p>
-                    <p className="text-[9px] text-white/70 line-clamp-1">
-                      {artwork.series_name}
-                    </p>
+            <div className="space-y-8">
+              {Object.entries(
+                allArtworks.reduce((acc, artwork) => {
+                  const seriesId = artwork.series_id || "unknown"
+                  if (!acc[seriesId]) {
+                    acc[seriesId] = {
+                      name: artwork.series_name || "Unknown Series",
+                      artworks: []
+                    }
+                  }
+                  acc[seriesId].artworks.push(artwork)
+                  return acc
+                }, {} as Record<string, { name: string; artworks: any[] }>)
+              ).map(([seriesId, group]: [string, any]) => (
+                <div key={seriesId} className="border-2 rounded-xl p-4 bg-card/50">
+                  <div className="flex items-center gap-2 mb-4">
+                    <div className="h-4 w-1 bg-primary rounded-full" />
+                    <h3 className="font-bold text-lg">{group.name}</h3>
+                    <Badge variant="outline" className="ml-auto">
+                      {group.artworks.length} {group.artworks.length === 1 ? 'Artwork' : 'Artworks'}
+                    </Badge>
                   </div>
+                  <div className="grid gap-2 grid-cols-4 md:grid-cols-6 lg:grid-cols-8 xl:grid-cols-10">
+                    {group.artworks.map((artwork: any) => (
+                      <div key={artwork.id} className="relative aspect-square rounded-md overflow-hidden bg-muted group border cursor-pointer hover:border-primary/50 transition-all">
+                        {artwork.image ? (
+                          <img
+                            src={artwork.image}
+                            alt={artwork.title || "Artwork"}
+                            className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
+                          />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center">
+                            <ImageIcon className="h-6 w-6 text-muted-foreground/30" />
+                          </div>
+                        )}
+                        
+                        {/* Overlay Gradient (visible on hover) */}
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex flex-col justify-end p-2">
+                          <p className="text-[10px] font-medium text-white line-clamp-1">
+                            {artwork.title || "Untitled"}
+                          </p>
+                        </div>
 
-                  {/* Status Icons */}
-                  {artwork.is_locked && (
-                    <div className="absolute top-1 right-1 bg-black/60 p-1 rounded-full text-white backdrop-blur-sm">
-                      <Lock className="h-2.5 w-2.5" />
-                    </div>
-                  )}
+                        {/* Status Icons */}
+                        {artwork.is_locked && (
+                          <div className="absolute top-1 right-1 bg-black/60 p-1 rounded-full text-white backdrop-blur-sm">
+                            <Lock className="h-2.5 w-2.5" />
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
                 </div>
               ))}
             </div>
