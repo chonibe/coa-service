@@ -450,13 +450,66 @@ export function VariantsStep({ formData, setFormData }: VariantsStepProps) {
                     Choose a price point that matches your artwork's value and market positioning.
                   </p>
                   
-                  <PricePickerCards
-                    value={variant.price ? Number.parseFloat(variant.price) : null}
-                    onChange={(price) => handlePriceChange(0, price)}
+                  {isTimed ? (
+                    <div className="grid gap-6 p-4 border rounded-lg bg-muted/20">
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label>Starting Price</Label>
+                          <div className="relative">
+                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">£</span>
+                            <Input 
+                              type="number" 
+                              min="0"
+                              className="pl-7"
+                              value={variant.price}
+                              onChange={(e) => handlePriceChange(0, e.target.value)}
+                            />
+                          </div>
+                          <p className="text-xs text-muted-foreground">Price at launch</p>
+                        </div>
+                        <div className="space-y-2">
+                          <Label>Final Price</Label>
+                          <div className="relative">
+                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">£</span>
+                            <Input 
+                              type="number" 
+                              min="0"
+                              className="pl-7"
+                              value={formData.metafields?.find(m => m.key === "final_price")?.value || ""}
+                              onChange={(e) => {
+                                const val = e.target.value
+                                setFormData(prev => {
+                                  const metas = [...(prev.metafields || [])]
+                                  const idx = metas.findIndex(m => m.key === "final_price")
+                                  if (idx >= 0) {
+                                    metas[idx] = { ...metas[idx], value: val }
+                                  } else {
+                                    metas.push({ namespace: "custom", key: "final_price", value: val, type: "number_decimal" })
+                                  }
+                                  return { ...prev, metafields: metas }
+                                })
+                              }}
+                            />
+                          </div>
+                          <p className="text-xs text-muted-foreground">Price at close</p>
+                        </div>
+                      </div>
+                      <Alert className="bg-blue-50 border-blue-200">
+                        <TrendingUp className="h-4 w-4 text-blue-600" />
+                        <AlertDescription className="text-blue-700 text-xs">
+                          Price will automatically increase from £{variant.price || 0} to £{formData.metafields?.find(m => m.key === "final_price")?.value || 0} as the time window closes.
+                        </AlertDescription>
+                      </Alert>
+                    </div>
+                  ) : (
+                    <PricePickerCards
+                      value={variant.price ? Number.parseFloat(variant.price) : null}
+                      onChange={(price) => handlePriceChange(0, price)}
                       min={priceRange.min}
                       max={priceRange.max}
-                    recommended={recommendedPrice}
-                  />
+                      recommended={recommendedPrice}
+                    />
+                  )}
                 </div>
               </>
             ) : (
