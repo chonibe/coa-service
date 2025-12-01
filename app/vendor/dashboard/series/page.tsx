@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { Loader2, Plus, Lock, Edit, Trash2, Eye, AlertCircle, Copy, LayoutGrid, BookOpen, ImageIcon, Unlock, ListOrdered, Gem, Clock, Crown } from "lucide-react"
+import { Loader2, Plus, Lock, Edit, Trash2, Eye, AlertCircle, Copy, LayoutGrid, BookOpen, ImageIcon, Unlock, ListOrdered, Gem, Clock, Crown, ShoppingCart } from "lucide-react"
 import { useToast } from "@/components/ui/use-toast"
 import { cn } from "@/lib/utils"
 import type { ArtworkSeries } from "@/types/artwork-series"
@@ -214,6 +214,38 @@ export default function SeriesPage() {
         return <ListOrdered className="h-4 w-4" />
       case "threshold":
         return <Gem className="h-4 w-4" />
+      case "vip":
+        return <Crown className="h-4 w-4" />
+      case "time_based":
+        return <Clock className="h-4 w-4" />
+      default:
+        return <Lock className="h-4 w-4" />
+    }
+  }
+
+  const getSeriesIcon = (unlockType: string) => {
+    switch (unlockType) {
+      case "any_purchase":
+        return <ShoppingCart className="h-4 w-4" />
+      case "sequential":
+        return <ListOrdered className="h-4 w-4" />
+      case "threshold":
+      case "vip":
+        return <Crown className="h-4 w-4" />
+      case "time_based":
+        return <Clock className="h-4 w-4" />
+      default:
+        return <Lock className="h-4 w-4" />
+    }
+  }
+
+  const getSeriesIcon = (unlockType: string) => {
+    switch (unlockType) {
+      case "any_purchase":
+        return <ShoppingCart className="h-4 w-4" />
+      case "sequential":
+        return <ListOrdered className="h-4 w-4" />
+      case "threshold":
       case "vip":
         return <Crown className="h-4 w-4" />
       case "time_based":
