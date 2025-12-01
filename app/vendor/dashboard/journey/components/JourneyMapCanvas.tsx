@@ -110,6 +110,21 @@ export function JourneyMapCanvas({
     [snapToGrid, isPositionOccupied]
   )
 
+  // Get grid position (always normalized to grid) - defined early for use in useEffect hooks
+  const getGridPosition = useCallback((s: ArtworkSeries) => {
+    // If this is the dragged node, use the dragged position
+    if (draggedNode === s.id && draggedPosition) {
+      return draggedPosition
+    }
+    
+    if (s.journey_position?.x !== undefined && s.journey_position?.y !== undefined) {
+      const x = Math.round(s.journey_position.x / GRID_SIZE) * GRID_SIZE
+      const y = Math.round(s.journey_position.y / GRID_SIZE) * GRID_SIZE
+      return { x, y }
+    }
+    return { x: 0, y: 0 }
+  }, [draggedNode, draggedPosition])
+
   // Handle connection node drag start
   const handleConnectionNodeStart = useCallback(
     (seriesId: string, nodePosition: { x: number; y: number }, side: 'top' | 'bottom' | 'left' | 'right') => {
@@ -316,21 +331,6 @@ export function JourneyMapCanvas({
     return () => clearTimeout(timeoutId)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []) // Only run once on mount
-
-  // Get grid position (always normalized to grid)
-  const getGridPosition = useCallback((s: ArtworkSeries) => {
-    // If this is the dragged node, use the dragged position
-    if (draggedNode === s.id && draggedPosition) {
-      return draggedPosition
-    }
-    
-    if (s.journey_position?.x !== undefined && s.journey_position?.y !== undefined) {
-      const x = Math.round(s.journey_position.x / GRID_SIZE) * GRID_SIZE
-      const y = Math.round(s.journey_position.y / GRID_SIZE) * GRID_SIZE
-      return { x, y }
-    }
-    return { x: 0, y: 0 }
-  }, [draggedNode, draggedPosition])
 
   // Build connections - lines that stretch between connected nodes
   const connections = series.flatMap((s) => {
