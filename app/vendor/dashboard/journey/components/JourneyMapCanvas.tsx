@@ -406,6 +406,7 @@ export function JourneyMapCanvas({
               gridSize={GRID_SIZE}
               cardSize={CARD_SIZE}
               containerRef={containerRef}
+              allSeries={series}
               onDragStart={() => {
                 setDraggedNode(s.id)
                 const currentPos = getGridPosition(s)

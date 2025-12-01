@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react"
 import { motion } from "framer-motion"
-import { MapPin } from "lucide-react"
+import { MapPin, Link2 } from "lucide-react"
 import type { ArtworkSeries } from "@/types/artwork-series"
 import { cn } from "@/lib/utils"
 
@@ -18,6 +18,18 @@ interface SeriesNodeProps {
   onClick: () => void
   onConnectionNodeStart?: (seriesId: string, nodePosition: { x: number; y: number }, side: 'top' | 'bottom' | 'left' | 'right') => void
   isConnectionDragging?: boolean
+  allSeries?: ArtworkSeries[] // For counting connections
+}
+
+// Format unlock type for display
+const formatUnlockType = (type: string) => {
+  const types: Record<string, string> = {
+    'any_purchase': 'Any Purchase',
+    'sequential': 'Sequential',
+    'threshold': 'VIP',
+    'custom': 'Custom'
+  }
+  return types[type] || type
 }
 
 export function SeriesNode({
@@ -32,6 +44,7 @@ export function SeriesNode({
   onClick,
   onConnectionNodeStart,
   isConnectionDragging = false,
+  allSeries = [],
 }: SeriesNodeProps) {
   const [isDragging, setIsDragging] = useState(false)
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 })
@@ -41,6 +54,12 @@ export function SeriesNode({
   const isCompleted = series.completed_at !== null
   const progress = series.completion_progress?.percentage_complete || 0
   const isInProgress = !isCompleted && progress > 0
+
+  // Count connections
+  const connectionCount = (series.connected_series_ids?.length || 0) + (series.unlocks_series_ids?.length || 0)
+  const connectedSeries = allSeries.filter(s => 
+    series.connected_series_ids?.includes(s.id) || series.unlocks_series_ids?.includes(s.id)
+  )
 
   const handleMouseDown = (e: React.MouseEvent) => {
     // Don't start drag if clicking on a connection node
@@ -162,21 +181,40 @@ export function SeriesNode({
           isDragging && "opacity-90"
         )}
       >
-        {/* Thumbnail */}
-        {series.thumbnail_url ? (
-          <img
-            src={series.thumbnail_url}
-            alt={series.name}
-            className="w-full h-full object-cover rounded-lg pointer-events-none"
-            draggable={false}
-          />
-        ) : (
-          <div className="w-full h-full flex items-center justify-center bg-muted rounded-lg pointer-events-none">
-            <MapPin className="h-8 w-8 text-muted-foreground" />
-          </div>
-        )}
+        {/* Thumbnail with overlay gradient for text readability */}
+        <div className="relative w-full h-full rounded-lg overflow-hidden">
+          {series.thumbnail_url ? (
+            <img
+              src={series.thumbnail_url}
+              alt={series.name}
+              className="w-full h-full object-cover pointer-events-none"
+              draggable={false}
+            />
+          ) : (
+            <div className="w-full h-full flex items-center justify-center bg-muted pointer-events-none">
+              <MapPin className="h-8 w-8 text-muted-foreground" />
+            </div>
+          )}
+          
+          {/* Gradient overlay for text */}
+          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent pointer-events-none" />
+        </div>
 
-        {/* Status Indicator */}
+        {/* Series Name - Always visible at bottom */}
+        <div className="absolute bottom-0 left-0 right-0 p-1.5 pointer-events-none z-10">
+          <div className="text-xs font-semibold text-white drop-shadow-lg line-clamp-1">
+            {series.name}
+          </div>
+        </div>
+
+        {/* Unlock Type Badge - Top Left */}
+        <div className="absolute top-1 left-1 z-10 pointer-events-none">
+          <div className="bg-primary/90 text-primary-foreground text-[9px] font-medium px-1.5 py-0.5 rounded shadow-sm">
+            {formatUnlockType(series.unlock_type)}
+          </div>
+        </div>
+
+        {/* Status Indicator - Top Right */}
         <div className="absolute top-1 right-1 z-10 pointer-events-none">
           {isCompleted ? (
             <div className="h-3 w-3 rounded-full bg-green-500 border border-background shadow-sm" />
@@ -186,6 +224,16 @@ export function SeriesNode({
             <div className="h-3 w-3 rounded-full bg-muted-foreground/30 border border-background" />
           )}
         </div>
+
+        {/* Connection Count Badge - Below status indicator */}
+        {connectionCount > 0 && (
+          <div className="absolute top-5 right-1 z-10 pointer-events-none flex items-center gap-0.5 bg-primary/90 rounded px-1 py-0.5">
+            <Link2 className="h-2.5 w-2.5 text-white" />
+            <span className="text-[9px] font-semibold text-white">
+              {connectionCount}
+            </span>
+          </div>
+        )}
 
         {/* Progress Bar */}
         {isInProgress && (
@@ -282,12 +330,26 @@ export function SeriesNode({
           </>
         )}
 
-        {/* Series Name Tooltip */}
-        <div className="absolute -bottom-8 left-1/2 transform -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-30">
-          <div className="bg-background border rounded px-2 py-1 text-xs font-medium shadow-lg">
-            {series.name}
+        {/* Connection Info Tooltip on Hover */}
+        {connectionCount > 0 && (
+          <div className="absolute -top-12 left-1/2 transform -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-30">
+            <div className="bg-background border rounded px-2 py-1 text-xs font-medium shadow-lg max-w-[200px]">
+              <div className="font-semibold mb-1">Connections:</div>
+              <div className="text-xs space-y-0.5">
+                {connectedSeries.slice(0, 3).map((s) => (
+                  <div key={s.id} className="text-muted-foreground">
+                    • {s.name}
+                  </div>
+                ))}
+                {connectedSeries.length > 3 && (
+                  <div className="text-muted-foreground">
+                    +{connectedSeries.length - 3} more
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
-        </div>
+        )}
       </div>
     </motion.div>
   )
