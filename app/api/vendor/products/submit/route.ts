@@ -34,11 +34,17 @@ function validateProductSubmission(data: any): { valid: boolean; errors: string[
   if (!data.metafields || !Array.isArray(data.metafields)) {
     errors.push("Edition size is required")
   } else {
-    const editionSizeMetafield = data.metafields.find(
-      (m: any) => m.namespace === "custom" && m.key === "edition_size"
+    const isTimed = data.metafields.find(
+      (m: any) => m.namespace === "custom" && m.key === "timed_edition" && m.value === "true"
     )
-    if (!editionSizeMetafield || !editionSizeMetafield.value) {
-      errors.push("Edition size is required")
+
+    if (!isTimed) {
+      const editionSizeMetafield = data.metafields.find(
+        (m: any) => m.namespace === "custom" && m.key === "edition_size"
+      )
+      if (!editionSizeMetafield || !editionSizeMetafield.value) {
+        errors.push("Edition size is required")
+      }
     }
   }
 
