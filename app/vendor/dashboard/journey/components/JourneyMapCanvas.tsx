@@ -29,6 +29,7 @@ export function JourneyMapCanvas({
     currentPosition: { x: number; y: number }
   } | null>(null)
   const containerRef = useRef<HTMLDivElement>(null)
+  const hasInitializedRef = useRef(false)
 
   // Snap position to grid
   const snapToGrid = useCallback((x: number, y: number) => {
@@ -169,60 +170,89 @@ export function JourneyMapCanvas({
     }
   }, [connectionDragging, series, onConnectionUpdate])
 
-  // Validate and fix overlapping positions on load
+  // Validate and fix overlapping positions on load (only once on mount)
   useEffect(() => {
-    series.forEach((s) => {
-      if (s.journey_position?.x !== undefined && s.journey_position?.y !== undefined) {
-        const normalized = snapToGrid(s.journey_position.x, s.journey_position.y)
-        
-        if (isPositionOccupied(normalized.x, normalized.y, s.id)) {
-          const freePos = findNearestFreePosition(normalized.x, normalized.y, s.id)
-          onPositionUpdate(s.id, {
-            ...s.journey_position,
-            x: freePos.x,
-            y: freePos.y,
-          })
-        } else if (normalized.x !== s.journey_position.x || normalized.y !== s.journey_position.y) {
-          onPositionUpdate(s.id, {
-            ...s.journey_position,
-            x: normalized.x,
-            y: normalized.y,
-          })
+    if (hasInitializedRef.current) return
+    if (series.length === 0) return
+    
+    // Use a timeout to batch updates and only run once
+    const timeoutId = setTimeout(() => {
+      if (hasInitializedRef.current) return
+      
+      series.forEach((s) => {
+        if (s.journey_position?.x !== undefined && s.journey_position?.y !== undefined) {
+          const normalized = snapToGrid(s.journey_position.x, s.journey_position.y)
+          
+          if (isPositionOccupied(normalized.x, normalized.y, s.id)) {
+            const freePos = findNearestFreePosition(normalized.x, normalized.y, s.id)
+            onPositionUpdate(s.id, {
+              ...s.journey_position,
+              x: freePos.x,
+              y: freePos.y,
+            })
+          } else if (normalized.x !== s.journey_position.x || normalized.y !== s.journey_position.y) {
+            onPositionUpdate(s.id, {
+              ...s.journey_position,
+              x: normalized.x,
+              y: normalized.y,
+            })
+          }
         }
-      }
-    })
-  }, [series, snapToGrid, isPositionOccupied, findNearestFreePosition, onPositionUpdate])
+      })
+      
+      hasInitializedRef.current = true
+    }, 100)
+    
+    return () => clearTimeout(timeoutId)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []) // Only run once on mount
 
-  // Auto-arrange series on grid if they don't have positions
+  // Auto-arrange series on grid if they don't have positions (only on initial load)
   useEffect(() => {
+    if (hasInitializedRef.current) return
+    if (series.length === 0) return
+    
     const seriesWithoutPositions = series.filter(
       (s) => !s.journey_position || s.journey_position.x === undefined || s.journey_position.y === undefined
     )
 
-    if (seriesWithoutPositions.length === 0) return
+    if (seriesWithoutPositions.length === 0) {
+      hasInitializedRef.current = true
+      return
+    }
 
-    const sorted = [...seriesWithoutPositions].sort((a, b) => {
-      const orderA = a.milestone_order ?? a.display_order ?? 0
-      const orderB = b.milestone_order ?? b.display_order ?? 0
-      return orderA - orderB
-    })
+    // Use a timeout to batch updates and only run once
+    const timeoutId = setTimeout(() => {
+      if (hasInitializedRef.current) return
+      
+      const sorted = [...seriesWithoutPositions].sort((a, b) => {
+        const orderA = a.milestone_order ?? a.display_order ?? 0
+        const orderB = b.milestone_order ?? b.display_order ?? 0
+        return orderA - orderB
+      })
 
-    sorted.forEach((s, index) => {
-      const row = Math.floor(index / 8)
-      const col = index % 8
-      const x = col * GRID_SIZE
-      const y = row * GRID_SIZE
+      sorted.forEach((s, index) => {
+        const row = Math.floor(index / 8)
+        const col = index % 8
+        const x = col * GRID_SIZE
+        const y = row * GRID_SIZE
+        
+        const freePos = findNearestFreePosition(x, y, s.id)
+        
+        if (!isPositionOccupied(freePos.x, freePos.y, s.id)) {
+          onPositionUpdate(s.id, { x: freePos.x, y: freePos.y, level: row })
+        } else {
+          const alternativePos = findNearestFreePosition(x + GRID_SIZE, y, s.id)
+          onPositionUpdate(s.id, { x: alternativePos.x, y: alternativePos.y, level: row })
+        }
+      })
       
-      const freePos = findNearestFreePosition(x, y, s.id)
-      
-      if (!isPositionOccupied(freePos.x, freePos.y, s.id)) {
-        onPositionUpdate(s.id, { x: freePos.x, y: freePos.y, level: row })
-      } else {
-        const alternativePos = findNearestFreePosition(x + GRID_SIZE, y, s.id)
-        onPositionUpdate(s.id, { x: alternativePos.x, y: alternativePos.y, level: row })
-      }
-    })
-  }, [series, onPositionUpdate, findNearestFreePosition, isPositionOccupied])
+      hasInitializedRef.current = true
+    }, 100)
+    
+    return () => clearTimeout(timeoutId)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []) // Only run once on mount
 
   // Get grid position (always normalized to grid)
   const getGridPosition = useCallback((s: ArtworkSeries) => {
