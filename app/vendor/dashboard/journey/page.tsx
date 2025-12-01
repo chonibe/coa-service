@@ -205,6 +205,74 @@ export default function JourneyMapPage() {
                 })
               }
             }}
+            onConnectionRemove={async (fromSeriesId, toSeriesId) => {
+              try {
+                // Get current series to find existing connections
+                const fromSeries = series.find((s) => s.id === fromSeriesId)
+                if (!fromSeries) return
+
+                // Remove from connected_series_ids
+                const currentConnections = fromSeries.connected_series_ids || []
+                const updatedConnections = currentConnections.filter((id) => id !== toSeriesId)
+
+                // Also check unlocks_series_ids
+                const currentUnlocks = fromSeries.unlocks_series_ids || []
+                const updatedUnlocks = currentUnlocks.filter((id) => id !== toSeriesId)
+
+                // Optimistically update local state
+                setSeries((prevSeries) =>
+                  prevSeries.map((s) =>
+                    s.id === fromSeriesId
+                      ? { 
+                          ...s, 
+                          connected_series_ids: updatedConnections,
+                          unlocks_series_ids: updatedUnlocks
+                        }
+                      : s
+                  )
+                )
+
+                const response = await fetch(`/api/vendor/series/${fromSeriesId}/journey-position`, {
+                  method: "PUT",
+                  headers: {
+                    "Content-Type": "application/json",
+                  },
+                  credentials: "include",
+                  body: JSON.stringify({ 
+                    connected_series_ids: updatedConnections,
+                    unlocks_series_ids: updatedUnlocks
+                  }),
+                })
+
+                if (!response.ok) {
+                  throw new Error("Failed to remove connection")
+                }
+
+                toast({
+                  title: "Connection Removed",
+                  description: "Series connection removed successfully",
+                })
+
+                // Update with server response
+                const data = await response.json()
+                if (data.series) {
+                  setSeries((prevSeries) =>
+                    prevSeries.map((s) =>
+                      s.id === fromSeriesId ? { ...s, ...data.series } : s
+                    )
+                  )
+                }
+              } catch (err: any) {
+                console.error("Error removing connection:", err)
+                // Revert on error
+                fetchJourneyData()
+                toast({
+                  title: "Error",
+                  description: err.message || "Failed to remove connection",
+                  variant: "destructive",
+                })
+              }
+            }}
           />
         </CardContent>
       </Card>

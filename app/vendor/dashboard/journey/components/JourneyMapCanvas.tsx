@@ -9,6 +9,7 @@ interface JourneyMapCanvasProps {
   onSeriesClick: (seriesId: string) => void
   onPositionUpdate: (seriesId: string, position: JourneyPosition) => void
   onConnectionUpdate?: (fromSeriesId: string, toSeriesId: string) => void
+  onConnectionRemove?: (fromSeriesId: string, toSeriesId: string) => void
 }
 
 // Grid constants - chess board style
@@ -20,6 +21,7 @@ export function JourneyMapCanvas({
   onSeriesClick,
   onPositionUpdate,
   onConnectionUpdate,
+  onConnectionRemove,
 }: JourneyMapCanvasProps) {
   const [draggedNode, setDraggedNode] = useState<string | null>(null)
   const [draggedPosition, setDraggedPosition] = useState<{ x: number; y: number } | null>(null)
@@ -271,21 +273,48 @@ export function JourneyMapCanvas({
 
   // Build connections - lines that stretch between connected nodes
   const connections = series.flatMap((s) => {
-    const connections: Array<{ from: { x: number; y: number }; to: { x: number; y: number } }> = []
+    const connections: Array<{ 
+      from: { x: number; y: number }
+      to: { x: number; y: number }
+      fromSeriesId: string
+      toSeriesId: string
+      connectionType: 'connected' | 'unlocks'
+    }> = []
     const from = getGridPosition(s)
 
-    const allConnections = [
-      ...(s.unlocks_series_ids || []),
-      ...(s.connected_series_ids || [])
-    ]
+    // Track connected series
+    if (s.connected_series_ids) {
+      s.connected_series_ids.forEach((connectedId) => {
+        const connected = series.find((cs) => cs.id === connectedId)
+        if (connected) {
+          const to = getGridPosition(connected)
+          connections.push({ 
+            from, 
+            to, 
+            fromSeriesId: s.id, 
+            toSeriesId: connectedId,
+            connectionType: 'connected'
+          })
+        }
+      })
+    }
 
-    allConnections.forEach((connectedId) => {
-      const connected = series.find((cs) => cs.id === connectedId)
-      if (connected) {
-        const to = getGridPosition(connected)
-        connections.push({ from, to })
-      }
-    })
+    // Track unlocks series
+    if (s.unlocks_series_ids) {
+      s.unlocks_series_ids.forEach((unlocksId) => {
+        const unlocked = series.find((cs) => cs.id === unlocksId)
+        if (unlocked) {
+          const to = getGridPosition(unlocked)
+          connections.push({ 
+            from, 
+            to, 
+            fromSeriesId: s.id, 
+            toSeriesId: unlocksId,
+            connectionType: 'unlocks'
+          })
+        }
+      })
+    }
 
     return connections
   })
@@ -336,7 +365,7 @@ export function JourneyMapCanvas({
 
       {/* Connection lines - stretch between connected nodes */}
       <svg
-        className="absolute inset-0 pointer-events-none"
+        className="absolute inset-0"
         style={{ width: `${gridWidth}px`, height: `${gridHeight}px` }}
       >
         {/* Existing connections */}
@@ -346,19 +375,52 @@ export function JourneyMapCanvas({
           const fromCenterY = conn.from.y + GRID_SIZE / 2
           const toCenterX = conn.to.x + GRID_SIZE / 2
           const toCenterY = conn.to.y + GRID_SIZE / 2
+          
+          // Calculate midpoint for delete button
+          const midX = (fromCenterX + toCenterX) / 2
+          const midY = (fromCenterY + toCenterY) / 2
 
           return (
-            <line
-              key={`conn-${index}`}
-              x1={fromCenterX}
-              y1={fromCenterY}
-              x2={toCenterX}
-              y2={toCenterY}
-              stroke="currentColor"
-              strokeWidth="2"
-              className="text-primary/50"
-              markerEnd="url(#arrowhead)"
-            />
+            <g key={`conn-${conn.fromSeriesId}-${conn.toSeriesId}-${index}`}>
+              <line
+                x1={fromCenterX}
+                y1={fromCenterY}
+                x2={toCenterX}
+                y2={toCenterY}
+                stroke="currentColor"
+                strokeWidth="2"
+                className="text-primary/50 pointer-events-none"
+                markerEnd="url(#arrowhead)"
+              />
+              {/* Delete button in center of connection */}
+              {onConnectionRemove && (
+                <g className="pointer-events-auto">
+                  <circle
+                    cx={midX}
+                    cy={midY}
+                    r="12"
+                    fill="hsl(var(--background))"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    className="text-primary/50 hover:text-primary cursor-pointer"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      onConnectionRemove(conn.fromSeriesId, conn.toSeriesId)
+                    }}
+                  />
+                  <text
+                    x={midX}
+                    y={midY}
+                    textAnchor="middle"
+                    dominantBaseline="central"
+                    className="text-primary/70 hover:text-primary text-sm font-bold cursor-pointer pointer-events-none"
+                    style={{ fontSize: '14px', userSelect: 'none' }}
+                  >
+                    −
+                  </text>
+                </g>
+              )}
+            </g>
           )
         })}
 
