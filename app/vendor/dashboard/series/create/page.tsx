@@ -148,7 +148,8 @@ export default function CreateSeriesPage() {
 
       if (!response.ok) {
         const error = await response.json()
-        throw new Error(error.error || "Failed to create series")
+        console.error("Series creation failed:", error)
+        throw new Error(error.details || error.error || "Failed to create series")
       }
 
       const data = await response.json()
@@ -170,7 +171,7 @@ export default function CreateSeriesPage() {
       toast({
         variant: "destructive",
         title: "Error",
-        description: error.message || "Failed to create series",
+        description: error.message || "Failed to create series. Check console for details.",
       })
     } finally {
       setCreatingSeries(false)
