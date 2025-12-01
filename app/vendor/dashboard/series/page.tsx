@@ -303,14 +303,6 @@ export default function SeriesPage() {
                 }, {} as Record<string, { name: string; artworks: any[] }>)
               ).map(([seriesId, group]: [string, any]) => (
                 <div key={seriesId} className="flex flex-col border-2 rounded-xl overflow-hidden bg-card hover:border-primary/50 transition-colors shadow-sm w-fit max-w-[320px]">
-                  {/* Header */}
-                  <div className="p-2 bg-muted/30 border-b flex items-center gap-3">
-                    <h3 className="font-semibold text-xs truncate max-w-[150px]" title={group.name}>{group.name}</h3>
-                    <Badge variant="secondary" className="text-[9px] h-4 px-1 ml-auto">
-                      {group.artworks.length}
-                    </Badge>
-                  </div>
-                  
                   {/* Artworks Flex Grid - Adapts to content size */}
                   <div className="p-1.5 bg-muted/10">
                     <div className="flex flex-wrap gap-1.5">
