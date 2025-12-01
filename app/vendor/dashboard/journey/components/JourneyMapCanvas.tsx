@@ -22,6 +22,7 @@ export function JourneyMapCanvas({
   onConnectionUpdate,
 }: JourneyMapCanvasProps) {
   const [draggedNode, setDraggedNode] = useState<string | null>(null)
+  const [draggedPosition, setDraggedPosition] = useState<{ x: number; y: number } | null>(null)
   const [connectionDragging, setConnectionDragging] = useState<{
     fromSeriesId: string
     fromPosition: { x: number; y: number }
@@ -224,14 +225,19 @@ export function JourneyMapCanvas({
   }, [series, onPositionUpdate, findNearestFreePosition, isPositionOccupied])
 
   // Get grid position (always normalized to grid)
-  const getGridPosition = (s: ArtworkSeries) => {
+  const getGridPosition = useCallback((s: ArtworkSeries) => {
+    // If this is the dragged node, use the dragged position
+    if (draggedNode === s.id && draggedPosition) {
+      return draggedPosition
+    }
+    
     if (s.journey_position?.x !== undefined && s.journey_position?.y !== undefined) {
       const x = Math.round(s.journey_position.x / GRID_SIZE) * GRID_SIZE
       const y = Math.round(s.journey_position.y / GRID_SIZE) * GRID_SIZE
       return { x, y }
     }
     return { x: 0, y: 0 }
-  }
+  }, [draggedNode, draggedPosition])
 
   // Build connections - lines that stretch between connected nodes
   const connections = series.flatMap((s) => {
@@ -370,7 +376,16 @@ export function JourneyMapCanvas({
               gridSize={GRID_SIZE}
               cardSize={CARD_SIZE}
               containerRef={containerRef}
-              onDragStart={() => setDraggedNode(s.id)}
+              onDragStart={() => {
+                setDraggedNode(s.id)
+                const currentPos = getGridPosition(s)
+                setDraggedPosition(currentPos)
+              }}
+              onDragMove={(newPosition) => {
+                const freePos = findNearestFreePosition(newPosition.x, newPosition.y, s.id)
+                const normalizedPos = snapToGrid(freePos.x, freePos.y)
+                setDraggedPosition(normalizedPos)
+              }}
               onDragEnd={(newPosition) => {
                 const freePos = findNearestFreePosition(newPosition.x, newPosition.y, s.id)
                 const normalizedPos = snapToGrid(freePos.x, freePos.y)
@@ -394,6 +409,7 @@ export function JourneyMapCanvas({
                   })
                 }
                 setDraggedNode(null)
+                setDraggedPosition(null)
               }}
               onClick={() => onSeriesClick(s.id)}
               onConnectionNodeStart={handleConnectionNodeStart}

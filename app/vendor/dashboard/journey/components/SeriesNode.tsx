@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect, useRef } from "react"
 import { motion } from "framer-motion"
 import { MapPin } from "lucide-react"
 import type { ArtworkSeries } from "@/types/artwork-series"
@@ -14,6 +14,7 @@ interface SeriesNodeProps {
   containerRef?: React.RefObject<HTMLDivElement>
   onDragStart: () => void
   onDragEnd: (position: { x: number; y: number }) => void
+  onDragMove?: (position: { x: number; y: number }) => void
   onClick: () => void
   onConnectionNodeStart?: (seriesId: string, nodePosition: { x: number; y: number }, side: 'top' | 'bottom' | 'left' | 'right') => void
   isConnectionDragging?: boolean
@@ -27,36 +28,79 @@ export function SeriesNode({
   containerRef,
   onDragStart,
   onDragEnd,
+  onDragMove,
   onClick,
   onConnectionNodeStart,
   isConnectionDragging = false,
 }: SeriesNodeProps) {
   const [isDragging, setIsDragging] = useState(false)
+  const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 })
   const [hoveredNode, setHoveredNode] = useState<'top' | 'bottom' | 'left' | 'right' | null>(null)
+  const nodeRef = useRef<HTMLDivElement>(null)
 
   const isCompleted = series.completed_at !== null
   const progress = series.completion_progress?.percentage_complete || 0
   const isInProgress = !isCompleted && progress > 0
 
   const handleMouseDown = (e: React.MouseEvent) => {
+    // Don't start drag if clicking on a connection node
+    if ((e.target as HTMLElement).closest('[data-connection-node]')) {
+      return
+    }
+    
     e.stopPropagation()
-    setIsDragging(true)
-    onDragStart()
-  }
-
-  const handleMouseUp = (e: React.MouseEvent) => {
-    if (isDragging) {
-      e.stopPropagation()
-      setIsDragging(false)
-
-      if (containerRef?.current) {
-        const containerRect = containerRef.current.getBoundingClientRect()
-        const x = e.clientX - containerRect.left
-        const y = e.clientY - containerRect.top
-        onDragEnd({ x, y })
-      }
+    
+    if (containerRef?.current && nodeRef.current) {
+      const containerRect = containerRef.current.getBoundingClientRect()
+      const nodeRect = nodeRef.current.getBoundingClientRect()
+      
+      // Calculate offset from mouse to node position
+      const offsetX = e.clientX - nodeRect.left - nodeRect.width / 2
+      const offsetY = e.clientY - nodeRect.top - nodeRect.height / 2
+      
+      setDragOffset({ x: offsetX, y: offsetY })
+      setIsDragging(true)
+      onDragStart()
     }
   }
+
+  // Handle mouse move during drag
+  useEffect(() => {
+    if (!isDragging) return
+
+    const handleMouseMove = (e: MouseEvent) => {
+      if (containerRef?.current && nodeRef.current) {
+        const containerRect = containerRef.current.getBoundingClientRect()
+        const x = e.clientX - containerRect.left - dragOffset.x - cardSize / 2
+        const y = e.clientY - containerRect.top - dragOffset.y - cardSize / 2
+        
+        if (onDragMove) {
+          onDragMove({ x, y })
+        }
+      }
+    }
+
+    const handleMouseUp = (e: MouseEvent) => {
+      if (isDragging) {
+        setIsDragging(false)
+        
+        if (containerRef?.current) {
+          const containerRect = containerRef.current.getBoundingClientRect()
+          const x = e.clientX - containerRect.left - dragOffset.x - cardSize / 2
+          const y = e.clientY - containerRect.top - dragOffset.y - cardSize / 2
+          onDragEnd({ x, y })
+        }
+      }
+    }
+
+    window.addEventListener('mousemove', handleMouseMove)
+    window.addEventListener('mouseup', handleMouseUp)
+
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove)
+      window.removeEventListener('mouseup', handleMouseUp)
+    }
+  }, [isDragging, dragOffset, containerRef, cardSize, onDragMove, onDragEnd])
 
   const handleConnectionNodeMouseDown = (e: React.MouseEvent, side: 'top' | 'bottom' | 'left' | 'right') => {
     e.stopPropagation()
@@ -84,6 +128,7 @@ export function SeriesNode({
 
   return (
     <motion.div
+      ref={nodeRef}
       className={cn(
         "absolute cursor-move group",
         isDragging && "z-50 cursor-grabbing",
@@ -96,15 +141,14 @@ export function SeriesNode({
         height: `${cardSize}px`,
       }}
       onMouseDown={handleMouseDown}
-      onMouseUp={handleMouseUp}
       onClick={(e) => {
         if (!isDragging && !isConnectionDragging) {
           e.stopPropagation()
           onClick()
         }
       }}
-      whileHover={{ scale: 1.05 }}
-      whileTap={{ scale: 0.95 }}
+      whileHover={!isDragging ? { scale: 1.05 } : {}}
+      whileTap={!isDragging ? { scale: 0.95 } : {}}
     >
       {/* Card */}
       <div
@@ -114,7 +158,8 @@ export function SeriesNode({
           isCompleted && "border-green-500 bg-green-50/50 dark:bg-green-950/50",
           isInProgress && "border-blue-500 bg-blue-50/50 dark:bg-blue-950/50",
           !isCompleted && !isInProgress && "border-border bg-card",
-          "hover:shadow-lg hover:border-primary"
+          "hover:shadow-lg hover:border-primary",
+          isDragging && "opacity-90"
         )}
       >
         {/* Thumbnail */}
@@ -122,16 +167,17 @@ export function SeriesNode({
           <img
             src={series.thumbnail_url}
             alt={series.name}
-            className="w-full h-full object-cover rounded-lg"
+            className="w-full h-full object-cover rounded-lg pointer-events-none"
+            draggable={false}
           />
         ) : (
-          <div className="w-full h-full flex items-center justify-center bg-muted rounded-lg">
+          <div className="w-full h-full flex items-center justify-center bg-muted rounded-lg pointer-events-none">
             <MapPin className="h-8 w-8 text-muted-foreground" />
           </div>
         )}
 
         {/* Status Indicator */}
-        <div className="absolute top-1 right-1 z-10">
+        <div className="absolute top-1 right-1 z-10 pointer-events-none">
           {isCompleted ? (
             <div className="h-3 w-3 rounded-full bg-green-500 border border-background shadow-sm" />
           ) : isInProgress ? (
@@ -143,7 +189,7 @@ export function SeriesNode({
 
         {/* Progress Bar */}
         {isInProgress && (
-          <div className="absolute bottom-0 left-0 right-0 h-1 bg-muted/50 rounded-b-lg">
+          <div className="absolute bottom-0 left-0 right-0 h-1 bg-muted/50 rounded-b-lg pointer-events-none">
             <div
               className="h-full bg-blue-500 transition-all rounded-b-lg"
               style={{ width: `${progress}%` }}
@@ -156,6 +202,7 @@ export function SeriesNode({
           <>
             {/* Top Node */}
             <div
+              data-connection-node
               className={cn(
                 "absolute left-1/2 -translate-x-1/2 cursor-crosshair z-20 transition-all",
                 "hover:scale-125",
@@ -175,6 +222,7 @@ export function SeriesNode({
 
             {/* Bottom Node */}
             <div
+              data-connection-node
               className={cn(
                 "absolute left-1/2 -translate-x-1/2 cursor-crosshair z-20 transition-all",
                 "hover:scale-125",
@@ -194,6 +242,7 @@ export function SeriesNode({
 
             {/* Left Node */}
             <div
+              data-connection-node
               className={cn(
                 "absolute top-1/2 -translate-y-1/2 cursor-crosshair z-20 transition-all",
                 "hover:scale-125",
@@ -213,6 +262,7 @@ export function SeriesNode({
 
             {/* Right Node */}
             <div
+              data-connection-node
               className={cn(
                 "absolute top-1/2 -translate-y-1/2 cursor-crosshair z-20 transition-all",
                 "hover:scale-125",
