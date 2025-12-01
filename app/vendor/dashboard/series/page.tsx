@@ -328,12 +328,13 @@ export default function SeriesPage() {
                     acc[seriesId] = {
                       name: artwork.series_name || "Unknown Series",
                       unlock_type: artwork.series_unlock_type || "unknown",
+                      unlock_config: artwork.series_unlock_config || {},
                       artworks: []
                     }
                   }
                   acc[seriesId].artworks.push(artwork)
                   return acc
-                }, {} as Record<string, { name: string; unlock_type: string; artworks: any[] }>)
+                }, {} as Record<string, { name: string; unlock_type: string; unlock_config: any; artworks: any[] }>)
               ).map(([seriesId, group]: [string, any]) => (
                 <div 
                   key={seriesId} 
@@ -386,6 +387,59 @@ export default function SeriesPage() {
                       ))}
                     </div>
                   </div>
+
+                  {/* Time-Based Info Footer */}
+                  {group.unlock_type === "time_based" && (
+                    <div className="px-2 pb-1 text-[10px] text-muted-foreground border-t bg-muted/20">
+                      {(() => {
+                        const config = group.unlock_config
+                        if (config.unlock_at) {
+                          const date = new Date(config.unlock_at)
+                          const isPast = date < new Date()
+                          return (
+                            <div className="flex items-center gap-1 py-1">
+                              <Clock className="h-3 w-3" />
+                              <span>{isPast ? "Unlocked" : `Unlocks ${date.toLocaleDateString()}`}</span>
+                            </div>
+                          )
+                        } else if (config.unlock_schedule?.start_date && config.unlock_schedule?.end_date) {
+                          const start = new Date(config.unlock_schedule.start_date)
+                          const end = new Date(config.unlock_schedule.end_date)
+                          const now = new Date()
+                          const isActive = now >= start && now <= end
+                          const isPast = now > end
+                          
+                          // Calculate percentage if active
+                          let progress = 0
+                          if (isActive) {
+                            const total = end.getTime() - start.getTime()
+                            const current = now.getTime() - start.getTime()
+                            progress = Math.min(100, Math.max(0, (current / total) * 100))
+                          }
+
+                          return (
+                            <div className="w-full py-1">
+                              <div className="flex justify-between items-center mb-0.5">
+                                <span className={cn("font-medium", isActive ? "text-green-600" : "")}>
+                                  {isActive ? "Active Now" : isPast ? "Ended" : "Coming Soon"}
+                                </span>
+                                <span className="opacity-70">{end.toLocaleDateString()}</span>
+                              </div>
+                              {isActive && (
+                                <div className="h-1 w-full bg-muted rounded-full overflow-hidden">
+                                  <div 
+                                    className="h-full bg-green-500 rounded-full" 
+                                    style={{ width: `${progress}%` }}
+                                  />
+                                </div>
+                              )}
+                            </div>
+                          )
+                        }
+                        return null
+                      })()}
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
