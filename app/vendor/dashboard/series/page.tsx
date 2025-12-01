@@ -206,22 +206,6 @@ export default function SeriesPage() {
     }
   }
 
-  const getSeriesColor = (unlockType: string) => {
-    switch (unlockType) {
-      case "any_purchase":
-        return "border-blue-500/50 bg-blue-50/10 hover:border-blue-500"
-      case "sequential":
-        return "border-purple-500/50 bg-purple-50/10 hover:border-purple-500"
-      case "threshold":
-      case "vip":
-        return "border-orange-500/50 bg-orange-50/10 hover:border-orange-500"
-      case "time_based":
-        return "border-green-500/50 bg-green-50/10 hover:border-green-500"
-      default:
-        return "border-border bg-card hover:border-primary/50"
-    }
-  }
-
   if (loading) {
     return (
       <div className="space-y-6">
