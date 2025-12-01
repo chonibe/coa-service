@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { Loader2, Plus, Lock, Edit, Trash2, Eye, AlertCircle, Copy, LayoutGrid, BookOpen, ImageIcon } from "lucide-react"
+import { Loader2, Plus, Lock, Edit, Trash2, Eye, AlertCircle, Copy, LayoutGrid, BookOpen, ImageIcon, Unlock, ListOrdered, Gem, Clock, Crown } from "lucide-react"
 import { useToast } from "@/components/ui/use-toast"
 import { cn } from "@/lib/utils"
 import type { ArtworkSeries } from "@/types/artwork-series"
@@ -206,6 +206,23 @@ export default function SeriesPage() {
     }
   }
 
+  const getSeriesIcon = (unlockType: string) => {
+    switch (unlockType) {
+      case "any_purchase":
+        return <Unlock className="h-4 w-4" />
+      case "sequential":
+        return <ListOrdered className="h-4 w-4" />
+      case "threshold":
+        return <Gem className="h-4 w-4" />
+      case "vip":
+        return <Crown className="h-4 w-4" />
+      case "time_based":
+        return <Clock className="h-4 w-4" />
+      default:
+        return <Lock className="h-4 w-4" />
+    }
+  }
+
   if (loading) {
     return (
       <div className="space-y-6">
@@ -322,10 +339,20 @@ export default function SeriesPage() {
                 <div 
                   key={seriesId} 
                   className={cn(
-                    "flex flex-col border-2 rounded-xl overflow-hidden transition-colors shadow-sm w-fit",
+                    "flex flex-col border-2 rounded-xl overflow-hidden transition-colors shadow-sm w-fit relative",
                     getSeriesColor(group.unlock_type)
                   )}
                 >
+                  {/* Type Icon Badge */}
+                  <div className={cn(
+                    "absolute top-0 right-0 p-1.5 rounded-bl-lg z-10",
+                    getSeriesColor(group.unlock_type).replace('border-', 'bg-').split(' ')[0] // Simple hack to get bg color from border class
+                  )}>
+                    <div className="bg-background/80 backdrop-blur-sm p-1 rounded-full shadow-sm">
+                      {getSeriesIcon(group.unlock_type)}
+                    </div>
+                  </div>
+
                   {/* Artworks Flex Grid - Adapts to content size */}
                   <div className="p-2 overflow-x-auto no-scrollbar max-w-[80vw]">
                     <div className="flex flex-nowrap gap-2 min-w-max">
