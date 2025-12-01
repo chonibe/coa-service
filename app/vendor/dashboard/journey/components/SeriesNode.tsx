@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react"
 import { motion } from "framer-motion"
-import { MapPin, Link2 } from "lucide-react"
+import { MapPin, ArrowRight } from "lucide-react"
 import type { ArtworkSeries } from "@/types/artwork-series"
 import { cn } from "@/lib/utils"
 
@@ -103,22 +103,6 @@ export function SeriesNode({
     }
   }, [isDragging, dragOffset, containerRef, cardSize, onDragMove, onDragEnd])
 
-  const handleConnectionNodeMouseDown = (e: React.MouseEvent, side: 'top' | 'bottom' | 'left' | 'right') => {
-    e.stopPropagation()
-    e.preventDefault()
-    
-    if (onConnectionNodeStart && containerRef?.current) {
-      const containerRect = containerRef.current.getBoundingClientRect()
-      const cardRect = e.currentTarget.getBoundingClientRect()
-      
-      // Calculate node position relative to container
-      const nodeX = cardRect.left - containerRect.left + cardRect.width / 2
-      const nodeY = cardRect.top - containerRect.top + cardRect.height / 2
-      
-      onConnectionNodeStart(series.id, { x: nodeX, y: nodeY }, side)
-    }
-  }
-
   // Center card in grid square
   const offsetX = (gridSize - cardSize) / 2
   const offsetY = (gridSize - cardSize) / 2
@@ -200,6 +184,13 @@ export function SeriesNode({
           ) : (
             <div className="h-3 w-3 rounded-full bg-muted-foreground/30 border border-background" />
           )}
+        </div>
+
+        {/* Hover Arrow Indicator - Center Overlay */}
+        <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-black/20 z-20 pointer-events-none rounded-lg">
+          <div className="bg-background/90 p-2 rounded-full shadow-lg transform scale-90 group-hover:scale-100 transition-transform">
+            <ArrowRight className="h-5 w-5 text-foreground" />
+          </div>
         </div>
 
         {/* Progress Bar */}
