@@ -330,7 +330,7 @@ export default function SeriesPage() {
                   <div className="p-2">
                     <div className="flex flex-wrap gap-2">
                       {group.artworks.map((artwork: any) => (
-                        <div key={artwork.id} className="relative w-24 h-24 rounded-md overflow-hidden bg-background border shadow-sm group/item flex-shrink-0">
+                        <div key={artwork.id} className="relative w-32 h-32 rounded-md overflow-hidden bg-background border shadow-sm group/item flex-shrink-0">
                           {artwork.image ? (
                             <img
                               src={artwork.image}
