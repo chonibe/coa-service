@@ -158,6 +158,7 @@ export function JourneyMapCanvas({
         if (targetSeries && onConnectionUpdate) {
           onConnectionUpdate(connectionDragging.fromSeriesId, targetSeries.id)
         }
+        // If not over a target, just cancel the connection creation
       }
 
       setConnectionDragging(null)
@@ -365,8 +366,8 @@ export function JourneyMapCanvas({
 
       {/* Connection lines - stretch between connected nodes */}
       <svg
-        className="absolute inset-0"
-        style={{ width: `${gridWidth}px`, height: `${gridHeight}px` }}
+        className="absolute inset-0 z-10"
+        style={{ width: `${gridWidth}px`, height: `${gridHeight}px`, pointerEvents: 'none' }}
       >
         {/* Existing connections */}
         {connections.map((conn, index) => {
@@ -389,37 +390,10 @@ export function JourneyMapCanvas({
                 y2={toCenterY}
                 stroke="currentColor"
                 strokeWidth="2"
-                className="text-primary/50 pointer-events-none"
+                className="text-primary/50"
                 markerEnd="url(#arrowhead)"
+                style={{ pointerEvents: 'none' }}
               />
-              {/* Delete button in center of connection */}
-              {onConnectionRemove && (
-                <g className="pointer-events-auto">
-                  <circle
-                    cx={midX}
-                    cy={midY}
-                    r="12"
-                    fill="hsl(var(--background))"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    className="text-primary/50 hover:text-primary cursor-pointer"
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      onConnectionRemove(conn.fromSeriesId, conn.toSeriesId)
-                    }}
-                  />
-                  <text
-                    x={midX}
-                    y={midY}
-                    textAnchor="middle"
-                    dominantBaseline="central"
-                    className="text-primary/70 hover:text-primary text-sm font-bold cursor-pointer pointer-events-none"
-                    style={{ fontSize: '14px', userSelect: 'none' }}
-                  >
-                    −
-                  </text>
-                </g>
-              )}
             </g>
           )
         })}
@@ -436,6 +410,7 @@ export function JourneyMapCanvas({
             className="text-primary"
             strokeDasharray="5,5"
             markerEnd="url(#arrowhead)"
+            style={{ pointerEvents: 'none' }}
           />
         )}
 
@@ -453,9 +428,48 @@ export function JourneyMapCanvas({
         </defs>
       </svg>
 
+      {/* Delete buttons for connections - separate layer for clickability */}
+      {onConnectionRemove && (
+        <div className="absolute inset-0 z-20" style={{ width: `${gridWidth}px`, height: `${gridHeight}px`, pointerEvents: 'none' }}>
+          {connections.map((conn, index) => {
+            // Calculate connection points at card centers
+            const fromCenterX = conn.from.x + GRID_SIZE / 2
+            const fromCenterY = conn.from.y + GRID_SIZE / 2
+            const toCenterX = conn.to.x + GRID_SIZE / 2
+            const toCenterY = conn.to.y + GRID_SIZE / 2
+            
+            // Calculate midpoint for delete button
+            const midX = (fromCenterX + toCenterX) / 2
+            const midY = (fromCenterY + toCenterY) / 2
+
+            return (
+              <button
+                key={`delete-${conn.fromSeriesId}-${conn.toSeriesId}-${index}`}
+                className="absolute rounded-full bg-background border-2 border-primary/50 hover:border-primary text-primary/70 hover:text-primary cursor-pointer transition-all hover:scale-110 shadow-lg flex items-center justify-center"
+                style={{
+                  left: `${midX - 14}px`,
+                  top: `${midY - 14}px`,
+                  width: '28px',
+                  height: '28px',
+                  pointerEvents: 'auto',
+                }}
+                onClick={(e) => {
+                  e.stopPropagation()
+                  e.preventDefault()
+                  onConnectionRemove(conn.fromSeriesId, conn.toSeriesId)
+                }}
+                title="Remove connection"
+              >
+                <span className="text-sm font-bold leading-none">−</span>
+              </button>
+            )
+          })}
+        </div>
+      )}
+
       {/* Series Nodes on Grid */}
       <div
-        className="relative"
+        className="relative z-30"
         style={{ width: `${gridWidth}px`, height: `${gridHeight}px` }}
       >
         {series.map((s) => {
