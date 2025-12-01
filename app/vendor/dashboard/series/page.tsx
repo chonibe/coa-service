@@ -209,39 +209,6 @@ export default function SeriesPage() {
   const getSeriesIcon = (unlockType: string) => {
     switch (unlockType) {
       case "any_purchase":
-        return <Unlock className="h-4 w-4" />
-      case "sequential":
-        return <ListOrdered className="h-4 w-4" />
-      case "threshold":
-        return <Gem className="h-4 w-4" />
-      case "vip":
-        return <Crown className="h-4 w-4" />
-      case "time_based":
-        return <Clock className="h-4 w-4" />
-      default:
-        return <Lock className="h-4 w-4" />
-    }
-  }
-
-  const getSeriesIcon = (unlockType: string) => {
-    switch (unlockType) {
-      case "any_purchase":
-        return <ShoppingCart className="h-4 w-4" />
-      case "sequential":
-        return <ListOrdered className="h-4 w-4" />
-      case "threshold":
-      case "vip":
-        return <Crown className="h-4 w-4" />
-      case "time_based":
-        return <Clock className="h-4 w-4" />
-      default:
-        return <Lock className="h-4 w-4" />
-    }
-  }
-
-  const getSeriesIcon = (unlockType: string) => {
-    switch (unlockType) {
-      case "any_purchase":
         return <ShoppingCart className="h-4 w-4" />
       case "sequential":
         return <ListOrdered className="h-4 w-4" />
