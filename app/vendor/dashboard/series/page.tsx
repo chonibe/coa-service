@@ -354,10 +354,7 @@ export default function SeriesPage() {
                   </div>
 
                   {/* Artworks Flex Grid - Adapts to content size */}
-                  <div className={cn(
-                    "p-2 overflow-x-auto no-scrollbar max-w-[80vw]",
-                    group.unlock_type === "time_based" ? "pb-10" : ""
-                  )}>
+                  <div className="p-2 overflow-x-auto no-scrollbar max-w-[80vw]">
                     <div className="flex flex-nowrap gap-2 min-w-max">
                       {group.artworks.map((artwork: any) => (
                         <div key={artwork.id} className="relative w-32 h-32 rounded-md overflow-hidden bg-background border shadow-sm group/item flex-shrink-0">
