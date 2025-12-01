@@ -128,8 +128,8 @@ export function SeriesNode({
       {/* Card */}
       <div
         className={cn(
-          "relative w-full h-full rounded-lg border-2 shadow-md transition-all",
-          "bg-card overflow-visible",
+          "relative w-full h-full rounded-lg border-2 shadow-md transition-all flex flex-col overflow-hidden",
+          "bg-card",
           isCompleted && "border-green-500 bg-green-50/50 dark:bg-green-950/50",
           isInProgress && "border-blue-500 bg-blue-50/50 dark:bg-blue-950/50",
           !isCompleted && !isInProgress && "border-border bg-card",
@@ -137,28 +137,71 @@ export function SeriesNode({
           isDragging && "opacity-90"
         )}
       >
-        {/* Thumbnail with overlay gradient for text readability */}
-        <div className="relative w-full h-full rounded-lg overflow-hidden">
-          {series.thumbnail_url ? (
-            <img
-              src={series.thumbnail_url}
-              alt={series.name}
-              className="w-full h-full object-cover pointer-events-none"
-              draggable={false}
-            />
-          ) : (
-            <div className="w-full h-full flex items-center justify-center bg-muted pointer-events-none">
-              <MapPin className="h-8 w-8 text-muted-foreground" />
-            </div>
-          )}
-          
-          {/* Gradient overlay for text */}
-          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent pointer-events-none" />
-        </div>
+        {series.members && series.members.length > 0 ? (
+          /* Artwork Grid Display */
+          <div className="flex-1 p-1 grid grid-cols-2 gap-1 overflow-hidden">
+            {series.members.slice(0, 4).map((member) => (
+              <div 
+                key={member.id} 
+                className="relative aspect-square rounded-sm overflow-hidden bg-muted border border-border/50"
+              >
+                {member.submissions?.images?.[0] ? (
+                  <img
+                    src={member.submissions.images[0]}
+                    alt={member.submissions.title || "Artwork"}
+                    className="w-full h-full object-cover"
+                    draggable={false}
+                  />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center">
+                    <MapPin className="h-3 w-3 text-muted-foreground/50" />
+                  </div>
+                )}
+                {/* Locked Overlay */}
+                {member.is_locked && (
+                  <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
+                    {/* Lock icon could go here */}
+                  </div>
+                )}
+              </div>
+            ))}
+            {/* Count Indicator if more than 4 */}
+            {series.members.length > 4 && (
+              <div className="absolute bottom-1 right-1 bg-black/60 text-white text-[8px] px-1 rounded-sm backdrop-blur-sm">
+                +{series.members.length - 4}
+              </div>
+            )}
+          </div>
+        ) : (
+          /* Default Series Cover Display */
+          <div className="relative w-full h-full rounded-lg overflow-hidden">
+            {series.thumbnail_url ? (
+              <img
+                src={series.thumbnail_url}
+                alt={series.name}
+                className="w-full h-full object-cover pointer-events-none"
+                draggable={false}
+              />
+            ) : (
+              <div className="w-full h-full flex items-center justify-center bg-muted pointer-events-none">
+                <MapPin className="h-8 w-8 text-muted-foreground" />
+              </div>
+            )}
+            
+            {/* Gradient overlay for text */}
+            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent pointer-events-none" />
+          </div>
+        )}
 
         {/* Series Name - Always visible at bottom */}
-        <div className="absolute bottom-0 left-0 right-0 p-1.5 pointer-events-none z-10">
-          <div className="text-xs font-semibold text-white drop-shadow-lg line-clamp-1">
+        <div className={cn(
+          "absolute bottom-0 left-0 right-0 p-1.5 pointer-events-none z-10",
+          series.members?.length ? "bg-background/80 backdrop-blur-sm border-t border-border/10" : ""
+        )}>
+          <div className={cn(
+            "text-xs font-semibold drop-shadow-lg line-clamp-1",
+            series.members?.length ? "text-foreground" : "text-white"
+          )}>
             {series.name}
           </div>
         </div>

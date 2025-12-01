@@ -53,6 +53,50 @@ export async function GET(request: NextRequest) {
           // Calculate real-time completion progress
           const progress = await calculateSeriesCompletion(s.id)
 
+          // Fetch series members (artworks)
+          const { data: membersData } = await supabase
+            .from("artwork_series_members")
+            .select(`
+              id,
+              series_id,
+              display_order,
+              is_locked,
+              vendor_product_submissions (
+                id,
+                product_data
+              )
+            `)
+            .eq("series_id", s.id)
+            .order("display_order", { ascending: true })
+
+          // Map members to formatted structure
+          const members = (membersData || []).map((m: any) => {
+            const submission = m.vendor_product_submissions
+            let images: string[] = []
+            let title = "Artwork"
+
+            if (submission?.product_data) {
+              title = submission.product_data.title || title
+              if (Array.isArray(submission.product_data.images)) {
+                images = submission.product_data.images.map((img: any) => 
+                  typeof img === 'string' ? img : img.src
+                ).filter(Boolean)
+              }
+            }
+
+            return {
+              id: m.id,
+              series_id: m.series_id,
+              display_order: m.display_order,
+              is_locked: m.is_locked,
+              submissions: submission ? {
+                id: submission.id,
+                title,
+                images
+              } : null
+            }
+          })
+
           // Update progress in database (non-blocking)
           supabase
             .from("artwork_series")
@@ -63,6 +107,7 @@ export async function GET(request: NextRequest) {
           return {
             ...s,
             completion_progress: progress,
+            members: members || []
           }
         } catch (error) {
           console.error(`Error calculating progress for series ${s.id}:`, error)
