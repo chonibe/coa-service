@@ -288,38 +288,38 @@ export default function SeriesPage() {
               </CardContent>
             </Card>
           ) : (
-            <div className="grid gap-4 grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+            <div className="grid gap-2 grid-cols-4 md:grid-cols-6 lg:grid-cols-8 xl:grid-cols-10">
               {allArtworks.map((artwork) => (
-                <Card key={artwork.id} className="overflow-hidden group hover:shadow-md transition-shadow">
-                  <div className="aspect-[3/4] relative bg-muted">
-                    {artwork.image ? (
-                      <img
-                        src={artwork.image}
-                        alt={artwork.title || "Artwork"}
-                        className="w-full h-full object-cover transition-transform group-hover:scale-105"
-                      />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center">
-                        <ImageIcon className="h-8 w-8 text-muted-foreground/50" />
-                      </div>
-                    )}
-                    {artwork.is_locked && (
-                      <div className="absolute top-2 right-2 bg-black/60 p-1.5 rounded-full text-white backdrop-blur-sm">
-                        <Lock className="h-3 w-3" />
-                      </div>
-                    )}
-                  </div>
-                  <div className="p-3">
-                    <h4 className="font-medium text-sm truncate" title={artwork.title}>
-                      {artwork.title || "Untitled"}
-                    </h4>
-                    <div className="flex items-center mt-1">
-                      <Badge variant="outline" className="text-[10px] truncate max-w-full px-1.5 h-5">
-                        {artwork.series_name}
-                      </Badge>
+                <div key={artwork.id} className="relative aspect-square rounded-md overflow-hidden bg-muted group border cursor-pointer hover:border-primary/50 transition-all">
+                  {artwork.image ? (
+                    <img
+                      src={artwork.image}
+                      alt={artwork.title || "Artwork"}
+                      className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center">
+                      <ImageIcon className="h-6 w-6 text-muted-foreground/30" />
                     </div>
+                  )}
+                  
+                  {/* Overlay Gradient (visible on hover) */}
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex flex-col justify-end p-2">
+                    <p className="text-[10px] font-medium text-white line-clamp-1">
+                      {artwork.title || "Untitled"}
+                    </p>
+                    <p className="text-[9px] text-white/70 line-clamp-1">
+                      {artwork.series_name}
+                    </p>
                   </div>
-                </Card>
+
+                  {/* Status Icons */}
+                  {artwork.is_locked && (
+                    <div className="absolute top-1 right-1 bg-black/60 p-1 rounded-full text-white backdrop-blur-sm">
+                      <Lock className="h-2.5 w-2.5" />
+                    </div>
+                  )}
+                </div>
               ))}
             </div>
           )}
