@@ -371,10 +371,15 @@ export default function SeriesPage() {
                           )}
                           
                           {/* Hover Title */}
-                          <div className="absolute inset-0 bg-black/60 opacity-0 group-hover/item:opacity-100 transition-opacity flex items-center justify-center p-1">
-                            <span className="text-[10px] text-white text-center font-medium leading-tight line-clamp-3">
+                          <div className="absolute inset-0 bg-black/60 opacity-0 group-hover/item:opacity-100 transition-opacity flex flex-col items-center justify-center p-1">
+                            <span className="text-[10px] text-white text-center font-medium leading-tight line-clamp-2 mb-1">
                               {artwork.title}
                             </span>
+                            {group.unlock_type === "time_based" && (
+                              <Badge variant="outline" className="text-[8px] h-4 px-1 border-white/50 text-white bg-black/20 backdrop-blur-sm">
+                                Timed Edition
+                              </Badge>
+                            )}
                           </div>
 
                           {/* Status Icons */}
