@@ -8,8 +8,6 @@ interface JourneyMapCanvasProps {
   series: ArtworkSeries[]
   onSeriesClick: (seriesId: string) => void
   onPositionUpdate: (seriesId: string, position: JourneyPosition) => void
-  onConnectionUpdate?: (fromSeriesId: string, toSeriesId: string) => void
-  onConnectionRemove?: (fromSeriesId: string, toSeriesId: string) => void
 }
 
 // Grid constants - chess board style
@@ -20,22 +18,9 @@ export function JourneyMapCanvas({
   series,
   onSeriesClick,
   onPositionUpdate,
-  onConnectionUpdate,
-  onConnectionRemove,
 }: JourneyMapCanvasProps) {
   const [draggedNode, setDraggedNode] = useState<string | null>(null)
   const [draggedPosition, setDraggedPosition] = useState<{ x: number; y: number } | null>(null)
-  const [connectionDragging, setConnectionDragging] = useState<{
-    fromSeriesId: string
-    fromPosition: { x: number; y: number }
-    currentPosition: { x: number; y: number }
-  } | null>(null)
-  const [connectionLineDragging, setConnectionLineDragging] = useState<{
-    fromSeriesId: string
-    toSeriesId: string
-    startPosition: { x: number; y: number }
-    currentPosition: { x: number; y: number }
-  } | null>(null)
   const containerRef = useRef<HTMLDivElement>(null)
   const hasInitializedRef = useRef(false)
 
@@ -110,7 +95,7 @@ export function JourneyMapCanvas({
     [snapToGrid, isPositionOccupied]
   )
 
-  // Get grid position (always normalized to grid) - defined early for use in useEffect hooks
+  // Get grid position (always normalized to grid)
   const getGridPosition = useCallback((s: ArtworkSeries) => {
     // If this is the dragged node, use the dragged position
     if (draggedNode === s.id && draggedPosition) {
@@ -124,129 +109,6 @@ export function JourneyMapCanvas({
     }
     return { x: 0, y: 0 }
   }, [draggedNode, draggedPosition])
-
-  // Handle connection node drag start
-  const handleConnectionNodeStart = useCallback(
-    (seriesId: string, nodePosition: { x: number; y: number }, side: 'top' | 'bottom' | 'left' | 'right') => {
-      setConnectionDragging({
-        fromSeriesId: seriesId,
-        fromPosition: nodePosition,
-        currentPosition: nodePosition,
-      })
-    },
-    []
-  )
-
-  // Handle mouse move for connection dragging (creating new connections)
-  useEffect(() => {
-    if (!connectionDragging) return
-
-    const handleMouseMove = (e: MouseEvent) => {
-      if (containerRef.current) {
-        const containerRect = containerRef.current.getBoundingClientRect()
-        const x = e.clientX - containerRect.left
-        const y = e.clientY - containerRect.top
-        setConnectionDragging((prev) =>
-          prev ? { ...prev, currentPosition: { x, y } } : null
-        )
-      }
-    }
-
-    const handleMouseUp = (e: MouseEvent) => {
-      if (!connectionDragging) return
-
-      // Find which series node we're over
-      if (containerRef.current) {
-        const containerRect = containerRef.current.getBoundingClientRect()
-        const x = e.clientX - containerRect.left
-        const y = e.clientY - containerRect.top
-
-        // Check if we're over any series node
-        const targetSeries = series.find((s) => {
-          if (s.journey_position?.x === undefined || s.journey_position?.y === undefined) return false
-          if (s.id === connectionDragging.fromSeriesId) return false
-
-          const gridPos = getGridPosition(s)
-          const cardX = gridPos.x + GRID_SIZE / 2
-          const cardY = gridPos.y + GRID_SIZE / 2
-          const distance = Math.sqrt(
-            Math.pow(x - cardX, 2) + Math.pow(y - cardY, 2)
-          )
-
-          return distance < GRID_SIZE / 2
-        })
-
-        if (targetSeries && onConnectionUpdate) {
-          onConnectionUpdate(connectionDragging.fromSeriesId, targetSeries.id)
-        }
-        // If not over a target, just cancel the connection creation
-      }
-
-      setConnectionDragging(null)
-    }
-
-    window.addEventListener('mousemove', handleMouseMove)
-    window.addEventListener('mouseup', handleMouseUp)
-
-    return () => {
-      window.removeEventListener('mousemove', handleMouseMove)
-      window.removeEventListener('mouseup', handleMouseUp)
-    }
-  }, [connectionDragging, series, onConnectionUpdate, getGridPosition])
-
-  // Handle mouse move for connection line dragging (removing connections)
-  useEffect(() => {
-    if (!connectionLineDragging) return
-
-    const handleMouseMove = (e: MouseEvent) => {
-      if (containerRef.current) {
-        const containerRect = containerRef.current.getBoundingClientRect()
-        const x = e.clientX - containerRect.left
-        const y = e.clientY - containerRect.top
-        setConnectionLineDragging((prev) =>
-          prev ? { ...prev, currentPosition: { x, y } } : null
-        )
-      }
-    }
-
-    const handleMouseUp = (e: MouseEvent) => {
-      if (!connectionLineDragging || !onConnectionRemove) return
-
-      if (containerRef.current) {
-        const containerRect = containerRef.current.getBoundingClientRect()
-        const x = e.clientX - containerRect.left
-        const y = e.clientY - containerRect.top
-
-        // Get the original target position
-        const targetSeries = series.find((s) => s.id === connectionLineDragging.toSeriesId)
-        if (targetSeries) {
-          const gridPos = getGridPosition(targetSeries)
-          const targetX = gridPos.x + GRID_SIZE / 2
-          const targetY = gridPos.y + GRID_SIZE / 2
-          
-          // Calculate distance from current position to original target
-          const distance = Math.sqrt(
-            Math.pow(x - targetX, 2) + Math.pow(y - targetY, 2)
-          )
-
-          // If dragged away from target (more than 60px), remove the connection
-          if (distance > 60) {
-            onConnectionRemove(connectionLineDragging.fromSeriesId, connectionLineDragging.toSeriesId)
-          }
-        }
-      }
-
-      setConnectionLineDragging(null)
-    }
-
-    window.addEventListener('mousemove', handleMouseMove)
-    window.addEventListener('mouseup', handleMouseUp)
-
-    return () => {
-      window.removeEventListener('mousemove', handleMouseMove)
-      window.removeEventListener('mouseup', handleMouseUp)
-    }
-  }, [connectionLineDragging, series, onConnectionRemove, getGridPosition])
 
   // Validate and fix overlapping positions on load (only once on mount)
   useEffect(() => {
@@ -304,9 +166,10 @@ export function JourneyMapCanvas({
       if (hasInitializedRef.current) return
       
       const sorted = [...seriesWithoutPositions].sort((a, b) => {
-        const orderA = a.milestone_order ?? a.display_order ?? 0
-        const orderB = b.milestone_order ?? b.display_order ?? 0
-        return orderA - orderB
+        const dateA = new Date(a.created_at).getTime()
+        const dateB = new Date(b.created_at).getTime()
+        // Sort by created_at ascending (oldest first)
+        return dateA - dateB
       })
 
       sorted.forEach((s, index) => {
@@ -331,54 +194,6 @@ export function JourneyMapCanvas({
     return () => clearTimeout(timeoutId)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []) // Only run once on mount
-
-  // Build connections - lines that stretch between connected nodes
-  const connections = series.flatMap((s) => {
-    const connections: Array<{ 
-      from: { x: number; y: number }
-      to: { x: number; y: number }
-      fromSeriesId: string
-      toSeriesId: string
-      connectionType: 'connected' | 'unlocks'
-    }> = []
-    const from = getGridPosition(s)
-
-    // Track connected series
-    if (s.connected_series_ids) {
-      s.connected_series_ids.forEach((connectedId) => {
-        const connected = series.find((cs) => cs.id === connectedId)
-        if (connected) {
-          const to = getGridPosition(connected)
-          connections.push({ 
-            from, 
-            to, 
-            fromSeriesId: s.id, 
-            toSeriesId: connectedId,
-            connectionType: 'connected'
-          })
-        }
-      })
-    }
-
-    // Track unlocks series
-    if (s.unlocks_series_ids) {
-      s.unlocks_series_ids.forEach((unlocksId) => {
-        const unlocked = series.find((cs) => cs.id === unlocksId)
-        if (unlocked) {
-          const to = getGridPosition(unlocked)
-          connections.push({ 
-            from, 
-            to, 
-            fromSeriesId: s.id, 
-            toSeriesId: unlocksId,
-            connectionType: 'unlocks'
-          })
-        }
-      })
-    }
-
-    return connections
-  })
 
   // Calculate grid dimensions
   const maxX = Math.max(
@@ -424,91 +239,6 @@ export function JourneyMapCanvas({
         }}
       />
 
-      {/* Connection lines - stretch between connected nodes */}
-      <svg
-        className="absolute inset-0 z-10"
-        style={{ width: `${gridWidth}px`, height: `${gridHeight}px` }}
-      >
-        {/* Existing connections */}
-        {connections.map((conn, index) => {
-          // Calculate connection points at card centers
-          const fromCenterX = conn.from.x + GRID_SIZE / 2
-          const fromCenterY = conn.from.y + GRID_SIZE / 2
-          const toCenterX = conn.to.x + GRID_SIZE / 2
-          const toCenterY = conn.to.y + GRID_SIZE / 2
-          
-          // If this connection is being dragged, use the dragged position
-          const isDragging = connectionLineDragging?.fromSeriesId === conn.fromSeriesId && 
-                            connectionLineDragging?.toSeriesId === conn.toSeriesId
-          const endX = isDragging ? connectionLineDragging.currentPosition.x : toCenterX
-          const endY = isDragging ? connectionLineDragging.currentPosition.y : toCenterY
-
-          return (
-            <g 
-              key={`conn-${conn.fromSeriesId}-${conn.toSeriesId}-${index}`}
-              onMouseDown={(e) => {
-                if (onConnectionRemove && containerRef.current) {
-                  e.stopPropagation()
-                  const containerRect = containerRef.current.getBoundingClientRect()
-                  const startX = e.clientX - containerRect.left
-                  const startY = e.clientY - containerRect.top
-                  
-                  setConnectionLineDragging({
-                    fromSeriesId: conn.fromSeriesId,
-                    toSeriesId: conn.toSeriesId,
-                    startPosition: { x: startX, y: startY },
-                    currentPosition: { x: toCenterX, y: toCenterY }
-                  })
-                }
-              }}
-              style={{ cursor: onConnectionRemove ? 'grab' : 'default' }}
-            >
-              <line
-                x1={fromCenterX}
-                y1={fromCenterY}
-                x2={endX}
-                y2={endY}
-                stroke="currentColor"
-                strokeWidth={isDragging ? "3" : "2"}
-                className={isDragging ? "text-primary" : "text-primary/50"}
-                markerEnd="url(#arrowhead)"
-                style={{ pointerEvents: 'stroke', cursor: onConnectionRemove ? 'grab' : 'default' }}
-              />
-            </g>
-          )
-        })}
-
-        {/* Temporary wire while dragging */}
-        {connectionDragging && (
-          <line
-            x1={connectionDragging.fromPosition.x}
-            y1={connectionDragging.fromPosition.y}
-            x2={connectionDragging.currentPosition.x}
-            y2={connectionDragging.currentPosition.y}
-            stroke="currentColor"
-            strokeWidth="3"
-            className="text-primary"
-            strokeDasharray="5,5"
-            markerEnd="url(#arrowhead)"
-            style={{ pointerEvents: 'none' }}
-          />
-        )}
-
-        <defs>
-          <marker
-            id="arrowhead"
-            markerWidth="10"
-            markerHeight="10"
-            refX="9"
-            refY="3"
-            orient="auto"
-          >
-            <polygon points="0 0, 10 3, 0 6" fill="currentColor" className="text-primary/50" />
-          </marker>
-        </defs>
-      </svg>
-
-
       {/* Series Nodes on Grid */}
       <div
         className="relative z-30"
@@ -524,14 +254,16 @@ export function JourneyMapCanvas({
               gridSize={GRID_SIZE}
               cardSize={CARD_SIZE}
               containerRef={containerRef}
-              allSeries={series}
               onDragStart={() => {
                 setDraggedNode(s.id)
                 const currentPos = getGridPosition(s)
                 setDraggedPosition(currentPos)
               }}
               onDragMove={(newPosition) => {
+                // Allow free movement while dragging, but snap for visual feedback
                 const freePos = findNearestFreePosition(newPosition.x, newPosition.y, s.id)
+                // Use the free position for "magnetic" snapping effect while dragging
+                // Or just snap to nearest grid point
                 const normalizedPos = snapToGrid(freePos.x, freePos.y)
                 setDraggedPosition(normalizedPos)
               }}
@@ -561,8 +293,6 @@ export function JourneyMapCanvas({
                 setDraggedPosition(null)
               }}
               onClick={() => onSeriesClick(s.id)}
-              onConnectionNodeStart={handleConnectionNodeStart}
-              isConnectionDragging={!!connectionDragging}
             />
           )
         })}

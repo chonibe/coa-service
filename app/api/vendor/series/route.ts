@@ -171,10 +171,10 @@ export async function POST(request: NextRequest) {
       .select()
       .single()
 
-    // If error is due to missing columns (PGRST204), retry without those fields
+    // If error is due to missing columns (PGRST204 or 42703), retry without those fields
     // The data is already in unlock_config, so it will work
-    if (createError && createError.code === "PGRST204") {
-      console.log("Columns not available, retrying with unlock_config only")
+    if (createError && (createError.code === "PGRST204" || createError.code === "42703")) {
+      console.log(`Columns not available (Code: ${createError.code}), retrying with unlock_config only`)
       // Remove the fields that don't exist and retry
       const retryData = { ...insertData }
       delete retryData.unlock_schedule
@@ -198,7 +198,11 @@ export async function POST(request: NextRequest) {
 
     if (createError) {
       console.error("Error creating series:", createError)
-      return NextResponse.json({ error: "Failed to create series" }, { status: 500 })
+      return NextResponse.json({ 
+        error: "Failed to create series", 
+        details: createError.message,
+        code: createError.code 
+      }, { status: 500 })
     }
 
     return NextResponse.json({ series: newSeries }, { status: 201 })

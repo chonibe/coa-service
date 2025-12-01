@@ -16,9 +16,6 @@ interface SeriesNodeProps {
   onDragEnd: (position: { x: number; y: number }) => void
   onDragMove?: (position: { x: number; y: number }) => void
   onClick: () => void
-  onConnectionNodeStart?: (seriesId: string, nodePosition: { x: number; y: number }, side: 'top' | 'bottom' | 'left' | 'right') => void
-  isConnectionDragging?: boolean
-  allSeries?: ArtworkSeries[] // For counting connections
 }
 
 // Format unlock type for display
@@ -42,31 +39,16 @@ export function SeriesNode({
   onDragEnd,
   onDragMove,
   onClick,
-  onConnectionNodeStart,
-  isConnectionDragging = false,
-  allSeries = [],
 }: SeriesNodeProps) {
   const [isDragging, setIsDragging] = useState(false)
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 })
-  const [hoveredNode, setHoveredNode] = useState<'top' | 'bottom' | 'left' | 'right' | null>(null)
   const nodeRef = useRef<HTMLDivElement>(null)
 
   const isCompleted = series.completed_at !== null
   const progress = series.completion_progress?.percentage_complete || 0
   const isInProgress = !isCompleted && progress > 0
 
-  // Count connections
-  const connectionCount = (series.connected_series_ids?.length || 0) + (series.unlocks_series_ids?.length || 0)
-  const connectedSeries = allSeries.filter(s => 
-    series.connected_series_ids?.includes(s.id) || series.unlocks_series_ids?.includes(s.id)
-  )
-
   const handleMouseDown = (e: React.MouseEvent) => {
-    // Don't start drag if clicking on a connection node
-    if ((e.target as HTMLElement).closest('[data-connection-node]')) {
-      return
-    }
-    
     e.stopPropagation()
     
     if (containerRef?.current && nodeRef.current) {
@@ -141,17 +123,12 @@ export function SeriesNode({
   const offsetX = (gridSize - cardSize) / 2
   const offsetY = (gridSize - cardSize) / 2
 
-  // Connection node positions
-  const nodeSize = 12
-  const nodeOffset = 2
-
   return (
     <motion.div
       ref={nodeRef}
       className={cn(
         "absolute cursor-move group",
-        isDragging && "z-50 cursor-grabbing",
-        isConnectionDragging && "pointer-events-none"
+        isDragging && "z-50 cursor-grabbing"
       )}
       style={{
         left: `${position.x + offsetX}px`,
@@ -161,7 +138,7 @@ export function SeriesNode({
       }}
       onMouseDown={handleMouseDown}
       onClick={(e) => {
-        if (!isDragging && !isConnectionDragging) {
+        if (!isDragging) {
           e.stopPropagation()
           onClick()
         }
@@ -225,16 +202,6 @@ export function SeriesNode({
           )}
         </div>
 
-        {/* Connection Count Badge - Below status indicator */}
-        {connectionCount > 0 && (
-          <div className="absolute top-5 right-1 z-10 pointer-events-none flex items-center gap-0.5 bg-primary/90 rounded px-1 py-0.5">
-            <Link2 className="h-2.5 w-2.5 text-white" />
-            <span className="text-[9px] font-semibold text-white">
-              {connectionCount}
-            </span>
-          </div>
-        )}
-
         {/* Progress Bar */}
         {isInProgress && (
           <div className="absolute bottom-0 left-0 right-0 h-1 bg-muted/50 rounded-b-lg pointer-events-none">
@@ -242,112 +209,6 @@ export function SeriesNode({
               className="h-full bg-blue-500 transition-all rounded-b-lg"
               style={{ width: `${progress}%` }}
             />
-          </div>
-        )}
-
-        {/* Connection Nodes - Top, Bottom, Left, Right */}
-        {onConnectionNodeStart && (
-          <>
-            {/* Top Node */}
-            <div
-              data-connection-node
-              className={cn(
-                "absolute left-1/2 -translate-x-1/2 cursor-crosshair z-20 transition-all",
-                "hover:scale-125",
-                hoveredNode === 'top' && "scale-125"
-              )}
-              style={{
-                top: `${-nodeSize / 2 - nodeOffset}px`,
-                width: `${nodeSize}px`,
-                height: `${nodeSize}px`,
-              }}
-              onMouseDown={(e) => handleConnectionNodeMouseDown(e, 'top')}
-              onMouseEnter={() => setHoveredNode('top')}
-              onMouseLeave={() => setHoveredNode(null)}
-            >
-              <div className="w-full h-full rounded-full bg-primary border-2 border-background shadow-lg hover:bg-primary/80" />
-            </div>
-
-            {/* Bottom Node */}
-            <div
-              data-connection-node
-              className={cn(
-                "absolute left-1/2 -translate-x-1/2 cursor-crosshair z-20 transition-all",
-                "hover:scale-125",
-                hoveredNode === 'bottom' && "scale-125"
-              )}
-              style={{
-                bottom: `${-nodeSize / 2 - nodeOffset}px`,
-                width: `${nodeSize}px`,
-                height: `${nodeSize}px`,
-              }}
-              onMouseDown={(e) => handleConnectionNodeMouseDown(e, 'bottom')}
-              onMouseEnter={() => setHoveredNode('bottom')}
-              onMouseLeave={() => setHoveredNode(null)}
-            >
-              <div className="w-full h-full rounded-full bg-primary border-2 border-background shadow-lg hover:bg-primary/80" />
-            </div>
-
-            {/* Left Node */}
-            <div
-              data-connection-node
-              className={cn(
-                "absolute top-1/2 -translate-y-1/2 cursor-crosshair z-20 transition-all",
-                "hover:scale-125",
-                hoveredNode === 'left' && "scale-125"
-              )}
-              style={{
-                left: `${-nodeSize / 2 - nodeOffset}px`,
-                width: `${nodeSize}px`,
-                height: `${nodeSize}px`,
-              }}
-              onMouseDown={(e) => handleConnectionNodeMouseDown(e, 'left')}
-              onMouseEnter={() => setHoveredNode('left')}
-              onMouseLeave={() => setHoveredNode(null)}
-            >
-              <div className="w-full h-full rounded-full bg-primary border-2 border-background shadow-lg hover:bg-primary/80" />
-            </div>
-
-            {/* Right Node */}
-            <div
-              data-connection-node
-              className={cn(
-                "absolute top-1/2 -translate-y-1/2 cursor-crosshair z-20 transition-all",
-                "hover:scale-125",
-                hoveredNode === 'right' && "scale-125"
-              )}
-              style={{
-                right: `${-nodeSize / 2 - nodeOffset}px`,
-                width: `${nodeSize}px`,
-                height: `${nodeSize}px`,
-              }}
-              onMouseDown={(e) => handleConnectionNodeMouseDown(e, 'right')}
-              onMouseEnter={() => setHoveredNode('right')}
-              onMouseLeave={() => setHoveredNode(null)}
-            >
-              <div className="w-full h-full rounded-full bg-primary border-2 border-background shadow-lg hover:bg-primary/80" />
-            </div>
-          </>
-        )}
-
-        {/* Connection Info Tooltip on Hover */}
-        {connectionCount > 0 && (
-          <div className="absolute -top-12 left-1/2 transform -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-30">
-            <div className="bg-background border rounded px-2 py-1 text-xs font-medium shadow-lg max-w-[200px]">
-              <div className="font-semibold mb-1">Connections:</div>
-              <div className="text-xs space-y-0.5">
-                {connectedSeries.slice(0, 3).map((s) => (
-                  <div key={s.id} className="text-muted-foreground">
-                    • {s.name}
-                  </div>
-                ))}
-                {connectedSeries.length > 3 && (
-                  <div className="text-muted-foreground">
-                    +{connectedSeries.length - 3} more
-                  </div>
-                )}
-              </div>
-            </div>
           </div>
         )}
       </div>

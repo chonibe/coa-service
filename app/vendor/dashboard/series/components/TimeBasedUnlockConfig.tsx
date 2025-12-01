@@ -69,7 +69,14 @@ export function TimeBasedUnlockConfig({ value, onChange }: TimeBasedUnlockConfig
       <div className="grid grid-cols-2 gap-4 mb-6">
         <motion.button
           type="button"
-          onClick={() => setUnlockType("one-time")}
+          onClick={() => {
+            setUnlockType("one-time")
+            onChange({
+              ...value,
+              unlock_at: value.unlock_at || "",
+              unlock_schedule: undefined,
+            })
+          }}
           className={cn(
             "p-4 rounded-lg border-2 transition-all text-left",
             unlockType === "one-time"
@@ -95,7 +102,17 @@ export function TimeBasedUnlockConfig({ value, onChange }: TimeBasedUnlockConfig
 
         <motion.button
           type="button"
-          onClick={() => setUnlockType("recurring")}
+          onClick={() => {
+            setUnlockType("recurring")
+            onChange({
+              ...value,
+              unlock_at: undefined,
+              unlock_schedule: value.unlock_schedule || {
+                type: "daily",
+                time: "12:00",
+              },
+            })
+          }}
           className={cn(
             "p-4 rounded-lg border-2 transition-all text-left",
             unlockType === "recurring"

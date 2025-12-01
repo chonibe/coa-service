@@ -77,9 +77,9 @@ export default function JourneyMapPage() {
           Back to Series
         </Button>
         <div>
-          <h1 className="text-3xl font-bold">Journey Tree</h1>
+          <h1 className="text-3xl font-bold">Journey Map</h1>
           <p className="text-muted-foreground text-sm mt-1">
-            Arrange your series on a grid and connect them to create your journey tree
+            Arrange your series on the grid to create a visual journey for your collectors
           </p>
         </div>
       </div>
@@ -136,139 +136,6 @@ export default function JourneyMapPage() {
                 toast({
                   title: "Error",
                   description: err.message || "Failed to update series position",
-                  variant: "destructive",
-                })
-              }
-            }}
-            onConnectionUpdate={async (fromSeriesId, toSeriesId) => {
-              try {
-                // Get current series to find existing connections
-                const fromSeries = series.find((s) => s.id === fromSeriesId)
-                if (!fromSeries) return
-
-                // Add to connected_series_ids if not already there
-                const currentConnections = fromSeries.connected_series_ids || []
-                if (currentConnections.includes(toSeriesId)) {
-                  toast({
-                    title: "Already Connected",
-                    description: "These series are already connected",
-                  })
-                  return
-                }
-
-                const updatedConnections = [...currentConnections, toSeriesId]
-
-                // Optimistically update local state
-                setSeries((prevSeries) =>
-                  prevSeries.map((s) =>
-                    s.id === fromSeriesId
-                      ? { ...s, connected_series_ids: updatedConnections }
-                      : s
-                  )
-                )
-
-                const response = await fetch(`/api/vendor/series/${fromSeriesId}/journey-position`, {
-                  method: "PUT",
-                  headers: {
-                    "Content-Type": "application/json",
-                  },
-                  credentials: "include",
-                  body: JSON.stringify({ connected_series_ids: updatedConnections }),
-                })
-
-                if (!response.ok) {
-                  throw new Error("Failed to create connection")
-                }
-
-                toast({
-                  title: "Connection Created",
-                  description: "Series connected successfully",
-                })
-
-                // Update with server response
-                const data = await response.json()
-                if (data.series) {
-                  setSeries((prevSeries) =>
-                    prevSeries.map((s) =>
-                      s.id === fromSeriesId ? { ...s, ...data.series } : s
-                    )
-                  )
-                }
-              } catch (err: any) {
-                console.error("Error creating connection:", err)
-                // Revert on error
-                fetchJourneyData()
-                toast({
-                  title: "Error",
-                  description: err.message || "Failed to create connection",
-                  variant: "destructive",
-                })
-              }
-            }}
-            onConnectionRemove={async (fromSeriesId, toSeriesId) => {
-              try {
-                // Get current series to find existing connections
-                const fromSeries = series.find((s) => s.id === fromSeriesId)
-                if (!fromSeries) return
-
-                // Remove from connected_series_ids
-                const currentConnections = fromSeries.connected_series_ids || []
-                const updatedConnections = currentConnections.filter((id) => id !== toSeriesId)
-
-                // Also check unlocks_series_ids
-                const currentUnlocks = fromSeries.unlocks_series_ids || []
-                const updatedUnlocks = currentUnlocks.filter((id) => id !== toSeriesId)
-
-                // Optimistically update local state
-                setSeries((prevSeries) =>
-                  prevSeries.map((s) =>
-                    s.id === fromSeriesId
-                      ? { 
-                          ...s, 
-                          connected_series_ids: updatedConnections,
-                          unlocks_series_ids: updatedUnlocks
-                        }
-                      : s
-                  )
-                )
-
-                const response = await fetch(`/api/vendor/series/${fromSeriesId}/journey-position`, {
-                  method: "PUT",
-                  headers: {
-                    "Content-Type": "application/json",
-                  },
-                  credentials: "include",
-                  body: JSON.stringify({ 
-                    connected_series_ids: updatedConnections,
-                    unlocks_series_ids: updatedUnlocks
-                  }),
-                })
-
-                if (!response.ok) {
-                  throw new Error("Failed to remove connection")
-                }
-
-                toast({
-                  title: "Connection Removed",
-                  description: "Series connection removed successfully",
-                })
-
-                // Update with server response
-                const data = await response.json()
-                if (data.series) {
-                  setSeries((prevSeries) =>
-                    prevSeries.map((s) =>
-                      s.id === fromSeriesId ? { ...s, ...data.series } : s
-                    )
-                  )
-                }
-              } catch (err: any) {
-                console.error("Error removing connection:", err)
-                // Revert on error
-                fetchJourneyData()
-                toast({
-                  title: "Error",
-                  description: err.message || "Failed to remove connection",
                   variant: "destructive",
                 })
               }
