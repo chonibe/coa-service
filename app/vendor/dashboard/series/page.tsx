@@ -288,7 +288,7 @@ export default function SeriesPage() {
               </CardContent>
             </Card>
           ) : (
-            <div className="space-y-8">
+            <div className="grid gap-6 grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
               {Object.entries(
                 allArtworks.reduce((acc, artwork) => {
                   const seriesId = artwork.series_id || "unknown"
@@ -302,44 +302,49 @@ export default function SeriesPage() {
                   return acc
                 }, {} as Record<string, { name: string; artworks: any[] }>)
               ).map(([seriesId, group]: [string, any]) => (
-                <div key={seriesId} className="border-2 rounded-xl p-4 bg-card/50">
-                  <div className="flex items-center gap-2 mb-4">
-                    <div className="h-4 w-1 bg-primary rounded-full" />
-                    <h3 className="font-bold text-lg">{group.name}</h3>
-                    <Badge variant="outline" className="ml-auto">
-                      {group.artworks.length} {group.artworks.length === 1 ? 'Artwork' : 'Artworks'}
+                <div key={seriesId} className="flex flex-col h-full border-2 rounded-xl overflow-hidden bg-card hover:border-primary/50 transition-colors shadow-sm">
+                  {/* Header */}
+                  <div className="p-3 bg-muted/30 border-b flex items-center justify-between">
+                    <h3 className="font-semibold text-sm truncate pr-2" title={group.name}>{group.name}</h3>
+                    <Badge variant="secondary" className="text-[10px] h-5 px-1.5">
+                      {group.artworks.length}
                     </Badge>
                   </div>
-                  <div className="grid gap-2 grid-cols-4 md:grid-cols-6 lg:grid-cols-8 xl:grid-cols-10">
-                    {group.artworks.map((artwork: any) => (
-                      <div key={artwork.id} className="relative aspect-square rounded-md overflow-hidden bg-muted group border cursor-pointer hover:border-primary/50 transition-all">
-                        {artwork.image ? (
-                          <img
-                            src={artwork.image}
-                            alt={artwork.title || "Artwork"}
-                            className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
-                          />
-                        ) : (
-                          <div className="w-full h-full flex items-center justify-center">
-                            <ImageIcon className="h-6 w-6 text-muted-foreground/30" />
+                  
+                  {/* Artworks Grid */}
+                  <div className="p-2 flex-1 bg-muted/10">
+                    <div className="grid grid-cols-3 gap-1.5 auto-rows-min">
+                      {group.artworks.map((artwork: any) => (
+                        <div key={artwork.id} className="relative aspect-square rounded-sm overflow-hidden bg-background border shadow-sm group/item">
+                          {artwork.image ? (
+                            <img
+                              src={artwork.image}
+                              alt={artwork.title || "Artwork"}
+                              className="w-full h-full object-cover"
+                            />
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center">
+                              <ImageIcon className="h-4 w-4 text-muted-foreground/30" />
+                            </div>
+                          )}
+                          
+                          {/* Hover Title */}
+                          <div className="absolute inset-0 bg-black/60 opacity-0 group-hover/item:opacity-100 transition-opacity flex items-center justify-center p-1">
+                            <span className="text-[8px] text-white text-center font-medium leading-tight line-clamp-2">
+                              {artwork.title}
+                            </span>
                           </div>
-                        )}
-                        
-                        {/* Overlay Gradient (visible on hover) */}
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex flex-col justify-end p-2">
-                          <p className="text-[10px] font-medium text-white line-clamp-1">
-                            {artwork.title || "Untitled"}
-                          </p>
-                        </div>
 
-                        {/* Status Icons */}
-                        {artwork.is_locked && (
-                          <div className="absolute top-1 right-1 bg-black/60 p-1 rounded-full text-white backdrop-blur-sm">
-                            <Lock className="h-2.5 w-2.5" />
-                          </div>
-                        )}
-                      </div>
-                    ))}
+                          {/* Status Icons */}
+                          {artwork.is_locked && (
+                            <div className="absolute top-0.5 right-0.5 bg-black/60 p-0.5 rounded-full text-white backdrop-blur-sm">
+                              <Lock className="h-2 w-2" />
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                      {/* Empty slots filler to maintain grid look if needed, or just let it flow */}
+                    </div>
                   </div>
                 </div>
               ))}
