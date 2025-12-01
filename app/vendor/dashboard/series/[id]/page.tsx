@@ -10,7 +10,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { Loader2, ArrowLeft, Lock, Edit, Save, X, AlertCircle, ImageIcon, ArrowRight, Crown, Clock } from "lucide-react"
+import { Loader2, ArrowLeft, Lock, Edit, Save, X, AlertCircle, ImageIcon, ArrowRight, Crown, Clock, LayoutGrid, GalleryHorizontal } from "lucide-react"
 import { useToast } from "@/components/ui/use-toast"
 import { motion } from "framer-motion"
 import { cn } from "@/lib/utils"
@@ -44,6 +44,7 @@ export default function SeriesDetailPage() {
   const [duplicateDialogOpen, setDuplicateDialogOpen] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
   const [isDuplicating, setIsDuplicating] = useState(false)
+  const [viewMode, setViewMode] = useState<"carousel" | "grid">("carousel")
 
   // Edit form state
   const [editName, setEditName] = useState("")
@@ -531,10 +532,32 @@ export default function SeriesDetailPage() {
       {/* Artwork Collection */}
       <Card>
         <CardHeader>
-          <CardTitle>Artwork Collection</CardTitle>
-          <CardDescription>
-            Artworks that are part of this series
-          </CardDescription>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle>Artwork Collection</CardTitle>
+              <CardDescription>
+                Artworks that are part of this series
+              </CardDescription>
+            </div>
+            <div className="flex bg-muted p-1 rounded-lg">
+              <Button
+                variant={viewMode === "carousel" ? "secondary" : "ghost"}
+                size="icon"
+                className="h-8 w-8"
+                onClick={() => setViewMode("carousel")}
+              >
+                <GalleryHorizontal className="h-4 w-4" />
+              </Button>
+              <Button
+                variant={viewMode === "grid" ? "secondary" : "ghost"}
+                size="icon"
+                className="h-8 w-8"
+                onClick={() => setViewMode("grid")}
+              >
+                <LayoutGrid className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
         </CardHeader>
         <CardContent>
           {members.length === 0 ? (
@@ -552,10 +575,58 @@ export default function SeriesDetailPage() {
           ) : (
             <div>
               <div className="flex items-center justify-between mb-3">
-                <h3 className="text-sm font-medium text-muted-foreground">Artworks</h3>
-                <span className="text-xs text-muted-foreground">Drag to reorder</span>
+                <h3 className="text-sm font-medium text-muted-foreground">
+                  {viewMode === "carousel" ? "Drag to reorder" : `${members.length} Artworks`}
+                </h3>
+              </div>
+              
+              {viewMode === "carousel" ? (
+                <ArtworkCarousel members={members} editable={true} seriesId={seriesId} />
+              ) : (
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+                  {members.map((member, index) => (
+                    <Card key={member.id} className="overflow-hidden group">
+                      <div className="aspect-square relative bg-muted">
+                        {member.artwork_image ? (
+                          <img
+                            src={member.artwork_image}
+                            alt={member.artwork_title || "Artwork"}
+                            className="w-full h-full object-cover transition-transform group-hover:scale-105"
+                          />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center">
+                            <ImageIcon className="h-8 w-8 text-muted-foreground/50" />
+                          </div>
+                        )}
+                        {member.is_locked && (
+                          <div className="absolute top-2 right-2 bg-black/60 p-1.5 rounded-full text-white backdrop-blur-sm">
+                            <Lock className="h-3 w-3" />
+                          </div>
+                        )}
+                        <div className="absolute top-2 left-2 bg-black/60 px-2 py-0.5 rounded text-[10px] text-white backdrop-blur-sm font-mono">
+                          #{index + 1}
+                        </div>
                       </div>
-              <ArtworkCarousel members={members} editable={true} seriesId={seriesId} />
+                      <div className="p-3">
+                        <h4 className="font-medium text-sm truncate" title={member.artwork_title}>
+                          {member.artwork_title || "Untitled Artwork"}
+                        </h4>
+                        <div className="flex items-center justify-between mt-2">
+                          <Badge variant="secondary" className="text-[10px] h-5">
+                            {member.is_locked ? "Locked" : "Unlocked"}
+                          </Badge>
+                          {member.has_benefits && (
+                            <div className="flex items-center text-[10px] text-amber-600 bg-amber-50 dark:bg-amber-900/20 px-1.5 py-0.5 rounded-full border border-amber-200 dark:border-amber-800">
+                              <Crown className="h-3 w-3 mr-1" />
+                              {member.benefit_count || 1}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </Card>
+                  ))}
+                </div>
+              )}
             </div>
           )}
         </CardContent>
