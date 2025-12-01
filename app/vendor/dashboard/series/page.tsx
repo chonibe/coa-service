@@ -288,7 +288,7 @@ export default function SeriesPage() {
               </CardContent>
             </Card>
           ) : (
-            <div className="grid gap-6 grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            <div className="flex flex-wrap gap-4 items-start content-start">
               {Object.entries(
                 allArtworks.reduce((acc, artwork) => {
                   const seriesId = artwork.series_id || "unknown"
@@ -302,20 +302,20 @@ export default function SeriesPage() {
                   return acc
                 }, {} as Record<string, { name: string; artworks: any[] }>)
               ).map(([seriesId, group]: [string, any]) => (
-                <div key={seriesId} className="flex flex-col h-full border-2 rounded-xl overflow-hidden bg-card hover:border-primary/50 transition-colors shadow-sm">
+                <div key={seriesId} className="flex flex-col border-2 rounded-xl overflow-hidden bg-card hover:border-primary/50 transition-colors shadow-sm w-fit max-w-[320px]">
                   {/* Header */}
-                  <div className="p-3 bg-muted/30 border-b flex items-center justify-between">
-                    <h3 className="font-semibold text-sm truncate pr-2" title={group.name}>{group.name}</h3>
-                    <Badge variant="secondary" className="text-[10px] h-5 px-1.5">
+                  <div className="p-2 bg-muted/30 border-b flex items-center gap-3">
+                    <h3 className="font-semibold text-xs truncate max-w-[150px]" title={group.name}>{group.name}</h3>
+                    <Badge variant="secondary" className="text-[9px] h-4 px-1 ml-auto">
                       {group.artworks.length}
                     </Badge>
                   </div>
                   
-                  {/* Artworks Grid */}
-                  <div className="p-2 flex-1 bg-muted/10">
-                    <div className="grid grid-cols-3 gap-1.5 auto-rows-min">
+                  {/* Artworks Flex Grid - Adapts to content size */}
+                  <div className="p-1.5 bg-muted/10">
+                    <div className="flex flex-wrap gap-1.5">
                       {group.artworks.map((artwork: any) => (
-                        <div key={artwork.id} className="relative aspect-square rounded-sm overflow-hidden bg-background border shadow-sm group/item">
+                        <div key={artwork.id} className="relative w-16 h-16 rounded-sm overflow-hidden bg-background border shadow-sm group/item flex-shrink-0">
                           {artwork.image ? (
                             <img
                               src={artwork.image}
@@ -324,13 +324,13 @@ export default function SeriesPage() {
                             />
                           ) : (
                             <div className="w-full h-full flex items-center justify-center">
-                              <ImageIcon className="h-4 w-4 text-muted-foreground/30" />
+                              <ImageIcon className="h-3 w-3 text-muted-foreground/30" />
                             </div>
                           )}
                           
                           {/* Hover Title */}
-                          <div className="absolute inset-0 bg-black/60 opacity-0 group-hover/item:opacity-100 transition-opacity flex items-center justify-center p-1">
-                            <span className="text-[8px] text-white text-center font-medium leading-tight line-clamp-2">
+                          <div className="absolute inset-0 bg-black/60 opacity-0 group-hover/item:opacity-100 transition-opacity flex items-center justify-center p-0.5">
+                            <span className="text-[6px] text-white text-center font-medium leading-tight line-clamp-2">
                               {artwork.title}
                             </span>
                           </div>
@@ -338,12 +338,11 @@ export default function SeriesPage() {
                           {/* Status Icons */}
                           {artwork.is_locked && (
                             <div className="absolute top-0.5 right-0.5 bg-black/60 p-0.5 rounded-full text-white backdrop-blur-sm">
-                              <Lock className="h-2 w-2" />
+                              <Lock className="h-1.5 w-1.5" />
                             </div>
                           )}
                         </div>
                       ))}
-                      {/* Empty slots filler to maintain grid look if needed, or just let it flow */}
                     </div>
                   </div>
                 </div>
