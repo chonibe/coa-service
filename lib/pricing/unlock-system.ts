@@ -164,14 +164,14 @@ export function validatePrice(
   if (price < tier.minPrice) {
     return {
       valid: false,
-      message: `Price must be at least £${tier.minPrice} for ${editionSize} edition size`,
+      message: `Price must be at least $${tier.minPrice} for ${editionSize} edition size`,
     }
   }
 
   if (price > tier.maxPrice) {
     return {
       valid: false,
-      message: `Price cannot exceed £${tier.maxPrice} for ${editionSize} edition size`,
+      message: `Price cannot exceed $${tier.maxPrice} for ${editionSize} edition size`,
     }
   }
 

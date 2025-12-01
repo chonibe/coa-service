@@ -92,7 +92,7 @@ export function ReviewStep({ formData, fieldsConfig }: ReviewStepProps) {
               <div className="flex items-center gap-4 flex-wrap pt-2 border-t">
                 <div>
                   <div className="text-xs text-muted-foreground">Price</div>
-                  <div className="text-2xl font-bold">£{variant?.price || "0.00"}</div>
+                  <div className="text-2xl font-bold">${variant?.price || "0.00"}</div>
                 </div>
                 {editionSizeMetafield && (
                   <div>
