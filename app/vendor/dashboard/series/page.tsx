@@ -9,7 +9,7 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Loader2, Plus, Lock, Edit, Trash2, Eye, AlertCircle, Copy, LayoutGrid, BookOpen, ImageIcon } from "lucide-react"
 import { useToast } from "@/components/ui/use-toast"
-import { motion } from "framer-motion"
+import { cn } from "@/lib/utils"
 import type { ArtworkSeries } from "@/types/artwork-series"
 import { SearchAndFilter } from "./components/SearchAndFilter"
 import { DeleteSeriesDialog } from "./components/DeleteSeriesDialog"
@@ -190,6 +190,38 @@ export default function SeriesPage() {
     }
   }
 
+  const getSeriesColor = (unlockType: string) => {
+    switch (unlockType) {
+      case "any_purchase":
+        return "border-blue-500/50 bg-blue-50/10 hover:border-blue-500"
+      case "sequential":
+        return "border-purple-500/50 bg-purple-50/10 hover:border-purple-500"
+      case "threshold":
+      case "vip":
+        return "border-orange-500/50 bg-orange-50/10 hover:border-orange-500"
+      case "time_based":
+        return "border-green-500/50 bg-green-50/10 hover:border-green-500"
+      default:
+        return "border-border bg-card hover:border-primary/50"
+    }
+  }
+
+  const getSeriesColor = (unlockType: string) => {
+    switch (unlockType) {
+      case "any_purchase":
+        return "border-blue-500/50 bg-blue-50/10 hover:border-blue-500"
+      case "sequential":
+        return "border-purple-500/50 bg-purple-50/10 hover:border-purple-500"
+      case "threshold":
+      case "vip":
+        return "border-orange-500/50 bg-orange-50/10 hover:border-orange-500"
+      case "time_based":
+        return "border-green-500/50 bg-green-50/10 hover:border-green-500"
+      default:
+        return "border-border bg-card hover:border-primary/50"
+    }
+  }
+
   if (loading) {
     return (
       <div className="space-y-6">
@@ -295,19 +327,26 @@ export default function SeriesPage() {
                   if (!acc[seriesId]) {
                     acc[seriesId] = {
                       name: artwork.series_name || "Unknown Series",
+                      unlock_type: artwork.series_unlock_type || "unknown",
                       artworks: []
                     }
                   }
                   acc[seriesId].artworks.push(artwork)
                   return acc
-                }, {} as Record<string, { name: string; artworks: any[] }>)
+                }, {} as Record<string, { name: string; unlock_type: string; artworks: any[] }>)
               ).map(([seriesId, group]: [string, any]) => (
-                <div key={seriesId} className="flex flex-col border-2 rounded-xl overflow-hidden bg-card hover:border-primary/50 transition-colors shadow-sm w-fit max-w-[320px]">
+                <div 
+                  key={seriesId} 
+                  className={cn(
+                    "flex flex-col border-2 rounded-xl overflow-hidden transition-colors shadow-sm w-fit max-w-[400px]",
+                    getSeriesColor(group.unlock_type)
+                  )}
+                >
                   {/* Artworks Flex Grid - Adapts to content size */}
-                  <div className="p-1.5 bg-muted/10">
-                    <div className="flex flex-wrap gap-1.5">
+                  <div className="p-2">
+                    <div className="flex flex-wrap gap-2">
                       {group.artworks.map((artwork: any) => (
-                        <div key={artwork.id} className="relative w-16 h-16 rounded-sm overflow-hidden bg-background border shadow-sm group/item flex-shrink-0">
+                        <div key={artwork.id} className="relative w-24 h-24 rounded-md overflow-hidden bg-background border shadow-sm group/item flex-shrink-0">
                           {artwork.image ? (
                             <img
                               src={artwork.image}
@@ -316,21 +355,21 @@ export default function SeriesPage() {
                             />
                           ) : (
                             <div className="w-full h-full flex items-center justify-center">
-                              <ImageIcon className="h-3 w-3 text-muted-foreground/30" />
+                              <ImageIcon className="h-6 w-6 text-muted-foreground/30" />
                             </div>
                           )}
                           
                           {/* Hover Title */}
-                          <div className="absolute inset-0 bg-black/60 opacity-0 group-hover/item:opacity-100 transition-opacity flex items-center justify-center p-0.5">
-                            <span className="text-[6px] text-white text-center font-medium leading-tight line-clamp-2">
+                          <div className="absolute inset-0 bg-black/60 opacity-0 group-hover/item:opacity-100 transition-opacity flex items-center justify-center p-1">
+                            <span className="text-[10px] text-white text-center font-medium leading-tight line-clamp-3">
                               {artwork.title}
                             </span>
                           </div>
 
                           {/* Status Icons */}
                           {artwork.is_locked && (
-                            <div className="absolute top-0.5 right-0.5 bg-black/60 p-0.5 rounded-full text-white backdrop-blur-sm">
-                              <Lock className="h-1.5 w-1.5" />
+                            <div className="absolute top-1 right-1 bg-black/60 p-1 rounded-full text-white backdrop-blur-sm">
+                              <Lock className="h-3 w-3" />
                             </div>
                           )}
                         </div>

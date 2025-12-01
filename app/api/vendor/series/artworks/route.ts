@@ -39,7 +39,8 @@ export async function GET(request: NextRequest) {
         artwork_series!inner (
           id,
           name,
-          vendor_id
+          vendor_id,
+          unlock_type
         ),
         vendor_product_submissions (
           id,
@@ -72,6 +73,7 @@ export async function GET(request: NextRequest) {
         id: m.id,
         series_id: m.series_id,
         series_name: m.artwork_series.name,
+        series_unlock_type: m.artwork_series.unlock_type,
         is_locked: m.is_locked,
         title,
         image,
