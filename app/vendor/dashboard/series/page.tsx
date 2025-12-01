@@ -354,7 +354,10 @@ export default function SeriesPage() {
                   </div>
 
                   {/* Artworks Flex Grid - Adapts to content size */}
-                  <div className="p-2 overflow-x-auto no-scrollbar max-w-[80vw]">
+                  <div className={cn(
+                    "p-2 overflow-x-auto no-scrollbar max-w-[80vw]",
+                    group.unlock_type === "time_based" ? "pb-10" : ""
+                  )}>
                     <div className="flex flex-nowrap gap-2 min-w-max">
                       {group.artworks.map((artwork: any) => (
                         <div key={artwork.id} className="relative w-32 h-32 rounded-md overflow-hidden bg-background border shadow-sm group/item flex-shrink-0">
@@ -395,7 +398,7 @@ export default function SeriesPage() {
 
                   {/* Time-Based Info Footer */}
                   {group.unlock_type === "time_based" && (
-                    <div className="px-2 pb-1 text-[10px] text-muted-foreground border-t bg-muted/20">
+                    <div className="absolute bottom-0 left-0 right-0 px-2 pb-1 text-[10px] text-muted-foreground border-t bg-muted/20 backdrop-blur-sm">
                       {(() => {
                         const config = group.unlock_config
                         if (config.unlock_at) {
