@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { Loader2, Plus, Lock, Edit, Trash2, Eye, AlertCircle, Copy } from "lucide-react"
+import { Loader2, Plus, Lock, Edit, Trash2, Eye, AlertCircle, Copy, LayoutGrid, BookOpen, ImageIcon } from "lucide-react"
 import { useToast } from "@/components/ui/use-toast"
 import { motion } from "framer-motion"
 import type { ArtworkSeries } from "@/types/artwork-series"
@@ -28,11 +28,42 @@ export default function SeriesPage() {
   const [selectedSeries, setSelectedSeries] = useState<ArtworkSeries | null>(null)
   const [isDeleting, setIsDeleting] = useState(false)
   const [isDuplicating, setIsDuplicating] = useState(false)
+  const [viewMode, setViewMode] = useState<"series" | "binder">("series")
+  const [allArtworks, setAllArtworks] = useState<any[]>([])
+  const [loadingArtworks, setLoadingArtworks] = useState(false)
   const { toast } = useToast()
 
   useEffect(() => {
     fetchSeries()
   }, [])
+
+  useEffect(() => {
+    if (viewMode === "binder" && allArtworks.length === 0) {
+      fetchAllArtworks()
+    }
+  }, [viewMode])
+
+  const fetchAllArtworks = async () => {
+    try {
+      setLoadingArtworks(true)
+      const response = await fetch("/api/vendor/series/artworks", {
+        credentials: "include",
+      })
+      if (response.ok) {
+        const data = await response.json()
+        setAllArtworks(data.artworks || [])
+      }
+    } catch (err) {
+      console.error("Error fetching all artworks:", err)
+      toast({
+        title: "Error",
+        description: "Failed to load artwork binder",
+        variant: "destructive",
+      })
+    } finally {
+      setLoadingArtworks(false)
+    }
+  }
 
   const fetchSeries = async () => {
     try {
@@ -194,16 +225,40 @@ export default function SeriesPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold tracking-tight bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
-          Artwork Series
-        </h1>
-        <p className="text-muted-foreground mt-1">
-          Manage your artwork series and unlock configurations
-        </p>
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
+              Artwork Series
+            </h1>
+            <p className="text-muted-foreground mt-1">
+              Manage your artwork series and unlock configurations
+            </p>
+          </div>
+          <div className="flex bg-muted p-1 rounded-lg">
+            <Button
+              variant={viewMode === "series" ? "secondary" : "ghost"}
+              size="sm"
+              onClick={() => setViewMode("series")}
+              className="gap-2"
+            >
+              <LayoutGrid className="h-4 w-4" />
+              Series View
+            </Button>
+            <Button
+              variant={viewMode === "binder" ? "secondary" : "ghost"}
+              size="sm"
+              onClick={() => setViewMode("binder")}
+              className="gap-2"
+            >
+              <BookOpen className="h-4 w-4" />
+              Binder View
+            </Button>
+          </div>
+        </div>
       </div>
 
-      {/* Search and Filter */}
-      {series.length > 0 && (
+      {/* Search and Filter - Only show in Series View for now */}
+      {viewMode === "series" && series.length > 0 && (
         <SearchAndFilter
           searchQuery={searchQuery}
           onSearchChange={setSearchQuery}
@@ -212,7 +267,64 @@ export default function SeriesPage() {
         />
       )}
 
-      {series.length === 0 ? (
+      {viewMode === "binder" ? (
+        <div className="space-y-6">
+          {loadingArtworks ? (
+            <div className="grid gap-4 grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+              {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((i) => (
+                <div key={i} className="aspect-[3/4]">
+                  <Skeleton className="h-full w-full rounded-lg" />
+                </div>
+              ))}
+            </div>
+          ) : allArtworks.length === 0 ? (
+            <Card>
+              <CardContent className="flex flex-col items-center justify-center py-12">
+                <ImageIcon className="h-12 w-12 text-muted-foreground mb-4" />
+                <h3 className="text-lg font-semibold mb-2">No Artworks Found</h3>
+                <p className="text-sm text-muted-foreground mb-4 text-center">
+                  Add artworks to your series to see them here.
+                </p>
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="grid gap-4 grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+              {allArtworks.map((artwork) => (
+                <Card key={artwork.id} className="overflow-hidden group hover:shadow-md transition-shadow">
+                  <div className="aspect-[3/4] relative bg-muted">
+                    {artwork.image ? (
+                      <img
+                        src={artwork.image}
+                        alt={artwork.title || "Artwork"}
+                        className="w-full h-full object-cover transition-transform group-hover:scale-105"
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center">
+                        <ImageIcon className="h-8 w-8 text-muted-foreground/50" />
+                      </div>
+                    )}
+                    {artwork.is_locked && (
+                      <div className="absolute top-2 right-2 bg-black/60 p-1.5 rounded-full text-white backdrop-blur-sm">
+                        <Lock className="h-3 w-3" />
+                      </div>
+                    )}
+                  </div>
+                  <div className="p-3">
+                    <h4 className="font-medium text-sm truncate" title={artwork.title}>
+                      {artwork.title || "Untitled"}
+                    </h4>
+                    <div className="flex items-center mt-1">
+                      <Badge variant="outline" className="text-[10px] truncate max-w-full px-1.5 h-5">
+                        {artwork.series_name}
+                      </Badge>
+                    </div>
+                  </div>
+                </Card>
+              ))}
+            </div>
+          )}
+        </div>
+      ) : series.length === 0 ? (
         <Card>
           <CardContent className="flex flex-col items-center justify-center py-12">
             <Lock className="h-12 w-12 text-muted-foreground mb-4" />
