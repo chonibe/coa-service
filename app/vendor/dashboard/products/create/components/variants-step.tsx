@@ -8,7 +8,7 @@ import { Slider } from "@/components/ui/slider"
 import { Badge } from "@/components/ui/badge"
 import { Progress } from "@/components/ui/progress"
 import { Card, CardContent } from "@/components/ui/card"
-import { Lock, TrendingUp, Info } from "lucide-react"
+import { Lock, TrendingUp, Info, Clock } from "lucide-react"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { PricePickerCards } from "./PricePickerCards"
@@ -106,6 +106,54 @@ export function VariantsStep({ formData, setFormData }: VariantsStepProps) {
     })
   }
 
+  const handleTimedEditionChange = () => {
+    // Set Timed Edition (Open Edition)
+    // Remove edition_size metafield
+    // Set inventory to unlimited/continue (represented by null or huge number, usually handled by platform)
+    
+    // For Timed Edition, we might want a specific price range or recommended price
+    // Let's assume similar to 90 edition size (entry level) or custom
+    const recommendedPrice = 50 
+
+    setFormData((prev) => {
+      const variants = [...prev.variants]
+      variants[0] = {
+        ...variants[0],
+        inventory_quantity: undefined, // Open/Unlimited
+        inventory_policy: 'continue', // Shopify flag for selling without stock tracking
+        price: prev.variants[0].price || recommendedPrice.toString(),
+      }
+      
+      // Remove edition_size metafield
+      const metafields = (prev.metafields || []).filter(
+        (m) => !(m.namespace === "custom" && m.key === "edition_size")
+      )
+      
+      // Add timed_edition metafield flag if needed, or just relying on absence of edition_size
+      const timedMetafield = {
+        namespace: "custom",
+        key: "timed_edition",
+        value: "true",
+        type: "boolean",
+      }
+      
+      // Check if it exists and update, or push
+      const existingIndex = metafields.findIndex(m => m.namespace === "custom" && m.key === "timed_edition")
+      if (existingIndex >= 0) {
+        metafields[existingIndex] = timedMetafield
+      } else {
+        metafields.push(timedMetafield)
+      }
+
+      return { ...prev, variants, metafields }
+    })
+  }
+
+  const isTimedEdition = (() => {
+    const timed = formData.metafields?.find(m => m.namespace === "custom" && m.key === "timed_edition")
+    return timed?.value === "true"
+  })()
+
   const handleEditionSizeChange = (index: number, editionSize: EditionSize) => {
     const totalSales = unlockStatus?.totalSales ?? 0
     const recommendedPrice = getRecommendedPrice(editionSize, totalSales)
@@ -122,8 +170,11 @@ export function VariantsStep({ formData, setFormData }: VariantsStepProps) {
     })
 
     // Update metafields to include edition_size
-    setFormData((prev) => {
-      const metafields = prev.metafields || []
+      setFormData((prev) => {
+      const metafields = (prev.metafields || []).filter(
+        (m) => !(m.namespace === "custom" && m.key === "timed_edition")
+      ) // Remove timed_edition flag if selecting fixed size
+
       const editionSizeMetafieldIndex = metafields.findIndex(
         (m) => m.namespace === "custom" && m.key === "edition_size",
       )
@@ -313,6 +364,32 @@ export function VariantsStep({ formData, setFormData }: VariantsStepProps) {
               </TooltipProvider>
             )
           })}
+          
+          {/* Timed Edition Button */}
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  type="button"
+                  variant={isTimedEdition ? "default" : "outline"}
+                  className={`relative h-24 flex flex-col items-center justify-center gap-1 ${
+                    isTimedEdition ? "ring-2 ring-primary ring-offset-2 bg-green-50 hover:bg-green-100 text-green-700 border-green-200" : "hover:border-green-200 hover:bg-green-50/50"
+                  }`}
+                  onClick={handleTimedEditionChange}
+                >
+                  <Clock className={`h-6 w-6 ${isTimedEdition ? "text-green-700" : "text-green-600/70"}`} />
+                  <span className="text-sm font-bold">Timed Edition</span>
+                  <span className="text-[10px] text-muted-foreground">Open Window</span>
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="top" className="max-w-xs">
+                <div className="space-y-1">
+                  <p className="font-semibold">Timed Edition</p>
+                  <p>Edition size is determined by sales during a specific time window.</p>
+                </div>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
         </div>
         {!loadingUnlock && unlockStatus && (
           <div className="space-y-1 text-xs text-muted-foreground">
@@ -348,13 +425,17 @@ export function VariantsStep({ formData, setFormData }: VariantsStepProps) {
         const editionSize = editionSizeMetafield
           ? (Number.parseInt(editionSizeMetafield.value, 10) as EditionSize)
           : null
-        const recommendedPrice = editionSize ? getRecommendedPrice(editionSize, totalSales) : 50
-        const priceRange = editionSize ? getPriceRange(editionSize) : { min: 40, max: 60 }
-        const currentPrice = variant.price ? Number.parseFloat(variant.price) : recommendedPrice
+        
+        const isTimed = formData.metafields?.find(
+          (m) => m.namespace === "custom" && m.key === "timed_edition"
+        )?.value === "true"
 
+        const recommendedPrice = editionSize ? getRecommendedPrice(editionSize, totalSales) : 50
+        const priceRange = editionSize ? getPriceRange(editionSize) : { min: 40, max: 100 } // Default wider range for timed
+        
         return (
           <div className="space-y-4">
-            {editionSize ? (
+            {editionSize || isTimed ? (
               <>
                 <div className="space-y-3">
                     <div className="flex items-center justify-between">
