@@ -344,7 +344,7 @@ export function VariantsStep({ formData, setFormData }: VariantsStepProps) {
                       <span className="text-2xl font-bold">{size}</span>
                       <span className="text-xs text-muted-foreground">editions</span>
                       {isUnlocked && (
-                        <span className="text-xs font-medium">£{priceRange.min}-£{priceRange.max}</span>
+                        <span className="text-xs font-medium">${priceRange.min}-${priceRange.max}</span>
                       )}
                     </Button>
                   </TooltipTrigger>
@@ -353,8 +353,8 @@ export function VariantsStep({ formData, setFormData }: VariantsStepProps) {
                       <p className="font-semibold">{size} Editions</p>
                       {isUnlocked ? (
                         <>
-                          <p>Price Range: £{priceRange.min} - £{priceRange.max}</p>
-                          <p>Recommended: £{recommendedPrice}</p>
+                          <p>Price Range: ${priceRange.min} - ${priceRange.max}</p>
+                          <p>Recommended: ${recommendedPrice}</p>
                         </>
                       ) : (
                         <p>Unlock at {minSales} sales (need {minSales - totalSales} more)</p>
@@ -444,7 +444,7 @@ export function VariantsStep({ formData, setFormData }: VariantsStepProps) {
                       Choose your price <span className="text-red-500">*</span>
                       </Label>
                         <Badge variant="outline" className="text-xs">
-                          Range: £{priceRange.min} - £{priceRange.max}
+                          Range: ${priceRange.min} - ${priceRange.max}
                         </Badge>
                       </div>
                   <p className="text-sm text-muted-foreground">
@@ -490,7 +490,7 @@ export function VariantsStep({ formData, setFormData }: VariantsStepProps) {
                                 {isSelected && <TrendingUp className="h-4 w-4 text-primary" />}
                               </div>
                               <div className="text-2xl font-bold mb-1">
-                                £{range.start} <span className="text-sm text-muted-foreground font-normal">to</span> £{range.end}
+                                ${range.start} <span className="text-sm text-muted-foreground font-normal">to</span> ${range.end}
                               </div>
                               <p className="text-xs text-muted-foreground">{range.desc}</p>
                             </div>

@@ -534,10 +534,10 @@ export default function SeriesDetailPage() {
         <CardHeader>
           <div className="flex items-center justify-between">
             <div>
-              <CardTitle>Artwork Collection</CardTitle>
-              <CardDescription>
-                Artworks that are part of this series
-              </CardDescription>
+          <CardTitle>Artwork Collection</CardTitle>
+          <CardDescription>
+            Artworks that are part of this series
+          </CardDescription>
             </div>
             <div className="flex bg-muted p-1 rounded-lg">
               <Button
