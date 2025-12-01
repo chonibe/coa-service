@@ -96,6 +96,16 @@ export default function JourneyMapPage() {
               router.push(`/vendor/dashboard/series/${seriesId}`)
             }}
             onPositionUpdate={async (seriesId, position) => {
+              // Optimistically update local state immediately
+              setSeries((prevSeries) =>
+                prevSeries.map((s) =>
+                  s.id === seriesId
+                    ? { ...s, journey_position: position }
+                    : s
+                )
+              )
+
+              // Update API in background
               try {
                 const response = await fetch(`/api/vendor/series/${seriesId}/journey-position`, {
                   method: "PUT",
@@ -110,10 +120,19 @@ export default function JourneyMapPage() {
                   throw new Error("Failed to update position")
                 }
 
-                // Refresh data
-                fetchJourneyData()
+                // Update with server response to ensure consistency
+                const data = await response.json()
+                if (data.series) {
+                  setSeries((prevSeries) =>
+                    prevSeries.map((s) =>
+                      s.id === seriesId ? { ...s, ...data.series } : s
+                    )
+                  )
+                }
               } catch (err: any) {
                 console.error("Error updating position:", err)
+                // Revert on error
+                fetchJourneyData()
                 toast({
                   title: "Error",
                   description: err.message || "Failed to update series position",
@@ -139,6 +158,15 @@ export default function JourneyMapPage() {
 
                 const updatedConnections = [...currentConnections, toSeriesId]
 
+                // Optimistically update local state
+                setSeries((prevSeries) =>
+                  prevSeries.map((s) =>
+                    s.id === fromSeriesId
+                      ? { ...s, connected_series_ids: updatedConnections }
+                      : s
+                  )
+                )
+
                 const response = await fetch(`/api/vendor/series/${fromSeriesId}/journey-position`, {
                   method: "PUT",
                   headers: {
@@ -157,10 +185,19 @@ export default function JourneyMapPage() {
                   description: "Series connected successfully",
                 })
 
-                // Refresh data
-                fetchJourneyData()
+                // Update with server response
+                const data = await response.json()
+                if (data.series) {
+                  setSeries((prevSeries) =>
+                    prevSeries.map((s) =>
+                      s.id === fromSeriesId ? { ...s, ...data.series } : s
+                    )
+                  )
+                }
               } catch (err: any) {
                 console.error("Error creating connection:", err)
+                // Revert on error
+                fetchJourneyData()
                 toast({
                   title: "Error",
                   description: err.message || "Failed to create connection",
