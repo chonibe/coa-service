@@ -53,23 +53,6 @@ export async function GET(request: NextRequest) {
           // Calculate real-time completion progress
           const progress = await calculateSeriesCompletion(s.id)
 
-          // Fetch series members (artworks)
-          const { data: members } = await supabase
-            .from("artwork_series_members")
-            .select(`
-              id,
-              series_id,
-              display_order,
-              is_locked,
-              submissions (
-                id,
-                title,
-                images
-              )
-            `)
-            .eq("series_id", s.id)
-            .order("display_order", { ascending: true })
-
           // Update progress in database (non-blocking)
           supabase
             .from("artwork_series")
@@ -80,7 +63,6 @@ export async function GET(request: NextRequest) {
           return {
             ...s,
             completion_progress: progress,
-            members: members || []
           }
         } catch (error) {
           console.error(`Error calculating progress for series ${s.id}:`, error)

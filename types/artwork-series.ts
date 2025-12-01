@@ -90,17 +90,6 @@ export interface ArtworkSeries {
   unlocks_series_ids?: string[] | null
   is_milestone?: boolean | null
   milestone_order?: number | null
-  members?: Array<{
-    id: string
-    series_id: string
-    display_order: number
-    is_locked: boolean
-    submissions?: {
-      id: string
-      title: string
-      images: string[]
-    } | null
-  }>
 }
 
 export interface SeriesMember {
