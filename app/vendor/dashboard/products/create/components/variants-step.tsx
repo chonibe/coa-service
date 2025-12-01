@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Slider } from "@/components/ui/slider"
 import { Badge } from "@/components/ui/badge"
+import { cn } from "@/lib/utils"
 import { Progress } from "@/components/ui/progress"
 import { Card, CardContent } from "@/components/ui/card"
 import { Lock, TrendingUp, Info, Clock } from "lucide-react"
@@ -451,53 +452,55 @@ export function VariantsStep({ formData, setFormData }: VariantsStepProps) {
                   </p>
                   
                   {isTimed ? (
-                    <div className="grid gap-6 p-4 border rounded-lg bg-muted/20">
-                      <div className="grid grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                          <Label>Starting Price</Label>
-                          <div className="relative">
-                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">£</span>
-                            <Input 
-                              type="number" 
-                              min="0"
-                              className="pl-7"
-                              value={variant.price}
-                              onChange={(e) => handlePriceChange(0, e.target.value)}
-                            />
-                          </div>
-                          <p className="text-xs text-muted-foreground">Price at launch</p>
-                        </div>
-                        <div className="space-y-2">
-                          <Label>Final Price</Label>
-                          <div className="relative">
-                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">£</span>
-                            <Input 
-                              type="number" 
-                              min="0"
-                              className="pl-7"
-                              value={formData.metafields?.find(m => m.key === "final_price")?.value || ""}
-                              onChange={(e) => {
-                                const val = e.target.value
+                    <div className="space-y-4">
+                      <Label>Select Progressive Pricing Range</Label>
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        {[
+                          { label: "Accessible", start: 40, end: 60, desc: "Entry level range" },
+                          { label: "Collector", start: 70, end: 100, desc: "Standard release range" },
+                          { label: "Invest", start: 120, end: 200, desc: "Premium tier range" }
+                        ].map((range) => {
+                          const isSelected = 
+                            parseFloat(variant.price || "0") === range.start && 
+                            parseFloat(formData.metafields?.find(m => m.key === "final_price")?.value || "0") === range.end
+
+                          return (
+                            <div 
+                              key={range.label}
+                              onClick={() => {
+                                updateVariant(0, "price", range.start.toString())
                                 setFormData(prev => {
                                   const metas = [...(prev.metafields || [])]
                                   const idx = metas.findIndex(m => m.key === "final_price")
                                   if (idx >= 0) {
-                                    metas[idx] = { ...metas[idx], value: val }
+                                    metas[idx] = { ...metas[idx], value: range.end.toString() }
                                   } else {
-                                    metas.push({ namespace: "custom", key: "final_price", value: val, type: "number_decimal" })
+                                    metas.push({ namespace: "custom", key: "final_price", value: range.end.toString(), type: "number_decimal" })
                                   }
                                   return { ...prev, metafields: metas }
                                 })
                               }}
-                            />
-                          </div>
-                          <p className="text-xs text-muted-foreground">Price at close</p>
-                        </div>
+                              className={cn(
+                                "cursor-pointer rounded-xl border-2 p-4 transition-all hover:border-primary",
+                                isSelected ? "border-primary bg-primary/5 ring-1 ring-primary" : "border-muted bg-card"
+                              )}
+                            >
+                              <div className="flex justify-between items-start mb-2">
+                                <span className="font-semibold text-sm">{range.label}</span>
+                                {isSelected && <TrendingUp className="h-4 w-4 text-primary" />}
+                              </div>
+                              <div className="text-2xl font-bold mb-1">
+                                £{range.start} <span className="text-sm text-muted-foreground font-normal">to</span> £{range.end}
+                              </div>
+                              <p className="text-xs text-muted-foreground">{range.desc}</p>
+                            </div>
+                          )
+                        })}
                       </div>
                       <Alert className="bg-blue-50 border-blue-200">
                         <TrendingUp className="h-4 w-4 text-blue-600" />
                         <AlertDescription className="text-blue-700 text-xs">
-                          Price will automatically increase from £{variant.price || 0} to £{formData.metafields?.find(m => m.key === "final_price")?.value || 0} as the time window closes.
+                          Price increases automatically from start to end price as the time window closes.
                         </AlertDescription>
                       </Alert>
                     </div>
