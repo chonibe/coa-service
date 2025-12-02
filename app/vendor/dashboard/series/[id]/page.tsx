@@ -10,7 +10,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { Loader2, ArrowLeft, Lock, Edit, Save, X, AlertCircle, ImageIcon, ArrowRight, Crown, Clock, LayoutGrid, GalleryHorizontal } from "lucide-react"
+import { Loader2, ArrowLeft, Lock, Edit, Save, X, AlertCircle, ImageIcon, ArrowRight, Crown, Clock, LayoutGrid, GalleryHorizontal, Info } from "lucide-react"
 import { useToast } from "@/components/ui/use-toast"
 import { motion } from "framer-motion"
 import { cn } from "@/lib/utils"
@@ -19,6 +19,9 @@ import { ArtworkCarousel } from "../components/ArtworkCarousel"
 import { UnlockProgress } from "../components/UnlockProgress"
 import { CoverArtUpload } from "../components/CoverArtUpload"
 import { CoverArtDesigner } from "../components/CoverArtDesigner"
+import { UnlockTypeCards } from "../components/UnlockTypeCards"
+import { TimeBasedUnlockConfig } from "../components/TimeBasedUnlockConfig"
+import { VIPUnlockConfig } from "../components/VIPUnlockConfig"
 import { DeleteSeriesDialog } from "../components/DeleteSeriesDialog"
 import { DuplicateSeriesDialog } from "../components/DuplicateSeriesDialog"
 import { UnlockTypeTooltip } from "../components/UnlockTypeTooltip"
@@ -330,6 +333,64 @@ export default function SeriesDetailPage() {
                   onChange={(e) => setEditDescription(e.target.value)}
                     rows={4}
                 />
+              </div>
+
+              <div className="space-y-4 pt-4 border-t">
+                <Label className="text-base">Unlock Settings</Label>
+                
+                <div className="space-y-4">
+                  <Label className="text-sm font-normal text-muted-foreground">Unlock Type</Label>
+                  <UnlockTypeCards
+                    value={editUnlockType}
+                    onChange={(type) => {
+                      setEditUnlockType(type)
+                      // Reset config when type changes
+                      setEditUnlockConfig({})
+                    }}
+                  />
+                </div>
+
+                <div className="pt-4">
+                  {editUnlockType === "time_based" && (
+                    <TimeBasedUnlockConfig
+                      value={editUnlockConfig}
+                      onChange={setEditUnlockConfig}
+                    />
+                  )}
+
+                  {editUnlockType === "vip" && (
+                    <VIPUnlockConfig
+                      value={editUnlockConfig}
+                      onChange={setEditUnlockConfig}
+                      seriesMembers={members}
+                    />
+                  )}
+
+                  {editUnlockType === "threshold" && (
+                    <div className="space-y-2">
+                      <Label htmlFor="edit-required-count">Required Purchases</Label>
+                      <Input
+                        id="edit-required-count"
+                        type="number"
+                        min="1"
+                        value={editUnlockConfig.required_count || 1}
+                        onChange={(e) => setEditUnlockConfig({ ...editUnlockConfig, required_count: parseInt(e.target.value) || 1 })}
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        Number of artworks collectors must purchase to unlock exclusive pieces.
+                      </p>
+                    </div>
+                  )}
+
+                  {editUnlockType === "sequential" && (
+                    <Alert>
+                      <Info className="h-4 w-4" />
+                      <AlertDescription>
+                        Artworks will unlock in the order they are arranged in the collection view.
+                      </AlertDescription>
+                    </Alert>
+                  )}
+                </div>
               </div>
               </CardContent>
             </Card>
