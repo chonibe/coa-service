@@ -343,10 +343,38 @@ export default function SeriesPage() {
                     getSeriesColor(group.unlock_type)
                   )}
                 >
+                  {/* Time-Based "Water Glass" Fill */}
+                  {group.unlock_type === "time_based" && (() => {
+                    const config = group.unlock_config
+                    if (config.unlock_schedule?.start_date && config.unlock_schedule?.end_date) {
+                      const start = new Date(config.unlock_schedule.start_date)
+                      const end = new Date(config.unlock_schedule.end_date)
+                      const now = new Date()
+                      const isActive = now >= start && now <= end
+                      
+                      let progress = 0
+                      if (isActive) {
+                        const total = end.getTime() - start.getTime()
+                        const current = now.getTime() - start.getTime()
+                        progress = Math.min(100, Math.max(0, (current / total) * 100))
+                      } else if (now > end) {
+                        progress = 100
+                      }
+
+                      return (
+                        <div 
+                          className="absolute bottom-0 left-0 right-0 bg-green-500/20 transition-all duration-1000 ease-in-out pointer-events-none"
+                          style={{ height: `${progress}%` }}
+                        />
+                      )
+                    }
+                    return null
+                  })()}
+
                   {/* Type Icon Badge */}
                   <div className={cn(
-                    "absolute top-0 right-0 p-1.5 rounded-bl-lg z-10",
-                    getSeriesColor(group.unlock_type).replace('border-', 'bg-').split(' ')[0] // Simple hack to get bg color from border class
+                    "absolute top-0 right-0 p-1.5 rounded-bl-lg z-20",
+                    getSeriesColor(group.unlock_type).replace('border-', 'bg-').split(' ')[0]
                   )}>
                     <div className="bg-background/80 backdrop-blur-sm p-1 rounded-full shadow-sm">
                       {getSeriesIcon(group.unlock_type)}
@@ -354,7 +382,7 @@ export default function SeriesPage() {
                   </div>
 
                   {/* Artworks Flex Grid - Adapts to content size */}
-                  <div className="p-2 overflow-x-auto no-scrollbar max-w-[80vw]">
+                  <div className="p-2 overflow-x-auto no-scrollbar max-w-[80vw] relative z-10">
                     <div className="flex flex-nowrap gap-2 min-w-max">
                       {group.artworks.map((artwork: any) => (
                         <div key={artwork.id} className="relative w-32 h-32 rounded-md overflow-hidden bg-background border shadow-sm group/item flex-shrink-0">
@@ -392,59 +420,6 @@ export default function SeriesPage() {
                       ))}
                     </div>
                   </div>
-
-                  {/* Time-Based Info Footer */}
-                  {group.unlock_type === "time_based" && (
-                    <div className="absolute bottom-0 left-0 right-0 px-2 pb-1 text-[10px] text-muted-foreground border-t bg-muted/20 backdrop-blur-sm">
-                      {(() => {
-                        const config = group.unlock_config
-                        if (config.unlock_at) {
-                          const date = new Date(config.unlock_at)
-                          const isPast = date < new Date()
-                          return (
-                            <div className="flex items-center gap-1 py-1">
-                              <Clock className="h-3 w-3" />
-                              <span>{isPast ? "Unlocked" : `Unlocks ${date.toLocaleDateString()}`}</span>
-                            </div>
-                          )
-                        } else if (config.unlock_schedule?.start_date && config.unlock_schedule?.end_date) {
-                          const start = new Date(config.unlock_schedule.start_date)
-                          const end = new Date(config.unlock_schedule.end_date)
-                          const now = new Date()
-                          const isActive = now >= start && now <= end
-                          const isPast = now > end
-                          
-                          // Calculate percentage if active
-                          let progress = 0
-                          if (isActive) {
-                            const total = end.getTime() - start.getTime()
-                            const current = now.getTime() - start.getTime()
-                            progress = Math.min(100, Math.max(0, (current / total) * 100))
-                          }
-
-                          return (
-                            <div className="w-full py-1">
-                              <div className="flex justify-between items-center mb-0.5">
-                                <span className={cn("font-medium", isActive ? "text-green-600" : "")}>
-                                  {isActive ? "Active Now" : isPast ? "Ended" : "Coming Soon"}
-                                </span>
-                                <span className="opacity-70">{end.toLocaleDateString()}</span>
-                              </div>
-                              {isActive && (
-                                <div className="h-1 w-full bg-muted rounded-full overflow-hidden">
-                                  <div 
-                                    className="h-full bg-green-500 rounded-full" 
-                                    style={{ width: `${progress}%` }}
-                                  />
-                                </div>
-                              )}
-                            </div>
-                          )
-                        }
-                        return null
-                      })()}
-                    </div>
-                  )}
                 </div>
               ))}
             </div>
