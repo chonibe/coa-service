@@ -230,6 +230,7 @@ export function AdminShell({ children }: AdminShellProps) {
     },
     {
       title: "Certificates",
+      href: "/admin/certificates/management",
       icon: <Icon size="sm"><DocumentTextIcon className="h-4 w-4" /></Icon>,
       submenu: [
         {
@@ -260,7 +261,41 @@ export function AdminShell({ children }: AdminShellProps) {
       ],
     },
     {
+      title: "CRM",
+      href: "/admin/crm",
+      icon: <Icon size="md"><UsersIcon className="h-5 w-5" /></Icon>,
+      submenu: [
+        {
+          title: "People",
+          href: "/admin/crm/people",
+          icon: <Icon size="sm"><UsersIcon className="h-4 w-4" /></Icon>,
+        },
+        {
+          title: "Companies",
+          href: "/admin/crm/companies",
+          icon: <Icon size="sm"><BuildingOffice2Icon className="h-4 w-4" /></Icon>,
+        },
+        {
+          title: "Inbox",
+          href: "/admin/crm/inbox",
+          icon: <Icon size="sm"><EnvelopeIcon className="h-4 w-4" /></Icon>,
+        },
+        {
+          title: "Lists",
+          href: "/admin/crm/lists",
+          icon: <Icon size="sm"><DocumentTextIcon className="h-4 w-4" /></Icon>,
+        },
+        {
+          title: "Settings",
+          href: "/admin/crm/settings",
+          icon: <Icon size="sm"><Cog6ToothIcon className="h-4 w-4" /></Icon>,
+        },
+      ],
+      expanded: pathname?.startsWith('/admin/crm') || false,
+    },
+    {
       title: "Preview",
+      href: "/admin/preview/customer",
       icon: <Icon size="sm"><EyeIcon className="h-4 w-4" /></Icon>,
       submenu: [
         {
@@ -592,7 +627,7 @@ export function AdminShell({ children }: AdminShellProps) {
                           className="h-8 w-8"
                           onClick={() => openEmailEditor(vendor)}
                         >
-                          <Pencil className="h-4 w-4" />
+                          <PencilIcon className="h-4 w-4" />
                           <span className="sr-only">Edit email</span>
                         </Button>
                       </div>

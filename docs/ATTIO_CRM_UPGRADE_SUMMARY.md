@@ -246,12 +246,29 @@ All migrations are ready to apply:
 12. **Bulk Operations**: Update, tag, delete, add/remove from lists
 13. **Enhanced Search**: Recent searches and suggestions
 
+## Integration Status (Updated 2025-12-03)
+
+### ✅ Completed UI Integrations
+- **CommentsPanel**: Integrated into person detail page conversations tab
+- **SavedViews**: Integrated into people list page with filter/sort support
+- **RecordActions**: New component created and integrated into person detail page header
+- **RecordWidgets**: New component created and integrated into person detail page overview tab
+- **BulkActionsToolbar**: Already integrated in people list page
+
+### New Components Created
+- `components/crm/record-actions.tsx` - Displays and executes custom record actions
+- `components/crm/record-widgets.tsx` - Displays custom widgets on record pages
+
+### Migration Fixes
+- Fixed combined migration (`20251203000012_attio_crm_upgrade_combined.sql`) to handle existing triggers with `DROP TRIGGER IF EXISTS` statements
+- Migration is now idempotent and safe to run multiple times
+
 ## Next Steps
 
-1. Apply all database migrations
-2. Test all new API endpoints
-3. Integrate Comments Panel into person/company detail pages
-4. Add Record Actions and Widgets UI to detail pages
+1. ✅ Apply all database migrations (completed)
+2. ✅ Test all new API endpoints (completed)
+3. ✅ Integrate Comments Panel into person/company detail pages (completed for person)
+4. ✅ Add Record Actions and Widgets UI to detail pages (completed)
 5. Add column customization to list views
 6. Test bulk operations with large datasets
 7. Add keyboard shortcuts throughout
