@@ -12,6 +12,9 @@ import Link from "next/link"
 import { FilterBuilder } from "@/components/crm/filter-builder"
 import { BulkActionsToolbar } from "@/components/crm/bulk-actions-toolbar"
 import { SavedViews } from "@/components/crm/saved-views"
+import { ExportButton } from "@/components/crm/export-button"
+import { PersonListSkeleton } from "@/components/crm/loading-skeleton"
+import { EmptyState } from "@/components/crm/empty-state"
 
 interface Person {
   id: string
@@ -38,6 +41,7 @@ interface Person {
 
 export default function PeoplePage() {
   const router = useRouter()
+  useCRMShortcuts() // Enable keyboard shortcuts
   const [people, setPeople] = useState<Person[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -111,10 +115,14 @@ export default function PeoplePage() {
             Manage contacts and customer relationships
           </p>
         </div>
-        <Button onClick={() => router.push("/admin/crm/people/new")}>
-          <Plus className="mr-2 h-4 w-4" />
-          Add Person
-        </Button>
+        <div className="flex items-center gap-2">
+          <ColumnCustomizer columns={columns} onColumnsChange={setColumns} entityType="person" />
+          <ExportButton entityType="person" filters={filters.length > 0 ? { $and: filters } : {}} selectedIds={selectedIds} />
+          <Button onClick={() => router.push("/admin/crm/people/new")}>
+            <Plus className="mr-2 h-4 w-4" />
+            Add Person
+          </Button>
+        </div>
       </div>
 
       {/* Search Bar and Saved Views */}
@@ -195,13 +203,12 @@ export default function PeoplePage() {
         </CardHeader>
         <CardContent>
           {isLoading ? (
-            <div className="flex justify-center py-8">
-              <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-            </div>
+            <PersonListSkeleton />
           ) : people.length === 0 ? (
-            <div className="text-center py-8 text-muted-foreground">
-              No people found. {!searchQuery && "Click 'Add Person' to create a new contact."}
-            </div>
+            <EmptyState
+              type="people"
+              actionHref="/admin/crm/people/new"
+            />
           ) : (
             <div className="space-y-2">
               {people.map((person) => {

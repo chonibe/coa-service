@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { useParams, useRouter } from "next/navigation"
+import { useCRMShortcuts } from "@/hooks/use-keyboard-shortcuts"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -12,6 +13,7 @@ import { PropertyPanel } from "@/components/crm/property-panel"
 import { CommentsPanel } from "@/components/crm/comments-panel"
 import { RecordActions } from "@/components/crm/record-actions"
 import { RecordWidgets } from "@/components/crm/record-widgets"
+import { ActivityCreatorDialog } from "@/components/crm/activity-creator-dialog"
 
 interface Person {
   id: string
@@ -505,7 +507,20 @@ export default function PersonDetailPage() {
         <TabsContent value="timeline" className="space-y-4">
           <Card>
             <CardHeader>
-              <CardTitle>Activity Timeline</CardTitle>
+              <div className="flex items-center justify-between">
+                <CardTitle>Activity Timeline</CardTitle>
+                <ActivityCreatorDialog
+                  entityType="person"
+                  entityId={personId}
+                  onActivityCreated={() => {
+                    // Refresh activities
+                    fetch(`/api/crm/activities?customer_id=${personId}&limit=50`)
+                      .then((res) => res.json())
+                      .then((data) => setActivities(data.activities || []))
+                      .catch(console.error)
+                  }}
+                />
+              </div>
             </CardHeader>
             <CardContent>
               {activities.length === 0 ? (

@@ -10,6 +10,9 @@ import { Loader2, ArrowLeft, Building2, Users, DollarSign, Package, Mail, Phone,
 import Link from "next/link"
 import { Timeline } from "@/components/crm/timeline"
 import { CustomFieldsPanel } from "@/components/crm/custom-fields-panel"
+import { CommentsPanel } from "@/components/crm/comments-panel"
+import { RecordActions } from "@/components/crm/record-actions"
+import { RecordWidgets } from "@/components/crm/record-widgets"
 
 interface Company {
   id: string
@@ -126,7 +129,10 @@ export default function CompanyDetailPage() {
               </Badge>
             )}
           </div>
-          <Button onClick={() => router.push(`/admin/crm/companies/${companyId}/edit`)}>Edit</Button>
+          <div className="flex items-center gap-2">
+            <RecordActions entityType="company" recordId={companyId} />
+            <Button onClick={() => router.push(`/admin/crm/companies/${companyId}/edit`)}>Edit</Button>
+          </div>
         </div>
       </div>
 
@@ -178,9 +184,13 @@ export default function CompanyDetailPage() {
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="people">People</TabsTrigger>
           <TabsTrigger value="timeline">Timeline</TabsTrigger>
+          <TabsTrigger value="conversations">Conversations</TabsTrigger>
         </TabsList>
 
         <TabsContent value="overview" className="space-y-4">
+          {/* Record Widgets */}
+          <RecordWidgets entityType="company" recordId={companyId} />
+          
           {/* Custom Fields */}
           <CustomFieldsPanel entityType="company" entityId={companyId} />
           
@@ -310,12 +320,26 @@ export default function CompanyDetailPage() {
         <TabsContent value="timeline" className="space-y-4">
           <Card>
             <CardHeader>
-              <CardTitle>Activity Timeline</CardTitle>
+              <div className="flex items-center justify-between">
+                <CardTitle>Activity Timeline</CardTitle>
+                <ActivityCreatorDialog
+                  entityType="company"
+                  entityId={companyId}
+                  onActivityCreated={() => {
+                    // Refresh timeline
+                    window.location.reload()
+                  }}
+                />
+              </div>
             </CardHeader>
             <CardContent>
               <Timeline companyId={companyId} />
             </CardContent>
           </Card>
+        </TabsContent>
+
+        <TabsContent value="conversations" className="space-y-4">
+          <CommentsPanel parentType="company" parentId={companyId} />
         </TabsContent>
       </Tabs>
     </div>
