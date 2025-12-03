@@ -12,7 +12,7 @@ import Link from "next/link"
 import { FilterBuilder } from "@/components/crm/filter-builder"
 import { BulkActionsToolbar } from "@/components/crm/bulk-actions-toolbar"
 import { SavedViews } from "@/components/crm/saved-views"
-import { ExportButton } from "@/components/crm/export-button"
+import { ExportDialog } from "@/components/crm/export-dialog"
 import { PersonListSkeleton } from "@/components/crm/loading-skeleton"
 import { EmptyState } from "@/components/crm/empty-state"
 import { ColumnCustomizer } from "@/components/crm/column-customizer"
@@ -130,7 +130,11 @@ export default function PeoplePage() {
         </div>
         <div className="flex items-center gap-2">
           <ColumnCustomizer columns={columns} onColumnsChange={setColumns} entityType="person" />
-          <ExportButton entityType="person" filters={filters.length > 0 ? { $and: filters } : {}} selectedIds={selectedIds} />
+          <ExportDialog 
+            entityType="people" 
+            filters={filters.length > 0 ? { $and: filters } : undefined} 
+            selectedIds={selectedIds.length > 0 ? selectedIds : undefined} 
+          />
           <Button onClick={() => router.push("/admin/crm/people/new")}>
             <Plus className="mr-2 h-4 w-4" />
             Add Person

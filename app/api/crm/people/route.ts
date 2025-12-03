@@ -8,6 +8,7 @@ import {
   createCursorResponse,
 } from "@/lib/crm/cursor-pagination"
 import { addRateLimitHeaders } from "@/lib/crm/rate-limit-middleware"
+import { Errors } from "@/lib/crm/errors"
 
 /**
  * People API - Unified API for managing people/contacts in CRM
@@ -39,13 +40,13 @@ export async function GET(request: NextRequest) {
         const validation = validateFilter(filter)
         if (!validation.valid) {
           return NextResponse.json(
-            { error: `Invalid filter: ${validation.error}` },
+            Errors.invalidFilter(validation.error || "Invalid filter syntax", { field: "filter" }),
             { status: 400 }
           )
         }
       } catch (err) {
         return NextResponse.json(
-          { error: "Invalid filter JSON format" },
+          Errors.validation("Invalid filter JSON format", { field: "filter", reason: "Malformed JSON" }),
           { status: 400 }
         )
       }
@@ -59,7 +60,7 @@ export async function GET(request: NextRequest) {
         sortConfig = typeof sortParam === "string" ? JSON.parse(sortParam) : sortParam
       } catch (err) {
         return NextResponse.json(
-          { error: "Invalid sort JSON format" },
+          Errors.validation("Invalid sort JSON format", { field: "sort", reason: "Malformed JSON" }),
           { status: 400 }
         )
       }
@@ -174,7 +175,7 @@ export async function GET(request: NextRequest) {
     const { data, error, count } = await query
 
     if (error) {
-      throw error
+      return NextResponse.json(Errors.internal(error.message || "Failed to fetch people"), { status: 500 })
     }
 
     // If using cursor pagination, format response accordingly
@@ -202,10 +203,7 @@ export async function GET(request: NextRequest) {
     return addRateLimitHeaders(request, response)
   } catch (error: any) {
     console.error("[CRM] Error fetching people:", error)
-    return NextResponse.json(
-      { error: error.message || "Internal server error" },
-      { status: 500 }
-    )
+    return NextResponse.json(Errors.internal(error.message || "Failed to fetch people"), { status: 500 })
   }
 }
 
@@ -214,7 +212,7 @@ export async function POST(request: NextRequest) {
   
   try {
     if (!supabase) {
-      throw new Error("Database client not initialized")
+      return NextResponse.json(Errors.internal("Database client not initialized"), { status: 500 })
     }
 
     const body = await request.json()
@@ -250,7 +248,13 @@ export async function POST(request: NextRequest) {
       .single()
 
     if (error) {
-      throw error
+      if (error.code === "23505") {
+        return NextResponse.json(
+          Errors.conflict("Email already exists", { field: "email" }),
+          { status: 409 }
+        )
+      }
+      return NextResponse.json(Errors.internal(error.message || "Failed to create person"), { status: 500 })
     }
 
     // Apply default values for custom fields

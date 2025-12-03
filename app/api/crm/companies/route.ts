@@ -6,6 +6,7 @@ import {
   applyCursorToQuery,
   createCursorResponse,
 } from "@/lib/crm/cursor-pagination"
+import { Errors } from "@/lib/crm/errors"
 
 /**
  * Companies API - Manage company/organization records
@@ -17,7 +18,7 @@ export async function GET(request: NextRequest) {
   
   try {
     if (!supabase) {
-      throw new Error("Database client not initialized")
+      return NextResponse.json(Errors.internal("Database client not initialized"), { status: 500 })
     }
 
     const searchParams = request.nextUrl.searchParams
@@ -36,13 +37,13 @@ export async function GET(request: NextRequest) {
         const validation = validateFilter(filter)
         if (!validation.valid) {
           return NextResponse.json(
-            { error: `Invalid filter: ${validation.error}` },
+            Errors.invalidFilter(validation.error || "Invalid filter syntax", { field: "filter" }),
             { status: 400 }
           )
         }
       } catch (err) {
         return NextResponse.json(
-          { error: "Invalid filter JSON format" },
+          Errors.validation("Invalid filter JSON format", { field: "filter", reason: "Malformed JSON" }),
           { status: 400 }
         )
       }
@@ -125,7 +126,7 @@ export async function GET(request: NextRequest) {
     const { data, error, count } = await query
 
     if (error) {
-      throw error
+      return NextResponse.json(Errors.internal(error.message || "Failed to fetch companies"), { status: 500 })
     }
 
     // If using cursor pagination, format response accordingly
@@ -147,10 +148,7 @@ export async function GET(request: NextRequest) {
     })
   } catch (error: any) {
     console.error("[CRM] Error fetching companies:", error)
-    return NextResponse.json(
-      { error: error.message || "Internal server error" },
-      { status: 500 }
-    )
+    return NextResponse.json(Errors.internal(error.message || "Failed to fetch companies"), { status: 500 })
   }
 }
 
@@ -159,7 +157,7 @@ export async function POST(request: NextRequest) {
   
   try {
     if (!supabase) {
-      throw new Error("Database client not initialized")
+      return NextResponse.json(Errors.internal("Database client not initialized"), { status: 500 })
     }
 
     const body = await request.json()

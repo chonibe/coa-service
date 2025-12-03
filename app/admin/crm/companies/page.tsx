@@ -10,6 +10,7 @@ import { Loader2, Search, Plus, Building2, Users, DollarSign, Package } from "lu
 import Link from "next/link"
 import { EmptyState } from "@/components/crm/empty-state"
 import { PersonListSkeleton } from "@/components/crm/loading-skeleton"
+import { ExportDialog } from "@/components/crm/export-dialog"
 
 interface Company {
   id: string
@@ -89,10 +90,13 @@ export default function CompaniesPage() {
             Manage company and organization records
           </p>
         </div>
-        <Button onClick={() => router.push("/admin/crm/companies/new")}>
-          <Plus className="mr-2 h-4 w-4" />
-          Add Company
-        </Button>
+        <div className="flex items-center gap-2">
+          <ExportDialog entityType="companies" />
+          <Button onClick={() => router.push("/admin/crm/companies/new")}>
+            <Plus className="mr-2 h-4 w-4" />
+            Add Company
+          </Button>
+        </div>
       </div>
 
       {/* Search Bar */}

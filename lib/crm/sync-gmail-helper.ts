@@ -2,6 +2,7 @@ import { createClient as createServiceClient } from "@/lib/supabase/server"
 import { fetchGmailMessages, extractEmailContent } from "@/lib/gmail/client"
 import { logEmail } from "@/lib/crm/log-email"
 import { isAdminEmail } from "@/lib/vendor-auth"
+import { updateLastSyncTime } from "@/lib/crm/sync-helper"
 
 /**
  * Helper function to sync Gmail emails for a user
@@ -124,6 +125,9 @@ export async function syncGmailForUser(
     }
 
     console.log(`[Gmail Sync Helper] Successfully synced ${syncedCount} emails (${errorCount} errors) for ${userEmail}`)
+
+    // Update last sync time
+    await updateLastSyncTime(userId)
 
     return {
       success: true,
