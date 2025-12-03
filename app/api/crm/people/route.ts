@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { createClient } from "@/lib/supabase/server"
+import { requirePermission } from "@/lib/crm/permissions"
 import { parseFilter, parseFilterAsync, validateFilter, hasPathFilters } from "@/lib/crm/filter-parser"
 import {
   getCursorForPagination,

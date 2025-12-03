@@ -65,7 +65,12 @@ export function GlobalSearch({ open, onOpenChange }: GlobalSearchProps) {
     setIsLoading(true)
     debounceTimer.current = setTimeout(async () => {
       try {
-        const response = await fetch(`/api/crm/search?q=${encodeURIComponent(query)}`)
+        // Try fuzzy search first, fallback to regular search
+        let response = await fetch(`/api/crm/search/fuzzy?q=${encodeURIComponent(query)}&objects=people,companies&limit=20`)
+        if (!response.ok) {
+          // Fallback to regular search
+          response = await fetch(`/api/crm/search?q=${encodeURIComponent(query)}`)
+        }
         if (!response.ok) {
           throw new Error("Search failed")
         }

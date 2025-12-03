@@ -15,6 +15,8 @@ import { SavedViews } from "@/components/crm/saved-views"
 import { ExportButton } from "@/components/crm/export-button"
 import { PersonListSkeleton } from "@/components/crm/loading-skeleton"
 import { EmptyState } from "@/components/crm/empty-state"
+import { ColumnCustomizer } from "@/components/crm/column-customizer"
+import { useCRMShortcuts } from "@/hooks/use-keyboard-shortcuts"
 
 interface Person {
   id: string
@@ -52,6 +54,15 @@ export default function PeoplePage() {
   const [filters, setFilters] = useState<any[]>([])
   const [selectedIds, setSelectedIds] = useState<string[]>([])
   const [currentSort, setCurrentSort] = useState<Array<{ field: string; direction: "asc" | "desc" }>>([])
+  const [columns, setColumns] = useState([
+    { key: "name", label: "Name", visible: true },
+    { key: "email", label: "Email", visible: true },
+    { key: "phone", label: "Phone", visible: true },
+    { key: "company", label: "Company", visible: true },
+    { key: "tags", label: "Tags", visible: true },
+    { key: "total_orders", label: "Orders", visible: true },
+    { key: "total_spent", label: "Total Spent", visible: true },
+  ])
   const limit = 50
 
   const fetchPeople = async (search = "", offset = 0) => {
@@ -108,10 +119,12 @@ export default function PeoplePage() {
 
   return (
     <div className="p-6 max-w-7xl mx-auto">
-      <div className="mb-6 flex items-center justify-between">
+      <div className="mb-8 flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">People</h1>
-          <p className="text-muted-foreground mt-1">
+          <h1 className="text-4xl font-bold tracking-tight bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent mb-2">
+            People
+          </h1>
+          <p className="text-muted-foreground text-lg">
             Manage contacts and customer relationships
           </p>
         </div>
@@ -152,7 +165,14 @@ export default function PeoplePage() {
               <div className="border-t pt-4">
                 <FilterBuilder
                   entityType="person"
-                  onFiltersChange={setFilters}
+                  filters={filters.length > 0 ? { $and: filters } : {}}
+                  onFiltersChange={(newFilters) => {
+                    if (newFilters.$and) {
+                      setFilters(newFilters.$and)
+                    } else {
+                      setFilters([])
+                    }
+                  }}
                 />
               </div>
             )}
@@ -220,7 +240,7 @@ export default function PeoplePage() {
                 return (
                   <div
                     key={person.id}
-                    className="flex items-center gap-3 p-4 border rounded-lg hover:bg-muted/50 transition-colors"
+                    className="flex items-center gap-3 p-4 border rounded-lg hover:bg-muted/50 hover:shadow-md transition-all duration-200 group"
                   >
                     <Checkbox
                       checked={isSelected}
@@ -274,8 +294,12 @@ export default function PeoplePage() {
                         {platforms.map((platform, idx) => {
                           const Icon = platform.icon
                           return (
-                            <div key={idx} className="p-1.5 rounded bg-muted" title={platform.label}>
-                              <Icon className="h-4 w-4 text-muted-foreground" />
+                            <div 
+                              key={idx} 
+                              className="p-1.5 rounded bg-muted group-hover:bg-blue-100 dark:group-hover:bg-blue-900/30 transition-colors" 
+                              title={platform.label}
+                            >
+                              <Icon className="h-4 w-4 text-muted-foreground group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors" />
                             </div>
                           )
                         })}

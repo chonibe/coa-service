@@ -74,20 +74,24 @@ export function EmptyState({
   }
 
   return (
-    <Card>
-      <CardContent className="flex flex-col items-center justify-center py-12">
-        <div className="rounded-full bg-muted p-4 mb-4">
-          <Icon className="h-8 w-8 text-muted-foreground" />
+    <Card className="border-dashed">
+      <CardContent className="flex flex-col items-center justify-center py-16">
+        <div className="rounded-full bg-gradient-to-br from-blue-100 to-indigo-100 dark:from-blue-900/30 dark:to-indigo-900/30 p-6 mb-6">
+          <Icon className="h-12 w-12 text-blue-600 dark:text-blue-400" />
         </div>
-        <h3 className="text-lg font-semibold mb-2">
+        <h3 className="text-xl font-semibold mb-3 text-center">
           {title || config.title}
         </h3>
-        <p className="text-sm text-muted-foreground text-center max-w-md mb-6">
+        <p className="text-sm text-muted-foreground text-center max-w-md mb-8">
           {description || config.description}
         </p>
         {(actionLabel || config.actionLabel) && (
-          <Button onClick={handleAction}>
-            <Plus className="mr-2 h-4 w-4" />
+          <Button 
+            onClick={handleAction}
+            className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700"
+            size="lg"
+          >
+            <Plus className="mr-2 h-5 w-5" />
             {actionLabel || config.actionLabel}
           </Button>
         )}

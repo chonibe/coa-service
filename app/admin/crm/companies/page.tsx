@@ -8,6 +8,8 @@ import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { Loader2, Search, Plus, Building2, Users, DollarSign, Package } from "lucide-react"
 import Link from "next/link"
+import { EmptyState } from "@/components/crm/empty-state"
+import { PersonListSkeleton } from "@/components/crm/loading-skeleton"
 
 interface Company {
   id: string
@@ -78,10 +80,12 @@ export default function CompaniesPage() {
 
   return (
     <div className="p-6 max-w-7xl mx-auto">
-      <div className="mb-6 flex items-center justify-between">
+      <div className="mb-8 flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Companies</h1>
-          <p className="text-muted-foreground mt-1">
+          <h1 className="text-4xl font-bold tracking-tight bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent mb-2">
+            Companies
+          </h1>
+          <p className="text-muted-foreground text-lg">
             Manage company and organization records
           </p>
         </div>
@@ -126,20 +130,19 @@ export default function CompaniesPage() {
         </CardHeader>
         <CardContent>
           {isLoading ? (
-            <div className="flex justify-center py-8">
-              <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-            </div>
+            <PersonListSkeleton />
           ) : companies.length === 0 ? (
-            <div className="text-center py-8 text-muted-foreground">
-              No companies found. {!searchQuery && "Click 'Add Company' to create a new company."}
-            </div>
+            <EmptyState
+              type="companies"
+              actionHref="/admin/crm/companies/new"
+            />
           ) : (
             <div className="space-y-2">
               {companies.map((company) => (
                 <Link
                   key={company.id}
                   href={`/admin/crm/companies/${company.id}`}
-                  className="block p-4 border rounded-lg hover:bg-muted/50 transition-colors"
+                  className="block p-4 border rounded-lg hover:bg-muted/50 hover:shadow-md transition-all duration-200 group"
                 >
                   <div className="flex items-center justify-between">
                     <div className="flex-1">
