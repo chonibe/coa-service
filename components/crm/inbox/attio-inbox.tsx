@@ -5,8 +5,11 @@ import { ConversationList, Conversation } from "./conversation-list"
 import { MessageThreadView } from "./message-thread-view"
 import { FilterBar } from "./filter-bar"
 import { SortDropdown, SortOption } from "./sort-dropdown"
+import { EnrichmentPanel } from "./enrichment-panel"
+import { TagsPanel } from "./tags-panel"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Separator } from "@/components/ui/separator"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 
 export interface AttioInboxProps {
   initialPlatform?: string
@@ -191,8 +194,8 @@ export function AttioInbox({
         </ScrollArea>
       </div>
 
-      {/* Right Panel: Message Thread */}
-      <div className="flex-1 flex flex-col">
+      {/* Middle Panel: Message Thread */}
+      <div className="flex-1 flex flex-col border-r border-gray-200">
         {selectedConversationId ? (
           <MessageThreadView conversationId={selectedConversationId} />
         ) : (
@@ -203,6 +206,54 @@ export function AttioInbox({
           </div>
         )}
       </div>
+
+      {/* Right Panel: Enrichment & Tags */}
+      {selectedConversationId && (
+        <div className="w-80 bg-white border-l border-gray-200 flex flex-col">
+          <Tabs defaultValue="enrichment" className="flex flex-col h-full">
+            <TabsList className="mx-4 mt-4">
+              <TabsTrigger value="enrichment" className="flex-1">
+                Contact
+              </TabsTrigger>
+              <TabsTrigger value="tags" className="flex-1">
+                Tags
+              </TabsTrigger>
+            </TabsList>
+            <TabsContent value="enrichment" className="flex-1 overflow-auto px-4 pb-4">
+              <ScrollArea className="h-full">
+                {(() => {
+                  const selectedConv = conversations.find(
+                    (c) => c.id === selectedConversationId
+                  )
+                  if (selectedConv?.customer) {
+                    return <EnrichmentPanel customer={selectedConv.customer} />
+                  }
+                  return (
+                    <div className="text-sm text-gray-500 py-8 text-center">
+                      No customer data available
+                    </div>
+                  )
+                })()}
+              </ScrollArea>
+            </TabsContent>
+            <TabsContent value="tags" className="flex-1 overflow-auto px-4 pb-4">
+              <ScrollArea className="h-full">
+                <TagsPanel
+                  conversationId={selectedConversationId}
+                  onTagAdded={() => {
+                    // Refresh conversations to show updated tags
+                    fetchConversations()
+                  }}
+                  onTagRemoved={() => {
+                    // Refresh conversations to show updated tags
+                    fetchConversations()
+                  }}
+                />
+              </ScrollArea>
+            </TabsContent>
+          </Tabs>
+        </div>
+      )}
     </div>
   )
 }
