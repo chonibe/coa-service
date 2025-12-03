@@ -81,3 +81,4 @@ COMMENT ON FUNCTION resolve_comment IS
 COMMENT ON FUNCTION unresolve_comment IS 
 'Unresolves a comment by setting is_resolved = false and clearing resolver info';
 
+

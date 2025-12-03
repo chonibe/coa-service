@@ -277,58 +277,80 @@ function InboxContent() {
                 <EmptyState type="inbox" />
               </div>
             ) : (
-              conversations.map((conv) => (
-                <div
-                  key={conv.id}
-                  className={`p-4 cursor-pointer hover:bg-muted/50 transition-colors ${
-                    selectedConversation === conv.id ? "bg-muted border-l-4 border-l-blue-500" : ""
-                  }`}
-                  onClick={() => setSelectedConversation(conv.id)}
-                >
-                  <div className="flex items-start gap-3">
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-1">
-                        <PlatformBadge platform={conv.platform} variant="outline" className="text-xs" />
-                        {conv.is_starred && <Star className="h-3 w-3 fill-yellow-500 text-yellow-500" />}
-                        <span className="font-medium text-sm truncate">
-                          {conv.customer?.first_name && conv.customer?.last_name
-                            ? `${conv.customer.first_name} ${conv.customer.last_name}`
-                            : conv.customer?.email || conv.customer?.instagram_username || "Unknown"}
-                        </span>
-                        {conv.unread_count && conv.unread_count > 0 && (
-                          <Badge variant="default" className="h-5 min-w-5 px-1.5 text-xs">
-                            {conv.unread_count}
-                          </Badge>
-                        )}
+              conversations.map((conv) => {
+                // Get contact name prominently
+                const contactName = conv.customer?.first_name && conv.customer?.last_name
+                  ? `${conv.customer.first_name} ${conv.customer.last_name}`
+                  : conv.customer?.email || conv.customer?.instagram_username || "Unknown Contact"
+                
+                // Get email subject from last message if available
+                const emailSubject = (conv.last_message as any)?.metadata?.subject
+                
+                return (
+                  <div
+                    key={conv.id}
+                    className={`p-4 cursor-pointer hover:bg-muted/50 transition-colors ${
+                      selectedConversation === conv.id ? "bg-muted border-l-4 border-l-blue-500" : ""
+                    }`}
+                    onClick={() => setSelectedConversation(conv.id)}
+                  >
+                    <div className="flex items-start gap-3">
+                      {/* Avatar */}
+                      <div className="flex-shrink-0">
+                        <div className="h-10 w-10 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white font-semibold text-sm">
+                          {contactName.charAt(0).toUpperCase()}
+                        </div>
                       </div>
                       
-                      {conv.last_message && (
-                        <p className="text-xs text-muted-foreground line-clamp-2 mb-1">
-                          {conv.last_message.content}
-                        </p>
-                      )}
-                      
-                      <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                        {getStatusIcon(conv.status)}
-                        <span>{formatDistanceToNow(new Date(conv.last_message_at), { addSuffix: true })}</span>
-                        {conv.tags && conv.tags.length > 0 && (
-                          <>
-                            <Separator orientation="vertical" className="h-3" />
-                            <div className="flex gap-1">
-                              {conv.tags.slice(0, 2).map((tag) => (
-                                <Badge key={tag} variant="secondary" className="text-xs px-1.5 py-0">
-                                  {tag}
-                                </Badge>
-                              ))}
-                            </div>
-                          </>
+                      <div className="flex-1 min-w-0">
+                        {/* Contact Name - Prominent */}
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="font-semibold text-sm text-foreground truncate">
+                            {contactName}
+                          </span>
+                          {conv.is_starred && <Star className="h-3 w-3 fill-yellow-500 text-yellow-500 flex-shrink-0" />}
+                          {conv.unread_count && conv.unread_count > 0 && (
+                            <Badge variant="default" className="h-5 min-w-5 px-1.5 text-xs flex-shrink-0">
+                              {conv.unread_count}
+                            </Badge>
+                          )}
+                        </div>
+                        
+                        {/* Email Subject or Preview */}
+                        {emailSubject ? (
+                          <p className="text-xs font-medium text-foreground mb-1 truncate">
+                            {emailSubject}
+                          </p>
+                        ) : conv.last_message && (
+                          <p className="text-xs text-muted-foreground line-clamp-1 mb-1">
+                            {conv.last_message.content}
+                          </p>
                         )}
+                        
+                        {/* Metadata Row */}
+                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                          <PlatformBadge platform={conv.platform} variant="outline" className="text-xs" />
+                          {getStatusIcon(conv.status)}
+                          <span>{formatDistanceToNow(new Date(conv.last_message_at), { addSuffix: true })}</span>
+                          {conv.tags && conv.tags.length > 0 && (
+                            <>
+                              <Separator orientation="vertical" className="h-3" />
+                              <div className="flex gap-1">
+                                {conv.tags.slice(0, 1).map((tag) => (
+                                  <Badge key={tag} variant="secondary" className="text-xs px-1.5 py-0">
+                                    {tag}
+                                  </Badge>
+                                ))}
+                              </div>
+                            </>
+                          )}
+                        </div>
                       </div>
+                      <ChevronRight className="h-4 w-4 text-muted-foreground flex-shrink-0 mt-1" />
                     </div>
-                    <ChevronRight className="h-4 w-4 text-muted-foreground flex-shrink-0" />
                   </div>
-                </div>
-              ))
+                )
+              })
             )}
           </div>
         </ScrollArea>
@@ -363,6 +385,10 @@ function MessageThreadView({ conversationId }: { conversationId: string }) {
   const [replyText, setReplyText] = useState("")
   const [isSending, setIsSending] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
+  
+  // Get email subject from first message
+  const emailSubject = messages.find(m => m.metadata?.subject)?.metadata?.subject || 
+                       messages[0]?.metadata?.subject
 
   useEffect(() => {
     async function fetchData() {
@@ -446,27 +472,35 @@ function MessageThreadView({ conversationId }: { conversationId: string }) {
     )
   }
 
+  const contactName = conversation?.customer?.first_name && conversation?.customer?.last_name
+    ? `${conversation.customer.first_name} ${conversation.customer.last_name}`
+    : conversation?.customer?.email || conversation?.customer?.instagram_username || "Unknown Contact"
+  
+  const contactEmail = conversation?.customer?.email || conversation?.customer?.instagram_username
+
   return (
     <div className="flex flex-col h-full">
-      {/* Header */}
+      {/* Header with Contact Info */}
       <div className="p-4 border-b bg-background">
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-3">
-            {conversation && (
-              <>
-                <PlatformBadge platform={conversation.platform} />
-                <div>
-                  <h3 className="font-semibold">
-                    {conversation.customer?.first_name && conversation.customer?.last_name
-                      ? `${conversation.customer.first_name} ${conversation.customer.last_name}`
-                      : conversation.customer?.email || conversation.customer?.instagram_username || "Unknown"}
-                  </h3>
+            {/* Avatar */}
+            <div className="h-12 w-12 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white font-semibold">
+              {contactName.charAt(0).toUpperCase()}
+            </div>
+            <div>
+              <h3 className="font-semibold text-base">
+                {contactName}
+              </h3>
+              <div className="flex items-center gap-2 mt-1">
+                <PlatformBadge platform={conversation?.platform || "email"} />
+                {contactEmail && (
                   <p className="text-sm text-muted-foreground">
-                    {conversation.customer?.email || conversation.customer?.instagram_username}
+                    {contactEmail}
                   </p>
-                </div>
-              </>
-            )}
+                )}
+              </div>
+            </div>
           </div>
           <div className="flex items-center gap-2">
             <Badge variant={conversation?.status === "open" ? "default" : "secondary"}>
@@ -497,6 +531,16 @@ function MessageThreadView({ conversationId }: { conversationId: string }) {
             </DropdownMenu>
           </div>
         </div>
+        
+        {/* Pinned Email Subject */}
+        {emailSubject && (
+          <div className="pt-3 border-t">
+            <div className="flex items-center gap-2">
+              <Mail className="h-4 w-4 text-muted-foreground" />
+              <span className="font-medium text-sm text-foreground">{emailSubject}</span>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Messages */}
@@ -507,41 +551,100 @@ function MessageThreadView({ conversationId }: { conversationId: string }) {
               <p className="text-muted-foreground">No messages yet</p>
             </div>
           ) : (
-            messages.map((msg) => (
-              <div
-                key={msg.id}
-                className={`flex gap-3 ${
-                  msg.direction === "outbound" ? "justify-end" : "justify-start"
-                }`}
-              >
+            messages.map((msg) => {
+              const isOutbound = msg.direction === "outbound"
+              const senderName = isOutbound 
+                ? "You" 
+                : contactName
+              const senderEmail = isOutbound
+                ? msg.metadata?.to || "you@example.com"
+                : msg.metadata?.from || contactEmail
+              
+              return (
                 <div
-                  className={`max-w-[70%] rounded-lg p-3 ${
-                    msg.direction === "outbound"
-                      ? "bg-blue-600 text-white"
-                      : "bg-muted"
+                  key={msg.id}
+                  className={`flex gap-3 ${
+                    isOutbound ? "justify-end" : "justify-start"
                   }`}
                 >
-                  {msg.metadata?.subject && (
-                    <div className="font-semibold mb-2 text-sm">
-                      {msg.metadata.subject}
+                  {/* Avatar for inbound messages */}
+                  {!isOutbound && (
+                    <div className="flex-shrink-0">
+                      <div className="h-8 w-8 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white font-semibold text-xs">
+                        {contactName.charAt(0).toUpperCase()}
+                      </div>
                     </div>
                   )}
-                  <div
-                    className="text-sm whitespace-pre-wrap"
-                    dangerouslySetInnerHTML={
-                      msg.metadata?.html
-                        ? { __html: msg.metadata.html }
-                        : undefined
-                    }
-                  >
-                    {!msg.metadata?.html && <p>{msg.content}</p>}
+                  
+                  <div className={`max-w-[70%] ${isOutbound ? "" : "flex-1"}`}>
+                    {/* Sender Info */}
+                    <div className={`flex items-center gap-2 mb-1 ${isOutbound ? "justify-end" : "justify-start"}`}>
+                      <span className="text-xs font-medium text-foreground">
+                        {senderName}
+                      </span>
+                      {senderEmail && (
+                        <span className="text-xs text-muted-foreground">
+                          {senderEmail}
+                        </span>
+                      )}
+                      <span className="text-xs text-muted-foreground">
+                        {format(new Date(msg.created_at), "MMM d, h:mm a")}
+                      </span>
+                    </div>
+                    
+                    {/* Message Bubble */}
+                    <div
+                      className={`rounded-lg p-4 ${
+                        isOutbound
+                          ? "bg-gradient-to-r from-blue-600 to-indigo-600 text-white ml-auto"
+                          : "bg-muted border border-border"
+                      }`}
+                    >
+                      {/* Email metadata for clarity */}
+                      {msg.metadata?.from && msg.metadata?.to && (
+                        <div className={`text-xs mb-2 pb-2 border-b ${
+                          isOutbound ? "border-white/20" : "border-border"
+                        }`}>
+                          <div className="space-y-1">
+                            <div>
+                              <span className={isOutbound ? "text-white/80" : "text-muted-foreground"}>From: </span>
+                              <span className={isOutbound ? "text-white" : "text-foreground"}>{msg.metadata.from}</span>
+                            </div>
+                            <div>
+                              <span className={isOutbound ? "text-white/80" : "text-muted-foreground"}>To: </span>
+                              <span className={isOutbound ? "text-white" : "text-foreground"}>{msg.metadata.to}</span>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                      
+                      {/* Message Content */}
+                      <div
+                        className={`text-sm whitespace-pre-wrap ${
+                          isOutbound ? "text-white" : "text-foreground"
+                        }`}
+                        dangerouslySetInnerHTML={
+                          msg.metadata?.html
+                            ? { __html: msg.metadata.html }
+                            : undefined
+                        }
+                      >
+                        {!msg.metadata?.html && <p>{msg.content}</p>}
+                      </div>
+                    </div>
                   </div>
-                  <div className="text-xs opacity-70 mt-2">
-                    {format(new Date(msg.created_at), "MMM d, yyyy 'at' h:mm a")}
-                  </div>
+                  
+                  {/* Avatar for outbound messages */}
+                  {isOutbound && (
+                    <div className="flex-shrink-0">
+                      <div className="h-8 w-8 rounded-full bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center text-white font-semibold text-xs">
+                        Y
+                      </div>
+                    </div>
+                  )}
                 </div>
-              </div>
-            ))
+              )
+            })
           )}
           <div ref={messagesEndRef} />
         </div>
@@ -580,6 +683,7 @@ function MessageThreadView({ conversationId }: { conversationId: string }) {
 
 function ContactSidebar({ conversationId }: { conversationId: string }) {
   const [customer, setCustomer] = useState<any>(null)
+  const [conversation, setConversation] = useState<Conversation | null>(null)
   const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
@@ -589,9 +693,10 @@ function ContactSidebar({ conversationId }: { conversationId: string }) {
         const convRes = await fetch(`/api/crm/conversations?conversation_id=${conversationId}`)
         if (convRes.ok) {
           const convData = await convRes.json()
-          const conversation = convData.conversations?.[0]
-          if (conversation?.customer_id) {
-            const customerRes = await fetch(`/api/crm/people/${conversation.customer_id}`)
+          const conv = convData.conversations?.[0]
+          setConversation(conv)
+          if (conv?.customer_id) {
+            const customerRes = await fetch(`/api/crm/people/${conv.customer_id}`)
             if (customerRes.ok) {
               const customerData = await customerRes.json()
               setCustomer(customerData.person)
@@ -624,11 +729,15 @@ function ContactSidebar({ conversationId }: { conversationId: string }) {
     )
   }
 
+  const contactName = customer?.first_name && customer?.last_name
+    ? `${customer.first_name} ${customer.last_name}`
+    : customer?.email || customer?.instagram_username || "Unknown Contact"
+
   return (
-    <div className="w-80 border-l bg-muted/30 flex flex-col">
-      <div className="p-4 border-b">
+    <div className="w-80 border-l bg-background flex flex-col">
+      <div className="p-4 border-b bg-muted/30">
         <h3 className="font-semibold mb-4">Contact Details</h3>
-        <Link href={`/admin/crm/people/${customer.id}`}>
+        <Link href={`/admin/crm/people/${customer?.id}`}>
           <Button variant="outline" size="sm" className="w-full">
             View Full Profile
           </Button>
@@ -637,37 +746,78 @@ function ContactSidebar({ conversationId }: { conversationId: string }) {
       
       <ScrollArea className="flex-1 p-4">
         <div className="space-y-6">
+          {/* Contact Header */}
+          <div className="text-center pb-4 border-b">
+            <div className="h-16 w-16 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white font-semibold text-xl mx-auto mb-3">
+              {contactName.charAt(0).toUpperCase()}
+            </div>
+            <h4 className="font-semibold text-base mb-1">{contactName}</h4>
+            {conversation && (
+              <div className="flex items-center justify-center gap-2 mt-2">
+                <PlatformBadge platform={conversation.platform} />
+                <Badge variant={conversation.status === "open" ? "default" : "secondary"}>
+                  {conversation.status}
+                </Badge>
+              </div>
+            )}
+          </div>
+
+          {/* Contact Info */}
           <div>
-            <h4 className="text-sm font-medium mb-2">Contact Info</h4>
-            <div className="space-y-2 text-sm">
-              {customer.email && (
-                <div className="flex items-center gap-2">
-                  <Mail className="h-4 w-4 text-muted-foreground" />
-                  <span>{customer.email}</span>
+            <h4 className="text-sm font-semibold mb-3 text-foreground">Contact Information</h4>
+            <div className="space-y-3 text-sm">
+              {customer?.email && (
+                <div className="flex items-start gap-3 p-2 rounded-md bg-muted/50">
+                  <Mail className="h-4 w-4 text-muted-foreground mt-0.5 flex-shrink-0" />
+                  <div className="flex-1 min-w-0">
+                    <div className="text-xs text-muted-foreground mb-0.5">Email</div>
+                    <div className="text-foreground break-all">{customer.email}</div>
+                  </div>
                 </div>
               )}
-              {customer.phone && (
-                <div className="flex items-center gap-2">
-                  <MessageCircle className="h-4 w-4 text-muted-foreground" />
-                  <span>{customer.phone}</span>
+              {customer?.phone && (
+                <div className="flex items-start gap-3 p-2 rounded-md bg-muted/50">
+                  <MessageCircle className="h-4 w-4 text-muted-foreground mt-0.5 flex-shrink-0" />
+                  <div className="flex-1 min-w-0">
+                    <div className="text-xs text-muted-foreground mb-0.5">Phone</div>
+                    <div className="text-foreground">{customer.phone}</div>
+                  </div>
+                </div>
+              )}
+              {customer?.instagram_username && (
+                <div className="flex items-start gap-3 p-2 rounded-md bg-muted/50">
+                  <Instagram className="h-4 w-4 text-muted-foreground mt-0.5 flex-shrink-0" />
+                  <div className="flex-1 min-w-0">
+                    <div className="text-xs text-muted-foreground mb-0.5">Instagram</div>
+                    <div className="text-foreground">@{customer.instagram_username}</div>
+                  </div>
                 </div>
               )}
             </div>
           </div>
 
-          {customer.total_orders && customer.total_orders > 0 && (
+          {/* Order History */}
+          {customer?.total_orders && customer.total_orders > 0 && (
             <div>
-              <h4 className="text-sm font-medium mb-2">Order History</h4>
-              <div className="space-y-1 text-sm">
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Total Orders</span>
-                  <span className="font-medium">{customer.total_orders}</span>
+              <h4 className="text-sm font-semibold mb-3 text-foreground">Order History</h4>
+              <div className="space-y-2 p-3 rounded-md bg-muted/50">
+                <div className="flex justify-between items-center">
+                  <span className="text-sm text-muted-foreground">Total Orders</span>
+                  <span className="font-semibold text-foreground">{customer.total_orders}</span>
                 </div>
                 {customer.total_spent && (
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Total Spent</span>
-                    <span className="font-medium">
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-muted-foreground">Total Spent</span>
+                    <span className="font-semibold text-foreground">
                       ${parseFloat(customer.total_spent.toString()).toFixed(2)}
+                    </span>
+                  </div>
+                )}
+                {customer.last_order_date && (
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-muted-foreground">Last Order</span>
+                    <span className="text-sm text-foreground">
+                      {format(new Date(customer.last_order_date), "MMM d, yyyy")}
                     </span>
                   </div>
                 )}
@@ -675,15 +825,27 @@ function ContactSidebar({ conversationId }: { conversationId: string }) {
             </div>
           )}
 
-          {customer.tags && customer.tags.length > 0 && (
+          {/* Tags */}
+          {customer?.tags && customer.tags.length > 0 && (
             <div>
-              <h4 className="text-sm font-medium mb-2">Tags</h4>
+              <h4 className="text-sm font-semibold mb-3 text-foreground">Tags</h4>
               <div className="flex flex-wrap gap-2">
                 {customer.tags.map((tag: string) => (
-                  <Badge key={tag} variant="secondary">
+                  <Badge key={tag} variant="secondary" className="text-xs">
                     {tag}
                   </Badge>
                 ))}
+              </div>
+            </div>
+          )}
+
+          {/* Company Info */}
+          {customer?.crm_companies && (
+            <div>
+              <h4 className="text-sm font-semibold mb-3 text-foreground">Company</h4>
+              <div className="flex items-center gap-2 p-2 rounded-md bg-muted/50">
+                <Building2 className="h-4 w-4 text-muted-foreground" />
+                <span className="text-sm text-foreground">{customer.crm_companies.name}</span>
               </div>
             </div>
           )}

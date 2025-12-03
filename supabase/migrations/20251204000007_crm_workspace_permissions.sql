@@ -202,3 +202,4 @@ COMMENT ON FUNCTION check_workspace_permission IS
 COMMENT ON FUNCTION get_workspace_member_role IS
 'Gets the role of a workspace member. Returns role name or "none" if not a member.';
 
+

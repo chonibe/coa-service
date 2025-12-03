@@ -98,3 +98,4 @@ COMMENT ON FUNCTION archive_record IS
 COMMENT ON FUNCTION restore_record IS 
 'Restores an archived record by setting is_archived = false';
 
+

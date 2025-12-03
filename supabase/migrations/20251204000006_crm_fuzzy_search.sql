@@ -161,3 +161,4 @@ COMMENT ON FUNCTION fuzzy_search_companies IS
 COMMENT ON FUNCTION enable_pg_trgm_if_needed IS
 'Placeholder function for API compatibility. pg_trgm extension should be enabled via migration.';
 
+

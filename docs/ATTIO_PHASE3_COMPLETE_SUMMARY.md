@@ -175,3 +175,4 @@ await requirePermission(supabase, userId, 'people.write')
 - Kanban board supports drag-and-drop with status transition validation
 - Workspace permissions are checked via database functions for security
 
+
