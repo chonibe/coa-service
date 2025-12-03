@@ -15,22 +15,22 @@ const ADMIN_DASHBOARD_REDIRECT = "/admin/dashboard"
 
 /**
  * Helper function to trigger Gmail sync in the background (fire and forget)
+ * This runs asynchronously without blocking the OAuth callback response
  */
-async function syncGmailInBackground(
+function syncGmailInBackground(
   userId: string,
   userEmail: string,
   providerToken?: string,
   providerRefreshToken?: string
 ) {
-  // Run sync in background without blocking
-  setImmediate(async () => {
-    try {
-      await syncGmailForUser(userId, userEmail, providerToken, providerRefreshToken)
+  // Run sync in background without blocking - don't await
+  syncGmailForUser(userId, userEmail, providerToken, providerRefreshToken)
+    .then(() => {
       console.log(`[auth/admin/callback] Background Gmail sync completed for ${userEmail}`)
-    } catch (error) {
+    })
+    .catch((error) => {
       console.error(`[auth/admin/callback] Background Gmail sync error for ${userEmail}:`, error)
-    }
-  })
+    })
 }
 
 /**
@@ -160,6 +160,13 @@ export async function GET(request: NextRequest) {
     // Store provider tokens
     await storeProviderTokens(user.id, providerToken, providerRefreshToken)
     
+    // Automatically trigger Gmail sync in the background if we have tokens
+    if (providerToken || providerRefreshToken) {
+      console.log(`[auth/admin/callback] Triggering automatic Gmail sync for ${email}`)
+      syncGmailInBackground(user.id, email, providerToken, providerRefreshToken)
+      redirectUrl.searchParams.set("auto_sync", "true")
+    }
+    
     // Build admin session cookie
     const adminCookie = buildAdminSessionCookie(email)
     const response = NextResponse.redirect(redirectUrl, { status: 307 })
@@ -218,6 +225,13 @@ export async function GET(request: NextRequest) {
     
     // Store provider tokens
     await storeProviderTokens(user.id, providerToken, providerRefreshToken)
+    
+    // Automatically trigger Gmail sync in the background if we have tokens
+    if (providerToken || providerRefreshToken) {
+      console.log(`[auth/admin/callback] Triggering automatic Gmail sync for ${email}`)
+      syncGmailInBackground(user.id, email, providerToken, providerRefreshToken)
+      redirectUrl.searchParams.set("auto_sync", "true")
+    }
     
     // Build admin session cookie
     const adminCookie = buildAdminSessionCookie(email)
@@ -308,6 +322,13 @@ export async function GET(request: NextRequest) {
     // Store provider tokens
     await storeProviderTokens(user.id, providerToken, providerRefreshToken)
     
+    // Automatically trigger Gmail sync in the background if we have tokens
+    if (providerToken || providerRefreshToken) {
+      console.log(`[auth/admin/callback] Triggering automatic Gmail sync for ${email}`)
+      syncGmailInBackground(user.id, email, providerToken, providerRefreshToken)
+      redirectUrl.searchParams.set("auto_sync", "true")
+    }
+    
     // Build admin session cookie
     const adminCookie = buildAdminSessionCookie(email)
     const response = NextResponse.redirect(redirectUrl, { status: 307 })
@@ -366,13 +387,7 @@ export async function GET(request: NextRequest) {
   // This mimics Attio's behavior of syncing immediately after OAuth
   if (providerToken || providerRefreshToken) {
     console.log(`[auth/admin/callback] Triggering automatic Gmail sync for ${email}`)
-    // Fire and forget - don't wait for sync to complete
-    syncGmailInBackground(user.id, email, providerToken, providerRefreshToken).catch((error) => {
-      console.error("[auth/admin/callback] Background Gmail sync failed:", error)
-      // Don't throw - we don't want to block the redirect
-    })
-    
-    // Add auto_sync parameter to redirect URL so frontend can show notification
+    syncGmailInBackground(user.id, email, providerToken, providerRefreshToken)
     redirectUrl.searchParams.set("auto_sync", "true")
   }
 
