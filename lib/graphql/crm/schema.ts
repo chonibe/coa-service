@@ -1,5 +1,4 @@
 import { GraphQLSchema, GraphQLObjectType, GraphQLString, GraphQLID, GraphQLList, GraphQLNonNull, GraphQLInt, GraphQLBoolean, GraphQLInputObjectType, GraphQLEnumType, GraphQLScalarType } from 'graphql'
-import { crmResolvers } from './resolvers'
 
 /**
  * CRM GraphQL Schema
@@ -306,12 +305,9 @@ const MutationType = new GraphQLObjectType({
   }),
 })
 
-// Schema with resolvers
+// Schema
 export const crmSchema = new GraphQLSchema({
   query: QueryType,
   mutation: MutationType,
 })
-
-// Export resolvers separately for use in Yoga
-export { crmResolvers } from './resolvers'
 
