@@ -2,7 +2,7 @@
 
 import { usePathname } from "next/navigation"
 import Link from "next/link"
-import { HomeIcon, CubeIcon, ShoppingCartIcon, AcademicCapIcon, Cog6ToothIcon, DocumentTextIcon } from "@heroicons/react/24/outline"
+import { HomeIcon, CubeIcon, ShoppingCartIcon, AcademicCapIcon, Cog6ToothIcon, DocumentTextIcon, ChatBubbleLeftRightIcon } from "@heroicons/react/24/outline"
 import { Icon } from "@/components/icon"
 import { cn } from "@/lib/utils"
 
@@ -39,6 +39,11 @@ export function BottomNav() {
       title: "Tax Reporting",
       href: "/admin/tax-reporting",
       icon: <Icon size="md"><DocumentTextIcon className="h-5 w-5" /></Icon>,
+    },
+    {
+      title: "CRM",
+      href: "/admin/crm",
+      icon: <Icon size="md"><ChatBubbleLeftRightIcon className="h-5 w-5" /></Icon>,
     },
   ]
 

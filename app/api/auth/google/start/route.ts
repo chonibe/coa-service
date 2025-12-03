@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { createClient } from "@supabase/supabase-js"
 import { cookies } from "next/headers"
 import { REQUIRE_ACCOUNT_SELECTION_COOKIE } from "@/lib/vendor-auth"
+import { createClient as createRouteClient } from "@/lib/supabase-server"
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
@@ -22,7 +23,11 @@ const POST_LOGIN_COOKIE = "vendor_post_login_redirect"
 export async function GET(request: NextRequest) {
   const { searchParams, origin } = request.nextUrl
   const redirectParam = searchParams.get("redirect")
+  const gmailParam = searchParams.get("gmail") === "true" // Check if Gmail scopes requested
   const cookieStore = cookies()
+
+  // Note: We can't check if user is admin before OAuth (they haven't authenticated yet)
+  // Instead, we'll handle admin detection in the callback and redirect appropriately
 
   // Check if account selection is required (user logged out previously)
   const requireAccountSelection = cookieStore.get(REQUIRE_ACCOUNT_SELECTION_COOKIE)?.value === "true"
@@ -37,12 +42,27 @@ export async function GET(request: NextRequest) {
     queryParams?: Record<string, string>
   } = {
     redirectTo,
-    scopes: "email profile openid",
+    // Only request Gmail scopes if explicitly requested (for admin Gmail sync)
+    // Default to clean auth (email, profile) for vendors - no verification needed
+    scopes: gmailParam
+      ? "email profile openid https://www.googleapis.com/auth/gmail.readonly https://www.googleapis.com/auth/gmail.send"
+      : "email profile openid",
     flowType: "pkce",
   }
 
-  // If account selection is required, force Google to show account selector
-  if (requireAccountSelection) {
+  // Only use prompt=consent for Gmail scopes (sensitive permissions require consent)
+  if (gmailParam) {
+    if (requireAccountSelection) {
+      oauthOptions.queryParams = {
+        prompt: "select_account consent",
+      }
+    } else {
+      oauthOptions.queryParams = {
+        prompt: "consent",
+      }
+    }
+  } else if (requireAccountSelection) {
+    // For regular auth, only prompt for account selection if needed
     oauthOptions.queryParams = {
       prompt: "select_account",
     }

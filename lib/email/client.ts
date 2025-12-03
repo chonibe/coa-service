@@ -4,6 +4,7 @@
  */
 
 import { Resend } from 'resend'
+import { logEmail } from '@/lib/crm/log-email'
 
 if (!process.env.RESEND_API_KEY) {
   console.warn('RESEND_API_KEY not configured. Email sending will be disabled.')
@@ -83,6 +84,28 @@ export async function sendEmail(options: EmailOptions): Promise<EmailResult> {
       messageId: result.data?.id,
       to: Array.isArray(options.to) ? options.to : [options.to],
     })
+
+    // Log email to CRM (for each recipient)
+    const recipients = Array.isArray(options.to) ? options.to : [options.to]
+    for (const recipient of recipients) {
+      // Only log if it's not a system email (like onboarding@resend.dev)
+      if (recipient && !recipient.includes('@resend.dev')) {
+        logEmail({
+          customerEmail: recipient,
+          subject: options.subject,
+          content: options.html,
+          direction: 'outbound',
+          externalId: result.data?.id,
+          metadata: {
+            from: fromEmail,
+            messageId: result.data?.id,
+          },
+        }).catch((error) => {
+          // Don't fail email send if CRM logging fails
+          console.error('[Email] Failed to log email to CRM:', error)
+        })
+      }
+    }
 
     return {
       success: true,

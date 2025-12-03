@@ -15,6 +15,7 @@ import {
   ADMIN_SESSION_COOKIE_NAME,
 } from "@/lib/admin-session"
 import { logFailedLoginAttempt } from "@/lib/audit-logger"
+import { createClient as createServiceClient } from "@/lib/supabase/server"
 
 const DEFAULT_VENDOR_REDIRECT = "/vendor/dashboard"
 const NOT_REGISTERED_REDIRECT = "/login?error=not_registered"
@@ -41,7 +42,7 @@ export async function GET(request: NextRequest) {
   deleteCookie(response, POST_LOGIN_REDIRECT_COOKIE)
 
   if (code) {
-    const { error: exchangeError } = await supabase.auth.exchangeCodeForSession(code)
+    const { data: sessionData, error: exchangeError } = await supabase.auth.exchangeCodeForSession(code)
 
     if (exchangeError) {
       console.error("Failed to exchange Supabase auth code:", exchangeError)
@@ -50,6 +51,55 @@ export async function GET(request: NextRequest) {
       await logFailedLoginAttempt({ method: "oauth", reason: exchangeError.message })
       response.headers.set("Location", new URL("/vendor/login?error=oauth_exchange_failed", origin).toString())
       return response
+    }
+
+    // After code exchange, immediately get the session to capture provider tokens
+    // Provider tokens are only available right after exchange, not in subsequent getSession() calls
+    if (sessionData?.session) {
+      const providerToken = (sessionData.session as any).provider_token as string | undefined
+      const providerRefreshToken = (sessionData.session as any).provider_refresh_token as string | undefined
+      
+      console.log('[auth/callback] Provider tokens after exchange:', {
+        hasProviderToken: !!providerToken,
+        hasRefreshToken: !!providerRefreshToken,
+        tokenLength: providerToken?.length || 0,
+        refreshTokenLength: providerRefreshToken?.length || 0,
+      })
+      
+      // Store provider tokens in user metadata for Gmail access
+      if ((providerToken && providerToken.trim()) || (providerRefreshToken && providerRefreshToken.trim())) {
+        console.log('[auth/callback] Storing provider tokens in user metadata')
+        const userId = sessionData.session.user.id
+        
+        try {
+          const serviceSupabase = createServiceClient()
+          
+          // Get existing metadata to merge
+          const { data: existingUser } = await serviceSupabase.auth.admin.getUserById(userId)
+          const existingMetadata = existingUser?.user?.app_metadata || {}
+          
+          const metadataUpdate: any = { ...existingMetadata }
+          if (providerToken && providerToken.trim()) {
+            metadataUpdate.provider_token = providerToken
+          }
+          if (providerRefreshToken && providerRefreshToken.trim()) {
+            metadataUpdate.provider_refresh_token = providerRefreshToken
+          }
+          
+          const { error: updateError } = await serviceSupabase.auth.admin.updateUserById(
+            userId,
+            { app_metadata: metadataUpdate }
+          )
+          
+          if (updateError) {
+            console.error('[auth/callback] Failed to store provider tokens:', updateError)
+          } else {
+            console.log('[auth/callback] Successfully stored provider tokens in user metadata')
+          }
+        } catch (error) {
+          console.error('[auth/callback] Error storing provider tokens:', error)
+        }
+      }
     }
   } else if (accessToken && refreshToken) {
     const { error: sessionError } = await supabase.auth.setSession({
@@ -83,22 +133,22 @@ export async function GET(request: NextRequest) {
     return errorResponse
   }
 
+  // Get user from session (already exchanged above if code was present)
   const user = session.user
   const email = user.email?.toLowerCase() ?? null
   const isAdmin = isAdminEmail(email)
   
   console.log(`[auth/callback] Processing login for email: ${email}, isAdmin: ${isAdmin}`)
 
-  // For admins, skip vendor linking and go straight to admin dashboard
+  // This should not happen if code path above worked correctly
+  // But handle it as fallback
   if (isAdmin && email) {
-    console.log(`[auth/callback] Admin user detected, setting admin session`)
-    const adminRedirect = NextResponse.redirect(new URL(ADMIN_DASHBOARD_REDIRECT, origin), { status: 307 })
-    const adminCookie = buildAdminSessionCookie(email)
-    adminRedirect.cookies.set(ADMIN_SESSION_COOKIE_NAME, adminCookie.value, adminCookie.options)
-    const clearVendorCookie = clearVendorSessionCookie()
-    adminRedirect.cookies.set(clearVendorCookie.name, "", { ...clearVendorCookie.options, maxAge: 0 })
-    deleteCookie(adminRedirect, PENDING_VENDOR_EMAIL_COOKIE)
-    return adminRedirect
+    console.log(`[auth/callback] Admin user detected in vendor auth flow (fallback) - redirecting to admin login`)
+    const adminLoginRedirect = NextResponse.redirect(new URL("/admin-login?error=use_admin_login", origin), { status: 307 })
+    deleteCookie(adminLoginRedirect, VENDOR_SESSION_COOKIE_NAME)
+    deleteCookie(adminLoginRedirect, PENDING_VENDOR_EMAIL_COOKIE)
+    await supabase.auth.signOut()
+    return adminLoginRedirect
   }
 
   // For non-admins, try to link vendor
