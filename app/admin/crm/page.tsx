@@ -57,9 +57,24 @@ export default function CRMDashboard() {
 
   if (isLoading) {
     return (
-      <div className="container mx-auto py-10 max-w-5xl">
-        <div className="flex items-center justify-center h-64">
-          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      <div className="container mx-auto py-10 max-w-7xl">
+        <div className="mb-8">
+          <div className="h-10 w-64 bg-muted animate-pulse rounded mb-2" />
+          <div className="h-6 w-96 bg-muted animate-pulse rounded" />
+        </div>
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 mb-8">
+          {Array.from({ length: 5 }).map((_, i) => (
+            <Card key={i} className="animate-pulse">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <div className="h-4 w-32 bg-muted rounded" />
+                <div className="h-10 w-10 rounded-full bg-muted" />
+              </CardHeader>
+              <CardContent>
+                <div className="h-8 w-16 bg-muted rounded mb-2" />
+                <div className="h-4 w-24 bg-muted rounded" />
+              </CardContent>
+            </Card>
+          ))}
         </div>
       </div>
     )
@@ -67,93 +82,112 @@ export default function CRMDashboard() {
 
   if (error) {
     return (
-      <div className="container mx-auto py-10 max-w-5xl">
-        <div className="text-red-500">{error}</div>
+      <div className="container mx-auto py-10 max-w-7xl">
+        <Card className="border-destructive">
+          <CardContent className="pt-6">
+            <div className="flex items-center gap-2 text-destructive">
+              <div className="h-5 w-5 rounded-full bg-destructive/20 flex items-center justify-center">
+                <span className="text-xs">!</span>
+              </div>
+              <span className="font-medium">{error}</span>
+            </div>
+          </CardContent>
+        </Card>
       </div>
     )
   }
 
   return (
-    <div className="container mx-auto py-10 max-w-5xl">
+    <div className="container mx-auto py-10 max-w-7xl">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold tracking-tight bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
+        <h1 className="text-4xl font-bold tracking-tight bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent mb-2">
           CRM Dashboard
         </h1>
-        <p className="text-muted-foreground mt-2">
+        <p className="text-muted-foreground text-lg">
           Manage customer relationships across Orders, Email, and Instagram
         </p>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 mb-8">
-        <Card>
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 mb-8">
+        <Card className="hover:shadow-lg transition-shadow duration-200 border-l-4 border-l-blue-500">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Customers</CardTitle>
-            <Users className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-semibold">Total Customers</CardTitle>
+            <div className="h-10 w-10 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
+              <Users className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+            </div>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats?.totalCustomers || 0}</div>
+            <div className="text-3xl font-bold mb-1">{stats?.totalCustomers || 0}</div>
             <Link href="/admin/crm/customers">
-              <Button variant="link" className="p-0 h-auto mt-2">
+              <Button variant="link" className="p-0 h-auto mt-2 text-blue-600 hover:text-blue-700">
                 View all customers →
               </Button>
             </Link>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="hover:shadow-lg transition-shadow duration-200 border-l-4 border-l-indigo-500">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Conversations</CardTitle>
-            <MessageSquare className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-semibold">Total Conversations</CardTitle>
+            <div className="h-10 w-10 rounded-full bg-indigo-100 dark:bg-indigo-900/30 flex items-center justify-center">
+              <MessageSquare className="h-5 w-5 text-indigo-600 dark:text-indigo-400" />
+            </div>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats?.totalConversations || 0}</div>
+            <div className="text-3xl font-bold mb-1">{stats?.totalConversations || 0}</div>
             <Link href="/admin/crm/inbox">
-              <Button variant="link" className="p-0 h-auto mt-2">
+              <Button variant="link" className="p-0 h-auto mt-2 text-indigo-600 hover:text-indigo-700">
                 View inbox →
               </Button>
             </Link>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="hover:shadow-lg transition-shadow duration-200 border-l-4 border-l-orange-500">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Open Conversations</CardTitle>
-            <MessageSquare className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-semibold">Open Conversations</CardTitle>
+            <div className="h-10 w-10 rounded-full bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center">
+              <MessageSquare className="h-5 w-5 text-orange-600 dark:text-orange-400" />
+            </div>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats?.openConversations || 0}</div>
+            <div className="text-3xl font-bold mb-1">{stats?.openConversations || 0}</div>
             <Link href="/admin/crm/inbox?status=open">
-              <Button variant="link" className="p-0 h-auto mt-2">
+              <Button variant="link" className="p-0 h-auto mt-2 text-orange-600 hover:text-orange-700">
                 View open →
               </Button>
             </Link>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="hover:shadow-lg transition-shadow duration-200 border-l-4 border-l-pink-500">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Instagram Messages</CardTitle>
-            <Instagram className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-semibold">Instagram Messages</CardTitle>
+            <div className="h-10 w-10 rounded-full bg-pink-100 dark:bg-pink-900/30 flex items-center justify-center">
+              <Instagram className="h-5 w-5 text-pink-600 dark:text-pink-400" />
+            </div>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats?.instagramConversations || 0}</div>
+            <div className="text-3xl font-bold mb-1">{stats?.instagramConversations || 0}</div>
             <Link href="/admin/crm/inbox?platform=instagram">
-              <Button variant="link" className="p-0 h-auto mt-2">
+              <Button variant="link" className="p-0 h-auto mt-2 text-pink-600 hover:text-pink-700">
                 View Instagram →
               </Button>
             </Link>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="hover:shadow-lg transition-shadow duration-200 border-l-4 border-l-green-500">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Email Messages</CardTitle>
-            <Mail className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-semibold">Email Messages</CardTitle>
+            <div className="h-10 w-10 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
+              <Mail className="h-5 w-5 text-green-600 dark:text-green-400" />
+            </div>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats?.emailConversations || 0}</div>
+            <div className="text-3xl font-bold mb-1">{stats?.emailConversations || 0}</div>
             <Link href="/admin/crm/inbox?platform=email">
-              <Button variant="link" className="p-0 h-auto mt-2">
+              <Button variant="link" className="p-0 h-auto mt-2 text-green-600 hover:text-green-700">
                 View Email →
               </Button>
             </Link>
@@ -161,22 +195,22 @@ export default function CRMDashboard() {
         </Card>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2">
-        <Card>
+      <div className="grid gap-6 md:grid-cols-2">
+        <Card className="hover:shadow-lg transition-shadow duration-200">
           <CardHeader>
-            <CardTitle>Quick Actions</CardTitle>
-            <CardDescription>Common CRM tasks</CardDescription>
+            <CardTitle className="text-xl">Quick Actions</CardTitle>
+            <CardDescription className="text-base">Common CRM tasks</CardDescription>
           </CardHeader>
-          <CardContent className="space-y-2">
+          <CardContent className="space-y-3">
             <Link href="/admin/crm/inbox">
-              <Button className="w-full justify-start" variant="outline">
-                <MessageSquare className="mr-2 h-4 w-4" />
+              <Button className="w-full justify-start h-11" variant="outline" size="lg">
+                <MessageSquare className="mr-2 h-5 w-5" />
                 Open Inbox
               </Button>
             </Link>
             <Link href="/admin/crm/customers">
-              <Button className="w-full justify-start" variant="outline">
-                <Users className="mr-2 h-4 w-4" />
+              <Button className="w-full justify-start h-11" variant="outline" size="lg">
+                <Users className="mr-2 h-5 w-5" />
                 Manage Customers
               </Button>
             </Link>
@@ -282,23 +316,26 @@ function GmailSyncButton() {
       <Button
         onClick={handleSync}
         disabled={isSyncing}
-        className="w-full justify-start"
+        className="w-full justify-start h-11"
         variant="outline"
+        size="lg"
       >
         {isSyncing ? (
           <>
-            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            <Loader2 className="mr-2 h-5 w-5 animate-spin" />
             Syncing Gmail...
           </>
         ) : (
           <>
-            <RefreshCw className="mr-2 h-4 w-4" />
+            <RefreshCw className="mr-2 h-5 w-5" />
             Sync Gmail
           </>
         )}
       </Button>
       {error && (
-        <p className="text-xs text-red-500">{error}</p>
+        <div className="p-3 rounded-md bg-destructive/10 border border-destructive/20">
+          <p className="text-xs text-destructive font-medium">{error}</p>
+        </div>
       )}
     </div>
   )

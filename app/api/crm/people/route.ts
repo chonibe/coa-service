@@ -1,6 +1,12 @@
 import { NextRequest, NextResponse } from "next/server"
 import { createClient } from "@/lib/supabase/server"
-import { parseFilter, validateFilter } from "@/lib/crm/filter-parser"
+import { parseFilter, parseFilterAsync, validateFilter, hasPathFilters } from "@/lib/crm/filter-parser"
+import {
+  getCursorForPagination,
+  applyCursorToQuery,
+  createCursorResponse,
+} from "@/lib/crm/cursor-pagination"
+import { addRateLimitHeaders } from "@/lib/crm/rate-limit-middleware"
 
 /**
  * People API - Unified API for managing people/contacts in CRM
@@ -20,6 +26,8 @@ export async function GET(request: NextRequest) {
     const search = searchParams.get("search")
     const limit = parseInt(searchParams.get("limit") || "50")
     const offset = parseInt(searchParams.get("offset") || "0")
+    const includeArchived = searchParams.get("include_archived") === "true"
+    const cursor = searchParams.get("cursor") // Cursor for pagination
     
     // Attio-style filter (JSON string or object)
     const filterParam = searchParams.get("filter")
@@ -81,7 +89,12 @@ export async function GET(request: NextRequest) {
 
     // Apply Attio-style filter if provided
     if (filter) {
-      query = parseFilter(filter, query)
+      // Check if filter contains path-based filters (requires async processing)
+      if (hasPathFilters(filter)) {
+        query = await parseFilterAsync(filter, query, supabase)
+      } else {
+        query = parseFilter(filter, query)
+      }
     } else {
       // Legacy filter support (backward compatibility)
       // Apply search
@@ -128,6 +141,11 @@ export async function GET(request: NextRequest) {
       }
     }
 
+    // Filter out archived records by default
+    if (!includeArchived) {
+      query = query.eq("is_archived", false)
+    }
+
     // Apply sorting
     if (sortConfig && sortConfig.length > 0) {
       const firstSort = sortConfig[0]
@@ -140,8 +158,17 @@ export async function GET(request: NextRequest) {
       query = query.order("updated_at", { ascending: false })
     }
 
-    // Apply pagination
-    query = query.range(offset, offset + limit - 1)
+    // Apply pagination - use cursor if provided, otherwise use offset
+    const decodedCursor = cursor ? getCursorForPagination(cursor) : null
+    if (decodedCursor) {
+      // Apply cursor-based pagination
+      query = applyCursorToQuery(query, decodedCursor, sortConfig)
+      // Fetch one extra to determine if there's a next page
+      query = query.limit(limit + 1)
+    } else {
+      // Use offset-based pagination (legacy)
+      query = query.range(offset, offset + limit - 1)
+    }
 
     const { data, error, count } = await query
 
@@ -149,12 +176,29 @@ export async function GET(request: NextRequest) {
       throw error
     }
 
-    return NextResponse.json({
+    // If using cursor pagination, format response accordingly
+    if (decodedCursor) {
+      const cursorResponse = createCursorResponse(data || [], limit, sortConfig)
+      const cursorResponseObj = NextResponse.json({
+        people: cursorResponse.data,
+        next_cursor: cursorResponse.next_cursor,
+        limit: cursorResponse.limit,
+        has_more: cursorResponse.has_more,
+      })
+
+      return addRateLimitHeaders(request, cursorResponseObj)
+    }
+
+    // Legacy offset-based response
+    const response = NextResponse.json({
       people: data || [],
       total: count || 0,
       limit,
       offset,
     })
+
+    // Add rate limit headers
+    return addRateLimitHeaders(request, response)
   } catch (error: any) {
     console.error("[CRM] Error fetching people:", error)
     return NextResponse.json(
@@ -184,6 +228,10 @@ export async function POST(request: NextRequest) {
       metadata,
     } = body
 
+    // Get current user for default value processing
+    const { data: { user } } = await supabase.auth.getUser()
+    const userId = user?.id || null
+
     // Insert person
     const { data, error } = await supabase
       .from("crm_customers")
@@ -202,6 +250,19 @@ export async function POST(request: NextRequest) {
 
     if (error) {
       throw error
+    }
+
+    // Apply default values for custom fields
+    if (data?.id) {
+      const { error: defaultError } = await supabase.rpc("apply_field_defaults", {
+        p_entity_type: "person",
+        p_entity_id: data.id,
+        p_user_id: userId,
+      })
+      if (defaultError) {
+        console.error("[CRM] Error applying default values:", defaultError)
+        // Don't fail the request if defaults fail
+      }
     }
 
     // Create contact identifiers if email/phone provided

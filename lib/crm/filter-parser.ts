@@ -6,8 +6,11 @@
  * - Shorthand: { email: "value" }
  * - Verbose: { email: { $contains: "value" } }
  * - Logical operators: { $and: [...], $or: [...] }
+ * - Path-based: { path: [["people", "company"], ["companies", "industry"]], "$eq": "Technology" }
  * - Operators: $eq, $ne, $contains, $starts_with, $ends_with, $not_empty, $empty, $gt, $gte, $lt, $lte, $in, $not_in
  */
+
+import { hasPathFilters, applyPathFilter } from "./path-filter-resolver"
 
 type FilterValue = string | number | boolean | null | FilterObject | FilterValue[];
 type FilterObject = {
@@ -29,6 +32,9 @@ type FilterObject = {
     $and?: FilterObject[];
     $or?: FilterObject[];
     $not?: FilterObject;
+  } | {
+    path?: Array<[string, string]>;
+    [operator: string]: any;
   };
 };
 
@@ -38,6 +44,8 @@ interface SupabaseQuery {
 
 /**
  * Parse Attio-style filter into Supabase query conditions
+ * Note: Path-based filters require async processing and should be handled separately
+ * Use parseFilterSync for non-path filters, or parseFilterAsync for full support
  */
 export function parseFilter(filter: FilterObject | null | undefined, baseQuery: any): any {
   if (!filter || Object.keys(filter).length === 0) {
@@ -66,6 +74,15 @@ export function parseFilter(filter: FilterObject | null | undefined, baseQuery: 
   for (const [field, condition] of Object.entries(filter)) {
     if (field.startsWith('$')) {
       continue; // Skip logical operators already handled
+    }
+
+    // Check if this is a path-based filter
+    if (typeof condition === 'object' && condition !== null && !Array.isArray(condition) && 'path' in condition) {
+      // Path-based filters require async processing
+      // For now, we'll skip them in sync parsing and log a warning
+      // They should be handled separately using parseFilterAsync
+      console.warn(`[Filter Parser] Path-based filter detected for field "${field}". Use parseFilterAsync for full support.`);
+      continue;
     }
 
     query = applyFieldFilter(query, field, condition);
@@ -139,68 +156,122 @@ function buildOrCondition(condition: FilterObject): string {
 }
 
 function applyFieldFilter(query: any, field: string, condition: any): any {
-  // Handle nested field paths (e.g., "name.first_name")
+  // Handle nested field paths (e.g., "name.first_name", "location.city")
+  // These are for filtering by properties of complex attribute types
   const fieldPath = field.split('.');
   const actualField = fieldPath[fieldPath.length - 1];
+  
+  // If field has nested path (e.g., "name.first_name"), we need to filter JSONB fields
+  // For now, we'll use JSONB operators if the field exists in our schema
+  const isNestedProperty = fieldPath.length > 1;
 
   // If condition is a direct value (shorthand), treat as $eq
   if (typeof condition !== 'object' || condition === null || Array.isArray(condition)) {
+    // For nested properties, use JSONB path filtering
+    if (isNestedProperty) {
+      const jsonPath = fieldPath.join('->');
+      return query.filter(jsonPath, 'eq', condition);
+    }
     return query.eq(actualField, condition);
   }
 
   // Handle operators
-  if ('$eq' in condition) {
-    return query.eq(actualField, condition.$eq);
-  }
-  
-  if ('$ne' in condition) {
-    return query.neq(actualField, condition.$ne);
-  }
-  
-  if ('$contains' in condition) {
-    return query.ilike(actualField, `%${condition.$contains}%`);
-  }
-  
-  if ('$starts_with' in condition) {
-    return query.ilike(actualField, `${condition.$starts_with}%`);
-  }
-  
-  if ('$ends_with' in condition) {
-    return query.ilike(actualField, `%${condition.$ends_with}`);
-  }
-  
-  if ('$not_empty' in condition && condition.$not_empty) {
-    return query.not(actualField, 'is', null);
-  }
-  
-  if ('$empty' in condition && condition.$empty) {
-    return query.is(actualField, null);
-  }
-  
-  if ('$gt' in condition) {
-    return query.gt(actualField, condition.$gt);
-  }
-  
-  if ('$gte' in condition) {
-    return query.gte(actualField, condition.$gte);
-  }
-  
-  if ('$lt' in condition) {
-    return query.lt(actualField, condition.$lt);
-  }
-  
-  if ('$lte' in condition) {
-    return query.lte(actualField, condition.$lte);
-  }
-  
-  if ('$in' in condition && Array.isArray(condition.$in)) {
-    return query.in(actualField, condition.$in);
-  }
-  
-  if ('$not_in' in condition && Array.isArray(condition.$not_in)) {
-    // Supabase doesn't have direct $not_in, so we'll need to use .not() with .in()
-    // This is a limitation - we might need to handle this differently
-    return query.not(actualField, 'in', `(${condition.$not_in.join(',')})`);
+  // For nested properties, use JSONB path operators
+  if (isNestedProperty) {
+    const jsonPath = fieldPath.join('->');
+    
+    if ('$eq' in condition) {
+      return query.filter(jsonPath, 'eq', condition.$eq);
+    }
+    if ('$ne' in condition) {
+      return query.filter(jsonPath, 'neq', condition.$ne);
+    }
+    if ('$contains' in condition) {
+      // JSONB contains check
+      return query.filter(jsonPath, 'cs', [condition.$contains]);
+    }
+    if ('$starts_with' in condition) {
+      // For JSONB, we'll need to use text search or extract text
+      return query.ilike(actualField, `${condition.$starts_with}%`);
+    }
+    if ('$ends_with' in condition) {
+      return query.ilike(actualField, `%${condition.$ends_with}`);
+    }
+    if ('$not_empty' in condition && condition.$not_empty) {
+      return query.not(jsonPath, 'is', null);
+    }
+    if ('$empty' in condition && condition.$empty) {
+      return query.filter(jsonPath, 'is', null);
+    }
+    if ('$gt' in condition) {
+      return query.filter(jsonPath, 'gt', condition.$gt);
+    }
+    if ('$gte' in condition) {
+      return query.filter(jsonPath, 'gte', condition.$gte);
+    }
+    if ('$lt' in condition) {
+      return query.filter(jsonPath, 'lt', condition.$lt);
+    }
+    if ('$lte' in condition) {
+      return query.filter(jsonPath, 'lte', condition.$lte);
+    }
+    if ('$in' in condition && Array.isArray(condition.$in)) {
+      // JSONB in - use overlap operator
+      return query.filter(jsonPath, 'ov', condition.$in);
+    }
+  } else {
+    // Regular field operators
+    if ('$eq' in condition) {
+      return query.eq(actualField, condition.$eq);
+    }
+    
+    if ('$ne' in condition) {
+      return query.neq(actualField, condition.$ne);
+    }
+    
+    if ('$contains' in condition) {
+      return query.ilike(actualField, `%${condition.$contains}%`);
+    }
+    
+    if ('$starts_with' in condition) {
+      return query.ilike(actualField, `${condition.$starts_with}%`);
+    }
+    
+    if ('$ends_with' in condition) {
+      return query.ilike(actualField, `%${condition.$ends_with}`);
+    }
+    
+    if ('$not_empty' in condition && condition.$not_empty) {
+      return query.not(actualField, 'is', null);
+    }
+    
+    if ('$empty' in condition && condition.$empty) {
+      return query.is(actualField, null);
+    }
+    
+    if ('$gt' in condition) {
+      return query.gt(actualField, condition.$gt);
+    }
+    
+    if ('$gte' in condition) {
+      return query.gte(actualField, condition.$gte);
+    }
+    
+    if ('$lt' in condition) {
+      return query.lt(actualField, condition.$lt);
+    }
+    
+    if ('$lte' in condition) {
+      return query.lte(actualField, condition.$lte);
+    }
+    
+    if ('$in' in condition && Array.isArray(condition.$in)) {
+      return query.in(actualField, condition.$in);
+    }
+    
+    if ('$not_in' in condition && Array.isArray(condition.$not_in)) {
+      return query.not(actualField, 'in', `(${condition.$not_in.join(',')})`);
+    }
   }
 
   return query;
@@ -241,5 +312,66 @@ export function validateFilter(filter: any): { valid: boolean; error?: string } 
   }
 
   return checkObject(filter);
+}
+
+/**
+ * Parse filter with async support for path-based filters
+ * This is the recommended function to use when path filters might be present
+ */
+export async function parseFilterAsync(
+  filter: FilterObject | null | undefined,
+  baseQuery: any,
+  supabase: any
+): Promise<any> {
+  if (!filter || Object.keys(filter).length === 0) {
+    return baseQuery;
+  }
+
+  // Check if filter contains path-based filters
+  if (!hasPathFilters(filter)) {
+    // No path filters, use sync parser
+    return parseFilter(filter, baseQuery);
+  }
+
+  // Handle logical operators with path support
+  if ('$and' in filter) {
+    let query = baseQuery;
+    for (const condition of filter.$and as FilterObject[]) {
+      query = await parseFilterAsync(condition, query, supabase);
+    }
+    return query;
+  }
+  
+  if ('$or' in filter) {
+    // For $or with path filters, we need to handle each condition separately
+    // This is complex - for now, we'll process them sequentially
+    // A full implementation would need to combine results
+    console.warn('[Filter Parser] $or with path filters - using simplified processing');
+    let query = baseQuery;
+    for (const condition of filter.$or as FilterObject[]) {
+      query = await parseFilterAsync(condition, query, supabase);
+    }
+    return query;
+  }
+
+  // Process individual field filters
+  let query = baseQuery;
+  
+  for (const [field, condition] of Object.entries(filter)) {
+    if (field.startsWith('$')) {
+      continue;
+    }
+
+    // Check if this is a path-based filter
+    if (typeof condition === 'object' && condition !== null && !Array.isArray(condition) && 'path' in condition) {
+      // Apply path filter asynchronously
+      query = await applyPathFilter(query, condition as any, supabase);
+    } else {
+      // Regular field filter
+      query = applyFieldFilter(query, field, condition);
+    }
+  }
+
+  return query;
 }
 

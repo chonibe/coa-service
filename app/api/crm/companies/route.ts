@@ -1,6 +1,11 @@
 import { NextRequest, NextResponse } from "next/server"
 import { createClient } from "@/lib/supabase/server"
 import { parseFilter, validateFilter } from "@/lib/crm/filter-parser"
+import {
+  getCursorForPagination,
+  applyCursorToQuery,
+  createCursorResponse,
+} from "@/lib/crm/cursor-pagination"
 
 /**
  * Companies API - Manage company/organization records
@@ -19,6 +24,8 @@ export async function GET(request: NextRequest) {
     const search = searchParams.get("search")
     const limit = parseInt(searchParams.get("limit") || "50")
     const offset = parseInt(searchParams.get("offset") || "0")
+    const includeArchived = searchParams.get("include_archived") === "true"
+    const cursor = searchParams.get("cursor")
     
     // Attio-style filter (JSON string or object)
     const filterParam = searchParams.get("filter")
@@ -91,6 +98,11 @@ export async function GET(request: NextRequest) {
       }
     }
 
+    // Filter out archived records by default
+    if (!includeArchived) {
+      query = query.eq("is_archived", false)
+    }
+
     // Apply sorting
     if (sortConfig && sortConfig.length > 0) {
       const firstSort = sortConfig[0]
@@ -101,13 +113,30 @@ export async function GET(request: NextRequest) {
       query = query.order("updated_at", { ascending: false })
     }
 
-    // Apply pagination
-    query = query.range(offset, offset + limit - 1)
+    // Apply pagination - use cursor if provided, otherwise use offset
+    const decodedCursor = cursor ? getCursorForPagination(cursor) : null
+    if (decodedCursor) {
+      query = applyCursorToQuery(query, decodedCursor, sortConfig)
+      query = query.limit(limit + 1)
+    } else {
+      query = query.range(offset, offset + limit - 1)
+    }
 
     const { data, error, count } = await query
 
     if (error) {
       throw error
+    }
+
+    // If using cursor pagination, format response accordingly
+    if (decodedCursor) {
+      const cursorResponse = createCursorResponse(data || [], limit, sortConfig)
+      return NextResponse.json({
+        companies: cursorResponse.data,
+        next_cursor: cursorResponse.next_cursor,
+        limit: cursorResponse.limit,
+        has_more: cursorResponse.has_more,
+      })
     }
 
     return NextResponse.json({
@@ -155,6 +184,10 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // Get current user for default value processing
+    const { data: { user } } = await supabase.auth.getUser()
+    const userId = user?.id || null
+
     const { data, error } = await supabase
       .from("crm_companies")
       .insert({
@@ -175,6 +208,19 @@ export async function POST(request: NextRequest) {
 
     if (error) {
       throw error
+    }
+
+    // Apply default values for custom fields
+    if (data?.id) {
+      const { error: defaultError } = await supabase.rpc("apply_field_defaults", {
+        p_entity_type: "company",
+        p_entity_id: data.id,
+        p_user_id: userId,
+      })
+      if (defaultError) {
+        console.error("[CRM] Error applying default values:", defaultError)
+        // Don't fail the request if defaults fail
+      }
     }
 
     return NextResponse.json({

@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { Badge } from "@/components/ui/badge"
-import { Loader2, MessageSquare, Send, Reply } from "lucide-react"
+import { Loader2, MessageSquare, Send, Reply, CheckCircle2, Circle } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import { formatDistanceToNow } from "date-fns"
 
@@ -24,6 +24,9 @@ interface Comment {
   updated_at: string
   deleted_at: string | null
   parent_comment_id: string | null
+  is_resolved?: boolean
+  resolved_at?: string | null
+  resolved_by_user_id?: string | null
 }
 
 interface CommentsPanelProps {
@@ -143,6 +146,32 @@ export function CommentsPanel({ parentType, parentId }: CommentsPanelProps) {
     }
   }
 
+  const handleResolve = async (commentId: string, action: "resolve" | "unresolve") => {
+    try {
+      const response = await fetch(`/api/crm/comments/${commentId}/resolve`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action }),
+      })
+
+      if (!response.ok) throw new Error(`Failed to ${action} comment`)
+
+      toast({
+        variant: "success",
+        title: "Success",
+        description: `Comment ${action === "resolve" ? "resolved" : "unresolved"}`,
+      })
+
+      fetchThreads()
+    } catch (err: any) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: err.message || `Failed to ${action} comment`,
+      })
+    }
+  }
+
   const renderComment = (comment: Comment, threadId: string, depth: number = 0) => {
     if (comment.deleted_at) {
       return (
@@ -152,32 +181,66 @@ export function CommentsPanel({ parentType, parentId }: CommentsPanelProps) {
       )
     }
 
+    const isResolved = comment.is_resolved || false
+
     return (
-      <div key={comment.id} className={`${depth > 0 ? "ml-8 border-l-2 pl-4" : ""}`}>
+      <div key={comment.id} className={`${depth > 0 ? "ml-8 border-l-2 pl-4" : ""} ${isResolved ? "opacity-75" : ""}`}>
         <div className="flex items-start gap-2 mb-2">
           <div className="flex-1">
             <div className="flex items-center gap-2 mb-1">
+              {isResolved && (
+                <CheckCircle2 className="h-4 w-4 text-green-600" title="Resolved" />
+              )}
               <Badge variant="outline" className="text-xs">
                 User
               </Badge>
+              {isResolved && (
+                <Badge variant="secondary" className="text-xs bg-green-100 text-green-800">
+                  Resolved
+                </Badge>
+              )}
               <span className="text-xs text-muted-foreground">
                 {formatDistanceToNow(new Date(comment.created_at), { addSuffix: true })}
               </span>
             </div>
-            <p className="text-sm whitespace-pre-wrap">{comment.content}</p>
+            <p className={`text-sm whitespace-pre-wrap ${isResolved ? "line-through" : ""}`}>
+              {comment.content}
+            </p>
           </div>
         </div>
-        {depth === 0 && (
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setReplyingTo(comment.id)}
-            className="text-xs"
-          >
-            <Reply className="h-3 w-3 mr-1" />
-            Reply
-          </Button>
-        )}
+        <div className="flex items-center gap-2">
+          {depth === 0 && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setReplyingTo(comment.id)}
+              className="text-xs"
+            >
+              <Reply className="h-3 w-3 mr-1" />
+              Reply
+            </Button>
+          )}
+          {depth === 0 && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => handleResolve(comment.id, isResolved ? "unresolve" : "resolve")}
+              className="text-xs"
+            >
+              {isResolved ? (
+                <>
+                  <Circle className="h-3 w-3 mr-1" />
+                  Unresolve
+                </>
+              ) : (
+                <>
+                  <CheckCircle2 className="h-3 w-3 mr-1" />
+                  Resolve
+                </>
+              )}
+            </Button>
+          )}
+        </div>
         {replyingTo === comment.id && (
           <div className="mt-2 space-y-2">
             <Textarea

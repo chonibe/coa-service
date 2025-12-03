@@ -1,6 +1,11 @@
 import { NextRequest, NextResponse } from "next/server"
 import { createClient } from "@/lib/supabase/server"
 import { parseFilter, validateFilter } from "@/lib/crm/filter-parser"
+import {
+  getCursorForPagination,
+  applyCursorToQuery,
+  createCursorResponse,
+} from "@/lib/crm/cursor-pagination"
 
 /**
  * Activities API - Unified activity timeline
@@ -54,6 +59,8 @@ export async function GET(request: NextRequest) {
 
     const limit = parseInt(searchParams.get("limit") || "100")
     const offset = parseInt(searchParams.get("offset") || "0")
+    const includeArchived = searchParams.get("include_archived") === "true"
+    const cursor = searchParams.get("cursor")
 
     // Legacy parameters (for backward compatibility)
     const customerId = searchParams.get("customer_id")
@@ -105,6 +112,11 @@ export async function GET(request: NextRequest) {
       }
     }
 
+    // Filter out archived records by default
+    if (!includeArchived) {
+      query = query.eq("is_archived", false)
+    }
+
     // Apply sorting
     if (sortConfig && sortConfig.length > 0) {
       const firstSort = sortConfig[0]
@@ -115,13 +127,30 @@ export async function GET(request: NextRequest) {
       query = query.order("created_at", { ascending: false })
     }
 
-    // Apply pagination
-    query = query.range(offset, offset + limit - 1)
+    // Apply pagination - use cursor if provided, otherwise use offset
+    const decodedCursor = cursor ? getCursorForPagination(cursor) : null
+    if (decodedCursor) {
+      query = applyCursorToQuery(query, decodedCursor, sortConfig)
+      query = query.limit(limit + 1)
+    } else {
+      query = query.range(offset, offset + limit - 1)
+    }
 
     const { data, error, count } = await query
 
     if (error) {
       throw error
+    }
+
+    // If using cursor pagination, format response accordingly
+    if (decodedCursor) {
+      const cursorResponse = createCursorResponse(data || [], limit, sortConfig)
+      return NextResponse.json({
+        activities: cursorResponse.data,
+        next_cursor: cursorResponse.next_cursor,
+        limit: cursorResponse.limit,
+        has_more: cursorResponse.has_more,
+      })
     }
 
     return NextResponse.json({

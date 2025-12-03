@@ -276,6 +276,11 @@ export function AdminShell({ children }: AdminShellProps) {
           icon: <Icon size="sm"><BuildingOffice2Icon className="h-4 w-4" /></Icon>,
         },
         {
+          title: "Kanban",
+          href: "/admin/crm/kanban",
+          icon: <Icon size="sm"><ChartBarIcon className="h-4 w-4" /></Icon>,
+        },
+        {
           title: "Inbox",
           href: "/admin/crm/inbox",
           icon: <Icon size="sm"><EnvelopeIcon className="h-4 w-4" /></Icon>,

@@ -67,6 +67,8 @@ export async function POST(request: NextRequest) {
       is_required,
       is_unique,
       default_value,
+      default_value_jsonb,
+      is_default_value_enabled,
       options,
       validation_rules,
       visibility_rules,
@@ -80,6 +82,18 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // Process default value - support both old TEXT format and new JSONB format
+    let processedDefaultValue: any = null
+    if (default_value_jsonb) {
+      processedDefaultValue = default_value_jsonb
+    } else if (default_value) {
+      // Convert old TEXT format to JSONB static default
+      processedDefaultValue = {
+        type: "static",
+        value: default_value,
+      }
+    }
+
     const { data, error } = await supabase
       .from("crm_custom_fields")
       .insert({
@@ -89,7 +103,8 @@ export async function POST(request: NextRequest) {
         entity_type,
         is_required: is_required || false,
         is_unique: is_unique || false,
-        default_value,
+        default_value_jsonb: processedDefaultValue,
+        is_default_value_enabled: is_default_value_enabled || false,
         options: options || null,
         validation_rules: validation_rules || {},
         visibility_rules: visibility_rules || {},

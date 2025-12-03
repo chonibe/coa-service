@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { createClient } from "@/lib/supabase/server"
+import { validateAttributeValue } from "@/lib/crm/attribute-type-validators"
 
 /**
  * Custom Field Values API
@@ -220,6 +221,24 @@ export async function PUT(request: NextRequest) {
     const valuesToInsert: any[] = []
 
     for (const [fieldId, value] of Object.entries(field_values)) {
+      // Get field type for validation
+      const { data: field } = await supabase
+        .from("crm_custom_fields")
+        .select("field_type")
+        .eq("id", fieldId)
+        .single()
+
+      if (field) {
+        // Validate value based on field type
+        const validation = validateAttributeValue(field.field_type, value)
+        if (!validation.valid) {
+          return NextResponse.json(
+            { error: `Invalid value for field ${fieldId}: ${validation.error}` },
+            { status: 400 }
+          )
+        }
+      }
+
       // Set active_until on current value (if exists)
       await supabase
         .from("crm_custom_field_values")
@@ -230,13 +249,15 @@ export async function PUT(request: NextRequest) {
         .is("active_until", null)
 
       // Prepare new value
-      const fieldValue = typeof value === "object" ? JSON.stringify(value) : String(value)
+      // For complex types (location, currency, etc.), store as JSONB
+      const isComplexType = ['location', 'currency', 'rating', 'timestamp', 'interaction', 'actor_reference', 'personal_name'].includes(field?.field_type || '')
+      const fieldValue = isComplexType ? null : (typeof value === "object" ? JSON.stringify(value) : String(value))
       valuesToInsert.push({
         field_id: fieldId,
         entity_type,
         entity_id,
-        field_value: typeof value === "object" ? null : fieldValue,
-        field_value_json: typeof value === "object" ? value : null,
+        field_value: fieldValue,
+        field_value_json: isComplexType || typeof value === "object" ? value : null,
         active_from: now,
         active_until: null,
         created_by_actor_id,

@@ -317,6 +317,14 @@ function CustomFieldForm({
             <SelectItem value="boolean">Boolean</SelectItem>
             <SelectItem value="select">Select (Single)</SelectItem>
             <SelectItem value="multi_select">Multi-Select</SelectItem>
+            <SelectItem value="status">Status</SelectItem>
+            <SelectItem value="location">Location</SelectItem>
+            <SelectItem value="currency">Currency</SelectItem>
+            <SelectItem value="rating">Rating</SelectItem>
+            <SelectItem value="timestamp">Timestamp</SelectItem>
+            <SelectItem value="interaction">Interaction</SelectItem>
+            <SelectItem value="actor_reference">Actor Reference</SelectItem>
+            <SelectItem value="personal_name">Personal Name</SelectItem>
           </SelectContent>
         </Select>
       </div>

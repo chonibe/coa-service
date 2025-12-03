@@ -1,10 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
-import { createClient } from "@supabase/supabase-js"
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-)
+import { createClient } from "@/lib/supabase/server"
 
 export async function GET(request: NextRequest) {
   try {
@@ -40,9 +35,15 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
+  const supabase = createClient()
+  
   try {
+    if (!supabase) {
+      throw new Error("Database client not initialized")
+    }
+
     const body = await request.json()
-    const { merged_into_customer_id, merged_from_customer_id, merge_reason } = body
+    const { merged_into_customer_id, merged_from_customer_id, merge_reason, conflict_resolution } = body
 
     if (!merged_into_customer_id || !merged_from_customer_id) {
       return NextResponse.json(
@@ -79,19 +80,42 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Merge data (prefer non-null values from both)
+    // Merge data with conflict resolution support
+    // conflict_resolution is an object like: { email: "keep_target", first_name: "keep_source" }
     const mergedData: any = {
-      email: toCustomer.email || fromCustomer.email,
-      first_name: toCustomer.first_name || fromCustomer.first_name,
-      last_name: toCustomer.last_name || fromCustomer.last_name,
-      phone: toCustomer.phone || fromCustomer.phone,
-      notes: [toCustomer.notes, fromCustomer.notes].filter(Boolean).join("\n\n---\n\n"),
-      tags: [...(toCustomer.tags || []), ...(fromCustomer.tags || [])],
-      instagram_id: toCustomer.instagram_id || fromCustomer.instagram_id,
-      facebook_id: toCustomer.facebook_id || fromCustomer.facebook_id,
-      whatsapp_id: toCustomer.whatsapp_id || fromCustomer.whatsapp_id,
       updated_at: new Date().toISOString(),
     }
+
+    // Helper to resolve conflicts
+    const resolveConflict = (field: string, targetValue: any, sourceValue: any) => {
+      if (conflict_resolution && conflict_resolution[field]) {
+        const resolution = conflict_resolution[field]
+        if (resolution === "keep_source") return sourceValue
+        if (resolution === "keep_target") return targetValue
+        if (resolution === "merge") {
+          // For text fields, merge with separator
+          if (typeof targetValue === "string" && typeof sourceValue === "string") {
+            return [targetValue, sourceValue].filter(Boolean).join("\n\n---\n\n")
+          }
+          // For arrays, combine
+          if (Array.isArray(targetValue) || Array.isArray(sourceValue)) {
+            return [...(targetValue || []), ...(sourceValue || [])]
+          }
+        }
+      }
+      // Default: prefer target, fallback to source
+      return targetValue || sourceValue
+    }
+
+    mergedData.email = resolveConflict("email", toCustomer.email, fromCustomer.email)
+    mergedData.first_name = resolveConflict("first_name", toCustomer.first_name, fromCustomer.first_name)
+    mergedData.last_name = resolveConflict("last_name", toCustomer.last_name, fromCustomer.last_name)
+    mergedData.phone = resolveConflict("phone", toCustomer.phone, fromCustomer.phone)
+    mergedData.notes = resolveConflict("notes", toCustomer.notes, fromCustomer.notes)
+    mergedData.tags = [...new Set([...(toCustomer.tags || []), ...(fromCustomer.tags || [])])] // Remove duplicates
+    mergedData.instagram_id = resolveConflict("instagram_id", toCustomer.instagram_id, fromCustomer.instagram_id)
+    mergedData.facebook_id = resolveConflict("facebook_id", toCustomer.facebook_id, fromCustomer.facebook_id)
+    mergedData.whatsapp_id = resolveConflict("whatsapp_id", toCustomer.whatsapp_id, fromCustomer.whatsapp_id)
 
     // Merge arrays
     if (fromCustomer.chinadivision_order_ids) {
@@ -169,9 +193,43 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // Emit webhook event for record merge
+    try {
+      await fetch(`${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/api/webhooks/crm`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          type: "record.merged",
+          payload: {
+            object: "person",
+            merged_record_id: merged_into_customer_id,
+            duplicate_record_id: merged_from_customer_id,
+            merge_reason: merge_reason || "User-initiated merge",
+            conflict_resolution: conflict_resolution || {},
+            merged_data: mergedData,
+            actor: {
+              type: "user",
+              id: (await supabase.auth.getUser()).data.user?.id || null,
+            },
+          },
+        }),
+      })
+    } catch (webhookError) {
+      // Don't fail the merge if webhook fails
+      console.error("[Deduplication] Error emitting webhook:", webhookError)
+    }
+
+    // Fetch updated merged record
+    const { data: mergedRecord } = await supabase
+      .from("crm_customers")
+      .select("*")
+      .eq("id", merged_into_customer_id)
+      .single()
+
     return NextResponse.json({
       success: true,
       message: "Contacts merged successfully",
+      merged_record: mergedRecord,
     })
   } catch (err: any) {
     console.error("[Deduplication] Unexpected error:", err)
