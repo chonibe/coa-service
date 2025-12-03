@@ -18,6 +18,7 @@
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
     "supabase:enable-google": "node scripts/enable-google-provider.js",
+    "migration:phase3-phase4": "node scripts/apply-phase3-phase4-migration.js",
     "test:graphql": "jest --testNamePattern='GraphQL'",
     "test:auth": "jest --testNamePattern='Authentication'",
     "test:performance": "artillery run performance-tests.yml",
