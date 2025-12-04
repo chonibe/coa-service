@@ -85,7 +85,19 @@ export async function POST(request: NextRequest) {
   
   try {
     if (!supabase) {
-      throw new Error("Database client not initialized")
+      return NextResponse.json(Errors.internal("Database client not initialized"), { status: 500 })
+    }
+
+    // Get current user
+    const { data: { user }, error: authError } = await supabase.auth.getUser()
+    if (authError || !user) {
+      return NextResponse.json(Errors.unauthorized("Authentication required"), { status: 401 })
+    }
+
+    // Get user's workspace
+    const workspaceId = await getUserWorkspaceId(supabase, user.id)
+    if (!workspaceId) {
+      return NextResponse.json(Errors.forbidden("User is not a member of any workspace"), { status: 403 })
     }
 
     const body = await request.json()
@@ -93,50 +105,68 @@ export async function POST(request: NextRequest) {
       name,
       description,
       entity_type,
-      filters,
-      sort,
+      filter_config,
+      sort_config,
+      column_config,
       is_shared,
       is_default,
     } = body
 
     if (!name || !entity_type) {
       return NextResponse.json(
-        { error: "name and entity_type are required" },
+        Errors.validation("name and entity_type are required", { 
+          field: !name ? "name" : "entity_type" 
+        }),
         { status: 400 }
       )
     }
 
-    // Get current user ID (you'll need to implement this based on your auth)
-    // For now, we'll use a placeholder
-    const created_by_user_id = null // TODO: Get from session
+    // Validate entity_type
+    const validEntityTypes = ['person', 'company', 'conversation', 'activity']
+    if (!validEntityTypes.includes(entity_type)) {
+      return NextResponse.json(
+        Errors.validation(`entity_type must be one of: ${validEntityTypes.join(', ')}`, { 
+          field: "entity_type" 
+        }),
+        { status: 400 }
+      )
+    }
 
-    // If setting as default, unset other defaults for this entity type and user
-    if (is_default && created_by_user_id) {
+    // If setting as default, unset other defaults for this entity type and workspace
+    if (is_default) {
       await supabase
         .from("crm_saved_views")
         .update({ is_default: false })
+        .eq("workspace_id", workspaceId)
         .eq("entity_type", entity_type)
-        .eq("created_by_user_id", created_by_user_id)
         .eq("is_default", true)
     }
 
     const { data, error } = await supabase
       .from("crm_saved_views")
       .insert({
+        workspace_id: workspaceId,
+        created_by: user.id,
         name,
         description,
         entity_type,
-        filters: filters || {},
-        sort: sort || [],
+        filter_config: filter_config || {},
+        sort_config: sort_config || null,
+        column_config: column_config || null,
         is_shared: is_shared || false,
         is_default: is_default || false,
-        created_by_user_id,
       })
       .select()
       .single()
 
     if (error) {
-      throw error
+      if (error.code === "23505") {
+        return NextResponse.json(
+          Errors.conflict("A saved view with this name already exists", { field: "name" }),
+          { status: 409 }
+        )
+      }
+      return NextResponse.json(Errors.internal(error.message || "Failed to create saved view"), { status: 500 })
     }
 
     return NextResponse.json({
@@ -144,10 +174,7 @@ export async function POST(request: NextRequest) {
     }, { status: 201 })
   } catch (error: any) {
     console.error("[CRM] Error creating saved view:", error)
-    return NextResponse.json(
-      { error: error.message || "Internal server error" },
-      { status: 500 }
-    )
+    return NextResponse.json(Errors.internal(error.message || "Failed to create saved view"), { status: 500 })
   }
 }
 

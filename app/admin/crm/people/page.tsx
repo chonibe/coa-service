@@ -186,8 +186,11 @@ export default function PeoplePage() {
                 currentFilters={filters.length > 0 ? { $and: filters } : {}}
                 currentSort={currentSort}
                 onViewSelect={(view) => {
-                  setFilters(view.filters?.$and || [])
-                  setCurrentSort(view.sort || [])
+                  // Apply saved view filters and sort
+                  const filters = view.filter_config?.$and || []
+                  const sort = view.sort_config || []
+                  setFilters(filters)
+                  setCurrentSort(sort)
                   fetchPeople(searchQuery, 0)
                 }}
               />

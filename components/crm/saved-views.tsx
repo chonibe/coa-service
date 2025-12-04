@@ -15,11 +15,13 @@ interface SavedView {
   name: string
   description: string | null
   entity_type: string
-  filters: any
-  sort: Array<{ field: string; direction: "asc" | "desc" }>
+  filter_config: any
+  sort_config: Array<{ field: string; direction: "asc" | "desc" }> | null
+  column_config: any | null
   is_shared: boolean
   is_default: boolean
   created_at: string
+  updated_at: string
 }
 
 interface SavedViewsProps {
@@ -82,8 +84,9 @@ export function SavedViews({ entityType, currentFilters, currentSort, onViewSele
           name: formData.name,
           description: formData.description || null,
           entity_type: entityType,
-          filters: currentFilters || {},
-          sort: currentSort || [],
+          filter_config: currentFilters || {},
+          sort_config: currentSort || null,
+          column_config: null, // Can be added later
           is_shared: formData.is_shared,
           is_default: formData.is_default,
         }),

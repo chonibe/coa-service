@@ -100,8 +100,10 @@ export function BulkActionsToolbar({ selectedIds, entityType, onActionComplete }
                 <Label htmlFor="tags">Tags (comma-separated)</Label>
                 <Input
                   id="tags"
-                  value={formData.tags || ""}
-                  onChange={(e) => setFormData({ tags: e.target.value.split(",").map(t => t.trim()).filter(Boolean) })}
+                  value={typeof formData.tags === "string" ? formData.tags : (formData.tags || []).join(", ")}
+                  onChange={(e) => setFormData({ 
+                    tags: e.target.value.split(",").map(t => t.trim()).filter(Boolean) 
+                  })}
                   placeholder="tag1, tag2, tag3"
                 />
               </div>
@@ -109,10 +111,83 @@ export function BulkActionsToolbar({ selectedIds, entityType, onActionComplete }
                 <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
                   Cancel
                 </Button>
-                <Button onClick={() => handleBulkAction("tag", formData)}>
+                <Button onClick={() => handleBulkAction("tag", { tags: formData.tags })}>
                   Add Tags
                 </Button>
               </div>
+            </div>
+          </DialogContent>
+        )
+
+      case "remove_tags":
+        return (
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Remove Tags</DialogTitle>
+              <DialogDescription>
+                Remove tags from {selectedIds.length} selected record(s)
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div>
+                <Label htmlFor="tags">Tags to remove (comma-separated)</Label>
+                <Input
+                  id="tags"
+                  value={typeof formData.tags === "string" ? formData.tags : (formData.tags || []).join(", ")}
+                  onChange={(e) => setFormData({ 
+                    tags: e.target.value.split(",").map(t => t.trim()).filter(Boolean) 
+                  })}
+                  placeholder="tag1, tag2, tag3"
+                />
+              </div>
+              <div className="flex justify-end gap-2">
+                <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
+                  Cancel
+                </Button>
+                <Button onClick={() => handleBulkAction("remove_tags", { tags: formData.tags })}>
+                  Remove Tags
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        )
+
+      case "archive":
+        return (
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Archive Records</DialogTitle>
+              <DialogDescription>
+                Are you sure you want to archive {selectedIds.length} selected record(s)?
+              </DialogDescription>
+            </DialogHeader>
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
+                Cancel
+              </Button>
+              <Button onClick={() => handleBulkAction("archive")}>
+                Archive
+              </Button>
+            </div>
+          </DialogContent>
+        )
+
+      case "restore":
+        return (
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Restore Records</DialogTitle>
+              <DialogDescription>
+                Are you sure you want to restore {selectedIds.length} selected record(s)?
+              </DialogDescription>
+            </DialogHeader>
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
+                Cancel
+              </Button>
+              <Button onClick={() => handleBulkAction("restore")}>
+                Restore
+              </Button>
             </div>
           </DialogContent>
         )
@@ -229,13 +304,18 @@ export function BulkActionsToolbar({ selectedIds, entityType, onActionComplete }
               <Tag className="h-4 w-4 mr-2" />
               Add Tags
             </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => openDialog("add_to_list")}>
-              <ListPlus className="h-4 w-4 mr-2" />
-              Add to List
+            <DropdownMenuItem onClick={() => openDialog("remove_tags")}>
+              <Tag className="h-4 w-4 mr-2" />
+              Remove Tags
             </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => openDialog("remove_from_list")}>
-              <ListMinus className="h-4 w-4 mr-2" />
-              Remove from List
+            <DropdownMenuSeparator />
+            <DropdownMenuItem onClick={() => openDialog("archive")}>
+              <Edit className="h-4 w-4 mr-2" />
+              Archive
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => openDialog("restore")}>
+              <Edit className="h-4 w-4 mr-2" />
+              Restore
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem
