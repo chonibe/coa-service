@@ -85,6 +85,8 @@ export async function syncGmailForUser(
       afterDate,
     })
 
+    console.log(`[Gmail Sync Helper] Found ${messages.length} messages to process`)
+
     // Process messages
     let syncedCount = 0
     let errorCount = 0
@@ -93,9 +95,23 @@ export async function syncGmailForUser(
       try {
         const { from, to, subject, body, date } = extractEmailContent(message)
 
+        // Skip if no from/to addresses
+        if (!from || !to) {
+          console.warn(`[Gmail Sync Helper] Skipping message ${message.id}: missing from/to`)
+          errorCount++
+          continue
+        }
+
         // Extract email addresses (remove name part)
-        const fromEmail = from.match(/<(.+)>/)?.[1] || from
-        const toEmail = to.match(/<(.+)>/)?.[1] || to
+        const fromEmail = from.match(/<(.+)>/)?.[1] || from.trim()
+        const toEmail = to.match(/<(.+)>/)?.[1] || to.trim()
+
+        // Skip if email addresses are invalid
+        if (!fromEmail || !toEmail || !fromEmail.includes('@') || !toEmail.includes('@')) {
+          console.warn(`[Gmail Sync Helper] Skipping message ${message.id}: invalid email addresses`)
+          errorCount++
+          continue
+        }
 
         // Determine direction
         const direction = toEmail.toLowerCase().includes(userEmail.toLowerCase()) 
@@ -105,8 +121,8 @@ export async function syncGmailForUser(
         // Log to CRM
         await logEmail({
           customerEmail: direction === 'inbound' ? fromEmail : toEmail,
-          subject,
-          content: body,
+          subject: subject || '(No Subject)',
+          content: body || '',
           direction,
           externalId: message.id,
           metadata: {
@@ -119,7 +135,7 @@ export async function syncGmailForUser(
 
         syncedCount++
       } catch (error: any) {
-        console.error(`[Gmail Sync Helper] Error processing message ${message.id}:`, error)
+        console.error(`[Gmail Sync Helper] Error processing message ${message.id}:`, error.message || error)
         errorCount++
       }
     }

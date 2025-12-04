@@ -35,6 +35,35 @@ export function AttioInbox({
   const [starredOnly, setStarredOnly] = useState(false)
   const [sortBy, setSortBy] = useState<SortOption>("recent")
 
+  // Auto-sync Gmail on component mount if needed
+  useEffect(() => {
+    async function checkAndSync() {
+      try {
+        // Check if sync is needed (only for email platform)
+        if (platformFilter === "email" || platformFilter === "all") {
+          const statusRes = await fetch("/api/crm/check-sync-status")
+          if (statusRes.ok) {
+            const statusData = await statusRes.json()
+            if (statusData.needsSync) {
+              // Trigger sync silently in background
+              console.log("[Inbox] Auto-syncing Gmail...")
+              fetch("/api/crm/sync-gmail", { method: "POST" }).catch((err) => {
+                console.error("[Inbox] Auto-sync error:", err)
+                // Silently fail - don't show error to user
+              })
+            }
+          }
+        }
+      } catch (err) {
+        // Silently fail - don't block inbox load
+        console.error("[Inbox] Error checking sync status:", err)
+      }
+    }
+
+    checkAndSync()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []) // Only run on mount
+
   // Fetch conversations
   const fetchConversations = async () => {
     try {

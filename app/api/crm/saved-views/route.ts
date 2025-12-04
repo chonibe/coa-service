@@ -1,45 +1,73 @@
 import { NextRequest, NextResponse } from "next/server"
 import { createClient } from "@/lib/supabase/server"
+import { Errors } from "@/lib/crm/errors"
 
 /**
  * Saved Views API - Manage saved filter combinations
  * Allows users to save and share filter/sort configurations
  */
 
+async function getUserWorkspaceId(supabase: any, userId: string): Promise<string | null> {
+  const { data, error } = await supabase
+    .from("crm_workspace_members")
+    .select("workspace_id")
+    .eq("user_id", userId)
+    .eq("is_active", true)
+    .limit(1)
+    .single()
+
+  if (error || !data) {
+    return null
+  }
+
+  return data.workspace_id
+}
+
 export async function GET(request: NextRequest) {
   const supabase = createClient()
   
   try {
     if (!supabase) {
-      throw new Error("Database client not initialized")
+      return NextResponse.json(Errors.internal("Database client not initialized"), { status: 500 })
+    }
+
+    // Get current user
+    const { data: { user }, error: authError } = await supabase.auth.getUser()
+    if (authError || !user) {
+      return NextResponse.json(Errors.unauthorized("Authentication required"), { status: 401 })
+    }
+
+    // Get user's workspace
+    const workspaceId = await getUserWorkspaceId(supabase, user.id)
+    if (!workspaceId) {
+      return NextResponse.json(Errors.forbidden("User is not a member of any workspace"), { status: 403 })
     }
 
     const searchParams = request.nextUrl.searchParams
     const entityType = searchParams.get("entity_type")
     const isShared = searchParams.get("is_shared") === "true"
-    const userId = searchParams.get("user_id") // Optional: filter by user
 
     let query = supabase
       .from("crm_saved_views")
       .select("*", { count: "exact" })
+      .eq("workspace_id", workspaceId)
       .order("created_at", { ascending: false })
 
     if (entityType) {
       query = query.eq("entity_type", entityType)
     }
 
+    // Filter: user's own views OR shared views
     if (isShared) {
       query = query.eq("is_shared", true)
-    }
-
-    if (userId) {
-      query = query.or(`created_by_user_id.eq.${userId},is_shared.eq.true`)
+    } else {
+      query = query.or(`created_by.eq.${user.id},is_shared.eq.true`)
     }
 
     const { data, error, count } = await query
 
     if (error) {
-      throw error
+      return NextResponse.json(Errors.internal(error.message || "Failed to fetch saved views"), { status: 500 })
     }
 
     return NextResponse.json({
@@ -48,10 +76,7 @@ export async function GET(request: NextRequest) {
     })
   } catch (error: any) {
     console.error("[CRM] Error fetching saved views:", error)
-    return NextResponse.json(
-      { error: error.message || "Internal server error" },
-      { status: 500 }
-    )
+    return NextResponse.json(Errors.internal(error.message || "Failed to fetch saved views"), { status: 500 })
   }
 }
 

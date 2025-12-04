@@ -29,12 +29,17 @@ export async function logEmail({
       return
     }
 
-    // Find customer by email
-    let { data: customer } = await supabase
+    // Find customer by email (use maybeSingle to handle 0 or 1 results)
+    let { data: customer, error: customerQueryError } = await supabase
       .from("crm_customers")
       .select("*")
       .eq("email", customerEmail)
-      .single()
+      .maybeSingle()
+
+    if (customerQueryError) {
+      console.error("[CRM] Error querying customer:", customerQueryError)
+      throw customerQueryError
+    }
 
     // If customer doesn't exist, create one
     if (!customer) {
@@ -48,19 +53,25 @@ export async function logEmail({
 
       if (customerError) {
         console.error("[CRM] Error creating customer:", customerError)
-        return
+        throw customerError
       }
 
       customer = newCustomer
+      console.log(`[CRM] Created new customer: ${customerEmail}`)
     }
 
-    // Find or create email conversation
-    let { data: conversation } = await supabase
+    // Find or create email conversation (use maybeSingle to handle 0 or 1 results)
+    let { data: conversation, error: convQueryError } = await supabase
       .from("crm_conversations")
       .select("*")
       .eq("customer_id", customer.id)
       .eq("platform", "email")
-      .single()
+      .maybeSingle()
+
+    if (convQueryError) {
+      console.error("[CRM] Error querying conversation:", convQueryError)
+      throw convQueryError
+    }
 
     if (!conversation) {
       const { data: newConversation, error: convError } = await supabase
@@ -75,10 +86,25 @@ export async function logEmail({
 
       if (convError) {
         console.error("[CRM] Error creating conversation:", convError)
-        return
+        throw convError
       }
 
       conversation = newConversation
+      console.log(`[CRM] Created new conversation for customer: ${customerEmail}`)
+    }
+
+    // Check if message already exists (by external_id to avoid duplicates)
+    if (externalId) {
+      const { data: existingMessage } = await supabase
+        .from("crm_messages")
+        .select("id")
+        .eq("external_id", externalId)
+        .maybeSingle()
+
+      if (existingMessage) {
+        console.log(`[CRM] Email with external_id ${externalId} already exists, skipping`)
+        return
+      }
     }
 
     // Save email message
@@ -99,12 +125,23 @@ export async function logEmail({
 
     if (messageError) {
       console.error("[CRM] Error saving email message:", messageError)
-      return
+      throw messageError
     }
 
-    console.log(`[CRM] Successfully logged email to ${customerEmail}`)
+    // Update conversation's last_message_at
+    await supabase
+      .from("crm_conversations")
+      .update({ 
+        last_message_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", conversation.id)
+
+    console.log(`[CRM] Successfully logged email to ${customerEmail} (${direction})`)
   } catch (error: any) {
     console.error("[CRM] Error logging email:", error)
+    // Re-throw so sync function can track errors
+    throw error
   }
 }
 
