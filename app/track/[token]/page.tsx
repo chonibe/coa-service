@@ -658,13 +658,25 @@ export default function TrackOrdersPage() {
     )
   }
 
+  // Helper function to check if order is delivered
+  // Uses the latest status from either track_status (121) or track_status_name ("Delivered")
+  const isDelivered = (order: ChinaDivisionOrderInfo): boolean => {
+    // Check track_status code first
+    if (order.track_status === 121) return true
+    
+    // Check track_status_name (case-insensitive) for "Delivered"
+    if (order.track_status_name?.toLowerCase() === 'delivered') return true
+    
+    return false
+  }
+
   // Helper function to detect if order has arrived in destination country
   const hasArrivedInCountry = (order: ChinaDivisionOrderInfo): boolean => {
     const orderKey = order.sys_order_id || order.order_id || ''
     if (arrivedInCountryOrders.has(orderKey)) return true
     
     if (order.track_status === 111 || order.track_status === 112) return true
-    if (order.track_status === 121) return true
+    if (isDelivered(order)) return true
     
     if (order.status === 3 && order.track_status === 101 && order.tracking_number) {
       return false
@@ -703,7 +715,7 @@ export default function TrackOrdersPage() {
 
   // Helper function to get order priority for sorting
   const getOrderPriority = (order: ChinaDivisionOrderInfo): number => {
-    if (order.track_status === 121) return 1
+    if (isDelivered(order)) return 1
     if (order.track_status === 112) return 2
     if (hasArrivedInCountry(order)) return 3
     if (order.track_status === 101 || order.track_status === 111) return 4
@@ -775,8 +787,8 @@ export default function TrackOrdersPage() {
     if (statusFilter !== 'all') {
       if (statusFilter === 'shipped' && order.status !== 3) return false
       if (statusFilter === 'in_transit' && order.track_status !== 101 && order.track_status !== 112) return false
-      if (statusFilter === 'delivered' && order.track_status !== 121) return false
-      if (statusFilter === 'pending' && (order.status === 3 || order.track_status === 121)) return false
+      if (statusFilter === 'delivered' && !isDelivered(order)) return false
+      if (statusFilter === 'pending' && (order.status === 3 || isDelivered(order))) return false
       if (statusFilter === 'packing' && order.status !== 9) return false
     }
 
@@ -804,8 +816,8 @@ export default function TrackOrdersPage() {
     total: orders.length,
     shipped: orders.filter(o => o.status === 3).length,
     in_transit: orders.filter(o => o.track_status === 101 || o.track_status === 112).length,
-    delivered: orders.filter(o => o.track_status === 121).length,
-    pending: orders.filter(o => o.status !== 3 && o.track_status !== 121).length,
+    delivered: orders.filter(o => isDelivered(o)).length,
+    pending: orders.filter(o => o.status !== 3 && !isDelivered(o)).length,
     arrived_in_country: orders.filter(o => hasArrivedInCountry(o)).length,
   }
 
