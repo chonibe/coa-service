@@ -785,11 +785,23 @@ export default function TrackOrdersPage() {
     }
 
     if (statusFilter !== 'all') {
-      if (statusFilter === 'shipped' && order.status !== 3) return false
+      // All status filters now use delivery status (track_status) instead of warehouse status
+      if (statusFilter === 'pending') {
+        // Pending = not yet in transit (track_status is 0, undefined, or null)
+        const hasTracking = order.track_status !== undefined && order.track_status !== null && order.track_status !== 0
+        if (hasTracking) return false
+      }
+      if (statusFilter === 'packing') {
+        // Packing is a warehouse status, so we check warehouse status (order.status === 9)
+        if (order.status !== 9) return false
+      }
+      if (statusFilter === 'shipped') {
+        // Shipped = has delivery tracking started (track_status >= 101) but not delivered
+        const hasTracking = order.track_status !== undefined && order.track_status !== null && order.track_status >= 101
+        if (!hasTracking || isDelivered(order)) return false
+      }
       if (statusFilter === 'in_transit' && order.track_status !== 101 && order.track_status !== 112) return false
       if (statusFilter === 'delivered' && !isDelivered(order)) return false
-      if (statusFilter === 'pending' && (order.status === 3 || isDelivered(order))) return false
-      if (statusFilter === 'packing' && order.status !== 9) return false
     }
 
     if (countryFilter !== 'all') {
@@ -811,13 +823,20 @@ export default function TrackOrdersPage() {
     return sortedOrders.filter(order => isOrderPinned(order))
   }, [sortedOrders, pinnedOrderIds])
 
-  // Group orders by delivery status for summary
+  // Group orders by delivery status for summary (using track_status, not warehouse status)
   const statusCounts = {
     total: orders.length,
-    shipped: orders.filter(o => o.status === 3).length,
+    pending: orders.filter(o => {
+      const hasTracking = o.track_status !== undefined && o.track_status !== null && o.track_status !== 0
+      return !hasTracking
+    }).length,
+    packing: orders.filter(o => o.status === 9).length,
+    shipped: orders.filter(o => {
+      const hasTracking = o.track_status !== undefined && o.track_status !== null && o.track_status >= 101
+      return hasTracking && !isDelivered(o)
+    }).length,
     in_transit: orders.filter(o => o.track_status === 101 || o.track_status === 112).length,
     delivered: orders.filter(o => isDelivered(o)).length,
-    pending: orders.filter(o => o.status !== 3 && !isDelivered(o)).length,
     arrived_in_country: orders.filter(o => hasArrivedInCountry(o)).length,
   }
 
