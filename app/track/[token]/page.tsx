@@ -660,12 +660,15 @@ export default function TrackOrdersPage() {
 
   // Helper function to check if order is delivered
   // Uses the latest status from either track_status (121) or track_status_name ("Delivered")
+  // Updated to use delivery status instead of warehouse status - v2
   const isDelivered = (order: ChinaDivisionOrderInfo): boolean => {
-    // Check track_status code first
+    // Check track_status code first (121 = Delivered)
     if (order.track_status === 121) return true
     
-    // Check track_status_name (case-insensitive) for "Delivered"
-    if (order.track_status_name?.toLowerCase() === 'delivered') return true
+    // Check track_status_name (case-insensitive, trimmed) for "Delivered"
+    // This handles cases where track_status_name is set but track_status might not be 121
+    const statusName = order.track_status_name?.toLowerCase().trim()
+    if (statusName === 'delivered') return true
     
     return false
   }
