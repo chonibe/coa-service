@@ -138,9 +138,9 @@ export function SeriesNode({
         )}
       >
         {series.members && series.members.length > 0 ? (
-          /* Artwork Grid Display */
-          <div className="flex-1 p-1 grid grid-cols-2 gap-1 overflow-hidden">
-            {series.members.slice(0, 4).map((member) => (
+          /* Artwork Grid Display - 3 columns to show more items */
+          <div className="flex-1 p-0.5 grid grid-cols-3 gap-0.5 overflow-hidden" style={{ gridTemplateColumns: 'repeat(3, 1fr)' }}>
+            {series.members.slice(0, 9).map((member) => (
               <div 
                 key={member.id} 
                 className="relative aspect-square rounded-sm overflow-hidden bg-muted border border-border/50"
@@ -165,10 +165,10 @@ export function SeriesNode({
                 )}
               </div>
             ))}
-            {/* Count Indicator if more than 4 */}
-            {series.members.length > 4 && (
-              <div className="absolute bottom-1 right-1 bg-black/60 text-white text-[8px] px-1 rounded-sm backdrop-blur-sm">
-                +{series.members.length - 4}
+            {/* Count Indicator if more than 9 */}
+            {series.members.length > 9 && (
+              <div className="absolute bottom-1 right-1 bg-black/60 text-white text-[8px] px-1 rounded-sm backdrop-blur-sm z-20">
+                +{series.members.length - 9}
               </div>
             )}
           </div>
