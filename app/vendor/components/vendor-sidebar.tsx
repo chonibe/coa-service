@@ -169,13 +169,8 @@ export function VendorSidebar() {
   }
 
   // Mobile bottom nav items (limited to 5 for space)
-  const mobileNavItems = [
-    navItems[0], // Dashboard
-    navItems[1], // Artworks
-    navItems[2], // Analytics
-    navItems[6], // Profile
-    navItems[7], // Help
-  ]
+  // Filter out undefined items (commented out items) and take first 5
+  const mobileNavItems = navItems.filter(item => item && item.href).slice(0, 5)
 
   // Check if a path is active (exact match or starts with for section pages)
   const isActive = (href: string) => {
@@ -280,7 +275,7 @@ export function VendorSidebar() {
               </h3>
             </div>
             <nav className="flex flex-col gap-2" aria-label="Navigation menu">
-              {navItems.map((item) => (
+              {navItems.filter(item => item && item.href).map((item) => (
                 <Link
                   key={item.href}
                   href={item.href}
