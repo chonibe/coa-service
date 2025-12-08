@@ -339,7 +339,31 @@ export async function POST(
       }
     }
 
-    // Create member
+    // Check if member already exists (idempotent operation)
+    const existingMemberQuery = supabase
+      .from("artwork_series_members")
+      .select("*")
+      .eq("series_id", seriesId)
+    
+    if (submission_id) {
+      existingMemberQuery.eq("submission_id", submission_id)
+    } else if (shopify_product_id) {
+      existingMemberQuery.eq("shopify_product_id", shopify_product_id)
+    }
+
+    const { data: existingMember, error: checkError } = await existingMemberQuery.maybeSingle()
+
+    if (checkError && checkError.code !== "PGRST116") { // PGRST116 is "not found" which is fine
+      console.error("Error checking existing member:", checkError)
+      return NextResponse.json({ error: "Failed to check existing member" }, { status: 500 })
+    }
+
+    // If member already exists, return it (idempotent)
+    if (existingMember) {
+      return NextResponse.json({ member: existingMember }, { status: 200 })
+    }
+
+    // Create new member
     const { data: member, error: createError } = await supabase
       .from("artwork_series_members")
       .insert({
@@ -356,6 +380,11 @@ export async function POST(
     if (createError) {
       console.error("Error creating member:", createError)
       if (createError.code === "23505") {
+        // Double-check: member might have been added between check and insert
+        const { data: doubleCheckMember } = await existingMemberQuery.maybeSingle()
+        if (doubleCheckMember) {
+          return NextResponse.json({ member: doubleCheckMember }, { status: 200 })
+        }
         return NextResponse.json({ error: "This artwork is already in the series" }, { status: 400 })
       }
       return NextResponse.json({ error: "Failed to add member to series" }, { status: 500 })
