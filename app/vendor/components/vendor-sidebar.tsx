@@ -68,11 +68,12 @@ export function VendorSidebar() {
       href: "/vendor/dashboard/products",
       icon: <Icon size="md"><Image className="h-5 w-5" /></Icon>,
     },
-    {
-      title: "Series",
-      href: "/vendor/dashboard/series",
-      icon: <Icon size="md"><Lock className="h-5 w-5" /></Icon>,
-    },
+    // Series now combined with Artworks page
+    // {
+    //   title: "Series",
+    //   href: "/vendor/dashboard/series",
+    //   icon: <Icon size="md"><Lock className="h-5 w-5" /></Icon>,
+    // },
     {
       title: "Analytics",
       href: "/vendor/dashboard/analytics",
