@@ -47,8 +47,13 @@ import type { ArtworkSeries } from "@/types/artwork-series"
 import { DeleteSeriesDialog } from "../series/components/DeleteSeriesDialog"
 import { DuplicateSeriesDialog } from "../series/components/DuplicateSeriesDialog"
 
-// Sortable Artwork Component
+// Sortable Artwork Component (Kanban Card)
 function SortableArtworkItem({ artwork, seriesUnlockType }: { artwork: any; seriesUnlockType: string }) {
+  // For artworks in series, use member id. For available artworks, use submission_id
+  const sortableId = artwork.submission_id && !artwork.series_id 
+    ? `artwork-submission-${artwork.submission_id}` 
+    : `artwork-${artwork.id}`
+  
   const {
     attributes,
     listeners,
@@ -56,7 +61,7 @@ function SortableArtworkItem({ artwork, seriesUnlockType }: { artwork: any; seri
     transform,
     transition,
     isDragging,
-  } = useSortable({ id: `artwork-${artwork.id}` })
+  } = useSortable({ id: sortableId })
 
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -68,107 +73,69 @@ function SortableArtworkItem({ artwork, seriesUnlockType }: { artwork: any; seri
     <div
       ref={setNodeRef}
       style={style}
-      className="relative w-32 h-32 rounded-md overflow-hidden bg-background border shadow-sm group/item flex-shrink-0 cursor-grab active:cursor-grabbing"
+      className="relative w-full rounded-lg overflow-hidden bg-background border shadow-sm group/item cursor-grab active:cursor-grabbing hover:shadow-md transition-shadow artwork-item"
       {...attributes}
       {...listeners}
     >
-      {artwork.image ? (
-        <img
-          src={artwork.image}
-          alt={artwork.title || "Artwork"}
-          className="w-full h-full object-cover"
-        />
-      ) : (
-        <div className="w-full h-full flex items-center justify-center">
-          <ImageIcon className="h-6 w-6 text-muted-foreground/30" />
+      {/* Artwork Image */}
+      <div className="aspect-square w-full bg-muted relative">
+        {artwork.image ? (
+          <img
+            src={artwork.image}
+            alt={artwork.title || "Artwork"}
+            className="w-full h-full object-cover"
+          />
+        ) : (
+          <div className="w-full h-full flex items-center justify-center">
+            <ImageIcon className="h-8 w-8 text-muted-foreground/30" />
+          </div>
+        )}
+        
+        {/* Drag Handle */}
+        <div className="absolute top-2 left-2 bg-black/60 p-1.5 rounded text-white backdrop-blur-sm opacity-0 group-hover/item:opacity-100 transition-opacity">
+          <GripVertical className="h-4 w-4" />
         </div>
-      )}
-      
-      <div className="absolute top-1 left-1 bg-black/60 p-1 rounded text-white backdrop-blur-sm">
-        <GripVertical className="h-3 w-3" />
+        
+        {/* Lock Badge */}
+        {artwork.is_locked && (
+          <div className="absolute top-2 right-2 bg-black/60 p-1.5 rounded-full text-white backdrop-blur-sm">
+            <Lock className="h-3 w-3" />
+          </div>
+        )}
       </div>
       
-      <div className="absolute inset-0 bg-black/60 opacity-0 group-hover/item:opacity-100 transition-opacity flex flex-col items-center justify-center p-1">
-        <span className="text-[10px] text-white text-center font-medium leading-tight line-clamp-2 mb-1">
-          {artwork.title}
-        </span>
+      {/* Artwork Info */}
+      <div className="p-2">
+        <h4 className="text-sm font-medium line-clamp-2 mb-1">{artwork.title || "Untitled"}</h4>
         {seriesUnlockType === "time_based" && (
-          <Badge variant="outline" className="text-[8px] h-4 px-1 border-white/50 text-white bg-black/20 backdrop-blur-sm">
+          <Badge variant="outline" className="text-xs">
             Timed Edition
           </Badge>
         )}
       </div>
-
-      {artwork.is_locked && (
-        <div className="absolute top-1 right-1 bg-black/60 p-1 rounded-full text-white backdrop-blur-sm">
-          <Lock className="h-3 w-3" />
-        </div>
-      )}
     </div>
   )
 }
 
-// Draggable Available Artwork Component
-function DraggableArtwork({ artwork, isAvailable }: { artwork: any; isAvailable: boolean }) {
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-    isDragging,
-  } = useSortable({ id: artwork.id })
 
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-    opacity: isDragging ? 0.5 : 1,
-  }
-
-  return (
-    <div
-      ref={setNodeRef}
-      style={style}
-      className="relative w-24 h-24 rounded-md overflow-hidden bg-background border-2 border-dashed border-muted-foreground/30 shadow-sm cursor-grab active:cursor-grabbing"
-      {...attributes}
-      {...listeners}
-    >
-      {artwork.image ? (
-        <img
-          src={artwork.image}
-          alt={artwork.title || "Artwork"}
-          className="w-full h-full object-cover"
-        />
-      ) : (
-        <div className="w-full h-full flex items-center justify-center">
-          <ImageIcon className="h-4 w-4 text-muted-foreground/30" />
-        </div>
-      )}
-      <div className="absolute top-0.5 left-0.5 bg-primary/80 p-0.5 rounded text-white backdrop-blur-sm">
-        <GripVertical className="h-2 w-2" />
-      </div>
-    </div>
-  )
-}
-
-// Droppable Series Component
+// Droppable Series Component (Kanban Column)
 function DroppableSeries({
   series,
   artworks,
-  hasArtworks,
   getSeriesColor,
   getSeriesIcon,
   onSeriesClick,
+  isOpenBox = false,
 }: {
-  series: ArtworkSeries
+  series: ArtworkSeries | { id: "open"; name: "Open"; unlock_type: "open" }
   artworks: any[]
-  hasArtworks: boolean
   getSeriesColor: (type: string) => string
   getSeriesIcon: (type: string) => React.ReactNode
   onSeriesClick: () => void
+  isOpenBox?: boolean
 }) {
   const { setNodeRef, isOver } = useDroppable({
-    id: `series-${series.id}`,
+    id: isOpenBox ? "open" : `series-${series.id}`,
   })
 
   return (
@@ -178,12 +145,13 @@ function DroppableSeries({
         // Don't navigate if clicking on an artwork or drag handle
         if ((e.target as HTMLElement).closest('.artwork-item') || 
             (e.target as HTMLElement).closest('[data-sortable-handle]')) return
-        onSeriesClick()
+        if (!isOpenBox) onSeriesClick()
       }}
       className={cn(
-        "flex flex-col border-2 rounded-xl overflow-hidden transition-colors shadow-sm w-fit relative cursor-pointer hover:shadow-lg",
-        getSeriesColor(series.unlock_type),
-        isOver && "ring-2 ring-primary ring-offset-2 bg-primary/5"
+        "flex flex-col border-2 rounded-xl overflow-hidden transition-colors shadow-sm min-w-[280px] max-w-[280px] relative",
+        isOpenBox ? "border-dashed border-muted-foreground/40 bg-muted/20" : getSeriesColor(series.unlock_type),
+        isOver && "ring-2 ring-primary ring-offset-2 bg-primary/5",
+        !isOpenBox && "cursor-pointer hover:shadow-lg"
       )}
     >
       {/* Time-Based "Water Glass" Fill */}
@@ -224,39 +192,53 @@ function DroppableSeries({
         </div>
       </div>
 
-      {/* Series Name (for empty series) */}
-      {!hasArtworks && (
-        <div className="p-3 min-w-[160px]">
-          <h3 className="font-semibold text-xs mb-1 line-clamp-1">{series.name}</h3>
-          <p className="text-[10px] text-muted-foreground mb-2">Empty series</p>
-          <div className="flex items-center justify-center p-4 border-2 border-dashed border-muted-foreground/30 rounded-lg">
-            <div className="text-center">
-              <Plus className="h-5 w-5 text-muted-foreground/50 mx-auto mb-1" />
-              <p className="text-[10px] text-muted-foreground">Drop artworks here</p>
+      {/* Series Header */}
+      <div className="p-3 border-b bg-background/50 backdrop-blur-sm">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            {!isOpenBox && (
+              <div className="bg-background/80 backdrop-blur-sm p-1 rounded-full shadow-sm">
+                {getSeriesIcon(series.unlock_type)}
+              </div>
+            )}
+            <div>
+              <h3 className="font-semibold text-sm line-clamp-1">{series.name}</h3>
+              <p className="text-xs text-muted-foreground">{artworks.length} {artworks.length === 1 ? 'artwork' : 'artworks'}</p>
             </div>
           </div>
         </div>
-      )}
+      </div>
 
-      {/* Artworks Flex Grid - Adapts to content size */}
-      {hasArtworks && (
+      {/* Artworks List (Kanban Cards) */}
+      <div className="flex-1 p-2 overflow-y-auto min-h-[200px] max-h-[600px]">
         <SortableContext
-          items={artworks.map((a: any) => `artwork-${a.id}`)}
-          strategy={horizontalListSortingStrategy}
+          items={artworks.map((a: any) => 
+            a.submission_id && !a.series_id 
+              ? `artwork-submission-${a.submission_id}` 
+              : `artwork-${a.id}`
+          )}
+          strategy={undefined}
         >
-          <div className="p-2 overflow-x-auto no-scrollbar max-w-[80vw] relative z-10">
-            <div className="flex flex-nowrap gap-2 min-w-max">
-              {artworks.map((artwork: any) => (
+          <div className="space-y-2">
+            {artworks.length === 0 ? (
+              <div className="flex items-center justify-center p-8 border-2 border-dashed border-muted-foreground/30 rounded-lg">
+                <div className="text-center">
+                  <Plus className="h-6 w-6 text-muted-foreground/50 mx-auto mb-2" />
+                  <p className="text-xs text-muted-foreground">Drop artworks here</p>
+                </div>
+              </div>
+            ) : (
+              artworks.map((artwork: any) => (
                 <SortableArtworkItem
                   key={artwork.id}
                   artwork={artwork}
-                  seriesUnlockType={series.unlock_type}
+                  seriesUnlockType={isOpenBox ? "open" : series.unlock_type}
                 />
-              ))}
-            </div>
+              ))
+            )}
           </div>
         </SortableContext>
-      )}
+      </div>
     </div>
   )
 }
@@ -587,58 +569,211 @@ export default function ProductsPage() {
     const activeId = active.id as string
     const overId = over.id as string
 
-    // If dragging an available artwork to a series
-    if (activeId.startsWith("submission-") && overId.startsWith("series-")) {
-      const submissionId = activeId.replace("submission-", "")
-      const seriesId = overId.replace("series-", "")
+    // If dragging an artwork to a different series (kanban move)
+    if (activeId.startsWith("artwork-")) {
+      const artworkId = activeId.replace("artwork-", "")
+      const artwork = allArtworks.find((a: any) => a.id === artworkId)
       
-      try {
-        const response = await fetch(`/api/vendor/series/${seriesId}/members`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          credentials: "include",
-          body: JSON.stringify({
-            submission_id: submissionId,
-            display_order: 0,
-          }),
-        })
-
-        if (!response.ok) {
-          const errorData = await response.json()
-          throw new Error(errorData.error || "Failed to add artwork to series")
+      if (!artwork) {
+        // Check if it's an available artwork (from Open box)
+        if (activeId.startsWith("artwork-submission-")) {
+          const submissionId = activeId.replace("artwork-submission-", "")
+          const availableArtwork = availableArtworks.find((a: any) => a.submission_id === submissionId)
+          
+          if (availableArtwork) {
+            if (overId === "open") {
+              // Already in open, do nothing
+              return
+            } else if (overId.startsWith("series-")) {
+              // Adding new artwork to series
+              const seriesId = overId.replace("series-", "")
+              await addArtworkToSeries(submissionId, seriesId)
+            } else if (overId.startsWith("artwork-")) {
+              // Dropped on another artwork - find its series
+              const targetArtworkId = overId.replace("artwork-", "")
+              const targetArtwork = allArtworks.find((a: any) => a.id === targetArtworkId)
+              if (targetArtwork && targetArtwork.series_id) {
+                await addArtworkToSeries(submissionId, targetArtwork.series_id)
+              }
+            }
+          }
         }
+        return
+      }
 
-        toast({
-          title: "Success",
-          description: "Artwork added to series",
-        })
+      const currentSeriesId = artwork.series_id
+      let targetSeriesId: string | null = null
 
-        // Refresh artworks
-        fetchAllArtworks()
-        fetchAvailableArtworks()
-      } catch (error: any) {
-        console.error("Error adding artwork to series:", error)
-        toast({
-          title: "Error",
-          description: error.message || "Failed to add artwork to series",
-          variant: "destructive",
-        })
+      if (overId === "open") {
+        // Moving to open (unassigning from series)
+        targetSeriesId = null
+      } else if (overId.startsWith("series-")) {
+        targetSeriesId = overId.replace("series-", "")
+      } else if (overId.startsWith("artwork-")) {
+        // Dropped on another artwork - find its series
+        const targetArtworkId = overId.replace("artwork-", "")
+        const targetArtwork = allArtworks.find((a: any) => a.id === targetArtworkId)
+        if (targetArtwork) {
+          targetSeriesId = targetArtwork.series_id
+        }
+      }
+
+      // If moving to same series, just reorder
+      if (targetSeriesId === currentSeriesId && overId.startsWith("artwork-")) {
+        await reorderArtworksInSeries(currentSeriesId, artworkId, overId.replace("artwork-", ""))
+        return
+      }
+
+      // If moving to different series or open
+      if (targetSeriesId !== currentSeriesId) {
+        if (targetSeriesId === null) {
+          // Remove from series (move to open)
+          await removeArtworkFromSeries(artworkId)
+        } else {
+          // Move to different series
+          await moveArtworkToSeries(artworkId, targetSeriesId)
+        }
       }
       return
     }
 
-    // If reordering within a series
-    if (activeId.startsWith("artwork-") && overId.startsWith("artwork-")) {
-      const activeArtworkId = activeId.replace("artwork-", "")
-      const overArtworkId = overId.replace("artwork-", "")
+    // If dragging a submission to a series
+    if (activeId.startsWith("submission-") && (overId.startsWith("series-") || overId === "open")) {
+      const submissionId = activeId.replace("submission-", "")
+      const availableArtwork = availableArtworks.find((a: any) => a.submission_id === submissionId)
       
-      // Find which series these artworks belong to
-      const activeArtwork = allArtworks.find((a: any) => a.id === activeArtworkId)
-      if (!activeArtwork) return
+      if (!availableArtwork) return
 
-      const seriesId = activeArtwork.series_id
+      if (overId === "open") {
+        // Already in open, do nothing
+        return
+      }
+
+      const seriesId = overId.replace("series-", "")
+      await addArtworkToSeries(submissionId, seriesId)
+    }
+  }
+
+  const addArtworkToSeries = async (submissionId: string, seriesId: string) => {
+    try {
+      const response = await fetch(`/api/vendor/series/${seriesId}/members`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "include",
+        body: JSON.stringify({
+          submission_id: submissionId,
+          display_order: 0,
+        }),
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || "Failed to add artwork to series")
+      }
+
+      toast({
+        title: "Success",
+        description: "Artwork added to series",
+      })
+
+      fetchAllArtworks()
+      fetchAvailableArtworks()
+    } catch (error: any) {
+      console.error("Error adding artwork to series:", error)
+      toast({
+        title: "Error",
+        description: error.message || "Failed to add artwork to series",
+        variant: "destructive",
+      })
+    }
+  }
+
+  const moveArtworkToSeries = async (artworkId: string, targetSeriesId: string) => {
+    try {
+      // First remove from current series, then add to new series
+      const artwork = allArtworks.find((a: any) => a.id === artworkId)
+      if (!artwork || !artwork.submission_id) return
+
+      // Remove from current series
+      const removeResponse = await fetch(`/api/vendor/series/${artwork.series_id}/members/${artworkId}`, {
+        method: "DELETE",
+        credentials: "include",
+      })
+
+      if (!removeResponse.ok) {
+        throw new Error("Failed to remove artwork from series")
+      }
+
+      // Add to new series
+      const addResponse = await fetch(`/api/vendor/series/${targetSeriesId}/members`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "include",
+        body: JSON.stringify({
+          submission_id: artwork.submission_id,
+          display_order: 0,
+        }),
+      })
+
+      if (!addResponse.ok) {
+        const errorData = await addResponse.json()
+        throw new Error(errorData.error || "Failed to add artwork to series")
+      }
+
+      toast({
+        title: "Success",
+        description: "Artwork moved to series",
+      })
+
+      fetchAllArtworks()
+      fetchAvailableArtworks()
+    } catch (error: any) {
+      console.error("Error moving artwork:", error)
+      toast({
+        title: "Error",
+        description: error.message || "Failed to move artwork",
+        variant: "destructive",
+      })
+    }
+  }
+
+  const removeArtworkFromSeries = async (artworkId: string) => {
+    try {
+      const artwork = allArtworks.find((a: any) => a.id === artworkId)
+      if (!artwork || !artwork.series_id) return
+
+      const response = await fetch(`/api/vendor/series/${artwork.series_id}/members/${artworkId}`, {
+        method: "DELETE",
+        credentials: "include",
+      })
+
+      if (!response.ok) {
+        throw new Error("Failed to remove artwork from series")
+      }
+
+      toast({
+        title: "Success",
+        description: "Artwork moved to Open",
+      })
+
+      fetchAllArtworks()
+      fetchAvailableArtworks()
+    } catch (error: any) {
+      console.error("Error removing artwork from series:", error)
+      toast({
+        title: "Error",
+        description: "Failed to remove artwork from series",
+        variant: "destructive",
+      })
+    }
+  }
+
+  const reorderArtworksInSeries = async (seriesId: string, activeArtworkId: string, overArtworkId: string) => {
+    try {
       const seriesArtworks = allArtworks
         .filter((a: any) => a.series_id === seriesId)
         .sort((a: any, b: any) => (a.display_order || 0) - (b.display_order || 0))
@@ -650,35 +785,27 @@ export default function ProductsPage() {
 
       const newOrder = arrayMove(seriesArtworks, oldIndex, newIndex).map((a: any) => a.id)
 
-      try {
-        const response = await fetch(`/api/vendor/series/${seriesId}/reorder`, {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          credentials: "include",
-          body: JSON.stringify({ memberIds: newOrder }),
-        })
+      const response = await fetch(`/api/vendor/series/${seriesId}/reorder`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "include",
+        body: JSON.stringify({ memberIds: newOrder }),
+      })
 
-        if (!response.ok) {
-          throw new Error("Failed to reorder artworks")
-        }
-
-        toast({
-          title: "Success",
-          description: "Artworks reordered",
-        })
-
-        // Refresh artworks
-        fetchAllArtworks()
-      } catch (error: any) {
-        console.error("Error reordering artworks:", error)
-        toast({
-          title: "Error",
-          description: "Failed to reorder artworks",
-          variant: "destructive",
-        })
+      if (!response.ok) {
+        throw new Error("Failed to reorder artworks")
       }
+
+      fetchAllArtworks()
+    } catch (error: any) {
+      console.error("Error reordering artworks:", error)
+      toast({
+        title: "Error",
+        description: "Failed to reorder artworks",
+        variant: "destructive",
+      })
     }
   }
 
@@ -842,42 +969,43 @@ export default function ProductsPage() {
             onDragEnd={handleDragEnd}
             onDragCancel={handleDragCancel}
           >
-            <div className="flex flex-wrap gap-4 items-start content-start">
+            <div className="flex gap-4 overflow-x-auto pb-4">
+              {/* Open Box (Unassigned Artworks) */}
+              <DroppableSeries
+                series={{ id: "open", name: "Open", unlock_type: "open" }}
+                artworks={availableArtworks.map((a: any) => ({
+                  id: `submission-${a.submission_id}`, // Use submission ID for available artworks
+                  title: a.title,
+                  image: a.image,
+                  submission_id: a.submission_id,
+                  series_id: null,
+                  is_locked: false,
+                }))}
+                getSeriesColor={() => "border-dashed border-muted-foreground/40 bg-muted/20"}
+                getSeriesIcon={() => <Package className="h-4 w-4" />}
+                onSeriesClick={() => {}}
+                isOpenBox={true}
+              />
+              
+              {/* Series Columns */}
               {series.map((s) => {
                 // Find artworks for this series, sorted by display_order
                 const seriesArtworks = allArtworks
                   .filter((artwork: any) => artwork.series_id === s.id)
                   .sort((a: any, b: any) => (a.display_order || 0) - (b.display_order || 0))
-                const hasArtworks = seriesArtworks.length > 0
                 
                 return (
                   <DroppableSeries
                     key={s.id}
                     series={s}
                     artworks={seriesArtworks}
-                    hasArtworks={hasArtworks}
                     getSeriesColor={getSeriesColor}
                     getSeriesIcon={getSeriesIcon}
                     onSeriesClick={() => router.push(`/vendor/dashboard/series/${s.id}`)}
+                    isOpenBox={false}
                   />
                 )
               })}
-              
-              {/* Available Artworks Pool */}
-              {availableArtworks.length > 0 && (
-                <div className="w-full mt-6">
-                  <h3 className="text-sm font-semibold mb-3 text-muted-foreground">Available Artworks</h3>
-                  <div className="flex flex-wrap gap-2">
-                    {availableArtworks.map((artwork: any) => (
-                      <DraggableArtwork
-                        key={artwork.id}
-                        artwork={artwork}
-                        isAvailable={true}
-                      />
-                    ))}
-                  </div>
-                </div>
-              )}
             </div>
             
             <DragOverlay>
@@ -885,7 +1013,12 @@ export default function ProductsPage() {
                 // Find the artwork being dragged
                 let artwork: any = null
                 
-                if (activeId.startsWith("artwork-")) {
+                if (activeId.startsWith("artwork-submission-")) {
+                  // Available artwork from Open box
+                  const submissionId = activeId.replace("artwork-submission-", "")
+                  artwork = availableArtworks.find((a: any) => a.submission_id === submissionId)
+                } else if (activeId.startsWith("artwork-")) {
+                  // Artwork in a series
                   const artworkId = activeId.replace("artwork-", "")
                   artwork = allArtworks.find((a: any) => a.id === artworkId)
                 } else if (activeId.startsWith("submission-")) {
@@ -896,18 +1029,23 @@ export default function ProductsPage() {
                 if (!artwork) return null
                 
                 return (
-                  <div className="w-32 h-32 rounded-md overflow-hidden bg-background border-2 border-primary shadow-lg">
-                    {artwork.image ? (
-                      <img
-                        src={artwork.image}
-                        alt={artwork.title || "Artwork"}
-                        className="w-full h-full object-cover"
-                      />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center">
-                        <ImageIcon className="h-6 w-6 text-muted-foreground/30" />
-                      </div>
-                    )}
+                  <div className="w-full max-w-[260px] rounded-lg overflow-hidden bg-background border-2 border-primary shadow-lg">
+                    <div className="aspect-square w-full bg-muted relative">
+                      {artwork.image ? (
+                        <img
+                          src={artwork.image}
+                          alt={artwork.title || "Artwork"}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center">
+                          <ImageIcon className="h-8 w-8 text-muted-foreground/30" />
+                        </div>
+                      )}
+                    </div>
+                    <div className="p-2">
+                      <h4 className="text-sm font-medium line-clamp-2">{artwork.title || "Untitled"}</h4>
+                    </div>
                   </div>
                 )
               })()}
