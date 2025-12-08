@@ -717,7 +717,7 @@ export default function SeriesDetailPage() {
                   description: "Series deleted successfully",
                 })
 
-                router.push("/vendor/dashboard/series")
+                router.push("/vendor/dashboard/products")
               } catch (error: any) {
                 console.error("Error deleting series:", error)
                 toast({
