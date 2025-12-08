@@ -644,6 +644,26 @@ export default function ProductsPage() {
   }
 
   const addArtworkToSeries = async (submissionId: string, seriesId: string) => {
+    // Find the artwork in availableArtworks
+    const artworkToMove = availableArtworks.find((a: any) => a.submission_id === submissionId)
+    if (!artworkToMove) return
+
+    // Optimistically update UI immediately
+    const newArtwork = {
+      id: `temp-${Date.now()}`, // Temporary ID until we get the real one
+      submission_id: submissionId,
+      shopify_product_id: artworkToMove.shopify_product_id,
+      series_id: seriesId,
+      title: artworkToMove.title,
+      image: artworkToMove.image,
+      is_locked: false,
+      display_order: 0,
+    }
+
+    // Update state immediately
+    setAllArtworks(prev => [...prev, newArtwork])
+    setAvailableArtworks(prev => prev.filter((a: any) => a.submission_id !== submissionId))
+
     try {
       const response = await fetch(`/api/vendor/series/${seriesId}/members`, {
         method: "POST",
@@ -662,15 +682,25 @@ export default function ProductsPage() {
         throw new Error(errorData.error || "Failed to add artwork to series")
       }
 
-      toast({
-        title: "Success",
-        description: "Artwork added to series",
-      })
+      const data = await response.json()
+      const realArtwork = data.member
 
+      // Update with real ID from server
+      setAllArtworks(prev => 
+        prev.map(a => a.id === newArtwork.id ? {
+          ...a,
+          id: realArtwork.id,
+        } : a)
+      )
+
+      // Silently refresh in background to sync with server
       fetchAllArtworks()
       fetchAvailableArtworks()
     } catch (error: any) {
       console.error("Error adding artwork to series:", error)
+      // Revert optimistic update on error
+      setAllArtworks(prev => prev.filter(a => a.id !== newArtwork.id))
+      setAvailableArtworks(prev => [...prev, artworkToMove])
       toast({
         title: "Error",
         description: error.message || "Failed to add artwork to series",
@@ -680,13 +710,20 @@ export default function ProductsPage() {
   }
 
   const moveArtworkToSeries = async (artworkId: string, targetSeriesId: string) => {
+    // Find the artwork
+    const artwork = allArtworks.find((a: any) => a.id === artworkId)
+    if (!artwork || !artwork.submission_id) return
+
+    const originalSeriesId = artwork.series_id
+
+    // Optimistically update UI immediately
+    setAllArtworks(prev => 
+      prev.map(a => a.id === artworkId ? { ...a, series_id: targetSeriesId } : a)
+    )
+
     try {
       // First remove from current series, then add to new series
-      const artwork = allArtworks.find((a: any) => a.id === artworkId)
-      if (!artwork || !artwork.submission_id) return
-
-      // Remove from current series
-      const removeResponse = await fetch(`/api/vendor/series/${artwork.series_id}/members/${artworkId}`, {
+      const removeResponse = await fetch(`/api/vendor/series/${originalSeriesId}/members/${artworkId}`, {
         method: "DELETE",
         credentials: "include",
       })
@@ -713,15 +750,27 @@ export default function ProductsPage() {
         throw new Error(errorData.error || "Failed to add artwork to series")
       }
 
-      toast({
-        title: "Success",
-        description: "Artwork moved to series",
-      })
+      const data = await addResponse.json()
+      const newMember = data.member
 
+      // Update with real ID from server
+      setAllArtworks(prev => 
+        prev.map(a => a.id === artworkId ? {
+          ...a,
+          id: newMember.id,
+          series_id: targetSeriesId,
+        } : a)
+      )
+
+      // Silently refresh in background to sync with server
       fetchAllArtworks()
       fetchAvailableArtworks()
     } catch (error: any) {
       console.error("Error moving artwork:", error)
+      // Revert optimistic update on error
+      setAllArtworks(prev => 
+        prev.map(a => a.id === artworkId ? { ...a, series_id: originalSeriesId } : a)
+      )
       toast({
         title: "Error",
         description: error.message || "Failed to move artwork",
@@ -731,11 +780,27 @@ export default function ProductsPage() {
   }
 
   const removeArtworkFromSeries = async (artworkId: string) => {
-    try {
-      const artwork = allArtworks.find((a: any) => a.id === artworkId)
-      if (!artwork || !artwork.series_id) return
+    // Find the artwork
+    const artwork = allArtworks.find((a: any) => a.id === artworkId)
+    if (!artwork || !artwork.series_id) return
 
-      const response = await fetch(`/api/vendor/series/${artwork.series_id}/members/${artworkId}`, {
+    const originalSeriesId = artwork.series_id
+
+    // Optimistically update UI immediately - move to available artworks
+    const availableArtwork = {
+      id: `submission-${artwork.submission_id}`,
+      submission_id: artwork.submission_id,
+      shopify_product_id: artwork.shopify_product_id,
+      title: artwork.title,
+      image: artwork.image,
+      type: "available",
+    }
+
+    setAllArtworks(prev => prev.filter(a => a.id !== artworkId))
+    setAvailableArtworks(prev => [...prev, availableArtwork])
+
+    try {
+      const response = await fetch(`/api/vendor/series/${originalSeriesId}/members/${artworkId}`, {
         method: "DELETE",
         credentials: "include",
       })
@@ -744,15 +809,14 @@ export default function ProductsPage() {
         throw new Error("Failed to remove artwork from series")
       }
 
-      toast({
-        title: "Success",
-        description: "Artwork moved to Open",
-      })
-
+      // Silently refresh in background to sync with server
       fetchAllArtworks()
       fetchAvailableArtworks()
     } catch (error: any) {
       console.error("Error removing artwork from series:", error)
+      // Revert optimistic update on error
+      setAllArtworks(prev => [...prev, artwork])
+      setAvailableArtworks(prev => prev.filter(a => a.submission_id !== artwork.submission_id))
       toast({
         title: "Error",
         description: "Failed to remove artwork from series",
@@ -762,18 +826,31 @@ export default function ProductsPage() {
   }
 
   const reorderArtworksInSeries = async (seriesId: string, activeArtworkId: string, overArtworkId: string) => {
+    const seriesArtworks = allArtworks
+      .filter((a: any) => a.series_id === seriesId)
+      .sort((a: any, b: any) => (a.display_order || 0) - (b.display_order || 0))
+
+    const oldIndex = seriesArtworks.findIndex((a: any) => a.id === activeArtworkId)
+    const newIndex = seriesArtworks.findIndex((a: any) => a.id === overArtworkId)
+
+    if (oldIndex === -1 || newIndex === -1) return
+
+    const reorderedArtworks = arrayMove(seriesArtworks, oldIndex, newIndex)
+    const newOrder = reorderedArtworks.map((a: any) => a.id)
+
+    // Optimistically update display_order immediately
+    setAllArtworks(prev => {
+      const updated = [...prev]
+      reorderedArtworks.forEach((artwork, index) => {
+        const idx = updated.findIndex(a => a.id === artwork.id)
+        if (idx >= 0) {
+          updated[idx] = { ...updated[idx], display_order: index }
+        }
+      })
+      return updated
+    })
+
     try {
-      const seriesArtworks = allArtworks
-        .filter((a: any) => a.series_id === seriesId)
-        .sort((a: any, b: any) => (a.display_order || 0) - (b.display_order || 0))
-
-      const oldIndex = seriesArtworks.findIndex((a: any) => a.id === activeArtworkId)
-      const newIndex = seriesArtworks.findIndex((a: any) => a.id === overArtworkId)
-
-      if (oldIndex === -1 || newIndex === -1) return
-
-      const newOrder = arrayMove(seriesArtworks, oldIndex, newIndex).map((a: any) => a.id)
-
       const response = await fetch(`/api/vendor/series/${seriesId}/reorder`, {
         method: "PUT",
         headers: {
@@ -787,9 +864,21 @@ export default function ProductsPage() {
         throw new Error("Failed to reorder artworks")
       }
 
+      // Silently refresh in background to sync with server
       fetchAllArtworks()
     } catch (error: any) {
       console.error("Error reordering artworks:", error)
+      // Revert on error
+      setAllArtworks(prev => {
+        const updated = [...prev]
+        seriesArtworks.forEach((artwork, index) => {
+          const idx = updated.findIndex(a => a.id === artwork.id)
+          if (idx >= 0) {
+            updated[idx] = { ...updated[idx], display_order: index }
+          }
+        })
+        return updated
+      })
       toast({
         title: "Error",
         description: "Failed to reorder artworks",
