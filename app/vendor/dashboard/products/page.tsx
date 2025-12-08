@@ -278,13 +278,18 @@ export default function ProductsPage() {
     fetchAllArtworks()
   }, [])
 
+  // Only fetch available artworks on initial load, not when allArtworks changes
+  // (to avoid overwriting optimistic updates)
   useEffect(() => {
-    if (allArtworks.length > 0 || !loadingArtworks) {
-      fetchAvailableArtworks()
+    if (!loadingArtworks && allArtworks.length >= 0) {
+      // Only fetch if we haven't loaded available artworks yet
+      if (availableArtworks.length === 0 && !loadingAvailable) {
+        fetchAvailableArtworks()
+      }
     }
-  }, [allArtworks, loadingArtworks])
+  }, [loadingArtworks]) // Only depend on loadingArtworks, not allArtworks
 
-  const fetchAvailableArtworks = async () => {
+  const fetchAvailableArtworks = async (currentAllArtworks?: any[]) => {
     try {
       setLoadingAvailable(true)
       // Get all submissions (pending, approved, published) - any artwork not in a series
@@ -296,9 +301,12 @@ export default function ProductsPage() {
         // Include all submissions regardless of status (pending, approved, published)
         const submissions = data.submissions || []
         
+        // Use provided artworks or current state
+        const artworksToCheck = currentAllArtworks || allArtworks
+        
         // Get all submission IDs that are already in series
         const submissionIdsInSeries = new Set(
-          allArtworks
+          artworksToCheck
             .filter((a: any) => a.submission_id)
             .map((a: any) => a.submission_id.toString())
         )
@@ -650,9 +658,12 @@ export default function ProductsPage() {
       display_order: 0,
     }
 
-    // Update state immediately
+    // Update state immediately (optimistic update)
     setAllArtworks(prev => [...prev, newArtwork])
     setAvailableArtworks(prev => prev.filter((a: any) => a.submission_id !== submissionId))
+    
+    // Update available artworks based on new state
+    fetchAvailableArtworks([...allArtworks, newArtwork])
 
     try {
       const response = await fetch(`/api/vendor/series/${seriesId}/members`, {
@@ -703,9 +714,11 @@ export default function ProductsPage() {
     const originalSeriesId = artwork.series_id
 
     // Optimistically update UI immediately
-    setAllArtworks(prev => 
-      prev.map(a => a.id === artworkId ? { ...a, series_id: targetSeriesId } : a)
-    )
+    const updatedArtworks = allArtworks.map(a => a.id === artworkId ? { ...a, series_id: targetSeriesId } : a)
+    setAllArtworks(updatedArtworks)
+    
+    // Update available artworks based on new state
+    fetchAvailableArtworks(updatedArtworks)
 
     try {
       // First remove from current series, then add to new series
@@ -778,8 +791,12 @@ export default function ProductsPage() {
       type: "available",
     }
 
-    setAllArtworks(prev => prev.filter(a => a.id !== artworkId))
+    const updatedArtworks = allArtworks.filter(a => a.id !== artworkId)
+    setAllArtworks(updatedArtworks)
     setAvailableArtworks(prev => [...prev, availableArtwork])
+    
+    // Update available artworks based on new state
+    fetchAvailableArtworks(updatedArtworks)
 
     try {
       const response = await fetch(`/api/vendor/series/${originalSeriesId}/members/${artworkId}`, {
