@@ -10,7 +10,7 @@ import { Badge } from "@/components/ui/badge"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { ProductTable } from "../components/product-table"
 import { useVendorData } from "@/hooks/use-vendor-data"
-import { Plus, Package, Clock, XCircle, Trash2, Loader2, Sparkles, AlertCircle, Lock, ArrowRight, Crown } from "lucide-react"
+import { Plus, Package, Clock, XCircle, Trash2, Loader2, Sparkles, AlertCircle, Lock, ArrowRight, Crown, ImageIcon } from "lucide-react"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -22,11 +22,10 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 import { useToast } from "@/components/ui/use-toast"
+import { cn } from "@/lib/utils"
 import type { ArtworkSeries } from "@/types/artwork-series"
-import { SearchAndFilter } from "../series/components/SearchAndFilter"
 import { DeleteSeriesDialog } from "../series/components/DeleteSeriesDialog"
 import { DuplicateSeriesDialog } from "../series/components/DuplicateSeriesDialog"
-import { SeriesCard } from "../series/components/SeriesCard"
 
 export default function ProductsPage() {
   const router = useRouter()
@@ -49,10 +48,35 @@ export default function ProductsPage() {
   const [selectedSeries, setSelectedSeries] = useState<ArtworkSeries | null>(null)
   const [isDeletingSeries, setIsDeletingSeries] = useState(false)
   const [isDuplicatingSeries, setIsDuplicatingSeries] = useState(false)
+  const [allArtworks, setAllArtworks] = useState<any[]>([])
+  const [loadingArtworks, setLoadingArtworks] = useState(false)
 
   useEffect(() => {
     fetchSeries()
+    fetchAllArtworks()
   }, [])
+
+  const fetchAllArtworks = async () => {
+    try {
+      setLoadingArtworks(true)
+      const response = await fetch("/api/vendor/series/artworks", {
+        credentials: "include",
+      })
+      if (response.ok) {
+        const data = await response.json()
+        setAllArtworks(data.artworks || [])
+      }
+    } catch (err) {
+      console.error("Error fetching all artworks:", err)
+      toast({
+        title: "Error",
+        description: "Failed to load artwork binder",
+        variant: "destructive",
+      })
+    } finally {
+      setLoadingArtworks(false)
+    }
+  }
 
   useEffect(() => {
     const fetchSubmissions = async () => {
@@ -199,6 +223,38 @@ export default function ProductsPage() {
     }
   }
 
+  const getSeriesColor = (unlockType: string) => {
+    switch (unlockType) {
+      case "any_purchase":
+        return "border-blue-500/50 bg-blue-50/10 hover:border-blue-500"
+      case "sequential":
+        return "border-purple-500/50 bg-purple-50/10 hover:border-purple-500"
+      case "threshold":
+      case "vip":
+        return "border-orange-500/50 bg-orange-50/10 hover:border-orange-500"
+      case "time_based":
+        return "border-green-500/50 bg-green-50/10 hover:border-green-500"
+      default:
+        return "border-border bg-card hover:border-primary/50"
+    }
+  }
+
+  const getSeriesIcon = (unlockType: string) => {
+    switch (unlockType) {
+      case "any_purchase":
+        return <Lock className="h-4 w-4" />
+      case "sequential":
+        return <ArrowRight className="h-4 w-4" />
+      case "threshold":
+      case "vip":
+        return <Crown className="h-4 w-4" />
+      case "time_based":
+        return <Clock className="h-4 w-4" />
+      default:
+        return <Lock className="h-4 w-4" />
+    }
+  }
+
   const handleDeleteClick = (submission: any, e: React.MouseEvent) => {
     e.stopPropagation()
     if (submission.status === "pending" || submission.status === "rejected") {
@@ -323,80 +379,127 @@ export default function ProductsPage() {
           </div>
         </div>
 
-        {/* Search and Filter */}
-        {!loadingSeries && series.length > 0 && (
-          <SearchAndFilter
-            searchQuery={searchQuery}
-            onSearchChange={setSearchQuery}
-            unlockTypeFilter={unlockTypeFilter}
-            onUnlockTypeFilterChange={setUnlockTypeFilter}
-          />
-        )}
-
-        {/* Series Content */}
-        {loadingSeries ? (
-          <div className="grid gap-4 grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
-            {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
-              <div key={i} className="aspect-square">
+        {/* Booklet/Binder View */}
+        {loadingArtworks ? (
+          <div className="grid gap-4 grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+            {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((i) => (
+              <div key={i} className="aspect-[3/4]">
                 <Skeleton className="h-full w-full rounded-lg" />
               </div>
             ))}
           </div>
-        ) : seriesError ? (
-          <Alert variant="destructive">
-            <AlertCircle className="h-4 w-4" />
-            <AlertDescription>{seriesError}</AlertDescription>
-          </Alert>
-        ) : series.length === 0 ? (
+        ) : allArtworks.length === 0 ? (
           <Card>
             <CardContent className="flex flex-col items-center justify-center py-12">
-              <Lock className="h-12 w-12 text-muted-foreground mb-4" />
-              <h3 className="text-lg font-semibold mb-2">No Series Yet</h3>
+              <ImageIcon className="h-12 w-12 text-muted-foreground mb-4" />
+              <h3 className="text-lg font-semibold mb-2">No Artworks Found</h3>
               <p className="text-sm text-muted-foreground mb-4 text-center">
-                Create your first series to organize your artworks with unlock mechanics.
+                Add artworks to your series to see them here.
               </p>
-              <Button onClick={() => router.push("/vendor/dashboard/series/create")}>
-                <Plus className="h-4 w-4 mr-2" />
-                Create Series
-              </Button>
-            </CardContent>
-          </Card>
-        ) : filteredSeries.length === 0 ? (
-          <Card>
-            <CardContent className="flex flex-col items-center justify-center py-12">
-              <AlertCircle className="h-12 w-12 text-muted-foreground mb-4" />
-              <h3 className="text-lg font-semibold mb-2">No Series Found</h3>
-              <p className="text-sm text-muted-foreground mb-4 text-center">
-                No series match your search criteria. Try adjusting your filters.
-              </p>
-              <Button variant="outline" onClick={() => {
-                setSearchQuery("")
-                setUnlockTypeFilter("all")
-              }}>
-                Clear Filters
-              </Button>
             </CardContent>
           </Card>
         ) : (
-          <div className="grid gap-4 grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
-            {filteredSeries.map((s, index) => (
-              <SeriesCard
-                key={s.id}
-                series={s}
-                index={index}
-                isHovered={false}
-                onHover={() => {}}
-                onView={() => router.push(`/vendor/dashboard/series/${s.id}`)}
-                onDuplicate={() => {
-                  setSelectedSeries(s)
-                  setDuplicateSeriesDialogOpen(true)
-                }}
-                onDelete={() => {
-                  setSelectedSeries(s)
-                  setDeleteSeriesDialogOpen(true)
-                }}
-                getUnlockTypeLabel={getUnlockTypeLabel}
-              />
+          <div className="flex flex-wrap gap-4 items-start content-start">
+            {Object.entries(
+              allArtworks.reduce((acc, artwork) => {
+                const seriesId = artwork.series_id || "unknown"
+                if (!acc[seriesId]) {
+                  acc[seriesId] = {
+                    name: artwork.series_name || "Unknown Series",
+                    unlock_type: artwork.series_unlock_type || "unknown",
+                    unlock_config: artwork.series_unlock_config || {},
+                    artworks: []
+                  }
+                }
+                acc[seriesId].artworks.push(artwork)
+                return acc
+              }, {} as Record<string, { name: string; unlock_type: string; unlock_config: any; artworks: any[] }>)
+            ).map(([seriesId, group]: [string, any]) => (
+              <div 
+                key={seriesId} 
+                className={cn(
+                  "flex flex-col border-2 rounded-xl overflow-hidden transition-colors shadow-sm w-fit relative",
+                  getSeriesColor(group.unlock_type)
+                )}
+              >
+                {/* Time-Based "Water Glass" Fill */}
+                {group.unlock_type === "time_based" && (() => {
+                  const config = group.unlock_config
+                  if (config.unlock_schedule?.start_date && config.unlock_schedule?.end_date) {
+                    const start = new Date(config.unlock_schedule.start_date)
+                    const end = new Date(config.unlock_schedule.end_date)
+                    const now = new Date()
+                    const isActive = now >= start && now <= end
+                    
+                    let progress = 0
+                    if (isActive) {
+                      const total = end.getTime() - start.getTime()
+                      const current = now.getTime() - start.getTime()
+                      progress = Math.min(100, Math.max(0, (current / total) * 100))
+                    } else if (now > end) {
+                      progress = 100
+                    }
+
+                    return (
+                      <div 
+                        className="absolute bottom-0 left-0 right-0 bg-green-500/20 transition-all duration-1000 ease-in-out pointer-events-none"
+                        style={{ height: `${progress}%` }}
+                      />
+                    )
+                  }
+                  return null
+                })()}
+
+                {/* Type Icon Badge */}
+                <div className={cn(
+                  "absolute top-0 right-0 p-1.5 rounded-bl-lg z-20",
+                  getSeriesColor(group.unlock_type).replace('border-', 'bg-').split(' ')[0]
+                )}>
+                  <div className="bg-background/80 backdrop-blur-sm p-1 rounded-full shadow-sm">
+                    {getSeriesIcon(group.unlock_type)}
+                  </div>
+                </div>
+
+                {/* Artworks Flex Grid - Adapts to content size */}
+                <div className="p-2 overflow-x-auto no-scrollbar max-w-[80vw] relative z-10">
+                  <div className="flex flex-nowrap gap-2 min-w-max">
+                    {group.artworks.map((artwork: any) => (
+                      <div key={artwork.id} className="relative w-32 h-32 rounded-md overflow-hidden bg-background border shadow-sm group/item flex-shrink-0">
+                        {artwork.image ? (
+                          <img
+                            src={artwork.image}
+                            alt={artwork.title || "Artwork"}
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center">
+                            <ImageIcon className="h-6 w-6 text-muted-foreground/30" />
+                          </div>
+                        )}
+                        
+                        {/* Hover Title */}
+                        <div className="absolute inset-0 bg-black/60 opacity-0 group-hover/item:opacity-100 transition-opacity flex flex-col items-center justify-center p-1">
+                          <span className="text-[10px] text-white text-center font-medium leading-tight line-clamp-2 mb-1">
+                            {artwork.title}
+                          </span>
+                          {group.unlock_type === "time_based" && (
+                            <Badge variant="outline" className="text-[8px] h-4 px-1 border-white/50 text-white bg-black/20 backdrop-blur-sm">
+                              Timed Edition
+                            </Badge>
+                          )}
+                        </div>
+
+                        {/* Status Icons */}
+                        {artwork.is_locked && (
+                          <div className="absolute top-1 right-1 bg-black/60 p-1 rounded-full text-white backdrop-blur-sm">
+                            <Lock className="h-3 w-3" />
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
             ))}
           </div>
         )}
