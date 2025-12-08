@@ -299,13 +299,22 @@ export default function ProductsPage() {
         // Include all submissions regardless of status (pending, approved, published)
         const submissions = data.submissions || []
         
-        // Get all submission IDs that are already in series (use current state)
-        const currentAllArtworks = allArtworks
-        const submissionIdsInSeries = new Set(
-          currentAllArtworks
-            .filter((a: any) => a.submission_id)
-            .map((a: any) => a.submission_id.toString())
-        )
+        // Fetch fresh artworks from server to check which are in series
+        const artworksResponse = await fetch("/api/vendor/series/artworks", {
+          credentials: "include",
+        })
+        let submissionIdsInSeries = new Set<string>()
+        
+        if (artworksResponse.ok) {
+          const artworksData = await artworksResponse.json()
+          const artworks = artworksData.artworks || []
+          // Get all submission IDs that are already in series
+          submissionIdsInSeries = new Set(
+            artworks
+              .filter((a: any) => a.submission_id)
+              .map((a: any) => a.submission_id.toString())
+          )
+        }
         
         // Automatically place any artwork not in a series into the Open box
         const available = submissions
@@ -346,7 +355,29 @@ export default function ProductsPage() {
       })
       if (response.ok) {
         const data = await response.json()
-        setAllArtworks(data.artworks || [])
+        const artworks = data.artworks || []
+        
+        // Deduplicate by submission_id + series_id combination
+        const seen = new Map<string, any>()
+        const uniqueArtworks = artworks.filter((artwork: any) => {
+          const key = artwork.submission_id 
+            ? `${artwork.submission_id}-${artwork.series_id}` 
+            : `${artwork.shopify_product_id}-${artwork.series_id}`
+          
+          if (seen.has(key)) {
+            // Keep the one with the most recent ID (assuming newer entries have higher IDs)
+            const existing = seen.get(key)
+            if (artwork.id > existing.id) {
+              seen.set(key, artwork)
+              return true
+            }
+            return false
+          }
+          seen.set(key, artwork)
+          return true
+        })
+        
+        setAllArtworks(uniqueArtworks)
       }
     } catch (err) {
       console.error("Error fetching all artworks:", err)
@@ -688,29 +719,7 @@ export default function ProductsPage() {
         throw new Error(errorData.error || "Failed to add artwork to series")
       }
 
-      const data = await response.json()
-      const realArtwork = data.member
-
-      // Check if this artwork already exists in allArtworks (idempotent response)
-      const existingArtwork = allArtworks.find(
-        (a: any) => a.id === realArtwork.id || 
-        (a.submission_id === realArtwork.submission_id && a.series_id === seriesId)
-      )
-
-      if (existingArtwork && existingArtwork.id !== newArtwork.id) {
-        // Artwork already exists, remove temp and keep existing
-        setAllArtworks(prev => prev.filter(a => a.id !== newArtwork.id))
-      } else {
-        // Update temp artwork with real ID from server
-        setAllArtworks(prev => 
-          prev.map(a => a.id === newArtwork.id ? {
-            ...a,
-            id: realArtwork.id,
-          } : a)
-        )
-      }
-      
-      // Refresh to ensure consistency
+      // Refresh from server to ensure consistency and avoid duplicates
       await fetchAllArtworks()
       await fetchAvailableArtworks()
     } catch (error: any) {
@@ -788,30 +797,7 @@ export default function ProductsPage() {
         throw new Error(errorData.error || "Failed to add artwork to series")
       }
 
-      const data = await addResponse.json()
-      const newMember = data.member
-
-      // Check if this artwork already exists in target series (idempotent response)
-      const existingInTarget = allArtworks.find(
-        (a: any) => a.id === newMember.id || 
-        (a.submission_id === artwork.submission_id && a.series_id === targetSeriesId && a.id !== artworkId)
-      )
-
-      if (existingInTarget && existingInTarget.id !== artworkId) {
-        // Artwork already exists in target, remove the one we moved
-        setAllArtworks(prev => prev.filter(a => a.id !== artworkId))
-      } else {
-        // Update with real ID from server
-        setAllArtworks(prev => 
-          prev.map(a => a.id === artworkId ? {
-            ...a,
-            id: newMember.id,
-            series_id: targetSeriesId,
-          } : a)
-        )
-      }
-      
-      // Refresh to ensure consistency
+      // Refresh from server to ensure consistency and avoid duplicates
       await fetchAllArtworks()
       await fetchAvailableArtworks()
     } catch (error: any) {
