@@ -458,13 +458,13 @@ export default function ProductsPage() {
 
                   {/* Series Name (for empty series) */}
                   {!hasArtworks && (
-                    <div className="p-4 min-w-[200px]">
-                      <h3 className="font-semibold text-sm mb-1">{s.name}</h3>
-                      <p className="text-xs text-muted-foreground mb-3">Empty series</p>
-                      <div className="flex items-center justify-center p-8 border-2 border-dashed border-muted-foreground/30 rounded-lg">
+                    <div className="p-3 min-w-[160px]">
+                      <h3 className="font-semibold text-xs mb-1 line-clamp-1">{s.name}</h3>
+                      <p className="text-[10px] text-muted-foreground mb-2">Empty series</p>
+                      <div className="flex items-center justify-center p-4 border-2 border-dashed border-muted-foreground/30 rounded-lg">
                         <div className="text-center">
-                          <Plus className="h-8 w-8 text-muted-foreground/50 mx-auto mb-2" />
-                          <p className="text-xs text-muted-foreground">Click to add artworks</p>
+                          <Plus className="h-5 w-5 text-muted-foreground/50 mx-auto mb-1" />
+                          <p className="text-[10px] text-muted-foreground">Click to add</p>
                         </div>
                       </div>
                     </div>
