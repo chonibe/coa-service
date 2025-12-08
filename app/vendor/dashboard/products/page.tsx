@@ -642,6 +642,18 @@ export default function ProductsPage() {
     const artworkToMove = availableArtworks.find((a: any) => a.submission_id === submissionId)
     if (!artworkToMove) return
 
+    // Check if artwork with same submission_id already exists in target series
+    const existingInTarget = allArtworks.find(
+      (a: any) => a.submission_id === submissionId && a.series_id === seriesId
+    )
+
+    // If already exists, don't add again (idempotent - API will return existing)
+    if (existingInTarget) {
+      // Just remove from available artworks if it's there
+      setAvailableArtworks(prev => prev.filter((a: any) => a.submission_id !== submissionId))
+      return
+    }
+
     // Optimistically update UI immediately
     const newArtwork = {
       id: `temp-${Date.now()}`, // Temporary ID until we get the real one
@@ -705,6 +717,27 @@ export default function ProductsPage() {
     if (!artwork || !artwork.submission_id) return
 
     const originalSeriesId = artwork.series_id
+
+    // Check if artwork with same submission_id already exists in target series
+    const existingInTarget = allArtworks.find(
+      (a: any) => a.submission_id === artwork.submission_id && 
+                   a.series_id === targetSeriesId && 
+                   a.id !== artworkId
+    )
+
+    // Remove existing duplicate from target series if found
+    if (existingInTarget) {
+      try {
+        await fetch(`/api/vendor/series/${targetSeriesId}/members/${existingInTarget.id}`, {
+          method: "DELETE",
+          credentials: "include",
+        })
+        // Remove from state
+        setAllArtworks(prev => prev.filter(a => a.id !== existingInTarget.id))
+      } catch (err) {
+        console.error("Error removing duplicate artwork:", err)
+      }
+    }
 
     // Optimistically update UI immediately
     setAllArtworks(prev => 
