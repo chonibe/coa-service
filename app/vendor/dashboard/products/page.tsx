@@ -296,15 +296,14 @@ export default function ProductsPage() {
   const fetchAvailableArtworks = async () => {
     try {
       setLoadingAvailable(true)
-      // Get all approved/published submissions
+      // Get all submissions (pending, approved, published) - any artwork not in a series
       const submissionsResponse = await fetch("/api/vendor/products/submissions", {
         credentials: "include",
       })
       if (submissionsResponse.ok) {
         const data = await submissionsResponse.json()
-        const submissions = (data.submissions || []).filter(
-          (sub: any) => sub.status === "approved" || sub.status === "published"
-        )
+        // Include all submissions regardless of status (pending, approved, published)
+        const submissions = data.submissions || []
         
         // Get all submission IDs that are already in series
         const submissionIdsInSeries = new Set(
