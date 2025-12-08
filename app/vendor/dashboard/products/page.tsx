@@ -306,31 +306,20 @@ export default function ProductsPage() {
           (sub: any) => sub.status === "approved" || sub.status === "published"
         )
         
-        // Get all submission IDs that are already in series by checking the members API
-        // We need to fetch series members to see which submissions are already used
-        const membersResponse = await fetch("/api/vendor/series/artworks", {
-          credentials: "include",
-        })
-        let usedSubmissionIds: string[] = []
-        if (membersResponse.ok) {
-          const membersData = await membersResponse.json()
-          // Extract submission_ids from artworks that are in series
-          // The API returns artworks with series_id, we need to check the actual member records
-          // For now, we'll check if a submission has a shopify_product_id and match that way
-          // Or we can make a separate call to get all members
-        }
+        // Get all submission IDs that are already in series
+        const submissionIdsInSeries = new Set(
+          allArtworks
+            .filter((a: any) => a.submission_id)
+            .map((a: any) => a.submission_id.toString())
+        )
         
-        // Filter out submissions that are already in series
+        // Automatically place any artwork not in a series into the Open box
         const available = submissions
           .filter((sub: any) => {
             const productData = sub.product_data as any
             const hasImage = productData?.images && productData.images.length > 0
-            // Check if this submission is already in a series by checking allArtworks
-            const isInSeries = allArtworks.some((a: any) => {
-              // Check if artwork has this submission's shopify_product_id or submission_id
-              return (a.shopify_product_id && sub.shopify_product_id && a.shopify_product_id === sub.shopify_product_id) ||
-                     (a.submission_id && a.submission_id === sub.id)
-            })
+            // Check if this submission is NOT in any series
+            const isInSeries = submissionIdsInSeries.has(sub.id.toString())
             return hasImage && !isInSeries
           })
           .map((sub: any) => {
