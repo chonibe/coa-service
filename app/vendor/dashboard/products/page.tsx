@@ -279,13 +279,12 @@ export default function ProductsPage() {
     fetchAllArtworks()
   }, [])
 
-  // Only fetch available artworks once on initial load
+  // Fetch available artworks after artworks are loaded
   useEffect(() => {
-    if (!loadingArtworks && !hasLoadedAvailableArtworks) {
+    if (!loadingArtworks) {
       fetchAvailableArtworks()
-      setHasLoadedAvailableArtworks(true)
     }
-  }, [loadingArtworks, hasLoadedAvailableArtworks])
+  }, [loadingArtworks])
 
   const fetchAvailableArtworks = async () => {
     try {
@@ -1078,20 +1077,6 @@ export default function ProductsPage() {
               </div>
             ))}
           </div>
-        ) : series.length === 0 ? (
-          <Card>
-            <CardContent className="flex flex-col items-center justify-center py-12">
-              <ImageIcon className="h-12 w-12 text-muted-foreground mb-4" />
-              <h3 className="text-lg font-semibold mb-2">No Series Found</h3>
-              <p className="text-sm text-muted-foreground mb-4 text-center">
-                Create your first series to organize your artworks.
-              </p>
-              <Button onClick={() => router.push("/vendor/dashboard/series/create")}>
-                <Plus className="h-4 w-4 mr-2" />
-                Create Series
-              </Button>
-          </CardContent>
-        </Card>
         ) : (
           <DndContext
             sensors={sensors}
@@ -1101,7 +1086,7 @@ export default function ProductsPage() {
             onDragCancel={handleDragCancel}
           >
             <div className="flex flex-wrap gap-4 items-start content-start">
-              {/* Open Box (Unassigned Artworks) */}
+              {/* Open Box (Unassigned Artworks) - Always show */}
               <DroppableSeries
                 series={{ id: "open", name: "Open", unlock_type: "open" }}
                 artworks={availableArtworks.map((a: any) => ({
@@ -1137,6 +1122,23 @@ export default function ProductsPage() {
                   />
                 )
               })}
+              
+              {/* Show "Create Series" card if no series exist */}
+              {series.length === 0 && (
+                <Card>
+                  <CardContent className="flex flex-col items-center justify-center py-12">
+                    <ImageIcon className="h-12 w-12 text-muted-foreground mb-4" />
+                    <h3 className="text-lg font-semibold mb-2">No Series Found</h3>
+                    <p className="text-sm text-muted-foreground mb-4 text-center">
+                      Create your first series to organize your artworks.
+                    </p>
+                    <Button onClick={() => router.push("/vendor/dashboard/series/create")}>
+                      <Plus className="h-4 w-4 mr-2" />
+                      Create Series
+                    </Button>
+                  </CardContent>
+                </Card>
+              )}
             </div>
             
             <DragOverlay>
