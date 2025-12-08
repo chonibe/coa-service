@@ -348,8 +348,8 @@ export default function ProductsPage() {
                                 <div>Published to Shopify</div>
                               )}
                             </div>
-                            {/* Proof Print Button */}
-                            {(submission.status === "pending" || submission.status === "approved" || submission.status === "published") && (
+                            {/* Proof Print Button - Temporarily hidden */}
+                            {/* {(submission.status === "pending" || submission.status === "approved" || submission.status === "published") && (
                               <Button
                                 variant="outline"
                                 size="sm"
@@ -367,7 +367,7 @@ export default function ProductsPage() {
                                 <ShoppingCart className="h-4 w-4" />
                                 Proof Print
                               </Button>
-                            )}
+                            )} */}
                             {canEdit && (
                               <Button
                                 variant="outline"

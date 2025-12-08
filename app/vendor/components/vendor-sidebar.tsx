@@ -83,11 +83,12 @@ export function VendorSidebar() {
       href: "/vendor/dashboard/payouts",
       icon: <Icon size="md"><CurrencyDollarIcon className="h-5 w-5" /></Icon>,
     },
-    {
-      title: "Store",
-      href: "/vendor/dashboard/store",
-      icon: <Icon size="md"><ShoppingBagIcon className="h-5 w-5" /></Icon>,
-    },
+    // Store temporarily hidden
+    // {
+    //   title: "Store",
+    //   href: "/vendor/dashboard/store",
+    //   icon: <Icon size="md"><ShoppingBagIcon className="h-5 w-5" /></Icon>,
+    // },
     {
       title: "Messages",
       href: "/vendor/dashboard/messages",
