@@ -510,6 +510,15 @@ export function VariantsStep({ formData, setFormData }: VariantsStepProps) {
       ? getPriceRange(editionSize) 
       : { min: 40, max: 100 }
 
+    // Edition size labels
+    const editionSizeLabels: Record<EditionSize, { label: string }> = {
+      90: { label: "Baseline" },
+      44: { label: "Premium" },
+      24: { label: "Capsule" },
+      78: { label: "Standard" },
+      8: { label: "Ultra Premium" },
+    }
+
     return (
       <div className="space-y-6">
         <div>
@@ -530,10 +539,27 @@ export function VariantsStep({ formData, setFormData }: VariantsStepProps) {
             </Button>
             <h3 className="text-lg font-semibold">Choose your price</h3>
           </div>
+          {!isTimed && editionSize && (
+            <div className="mb-3 p-3 bg-muted/50 rounded-lg border">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium">
+                    {editionSize} Editions — {editionSizeLabels[editionSize]?.label || "Fixed Edition"}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    Price range based on your selected edition size
+                  </p>
+                </div>
+                <Badge variant="secondary" className="text-sm font-semibold">
+                  ${priceRange.min} - ${priceRange.max}
+                </Badge>
+              </div>
+            </div>
+          )}
           <p className="text-sm text-muted-foreground">
             {isTimed 
               ? "Set your price for the timed edition window"
-              : `Select a price within the range for ${editionSize} editions`
+              : `Select a price within the range for your ${editionSize} edition size`
             }
           </p>
         </div>
@@ -543,9 +569,11 @@ export function VariantsStep({ formData, setFormData }: VariantsStepProps) {
             <Label>
               Price <span className="text-red-500">*</span>
             </Label>
-            <Badge variant="outline" className="text-xs">
-              Range: ${priceRange.min} - ${priceRange.max}
-            </Badge>
+            {!isTimed && editionSize && (
+              <Badge variant="outline" className="text-xs">
+                Range: ${priceRange.min} - ${priceRange.max}
+              </Badge>
+            )}
           </div>
 
           {isTimed ? (
