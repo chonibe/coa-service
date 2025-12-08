@@ -278,14 +278,10 @@ export default function ProductsPage() {
     fetchAllArtworks()
   }, [])
 
-  // Only fetch available artworks on initial load, not when allArtworks changes
-  // (to avoid overwriting optimistic updates)
+  // Only fetch available artworks once on initial load
   useEffect(() => {
-    if (!loadingArtworks && allArtworks.length >= 0) {
-      // Only fetch if we haven't loaded available artworks yet
-      if (availableArtworks.length === 0 && !loadingAvailable) {
-        fetchAvailableArtworks()
-      }
+    if (!loadingArtworks) {
+      fetchAvailableArtworks()
     }
   }, [loadingArtworks]) // Only depend on loadingArtworks, not allArtworks
 
@@ -661,9 +657,6 @@ export default function ProductsPage() {
     // Update state immediately (optimistic update)
     setAllArtworks(prev => [...prev, newArtwork])
     setAvailableArtworks(prev => prev.filter((a: any) => a.submission_id !== submissionId))
-    
-    // Update available artworks based on new state
-    fetchAvailableArtworks([...allArtworks, newArtwork])
 
     try {
       const response = await fetch(`/api/vendor/series/${seriesId}/members`, {
@@ -714,11 +707,9 @@ export default function ProductsPage() {
     const originalSeriesId = artwork.series_id
 
     // Optimistically update UI immediately
-    const updatedArtworks = allArtworks.map(a => a.id === artworkId ? { ...a, series_id: targetSeriesId } : a)
-    setAllArtworks(updatedArtworks)
-    
-    // Update available artworks based on new state
-    fetchAvailableArtworks(updatedArtworks)
+    setAllArtworks(prev => 
+      prev.map(a => a.id === artworkId ? { ...a, series_id: targetSeriesId } : a)
+    )
 
     try {
       // First remove from current series, then add to new series
@@ -791,12 +782,8 @@ export default function ProductsPage() {
       type: "available",
     }
 
-    const updatedArtworks = allArtworks.filter(a => a.id !== artworkId)
-    setAllArtworks(updatedArtworks)
+    setAllArtworks(prev => prev.filter(a => a.id !== artworkId))
     setAvailableArtworks(prev => [...prev, availableArtwork])
-    
-    // Update available artworks based on new state
-    fetchAvailableArtworks(updatedArtworks)
 
     try {
       const response = await fetch(`/api/vendor/series/${originalSeriesId}/members/${artworkId}`, {
