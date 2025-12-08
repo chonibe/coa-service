@@ -41,7 +41,6 @@ export function SeriesNode({
   onClick,
 }: SeriesNodeProps) {
   const [isDragging, setIsDragging] = useState(false)
-  const [isDragging, setIsDragging] = useState(false)
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 })
   const nodeRef = useRef<HTMLDivElement>(null)
 
