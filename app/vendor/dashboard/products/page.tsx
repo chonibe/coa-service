@@ -182,16 +182,6 @@ function DroppableSeries({
       })()}
 
       {/* Type Icon Badge */}
-      <div className={cn(
-        "absolute top-0 right-0 p-1.5 rounded-bl-lg z-20",
-        getSeriesColor(series.unlock_type).replace('border-', 'bg-').split(' ')[0]
-      )}>
-        <div className="bg-background/80 backdrop-blur-sm p-1 rounded-full shadow-sm">
-          {getSeriesIcon(series.unlock_type)}
-        </div>
-      </div>
-
-      {/* Type Icon Badge */}
       {!isOpenBox && (
         <div className={cn(
           "absolute top-0 right-0 p-1.5 rounded-bl-lg z-20",
@@ -227,8 +217,8 @@ function DroppableSeries({
           )}
           strategy={undefined}
         >
-          <div className="p-2 overflow-x-auto no-scrollbar max-w-[80vw] relative z-10">
-            <div className="flex flex-wrap gap-2 min-w-max">
+          <div className="p-2 relative z-10">
+            <div className="flex flex-wrap gap-2">
               {artworks.map((artwork: any) => (
                 <SortableArtworkItem
                   key={artwork.id}
@@ -685,17 +675,13 @@ export default function ProductsPage() {
       const data = await response.json()
       const realArtwork = data.member
 
-      // Update with real ID from server
+      // Update with real ID from server (no refresh needed)
       setAllArtworks(prev => 
         prev.map(a => a.id === newArtwork.id ? {
           ...a,
           id: realArtwork.id,
         } : a)
       )
-
-      // Silently refresh in background to sync with server
-      fetchAllArtworks()
-      fetchAvailableArtworks()
     } catch (error: any) {
       console.error("Error adding artwork to series:", error)
       // Revert optimistic update on error
@@ -753,7 +739,7 @@ export default function ProductsPage() {
       const data = await addResponse.json()
       const newMember = data.member
 
-      // Update with real ID from server
+      // Update with real ID from server (no refresh needed)
       setAllArtworks(prev => 
         prev.map(a => a.id === artworkId ? {
           ...a,
@@ -761,10 +747,6 @@ export default function ProductsPage() {
           series_id: targetSeriesId,
         } : a)
       )
-
-      // Silently refresh in background to sync with server
-      fetchAllArtworks()
-      fetchAvailableArtworks()
     } catch (error: any) {
       console.error("Error moving artwork:", error)
       // Revert optimistic update on error
@@ -808,10 +790,7 @@ export default function ProductsPage() {
       if (!response.ok) {
         throw new Error("Failed to remove artwork from series")
       }
-
-      // Silently refresh in background to sync with server
-      fetchAllArtworks()
-      fetchAvailableArtworks()
+      // No refresh needed - optimistic update already handled it
     } catch (error: any) {
       console.error("Error removing artwork from series:", error)
       // Revert optimistic update on error
@@ -863,9 +842,7 @@ export default function ProductsPage() {
       if (!response.ok) {
         throw new Error("Failed to reorder artworks")
       }
-
-      // Silently refresh in background to sync with server
-      fetchAllArtworks()
+      // No refresh needed - optimistic update already handled it
     } catch (error: any) {
       console.error("Error reordering artworks:", error)
       // Revert on error
