@@ -279,13 +279,16 @@ export default function ProductsPage() {
   }, [])
 
   // Only fetch available artworks once on initial load
+  const [hasLoadedAvailableArtworks, setHasLoadedAvailableArtworks] = useState(false)
+  
   useEffect(() => {
-    if (!loadingArtworks) {
+    if (!loadingArtworks && !hasLoadedAvailableArtworks) {
       fetchAvailableArtworks()
+      setHasLoadedAvailableArtworks(true)
     }
-  }, [loadingArtworks]) // Only depend on loadingArtworks, not allArtworks
+  }, [loadingArtworks, hasLoadedAvailableArtworks])
 
-  const fetchAvailableArtworks = async (currentAllArtworks?: any[]) => {
+  const fetchAvailableArtworks = async () => {
     try {
       setLoadingAvailable(true)
       // Get all submissions (pending, approved, published) - any artwork not in a series
@@ -297,12 +300,10 @@ export default function ProductsPage() {
         // Include all submissions regardless of status (pending, approved, published)
         const submissions = data.submissions || []
         
-        // Use provided artworks or current state
-        const artworksToCheck = currentAllArtworks || allArtworks
-        
-        // Get all submission IDs that are already in series
+        // Get all submission IDs that are already in series (use current state)
+        const currentAllArtworks = allArtworks
         const submissionIdsInSeries = new Set(
-          artworksToCheck
+          currentAllArtworks
             .filter((a: any) => a.submission_id)
             .map((a: any) => a.submission_id.toString())
         )
