@@ -10,7 +10,27 @@ import { Badge } from "@/components/ui/badge"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { ProductTable } from "../components/product-table"
 import { useVendorData } from "@/hooks/use-vendor-data"
-import { Plus, Package, Clock, XCircle, Trash2, Loader2, Sparkles, AlertCircle, Lock, ArrowRight, Crown, ImageIcon } from "lucide-react"
+import { Plus, Package, Clock, XCircle, Trash2, Loader2, Sparkles, AlertCircle, Lock, ArrowRight, Crown, ImageIcon, GripVertical } from "lucide-react"
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+  DragOverlay,
+  DragStartEvent,
+  useDroppable,
+} from "@dnd-kit/core"
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+  horizontalListSortingStrategy,
+} from "@dnd-kit/sortable"
+import { CSS } from "@dnd-kit/utilities"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -26,6 +46,220 @@ import { cn } from "@/lib/utils"
 import type { ArtworkSeries } from "@/types/artwork-series"
 import { DeleteSeriesDialog } from "../series/components/DeleteSeriesDialog"
 import { DuplicateSeriesDialog } from "../series/components/DuplicateSeriesDialog"
+
+// Sortable Artwork Component
+function SortableArtworkItem({ artwork, seriesUnlockType }: { artwork: any; seriesUnlockType: string }) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: `artwork-${artwork.id}` })
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  }
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      className="relative w-32 h-32 rounded-md overflow-hidden bg-background border shadow-sm group/item flex-shrink-0 cursor-grab active:cursor-grabbing"
+      {...attributes}
+      {...listeners}
+    >
+      {artwork.image ? (
+        <img
+          src={artwork.image}
+          alt={artwork.title || "Artwork"}
+          className="w-full h-full object-cover"
+        />
+      ) : (
+        <div className="w-full h-full flex items-center justify-center">
+          <ImageIcon className="h-6 w-6 text-muted-foreground/30" />
+        </div>
+      )}
+      
+      <div className="absolute top-1 left-1 bg-black/60 p-1 rounded text-white backdrop-blur-sm">
+        <GripVertical className="h-3 w-3" />
+      </div>
+      
+      <div className="absolute inset-0 bg-black/60 opacity-0 group-hover/item:opacity-100 transition-opacity flex flex-col items-center justify-center p-1">
+        <span className="text-[10px] text-white text-center font-medium leading-tight line-clamp-2 mb-1">
+          {artwork.title}
+        </span>
+        {seriesUnlockType === "time_based" && (
+          <Badge variant="outline" className="text-[8px] h-4 px-1 border-white/50 text-white bg-black/20 backdrop-blur-sm">
+            Timed Edition
+          </Badge>
+        )}
+      </div>
+
+      {artwork.is_locked && (
+        <div className="absolute top-1 right-1 bg-black/60 p-1 rounded-full text-white backdrop-blur-sm">
+          <Lock className="h-3 w-3" />
+        </div>
+      )}
+    </div>
+  )
+}
+
+// Draggable Available Artwork Component
+function DraggableArtwork({ artwork, isAvailable }: { artwork: any; isAvailable: boolean }) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: artwork.id })
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  }
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      className="relative w-24 h-24 rounded-md overflow-hidden bg-background border-2 border-dashed border-muted-foreground/30 shadow-sm cursor-grab active:cursor-grabbing"
+      {...attributes}
+      {...listeners}
+    >
+      {artwork.image ? (
+        <img
+          src={artwork.image}
+          alt={artwork.title || "Artwork"}
+          className="w-full h-full object-cover"
+        />
+      ) : (
+        <div className="w-full h-full flex items-center justify-center">
+          <ImageIcon className="h-4 w-4 text-muted-foreground/30" />
+        </div>
+      )}
+      <div className="absolute top-0.5 left-0.5 bg-primary/80 p-0.5 rounded text-white backdrop-blur-sm">
+        <GripVertical className="h-2 w-2" />
+      </div>
+    </div>
+  )
+}
+
+// Droppable Series Component
+function DroppableSeries({
+  series,
+  artworks,
+  hasArtworks,
+  getSeriesColor,
+  getSeriesIcon,
+  onSeriesClick,
+}: {
+  series: ArtworkSeries
+  artworks: any[]
+  hasArtworks: boolean
+  getSeriesColor: (type: string) => string
+  getSeriesIcon: (type: string) => React.ReactNode
+  onSeriesClick: () => void
+}) {
+  const { setNodeRef, isOver } = useDroppable({
+    id: `series-${series.id}`,
+  })
+
+  return (
+    <div
+      ref={setNodeRef}
+      onClick={(e) => {
+        // Don't navigate if clicking on an artwork or drag handle
+        if ((e.target as HTMLElement).closest('.artwork-item') || 
+            (e.target as HTMLElement).closest('[data-sortable-handle]')) return
+        onSeriesClick()
+      }}
+      className={cn(
+        "flex flex-col border-2 rounded-xl overflow-hidden transition-colors shadow-sm w-fit relative cursor-pointer hover:shadow-lg",
+        getSeriesColor(series.unlock_type),
+        isOver && "ring-2 ring-primary ring-offset-2 bg-primary/5"
+      )}
+    >
+      {/* Time-Based "Water Glass" Fill */}
+      {series.unlock_type === "time_based" && series.unlock_config && (() => {
+        const config = series.unlock_config
+        if (config.unlock_schedule?.start_date && config.unlock_schedule?.end_date) {
+          const start = new Date(config.unlock_schedule.start_date)
+          const end = new Date(config.unlock_schedule.end_date)
+          const now = new Date()
+          const isActive = now >= start && now <= end
+          
+          let progress = 0
+          if (isActive) {
+            const total = end.getTime() - start.getTime()
+            const current = now.getTime() - start.getTime()
+            progress = Math.min(100, Math.max(0, (current / total) * 100))
+          } else if (now > end) {
+            progress = 100
+          }
+
+          return (
+            <div 
+              className="absolute bottom-0 left-0 right-0 bg-green-500/20 transition-all duration-1000 ease-in-out pointer-events-none"
+              style={{ height: `${progress}%` }}
+            />
+          )
+        }
+        return null
+      })()}
+
+      {/* Type Icon Badge */}
+      <div className={cn(
+        "absolute top-0 right-0 p-1.5 rounded-bl-lg z-20",
+        getSeriesColor(series.unlock_type).replace('border-', 'bg-').split(' ')[0]
+      )}>
+        <div className="bg-background/80 backdrop-blur-sm p-1 rounded-full shadow-sm">
+          {getSeriesIcon(series.unlock_type)}
+        </div>
+      </div>
+
+      {/* Series Name (for empty series) */}
+      {!hasArtworks && (
+        <div className="p-3 min-w-[160px]">
+          <h3 className="font-semibold text-xs mb-1 line-clamp-1">{series.name}</h3>
+          <p className="text-[10px] text-muted-foreground mb-2">Empty series</p>
+          <div className="flex items-center justify-center p-4 border-2 border-dashed border-muted-foreground/30 rounded-lg">
+            <div className="text-center">
+              <Plus className="h-5 w-5 text-muted-foreground/50 mx-auto mb-1" />
+              <p className="text-[10px] text-muted-foreground">Drop artworks here</p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Artworks Flex Grid - Adapts to content size */}
+      {hasArtworks && (
+        <SortableContext
+          items={artworks.map((a: any) => `artwork-${a.id}`)}
+          strategy={horizontalListSortingStrategy}
+        >
+          <div className="p-2 overflow-x-auto no-scrollbar max-w-[80vw] relative z-10">
+            <div className="flex flex-nowrap gap-2 min-w-max">
+              {artworks.map((artwork: any) => (
+                <SortableArtworkItem
+                  key={artwork.id}
+                  artwork={artwork}
+                  seriesUnlockType={series.unlock_type}
+                />
+              ))}
+            </div>
+          </div>
+        </SortableContext>
+      )}
+    </div>
+  )
+}
 
 export default function ProductsPage() {
   const router = useRouter()
@@ -50,11 +284,94 @@ export default function ProductsPage() {
   const [isDuplicatingSeries, setIsDuplicatingSeries] = useState(false)
   const [allArtworks, setAllArtworks] = useState<any[]>([])
   const [loadingArtworks, setLoadingArtworks] = useState(false)
+  const [availableArtworks, setAvailableArtworks] = useState<any[]>([])
+  const [loadingAvailable, setLoadingAvailable] = useState(false)
+  const [activeId, setActiveId] = useState<string | null>(null)
+  const [isDragging, setIsDragging] = useState(false)
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 8,
+      },
+    }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  )
 
   useEffect(() => {
     fetchSeries()
     fetchAllArtworks()
   }, [])
+
+  useEffect(() => {
+    if (allArtworks.length > 0 || !loadingArtworks) {
+      fetchAvailableArtworks()
+    }
+  }, [allArtworks, loadingArtworks])
+
+  const fetchAvailableArtworks = async () => {
+    try {
+      setLoadingAvailable(true)
+      // Get all approved/published submissions
+      const submissionsResponse = await fetch("/api/vendor/products/submissions", {
+        credentials: "include",
+      })
+      if (submissionsResponse.ok) {
+        const data = await submissionsResponse.json()
+        const submissions = (data.submissions || []).filter(
+          (sub: any) => sub.status === "approved" || sub.status === "published"
+        )
+        
+        // Get all submission IDs that are already in series by checking the members API
+        // We need to fetch series members to see which submissions are already used
+        const membersResponse = await fetch("/api/vendor/series/artworks", {
+          credentials: "include",
+        })
+        let usedSubmissionIds: string[] = []
+        if (membersResponse.ok) {
+          const membersData = await membersResponse.json()
+          // Extract submission_ids from artworks that are in series
+          // The API returns artworks with series_id, we need to check the actual member records
+          // For now, we'll check if a submission has a shopify_product_id and match that way
+          // Or we can make a separate call to get all members
+        }
+        
+        // Filter out submissions that are already in series
+        const available = submissions
+          .filter((sub: any) => {
+            const productData = sub.product_data as any
+            const hasImage = productData?.images && productData.images.length > 0
+            // Check if this submission is already in a series by checking allArtworks
+            const isInSeries = allArtworks.some((a: any) => {
+              // Check if artwork has this submission's shopify_product_id or submission_id
+              return (a.shopify_product_id && sub.shopify_product_id && a.shopify_product_id === sub.shopify_product_id) ||
+                     (a.submission_id && a.submission_id === sub.id)
+            })
+            return hasImage && !isInSeries
+          })
+          .map((sub: any) => {
+            const productData = sub.product_data as any
+            const image = productData?.images?.[0]?.src || productData?.images?.[0] || null
+            return {
+              id: `submission-${sub.id}`,
+              submission_id: sub.id,
+              shopify_product_id: sub.shopify_product_id,
+              title: productData?.title || "Untitled",
+              image,
+              type: "available",
+            }
+          })
+        
+        setAvailableArtworks(available)
+      }
+    } catch (err) {
+      console.error("Error fetching available artworks:", err)
+    } finally {
+      setLoadingAvailable(false)
+    }
+  }
 
   const fetchAllArtworks = async () => {
     try {
@@ -255,6 +572,121 @@ export default function ProductsPage() {
     }
   }
 
+  const handleDragStart = (event: DragStartEvent) => {
+    setActiveId(event.active.id as string)
+    setIsDragging(true)
+  }
+
+  const handleDragEnd = async (event: DragEndEvent) => {
+    const { active, over } = event
+    setActiveId(null)
+    setIsDragging(false)
+
+    if (!over) return
+
+    const activeId = active.id as string
+    const overId = over.id as string
+
+    // If dragging an available artwork to a series
+    if (activeId.startsWith("submission-") && overId.startsWith("series-")) {
+      const submissionId = activeId.replace("submission-", "")
+      const seriesId = overId.replace("series-", "")
+      
+      try {
+        const response = await fetch(`/api/vendor/series/${seriesId}/members`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          credentials: "include",
+          body: JSON.stringify({
+            submission_id: submissionId,
+            display_order: 0,
+          }),
+        })
+
+        if (!response.ok) {
+          const errorData = await response.json()
+          throw new Error(errorData.error || "Failed to add artwork to series")
+        }
+
+        toast({
+          title: "Success",
+          description: "Artwork added to series",
+        })
+
+        // Refresh artworks
+        fetchAllArtworks()
+        fetchAvailableArtworks()
+      } catch (error: any) {
+        console.error("Error adding artwork to series:", error)
+        toast({
+          title: "Error",
+          description: error.message || "Failed to add artwork to series",
+          variant: "destructive",
+        })
+      }
+      return
+    }
+
+    // If reordering within a series
+    if (activeId.startsWith("artwork-") && overId.startsWith("artwork-")) {
+      const activeArtworkId = activeId.replace("artwork-", "")
+      const overArtworkId = overId.replace("artwork-", "")
+      
+      // Find which series these artworks belong to
+      const activeArtwork = allArtworks.find((a: any) => a.id === activeArtworkId)
+      if (!activeArtwork) return
+
+      const seriesId = activeArtwork.series_id
+      const seriesArtworks = allArtworks
+        .filter((a: any) => a.series_id === seriesId)
+        .sort((a: any, b: any) => (a.display_order || 0) - (b.display_order || 0))
+
+      const oldIndex = seriesArtworks.findIndex((a: any) => a.id === activeArtworkId)
+      const newIndex = seriesArtworks.findIndex((a: any) => a.id === overArtworkId)
+
+      if (oldIndex === -1 || newIndex === -1) return
+
+      const newOrder = arrayMove(seriesArtworks, oldIndex, newIndex).map((a: any) => a.id)
+
+      try {
+        const response = await fetch(`/api/vendor/series/${seriesId}/reorder`, {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          credentials: "include",
+          body: JSON.stringify({ memberIds: newOrder }),
+        })
+
+        if (!response.ok) {
+          throw new Error("Failed to reorder artworks")
+        }
+
+        toast({
+          title: "Success",
+          description: "Artworks reordered",
+        })
+
+        // Refresh artworks
+        fetchAllArtworks()
+      } catch (error: any) {
+        console.error("Error reordering artworks:", error)
+        toast({
+          title: "Error",
+          description: "Failed to reorder artworks",
+          variant: "destructive",
+        })
+      }
+    }
+  }
+
+  const handleDragCancel = () => {
+    setActiveId(null)
+    setIsDragging(false)
+  }
+
   const handleDeleteClick = (submission: any, e: React.MouseEvent) => {
     e.stopPropagation()
     if (submission.status === "pending" || submission.status === "rejected") {
@@ -364,7 +796,7 @@ export default function ProductsPage() {
       <div className="space-y-6">
         <div>
           <div className="flex items-center justify-between">
-            <div>
+      <div>
               <h1 className="text-3xl font-bold tracking-tight bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
                 Artwork Series
               </h1>
@@ -377,7 +809,7 @@ export default function ProductsPage() {
               Create Series
             </Button>
           </div>
-        </div>
+      </div>
 
         {/* Booklet/Binder View */}
         {loadingArtworks || loadingSeries ? (
@@ -400,121 +832,87 @@ export default function ProductsPage() {
                 <Plus className="h-4 w-4 mr-2" />
                 Create Series
               </Button>
-            </CardContent>
-          </Card>
+          </CardContent>
+        </Card>
         ) : (
-          <div className="flex flex-wrap gap-4 items-start content-start">
-            {series.map((s) => {
-              // Find artworks for this series
-              const seriesArtworks = allArtworks.filter((artwork: any) => artwork.series_id === s.id)
-              const hasArtworks = seriesArtworks.length > 0
+          <DndContext
+            sensors={sensors}
+            collisionDetection={closestCenter}
+            onDragStart={handleDragStart}
+            onDragEnd={handleDragEnd}
+            onDragCancel={handleDragCancel}
+          >
+            <div className="flex flex-wrap gap-4 items-start content-start">
+              {series.map((s) => {
+                // Find artworks for this series, sorted by display_order
+                const seriesArtworks = allArtworks
+                  .filter((artwork: any) => artwork.series_id === s.id)
+                  .sort((a: any, b: any) => (a.display_order || 0) - (b.display_order || 0))
+                const hasArtworks = seriesArtworks.length > 0
+                
+                return (
+                  <DroppableSeries
+                    key={s.id}
+                    series={s}
+                    artworks={seriesArtworks}
+                    hasArtworks={hasArtworks}
+                    getSeriesColor={getSeriesColor}
+                    getSeriesIcon={getSeriesIcon}
+                    onSeriesClick={() => router.push(`/vendor/dashboard/series/${s.id}`)}
+                  />
+                )
+              })}
               
-              return (
-                <div 
-                  key={s.id}
-                  onClick={() => router.push(`/vendor/dashboard/series/${s.id}`)}
-                  className={cn(
-                    "flex flex-col border-2 rounded-xl overflow-hidden transition-colors shadow-sm w-fit relative cursor-pointer hover:shadow-lg",
-                    getSeriesColor(s.unlock_type)
-                  )}
-                >
-                  {/* Time-Based "Water Glass" Fill */}
-                  {s.unlock_type === "time_based" && s.unlock_config && (() => {
-                    const config = s.unlock_config
-                    if (config.unlock_schedule?.start_date && config.unlock_schedule?.end_date) {
-                      const start = new Date(config.unlock_schedule.start_date)
-                      const end = new Date(config.unlock_schedule.end_date)
-                      const now = new Date()
-                      const isActive = now >= start && now <= end
-                      
-                      let progress = 0
-                      if (isActive) {
-                        const total = end.getTime() - start.getTime()
-                        const current = now.getTime() - start.getTime()
-                        progress = Math.min(100, Math.max(0, (current / total) * 100))
-                      } else if (now > end) {
-                        progress = 100
-                      }
-
-                      return (
-                        <div 
-                          className="absolute bottom-0 left-0 right-0 bg-green-500/20 transition-all duration-1000 ease-in-out pointer-events-none"
-                          style={{ height: `${progress}%` }}
-                        />
-                      )
-                    }
-                    return null
-                  })()}
-
-                  {/* Type Icon Badge */}
-                  <div className={cn(
-                    "absolute top-0 right-0 p-1.5 rounded-bl-lg z-20",
-                    getSeriesColor(s.unlock_type).replace('border-', 'bg-').split(' ')[0]
-                  )}>
-                    <div className="bg-background/80 backdrop-blur-sm p-1 rounded-full shadow-sm">
-                      {getSeriesIcon(s.unlock_type)}
-                    </div>
+              {/* Available Artworks Pool */}
+              {availableArtworks.length > 0 && (
+                <div className="w-full mt-6">
+                  <h3 className="text-sm font-semibold mb-3 text-muted-foreground">Available Artworks</h3>
+                  <div className="flex flex-wrap gap-2">
+                    {availableArtworks.map((artwork: any) => (
+                      <DraggableArtwork
+                        key={artwork.id}
+                        artwork={artwork}
+                        isAvailable={true}
+                      />
+                    ))}
                   </div>
-
-                  {/* Series Name (for empty series) */}
-                  {!hasArtworks && (
-                    <div className="p-3 min-w-[160px]">
-                      <h3 className="font-semibold text-xs mb-1 line-clamp-1">{s.name}</h3>
-                      <p className="text-[10px] text-muted-foreground mb-2">Empty series</p>
-                      <div className="flex items-center justify-center p-4 border-2 border-dashed border-muted-foreground/30 rounded-lg">
-                        <div className="text-center">
-                          <Plus className="h-5 w-5 text-muted-foreground/50 mx-auto mb-1" />
-                          <p className="text-[10px] text-muted-foreground">Click to add</p>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Artworks Flex Grid - Adapts to content size */}
-                  {hasArtworks && (
-                    <div className="p-2 overflow-x-auto no-scrollbar max-w-[80vw] relative z-10">
-                      <div className="flex flex-nowrap gap-2 min-w-max">
-                        {seriesArtworks.map((artwork: any) => (
-                          <div key={artwork.id} className="relative w-32 h-32 rounded-md overflow-hidden bg-background border shadow-sm group/item flex-shrink-0">
-                            {artwork.image ? (
-                              <img
-                                src={artwork.image}
-                                alt={artwork.title || "Artwork"}
-                                className="w-full h-full object-cover"
-                              />
-                            ) : (
-                              <div className="w-full h-full flex items-center justify-center">
-                                <ImageIcon className="h-6 w-6 text-muted-foreground/30" />
-                              </div>
-                            )}
-                            
-                            {/* Hover Title */}
-                            <div className="absolute inset-0 bg-black/60 opacity-0 group-hover/item:opacity-100 transition-opacity flex flex-col items-center justify-center p-1">
-                              <span className="text-[10px] text-white text-center font-medium leading-tight line-clamp-2 mb-1">
-                                {artwork.title}
-                              </span>
-                              {s.unlock_type === "time_based" && (
-                                <Badge variant="outline" className="text-[8px] h-4 px-1 border-white/50 text-white bg-black/20 backdrop-blur-sm">
-                                  Timed Edition
-                                </Badge>
-                              )}
-                            </div>
-
-                            {/* Status Icons */}
-                            {artwork.is_locked && (
-                              <div className="absolute top-1 right-1 bg-black/60 p-1 rounded-full text-white backdrop-blur-sm">
-                                <Lock className="h-3 w-3" />
-                              </div>
-                            )}
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
                 </div>
-              )
-            })}
-          </div>
+              )}
+            </div>
+            
+            <DragOverlay>
+              {activeId && (() => {
+                // Find the artwork being dragged
+                let artwork: any = null
+                
+                if (activeId.startsWith("artwork-")) {
+                  const artworkId = activeId.replace("artwork-", "")
+                  artwork = allArtworks.find((a: any) => a.id === artworkId)
+                } else if (activeId.startsWith("submission-")) {
+                  const submissionId = activeId.replace("submission-", "")
+                  artwork = availableArtworks.find((a: any) => a.submission_id === submissionId)
+                }
+                
+                if (!artwork) return null
+                
+                return (
+                  <div className="w-32 h-32 rounded-md overflow-hidden bg-background border-2 border-primary shadow-lg">
+                    {artwork.image ? (
+                      <img
+                        src={artwork.image}
+                        alt={artwork.title || "Artwork"}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center">
+                        <ImageIcon className="h-6 w-6 text-muted-foreground/30" />
+                      </div>
+                    )}
+                  </div>
+                )
+              })()}
+            </DragOverlay>
+          </DndContext>
         )}
       </div>
 
@@ -525,174 +923,174 @@ export default function ProductsPage() {
           <p className="text-muted-foreground mt-1">
             Manage and track your individual artworks
           </p>
-        </div>
+      </div>
 
-        <Tabs defaultValue="catalog" className="space-y-6">
-          <TabsList>
-            <TabsTrigger value="catalog">Artwork Catalog</TabsTrigger>
-            <TabsTrigger value="submissions">
-              Submissions
-              {submissions.length > 0 && (
-                <Badge variant="secondary" className="ml-2">
-                  {submissions.length}
-                </Badge>
-              )}
-            </TabsTrigger>
-          </TabsList>
+      <Tabs defaultValue="catalog" className="space-y-6">
+        <TabsList>
+          <TabsTrigger value="catalog">Artwork Catalog</TabsTrigger>
+          <TabsTrigger value="submissions">
+            Submissions
+            {submissions.length > 0 && (
+              <Badge variant="secondary" className="ml-2">
+                {submissions.length}
+              </Badge>
+            )}
+          </TabsTrigger>
+        </TabsList>
 
-          <TabsContent value="catalog" className="space-y-6">
-            <Card className="overflow-hidden w-full bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-0 shadow-xl">
-              <CardHeader>
-                <CardTitle>Your Artworks</CardTitle>
-                <CardDescription>All your artworks in one place - manage and track them here</CardDescription>
-              </CardHeader>
-              <CardContent className="p-0 sm:p-2">
-                {isLoading ? (
-                  <div className="space-y-2 p-4">
-                    {Array(5)
-                      .fill(0)
-                      .map((_, i) => (
-                        <Skeleton key={i} className="h-12 w-full" />
-                      ))}
-                  </div>
-                ) : (
-                  <ProductTable products={products || []} />
-                )}
-              </CardContent>
-            </Card>
-          </TabsContent>
+        <TabsContent value="catalog" className="space-y-6">
+      <Card className="overflow-hidden w-full bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-0 shadow-xl">
+        <CardHeader>
+          <CardTitle>Your Artworks</CardTitle>
+          <CardDescription>All your artworks in one place - manage and track them here</CardDescription>
+        </CardHeader>
+        <CardContent className="p-0 sm:p-2">
+          {isLoading ? (
+            <div className="space-y-2 p-4">
+              {Array(5)
+                .fill(0)
+                .map((_, i) => (
+                  <Skeleton key={i} className="h-12 w-full" />
+                ))}
+            </div>
+          ) : (
+            <ProductTable products={products || []} />
+          )}
+        </CardContent>
+      </Card>
+        </TabsContent>
 
-          <TabsContent value="submissions" className="space-y-6">
-            <Card className="overflow-hidden w-full bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-0 shadow-xl">
-              <CardHeader>
-                <CardTitle>Artwork Submissions</CardTitle>
-                <CardDescription>
-                  View the status of artworks you've submitted for approval
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                {loadingSubmissions ? (
-                  <div className="space-y-2">
-                    {Array(3)
-                      .fill(0)
-                      .map((_, i) => (
-                        <Skeleton key={i} className="h-16 w-full" />
-                      ))}
-                  </div>
-                ) : submissions.length === 0 ? (
-                  <div className="text-center py-8 text-muted-foreground">
-                    <Package className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                    <p>No artwork submissions yet.</p>
-                    <Button
-                      variant="outline"
-                      className="mt-4"
-                      onClick={() => router.push("/vendor/dashboard/products/create")}
-                    >
-                      <Plus className="h-4 w-4 mr-2" />
-                      Upload Your First Artwork
-                    </Button>
-                  </div>
-                ) : (
-                  <div className="space-y-4">
-                    {submissions.map((submission) => {
-                      const canEdit = submission.status === "pending" || submission.status === "rejected"
-                      const productData = submission.product_data as any
-                      const previewImage = productData?.images?.[0]?.src || productData?.images?.[0] || null
-                      const hasBenefits = (productData?.benefits || []).filter((b: any) => !b.is_series_level).length > 0
-                      const benefitCount = (productData?.benefits || []).filter((b: any) => !b.is_series_level).length
-                      
-                      return (
-                        <div
-                          key={submission.id}
-                          className="border rounded-lg p-4 hover:bg-muted/50 transition-colors"
-                        >
-                          <div className="flex items-start gap-4">
-                            {/* Preview Image */}
-                            {previewImage ? (
-                              <div className="flex-shrink-0 w-24 h-24 rounded-lg overflow-hidden bg-muted border">
-                                <img
-                                  src={previewImage}
-                                  alt={productData?.title || "Artwork"}
-                                  className="w-full h-full object-cover"
-                                />
-                              </div>
-                            ) : (
-                              <div className="flex-shrink-0 w-24 h-24 rounded-lg bg-muted border flex items-center justify-center">
-                                <Package className="h-8 w-8 text-muted-foreground" />
-                              </div>
-                            )}
-                            
-                            <div className="flex-1 min-w-0">
-                              <div className="flex items-center gap-3 flex-wrap">
-                                <h3 className="font-semibold">
-                                  {productData?.title || "Untitled Artwork"}
-                                </h3>
-                                {getStatusBadge(submission.status)}
-                                {(submission as any).series_metadata?.series_name && (
-                                  <Badge variant="secondary">
-                                    Series: {(submission as any).series_metadata.series_name}
-                                  </Badge>
-                                )}
-                                {hasBenefits && (
-                                  <Badge variant="outline" className="bg-purple-50 dark:bg-purple-950/20 border-purple-200 text-purple-700 dark:text-purple-300">
-                                    <Sparkles className="h-3 w-3 mr-1" />
-                                    {benefitCount} {benefitCount === 1 ? "treasure" : "treasures"}
-                                  </Badge>
-                                )}
-                              </div>
-                              <p className="text-sm text-muted-foreground mt-1">
-                                Submitted {new Date(submission.submitted_at).toLocaleDateString()}
+        <TabsContent value="submissions" className="space-y-6">
+          <Card className="overflow-hidden w-full bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-0 shadow-xl">
+            <CardHeader>
+              <CardTitle>Artwork Submissions</CardTitle>
+              <CardDescription>
+                View the status of artworks you've submitted for approval
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {loadingSubmissions ? (
+                <div className="space-y-2">
+                  {Array(3)
+                    .fill(0)
+                    .map((_, i) => (
+                      <Skeleton key={i} className="h-16 w-full" />
+                    ))}
+                </div>
+              ) : submissions.length === 0 ? (
+                <div className="text-center py-8 text-muted-foreground">
+                  <Package className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                  <p>No artwork submissions yet.</p>
+                  <Button
+                    variant="outline"
+                    className="mt-4"
+                    onClick={() => router.push("/vendor/dashboard/products/create")}
+                  >
+                    <Plus className="h-4 w-4 mr-2" />
+                    Upload Your First Artwork
+                  </Button>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {submissions.map((submission) => {
+                    const canEdit = submission.status === "pending" || submission.status === "rejected"
+                    const productData = submission.product_data as any
+                    const previewImage = productData?.images?.[0]?.src || productData?.images?.[0] || null
+                    const hasBenefits = (productData?.benefits || []).filter((b: any) => !b.is_series_level).length > 0
+                    const benefitCount = (productData?.benefits || []).filter((b: any) => !b.is_series_level).length
+                    
+                    return (
+                      <div
+                        key={submission.id}
+                        className="border rounded-lg p-4 hover:bg-muted/50 transition-colors"
+                      >
+                        <div className="flex items-start gap-4">
+                          {/* Preview Image */}
+                          {previewImage ? (
+                            <div className="flex-shrink-0 w-24 h-24 rounded-lg overflow-hidden bg-muted border">
+                              <img
+                                src={previewImage}
+                                alt={productData?.title || "Artwork"}
+                                className="w-full h-full object-cover"
+                              />
+                            </div>
+                          ) : (
+                            <div className="flex-shrink-0 w-24 h-24 rounded-lg bg-muted border flex items-center justify-center">
+                              <Package className="h-8 w-8 text-muted-foreground" />
+                            </div>
+                          )}
+                          
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-3 flex-wrap">
+                              <h3 className="font-semibold">
+                                {productData?.title || "Untitled Artwork"}
+                              </h3>
+                              {getStatusBadge(submission.status)}
+                              {(submission as any).series_metadata?.series_name && (
+                                <Badge variant="secondary">
+                                  Series: {(submission as any).series_metadata.series_name}
+                                </Badge>
+                              )}
+                              {hasBenefits && (
+                                <Badge variant="outline" className="bg-purple-50 dark:bg-purple-950/20 border-purple-200 text-purple-700 dark:text-purple-300">
+                                  <Sparkles className="h-3 w-3 mr-1" />
+                                  {benefitCount} {benefitCount === 1 ? "treasure" : "treasures"}
+                                </Badge>
+                              )}
+                            </div>
+                            <p className="text-sm text-muted-foreground mt-1">
+                              Submitted {new Date(submission.submitted_at).toLocaleDateString()}
+                            </p>
+                            {submission.rejection_reason && (
+                              <p className="text-sm text-destructive mt-2">
+                                {submission.rejection_reason}
                               </p>
-                              {submission.rejection_reason && (
-                                <p className="text-sm text-destructive mt-2">
-                                  {submission.rejection_reason}
-                                </p>
-                              )}
-                              {submission.admin_notes && (
-                                <p className="text-sm text-muted-foreground mt-2">
-                                  Admin notes: {submission.admin_notes}
-                                </p>
-                              )}
-                            </div>
-                            <div className="flex items-center gap-2 flex-shrink-0">
-                              <div className="text-right text-sm text-muted-foreground">
-                                {submission.shopify_product_id && (
-                                  <div>Published to Shopify</div>
-                                )}
-                              </div>
-                              {canEdit && (
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={(e) => {
-                                    e.stopPropagation()
-                                    router.push(`/vendor/dashboard/products/edit/${submission.id}`)
-                                  }}
-                                >
-                                  Edit
-                                </Button>
-                              )}
-                              {(submission.status === "pending" || submission.status === "rejected") && (
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={(e) => handleDeleteClick(submission, e)}
-                                  className="text-destructive hover:text-destructive hover:bg-destructive/10"
-                                >
-                                  <Trash2 className="h-4 w-4" />
-                                </Button>
+                            )}
+                            {submission.admin_notes && (
+                              <p className="text-sm text-muted-foreground mt-2">
+                                Admin notes: {submission.admin_notes}
+                              </p>
+                            )}
+                          </div>
+                          <div className="flex items-center gap-2 flex-shrink-0">
+                            <div className="text-right text-sm text-muted-foreground">
+                              {submission.shopify_product_id && (
+                                <div>Published to Shopify</div>
                               )}
                             </div>
+                            {canEdit && (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  router.push(`/vendor/dashboard/products/edit/${submission.id}`)
+                                }}
+                              >
+                                Edit
+                              </Button>
+                            )}
+                            {(submission.status === "pending" || submission.status === "rejected") && (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={(e) => handleDeleteClick(submission, e)}
+                                className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            )}
                           </div>
                         </div>
-                      )
-                    })}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </TabsContent>
-        </Tabs>
+                      </div>
+                    )
+                  })}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
       </div>
 
       {/* Delete Submission Dialog */}

@@ -36,6 +36,8 @@ export async function GET(request: NextRequest) {
         series_id,
         display_order,
         is_locked,
+        submission_id,
+        shopify_product_id,
         artwork_series!inner (
           id,
           name,
@@ -77,6 +79,9 @@ export async function GET(request: NextRequest) {
         series_unlock_type: m.artwork_series.unlock_type,
         series_unlock_config: m.artwork_series.unlock_config,
         is_locked: m.is_locked,
+        submission_id: m.submission_id,
+        shopify_product_id: m.shopify_product_id,
+        display_order: m.display_order,
         title,
         image,
       }
