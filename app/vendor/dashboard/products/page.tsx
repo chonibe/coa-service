@@ -67,13 +67,14 @@ function SortableArtworkItem({ artwork, seriesUnlockType }: { artwork: any; seri
     transform: CSS.Transform.toString(transform),
     transition,
     opacity: isDragging ? 0.5 : 1,
+    aspectRatio: '827/1197', // Match mask shape (portrait rectangle)
   }
 
   return (
     <div
       ref={setNodeRef}
       style={style}
-      className="relative w-32 h-32 rounded-md overflow-hidden bg-background border shadow-sm group/item flex-shrink-0 cursor-grab active:cursor-grabbing artwork-item"
+      className="relative w-32 rounded-md overflow-hidden bg-background border shadow-sm group/item flex-shrink-0 cursor-grab active:cursor-grabbing artwork-item"
       {...attributes}
       {...listeners}
     >
