@@ -47,7 +47,7 @@ import type { ArtworkSeries } from "@/types/artwork-series"
 import { DeleteSeriesDialog } from "../series/components/DeleteSeriesDialog"
 import { DuplicateSeriesDialog } from "../series/components/DuplicateSeriesDialog"
 
-// Sortable Artwork Component (Kanban Card)
+// Sortable Artwork Component (Grid Item)
 function SortableArtworkItem({ artwork, seriesUnlockType }: { artwork: any; seriesUnlockType: string }) {
   // For artworks in series, use member id. For available artworks, use submission_id
   const sortableId = artwork.submission_id && !artwork.series_id 
@@ -73,46 +73,45 @@ function SortableArtworkItem({ artwork, seriesUnlockType }: { artwork: any; seri
     <div
       ref={setNodeRef}
       style={style}
-      className="relative w-full rounded-lg overflow-hidden bg-background border shadow-sm group/item cursor-grab active:cursor-grabbing hover:shadow-md transition-shadow artwork-item"
+      className="relative w-32 h-32 rounded-md overflow-hidden bg-background border shadow-sm group/item flex-shrink-0 cursor-grab active:cursor-grabbing artwork-item"
       {...attributes}
       {...listeners}
     >
-      {/* Artwork Image */}
-      <div className="aspect-square w-full bg-muted relative">
-        {artwork.image ? (
-          <img
-            src={artwork.image}
-            alt={artwork.title || "Artwork"}
-            className="w-full h-full object-cover"
-          />
-        ) : (
-          <div className="w-full h-full flex items-center justify-center">
-            <ImageIcon className="h-8 w-8 text-muted-foreground/30" />
-          </div>
-        )}
-        
-        {/* Drag Handle */}
-        <div className="absolute top-2 left-2 bg-black/60 p-1.5 rounded text-white backdrop-blur-sm opacity-0 group-hover/item:opacity-100 transition-opacity">
-          <GripVertical className="h-4 w-4" />
+      {artwork.image ? (
+        <img
+          src={artwork.image}
+          alt={artwork.title || "Artwork"}
+          className="w-full h-full object-cover"
+        />
+      ) : (
+        <div className="w-full h-full flex items-center justify-center">
+          <ImageIcon className="h-6 w-6 text-muted-foreground/30" />
         </div>
-        
-        {/* Lock Badge */}
-        {artwork.is_locked && (
-          <div className="absolute top-2 right-2 bg-black/60 p-1.5 rounded-full text-white backdrop-blur-sm">
-            <Lock className="h-3 w-3" />
-          </div>
-        )}
+      )}
+      
+      {/* Drag Handle */}
+      <div className="absolute top-1 left-1 bg-black/60 p-1 rounded text-white backdrop-blur-sm opacity-0 group-hover/item:opacity-100 transition-opacity">
+        <GripVertical className="h-3 w-3" />
       </div>
       
-      {/* Artwork Info */}
-      <div className="p-2">
-        <h4 className="text-sm font-medium line-clamp-2 mb-1">{artwork.title || "Untitled"}</h4>
+      {/* Hover Title */}
+      <div className="absolute inset-0 bg-black/60 opacity-0 group-hover/item:opacity-100 transition-opacity flex flex-col items-center justify-center p-1">
+        <span className="text-[10px] text-white text-center font-medium leading-tight line-clamp-2 mb-1">
+          {artwork.title}
+        </span>
         {seriesUnlockType === "time_based" && (
-          <Badge variant="outline" className="text-xs">
+          <Badge variant="outline" className="text-[8px] h-4 px-1 border-white/50 text-white bg-black/20 backdrop-blur-sm">
             Timed Edition
           </Badge>
         )}
       </div>
+
+      {/* Lock Badge */}
+      {artwork.is_locked && (
+        <div className="absolute top-1 right-1 bg-black/60 p-1 rounded-full text-white backdrop-blur-sm">
+          <Lock className="h-3 w-3" />
+        </div>
+      )}
     </div>
   )
 }
@@ -148,7 +147,7 @@ function DroppableSeries({
         if (!isOpenBox) onSeriesClick()
       }}
       className={cn(
-        "flex flex-col border-2 rounded-xl overflow-hidden transition-colors shadow-sm min-w-[280px] max-w-[280px] relative",
+        "flex flex-col border-2 rounded-xl overflow-hidden transition-colors shadow-sm w-fit relative",
         isOpenBox ? "border-dashed border-muted-foreground/40 bg-muted/20" : getSeriesColor(series.unlock_type),
         isOver && "ring-2 ring-primary ring-offset-2 bg-primary/5",
         !isOpenBox && "cursor-pointer hover:shadow-lg"
@@ -192,25 +191,34 @@ function DroppableSeries({
         </div>
       </div>
 
-      {/* Series Header */}
-      <div className="p-3 border-b bg-background/50 backdrop-blur-sm">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            {!isOpenBox && (
-              <div className="bg-background/80 backdrop-blur-sm p-1 rounded-full shadow-sm">
-                {getSeriesIcon(series.unlock_type)}
-              </div>
-            )}
-            <div>
-              <h3 className="font-semibold text-sm line-clamp-1">{series.name}</h3>
-              <p className="text-xs text-muted-foreground">{artworks.length} {artworks.length === 1 ? 'artwork' : 'artworks'}</p>
+      {/* Type Icon Badge */}
+      {!isOpenBox && (
+        <div className={cn(
+          "absolute top-0 right-0 p-1.5 rounded-bl-lg z-20",
+          getSeriesColor(series.unlock_type).replace('border-', 'bg-').split(' ')[0]
+        )}>
+          <div className="bg-background/80 backdrop-blur-sm p-1 rounded-full shadow-sm">
+            {getSeriesIcon(series.unlock_type)}
+          </div>
+        </div>
+      )}
+
+      {/* Series Name (for empty series) */}
+      {artworks.length === 0 && (
+        <div className="p-3 min-w-[160px]">
+          <h3 className="font-semibold text-xs mb-1 line-clamp-1">{series.name}</h3>
+          <p className="text-[10px] text-muted-foreground mb-2">Empty series</p>
+          <div className="flex items-center justify-center p-4 border-2 border-dashed border-muted-foreground/30 rounded-lg">
+            <div className="text-center">
+              <Plus className="h-5 w-5 text-muted-foreground/50 mx-auto mb-1" />
+              <p className="text-[10px] text-muted-foreground">Drop artworks here</p>
             </div>
           </div>
         </div>
-      </div>
+      )}
 
-      {/* Artworks List (Kanban Cards) */}
-      <div className="flex-1 p-2 overflow-y-auto min-h-[200px] max-h-[600px]">
+      {/* Artworks Grid */}
+      {artworks.length > 0 && (
         <SortableContext
           items={artworks.map((a: any) => 
             a.submission_id && !a.series_id 
@@ -219,26 +227,19 @@ function DroppableSeries({
           )}
           strategy={undefined}
         >
-          <div className="space-y-2">
-            {artworks.length === 0 ? (
-              <div className="flex items-center justify-center p-8 border-2 border-dashed border-muted-foreground/30 rounded-lg">
-                <div className="text-center">
-                  <Plus className="h-6 w-6 text-muted-foreground/50 mx-auto mb-2" />
-                  <p className="text-xs text-muted-foreground">Drop artworks here</p>
-                </div>
-              </div>
-            ) : (
-              artworks.map((artwork: any) => (
+          <div className="p-2 overflow-x-auto no-scrollbar max-w-[80vw] relative z-10">
+            <div className="flex flex-wrap gap-2 min-w-max">
+              {artworks.map((artwork: any) => (
                 <SortableArtworkItem
                   key={artwork.id}
                   artwork={artwork}
                   seriesUnlockType={isOpenBox ? "open" : series.unlock_type}
                 />
-              ))
-            )}
+              ))}
+            </div>
           </div>
         </SortableContext>
-      </div>
+      )}
     </div>
   )
 }
@@ -957,7 +958,7 @@ export default function ProductsPage() {
             onDragEnd={handleDragEnd}
             onDragCancel={handleDragCancel}
           >
-            <div className="flex gap-4 overflow-x-auto pb-4">
+            <div className="flex flex-wrap gap-4 items-start content-start">
               {/* Open Box (Unassigned Artworks) */}
               <DroppableSeries
                 series={{ id: "open", name: "Open", unlock_type: "open" }}
@@ -975,7 +976,7 @@ export default function ProductsPage() {
                 isOpenBox={true}
               />
               
-              {/* Series Columns */}
+              {/* Series Grid */}
               {series.map((s) => {
                 // Find artworks for this series, sorted by display_order
                 const seriesArtworks = allArtworks
