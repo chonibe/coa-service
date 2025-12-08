@@ -259,6 +259,7 @@ export default function ProductsPage() {
   const [loadingArtworks, setLoadingArtworks] = useState(false)
   const [availableArtworks, setAvailableArtworks] = useState<any[]>([])
   const [loadingAvailable, setLoadingAvailable] = useState(false)
+  const [hasLoadedAvailableArtworks, setHasLoadedAvailableArtworks] = useState(false)
   const [activeId, setActiveId] = useState<string | null>(null)
   const [isDragging, setIsDragging] = useState(false)
 

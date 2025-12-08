@@ -90,11 +90,7 @@ export function VendorSidebar() {
     //   href: "/vendor/dashboard/store",
     //   icon: <Icon size="md"><ShoppingBagIcon className="h-5 w-5" /></Icon>,
     // },
-    {
-      title: "Messages",
-      href: "/vendor/dashboard/messages",
-      icon: <Icon size="md"><ChatBubbleLeftRightIcon className="h-5 w-5" /></Icon>,
-    },
+    // Messages moved to header icon
     {
       title: "Profile",
       href: "/vendor/dashboard/profile",
@@ -221,8 +217,31 @@ export function VendorSidebar() {
         </Link>
         </div>
 
-        {/* Right: Create Menu */}
-        <CreateMenu />
+        {/* Right: Messages and Create Menu */}
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="icon"
+            className="relative flex items-center justify-center transition-all hover:bg-primary/10 min-h-[44px] min-w-[44px] focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+            onClick={() => router.push("/vendor/dashboard/messages")}
+            aria-label={unreadMessages > 0 ? `Messages, ${unreadMessages} unread` : "Messages"}
+          >
+            <Icon size="lg">
+              <ChatBubbleLeftRightIcon className="h-6 w-6" aria-hidden="true" />
+            </Icon>
+            {unreadMessages > 0 && (
+              <Badge 
+                variant="destructive" 
+                className="absolute -top-1 -right-1 h-5 min-w-5 flex items-center justify-center p-0 text-xs" 
+                aria-label={`${unreadMessages} unread messages`}
+              >
+                {unreadMessages > 99 ? "99+" : unreadMessages}
+              </Badge>
+            )}
+            <span className="sr-only">Messages</span>
+          </Button>
+          <CreateMenu />
+        </div>
       </header>
 
       {/* Overlay sidebar - shown when sidebarOpen is true */}
@@ -286,15 +305,10 @@ export function VendorSidebar() {
                       : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
                   }`}
                   aria-current={isActive(item.href) ? "page" : undefined}
-                  aria-label={item.title === "Messages" && unreadMessages > 0 ? `${item.title}, ${unreadMessages} unread messages` : item.title}
+                  aria-label={item.title}
                 >
                   {item.icon}
                   <span>{item.title}</span>
-                  {item.title === "Messages" && unreadMessages > 0 && (
-                    <Badge variant="destructive" className="ml-auto h-5 min-w-5 flex items-center justify-center p-0 text-xs" aria-label={`${unreadMessages} unread messages`}>
-                      {unreadMessages > 99 ? "99+" : unreadMessages}
-                    </Badge>
-                  )}
                   {item.title === "Profile" && !profileComplete && (
                     <span className="ml-auto flex h-2 w-2 rounded-full bg-red-500" aria-label="Profile incomplete"></span>
                   )}
