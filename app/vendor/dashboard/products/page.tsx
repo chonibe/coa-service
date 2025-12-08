@@ -691,13 +691,28 @@ export default function ProductsPage() {
       const data = await response.json()
       const realArtwork = data.member
 
-      // Update with real ID from server (no refresh needed)
-      setAllArtworks(prev => 
-        prev.map(a => a.id === newArtwork.id ? {
-          ...a,
-          id: realArtwork.id,
-        } : a)
+      // Check if this artwork already exists in allArtworks (idempotent response)
+      const existingArtwork = allArtworks.find(
+        (a: any) => a.id === realArtwork.id || 
+        (a.submission_id === realArtwork.submission_id && a.series_id === seriesId)
       )
+
+      if (existingArtwork && existingArtwork.id !== newArtwork.id) {
+        // Artwork already exists, remove temp and keep existing
+        setAllArtworks(prev => prev.filter(a => a.id !== newArtwork.id))
+      } else {
+        // Update temp artwork with real ID from server
+        setAllArtworks(prev => 
+          prev.map(a => a.id === newArtwork.id ? {
+            ...a,
+            id: realArtwork.id,
+          } : a)
+        )
+      }
+      
+      // Refresh to ensure consistency
+      await fetchAllArtworks()
+      await fetchAvailableArtworks()
     } catch (error: any) {
       console.error("Error adding artwork to series:", error)
       // Revert optimistic update on error
@@ -776,14 +791,29 @@ export default function ProductsPage() {
       const data = await addResponse.json()
       const newMember = data.member
 
-      // Update with real ID from server (no refresh needed)
-      setAllArtworks(prev => 
-        prev.map(a => a.id === artworkId ? {
-          ...a,
-          id: newMember.id,
-          series_id: targetSeriesId,
-        } : a)
+      // Check if this artwork already exists in target series (idempotent response)
+      const existingInTarget = allArtworks.find(
+        (a: any) => a.id === newMember.id || 
+        (a.submission_id === artwork.submission_id && a.series_id === targetSeriesId && a.id !== artworkId)
       )
+
+      if (existingInTarget && existingInTarget.id !== artworkId) {
+        // Artwork already exists in target, remove the one we moved
+        setAllArtworks(prev => prev.filter(a => a.id !== artworkId))
+      } else {
+        // Update with real ID from server
+        setAllArtworks(prev => 
+          prev.map(a => a.id === artworkId ? {
+            ...a,
+            id: newMember.id,
+            series_id: targetSeriesId,
+          } : a)
+        )
+      }
+      
+      // Refresh to ensure consistency
+      await fetchAllArtworks()
+      await fetchAvailableArtworks()
     } catch (error: any) {
       console.error("Error moving artwork:", error)
       // Revert optimistic update on error
