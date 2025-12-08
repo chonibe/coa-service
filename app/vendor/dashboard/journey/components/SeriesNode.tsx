@@ -41,6 +41,7 @@ export function SeriesNode({
   onClick,
 }: SeriesNodeProps) {
   const [isDragging, setIsDragging] = useState(false)
+  const [isDragging, setIsDragging] = useState(false)
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 })
   const nodeRef = useRef<HTMLDivElement>(null)
 
@@ -139,11 +140,25 @@ export function SeriesNode({
       >
         {series.members && series.members.length > 0 ? (
           /* Artwork Grid Display - 3 columns to show more items */
-          <div className="flex-1 p-0.5 grid grid-cols-3 gap-0.5 overflow-hidden" style={{ gridTemplateColumns: 'repeat(3, 1fr)' }}>
+          <div 
+            className="flex-1 overflow-hidden" 
+            style={{ 
+              display: 'grid',
+              gridTemplateColumns: 'repeat(3, 1fr)',
+              gap: '1px',
+              padding: '2px'
+            }}
+          >
             {series.members.slice(0, 9).map((member) => (
               <div 
                 key={member.id} 
-                className="relative aspect-square rounded-sm overflow-hidden bg-muted border border-border/50"
+                className="relative overflow-hidden bg-muted"
+                style={{ 
+                  aspectRatio: '1 / 1',
+                  width: '100%',
+                  minWidth: 0,
+                  minHeight: 0
+                }}
               >
                 {member.submissions?.images?.[0] ? (
                   <img
@@ -151,6 +166,7 @@ export function SeriesNode({
                     alt={member.submissions.title || "Artwork"}
                     className="w-full h-full object-cover"
                     draggable={false}
+                    style={{ display: 'block' }}
                   />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center">
