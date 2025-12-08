@@ -380,7 +380,7 @@ export default function ProductsPage() {
         </div>
 
         {/* Booklet/Binder View */}
-        {loadingArtworks ? (
+        {loadingArtworks || loadingSeries ? (
           <div className="grid gap-4 grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
             {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((i) => (
               <div key={i} className="aspect-[3/4]">
@@ -388,119 +388,132 @@ export default function ProductsPage() {
               </div>
             ))}
           </div>
-        ) : allArtworks.length === 0 ? (
+        ) : series.length === 0 ? (
           <Card>
             <CardContent className="flex flex-col items-center justify-center py-12">
               <ImageIcon className="h-12 w-12 text-muted-foreground mb-4" />
-              <h3 className="text-lg font-semibold mb-2">No Artworks Found</h3>
+              <h3 className="text-lg font-semibold mb-2">No Series Found</h3>
               <p className="text-sm text-muted-foreground mb-4 text-center">
-                Add artworks to your series to see them here.
+                Create your first series to organize your artworks.
               </p>
+              <Button onClick={() => router.push("/vendor/dashboard/series/create")}>
+                <Plus className="h-4 w-4 mr-2" />
+                Create Series
+              </Button>
             </CardContent>
           </Card>
         ) : (
           <div className="flex flex-wrap gap-4 items-start content-start">
-            {Object.entries(
-              allArtworks.reduce((acc, artwork) => {
-                const seriesId = artwork.series_id || "unknown"
-                if (!acc[seriesId]) {
-                  acc[seriesId] = {
-                    name: artwork.series_name || "Unknown Series",
-                    unlock_type: artwork.series_unlock_type || "unknown",
-                    unlock_config: artwork.series_unlock_config || {},
-                    artworks: []
-                  }
-                }
-                acc[seriesId].artworks.push(artwork)
-                return acc
-              }, {} as Record<string, { name: string; unlock_type: string; unlock_config: any; artworks: any[] }>)
-            ).map(([seriesId, group]: [string, any]) => (
-              <div 
-                key={seriesId} 
-                className={cn(
-                  "flex flex-col border-2 rounded-xl overflow-hidden transition-colors shadow-sm w-fit relative",
-                  getSeriesColor(group.unlock_type)
-                )}
-              >
-                {/* Time-Based "Water Glass" Fill */}
-                {group.unlock_type === "time_based" && (() => {
-                  const config = group.unlock_config
-                  if (config.unlock_schedule?.start_date && config.unlock_schedule?.end_date) {
-                    const start = new Date(config.unlock_schedule.start_date)
-                    const end = new Date(config.unlock_schedule.end_date)
-                    const now = new Date()
-                    const isActive = now >= start && now <= end
-                    
-                    let progress = 0
-                    if (isActive) {
-                      const total = end.getTime() - start.getTime()
-                      const current = now.getTime() - start.getTime()
-                      progress = Math.min(100, Math.max(0, (current / total) * 100))
-                    } else if (now > end) {
-                      progress = 100
+            {series.map((s) => {
+              // Find artworks for this series
+              const seriesArtworks = allArtworks.filter((artwork: any) => artwork.series_id === s.id)
+              const hasArtworks = seriesArtworks.length > 0
+              
+              return (
+                <div 
+                  key={s.id}
+                  onClick={() => router.push(`/vendor/dashboard/series/${s.id}`)}
+                  className={cn(
+                    "flex flex-col border-2 rounded-xl overflow-hidden transition-colors shadow-sm w-fit relative cursor-pointer hover:shadow-lg",
+                    getSeriesColor(s.unlock_type)
+                  )}
+                >
+                  {/* Time-Based "Water Glass" Fill */}
+                  {s.unlock_type === "time_based" && s.unlock_config && (() => {
+                    const config = s.unlock_config
+                    if (config.unlock_schedule?.start_date && config.unlock_schedule?.end_date) {
+                      const start = new Date(config.unlock_schedule.start_date)
+                      const end = new Date(config.unlock_schedule.end_date)
+                      const now = new Date()
+                      const isActive = now >= start && now <= end
+                      
+                      let progress = 0
+                      if (isActive) {
+                        const total = end.getTime() - start.getTime()
+                        const current = now.getTime() - start.getTime()
+                        progress = Math.min(100, Math.max(0, (current / total) * 100))
+                      } else if (now > end) {
+                        progress = 100
+                      }
+
+                      return (
+                        <div 
+                          className="absolute bottom-0 left-0 right-0 bg-green-500/20 transition-all duration-1000 ease-in-out pointer-events-none"
+                          style={{ height: `${progress}%` }}
+                        />
+                      )
                     }
+                    return null
+                  })()}
 
-                    return (
-                      <div 
-                        className="absolute bottom-0 left-0 right-0 bg-green-500/20 transition-all duration-1000 ease-in-out pointer-events-none"
-                        style={{ height: `${progress}%` }}
-                      />
-                    )
-                  }
-                  return null
-                })()}
-
-                {/* Type Icon Badge */}
-                <div className={cn(
-                  "absolute top-0 right-0 p-1.5 rounded-bl-lg z-20",
-                  getSeriesColor(group.unlock_type).replace('border-', 'bg-').split(' ')[0]
-                )}>
-                  <div className="bg-background/80 backdrop-blur-sm p-1 rounded-full shadow-sm">
-                    {getSeriesIcon(group.unlock_type)}
+                  {/* Type Icon Badge */}
+                  <div className={cn(
+                    "absolute top-0 right-0 p-1.5 rounded-bl-lg z-20",
+                    getSeriesColor(s.unlock_type).replace('border-', 'bg-').split(' ')[0]
+                  )}>
+                    <div className="bg-background/80 backdrop-blur-sm p-1 rounded-full shadow-sm">
+                      {getSeriesIcon(s.unlock_type)}
+                    </div>
                   </div>
-                </div>
 
-                {/* Artworks Flex Grid - Adapts to content size */}
-                <div className="p-2 overflow-x-auto no-scrollbar max-w-[80vw] relative z-10">
-                  <div className="flex flex-nowrap gap-2 min-w-max">
-                    {group.artworks.map((artwork: any) => (
-                      <div key={artwork.id} className="relative w-32 h-32 rounded-md overflow-hidden bg-background border shadow-sm group/item flex-shrink-0">
-                        {artwork.image ? (
-                          <img
-                            src={artwork.image}
-                            alt={artwork.title || "Artwork"}
-                            className="w-full h-full object-cover"
-                          />
-                        ) : (
-                          <div className="w-full h-full flex items-center justify-center">
-                            <ImageIcon className="h-6 w-6 text-muted-foreground/30" />
-                          </div>
-                        )}
-                        
-                        {/* Hover Title */}
-                        <div className="absolute inset-0 bg-black/60 opacity-0 group-hover/item:opacity-100 transition-opacity flex flex-col items-center justify-center p-1">
-                          <span className="text-[10px] text-white text-center font-medium leading-tight line-clamp-2 mb-1">
-                            {artwork.title}
-                          </span>
-                          {group.unlock_type === "time_based" && (
-                            <Badge variant="outline" className="text-[8px] h-4 px-1 border-white/50 text-white bg-black/20 backdrop-blur-sm">
-                              Timed Edition
-                            </Badge>
-                          )}
+                  {/* Series Name (for empty series) */}
+                  {!hasArtworks && (
+                    <div className="p-4 min-w-[200px]">
+                      <h3 className="font-semibold text-sm mb-1">{s.name}</h3>
+                      <p className="text-xs text-muted-foreground mb-3">Empty series</p>
+                      <div className="flex items-center justify-center p-8 border-2 border-dashed border-muted-foreground/30 rounded-lg">
+                        <div className="text-center">
+                          <Plus className="h-8 w-8 text-muted-foreground/50 mx-auto mb-2" />
+                          <p className="text-xs text-muted-foreground">Click to add artworks</p>
                         </div>
-
-                        {/* Status Icons */}
-                        {artwork.is_locked && (
-                          <div className="absolute top-1 right-1 bg-black/60 p-1 rounded-full text-white backdrop-blur-sm">
-                            <Lock className="h-3 w-3" />
-                          </div>
-                        )}
                       </div>
-                    ))}
-                  </div>
+                    </div>
+                  )}
+
+                  {/* Artworks Flex Grid - Adapts to content size */}
+                  {hasArtworks && (
+                    <div className="p-2 overflow-x-auto no-scrollbar max-w-[80vw] relative z-10">
+                      <div className="flex flex-nowrap gap-2 min-w-max">
+                        {seriesArtworks.map((artwork: any) => (
+                          <div key={artwork.id} className="relative w-32 h-32 rounded-md overflow-hidden bg-background border shadow-sm group/item flex-shrink-0">
+                            {artwork.image ? (
+                              <img
+                                src={artwork.image}
+                                alt={artwork.title || "Artwork"}
+                                className="w-full h-full object-cover"
+                              />
+                            ) : (
+                              <div className="w-full h-full flex items-center justify-center">
+                                <ImageIcon className="h-6 w-6 text-muted-foreground/30" />
+                              </div>
+                            )}
+                            
+                            {/* Hover Title */}
+                            <div className="absolute inset-0 bg-black/60 opacity-0 group-hover/item:opacity-100 transition-opacity flex flex-col items-center justify-center p-1">
+                              <span className="text-[10px] text-white text-center font-medium leading-tight line-clamp-2 mb-1">
+                                {artwork.title}
+                              </span>
+                              {s.unlock_type === "time_based" && (
+                                <Badge variant="outline" className="text-[8px] h-4 px-1 border-white/50 text-white bg-black/20 backdrop-blur-sm">
+                                  Timed Edition
+                                </Badge>
+                              )}
+                            </div>
+
+                            {/* Status Icons */}
+                            {artwork.is_locked && (
+                              <div className="absolute top-1 right-1 bg-black/60 p-1 rounded-full text-white backdrop-blur-sm">
+                                <Lock className="h-3 w-3" />
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
-              </div>
-            ))}
+              )
+            })}
           </div>
         )}
       </div>
