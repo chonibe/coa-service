@@ -9,7 +9,7 @@ import { Badge } from "@/components/ui/badge"
 import { cn } from "@/lib/utils"
 import { Progress } from "@/components/ui/progress"
 import { Card, CardContent } from "@/components/ui/card"
-import { Lock, TrendingUp, Info, Clock } from "lucide-react"
+import { Lock, TrendingUp, Info, Clock, Check } from "lucide-react"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { PricePickerCards } from "./PricePickerCards"
@@ -22,6 +22,12 @@ import {
   validatePrice,
   type UnlockStatus,
 } from "@/lib/pricing/unlock-system"
+
+type DropType = "fixed" | "timed" | null
+type WizardStep = 1 | 2 | 3
+
+// Simplified edition sizes for the guided flow
+const GUIDED_EDITION_SIZES: EditionSize[] = [90, 44, 24]
 
 interface VariantsStepProps {
   formData: ProductSubmissionData
@@ -45,6 +51,35 @@ function generateSKU(vendorName: string, productTitle: string, variantIndex: num
 export function VariantsStep({ formData, setFormData }: VariantsStepProps) {
   const [unlockStatus, setUnlockStatus] = useState<UnlockStatus | null>(null)
   const [loadingUnlock, setLoadingUnlock] = useState(true)
+  const [currentStep, setCurrentStep] = useState<WizardStep>(1)
+  const [selectedDropType, setSelectedDropType] = useState<DropType>(null)
+  const [selectedEditionSize, setSelectedEditionSize] = useState<EditionSize | null>(null)
+
+  // Initialize wizard state from form data (only once on mount)
+  useEffect(() => {
+    // Only initialize if we haven't set a drop type yet
+    if (selectedDropType !== null) return
+    
+    const isTimed = formData.metafields?.find(
+      (m) => m.namespace === "custom" && m.key === "timed_edition"
+    )?.value === "true"
+    
+    const editionSizeMetafield = formData.metafields?.find(
+      (m) => m.namespace === "custom" && m.key === "edition_size"
+    )
+    
+    if (isTimed) {
+      setSelectedDropType("timed")
+      setCurrentStep(3) // Skip to price step
+    } else if (editionSizeMetafield) {
+      const size = Number.parseInt(editionSizeMetafield.value, 10) as EditionSize
+      if (GUIDED_EDITION_SIZES.includes(size)) {
+        setSelectedDropType("fixed")
+        setSelectedEditionSize(size)
+        setCurrentStep(3) // Skip to price step
+      }
+    }
+  }, [formData.metafields, selectedDropType])
 
   // Fetch unlock status on mount
   useEffect(() => {
@@ -107,74 +142,73 @@ export function VariantsStep({ formData, setFormData }: VariantsStepProps) {
     })
   }
 
-  const handleTimedEditionChange = () => {
-    // Set Timed Edition (Open Edition)
-    // Remove edition_size metafield
-    // Set inventory to unlimited/continue (represented by null or huge number, usually handled by platform)
+  const handleDropTypeSelect = (type: "fixed" | "timed") => {
+    setSelectedDropType(type)
     
-    // For Timed Edition, we might want a specific price range or recommended price
-    // Let's assume similar to 90 edition size (entry level) or custom
-    const recommendedPrice = 50 
+    if (type === "timed") {
+      // Set Timed Edition immediately
+      const recommendedPrice = 50
+      setFormData((prev) => {
+        const variants = [...prev.variants]
+        variants[0] = {
+          ...variants[0],
+          inventory_quantity: undefined,
+          inventory_policy: 'continue',
+          price: prev.variants[0].price || recommendedPrice.toString(),
+        }
+        
+        const metafields = (prev.metafields || []).filter(
+          (m) => !(m.namespace === "custom" && m.key === "edition_size")
+        )
+        
+        const timedMetafield = {
+          namespace: "custom",
+          key: "timed_edition",
+          value: "true",
+          type: "boolean",
+        }
+        
+        const existingIndex = metafields.findIndex(m => m.namespace === "custom" && m.key === "timed_edition")
+        if (existingIndex >= 0) {
+          metafields[existingIndex] = timedMetafield
+        } else {
+          metafields.push(timedMetafield)
+        }
+
+        return { ...prev, variants, metafields }
+      })
+      // Skip to price step for timed editions
+      setCurrentStep(3)
+    } else {
+      // Fixed edition - go to step 2
+      setCurrentStep(2)
+    }
+  }
+
+  const isTimedEdition = selectedDropType === "timed" || (() => {
+    const timed = formData.metafields?.find(m => m.namespace === "custom" && m.key === "timed_edition")
+    return timed?.value === "true"
+  })()
+
+  const handleEditionSizeSelect = (editionSize: EditionSize) => {
+    setSelectedEditionSize(editionSize)
+    const totalSales = unlockStatus?.totalSales ?? 0
+    const recommendedPrice = getRecommendedPrice(editionSize, totalSales)
 
     setFormData((prev) => {
       const variants = [...prev.variants]
       variants[0] = {
         ...variants[0],
-        inventory_quantity: undefined, // Open/Unlimited
-        inventory_policy: 'continue', // Shopify flag for selling without stock tracking
+        inventory_quantity: editionSize,
         price: prev.variants[0].price || recommendedPrice.toString(),
-      }
-      
-      // Remove edition_size metafield
-      const metafields = (prev.metafields || []).filter(
-        (m) => !(m.namespace === "custom" && m.key === "edition_size")
-      )
-      
-      // Add timed_edition metafield flag if needed, or just relying on absence of edition_size
-      const timedMetafield = {
-        namespace: "custom",
-        key: "timed_edition",
-        value: "true",
-        type: "boolean",
-      }
-      
-      // Check if it exists and update, or push
-      const existingIndex = metafields.findIndex(m => m.namespace === "custom" && m.key === "timed_edition")
-      if (existingIndex >= 0) {
-        metafields[existingIndex] = timedMetafield
-      } else {
-        metafields.push(timedMetafield)
-      }
-
-      return { ...prev, variants, metafields }
-    })
-  }
-
-  const isTimedEdition = (() => {
-    const timed = formData.metafields?.find(m => m.namespace === "custom" && m.key === "timed_edition")
-    return timed?.value === "true"
-  })()
-
-  const handleEditionSizeChange = (index: number, editionSize: EditionSize) => {
-    const totalSales = unlockStatus?.totalSales ?? 0
-    const recommendedPrice = getRecommendedPrice(editionSize, totalSales)
-    const priceRange = getPriceRange(editionSize)
-
-    setFormData((prev) => {
-      const variants = [...prev.variants]
-      variants[index] = {
-        ...variants[index],
-        inventory_quantity: editionSize, // Set inventory = edition size
-        price: prev.variants[index].price || recommendedPrice.toString(), // Set recommended price if empty
       }
       return { ...prev, variants }
     })
 
-    // Update metafields to include edition_size
-      setFormData((prev) => {
+    setFormData((prev) => {
       const metafields = (prev.metafields || []).filter(
         (m) => !(m.namespace === "custom" && m.key === "timed_edition")
-      ) // Remove timed_edition flag if selecting fixed size
+      )
 
       const editionSizeMetafieldIndex = metafields.findIndex(
         (m) => m.namespace === "custom" && m.key === "edition_size",
@@ -195,6 +229,9 @@ export function VariantsStep({ formData, setFormData }: VariantsStepProps) {
 
       return { ...prev, metafields }
     })
+    
+    // Move to price step
+    setCurrentStep(3)
   }
 
   const handlePriceChange = (index: number, price: string | number) => {
@@ -259,19 +296,327 @@ export function VariantsStep({ formData, setFormData }: VariantsStepProps) {
     return Math.min(progress, 100)
   }
 
-  const currentEditionSize = getCurrentEditionSize()
+  const currentEditionSize = selectedEditionSize || getCurrentEditionSize()
   const totalSales = unlockStatus?.totalSales ?? 0
   const nextUnlock = getNextUnlock()
 
-  return (
+  // Step 1: Choose Drop Type
+  const renderStep1 = () => (
     <div className="space-y-6">
       <div>
-        <h3 className="text-lg font-semibold">Pricing & Edition Size</h3>
+        <h3 className="text-lg font-semibold">Choose your drop format</h3>
         <p className="text-sm text-muted-foreground">
-          Select edition size and set pricing for your artwork
+          Select how you want to sell your artwork
         </p>
       </div>
 
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {/* Fixed Edition Option */}
+        <Card
+          className={cn(
+            "cursor-pointer transition-all hover:border-primary",
+            selectedDropType === "fixed" && "border-primary ring-2 ring-primary ring-offset-2 bg-primary/5"
+          )}
+          onClick={() => handleDropTypeSelect("fixed")}
+        >
+          <CardContent className="p-6">
+            <div className="flex items-start gap-4">
+              <div className={cn(
+                "p-3 rounded-lg",
+                selectedDropType === "fixed" ? "bg-primary text-primary-foreground" : "bg-muted"
+              )}>
+                <Lock className="h-6 w-6" />
+              </div>
+              <div className="flex-1">
+                <h4 className="font-semibold text-lg mb-2">Fixed Edition</h4>
+                <p className="text-sm text-muted-foreground mb-4">
+                  Choose a set edition size and price. Limited quantity creates scarcity.
+                </p>
+                {selectedDropType === "fixed" && (
+                  <Badge variant="default" className="mt-2">
+                    <Check className="h-3 w-3 mr-1" />
+                    Selected
+                  </Badge>
+                )}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Timed Edition Option */}
+        <Card
+          className={cn(
+            "cursor-pointer transition-all hover:border-primary",
+            selectedDropType === "timed" && "border-primary ring-2 ring-primary ring-offset-2 bg-primary/5"
+          )}
+          onClick={() => handleDropTypeSelect("timed")}
+        >
+          <CardContent className="p-6">
+            <div className="flex items-start gap-4">
+              <div className={cn(
+                "p-3 rounded-lg",
+                selectedDropType === "timed" ? "bg-primary text-primary-foreground" : "bg-muted"
+              )}>
+                <Clock className="h-6 w-6" />
+              </div>
+              <div className="flex-1">
+                <h4 className="font-semibold text-lg mb-2">Timed Edition</h4>
+                <p className="text-sm text-muted-foreground mb-4">
+                  Sell for a limited time. The number of sales becomes your edition size.
+                </p>
+                {selectedDropType === "timed" && (
+                  <Badge variant="default" className="mt-2">
+                    <Check className="h-3 w-3 mr-1" />
+                    Selected
+                  </Badge>
+                )}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    </div>
+  )
+
+  // Step 2: Choose Edition Size (only for Fixed Edition)
+  const renderStep2 = () => {
+    const editionSizeLabels: Record<EditionSize, { label: string; description: string }> = {
+      90: { label: "Baseline", description: "Great for building your collector base" },
+      44: { label: "Premium", description: "Balanced scarcity and accessibility" },
+      24: { label: "Capsule", description: "Exclusive limited release" },
+      78: { label: "Standard", description: "" },
+      8: { label: "Ultra Premium", description: "" },
+    }
+
+    return (
+      <div className="space-y-6">
+        <div>
+          <div className="flex items-center gap-2 mb-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => {
+                setCurrentStep(1)
+                setSelectedDropType(null)
+              }}
+            >
+              ← Back
+            </Button>
+            <h3 className="text-lg font-semibold">Choose your edition size</h3>
+          </div>
+          <p className="text-sm text-muted-foreground">
+            Select the number of pieces you want to create
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {GUIDED_EDITION_SIZES.map((size) => {
+            const isUnlocked = unlockStatus
+              ? unlockStatus.editionSizes.find((e) => e.size === size)?.unlocked ?? false
+              : size === 90
+            const minSales = unlockStatus
+              ? unlockStatus.editionSizes.find((e) => e.size === size)?.minSales ?? 0
+              : 0
+            const isSelected = selectedEditionSize === size
+            const priceRange = getPriceRange(size)
+            const label = editionSizeLabels[size]?.label || `${size} editions`
+            const description = editionSizeLabels[size]?.description || ""
+
+            return (
+              <Card
+                key={size}
+                className={cn(
+                  "cursor-pointer transition-all hover:border-primary",
+                  isSelected && "border-primary ring-2 ring-primary ring-offset-2 bg-primary/5",
+                  !isUnlocked && "opacity-60 cursor-not-allowed"
+                )}
+                onClick={() => isUnlocked && handleEditionSizeSelect(size)}
+              >
+                <CardContent className="p-6">
+                  <div className="flex items-start justify-between mb-4">
+                    {!isUnlocked && (
+                      <Lock className="h-5 w-5 text-muted-foreground" />
+                    )}
+                    {isSelected && (
+                      <div className="h-6 w-6 rounded-full bg-primary flex items-center justify-center">
+                        <Check className="h-4 w-4 text-primary-foreground" />
+                      </div>
+                    )}
+                  </div>
+                  <div className="text-center mb-4">
+                    <div className="text-4xl font-bold mb-2">{size}</div>
+                    <div className="text-sm font-medium text-muted-foreground mb-1">{label}</div>
+                    {description && (
+                      <p className="text-xs text-muted-foreground">{description}</p>
+                    )}
+                  </div>
+                  {isUnlocked ? (
+                    <div className="text-center">
+                      <Badge variant="outline" className="text-xs">
+                        ${priceRange.min} - ${priceRange.max}
+                      </Badge>
+                    </div>
+                  ) : (
+                    <div className="text-center">
+                      <Badge variant="secondary" className="text-xs">
+                        Unlock at {minSales} sales
+                      </Badge>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            )
+          })}
+        </div>
+
+        {!loadingUnlock && unlockStatus && (
+          <div className="space-y-2">
+            {unlockStatus.editionSizes
+              .filter((e) => !e.unlocked && GUIDED_EDITION_SIZES.includes(e.size))
+              .map((e) => {
+                const progress = getUnlockProgress(e.minSales)
+                return (
+                  <div key={e.size} className="flex items-center justify-between text-sm">
+                    <span className="text-muted-foreground">
+                      {e.size} editions locked - {e.minSales - totalSales} more sales needed
+                    </span>
+                    <span className="font-medium">{Math.round(progress)}%</span>
+                  </div>
+                )
+              })}
+          </div>
+        )}
+      </div>
+    )
+  }
+
+  // Step 3: Choose Price
+  const renderStep3 = () => {
+    const variant = formData.variants[0] || {
+      price: "",
+      sku: "",
+      requires_shipping: true,
+      weight: 90,
+      weight_unit: "g",
+    }
+
+    const isTimed = selectedDropType === "timed" || isTimedEdition
+    const editionSize = selectedEditionSize || currentEditionSize
+
+    const recommendedPrice = editionSize 
+      ? getRecommendedPrice(editionSize, totalSales) 
+      : 50
+    const priceRange = editionSize 
+      ? getPriceRange(editionSize) 
+      : { min: 40, max: 100 }
+
+    return (
+      <div className="space-y-6">
+        <div>
+          <div className="flex items-center gap-2 mb-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => {
+                if (isTimed) {
+                  setCurrentStep(1)
+                  setSelectedDropType(null)
+                } else {
+                  setCurrentStep(2)
+                }
+              }}
+            >
+              ← Back
+            </Button>
+            <h3 className="text-lg font-semibold">Choose your price</h3>
+          </div>
+          <p className="text-sm text-muted-foreground">
+            {isTimed 
+              ? "Set your price for the timed edition window"
+              : `Select a price within the range for ${editionSize} editions`
+            }
+          </p>
+        </div>
+
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <Label>
+              Price <span className="text-red-500">*</span>
+            </Label>
+            <Badge variant="outline" className="text-xs">
+              Range: ${priceRange.min} - ${priceRange.max}
+            </Badge>
+          </div>
+
+          {isTimed ? (
+            <div className="space-y-4">
+              <Label>Select Progressive Pricing Range</Label>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {[
+                  { label: "Accessible", start: 40, end: 60, desc: "Entry level range" },
+                  { label: "Collector", start: 70, end: 100, desc: "Standard release range" },
+                  { label: "Invest", start: 120, end: 200, desc: "Premium tier range" }
+                ].map((range) => {
+                  const isSelected = 
+                    parseFloat(variant.price || "0") === range.start && 
+                    parseFloat(formData.metafields?.find(m => m.key === "final_price")?.value || "0") === range.end
+
+                  return (
+                    <div 
+                      key={range.label}
+                      onClick={() => {
+                        updateVariant(0, "price", range.start.toString())
+                        setFormData(prev => {
+                          const metas = [...(prev.metafields || [])]
+                          const idx = metas.findIndex(m => m.key === "final_price")
+                          if (idx >= 0) {
+                            metas[idx] = { ...metas[idx], value: range.end.toString() }
+                          } else {
+                            metas.push({ namespace: "custom", key: "final_price", value: range.end.toString(), type: "number_decimal" })
+                          }
+                          return { ...prev, metafields: metas }
+                        })
+                      }}
+                      className={cn(
+                        "cursor-pointer rounded-xl border-2 p-4 transition-all hover:border-primary",
+                        isSelected ? "border-primary bg-primary/5 ring-1 ring-primary" : "border-muted bg-card"
+                      )}
+                    >
+                      <div className="flex justify-between items-start mb-2">
+                        <span className="font-semibold text-sm">{range.label}</span>
+                        {isSelected && <TrendingUp className="h-4 w-4 text-primary" />}
+                      </div>
+                      <div className="text-2xl font-bold mb-1">
+                        ${range.start} <span className="text-sm text-muted-foreground font-normal">to</span> ${range.end}
+                      </div>
+                      <p className="text-xs text-muted-foreground">{range.desc}</p>
+                    </div>
+                  )
+                })}
+              </div>
+              <Alert className="bg-blue-50 border-blue-200">
+                <TrendingUp className="h-4 w-4 text-blue-600" />
+                <AlertDescription className="text-blue-700 text-xs">
+                  Price increases automatically from start to end price as the time window closes.
+                </AlertDescription>
+              </Alert>
+            </div>
+          ) : (
+            <PricePickerCards
+              value={variant.price ? Number.parseFloat(variant.price) : null}
+              onChange={(price) => handlePriceChange(0, price)}
+              min={priceRange.min}
+              max={priceRange.max}
+              recommended={recommendedPrice}
+            />
+          )}
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <div className="space-y-6">
       {/* Sales Performance & Next Unlock */}
       {unlockStatus && (
         <Card className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-950/20 dark:to-indigo-950/20 border-blue-200">
@@ -308,224 +653,54 @@ export function VariantsStep({ formData, setFormData }: VariantsStepProps) {
         </Card>
       )}
 
-      {/* Edition Size Selection - Button Grid */}
-      <div className="space-y-3">
-        <Label>
-          Choose your edition size <span className="text-red-500">*</span>
-        </Label>
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-          {EDITION_SIZES.map((size) => {
-            const isUnlocked = unlockStatus
-              ? unlockStatus.editionSizes.find((e) => e.size === size)?.unlocked ?? false
-              : size === 90 // Default: 90 is always unlocked
-            const minSales = unlockStatus
-              ? unlockStatus.editionSizes.find((e) => e.size === size)?.minSales ?? 0
-              : 0
-            const isSelected = currentEditionSize === size
-            const priceRange = getPriceRange(size)
-            const recommendedPrice = getRecommendedPrice(size, totalSales)
-
-            return (
-              <TooltipProvider key={size}>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      type="button"
-                      variant={isSelected ? "default" : "outline"}
-                      className={`relative h-24 flex flex-col items-center justify-center gap-1 ${
-                        !isUnlocked ? "opacity-60 cursor-not-allowed" : ""
-                      } ${isSelected ? "ring-2 ring-primary ring-offset-2" : ""}`}
-                      disabled={!isUnlocked}
-                      onClick={() => handleEditionSizeChange(0, size)}
-                    >
-                      {!isUnlocked && (
-                        <Lock className="h-4 w-4 absolute top-2 right-2 text-muted-foreground" />
-                      )}
-                      <span className="text-2xl font-bold">{size}</span>
-                      <span className="text-xs text-muted-foreground">editions</span>
-                      {isUnlocked && (
-                        <span className="text-xs font-medium">${priceRange.min}-${priceRange.max}</span>
-                      )}
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent side="top" className="max-w-xs">
-                    <div className="space-y-1">
-                      <p className="font-semibold">{size} Editions</p>
-                      {isUnlocked ? (
-                        <>
-                          <p>Price Range: ${priceRange.min} - ${priceRange.max}</p>
-                          <p>Recommended: ${recommendedPrice}</p>
-                        </>
-                      ) : (
-                        <p>Unlock at {minSales} sales (need {minSales - totalSales} more)</p>
-                      )}
-                    </div>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-            )
-          })}
-          
-          {/* Timed Edition Button */}
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  type="button"
-                  variant={isTimedEdition ? "default" : "outline"}
-                  className={`relative h-24 flex flex-col items-center justify-center gap-1 ${
-                    isTimedEdition ? "ring-2 ring-primary ring-offset-2 bg-green-50 hover:bg-green-100 text-green-700 border-green-200" : "hover:border-green-200 hover:bg-green-50/50"
-                  }`}
-                  onClick={handleTimedEditionChange}
-                >
-                  <Clock className={`h-6 w-6 ${isTimedEdition ? "text-green-700" : "text-green-600/70"}`} />
-                  <span className="text-sm font-bold">Timed Edition</span>
-                  <span className="text-[10px] text-muted-foreground">Open Window</span>
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent side="top" className="max-w-xs">
-                <div className="space-y-1">
-                  <p className="font-semibold">Timed Edition</p>
-                  <p>Edition size is determined by sales during a specific time window.</p>
-                </div>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-        </div>
-        {!loadingUnlock && unlockStatus && (
-          <div className="space-y-1 text-xs text-muted-foreground">
-            {unlockStatus.editionSizes
-              .filter((e) => !e.unlocked)
-              .map((e) => {
-                const progress = getUnlockProgress(e.minSales)
-                return (
-                  <div key={e.size} className="flex items-center justify-between">
-                    <span>
-                      {e.size} editions locked - {e.minSales - totalSales} more sales needed
-                    </span>
-                    <span className="font-medium">{Math.round(progress)}%</span>
-                  </div>
-                )
-              })}
+      {/* Step Indicator */}
+      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+        <div className={cn(
+          "flex items-center gap-2",
+          currentStep >= 1 && "text-foreground font-medium"
+        )}>
+          <div className={cn(
+            "h-8 w-8 rounded-full flex items-center justify-center",
+            currentStep >= 1 ? "bg-primary text-primary-foreground" : "bg-muted"
+          )}>
+            {currentStep > 1 ? <Check className="h-4 w-4" /> : "1"}
           </div>
-        )}
+          <span>Drop Type</span>
+        </div>
+        <div className="h-px w-8 bg-muted" />
+        <div className={cn(
+          "flex items-center gap-2",
+          currentStep >= 2 && "text-foreground font-medium",
+          selectedDropType === "timed" && "opacity-50"
+        )}>
+          <div className={cn(
+            "h-8 w-8 rounded-full flex items-center justify-center",
+            currentStep >= 2 ? "bg-primary text-primary-foreground" : "bg-muted",
+            selectedDropType === "timed" && "opacity-50"
+          )}>
+            {currentStep > 2 ? <Check className="h-4 w-4" /> : "2"}
+          </div>
+          <span>Edition Size</span>
+        </div>
+        <div className="h-px w-8 bg-muted" />
+        <div className={cn(
+          "flex items-center gap-2",
+          currentStep >= 3 && "text-foreground font-medium"
+        )}>
+          <div className={cn(
+            "h-8 w-8 rounded-full flex items-center justify-center",
+            currentStep >= 3 ? "bg-primary text-primary-foreground" : "bg-muted"
+          )}>
+            3
+          </div>
+          <span>Price</span>
+        </div>
       </div>
 
-      {/* Price Section */}
-      {(() => {
-        const variant = formData.variants[0] || {
-          price: "",
-          sku: "",
-          requires_shipping: true,
-          weight: 90,
-          weight_unit: "g",
-        }
-        const editionSizeMetafield = formData.metafields?.find(
-          (m) => m.namespace === "custom" && m.key === "edition_size",
-        )
-        const editionSize = editionSizeMetafield
-          ? (Number.parseInt(editionSizeMetafield.value, 10) as EditionSize)
-          : null
-        
-        const isTimed = formData.metafields?.find(
-          (m) => m.namespace === "custom" && m.key === "timed_edition"
-        )?.value === "true"
-
-        const recommendedPrice = editionSize ? getRecommendedPrice(editionSize, totalSales) : 50
-        const priceRange = editionSize ? getPriceRange(editionSize) : { min: 40, max: 100 } // Default wider range for timed
-        
-        return (
-          <div className="space-y-4">
-            {editionSize || isTimed ? (
-              <>
-                <div className="space-y-3">
-                    <div className="flex items-center justify-between">
-                    <Label>
-                      Choose your price <span className="text-red-500">*</span>
-                      </Label>
-                        <Badge variant="outline" className="text-xs">
-                          Range: ${priceRange.min} - ${priceRange.max}
-                        </Badge>
-                      </div>
-                  <p className="text-sm text-muted-foreground">
-                    Choose a price point that matches your artwork's value and market positioning.
-                  </p>
-                  
-                  {isTimed ? (
-                    <div className="space-y-4">
-                      <Label>Select Progressive Pricing Range</Label>
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        {[
-                          { label: "Accessible", start: 40, end: 60, desc: "Entry level range" },
-                          { label: "Collector", start: 70, end: 100, desc: "Standard release range" },
-                          { label: "Invest", start: 120, end: 200, desc: "Premium tier range" }
-                        ].map((range) => {
-                          const isSelected = 
-                            parseFloat(variant.price || "0") === range.start && 
-                            parseFloat(formData.metafields?.find(m => m.key === "final_price")?.value || "0") === range.end
-
-                          return (
-                            <div 
-                              key={range.label}
-                              onClick={() => {
-                                updateVariant(0, "price", range.start.toString())
-                                setFormData(prev => {
-                                  const metas = [...(prev.metafields || [])]
-                                  const idx = metas.findIndex(m => m.key === "final_price")
-                                  if (idx >= 0) {
-                                    metas[idx] = { ...metas[idx], value: range.end.toString() }
-                                  } else {
-                                    metas.push({ namespace: "custom", key: "final_price", value: range.end.toString(), type: "number_decimal" })
-                                  }
-                                  return { ...prev, metafields: metas }
-                                })
-                              }}
-                              className={cn(
-                                "cursor-pointer rounded-xl border-2 p-4 transition-all hover:border-primary",
-                                isSelected ? "border-primary bg-primary/5 ring-1 ring-primary" : "border-muted bg-card"
-                              )}
-                            >
-                              <div className="flex justify-between items-start mb-2">
-                                <span className="font-semibold text-sm">{range.label}</span>
-                                {isSelected && <TrendingUp className="h-4 w-4 text-primary" />}
-                              </div>
-                              <div className="text-2xl font-bold mb-1">
-                                ${range.start} <span className="text-sm text-muted-foreground font-normal">to</span> ${range.end}
-                              </div>
-                              <p className="text-xs text-muted-foreground">{range.desc}</p>
-                            </div>
-                          )
-                        })}
-                      </div>
-                      <Alert className="bg-blue-50 border-blue-200">
-                        <TrendingUp className="h-4 w-4 text-blue-600" />
-                        <AlertDescription className="text-blue-700 text-xs">
-                          Price increases automatically from start to end price as the time window closes.
-                        </AlertDescription>
-                      </Alert>
-                    </div>
-                  ) : (
-                    <PricePickerCards
-                      value={variant.price ? Number.parseFloat(variant.price) : null}
-                      onChange={(price) => handlePriceChange(0, price)}
-                      min={priceRange.min}
-                      max={priceRange.max}
-                      recommended={recommendedPrice}
-                    />
-                  )}
-                </div>
-              </>
-            ) : (
-              <Alert>
-                <Info className="h-4 w-4" />
-                <AlertDescription>
-                  Please select an edition size above to set the price
-                </AlertDescription>
-              </Alert>
-            )}
-          </div>
-        )
-      })()}
+      {/* Render Current Step */}
+      {currentStep === 1 && renderStep1()}
+      {currentStep === 2 && renderStep2()}
+      {currentStep === 3 && renderStep3()}
     </div>
   )
 }
