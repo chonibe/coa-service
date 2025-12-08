@@ -316,17 +316,26 @@ export default function ProductsPage() {
         }
         
         // Automatically place any artwork not in a series into the Open box
+        // Show ALL submissions that aren't in a series, even if they don't have images yet
         const available = submissions
           .filter((sub: any) => {
-            const productData = sub.product_data as any
-            const hasImage = productData?.images && productData.images.length > 0
             // Check if this submission is NOT in any series
             const isInSeries = submissionIdsInSeries.has(sub.id.toString())
-            return hasImage && !isInSeries
+            return !isInSeries
           })
           .map((sub: any) => {
             const productData = sub.product_data as any
-            const image = productData?.images?.[0]?.src || productData?.images?.[0] || null
+            // Extract image - handle different formats
+            let image = null
+            if (productData?.images) {
+              if (Array.isArray(productData.images) && productData.images.length > 0) {
+                const firstImg = productData.images[0]
+                image = typeof firstImg === 'string' ? firstImg : (firstImg?.src || firstImg?.url || null)
+              } else if (typeof productData.images === 'string') {
+                image = productData.images
+              }
+            }
+            
             return {
               id: `submission-${sub.id}`,
               submission_id: sub.id,
@@ -356,32 +365,38 @@ export default function ProductsPage() {
         const data = await response.json()
         const artworks = data.artworks || []
         
-        // Deduplicate: if same submission_id appears in multiple series, keep only the first one
-        // This prevents showing the same artwork in multiple series
-        const seenSubmissionIds = new Set<string>()
-        const seenShopifyIds = new Set<string>()
-        const uniqueArtworks = artworks.filter((artwork: any) => {
+        // Deduplicate: if same submission_id appears in multiple series, keep only one
+        // Use a Map to track which series each submission is in, keeping the first occurrence
+        const submissionToArtwork = new Map<string, any>()
+        const shopifyToArtwork = new Map<string, any>()
+        
+        artworks.forEach((artwork: any) => {
           if (artwork.submission_id) {
             const submissionKey = artwork.submission_id.toString()
-            if (seenSubmissionIds.has(submissionKey)) {
-              // This submission already exists in another series - skip it
-              console.warn(`Duplicate submission ${submissionKey} found in series ${artwork.series_id}`)
-              return false
+            if (!submissionToArtwork.has(submissionKey)) {
+              submissionToArtwork.set(submissionKey, artwork)
+            } else {
+              // Duplicate found - log warning but keep the first one
+              console.warn(`Duplicate submission ${submissionKey} found in series ${artwork.series_id}, keeping first occurrence`)
             }
-            seenSubmissionIds.add(submissionKey)
-            return true
           } else if (artwork.shopify_product_id) {
             const shopifyKey = artwork.shopify_product_id.toString()
-            if (seenShopifyIds.has(shopifyKey)) {
-              // This product already exists in another series - skip it
-              console.warn(`Duplicate shopify product ${shopifyKey} found in series ${artwork.series_id}`)
-              return false
+            if (!shopifyToArtwork.has(shopifyKey)) {
+              shopifyToArtwork.set(shopifyKey, artwork)
+            } else {
+              // Duplicate found - log warning but keep the first one
+              console.warn(`Duplicate shopify product ${shopifyKey} found in series ${artwork.series_id}, keeping first occurrence`)
             }
-            seenShopifyIds.add(shopifyKey)
-            return true
           }
-          return true
         })
+        
+        // Combine unique artworks
+        const uniqueArtworks = [
+          ...Array.from(submissionToArtwork.values()),
+          ...Array.from(shopifyToArtwork.values()),
+          // Include artworks without submission_id or shopify_product_id
+          ...artworks.filter((a: any) => !a.submission_id && !a.shopify_product_id)
+        ]
         
         setAllArtworks(uniqueArtworks)
       }
