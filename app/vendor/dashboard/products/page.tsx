@@ -280,8 +280,6 @@ export default function ProductsPage() {
   }, [])
 
   // Only fetch available artworks once on initial load
-  const [hasLoadedAvailableArtworks, setHasLoadedAvailableArtworks] = useState(false)
-  
   useEffect(() => {
     if (!loadingArtworks && !hasLoadedAvailableArtworks) {
       fetchAvailableArtworks()
