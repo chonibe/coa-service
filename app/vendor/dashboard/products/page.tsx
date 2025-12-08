@@ -357,23 +357,30 @@ export default function ProductsPage() {
         const data = await response.json()
         const artworks = data.artworks || []
         
-        // Deduplicate by submission_id + series_id combination
-        const seen = new Map<string, any>()
+        // Deduplicate: if same submission_id appears in multiple series, keep only the first one
+        // This prevents showing the same artwork in multiple series
+        const seenSubmissionIds = new Set<string>()
+        const seenShopifyIds = new Set<string>()
         const uniqueArtworks = artworks.filter((artwork: any) => {
-          const key = artwork.submission_id 
-            ? `${artwork.submission_id}-${artwork.series_id}` 
-            : `${artwork.shopify_product_id}-${artwork.series_id}`
-          
-          if (seen.has(key)) {
-            // Keep the one with the most recent ID (assuming newer entries have higher IDs)
-            const existing = seen.get(key)
-            if (artwork.id > existing.id) {
-              seen.set(key, artwork)
-              return true
+          if (artwork.submission_id) {
+            const submissionKey = artwork.submission_id.toString()
+            if (seenSubmissionIds.has(submissionKey)) {
+              // This submission already exists in another series - skip it
+              console.warn(`Duplicate submission ${submissionKey} found in series ${artwork.series_id}`)
+              return false
             }
-            return false
+            seenSubmissionIds.add(submissionKey)
+            return true
+          } else if (artwork.shopify_product_id) {
+            const shopifyKey = artwork.shopify_product_id.toString()
+            if (seenShopifyIds.has(shopifyKey)) {
+              // This product already exists in another series - skip it
+              console.warn(`Duplicate shopify product ${shopifyKey} found in series ${artwork.series_id}`)
+              return false
+            }
+            seenShopifyIds.add(shopifyKey)
+            return true
           }
-          seen.set(key, artwork)
           return true
         })
         
@@ -722,6 +729,14 @@ export default function ProductsPage() {
       // Refresh from server to ensure consistency and avoid duplicates
       await fetchAllArtworks()
       await fetchAvailableArtworks()
+      // Refresh submissions to update series information in submissions tab
+      const submissionsResponse = await fetch("/api/vendor/products/submissions", {
+        credentials: "include",
+      })
+      if (submissionsResponse.ok) {
+        const data = await submissionsResponse.json()
+        setSubmissions(data.submissions || [])
+      }
     } catch (error: any) {
       console.error("Error adding artwork to series:", error)
       // Revert optimistic update on error
@@ -800,6 +815,14 @@ export default function ProductsPage() {
       // Refresh from server to ensure consistency and avoid duplicates
       await fetchAllArtworks()
       await fetchAvailableArtworks()
+      // Refresh submissions to update series information in submissions tab
+      const submissionsResponse = await fetch("/api/vendor/products/submissions", {
+        credentials: "include",
+      })
+      if (submissionsResponse.ok) {
+        const data = await submissionsResponse.json()
+        setSubmissions(data.submissions || [])
+      }
     } catch (error: any) {
       console.error("Error moving artwork:", error)
       // Revert optimistic update on error

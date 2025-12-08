@@ -17,10 +17,32 @@ export async function GET(request: NextRequest) {
     const { searchParams } = request.nextUrl
     const status = searchParams.get("status")
 
-    // Build query
+    // Get vendor info first
+    const { data: vendor, error: vendorError } = await supabase
+      .from("vendors")
+      .select("id")
+      .eq("vendor_name", vendorName)
+      .single()
+
+    if (vendorError || !vendor) {
+      return NextResponse.json({ error: "Vendor not found" }, { status: 404 })
+    }
+
+    // Build query with series information
     let query = supabase
       .from("vendor_product_submissions")
-      .select("*")
+      .select(`
+        *,
+        artwork_series_members (
+          id,
+          series_id,
+          artwork_series (
+            id,
+            name,
+            unlock_type
+          )
+        )
+      `)
       .eq("vendor_name", vendorName)
       .order("submitted_at", { ascending: false })
 
@@ -39,9 +61,28 @@ export async function GET(request: NextRequest) {
       )
     }
 
+    // Map submissions to include series metadata
+    const submissionsWithSeries = (submissions || []).map((submission: any) => {
+      const members = submission.artwork_series_members || []
+      // Get the first series (in case of duplicates, we'll show the first one)
+      const firstMember = members[0]
+      const seriesMetadata = firstMember?.artwork_series ? {
+        series_id: firstMember.series_id,
+        series_name: firstMember.artwork_series.name,
+        unlock_type: firstMember.artwork_series.unlock_type,
+      } : null
+
+      // Remove the nested members array from the response
+      const { artwork_series_members, ...submissionData } = submission
+      return {
+        ...submissionData,
+        series_metadata: seriesMetadata,
+      }
+    })
+
     return NextResponse.json({
       success: true,
-      submissions: submissions || [],
+      submissions: submissionsWithSeries,
     })
   } catch (error: any) {
     console.error("Error fetching submissions:", error)
