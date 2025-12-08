@@ -204,7 +204,8 @@ export function BankingDashboard({ collectorIdentifier }: BankingDashboardProps)
         </CardContent>
       </Card>
 
-      <Card>
+      {/* Perk Unlocks - Temporarily hidden */}
+      {/* <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Gift className="h-5 w-5" />
@@ -214,7 +215,7 @@ export function BankingDashboard({ collectorIdentifier }: BankingDashboardProps)
         </CardHeader>
         <CardContent className="space-y-6">
           {/* Lamp Unlock */}
-          <div className="space-y-2">
+          {/* <div className="space-y-2">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <span className="font-semibold">Free Lamp</span>
@@ -235,10 +236,10 @@ export function BankingDashboard({ collectorIdentifier }: BankingDashboardProps)
             <p className="text-xs text-muted-foreground">
               Spend {formatCurrency(255)} to unlock a free lamp ($85 value)
             </p>
-          </div>
+          </div> */}
 
           {/* Proof Print Unlock */}
-          <div className="space-y-2">
+          {/* <div className="space-y-2">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <span className="font-semibold">Free Proof Print</span>
@@ -261,7 +262,7 @@ export function BankingDashboard({ collectorIdentifier }: BankingDashboardProps)
             </p>
           </div>
         </CardContent>
-      </Card>
+      </Card> */}
 
     </div>
   )
