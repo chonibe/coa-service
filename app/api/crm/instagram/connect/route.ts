@@ -80,26 +80,29 @@ export async function GET(request: NextRequest) {
     app_domain: appDomain,
     instructions: "Redirect user to auth_url to authorize Instagram Business account",
     setup_required: {
-      note: "You need to configure TWO things in Meta Developer Console:",
+      note: "You need to configure TWO things in Meta Developer Console (updated 2024/2025 layout):",
       step1: {
         title: "Add App Domain",
         instructions: [
-          "Go to Meta Developer Console → Your App → Settings → Basic",
-          "Scroll to 'App Domains' section",
+          "Go to Meta Developer Console (developers.facebook.com)",
+          "Select your app from 'My Apps' dropdown",
+          "In left sidebar: Click 'Settings' → 'Basic'",
+          "Scroll to 'App Domains' field",
           `Add this domain: ${appDomain}`,
           "Also add the base domain (e.g., if domain is 'dashboard.thestreetlamp.com', also add 'thestreetlamp.com')",
-          "Click 'Save Changes'"
+          "Click 'Save Changes' at bottom of page"
         ]
       },
       step2: {
-        title: "Add OAuth Redirect URI",
+        title: "Add OAuth Redirect URI (NEW LOCATION)",
         instructions: [
-          "Still in Settings → Basic, scroll to 'Client OAuth Settings' section",
-          "Enable 'Client OAuth Login' toggle",
-          "Enable 'Web OAuth Login' toggle",
-          "In 'Valid OAuth Redirect URIs', click 'Add URI'",
+          "In left sidebar: Click 'Products'",
+          "If 'Facebook Login' is not added: Click 'Add Product' → Find 'Facebook Login' → Click 'Set Up'",
+          "Under 'Facebook Login' product, click 'Settings'",
+          "In 'Client OAuth Settings' section, find 'Valid OAuth Redirect URIs' field",
           `Add this EXACT URL: ${REDIRECT_URI}`,
-          "Important: The URL must match exactly (including query parameters)",
+          "Important: The URL must match exactly (including query parameters like ?provider=instagram)",
+          "Make sure 'Client OAuth Login' and 'Web OAuth Login' are enabled",
           "Click 'Save Changes'"
         ]
       },
