@@ -308,7 +308,7 @@ async function storeInstagramAccount(
     // Calculate token expiration
     const tokenExpiresAt = expiresIn ? new Date(Date.now() + expiresIn * 1000).toISOString() : null
 
-    console.log("[Instagram Callback] Inserting account into database...")
+    console.log("[Instagram Callback] Upserting account into database...")
     console.log("[Instagram Callback] Account data:", {
       userId: user.id,
       accountName,
@@ -319,22 +319,50 @@ async function storeInstagramAccount(
     })
 
     // Store account directly in database using upsert to handle updates
-    const { data, error } = await supabase
+    // First try to update existing record
+    const { data: existingData, error: checkError } = await supabase
       .from("crm_instagram_accounts")
-      .upsert({
-        user_id: user.id,
-        account_name: accountName,
-        instagram_account_id: instagramAccountId,
-        instagram_username: instagramUsername,
-        access_token: accessToken,
-        token_expires_at: tokenExpiresAt,
-        updated_at: new Date().toISOString(),
-      }, {
-        onConflict: 'user_id,instagram_account_id',
-        ignoreDuplicates: false
-      })
-      .select()
+      .select("id")
+      .eq("user_id", user.id)
+      .eq("instagram_account_id", instagramAccountId)
       .single()
+
+    let data, error
+    if (existingData) {
+      // Update existing record
+      console.log("[Instagram Callback] Updating existing account:", existingData.id)
+      const result = await supabase
+        .from("crm_instagram_accounts")
+        .update({
+          account_name: accountName,
+          instagram_username: instagramUsername,
+          access_token: accessToken,
+          token_expires_at: tokenExpiresAt,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", existingData.id)
+        .select()
+        .single()
+      data = result.data
+      error = result.error
+    } else {
+      // Insert new record
+      console.log("[Instagram Callback] Inserting new account")
+      const result = await supabase
+        .from("crm_instagram_accounts")
+        .insert({
+          user_id: user.id,
+          account_name: accountName,
+          instagram_account_id: instagramAccountId,
+          instagram_username: instagramUsername,
+          access_token: accessToken,
+          token_expires_at: tokenExpiresAt,
+        })
+        .select()
+        .single()
+      data = result.data
+      error = result.error
+    }
 
     if (error) {
       console.error("[Instagram Callback] Failed to store account:", {
