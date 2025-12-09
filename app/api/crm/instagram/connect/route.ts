@@ -10,15 +10,34 @@ export async function GET(request: NextRequest) {
   const origin = request.nextUrl.origin
   
   // Meta OAuth configuration
-  // Support both META_APP_ID and INSTAGRAM_APP_ID for flexibility
-  const META_APP_ID = process.env.META_APP_ID || process.env.INSTAGRAM_APP_ID
-  const META_APP_SECRET = process.env.META_APP_SECRET || process.env.INSTAGRAM_APP_SECRET
+  // For Instagram Business API, you need the FACEBOOK App ID (not Instagram App ID)
+  // The Facebook App must have Instagram permissions configured
+  const META_APP_ID = process.env.META_APP_ID || process.env.FACEBOOK_APP_ID || process.env.INSTAGRAM_APP_ID
+  const META_APP_SECRET = process.env.META_APP_SECRET || process.env.FACEBOOK_APP_SECRET || process.env.INSTAGRAM_APP_SECRET
   const REDIRECT_URI = process.env.META_REDIRECT_URI || process.env.INSTAGRAM_REDIRECT_URI || `${origin}/auth/callback?provider=instagram`
   
   if (!META_APP_ID) {
     return NextResponse.json(
-      { error: "META_APP_ID or INSTAGRAM_APP_ID not configured. Please set one of these environment variables in Vercel." },
+      { 
+        error: "App ID not configured",
+        details: "Please set META_APP_ID, FACEBOOK_APP_ID, or INSTAGRAM_APP_ID in Vercel environment variables. For Instagram Business API, you need the Facebook App ID (not Instagram App ID).",
+        help: "Go to Meta Developer Console → Your App → Settings → Basic to find your Facebook App ID"
+      },
       { status: 500 }
+    )
+  }
+
+  // Validate App ID format (Facebook App IDs are typically 15-16 digits)
+  const appIdPattern = /^\d{15,16}$/
+  if (!appIdPattern.test(META_APP_ID)) {
+    console.error("[Instagram Connect] Invalid App ID format:", META_APP_ID)
+    return NextResponse.json(
+      { 
+        error: "Invalid App ID format",
+        details: `The App ID "${META_APP_ID}" does not match the expected format (15-16 digits).`,
+        help: "For Instagram Business API, you need the Facebook App ID from Meta Developer Console, not the Instagram Business Account ID."
+      },
+      { status: 400 }
     )
   }
 
@@ -34,6 +53,7 @@ export async function GET(request: NextRequest) {
   ].join(",")
 
   // Meta OAuth URL
+  // Note: For Instagram Business API, use Facebook OAuth endpoint with Instagram scopes
   const authUrl = `https://www.facebook.com/v18.0/dialog/oauth?` +
     `client_id=${META_APP_ID}` +
     `&redirect_uri=${encodeURIComponent(REDIRECT_URI)}` +
@@ -41,10 +61,18 @@ export async function GET(request: NextRequest) {
     `&state=${state}` +
     `&response_type=code`
 
+  console.log("[Instagram Connect] OAuth URL generated:", {
+    appId: META_APP_ID,
+    redirectUri: REDIRECT_URI,
+    scopes,
+    hasSecret: !!META_APP_SECRET
+  })
+
   return NextResponse.json({
     auth_url: authUrl,
     state,
     instructions: "Redirect user to auth_url to authorize Instagram Business account",
+    note: "Make sure you're using the Facebook App ID (not Instagram App ID) from Meta Developer Console"
   })
 }
 
