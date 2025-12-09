@@ -4,7 +4,7 @@ import { useState } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Button } from "@/components/ui/button"
-import { Mail, Facebook, MessageCircle, Settings as SettingsIcon } from "lucide-react"
+import { Mail, Facebook, MessageCircle, Instagram } from "lucide-react"
 import Link from "next/link"
 
 export default function CRMSettingsPage() {
@@ -90,17 +90,19 @@ export default function CRMSettingsPage() {
             <Card>
               <CardHeader>
                 <div className="flex items-center gap-2">
-                  <SettingsIcon className="h-5 w-5" />
+                  <Instagram className="h-5 w-5" />
                   <CardTitle>Instagram</CardTitle>
                 </div>
                 <CardDescription>
-                  Instagram messaging integration
+                  Connect Instagram Business account for messaging
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <Button variant="outline" className="w-full" disabled>
-                  Configure Instagram
-                </Button>
+                <Link href="/admin/crm/settings/integrations?platform=instagram">
+                  <Button variant="outline" className="w-full">
+                    Connect Instagram
+                  </Button>
+                </Link>
               </CardContent>
             </Card>
           </div>

@@ -1,15 +1,15 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, Suspense } from "react"
 import { useSearchParams } from "next/navigation"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Loader2, Facebook, MessageCircle, CheckCircle, XCircle } from "lucide-react"
+import { Loader2, Facebook, MessageCircle, CheckCircle, XCircle, Instagram } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 
-export default function IntegrationsPage() {
+function IntegrationsContent() {
   const searchParams = useSearchParams()
   const platform = searchParams.get("platform")
   const [isConnecting, setIsConnecting] = useState(false)
@@ -20,6 +20,8 @@ export default function IntegrationsPage() {
       fetchFacebookAccounts()
     } else if (platform === "whatsapp") {
       fetchWhatsAppAccounts()
+    } else if (platform === "instagram") {
+      fetchInstagramAccounts()
     }
   }, [platform])
 
@@ -45,6 +47,18 @@ export default function IntegrationsPage() {
     }
   }
 
+  const fetchInstagramAccounts = async () => {
+    try {
+      const response = await fetch("/api/crm/instagram/accounts")
+      if (response.ok) {
+        const data = await response.json()
+        setConnectedAccounts(data.accounts || [])
+      }
+    } catch (err) {
+      console.error("Error fetching Instagram accounts:", err)
+    }
+  }
+
   const handleFacebookConnect = async () => {
     setIsConnecting(true)
     try {
@@ -66,6 +80,39 @@ export default function IntegrationsPage() {
     } catch (err) {
       console.error("Error connecting WhatsApp:", err)
     } finally {
+      setIsConnecting(false)
+    }
+  }
+
+  const handleInstagramConnect = async () => {
+    console.log("[Instagram Connect] Button clicked")
+    setIsConnecting(true)
+    try {
+      console.log("[Instagram Connect] Fetching OAuth URL...")
+      const response = await fetch("/api/crm/instagram/connect")
+      console.log("[Instagram Connect] Response status:", response.status)
+      
+      if (response.ok) {
+        const data = await response.json()
+        console.log("[Instagram Connect] Response data:", data)
+        
+        if (data.auth_url) {
+          console.log("[Instagram Connect] Redirecting to:", data.auth_url)
+          // Redirect to Meta OAuth
+          window.location.href = data.auth_url
+        } else {
+          console.error("[Instagram Connect] No auth_url in response")
+          alert("Error: No authorization URL received from server")
+        }
+      } else {
+        const error = await response.json()
+        console.error("[Instagram Connect] API error:", error)
+        alert(`Error: ${error.error || "Failed to initiate Instagram connection"}`)
+        setIsConnecting(false)
+      }
+    } catch (err) {
+      console.error("[Instagram Connect] Exception:", err)
+      alert(`Failed to connect Instagram account: ${err instanceof Error ? err.message : "Unknown error"}`)
       setIsConnecting(false)
     }
   }
@@ -267,12 +314,110 @@ export default function IntegrationsPage() {
     )
   }
 
+  if (platform === "instagram") {
+    return (
+      <div className="p-6 max-w-4xl mx-auto">
+        <div className="mb-6">
+          <h1 className="text-2xl font-bold tracking-tight">Instagram Integration</h1>
+          <p className="text-muted-foreground mt-1">
+            Connect your Instagram Business account to sync messages
+          </p>
+        </div>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Instagram className="h-5 w-5" />
+              Connect Instagram Business Account
+            </CardTitle>
+            <CardDescription>
+              Authorize access to your Instagram Business account to sync direct messages
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <div>
+                <Label>Instructions</Label>
+                <ol className="list-decimal list-inside space-y-2 text-sm text-muted-foreground mt-2">
+                  <li>Click "Connect Instagram" below</li>
+                  <li>Authorize the app to access your Instagram Business account</li>
+                  <li>Select the Instagram account you want to connect</li>
+                  <li>Messages will automatically sync via webhook</li>
+                </ol>
+              </div>
+
+              <Button
+                onClick={handleInstagramConnect}
+                disabled={isConnecting}
+                className="w-full"
+              >
+                {isConnecting ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Connecting...
+                  </>
+                ) : (
+                  <>
+                    <Instagram className="mr-2 h-4 w-4" />
+                    Connect Instagram
+                  </>
+                )}
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+
+        {connectedAccounts.length > 0 && (
+          <Card className="mt-6">
+            <CardHeader>
+              <CardTitle>Connected Accounts</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-2">
+                {connectedAccounts.map((account) => (
+                  <div key={account.id} className="flex items-center justify-between p-3 border rounded-lg">
+                    <div>
+                      <div className="font-medium">{account.account_name}</div>
+                      <div className="text-sm text-muted-foreground">
+                        @{account.instagram_username || account.instagram_account_id}
+                      </div>
+                    </div>
+                    <Badge variant="outline" className="text-green-600">
+                      <CheckCircle className="h-3 w-3 mr-1" />
+                      Connected
+                    </Badge>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+      </div>
+    )
+  }
+
   return (
     <div className="p-6">
       <div className="text-center py-8 text-muted-foreground">
         Select an integration from the settings page
       </div>
     </div>
+  )
+}
+
+export default function IntegrationsPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="p-6">
+          <div className="flex items-center justify-center py-8">
+            <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+          </div>
+        </div>
+      }
+    >
+      <IntegrationsContent />
+    </Suspense>
   )
 }
 

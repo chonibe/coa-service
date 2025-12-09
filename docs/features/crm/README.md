@@ -24,7 +24,7 @@ The CRM (Customer Relationship Management) system is a comprehensive solution fo
    - Custom Fields API (field definitions and values)
    - Search API (global search across entities)
    - Email Accounts API
-   - Facebook/WhatsApp Connect & Sync APIs
+   - Facebook/WhatsApp/Instagram Connect & Sync APIs
    - Contact Deduplication API
    - AI Enrichment & Insights APIs
 
@@ -63,6 +63,7 @@ The CRM system uses the following main tables:
 - `crm_email_accounts` - Connected email accounts
 - `crm_facebook_accounts` - Facebook account connections
 - `crm_whatsapp_accounts` - WhatsApp account connections
+- `crm_instagram_accounts` - Instagram Business account connections
 - `crm_contact_identifiers` - Contact identifier mapping for deduplication
 - `crm_contact_merge_history` - History of contact merges
 - `crm_ai_insights` - AI-generated insights
@@ -103,6 +104,11 @@ The CRM system uses the following main tables:
 
 #### Search API
 - `GET /api/crm/search?q=query` - Global search across people, companies, and conversations
+
+#### Instagram Integration API
+- `GET /api/crm/instagram/connect` - Initiate Meta OAuth flow for Instagram Business account
+- `POST /api/crm/instagram/connect` - Store connected Instagram account (requires admin access)
+- `GET /api/crm/instagram/accounts` - List connected Instagram accounts for current admin user
 
 #### Deduplication API
 - `GET /api/crm/contacts/duplicates` - Find duplicate contacts
@@ -192,9 +198,14 @@ The CRM system uses the following main tables:
 
 ### Instagram Integration
 
-1. Configure Instagram webhook in Meta Developer Console
-2. Webhook endpoint: `/api/webhooks/instagram`
-3. Messages are automatically logged to CRM
+1. Navigate to `/admin/crm/settings/integrations?platform=instagram`
+2. Click "Connect Instagram" to initiate Meta OAuth flow
+3. Authorize the app to access your Instagram Business account
+4. Select the Instagram account you want to connect
+5. The account will be stored and available for syncing
+6. Configure Instagram webhook in Meta Developer Console (if not already done)
+7. Webhook endpoint: `/api/webhooks/instagram`
+8. Messages are automatically logged to CRM via webhook
 
 ### Email Integration (Resend)
 
@@ -205,7 +216,8 @@ The CRM system uses the following main tables:
 ## Known Limitations
 
 1. **Facebook/WhatsApp OAuth**: UI is ready but OAuth flows need to be implemented
-2. **AI Enrichment**: API endpoints exist but actual AI service integration is pending
+2. **Instagram OAuth Callback**: OAuth callback handler needs to be implemented to complete the connection flow
+3. **AI Enrichment**: API endpoints exist but actual AI service integration is pending
 3. **Real-time Updates**: Currently uses polling; WebSocket/SSE support planned
 4. **Bulk Operations**: Not yet implemented
 5. **Export Functionality**: Not yet implemented
@@ -232,6 +244,6 @@ The CRM system uses the following main tables:
 
 ## Version
 
-- Last Updated: 2025-12-03
-- Version: 1.0.0
+- Last Updated: 2025-12-05
+- Version: 1.1.0
 
