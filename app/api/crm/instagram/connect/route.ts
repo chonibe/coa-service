@@ -51,6 +51,7 @@ export async function GET(request: NextRequest) {
     "pages_show_list",
     "pages_messaging",
     "pages_read_engagement",
+    "pages_manage_metadata",
   ].join(",")
 
   // Meta OAuth URL
