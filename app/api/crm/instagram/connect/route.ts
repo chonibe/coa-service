@@ -50,6 +50,7 @@ export async function GET(request: NextRequest) {
     "instagram_manage_messages",
     "pages_show_list",
     "pages_messaging",
+    "pages_read_engagement",
   ].join(",")
 
   // Meta OAuth URL
