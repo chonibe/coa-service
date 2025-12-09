@@ -151,7 +151,7 @@ async function handleInstagramCallback(
     console.log("[Instagram Callback] Access token obtained, fetching account info...")
 
     // Get user's Facebook pages (which may have Instagram accounts)
-    const pagesUrl = `https://graph.facebook.com/v18.0/me/accounts?access_token=${accessToken}&fields=id,name,instagram_business_account{id,username}`
+    const pagesUrl = `https://graph.facebook.com/v18.0/me/accounts?access_token=${accessToken}&fields=id,name,access_token,instagram_business_account{id,username}`
     console.log("[Instagram Callback] Fetching pages from:", pagesUrl.replace(accessToken, "***"))
     
     const pagesResponse = await fetch(pagesUrl)
@@ -190,7 +190,7 @@ async function handleInstagramCallback(
     })
 
     // Find pages with Instagram Business accounts
-    const instagramAccounts: Array<{ pageId: string; pageName: string; instagramId: string; instagramUsername: string | null }> = []
+    const instagramAccounts: Array<{ pageId: string; pageName: string; instagramId: string; instagramUsername: string | null; pageAccessToken?: string }> = []
     
     for (const page of pages) {
       if (page.instagram_business_account) {
@@ -199,6 +199,7 @@ async function handleInstagramCallback(
           pageName: page.name,
           instagramId: page.instagram_business_account.id,
           instagramUsername: page.instagram_business_account.username || null,
+          pageAccessToken: page.access_token
         })
       }
     }
@@ -221,19 +222,22 @@ async function handleInstagramCallback(
     // Store the first Instagram account (or all if multiple)
     // For now, store the first one
     const account = instagramAccounts[0]
+    // Use Page Access Token if available, otherwise fall back to User Access Token
+    const finalAccessToken = account.pageAccessToken || accessToken
     const tokenExpiresAt = expiresIn ? new Date(Date.now() + expiresIn * 1000).toISOString() : null
 
     console.log("[Instagram Callback] Storing account:", {
       instagramId: account.instagramId,
       accountName: account.pageName,
-      username: account.instagramUsername
+      username: account.instagramUsername,
+      usingPageToken: !!account.pageAccessToken
     })
 
     return await storeInstagramAccount(
       account.instagramId,
       account.pageName,
       account.instagramUsername,
-      accessToken,
+      finalAccessToken,
       expiresIn,
       origin,
       cookieStore
