@@ -42,6 +42,20 @@ export async function fetchInstagramConversations(
   instagramAccountId: string
 ) {
   try {
+    // Debug: Check token permissions
+    console.log("[Instagram Helper] Checking token permissions...")
+    const debugResponse = await fetch(
+      `https://graph.facebook.com/v18.0/me/permissions?access_token=${accessToken}`
+    )
+    if (debugResponse.ok) {
+      const debugData = await debugResponse.json()
+      console.log("[Instagram Helper] Token permissions:", JSON.stringify(debugData, null, 2))
+    } else {
+      console.error("[Instagram Helper] Failed to check permissions:", await debugResponse.text())
+    }
+
+    console.log(`[Instagram Helper] Fetching conversations for account ${instagramAccountId}`)
+    
     // Fetch conversations with messages and participants
     const response = await fetch(
       `https://graph.facebook.com/v18.0/${instagramAccountId}/conversations?platform=instagram&fields=id,updated_time,participants,messages{id,message,created_time,from,to}&access_token=${accessToken}`
