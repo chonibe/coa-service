@@ -289,13 +289,11 @@ async function storeInstagramAccount(
       )
     }
 
-    // Check if user is admin
-    const adminEmails = process.env.ADMIN_EMAILS?.split(",") || []
-    const isAdmin = user.email && adminEmails.includes(user.email)
+    // Check if user is admin using the centralized isAdminEmail function
+    const isAdmin = isAdminEmail(user.email)
     
     console.log("[Instagram Callback] Admin check:", {
       userEmail: user.email,
-      adminEmails,
       isAdmin
     })
 
