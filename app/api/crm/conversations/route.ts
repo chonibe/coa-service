@@ -1,10 +1,12 @@
 import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
-import { createClient } from "@/lib/supabase/server"
+import { cookies } from "next/headers"
+import { createClient as createRouteClient } from "@/lib/supabase-server"
 import { parseFilter, validateFilter } from "@/lib/crm/filter-parser"
 
 export async function GET(request: NextRequest) {
-  const supabase = createClient()
+  const cookieStore = cookies()
+  const supabase = createRouteClient(cookieStore)
   
   try {
     if (!supabase) {
