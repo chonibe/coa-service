@@ -37,7 +37,8 @@ async function handleInstagramCallback(
   state: string | null,
   error: string | null,
   errorReason: string | null,
-  origin: string
+  origin: string,
+  cookieStore: ReturnType<typeof cookies>
 ) {
   console.log("[Instagram Callback] ===== INSTAGRAM CALLBACK HANDLER STARTED =====")
   console.log("[Instagram Callback] Full request URL:", request.url)
@@ -168,7 +169,7 @@ async function handleInstagramCallback(
         const userData = await userResponse.json()
         console.log("[Instagram Callback] Using basic user info:", userData)
         // Store with basic info
-        return await storeInstagramAccount(userData.id, userData.name || "Instagram Account", null, accessToken, expiresIn, origin)
+        return await storeInstagramAccount(userData.id, userData.name || "Instagram Account", null, accessToken, expiresIn, origin, cookieStore)
       }
       return NextResponse.redirect(
         new URL("/admin/crm/settings/integrations?platform=instagram&error=fetch_account_failed", origin),
@@ -233,7 +234,8 @@ async function handleInstagramCallback(
       account.instagramUsername,
       accessToken,
       expiresIn,
-      origin
+      origin,
+      cookieStore
     )
 
   } catch (err: any) {
@@ -254,7 +256,8 @@ async function storeInstagramAccount(
   instagramUsername: string | null,
   accessToken: string,
   expiresIn: number | null,
-  origin: string
+  origin: string,
+  cookieStore: ReturnType<typeof cookies>
 ) {
   console.log("[Instagram Callback] storeInstagramAccount called:", {
     instagramAccountId,
@@ -265,8 +268,8 @@ async function storeInstagramAccount(
   })
 
   try {
-    // Get current user session
-    const supabase = createServiceClient()
+    // Get current user session using route client to access cookies
+    const supabase = createRouteClient(cookieStore)
     console.log("[Instagram Callback] Getting user session...")
     
     const { data: { user }, error: authError } = await supabase.auth.getUser()
@@ -400,7 +403,7 @@ export async function GET(request: NextRequest) {
   // Check both provider param and if it's a Meta callback (has code but no Supabase tokens)
   if (provider === "instagram" || (code && !accessToken && !refreshToken && request.url.includes("provider=instagram"))) {
     console.log("[auth/callback] Detected Instagram OAuth callback, routing to handler")
-    return handleInstagramCallback(request, code, state, error, errorReason, origin)
+    return handleInstagramCallback(request, code, state, error, errorReason, origin, cookieStore)
   }
 
   // Create redirect response - we'll update the location after setting cookies
