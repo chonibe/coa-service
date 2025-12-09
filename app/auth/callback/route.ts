@@ -16,6 +16,7 @@ import {
 } from "@/lib/admin-session"
 import { logFailedLoginAttempt } from "@/lib/audit-logger"
 import { createClient as createServiceClient } from "@/lib/supabase/server"
+import { syncInstagramHistory } from "@/lib/crm/instagram-helper"
 
 const DEFAULT_VENDOR_REDIRECT = "/vendor/dashboard"
 const NOT_REGISTERED_REDIRECT = "/login?error=not_registered"
@@ -379,6 +380,12 @@ async function storeInstagramAccount(
 
     console.log("[Instagram Callback] ===== ACCOUNT STORED SUCCESSFULLY =====")
     console.log("[Instagram Callback] Stored account ID:", data.id)
+    
+    // Trigger historical sync in background
+    console.log("[Instagram Callback] Triggering historical sync...")
+    syncInstagramHistory(user.id, accessToken, instagramAccountId)
+      .catch(err => console.error("[Instagram Callback] Background sync error:", err))
+
     console.log("[Instagram Callback] Redirecting to integrations page...")
     
     return NextResponse.redirect(
