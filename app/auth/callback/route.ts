@@ -325,10 +325,10 @@ async function storeInstagramAccount(
       .select("id")
       .eq("user_id", user.id)
       .eq("instagram_account_id", instagramAccountId)
-      .single()
+      .maybeSingle()
 
     let data, error
-    if (existingData) {
+    if (existingData && !checkError) {
       // Update existing record
       console.log("[Instagram Callback] Updating existing account:", existingData.id)
       const result = await supabase
