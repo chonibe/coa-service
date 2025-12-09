@@ -10,13 +10,14 @@ export async function GET(request: NextRequest) {
   const origin = request.nextUrl.origin
   
   // Meta OAuth configuration
-  const META_APP_ID = process.env.META_APP_ID
-  const META_APP_SECRET = process.env.META_APP_SECRET
-  const REDIRECT_URI = process.env.META_REDIRECT_URI || `${origin}/auth/callback?provider=instagram`
+  // Support both META_APP_ID and INSTAGRAM_APP_ID for flexibility
+  const META_APP_ID = process.env.META_APP_ID || process.env.INSTAGRAM_APP_ID
+  const META_APP_SECRET = process.env.META_APP_SECRET || process.env.INSTAGRAM_APP_SECRET
+  const REDIRECT_URI = process.env.META_REDIRECT_URI || process.env.INSTAGRAM_REDIRECT_URI || `${origin}/auth/callback?provider=instagram`
   
   if (!META_APP_ID) {
     return NextResponse.json(
-      { error: "META_APP_ID not configured" },
+      { error: "META_APP_ID or INSTAGRAM_APP_ID not configured. Please set one of these environment variables in Vercel." },
       { status: 500 }
     )
   }
