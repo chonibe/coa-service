@@ -27,6 +27,234 @@ const deleteCookie = (response: NextResponse, name: string) => {
   response.cookies.set(name, "", { path: "/", maxAge: 0 })
 }
 
+/**
+ * Handle Instagram OAuth callback from Meta
+ * Exchanges authorization code for access token and stores Instagram account
+ */
+async function handleInstagramCallback(
+  request: NextRequest,
+  code: string | null,
+  state: string | null,
+  error: string | null,
+  errorReason: string | null,
+  origin: string
+) {
+  console.log("[Instagram Callback] Received callback:", { code: !!code, state, error, errorReason })
+
+  // Handle OAuth errors
+  if (error) {
+    console.error("[Instagram Callback] OAuth error:", error, errorReason)
+    return NextResponse.redirect(
+      new URL(`/admin/crm/settings/integrations?platform=instagram&error=${encodeURIComponent(error)}&reason=${encodeURIComponent(errorReason || "")}`, origin),
+      { status: 307 }
+    )
+  }
+
+  if (!code) {
+    console.error("[Instagram Callback] No authorization code received")
+    return NextResponse.redirect(
+      new URL("/admin/crm/settings/integrations?platform=instagram&error=no_code", origin),
+      { status: 307 }
+    )
+  }
+
+  try {
+    // Get Meta app credentials
+    const META_APP_ID = process.env.META_APP_ID || process.env.FACEBOOK_APP_ID || process.env.INSTAGRAM_APP_ID
+    const META_APP_SECRET = process.env.META_APP_SECRET || process.env.FACEBOOK_APP_SECRET || process.env.INSTAGRAM_APP_SECRET
+    const REDIRECT_URI = process.env.META_REDIRECT_URI || process.env.INSTAGRAM_REDIRECT_URI || `${origin}/auth/callback?provider=instagram`
+
+    if (!META_APP_ID || !META_APP_SECRET) {
+      console.error("[Instagram Callback] Missing app credentials")
+      return NextResponse.redirect(
+        new URL("/admin/crm/settings/integrations?platform=instagram&error=missing_credentials", origin),
+        { status: 307 }
+      )
+    }
+
+    // Exchange authorization code for access token
+    console.log("[Instagram Callback] Exchanging code for access token...")
+    const tokenResponse = await fetch(
+      `https://graph.facebook.com/v18.0/oauth/access_token?` +
+      `client_id=${META_APP_ID}` +
+      `&client_secret=${META_APP_SECRET}` +
+      `&redirect_uri=${encodeURIComponent(REDIRECT_URI)}` +
+      `&code=${code}`,
+      { method: "GET" }
+    )
+
+    if (!tokenResponse.ok) {
+      const errorData = await tokenResponse.json().catch(() => ({}))
+      console.error("[Instagram Callback] Token exchange failed:", errorData)
+      return NextResponse.redirect(
+        new URL(`/admin/crm/settings/integrations?platform=instagram&error=token_exchange_failed&details=${encodeURIComponent(errorData.error?.message || "Unknown error")}`, origin),
+        { status: 307 }
+      )
+    }
+
+    const tokenData = await tokenResponse.json()
+    const accessToken = tokenData.access_token
+    const expiresIn = tokenData.expires_in
+
+    if (!accessToken) {
+      console.error("[Instagram Callback] No access token in response")
+      return NextResponse.redirect(
+        new URL("/admin/crm/settings/integrations?platform=instagram&error=no_access_token", origin),
+        { status: 307 }
+      )
+    }
+
+    console.log("[Instagram Callback] Access token obtained, fetching account info...")
+
+    // Get user's Facebook pages (which may have Instagram accounts)
+    const pagesResponse = await fetch(
+      `https://graph.facebook.com/v18.0/me/accounts?access_token=${accessToken}&fields=id,name,instagram_business_account{id,username}`
+    )
+
+    if (!pagesResponse.ok) {
+      console.error("[Instagram Callback] Failed to fetch pages")
+      // Try to get basic user info instead
+      const userResponse = await fetch(`https://graph.facebook.com/v18.0/me?access_token=${accessToken}&fields=id,name`)
+      if (userResponse.ok) {
+        const userData = await userResponse.json()
+        // Store with basic info
+        return await storeInstagramAccount(userData.id, userData.name || "Instagram Account", null, accessToken, expiresIn, origin)
+      }
+      return NextResponse.redirect(
+        new URL("/admin/crm/settings/integrations?platform=instagram&error=fetch_account_failed", origin),
+        { status: 307 }
+      )
+    }
+
+    const pagesData = await pagesResponse.json()
+    const pages = pagesData.data || []
+
+    // Find pages with Instagram Business accounts
+    const instagramAccounts: Array<{ pageId: string; pageName: string; instagramId: string; instagramUsername: string | null }> = []
+    
+    for (const page of pages) {
+      if (page.instagram_business_account) {
+        instagramAccounts.push({
+          pageId: page.id,
+          pageName: page.name,
+          instagramId: page.instagram_business_account.id,
+          instagramUsername: page.instagram_business_account.username || null,
+        })
+      }
+    }
+
+    if (instagramAccounts.length === 0) {
+      console.error("[Instagram Callback] No Instagram Business accounts found")
+      return NextResponse.redirect(
+        new URL("/admin/crm/settings/integrations?platform=instagram&error=no_instagram_account", origin),
+        { status: 307 }
+      )
+    }
+
+    // Store the first Instagram account (or all if multiple)
+    // For now, store the first one
+    const account = instagramAccounts[0]
+    const tokenExpiresAt = expiresIn ? new Date(Date.now() + expiresIn * 1000).toISOString() : null
+
+    return await storeInstagramAccount(
+      account.instagramId,
+      account.pageName,
+      account.instagramUsername,
+      accessToken,
+      expiresIn,
+      origin
+    )
+
+  } catch (err: any) {
+    console.error("[Instagram Callback] Error:", err)
+    return NextResponse.redirect(
+      new URL(`/admin/crm/settings/integrations?platform=instagram&error=callback_error&message=${encodeURIComponent(err.message || "Unknown error")}`, origin),
+      { status: 307 }
+    )
+  }
+}
+
+/**
+ * Store Instagram account in database
+ */
+async function storeInstagramAccount(
+  instagramAccountId: string,
+  accountName: string,
+  instagramUsername: string | null,
+  accessToken: string,
+  expiresIn: number | null,
+  origin: string
+) {
+  try {
+    // Get current user session
+    const supabase = createServiceClient()
+    const { data: { user }, error: authError } = await supabase.auth.getUser()
+
+    if (authError || !user) {
+      console.error("[Instagram Callback] User not authenticated")
+      return NextResponse.redirect(
+        new URL("/admin/crm/settings/integrations?platform=instagram&error=not_authenticated", origin),
+        { status: 307 }
+      )
+    }
+
+    // Check if user is admin
+    const isAdmin = user.email && process.env.ADMIN_EMAILS?.split(",").includes(user.email)
+    if (!isAdmin) {
+      console.error("[Instagram Callback] User is not admin")
+      return NextResponse.redirect(
+        new URL("/admin/crm/settings/integrations?platform=instagram&error=not_admin", origin),
+        { status: 307 }
+      )
+    }
+
+    // Calculate token expiration
+    const tokenExpiresAt = expiresIn ? new Date(Date.now() + expiresIn * 1000).toISOString() : null
+
+    // Store account directly in database
+    const { data, error } = await supabase
+      .from("crm_instagram_accounts")
+      .insert({
+        user_id: user.id,
+        account_name: accountName,
+        instagram_account_id: instagramAccountId,
+        instagram_username: instagramUsername,
+        access_token: accessToken,
+        token_expires_at: tokenExpiresAt,
+      })
+      .select()
+      .single()
+
+    if (error) {
+      console.error("[Instagram Callback] Failed to store account:", error)
+      // Check if it's a duplicate
+      if (error.code === "23505") {
+        return NextResponse.redirect(
+          new URL("/admin/crm/settings/integrations?platform=instagram&error=already_connected", origin),
+          { status: 307 }
+        )
+      }
+      return NextResponse.redirect(
+        new URL(`/admin/crm/settings/integrations?platform=instagram&error=store_failed&details=${encodeURIComponent(error.message || "Unknown error")}`, origin),
+        { status: 307 }
+      )
+    }
+
+    console.log("[Instagram Callback] Account stored successfully:", data.id)
+    return NextResponse.redirect(
+      new URL("/admin/crm/settings/integrations?platform=instagram&success=connected", origin),
+      { status: 307 }
+    )
+
+  } catch (err: any) {
+    console.error("[Instagram Callback] Error storing account:", err)
+    return NextResponse.redirect(
+      new URL(`/admin/crm/settings/integrations?platform=instagram&error=store_error&message=${encodeURIComponent(err.message || "Unknown error")}`, origin),
+      { status: 307 }
+    )
+  }
+}
+
 export async function GET(request: NextRequest) {
   const cookieStore = cookies()
   const supabase = createRouteClient(cookieStore)
@@ -35,6 +263,15 @@ export async function GET(request: NextRequest) {
   const code = searchParams.get("code")
   const accessToken = searchParams.get("access_token")
   const refreshToken = searchParams.get("refresh_token")
+  const provider = searchParams.get("provider")
+  const state = searchParams.get("state")
+  const error = searchParams.get("error")
+  const errorReason = searchParams.get("error_reason")
+
+  // Handle Instagram OAuth callback (Meta OAuth, not Supabase)
+  if (provider === "instagram") {
+    return handleInstagramCallback(request, code, state, error, errorReason, origin)
+  }
 
   // Create redirect response - we'll update the location after setting cookies
   const response = NextResponse.redirect(new URL(DEFAULT_VENDOR_REDIRECT, origin), { status: 307 })

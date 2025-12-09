@@ -1,17 +1,21 @@
 "use client"
 
 import { useState, useEffect, Suspense } from "react"
-import { useSearchParams } from "next/navigation"
+import { useSearchParams, useRouter } from "next/navigation"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Loader2, Facebook, MessageCircle, CheckCircle, XCircle, Instagram } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
+import { Alert, AlertDescription } from "@/components/ui/alert"
 
 function IntegrationsContent() {
   const searchParams = useSearchParams()
+  const router = useRouter()
   const platform = searchParams.get("platform")
+  const success = searchParams.get("success")
+  const error = searchParams.get("error")
   const [isConnecting, setIsConnecting] = useState(false)
   const [connectedAccounts, setConnectedAccounts] = useState<any[]>([])
 
@@ -23,7 +27,23 @@ function IntegrationsContent() {
     } else if (platform === "instagram") {
       fetchInstagramAccounts()
     }
-  }, [platform])
+  }, [platform, success]) // Refresh when success param changes
+
+  // Clear URL params after showing message
+  useEffect(() => {
+    if (success || error) {
+      const timer = setTimeout(() => {
+        const newParams = new URLSearchParams(searchParams.toString())
+        newParams.delete("success")
+        newParams.delete("error")
+        newParams.delete("reason")
+        newParams.delete("details")
+        newParams.delete("message")
+        router.replace(`/admin/crm/settings/integrations?${newParams.toString()}`)
+      }, 5000) // Clear after 5 seconds
+      return () => clearTimeout(timer)
+    }
+  }, [success, error, searchParams, router])
 
   const fetchFacebookAccounts = async () => {
     try {
@@ -323,6 +343,32 @@ function IntegrationsContent() {
             Connect your Instagram Business account to sync messages
           </p>
         </div>
+
+        {/* Success/Error Messages */}
+        {success === "connected" && (
+          <Alert className="mb-4 border-green-500 bg-green-50 dark:bg-green-950">
+            <CheckCircle className="h-4 w-4 text-green-600" />
+            <AlertDescription className="text-green-800 dark:text-green-200">
+              Instagram account connected successfully! The account will now appear in your connected accounts list.
+            </AlertDescription>
+          </Alert>
+        )}
+
+        {error && (
+          <Alert className="mb-4 border-red-500 bg-red-50 dark:bg-red-950">
+            <XCircle className="h-4 w-4 text-red-600" />
+            <AlertDescription className="text-red-800 dark:text-red-200">
+              {error === "already_connected" && "This Instagram account is already connected."}
+              {error === "not_authenticated" && "You must be logged in to connect an Instagram account."}
+              {error === "not_admin" && "Only admin users can connect Instagram accounts."}
+              {error === "no_instagram_account" && "No Instagram Business account found. Make sure your Facebook Page has an Instagram Business account linked."}
+              {error === "token_exchange_failed" && `Token exchange failed: ${searchParams.get("details") || "Unknown error"}`}
+              {error === "store_failed" && `Failed to store account: ${searchParams.get("details") || "Unknown error"}`}
+              {!["already_connected", "not_authenticated", "not_admin", "no_instagram_account", "token_exchange_failed", "store_failed"].includes(error) && 
+                `Error: ${searchParams.get("message") || searchParams.get("details") || error}`}
+            </AlertDescription>
+          </Alert>
+        )}
 
         <Card>
           <CardHeader>
