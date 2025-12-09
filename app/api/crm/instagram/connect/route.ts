@@ -69,20 +69,56 @@ export async function GET(request: NextRequest) {
     fullAuthUrl: authUrl
   })
 
+  // Extract domain from redirect URI for App Domains configuration
+  const redirectUrlObj = new URL(REDIRECT_URI)
+  const appDomain = redirectUrlObj.hostname
+
   return NextResponse.json({
     auth_url: authUrl,
     state,
     redirect_uri: REDIRECT_URI,
+    app_domain: appDomain,
     instructions: "Redirect user to auth_url to authorize Instagram Business account",
     setup_required: {
-      step1: "Go to Meta Developer Console → Your App → Settings → Basic",
-      step2: "Scroll to 'Client OAuth Settings' section",
-      step3: "Add this exact URL to 'Valid OAuth Redirect URIs':",
-      redirect_uri: REDIRECT_URI,
-      step4: "Make sure 'Client OAuth Login' and 'Web OAuth Login' are enabled",
-      step5: "Save changes and wait a few minutes for propagation"
+      note: "You need to configure TWO things in Meta Developer Console:",
+      step1: {
+        title: "Add App Domain",
+        instructions: [
+          "Go to Meta Developer Console → Your App → Settings → Basic",
+          "Scroll to 'App Domains' section",
+          `Add this domain: ${appDomain}`,
+          "Also add the base domain (e.g., if domain is 'dashboard.thestreetlamp.com', also add 'thestreetlamp.com')",
+          "Click 'Save Changes'"
+        ]
+      },
+      step2: {
+        title: "Add OAuth Redirect URI",
+        instructions: [
+          "Still in Settings → Basic, scroll to 'Client OAuth Settings' section",
+          "Enable 'Client OAuth Login' toggle",
+          "Enable 'Web OAuth Login' toggle",
+          "In 'Valid OAuth Redirect URIs', click 'Add URI'",
+          `Add this EXACT URL: ${REDIRECT_URI}`,
+          "Important: The URL must match exactly (including query parameters)",
+          "Click 'Save Changes'"
+        ]
+      },
+      step3: {
+        title: "Wait for Propagation",
+        instructions: [
+          "Wait 2-5 minutes for changes to propagate",
+          "Then try connecting again"
+        ]
+      }
     },
-    note: "Make sure you're using the Facebook App ID (not Instagram App ID) from Meta Developer Console"
+    troubleshooting: {
+      common_issues: [
+        "Make sure you're using the Facebook App ID (not Instagram App ID)",
+        "The redirect URI must match EXACTLY (including ?provider=instagram)",
+        "App Domain should be just the domain (e.g., 'dashboard.thestreetlamp.com'), not the full URL",
+        "Both 'Client OAuth Login' and 'Web OAuth Login' must be enabled"
+      ]
+    }
   })
 }
 
