@@ -318,16 +318,20 @@ async function storeInstagramAccount(
       tokenExpiresAt
     })
 
-    // Store account directly in database
+    // Store account directly in database using upsert to handle updates
     const { data, error } = await supabase
       .from("crm_instagram_accounts")
-      .insert({
+      .upsert({
         user_id: user.id,
         account_name: accountName,
         instagram_account_id: instagramAccountId,
         instagram_username: instagramUsername,
         access_token: accessToken,
         token_expires_at: tokenExpiresAt,
+        updated_at: new Date().toISOString(),
+      }, {
+        onConflict: 'user_id,instagram_account_id',
+        ignoreDuplicates: false
       })
       .select()
       .single()
@@ -339,14 +343,6 @@ async function storeInstagramAccount(
         details: error.details,
         hint: error.hint
       })
-      // Check if it's a duplicate
-      if (error.code === "23505") {
-        console.log("[Instagram Callback] Account already exists (duplicate)")
-        return NextResponse.redirect(
-          new URL("/admin/crm/settings/integrations?platform=instagram&error=already_connected", origin),
-          { status: 307 }
-        )
-      }
       return NextResponse.redirect(
         new URL(`/admin/crm/settings/integrations?platform=instagram&error=store_failed&details=${encodeURIComponent(error.message || "Unknown error")}`, origin),
         { status: 307 }
