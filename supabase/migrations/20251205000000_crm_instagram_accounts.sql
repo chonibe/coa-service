@@ -34,6 +34,9 @@ CREATE INDEX IF NOT EXISTS idx_crm_instagram_accounts_is_active ON crm_instagram
 -- PART 3: Trigger for Updated At
 -- ============================================
 
+-- Drop trigger if it exists, then create it
+DROP TRIGGER IF EXISTS update_crm_instagram_accounts_updated_at ON crm_instagram_accounts;
+
 CREATE TRIGGER update_crm_instagram_accounts_updated_at
   BEFORE UPDATE ON crm_instagram_accounts
   FOR EACH ROW
