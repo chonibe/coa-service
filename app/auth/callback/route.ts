@@ -111,7 +111,7 @@ async function handleInstagramCallback(
 
     if (!tokenResponse.ok) {
       const errorText = await tokenResponse.text()
-      let errorData = {}
+      let errorData: any = {}
       try {
         errorData = JSON.parse(errorText)
       } catch {
