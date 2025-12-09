@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
-import { createClient } from "@/lib/supabase/server"
+import { cookies } from "next/headers"
+import { createClient as createRouteClient } from "@/lib/supabase-server"
 import { Errors } from "@/lib/crm/errors"
 
 /**
@@ -26,7 +27,8 @@ export async function GET(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
-  const supabase = createClient()
+  const cookieStore = cookies()
+  const supabase = createRouteClient(cookieStore)
   
   try {
     if (!supabase) {
@@ -71,7 +73,8 @@ export async function PUT(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
-  const supabase = createClient()
+  const cookieStore = cookies()
+  const supabase = createRouteClient(cookieStore)
   
   try {
     if (!supabase) {
@@ -161,7 +164,8 @@ export async function DELETE(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
-  const supabase = createClient()
+  const cookieStore = cookies()
+  const supabase = createRouteClient(cookieStore)
   
   try {
     if (!supabase) {
