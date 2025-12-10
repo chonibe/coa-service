@@ -225,14 +225,18 @@ async function handleInstagramCallback(
     
     // Check for manual token override (useful for debugging permissions)
     const manualToken = process.env.INSTAGRAM_MANUAL_ACCESS_TOKEN
-    const finalAccessToken = manualToken || accessToken
+    
+    // Prioritize: Manual Token -> Page Access Token -> User Access Token
+    // We found that Page Access Token + Page ID is the most reliable way to fetch conversations
+    const finalAccessToken = manualToken || account.pageAccessToken || accessToken
     const tokenExpiresAt = expiresIn ? new Date(Date.now() + expiresIn * 1000).toISOString() : null
 
     console.log("[Instagram Callback] Storing account:", {
       instagramId: account.instagramId,
       accountName: account.pageName,
       username: account.instagramUsername,
-      usingPageToken: false, // Defaulting to User Token (unless manual)
+      pageId: account.pageId,
+      usingPageToken: !!(manualToken || account.pageAccessToken),
       usingManualToken: !!manualToken
     })
 
@@ -243,7 +247,8 @@ async function handleInstagramCallback(
       finalAccessToken,
       expiresIn,
       origin,
-      cookieStore
+      cookieStore,
+      account.pageId
     )
 
   } catch (err: any) {
@@ -265,14 +270,16 @@ async function storeInstagramAccount(
   accessToken: string,
   expiresIn: number | null,
   origin: string,
-  cookieStore: ReturnType<typeof cookies>
+  cookieStore: ReturnType<typeof cookies>,
+  pageId?: string
 ) {
   console.log("[Instagram Callback] storeInstagramAccount called:", {
     instagramAccountId,
     accountName,
     instagramUsername,
     hasAccessToken: !!accessToken,
-    expiresIn
+    expiresIn,
+    pageId
   })
 
   try {
@@ -389,10 +396,13 @@ async function storeInstagramAccount(
     console.log("[Instagram Callback] Stored account ID:", data.id)
     
     // Trigger historical sync in background
-    // Note: Temporarily disabled due to API capability issues. Webhooks handle real-time messages.
-    // console.log("[Instagram Callback] Triggering historical sync...")
-    // syncInstagramHistory(user.id, accessToken, instagramAccountId)
-    //   .catch(err => console.error("[Instagram Callback] Background sync error:", err))
+    if (pageId) {
+      console.log("[Instagram Callback] Triggering historical sync using Page ID:", pageId)
+      syncInstagramHistory(user.id, accessToken, instagramAccountId, pageId)
+        .catch(err => console.error("[Instagram Callback] Background sync error:", err))
+    } else {
+      console.warn("[Instagram Callback] Skipping history sync: Page ID missing")
+    }
 
     console.log("[Instagram Callback] Redirecting to integrations page...")
     
