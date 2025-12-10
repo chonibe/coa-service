@@ -389,9 +389,10 @@ async function storeInstagramAccount(
     console.log("[Instagram Callback] Stored account ID:", data.id)
     
     // Trigger historical sync in background
-    console.log("[Instagram Callback] Triggering historical sync...")
-    syncInstagramHistory(user.id, accessToken, instagramAccountId)
-      .catch(err => console.error("[Instagram Callback] Background sync error:", err))
+    // Note: Temporarily disabled due to API capability issues. Webhooks handle real-time messages.
+    // console.log("[Instagram Callback] Triggering historical sync...")
+    // syncInstagramHistory(user.id, accessToken, instagramAccountId)
+    //   .catch(err => console.error("[Instagram Callback] Background sync error:", err))
 
     console.log("[Instagram Callback] Redirecting to integrations page...")
     
