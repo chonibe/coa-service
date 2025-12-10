@@ -18,13 +18,7 @@ interface InstagramMessage {
 
 interface InstagramConversation {
   id: string
-  // messages removed from here as we fetch them separately
-  participants: {
-    data: Array<{
-      id: string
-      username: string
-    }>
-  }
+  // messages and participants removed from here as we fetch them separately/infer them
   updated_time: string
 }
 
@@ -51,10 +45,10 @@ export async function fetchInstagramConversations(
     console.log(`[Instagram Helper] Fetching conversations for target ${targetId}`)
     
     // Fetch conversations using Page ID
-    // Note: Fetching messages in the same call caused "An unknown error has occurred" (code 1)
-    // So we fetch conversations first, then messages individually.
+    // Note: Requesting 'participants' or 'messages' in the list caused "An unknown error has occurred"
+    // So we only fetch metadata here.
     const response = await fetch(
-      `https://graph.facebook.com/v19.0/${targetId}/conversations?platform=instagram&fields=id,updated_time,participants&access_token=${accessToken}`
+      `https://graph.facebook.com/v19.0/${targetId}/conversations?platform=instagram&fields=id,updated_time&access_token=${accessToken}`
     )
 
     if (!response.ok) {
@@ -110,11 +104,27 @@ export async function syncInstagramHistory(
     if (!conversations) return
 
     for (const igConv of conversations) {
-      // Find the participant that is NOT the business account (check both IDs)
-      const participant = igConv.participants.data.find(p => p.id !== instagramAccountId && p.id !== pageId)
+      // 3. Sync messages
+      const messages = await fetchConversationMessages(accessToken, igConv.id)
+      console.log(`[Instagram Sync] Syncing ${messages.length} messages for conversation ${igConv.id}`)
       
+      if (messages.length === 0) continue
+
+      // Infer participant from messages (since we removed participants field from list fetch)
+      // Look for a message where the sender is NOT the page/business
+      let participant = messages.find(m => m.from.id !== instagramAccountId && m.from.id !== pageId)?.from
+      
+      // If all messages are FROM the page, look at the 'to' field of the first message
       if (!participant) {
-        console.warn(`[Instagram Sync] No other participant found for conversation ${igConv.id}`)
+        const firstMsg = messages[0]
+        const recipient = firstMsg.to.data.find(r => r.id !== instagramAccountId && r.id !== pageId)
+        if (recipient) {
+          participant = recipient
+        }
+      }
+
+      if (!participant) {
+        console.warn(`[Instagram Sync] Could not identify customer participant for conversation ${igConv.id}`)
         continue
       }
 
@@ -188,10 +198,9 @@ export async function syncInstagramHistory(
         conversationId = newConv.id
       }
 
-      // 3. Sync messages
-      const messages = await fetchConversationMessages(accessToken, igConv.id)
-      console.log(`[Instagram Sync] Syncing ${messages.length} messages for conversation ${igConv.id}`)
-
+      // 3. Sync messages (Done earlier to get participant)
+      // const messages = await fetchConversationMessages(accessToken, igConv.id)
+      
       for (const msg of messages) {
         // Check if message already exists
         const { data: existingMsg } = await supabase
