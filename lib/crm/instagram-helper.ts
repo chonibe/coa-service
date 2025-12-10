@@ -45,10 +45,9 @@ export async function fetchInstagramConversations(
     console.log(`[Instagram Helper] Fetching conversations for target ${targetId}`)
     
     // Fetch conversations using Page ID
-    // Note: Requesting 'participants' or 'messages' in the list caused "An unknown error has occurred"
-    // So we only fetch metadata here.
+    // Added limit=25 to prevent "Please reduce the amount of data" error
     const response = await fetch(
-      `https://graph.facebook.com/v19.0/${targetId}/conversations?platform=instagram&fields=id,updated_time&access_token=${accessToken}`
+      `https://graph.facebook.com/v19.0/${targetId}/conversations?platform=instagram&fields=id,updated_time&limit=25&access_token=${accessToken}`
     )
 
     if (!response.ok) {
@@ -69,8 +68,9 @@ export async function fetchConversationMessages(
   conversationId: string
 ) {
   try {
+    // Added limit=50 to prevent data volume errors
     const response = await fetch(
-      `https://graph.facebook.com/v19.0/${conversationId}/messages?fields=id,message,created_time,from,to&access_token=${accessToken}`
+      `https://graph.facebook.com/v19.0/${conversationId}/messages?fields=id,message,created_time,from,to&limit=50&access_token=${accessToken}`
     )
     
     if (!response.ok) {
