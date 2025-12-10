@@ -222,15 +222,16 @@ async function handleInstagramCallback(
     // Store the first Instagram account (or all if multiple)
     // For now, store the first one
     const account = instagramAccounts[0]
-    // Use Page Access Token if available, otherwise fall back to User Access Token
-    const finalAccessToken = account.pageAccessToken || accessToken
+    // Use User Access Token to ensure permissions are correctly delegated
+    // (Page tokens sometimes behave differently for IG Messaging capability checks)
+    const finalAccessToken = accessToken
     const tokenExpiresAt = expiresIn ? new Date(Date.now() + expiresIn * 1000).toISOString() : null
 
     console.log("[Instagram Callback] Storing account:", {
       instagramId: account.instagramId,
       accountName: account.pageName,
       username: account.instagramUsername,
-      usingPageToken: !!account.pageAccessToken
+      usingPageToken: false // Reverted to User Token
     })
 
     return await storeInstagramAccount(
