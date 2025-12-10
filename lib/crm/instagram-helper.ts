@@ -18,16 +18,7 @@ interface InstagramMessage {
 
 interface InstagramConversation {
   id: string
-  messages: {
-    data: InstagramMessage[]
-    paging?: {
-      cursors: {
-        before: string
-        after: string
-      }
-      next?: string
-    }
-  }
+  // messages removed from here as we fetch them separately
   participants: {
     data: Array<{
       id: string
@@ -39,37 +30,31 @@ interface InstagramConversation {
 
 export async function fetchInstagramConversations(
   accessToken: string,
-  instagramAccountId: string
+  targetId: string
 ) {
   try {
-    // Debug: Check token permissions
-    console.log("[Instagram Helper] Checking token permissions...")
-    const debugResponse = await fetch(
-      `https://graph.facebook.com/v19.0/me/permissions?access_token=${accessToken}`
-    )
-    if (debugResponse.ok) {
-      const debugData = await debugResponse.json()
-      console.log("[Instagram Helper] Token permissions:", JSON.stringify(debugData, null, 2))
-      
-      // Check for specific required permissions
-      const permissions = debugData.data || []
-      const required = ["instagram_manage_messages", "pages_manage_metadata"]
-      const missing = required.filter(p => !permissions.some((pp: any) => pp.permission === p && pp.status === "granted"))
-      
-      if (missing.length > 0) {
-        console.error("[Instagram Helper] MISSING REQUIRED PERMISSIONS:", missing)
+    // Debug: Check token permissions (only works for User Token, skip for Page Token if manual)
+    if (!process.env.INSTAGRAM_MANUAL_ACCESS_TOKEN) {
+      console.log("[Instagram Helper] Checking token permissions...")
+      const debugResponse = await fetch(
+        `https://graph.facebook.com/v19.0/me/permissions?access_token=${accessToken}`
+      )
+      if (debugResponse.ok) {
+        const debugData = await debugResponse.json()
+        console.log("[Instagram Helper] Token permissions:", JSON.stringify(debugData, null, 2))
       } else {
-        console.log("[Instagram Helper] All required permissions present.")
+        // Don't fail, just log (Page Tokens don't support /me/permissions)
+        console.log("[Instagram Helper] Permissions check skipped (likely Page Token).")
       }
-    } else {
-      console.error("[Instagram Helper] Failed to check permissions:", await debugResponse.text())
     }
 
-    console.log(`[Instagram Helper] Fetching conversations for account ${instagramAccountId}`)
+    console.log(`[Instagram Helper] Fetching conversations for target ${targetId}`)
     
-    // Fetch conversations with messages and participants
+    // Fetch conversations using Page ID
+    // Note: Fetching messages in the same call caused "An unknown error has occurred" (code 1)
+    // So we fetch conversations first, then messages individually.
     const response = await fetch(
-      `https://graph.facebook.com/v19.0/${instagramAccountId}/conversations?platform=instagram&fields=id,updated_time,participants,messages{id,message,created_time,from,to}&access_token=${accessToken}`
+      `https://graph.facebook.com/v19.0/${targetId}/conversations?platform=instagram&fields=id,updated_time,participants&access_token=${accessToken}`
     )
 
     if (!response.ok) {
@@ -85,23 +70,48 @@ export async function fetchInstagramConversations(
   }
 }
 
+export async function fetchConversationMessages(
+  accessToken: string,
+  conversationId: string
+) {
+  try {
+    const response = await fetch(
+      `https://graph.facebook.com/v19.0/${conversationId}/messages?fields=id,message,created_time,from,to&access_token=${accessToken}`
+    )
+    
+    if (!response.ok) {
+      // If we can't fetch messages for a specific conversation, log but return empty to continue
+      console.warn(`[Instagram Helper] Failed to fetch messages for conversation ${conversationId}:`, await response.text())
+      return []
+    }
+
+    const data = await response.json()
+    return data.data as InstagramMessage[]
+  } catch (error) {
+    console.error(`[Instagram Helper] Error fetching messages for ${conversationId}:`, error)
+    return []
+  }
+}
+
 export async function syncInstagramHistory(
   userId: string,
   accessToken: string,
-  instagramAccountId: string
+  instagramAccountId: string,
+  pageId: string
 ) {
   const supabase = createServiceClient()
-  console.log(`[Instagram Sync] Starting history sync for user ${userId}, account ${instagramAccountId}`)
+  console.log(`[Instagram Sync] Starting history sync for user ${userId}, account ${instagramAccountId} via Page ${pageId}`)
 
   try {
-    const conversations = await fetchInstagramConversations(accessToken, instagramAccountId)
+    // Use Page ID for fetching conversations (works better with Page Tokens)
+    const conversations = await fetchInstagramConversations(accessToken, pageId)
     console.log(`[Instagram Sync] Found ${conversations?.length || 0} conversations`)
 
     if (!conversations) return
 
     for (const igConv of conversations) {
-      // Find the participant that is NOT the business account
-      const participant = igConv.participants.data.find(p => p.id !== instagramAccountId)
+      // Find the participant that is NOT the business account (check both IDs)
+      const participant = igConv.participants.data.find(p => p.id !== instagramAccountId && p.id !== pageId)
       
       if (!participant) {
         console.warn(`[Instagram Sync] No other participant found for conversation ${igConv.id}`)
@@ -179,7 +189,7 @@ export async function syncInstagramHistory(
       }
 
       // 3. Sync messages
-      const messages = igConv.messages?.data || []
+      const messages = await fetchConversationMessages(accessToken, igConv.id)
       console.log(`[Instagram Sync] Syncing ${messages.length} messages for conversation ${igConv.id}`)
 
       for (const msg of messages) {
@@ -192,7 +202,8 @@ export async function syncInstagramHistory(
 
         if (existingMsg) continue
 
-        const direction = msg.from.id === instagramAccountId ? "outbound" : "inbound"
+        // Check against both Instagram Account ID and Page ID for outbound direction
+        const direction = (msg.from.id === instagramAccountId || msg.from.id === pageId) ? "outbound" : "inbound"
 
         await supabase
           .from("crm_messages")
