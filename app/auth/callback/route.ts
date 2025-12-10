@@ -397,9 +397,15 @@ async function storeInstagramAccount(
     
     // Trigger historical sync in background
     if (pageId) {
-      console.log("[Instagram Callback] Triggering historical sync using Page ID:", pageId)
-      syncInstagramHistory(user.id, accessToken, instagramAccountId, pageId)
-        .catch(err => console.error("[Instagram Callback] Background sync error:", err))
+      // NOTE: Temporarily disabled because the Instagram account has too many existing conversations
+      // with non-role users, causing the Graph API to timeout while filtering in Dev Mode.
+      // Error: "Your query has timed out since you have too many conversations..."
+      // To enable this, the app needs Advanced Access to instagram_manage_messages.
+      
+      console.log("[Instagram Callback] Skipping historical sync (Dev Mode limitation with high-volume account)")
+      // console.log("[Instagram Callback] Triggering historical sync using Page ID:", pageId)
+      // syncInstagramHistory(user.id, accessToken, instagramAccountId, pageId)
+      //   .catch(err => console.error("[Instagram Callback] Background sync error:", err))
     } else {
       console.warn("[Instagram Callback] Skipping history sync: Page ID missing")
     }
