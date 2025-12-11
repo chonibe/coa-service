@@ -261,6 +261,9 @@ function validateUnlockConfig(unlockType: UnlockType, config: any): string | nul
     case "any_purchase":
       // No specific validation required
       break
+    case "nfc":
+      // No additional validation required for NFC unlocks today
+      break
     default:
       return `Invalid unlock type: ${unlockType}`
   }

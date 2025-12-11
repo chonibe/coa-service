@@ -183,6 +183,8 @@ export default function SeriesDetailPage() {
         return "Time-Based"
       case "vip":
         return "VIP"
+      case "nfc":
+        return "NFC Unlock"
       default:
         return type
     }

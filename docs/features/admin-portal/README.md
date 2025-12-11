@@ -114,7 +114,7 @@
   - 2025-12-11: **UX Refresh** – grouped navigation, command palette, overview-first admin home, and vendor explorer filter improvements.
     - Added command palette component (`app/admin/components/command-palette.tsx`) with `⌘/Ctrl + K` shortcut and grouped nav targets.
     - Admin home now highlights system health, today’s actions, recent activity log, and a job activity panel before product sync flows (`app/admin/page.tsx`).
-    - Vendor explorer gains sticky filter bar, preset status chips, reset, enriched empty/error states, and clearer impersonation styling (`app/admin/admin-shell.tsx`).
+    - Vendor explorer gains sticky filter bar, preset status chips, reset, enriched empty/error states, clearer impersonation styling, and live-region announcements for table feedback (`app/admin/admin-shell.tsx`).
   - 2025-11-17: **Major Refactor** - Switched from impersonation-first to admin-view-first approach.
     - Added `/admin/vendors/[vendorId]` page for comprehensive vendor management within admin UI.
     - Created admin vendor data APIs (`/api/admin/vendors/[vendorId]/*`) for dashboard, orders, and settings.

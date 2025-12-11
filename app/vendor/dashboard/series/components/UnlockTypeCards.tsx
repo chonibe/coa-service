@@ -1,7 +1,7 @@
 "use client"
 
 import { motion } from "framer-motion"
-import { Check, Lock, ArrowRight, Crown, Clock } from "lucide-react"
+import { Check, Lock, ArrowRight, Crown, Clock, Radio } from "lucide-react"
 import type { UnlockType } from "@/types/artwork-series"
 import { cn } from "@/lib/utils"
 
@@ -10,7 +10,7 @@ interface UnlockTypeCardsProps {
   onChange: (value: UnlockType) => void
 }
 
-const unlockTypes = [
+const baseUnlockTypes = [
   {
     value: "any_purchase" as UnlockType,
     label: "Open Collection",
@@ -55,7 +55,22 @@ const unlockTypes = [
     borderColor: "border-green-200 dark:border-green-800",
     layout: "vertical" as const,
   },
-]
+] as const
+
+// Add NFC unlock option
+const nfcUnlockType = {
+  value: "nfc" as UnlockType,
+  label: "NFC Unlock",
+  shortLabel: "NFC",
+  visual: "📡",
+  icon: Radio,
+  color: "from-indigo-500 to-blue-500",
+  bgColor: "bg-indigo-50 dark:bg-indigo-950/20",
+  borderColor: "border-indigo-200 dark:border-indigo-800",
+  layout: "horizontal" as const,
+} as const
+
+const unlockTypes = [...baseUnlockTypes, nfcUnlockType] as const
 
 export function UnlockTypeCards({ value, onChange }: UnlockTypeCardsProps) {
   return (

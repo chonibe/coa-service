@@ -26,7 +26,7 @@ async function logNfcTagAction(action: string, details: Record<string, any>) {
   }
 }
 
-export async function POST() {
+export async function POST(request: NextRequest) {
   const supabase = createClient()
   
   try {
@@ -96,7 +96,7 @@ export async function POST() {
     // Check if the certificate exists
     const { data: certificate, error: certError } = await supabase
       .from("order_line_items_v2")
-      .select("certificate_url, certificate_token, name")
+      .select("certificate_url, certificate_token, name, product_id, submission_id, series_id")
       .eq("line_item_id", lineItemId)
       .eq("order_id", orderId)
       .maybeSingle()
@@ -167,6 +167,58 @@ export async function POST() {
       // Continue anyway since the tag was successfully claimed
     }
 
+    let seriesUnlocked = false
+
+    // Attempt to unlock series member if the series uses NFC unlocks
+    try {
+      const productId = (certificate as any)?.product_id as string | undefined
+      const submissionId = (certificate as any)?.submission_id as string | undefined
+      const seriesId = (certificate as any)?.series_id as string | undefined
+
+      if (productId || submissionId || seriesId) {
+        const orFilters = [
+          productId ? `shopify_product_id.eq.${productId}` : null,
+          submissionId ? `submission_id.eq.${submissionId}` : null,
+          seriesId ? `series_id.eq.${seriesId}` : null,
+        ]
+          .filter(Boolean)
+          .join(",")
+
+        if (orFilters.length > 0) {
+          const { data: member, error: memberError } = await supabase
+            .from("artwork_series_members")
+            .select("id, series_id, is_locked, unlocked_at")
+            .or(orFilters)
+            .limit(1)
+            .maybeSingle()
+
+          if (!memberError && member?.series_id) {
+            const { data: series } = await supabase
+              .from("artwork_series")
+              .select("id, unlock_type")
+              .eq("id", member.series_id)
+              .maybeSingle()
+
+            if (series?.unlock_type === "nfc") {
+              const { error: unlockError } = await supabase
+                .from("artwork_series_members")
+                .update({
+                  is_locked: false,
+                  unlocked_at: new Date().toISOString(),
+                })
+                .eq("id", member.id)
+
+              if (!unlockError) {
+                seriesUnlocked = true
+              }
+            }
+          }
+        }
+      }
+    } catch (unlockError) {
+      console.error("Series unlock attempt failed:", unlockError)
+    }
+
     // Log successful claim
     await logNfcTagAction("tag_claimed_successfully", {
       tagId,
@@ -178,7 +230,8 @@ export async function POST() {
     return NextResponse.json({
       success: true,
       nfcTag: data[0],
-      artworkName: certificate.name
+      artworkName: certificate.name,
+      seriesUnlocked,
     })
   } catch (error: any) {
     console.error("Error in claim NFC tag API:", error)

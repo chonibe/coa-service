@@ -394,8 +394,8 @@ export default function AdminDashboard() {
                   Clear
                 </Button>
               </div>
-              <div className="rounded-md border bg-muted/40 max-h-48 overflow-auto">
-                <div className="space-y-2 p-3 text-sm">
+              <div className="rounded-md border bg-muted/40 max-h-48 overflow-auto" aria-live="polite">
+                <div className="space-y-2 p-3 text-sm" role="status">
                   {progressMessages.length > 0 ? (
                     progressMessages.map((message, index) => (
                       <div key={index} className="flex items-start gap-2">
@@ -419,227 +419,227 @@ export default function AdminDashboard() {
           </div>
 
           {/* Product selection */}
-          <Card className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-0 shadow-xl">
-            <CardHeader>
-              <CardTitle>Select Products</CardTitle>
-              <CardDescription>Choose which products should be assigned sequential edition numbers.</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <div className="flex flex-col space-y-2 sm:flex-row sm:space-y-0 sm:space-x-2">
-                  <div className="flex-1">
-                    <Input
-                      placeholder="Search products..."
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                      onKeyDown={(e) => e.key === "Enter" && handleSearch()}
-                    />
-                  </div>
-                  <div className="flex space-x-2">
-                    <Select value={searchField} onValueChange={setSearchField}>
-                      <SelectTrigger className="w-[120px]">
-                        <SelectValue placeholder="Search by" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="title">Title</SelectItem>
-                        <SelectItem value="sku">SKU</SelectItem>
-                        <SelectItem value="vendor">Vendor</SelectItem>
-                        <SelectItem value="tag">Tag</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <Button
-                      onClick={handleSearch}
-                      disabled={isFetchingProducts}
-                      className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-lg"
-                    >
-                      <Search className="h-4 w-4 mr-2" />
-                      Search
-                    </Button>
-                  </div>
+        <Card className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-0 shadow-xl">
+          <CardHeader>
+            <CardTitle>Select Products</CardTitle>
+            <CardDescription>Choose which products should be assigned sequential edition numbers.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <div className="flex flex-col space-y-2 sm:flex-row sm:space-y-0 sm:space-x-2">
+                <div className="flex-1">
+                  <Input
+                    placeholder="Search products..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    onKeyDown={(e) => e.key === "Enter" && handleSearch()}
+                  />
                 </div>
+                <div className="flex space-x-2">
+                  <Select value={searchField} onValueChange={setSearchField}>
+                    <SelectTrigger className="w-[120px]">
+                      <SelectValue placeholder="Search by" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="title">Title</SelectItem>
+                      <SelectItem value="sku">SKU</SelectItem>
+                      <SelectItem value="vendor">Vendor</SelectItem>
+                      <SelectItem value="tag">Tag</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <Button 
+                    onClick={handleSearch} 
+                    disabled={isFetchingProducts}
+                    className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-lg"
+                  >
+                    <Search className="h-4 w-4 mr-2" />
+                    Search
+                  </Button>
+                </div>
+              </div>
 
-                {error && (
-                  <Alert variant="destructive" className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-0 shadow-lg">
-                    <AlertCircle className="h-4 w-4" />
-                    <AlertTitle>Error</AlertTitle>
-                    <AlertDescription>{error}</AlertDescription>
-                  </Alert>
-                )}
+              {error && (
+                <Alert variant="destructive" className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-0 shadow-lg">
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertTitle>Error</AlertTitle>
+                  <AlertDescription>{error}</AlertDescription>
+                </Alert>
+              )}
 
-                {isFetchingProducts ? (
-                  <div className="flex justify-center py-8">
-                    <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-                  </div>
+              {isFetchingProducts ? (
+                <div className="flex justify-center py-8">
+                  <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                </div>
                 ) : products.length === 0 ? (
-                  <Alert className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-0 shadow-lg">
-                    <AlertCircle className="h-4 w-4" />
-                    <AlertTitle>No products found</AlertTitle>
-                    <AlertDescription>
-                      No products match your search criteria. Try a different search term.
-                    </AlertDescription>
-                  </Alert>
-                ) : (
-                  <div className="border rounded-md">
-                    <div className="flex items-center justify-between p-4 border-b">
-                      <div className="flex items-center space-x-4">
-                        <div className="flex items-center space-x-2">
-                          <Checkbox
-                            id="select-page"
-                            checked={selectedProductIds.length >= products.length && products.length > 0}
-                            onCheckedChange={toggleSelectAll}
-                          />
-                          <label htmlFor="select-page" className="text-sm font-medium">
-                            Select Page
-                          </label>
+                    <Alert className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-0 shadow-lg">
+                      <AlertCircle className="h-4 w-4" />
+                      <AlertTitle>No products found</AlertTitle>
+                      <AlertDescription>
+                        No products match your search criteria. Try a different search term.
+                      </AlertDescription>
+                    </Alert>
+                  ) : (
+                    <div className="border rounded-md">
+                      <div className="flex items-center justify-between p-4 border-b">
+                        <div className="flex items-center space-x-4">
+                          <div className="flex items-center space-x-2">
+                            <Checkbox
+                              id="select-page"
+                              checked={selectedProductIds.length >= products.length && products.length > 0}
+                              onCheckedChange={toggleSelectAll}
+                            />
+                            <label htmlFor="select-page" className="text-sm font-medium">
+                              Select Page
+                            </label>
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={handleSelectAllPages}
+                              disabled={isSelectingAll}
+                              className="h-8"
+                            >
+                              {isSelectingAll ? <Loader2 className="h-3 w-3 mr-1 animate-spin" /> : null}
+                              {totalProductCount > 0 && selectedProductIds.length === totalProductCount
+                                ? "Deselect All"
+                                : "Select All Products"}
+                            </Button>
+                          </div>
                         </div>
-                        <div className="flex items-center space-x-2">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={handleSelectAllPages}
-                            disabled={isSelectingAll}
-                            className="h-8"
-                          >
-                            {isSelectingAll ? <Loader2 className="h-3 w-3 mr-1 animate-spin" /> : null}
-                            {totalProductCount > 0 && selectedProductIds.length === totalProductCount
-                              ? "Deselect All"
-                              : "Select All Products"}
-                          </Button>
+                        <div className="text-sm text-muted-foreground">
+                          Selected: {selectedProductIds.length}
+                          {totalProductCount > 0 ? ` / ${totalProductCount}` : ""}
                         </div>
                       </div>
-                      <div className="text-sm text-muted-foreground">
-                        Selected: {selectedProductIds.length}
-                        {totalProductCount > 0 ? ` / ${totalProductCount}` : ""}
-                      </div>
-                    </div>
 
-                    <div className="divide-y">
-                      {products.map((product) => (
+                      <div className="divide-y">
+                        {products.map((product) => (
                         <div
                           key={product.id}
                           className="flex items-center p-4 hover:bg-white/50 dark:hover:bg-slate-900/50 backdrop-blur-sm transition-colors"
                         >
-                          <div className="flex items-center flex-1">
-                            <Checkbox
-                              id={`product-${product.id}`}
-                              checked={selectedProductIds.includes(product.id)}
-                              onCheckedChange={() => toggleProductSelection(product.id)}
-                              className="mr-4"
-                            />
+                            <div className="flex items-center flex-1">
+                              <Checkbox
+                                id={`product-${product.id}`}
+                                checked={selectedProductIds.includes(product.id)}
+                                onCheckedChange={() => toggleProductSelection(product.id)}
+                                className="mr-4"
+                              />
 
-                            <div className="flex items-center space-x-4">
-                              {product.image ? (
-                                <Image
-                                  src={product.image.src || "/placeholder.svg"}
-                                  alt={product.title}
-                                  width={40}
-                                  height={40}
-                                  className="rounded-md object-cover"
-                                />
-                              ) : (
-                                <div className="w-10 h-10 bg-muted rounded-md flex items-center justify-center">
-                                  <span className="text-xs text-muted-foreground">No img</span>
-                                </div>
-                              )}
+                              <div className="flex items-center space-x-4">
+                                {product.image ? (
+                                  <Image
+                                    src={product.image.src || "/placeholder.svg"}
+                                    alt={product.title}
+                                    width={40}
+                                    height={40}
+                                    className="rounded-md object-cover"
+                                  />
+                                ) : (
+                                  <div className="w-10 h-10 bg-muted rounded-md flex items-center justify-center">
+                                    <span className="text-xs text-muted-foreground">No img</span>
+                                  </div>
+                                )}
 
-                              <div className="flex-1 min-w-0">
-                                <div className="font-medium truncate">{product.title}</div>
-                                <div className="text-sm text-muted-foreground flex items-center space-x-2">
-                                  <span>{product.vendor}</span>
-                                  {product.variants && product.variants[0] && (
-                                    <span className="text-xs bg-muted px-1.5 py-0.5 rounded">
-                                      SKU: {product.variants[0].sku || "N/A"}
-                                    </span>
-                                  )}
-                                </div>
-                                {product.tags && (
-                                  <div className="flex flex-wrap gap-1 mt-1">
-                                    {product.tags
-                                      .split(",")
-                                      .slice(0, 3)
-                                      .map((tag: string, i: number) => (
-                                        <span key={i} className="text-xs bg-muted px-1.5 py-0.5 rounded">
-                                          {tag.trim()}
-                                        </span>
-                                      ))}
-                                    {product.tags.split(",").length > 3 && (
-                                      <span className="text-xs text-muted-foreground">
-                                        +{product.tags.split(",").length - 3} more
+                                <div className="flex-1 min-w-0">
+                                  <div className="font-medium truncate">{product.title}</div>
+                                  <div className="text-sm text-muted-foreground flex items-center space-x-2">
+                                    <span>{product.vendor}</span>
+                                    {product.variants && product.variants[0] && (
+                                      <span className="text-xs bg-muted px-1.5 py-0.5 rounded">
+                                        SKU: {product.variants[0].sku || "N/A"}
                                       </span>
                                     )}
                                   </div>
-                                )}
+                                  {product.tags && (
+                                    <div className="flex flex-wrap gap-1 mt-1">
+                                      {product.tags
+                                        .split(",")
+                                        .slice(0, 3)
+                                        .map((tag: string, i: number) => (
+                                          <span key={i} className="text-xs bg-muted px-1.5 py-0.5 rounded">
+                                            {tag.trim()}
+                                          </span>
+                                        ))}
+                                      {product.tags.split(",").length > 3 && (
+                                        <span className="text-xs text-muted-foreground">
+                                          +{product.tags.split(",").length - 3} more
+                                        </span>
+                                      )}
+                                    </div>
+                                  )}
+                                </div>
                               </div>
                             </div>
                           </div>
-                        </div>
-                      ))}
-                    </div>
+                        ))}
+                      </div>
 
-                    <div className="flex items-center justify-between p-4 border-t">
-                      <div className="text-sm text-muted-foreground">Showing {products.length} products</div>
-                      <div className="flex space-x-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => fetchProducts(pagination.prevCursor, searchQuery)}
-                          disabled={!pagination.hasPrev || isFetchingProducts}
-                        >
-                          <ChevronLeft className="h-4 w-4 mr-1" />
-                          Previous
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => fetchProducts(pagination.nextCursor, searchQuery)}
-                          disabled={!pagination.hasNext || isFetchingProducts}
-                        >
-                          Next
-                          <ChevronRight className="h-4 w-4 ml-1" />
-                        </Button>
+                      <div className="flex items-center justify-between p-4 border-t">
+                        <div className="text-sm text-muted-foreground">Showing {products.length} products</div>
+                        <div className="flex space-x-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => fetchProducts(pagination.prevCursor, searchQuery)}
+                            disabled={!pagination.hasPrev || isFetchingProducts}
+                          >
+                            <ChevronLeft className="h-4 w-4 mr-1" />
+                            Previous
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => fetchProducts(pagination.nextCursor, searchQuery)}
+                            disabled={!pagination.hasNext || isFetchingProducts}
+                          >
+                            Next
+                            <ChevronRight className="h-4 w-4 ml-1" />
+                          </Button>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                )}
-              </div>
-            </CardContent>
-          </Card>
+              )}
+            </div>
+          </CardContent>
+        </Card>
 
           {/* Sync controls */}
-          <Card className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-0 shadow-xl">
-            <CardHeader>
-              <CardTitle>Sync Selected Products</CardTitle>
-              <CardDescription>This will assign sequential edition numbers based on order creation time.</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="flex items-center space-x-2 mb-6">
-                <Checkbox
-                  id="force-sync"
-                  checked={forceSync}
-                  onCheckedChange={(checked) => setForceSync(checked as boolean)}
-                />
-                <label
-                  htmlFor="force-sync"
-                  className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                >
-                  Force sync (re-assign all edition numbers even if already synced)
-                </label>
-              </div>
+        <Card className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-0 shadow-xl">
+          <CardHeader>
+            <CardTitle>Sync Selected Products</CardTitle>
+            <CardDescription>This will assign sequential edition numbers based on order creation time.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center space-x-2 mb-6">
+              <Checkbox
+                id="force-sync"
+                checked={forceSync}
+                onCheckedChange={(checked) => setForceSync(checked as boolean)}
+              />
+              <label
+                htmlFor="force-sync"
+                className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+              >
+                Force sync (re-assign all edition numbers even if already synced)
+              </label>
+            </div>
 
-              {isLoading && (
-                <div className="mb-6 space-y-2">
-                  <div className="flex justify-between text-sm">
+            {isLoading && (
+              <div className="mb-6 space-y-2">
+                <div className="flex justify-between text-sm">
                     <span>Progress</span>
                     <span>{progress}%</span>
-                  </div>
-                  <Progress value={progress} className="h-2" />
+                </div>
+                <Progress value={progress} className="h-2" />
                   {currentProduct && (
                     <div className="text-sm text-muted-foreground">
                       Syncing: <span className="font-medium text-foreground">{currentProduct}</span>
-                    </div>
-                  )}
-                </div>
-              )}
+              </div>
+            )}
+              </div>
+            )}
 
               <div className="flex items-center space-x-2">
                 <Button
@@ -669,9 +669,9 @@ export default function AdminDashboard() {
                     "Test Supabase Connection"
                   )}
                 </Button>
-              </div>
-            </CardContent>
-          </Card>
+            </div>
+          </CardContent>
+        </Card>
 
           {/* Sync results */}
           <Card className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-0 shadow-xl">
@@ -685,33 +685,33 @@ export default function AdminDashboard() {
                   <TabsTrigger value="all">
                     All Results
                     {syncResults?.syncResults && (
-                      <Badge variant="secondary" className="ml-2">
-                        {syncResults.syncResults.length}
-                      </Badge>
+                    <Badge variant="secondary" className="ml-2">
+                      {syncResults.syncResults.length}
+                    </Badge>
                     )}
                   </TabsTrigger>
                   <TabsTrigger value="success">
                     Success
                     {syncResults?.syncResults && (
-                      <Badge variant="secondary" className="ml-2">
-                        {syncResults.syncResults.filter((item: any) => !item.error).length}
-                      </Badge>
+                    <Badge variant="secondary" className="ml-2">
+                      {syncResults.syncResults.filter((item: any) => !item.error).length}
+                    </Badge>
                     )}
                   </TabsTrigger>
                   <TabsTrigger value="error">
                     Errors
                     {syncResults?.syncResults && (
                       <Badge variant="destructive" className="ml-2">
-                        {syncResults.syncResults.filter((item: any) => item.error).length}
-                      </Badge>
+                      {syncResults.syncResults.filter((item: any) => item.error).length}
+                    </Badge>
                     )}
                   </TabsTrigger>
                 </TabsList>
 
                 {syncResults ? (
-                  <div className="space-y-4">
+              <div className="space-y-4">
                     <div className="grid gap-4">
-                      {getFilteredResults().map((result: any, index: number) => (
+                {getFilteredResults().map((result: any, index: number) => (
                         <Card key={`${result.productId}-${index}`} className="border border-slate-200/80 dark:border-slate-800/80">
                           <CardHeader>
                             <div className="flex items-start justify-between">
@@ -721,26 +721,26 @@ export default function AdminDashboard() {
                               </div>
                               <Badge variant={result.error ? "destructive" : "default"}>
                                 {result.error ? "Failed" : "Synced"}
-                              </Badge>
-                            </div>
+                        </Badge>
+                    </div>
                           </CardHeader>
                           <CardContent className="space-y-2">
-                            {result.error ? (
+                    {result.error ? (
                               <Alert variant="destructive">
-                                <AlertCircle className="h-4 w-4" />
+                        <AlertCircle className="h-4 w-4" />
                                 <AlertTitle>Sync failed</AlertTitle>
                                 <AlertDescription>{result.error}</AlertDescription>
-                              </Alert>
-                            ) : (
+                      </Alert>
+                    ) : (
                               <div className="space-y-1 text-sm">
                                 <p className="text-muted-foreground">Edition number assigned: {result.editionNumber ?? "n/a"}</p>
                                 {result.note && <p className="text-muted-foreground">Note: {result.note}</p>}
-                              </div>
+                          </div>
                             )}
                           </CardContent>
                         </Card>
                       ))}
-                    </div>
+                        </div>
                   </div>
                 ) : (
                   <div className="text-sm text-muted-foreground">Run a sync to see results.</div>

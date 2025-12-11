@@ -134,15 +134,65 @@ export default function AuthenticatePage() {
       setError("Please select a certificate to pair with this NFC tag")
       return
     }
+    if (!nfcTagId.trim()) {
+      setError("Scan or enter your NFC tag ID before pairing")
+      return
+    }
 
     setIsClaimingNfc(true)
     setError(null)
     setSuccess(null)
 
     try {
-      // In a real implementation, this would call your API
-      // For demo purposes, we'll simulate the API call
-      await new Promise((resolve) => setTimeout(resolve, 1500))
+      const orderId = selectedCertificate.order_info?.order_id || selectedCertificate.order_id
+
+      if (!("NDEFReader" in window)) {
+        throw new Error("NFC is not supported in this browser. Try a supported device.")
+      }
+
+      // Prepare signed unlock URL
+      const signResponse = await fetch("/api/nfc-tags/sign", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          tagId: nfcTagId,
+          lineItemId: selectedCertificate.line_item_id,
+          orderId,
+        }),
+      })
+
+      const signData = await signResponse.json()
+      if (!signResponse.ok || !signData.success) {
+        throw new Error(signData.message || "Failed to prepare NFC payload")
+      }
+
+      const unlockUrl = signData.unlockUrl || selectedCertificate.certificate_url
+
+      // Write to NTAG (Web NFC)
+      const ndef = new (window as any).NDEFReader()
+      await ndef.write({
+        records: [
+          { recordType: "url", data: unlockUrl },
+          { recordType: "text", data: `Certificate for ${selectedCertificate.title || "artwork"}` },
+        ],
+      })
+
+      // Claim in backend
+      const claimResponse = await fetch("/api/nfc-tags/claim", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          tagId: nfcTagId,
+          lineItemId: selectedCertificate.line_item_id,
+          orderId,
+          customerId: customerId || undefined,
+        }),
+      })
+
+      const claimData = await claimResponse.json()
+      if (!claimResponse.ok || !claimData.success) {
+        throw new Error(claimData.message || "Failed to pair NFC tag with certificate")
+      }
 
       // Update local state to show this certificate as claimed
       setClaimedTags({
@@ -150,7 +200,7 @@ export default function AuthenticatePage() {
         [selectedCertificate.line_item_id]: true,
       })
 
-      setSuccess(`Successfully paired NFC tag ${nfcTagId} with your certificate for ${selectedCertificate.title}`)
+      setSuccess(`NFC tag ${nfcTagId} locked to ${selectedCertificate.title}. Artist content will unlock on scan.`)
 
       // Reset selection
       setSelectedCertificate(null)

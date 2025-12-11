@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Switch } from "@/components/ui/switch"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { Loader2, Lock, Plus, Info, X, ArrowRight, ArrowLeft, Check, Crown, Clock } from "lucide-react"
+import { Loader2, Lock, Plus, Info, X, ArrowRight, ArrowLeft, Check, Crown, Clock, Radio } from "lucide-react"
 import { motion, AnimatePresence } from "framer-motion"
 import type { ProductSubmissionData } from "@/types/product-submission"
 import type { UnlockType } from "@/types/artwork-series"
@@ -315,6 +315,8 @@ export function SeriesStep({ formData, setFormData }: SeriesStepProps) {
         return "Time-Based"
       case "vip":
         return "VIP"
+      case "nfc":
+        return "NFC Unlock"
       default:
         return type || "Unknown"
     }
@@ -331,6 +333,8 @@ export function SeriesStep({ formData, setFormData }: SeriesStepProps) {
         return <Crown className="h-3 w-3" />
       case "time_based":
         return <Clock className="h-3 w-3" />
+      case "nfc":
+        return <Radio className="h-3 w-3" />
       default:
         return null
     }
@@ -347,6 +351,8 @@ export function SeriesStep({ formData, setFormData }: SeriesStepProps) {
         return "border-orange-400 bg-orange-50 dark:bg-orange-900/20 text-orange-700 dark:text-orange-300"
       case "time_based":
         return "border-green-400 bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-300"
+      case "nfc":
+        return "border-indigo-400 bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-200"
       default:
         return "border-gray-400 bg-gray-50 dark:bg-gray-900/20 text-gray-700 dark:text-gray-300"
     }

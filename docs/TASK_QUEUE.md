@@ -175,6 +175,13 @@
 - Comprehensive cross-browser testing
 - Detailed error logging and user guidance
 
+## NFC Unlock Landing & Series Integration
+
+- [ ] [NFC unlock experience (NTAG424)](/docs/features/series-manager/README.md)
+  - [ ] Issue signed unlock URLs via `/api/nfc-tags/sign`
+  - [ ] Route scans to artist unlock page `/nfc/unlock`
+  - [ ] Mark NFC-claimed series members as unlocked when series uses `nfc`
+
 # Task Queue
 
 ## Monitoring and Webhook System Improvements

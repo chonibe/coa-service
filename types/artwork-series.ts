@@ -1,6 +1,6 @@
 // Type definitions for artwork series and unlock system
 
-export type UnlockType = 'any_purchase' | 'sequential' | 'threshold' | 'time_based' | 'vip'
+export type UnlockType = 'any_purchase' | 'sequential' | 'threshold' | 'time_based' | 'vip' | 'nfc'
 
 export interface UnlockConfig {
   order?: string[] // For sequential - array of submission/product IDs in unlock order
@@ -18,6 +18,11 @@ export interface UnlockConfig {
   vip_tier?: number // Minimum tier level required
   loyalty_points_required?: number
   rules?: any[] // For custom logic
+  // NFC unlock configuration (optional for future expansions)
+  nfc?: {
+    landing_path?: string // Custom landing path for artist unlock page
+    content_blocks?: Array<{ type: string; value: any }>
+  }
 }
 
 // Journey Milestone System Types
@@ -112,6 +117,7 @@ export interface SeriesMember {
   unlock_order?: number | null
   display_order: number
   unlocked_at?: string | null
+  unlocked_via?: 'nfc' | 'purchase' | 'manual' | null
   artwork_title?: string // Join data
   artwork_image?: string // Join data
   has_benefits?: boolean // Whether artwork has benefits/treasures

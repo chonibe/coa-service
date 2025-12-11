@@ -601,6 +601,7 @@ export function AdminShell({ children }: AdminShellProps) {
             value={vendorSearch}
             onChange={(event) => setVendorSearch(event.target.value)}
             className="md:w-72"
+            aria-label="Search vendors"
           />
           <div className="flex flex-col gap-2 md:flex-row md:items-center md:gap-3">
             <div className="flex items-center gap-2">
@@ -655,13 +656,13 @@ export function AdminShell({ children }: AdminShellProps) {
             <tbody>
               {isLoadingVendors ? (
                 <tr>
-                  <td colSpan={6} className="px-4 py-6 text-center text-muted-foreground">
+                  <td colSpan={6} className="px-4 py-6 text-center text-muted-foreground" aria-live="polite">
                     Loading vendors…
                   </td>
                 </tr>
               ) : switcherError ? (
                 <tr>
-                  <td colSpan={6} className="px-4 py-6 text-center text-destructive">
+                  <td colSpan={6} className="px-4 py-6 text-center text-destructive" aria-live="assertive">
                     <div className="flex flex-col items-center gap-3">
                       <span>{switcherError}</span>
                       <Button size="sm" variant="outline" onClick={() => { setSwitcherError(null); setVendorsLoaded(false); setActiveView("chooser") }}>
@@ -672,7 +673,7 @@ export function AdminShell({ children }: AdminShellProps) {
                 </tr>
               ) : filteredVendors.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="px-4 py-6 text-center text-muted-foreground">
+                  <td colSpan={6} className="px-4 py-6 text-center text-muted-foreground" aria-live="polite">
                     <div className="space-y-2">
                       <p className="font-medium">No vendors match your filters.</p>
                       <p className="text-sm text-muted-foreground">Try a different status or clear filters to see all vendors.</p>

@@ -134,7 +134,14 @@ Unlockable series make art behave like progression, and progression is the stron
 - **Config**: `{ unlock_at: string }` or `{ unlock_schedule: {...} }`
 - **Why it works**: Like daily drops or scheduled releases
 
-### 5. Custom
+### 5. NFC Unlocks
+- **Label**: NFC Unlock
+- **Description**: Unlock content when the collector writes the authenticated certificate URL to their NFC tag (e.g., NTAG424).
+- **Use Case**: Deliver post-scan artist experiences, stories, and next-drop CTAs directly from the physical piece.
+- **Config**: `{ nfc: { landing_path?: string, content_blocks?: [...] } }` (optional; defaults to standard unlock page)
+- **Why it works**: Bridges physical ownership with authenticated digital content and keeps collectors in-journey after each scan.
+
+### 6. Custom
 - **Label**: Custom
 - **Description**: Define your own unlock rules including time-based schedules and complex mechanics
 - **Use Case**: Special events, complex collection mechanics
@@ -255,6 +262,7 @@ npm install @dnd-kit/core @dnd-kit/sortable @dnd-kit/utilities react-image-crop
 - [Unlock System](/docs/features/unlock-system.md)
 
 ## Version History
+- **v1.2.0** (2025-12-11) - Added NFC unlock type and artist unlock landing flow; supports signed URLs for NTAG424 pairing.
 - **v1.1.1** (2025-12-11) - Improved mobile responsiveness for series binder cards in vendor dashboard views ([`app/vendor/dashboard/series/page.tsx`](../../../app/vendor/dashboard/series/page.tsx), [`app/vendor/dashboard/products/page.tsx`](../../../app/vendor/dashboard/products/page.tsx)).
 - **v1.0.0** (2025-01-29) - Initial implementation with Instagram-style flow
 - **v1.1.0** (2025-01-29) - Added delete, duplicate, search, and polish features
