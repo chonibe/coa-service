@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
-import { sendEmail } from '@/lib/email/client'
+import { sendTrackingUpdateEmail } from '@/lib/notifications/tracking-link'
 
 /**
  * POST /api/track/[token]/notifications/send
@@ -52,32 +52,14 @@ export async function POST(
       )
     }
 
-    // Generate email HTML
-    const emailHtml = generateTrackingUpdateEmailHtml({
+    // Send email using shared tracking notification utility
+    const emailResult = await sendTrackingUpdateEmail({
+      token,
       title: trackingLink.title || 'Order Tracking',
       orders,
       primaryColor: trackingLink.primary_color || '#8217ff',
-      trackingUrl: `${process.env.NEXT_PUBLIC_APP_URL || ''}/track/${token}`,
-    })
-
-    // Check if email service is configured
-    if (!process.env.RESEND_API_KEY) {
-      console.warn('Email service not configured. Skipping email notification.')
-      return NextResponse.json(
-        { 
-          success: false, 
-          message: 'Email service is not configured. Please set RESEND_API_KEY environment variable.',
-          errorCode: 'EMAIL_SERVICE_NOT_CONFIGURED'
-        },
-        { status: 503 } // Service Unavailable
-      )
-    }
-
-    // Send email
-    const emailResult = await sendEmail({
-      to: email,
-      subject: `${orders.length === 1 ? 'Order' : `${orders.length} Orders`} Status Update - ${trackingLink.title || 'Tracking'}`,
-      html: emailHtml,
+      email,
+      baseUrl: process.env.NEXT_PUBLIC_APP_URL,
     })
 
     if (!emailResult.success) {

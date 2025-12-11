@@ -4,6 +4,15 @@
 
 The Warehouse Order Tracking feature provides comprehensive order tracking capabilities for orders fulfilled through the ChinaDivision warehouse. It includes both admin and customer-facing interfaces to track orders, view package details, and monitor shipping status.
 
+### References
+- Implementation: `app/api/warehouse/orders/auto-fulfill/route.ts`
+- Shopify Fulfillment Helper: `lib/shopify/fulfillment.ts`
+- Notification Template: `lib/notifications/tracking-link.ts`
+- Tests: `tests/chinadivision-auto-fulfillment.md`
+- Performance tracking: `lib/monitoring/README.md`
+- Version: 1.1.1
+- Change log: Added ChinaDivision auto-fulfillment + customer email automation (2025-12-11)
+
 ## Features
 
 - **Admin Dashboard**: View and manage all warehouse orders with date range filtering
@@ -256,6 +265,16 @@ Stores shareable tracking links created by admins:
 
 ### Admin Order Management
 
+### Auto-Fulfillment & Notification Flow (New)
+1. Cron hits `POST /api/warehouse/orders/auto-fulfill?dryRun=false` with `x-cron-secret`.
+2. Fetch last 30 days of ChinaDivision orders.
+3. Qualify orders with tracking number and status in transit or shipped.
+4. Create or reuse tracking link (`shared_order_tracking_links`) for the order.
+5. Upsert notification prefs with `ship_email`; send tracking email (recipient name included) via `sendTrackingUpdateEmail`.
+6. Create Shopify fulfillment with tracking number/URL via Fulfillment Orders API (no customer notify from Shopify).
+7. Update Supabase `orders` and `order_line_items` fulfillment status and tracking fields.
+8. Returns JSON summary (counts, results). Supports `dryRun=true` for safe checks.
+
 1. Admin authenticates with admin session
 2. Admin selects date range for orders
 3. System fetches all orders from ChinaDivision API for date range
@@ -331,6 +350,13 @@ Error codes:
 5. Verify package tracking information
 
 ### Test Large Orders
+
+### Test Auto-Fulfillment (Manual)
+1. Ensure `CRON_SECRET`, `CHINADIVISION_API_KEY`, `SHOPIFY_ACCESS_TOKEN`, `NEXT_PUBLIC_APP_URL`, `RESEND_API_KEY` are set.
+2. Trigger dry run: `POST /api/warehouse/orders/auto-fulfill?dryRun=true` with header `x-cron-secret: <secret>`; expect `success: true`, no side effects.
+3. Trigger live run: `POST /api/warehouse/orders/auto-fulfill` with same header; expect links/emails/fulfillments created and Supabase updated.
+4. Verify Shopify order shows fulfillment with tracking number and no duplicate fulfillments.
+5. Open emailed link and confirm tracking page renders order and labels.
 1. Find or create an order with 50+ packages
 2. Verify all packages load
 3. Verify scrollable container works

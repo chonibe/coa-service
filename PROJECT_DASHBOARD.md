@@ -68,9 +68,17 @@
   - **Story**: [Admin Portal UX Refresh](./docs/features/admin-portal/README.md) — Completed 2025-12-11. Grouped navigation, added command palette, refreshed admin home overview/job activity, and improved vendor explorer filters and states.
   - **Story**: [Mobile layout fix for series binder](./docs/features/vendor-dashboard/README.md#version--change-log) — Completed 2025-12-11. Series cards now span full width on mobile in binder and products views without clipping.
 
+### Sprint: Fulfillment Automation
+- **Epic**: Logistics & Tracking
+  - **Story**: [ChinaDivision Auto-Fulfillment](./docs/features/chinadivision-auto-fulfillment/README.md) — Completed 2025-12-11. Automates tracking link creation, customer email, and Shopify fulfillment when ChinaDivision orders move to in-transit/shipped.
+
 ### Sprint: Collector Experience
 - **Epic**: Collector Dashboard
   - **Story**: [Collector dashboard launch](./docs/features/collector-dashboard/README.md) — Completed 2025-12-11. Added aggregated collector dashboard with purchased artworks grid, artist journeys, series binder, authentication queue, and credits/subscription management. API aggregator ties orders to series and Shopify purchase links.
+
+### Sprint: CRM Apollo Foundations
+- **Epic**: Apollo-grade CRM uplift
+  - **Story**: [CRM Apollo foundations](./docs/features/crm/README.md) — Completed 2025-12-11. Added sequences/tasks/deals data model, sequence enroll/outbox APIs, deal pipeline CRUD, tasks/calls APIs, conversation assignment, metrics endpoint, and admin UIs for sequences, deals, tasks, reports with inbox assignment controls.
 
 ### Sprint: NFC Unlock Experience
 - **Epic**: Physical-to-Digital Unlocks

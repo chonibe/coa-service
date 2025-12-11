@@ -262,19 +262,27 @@
 - 🟠 Webhook Event Filtering
 - 🟢 External Alerting Integrations
 
+### ChinaDivision Auto-Fulfillment
+- [ ] [Automate ChinaDivision tracking → Shopify fulfillment + email](/docs/features/chinadivision-auto-fulfillment/README.md)
+  - Success Criteria:
+    - `/api/warehouse/orders/auto-fulfill` creates/reuses tracking link, upserts notification prefs, sends email to `ship_email` with recipient name, and creates Shopify fulfillment with tracking number/URL.
+    - Supabase `orders` and `order_line_items` fulfillment/tracking fields updated.
+    - Dry-run mode returns summary without side effects.
+    - Tests documented in `tests/chinadivision-auto-fulfillment.md`.
+
 ## Apollo-Grade CRM Upgrade
 
 ### Immediate Priority Tasks
 
-- [ ] Stand up Apollo CRM core data model (sequences, tasks/calls, deals, assignment) — success: migration `supabase/migrations/20251211000000_apollo_crm_core.sql` applied and tables available.
+- [x] Stand up Apollo CRM core data model (sequences, tasks/calls, deals, assignment) — success: migration `supabase/migrations/20251211000000_apollo_crm_core.sql` applied and tables available.
   - Link: [CRM Feature README](/docs/features/crm/README.md)
-- [ ] Ship sequence APIs (CRUD, enroll, outbox, sends) — success: `/api/crm/sequences*` routes return/accept data and create outbox rows; enrollments set next send.
+- [x] Ship sequence APIs (CRUD, enroll, outbox, sends) — success: `/api/crm/sequences*` routes return/accept data and create outbox rows; enrollments set next send.
   - Link: [CRM Feature README](/docs/features/crm/README.md)
-- [ ] Ship task/call APIs and deal pipeline APIs — success: `/api/crm/tasks*`, `/api/crm/calls`, `/api/crm/deal-pipelines*`, `/api/crm/deals*` CRUD functional with Supabase persistence.
+- [x] Ship task/call APIs and deal pipeline APIs — success: `/api/crm/tasks*`, `/api/crm/calls`, `/api/crm/deal-pipelines*`, `/api/crm/deals*` CRUD functional with Supabase persistence.
   - Link: [CRM Feature README](/docs/features/crm/README.md)
-- [ ] Add conversation assignment/status API + inbox UI wiring — success: conversations return assignment/status and allow update via API + UI.
+- [x] Add conversation assignment/status API + inbox UI wiring — success: conversations return assignment/status and allow update via API + UI.
   - Link: [CRM Feature README](/docs/features/crm/README.md)
-- [ ] Add sequence UI, pipeline board, task/call surfaces, reporting dashboard — success: admin CRM surfaces render and allow basic create/update for sequences, deals, tasks; reporting page shows metrics.
+- [x] Add sequence UI, pipeline board, task/call surfaces, reporting dashboard — success: admin CRM surfaces render and allow basic create/update for sequences, deals, tasks; reporting page shows metrics.
   - Link: [CRM Feature README](/docs/features/crm/README.md)
 
 ### Success Criteria

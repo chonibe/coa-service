@@ -22,6 +22,9 @@ COA Service is a comprehensive digital art authentication and management platfor
 - NFC tag pairing
 - Ownership verification
 
+### 📞 CRM (Apollo-Grade Foundations)
+- Multi-channel CRM with Attio-style filters and new Apollo-grade building blocks (sequences, tasks/calls, deal pipelines, conversation assignment) — see [`docs/features/crm/README.md`](/docs/features/crm/README.md)
+
 ## NFC Pairing Technology
 
 ### How It Works
@@ -73,6 +76,7 @@ npm run dev
 - [Vendor Login Funnel](/docs/features/vendor-login/README.md)
 - [Vendor Dashboard UX/Analytics](/docs/features/vendor-dashboard/README.md)
 - [MCP Servers](/docs/mcp/README.md) - Model Context Protocol servers for Cursor agents
+- [ChinaDivision Auto-Fulfillment](/docs/features/chinadivision-auto-fulfillment/README.md)
 
 ## Contributing
 
