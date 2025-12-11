@@ -68,6 +68,15 @@
   - **Story**: [Admin Portal UX Refresh](./docs/features/admin-portal/README.md) — Completed 2025-12-11. Grouped navigation, added command palette, refreshed admin home overview/job activity, and improved vendor explorer filters and states.
   - **Story**: [Mobile layout fix for series binder](./docs/features/vendor-dashboard/README.md#version--change-log) — Completed 2025-12-11. Series cards now span full width on mobile in binder and products views without clipping.
 
+### Sprint: NFC Unlock Experience
+- **Epic**: Physical-to-Digital Unlocks
+  - **Story**: [NFC unlock flow + NTAG424 signing](./docs/features/series-manager/README.md) — Completed 2025-12-11
+    - [x] Added `nfc` unlock type and config to series model ([types/artwork-series.ts](./types/artwork-series.ts))
+    - [x] Enabled vendor UI to select NFC unlocks ([series-step](./app/vendor/dashboard/products/create/components/series-step.tsx), [UnlockTypeCards](./app/vendor/dashboard/series/components/UnlockTypeCards.tsx))
+    - [x] Added signed unlock URL issuer for NTAG424 pairing ([sign endpoint](./app/api/nfc-tags/sign/route.ts))
+    - [x] Built artist unlock landing page for post-scan content ([nfc/unlock page](./app/nfc/unlock/page.tsx)) and routed legacy scans through token-aware redirect ([redirect handler](./app/api/nfc-tags/redirect/route.ts))
+    - [x] Updated collector authenticate flow to write NDEF and claim tags ([authenticate page](./app/pages/authenticate/page.tsx)) with NFC-series unlock support in backend ([claim endpoint](./app/api/nfc-tags/claim/route.ts))
+
 ## Development Metrics
 
 ### Code Quality
