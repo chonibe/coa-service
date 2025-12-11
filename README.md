@@ -70,6 +70,7 @@ npm run dev
 - [Authentication](/docs/authentication/README.md)
 - [Dashboard Guides](/docs/README.md)
 - [Vendor Login Funnel](/docs/features/vendor-login/README.md)
+- [Vendor Dashboard UX/Analytics](/docs/features/vendor-dashboard/README.md)
 - [MCP Servers](/docs/mcp/README.md) - Model Context Protocol servers for Cursor agents
 
 ## Contributing

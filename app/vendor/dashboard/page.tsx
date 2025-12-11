@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useRef } from "react"
+import { useState, useEffect, useRef, useMemo } from "react"
 import { useRouter } from "next/navigation"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
@@ -16,11 +16,15 @@ import { LoadingSkeleton } from "@/components/vendor/loading-skeleton"
 import { EmptyState } from "@/components/vendor/empty-state"
 import { KeyboardShortcutsManager, defaultShortcuts } from "@/lib/keyboard-shortcuts"
 import { BankingDashboard } from "./components/banking-dashboard"
+import { TimeRangeSelector, type TimeRange, type DateRange } from "@/components/vendor/time-range-selector"
 
 interface SalesData {
   totalSales: number
   totalRevenue: number
   totalPayout: number
+  previousTotalSales?: number
+  previousTotalRevenue?: number
+  previousTotalPayout?: number
   salesByDate: Array<{
     date: string
     sales: number
@@ -50,8 +54,13 @@ export default function VendorDashboardPage() {
   const shortcutsManagerRef = useRef<KeyboardShortcutsManager | null>(null)
   const [vendorName, setVendorName] = useState<string>("Vendor")
   const [onboardingCompleted, setOnboardingCompleted] = useState<boolean>(true)
-  const [isLoading, setIsLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
+  const [isLoadingStats, setIsLoadingStats] = useState(true)
+  const [isLoadingAnalytics, setIsLoadingAnalytics] = useState(true)
+  const [statsError, setStatsError] = useState<string | null>(null)
+  const [analyticsError, setAnalyticsError] = useState<string | null>(null)
+  const [lastUpdated, setLastUpdated] = useState<Date | null>(null)
+  const [timeRange, setTimeRange] = useState<TimeRange>("30d")
+  const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined)
   const [salesData, setSalesData] = useState<SalesData>({
     totalSales: 0,
     totalRevenue: 0,
@@ -129,61 +138,99 @@ export default function VendorDashboardPage() {
     fetchVendorProfile()
   }, [router])
 
-  useEffect(() => {
-    const fetchSalesData = async () => {
-      try {
-        setIsLoading(true)
-        const [statsResponse, analyticsResponse] = await Promise.all([
-          fetch("/api/vendor/stats", {
-            cache: "no-store",
-            credentials: "include",
-          }),
-          fetch("/api/vendor/sales-analytics", {
-            cache: "no-store",
-            credentials: "include",
-          })
-        ])
-
-        if (!statsResponse.ok) {
-          const errorData = await statsResponse.json().catch(() => ({}))
-          throw new Error(errorData.error || errorData.message || `Failed to fetch sales data: ${statsResponse.status}`)
-        }
-
-        if (!analyticsResponse.ok) {
-          const errorData = await analyticsResponse.json().catch(() => ({}))
-          throw new Error(errorData.error || errorData.message || `Failed to fetch analytics data: ${analyticsResponse.status}`)
-        }
-
-        const statsData = await statsResponse.json()
-        const analyticsData = await analyticsResponse.json()
-
-        const currency = statsData.currency || "USD"
-
-        setSalesData({
-          totalSales: statsData.totalSales ?? 0,
-          totalRevenue: statsData.totalRevenue ?? 0,
-          totalPayout: statsData.totalPayout ?? statsData.totalRevenue ?? 0,
-          salesByDate: analyticsData.salesByDate || [],
-          salesByProduct: analyticsData.salesByProduct || [],
-          recentActivity: statsData.recentActivity || [],
-          currency,
-        })
-      } catch (err) {
-        console.error("Error fetching sales data:", err)
-        setError(err instanceof Error ? err.message : "Failed to load sales data")
-      } finally {
-        setIsLoading(false)
-      }
+  const fetchSalesData = useMemo(() => async (range: TimeRange, customRange?: DateRange) => {
+    const params = new URLSearchParams()
+    params.set("range", range)
+    params.set("compare", "true")
+    if (customRange) {
+      params.set("from", customRange.from.toISOString())
+      params.set("to", customRange.to.toISOString())
     }
 
-    void fetchSalesData()
+    try {
+      setIsLoadingStats(true)
+      setStatsError(null)
+
+      const statsResponse = await fetch(`/api/vendor/stats?${params.toString()}`, {
+        cache: "no-store",
+        credentials: "include",
+      })
+
+      if (!statsResponse.ok) {
+        const errorData = await statsResponse.json().catch(() => ({}))
+        throw new Error(errorData.error || errorData.message || `Failed to fetch sales data: ${statsResponse.status}`)
+      }
+
+      const statsData = await statsResponse.json()
+      const previous = statsData.previous || {}
+
+      setSalesData((prev) => ({
+        ...prev,
+        totalSales: statsData.totalSales ?? 0,
+        totalRevenue: statsData.totalRevenue ?? 0,
+        totalPayout: statsData.totalPayout ?? statsData.totalRevenue ?? 0,
+        salesByDate: statsData.salesByDate || prev.salesByDate || [],
+        recentActivity: statsData.recentActivity || [],
+        currency: "USD",
+        previousTotalSales: previous.totalSales ?? prev.previousTotalSales,
+        previousTotalRevenue: previous.totalRevenue ?? prev.previousTotalRevenue,
+        previousTotalPayout: previous.totalPayout ?? prev.previousTotalPayout,
+      }))
+      setLastUpdated(new Date())
+    } catch (err) {
+      console.error("Error fetching sales data:", err)
+      setStatsError(err instanceof Error ? err.message : "Failed to load sales data")
+    } finally {
+      setIsLoadingStats(false)
+    }
   }, [])
 
+  const fetchAnalytics = useMemo(() => async (range: TimeRange, customRange?: DateRange) => {
+    const params = new URLSearchParams()
+    params.set("range", range)
+    if (customRange) {
+      params.set("from", customRange.from.toISOString())
+      params.set("to", customRange.to.toISOString())
+    }
+
+    try {
+      setIsLoadingAnalytics(true)
+      setAnalyticsError(null)
+
+      const response = await fetch(`/api/vendor/sales-analytics?${params.toString()}`, {
+        cache: "no-store",
+        credentials: "include",
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}))
+        throw new Error(errorData.error || errorData.message || `Failed to fetch analytics data: ${response.status}`)
+      }
+
+      const analyticsData = await response.json()
+      setSalesData((prev) => ({
+        ...prev,
+        salesByDate: analyticsData.salesByDate || [],
+        salesByProduct: analyticsData.salesByProduct || [],
+      }))
+    } catch (err) {
+      console.error("Error fetching analytics data:", err)
+      setAnalyticsError(err instanceof Error ? err.message : "Failed to load analytics data")
+    } finally {
+      setIsLoadingAnalytics(false)
+    }
+  }, [])
+
+  useEffect(() => {
+    void fetchSalesData(timeRange, dateRange)
+    void fetchAnalytics(timeRange, dateRange)
+  }, [fetchAnalytics, fetchSalesData, timeRange, dateRange])
+
   // Format currency
-  const formatCurrency = (amount: number, currency?: string) => {
+  const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat("en-US", {
       style: "currency",
-      currency: currency || salesData.currency || "USD",
+      currency: "USD",
       minimumFractionDigits: 2,
     }).format(amount)
   }
@@ -194,29 +241,48 @@ export default function VendorDashboardPage() {
     return ((current - previous) / previous) * 100
   }
 
-  // Mock previous period data (in real app, fetch from API)
-  const previousSales = salesData.totalSales * 0.9 // 10% less for demo
-  const previousRevenue = salesData.totalRevenue * 0.95
-  const previousPayout = salesData.totalPayout * 0.95
+  const previousSales = (salesData as any).previousTotalSales ?? salesData.totalSales * 0.9
+  const previousRevenue = (salesData as any).previousTotalRevenue ?? salesData.totalRevenue * 0.95
+  const previousPayout = (salesData as any).previousTotalPayout ?? salesData.totalPayout * 0.95
+  const isLoading = isLoadingStats || isLoadingAnalytics
+  const formattedLastUpdated = lastUpdated ? new Intl.DateTimeFormat("en-GB", { hour: "2-digit", minute: "2-digit", hour12: false }).format(lastUpdated) : null
 
   return (
     <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <div>
+        <div className="flex items-center justify-between gap-3">
+          <div className="space-y-1">
             <p className="text-muted-foreground text-lg">Welcome back, {vendorName}! Here's what's happening with your business.</p>
+            {formattedLastUpdated && <p className="text-xs text-muted-foreground">Last updated {formattedLastUpdated}</p>}
+          </div>
+          <div className="flex items-center gap-2">
+            <TimeRangeSelector
+              value={timeRange}
+              dateRange={dateRange}
+              onChange={(range, customRange) => {
+                setTimeRange(range)
+                setDateRange(customRange)
+              }}
+            />
           </div>
         </div>
 
         {/* Contextual onboarding - floating card */}
-        <ContextualOnboarding context="settings" />
+        <ContextualOnboarding context="dashboard" />
 
-      {error ? (
+      {statsError && (
         <Alert variant="destructive" className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-0 shadow-lg">
           <AlertCircle className="h-4 w-4" />
-          <AlertTitle>Error</AlertTitle>
-          <AlertDescription>{error}</AlertDescription>
+          <AlertTitle>Stats issue</AlertTitle>
+          <AlertDescription>{statsError}</AlertDescription>
         </Alert>
-      ) : null}
+      )}
+      {analyticsError && (
+        <Alert variant="destructive" className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-0 shadow-lg">
+          <AlertCircle className="h-4 w-4" />
+          <AlertTitle>Analytics issue</AlertTitle>
+          <AlertDescription>{analyticsError}</AlertDescription>
+        </Alert>
+      )}
 
       <div className="space-y-6">
           {isLoading ? (
@@ -238,7 +304,7 @@ export default function VendorDashboardPage() {
 
               <MetricCard
                 title="Total Revenue"
-                value={formatCurrency(salesData?.totalRevenue || 0, salesData.currency)}
+                value={formatCurrency(salesData?.totalRevenue || 0)}
                 icon={DollarSign}
                 trend={{
                   value: calculateTrend(salesData.totalRevenue, previousRevenue),
@@ -251,7 +317,7 @@ export default function VendorDashboardPage() {
 
               <MetricCard
                 title="Total Payout"
-                value={formatCurrency(salesData?.totalPayout || 0, salesData.currency)}
+                value={formatCurrency(salesData?.totalPayout || 0)}
                 icon={DollarSign}
                 trend={{
                   value: calculateTrend(salesData.totalPayout, previousPayout),
@@ -326,79 +392,37 @@ export default function VendorDashboardPage() {
 function BankingSection({ vendorName }: { vendorName: string }) {
   const [collectorIdentifier, setCollectorIdentifier] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  const loadCollector = async () => {
+    setIsLoading(true)
+    setError(null)
+    try {
+      const response = await fetch("/api/banking/collector-identifier", {
+        credentials: "include",
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+        if (data.success && data.collectorIdentifier) {
+          setCollectorIdentifier(data.collectorIdentifier)
+        } else {
+          setCollectorIdentifier(null)
+          setError(data.error || "Bank account setup incomplete")
+        }
+      } else {
+        const errorText = await response.text()
+        setError(errorText || "Unable to load account information")
+      }
+    } catch (err: any) {
+      setError(err?.message || "Unable to load account information")
+    } finally {
+      setIsLoading(false)
+    }
+  }
 
   useEffect(() => {
-    const fetchCollectorIdentifier = async () => {
-      const requestId = `frontend_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-      console.log(`[${requestId}] [BankingSection] Starting to fetch collector identifier`, {
-        vendorName,
-        url: "/api/banking/collector-identifier",
-      });
-
-      try {
-        const startTime = Date.now();
-        const response = await fetch("/api/banking/collector-identifier", {
-          credentials: "include",
-        });
-
-        const duration = Date.now() - startTime;
-        console.log(`[${requestId}] [BankingSection] Response received:`, {
-          status: response.status,
-          statusText: response.statusText,
-          ok: response.ok,
-          duration: `${duration}ms`,
-          headers: Object.fromEntries(response.headers.entries()),
-        });
-
-        if (response.ok) {
-          const data = await response.json();
-          console.log(`[${requestId}] [BankingSection] Response data:`, {
-            success: data.success,
-            collectorIdentifier: data.collectorIdentifier ? data.collectorIdentifier.substring(0, 20) + '...' : null,
-            accountType: data.accountType,
-            vendorId: data.vendorId,
-            requestId: data.requestId,
-            error: data.error,
-          });
-
-          if (data.success) {
-            console.log(`[${requestId}] [BankingSection] Setting collector identifier:`, {
-              collectorIdentifier: data.collectorIdentifier.substring(0, 20) + '...',
-            });
-            setCollectorIdentifier(data.collectorIdentifier);
-          } else {
-            console.error(`[${requestId}] [BankingSection] Response not successful:`, {
-              error: data.error,
-              details: data,
-            });
-          }
-        } else {
-          const errorText = await response.text();
-          let errorData;
-          try {
-            errorData = JSON.parse(errorText);
-          } catch {
-            errorData = { raw: errorText };
-          }
-
-          console.error(`[${requestId}] [BankingSection] Response not OK:`, {
-            status: response.status,
-            statusText: response.statusText,
-            error: errorData,
-          });
-        }
-      } catch (error: any) {
-        console.error(`[${requestId}] [BankingSection] Fetch error:`, {
-          error: error.message,
-          stack: error.stack,
-          name: error.name,
-        });
-      } finally {
-        setIsLoading(false);
-        console.log(`[${requestId}] [BankingSection] Loading complete`);
-      }
-    };
-    fetchCollectorIdentifier();
+    void loadCollector()
   }, [vendorName])
 
   if (isLoading) {
@@ -407,8 +431,22 @@ function BankingSection({ vendorName }: { vendorName: string }) {
 
   if (!collectorIdentifier) {
     return (
-      <div className="text-center py-8 text-muted-foreground">
-        <p>Unable to load account information</p>
+      <div className="text-center py-8 text-muted-foreground space-y-3">
+        <p>{error || "Unable to load account information"}</p>
+        <div className="flex items-center justify-center gap-2">
+          <button
+            onClick={loadCollector}
+            className="inline-flex items-center justify-center rounded-md border border-input bg-background px-3 py-2 text-sm font-medium shadow-sm transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+          >
+            Retry
+          </button>
+          <a
+            href="mailto:support@street-lamp.xyz"
+            className="inline-flex items-center justify-center rounded-md border border-transparent bg-primary px-3 py-2 text-sm font-medium text-primary-foreground shadow-sm transition-colors hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+          >
+            Contact support
+          </a>
+        </div>
       </div>
     )
   }

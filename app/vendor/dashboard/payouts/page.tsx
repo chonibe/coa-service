@@ -61,7 +61,10 @@ export default function PayoutsPage() {
   const [pendingLineItems, setPendingLineItems] = useState<any[]>([])
   const [pendingGroupedByMonth, setPendingGroupedByMonth] = useState<any[]>([])
   const [isLoadingPending, setIsLoadingPending] = useState(false)
+  const [pendingError, setPendingError] = useState<string | null>(null)
   const [expandedMonths, setExpandedMonths] = useState<Set<string>>(new Set())
+  const [lastUpdated, setLastUpdated] = useState<Date | null>(null)
+  const [isPageVisible, setIsPageVisible] = useState(true)
   const { toast } = useToast()
 
   const formatCurrency = (amount: number) =>
@@ -72,23 +75,32 @@ export default function PayoutsPage() {
     }).format(amount)
 
   useEffect(() => {
-    fetchVendorName()
-    fetchPayouts()
-    fetchPendingItems()
-    
-    // Auto-refresh for pending/requested payouts every 30 seconds
+    const initialLoad = async () => {
+      await Promise.all([fetchVendorName(), fetchPayouts(), fetchPendingItems()])
+      setLastUpdated(new Date())
+    }
+    void initialLoad()
+  }, [])
+
+  useEffect(() => {
+    const handleVisibility = () => setIsPageVisible(document.visibilityState === "visible")
+    document.addEventListener("visibilitychange", handleVisibility)
+    return () => document.removeEventListener("visibilitychange", handleVisibility)
+  }, [])
+
+  useEffect(() => {
     const interval = setInterval(() => {
       const hasPending = payouts.some(
         (p) => p.status === "pending" || p.status === "processing" || p.status === "requested"
       )
-      if (hasPending) {
+      if (isPageVisible && hasPending) {
         fetchPayouts()
         fetchPendingItems()
+        setLastUpdated(new Date())
       }
-    }, 30000)
-
+    }, 45000)
     return () => clearInterval(interval)
-  }, [])
+  }, [isPageVisible, payouts])
 
   const fetchVendorName = async () => {
     try {
@@ -146,6 +158,7 @@ export default function PayoutsPage() {
   const fetchPendingItems = async () => {
     try {
       setIsLoadingPending(true)
+      setPendingError(null)
       const response = await fetch("/api/vendor/payouts/pending-items", {
         credentials: "include",
       })
@@ -159,6 +172,7 @@ export default function PayoutsPage() {
       setPendingGroupedByMonth(data.groupedByMonth || [])
     } catch (err) {
       console.error("Error fetching pending items:", err)
+      setPendingError(err instanceof Error ? err.message : "Failed to load pending items")
     } finally {
       setIsLoadingPending(false)
     }
@@ -167,6 +181,7 @@ export default function PayoutsPage() {
   const handleRefresh = async () => {
     setIsRefreshing(true)
     await Promise.all([fetchPayouts(), fetchPendingItems()])
+    setLastUpdated(new Date())
       toast({
         title: "Updated!",
         description: "Your latest earnings information has been refreshed.",
@@ -382,6 +397,9 @@ export default function PayoutsPage() {
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div>
             <p className="text-muted-foreground text-lg">Your earnings and payment history</p>
+            {lastUpdated && (
+              <p className="text-xs text-muted-foreground">Last updated {format(lastUpdated, "HH:mm")}</p>
+            )}
           </div>
         <div className="flex gap-2 flex-wrap">
           {pendingAmount > 0 && (
@@ -404,6 +422,11 @@ export default function PayoutsPage() {
             Refresh
           </Button>
         </div>
+      </div>
+      <div className="flex flex-wrap gap-2 text-xs text-muted-foreground">
+        {statusFilter !== "all" && <Badge variant="outline">Status: {statusFilter}</Badge>}
+        {dateFilter !== "all" && <Badge variant="outline">Date: {dateFilter}</Badge>}
+        {searchQuery && <Badge variant="outline">Search: “{searchQuery}”</Badge>}
       </div>
 
       {error && (
@@ -539,6 +562,19 @@ export default function PayoutsPage() {
                       <Skeleton key={i} className="h-16 w-full" />
                     ))}
                 </div>
+              ) : pendingError ? (
+                <Alert variant="destructive">
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertTitle>Couldn’t load pending items</AlertTitle>
+                  <AlertDescription className="mt-1">
+                    {pendingError}
+                    <div className="mt-2">
+                      <Button size="sm" variant="outline" onClick={fetchPendingItems}>
+                        Retry
+                      </Button>
+                    </div>
+                  </AlertDescription>
+                </Alert>
               ) : pendingGroupedByMonth.length > 0 ? (
                 <div className="space-y-4">
                   {pendingGroupedByMonth.map((monthData) => (

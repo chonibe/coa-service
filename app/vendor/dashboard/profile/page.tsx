@@ -39,6 +39,7 @@ import { StripeConnect } from "../components/stripe-connect"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { Badge } from "@/components/ui/badge"
 import { ThemeToggle } from "@/components/theme-toggle"
+import { useDirtyFormGuard, useRefreshRegistry } from "../../components/sidebar-layout"
 
 interface VendorProfile {
   id: number | string
@@ -114,6 +115,8 @@ export default function VendorProfilePage() {
     payment: false,
     tax: false,
   })
+  const { isDirty, setDirty } = useDirtyFormGuard()
+  const { register } = useRefreshRegistry()
   const { toast } = useToast()
   const fileInputRef = useRef<HTMLInputElement>(null)
   const dropZoneRef = useRef<HTMLDivElement>(null)
@@ -207,6 +210,10 @@ export default function VendorProfilePage() {
   useEffect(() => {
     fetchProfile()
   }, [fetchProfile])
+
+  useEffect(() => {
+    return register(() => fetchProfile())
+  }, [fetchProfile, register])
 
   // Keyboard shortcuts
   useEffect(() => {
@@ -480,6 +487,8 @@ export default function VendorProfilePage() {
       await fetchProfile()
       setIsEditingProfile(false)
       setLastSaved(new Date())
+      setHasUnsavedChanges(false)
+      setDirty(false)
 
       toast({
         title: "Success",
@@ -548,6 +557,7 @@ export default function VendorProfilePage() {
         })
         setHasUnsavedChanges(false)
         setLastSaved(new Date())
+        setDirty(false)
       }
 
       toast({
@@ -577,18 +587,23 @@ export default function VendorProfilePage() {
     }
     setIsEditingProfile(false)
     setError(null)
+    setHasUnsavedChanges(false)
+    setDirty(false)
   }
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target
     setSettingsFormState((prev) => ({ ...prev, [name]: value }))
     setHasUnsavedChanges(true)
+    setDirty(true)
     // Real-time validation
     validateField(name, value)
   }
 
   const handleProfileInputChange = (field: keyof ProfileFormState, value: string) => {
     setProfileFormState((prev) => ({ ...prev, [field]: value }))
+    setHasUnsavedChanges(true)
+    setDirty(true)
     if (field === "instagram_url") {
       validateField("instagram_url", value)
     }
@@ -596,10 +611,14 @@ export default function VendorProfilePage() {
 
   const handleCheckboxChange = (checked: boolean) => {
     setSettingsFormState((prev) => ({ ...prev, is_company: checked }))
+    setHasUnsavedChanges(true)
+    setDirty(true)
   }
 
   const handleSelectChange = (value: string) => {
     setSettingsFormState((prev) => ({ ...prev, tax_country: value }))
+    setHasUnsavedChanges(true)
+    setDirty(true)
   }
 
   const extractInstagramHandle = (url: string): string => {
@@ -636,20 +655,34 @@ export default function VendorProfilePage() {
   }
 
   // Quick actions
-  const handleCopyProfileLink = () => {
-    // TODO: Implement profile link when profile pages are available
-    toast({
-      title: "Coming soon",
-      description: "Profile link feature will be available soon",
-    })
+  const buildProfileUrl = () => {
+    if (typeof window === "undefined") return ""
+    const slug = profile?.vendor_name ? encodeURIComponent(profile.vendor_name) : profile?.id
+    return `${window.location.origin}/artist/${slug}`
+  }
+
+  const handleCopyProfileLink = async () => {
+    const link = buildProfileUrl()
+    if (!link) return
+    try {
+      await navigator.clipboard.writeText(link)
+      toast({
+        title: "Profile link copied",
+        description: link,
+      })
+    } catch {
+      toast({
+        title: "Copy failed",
+        description: "Unable to copy link. Please try again.",
+        variant: "destructive",
+      })
+    }
   }
 
   const handlePreviewProfile = () => {
-    // TODO: Open profile preview in new tab
-    toast({
-      title: "Coming soon",
-      description: "Profile preview will be available soon",
-    })
+    const link = buildProfileUrl()
+    if (!link) return
+    window.open(link, "_blank", "noopener,noreferrer")
   }
 
   return (

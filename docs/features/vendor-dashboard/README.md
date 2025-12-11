@@ -1,3 +1,66 @@
+## Vendor Dashboard UX/Analytics Improvements
+
+**Version:** 1.0.0  
+**Last Updated:** 2025-12-11
+
+### Overview
+- Refined vendor dashboard navigation, analytics, payouts, and profile UX with safer refresh, accurate USD formatting, and contextual onboarding.
+
+### Implementation Links
+- Layout & navigation: `app/vendor/components/sidebar-layout.tsx`, `app/vendor/components/vendor-sidebar.tsx`
+- Dashboard home metrics & banking: `app/vendor/dashboard/page.tsx`
+- Payouts refresh & filters: `app/vendor/dashboard/payouts/page.tsx`
+- Analytics metrics & charts (USD): `app/vendor/dashboard/analytics/page.tsx`
+- Profile dirty-guard and preview links: `app/vendor/dashboard/profile/page.tsx`
+- Products ordering state: `app/vendor/dashboard/products/page.tsx`
+
+### Test File Link
+- Manual test plan: `tests/vendor-dashboard.md`
+
+### Performance Tracking Link
+- Monitoring overview: `docs/monitoring/README.md`
+
+### Related Components
+- Contextual onboarding: `app/vendor/components/contextual-onboarding.tsx`
+- Time range selector: `components/vendor/time-range-selector`
+
+### API Endpoints
+- `GET /api/vendor/stats?range&compare`
+- `GET /api/vendor/sales-analytics?range&from&to`
+- `GET /api/vendor/payouts` and `GET /api/vendor/payouts/pending-items`
+- `POST /api/vendor/profile/update`, `POST /api/vendor/update-profile`
+- `GET /api/vendor/products/submissions`, `GET /api/vendor/series/artworks`
+
+### UI/UX Considerations
+- Sidebar collapses on desktop and shows unread badges; skip-to-content and focusable controls.
+- Pull-to-refresh uses data refetch and blocks when forms are dirty.
+- Dashboard/payouts/analytics metrics are USD-only; per-call error surfaces and retries.
+- Available artworks search + pagination to keep open box manageable.
+- Profile edits guarded against refresh/nav loss; profile link copy/preview.
+
+### Testing Requirements
+- Verify navigation collapse/unread badges across desktop/mobile.
+- Dashboard: time-range fetch, last-updated, banking retry state.
+- Payouts: manual refresh and visibility-aware auto-refresh; pending-items retry; filter pills.
+- Analytics: USD formatting, metric skeletons, chart empty states.
+- Profile: dirty guard prevents refresh, save/cancel clears dirty, copy/preview link.
+- Products: drag/drop ordering shows saving state; pagination/search affect open box.
+
+### Deployment Considerations
+- Requires Vercel production deploy after commit.
+- No schema changes; cache headers rely on `cache: "no-store"`.
+
+### Known Limitations
+- Available artworks pagination is client-side; large datasets still fetch in full.
+- Analytics comparison relies on `compare=true` support in stats endpoint; if absent, trends fall back to current-period heuristics.
+
+### Future Improvements
+- Server-side pagination for available artworks.
+- Backend-provided comparison slices for analytics charts.
+- Dedicated tests for drag/drop ordering and refresh guards.
+
+### Change Log
+- 2025-12-11: Added sidebar collapse/unread badges, USD analytics/payouts, time-range-aware dashboard, banking retry, payouts visibility-aware refresh, profile dirty guard, available artworks search/pagination, and documentation updates.
 # Vendor Dashboard Hardening
 
 ## Feature Overview

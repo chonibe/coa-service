@@ -49,7 +49,8 @@ interface SaleItem {
 }
 
 export default function AnalyticsPage() {
-  const [isLoading, setIsLoading] = useState(true)
+  const [isAnalyticsLoading, setIsAnalyticsLoading] = useState(true) // analytics data
+  const [isMetricsLoading, setIsMetricsLoading] = useState(true) // stats tiles
   const [error, setError] = useState<string | null>(null)
   const [timeRange, setTimeRange] = useState<TimeRange>("30d")
   const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined)
@@ -66,6 +67,11 @@ export default function AnalyticsPage() {
     totalPayout: 0,
     currency: "USD",
   })
+  const [previousMetrics, setPreviousMetrics] = useState({
+    totalSales: 0,
+    totalRevenue: 0,
+    totalPayout: 0,
+  })
   const { toast } = useToast()
 
   const formatCurrency = (value: number) =>
@@ -77,7 +83,7 @@ export default function AnalyticsPage() {
 
   const fetchAnalyticsData = async (range?: TimeRange, customRange?: DateRange) => {
     try {
-      setIsLoading(true)
+      setIsAnalyticsLoading(true)
       setError(null)
 
       const params = new URLSearchParams()
@@ -114,17 +120,18 @@ export default function AnalyticsPage() {
         description: err instanceof Error ? err.message : "Failed to load analytics data",
       })
     } finally {
-      setIsLoading(false)
+      setIsAnalyticsLoading(false)
     }
   }
 
   useEffect(() => {
-    fetchAnalyticsData()
-    fetchVendorData()
-  }, [])
+    fetchAnalyticsData(timeRange, dateRange)
+    fetchVendorData(timeRange, dateRange)
+  }, [timeRange, dateRange])
 
-  const fetchVendorData = async () => {
+  const fetchVendorData = async (range?: TimeRange, customRange?: DateRange) => {
     try {
+      setIsMetricsLoading(true)
       const profileResponse = await fetch("/api/vendor/profile", {
         credentials: "include",
       })
@@ -133,7 +140,17 @@ export default function AnalyticsPage() {
         setVendorName(profileData.vendor?.vendor_name || null)
       }
 
-      const statsResponse = await fetch("/api/vendor/stats", {
+      const params = new URLSearchParams()
+      params.set("range", range || "30d")
+      if (customRange || dateRange) {
+        const rangeToUse = customRange || dateRange
+        if (rangeToUse) {
+          params.set("from", rangeToUse.from.toISOString())
+          params.set("to", rangeToUse.to.toISOString())
+        }
+      }
+
+      const statsResponse = await fetch(`/api/vendor/stats?${params.toString()}&compare=true`, {
         cache: "no-store",
         credentials: "include",
       })
@@ -143,11 +160,18 @@ export default function AnalyticsPage() {
           totalSales: statsData.totalSales ?? 0,
           totalRevenue: statsData.totalRevenue ?? 0,
           totalPayout: statsData.totalPayout ?? statsData.totalRevenue ?? 0,
-          currency: statsData.currency || "USD",
+          currency: "USD",
+        })
+        setPreviousMetrics({
+          totalSales: statsData.previous?.totalSales ?? statsData.totalSales ?? 0,
+          totalRevenue: statsData.previous?.totalRevenue ?? statsData.totalRevenue ?? 0,
+          totalPayout: statsData.previous?.totalPayout ?? statsData.totalPayout ?? statsData.totalRevenue ?? 0,
         })
       }
     } catch (err) {
       console.error("Error fetching vendor data:", err)
+    } finally {
+      setIsMetricsLoading(false)
     }
   }
 
@@ -203,7 +227,7 @@ export default function AnalyticsPage() {
         <div className="bg-white/90 dark:bg-slate-900/90 backdrop-blur-md p-3 border border-border/50 rounded-lg shadow-xl">
           <p className="font-medium text-sm">{data.title}</p>
           <p className="text-xs text-muted-foreground">Sales: {data.sales}</p>
-          <p className="text-xs text-muted-foreground">Revenue: £{data.revenue.toFixed(2)}</p>
+          <p className="text-xs text-muted-foreground">Revenue: {formatCurrency(data.revenue)}</p>
         </div>
       )
     }
@@ -248,13 +272,13 @@ export default function AnalyticsPage() {
     return ((current - previous) / previous) * 100
   }
 
-  const previousSales = salesData.totalSales * 0.9
-  const previousRevenue = salesData.totalRevenue * 0.95
-  const previousPayout = salesData.totalPayout * 0.95
+  const previousSales = previousMetrics.totalSales || salesData.totalSales * 0.9
+  const previousRevenue = previousMetrics.totalRevenue || salesData.totalRevenue * 0.95
+  const previousPayout = previousMetrics.totalPayout || salesData.totalPayout * 0.95
 
   return (
     <div className="space-y-6 pb-20 px-1">
-      <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between">
         <div>
           <p className="text-muted-foreground text-lg">Your complete analytics and insights</p>
         </div>
@@ -299,7 +323,7 @@ export default function AnalyticsPage() {
         </Alert>
       )}
 
-      {totalItems === 0 && !isLoading && !error && (
+      {totalItems === 0 && !isAnalyticsLoading && !error && (
         <EmptyState
           icon={BarChart3}
           title="No Sales Data"
@@ -316,44 +340,50 @@ export default function AnalyticsPage() {
 
         <TabsContent value="sales" className="space-y-6">
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            <MetricCard
-              title="Total Sales"
-              value={salesData?.totalSales || 0}
-              icon={ShoppingCart}
-              trend={{
-                value: calculateTrend(salesData.totalSales, previousSales),
-                label: "vs last period",
-                isPositive: salesData.totalSales >= previousSales,
-              }}
-              description="Orders you've received"
-              variant="elevated"
-            />
+            {isMetricsLoading ? (
+              <LoadingSkeleton variant="metric" count={3} />
+            ) : (
+              <>
+                <MetricCard
+                  title="Total Sales"
+                  value={salesData?.totalSales || 0}
+                  icon={ShoppingCart}
+                  trend={{
+                    value: calculateTrend(salesData.totalSales, previousSales),
+                    label: "vs last period",
+                    isPositive: salesData.totalSales >= previousSales,
+                  }}
+                  description="Orders you've received"
+                  variant="elevated"
+                />
 
-            <MetricCard
-              title="Total Revenue"
-              value={formatCurrency(salesData?.totalRevenue || 0)}
-              icon={DollarSign}
-              trend={{
-                value: calculateTrend(salesData.totalRevenue, previousRevenue),
-                label: "vs last period",
-                isPositive: salesData.totalRevenue >= previousRevenue,
-              }}
-              description="Total sales you've made"
-              variant="elevated"
-            />
+                <MetricCard
+                  title="Total Revenue"
+                  value={formatCurrency(salesData?.totalRevenue || 0)}
+                  icon={DollarSign}
+                  trend={{
+                    value: calculateTrend(salesData.totalRevenue, previousRevenue),
+                    label: "vs last period",
+                    isPositive: salesData.totalRevenue >= previousRevenue,
+                  }}
+                  description="Total sales you've made"
+                  variant="elevated"
+                />
 
-            <MetricCard
-              title="Total Payout"
-              value={formatCurrency(salesData?.totalPayout || 0)}
-              icon={DollarSign}
-              trend={{
-                value: calculateTrend(salesData.totalPayout, previousPayout),
-                label: "vs last period",
-                isPositive: salesData.totalPayout >= previousPayout,
-              }}
-              description="What you've earned so far"
-              variant="elevated"
-            />
+                <MetricCard
+                  title="Total Payout"
+                  value={formatCurrency(salesData?.totalPayout || 0)}
+                  icon={DollarSign}
+                  trend={{
+                    value: calculateTrend(salesData.totalPayout, previousPayout),
+                    label: "vs last period",
+                    isPositive: salesData.totalPayout >= previousPayout,
+                  }}
+                  description="What you've earned so far"
+                  variant="elevated"
+                />
+              </>
+            )}
           </div>
 
           <Card className="w-full bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-0 shadow-xl">
@@ -362,7 +392,7 @@ export default function AnalyticsPage() {
           <CardDescription>Monthly sales and revenue trends</CardDescription>
         </CardHeader>
         <CardContent>
-          {isLoading ? (
+              {isAnalyticsLoading ? (
             <LoadingSkeleton variant="chart" />
           ) : salesByDate.length > 0 ? (
             <ResponsiveContainer width="100%" height={300}>
@@ -381,8 +411,8 @@ export default function AnalyticsPage() {
                 <YAxis yAxisId="right" orientation="right" stroke="#6366f1" />
                 <Tooltip
                   formatter={(value, name) => {
-                    if (name === "Revenue (£)") {
-                      return [formatCurrency(Number(value)), "Revenue (£)"]
+                    if (name === "Revenue (USD)") {
+                      return [formatCurrency(Number(value)), "Revenue (USD)"]
                     }
                     return [value, name]
                   }}
@@ -390,11 +420,11 @@ export default function AnalyticsPage() {
                 <Legend
                   payload={[
                     { value: "Sales (Units)", type: "square", color: "#3b82f6" },
-                    { value: "Revenue (£)", type: "square", color: "#6366f1" },
+                    { value: "Revenue (USD)", type: "square", color: "#6366f1" },
                   ]}
                 />
                 <Bar yAxisId="left" dataKey="sales" fill="#3b82f6" name="Sales (Units)" />
-                <Bar yAxisId="right" dataKey="revenue" fill="#6366f1" name="Revenue (£)" />
+                <Bar yAxisId="right" dataKey="revenue" fill="#6366f1" name="Revenue (USD)" />
               </BarChart>
             </ResponsiveContainer>
           ) : (
@@ -412,7 +442,7 @@ export default function AnalyticsPage() {
             <CardDescription>Monthly sales trend</CardDescription>
           </CardHeader>
           <CardContent>
-            {isLoading ? (
+            {isAnalyticsLoading ? (
               <Skeleton className="h-[200px] w-full" />
             ) : salesByDate.length > 0 ? (
               <ResponsiveContainer width="100%" height={200}>
@@ -446,7 +476,7 @@ export default function AnalyticsPage() {
             <CardDescription>Monthly revenue trend</CardDescription>
           </CardHeader>
           <CardContent>
-            {isLoading ? (
+            {isAnalyticsLoading ? (
               <Skeleton className="h-[200px] w-full" />
             ) : salesByDate.length > 0 ? (
               <ResponsiveContainer width="100%" height={200}>
@@ -481,7 +511,7 @@ export default function AnalyticsPage() {
           <CardDescription>Distribution of sales across products</CardDescription>
         </CardHeader>
         <CardContent>
-          {isLoading ? (
+          {isAnalyticsLoading ? (
             <Skeleton className="h-[300px] w-full" />
           ) : salesByProduct.length > 0 ? (
             <div className="grid md:grid-cols-2 gap-4">
@@ -555,7 +585,7 @@ export default function AnalyticsPage() {
           <CardDescription>Detailed record of individual sales</CardDescription>
         </CardHeader>
         <CardContent>
-          {isLoading ? (
+          {isAnalyticsLoading ? (
             <Skeleton className="h-[300px] w-full" />
           ) : salesHistory && salesHistory.length > 0 ? (
             <div>
@@ -655,7 +685,7 @@ export default function AnalyticsPage() {
               sales: p.sales,
               revenue: p.revenue,
             })) || []}
-            isLoading={isLoading}
+            isLoading={isAnalyticsLoading}
           />
         </TabsContent>
       </Tabs>

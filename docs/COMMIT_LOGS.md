@@ -1,3 +1,35 @@
+## Commit: Vendor Dashboard UX & USD Analytics Refresh (2025-12-11)
+
+### ✅ Implementation Checklist
+- [x] `app/vendor/components/sidebar-layout.tsx` – Added refresh registry, dirty-form guard, skip-to-content, safer pull-to-refresh padding.
+- [x] `app/vendor/components/vendor-sidebar.tsx` – Desktop collapse with persisted state, unread badges for messages/notifications, accessibility focus tweaks.
+- [x] `app/vendor/dashboard/page.tsx` – Time-range-aware stats fetch, USD-only metrics, separate error surfaces, last-updated, banking retry/support CTA, dashboard onboarding context.
+- [x] `app/vendor/dashboard/payouts/page.tsx` – Visibility-aware refresh cadence, filter pills, pending-items localized error/retry, last-updated timestamp.
+- [x] `app/vendor/dashboard/analytics/page.tsx` – USD formatting, separate metric/chart loaders, stats compare via `compare=true`, better empty/loading states.
+- [x] `app/vendor/dashboard/profile/page.tsx` – Dirty guard integration, unsaved-state resets, profile link copy/preview.
+- [x] `app/vendor/dashboard/products/page.tsx` – DnD saving state, available-artworks search + pagination, parallelized initial fetch.
+- [x] Documentation: `docs/features/vendor-dashboard/README.md`, `README.md`.
+- [x] Tests plan: `tests/vendor-dashboard.md`.
+
+### 🔐 Highlights
+- Unified USD currency display across vendor analytics, dashboard, payouts, and banking widgets.
+- Reduced destructive refreshes with dirty-form guard and refresh registry; sidebar now collapses on desktop with unread badges for quick triage.
+- Payouts and analytics surfaces now show localized errors and retries without hiding available data.
+- Open-box (available artworks) search/pagination keeps DnD manageable while tracking save state.
+
+### 🧪 Verification
+- Manual (see `tests/vendor-dashboard.md`):
+  - Sidebar collapse persists; unread badges visible on desktop/mobile.
+  - Dashboard time range updates metrics; banking widget retry/support CTA.
+  - Payouts refresh respects tab visibility; pending items show retry on failure.
+  - Analytics metrics/charts render USD, with skeletons while loading.
+  - Profile edits set/clear dirty; copy/preview link works.
+  - Products DnD shows saving badge; open-box search/pagination limits visible tiles.
+
+### 📌 Deployment Notes
+- No schema changes. Requires production deploy to Vercel after commit.
+- Ensure `/api/vendor/stats` supports `compare=true`; trends fall back to current-period heuristics if unavailable.
+
 ## Commit: Admin Portal Access Control (2025-11-11)
 
 ### ✅ Implementation Checklist

@@ -8,6 +8,7 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Badge } from "@/components/ui/badge"
 import { Alert, AlertDescription } from "@/components/ui/alert"
+import { Input } from "@/components/ui/input"
 import { ProductTable } from "../components/product-table"
 import { useVendorData } from "@/hooks/use-vendor-data"
 import { Plus, Package, Clock, XCircle, Trash2, Loader2, Sparkles, AlertCircle, Lock, ArrowRight, Crown, ImageIcon, GripVertical } from "lucide-react"
@@ -264,6 +265,9 @@ export default function ProductsPage() {
   const [activeId, setActiveId] = useState<string | null>(null)
   const [isDragging, setIsDragging] = useState(false)
   const [isSavingOrder, setIsSavingOrder] = useState(false)
+  const [availableSearch, setAvailableSearch] = useState("")
+  const [availablePage, setAvailablePage] = useState(1)
+  const AVAILABLE_PAGE_SIZE = 12
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -276,9 +280,25 @@ export default function ProductsPage() {
     })
   )
 
+  const filteredAvailable = useMemo(() => {
+    const query = availableSearch.toLowerCase().trim()
+    const filtered = query
+      ? availableArtworks.filter((a) => a.title?.toLowerCase().includes(query))
+      : availableArtworks
+    return filtered
+  }, [availableArtworks, availableSearch])
+
+  const totalAvailablePages = Math.max(1, Math.ceil(filteredAvailable.length / AVAILABLE_PAGE_SIZE))
+  const paginatedAvailable = useMemo(() => {
+    const start = (availablePage - 1) * AVAILABLE_PAGE_SIZE
+    return filteredAvailable.slice(start, start + AVAILABLE_PAGE_SIZE)
+  }, [filteredAvailable, availablePage])
+
   useEffect(() => {
-    fetchSeries()
-    fetchAllArtworks()
+    const load = async () => {
+      await Promise.all([fetchSeries(), fetchAllArtworks()])
+    }
+    void load()
   }, [])
 
   // Fetch available artworks after artworks are loaded
@@ -287,6 +307,16 @@ export default function ProductsPage() {
       fetchAvailableArtworks()
     }
   }, [loadingArtworks])
+
+  useEffect(() => {
+    setAvailablePage(1)
+  }, [availableSearch])
+
+  useEffect(() => {
+    if (availablePage > totalAvailablePages) {
+      setAvailablePage(totalAvailablePages)
+    }
+  }, [availablePage, totalAvailablePages])
 
   const fetchAvailableArtworks = async () => {
     try {
@@ -1103,6 +1133,41 @@ export default function ProductsPage() {
           </div>
       </div>
 
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+          <div className="space-y-1">
+            <p className="text-sm text-muted-foreground">Open box shows artworks not yet in a series.</p>
+            <p className="text-xs text-muted-foreground">
+              Showing {paginatedAvailable.length} of {filteredAvailable.length} available artworks (page {availablePage} / {totalAvailablePages})
+            </p>
+          </div>
+          <div className="flex items-center gap-2">
+            <Input
+              placeholder="Search available artworks"
+              value={availableSearch}
+              onChange={(e) => setAvailableSearch(e.target.value)}
+              className="w-64"
+            />
+            <div className="flex items-center gap-1">
+              <Button
+                variant="outline"
+                size="icon"
+                disabled={availablePage <= 1}
+                onClick={() => setAvailablePage((p) => Math.max(1, p - 1))}
+              >
+                ←
+              </Button>
+              <Button
+                variant="outline"
+                size="icon"
+                disabled={availablePage >= totalAvailablePages}
+                onClick={() => setAvailablePage((p) => Math.min(totalAvailablePages, p + 1))}
+              >
+                →
+              </Button>
+            </div>
+          </div>
+        </div>
+
         {/* Booklet/Binder View */}
         {loadingArtworks || loadingSeries ? (
           <div className="grid gap-4 grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
@@ -1124,7 +1189,7 @@ export default function ProductsPage() {
               {/* Open Box (Unassigned Artworks) - Always show */}
               <DroppableSeries
                 series={{ id: "open", name: "Open", unlock_type: "open" }}
-                artworks={availableArtworks.map((a: any) => ({
+                artworks={paginatedAvailable.map((a: any) => ({
                   id: `submission-${a.submission_id}`, // Use submission ID for available artworks
                   title: a.title,
                   image: a.image,
