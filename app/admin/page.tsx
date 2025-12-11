@@ -4,7 +4,7 @@ import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Checkbox } from "@/components/ui/checkbox"
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
@@ -470,7 +470,7 @@ export default function AdminDashboard() {
                 <div className="flex justify-center py-8">
                   <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
                 </div>
-                ) : products.length === 0 ? (
+              ) : products.length === 0 ? (
                     <Alert className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-0 shadow-lg">
                       <AlertCircle className="h-4 w-4" />
                       <AlertTitle>No products found</AlertTitle>
@@ -605,7 +605,7 @@ export default function AdminDashboard() {
           </CardContent>
         </Card>
 
-          {/* Sync controls */}
+        {/* Sync controls */}
         <Card className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-0 shadow-xl">
           <CardHeader>
             <CardTitle>Sync Selected Products</CardTitle>
@@ -629,46 +629,46 @@ export default function AdminDashboard() {
             {isLoading && (
               <div className="mb-6 space-y-2">
                 <div className="flex justify-between text-sm">
-                    <span>Progress</span>
-                    <span>{progress}%</span>
+                  <span>Progress</span>
+                  <span>{progress}%</span>
                 </div>
                 <Progress value={progress} className="h-2" />
-                  {currentProduct && (
-                    <div className="text-sm text-muted-foreground">
-                      Syncing: <span className="font-medium text-foreground">{currentProduct}</span>
-              </div>
-            )}
+                {currentProduct && (
+                  <div className="text-sm text-muted-foreground">
+                    Syncing: <span className="font-medium text-foreground">{currentProduct}</span>
+                  </div>
+                )}
               </div>
             )}
 
-              <div className="flex items-center space-x-2">
-                <Button
-                  onClick={handleSync}
-                  disabled={isLoading || selectedProductIds.length === 0}
-                  className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-lg"
-                >
-                  {isLoading ? (
-                    <>
-                      <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                      Syncing...
-                    </>
-                  ) : (
-                    <>
-                      <RefreshCw className="h-4 w-4 mr-2" />
-                      Start Sync
-                    </>
-                  )}
-                </Button>
-                <Button variant="outline" onClick={testSupabaseConnection} disabled={isTestingConnection}>
-                  {isTestingConnection ? (
-                    <>
-                      <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                      Testing...
-                    </>
-                  ) : (
-                    "Test Supabase Connection"
-                  )}
-                </Button>
+            <div className="flex items-center space-x-2">
+            <Button
+              onClick={handleSync}
+              disabled={isLoading || selectedProductIds.length === 0}
+                className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-lg"
+            >
+              {isLoading ? (
+                <>
+                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                    Syncing...
+                </>
+              ) : (
+                <>
+                    <RefreshCw className="h-4 w-4 mr-2" />
+                    Start Sync
+                </>
+              )}
+            </Button>
+              <Button variant="outline" onClick={testSupabaseConnection} disabled={isTestingConnection}>
+                {isTestingConnection ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                    Testing...
+                  </>
+                ) : (
+                  "Test Supabase Connection"
+                )}
+              </Button>
             </div>
           </CardContent>
         </Card>
@@ -740,7 +740,7 @@ export default function AdminDashboard() {
                           </CardContent>
                         </Card>
                       ))}
-                    </div>
+                        </div>
                   </div>
                 ) : (
                   <div className="text-sm text-muted-foreground">Run a sync to see results.</div>
