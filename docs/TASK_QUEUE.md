@@ -20,21 +20,22 @@
 ## Admin Portal UX Refresh
 
 ### Deployment Status
-- [ ] In Progress
+- [x] Completed
   - Environment: Admin Portal
   - Documentation: [Admin Portal README](./features/admin-portal/README.md)
+  - Deployment: Vercel Production
 
 ### Tasks
-- [ ] Group admin navigation and add command palette for quick jumps.
-- [ ] Refresh admin home overview with health, actions, activity, and job panel.
-- [ ] Improve vendor explorer filters, empty/error states, and impersonation styling.
-- [ ] Document changes and archive completion in dashboard.
+- [x] Group admin navigation and add command palette for quick jumps.
+- [x] Refresh admin home overview with health, actions, activity, and job panel.
+- [x] Improve vendor explorer filters, empty/error states, and impersonation styling.
+- [x] Document changes and archive completion in dashboard.
 
 ### Success Criteria
-- [ ] Command palette available with shortcut (`⌘/Ctrl+K`) and grouped nav destinations.
-- [ ] Admin home shows system health card, today’s actions, recent activity log, and job activity card.
-- [ ] Vendor explorer has sticky filters, preset status chips, reset, and clearer empty/error handling.
-- [ ] Documentation and dashboard entries updated with links and version bump.
+- [x] Command palette available with shortcut (`⌘/Ctrl+K`) and grouped nav destinations.
+- [x] Admin home shows system health card, today’s actions, recent activity log, and job activity card.
+- [x] Vendor explorer has sticky filters, preset status chips, reset, and clearer empty/error handling.
+- [x] Documentation and dashboard entries updated with links and version bump.
 
 ## Customer Dashboard Improvements
 

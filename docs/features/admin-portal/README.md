@@ -72,7 +72,10 @@
 - **Existing Tables**: `vendors`, `orders`, `backup_settings`, `backups`, `impersonation_logs`, `failed_login_attempts` are reused with stricter guards.
 
 ## UI/UX Considerations
-- Vendor switcher exposed as side-menu entry and header action inside admin portal.
+- Navigation is grouped (Overview, Products, Orders & Ops, Vendors & Payouts, Reports, CRM, Preview, Settings) for faster scanning; command palette (`⌘/Ctrl + K`) jumps directly to destinations.
+- Header exposes quick jump and theme toggle; mobile keeps vendor chooser and command palette accessible.
+- Admin home surfaces health checks, “Today’s actions,” recent activity, and a dedicated job activity panel before product sync flows.
+- Vendor switcher exposed as side-menu entry and header action inside admin portal with sticky filters, preset status chips, reset, and improved empty/error states.
 - Dialog-based vendor selection includes search, loading states, and impersonation feedback via toast.
 - Admin login page now directs users to Google sign-in; password prompt removed.
 - Unauthorized users hitting admin routes are redirected to `/admin/login`.
@@ -105,9 +108,13 @@
 - Migrate vendor override mapping to Supabase configuration table with UI management.
 
 ## Version & Change Log
-- **Version**: 2.0.0
-- **Last Updated**: 2025-11-17
+- **Version**: 2.1.0
+- **Last Updated**: 2025-12-11
 - **Change Log**:
+  - 2025-12-11: **UX Refresh** – grouped navigation, command palette, overview-first admin home, and vendor explorer filter improvements.
+    - Added command palette component (`app/admin/components/command-palette.tsx`) with `⌘/Ctrl + K` shortcut and grouped nav targets.
+    - Admin home now highlights system health, today’s actions, recent activity log, and a job activity panel before product sync flows (`app/admin/page.tsx`).
+    - Vendor explorer gains sticky filter bar, preset status chips, reset, enriched empty/error states, and clearer impersonation styling (`app/admin/admin-shell.tsx`).
   - 2025-11-17: **Major Refactor** - Switched from impersonation-first to admin-view-first approach.
     - Added `/admin/vendors/[vendorId]` page for comprehensive vendor management within admin UI.
     - Created admin vendor data APIs (`/api/admin/vendors/[vendorId]/*`) for dashboard, orders, and settings.

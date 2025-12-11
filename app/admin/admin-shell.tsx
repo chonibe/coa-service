@@ -51,6 +51,8 @@ import {
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { ThemeToggle } from "@/components/theme-toggle"
 import { Logo } from "@/components/logo"
+import { MagnifyingGlassIcon } from "@heroicons/react/24/solid"
+import { AdminCommandPalette } from "./components/command-palette"
 
 interface NavItem {
   title: string
@@ -58,6 +60,7 @@ interface NavItem {
   icon: React.ReactNode
   submenu?: NavItem[]
   expanded?: boolean
+  group?: string
 }
 
 interface AdminShellProps {
@@ -83,14 +86,17 @@ export function AdminShell({ children }: AdminShellProps) {
   const [open, setOpen] = useState(false)
   const [currentSection, setCurrentSection] = useState("Dashboard")
   const [activeView, setActiveView] = useState<AdminView>("admin")
+  const [isCommandOpen, setIsCommandOpen] = useState(false)
   // Initialize nav items with auto-expansion based on current path
   const initialNavItems: NavItem[] = [
     {
+      group: "Overview",
       title: "Dashboard",
       href: "/admin/dashboard",
       icon: <Icon size="md"><HomeIcon className="h-5 w-5" /></Icon>,
     },
     {
+      group: "Products",
       title: "Products",
       href: "/admin/sync-products",
       icon: <Icon size="md"><CubeIcon className="h-5 w-5" /></Icon>,
@@ -119,6 +125,7 @@ export function AdminShell({ children }: AdminShellProps) {
       expanded: false,
     },
     {
+      group: "Orders & Ops",
       title: "Orders",
       href: "/admin/missing-orders",
       icon: <Icon size="md"><ShoppingCartIcon className="h-5 w-5" /></Icon>,
@@ -142,6 +149,7 @@ export function AdminShell({ children }: AdminShellProps) {
       expanded: false,
     },
     {
+      group: "Orders & Ops",
       title: "Warehouse",
       href: "/admin/warehouse/orders",
       icon: <Icon size="md"><BuildingOffice2Icon className="h-5 w-5" /></Icon>,
@@ -165,6 +173,7 @@ export function AdminShell({ children }: AdminShellProps) {
       expanded: pathname?.startsWith('/admin/warehouse') || false,
     },
     {
+      group: "Vendors & Payouts",
       title: "Vendors",
       href: "/admin/vendors",
       icon: <Icon size="md"><TruckIcon className="h-5 w-5" /></Icon>,
@@ -178,6 +187,7 @@ export function AdminShell({ children }: AdminShellProps) {
       expanded: false,
     },
     {
+      group: "Vendors & Payouts",
       title: "Payouts",
       href: "/admin/vendors/payouts",
       icon: <Icon size="md"><CurrencyDollarIcon className="h-5 w-5" /></Icon>,
@@ -211,6 +221,7 @@ export function AdminShell({ children }: AdminShellProps) {
       expanded: false,
     },
     {
+      group: "Reports",
       title: "Reports",
       href: "/admin/tax-reporting",
       icon: <Icon size="md"><DocumentTextIcon className="h-5 w-5" /></Icon>,
@@ -229,6 +240,7 @@ export function AdminShell({ children }: AdminShellProps) {
       expanded: false,
     },
     {
+      group: "Reports",
       title: "Certificates",
       href: "/admin/certificates/management",
       icon: <Icon size="sm"><DocumentTextIcon className="h-4 w-4" /></Icon>,
@@ -261,6 +273,7 @@ export function AdminShell({ children }: AdminShellProps) {
       ],
     },
     {
+      group: "CRM",
       title: "CRM",
       href: "/admin/crm",
       icon: <Icon size="md"><UsersIcon className="h-5 w-5" /></Icon>,
@@ -299,6 +312,7 @@ export function AdminShell({ children }: AdminShellProps) {
       expanded: pathname?.startsWith('/admin/crm') || false,
     },
     {
+      group: "Preview",
       title: "Preview",
       href: "/admin/preview/customer",
       icon: <Icon size="sm"><EyeIcon className="h-4 w-4" /></Icon>,
@@ -311,6 +325,7 @@ export function AdminShell({ children }: AdminShellProps) {
       ],
     },
     {
+      group: "Settings",
       title: "Settings",
       href: "/admin/settings",
       icon: <Icon size="md"><Cog6ToothIcon className="h-5 w-5" /></Icon>,
@@ -332,6 +347,7 @@ export function AdminShell({ children }: AdminShellProps) {
   const [vendorRecords, setVendorRecords] = useState<VendorRecord[]>([])
   const [vendorSearch, setVendorSearch] = useState("")
   const [statusFilter, setStatusFilter] = useState<string>("all")
+  const presetStatuses = ["active", "pending", "review", "disabled", "suspended"] as const
   const [switcherError, setSwitcherError] = useState<string | null>(null)
   const [loadingVendorId, setLoadingVendorId] = useState<number | null>(null)
   const [vendorsLoaded, setVendorsLoaded] = useState(false)
@@ -340,6 +356,30 @@ export function AdminShell({ children }: AdminShellProps) {
   const [savingEmail, setSavingEmail] = useState(false)
   const [impersonateConfirmOpen, setImpersonateConfirmOpen] = useState(false)
   const [pendingImpersonateVendor, setPendingImpersonateVendor] = useState<VendorRecord | null>(null)
+  const commandItems = useMemo(() => {
+    const entries: { title: string; href: string; group?: string }[] = []
+    navItems.forEach((item) => {
+      if (item.submenu?.length) {
+        item.submenu.forEach((subItem) => {
+          entries.push({ title: `${item.title} / ${subItem.title}`, href: subItem.href, group: item.group ?? item.title })
+        })
+      } else {
+        entries.push({ title: item.title, href: item.href, group: item.group })
+      }
+    })
+    return entries
+  }, [navItems])
+
+  useEffect(() => {
+    const handleShortcut = (event: KeyboardEvent) => {
+      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "k") {
+        event.preventDefault()
+        setIsCommandOpen((prev) => !prev)
+      }
+    }
+    window.addEventListener("keydown", handleShortcut)
+    return () => window.removeEventListener("keydown", handleShortcut)
+  }, [])
 
   const filteredVendors = useMemo(() => {
     const bySearch = vendorRecords.filter((vendor) =>
@@ -554,28 +594,48 @@ export function AdminShell({ children }: AdminShellProps) {
         <Button variant="outline" onClick={() => setActiveView("admin")}>Return to Admin</Button>
       </div>
 
-      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-        <Input
-          placeholder="Search vendors..."
-          value={vendorSearch}
-          onChange={(event) => setVendorSearch(event.target.value)}
-          className="md:w-72"
-        />
-        <div className="flex items-center gap-2">
-          <span className="text-sm text-muted-foreground">Status</span>
-          <Select value={statusFilter} onValueChange={setStatusFilter}>
-            <SelectTrigger className="w-[160px]">
-              <SelectValue placeholder="Filter by status" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All statuses</SelectItem>
-              <SelectItem value="active">Active</SelectItem>
-              <SelectItem value="pending">Pending</SelectItem>
-              <SelectItem value="review">In Review</SelectItem>
-              <SelectItem value="disabled">Disabled</SelectItem>
-              <SelectItem value="suspended">Suspended</SelectItem>
-            </SelectContent>
-          </Select>
+      <div className="sticky top-16 z-10 rounded-md border bg-background/80 px-4 py-3 backdrop-blur supports-[backdrop-filter]:bg-background/60 md:px-5">
+        <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+          <Input
+            placeholder="Search vendors..."
+            value={vendorSearch}
+            onChange={(event) => setVendorSearch(event.target.value)}
+            className="md:w-72"
+          />
+          <div className="flex flex-col gap-2 md:flex-row md:items-center md:gap-3">
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-muted-foreground">Status</span>
+              <Select value={statusFilter} onValueChange={setStatusFilter}>
+                <SelectTrigger className="w-[160px]">
+                  <SelectValue placeholder="Filter by status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All statuses</SelectItem>
+                  {presetStatuses.map((status) => (
+                    <SelectItem key={status} value={status}>
+                      {status.charAt(0).toUpperCase() + status.slice(1)}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex flex-wrap items-center gap-2">
+              {presetStatuses.map((status) => (
+                <Button
+                  key={status}
+                  variant={statusFilter === status ? "default" : "secondary"}
+                  size="sm"
+                  onClick={() => setStatusFilter(status)}
+                  className="h-8"
+                >
+                  {status}
+                </Button>
+              ))}
+              <Button variant="ghost" size="sm" className="h-8" onClick={() => { setVendorSearch(""); setStatusFilter("all") }}>
+                Reset filters
+              </Button>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -602,13 +662,21 @@ export function AdminShell({ children }: AdminShellProps) {
               ) : switcherError ? (
                 <tr>
                   <td colSpan={6} className="px-4 py-6 text-center text-destructive">
-                    {switcherError}
+                    <div className="flex flex-col items-center gap-3">
+                      <span>{switcherError}</span>
+                      <Button size="sm" variant="outline" onClick={() => { setSwitcherError(null); setVendorsLoaded(false); setActiveView("chooser") }}>
+                        Retry
+                      </Button>
+                    </div>
                   </td>
                 </tr>
               ) : filteredVendors.length === 0 ? (
                 <tr>
                   <td colSpan={6} className="px-4 py-6 text-center text-muted-foreground">
-                    No vendors match your filters.
+                    <div className="space-y-2">
+                      <p className="font-medium">No vendors match your filters.</p>
+                      <p className="text-sm text-muted-foreground">Try a different status or clear filters to see all vendors.</p>
+                    </div>
                   </td>
                 </tr>
               ) : (
@@ -655,7 +723,8 @@ export function AdminShell({ children }: AdminShellProps) {
                         </Button>
                         <Button
                           size="sm"
-                          variant="outline"
+                          variant="secondary"
+                          className="border-amber-200/70 bg-amber-50 text-amber-900 hover:bg-amber-100 dark:border-amber-500/40 dark:bg-amber-950/40 dark:text-amber-50"
                           onClick={() => handleImpersonateClick(vendor)}
                           disabled={loadingVendorId !== null}
                         >
@@ -775,71 +844,79 @@ export function AdminShell({ children }: AdminShellProps) {
               <ScrollArea className="flex-1">
                 <div className="px-2 py-4">
                   <nav className="flex flex-col gap-2">
-                    {navItems.map((item, index) => (
-                      <div key={item.href ?? item.title} className="flex flex-col">
-                        {item.submenu ? (
-                          <>
-                            <button
-                              onClick={() => toggleSubmenu(index)}
-                              className={`flex items-center justify-between rounded-md px-3 py-2 text-sm font-medium ${
-                                isActive(item)
+                    {navItems.map((item, index) => {
+                      const showHeading = item.group && item.group !== navItems[index - 1]?.group
+                      return (
+                        <div key={item.href ?? item.title} className="flex flex-col">
+                          {showHeading ? (
+                            <p className="px-3 pb-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                              {item.group}
+                            </p>
+                          ) : null}
+                          {item.submenu ? (
+                            <>
+                              <button
+                                onClick={() => toggleSubmenu(index)}
+                                className={`flex items-center justify-between rounded-md px-3 py-2 text-sm font-medium ${
+                                  isActive(item)
+                                    ? "bg-accent text-accent-foreground"
+                                    : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+                                }`}
+                              >
+                                <div className="flex items-center gap-3">
+                                  {item.icon}
+                                  <span>{item.title}</span>
+                                </div>
+                                <svg
+                                  xmlns="http://www.w3.org/2000/svg"
+                                  width="24"
+                                  height="24"
+                                  viewBox="0 0 24 24"
+                                  fill="none"
+                                  stroke="currentColor"
+                                  strokeWidth="2"
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  className={`h-4 w-4 transition-transform ${item.expanded ? "rotate-180" : ""}`}
+                                >
+                                  <polyline points="6 9 12 15 18 9" />
+                                </svg>
+                              </button>
+                              {item.expanded && (
+                                <div className="mt-1 pl-6 space-y-1">
+                                  {item.submenu.map((subItem) => (
+                                    <Link
+                                      key={subItem.href}
+                                      href={subItem.href}
+                                      className={`flex items-center gap-3 rounded-md px-3 py-2 text-sm ${
+                                        pathname === subItem.href
+                                          ? "bg-accent text-accent-foreground font-medium"
+                                          : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+                                      }`}
+                                    >
+                                      {subItem.icon}
+                                      <span>{subItem.title}</span>
+                                    </Link>
+                                  ))}
+                                </div>
+                              )}
+                            </>
+                          ) : (
+                            <Link
+                              href={item.href}
+                              className={`flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium ${
+                                pathname === item.href
                                   ? "bg-accent text-accent-foreground"
                                   : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
                               }`}
                             >
-                              <div className="flex items-center gap-3">
-                                {item.icon}
-                                <span>{item.title}</span>
-                              </div>
-                              <svg
-                                xmlns="http://www.w3.org/2000/svg"
-                                width="24"
-                                height="24"
-                                viewBox="0 0 24 24"
-                                fill="none"
-                                stroke="currentColor"
-                                strokeWidth="2"
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                className={`h-4 w-4 transition-transform ${item.expanded ? "rotate-180" : ""}`}
-                              >
-                                <polyline points="6 9 12 15 18 9" />
-                              </svg>
-                            </button>
-                            {item.expanded && (
-                              <div className="mt-1 pl-6 space-y-1">
-                                {item.submenu.map((subItem) => (
-                                  <Link
-                                    key={subItem.href}
-                                    href={subItem.href}
-                                    className={`flex items-center gap-3 rounded-md px-3 py-2 text-sm ${
-                                      pathname === subItem.href
-                                        ? "bg-accent text-accent-foreground font-medium"
-                                        : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
-                                    }`}
-                                  >
-                                    {subItem.icon}
-                                    <span>{subItem.title}</span>
-                                  </Link>
-                                ))}
-                              </div>
-                            )}
-                          </>
-                        ) : (
-                          <Link
-                            href={item.href}
-                            className={`flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium ${
-                              pathname === item.href
-                                ? "bg-accent text-accent-foreground"
-                                : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
-                            }`}
-                          >
-                            {item.icon}
-                            <span>{item.title}</span>
-                          </Link>
-                        )}
-                      </div>
-                    ))}
+                              {item.icon}
+                              <span>{item.title}</span>
+                            </Link>
+                          )}
+                        </div>
+                      )
+                    })}
                     {renderViewToggle("")}
                   </nav>
                 </div>
@@ -867,6 +944,19 @@ export function AdminShell({ children }: AdminShellProps) {
           <div className="hidden md:flex gap-2">
             {renderViewToggle("hidden md:flex")}
           </div>
+          <Button variant="ghost" size="sm" className="hidden md:inline-flex" onClick={() => setIsCommandOpen(true)}>
+            <Icon size="sm">
+              <MagnifyingGlassIcon className="h-4 w-4" />
+            </Icon>
+            <span className="ml-2">Quick jump</span>
+            <span className="ml-2 rounded border px-1 text-[11px] text-muted-foreground">⌘K</span>
+          </Button>
+          <Button variant="outline" size="sm" className="md:hidden" onClick={() => setIsCommandOpen(true)}>
+            <Icon size="sm">
+              <MagnifyingGlassIcon className="h-4 w-4" />
+            </Icon>
+            <span className="ml-1">Search</span>
+          </Button>
           <Button variant="outline" size="sm" className="md:hidden" onClick={openVendorChooser}>
             <Icon size="sm"><UsersIcon className="h-4 w-4 mr-2" /></Icon>
             Vendor Chooser
@@ -880,71 +970,79 @@ export function AdminShell({ children }: AdminShellProps) {
           <ScrollArea className="flex-1">
             <div className="flex flex-col gap-2 p-4">
               <nav className="grid gap-2">
-                {navItems.map((item, index) => (
-                  <div key={item.href ?? item.title} className="flex flex-col">
-                    {item.submenu ? (
-                      <>
-                        <button
-                          onClick={() => toggleSubmenu(index)}
-                          className={`flex items-center justify-between rounded-md px-3 py-2 text-sm font-medium ${
-                            isActive(item)
+                {navItems.map((item, index) => {
+                  const showHeading = item.group && item.group !== navItems[index - 1]?.group
+                  return (
+                    <div key={item.href ?? item.title} className="flex flex-col">
+                      {showHeading ? (
+                        <p className="px-3 pb-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                          {item.group}
+                        </p>
+                      ) : null}
+                      {item.submenu ? (
+                        <>
+                          <button
+                            onClick={() => toggleSubmenu(index)}
+                            className={`flex items-center justify-between rounded-md px-3 py-2 text-sm font-medium ${
+                              isActive(item)
+                                ? "bg-accent text-accent-foreground"
+                                : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+                            }`}
+                          >
+                            <div className="flex items-center gap-3">
+                              {item.icon}
+                              <span>{item.title}</span>
+                            </div>
+                            <svg
+                              xmlns="http://www.w3.org/2000/svg"
+                              width="24"
+                              height="24"
+                              viewBox="0 0 24 24"
+                              fill="none"
+                              stroke="currentColor"
+                              strokeWidth="2"
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              className={`h-4 w-4 transition-transform ${item.expanded ? "rotate-180" : ""}`}
+                            >
+                              <polyline points="6 9 12 15 18 9" />
+                            </svg>
+                          </button>
+                          {item.expanded && (
+                            <div className="mt-1 pl-6 space-y-1">
+                              {item.submenu.map((subItem) => (
+                                <Link
+                                  key={subItem.href}
+                                  href={subItem.href}
+                                  className={`flex items-center gap-3 rounded-md px-3 py-2 text-sm ${
+                                    pathname === subItem.href
+                                      ? "bg-accent text-accent-foreground font-medium"
+                                      : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+                                  }`}
+                                >
+                                  {subItem.icon}
+                                  <span>{subItem.title}</span>
+                                </Link>
+                              ))}
+                            </div>
+                          )}
+                        </>
+                      ) : (
+                        <Link
+                          href={item.href}
+                          className={`flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium ${
+                            pathname === item.href
                               ? "bg-accent text-accent-foreground"
                               : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
                           }`}
                         >
-                          <div className="flex items-center gap-3">
-                            {item.icon}
-                            <span>{item.title}</span>
-                          </div>
-                          <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            width="24"
-                            height="24"
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            stroke="currentColor"
-                            strokeWidth="2"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            className={`h-4 w-4 transition-transform ${item.expanded ? "rotate-180" : ""}`}
-                          >
-                            <polyline points="6 9 12 15 18 9" />
-                          </svg>
-                        </button>
-                        {item.expanded && (
-                          <div className="mt-1 pl-6 space-y-1">
-                            {item.submenu.map((subItem) => (
-                              <Link
-                                key={subItem.href}
-                                href={subItem.href}
-                                className={`flex items-center gap-3 rounded-md px-3 py-2 text-sm ${
-                                  pathname === subItem.href
-                                    ? "bg-accent text-accent-foreground font-medium"
-                                    : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
-                                }`}
-                              >
-                                {subItem.icon}
-                                <span>{subItem.title}</span>
-                              </Link>
-                            ))}
-                          </div>
-                        )}
-                      </>
-                    ) : (
-                      <Link
-                        href={item.href}
-                        className={`flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium ${
-                          pathname === item.href
-                            ? "bg-accent text-accent-foreground"
-                            : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
-                        }`}
-                      >
-                        {item.icon}
-                        <span>{item.title}</span>
-                      </Link>
-                    )}
-                  </div>
-                ))}
+                          {item.icon}
+                          <span>{item.title}</span>
+                        </Link>
+                      )}
+                    </div>
+                  )
+                })}
                 {renderViewToggle("text-left")}
               </nav>
             </div>
@@ -957,6 +1055,7 @@ export function AdminShell({ children }: AdminShellProps) {
           {activeView === "admin" ? children : vendorChooser}
         </main>
       </div>
+      <AdminCommandPalette open={isCommandOpen} onOpenChange={setIsCommandOpen} items={commandItems} />
       <BottomNav />
       <Toaster />
     </div>

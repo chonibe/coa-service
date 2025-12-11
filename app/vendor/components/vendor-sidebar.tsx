@@ -1,7 +1,7 @@
 "use client"
 
 import type React from "react"
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef, useCallback } from "react"
 import { usePathname, useRouter } from "next/navigation"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
@@ -28,7 +28,6 @@ import { cn } from "@/lib/utils"
 import { NotificationCenter } from "@/components/vendor/notification-center"
 import { Badge } from "@/components/ui/badge"
 import { useSwipeGesture } from "@/components/vendor/mobile-gestures"
-import { useRef } from "react"
 import { Logo } from "@/components/logo"
 
 interface NavItem {
@@ -37,15 +36,37 @@ interface NavItem {
   icon: React.ReactNode
 }
 
+const SIDEBAR_COLLAPSE_KEY = "vendor_sidebar_collapsed"
+
 export function VendorSidebar() {
   const pathname = usePathname()
   const router = useRouter()
   const isMobile = useMobile()
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [isCollapsed, setIsCollapsed] = useState(false)
   const [vendorName, setVendorName] = useState<string>("Vendor")
   const [profileComplete, setProfileComplete] = useState<boolean>(true)
   const [unreadMessages, setUnreadMessages] = useState(0)
+  const [unreadNotifications, setUnreadNotifications] = useState(0)
   const sidebarRef = useRef<HTMLElement>(null)
+  useEffect(() => {
+    // Restore collapsed state on desktop
+    const stored = typeof window !== "undefined" ? localStorage.getItem(SIDEBAR_COLLAPSE_KEY) : null
+    if (stored === "true") {
+      setIsCollapsed(true)
+    }
+  }, [])
+
+  const toggleCollapsed = useCallback(() => {
+    setIsCollapsed((prev) => {
+      const next = !prev
+      if (typeof window !== "undefined") {
+        localStorage.setItem(SIDEBAR_COLLAPSE_KEY, next ? "true" : "false")
+      }
+      return next
+    })
+  }, [])
+
   
   // Enable swipe right to open sidebar on mobile
   useSwipeGesture(sidebarRef, {
@@ -142,6 +163,10 @@ export function VendorSidebar() {
         if (messagesResponse?.ok) {
           const messagesData = await messagesResponse.json()
           setUnreadMessages(messagesData.totalUnread || 0)
+        }
+        if (notificationsResponse?.ok) {
+          const notificationsData = await notificationsResponse.json()
+          setUnreadNotifications(notificationsData.totalUnread || 0)
         }
       } catch (error) {
         console.error("Error fetching unread counts:", error)
@@ -241,6 +266,17 @@ export function VendorSidebar() {
             <span className="sr-only">Messages</span>
           </Button>
           <CreateMenu />
+          <Button
+            variant="outline"
+            size="icon"
+            className="hidden md:inline-flex items-center justify-center transition-all hover:bg-primary/10 min-h-[44px] min-w-[44px] focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+            onClick={toggleCollapsed}
+            aria-label={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+          >
+            <Icon size="lg">
+              <Bars3Icon className="h-6 w-6" aria-hidden="true" />
+            </Icon>
+          </Button>
         </div>
       </header>
 
@@ -256,8 +292,11 @@ export function VendorSidebar() {
           <aside
             ref={sidebarRef}
             className={cn(
-              "fixed top-0 left-0 z-50 h-full w-[280px] bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl border-r border-slate-200/50 dark:border-slate-800/50 shadow-2xl transition-transform duration-300 ease-in-out transform",
+              "fixed top-0 left-0 z-50 h-full bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl border-r border-slate-200/50 dark:border-slate-800/50 shadow-2xl transition-transform duration-300 ease-in-out transform",
+              "w-[280px] md:w-[260px]",
               sidebarOpen ? "translate-x-0" : "-translate-x-full",
+              "md:translate-x-0",
+              isCollapsed && "md:w-[88px]"
             )}
           >
         <div className="flex items-center justify-between h-16 px-6 border-b border-slate-200/50 dark:border-slate-800/50">
@@ -308,9 +347,18 @@ export function VendorSidebar() {
                   aria-label={item.title}
                 >
                   {item.icon}
-                  <span>{item.title}</span>
+                  <span className={cn("transition-opacity", isCollapsed ? "md:opacity-0 md:hidden opacity-100" : "opacity-100")}>{item.title}</span>
                   {item.title === "Profile" && !profileComplete && (
                     <span className="ml-auto flex h-2 w-2 rounded-full bg-red-500" aria-label="Profile incomplete"></span>
+                  )}
+                  {item.title === "Help" && unreadNotifications > 0 && (
+                    <Badge 
+                      variant="destructive" 
+                      className="ml-auto h-5 min-w-5 flex items-center justify-center p-0 text-[10px]"
+                      aria-label={`${unreadNotifications} unread notifications`}
+                    >
+                      {unreadNotifications > 99 ? "99+" : unreadNotifications}
+                    </Badge>
                   )}
                 </Link>
               ))}
@@ -358,6 +406,24 @@ export function VendorSidebar() {
               <span className="text-xs font-medium">{item.title}</span>
               {item.title === "Profile" && !profileComplete && (
                 <span className="absolute top-1 right-1/4 flex h-2 w-2 rounded-full bg-red-500" aria-label="Profile incomplete"></span>
+              )}
+              {item.title === "Dashboard" && unreadNotifications > 0 && (
+                <Badge 
+                  variant="destructive" 
+                  className="absolute top-1 right-1/2 translate-x-1/2 h-4 min-w-4 flex items-center justify-center p-0 text-[9px]"
+                  aria-label={`${unreadNotifications} unread notifications`}
+                >
+                  {unreadNotifications > 99 ? "99+" : unreadNotifications}
+                </Badge>
+              )}
+              {item.title === "Profile" && unreadMessages > 0 && (
+                <Badge 
+                  variant="secondary" 
+                  className="absolute top-1 right-1/2 translate-x-1/2 h-4 min-w-4 flex items-center justify-center p-0 text-[9px]"
+                  aria-label={`${unreadMessages} unread messages`}
+                >
+                  {unreadMessages > 99 ? "99+" : unreadMessages}
+                </Badge>
               )}
               {isActive(item.href) && (
                 <span className="absolute bottom-0 left-1/2 w-1/2 h-0.5 bg-primary transform -translate-x-1/2"></span>

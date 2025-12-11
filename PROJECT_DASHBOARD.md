@@ -62,6 +62,10 @@
 - **Epic**: Session Security Hardening
   - **Story**: [Vendor Dashboard Hardening](./docs/features/vendor-dashboard/README.md) — Completed 2025-11-10. Introduced signed vendor sessions, Supabase-aligned analytics, and GBP-consistent dashboards.
   - **Story**: [Google SSO & Admin Impersonation](./docs/features/vendor-dashboard/README.md#api-endpoints--usage) — Completed 2025-11-10. Migrated vendor login to Supabase Google OAuth and enabled admin impersonation flows.
+
+### Sprint: Admin UX Refresh
+- **Epic**: Admin Portal Experience
+  - **Story**: [Admin Portal UX Refresh](./docs/features/admin-portal/README.md) — Completed 2025-12-11. Grouped navigation, added command palette, refreshed admin home overview/job activity, and improved vendor explorer filters and states.
   - **Story**: [Mobile layout fix for series binder](./docs/features/vendor-dashboard/README.md#version--change-log) — Completed 2025-12-11. Series cards now span full width on mobile in binder and products views without clipping.
 
 ## Development Metrics
