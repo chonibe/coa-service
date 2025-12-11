@@ -22,6 +22,10 @@ Collector-facing dashboard that lets collectors view purchased artworks, track a
 - Credits/subscriptions: Reuses banking endpoints (`/api/banking/collector-identifier`, `/api/banking/balance`, `/api/banking/subscriptions/manage`).
 - UI components: Cards for artworks, artists, series binder, authentication queue, credits panel (wrapping `BankingDashboard` + `SubscriptionManager`).
 - Purchase links: Direct to Shopify product detail pages (`/products/{product_id}`).
+- Collector auth options:
+  - Shopify customer login via `/api/auth/shopify` (sets `shopify_customer_id`).
+  - Google login via `/api/auth/collector/google/start` → `/auth/collector/callback` (maps email to orders.customer_email, sets `collector_session` + `shopify_customer_id`).
+  - Vendor self-switch via `/api/auth/collector/switch` (uses vendor session + vendor email to set collector cookies).
 
 ## API Endpoints and Usage
 - `GET /api/collector/dashboard`
@@ -59,6 +63,7 @@ Collector-facing dashboard that lets collectors view purchased artworks, track a
 - Product URL assumes `/products/{product_id}` path; adjust if storefront differs.
 - Banking/subscription calls rely on same-origin fetch; cross-origin setups may need CORS allowances.
 - No pagination beyond latest 50 orders.
+- Google login requires email match to an existing Shopify customer email (orders.customer_email). If no match is found, user is redirected with error.
 
 ## Future Improvements
 - Add pagination and filters (by artist/series/auth status).

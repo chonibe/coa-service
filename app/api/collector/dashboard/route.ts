@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { createClient } from "@/lib/supabase/server"
+import { verifyCollectorSessionToken } from "@/lib/collector-session"
 
 type LineItem = {
   id: number
@@ -32,7 +33,8 @@ type Order = {
 export async function GET(request: NextRequest) {
   const supabase = createClient()
 
-  const customerId = request.cookies.get("shopify_customer_id")?.value
+  const collectorSession = verifyCollectorSessionToken(request.cookies.get("collector_session")?.value)
+  const customerId = collectorSession?.shopifyCustomerId || request.cookies.get("shopify_customer_id")?.value
   if (!customerId) {
     return NextResponse.json(
       { success: false, message: "Missing customer session" },
@@ -221,18 +223,20 @@ export async function GET(request: NextRequest) {
 
     // Collector identifier for banking
     const origin = request.nextUrl.origin
-    let collectorIdentifier: string | null = null
+    let collectorIdentifier: string | null = collectorSession?.collectorIdentifier || null
     let banking: any = null
     let subscriptions: any = null
 
     try {
-      const idRes = await fetch(`${origin}/api/banking/collector-identifier`, {
-        headers: { cookie: request.headers.get("cookie") || "" },
-        cache: "no-store",
-      })
-      if (idRes.ok) {
-        const idData = await idRes.json()
-        collectorIdentifier = idData.collectorIdentifier || null
+      if (!collectorIdentifier) {
+        const idRes = await fetch(`${origin}/api/banking/collector-identifier`, {
+          headers: { cookie: request.headers.get("cookie") || "" },
+          cache: "no-store",
+        })
+        if (idRes.ok) {
+          const idData = await idRes.json()
+          collectorIdentifier = idData.collectorIdentifier || null
+        }
       }
 
       if (collectorIdentifier) {

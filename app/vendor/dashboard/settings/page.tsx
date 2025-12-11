@@ -14,7 +14,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Separator } from "@/components/ui/separator"
 import { useToast } from "@/components/ui/use-toast"
-import { Loader2, AlertCircle, CheckCircle, Save, DollarSign, FileText, User, CreditCard } from "lucide-react"
+import { Loader2, AlertCircle, CheckCircle, Save, DollarSign, FileText, User, CreditCard, Sparkles } from "lucide-react"
 import { StripeConnect } from "../components/stripe-connect"
 
 interface VendorProfile {
@@ -82,6 +82,7 @@ export default function VendorSettingsPage() {
   const [profile, setProfile] = useState<VendorProfile | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
+  const [isSwitching, setIsSwitching] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [activeTab, setActiveTab] = useState("profile")
   const [completionSteps, setCompletionSteps] = useState({
@@ -252,6 +253,30 @@ export default function VendorSettingsPage() {
     return Math.round((completed / steps.length) * 100)
   }
 
+  const handleSwitchToCollector = async () => {
+    try {
+      setIsSwitching(true)
+      const res = await fetch("/api/auth/collector/switch", { method: "POST", credentials: "include" })
+      const payload = await res.json().catch(() => ({}))
+      if (!res.ok || !payload.success) {
+        throw new Error(payload.error || "Unable to switch to collector view")
+      }
+      toast({
+        title: "Collector view ready",
+        description: "Redirecting to your collector dashboard.",
+      })
+      window.location.href = "/collector/dashboard"
+    } catch (err: any) {
+      toast({
+        variant: "destructive",
+        title: "Switch failed",
+        description: err.message || "Could not start collector view",
+      })
+    } finally {
+      setIsSwitching(false)
+    }
+  }
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
@@ -273,6 +298,22 @@ export default function VendorSettingsPage() {
           <AlertDescription>{error}</AlertDescription>
         </Alert>
       )}
+
+      <Card className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-0 shadow-lg">
+        <CardHeader className="flex flex-row items-center justify-between">
+          <div className="space-y-1">
+            <CardTitle className="flex items-center gap-2">
+              <Sparkles className="h-4 w-4" />
+              View as Collector
+            </CardTitle>
+            <CardDescription>Switch into your own collector profile (matches your vendor email).</CardDescription>
+          </div>
+          <Button onClick={handleSwitchToCollector} disabled={isSwitching}>
+            {isSwitching && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+            View collector dashboard
+          </Button>
+        </CardHeader>
+      </Card>
 
       <div className="grid gap-6 md:grid-cols-7">
         <div className="md:col-span-5">

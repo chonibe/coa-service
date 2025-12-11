@@ -192,6 +192,7 @@
   - [x] Shopify purchase CTAs
   - [x] Documentation ([link](/docs/features/collector-dashboard/README.md))
   - [x] Tests ([link](/docs/features/collector-dashboard/tests.md))
+- [x] Add Google collector login + vendor self-switch ([link](/docs/features/collector-dashboard/README.md#technical-implementation-details))
 
 ### Success Criteria
 - [x] Collector sees purchased artworks with auth/certificate status
@@ -260,6 +261,29 @@
 - 🔥 Real-time Monitoring Dashboard
 - 🟠 Webhook Event Filtering
 - 🟢 External Alerting Integrations
+
+## Apollo-Grade CRM Upgrade
+
+### Immediate Priority Tasks
+
+- [ ] Stand up Apollo CRM core data model (sequences, tasks/calls, deals, assignment) — success: migration `supabase/migrations/20251211000000_apollo_crm_core.sql` applied and tables available.
+  - Link: [CRM Feature README](/docs/features/crm/README.md)
+- [ ] Ship sequence APIs (CRUD, enroll, outbox, sends) — success: `/api/crm/sequences*` routes return/accept data and create outbox rows; enrollments set next send.
+  - Link: [CRM Feature README](/docs/features/crm/README.md)
+- [ ] Ship task/call APIs and deal pipeline APIs — success: `/api/crm/tasks*`, `/api/crm/calls`, `/api/crm/deal-pipelines*`, `/api/crm/deals*` CRUD functional with Supabase persistence.
+  - Link: [CRM Feature README](/docs/features/crm/README.md)
+- [ ] Add conversation assignment/status API + inbox UI wiring — success: conversations return assignment/status and allow update via API + UI.
+  - Link: [CRM Feature README](/docs/features/crm/README.md)
+- [ ] Add sequence UI, pipeline board, task/call surfaces, reporting dashboard — success: admin CRM surfaces render and allow basic create/update for sequences, deals, tasks; reporting page shows metrics.
+  - Link: [CRM Feature README](/docs/features/crm/README.md)
+
+### Success Criteria
+- Sequences: create/edit/enroll, outbox emits due items, send status tracked.
+- Pipeline: board drag/drop updates stage, totals per stage visible.
+- Tasks/Calls: create/complete tasks, log calls with outcomes.
+- Inbox: assign/close/snooze conversations; status visible in list/thread.
+- Reporting: sequence + pipeline metrics visible in admin reports page.
+
 
 ## Contribution Guidelines
 
