@@ -68,6 +68,10 @@
   - **Story**: [Admin Portal UX Refresh](./docs/features/admin-portal/README.md) — Completed 2025-12-11. Grouped navigation, added command palette, refreshed admin home overview/job activity, and improved vendor explorer filters and states.
   - **Story**: [Mobile layout fix for series binder](./docs/features/vendor-dashboard/README.md#version--change-log) — Completed 2025-12-11. Series cards now span full width on mobile in binder and products views without clipping.
 
+### Sprint: Collector Experience
+- **Epic**: Collector Dashboard
+  - **Story**: [Collector dashboard launch](./docs/features/collector-dashboard/README.md) — Completed 2025-12-11. Added aggregated collector dashboard with purchased artworks grid, artist journeys, series binder, authentication queue, and credits/subscription management. API aggregator ties orders to series and Shopify purchase links.
+
 ### Sprint: NFC Unlock Experience
 - **Epic**: Physical-to-Digital Unlocks
   - **Story**: [NFC unlock flow + NTAG424 signing](./docs/features/series-manager/README.md) — Completed 2025-12-11

@@ -182,6 +182,24 @@
   - [ ] Route scans to artist unlock page `/nfc/unlock`
   - [ ] Mark NFC-claimed series members as unlocked when series uses `nfc`
 
+## Collector Dashboard (New)
+
+### Priority: High
+- [x] [Build collector dashboard surface](/app/collector/dashboard/page.tsx)
+  - [x] API aggregator for collector view ([link](/app/api/collector/dashboard/route.ts))
+  - [x] UI: artworks, artists, series binder, auth queue, credits
+  - [x] Journey deep-links per artist
+  - [x] Shopify purchase CTAs
+  - [x] Documentation ([link](/docs/features/collector-dashboard/README.md))
+  - [x] Tests ([link](/docs/features/collector-dashboard/tests.md))
+
+### Success Criteria
+- [x] Collector sees purchased artworks with auth/certificate status
+- [x] Artist/series explorer shows owned series and journey links
+- [x] Authentication queue surfaces pending NFC items
+- [x] Credits/subscriptions visible for collector identifier
+- [x] Shopify purchase links available for owned products
+
 # Task Queue
 
 ## Monitoring and Webhook System Improvements

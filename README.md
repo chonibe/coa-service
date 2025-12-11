@@ -10,6 +10,7 @@ COA Service is a comprehensive digital art authentication and management platfor
 - Secure artwork tracking
 - Edition management
 - Certificate generation
+- Collector dashboard for owned artworks, artist journeys, authentication status, and credits
 
 ### 🏷️ NFC Authentication
 - Web NFC tag scanning
