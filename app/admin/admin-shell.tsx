@@ -813,6 +813,12 @@ export function AdminShell({ children }: AdminShellProps) {
 
   return (
     <div className="flex min-h-screen flex-col bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950">
+      <a
+        href="#admin-main"
+        className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:rounded-md focus:bg-primary focus:px-3 focus:py-2 focus:text-primary-foreground"
+      >
+        Skip to main content
+      </a>
       <header className="sticky top-0 z-30 flex h-16 items-center gap-4 border-b border-slate-200/50 dark:border-slate-800/50 bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl px-4 sm:px-6">
         <Sheet open={open} onOpenChange={setOpen}>
           <SheetTrigger asChild>
@@ -844,7 +850,7 @@ export function AdminShell({ children }: AdminShellProps) {
               </div>
               <ScrollArea className="flex-1">
                 <div className="px-2 py-4">
-                  <nav className="flex flex-col gap-2">
+                  <nav className="flex flex-col gap-2" aria-label="Admin navigation (mobile)">
                     {navItems.map((item, index) => {
                       const showHeading = item.group && item.group !== navItems[index - 1]?.group
                       return (
@@ -970,7 +976,7 @@ export function AdminShell({ children }: AdminShellProps) {
         <aside className="hidden w-[250px] flex-col border-r border-slate-200/50 dark:border-slate-800/50 bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl md:flex">
           <ScrollArea className="flex-1">
             <div className="flex flex-col gap-2 p-4">
-              <nav className="grid gap-2">
+              <nav className="grid gap-2" aria-label="Admin navigation">
                 {navItems.map((item, index) => {
                   const showHeading = item.group && item.group !== navItems[index - 1]?.group
                   return (
@@ -1049,7 +1055,7 @@ export function AdminShell({ children }: AdminShellProps) {
             </div>
           </ScrollArea>
         </aside>
-        <main className="flex-1 pb-16 md:pb-0">
+        <main id="admin-main" className="flex-1 pb-16 md:pb-0">
           <div className="px-4 py-2 md:px-6 md:py-4">
             {activeView === "admin" ? <Breadcrumb className="hidden md:flex" /> : null}
           </div>
