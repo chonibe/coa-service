@@ -263,6 +263,7 @@ export default function ProductsPage() {
   const [hasLoadedAvailableArtworks, setHasLoadedAvailableArtworks] = useState(false)
   const [activeId, setActiveId] = useState<string | null>(null)
   const [isDragging, setIsDragging] = useState(false)
+  const [isSavingOrder, setIsSavingOrder] = useState(false)
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -601,92 +602,104 @@ export default function ProductsPage() {
     setIsDragging(false)
 
     if (!over) return
+    setIsSavingOrder(true)
 
-    const activeId = active.id as string
-    const overId = over.id as string
+    try {
+      const activeId = active.id as string
+      const overId = over.id as string
 
-    // If dragging an artwork to a different series (kanban move)
-    if (activeId.startsWith("artwork-")) {
-      const artworkId = activeId.replace("artwork-", "")
-      const artwork = allArtworks.find((a: any) => a.id === artworkId)
-      
-      if (!artwork) {
-        // Check if it's an available artwork (from Open box)
-        if (activeId.startsWith("artwork-submission-")) {
-          const submissionId = activeId.replace("artwork-submission-", "")
-          const availableArtwork = availableArtworks.find((a: any) => a.submission_id === submissionId)
-          
-          if (availableArtwork) {
-            if (overId === "open") {
-              // Already in open, do nothing
-              return
-            } else if (overId.startsWith("series-")) {
-              // Adding new artwork to series
-              const seriesId = overId.replace("series-", "")
-              await addArtworkToSeries(submissionId, seriesId)
-            } else if (overId.startsWith("artwork-")) {
-              // Dropped on another artwork - find its series
-              const targetArtworkId = overId.replace("artwork-", "")
-              const targetArtwork = allArtworks.find((a: any) => a.id === targetArtworkId)
-              if (targetArtwork && targetArtwork.series_id) {
-                await addArtworkToSeries(submissionId, targetArtwork.series_id)
+      // If dragging an artwork to a different series (kanban move)
+      if (activeId.startsWith("artwork-")) {
+        const artworkId = activeId.replace("artwork-", "")
+        const artwork = allArtworks.find((a: any) => a.id === artworkId)
+        
+        if (!artwork) {
+          // Check if it's an available artwork (from Open box)
+          if (activeId.startsWith("artwork-submission-")) {
+            const submissionId = activeId.replace("artwork-submission-", "")
+            const availableArtwork = availableArtworks.find((a: any) => a.submission_id === submissionId)
+            
+            if (availableArtwork) {
+              if (overId === "open") {
+                // Already in open, do nothing
+                return
+              } else if (overId.startsWith("series-")) {
+                // Adding new artwork to series
+                const seriesId = overId.replace("series-", "")
+                await addArtworkToSeries(submissionId, seriesId)
+              } else if (overId.startsWith("artwork-")) {
+                // Dropped on another artwork - find its series
+                const targetArtworkId = overId.replace("artwork-", "")
+                const targetArtwork = allArtworks.find((a: any) => a.id === targetArtworkId)
+                if (targetArtwork && targetArtwork.series_id) {
+                  await addArtworkToSeries(submissionId, targetArtwork.series_id)
+                }
               }
             }
+          }
+          return
+        }
+
+        const currentSeriesId = artwork.series_id
+        let targetSeriesId: string | null = null
+
+        if (overId === "open") {
+          // Moving to open (unassigning from series)
+          targetSeriesId = null
+        } else if (overId.startsWith("series-")) {
+          targetSeriesId = overId.replace("series-", "")
+        } else if (overId.startsWith("artwork-")) {
+          // Dropped on another artwork - find its series
+          const targetArtworkId = overId.replace("artwork-", "")
+          const targetArtwork = allArtworks.find((a: any) => a.id === targetArtworkId)
+          if (targetArtwork) {
+            targetSeriesId = targetArtwork.series_id
+          }
+        }
+
+        // If moving to same series, just reorder
+        if (targetSeriesId === currentSeriesId && overId.startsWith("artwork-")) {
+          await reorderArtworksInSeries(currentSeriesId, artworkId, overId.replace("artwork-", ""))
+          return
+        }
+
+        // If moving to different series or open
+        if (targetSeriesId !== currentSeriesId) {
+          if (targetSeriesId === null) {
+            // Remove from series (move to open)
+            await removeArtworkFromSeries(artworkId)
+          } else {
+            // Move to different series
+            await moveArtworkToSeries(artworkId, targetSeriesId)
           }
         }
         return
       }
 
-      const currentSeriesId = artwork.series_id
-      let targetSeriesId: string | null = null
+      // If dragging a submission to a series
+      if (activeId.startsWith("submission-") && (overId.startsWith("series-") || overId === "open")) {
+        const submissionId = activeId.replace("submission-", "")
+        const availableArtwork = availableArtworks.find((a: any) => a.submission_id === submissionId)
+        
+        if (!availableArtwork) return
 
-      if (overId === "open") {
-        // Moving to open (unassigning from series)
-        targetSeriesId = null
-      } else if (overId.startsWith("series-")) {
-        targetSeriesId = overId.replace("series-", "")
-      } else if (overId.startsWith("artwork-")) {
-        // Dropped on another artwork - find its series
-        const targetArtworkId = overId.replace("artwork-", "")
-        const targetArtwork = allArtworks.find((a: any) => a.id === targetArtworkId)
-        if (targetArtwork) {
-          targetSeriesId = targetArtwork.series_id
+        if (overId === "open") {
+          // Already in open, do nothing
+          return
         }
+
+        const seriesId = overId.replace("series-", "")
+        await addArtworkToSeries(submissionId, seriesId)
       }
-
-      // If moving to same series, just reorder
-      if (targetSeriesId === currentSeriesId && overId.startsWith("artwork-")) {
-        await reorderArtworksInSeries(currentSeriesId, artworkId, overId.replace("artwork-", ""))
-        return
-      }
-
-      // If moving to different series or open
-      if (targetSeriesId !== currentSeriesId) {
-        if (targetSeriesId === null) {
-          // Remove from series (move to open)
-          await removeArtworkFromSeries(artworkId)
-        } else {
-          // Move to different series
-          await moveArtworkToSeries(artworkId, targetSeriesId)
-        }
-      }
-      return
-    }
-
-    // If dragging a submission to a series
-    if (activeId.startsWith("submission-") && (overId.startsWith("series-") || overId === "open")) {
-      const submissionId = activeId.replace("submission-", "")
-      const availableArtwork = availableArtworks.find((a: any) => a.submission_id === submissionId)
-      
-      if (!availableArtwork) return
-
-      if (overId === "open") {
-        // Already in open, do nothing
-        return
-      }
-
-      const seriesId = overId.replace("series-", "")
-      await addArtworkToSeries(submissionId, seriesId)
+    } catch (err: any) {
+      console.error("Error updating ordering:", err)
+      toast({
+        variant: "destructive",
+        title: "Update failed",
+        description: err?.message || "Could not update ordering. Please try again.",
+      })
+    } finally {
+      setIsSavingOrder(false)
     }
   }
 
@@ -1076,6 +1089,12 @@ export default function ProductsPage() {
               <p className="text-muted-foreground mt-1">
                 Manage your artwork series and unlock configurations
               </p>
+              {isSavingOrder && (
+                <Badge variant="outline" className="mt-2 text-amber-600 border-amber-300">
+                  <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+                  Saving ordering...
+                </Badge>
+              )}
             </div>
             <Button onClick={() => router.push("/vendor/dashboard/series/create")}>
               <Plus className="h-4 w-4 mr-2" />
