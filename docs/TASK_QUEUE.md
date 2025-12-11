@@ -1,3 +1,41 @@
+## AI Gateway Integration
+
+### Deployment Status
+- [x] Integration Completed
+  - Environment: Dev/Preview
+  - Date: 2025-12-10
+
+### Tasks
+- [x] [Integrate Vercel AI SDK](/docs/features/ai-gateway/README.md)
+  - [x] Install `ai` package
+  - [x] Configure AI Gateway client (`lib/ai/gateway.ts`)
+  - [x] Implement Insights API (`app/api/crm/ai/insights`)
+  - [x] Add documentation
+
+### Success Criteria
+- [x] API endpoint `/api/crm/ai/insights` operational
+- [x] Gateway abstraction layer implemented
+- [x] Documentation completed
+
+## Admin Portal UX Refresh
+
+### Deployment Status
+- [ ] In Progress
+  - Environment: Admin Portal
+  - Documentation: [Admin Portal README](./features/admin-portal/README.md)
+
+### Tasks
+- [ ] Group admin navigation and add command palette for quick jumps.
+- [ ] Refresh admin home overview with health, actions, activity, and job panel.
+- [ ] Improve vendor explorer filters, empty/error states, and impersonation styling.
+- [ ] Document changes and archive completion in dashboard.
+
+### Success Criteria
+- [ ] Command palette available with shortcut (`⌘/Ctrl+K`) and grouped nav destinations.
+- [ ] Admin home shows system health card, today’s actions, recent activity log, and job activity card.
+- [ ] Vendor explorer has sticky filters, preset status chips, reset, and clearer empty/error handling.
+- [ ] Documentation and dashboard entries updated with links and version bump.
+
 ## Customer Dashboard Improvements
 
 ### Deployment Status
@@ -39,6 +77,13 @@
 - [ ] Track user engagement metrics
 - [ ] Monitor load times and responsiveness
 - [ ] Collect user feedback
+
+### Vendor Dashboard Mobile Layout
+- [x] [Fix series cards layout on mobile (binder + products views)](./features/vendor-dashboard/README.md#version--change-log)
+  - Success Criteria:
+    - [x] Series binder cards span full available width on mobile in `app/vendor/dashboard/series/page.tsx`.
+    - [x] Droppable series cards in `app/vendor/dashboard/products/page.tsx` render without clipping and allow horizontal scroll.
+    - [x] Manual responsive check on a small viewport confirms cards and scrollers are visible without horizontal page scroll.
 
 ### Future Enhancements
 - [ ] [Enhance NFC Tag Experience](/app/dashboard/README.md)

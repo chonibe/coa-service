@@ -7,6 +7,7 @@
 
 ## Implementation Summary
 - Implementation: [`app/vendor/dashboard/page.tsx`](../../../app/vendor/dashboard/page.tsx)
+- Series binder layouts: [`app/vendor/dashboard/series/page.tsx`](../../../app/vendor/dashboard/series/page.tsx), [`app/vendor/dashboard/products/page.tsx`](../../../app/vendor/dashboard/products/page.tsx)
 - Core APIs:
   - [`app/api/auth/google/start/route.ts`](../../../app/api/auth/google/start/route.ts)
   - [`app/auth/callback/route.ts`](../../../app/auth/callback/route.ts)
@@ -106,9 +107,10 @@
 - Build E2E tests covering login/session flows.
 
 ## Version & Change Log
-- **Version**: 1.4.0
-- **Last Updated**: 2025-11-11
+- **Version**: 1.4.1
+- **Last Updated**: 2025-12-11
 - **Change Log**:
+  - 2025-12-11: Improved mobile layout for series binder cards in vendor dashboard (series page + products/binder view) to ensure full-width cards and horizontal scroll usability on small screens.
   - 2025-11-11: Added email override linking for Street Collector, aligned admin redirect to portal, and documented shared admin sessions.
   - 2025-11-10: Migrated vendor auth to Supabase Google OAuth, added admin impersonation, and linked vendors to Supabase user IDs.
 

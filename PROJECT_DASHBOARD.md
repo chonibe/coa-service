@@ -54,10 +54,15 @@
 
 ## Completed Tasks Archive
 
+### Sprint: AI Integration
+- **Epic**: Intelligence Layer
+  - **Story**: [Vercel AI Gateway Integration](./docs/features/ai-gateway/README.md) — Completed 2025-12-10. Integrated Vercel AI SDK and Gateway, replacing placeholder insights logic with live OpenAI calls.
+
 ### Sprint: Vendor Portal Reliability
 - **Epic**: Session Security Hardening
   - **Story**: [Vendor Dashboard Hardening](./docs/features/vendor-dashboard/README.md) — Completed 2025-11-10. Introduced signed vendor sessions, Supabase-aligned analytics, and GBP-consistent dashboards.
   - **Story**: [Google SSO & Admin Impersonation](./docs/features/vendor-dashboard/README.md#api-endpoints--usage) — Completed 2025-11-10. Migrated vendor login to Supabase Google OAuth and enabled admin impersonation flows.
+  - **Story**: [Mobile layout fix for series binder](./docs/features/vendor-dashboard/README.md#version--change-log) — Completed 2025-12-11. Series cards now span full width on mobile in binder and products views without clipping.
 
 ## Development Metrics
 

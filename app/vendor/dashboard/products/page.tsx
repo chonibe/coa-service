@@ -148,7 +148,7 @@ function DroppableSeries({
         if (!isOpenBox) onSeriesClick()
       }}
       className={cn(
-        "flex flex-col border-2 rounded-xl overflow-hidden transition-colors shadow-sm w-fit relative",
+        "flex flex-col border-2 rounded-xl overflow-hidden transition-colors shadow-sm w-full max-w-full sm:w-[min(520px,100%)] md:w-fit min-w-0 relative",
         isOpenBox ? "border-dashed border-muted-foreground/40 bg-muted/20" : getSeriesColor(series.unlock_type),
         isOver && "ring-2 ring-primary ring-offset-2 bg-primary/5",
         !isOpenBox && "cursor-pointer hover:shadow-lg"

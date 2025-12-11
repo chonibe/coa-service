@@ -320,7 +320,7 @@ export default function SeriesPage() {
               </CardContent>
             </Card>
           ) : (
-            <div className="flex flex-wrap gap-4 items-start content-start">
+            <div className="flex flex-col sm:flex-row sm:flex-wrap gap-4 items-stretch content-start w-full">
               {Object.entries(
                 allArtworks.reduce((acc, artwork) => {
                   const seriesId = artwork.series_id || "unknown"
@@ -336,10 +336,10 @@ export default function SeriesPage() {
                   return acc
                 }, {} as Record<string, { name: string; unlock_type: string; unlock_config: any; artworks: any[] }>)
               ).map(([seriesId, group]: [string, any]) => (
-                <div 
-                  key={seriesId} 
+                <div
+                  key={seriesId}
                   className={cn(
-                    "flex flex-col border-2 rounded-xl overflow-hidden transition-colors shadow-sm w-fit relative",
+                    "flex flex-col border-2 rounded-xl overflow-hidden transition-colors shadow-sm w-full max-w-full sm:w-[min(520px,100%)] md:w-fit min-w-0 relative",
                     getSeriesColor(group.unlock_type)
                   )}
                 >
@@ -382,7 +382,7 @@ export default function SeriesPage() {
                   </div>
 
                   {/* Artworks Flex Grid - Adapts to content size */}
-                  <div className="p-2 overflow-x-auto no-scrollbar max-w-[80vw] relative z-10">
+                  <div className="p-2 overflow-x-auto no-scrollbar w-full max-w-full sm:max-w-[80vw] min-w-0 relative z-10">
                     <div className="flex flex-nowrap gap-2 min-w-max">
                       {group.artworks.map((artwork: any) => (
                         <div key={artwork.id} className="relative w-32 h-32 rounded-md overflow-hidden bg-background border shadow-sm group/item flex-shrink-0">

@@ -255,6 +255,7 @@ npm install @dnd-kit/core @dnd-kit/sortable @dnd-kit/utilities react-image-crop
 - [Unlock System](/docs/features/unlock-system.md)
 
 ## Version History
+- **v1.1.1** (2025-12-11) - Improved mobile responsiveness for series binder cards in vendor dashboard views ([`app/vendor/dashboard/series/page.tsx`](../../../app/vendor/dashboard/series/page.tsx), [`app/vendor/dashboard/products/page.tsx`](../../../app/vendor/dashboard/products/page.tsx)).
 - **v1.0.0** (2025-01-29) - Initial implementation with Instagram-style flow
 - **v1.1.0** (2025-01-29) - Added delete, duplicate, search, and polish features
 
