@@ -75,6 +75,7 @@
 - Navigation is grouped (Overview, Products, Orders & Ops, Vendors & Payouts, Reports, CRM, Preview, Settings) for faster scanning; command palette (`⌘/Ctrl + K`) jumps directly to destinations.
 - Header exposes quick jump and theme toggle; mobile keeps vendor chooser and command palette accessible.
 - Admin home surfaces health checks, “Today’s actions,” recent activity, and a dedicated job activity panel before product sync flows.
+- Admin dashboard now surfaces ChinaDivision warehouse alerts (pending approvals, awaiting fulfillment, shipped/delivered counts) and links to `/admin/warehouse/orders`.
 - Vendor switcher exposed as side-menu entry and header action inside admin portal with sticky filters, preset status chips, reset, and improved empty/error states.
 - Dialog-based vendor selection includes search, loading states, and impersonation feedback via toast.
 - Admin login page now directs users to Google sign-in; password prompt removed.

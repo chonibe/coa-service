@@ -26,6 +26,15 @@ export default function AdminDashboard() {
   const [currentProduct, setCurrentProduct] = useState<string | null>(null)
   // Add a state for sync progress messages
   const [progressMessages, setProgressMessages] = useState<string[]>([])
+  // Warehouse alerts state
+  const [warehouseLoading, setWarehouseLoading] = useState(false)
+  const [warehouseError, setWarehouseError] = useState<string | null>(null)
+  const [warehouseCounts, setWarehouseCounts] = useState<{
+    pendingApproval: number
+    awaitingFulfillment: number
+    shippedOrDelivered: number
+    total: number
+  }>({ pendingApproval: 0, awaitingFulfillment: 0, shippedOrDelivered: 0, total: 0 })
 
   // Product selection state
   const [products, setProducts] = useState<any[]>([])
@@ -235,6 +244,47 @@ export default function AdminDashboard() {
     setProgressMessages((prev) => [...prev, message])
   }
 
+  // Load warehouse summary (last 30 days)
+  useEffect(() => {
+    const loadWarehouse = async () => {
+      try {
+        setWarehouseLoading(true)
+        setWarehouseError(null)
+        const end = new Date()
+        const start = new Date()
+        start.setDate(end.getDate() - 30)
+        const fmt = (d: Date) => d.toISOString().split("T")[0]
+        const url = `/api/warehouse/orders?start=${fmt(start)}&end=${fmt(end)}&pageSize=200`
+        const response = await fetch(url, { cache: "no-store" })
+        if (!response.ok) {
+          const payload = await response.json().catch(() => ({}))
+          throw new Error(payload.message || "Failed to load warehouse orders")
+        }
+        const payload = await response.json()
+        const orders = Array.isArray(payload.orders) ? payload.orders : []
+        const pendingApproval = orders.filter((o: any) => o.status === 0 || o.order_detail_status === "0").length
+        const shippedOrDelivered = orders.filter(
+          (o: any) => o.status === 3 || o.track_status === 121 || o.track_status_name === "Delivered",
+        ).length
+        const awaitingFulfillment = orders.filter(
+          (o: any) => !(o.status === 3 || o.track_status === 121 || o.track_status_name === "Delivered"),
+        ).length
+        setWarehouseCounts({
+          pendingApproval,
+          awaitingFulfillment,
+          shippedOrDelivered,
+          total: orders.length,
+        })
+      } catch (error: any) {
+        setWarehouseError(error.message || "Unable to load warehouse alerts")
+      } finally {
+        setWarehouseLoading(false)
+      }
+    }
+
+    void loadWarehouse()
+  }, [])
+
   // Filter results based on active tab
   const getFilteredResults = () => {
     if (!syncResults?.syncResults) return []
@@ -333,6 +383,65 @@ export default function AdminDashboard() {
                     </Link>
                   </Button>
                 </div>
+              </CardContent>
+            </Card>
+
+            <Card className="shadow-sm">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-base">Warehouse alerts</CardTitle>
+                <CardDescription>ChinaDivision approvals & fulfillment</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                {warehouseLoading ? (
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    Loading warehouse status…
+                  </div>
+                ) : warehouseError ? (
+                  <Alert variant="destructive">
+                    <AlertCircle className="h-4 w-4" />
+                    <AlertTitle>Warehouse status unavailable</AlertTitle>
+                    <AlertDescription className="space-y-1">
+                      <p>{warehouseError}</p>
+                      <Button size="sm" variant="outline" onClick={() => window.location.reload()}>
+                        Retry
+                      </Button>
+                    </AlertDescription>
+                  </Alert>
+                ) : (
+                  <>
+                    <div className="grid grid-cols-2 gap-3 text-sm">
+                      <div className="rounded-md border bg-muted/50 p-3">
+                        <p className="text-muted-foreground">Pending approval</p>
+                        <p className="text-lg font-semibold text-amber-600">{warehouseCounts.pendingApproval}</p>
+                      </div>
+                      <div className="rounded-md border bg-muted/50 p-3">
+                        <p className="text-muted-foreground">Awaiting fulfillment</p>
+                        <p className="text-lg font-semibold">{warehouseCounts.awaitingFulfillment}</p>
+                      </div>
+                      <div className="rounded-md border bg-muted/50 p-3">
+                        <p className="text-muted-foreground">Shipped/Delivered</p>
+                        <p className="text-lg font-semibold text-emerald-600">{warehouseCounts.shippedOrDelivered}</p>
+                      </div>
+                      <div className="rounded-md border bg-muted/50 p-3">
+                        <p className="text-muted-foreground">Total (30d)</p>
+                        <p className="text-lg font-semibold">{warehouseCounts.total}</p>
+                      </div>
+                    </div>
+                    {warehouseCounts.pendingApproval > 0 && (
+                      <Alert className="border-amber-200 bg-amber-50 text-amber-900">
+                        <AlertCircle className="h-4 w-4" />
+                        <AlertTitle>Orders need approval</AlertTitle>
+                        <AlertDescription>
+                          {warehouseCounts.pendingApproval} orders are waiting for approval in ChinaDivision.
+                        </AlertDescription>
+                      </Alert>
+                    )}
+                    <Button asChild variant="outline" size="sm">
+                      <Link href="/admin/warehouse/orders">Open warehouse orders</Link>
+                    </Button>
+                  </>
+                )}
               </CardContent>
             </Card>
 
@@ -669,6 +778,11 @@ export default function AdminDashboard() {
                   "Test Supabase Connection"
                 )}
               </Button>
+              {warehouseCounts.pendingApproval > 0 && (
+                <Badge variant="destructive" className="gap-1">
+                  {warehouseCounts.pendingApproval} warehouse approvals pending
+                </Badge>
+              )}
             </div>
           </CardContent>
         </Card>
