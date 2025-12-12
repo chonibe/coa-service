@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { Suspense, useEffect, useState } from "react"
 import { useSearchParams } from "next/navigation"
 import {
   Card,
@@ -15,7 +15,7 @@ import { Artwork, MarketplaceApiResponse } from "@/types/collector"
 import { ArtworkCard } from "./components/artwork-card"
 import { FilterSidebar } from "./components/filter-sidebar"
 
-export default function CollectorDiscoverPage() {
+function DiscoverContent() {
   const searchParams = useSearchParams()
   const [artworks, setArtworks] = useState<Artwork[]>([])
   const [isLoading, setIsLoading] = useState(true)
@@ -108,6 +108,14 @@ export default function CollectorDiscoverPage() {
         </div>
       </div>
     </div>
+  )
+}
+
+export default function CollectorDiscoverPage() {
+  return (
+    <Suspense fallback={<div className="container mx-auto px-4 py-8">Loading…</div>}>
+      <DiscoverContent />
+    </Suspense>
   )
 }
 

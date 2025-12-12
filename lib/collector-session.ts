@@ -86,3 +86,9 @@ export const clearCollectorSessionCookie = () => ({
 
 export const COLLECTOR_SESSION_COOKIE_NAME = SESSION_COOKIE_NAME
 
+// Lightweight helper to extract collector session from a cookie store (NextRequest cookies)
+export const getCollectorSession = (cookieStore: { get: (key: string) => { value?: string } | undefined }) => {
+  const token = cookieStore.get?.(COLLECTOR_SESSION_COOKIE_NAME)?.value
+  return verifyCollectorSessionToken(token)
+}
+

@@ -38,6 +38,13 @@ export function resolvePathFilter(pathFilter: PathFilter): {
     return null
   }
 
+export function hasPathFilters(filters: any): boolean {
+  if (!filters || typeof filters !== "object") return false
+  if (Array.isArray(filters)) return filters.some(hasPathFilters)
+  if (filters.path) return true
+  return Object.values(filters).some(hasPathFilters)
+}
+
   const path = pathFilter.path
   const sourceEntity = path[0][0] // e.g., "people"
   const relationshipName = path[0][1] // e.g., "company"

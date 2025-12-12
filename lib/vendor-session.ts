@@ -128,3 +128,6 @@ export const getVendorFromCookieStore = (cookieStore: CookieStoreLike) => {
 
 export const VENDOR_SESSION_COOKIE_NAME = SESSION_COOKIE_NAME
 
+// Alias used by some routes
+export const getVendorFromSession = getVendorFromCookieStore
+
