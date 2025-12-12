@@ -10,7 +10,14 @@
  * - Operators: $eq, $ne, $contains, $starts_with, $ends_with, $not_empty, $empty, $gt, $gte, $lt, $lte, $in, $not_in
  */
 
-import { hasPathFilters, applyPathFilter } from "./path-filter-resolver"
+import { applyPathFilter } from "./path-filter-resolver"
+
+function hasPathFilters(filters: any): boolean {
+  if (!filters || typeof filters !== "object") return false
+  if (Array.isArray(filters)) return filters.some(hasPathFilters)
+  if (filters.path) return true
+  return Object.values(filters).some(hasPathFilters)
+}
 
 type FilterValue = string | number | boolean | null | FilterObject | FilterValue[];
 type FilterObject = {
