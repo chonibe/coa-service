@@ -135,8 +135,16 @@ export default function ProductDetailPage({ params }: { params: { id: string } }
             </Card>
           )}
 
-          <Button className="w-full text-lg py-7" disabled={!primaryVariant?.available}>
-            {primaryVariant?.available ? "Add to Cart" : "Sold Out"}
+          <Button className="w-full text-lg py-7" asChild disabled={!primaryVariant?.available}>
+            <a
+              href={`https://${process.env.NEXT_PUBLIC_SHOPIFY_DOMAIN || "thestreetlamp-9103.myshopify.com"}/products/${
+                artwork.handle || artwork.shopifyProductId
+              }`}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              {primaryVariant?.available ? "View on Shopify" : "Sold Out"}
+            </a>
           </Button>
         </div>
       </div>
@@ -177,4 +185,5 @@ export default function ProductDetailPage({ params }: { params: { id: string } }
     </div>
   )
 }
+
 

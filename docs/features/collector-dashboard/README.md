@@ -1,6 +1,6 @@
 # Collector Dashboard
 
-> Version: 1.1.0 · Last Updated: 2025-12-21
+> Version: 1.1.1 · Last Updated: 2025-12-21
 
 ## Overview and Purpose
 Collector-facing dashboard that lets collectors view purchased artworks, track authentication status, explore artists/series, and manage credits/subscriptions with Shopify purchasing links.
@@ -29,6 +29,7 @@ Collector-facing dashboard that lets collectors view purchased artworks, track a
   - Shopify Google login via `/api/auth/shopify/google/start` → `/api/auth/shopify/google/callback` (sets `shopify_customer_id`, `collector_session`, preserves same UX).
   - Google login via `/api/auth/collector/google/start` → `/auth/collector/callback` (maps email to orders.customer_email, sets `collector_session` + `shopify_customer_id`).
   - Vendor self-switch via `/api/auth/collector/switch` (uses vendor session + vendor email to set collector cookies).
+  - Collector browse/purchase CTAs now deep-link to Shopify product pages using published handles.
 
 ## API Endpoints and Usage
 - `GET /api/collector/dashboard`
@@ -75,6 +76,7 @@ Collector-facing dashboard that lets collectors view purchased artworks, track a
 - Personalized recommendations per collector purchase history.
 
 ## Change Log
+- 1.1.1: Collector purchase CTAs link directly to Shopify product pages (discover, series, artist, product detail).
 - 1.1.0: Added Shopify Google login flow with seamless redirect to collector dashboard; aligned cookies for cross-domain auth.
 - 1.0.0: Initial collector dashboard release with orders, series binder, artist explorer, authentication queue, and credits/subscriptions surface.
 

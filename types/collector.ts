@@ -1,5 +1,6 @@
 export interface Artwork {
   id: string
+  handle?: string
   title: string
   description: string
   price: number | null
@@ -106,6 +107,7 @@ export interface ProductApiResponse {
 
 export interface SeriesArtwork {
   id: string
+  handle?: string
   title: string
   description: string
   image?: string
@@ -146,6 +148,7 @@ export interface SeriesApiResponse {
 
 export interface ArtistArtwork {
   id: string
+  handle?: string
   title: string
   description: string
   price: number | null

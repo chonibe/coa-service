@@ -146,7 +146,9 @@ export default function SeriesDetailPage({ params }: { params: { id: string } })
                 ) : (
                   !artwork.isLocked && (
                     <Button variant="secondary" size="sm" className="mt-2" asChild>
-                      <Link href={`/collector/products/${artwork.id}`}>View Product</Link>
+                      <Link href={`https://${process.env.NEXT_PUBLIC_SHOPIFY_DOMAIN || "thestreetlamp-9103.myshopify.com"}/products/${artwork.handle || artwork.shopifyProductId}`} target="_blank" rel="noopener noreferrer">
+                        View on Shopify
+                      </Link>
                     </Button>
                   )
                 )}
@@ -160,4 +162,5 @@ export default function SeriesDetailPage({ params }: { params: { id: string } })
     </div>
   )
 }
+
 

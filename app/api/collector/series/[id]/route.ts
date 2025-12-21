@@ -74,6 +74,7 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
             ownedMap.has(m.vendor_product_submissions.id) || (shopifyProductId && ownedMap.has(shopifyProductId))
           return {
             id: m.vendor_product_submissions.id,
+            handle: pd?.handle,
             title: pd?.title || "Untitled",
             description: pd?.description || "",
             image: pd?.images?.[0]?.src,
@@ -114,4 +115,5 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
     return NextResponse.json({ success: false, message: err.message || "Failed to fetch series" }, { status: 500 })
   }
 }
+
 

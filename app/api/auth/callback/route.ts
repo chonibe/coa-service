@@ -58,10 +58,11 @@ export async function GET(request: NextRequest) {
     if (customerId) {
       console.log('✅ Customer ID found, setting authentication cookies');
       
-      // Redirect to customer dashboard
-      const response = NextResponse.redirect(new URL('/customer/dashboard', request.url));
-
       const cookieDomain = process.env.NODE_ENV === 'production' ? '.thestreetlamp.com' : undefined;
+      const postLoginRedirect = request.cookies.get('shopify_login_redirect')?.value || '/collector/dashboard';
+
+      // Redirect to destination (default collector dashboard)
+      const response = NextResponse.redirect(new URL(postLoginRedirect, request.url));
 
       // Set authentication cookies
       response.cookies.set('shopify_customer_id', customerId, {

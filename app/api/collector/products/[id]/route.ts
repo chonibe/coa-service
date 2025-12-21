@@ -68,6 +68,7 @@ export async function GET(_req: NextRequest, { params }: { params: { id: string 
       related =
         rel?.map((m) => ({
           id: m.vendor_product_submissions.id,
+          handle: m.vendor_product_submissions.product_data?.handle,
           title: m.vendor_product_submissions.product_data?.title || "Untitled",
           image: m.vendor_product_submissions.product_data?.images?.[0]?.src,
           displayOrder: m.display_order,
@@ -146,4 +147,5 @@ export async function GET(_req: NextRequest, { params }: { params: { id: string 
     return NextResponse.json({ success: false, message: err.message || "Failed to fetch product" }, { status: 500 })
   }
 }
+
 

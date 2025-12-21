@@ -94,6 +94,7 @@ export async function GET(request: NextRequest) {
 
           return {
             id: artwork.id,
+            handle: productData?.handle,
             title: productData?.title || "Untitled",
             description: productData?.description || "",
             price,
@@ -179,4 +180,5 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ success: false, message: err.message || "Failed to fetch marketplace" }, { status: 500 })
   }
 }
+
 

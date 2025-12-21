@@ -29,11 +29,11 @@ export async function GET(request: NextRequest) {
       fullLoginUrl: loginUrl.toString()
     });
 
+    const redirectParam = request.nextUrl.searchParams.get('redirect');
+    const postLoginRedirect = redirectParam || '/collector/dashboard';
+
     // Create a response that will redirect to the Shopify customer login page
     const response = NextResponse.redirect(loginUrl.toString());
-
-    // Set cookies for state and post-login redirect
-    const postLoginRedirect = '/customer/dashboard';
 
     // Set state cookie for CSRF protection
     const cookieDomain = process.env.NODE_ENV === 'production' ? '.thestreetlamp.com' : undefined;

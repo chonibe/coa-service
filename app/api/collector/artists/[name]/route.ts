@@ -53,6 +53,7 @@ export async function GET(_req: NextRequest, { params }: { params: { name: strin
         const price = variants.length > 0 ? parseFloat(variants[0].price) : null
         return {
           id: a.id,
+          handle: pd?.handle,
           title: pd?.title || "Untitled",
           description: pd?.description || "",
           price,
@@ -159,4 +160,5 @@ export async function GET(_req: NextRequest, { params }: { params: { name: strin
     return NextResponse.json({ success: false, message: err.message || "Failed to fetch artist profile" }, { status: 500 })
   }
 }
+
 

@@ -14,6 +14,9 @@ interface ArtworkCardProps {
 export function ArtworkCard({ artwork }: ArtworkCardProps) {
   const imageUrl = artwork.images?.[0]?.src || "/placeholder-image.jpg"
   const isNew = artwork.isNew
+  const shopDomain = process.env.NEXT_PUBLIC_SHOPIFY_DOMAIN || "thestreetlamp-9103.myshopify.com"
+  const productHandle = artwork.handle || artwork.shopifyProductId
+  const shopifyUrl = `https://${shopDomain}/products/${productHandle}`
 
   return (
     <Card className="overflow-hidden shadow-lg hover:shadow-xl transition-shadow duration-300 ease-in-out">
@@ -46,12 +49,15 @@ export function ArtworkCard({ artwork }: ArtworkCardProps) {
           <span className="text-xl font-bold text-primary">
             {artwork.price ? `${artwork.currency} ${artwork.price.toFixed(2)}` : "N/A"}
           </span>
-          <Button variant="secondary" size="sm">
-            Add to Cart
+          <Button variant="secondary" size="sm" asChild>
+            <a href={shopifyUrl} target="_blank" rel="noopener noreferrer">
+              View on Shopify
+            </a>
           </Button>
         </div>
       </CardContent>
     </Card>
   )
 }
+
 

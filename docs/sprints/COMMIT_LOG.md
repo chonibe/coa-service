@@ -125,4 +125,24 @@
 - [x] Updated collector dashboard CTA for Google login [`app/collector/dashboard/page.tsx`](../../app/collector/dashboard/page.tsx)
 - [x] Updated authentication and collector docs [`docs/authentication/README.md`](../../docs/authentication/README.md), [`docs/features/collector-dashboard/README.md`](../../docs/features/collector-dashboard/README.md), [`docs/features/collector-dashboard/tests.md`](../../docs/features/collector-dashboard/tests.md)
 
+## Commit: chore: add Shopify Google CTA on login page [2025-12-21]
+
+### Checklist
+- [x] Added Shopify Google CTA to login page [`app/login/login-client.tsx`](../../app/login/login-client.tsx)
+- [x] Verified build and deployed to Vercel production
+
+## Commit: fix: collector storefront CTAs use Shopify product links [2025-12-21]
+
+### Checklist
+- [x] Added Shopify handle support to collector types [`types/collector.ts`](../../types/collector.ts)
+- [x] Included product handles in collector APIs [`app/api/collector/marketplace/route.ts`](../../app/api/collector/marketplace/route.ts), [`app/api/collector/products/[id]/route.ts`](../../app/api/collector/products/%5Bid%5D/route.ts), [`app/api/collector/series/[id]/route.ts`](../../app/api/collector/series/%5Bid%5D/route.ts), [`app/api/collector/artists/[name]/route.ts`](../../app/api/collector/artists/%5Bname%5D/route.ts)
+- [x] Updated collector UI CTAs to open Shopify product pages [`app/collector/discover/components/artwork-card.tsx`](../../app/collector/discover/components/artwork-card.tsx), [`app/collector/products/[id]/page.tsx`](../../app/collector/products/%5Bid%5D/page.tsx), [`app/collector/series/[id]/page.tsx`](../../app/collector/series/%5Bid%5D/page.tsx)
+- [x] Updated docs and tests for collector storefront CTAs [`docs/features/collector-dashboard/README.md`](../../docs/features/collector-dashboard/README.md), [`docs/features/collector-dashboard/tests.md`](../../docs/features/collector-dashboard/tests.md)
+
+## Commit: fix: Shopify auth redirects to collector dashboard [2025-12-21]
+
+### Checklist
+- [x] Allow redirect override in Shopify auth start; default to `/collector/dashboard` [`app/api/auth/shopify/route.ts`](../../app/api/auth/shopify/route.ts)
+- [x] Callback now respects `shopify_login_redirect` cookie and defaults to collector dashboard [`app/api/auth/callback/route.ts`](../../app/api/auth/callback/route.ts)
+
 --- 

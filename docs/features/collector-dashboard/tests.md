@@ -8,6 +8,7 @@ Related implementation:
 - Load `/collector/dashboard` with a valid `shopify_customer_id` cookie; expect stats cards, artworks grid, artist list, series binder, authentication queue, and credits panel to render without errors.
 - Empty-state check: with no orders, expect friendly cards for artworks/artists/series/auth queue.
 - Shopify Google login: click “Continue with Google” (unauthenticated state) → authenticate → expect redirect to `/collector/dashboard` with orders loaded and `shopify_customer_id` + `collector_session` cookies present.
+- Collector purchase CTAs: from discover, artist, series, and product detail pages, “View on Shopify” opens the storefront product page using the published handle.
 
 ## Authentication Status
 - Verify an item with `nfc_tag_id` and `nfc_claimed_at` shows “Authenticated”.
