@@ -35,17 +35,21 @@ export async function GET(request: NextRequest) {
     });
 
     // Create a response that will redirect to the Shopify customer login page
+    const host = request.nextUrl.hostname || ""
+    const prodCookieDomain =
+      process.env.NODE_ENV === 'production' && host.endsWith('thestreetlamp.com')
+        ? '.thestreetlamp.com'
+        : undefined
+
     const response = NextResponse.redirect(loginUrl.toString());
 
     // Set state cookie for CSRF protection
-    const cookieDomain = process.env.NODE_ENV === 'production' ? '.thestreetlamp.com' : undefined;
-
     response.cookies.set('shopify_oauth_state', state, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax', // Changed to 'lax' to allow cross-site redirects
       maxAge: 60 * 10, // 10 minutes
-      domain: cookieDomain
+      domain: prodCookieDomain
     });
 
     // Set redirect destination cookie
@@ -54,7 +58,7 @@ export async function GET(request: NextRequest) {
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax', // Changed to 'lax' to allow cross-site redirects
       maxAge: 60 * 10, // 10 minutes
-      domain: cookieDomain
+      domain: prodCookieDomain
     });
 
     return response;
