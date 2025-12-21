@@ -111,8 +111,8 @@ export default function CollectorDashboardPage() {
           <a href="/api/auth/shopify" className="inline-flex">
             <Badge variant="outline" className="px-3 py-2">Sign in with Shopify</Badge>
           </a>
-          <a href="/api/auth/collector/google/start?redirect=/collector/dashboard" className="inline-flex">
-            <Badge variant="secondary" className="px-3 py-2">Sign in with Google</Badge>
+          <a href="/api/auth/shopify/google/start" className="inline-flex">
+            <Badge variant="secondary" className="px-3 py-2">Continue with Google</Badge>
           </a>
         </div>
       </div>

@@ -21,6 +21,7 @@ COA Service is a comprehensive digital art authentication and management platfor
 - Unique certificate generation
 - NFC tag pairing
 - Ownership verification
+- Shopify customer login with optional Google identity provider
 
 ### 📞 CRM (Apollo-Grade Foundations)
 - Multi-channel CRM with Attio-style filters and new Apollo-grade building blocks (sequences, tasks/calls, deal pipelines, conversation assignment) — see [`docs/features/crm/README.md`](/docs/features/crm/README.md)

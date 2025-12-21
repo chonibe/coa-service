@@ -12,7 +12,7 @@
 
 import { applyPathFilter } from "./path-filter-resolver"
 
-function hasPathFilters(filters: any): boolean {
+export function hasPathFilters(filters: any): boolean {
   if (!filters || typeof filters !== "object") return false
   if (Array.isArray(filters)) return filters.some(hasPathFilters)
   if (filters.path) return true

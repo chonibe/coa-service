@@ -1,6 +1,6 @@
 # Collector Dashboard
 
-> Version: 1.0.0 · Last Updated: 2025-12-11
+> Version: 1.1.0 · Last Updated: 2025-12-21
 
 ## Overview and Purpose
 Collector-facing dashboard that lets collectors view purchased artworks, track authentication status, explore artists/series, and manage credits/subscriptions with Shopify purchasing links.
@@ -9,6 +9,8 @@ Collector-facing dashboard that lets collectors view purchased artworks, track a
 - Dashboard page: [`app/collector/dashboard/page.tsx`](../../app/collector/dashboard/page.tsx)
 - Aggregation API: [`app/api/collector/dashboard/route.ts`](../../app/api/collector/dashboard/route.ts)
 - Journey link-out: [`app/collector/journey/[vendorName]/page.tsx`](../../app/collector/journey/%5BvendorName%5D/page.tsx)
+- Shopify Google login start: [`app/api/auth/shopify/google/start/route.ts`](../../app/api/auth/shopify/google/start/route.ts)
+- Shopify Google login callback: [`app/api/auth/shopify/google/callback/route.ts`](../../app/api/auth/shopify/google/callback/route.ts)
 
 ## Test Files
 - Manual test plan: [`docs/features/collector-dashboard/tests.md`](./tests.md)
@@ -24,6 +26,7 @@ Collector-facing dashboard that lets collectors view purchased artworks, track a
 - Purchase links: Direct to Shopify product detail pages (`/products/{product_id}`).
 - Collector auth options:
   - Shopify customer login via `/api/auth/shopify` (sets `shopify_customer_id`).
+  - Shopify Google login via `/api/auth/shopify/google/start` → `/api/auth/shopify/google/callback` (sets `shopify_customer_id`, `collector_session`, preserves same UX).
   - Google login via `/api/auth/collector/google/start` → `/auth/collector/callback` (maps email to orders.customer_email, sets `collector_session` + `shopify_customer_id`).
   - Vendor self-switch via `/api/auth/collector/switch` (uses vendor session + vendor email to set collector cookies).
 
@@ -63,7 +66,7 @@ Collector-facing dashboard that lets collectors view purchased artworks, track a
 - Product URL assumes `/products/{product_id}` path; adjust if storefront differs.
 - Banking/subscription calls rely on same-origin fetch; cross-origin setups may need CORS allowances.
 - No pagination beyond latest 50 orders.
-- Google login requires email match to an existing Shopify customer email (orders.customer_email). If no match is found, user is redirected with error.
+- Legacy Google login (non-Shopify) still requires email match to an existing Shopify customer email (orders.customer_email). If no match is found, user is redirected with error or link flow.
 
 ## Future Improvements
 - Add pagination and filters (by artist/series/auth status).
@@ -72,5 +75,6 @@ Collector-facing dashboard that lets collectors view purchased artworks, track a
 - Personalized recommendations per collector purchase history.
 
 ## Change Log
+- 1.1.0: Added Shopify Google login flow with seamless redirect to collector dashboard; aligned cookies for cross-domain auth.
 - 1.0.0: Initial collector dashboard release with orders, series binder, artist explorer, authentication queue, and credits/subscriptions surface.
 

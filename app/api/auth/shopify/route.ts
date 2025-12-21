@@ -36,11 +36,14 @@ export async function GET(request: NextRequest) {
     const postLoginRedirect = '/customer/dashboard';
 
     // Set state cookie for CSRF protection
+    const cookieDomain = process.env.NODE_ENV === 'production' ? '.thestreetlamp.com' : undefined;
+
     response.cookies.set('shopify_oauth_state', state, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax', // Changed to 'lax' to allow cross-site redirects
-      maxAge: 60 * 10 // 10 minutes
+      maxAge: 60 * 10, // 10 minutes
+      domain: cookieDomain
     });
 
     // Set redirect destination cookie
@@ -48,7 +51,8 @@ export async function GET(request: NextRequest) {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax', // Changed to 'lax' to allow cross-site redirects
-      maxAge: 60 * 10 // 10 minutes
+      maxAge: 60 * 10, // 10 minutes
+      domain: cookieDomain
     });
 
     return response;

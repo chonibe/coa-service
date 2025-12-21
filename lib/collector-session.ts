@@ -58,6 +58,7 @@ export const verifyCollectorSessionToken = (token: string | undefined): Collecto
 
 export interface CollectorSessionCookieOptions {
   maxAge?: number
+  domain?: string
 }
 
 export const buildCollectorSessionCookie = (
@@ -71,6 +72,7 @@ export const buildCollectorSessionCookie = (
     secure: process.env.NODE_ENV === "production",
     sameSite: "lax" as const,
     maxAge: options.maxAge ?? DEFAULT_MAX_AGE_SECONDS,
+    domain: options.domain ?? (process.env.NODE_ENV === "production" ? ".thestreetlamp.com" : undefined),
   }
   return {
     name: SESSION_COOKIE_NAME,

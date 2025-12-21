@@ -61,12 +61,15 @@ export async function GET(request: NextRequest) {
       // Redirect to customer dashboard
       const response = NextResponse.redirect(new URL('/customer/dashboard', request.url));
 
+      const cookieDomain = process.env.NODE_ENV === 'production' ? '.thestreetlamp.com' : undefined;
+
       // Set authentication cookies
       response.cookies.set('shopify_customer_id', customerId, {
         httpOnly: false, // Allow JavaScript to read this cookie
         secure: process.env.NODE_ENV === 'production',
         sameSite: 'lax',
-        maxAge: 60 * 60 * 24 * 7 // 7 days
+        maxAge: 60 * 60 * 24 * 7, // 7 days
+        domain: cookieDomain,
       });
 
       if (customerAccessToken) {
@@ -74,7 +77,8 @@ export async function GET(request: NextRequest) {
           httpOnly: true,
           secure: process.env.NODE_ENV === 'production',
           sameSite: 'lax',
-          maxAge: 60 * 60 * 24 * 7 // 7 days
+          maxAge: 60 * 60 * 24 * 7, // 7 days
+          domain: cookieDomain,
         });
       }
 
@@ -82,7 +86,8 @@ export async function GET(request: NextRequest) {
         httpOnly: false, // Allow client-side access for this flag
         secure: process.env.NODE_ENV === 'production',
         sameSite: 'lax',
-        maxAge: 60 * 60 * 24 * 7 // 7 days
+        maxAge: 60 * 60 * 24 * 7, // 7 days
+        domain: cookieDomain,
       });
 
       // Clear the state cookie
