@@ -264,9 +264,22 @@ export default function LoginClient() {
               )}
             </Button>
 
+            <Button
+              asChild
+              disabled={googleLoading}
+              className="w-full h-14 text-base font-medium bg-slate-900 dark:bg-slate-800 hover:bg-slate-800 dark:hover:bg-slate-700 text-white border-2 border-slate-900 dark:border-slate-700 shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-[1.02] active:scale-[0.98]"
+              size="lg"
+              aria-label="Continue with Google via Shopify"
+            >
+              <Link href="/api/auth/shopify/google/start">
+                <Shield className="h-5 w-5 mr-3" />
+                <span>Continue with Google (Shopify)</span>
+              </Link>
+            </Button>
+
             <div className="text-center">
               <p className="text-xs text-muted-foreground">
-                Secure authentication powered by Google
+                Secure authentication powered by Google and Shopify
               </p>
             </div>
           </div>
