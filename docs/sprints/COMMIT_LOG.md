@@ -116,4 +116,13 @@
 - Test all critical paths and integrations
 - Monitor application performance and logs
 
+## Commit: feat: add Shopify Google login for collectors [2025-12-21]
+
+### Checklist
+- [x] Added Shopify Google login start route [`app/api/auth/shopify/google/start/route.ts`](../../app/api/auth/shopify/google/start/route.ts)
+- [x] Added Shopify Google login callback [`app/api/auth/shopify/google/callback/route.ts`](../../app/api/auth/shopify/google/callback/route.ts)
+- [x] Updated collector session cookie domain handling [`lib/collector-session.ts`](../../lib/collector-session.ts)
+- [x] Updated collector dashboard CTA for Google login [`app/collector/dashboard/page.tsx`](../../app/collector/dashboard/page.tsx)
+- [x] Updated authentication and collector docs [`docs/authentication/README.md`](../../docs/authentication/README.md), [`docs/features/collector-dashboard/README.md`](../../docs/features/collector-dashboard/README.md), [`docs/features/collector-dashboard/tests.md`](../../docs/features/collector-dashboard/tests.md)
+
 --- 
