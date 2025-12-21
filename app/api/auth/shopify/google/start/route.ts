@@ -7,14 +7,20 @@ import crypto from "crypto"
  */
 export async function GET(request: NextRequest) {
   try {
-    const shopDomain = process.env.SHOPIFY_SHOP || "thestreetlamp-9103.myshopify.com"
+    const shopDomain =
+      process.env.SHOPIFY_STORE_DOMAIN ||
+      process.env.SHOPIFY_SHOP ||
+      "thestreetlamp-9103.myshopify.com"
     const appUrl = process.env.NEXT_PUBLIC_APP_URL || request.nextUrl.origin
 
     const state = crypto.randomBytes(16).toString("hex")
     const redirectBackUrl = `${appUrl}/api/auth/shopify/google/callback`
+    const redirectParam = request.nextUrl.searchParams.get("redirect") || "/collector/dashboard"
 
     const loginUrl = new URL(`https://${shopDomain}/account/login`)
-    const returnUrl = `/pages/street-collector-auth?redirect_uri=${encodeURIComponent(redirectBackUrl)}&state=${state}`
+    const returnUrl = `https://${shopDomain}/pages/street-collector-auth?redirect_uri=${encodeURIComponent(
+      redirectBackUrl,
+    )}&state=${state}&redirect=${encodeURIComponent(redirectParam)}`
     loginUrl.searchParams.set("return_url", returnUrl)
     loginUrl.searchParams.set("identity_provider", "google")
 
