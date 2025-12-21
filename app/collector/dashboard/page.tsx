@@ -108,7 +108,7 @@ export default function CollectorDashboardPage() {
           <AlertDescription>{error || "Something went wrong"}</AlertDescription>
         </Alert>
         <div className="mt-4 flex flex-wrap gap-3">
-          <a href="/api/auth/shopify" className="inline-flex">
+          <a href="/api/auth/shopify?redirect=/collector/dashboard" className="inline-flex">
             <Badge variant="outline" className="px-3 py-2">Sign in with Shopify</Badge>
           </a>
           <a href="/api/auth/shopify/google/start" className="inline-flex">

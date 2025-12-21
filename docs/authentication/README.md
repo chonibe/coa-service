@@ -7,7 +7,7 @@ The Street Collector authentication system provides a secure, Shopify-integrated
 
 ### 1. Login Initiation
 - User clicks "Login with Shopify" or "Continue with Google" (Shopify Google login).
-- Redirected to Shopify account login page with `identity_provider=google` when using Google.
+- Redirected to Shopify account login page (or Google identity within Shopify) with `return_url` pointing to a Shopify page we control (`/pages/street-collector-auth`) that immediately forwards to our app callback.
 - Includes state parameter for CSRF protection.
 
 ### 2. Shopify Authentication
@@ -19,7 +19,7 @@ The Street Collector authentication system provides a secure, Shopify-integrated
 - Validate OAuth state.
 - Set authentication cookies (domain `.thestreetlamp.com` in production).
 - Create collector session token when `customer_id` is present.
-- Redirect to customer or collector dashboard.
+- Redirect to collector dashboard (default) or the `redirect` parameter set at login start.
 
 ## 🍪 Cookie Management
 
