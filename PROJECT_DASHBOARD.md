@@ -89,6 +89,10 @@
     - [x] Built artist unlock landing page for post-scan content ([nfc/unlock page](./app/nfc/unlock/page.tsx)) and routed legacy scans through token-aware redirect ([redirect handler](./app/api/nfc-tags/redirect/route.ts))
     - [x] Updated collector authenticate flow to write NDEF and claim tags ([authenticate page](./app/pages/authenticate/page.tsx)) with NFC-series unlock support in backend ([claim endpoint](./app/api/nfc-tags/claim/route.ts))
 
+### Sprint: Marketplace Reliability
+- **Epic**: Collector APIs Hardening
+  - **Story**: [Collector vendor profile fix](./app/api/collector/marketplace/route.ts) — Completed 2025-12-21. Updated collector marketplace, product, series, and artist APIs to use existing vendor profile columns for profile image/website/instagram data to prevent Supabase column errors.
+
 ## Development Metrics
 
 ### Code Quality

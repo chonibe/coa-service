@@ -153,4 +153,9 @@
 - [x] Align series collector API with vendor profile columns [`app/api/collector/series/[id]/route.ts`](../../app/api/collector/series/%5Bid%5D/route.ts)
 - [x] Align artist collector API with vendor profile columns [`app/api/collector/artists/[name]/route.ts`](../../app/api/collector/artists/%5Bname%5D/route.ts)
 
+## Commit: docs: archive marketplace vendor fix [2025-12-21]
+
+### Checklist
+- [x] Archived collector marketplace vendor profile fix in dashboard history [`PROJECT_DASHBOARD.md`](../../PROJECT_DASHBOARD.md)
+
 --- 
