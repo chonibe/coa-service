@@ -394,6 +394,9 @@ The edition number assignment system allows for automatic assignment of edition 
 
 ## Recent Updates
 
+### Collector Marketplace Vendor Profile Fix
+- Corrected vendor profile field selection to use existing Supabase columns in collector APIs [`app/api/collector/marketplace/route.ts`](./app/api/collector/marketplace/route.ts), [`app/api/collector/products/[id]/route.ts`](./app/api/collector/products/%5Bid%5D/route.ts), [`app/api/collector/series/[id]/route.ts`](./app/api/collector/series/%5Bid%5D/route.ts), [`app/api/collector/artists/[name]/route.ts`](./app/api/collector/artists/%5Bname%5D/route.ts).
+
 ### Authentication and Performance Cleanup (ef00c42c)
 - Removed deprecated NFC authentication files
 - Streamlined customer dashboard authentication flow

@@ -145,4 +145,12 @@
 - [x] Allow redirect override in Shopify auth start; default to `/collector/dashboard` [`app/api/auth/shopify/route.ts`](../../app/api/auth/shopify/route.ts)
 - [x] Callback now respects `shopify_login_redirect` cookie and defaults to collector dashboard [`app/api/auth/callback/route.ts`](../../app/api/auth/callback/route.ts)
 
+## Commit: fix: collector vendor profile fields [2025-12-21]
+
+### Checklist
+- [x] Use existing vendor profile columns in collector marketplace API [`app/api/collector/marketplace/route.ts`](../../app/api/collector/marketplace/route.ts)
+- [x] Align product detail collector API with vendor profile columns [`app/api/collector/products/[id]/route.ts`](../../app/api/collector/products/%5Bid%5D/route.ts)
+- [x] Align series collector API with vendor profile columns [`app/api/collector/series/[id]/route.ts`](../../app/api/collector/series/%5Bid%5D/route.ts)
+- [x] Align artist collector API with vendor profile columns [`app/api/collector/artists/[name]/route.ts`](../../app/api/collector/artists/%5Bname%5D/route.ts)
+
 --- 

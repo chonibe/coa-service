@@ -39,7 +39,7 @@ export async function GET(request: NextRequest) {
         vendors!inner (
           vendor_name,
           bio,
-          profile_image_url
+          profile_image
         ),
         artwork_series_members (
           display_order,
@@ -103,7 +103,7 @@ export async function GET(request: NextRequest) {
             vendor: {
               name: artwork.vendors?.vendor_name || "Unknown Artist",
               bio: artwork.vendors?.bio,
-              profileImageUrl: artwork.vendors?.profile_image_url,
+              profileImageUrl: artwork.vendors?.profile_image,
             },
             series: series
               ? {

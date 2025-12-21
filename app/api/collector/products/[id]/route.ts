@@ -16,9 +16,9 @@ export async function GET(_req: NextRequest, { params }: { params: { id: string 
         vendors!inner (
           vendor_name,
           bio,
-          profile_image_url,
-          website_url,
-          instagram_handle
+          profile_image,
+          website,
+          instagram_url
         ),
         artwork_series_members (
           display_order,
@@ -115,9 +115,9 @@ export async function GET(_req: NextRequest, { params }: { params: { id: string 
       vendor: {
         name: artwork.vendors?.vendor_name || "Unknown Artist",
         bio: artwork.vendors?.bio,
-        profileImageUrl: artwork.vendors?.profile_image_url,
-        websiteUrl: artwork.vendors?.website_url,
-        instagramHandle: artwork.vendors?.instagram_handle,
+        profileImageUrl: artwork.vendors?.profile_image,
+        websiteUrl: artwork.vendors?.website,
+        instagramHandle: artwork.vendors?.instagram_url,
       },
       series: series
         ? {

@@ -28,7 +28,7 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
         vendors!inner (
           vendor_name,
           bio,
-          profile_image_url
+          profile_image
         ),
         artwork_series_members (
           id,
@@ -102,7 +102,7 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
       vendor: {
         name: series.vendors?.vendor_name || "Unknown Artist",
         bio: series.vendors?.bio,
-        profileImageUrl: series.vendors?.profile_image_url,
+        profileImageUrl: series.vendors?.profile_image,
       },
       artworks,
       createdAt: series.created_at,

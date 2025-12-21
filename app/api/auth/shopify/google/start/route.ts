@@ -12,11 +12,6 @@ export async function GET(request: NextRequest) {
       process.env.SHOPIFY_SHOP ||
       "thestreetlamp-9103.myshopify.com"
     const appUrl = process.env.NEXT_PUBLIC_APP_URL || request.nextUrl.origin
-    const host = request.nextUrl.hostname || ""
-    const prodCookieDomain =
-      process.env.NODE_ENV === "production" && host.endsWith("thestreetlamp.com")
-        ? ".thestreetlamp.com"
-        : undefined
 
     const state = crypto.randomBytes(16).toString("hex")
     const redirectBackUrl = `${appUrl}/api/auth/shopify/google/callback`
@@ -37,7 +32,7 @@ export async function GET(request: NextRequest) {
       secure: process.env.NODE_ENV === "production",
       sameSite: "lax",
       maxAge: 60 * 10,
-      domain: prodCookieDomain,
+      // host-only cookie
     })
 
     response.cookies.set("shopify_login_redirect", postLoginRedirect, {
@@ -45,7 +40,7 @@ export async function GET(request: NextRequest) {
       secure: process.env.NODE_ENV === "production",
       sameSite: "lax",
       maxAge: 60 * 10,
-      domain: prodCookieDomain,
+      // host-only cookie
     })
 
     return response

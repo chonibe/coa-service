@@ -11,7 +11,7 @@ export async function GET(_req: NextRequest, { params }: { params: { name: strin
   try {
     const { data: vendor, error: vendorError } = await supabase
       .from("vendors")
-      .select("id, vendor_name, bio, profile_image_url, website_url, instagram_handle")
+      .select("id, vendor_name, bio, profile_image, website, instagram_url")
       .eq("vendor_name", artistName)
       .single()
 
@@ -62,7 +62,7 @@ export async function GET(_req: NextRequest, { params }: { params: { name: strin
           vendor: {
             name: vendor.vendor_name,
             bio: vendor.bio,
-            profileImageUrl: vendor.profile_image_url,
+            profileImageUrl: vendor.profile_image,
           },
           shopifyProductId: pd?.id,
           submittedAt: a.submitted_at,
@@ -148,9 +148,9 @@ export async function GET(_req: NextRequest, { params }: { params: { name: strin
         id: vendor.id,
         name: vendor.vendor_name,
         bio: vendor.bio,
-        profileImageUrl: vendor.profile_image_url,
-        websiteUrl: vendor.website_url,
-        instagramHandle: vendor.instagram_handle,
+        profileImageUrl: vendor.profile_image,
+        websiteUrl: vendor.website,
+        instagramHandle: vendor.instagram_url,
       },
       artworks,
       series,
