@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { guardAdminRequest } from "@/lib/auth-guards"
 import { createClient } from "@/lib/supabase/server"
-import { convertGBPToUSD } from "@/lib/utils"
+import { convertToUSD } from "@/lib/currency-converter"
 import { getVendorFromCookieStore } from "@/lib/vendor-session"
 import { cookies } from "next/headers"
 
@@ -87,23 +87,25 @@ export async function GET(request: NextRequest) {
     // Group by date
     const trendsMap = new Map<string, { payoutAmount: number; revenueAmount: number; productCount: number }>()
 
-    // Process payouts
-    payouts?.forEach((payout) => {
+    // Process payouts (all amounts are in USD)
+    for (const payout of payouts || []) {
       const date = new Date(payout.payout_date || payout.created_at).toISOString().split("T")[0]
       const existing = trendsMap.get(date) || { payoutAmount: 0, revenueAmount: 0, productCount: 0 }
-      existing.payoutAmount += convertGBPToUSD(payout.amount || 0)
+      existing.payoutAmount += Number(payout.amount || 0)
       trendsMap.set(date, existing)
-    })
+    }
 
     // Process revenue
-    lineItems?.forEach((item) => {
+    for (const item of lineItems || []) {
       const date = new Date(item.created_at).toISOString().split("T")[0]
       const existing = trendsMap.get(date) || { payoutAmount: 0, revenueAmount: 0, productCount: 0 }
       const price = typeof item.price === "string" ? parseFloat(item.price || "0") : item.price || 0
-      existing.revenueAmount += convertGBPToUSD(price)
+      // Convert to USD if needed (prices might be in different currencies)
+      const priceUSD = await convertToUSD(price, "USD")
+      existing.revenueAmount += priceUSD
       existing.productCount += 1
       trendsMap.set(date, existing)
-    })
+    }
 
     // Convert to array and sort
     const trends = Array.from(trendsMap.entries())
@@ -115,10 +117,117 @@ export async function GET(request: NextRequest) {
       }))
       .sort((a, b) => a.date.localeCompare(b.date))
 
-    return NextResponse.json({ trends })
+    // Calculate metrics
+    const totalPayouts = payouts?.length || 0
+    const totalPayoutAmount = payouts?.reduce((sum, p) => sum + Number(p.amount || 0), 0) || 0
+    const completedPayouts = payouts?.filter((p) => p.status === "completed").length || 0
+    const averagePayoutAmount = totalPayouts > 0 ? totalPayoutAmount / totalPayouts : 0
+
+    // Calculate payout velocity (payouts per week)
+    const daysDiff = (now.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)
+    const weeksDiff = Math.max(daysDiff / 7, 1)
+    const payoutVelocity = totalPayouts / weeksDiff
+
+    // Calculate trend analysis
+    const trendAnalysis = {
+      daily: calculateTrend(trends, "daily"),
+      weekly: calculateTrend(trends, "weekly"),
+      monthly: calculateTrend(trends, "monthly"),
+    }
+
+    // Payment method breakdown
+    const paymentMethodBreakdown = new Map<string, { count: number; amount: number }>()
+    payouts?.forEach((payout) => {
+      const method = payout.payment_method || "unknown"
+      const existing = paymentMethodBreakdown.get(method) || { count: 0, amount: 0 }
+      existing.count += 1
+      existing.amount += Number(payout.amount || 0)
+      paymentMethodBreakdown.set(method, existing)
+    })
+
+    return NextResponse.json({
+      trends,
+      metrics: {
+        totalPayouts,
+        totalPayoutAmount,
+        completedPayouts,
+        averagePayoutAmount,
+        payoutVelocity,
+        successRate: totalPayouts > 0 ? (completedPayouts / totalPayouts) * 100 : 0,
+      },
+      trendAnalysis,
+      paymentMethodBreakdown: Array.from(paymentMethodBreakdown.entries()).map(([method, data]) => ({
+        method,
+        count: data.count,
+        amount: data.amount,
+        percentage: totalPayoutAmount > 0 ? (data.amount / totalPayoutAmount) * 100 : 0,
+      })),
+    })
   } catch (error) {
     console.error("Error in analytics route:", error)
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })
+  }
+}
+
+/**
+ * Calculate trend for different time periods
+ */
+function calculateTrend(
+  trends: Array<{ date: string; payoutAmount: number; revenueAmount: number; productCount: number }>,
+  period: "daily" | "weekly" | "monthly"
+): {
+  period: string
+  payoutAmount: number
+  revenueAmount: number
+  productCount: number
+  change: number
+}[] {
+  try {
+    const grouped = new Map<string, { payoutAmount: number; revenueAmount: number; productCount: number }>()
+
+    trends.forEach((trend) => {
+      const date = new Date(trend.date)
+      let key: string
+
+      if (period === "daily") {
+        key = trend.date
+      } else if (period === "weekly") {
+        const weekStart = new Date(date)
+        weekStart.setDate(date.getDate() - date.getDay())
+        key = weekStart.toISOString().split("T")[0]
+      } else {
+        // monthly
+        key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`
+      }
+
+      const existing = grouped.get(key) || { payoutAmount: 0, revenueAmount: 0, productCount: 0 }
+      existing.payoutAmount += trend.payoutAmount
+      existing.revenueAmount += trend.revenueAmount
+      existing.productCount += trend.productCount
+      grouped.set(key, existing)
+    })
+
+    const result = Array.from(grouped.entries())
+      .map(([periodKey, data]) => ({
+        period: periodKey,
+        payoutAmount: data.payoutAmount,
+        revenueAmount: data.revenueAmount,
+        productCount: data.productCount,
+        change: 0, // Will be calculated below
+      }))
+      .sort((a, b) => a.period.localeCompare(b.period))
+
+    // Calculate change percentage
+    for (let i = 1; i < result.length; i++) {
+      const prev = result[i - 1].payoutAmount
+      const curr = result[i].payoutAmount
+      result[i].change = prev > 0 ? ((curr - prev) / prev) * 100 : 0
+    }
+
+    return result
+  } catch (error) {
+    console.error("Error in calculateTrend:", error)
+    return []
   }
 }
 

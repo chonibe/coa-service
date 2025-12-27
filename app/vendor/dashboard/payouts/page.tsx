@@ -38,6 +38,15 @@ interface Payout {
   items?: PayoutItem[]
 }
 
+interface VendorBalance {
+  vendor_name: string
+  available_balance: number
+  pending_balance: number
+  held_balance: number
+  total_balance: number
+  last_updated: string
+}
+
 type ViewMode = "list" | "card"
 type SortOption = "date-desc" | "date-asc" | "amount-desc" | "amount-asc" | "status"
 type StatusFilter = "all" | "requested" | "processing" | "completed" | "rejected" | "failed"
@@ -65,7 +74,27 @@ export default function PayoutsPage() {
   const [expandedMonths, setExpandedMonths] = useState<Set<string>>(new Set())
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null)
   const [isPageVisible, setIsPageVisible] = useState(true)
+  const [balance, setBalance] = useState<VendorBalance | null>(null)
+  const [isLoadingBalance, setIsLoadingBalance] = useState(false)
   const { toast } = useToast()
+
+  // Fetch balance data
+  const fetchBalance = async () => {
+    if (!vendorName) return
+
+    try {
+      setIsLoadingBalance(true)
+      const response = await fetch(`/api/vendors/balance?vendorName=${encodeURIComponent(vendorName)}`)
+      if (!response.ok) throw new Error("Failed to fetch balance")
+      const data = await response.json()
+      setBalance(data.balance)
+    } catch (error: any) {
+      console.error("Error fetching balance:", error)
+      // Don't show error toast for balance fetch, just log it
+    } finally {
+      setIsLoadingBalance(false)
+    }
+  }
 
   const formatCurrency = (amount: number) =>
     new Intl.NumberFormat("en-US", {
@@ -76,7 +105,7 @@ export default function PayoutsPage() {
 
   useEffect(() => {
     const initialLoad = async () => {
-      await Promise.all([fetchVendorName(), fetchPayouts(), fetchPendingItems()])
+      await Promise.all([fetchVendorName(), fetchPayouts(), fetchPendingItems(), fetchBalance()])
       setLastUpdated(new Date())
     }
     void initialLoad()

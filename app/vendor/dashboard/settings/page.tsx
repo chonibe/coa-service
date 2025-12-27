@@ -14,7 +14,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Separator } from "@/components/ui/separator"
 import { useToast } from "@/components/ui/use-toast"
-import { Loader2, AlertCircle, CheckCircle, Save, DollarSign, FileText, User, CreditCard, Sparkles } from "lucide-react"
+import { Loader2, AlertCircle, CheckCircle, Save, DollarSign, FileText, User, CreditCard, Sparkles, Clock, Zap } from "lucide-react"
 import { StripeConnect } from "../components/stripe-connect"
 
 interface VendorProfile {
@@ -285,6 +285,187 @@ export default function VendorSettingsPage() {
     )
   }
 
+  // Payout Settings Component
+  function PayoutSettings({ profile }: { profile: VendorProfile | null }) {
+    const [instantPayoutsEnabled, setInstantPayoutsEnabled] = useState(false)
+    const [instantPayoutFeePercent, setInstantPayoutFeePercent] = useState(0)
+    const [minimumPayoutAmount, setMinimumPayoutAmount] = useState(10)
+    const [isLoading, setIsLoading] = useState(false)
+
+    useEffect(() => {
+      // Fetch current payout schedule settings
+      const fetchPayoutSettings = async () => {
+        if (!profile) return
+        try {
+          const response = await fetch("/api/admin/payouts/schedules")
+          if (response.ok) {
+            const data = await response.json()
+            const vendorSchedule = data.schedules?.find((s: any) => s.vendor_name === profile.vendor_name)
+            if (vendorSchedule) {
+              setInstantPayoutsEnabled(vendorSchedule.instant_payouts_enabled || false)
+              setInstantPayoutFeePercent(vendorSchedule.instant_payout_fee_percent || 0)
+              setMinimumPayoutAmount(vendorSchedule.minimum_amount || 10)
+            }
+          }
+        } catch (error) {
+          console.error("Error fetching payout settings:", error)
+        }
+      }
+      fetchPayoutSettings()
+    }, [profile])
+
+    const handleSavePayoutSettings = async () => {
+      if (!profile) return
+      setIsLoading(true)
+      try {
+        const response = await fetch(`/api/admin/payouts/schedules/${profile.vendor_name}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            instant_payouts_enabled: instantPayoutsEnabled,
+            instant_payout_fee_percent: instantPayoutFeePercent,
+            minimum_amount: minimumPayoutAmount,
+          }),
+        })
+
+        if (!response.ok) throw new Error("Failed to update payout settings")
+
+        toast({
+          title: "Payout settings updated",
+          description: "Your payout preferences have been saved.",
+        })
+      } catch (error: any) {
+        toast({
+          variant: "destructive",
+          title: "Error",
+          description: error.message || "Failed to update payout settings",
+        })
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    return (
+      <Card className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-0 shadow-xl">
+        <CardHeader>
+          <CardTitle>Payout Preferences</CardTitle>
+          <CardDescription>Configure your payout schedule and instant payout options</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          {/* Payout Schedule Info */}
+          <div className="space-y-4">
+            <div className="flex items-center gap-2">
+              <Clock className="h-5 w-5 text-muted-foreground" />
+              <h3 className="text-lg font-medium">Payout Schedule</h3>
+            </div>
+            <Alert>
+              <AlertCircle className="h-4 w-4" />
+              <AlertTitle>Automated Payouts</AlertTitle>
+              <AlertDescription>
+                Your payouts are processed automatically according to your schedule. Contact support if you need to modify your payout frequency or minimum amounts.
+              </AlertDescription>
+            </Alert>
+          </div>
+
+          <Separator />
+
+          {/* Instant Payouts */}
+          <div className="space-y-4">
+            <div className="flex items-center gap-2">
+              <Zap className="h-5 w-5 text-muted-foreground" />
+              <h3 className="text-lg font-medium">Instant Payouts</h3>
+            </div>
+
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div className="space-y-1">
+                  <Label>Enable Instant Payouts</Label>
+                  <p className="text-sm text-muted-foreground">
+                    Get paid immediately for any available balance above your minimum threshold
+                  </p>
+                </div>
+                <Switch
+                  checked={instantPayoutsEnabled}
+                  onCheckedChange={setInstantPayoutsEnabled}
+                />
+              </div>
+
+              {instantPayoutsEnabled && (
+                <div className="space-y-4 ml-4 border-l-2 border-muted pl-4">
+                  <div className="space-y-2">
+                    <Label>Minimum Instant Payout Amount ($)</Label>
+                    <Input
+                      type="number"
+                      min="1"
+                      step="0.01"
+                      value={minimumPayoutAmount}
+                      onChange={(e) => setMinimumPayoutAmount(parseFloat(e.target.value) || 10)}
+                    />
+                    <p className="text-sm text-muted-foreground">
+                      Minimum amount required for instant payout requests
+                    </p>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>Instant Payout Fee (%)</Label>
+                    <Input
+                      type="number"
+                      min="0"
+                      max="10"
+                      step="0.1"
+                      value={instantPayoutFeePercent}
+                      onChange={(e) => setInstantPayoutFeePercent(parseFloat(e.target.value) || 0)}
+                    />
+                    <p className="text-sm text-muted-foreground">
+                      Fee charged for instant payouts (set by admin, usually 1-3%)
+                    </p>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+
+          <Separator />
+
+          {/* Payment Method Preferences */}
+          <div className="space-y-4">
+            <div className="flex items-center gap-2">
+              <DollarSign className="h-5 w-5 text-muted-foreground" />
+              <h3 className="text-lg font-medium">Payment Methods</h3>
+            </div>
+
+            <Alert>
+              <AlertCircle className="h-4 w-4" />
+              <AlertTitle>Payment Method Setup</AlertTitle>
+              <AlertDescription>
+                Configure your preferred payment methods in the Payment and Stripe tabs. PayPal is used by default for most payouts.
+              </AlertDescription>
+            </Alert>
+          </div>
+        </CardContent>
+        <CardFooter>
+          <Button
+            onClick={handleSavePayoutSettings}
+            disabled={isLoading}
+            className="flex items-center gap-2"
+          >
+            {isLoading ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin" />
+                Saving...
+              </>
+            ) : (
+              <>
+                <Save className="h-4 w-4" />
+                Save Payout Settings
+              </>
+            )}
+          </Button>
+        </CardFooter>
+      </Card>
+    )
+  }
+
   return (
     <div className="space-y-6">
       <div>
@@ -318,7 +499,7 @@ export default function VendorSettingsPage() {
       <div className="grid gap-6 md:grid-cols-7">
         <div className="md:col-span-5">
           <Tabs value={activeTab} onValueChange={setActiveTab}>
-            <TabsList className="grid w-full grid-cols-4 bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-0 shadow-lg">
+            <TabsList className="grid w-full grid-cols-5 bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-0 shadow-lg">
               <TabsTrigger value="profile" className="flex items-center gap-2">
                 <User className="h-4 w-4" />
                 <span>Profile</span>
@@ -337,6 +518,10 @@ export default function VendorSettingsPage() {
               <TabsTrigger value="stripe" className="flex items-center gap-2">
                 <CreditCard className="h-4 w-4" />
                 <span>Stripe</span>
+              </TabsTrigger>
+              <TabsTrigger value="payouts" className="flex items-center gap-2">
+                <DollarSign className="h-4 w-4" />
+                <span>Payouts</span>
               </TabsTrigger>
             </TabsList>
 
@@ -611,6 +796,10 @@ export default function VendorSettingsPage() {
 
               <TabsContent value="stripe" className="space-y-4 mt-4">
                 {profile && <StripeConnect vendorName={profile.vendor_name} />}
+              </TabsContent>
+
+              <TabsContent value="payouts" className="space-y-4 mt-4">
+                <PayoutSettings profile={profile} />
               </TabsContent>
 
               {activeTab !== "stripe" && (

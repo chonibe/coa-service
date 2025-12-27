@@ -524,6 +524,188 @@ The Street Collector API provides a comprehensive, headless backend for managing
 
 #### Endpoint: `GET /api/admin/payouts/calculate`
 - **Description**: Calculate detailed payout breakdown by order for a vendor.
+
+### Enhanced Payout APIs
+
+#### Endpoint: `GET /api/vendors/balance`
+- **Description**: Get real-time balance information for a vendor.
+- **Auth**: VENDOR or ADMIN
+- **Query Params**:
+  - `vendorName` (required for ADMIN): Vendor identifier
+- **Success (200)**:
+  ```json
+  {
+    "success": true,
+    "balance": {
+      "vendor_name": "artist@example.com",
+      "available_balance": 1250.50,
+      "pending_balance": 450.25,
+      "held_balance": 125.00,
+      "total_balance": 1825.75,
+      "last_updated": "2024-12-27T10:30:00Z"
+    }
+  }
+  ```
+- **Notes**: Returns cached balance with 5-minute TTL for performance.
+
+#### Endpoint: `GET /api/payouts/analytics`
+- **Description**: Get comprehensive payout analytics and trends.
+- **Auth**: VENDOR or ADMIN
+- **Query Params**:
+  - `timeRange` (optional): "7d", "30d", "90d", "1y" (default: "30d")
+  - `vendorName` (optional for ADMIN): Filter by specific vendor
+- **Success (200)**:
+  ```json
+  {
+    "trends": [
+      {
+        "date": "2024-12-27",
+        "payoutAmount": 1250.50,
+        "revenueAmount": 5002.00,
+        "productCount": 15
+      }
+    ],
+    "metrics": {
+      "totalPayouts": 12,
+      "totalPayoutAmount": 15000.50,
+      "completedPayouts": 11,
+      "averagePayoutAmount": 1250.04,
+      "payoutVelocity": 0.4,
+      "successRate": 91.67
+    },
+    "trendAnalysis": {
+      "daily": [...],
+      "weekly": [...],
+      "monthly": [...]
+    },
+    "paymentMethodBreakdown": [
+      {
+        "method": "paypal",
+        "count": 8,
+        "amount": 10000.00,
+        "percentage": 66.67
+      }
+    ]
+  }
+  ```
+- **Notes**: Includes trend analysis, velocity metrics, and payment method distribution.
+
+#### Endpoint: `GET /api/payouts/forecast`
+- **Description**: Get payout forecasting with confidence intervals.
+- **Auth**: VENDOR or ADMIN
+- **Query Params**:
+  - `days` (optional): Forecast period in days (default: 30)
+  - `vendorName` (optional for ADMIN): Filter by specific vendor
+- **Success (200)**:
+  ```json
+  {
+    "forecast": [
+      {
+        "date": "2024-12-27",
+        "historical": true,
+        "forecast": 0,
+        "confidenceLow": 0,
+        "confidenceHigh": 0
+      },
+      {
+        "date": "2024-12-28",
+        "historical": false,
+        "forecast": 1250.50,
+        "confidenceLow": 1000.40,
+        "confidenceHigh": 1500.60
+      }
+    ]
+  }
+  ```
+- **Notes**: Uses enhanced forecasting with moving averages, exponential smoothing, and linear regression.
+
+#### Endpoint: `POST /api/vendors/payouts/request-instant`
+- **Description**: Request instant payout for available balance.
+- **Auth**: VENDOR or ADMIN
+- **Request Body**:
+  ```json
+  {
+    "vendor_name": "artist@example.com",
+    "amount": 500.00,
+    "payment_method": "paypal"
+  }
+  ```
+- **Success (200)**:
+  ```json
+  {
+    "success": true,
+    "request_id": 123,
+    "amount": 500.00,
+    "fee_amount": 12.50,
+    "total_amount": 512.50,
+    "status": "pending"
+  }
+  ```
+- **Notes**: Requires instant payouts to be enabled for the vendor. Auto-approved for admins.
+
+#### Endpoint: `GET /api/admin/payouts/schedules`
+- **Description**: Get all payout schedules.
+- **Auth**: ADMIN
+- **Success (200)**:
+  ```json
+  {
+    "schedules": [
+      {
+        "id": 1,
+        "vendor_name": "artist@example.com",
+        "schedule_type": "biweekly",
+        "biweekly_interval": 1,
+        "enabled": true,
+        "minimum_amount": 100.00,
+        "payment_method": "paypal",
+        "instant_payouts_enabled": true,
+        "instant_payout_fee_percent": 2.5
+      }
+    ]
+  }
+  ```
+
+#### Endpoint: `PUT /api/admin/payouts/schedules/[id]`
+- **Description**: Update payout schedule settings.
+- **Auth**: ADMIN
+- **Request Body**:
+  ```json
+  {
+    "schedule_type": "biweekly",
+    "biweekly_interval": 15,
+    "enabled": true,
+    "minimum_amount": 50.00,
+    "payment_method": "stripe",
+    "instant_payouts_enabled": true,
+    "instant_payout_fee_percent": 1.5
+  }
+  ```
+- **Success (200)**: Schedule updated confirmation.
+
+### Libraries
+
+#### `lib/payout-processor.ts`
+- **Description**: Unified payout processing for PayPal, Stripe, and Bank Transfer
+- **Key Functions**:
+  - `validateVendorPaymentMethod()`: Validate vendor payment setup
+  - `processPayouts()`: Process payouts using unified logic
+
+#### `lib/vendor-balance-calculator.ts`
+- **Description**: Real-time balance calculation with caching
+- **Key Functions**:
+  - `calculateVendorBalance()`: Calculate current vendor balance
+  - `invalidateVendorBalanceCache()`: Clear balance cache
+
+#### `lib/currency-converter.ts`
+- **Description**: Multi-currency exchange rate handling
+- **Supported Currencies**: USD, GBP, EUR, CAD, AUD, NIS
+- **Key Functions**:
+  - `convertToUSD()`: Convert any currency to USD
+  - `getExchangeRates()`: Fetch current exchange rates
+
+#### `components/payouts/payout-analytics.tsx`
+- **Description**: React component for payout analytics visualization
+- **Features**: Charts, metrics cards, trend analysis, payment method breakdown
 - **Auth**: Admin session required
 - **Query Parameters**:
   - `vendorName` (required): Vendor name

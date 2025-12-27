@@ -17,6 +17,15 @@ COA Service is a comprehensive digital art authentication and management platfor
 - Digital artwork verification
 - Secure claim process
 
+### 💰 Gumroad-Level Payout System
+- **Unified Payment Processing**: PayPal, Stripe, and Bank Transfer support
+- **Automated Scheduling**: Bi-weekly, weekly, and monthly payout schedules
+- **Real-Time Balance Tracking**: Live balance updates with caching
+- **Advanced Analytics**: Revenue trends, payout forecasting, and velocity metrics
+- **Instant Payouts**: On-demand payouts with configurable fees
+- **Multi-Currency Support**: Real-time exchange rates for GBP, EUR, CAD, AUD, NIS
+- **Enhanced Vendor Experience**: Real-time dashboards and notifications
+
 ### 🔒 Security Highlights
 - Unique certificate generation
 - NFC tag pairing
@@ -76,6 +85,8 @@ npm run dev
 - [Dashboard Guides](/docs/README.md)
 - [Vendor Login Funnel](/docs/features/vendor-login/README.md)
 - [Vendor Dashboard UX/Analytics](/docs/features/vendor-dashboard/README.md)
+- [Advanced Payout System](/docs/features/vendor-payouts/README.md)
+- [CRM System](/docs/features/crm/README.md)
 - [MCP Servers](/docs/mcp/README.md) - Model Context Protocol servers for Cursor agents
 - [ChinaDivision Auto-Fulfillment](/docs/features/chinadivision-auto-fulfillment/README.md)
 
@@ -121,7 +132,10 @@ This application provides several key functionalities:
 2. **Vendor Portal**: Allow vendors to view their sales, products, and payouts
 3. **Certificate Management**: Generate and manage certificates for products
 4. **NFC Tag Management**: Create, assign, and manage NFC tags for products
-5. **Stripe Integration**: Process vendor payouts via Stripe
+5. **Stripe Integration**: Process vendor payouts via Stripe Connect
+6. **Advanced Payout Analytics**: Real-time balance tracking and forecasting
+7. **Automated Payout Scheduling**: Bi-weekly, weekly, and monthly options
+8. **Multi-Currency Support**: Real-time exchange rates and conversion
 
 ## Project Structure
 
@@ -143,7 +157,10 @@ This application provides several key functionalities:
 - `/app/admin/certificates/management/page.tsx`: Certificate management
 - `/app/admin/certificates/nfc/page.tsx`: NFC tag management
 - `/app/admin/vendors/page.tsx`: Vendor management
-- `/app/admin/vendors/payouts/page.tsx`: Vendor payout management
+- `/app/admin/vendors/payouts/page.tsx`: Vendor payout management (legacy)
+- `/app/admin/vendors/payouts/admin/page.tsx`: Unified payout processing
+- `/app/admin/vendors/payouts/analytics/page.tsx`: Payout analytics dashboard
+- `/app/admin/vendors/payouts/schedules/page.tsx`: Payout schedule management
 - `/app/admin/tax-reporting/page.tsx`: Tax reporting tools
 
 #### Vendor Pages
@@ -152,7 +169,8 @@ This application provides several key functionalities:
 - `/app/vendor/login/page.tsx`: Vendor login
 - `/app/vendor/dashboard/page.tsx`: Vendor dashboard
 - `/app/vendor/dashboard/products/page.tsx`: Vendor products
-- `/app/vendor/dashboard/payouts/page.tsx`: Vendor payouts
+- `/app/vendor/dashboard/payouts/page.tsx`: Vendor payouts with real-time balance
+- `/app/vendor/dashboard/settings/page.tsx`: Vendor settings with payout preferences
 - `/app/vendor/dashboard/analytics/page.tsx`: Vendor analytics
 - `/app/vendor/dashboard/settings/page.tsx`: Vendor settings
 - `/app/vendor/onboarding/page.tsx`: Vendor onboarding
@@ -183,6 +201,11 @@ This application provides several key functionalities:
 - `/app/api/vendors/list/route.ts`: List vendors
 - `/app/api/vendors/names/route.ts`: Vendor directory for admin vendor switcher
 - `/app/api/vendors/payouts/route.ts`: Manage vendor payouts
+- `/app/api/vendors/payouts/process/route.ts`: Unified payout processing
+- `/app/api/vendors/payouts/request-instant/route.ts`: Instant payout requests
+- `/app/api/vendors/balance/route.ts`: Real-time balance queries
+- `/app/api/payouts/analytics/route.ts`: Payout analytics data
+- `/app/api/payouts/forecast/route.ts`: Payout forecasting with enhanced algorithms
 - `/app/api/tax-reporting/generate-forms/route.ts`: Generate tax forms
 - `/app/api/admin/orders/route.ts`: Retrieve orders for admin dashboard
 - `/app/api/admin/orders/[orderId]/route.ts`: Retrieve a single order with nested line items
@@ -201,10 +224,15 @@ This application provides several key functionalities:
 - `/app/api/vendor/stats/route.ts`: Get vendor stats
 - `/app/api/vendor/sales/route.ts`: Get vendor sales
 - `/app/api/vendor/payouts/route.ts`: Get vendor payouts
+- `/app/api/admin/payouts/schedules/route.ts`: Manage payout schedules
 - `/app/api/stripe/create-account/route.ts`: Create Stripe account
 - `/app/api/stripe/onboarding-link/route.ts`: Get Stripe onboarding link
 - `/app/api/stripe/account-status/route.ts`: Check Stripe account status
-- `/app/api/stripe/process-payout/route.ts`: Process Stripe payout
+- `/app/api/stripe/process-payout/route.ts`: Process Stripe payout (legacy)
+- `/lib/payout-processor.ts`: Unified payout processing logic
+- `/lib/vendor-balance-calculator.ts`: Real-time balance calculation
+- `/lib/currency-converter.ts`: Multi-currency exchange rates
+- `/components/payouts/payout-analytics.tsx`: Analytics visualizations
 
 #### Public APIs
 
@@ -298,7 +326,9 @@ The vendor portal allows vendors to:
 
 - View their sales and revenue
 - Track their products
-- Manage their payouts
+- Manage their payouts and view real-time balance
+- Configure payout preferences and instant payout settings
+- Access comprehensive payout analytics and forecasting
 - Update their settings
 - View analytics
 - Sign in with Google (Supabase Auth) and receive a signed `vendor_session` cookie to isolate access
@@ -306,7 +336,38 @@ The vendor portal allows vendors to:
 
 ## Stripe Integration
 
-The application integrates with Stripe Connect to process vendor payouts. Vendors can connect their Stripe accounts to receive payouts.
+## Advanced Payout System
+
+The COA Service features a Gumroad-level payout system that rivals industry-leading platforms:
+
+### Payment Methods
+- **PayPal**: Batch payouts with automatic status tracking
+- **Stripe Connect**: Individual transfers with Express account onboarding
+- **Bank Transfer**: Manual processing for international vendors
+
+### Automated Features
+- **Bi-Weekly Scheduling**: Automatic payouts on 1st and 15th of each month
+- **Custom Thresholds**: Configurable minimum payout amounts
+- **Real-Time Balances**: Live balance tracking with caching
+- **Instant Payouts**: On-demand payments with configurable fees
+
+### Analytics & Forecasting
+- **Advanced Forecasting**: Moving average, exponential smoothing, and linear regression models
+- **Trend Analysis**: Daily, weekly, and monthly payout trends
+- **Velocity Metrics**: Payout frequency and success rates
+- **Payment Method Breakdown**: Distribution analysis by payment type
+
+### Multi-Currency Support
+- **Real-Time Rates**: Live exchange rate fetching with caching
+- **Supported Currencies**: USD, GBP, EUR, CAD, AUD, NIS
+- **Automatic Conversion**: Orders processed in original currency, payouts in USD
+
+### Database Enhancements
+- **Balance Snapshots**: Historical balance tracking
+- **Instant Payout Requests**: On-demand payout request management
+- **Enhanced Schedules**: Bi-weekly intervals and payment method preferences
+
+For detailed documentation, see [`docs/features/vendor-payouts/README.md`](/docs/features/vendor-payouts/README.md).
 
 ## Custom Date Ranges
 

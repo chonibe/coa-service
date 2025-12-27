@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { guardAdminRequest } from "@/lib/auth-guards"
 import { createClient } from "@/lib/supabase/server"
-import { convertGBPToUSD } from "@/lib/utils"
+import { convertToUSD } from "@/lib/currency-converter"
 import { getVendorFromCookieStore } from "@/lib/vendor-session"
 import { cookies } from "next/headers"
 
@@ -55,20 +55,41 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ forecast: [] })
     }
 
-    // Group by date
+    // Group by date and convert to USD
     const dailyData = new Map<string, number>()
-    historicalPayouts.forEach((payout) => {
+    for (const payout of historicalPayouts) {
       const date = new Date(payout.payout_date || payout.created_at).toISOString().split("T")[0]
       const existing = dailyData.get(date) || 0
-      dailyData.set(date, existing + convertGBPToUSD(payout.amount || 0))
-    })
+      // All payouts are stored in USD, but convert if needed for safety
+      const amountUSD = await convertToUSD(Number(payout.amount || 0), 'USD')
+      dailyData.set(date, existing + amountUSD)
+    }
 
     // Convert to sorted array
     const historicalArray = Array.from(dailyData.entries())
       .map(([date, amount]) => ({ date, amount }))
       .sort((a, b) => a.date.localeCompare(b.date))
 
-    // Simple linear regression for forecasting
+    // Enhanced forecasting with multiple models
+    
+    // 1. Moving Average (7-day window)
+    const movingAverageWindow = 7
+    const movingAverages: number[] = []
+    for (let i = movingAverageWindow - 1; i < historicalArray.length; i++) {
+      const window = historicalArray.slice(i - movingAverageWindow + 1, i + 1)
+      const avg = window.reduce((sum, d) => sum + d.amount, 0) / window.length
+      movingAverages.push(avg)
+    }
+    const lastMovingAvg = movingAverages[movingAverages.length - 1] || 0
+
+    // 2. Exponential Smoothing (alpha = 0.3)
+    const alpha = 0.3
+    let smoothed = historicalArray[0]?.amount || 0
+    for (let i = 1; i < historicalArray.length; i++) {
+      smoothed = alpha * historicalArray[i].amount + (1 - alpha) * smoothed
+    }
+
+    // 3. Linear Regression
     const n = historicalArray.length
     const sumX = historicalArray.reduce((sum, _, i) => sum + i, 0)
     const sumY = historicalArray.reduce((sum, d) => sum + d.amount, 0)
@@ -83,6 +104,9 @@ export async function GET(request: NextRequest) {
     const variance =
       historicalArray.reduce((sum, d) => sum + Math.pow(d.amount - mean, 2), 0) / (n - 1)
     const stdDev = Math.sqrt(variance)
+
+    // Weighted combination of models (40% moving avg, 30% exponential, 30% linear)
+    const combinedForecast = (lastMovingAvg * 0.4) + (smoothed * 0.3) + ((slope * (n - 1) + intercept) * 0.3)
 
     // Generate forecast
     const forecast: Array<{
@@ -113,9 +137,13 @@ export async function GET(request: NextRequest) {
       futureDate.setDate(futureDate.getDate() + i)
       const dateStr = futureDate.toISOString().split("T")[0]
 
-      const x = n + i - 1
-      const predicted = slope * x + intercept
-      const confidenceMargin = stdDev * 1.96 // 95% confidence interval
+      // Use combined forecast with trend adjustment
+      const trendAdjustment = slope * i
+      const predicted = combinedForecast + trendAdjustment
+      
+      // Confidence interval widens over time (uncertainty increases)
+      const timeDecay = 1 + (i * 0.05) // 5% increase per day
+      const confidenceMargin = stdDev * 1.96 * timeDecay // 95% confidence interval with time decay
 
       forecast.push({
         date: dateStr,

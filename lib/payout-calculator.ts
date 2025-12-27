@@ -1,7 +1,7 @@
 import { createClient } from "@/lib/supabase/server"
 import type { SupabaseClient } from "@supabase/supabase-js"
 import type { Database } from "@/types/supabase"
-import { convertGBPToUSD, convertNISToUSD } from "@/lib/utils"
+import { convertToUSD } from "@/lib/currency-converter"
 
 const DEFAULT_PAYOUT_PERCENTAGE = 25
 
@@ -106,14 +106,13 @@ export async function calculateOrderPayout(
       .single()
 
     const orderCurrency = (order as any)?.currency_code || 'USD'
-    const isGBP = orderCurrency.toUpperCase() === 'GBP'
-    const isNIS = orderCurrency.toUpperCase() === 'ILS' || orderCurrency.toUpperCase() === 'NIS'
 
     // Transform line items with original prices and currency conversion
     const lineItems: LineItemPayout[] = await Promise.all(
       (Array.isArray(orderData.line_items) ? orderData.line_items : []).map(async (item: any) => {
         // Get original price from Shopify order data (before discount)
         let originalPrice = Number(item.price)
+        let originalCurrency = orderCurrency
         
         if ((order as any)?.raw_shopify_order_data?.line_items) {
           const shopifyLineItem = (order as any).raw_shopify_order_data.line_items.find(
@@ -138,19 +137,18 @@ export async function calculateOrderPayout(
         }
 
         // Convert to USD if needed
-        let priceForCalculation = originalPrice
-        if (isGBP) {
-          priceForCalculation = convertGBPToUSD(originalPrice)
-        } else if (isNIS) {
-          priceForCalculation = convertNISToUSD(originalPrice)
-        }
+        const priceForCalculation = await convertToUSD(originalPrice, originalCurrency)
 
         // Recalculate payout amount using original price and converted currency
         const payoutPercentage = item.payout_percentage ?? DEFAULT_PAYOUT_PERCENTAGE
         const isPercentage = item.payout_percentage !== null
-        const recalculatedPayoutAmount = isPercentage
-          ? (priceForCalculation * payoutPercentage) / 100
-          : (isGBP ? convertGBPToUSD(payoutPercentage) : isNIS ? convertNISToUSD(payoutPercentage) : payoutPercentage)
+        let recalculatedPayoutAmount: number
+        if (isPercentage) {
+          recalculatedPayoutAmount = (priceForCalculation * payoutPercentage) / 100
+        } else {
+          // For fixed amounts, convert to USD if needed
+          recalculatedPayoutAmount = await convertToUSD(payoutPercentage, originalCurrency)
+        }
 
         return {
           line_item_id: item.line_item_id,
@@ -243,20 +241,18 @@ export async function calculateVendorPayout(
       (data as any[]).map(async (orderData: any) => {
         const orderInfo = ordersMap.get(orderData.order_id) as any
         const orderCurrency = orderInfo?.currency_code || 'USD'
-        const isGBP = orderCurrency.toUpperCase() === 'GBP'
-        const isNIS = orderCurrency.toUpperCase() === 'ILS' || orderCurrency.toUpperCase() === 'NIS'
 
         // Process line items with original prices and currency conversion
         const lineItems: LineItemPayout[] = await Promise.all(
           (Array.isArray(orderData.line_items) ? orderData.line_items : []).map(async (item: any) => {
             // Get original price from Shopify order data (before discount)
             let originalPrice = Number(item.price)
+            let originalCurrency = orderCurrency
             
-        const orderInfo = ordersMap.get(orderData.order_id) as any
-        if (orderInfo?.raw_shopify_order_data?.line_items) {
-          const shopifyLineItem = orderInfo.raw_shopify_order_data.line_items.find(
-            (li: any) => li.id.toString() === item.line_item_id
-          )
+            if (orderInfo?.raw_shopify_order_data?.line_items) {
+              const shopifyLineItem = orderInfo.raw_shopify_order_data.line_items.find(
+                (li: any) => li.id.toString() === item.line_item_id
+              )
               
               if (shopifyLineItem) {
                 // Use original_price if available
@@ -276,19 +272,18 @@ export async function calculateVendorPayout(
             }
 
             // Convert to USD if needed
-            let priceForCalculation = originalPrice
-            if (isGBP) {
-              priceForCalculation = convertGBPToUSD(originalPrice)
-            } else if (isNIS) {
-              priceForCalculation = convertNISToUSD(originalPrice)
-            }
+            const priceForCalculation = await convertToUSD(originalPrice, originalCurrency)
 
             // Recalculate payout amount using original price and converted currency
             const payoutPercentage = item.payout_percentage ?? DEFAULT_PAYOUT_PERCENTAGE
             const isPercentage = item.payout_percentage !== null
-            const recalculatedPayoutAmount = isPercentage
-              ? (priceForCalculation * payoutPercentage) / 100
-              : (isGBP ? convertGBPToUSD(payoutPercentage) : isNIS ? convertNISToUSD(payoutPercentage) : payoutPercentage)
+            let recalculatedPayoutAmount: number
+            if (isPercentage) {
+              recalculatedPayoutAmount = (priceForCalculation * payoutPercentage) / 100
+            } else {
+              // For fixed amounts, convert to USD if needed
+              recalculatedPayoutAmount = await convertToUSD(payoutPercentage, originalCurrency)
+            }
 
             return {
               line_item_id: item.line_item_id,
