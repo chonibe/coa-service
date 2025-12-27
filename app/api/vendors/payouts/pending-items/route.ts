@@ -1,12 +1,21 @@
 import { NextResponse } from "next/server"
 import { createClient } from "@/lib/supabase-server"
 
+// Vendors excluded from payout calculations (e.g., internal/company vendors)
+const EXCLUDED_VENDORS = ["Street Collector", "street collector", "street-collector"]
+
 export async function POST(request: Request) {
   try {
     const { vendorName, startDate, endDate, includePaid = false } = await request.json()
 
     if (!vendorName) {
       return NextResponse.json({ error: "Vendor name is required" }, { status: 400 })
+    }
+
+    // Return empty result for excluded vendors
+    if (EXCLUDED_VENDORS.includes(vendorName)) {
+      console.log(`[pending-items] Vendor "${vendorName}" is excluded from payouts, returning empty result`)
+      return NextResponse.json({ lineItems: [] })
     }
 
     console.log(`[pending-items] Fetching line items for vendor: ${vendorName}`)

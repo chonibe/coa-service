@@ -5,6 +5,9 @@ import { convertToUSD } from "@/lib/currency-converter"
 
 const DEFAULT_PAYOUT_PERCENTAGE = 25
 
+// Vendors excluded from payout calculations (e.g., internal/company vendors)
+const EXCLUDED_VENDORS = ["Street Collector", "street collector", "street-collector"]
+
 export interface LineItemPayout {
   line_item_id: string
   order_id: string
@@ -79,6 +82,11 @@ export async function calculateOrderPayout(
   vendorName: string,
   supabase?: SupabaseClient<Database>
 ): Promise<OrderPayout | null> {
+  // Return null for excluded vendors
+  if (EXCLUDED_VENDORS.includes(vendorName)) {
+    return null
+  }
+
   const client = supabase || createClient()
 
   try {
@@ -198,6 +206,21 @@ export async function calculateVendorPayout(
   options: PayoutCalculationOptions = {},
   supabase?: SupabaseClient<Database>
 ): Promise<VendorPayoutSummary | null> {
+  // Return empty summary for excluded vendors
+  if (EXCLUDED_VENDORS.includes(vendorName)) {
+    return {
+      vendor_name: vendorName,
+      total_orders: 0,
+      total_line_items: 0,
+      fulfilled_line_items: 0,
+      paid_line_items: 0,
+      pending_line_items: 0,
+      total_revenue: 0,
+      total_payout_amount: 0,
+      orders: [],
+    }
+  }
+
   const client = supabase || createClient()
 
   try {
@@ -371,6 +394,11 @@ export async function getPendingLineItems(
   vendorName: string,
   supabase?: SupabaseClient<Database>
 ): Promise<LineItemPayout[]> {
+  // Return empty array for excluded vendors
+  if (EXCLUDED_VENDORS.includes(vendorName)) {
+    return []
+  }
+
   const client = supabase || createClient()
 
   try {

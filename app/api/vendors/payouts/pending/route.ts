@@ -2,6 +2,9 @@ import { NextResponse } from "next/server"
 import { NextRequest } from "next/server"
 import { createClient } from "@/lib/supabase-server"
 
+// Vendors excluded from payout calculations (e.g., internal/company vendors)
+const EXCLUDED_VENDORS = ["Street Collector", "street collector", "street-collector"]
+
 export async function GET(request: NextRequest) {
   try {
     console.log("=".repeat(80))
@@ -43,12 +46,17 @@ export async function GET(request: NextRequest) {
         console.log(`[pending-payouts] First vendor sample:`, JSON.stringify(data[0], null, 2))
         console.log(`[pending-payouts] All vendor names:`, data.map((v: any) => v.vendor_name).join(", "))
         
+        // Filter out excluded vendors
+        const filteredData = data.filter((vendor: any) => 
+          !EXCLUDED_VENDORS.includes(vendor.vendor_name)
+        )
+        
         // Paginate the results
-        const total = data.length
-        const paginatedData = data.slice(from, to + 1)
+        const total = filteredData.length
+        const paginatedData = filteredData.slice(from, to + 1)
 
         console.log(`[pending-payouts] ========== PAGINATION RESULT ==========`)
-        console.log(`[pending-payouts] Total vendors: ${total}`)
+        console.log(`[pending-payouts] Total vendors (after exclusion): ${total}`)
         console.log(`[pending-payouts] Returning page ${page} with ${paginatedData.length} vendors`)
         console.log(`[pending-payouts] ========== END RPC PATH ==========`)
 
@@ -440,17 +448,19 @@ export async function GET(request: NextRequest) {
         }
       })
 
-      // Build payouts array with ALL vendors (including $0 pending)
-      const payouts = Array.from(vendorMap.values()).map((vendor) => ({
-        vendor_name: vendor.vendor_name,
-        amount: vendor.amount,
-        product_count: vendor.product_count,
-        paypal_email: vendor.paypal_email,
-        tax_id: vendor.tax_id,
-        tax_country: vendor.tax_country,
-        is_company: vendor.is_company,
-        last_payout_date: lastPayoutMap.get(vendor.vendor_name) || null,
-      })).sort((a, b) => b.amount - a.amount)
+      // Build payouts array with ALL vendors (including $0 pending), excluding Street Collector
+      const payouts = Array.from(vendorMap.values())
+        .filter((vendor) => !EXCLUDED_VENDORS.includes(vendor.vendor_name))
+        .map((vendor) => ({
+          vendor_name: vendor.vendor_name,
+          amount: vendor.amount,
+          product_count: vendor.product_count,
+          paypal_email: vendor.paypal_email,
+          tax_id: vendor.tax_id,
+          tax_country: vendor.tax_country,
+          is_company: vendor.is_company,
+          last_payout_date: lastPayoutMap.get(vendor.vendor_name) || null,
+        })).sort((a, b) => b.amount - a.amount)
       
       console.log(`[pending-payouts] Built ${payouts.length} payout records`)
       console.log(`[pending-payouts] Vendors with pending amount > 0:`, payouts.filter((p: any) => p.amount > 0).length)
