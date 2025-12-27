@@ -183,7 +183,7 @@ export function VendorLineItemsDrawer({
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange} modal={true}>
-      <SheetContent className="sm:max-w-4xl overflow-y-auto" aria-describedby="line-items-description">
+      <SheetContent className="sm:max-w-4xl overflow-y-auto z-[100]" aria-describedby="line-items-description">
         <SheetHeader>
           <SheetTitle>Line Items - {vendorName}</SheetTitle>
           <SheetDescription id="line-items-description">
@@ -305,7 +305,10 @@ export function VendorLineItemsDrawer({
                                 <Button
                                   variant="outline"
                                   size="sm"
-                                  onClick={() => handleMarkPaid(item.line_item_id)}
+                                  onClick={() => {
+                                    console.log("Mark Paid button clicked for item:", item.line_item_id)
+                                    handleMarkPaid(item.line_item_id)
+                                  }}
                                   disabled={isProcessing}
                                 >
                                   <CheckCircle className="h-3 w-3 mr-1" />
