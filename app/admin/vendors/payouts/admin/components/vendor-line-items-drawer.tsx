@@ -95,7 +95,7 @@ export function VendorLineItemsDrawer({
   const calculatePayoutAmount = (item: PendingLineItem) => {
     // Use calculated_payout from API if available, otherwise calculate manually
     if (item.calculated_payout !== undefined && item.calculated_payout !== null) {
-      return convertGBPToUSD(item.calculated_payout)
+      return item.calculated_payout // Already in USD from API
     }
     const priceUSD = convertGBPToUSD(item.price)
     if (item.is_percentage) {
