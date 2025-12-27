@@ -238,14 +238,8 @@ export async function POST(request: Request) {
         // Apply $10 minimum for orders before October 2025
         const orderDate = new Date(item.created_at)
         const october2025 = new Date('2025-10-01')
-        const isBeforeOct2025 = orderDate < october2025
-        const needsMinimum = calculatedPayout < 10
-
-        console.log(`[pending-items] Item ${item.line_item_id}: price=${itemPrice}, calculated=${calculatedPayout}, date=${item.created_at}, isBeforeOct2025=${isBeforeOct2025}, needsMinimum=${needsMinimum}`)
-
-        if (isBeforeOct2025 && needsMinimum) {
+        if (orderDate < october2025 && calculatedPayout < 10) {
           calculatedPayout = 10
-          console.log(`[pending-items] Applied $10 minimum to item ${item.line_item_id}`)
         }
         
         const paidItem = paidItemsMap.get(item.line_item_id)
@@ -277,13 +271,6 @@ export async function POST(request: Request) {
       console.log(`[pending-items] Returning ${data.length} line items for ${vendorName}`)
       console.log(`[pending-items] Items with $0 price: ${data.filter((item: any) => item.price === 0).length}`)
       console.log(`[pending-items] Items with $0 calculated payout: ${data.filter((item: any) => item.calculated_payout === 0).length}`)
-
-      // Debug: Log first few items with their prices and calculated payouts
-      console.log(`[pending-items] Sample items:`, data.slice(0, 5).map((item: any) => ({
-        price: item.price,
-        calculated_payout: item.calculated_payout,
-        order_date: item.created_at
-      })))
 
       return NextResponse.json({ lineItems: data })
   } catch (error: any) {
