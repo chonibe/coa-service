@@ -1358,6 +1358,7 @@ export default function AdminPayoutsPage() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="paypal">PayPal</SelectItem>
+                  <SelectItem value="stripe">Stripe</SelectItem>
                   <SelectItem value="bank_transfer">Bank Transfer</SelectItem>
                   <SelectItem value="manual">Manual (Other)</SelectItem>
                 </SelectContent>

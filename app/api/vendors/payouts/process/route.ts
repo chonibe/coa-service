@@ -2,7 +2,7 @@ import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
 import { guardAdminRequest } from "@/lib/auth-guards"
 import { createClient } from "@/lib/supabase/server"
-import { createPayPalPayout, isValidPayPalEmail } from "@/lib/paypal/payouts"
+import { processPayouts, type PaymentMethod } from "@/lib/payout-processor"
 import { notifyPayoutProcessed, notifyPayoutFailed } from "@/lib/notifications/payout-notifications"
 import crypto from "crypto"
 
@@ -23,50 +23,17 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "No payouts provided" }, { status: 400 })
     }
 
-    // Validate PayPal email for all vendors before processing
-    const vendorEmails = new Map<string, string>()
-    for (const payout of payouts) {
-      const { vendor_name } = payout
-      if (!vendor_name) continue
-
-      const { data: vendor } = await supabase
-        .from("vendors")
-        .select("paypal_email")
-        .eq("vendor_name", vendor_name)
-        .single()
-
-      if (!vendor?.paypal_email) {
-        results.push({
-          vendor_name,
-          success: false,
-          error: "PayPal email not configured for vendor",
-        })
-        continue
-      }
-
-      if (!isValidPayPalEmail(vendor.paypal_email)) {
-        results.push({
-          vendor_name,
-          success: false,
-          error: "Invalid PayPal email format",
-        })
-        continue
-      }
-
-      vendorEmails.set(vendor_name, vendor.paypal_email)
+    if (!payment_method) {
+      return NextResponse.json({ error: "Payment method is required" }, { status: 400 })
     }
 
-    // Process each payout
-    const results = []
-    let processedCount = 0
-    const paypalPayoutItems: Array<{
-      email: string
+    // Step 1: Create payout records and associate line items
+    const payoutRecords: Array<{
+      vendor_name: string
       amount: number
-      currency?: string
-      note?: string
-      senderItemId?: string
-      vendorName: string
-      payoutId?: number
+      product_count: number
+      payout_id: number
+      reference: string
     }> = []
 
     for (const payout of payouts) {
@@ -74,16 +41,6 @@ export async function POST(request: NextRequest) {
         const { vendor_name, amount, product_count } = payout
 
         if (!vendor_name || !amount) {
-          results.push({
-            vendor_name,
-            success: false,
-            error: "Missing required fields",
-          })
-          continue
-        }
-
-        // Skip if vendor email validation failed
-        if (!vendorEmails.has(vendor_name)) {
           continue
         }
 
@@ -105,10 +62,10 @@ export async function POST(request: NextRequest) {
           .insert({
             vendor_name,
             amount,
-            status: "pending", // Start as pending
+            status: "pending",
             reference,
             product_count: product_count || 0,
-            payment_method: payment_method || "paypal",
+            payment_method: payment_method as PaymentMethod,
             currency: "USD",
             invoice_number: invoiceNumber,
             tax_rate: taxRate,
@@ -119,54 +76,28 @@ export async function POST(request: NextRequest) {
           })
           .select()
 
-        if (error) {
+        if (error || !data || data.length === 0) {
           console.error(`Error creating payout for ${vendor_name}:`, error)
-          results.push({
-            vendor_name,
-            success: false,
-            error: error.message,
-          })
           continue
         }
 
         const payoutId = data[0].id
 
         // Get all pending fulfilled line items for this vendor
-        // The RPC function now filters by fulfillment_status = 'fulfilled'
         const { data: lineItems, error: lineItemsError } = await supabase.rpc("get_vendor_pending_line_items", {
           p_vendor_name: vendor_name,
         })
 
         if (lineItemsError) {
           console.error(`Error fetching line items for ${vendor_name}:`, lineItemsError)
-          results.push({
-            vendor_name,
-            success: false,
-            error: `Failed to fetch line items: ${lineItemsError.message}`,
-          })
           continue
         }
 
         if (!lineItems || lineItems.length === 0) {
-          results.push({
-            vendor_name,
-            success: false,
-            error: "No fulfilled line items found for payout",
-          })
           continue
         }
 
-        // Group line items by order for better tracking
-        const orderGroups = new Map<string, typeof lineItems>()
-        lineItems.forEach((item: any) => {
-          const orderId = item.order_id
-          if (!orderGroups.has(orderId)) {
-            orderGroups.set(orderId, [])
-          }
-          orderGroups.get(orderId)!.push(item)
-        })
-
-        // Associate line items with this payout, grouped by order
+        // Associate line items with this payout
         const payoutItems = lineItems.map((item: any) => ({
           payout_id: payoutId,
           line_item_id: item.line_item_id,
@@ -176,176 +107,96 @@ export async function POST(request: NextRequest) {
           created_at: new Date().toISOString(),
         }))
 
-        const { error: insertError } = await supabase.from("vendor_payout_items").insert(payoutItems)
+        await supabase.from("vendor_payout_items").insert(payoutItems)
 
-        if (insertError) {
-          console.error(`Error associating line items with payout for ${vendor_name}:`, insertError)
-          // Continue with the payout even if we can't associate line items
-        }
-
-        // If using PayPal, prepare for batch payout
-        if (payment_method === "paypal") {
-          // Add to PayPal batch payout items
-          paypalPayoutItems.push({
-            email: vendorEmails.get(vendor_name)!,
-            amount: parseFloat(amount.toString()),
-            currency: "USD",
-            note: `Payout for ${product_count || 0} products - ${reference}`,
-            senderItemId: `PAYOUT-${payoutId}`,
-            vendorName: vendor_name,
-            payoutId: payoutId,
-          })
-
-          // Mark as processing (will be updated after PayPal batch is created)
-          await supabase
-            .from("vendor_payouts")
-            .update({
-              status: "processing",
-              updated_at: new Date().toISOString(),
-            })
-            .eq("id", payoutId)
-
-          results.push({
-            vendor_name,
-            success: true,
-            payout_id: payoutId,
-            reference,
-            status: "processing",
-          })
-
-          processedCount++
-        } else {
-          // For other payment methods, mark as processing
-          await supabase
-            .from("vendor_payouts")
-            .update({
-              status: "processing",
-              updated_at: new Date().toISOString(),
-            })
-            .eq("id", payoutId)
-
-          results.push({
-            vendor_name,
-            success: true,
-            payout_id: payoutId,
-            reference,
-            status: "processing",
-          })
-
-          processedCount++
-        }
-      } catch (err: any) {
-        console.error(`Error processing payout for ${payout.vendor_name}:`, err)
-        results.push({
-          vendor_name: payout.vendor_name,
-          success: false,
-          error: err.message || "Unknown error",
+        payoutRecords.push({
+          vendor_name,
+          amount: parseFloat(amount.toString()),
+          product_count: product_count || 0,
+          payout_id: payoutId,
+          reference,
         })
+      } catch (err: any) {
+        console.error(`Error creating payout record for ${payout.vendor_name}:`, err)
       }
     }
 
-    // Process PayPal batch payout if there are any PayPal payouts
-    if (payment_method === "paypal" && paypalPayoutItems.length > 0) {
-      try {
-        const paypalResponse = await createPayPalPayout(
-          paypalPayoutItems.map((item) => ({
-            email: item.email,
-            amount: item.amount,
-            currency: item.currency,
-            note: item.note,
-            senderItemId: item.senderItemId,
-          }))
-        )
+    if (payoutRecords.length === 0) {
+      return NextResponse.json({ error: "No valid payouts to process" }, { status: 400 })
+    }
 
-        const batchId = paypalResponse.batch_header.payout_batch_id
-        const batchStatus = paypalResponse.batch_header.batch_status
+    // Step 2: Process payouts using unified processor
+    const processorResults = await processPayouts(
+      payoutRecords.map((record) => ({
+        vendor_name: record.vendor_name,
+        amount: record.amount,
+        product_count: record.product_count,
+        payout_id: record.payout_id,
+        reference: record.reference,
+      })),
+      {
+        payment_method: payment_method as PaymentMethod,
+        generate_invoices,
+        notes,
+        supabase,
+      }
+    )
 
-        // Update all payouts with batch ID
-        for (const item of paypalPayoutItems) {
-          if (item.payoutId) {
-            const { data: updatedPayout } = await supabase
-              .from("vendor_payouts")
-              .update({
-                payout_batch_id: batchId,
-                status: batchStatus === "PENDING" ? "processing" : batchStatus.toLowerCase(),
-                updated_at: new Date().toISOString(),
-              })
-              .eq("id", item.payoutId)
-              .select()
-              .single()
+    // Step 3: Send notifications for successful/failed payouts
+    for (const result of processorResults) {
+      if (result.success && result.status === "completed") {
+        const record = payoutRecords.find((r) => r.vendor_name === result.vendor_name)
+        if (record) {
+          const { data: payout } = await supabase
+            .from("vendor_payouts")
+            .select("*")
+            .eq("id", record.payout_id)
+            .single()
 
-            // Update result for this vendor
-            const resultIndex = results.findIndex((r) => r.payout_id === item.payoutId)
-            if (resultIndex >= 0) {
-              results[resultIndex] = {
-                ...results[resultIndex],
-                payout_batch_id: batchId,
-                status: batchStatus.toLowerCase(),
-              }
-            }
-
-            // If status is SUCCESS, send notification (webhook will handle this, but we can also do it here for immediate feedback)
-            if (batchStatus === "SUCCESS" && updatedPayout) {
-              await notifyPayoutProcessed(item.vendorName, {
-                vendorName: item.vendorName,
-                amount: item.amount,
-                currency: item.currency || "USD",
-                payoutDate: updatedPayout.payout_date || updatedPayout.created_at,
-                reference: updatedPayout.reference || `PAY-${item.payoutId}`,
-                invoiceNumber: updatedPayout.invoice_number || undefined,
-                productCount: updatedPayout.product_count || 0,
-                payoutBatchId: batchId,
-                invoiceUrl: `${process.env.NEXT_PUBLIC_APP_URL || ""}/api/vendors/payouts/${item.payoutId}/invoice`,
-              })
-            }
+          if (payout) {
+            await notifyPayoutProcessed(result.vendor_name, {
+              vendorName: result.vendor_name,
+              amount: record.amount,
+              currency: "USD",
+              payoutDate: payout.payout_date || payout.created_at,
+              reference: record.reference,
+              invoiceNumber: payout.invoice_number || undefined,
+              productCount: record.product_count,
+              payoutBatchId: result.batch_id,
+              invoiceUrl: `${process.env.NEXT_PUBLIC_APP_URL || ""}/api/vendors/payouts/${record.payout_id}/invoice`,
+            })
           }
         }
-      } catch (paypalError: any) {
-        console.error("PayPal batch payout error:", paypalError)
-        
-        // Mark all PayPal payouts as failed
-        for (const item of paypalPayoutItems) {
-          if (item.payoutId) {
-            const { data: failedPayout } = await supabase
-              .from("vendor_payouts")
-              .update({
-                status: "failed",
-                notes: `PayPal payout failed: ${paypalError.message}`,
-                updated_at: new Date().toISOString(),
-              })
-              .eq("id", item.payoutId)
-              .select()
-              .single()
-
-            // Update result for this vendor
-            const resultIndex = results.findIndex((r) => r.payout_id === item.payoutId)
-            if (resultIndex >= 0) {
-              results[resultIndex] = {
-                ...results[resultIndex],
-                success: false,
-                error: `PayPal error: ${paypalError.message}`,
-              }
-            }
-
-            // Send failure notification
-            if (failedPayout) {
-              await notifyPayoutFailed(item.vendorName, {
-                vendorName: item.vendorName,
-                amount: item.amount,
-                currency: item.currency || "USD",
-                reference: failedPayout.reference || `PAY-${item.payoutId}`,
-                errorMessage: paypalError.message || "PayPal payout failed",
-              })
-            }
-          }
+      } else if (!result.success) {
+        const record = payoutRecords.find((r) => r.vendor_name === result.vendor_name)
+        if (record) {
+          await notifyPayoutFailed(result.vendor_name, {
+            vendorName: result.vendor_name,
+            amount: record.amount,
+            currency: "USD",
+            reference: record.reference,
+            errorMessage: result.error || "Payout processing failed",
+          })
         }
       }
     }
+
+    const processedCount = processorResults.filter((r) => r.success).length
+    const results = processorResults.map((result) => ({
+      vendor_name: result.vendor_name,
+      success: result.success,
+      payout_id: result.payout_id,
+      reference: result.reference,
+      status: result.status,
+      error: result.error,
+      transfer_id: result.transfer_id,
+      batch_id: result.batch_id,
+    }))
 
     return NextResponse.json({
       success: true,
       processed: processedCount,
-      total: payouts.length,
+      total: payoutRecords.length,
       results,
     })
   } catch (error: any) {

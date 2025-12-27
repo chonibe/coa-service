@@ -2,7 +2,7 @@ import Stripe from "stripe"
 
 // Initialize Stripe with your secret key
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || "", {
-  apiVersion: "2023-10-16", // Use the latest API version
+  apiVersion: "2025-05-28.basil", // Use the latest API version
 })
 
 export default stripe
@@ -92,14 +92,94 @@ export async function getAccountBalance(accountId: string) {
 
 export async function listPayouts(accountId: string, limit = 10) {
   try {
-    const payouts = await stripe.payouts.list({
-      stripeAccount: accountId,
-      limit,
-    })
+    const payouts = await stripe.payouts.list(
+      {
+        limit,
+      },
+      {
+        stripeAccount: accountId,
+      }
+    )
 
     return { success: true, payouts: payouts.data }
   } catch (error: any) {
     console.error("Error listing payouts:", error)
     return { success: false, error: error.message }
+  }
+}
+
+/**
+ * Process multiple Stripe payouts (batch processing)
+ * Note: Stripe doesn't support true batch transfers, so this processes them sequentially
+ * but returns a unified result with all transfer IDs
+ */
+export async function createBatchPayout(
+  payouts: Array<{
+    accountId: string
+    amount: number
+    currency?: string
+    metadata?: any
+  }>
+): Promise<{
+  success: boolean
+  results: Array<{
+    accountId: string
+    success: boolean
+    transferId?: string
+    error?: string
+  }>
+  errors?: string
+}> {
+  const results: Array<{
+    accountId: string
+    success: boolean
+    transferId?: string
+    error?: string
+  }> = []
+
+  let hasErrors = false
+  const errors: string[] = []
+
+  // Process each payout sequentially
+  for (const payout of payouts) {
+    try {
+      const result = await createPayout(
+        payout.accountId,
+        payout.amount,
+        payout.currency || "usd",
+        payout.metadata
+      )
+
+      if (result.success) {
+        results.push({
+          accountId: payout.accountId,
+          success: true,
+          transferId: result.transferId,
+        })
+      } else {
+        hasErrors = true
+        errors.push(`Account ${payout.accountId}: ${result.error}`)
+        results.push({
+          accountId: payout.accountId,
+          success: false,
+          error: result.error,
+        })
+      }
+    } catch (error: any) {
+      hasErrors = true
+      const errorMsg = error.message || "Unknown error"
+      errors.push(`Account ${payout.accountId}: ${errorMsg}`)
+      results.push({
+        accountId: payout.accountId,
+        success: false,
+        error: errorMsg,
+      })
+    }
+  }
+
+  return {
+    success: !hasErrors,
+    results,
+    errors: hasErrors ? errors.join("; ") : undefined,
   }
 }
