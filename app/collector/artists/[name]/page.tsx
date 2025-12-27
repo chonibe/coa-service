@@ -169,3 +169,4 @@ export default function ArtistProfilePage({ params }: { params: { name: string }
   )
 }
 
+
