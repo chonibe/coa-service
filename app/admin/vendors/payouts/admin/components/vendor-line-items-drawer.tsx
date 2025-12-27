@@ -43,7 +43,7 @@ export function VendorLineItemsDrawer({
   const { toast } = useToast()
 
   useEffect(() => {
-    if (open && vendorName) {
+    if (open && vendorName && vendorName.trim() !== "") {
       fetchLineItems()
     } else if (!open) {
       // Clear line items when drawer closes
@@ -53,7 +53,12 @@ export function VendorLineItemsDrawer({
   }, [open, vendorName, dateRange.start, dateRange.end, includePaid])
 
   const fetchLineItems = async () => {
+    if (!vendorName || vendorName.trim() === "") {
+      return
+    }
+
     setIsLoading(true)
+    
     try {
       const response = await fetch("/api/vendors/payouts/pending-items", {
         method: "POST",
@@ -69,7 +74,8 @@ export function VendorLineItemsDrawer({
       })
 
       if (!response.ok) {
-        throw new Error("Failed to fetch line items")
+        const errorData = await response.json().catch(() => ({ error: "Unknown error" }))
+        throw new Error(errorData.error || `Failed to fetch line items: ${response.status}`)
       }
 
       const data = await response.json()
@@ -87,6 +93,10 @@ export function VendorLineItemsDrawer({
   }
 
   const calculatePayoutAmount = (item: PendingLineItem) => {
+    // Use calculated_payout from API if available, otherwise calculate manually
+    if (item.calculated_payout !== undefined && item.calculated_payout !== null) {
+      return convertGBPToUSD(item.calculated_payout)
+    }
     const priceUSD = convertGBPToUSD(item.price)
     if (item.is_percentage) {
       return (priceUSD * item.payout_amount) / 100
@@ -158,8 +168,12 @@ export function VendorLineItemsDrawer({
     .reduce((sum, item) => sum + calculatePayoutAmount(item), 0)
   const pendingAmount = totalAmount - paidAmount
 
+  if (!vendorName || vendorName.trim() === "") {
+    return null
+  }
+
   return (
-    <Sheet open={open} onOpenChange={onOpenChange}>
+    <Sheet open={open} onOpenChange={onOpenChange} modal={true}>
       <SheetContent className="sm:max-w-4xl overflow-y-auto" aria-describedby="line-items-description">
         <SheetHeader>
           <SheetTitle>Line Items - {vendorName}</SheetTitle>
@@ -173,8 +187,13 @@ export function VendorLineItemsDrawer({
             <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
           </div>
         ) : lineItems.length === 0 ? (
-          <div className="py-8 text-center text-muted-foreground">
-            No line items found for this vendor.
+          <div className="py-8 text-center">
+            <p className="text-muted-foreground mb-4">No line items found for this vendor.</p>
+            <p className="text-sm text-muted-foreground">
+              {includePaid
+                ? "Try adjusting the date range or check if items have been fulfilled."
+                : "Only fulfilled items are shown. Enable 'Include Paid Items' to see all items."}
+            </p>
           </div>
         ) : (
           <div className="space-y-6 mt-6">

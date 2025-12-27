@@ -28,6 +28,7 @@ export interface PendingLineItem {
   created_at: string
   payout_amount: number
   is_percentage: boolean
+  calculated_payout?: number
   fulfillment_status?: string | null
   is_paid?: boolean
   payout_reference?: string | null

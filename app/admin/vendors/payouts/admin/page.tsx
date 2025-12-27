@@ -237,21 +237,19 @@ export default function AdminPayoutsPage() {
       </div>
 
       {/* Line Items Drawer */}
-      {selectedVendor && (
-        <VendorLineItemsDrawer
-          open={isDrawerOpen}
-          onOpenChange={(open) => {
-            setIsDrawerOpen(open)
-            if (!open) {
-              setSelectedVendor(null)
-            }
-          }}
-          vendorName={selectedVendor}
-          dateRange={filters.dateRange}
-          includePaid={filters.includePaid}
-          onItemMarkedPaid={fetchPayoutData}
-        />
-      )}
+      <VendorLineItemsDrawer
+        open={isDrawerOpen && !!selectedVendor}
+        onOpenChange={(open) => {
+          setIsDrawerOpen(open)
+          if (!open) {
+            setSelectedVendor(null)
+          }
+        }}
+        vendorName={selectedVendor || ""}
+        dateRange={filters.dateRange}
+        includePaid={filters.includePaid || false}
+        onItemMarkedPaid={fetchPayoutData}
+      />
 
       {/* Process Payouts Dialog */}
       <PayoutProcessDialog

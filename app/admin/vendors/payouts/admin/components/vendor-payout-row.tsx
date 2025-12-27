@@ -119,12 +119,14 @@ export function VendorPayoutRow({
             {isSelected ? "Deselect" : "Select"}
           </Button>
           <Button
-            variant="ghost"
-            size="icon"
+            variant="outline"
+            size="sm"
             onClick={() => onViewDetails(payout.vendor_name)}
-            title="View Details"
+            title="View Line Items Details"
+            className="flex items-center gap-1"
           >
             <Eye className="h-4 w-4" />
+            <span>Details</span>
           </Button>
         </div>
       </TableCell>
