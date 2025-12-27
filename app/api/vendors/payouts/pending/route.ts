@@ -385,11 +385,18 @@ export async function GET(request: NextRequest) {
         // Custom payout settings are disabled
         const payoutAmount = 25
         const isPercentage = true // Always percentage
-        
+
         // Calculate payout (will be $0 for items with $0 price, but still include them)
-        const itemPayout = isPercentage 
+        let itemPayout = isPercentage
           ? (itemPrice * payoutAmount / 100)
           : payoutAmount
+
+        // Apply $10 minimum for orders before October 2025
+        const orderDate = new Date(item.created_at)
+        const october2025 = new Date('2025-10-01')
+        if (orderDate < october2025 && itemPayout < 10) {
+          itemPayout = 10
+        }
         
         vendor.amount += itemPayout
         vendor.product_count += 1

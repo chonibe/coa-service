@@ -142,15 +142,16 @@ export async function calculateOrderPayout(
         // Convert to USD if needed
         const priceForCalculation = await convertToUSD(originalPrice, originalCurrency)
 
-        // Recalculate payout amount using original price and converted currency
-        const payoutPercentage = item.payout_percentage ?? DEFAULT_PAYOUT_PERCENTAGE
-        const isPercentage = item.payout_percentage !== null
-        let recalculatedPayoutAmount: number
-        if (isPercentage) {
-          recalculatedPayoutAmount = (priceForCalculation * payoutPercentage) / 100
-        } else {
-          // For fixed amounts, convert to USD if needed
-          recalculatedPayoutAmount = await convertToUSD(payoutPercentage, originalCurrency)
+        // Always use 25% payout with $10 minimum for orders before October 2025
+        const payoutPercentage = DEFAULT_PAYOUT_PERCENTAGE // Always 25%
+        const isPercentage = true // Always percentage
+        let recalculatedPayoutAmount = (priceForCalculation * payoutPercentage) / 100
+
+        // Apply $10 minimum for orders before October 2025
+        const orderDate = new Date(orderData.order_date)
+        const october2025 = new Date('2025-10-01')
+        if (orderDate < october2025 && recalculatedPayoutAmount < 10) {
+          recalculatedPayoutAmount = 10
         }
 
         return {
@@ -292,15 +293,16 @@ export async function calculateVendorPayout(
             // Convert to USD if needed
             const priceForCalculation = await convertToUSD(originalPrice, originalCurrency)
 
-            // Recalculate payout amount using original price and converted currency
-            const payoutPercentage = item.payout_percentage ?? DEFAULT_PAYOUT_PERCENTAGE
-            const isPercentage = item.payout_percentage !== null
-            let recalculatedPayoutAmount: number
-            if (isPercentage) {
-              recalculatedPayoutAmount = (priceForCalculation * payoutPercentage) / 100
-            } else {
-              // For fixed amounts, convert to USD if needed
-              recalculatedPayoutAmount = await convertToUSD(payoutPercentage, originalCurrency)
+            // Always use 25% payout with $10 minimum for orders before October 2025
+            const payoutPercentage = DEFAULT_PAYOUT_PERCENTAGE // Always 25%
+            const isPercentage = true // Always percentage
+            let recalculatedPayoutAmount = (priceForCalculation * payoutPercentage) / 100
+
+            // Apply $10 minimum for orders before October 2025
+            const orderDate = new Date(orderData.order_date)
+            const october2025 = new Date('2025-10-01')
+            if (orderDate < october2025 && recalculatedPayoutAmount < 10) {
+              recalculatedPayoutAmount = 10
             }
 
             return {

@@ -230,10 +230,17 @@ export async function POST(request: Request) {
         // Custom payout settings are disabled
         const payoutAmount = 25
         const isPercentage = true // Always percentage
-        
-        const calculatedPayout = isPercentage 
+
+        let calculatedPayout = isPercentage
           ? (itemPrice * payoutAmount / 100)
           : payoutAmount
+
+        // Apply $10 minimum for orders before October 2025
+        const orderDate = new Date(item.created_at)
+        const october2025 = new Date('2025-10-01')
+        if (orderDate < october2025 && calculatedPayout < 10) {
+          calculatedPayout = 10
+        }
         
         const paidItem = paidItemsMap.get(item.line_item_id)
         return {
