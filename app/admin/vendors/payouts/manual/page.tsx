@@ -66,7 +66,7 @@ export default function ManualPayoutPage() {
   const [error, setError] = useState<string | null>(null)
   const [searchQuery, setSearchQuery] = useState("")
   const [dateRange, setDateRange] = useState({ start: "", end: "" })
-  const [orderFilter, setOrderFilter] = useState("")
+  const [orderFilter, setOrderFilter] = useState("all")
   const [showMarkPaidDialog, setShowMarkPaidDialog] = useState(false)
   const [isMarkingPaid, setIsMarkingPaid] = useState(false)
   const [payoutReference, setPayoutReference] = useState("")
@@ -113,7 +113,7 @@ export default function ManualPayoutPage() {
     }
 
     // Order filter
-    if (orderFilter) {
+    if (orderFilter && orderFilter !== "all") {
       filtered = filtered.filter((item) => item.order_id === orderFilter || item.order_name === orderFilter)
     }
 
@@ -324,7 +324,7 @@ export default function ManualPayoutPage() {
                       <SelectValue placeholder="Filter by order" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">All Orders</SelectItem>
+                      <SelectItem value="all">All Orders</SelectItem>
                       {getUniqueOrders().map((order) => (
                         <SelectItem key={order} value={order}>
                           {order}

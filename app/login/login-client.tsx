@@ -150,7 +150,12 @@ export default function LoginClient() {
     setFormError(null)
     setSuccessMessage(null)
     setGoogleLoading(true)
-    window.location.href = "/api/auth/google/start"
+
+    // Check if this is an admin login attempt
+    const isAdminLogin = searchParams.get("admin") === "true"
+    const redirectParam = isAdminLogin ? "&redirect=/admin/dashboard" : ""
+
+    window.location.href = `/api/auth/google/start${redirectParam}`
   }
 
   if (checkingSession) {

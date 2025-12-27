@@ -7,7 +7,7 @@ import { isAdminEmail } from "@/lib/vendor-auth"
 const PENDING_ACCESS_ROUTE = "/vendor/access-pending"
 const ACCESS_DENIED_ROUTE = "/vendor/access-denied"
 const VENDOR_LOGIN_ROUTE = "/login"
-const ADMIN_LOGIN_ROUTE = "/admin-login"
+const ADMIN_LOGIN_ROUTE = "/login?admin=true"
 
 export type GuardResult =
   | { kind: "ok"; vendorName?: string }

@@ -10,13 +10,13 @@ import { BarChart3, TrendingUp, Users, DollarSign, Download, RefreshCw } from "l
 import { useToast } from "@/components/ui/use-toast"
 
 export default function AdminPayoutAnalyticsPage() {
-  const [selectedVendor, setSelectedVendor] = useState<string>("")
+  const [selectedVendor, setSelectedVendor] = useState<string>("all")
   const [isRefreshing, setIsRefreshing] = useState(false)
   const { toast } = useToast()
 
   const handleExport = async (format: "csv" | "pdf") => {
     try {
-      const response = await fetch(`/api/payouts/analytics/export?format=${format}&vendorName=${selectedVendor || ""}`)
+      const response = await fetch(`/api/payouts/analytics/export?format=${format}&vendorName=${selectedVendor === "all" ? "" : selectedVendor}`)
       if (!response.ok) throw new Error("Export failed")
 
       const blob = await response.blob()
@@ -70,7 +70,7 @@ export default function AdminPayoutAnalyticsPage() {
               <SelectValue placeholder="All vendors" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">All vendors</SelectItem>
+              <SelectItem value="all">All vendors</SelectItem>
               {/* Vendor options would be populated dynamically */}
             </SelectContent>
           </Select>
@@ -162,7 +162,7 @@ export default function AdminPayoutAnalyticsPage() {
         </TabsList>
 
         <TabsContent value="overview" className="space-y-6">
-          <PayoutAnalytics isAdmin={true} />
+          <PayoutAnalytics isAdmin={true} vendorName={selectedVendor === "all" ? undefined : selectedVendor} />
         </TabsContent>
 
         <TabsContent value="vendors" className="space-y-6">
@@ -193,6 +193,7 @@ export default function AdminPayoutAnalyticsPage() {
               <PayoutAnalytics
                 isAdmin={true}
                 timeRange="1y"
+                vendorName={selectedVendor === "all" ? undefined : selectedVendor}
               />
             </CardContent>
           </Card>

@@ -21,7 +21,7 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
   
   // If no admin session, redirect to admin login page
   if (!payload?.email || !isAdminEmail(payload.email)) {
-    redirect("/admin-login")
+    redirect("/login?admin=true")
   }
 
   return <AdminShell>{children}</AdminShell>

@@ -17,6 +17,7 @@ import {
 import { logFailedLoginAttempt } from "@/lib/audit-logger"
 import { createClient as createServiceClient } from "@/lib/supabase/server"
 import { syncInstagramHistory } from "@/lib/crm/instagram-helper"
+import { syncGmailForUser } from "@/lib/crm/sync-gmail-helper"
 
 const DEFAULT_VENDOR_REDIRECT = "/vendor/dashboard"
 const NOT_REGISTERED_REDIRECT = "/login?error=not_registered"
@@ -26,6 +27,72 @@ const DENIED_VENDOR_REDIRECT = "/vendor/access-denied"
 
 const deleteCookie = (response: NextResponse, name: string) => {
   response.cookies.set(name, "", { path: "/", maxAge: 0 })
+}
+
+/**
+ * Helper function to trigger Gmail sync in the background (fire and forget)
+ * This runs asynchronously without blocking the OAuth callback response
+ */
+function syncGmailInBackground(
+  userId: string,
+  userEmail: string,
+  providerToken?: string,
+  providerRefreshToken?: string
+) {
+  // Run sync in background without blocking - don't await
+  syncGmailForUser(userId, userEmail, providerToken, providerRefreshToken)
+    .then(() => {
+      console.log(`[auth/callback] Background Gmail sync completed for ${userEmail}`)
+    })
+    .catch((error) => {
+      console.error(`[auth/callback] Background Gmail sync error for ${userEmail}:`, error)
+    })
+}
+
+/**
+ * Helper function to store provider tokens in user metadata
+ */
+async function storeProviderTokens(
+  userId: string,
+  providerToken: string | undefined,
+  providerRefreshToken: string | undefined
+) {
+  if ((providerToken && providerToken.trim()) || (providerRefreshToken && providerRefreshToken.trim())) {
+    console.log("[auth/callback] Storing provider tokens in user metadata")
+
+    try {
+      const serviceSupabase = createServiceClient()
+
+      // Get existing metadata to merge
+      const { data: existingUser } = await serviceSupabase.auth.admin.getUserById(userId)
+      const existingMetadata = existingUser?.user?.app_metadata || {}
+
+      const metadataUpdate: any = { ...existingMetadata }
+      if (providerToken && providerToken.trim()) {
+        metadataUpdate.provider_token = providerToken
+        console.log("[auth/callback] Stored provider_token")
+      }
+      if (providerRefreshToken && providerRefreshToken.trim()) {
+        metadataUpdate.provider_refresh_token = providerRefreshToken
+        console.log("[auth/callback] Stored provider_refresh_token")
+      }
+
+      const { error: updateError } = await serviceSupabase.auth.admin.updateUserById(
+        userId,
+        { app_metadata: metadataUpdate }
+      )
+
+      if (updateError) {
+        console.error("[auth/callback] Failed to store provider tokens:", updateError)
+      } else {
+        console.log("[auth/callback] Successfully stored provider tokens in user metadata")
+      }
+    } catch (error) {
+      console.error("[auth/callback] Error storing provider tokens:", error)
+    }
+  } else {
+    console.warn("[auth/callback] No provider tokens found in session - Gmail sync may not work")
+  }
 }
 
 /**
@@ -563,15 +630,48 @@ export async function GET(request: NextRequest) {
   
   console.log(`[auth/callback] Processing login for email: ${email}, isAdmin: ${isAdmin}`)
 
-  // This should not happen if code path above worked correctly
-  // But handle it as fallback
+  // Handle admin users - set admin session and redirect to admin dashboard
   if (isAdmin && email) {
-    console.log(`[auth/callback] Admin user detected in vendor auth flow (fallback) - redirecting to admin login`)
-    const adminLoginRedirect = NextResponse.redirect(new URL("/admin-login?error=use_admin_login", origin), { status: 307 })
-    deleteCookie(adminLoginRedirect, VENDOR_SESSION_COOKIE_NAME)
-    deleteCookie(adminLoginRedirect, PENDING_VENDOR_EMAIL_COOKIE)
-    await supabase.auth.signOut()
-    return adminLoginRedirect
+    console.log(`[auth/callback] Admin user detected - setting admin session and redirecting to dashboard`)
+
+    // Store provider tokens for Gmail access (if available from session)
+    const providerToken = (session as any).provider_token as string | undefined
+    const providerRefreshToken = (session as any).provider_refresh_token as string | undefined
+
+    console.log("[auth/callback] Provider tokens for admin:", {
+      hasProviderToken: !!providerToken,
+      hasRefreshToken: !!providerRefreshToken,
+      tokenLength: providerToken?.length || 0,
+      refreshTokenLength: providerRefreshToken?.length || 0,
+    })
+
+    // Store provider tokens in user metadata for Gmail access
+    await storeProviderTokens(user.id, providerToken, providerRefreshToken)
+
+    // Automatically trigger Gmail sync in the background if we have tokens
+    if (providerToken || providerRefreshToken) {
+      console.log(`[auth/callback] Triggering automatic Gmail sync for admin ${email}`)
+      syncGmailInBackground(user.id, email, providerToken, providerRefreshToken)
+    }
+
+    // Build admin session cookie
+    const adminCookie = buildAdminSessionCookie(email)
+    const adminRedirect = NextResponse.redirect(new URL("/admin/dashboard", origin), { status: 307 })
+
+    // Set admin session cookie
+    adminRedirect.cookies.set(ADMIN_SESSION_COOKIE_NAME, adminCookie.value, adminCookie.options)
+
+    // Clear vendor session cookie (admin shouldn't have vendor access)
+    adminRedirect.cookies.set(VENDOR_SESSION_COOKIE_NAME, "", { ...clearVendorSessionCookie().options, maxAge: 0 })
+
+    // Clear pending vendor email cookie
+    deleteCookie(adminRedirect, PENDING_VENDOR_EMAIL_COOKIE)
+
+    // Clear account selection requirement after successful login
+    deleteCookie(adminRedirect, REQUIRE_ACCOUNT_SELECTION_COOKIE)
+
+    console.log(`[auth/callback] Admin login successful for ${email}, redirecting to admin dashboard`)
+    return adminRedirect
   }
 
   // For non-admins, try to link vendor

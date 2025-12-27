@@ -31,8 +31,8 @@ export default function EmailLogsPage() {
   const [loading, setLoading] = useState(true)
   const [filters, setFilters] = useState({
     vendor: "",
-    type: "",
-    status: "",
+    type: "all",
+    status: "all",
     dateFrom: "",
     dateTo: "",
   })
@@ -46,8 +46,8 @@ export default function EmailLogsPage() {
       setLoading(true)
       const params = new URLSearchParams()
       if (filters.vendor) params.append("vendor", filters.vendor)
-      if (filters.type) params.append("type", filters.type)
-      if (filters.status) params.append("status", filters.status)
+      if (filters.type && filters.type !== "all") params.append("type", filters.type)
+      if (filters.status && filters.status !== "all") params.append("status", filters.status)
       if (filters.dateFrom) params.append("dateFrom", filters.dateFrom)
       if (filters.dateTo) params.append("dateTo", filters.dateTo)
 
@@ -84,7 +84,7 @@ export default function EmailLogsPage() {
     try {
       const params = new URLSearchParams()
       Object.entries(filters).forEach(([key, value]) => {
-        if (value) params.append(key, value)
+        if (value && value !== "all") params.append(key, value)
       })
 
       const response = await fetch(`/api/admin/payouts/email-logs/export?${params}`)
@@ -156,7 +156,7 @@ export default function EmailLogsPage() {
                 <SelectValue placeholder="Email type" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">All Types</SelectItem>
+                <SelectItem value="all">All Types</SelectItem>
                 <SelectItem value="payout_processed">Payout Processed</SelectItem>
                 <SelectItem value="payout_failed">Payout Failed</SelectItem>
                 <SelectItem value="payout_pending">Payout Pending</SelectItem>
@@ -169,7 +169,7 @@ export default function EmailLogsPage() {
                 <SelectValue placeholder="Status" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">All Statuses</SelectItem>
+                <SelectItem value="all">All Statuses</SelectItem>
                 <SelectItem value="sent">Sent</SelectItem>
                 <SelectItem value="failed">Failed</SelectItem>
                 <SelectItem value="pending">Pending</SelectItem>

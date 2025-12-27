@@ -34,6 +34,10 @@ export async function GET(request: NextRequest) {
 
   const redirectTo = `${origin}/auth/callback`
 
+  // Automatically request Gmail scopes for admin redirects or when explicitly requested
+  const isAdminRedirect = redirectParam?.startsWith("/admin/")
+  const requestGmailScopes = gmailParam || isAdminRedirect
+
   // Build OAuth options
   const oauthOptions: {
     redirectTo: string
@@ -42,9 +46,8 @@ export async function GET(request: NextRequest) {
     queryParams?: Record<string, string>
   } = {
     redirectTo,
-    // Only request Gmail scopes if explicitly requested (for admin Gmail sync)
-    // Default to clean auth (email, profile) for vendors - no verification needed
-    scopes: gmailParam
+    // Request Gmail scopes for admin users or when explicitly requested
+    scopes: requestGmailScopes
       ? "email profile openid https://www.googleapis.com/auth/gmail.readonly https://www.googleapis.com/auth/gmail.send"
       : "email profile openid",
     flowType: "pkce",
