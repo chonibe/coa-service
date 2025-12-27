@@ -7,7 +7,6 @@ import { TableCell, TableRow } from "@/components/ui/table"
 import { Eye, AlertTriangle, Mail, CheckCircle2 } from "lucide-react"
 import { format } from "date-fns"
 import { formatUSD } from "@/lib/utils"
-import { convertGBPToUSD } from "@/lib/utils"
 import type { PendingPayout } from "../types"
 
 interface VendorPayoutRowProps {
@@ -34,8 +33,9 @@ export function VendorPayoutRow({
     }
   }
 
-  const convertPayoutAmount = (gbpAmount: number): number => {
-    return convertGBPToUSD(gbpAmount)
+  // payout.amount is already in USD from the API
+  const formatPayoutAmount = (amount: number): string => {
+    return formatUSD(amount)
   }
 
   const hasIssues = payout.amount < 0 || !payout.paypal_email
@@ -64,7 +64,7 @@ export function VendorPayoutRow({
           {payout.amount < 0 && (
             <Badge variant="destructive" className="text-xs">
               <AlertTriangle className="h-3 w-3 mr-1" />
-              Owing {formatUSD(Math.abs(convertPayoutAmount(payout.amount)))}
+              Owing {formatUSD(Math.abs(payout.amount))}
             </Badge>
           )}
           {!payout.paypal_email && (
@@ -104,7 +104,7 @@ export function VendorPayoutRow({
         )}
       </TableCell>
       <TableCell className="text-right font-medium">
-        {formatUSD(convertPayoutAmount(payout.amount))}
+        {formatPayoutAmount(payout.amount)}
       </TableCell>
       <TableCell>{payout.product_count}</TableCell>
       <TableCell>{formatDate(payout.last_payout_date)}</TableCell>

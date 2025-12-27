@@ -295,7 +295,7 @@ export default function ManualPayoutPage() {
               <SelectContent>
                 {vendors.map((vendor) => (
                   <SelectItem key={vendor.vendor_name} value={vendor.vendor_name}>
-                    {vendor.vendor_name} - {formatUSD(convertGBPToUSD(vendor.amount))} ({vendor.product_count} items)
+                    {vendor.vendor_name} - {formatUSD(vendor.amount)} ({vendor.product_count} items)
                   </SelectItem>
                 ))}
               </SelectContent>
