@@ -111,7 +111,7 @@ export function generateInvoicePDF(data: InvoiceData): jsPDF {
   doc.setFont('helvetica', 'normal')
   doc.text('Street Collector Ltd', margin, yPos)
   yPos += 6
-  doc.text('Platform for Digital Art & NFTs', margin, yPos)
+  doc.text('Art marketplace', margin, yPos)
   yPos += 6
   doc.text('Registered address: 128 City Road, London EC1V 2NX', margin, yPos)
   yPos += 6
