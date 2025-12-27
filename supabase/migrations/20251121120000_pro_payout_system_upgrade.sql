@@ -75,7 +75,7 @@ BEGIN
   ),
   pending_items AS (
     -- Get all fulfilled line items that haven't been paid yet
-    SELECT 
+    SELECT
       oli.vendor_name,
       oli.line_item_id,
       oli.product_id,
@@ -106,15 +106,15 @@ BEGIN
                AND vpi.payout_id IS NOT NULL 
                LIMIT 1),
               -- If not in payout_items, calculate what would have been paid
-              CASE 
+              CASE
                 WHEN COALESCE(pvp.is_percentage, true) THEN (COALESCE(oli.price, 0) * COALESCE(pvp.payout_amount, 25) / 100)
                 ELSE COALESCE(pvp.payout_amount, 0)
               END
             )
           WHEN oli.refund_status = 'partial' THEN
             -- Partial refund: deduct proportional amount
-            COALESCE(oli.refunded_amount, 0) * 
-            CASE 
+            COALESCE(oli.refunded_amount, 0) *
+            CASE
               WHEN COALESCE(pvp.is_percentage, true) THEN (COALESCE(pvp.payout_amount, 25) / 100)
               ELSE (COALESCE(pvp.payout_amount, 0) / COALESCE(oli.price, 1))
             END
@@ -138,7 +138,7 @@ BEGIN
       COUNT(DISTINCT pi.line_item_id)::INTEGER as product_count,
       COALESCE(
         SUM(
-          CASE 
+          CASE
             WHEN pi.is_percentage THEN (COALESCE(pi.price, 0) * pi.payout_amount / 100)
             ELSE pi.payout_amount
           END

@@ -381,20 +381,10 @@ export async function GET(request: NextRequest) {
         const payoutSetting = payoutMap.get(payoutKey)
         const itemPrice = item.price || 0
         
-        // Always use 25% of the item price for payouts
-        // Only use custom payout settings if they exist and are explicitly set
-        let payoutAmount: number
-        let isPercentage: boolean
-
-        if (payoutSetting && payoutSetting.payout_amount !== null && payoutSetting.payout_amount !== undefined) {
-          // Use the configured payout setting if it exists
-          payoutAmount = payoutSetting.payout_amount
-          isPercentage = payoutSetting.is_percentage ?? true
-        } else {
-          // Default: 25% of the item price
-          payoutAmount = 25
-          isPercentage = true // Always percentage
-        }
+        // Always use exactly 25% of the item price for ALL payouts
+        // Custom payout settings are disabled
+        const payoutAmount = 25
+        const isPercentage = true // Always percentage
         
         // Calculate payout (will be $0 for items with $0 price, but still include them)
         const itemPayout = isPercentage 

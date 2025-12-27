@@ -64,19 +64,8 @@ export function calculateLineItemPayout(
     is_percentage?: boolean | null
   }
 ): number {
-  // Check if there's a custom payout setting
-  if (lineItem.payout_amount !== null && lineItem.payout_amount !== undefined) {
-    const payoutAmount = lineItem.payout_amount
-    const isPercentage = lineItem.is_percentage ?? true
-
-    if (isPercentage) {
-      return (lineItem.price * payoutAmount) / 100
-    }
-
-    return payoutAmount
-  }
-
-  // Default: Always 25% of the item price
+  // Always use exactly 25% of the item price
+  // Custom payout settings are disabled
   return (lineItem.price * 25) / 100
 }
 
