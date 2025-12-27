@@ -3,11 +3,16 @@
 ### ✅ Implementation Checklist
 - [x] `components/payouts/payout-metrics-cards.tsx` – Removed confusing 'Payout Frequency' card from vendor dashboard
 - [x] `lib/invoices/generator.ts` – Complete invoice restructure with proper SELF-BILLING INVOICE header, Street Collector Ltd customer details, metadata block, supplier/customer sections, line items table, dominant totals, payment details section, and footer legal notice
+- [x] `lib/invoices/generator.ts` – Updated line items to show actual product names and aggregate multiple items
+- [x] `lib/invoices/generator.ts` – Updated VAT number to 473655758 and self-billing notice to reference Street Collector Ltd
+- [x] `lib/invoices/generator.ts` – Updated company description to 'Art marketplace'
 
 ### 🔐 Highlights
 - Eliminated confusing payout frequency metric from vendor dashboard for cleaner UX
 - Professional invoice structure with clear hierarchy and scannability
-- Proper tax compliance with Street Collector Ltd company details and registration number
+- Proper tax compliance with Street Collector Ltd company details and UK VAT registration (473655758)
+- Line items now show actual product names instead of generic 'Artist payout'
+- Multiple items of same product are aggregated with total quantities and amounts
 - Visually dominant totals section for easy accountant review
 - Separated payment details from notes for better clarity
 
@@ -15,10 +20,11 @@
 - Manual testing of invoice generation shows proper formatting and layout
 - Vendor dashboard loads without the removed payout frequency card
 - All invoice sections display correctly with new customer information
+- Line items display actual product names and aggregate correctly
 
 ### 📌 Deployment Notes
 - No schema changes required. Deployed to Vercel production.
-- Invoice generation now uses updated structure for all new payouts.
+- Invoice generation now uses updated structure for all payouts.
 
 ## Commit: Vendor Dashboard UX & USD Analytics Refresh (2025-12-11)
 
