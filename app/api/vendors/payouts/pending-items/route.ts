@@ -238,8 +238,14 @@ export async function POST(request: Request) {
         // Apply $10 minimum for orders before October 2025
         const orderDate = new Date(item.created_at)
         const october2025 = new Date('2025-10-01')
-        if (orderDate < october2025 && calculatedPayout < 10) {
+        const isBeforeOct2025 = orderDate < october2025
+        const needsMinimum = calculatedPayout < 10
+
+        console.log(`[pending-items] Item ${item.line_item_id}: price=${itemPrice}, calculated=${calculatedPayout}, date=${item.created_at}, isBeforeOct2025=${isBeforeOct2025}, needsMinimum=${needsMinimum}`)
+
+        if (isBeforeOct2025 && needsMinimum) {
           calculatedPayout = 10
+          console.log(`[pending-items] Applied $10 minimum to item ${item.line_item_id}`)
         }
         
         const paidItem = paidItemsMap.get(item.line_item_id)
