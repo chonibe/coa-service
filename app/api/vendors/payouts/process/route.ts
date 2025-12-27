@@ -98,12 +98,13 @@ export async function POST(request: NextRequest) {
         }
 
         // Associate line items with this payout
+        // DISABLED: Custom payout settings - always use 25% of item price
         const payoutItems = lineItems.map((item: any) => ({
           payout_id: payoutId,
           line_item_id: item.line_item_id,
           order_id: item.order_id,
           product_id: item.product_id,
-          amount: item.is_percentage ? (item.price * item.payout_amount) / 100 : item.payout_amount,
+          amount: (item.price * 25) / 100, // Always 25% of item price
           created_at: new Date().toISOString(),
         }))
 

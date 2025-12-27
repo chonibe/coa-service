@@ -35,8 +35,9 @@ BEGIN
     COALESCE(p.name, COALESCE(p.product_id::TEXT, p.id::TEXT)) as product_title,
     COALESCE(oli.price, 0)::DECIMAL as price,
     oli.created_at,
-    COALESCE(pvp.payout_amount, 25)::DECIMAL as payout_amount,
-    COALESCE(pvp.is_percentage, true)::BOOLEAN as is_percentage,
+    -- DISABLED: Custom payout settings - always use 25%
+    25::DECIMAL as payout_amount,
+    true::BOOLEAN as is_percentage,
     COALESCE(oli.fulfillment_status, '')::TEXT as fulfillment_status,
     COALESCE(oli.refund_status::TEXT, 'none')::TEXT as refund_status
   FROM order_line_items_v2 oli

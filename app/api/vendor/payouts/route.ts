@@ -113,46 +113,28 @@ export async function GET() {
       }
     } catch (error) {
       console.error("Error fetching collector balance for payouts:", error)
-      // If ledger lookup fails, fall back to old calculation method
-    const { data: paidItems } = await supabase
-      .from("vendor_payout_items")
-      .select("line_item_id")
-      .not("payout_id", "is", null)
-    
-    const paidLineItemIds = new Set((paidItems || []).map((item: any) => item.line_item_id))
-    
-    const { data: lineItems } = await supabase
-      .from("order_line_items_v2")
-      .select("*")
-      .eq("vendor_name", vendorName)
-      .eq("fulfillment_status", "fulfilled")
+      // If ledger lookup fails, fall back to direct calculation method
+      // DISABLED: Custom payout settings - always use 25% of item price
+      const { data: paidItems } = await supabase
+        .from("vendor_payout_items")
+        .select("line_item_id")
+        .not("payout_id", "is", null)
 
-    const { products } = await fetchProductsByVendor(vendorName)
-    const productIds = products.map((p) => p.id)
+      const paidLineItemIds = new Set((paidItems || []).map((item: any) => item.line_item_id))
 
-    const { data: payoutSettings } = await supabase
-      .from("product_vendor_payouts")
-      .select("*")
-      .eq("vendor_name", vendorName)
-      .in("product_id", productIds)
+      const { data: lineItems } = await supabase
+        .from("order_line_items_v2")
+        .select("*")
+        .eq("vendor_name", vendorName)
+        .eq("fulfillment_status", "fulfilled")
+        .not("line_item_id", "in", `(${Array.from(paidLineItemIds).join(',')})`)
 
-    const unpaidItems = (lineItems || []).filter((item: any) => !paidLineItemIds.has(item.line_item_id))
-    const salesData = unpaidItems
-
-    salesData.forEach((item) => {
-      const payout = payoutSettings?.find((p) => p.product_id === item.product_id)
-      if (payout) {
+      // Calculate pending amount using 25% of item price for all items
+      const unpaidItems = lineItems || []
+      unpaidItems.forEach((item: any) => {
         const price = typeof item.price === "string" ? Number.parseFloat(item.price || "0") : item.price || 0
-        if (payout.is_percentage) {
-          pendingAmount += (price * payout.payout_amount) / 100
-        } else {
-          pendingAmount += payout.payout_amount
-        }
-      } else {
-        const price = typeof item.price === "string" ? Number.parseFloat(item.price || "0") : item.price || 0
-          pendingAmount += price * 0.25
-      }
-    })
+        pendingAmount += price * 0.25
+      })
     }
 
     // Create a mock pending payout with balance from ledger

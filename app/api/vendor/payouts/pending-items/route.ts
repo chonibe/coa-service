@@ -38,34 +38,10 @@ export async function GET() {
     // Filter out already paid items
     const unpaidItems = (lineItems || []).filter((item: any) => !paidLineItemIds.has(item.line_item_id))
 
-    // Get payout settings for products
-    const productIds = [...new Set(unpaidItems.map((item: any) => item.product_id).filter(Boolean))]
-    
-    let payoutSettings: any[] = []
-    if (productIds.length > 0) {
-      const { data: settings } = await supabase
-        .from("product_vendor_payouts")
-        .select("product_id, payout_amount, is_percentage")
-        .eq("vendor_name", vendorName)
-        .in("product_id", productIds)
-      
-      payoutSettings = settings || []
-    }
-
-    // Create a map of product_id to payout settings
-    const payoutSettingsMap = new Map()
-    payoutSettings.forEach((setting: any) => {
-      payoutSettingsMap.set(setting.product_id, setting)
-    })
-
-    // Calculate payout amounts for each line item
+    // DISABLED: Custom payout settings - always use 25% of item price
+    // Calculate payout amounts for each line item (always 25%)
     const lineItemsWithPayouts = unpaidItems.map((item: any) => {
-      const setting = payoutSettingsMap.get(item.product_id)
-      const payoutAmount = setting
-        ? setting.is_percentage
-          ? (convertGBPToUSD(item.price || 0) * setting.payout_amount) / 100
-          : convertGBPToUSD(setting.payout_amount)
-        : (convertGBPToUSD(item.price || 0) * 25) / 100 // Default 25%
+      const payoutAmount = (convertGBPToUSD(item.price || 0) * 25) / 100 // Always 25%
 
       return {
         line_item_id: item.line_item_id,

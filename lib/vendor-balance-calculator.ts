@@ -76,10 +76,9 @@ export async function calculateVendorBalance(
 
   let pendingBalance = 0
   if (pendingItems && Array.isArray(pendingItems)) {
+    // DISABLED: Custom payout settings - always use 25% of item price
     pendingBalance = pendingItems.reduce((sum: number, item: any) => {
-      const payoutAmount = item.is_percentage
-        ? (Number(item.price || 0) * Number(item.payout_amount || 25)) / 100
-        : Number(item.payout_amount || 0)
+      const payoutAmount = (Number(item.price || 0) * 25) / 100
       return sum + payoutAmount
     }, 0)
   }

@@ -58,14 +58,11 @@ export async function POST(request: NextRequest) {
     }
 
     // Calculate total payout amount
+    // DISABLED: Custom payout settings - always use 25% of item price
     let totalAmount = 0
     lineItems.forEach((item: any) => {
       const price = typeof item.price === "string" ? Number.parseFloat(item.price || "0") : item.price || 0
-      if (item.is_percentage) {
-        totalAmount += (price * item.payout_amount) / 100
-      } else {
-        totalAmount += item.payout_amount
-      }
+      totalAmount += (price * 25) / 100 // Always 25% of item price
     })
 
     // Generate a unique reference number
