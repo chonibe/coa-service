@@ -113,22 +113,30 @@ export function VendorLineItemsDrawer({
   }
 
   const handleMarkPaid = async (lineItemId: string) => {
+    console.log("handleMarkPaid called with lineItemId:", lineItemId, "vendorName:", vendorName)
     try {
       setIsProcessing(true)
+      const requestBody = {
+        lineItemIds: [lineItemId],
+        vendorName,
+        createPayoutRecord: false,
+      }
+      console.log("Sending request:", requestBody)
+
       const response = await fetch("/api/admin/payouts/mark-paid", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({
-          lineItemIds: [lineItemId],
-          vendorName,
-          createPayoutRecord: false,
-        }),
+        body: JSON.stringify(requestBody),
       })
 
+      console.log("Response status:", response.status)
+      const responseData = await response.json()
+      console.log("Response data:", responseData)
+
       if (!response.ok) {
-        throw new Error("Failed to mark as paid")
+        throw new Error(responseData.error || `HTTP ${response.status}: ${response.statusText}`)
       }
 
       toast({
@@ -138,10 +146,11 @@ export function VendorLineItemsDrawer({
 
       // Refresh line items
       await fetchLineItems()
-      
+
       // Notify parent to refresh data
       onItemMarkedPaid?.()
     } catch (err: any) {
+      console.error("Error in handleMarkPaid:", err)
       toast({
         variant: "destructive",
         title: "Error",

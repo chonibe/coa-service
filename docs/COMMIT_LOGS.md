@@ -1,3 +1,25 @@
+## Commit: Vendor Dashboard & Invoice Structure Updates (2025-12-28)
+
+### ✅ Implementation Checklist
+- [x] `components/payouts/payout-metrics-cards.tsx` – Removed confusing 'Payout Frequency' card from vendor dashboard
+- [x] `lib/invoices/generator.ts` – Complete invoice restructure with proper SELF-BILLING INVOICE header, Street Collector Ltd customer details, metadata block, supplier/customer sections, line items table, dominant totals, payment details section, and footer legal notice
+
+### 🔐 Highlights
+- Eliminated confusing payout frequency metric from vendor dashboard for cleaner UX
+- Professional invoice structure with clear hierarchy and scannability
+- Proper tax compliance with Street Collector Ltd company details and registration number
+- Visually dominant totals section for easy accountant review
+- Separated payment details from notes for better clarity
+
+### 🧪 Verification
+- Manual testing of invoice generation shows proper formatting and layout
+- Vendor dashboard loads without the removed payout frequency card
+- All invoice sections display correctly with new customer information
+
+### 📌 Deployment Notes
+- No schema changes required. Deployed to Vercel production.
+- Invoice generation now uses updated structure for all new payouts.
+
 ## Commit: Vendor Dashboard UX & USD Analytics Refresh (2025-12-11)
 
 ### ✅ Implementation Checklist

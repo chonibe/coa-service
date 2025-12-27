@@ -17,18 +17,22 @@ interface MarkPaidRequest {
 }
 
 export async function POST(request: NextRequest) {
+  console.log("Mark paid API called")
   const auth = guardAdminRequest(request)
   if (auth.kind !== "ok") {
+    console.log("Auth failed:", auth)
     return auth.response
   }
 
   const adminEmail = getAdminEmailFromCookieStore(request.cookies)
+  console.log("Admin email:", adminEmail)
   if (!adminEmail) {
     return NextResponse.json({ error: "Admin email not found" }, { status: 401 })
   }
 
   try {
     const body: MarkPaidRequest = await request.json()
+    console.log("Request body:", body)
     const {
       lineItemIds = [],
       orderIds = [],
