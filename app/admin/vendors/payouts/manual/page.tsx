@@ -45,6 +45,7 @@ interface LineItem {
   created_at: string
   payout_amount: number
   is_percentage: boolean
+  calculated_payout?: number
   fulfillment_status: string | null
   is_paid: boolean
 }
@@ -183,7 +184,11 @@ export default function ManualPayoutPage() {
   const calculateSelectedTotal = () => {
     return Array.from(selectedLineItems).reduce((total, lineItemId) => {
       const item = lineItems.find((li) => li.line_item_id === lineItemId)
-      return total + (item?.payout_amount || 0)
+      // Use calculated_payout if available (which contains the actual payout amount), otherwise fallback to calculation
+      const payoutAmount = item?.calculated_payout ?? (item?.is_percentage
+        ? (convertGBPToUSD(item.price) * item.payout_amount) / 100
+        : convertGBPToUSD(item.payout_amount))
+      return total + payoutAmount
     }, 0)
   }
 
@@ -432,9 +437,13 @@ export default function ManualPayoutPage() {
                             </TableCell>
                             <TableCell className="text-right">{formatUSD(convertGBPToUSD(item.price))}</TableCell>
                             <TableCell className="text-right">
-                              <div className="font-medium">{formatUSD(convertGBPToUSD(item.payout_amount))}</div>
+                              <div className="font-medium">
+                                {formatUSD(item.calculated_payout ?? (item.is_percentage
+                                  ? (convertGBPToUSD(item.price) * item.payout_amount) / 100
+                                  : convertGBPToUSD(item.payout_amount)))}
+                              </div>
                               <div className="text-xs text-muted-foreground">
-                                {item.is_percentage ? `${item.payout_amount}%` : "Fixed"}
+                                25% of item price
                               </div>
                             </TableCell>
                             <TableCell>
