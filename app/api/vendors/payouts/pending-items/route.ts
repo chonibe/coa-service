@@ -272,6 +272,13 @@ export async function POST(request: Request) {
       console.log(`[pending-items] Items with $0 price: ${data.filter((item: any) => item.price === 0).length}`)
       console.log(`[pending-items] Items with $0 calculated payout: ${data.filter((item: any) => item.calculated_payout === 0).length}`)
 
+      // Debug: Log first few items with their prices and calculated payouts
+      console.log(`[pending-items] Sample items:`, data.slice(0, 5).map((item: any) => ({
+        price: item.price,
+        calculated_payout: item.calculated_payout,
+        order_date: item.created_at
+      })))
+
       return NextResponse.json({ lineItems: data })
   } catch (error: any) {
     console.error("Error in pending line items API:", error)
