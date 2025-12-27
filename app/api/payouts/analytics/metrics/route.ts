@@ -43,7 +43,7 @@ export async function GET(request: NextRequest) {
       }
 
       const completedPayouts = payouts?.filter((p) => p.status === "completed" || p.status === "paid") || []
-      const totalEarned = completedPayouts.reduce((sum, p) => sum + convertGBPToUSD(p.amount || 0), 0)
+      const totalEarned = completedPayouts.reduce((sum, p) => sum + (p.amount || 0), 0)
       const averagePayoutSize =
         completedPayouts.length > 0 ? totalEarned / completedPayouts.length : 0
 
@@ -73,8 +73,8 @@ export async function GET(request: NextRequest) {
           new Date(p.payout_date || p.created_at) < last30Days
       )
 
-      const recentTotal = recentPayouts.reduce((sum, p) => sum + convertGBPToUSD(p.amount || 0), 0)
-      const previousTotal = previousPayouts.reduce((sum, p) => sum + convertGBPToUSD(p.amount || 0), 0)
+      const recentTotal = recentPayouts.reduce((sum, p) => sum + (p.amount || 0), 0)
+      const previousTotal = previousPayouts.reduce((sum, p) => sum + (p.amount || 0), 0)
       const growthTrend = previousTotal > 0 ? ((recentTotal - previousTotal) / previousTotal) * 100 : 0
 
       // Get pending payout amount
@@ -85,7 +85,7 @@ export async function GET(request: NextRequest) {
         .in("status", ["pending", "processing"])
 
       const expectedNextPayout =
-        pendingPayouts?.reduce((sum, p) => sum + convertGBPToUSD(p.amount || 0), 0) || 0
+        pendingPayouts?.reduce((sum, p) => sum + (p.amount || 0), 0) || 0
 
       // Estimate next payout date (average interval)
       let nextPayoutDate: string | undefined
@@ -122,7 +122,7 @@ export async function GET(request: NextRequest) {
 
       // Calculate pending total
       const pendingPayouts = allPayouts?.filter((p) => p.status === "pending" || p.status === "processing") || []
-      const totalPending = pendingPayouts.reduce((sum, p) => sum + convertGBPToUSD(p.amount || 0), 0)
+      const totalPending = pendingPayouts.reduce((sum, p) => sum + (p.amount || 0), 0)
 
       // Calculate success rate
       const completedPayouts = allPayouts?.filter((p) => p.status === "completed" || p.status === "paid") || []
@@ -167,7 +167,7 @@ export async function GET(request: NextRequest) {
       const vendorMap = new Map<string, number>()
       completedPayouts.forEach((payout) => {
         const existing = vendorMap.get(payout.vendor_name) || 0
-        vendorMap.set(payout.vendor_name, existing + convertGBPToUSD(payout.amount || 0))
+        vendorMap.set(payout.vendor_name, existing + (payout.amount || 0))
       })
 
       const topVendors = Array.from(vendorMap.entries())

@@ -161,7 +161,7 @@ export default function PayoutsPage() {
       const data = await response.json()
       setPayouts(data.payouts || [])
 
-      // Calculate totals
+      // Calculate totals (amounts are already in USD from vendor_payouts table)
       const paid = data.payouts
         .filter((p: Payout) => p.status === "paid" || p.status === "completed")
         .reduce((sum: number, p: Payout) => sum + p.amount, 0)

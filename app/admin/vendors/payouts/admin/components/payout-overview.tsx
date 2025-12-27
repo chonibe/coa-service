@@ -17,7 +17,7 @@ interface PayoutOverviewProps {
 
 export function PayoutOverview({ pendingPayouts, payoutHistory, isLoading }: PayoutOverviewProps) {
   const metrics = useMemo(() => {
-    const totalPending = pendingPayouts.reduce((sum, p) => sum + convertGBPToUSD(p.amount), 0)
+    const totalPending = pendingPayouts.reduce((sum, p) => sum + p.amount, 0)
     const vendorsWithIssues = pendingPayouts.filter(
       (p) => p.amount < 0 || !p.paypal_email
     ).length
@@ -31,13 +31,13 @@ export function PayoutOverview({ pendingPayouts, payoutHistory, isLoading }: Pay
       const payoutDate = new Date(p.payout_date || p.created_at)
       return payoutDate >= thisMonthStart && p.status === "completed"
     })
-    const totalThisMonth = thisMonthPayouts.reduce((sum, p) => sum + convertGBPToUSD(p.amount), 0)
+    const totalThisMonth = thisMonthPayouts.reduce((sum, p) => sum + p.amount, 0)
 
     // Calculate average payout
     const completedPayouts = payoutHistory.filter((p) => p.status === "completed")
     const averagePayout =
       completedPayouts.length > 0
-        ? completedPayouts.reduce((sum, p) => sum + convertGBPToUSD(p.amount), 0) /
+        ? completedPayouts.reduce((sum, p) => sum + p.amount, 0) /
           completedPayouts.length
         : 0
 
