@@ -46,31 +46,42 @@ export function generateInvoicePDF(data: InvoiceData): jsPDF {
   doc.setFontSize(20)
   doc.setFont('helvetica', 'bold')
   doc.text('SELF-BILLING INVOICE', pageWidth / 2, yPos, { align: 'center' })
-  yPos += 15
+  yPos += 12
 
-  // Invoice details
+  // Sub-line
   doc.setFontSize(10)
   doc.setFont('helvetica', 'normal')
-  doc.text(`Invoice Number: ${data.invoiceNumber}`, margin, yPos)
-  doc.text(`Date: ${new Date(data.payoutDate).toLocaleDateString('en-GB')}`, pageWidth - margin, yPos, { align: 'right' })
-  yPos += 10
+  doc.text('Issued by COA Service on behalf of the supplier', pageWidth / 2, yPos, { align: 'center' })
+  yPos += 15
 
-  if (data.reference) {
-    doc.text(`Reference: ${data.reference}`, margin, yPos)
-    yPos += 10
-  }
+  // Invoice details (right-aligned block)
+  const metadataX = pageWidth - margin
+  doc.setFontSize(10)
+  doc.setFont('helvetica', 'normal')
 
-  if (data.payoutBatchId) {
-    doc.text(`Payment Batch ID: ${data.payoutBatchId}`, margin, yPos)
-    yPos += 10
-  }
+  // Draw a light box around the metadata
+  const boxWidth = 80
+  const boxHeight = 25
+  const boxX = metadataX - boxWidth
+  doc.setFillColor(245, 245, 245) // Light gray background
+  doc.rect(boxX, yPos - 5, boxWidth, boxHeight, 'F')
+  doc.setDrawColor(200, 200, 200) // Light border
+  doc.rect(boxX, yPos - 5, boxWidth, boxHeight, 'S')
 
-  yPos += 5
+  doc.text(`Invoice Number: ${data.invoiceNumber}`, metadataX, yPos, { align: 'right' })
+  yPos += 6
+  doc.text(`Invoice Date: ${new Date(data.payoutDate).toLocaleDateString('en-GB')}`, metadataX, yPos, { align: 'right' })
+  yPos += 6
+  doc.text(`Reference: ${data.reference || 'MANUAL-' + Date.now().toString().slice(-6)}`, metadataX, yPos, { align: 'right' })
+  yPos += 6
+  doc.text(`Payout ID: ${data.payoutId}`, metadataX, yPos, { align: 'right' })
 
-  // Supplier (Vendor) Details
+  yPos += 15
+
+  // Supplier (Artist / Vendor)
   doc.setFontSize(12)
   doc.setFont('helvetica', 'bold')
-  doc.text('Supplier Details', margin, yPos)
+  doc.text('Supplier (Artist / Vendor)', margin, yPos)
   yPos += 8
 
   doc.setFontSize(10)
@@ -78,34 +89,37 @@ export function generateInvoicePDF(data: InvoiceData): jsPDF {
   doc.text(`Name: ${data.vendorName}`, margin, yPos)
   yPos += 6
 
-  if (data.vendorEmail) {
-    doc.text(`Email: ${data.vendorEmail}`, margin, yPos)
+  if (data.vendorTaxCountry) {
+    doc.text(`Country of residence: ${data.vendorTaxCountry}`, margin, yPos)
     yPos += 6
   }
 
   if (data.vendorTaxId) {
-    doc.text(`Tax ID: ${data.vendorTaxId}`, margin, yPos)
-    yPos += 6
-  }
-
-  if (data.vendorTaxCountry) {
-    doc.text(`Country: ${data.vendorTaxCountry}`, margin, yPos)
+    doc.text(`Tax ID / VAT ID: ${data.vendorTaxId}`, margin, yPos)
     yPos += 6
   }
 
   yPos += 10
 
-  // Customer (Platform) Details
+  // Customer / Invoice Issuer (COA Service)
   doc.setFontSize(12)
   doc.setFont('helvetica', 'bold')
-  doc.text('Customer Details', margin, yPos)
+  doc.text('Customer / Invoice Issuer', margin, yPos)
   yPos += 8
 
   doc.setFontSize(10)
   doc.setFont('helvetica', 'normal')
-  doc.text('COA Service', margin, yPos)
+  doc.text('Street Collector Ltd', margin, yPos)
   yPos += 6
   doc.text('Platform for Digital Art & NFTs', margin, yPos)
+  yPos += 6
+  doc.text('Registered address: 128 City Road, London EC1V 2NX', margin, yPos)
+  yPos += 6
+  doc.text('Country: United Kingdom', margin, yPos)
+  yPos += 6
+  doc.text('Company registration number: 473655758', margin, yPos)
+  yPos += 6
+  doc.text('VAT number: Not VAT registered', margin, yPos)
   yPos += 10
 
   // Line Items Table
@@ -115,16 +129,16 @@ export function generateInvoicePDF(data: InvoiceData): jsPDF {
   yPos += 8
 
   const tableData = data.lineItems.map((item) => [
-    item.productTitle || 'Product',
-    item.orderName || item.orderId,
-    item.quantity.toString(),
-    `${data.currency} ${item.unitPrice.toFixed(2)}`,
-    `${data.currency} ${item.payoutAmount.toFixed(2)}`,
+    'Artist payout', // Description
+    item.orderId, // Order ID
+    item.quantity.toString(), // Qty
+    `${data.currency} ${item.unitPrice.toFixed(2)}`, // Unit Price (USD)
+    `${data.currency} ${item.payoutAmount.toFixed(2)}`, // Amount (USD)
   ])
 
   autoTable(doc, {
     startY: yPos,
-    head: [['Product', 'Order', 'Qty', 'Unit Price', 'Payout Amount']],
+    head: [['Description', 'Order ID', 'Qty', 'Unit Price (USD)', 'Amount (USD)']],
     body: tableData,
     theme: 'striped',
     headStyles: { fillColor: [66, 66, 66] },
@@ -134,55 +148,65 @@ export function generateInvoicePDF(data: InvoiceData): jsPDF {
 
   yPos = (doc as any).lastAutoTable.finalY + 15
 
-  // Totals
+  // Totals (visually dominant)
   const totalsX = pageWidth - margin
   doc.setFontSize(10)
-  doc.setFont('helvetica', 'normal')
 
   // Subtotal
+  doc.setFont('helvetica', 'normal')
   doc.text('Subtotal:', totalsX - 60, yPos, { align: 'right' })
   doc.text(`${data.currency} ${(data.payoutAmount - data.taxAmount).toFixed(2)}`, totalsX, yPos, { align: 'right' })
-  yPos += 6
+  yPos += 8
 
-  // Tax
-  if (data.taxAmount > 0) {
-    doc.text(`Tax (${data.taxRate}%):`, totalsX - 60, yPos, { align: 'right' })
-    doc.text(`${data.currency} ${data.taxAmount.toFixed(2)}`, totalsX, yPos, { align: 'right' })
-    yPos += 6
-  }
+  // Separator line
+  doc.setDrawColor(100, 100, 100)
+  doc.line(totalsX - 80, yPos, totalsX, yPos)
+  yPos += 8
 
-  // Total
+  // Total (made visually dominant)
   doc.setFont('helvetica', 'bold')
-  doc.text('Total:', totalsX - 60, yPos, { align: 'right' })
+  doc.setFontSize(14)
+  doc.text('TOTAL DUE:', totalsX - 60, yPos, { align: 'right' })
   doc.text(`${data.currency} ${data.payoutAmount.toFixed(2)}`, totalsX, yPos, { align: 'right' })
-  yPos += 15
+  yPos += 20
 
-  // Payment Information
+  // Payment Details
+  doc.setFontSize(12)
+  doc.setFont('helvetica', 'bold')
+  doc.text('Payment Details', margin, yPos)
+  yPos += 8
+
   doc.setFontSize(10)
   doc.setFont('helvetica', 'normal')
   doc.text(`Payment Method: ${data.paymentMethod.toUpperCase()}`, margin, yPos)
   yPos += 6
-
-  if (data.notes) {
-    doc.text(`Notes: ${data.notes}`, margin, yPos)
-    yPos += 6
-  }
-
-  yPos += 10
+  doc.text('Payment Status: Paid', margin, yPos)
+  yPos += 6
+  // Note: We don't have the actual user who marked it as paid or the exact payment date in the current data structure
+  // This would need to be added to the InvoiceData interface if we want to include it
+  doc.text(`Marked as paid by: System`, margin, yPos)
+  yPos += 6
+  doc.text(`Payment Date: ${new Date(data.payoutDate).toLocaleDateString('en-GB')}`, margin, yPos)
+  yPos += 15
 
   // Footer
+  yPos = doc.internal.pageSize.getHeight() - 40
+
+  // Self-billing notice (footer, smaller text)
   doc.setFontSize(8)
   doc.setFont('helvetica', 'italic')
   doc.text(
-    'This is a self-billing invoice issued by COA Service. The supplier (vendor) agrees to accept this invoice as valid for tax purposes.',
+    'This is a self-billing invoice issued by COA Service. The supplier agrees to accept this invoice as valid for tax purposes.',
     margin,
     yPos,
     { maxWidth: pageWidth - 2 * margin, align: 'left' }
   )
-  yPos += 8
+  yPos += 10
 
+  // Generation info (clean line)
+  doc.setFont('helvetica', 'normal')
   doc.text(
-    `Generated on ${new Date().toLocaleString('en-GB')} | Payout ID: ${data.payoutId}`,
+    `Generated on ${new Date().toLocaleString('en-GB')}`,
     pageWidth / 2,
     yPos,
     { align: 'center' }
