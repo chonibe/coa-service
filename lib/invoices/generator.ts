@@ -119,7 +119,7 @@ export function generateInvoicePDF(data: InvoiceData): jsPDF {
   yPos += 6
   doc.text('Company registration number: 473655758', margin, yPos)
   yPos += 6
-  doc.text('VAT number: Not VAT registered', margin, yPos)
+  doc.text('VAT number: 473655758', margin, yPos)
   yPos += 10
 
   // Line Items Table
@@ -128,12 +128,33 @@ export function generateInvoicePDF(data: InvoiceData): jsPDF {
   doc.text('Line Items', margin, yPos)
   yPos += 8
 
-  const tableData = data.lineItems.map((item) => [
-    'Artist payout', // Description
-    item.orderId, // Order ID
+  // Aggregate items by product name to handle multiple quantities
+  const aggregatedItems = data.lineItems.reduce((acc, item) => {
+    const key = item.productTitle
+    if (!acc[key]) {
+      acc[key] = {
+        productTitle: item.productTitle,
+        quantity: 0,
+        totalUnitPrice: 0,
+        totalPayoutAmount: 0,
+        orderIds: []
+      }
+    }
+    acc[key].quantity += item.quantity
+    acc[key].totalUnitPrice += item.unitPrice * item.quantity
+    acc[key].totalPayoutAmount += item.payoutAmount
+    if (!acc[key].orderIds.includes(item.orderId)) {
+      acc[key].orderIds.push(item.orderId)
+    }
+    return acc
+  }, {} as Record<string, { productTitle: string; quantity: number; totalUnitPrice: number; totalPayoutAmount: number; orderIds: string[] }>)
+
+  const tableData = Object.values(aggregatedItems).map((item) => [
+    item.productTitle, // Description - actual product name
+    item.orderIds.join(', '), // Order ID(s)
     item.quantity.toString(), // Qty
-    `${data.currency} ${item.unitPrice.toFixed(2)}`, // Unit Price (USD)
-    `${data.currency} ${item.payoutAmount.toFixed(2)}`, // Amount (USD)
+    `${data.currency} ${(item.totalUnitPrice / item.quantity).toFixed(2)}`, // Unit Price (USD) - average per item
+    `${data.currency} ${item.totalPayoutAmount.toFixed(2)}`, // Amount (USD) - total payout for this product
   ])
 
   autoTable(doc, {
@@ -196,7 +217,7 @@ export function generateInvoicePDF(data: InvoiceData): jsPDF {
   doc.setFontSize(8)
   doc.setFont('helvetica', 'italic')
   doc.text(
-    'This is a self-billing invoice issued by COA Service. The supplier agrees to accept this invoice as valid for tax purposes.',
+    'This is a self-billing invoice issued by Street Collector Ltd. The supplier agrees to accept this invoice as valid for tax purposes.',
     margin,
     yPos,
     { maxWidth: pageWidth - 2 * margin, align: 'left' }
