@@ -35,66 +35,117 @@ export async function calculateVendorBalance(
     return cached.balance
   }
 
-  // Calculate available balance (completed payouts - refund deductions)
-  const { data: completedPayouts, error: payoutError } = await client
-    .from("vendor_payouts")
-    .select("amount")
+  // Get vendor's collector identifier for ledger-based balance
+  const { data: vendor, error: vendorError } = await client
+    .from("vendors")
+    .select("id, auth_id, vendor_name")
     .eq("vendor_name", vendorName)
-    .eq("status", "completed")
+    .single()
 
-  if (payoutError) {
-    console.error(`Error fetching completed payouts for ${vendorName}:`, payoutError)
+  let availableBalance = 0
+  if (vendor && !vendorError) {
+    const collectorIdentifier = vendor.auth_id || vendorName
+
+    try {
+      // Import the ledger-based balance calculator
+      const { getUsdBalance } = await import("@/lib/banking/balance-calculator")
+      availableBalance = await getUsdBalance(collectorIdentifier)
+    } catch (error) {
+      console.error(`Error getting ledger balance for ${vendorName}:`, error)
+      // Fall back to calculating from completed payouts
+      const { data: completedPayouts, error: payoutError } = await client
+        .from("vendor_payouts")
+        .select("amount")
+        .eq("vendor_name", vendorName)
+        .eq("status", "completed")
+
+      if (payoutError) {
+        console.error(`Error fetching completed payouts for ${vendorName}:`, payoutError)
+      }
+
+      availableBalance = completedPayouts?.reduce((sum, payout) => sum + Number(payout.amount || 0), 0) || 0
+    }
+  } else {
+    console.error(`Error fetching vendor ${vendorName}:`, vendorError)
+    // Fall back to direct calculation
+    const { data: completedPayouts, error: payoutError } = await client
+      .from("vendor_payouts")
+      .select("amount")
+      .eq("vendor_name", vendorName)
+      .eq("status", "completed")
+
+    if (payoutError) {
+      console.error(`Error fetching completed payouts for ${vendorName}:`, payoutError)
+    }
+
+    availableBalance = completedPayouts?.reduce((sum, payout) => sum + Number(payout.amount || 0), 0) || 0
   }
 
-  const availableBalance =
-    completedPayouts?.reduce((sum, payout) => sum + Number(payout.amount || 0), 0) || 0
+  // Calculate refund deductions from ledger (if available)
+  let refundTotal = 0
+  try {
+    const { data: refundDeductions, error: refundError } = await client
+      .from("vendor_ledger_entries")
+      .select("amount")
+      .eq("vendor_name", vendorName)
+      .eq("entry_type", "refund_deduction")
 
-  // Calculate refund deductions from ledger
-  const { data: refundDeductions, error: refundError } = await client
-    .from("vendor_ledger_entries")
-    .select("amount")
-    .eq("vendor_name", vendorName)
-    .eq("entry_type", "refund_deduction")
+    if (refundError) {
+      console.error(`Error fetching refund deductions for ${vendorName}:`, refundError)
+    }
 
-  if (refundError) {
-    console.error(`Error fetching refund deductions for ${vendorName}:`, refundError)
+    refundTotal = refundDeductions?.reduce((sum, entry) => sum + Math.abs(Number(entry.amount || 0)), 0) || 0
+  } catch (error) {
+    console.error(`Error calculating refund deductions for ${vendorName}:`, error)
   }
-
-  const refundTotal =
-    refundDeductions?.reduce((sum, entry) => sum + Math.abs(Number(entry.amount || 0)), 0) || 0
 
   const finalAvailableBalance = Math.max(0, availableBalance - refundTotal)
 
   // Calculate pending balance (fulfilled items not yet paid)
-  const { data: pendingItems, error: pendingError } = await client.rpc("get_vendor_pending_line_items", {
-    p_vendor_name: vendorName,
-  })
-
-  if (pendingError) {
-    console.error(`Error fetching pending items for ${vendorName}:`, pendingError)
-  }
-
   let pendingBalance = 0
-  if (pendingItems && Array.isArray(pendingItems)) {
-    // DISABLED: Custom payout settings - always use 25% of item price
-    pendingBalance = pendingItems.reduce((sum: number, item: any) => {
-      const payoutAmount = (Number(item.price || 0) * 25) / 100
-      return sum + payoutAmount
-    }, 0)
+
+  try {
+    // First try to get pending amount from collector ledger (same as payout calculation)
+    if (vendor) {
+      const { ensureCollectorAccount } = await import("@/lib/banking/account-manager")
+      const { getUsdBalance } = await import("@/lib/banking/balance-calculator")
+
+      const collectorIdentifier = vendor.auth_id || vendorName
+      await ensureCollectorAccount(collectorIdentifier, 'vendor', vendor.id)
+
+      // Get current USD balance from ledger (this includes pending payouts)
+      const ledgerBalance = await getUsdBalance(collectorIdentifier)
+      // Pending balance is the difference between ledger balance and already available balance
+      pendingBalance = Math.max(0, ledgerBalance - finalAvailableBalance)
+    }
+  } catch (error) {
+    console.error(`Error getting ledger-based pending balance for ${vendorName}:`, error)
+    // Fall back to calculating from pending payouts
+    const { data: processingPayouts, error: processingError } = await client
+      .from("vendor_payouts")
+      .select("amount")
+      .eq("vendor_name", vendorName)
+      .in("status", ["processing", "pending", "requested"])
+
+    if (processingError) {
+      console.error(`Error fetching processing payouts for ${vendorName}:`, processingError)
+    }
+
+    pendingBalance = processingPayouts?.reduce((sum, payout) => sum + Number(payout.amount || 0), 0) || 0
   }
 
-  // Calculate held balance (items in processing or on hold)
-  const { data: processingPayouts, error: processingError } = await client
+  // Calculate held balance (payouts in processing or pending status)
+  const { data: heldPayouts, error: heldError } = await client
     .from("vendor_payouts")
     .select("amount")
     .eq("vendor_name", vendorName)
-    .in("status", ["processing", "pending"])
+    .in("status", ["processing", "pending", "requested"])
 
-  if (processingError) {
-    console.error(`Error fetching processing payouts for ${vendorName}:`, processingError)
+  if (heldError) {
+    console.error(`Error fetching held payouts for ${vendorName}:`, heldError)
   }
 
-  const heldBalance = processingPayouts?.reduce((sum, payout) => sum + Number(payout.amount || 0), 0) || 0
+  const heldBalance = heldPayouts?.reduce((sum, payout) => sum + Number(payout.amount || 0), 0) || 0
 
   const balance: VendorBalance = {
     vendor_name: vendorName,
