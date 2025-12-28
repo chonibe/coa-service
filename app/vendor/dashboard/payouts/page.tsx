@@ -69,9 +69,12 @@ export default function PayoutsPage() {
   const [activeTab, setActiveTab] = useState("overview")
   const [pendingLineItems, setPendingLineItems] = useState<any[]>([])
   const [pendingGroupedByMonth, setPendingGroupedByMonth] = useState<any[]>([])
+  const [unfulfilledLineItems, setUnfulfilledLineItems] = useState<any[]>([])
+  const [unfulfilledGroupedByMonth, setUnfulfilledGroupedByMonth] = useState<any[]>([])
   const [isLoadingPending, setIsLoadingPending] = useState(false)
   const [pendingError, setPendingError] = useState<string | null>(null)
   const [expandedMonths, setExpandedMonths] = useState<Set<string>>(new Set())
+  const [expandedUnfulfilledMonths, setExpandedUnfulfilledMonths] = useState<Set<string>>(new Set())
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null)
   const [isPageVisible, setIsPageVisible] = useState(true)
   const [balance, setBalance] = useState<VendorBalance | null>(null)
@@ -199,6 +202,8 @@ export default function PayoutsPage() {
       const data = await response.json()
       setPendingLineItems(data.lineItems || [])
       setPendingGroupedByMonth(data.groupedByMonth || [])
+      setUnfulfilledLineItems(data.unfulfilledItems || [])
+      setUnfulfilledGroupedByMonth(data.unfulfilledGroupedByMonth || [])
     } catch (err) {
       console.error("Error fetching pending items:", err)
       setPendingError(err instanceof Error ? err.message : "Failed to load pending items")
@@ -219,6 +224,18 @@ export default function PayoutsPage() {
 
   const toggleMonthExpansion = (monthKey: string) => {
     setExpandedMonths((prev) => {
+      const newSet = new Set(prev)
+      if (newSet.has(monthKey)) {
+        newSet.delete(monthKey)
+      } else {
+        newSet.add(monthKey)
+      }
+      return newSet
+    })
+  }
+
+  const toggleUnfulfilledMonthExpansion = (monthKey: string) => {
+    setExpandedUnfulfilledMonths((prev) => {
       const newSet = new Set(prev)
       if (newSet.has(monthKey)) {
         newSet.delete(monthKey)
@@ -570,6 +587,74 @@ export default function PayoutsPage() {
               </CardContent>
             </Card>
           </div>
+
+          {/* Unfulfilled Orders (Pending Fulfillment) */}
+          {unfulfilledGroupedByMonth.length > 0 && (
+            <Card className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-0 shadow-xl border-amber-200 dark:border-amber-900/30 opacity-75">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-amber-700 dark:text-amber-400">
+                  <Clock className="h-5 w-5" />
+                  Pending Fulfillment
+                </CardTitle>
+                <CardDescription>
+                  These orders have been placed but haven't been fulfilled yet. Once they're fulfilled, they'll appear in "Ready to Request Payment" and you can request your payout.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {unfulfilledGroupedByMonth.map((monthData) => (
+                    <div key={monthData.monthKey} className="border rounded-lg p-4 space-y-3 border-amber-200 dark:border-amber-900/30 bg-amber-50/30 dark:bg-amber-950/10">
+                      <div
+                        className="flex items-center justify-between cursor-pointer"
+                        onClick={() => toggleUnfulfilledMonthExpansion(monthData.monthKey)}
+                      >
+                        <div className="flex items-center gap-3">
+                          <h3 className="text-lg font-semibold">{monthData.month}</h3>
+                          <Badge variant="outline" className="border-amber-300 text-amber-700">{monthData.itemCount} items</Badge>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <span className="text-sm text-muted-foreground">
+                            Total Value: <span className="font-medium text-foreground">{formatCurrency(monthData.totalAmount)}</span>
+                          </span>
+                          {expandedUnfulfilledMonths.has(monthData.monthKey) ? (
+                            <ChevronUp className="h-4 w-4 text-muted-foreground" />
+                          ) : (
+                            <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                          )}
+                        </div>
+                      </div>
+                      {expandedUnfulfilledMonths.has(monthData.monthKey) && (
+                        <div className="space-y-2 pt-2 border-t border-amber-200 dark:border-amber-900/30">
+                          {monthData.items.map((item: any) => (
+                            <div key={item.line_item_id} className="flex items-center justify-between p-2 rounded bg-white/50 dark:bg-slate-900/50 backdrop-blur-sm border border-amber-200/50 dark:border-amber-900/20">
+                              <div className="flex-1 min-w-0">
+                                <div className="font-medium truncate">{item.product_title}</div>
+                                <div className="text-sm text-muted-foreground">
+                                  {format(new Date(item.created_at), "MMM d, yyyy")}
+                                </div>
+                              </div>
+                              <div className="text-right ml-4">
+                                <div className="text-sm text-muted-foreground">Order Value</div>
+                                <div className="font-medium">{formatCurrency(item.price)}</div>
+                                <div className="text-sm text-muted-foreground mt-1">Payout</div>
+                                <div className="font-bold text-amber-600 dark:text-amber-400">{formatCurrency(item.payout_amount)}</div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                  <Alert className="bg-amber-50 dark:bg-amber-950/20 border-amber-200 dark:border-amber-900/30">
+                    <AlertCircle className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+                    <AlertDescription className="text-amber-800 dark:text-amber-300">
+                      <strong>Awaiting fulfillment.</strong> These items have been sold but haven't been fulfilled yet. Once they're fulfilled, they'll move to "Ready to Request Payment" and you can request your payout.
+                    </AlertDescription>
+                  </Alert>
+                </div>
+              </CardContent>
+            </Card>
+          )}
 
           {/* Pending Orders Breakdown */}
           <Card className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-0 shadow-xl">
