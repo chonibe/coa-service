@@ -34,19 +34,19 @@ SELECT
     COALESCE(v.auth_id::TEXT, oli.vendor_name) as collector_identifier,
     'payout_earned'::collector_transaction_type,
     CASE 
-        WHEN oli.price < 10 THEN 10.00 
+        WHEN oli.created_at < '2025-10-01' THEN 10.00
         ELSE (oli.price * 0.25) 
     END as amount,
     'USD', -- currency is TEXT with check constraint
     oli.order_id,
     oli.line_item_id,
     CASE 
-        WHEN oli.price < 10 THEN 'Payout earnings (Price Correction applied: <$10 -> $40)'
+        WHEN oli.created_at < '2025-10-01' THEN 'Payout earnings (Historical Adjustment: $40 Revenue -> $10 Payout)'
         ELSE 'Payout earnings (Standard 25% share)'
     END as description,
     jsonb_build_object(
-        'original_price', oli.price,
-        'correction_applied', oli.price < 10,
+        'original_price', COALESCE(oli.metadata->>'original_price', oli.price::text),
+        'historical_adjustment', oli.created_at < '2025-10-01',
         'vendor_name', oli.vendor_name,
         'rebuilt_at', NOW()
     ) as metadata,

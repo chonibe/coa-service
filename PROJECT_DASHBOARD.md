@@ -92,6 +92,7 @@
 ### Sprint: Marketplace Reliability
 - **Epic**: Collector APIs Hardening
   - **Story**: [Collector vendor profile fix](./app/api/collector/marketplace/route.ts) — Completed 2025-12-21. Updated collector marketplace, product, series, and artist APIs to use existing vendor profile columns for profile image/website/instagram data to prevent Supabase column errors.
+  - **Story**: [Historical Price Correction (Pre-Oct 2025)](/docs/features/vendor-payouts/README.md) — Completed 2025-12-28. Implemented forced $40 revenue and $10 payout for items before October 2025 to resolve historical currency inconsistencies. Adjusted ledger and line items with metadata audit trail.
 
 ## Development Metrics
 

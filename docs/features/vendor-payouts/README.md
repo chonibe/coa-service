@@ -338,7 +338,24 @@ When an order is refunded:
 - Invoices display USD amounts
 - Vendor dashboard shows USD formatting
 
+## Historical Price Correction (Pre-Oct 2025)
+
+As part of the platform's currency transition and "reset," an exception has been applied to all fulfilled line items created before October 1, 2025.
+
+### Adjustment Details
+- **Revenue Correction**: All eligible line items have their `price` set to **$40.00**.
+- **Payout Rule**: Fixed at **$10.00** (exactly 25% of the corrected $40.00 revenue).
+- **Audit Trail**: Original prices and adjustment notes are preserved in the `metadata` column of `order_line_items_v2`.
+- **Ledger Rebuild**: The unified ledger has been rebuilt to reflect these corrected earnings for all historical records.
+
+This adjustment ensures that historical data matches the current USD-only payout standard and provides a clear, consistent baseline for vendors.
+
 ## Version History
+
+- **v2.1.0** (2025-12-28): Historical Data Alignment
+  - Implemented historical price correction ($40 revenue / $10 payout) for pre-Oct 2025 data.
+  - Added `metadata` support to `order_line_items_v2` for audit trails.
+  - Updated unified ledger rebuild logic.
 
 - **v2.0.0** (2024-11-21): Pro Payout System Upgrade
   - PayPal Payouts API integration

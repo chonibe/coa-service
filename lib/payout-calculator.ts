@@ -139,17 +139,21 @@ export async function calculateOrderPayout(
           }
         }
 
-        // Convert to USD if needed
-        const priceForCalculation = await convertToUSD(originalPrice, originalCurrency)
+        // Historical exception: Up to September 2025, force $40 price and $10 payout
+        const orderDate = new Date(orderData.order_date)
+        const october2025 = new Date('2025-10-01')
+        
+        let priceForCalculation = await convertToUSD(originalPrice, originalCurrency)
+        
+        if (orderDate < october2025) {
+          priceForCalculation = 40.00
+        }
 
-        // Always use 25% payout with $10 minimum for orders before October 2025
         const payoutPercentage = DEFAULT_PAYOUT_PERCENTAGE // Always 25%
         const isPercentage = true // Always percentage
         let recalculatedPayoutAmount = (priceForCalculation * payoutPercentage) / 100
 
-        // Apply $10 minimum for orders before October 2025
-        const orderDate = new Date(orderData.order_date)
-        const october2025 = new Date('2025-10-01')
+        // Apply $10 minimum for orders before October 2025 (safety check)
         if (orderDate < october2025 && recalculatedPayoutAmount < 10) {
           recalculatedPayoutAmount = 10
         }

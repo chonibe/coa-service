@@ -288,7 +288,7 @@ export default function VendorDashboardPage() {
           {isLoading ? (
             <LoadingSkeleton variant="metric" count={3} />
           ) : (
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            <div className="grid gap-4 md:grid-cols-2">
               <MetricCard
                 title="Total Sales"
                 value={salesData?.totalSales || 0}
@@ -299,19 +299,6 @@ export default function VendorDashboardPage() {
                   isPositive: salesData.totalSales >= previousSales,
                 }}
                 description="Orders you've received"
-                variant="elevated"
-              />
-
-              <MetricCard
-                title="Total Revenue"
-                value={formatCurrency(salesData?.totalRevenue || 0)}
-                icon={DollarSign}
-                trend={{
-                  value: calculateTrend(salesData.totalRevenue, previousRevenue),
-                  label: "vs last period",
-                  isPositive: salesData.totalRevenue >= previousRevenue,
-                }}
-                description="Total sales you've made"
                 variant="elevated"
               />
 
