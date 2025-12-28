@@ -20,6 +20,7 @@ interface AdminMetrics {
 
 interface VendorMetrics {
   expectedNextPayout: number
+  availablePayoutBalance: number
   payoutFrequency: number
   averagePayoutSize: number
   growthTrend: number
@@ -233,11 +234,24 @@ export function PayoutMetricsCards({ vendorName, isAdmin = false }: PayoutMetric
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         <Card className="border-primary/20 bg-primary/5">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Expected Next Payout</CardTitle>
+            <CardTitle className="text-sm font-medium">Available Payout Balance</CardTitle>
             <DollarSign className="h-4 w-4 text-primary" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-primary">{formatUSD(vendorMetrics.expectedNextPayout)}</div>
+            <div className="text-2xl font-bold text-primary">{formatUSD(vendorMetrics.availablePayoutBalance)}</div>
+            <p className="text-xs text-muted-foreground mt-1">
+              Available for payout requests
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card className="border-green-500/20 bg-green-500/5">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Expected Next Payout</CardTitle>
+            <DollarSign className="h-4 w-4 text-green-500" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-green-500">{formatUSD(vendorMetrics.expectedNextPayout)}</div>
             {vendorMetrics.nextPayoutDate && (
               <p className="text-xs text-muted-foreground mt-1">
                 Estimated: {new Date(vendorMetrics.nextPayoutDate).toLocaleDateString()}

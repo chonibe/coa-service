@@ -6,7 +6,7 @@ import { getVendorFromCookieStore } from "@/lib/vendor-session"
 import { cookies } from "next/headers"
 
 export async function GET(request: NextRequest) {
-  const cookieStore = cookies()
+  const cookieStore = await cookies()
   const sessionVendorName = getVendorFromCookieStore(cookieStore)
   const { searchParams } = request.nextUrl
   const queryVendorName = searchParams.get("vendorName")
@@ -77,15 +77,43 @@ export async function GET(request: NextRequest) {
       const previousTotal = previousPayouts.reduce((sum, p) => sum + (p.amount || 0), 0)
       const growthTrend = previousTotal > 0 ? ((recentTotal - previousTotal) / previousTotal) * 100 : 0
 
-      // Get pending payout amount
-      const { data: pendingPayouts } = await supabase
-        .from("vendor_payouts")
-        .select("amount")
+      // Get vendor's collector identifier for ledger-based balance
+      const { data: vendor } = await supabase
+        .from("vendors")
+        .select("id, auth_id, vendor_name")
         .eq("vendor_name", vendorName)
-        .in("status", ["pending", "processing"])
+        .single()
 
-      const expectedNextPayout =
-        pendingPayouts?.reduce((sum, p) => sum + (p.amount || 0), 0) || 0
+      let expectedNextPayout = 0
+      if (vendor && !vendor.error) {
+        const collectorIdentifier = vendor.auth_id || vendorName
+
+        try {
+          // Import the ledger-based balance calculator
+          const { getUsdBalance } = await import("@/lib/banking/balance-calculator")
+          expectedNextPayout = await getUsdBalance(collectorIdentifier)
+        } catch (error) {
+          console.error(`Error getting ledger balance for ${vendorName}:`, error)
+          // Fall back to pending payouts calculation
+          const { data: pendingPayouts } = await supabase
+            .from("vendor_payouts")
+            .select("amount")
+            .eq("vendor_name", vendorName)
+            .in("status", ["pending", "processing"])
+
+          expectedNextPayout = pendingPayouts?.reduce((sum, p) => sum + (p.amount || 0), 0) || 0
+        }
+      } else {
+        console.error(`Error fetching vendor ${vendorName}:`, vendor?.error)
+        // Fall back to pending payouts calculation
+        const { data: pendingPayouts } = await supabase
+          .from("vendor_payouts")
+          .select("amount")
+          .eq("vendor_name", vendorName)
+          .in("status", ["pending", "processing"])
+
+        expectedNextPayout = pendingPayouts?.reduce((sum, p) => sum + (p.amount || 0), 0) || 0
+      }
 
       // Estimate next payout date (average interval)
       let nextPayoutDate: string | undefined
@@ -101,6 +129,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({
         metrics: {
           expectedNextPayout,
+          availablePayoutBalance: expectedNextPayout, // Same as expectedNextPayout - represents available balance for payout
           payoutFrequency,
           averagePayoutSize,
           growthTrend,
