@@ -9,15 +9,18 @@
 - [x] `lib/vendor-balance-calculator.ts` – Updated to use ledger-based USD balance instead of random calculations, ensuring account balance correlates with actual payout amounts
 - [x] `app/api/payouts/analytics/metrics/route.ts` – Updated expected next payout to use ledger-based USD balance for consistency with credit amounts
 - [x] `components/payouts/payout-metrics-cards.tsx` – Added 'Available Payout Balance' card showing the same amount as store credits
+- [x] `lib/payout-processor.ts` – Created payout processor that properly debits USD balance from ledger when payouts are processed
+- [x] `lib/vendor-balance-calculator.ts` – Added auto-detection and fix for missing payout withdrawal ledger entries
 
 ### 🔐 Highlights
+- **FIXED CRITICAL BALANCE DISCREPANCY**: Resolved issue where processed payouts weren't debiting the ledger, causing credit balances to show incorrect amounts
+- **AUTO-HEALING LEDGER**: Balance calculator now automatically detects and fixes missing payout withdrawal entries
+- **SYNCHRONIZED BALANCES**: Payout amounts and credit balances now stay perfectly correlated
 - Eliminated confusing payout frequency metric from vendor dashboard for cleaner UX
 - Professional invoice structure with clear hierarchy and scannability
 - Proper tax compliance with Street Collector Ltd company details and UK VAT registration (473655758)
 - Line items now show actual product names instead of generic 'Artist payout'
 - Multiple items of same product are aggregated with total quantities and amounts
-- **Account balance now correlates with actual payout amounts** - uses ledger-based USD balance system instead of random calculations
-- **Payout amounts and credit amounts are now the same** - unified balance system across dashboard, payouts, and store
 - Added clear 'Available Payout Balance' card for transparency
 - Visually dominant totals section for easy accountant review
 - Separated payment details from notes for better clarity
