@@ -151,5 +151,50 @@ export class UnifiedBankingService {
       amount: -Math.abs(params.amount), // Ensure negative
     });
   }
+
+  /**
+   * Verify platform financial integrity.
+   * Compares total completed payouts against total ledger withdrawals.
+   * Returns a drift amount (ideally 0.00).
+   */
+  async verifyPlatformIntegrity() {
+    // 1. Sum of all completed payouts
+    const { data: payoutSum, error: payoutError } = await this.supabase
+      .from('vendor_payouts')
+      .select('amount')
+      .eq('status', 'completed');
+
+    if (payoutError) throw payoutError;
+
+    const totalPayouts = payoutSum?.reduce((sum, p) => sum + Number(p.amount || 0), 0) || 0;
+
+    // 2. Sum of all ledger withdrawals
+    const { data: ledgerSum, error: ledgerError } = await this.supabase
+      .from('collector_ledger_entries')
+      .select('amount')
+      .eq('transaction_type', 'payout_withdrawal')
+      .eq('currency', 'USD');
+
+    if (ledgerError) throw ledgerError;
+
+    const totalWithdrawals = Math.abs(ledgerSum?.reduce((sum, l) => sum + Number(l.amount || 0), 0) || 0);
+
+    const drift = Number((totalPayouts - totalWithdrawals).toFixed(2));
+
+    // 3. Find specific missing payout IDs (optional but helpful)
+    const { data: vp } = await this.supabase.from('vendor_payouts').select('id').eq('status', 'completed');
+    const { data: cle } = await this.supabase.from('collector_ledger_entries').select('payout_id').eq('transaction_type', 'payout_withdrawal');
+    const ledgerPayoutIds = new Set(cle?.map(l => l.payout_id).filter(Boolean));
+    const missingCount = vp?.filter(p => !ledgerPayoutIds.has(p.id)).length || 0;
+
+    return {
+      totalPayouts,
+      totalWithdrawals,
+      drift,
+      missingCount,
+      isHealthy: Math.abs(drift) < 0.01 && missingCount === 0,
+      lastChecked: new Date().toISOString()
+    };
+  }
 }
 

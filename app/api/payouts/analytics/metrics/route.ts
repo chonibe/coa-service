@@ -132,6 +132,9 @@ export async function GET(request: NextRequest) {
       // Refund impact from ledger
       const refundImpact = Math.abs(recentEntries?.filter(e => e.transaction_type === 'refund_deduction').reduce((sum, e) => sum + e.amount, 0) || 0)
 
+      // Ledger integrity check
+      const integrity = await banking.verifyPlatformIntegrity()
+
       return NextResponse.json({
         metrics: {
           totalPending,
@@ -144,6 +147,7 @@ export async function GET(request: NextRequest) {
             monthly: completedPayouts.filter(e => new Date(e.created_at) > new Date(Date.now() - 2592000000)).length / 30,
           },
           refundImpact,
+          ledgerIntegrity: integrity,
         },
       })
     }
