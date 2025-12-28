@@ -329,253 +329,254 @@ export function VendorLineItemsDrawer({
       </div>
     )
   } else {
-    content = (
-      <>
-          <div className="space-y-4 mt-6">
-            {/* Sticky Summary */}
-            <div className="sticky top-0 z-10 bg-background pb-2 border-b">
-              <div className="grid grid-cols-3 gap-4 p-4 bg-muted rounded-lg border" role="region" aria-label="Line items summary">
-                <div>
-                  <div className="text-sm text-muted-foreground">Total</div>
-                  <div className="text-lg font-semibold">{formatUSD(totalAmount)}</div>
-                </div>
-                <div>
-                  <div className="text-sm text-muted-foreground">Paid</div>
-                  <div className="text-lg font-semibold text-green-600">{formatUSD(paidAmount)}</div>
-                </div>
-                <div>
-                  <div className="text-sm text-muted-foreground">Pending</div>
-                  <div className="text-lg font-semibold text-amber-600">{formatUSD(pendingAmount)}</div>
-                </div>
-              </div>
-
-              {/* Search and Actions */}
-              <div className="flex items-center gap-2 mt-3">
-                <div className="relative flex-1">
-                  <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    placeholder="Search products, orders..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="pl-8"
-                  />
-                </div>
-                {selectedItems.size > 0 && (
-                  <Button
-                    variant="default"
-                    size="sm"
-                    onClick={handleBulkMarkPaid}
-                    disabled={isProcessing}
+    const lineItemsContent = filteredLineItems.length === 0 && searchQuery ? (
+      <div className="py-8 text-center">
+        <p className="text-muted-foreground">No items match your search query.</p>
+        <Button variant="ghost" size="sm" onClick={() => setSearchQuery("")} className="mt-2">
+          Clear Search
+        </Button>
+      </div>
+    ) : (
+      <div className="space-y-6" role="region" aria-label="Line items by order">
+        {Object.entries(groupedByOrder).map(([orderId, items]) => {
+          const orderTotal = items.reduce((sum, item) => sum + calculatePayoutAmount(item), 0)
+          return (
+            <div key={orderId} className="border rounded-lg overflow-hidden shadow-sm">
+              <div className="p-4 bg-gradient-to-r from-muted/50 to-muted/30 border-b">
+                <div className="flex items-center justify-between">
+                  <a
+                    href={`/admin/orders/${orderId}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-2 font-medium hover:text-primary transition-colors"
                   >
-                    <CheckCircle className="h-4 w-4 mr-1" />
-                    Mark {selectedItems.size} Paid
-                  </Button>
-                )}
-                <Button variant="outline" size="sm" onClick={handleExport}>
-                  <Download className="h-4 w-4 mr-1" />
-                  Export
-                </Button>
-              </div>
-
-              {/* Selection Controls */}
-              {selectableItems.length > 0 && (
-                <div className="flex items-center gap-2 mt-2">
-                  <Checkbox
-                    checked={selectedItems.size === selectableItems.length && selectableItems.length > 0}
-                    onCheckedChange={handleSelectAll}
-                  />
-                  <span className="text-sm text-muted-foreground">
-                    {selectedItems.size > 0
-                      ? `${selectedItems.size} of ${selectableItems.length} selected`
-                      : `Select all ${selectableItems.length} payable items`}
-                  </span>
+                    {items[0]?.order_name || orderId}
+                    <ExternalLink className="h-3 w-3" />
+                  </a>
+                  <div className="text-sm font-semibold">{formatUSD(orderTotal)}</div>
                 </div>
-              )}
-            </div>
-
-            {/* Line Items by Order */}
-            {filteredLineItems.length === 0 && searchQuery ? (
-              <div className="py-8 text-center">
-                <p className="text-muted-foreground">No items match your search query.</p>
-                <Button variant="ghost" size="sm" onClick={() => setSearchQuery("")} className="mt-2">
-                  Clear Search
-                </Button>
               </div>
-            ) : (
-              <div className="space-y-6" role="region" aria-label="Line items by order">
-                {Object.entries(groupedByOrder).map(([orderId, items]) => {
-                  const orderTotal = items.reduce((sum, item) => sum + calculatePayoutAmount(item), 0)
-                  return (
-                    <div key={orderId} className="border rounded-lg overflow-hidden shadow-sm">
-                      <div className="p-4 bg-gradient-to-r from-muted/50 to-muted/30 border-b">
-                        <div className="flex items-center justify-between">
-                          <a
-                            href={`/admin/orders/${orderId}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="flex items-center gap-2 font-medium hover:text-primary transition-colors"
-                          >
-                            {items[0]?.order_name || orderId}
-                            <ExternalLink className="h-3 w-3" />
-                          </a>
-                          <div className="text-sm font-semibold">{formatUSD(orderTotal)}</div>
-                        </div>
-                      </div>
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead className="w-[50px]"></TableHead>
-                          <TableHead>Product</TableHead>
-                          <TableHead>Date</TableHead>
-                          <TableHead>Fulfillment</TableHead>
-                          <TableHead>Status</TableHead>
-                          <TableHead className="text-right">Price</TableHead>
-                          <TableHead className="text-right">Payout</TableHead>
-                          <TableHead className="w-[100px]">Actions</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {items.map((item) => {
-                          const isSelectable = !item.is_paid && item.fulfillment_status === "fulfilled"
-                          const isSelected = selectedItems.has(item.line_item_id)
-                          return (
-                            <TableRow
-                              key={item.line_item_id}
-                              className={cn(isSelected && "bg-blue-50 dark:bg-blue-950/20")}
-                            >
-                              <TableCell className="w-[50px]">
-                                {isSelectable && (
-                                  <Checkbox
-                                    checked={isSelected}
-                                    onCheckedChange={() => handleToggleSelect(item.line_item_id)}
-                                  />
-                                )}
-                              </TableCell>
-                              <TableCell>
-                                <div className="text-sm font-medium">
-                                  {item.product_title || "Unknown Product"}
-                                </div>
-                                <div className="text-xs text-muted-foreground">{item.product_id}</div>
-                              </TableCell>
-                              <TableCell>{formatDate(item.created_at)}</TableCell>
-                              <TableCell>
-                                <TooltipProvider>
-                                  <Tooltip>
-                                    <TooltipTrigger asChild>
-                                      <Badge
-                                        variant={
-                                          item.fulfillment_status === "fulfilled" ? "default" : "outline"
-                                        }
-                                        className={cn(
-                                          item.fulfillment_status !== "fulfilled" &&
-                                            "text-amber-600 border-amber-200 bg-amber-50 cursor-help"
-                                        )}
-                                      >
-                                        {item.fulfillment_status || "Unfulfilled"}
-                                      </Badge>
-                                    </TooltipTrigger>
-                                    <TooltipContent>
-                                      <p className="text-sm">
-                                        {item.fulfillment_status === "fulfilled"
-                                          ? "Order has been fulfilled and is ready for payout"
-                                          : "Order must be fulfilled before payout can be processed"}
-                                      </p>
-                                    </TooltipContent>
-                                  </Tooltip>
-                                </TooltipProvider>
-                              </TableCell>
-                              <TableCell>
-                                {item.is_paid ? (
-                                  <TooltipProvider>
-                                    <Tooltip>
-                                      <TooltipTrigger asChild>
-                                        <div className="flex items-center gap-2 cursor-help">
-                                          <Badge variant="default" className="bg-green-600">
-                                            Paid
-                                          </Badge>
-                                          {item.payout_reference && (
-                                            <span className="text-xs text-muted-foreground">
-                                              {item.payout_reference}
-                                            </span>
-                                          )}
-                                        </div>
-                                      </TooltipTrigger>
-                                      <TooltipContent>
-                                        <p className="text-sm">
-                                          This item has been marked as paid
-                                          {item.payout_reference && ` (Reference: ${item.payout_reference})`}
-                                        </p>
-                                      </TooltipContent>
-                                    </Tooltip>
-                                  </TooltipProvider>
-                                ) : item.fulfillment_status === "fulfilled" ? (
-                                  <TooltipProvider>
-                                    <Tooltip>
-                                      <TooltipTrigger asChild>
-                                        <Badge variant="outline" className="text-amber-600 cursor-help">
-                                          Pending Payout
-                                        </Badge>
-                                      </TooltipTrigger>
-                                      <TooltipContent>
-                                        <p className="text-sm">Ready to be marked as paid</p>
-                                      </TooltipContent>
-                                    </Tooltip>
-                                  </TooltipProvider>
-                                ) : (
-                                  <TooltipProvider>
-                                    <Tooltip>
-                                      <TooltipTrigger asChild>
-                                        <Badge
-                                          variant="outline"
-                                          className="text-muted-foreground bg-muted cursor-help"
-                                        >
-                                          Not Ready
-                                        </Badge>
-                                      </TooltipTrigger>
-                                      <TooltipContent>
-                                        <p className="text-sm">
-                                          Item must be fulfilled before it can be marked as paid
-                                        </p>
-                                      </TooltipContent>
-                                    </Tooltip>
-                                  </TooltipProvider>
-                                )}
-                              </TableCell>
-                              <TableCell className="text-right">
-                                {formatUSD(convertGBPToUSD(item.price))}
-                              </TableCell>
-                              <TableCell className="text-right">
-                                <div className="font-medium">{formatUSD(calculatePayoutAmount(item))}</div>
-                                <div className="text-xs text-muted-foreground">
-                                  {item.is_percentage ? `${item.payout_amount}%` : "Fixed"}
-                                </div>
-                              </TableCell>
-                              <TableCell>
-                                {!item.is_paid && (
-                                  <Button
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="w-[50px]"></TableHead>
+                    <TableHead>Product</TableHead>
+                    <TableHead>Date</TableHead>
+                    <TableHead>Fulfillment</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead className="text-right">Price</TableHead>
+                    <TableHead className="text-right">Payout</TableHead>
+                    <TableHead className="w-[100px]">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {items.map((item) => {
+                    const isSelectable = !item.is_paid && item.fulfillment_status === "fulfilled"
+                    const isSelected = selectedItems.has(item.line_item_id)
+                    return (
+                      <TableRow
+                        key={item.line_item_id}
+                        className={cn(isSelected && "bg-blue-50 dark:bg-blue-950/20")}
+                      >
+                        <TableCell className="w-[50px]">
+                          {isSelectable && (
+                            <Checkbox
+                              checked={isSelected}
+                              onCheckedChange={() => handleToggleSelect(item.line_item_id)}
+                            />
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          <div className="text-sm font-medium">
+                            {item.product_title || "Unknown Product"}
+                          </div>
+                          <div className="text-xs text-muted-foreground">{item.product_id}</div>
+                        </TableCell>
+                        <TableCell>{formatDate(item.created_at)}</TableCell>
+                        <TableCell>
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Badge
+                                  variant={
+                                    item.fulfillment_status === "fulfilled" ? "default" : "outline"
+                                  }
+                                  className={cn(
+                                    item.fulfillment_status !== "fulfilled" &&
+                                      "text-amber-600 border-amber-200 bg-amber-50 cursor-help"
+                                  )}
+                                >
+                                  {item.fulfillment_status || "Unfulfilled"}
+                                </Badge>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p className="text-sm">
+                                  {item.fulfillment_status === "fulfilled"
+                                    ? "Order has been fulfilled and is ready for payout"
+                                    : "Order must be fulfilled before payout can be processed"}
+                                </p>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                        </TableCell>
+                        <TableCell>
+                          {item.is_paid ? (
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <div className="flex items-center gap-2 cursor-help">
+                                    <Badge variant="default" className="bg-green-600">
+                                      Paid
+                                    </Badge>
+                                    {item.payout_reference && (
+                                      <span className="text-xs text-muted-foreground">
+                                        {item.payout_reference}
+                                      </span>
+                                    )}
+                                  </div>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  <p className="text-sm">
+                                    This item has been marked as paid
+                                    {item.payout_reference && ` (Reference: ${item.payout_reference})`}
+                                  </p>
+                                </TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
+                          ) : item.fulfillment_status === "fulfilled" ? (
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Badge variant="outline" className="text-amber-600 cursor-help">
+                                    Pending Payout
+                                  </Badge>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  <p className="text-sm">Ready to be marked as paid</p>
+                                </TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
+                          ) : (
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Badge
                                     variant="outline"
-                                    size="sm"
-                                    onClick={() => {
-                                      handleMarkPaid(item.line_item_id)
-                                    }}
-                                    disabled={isProcessing || item.fulfillment_status !== "fulfilled"}
+                                    className="text-muted-foreground bg-muted cursor-help"
                                   >
-                                    <CheckCircle className="h-3 w-3 mr-1" />
-                                    Mark Paid
-                                  </Button>
-                                )}
-                              </TableCell>
-                            </TableRow>
-                          )
-                        })}
-                      </TableBody>
-                    </Table>
-                  </div>
-                )
-              })}
+                                    Not Ready
+                                  </Badge>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  <p className="text-sm">
+                                    Item must be fulfilled before it can be marked as paid
+                                  </p>
+                                </TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
+                          )}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          {formatUSD(convertGBPToUSD(item.price))}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <div className="font-medium">{formatUSD(calculatePayoutAmount(item))}</div>
+                          <div className="text-xs text-muted-foreground">
+                            {item.is_percentage ? `${item.payout_amount}%` : "Fixed"}
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          {!item.is_paid && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => {
+                                handleMarkPaid(item.line_item_id)
+                              }}
+                              disabled={isProcessing || item.fulfillment_status !== "fulfilled"}
+                            >
+                              <CheckCircle className="h-3 w-3 mr-1" />
+                              Mark Paid
+                            </Button>
+                          )}
+                        </TableCell>
+                      </TableRow>
+                    )
+                  })}
+                </TableBody>
+              </Table>
+            </div>
+          )
+        })}
+      </div>
+    )
+
+    content = (
+      <div className="space-y-4 mt-6">
+        {/* Sticky Summary */}
+        <div className="sticky top-0 z-10 bg-background pb-2 border-b">
+          <div className="grid grid-cols-3 gap-4 p-4 bg-muted rounded-lg border" role="region" aria-label="Line items summary">
+            <div>
+              <div className="text-sm text-muted-foreground">Total</div>
+              <div className="text-lg font-semibold">{formatUSD(totalAmount)}</div>
+            </div>
+            <div>
+              <div className="text-sm text-muted-foreground">Paid</div>
+              <div className="text-lg font-semibold text-green-600">{formatUSD(paidAmount)}</div>
+            </div>
+            <div>
+              <div className="text-sm text-muted-foreground">Pending</div>
+              <div className="text-lg font-semibold text-amber-600">{formatUSD(pendingAmount)}</div>
             </div>
           </div>
-      </>
+
+          {/* Search and Actions */}
+          <div className="flex items-center gap-2 mt-3">
+            <div className="relative flex-1">
+              <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Search products, orders..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-8"
+              />
+            </div>
+            {selectedItems.size > 0 && (
+              <Button
+                variant="default"
+                size="sm"
+                onClick={handleBulkMarkPaid}
+                disabled={isProcessing}
+              >
+                <CheckCircle className="h-4 w-4 mr-1" />
+                Mark {selectedItems.size} Paid
+              </Button>
+            )}
+            <Button variant="outline" size="sm" onClick={handleExport}>
+              <Download className="h-4 w-4 mr-1" />
+              Export
+            </Button>
+          </div>
+
+          {/* Selection Controls */}
+          {selectableItems.length > 0 && (
+            <div className="flex items-center gap-2 mt-2">
+              <Checkbox
+                checked={selectedItems.size === selectableItems.length && selectableItems.length > 0}
+                onCheckedChange={handleSelectAll}
+              />
+              <span className="text-sm text-muted-foreground">
+                {selectedItems.size > 0
+                  ? `${selectedItems.size} of ${selectableItems.length} selected`
+                  : `Select all ${selectableItems.length} payable items`}
+              </span>
+            </div>
+          )}
+        </div>
+
+        {/* Line Items by Order */}
+        {lineItemsContent}
+      </div>
     )
   }
 
