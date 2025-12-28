@@ -108,7 +108,15 @@ export function VendorLineItemsDrawer({
     return convertGBPToUSD(item.payout_amount)
   }
 
-  const formatDate = (dateString: string) => {
+  const formatDate = (dateString: string): string => {
+    try {
+      return format(new Date(dateString), "dd MMM yyyy")
+    } catch (e) {
+      return "Invalid date"
+    }
+  }
+
+  const formatDateForExport = (dateString: string): string => {
     try {
       return format(new Date(dateString), "dd MMM yyyy")
     } catch (e) {
@@ -271,7 +279,7 @@ export function VendorLineItemsDrawer({
           item.order_name || "",
           item.product_id,
           item.product_title || "",
-          formatDate(item.created_at),
+          formatDateForExport(item.created_at),
           convertGBPToUSD(item.price),
           calculatePayoutAmount(item),
           item.is_paid ? "Paid" : "Pending",
