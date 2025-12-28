@@ -7,6 +7,8 @@
 - [x] `lib/invoices/generator.ts` – Updated VAT number to 473655758 and self-billing notice to reference Street Collector Ltd
 - [x] `lib/invoices/generator.ts` – Updated company description to 'Art marketplace'
 - [x] `lib/vendor-balance-calculator.ts` – Updated to use ledger-based USD balance instead of random calculations, ensuring account balance correlates with actual payout amounts
+- [x] `app/api/payouts/analytics/metrics/route.ts` – Updated expected next payout to use ledger-based USD balance for consistency with credit amounts
+- [x] `components/payouts/payout-metrics-cards.tsx` – Added 'Available Payout Balance' card showing the same amount as store credits
 
 ### 🔐 Highlights
 - Eliminated confusing payout frequency metric from vendor dashboard for cleaner UX
@@ -15,6 +17,8 @@
 - Line items now show actual product names instead of generic 'Artist payout'
 - Multiple items of same product are aggregated with total quantities and amounts
 - **Account balance now correlates with actual payout amounts** - uses ledger-based USD balance system instead of random calculations
+- **Payout amounts and credit amounts are now the same** - unified balance system across dashboard, payouts, and store
+- Added clear 'Available Payout Balance' card for transparency
 - Visually dominant totals section for easy accountant review
 - Separated payment details from notes for better clarity
 
@@ -24,11 +28,12 @@
 - All invoice sections display correctly with new customer information
 - Line items display actual product names and aggregate correctly
 - Account balance now reflects actual payout earnings from the ledger system
+- Payout amounts and credit amounts now show the same values
 
 ### 📌 Deployment Notes
 - No schema changes required. Deployed to Vercel production.
 - Invoice generation now uses updated structure for all payouts.
-- Balance calculations now use the unified collector ledger system for consistency.
+- Balance calculations now use the unified collector ledger system for consistency across all components.
 
 ## Commit: Vendor Dashboard UX & USD Analytics Refresh (2025-12-11)
 
