@@ -325,6 +325,7 @@ export function VendorLineItemsDrawer({
             </p>
           </div>
         ) : (
+          <>
           <div className="space-y-4 mt-6">
             {/* Sticky Summary */}
             <div className="sticky top-0 z-10 bg-background pb-2 border-b">
@@ -569,6 +570,7 @@ export function VendorLineItemsDrawer({
               })}
             </div>
           </div>
+          </>
         )}
       </SheetContent>
     </Sheet>
