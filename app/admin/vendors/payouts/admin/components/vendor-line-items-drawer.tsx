@@ -306,34 +306,31 @@ export function VendorLineItemsDrawer({
     return null
   }
 
-  return (
-    <Sheet open={open} onOpenChange={onOpenChange} modal={true}>
-      <SheetContent className="sm:max-w-4xl overflow-y-auto z-[100]" aria-describedby="line-items-description">
-        <SheetHeader>
-          <SheetTitle>Line Items - {vendorName}</SheetTitle>
-          <SheetDescription id="line-items-description">
-            View and manage line items for this vendor's payout. Line items are grouped by order.
-          </SheetDescription>
-        </SheetHeader>
+  let content: React.ReactNode = null
 
-        {isLoading ? (
-          <div className="flex justify-center py-8">
-            <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-          </div>
-        ) : lineItems.length === 0 ? (
-          <div className="py-12 text-center">
-            <p className="text-muted-foreground mb-2 font-medium">No line items found for this vendor.</p>
-            <p className="text-sm text-muted-foreground mb-4">
-              {includePaid
-                ? "Try adjusting the date range or check if items have been fulfilled."
-                : "Only fulfilled items are shown. Enable 'Include Paid Items' to see all items."}
-            </p>
-            <p className="text-xs text-muted-foreground">
-              Make sure the vendor has fulfilled orders within the selected date range.
-            </p>
-          </div>
-        ) : (
-          <>
+  if (isLoading) {
+    content = (
+      <div className="flex justify-center py-8">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    )
+  } else if (lineItems.length === 0) {
+    content = (
+      <div className="py-12 text-center">
+        <p className="text-muted-foreground mb-2 font-medium">No line items found for this vendor.</p>
+        <p className="text-sm text-muted-foreground mb-4">
+          {includePaid
+            ? "Try adjusting the date range or check if items have been fulfilled."
+            : "Only fulfilled items are shown. Enable 'Include Paid Items' to see all items."}
+        </p>
+        <p className="text-xs text-muted-foreground">
+          Make sure the vendor has fulfilled orders within the selected date range.
+        </p>
+      </div>
+    )
+  } else {
+    content = (
+      <>
           <div className="space-y-4 mt-6">
             {/* Sticky Summary */}
             <div className="sticky top-0 z-10 bg-background pb-2 border-b">
@@ -578,8 +575,20 @@ export function VendorLineItemsDrawer({
               })}
             </div>
           </div>
-          </>
-        )}
+      </>
+    )
+  }
+
+  return (
+    <Sheet open={open} onOpenChange={onOpenChange} modal={true}>
+      <SheetContent className="sm:max-w-4xl overflow-y-auto z-[100]" aria-describedby="line-items-description">
+        <SheetHeader>
+          <SheetTitle>Line Items - {vendorName}</SheetTitle>
+          <SheetDescription id="line-items-description">
+            View and manage line items for this vendor's payout. Line items are grouped by order.
+          </SheetDescription>
+        </SheetHeader>
+        {content}
       </SheetContent>
     </Sheet>
   )
