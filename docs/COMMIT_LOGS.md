@@ -6,6 +6,7 @@
 - [x] `lib/invoices/generator.ts` – Updated line items to show actual product names and aggregate multiple items
 - [x] `lib/invoices/generator.ts` – Updated VAT number to 473655758 and self-billing notice to reference Street Collector Ltd
 - [x] `lib/invoices/generator.ts` – Updated company description to 'Art marketplace'
+- [x] `lib/vendor-balance-calculator.ts` – Updated to use ledger-based USD balance instead of random calculations, ensuring account balance correlates with actual payout amounts
 
 ### 🔐 Highlights
 - Eliminated confusing payout frequency metric from vendor dashboard for cleaner UX
@@ -13,6 +14,7 @@
 - Proper tax compliance with Street Collector Ltd company details and UK VAT registration (473655758)
 - Line items now show actual product names instead of generic 'Artist payout'
 - Multiple items of same product are aggregated with total quantities and amounts
+- **Account balance now correlates with actual payout amounts** - uses ledger-based USD balance system instead of random calculations
 - Visually dominant totals section for easy accountant review
 - Separated payment details from notes for better clarity
 
@@ -21,10 +23,12 @@
 - Vendor dashboard loads without the removed payout frequency card
 - All invoice sections display correctly with new customer information
 - Line items display actual product names and aggregate correctly
+- Account balance now reflects actual payout earnings from the ledger system
 
 ### 📌 Deployment Notes
 - No schema changes required. Deployed to Vercel production.
 - Invoice generation now uses updated structure for all payouts.
+- Balance calculations now use the unified collector ledger system for consistency.
 
 ## Commit: Vendor Dashboard UX & USD Analytics Refresh (2025-12-11)
 
