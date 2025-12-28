@@ -101,6 +101,42 @@ export async function calculateVendorBalance(
 
   const finalAvailableBalance = Math.max(0, availableBalance - refundTotal)
 
+  // LEGACY FIX: Check for completed payouts that don't have ledger withdrawal entries
+  // This fixes the discrepancy where payouts were processed but ledger wasn't updated
+  try {
+    // Get completed payouts that might not have withdrawal entries
+    const { data: completedPayouts, error: payoutError } = await client
+      .from("vendor_payouts")
+      .select("id, amount, payout_date")
+      .eq("vendor_name", vendorName)
+      .eq("status", "completed")
+
+    if (!payoutError && completedPayouts && vendor) {
+      const collectorIdentifier = vendor.auth_id || vendorName
+
+      for (const payout of completedPayouts) {
+        // Check if withdrawal entry exists
+        const { data: withdrawalEntry, error: checkError } = await client
+          .from("collector_ledger_entries")
+          .select("id")
+          .eq("collector_identifier", collectorIdentifier)
+          .eq("payout_id", payout.id)
+          .eq("transaction_type", "payout_withdrawal")
+          .maybeSingle()
+
+        if (!checkError && !withdrawalEntry) {
+          // Missing withdrawal entry - create it
+          console.log(`Creating missing withdrawal entry for payout ${payout.id} (${vendorName})`)
+
+          const { recordPayoutWithdrawal } = await import("@/lib/banking/payout-withdrawal")
+          await recordPayoutWithdrawal(vendorName, payout.id, payout.amount, client)
+        }
+      }
+    }
+  } catch (error) {
+    console.error(`Error checking for missing withdrawal entries for ${vendorName}:`, error)
+  }
+
   // Calculate pending balance (fulfilled items not yet paid)
   let pendingBalance = 0
 
