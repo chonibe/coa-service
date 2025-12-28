@@ -451,115 +451,115 @@ export function VendorLineItemsDrawer({
                                 </div>
                                 <div className="text-xs text-muted-foreground">{item.product_id}</div>
                               </TableCell>
-                            <TableCell>{formatDate(item.created_at)}</TableCell>
-                            <TableCell>
-                              <TooltipProvider>
-                                <Tooltip>
-                                  <TooltipTrigger asChild>
-                                    <Badge
-                                      variant={
-                                        item.fulfillment_status === "fulfilled" ? "default" : "outline"
-                                      }
-                                      className={cn(
-                                        item.fulfillment_status !== "fulfilled" &&
-                                          "text-amber-600 border-amber-200 bg-amber-50 cursor-help"
-                                      )}
-                                    >
-                                      {item.fulfillment_status || "Unfulfilled"}
-                                    </Badge>
-                                  </TooltipTrigger>
-                                  <TooltipContent>
-                                    <p className="text-sm">
-                                      {item.fulfillment_status === "fulfilled"
-                                        ? "Order has been fulfilled and is ready for payout"
-                                        : "Order must be fulfilled before payout can be processed"}
-                                    </p>
-                                  </TooltipContent>
-                                </Tooltip>
-                              </TooltipProvider>
-                            </TableCell>
-                            <TableCell>
-                              {item.is_paid ? (
-                                <TooltipProvider>
-                                  <Tooltip>
-                                    <TooltipTrigger asChild>
-                                      <div className="flex items-center gap-2 cursor-help">
-                                        <Badge variant="default" className="bg-green-600">
-                                          Paid
-                                        </Badge>
-                                        {item.payout_reference && (
-                                          <span className="text-xs text-muted-foreground">
-                                            {item.payout_reference}
-                                          </span>
-                                        )}
-                                      </div>
-                                    </TooltipTrigger>
-                                    <TooltipContent>
-                                      <p className="text-sm">
-                                        This item has been marked as paid
-                                        {item.payout_reference && ` (Reference: ${item.payout_reference})`}
-                                      </p>
-                                    </TooltipContent>
-                                  </Tooltip>
-                                </TooltipProvider>
-                              ) : item.fulfillment_status === "fulfilled" ? (
-                                <TooltipProvider>
-                                  <Tooltip>
-                                    <TooltipTrigger asChild>
-                                      <Badge variant="outline" className="text-amber-600 cursor-help">
-                                        Pending Payout
-                                      </Badge>
-                                    </TooltipTrigger>
-                                    <TooltipContent>
-                                      <p className="text-sm">Ready to be marked as paid</p>
-                                    </TooltipContent>
-                                  </Tooltip>
-                                </TooltipProvider>
-                              ) : (
+                              <TableCell>{formatDate(item.created_at)}</TableCell>
+                              <TableCell>
                                 <TooltipProvider>
                                   <Tooltip>
                                     <TooltipTrigger asChild>
                                       <Badge
-                                        variant="outline"
-                                        className="text-muted-foreground bg-muted cursor-help"
+                                        variant={
+                                          item.fulfillment_status === "fulfilled" ? "default" : "outline"
+                                        }
+                                        className={cn(
+                                          item.fulfillment_status !== "fulfilled" &&
+                                            "text-amber-600 border-amber-200 bg-amber-50 cursor-help"
+                                        )}
                                       >
-                                        Not Ready
+                                        {item.fulfillment_status || "Unfulfilled"}
                                       </Badge>
                                     </TooltipTrigger>
                                     <TooltipContent>
                                       <p className="text-sm">
-                                        Item must be fulfilled before it can be marked as paid
+                                        {item.fulfillment_status === "fulfilled"
+                                          ? "Order has been fulfilled and is ready for payout"
+                                          : "Order must be fulfilled before payout can be processed"}
                                       </p>
                                     </TooltipContent>
                                   </Tooltip>
                                 </TooltipProvider>
-                              )}
-                            </TableCell>
-                            <TableCell className="text-right">
-                              {formatUSD(convertGBPToUSD(item.price))}
-                            </TableCell>
-                            <TableCell className="text-right">
-                              <div className="font-medium">{formatUSD(calculatePayoutAmount(item))}</div>
-                              <div className="text-xs text-muted-foreground">
-                                {item.is_percentage ? `${item.payout_amount}%` : "Fixed"}
-                              </div>
-                            </TableCell>
-                            <TableCell>
-                              {!item.is_paid && (
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() => {
-                                    handleMarkPaid(item.line_item_id)
-                                  }}
-                                  disabled={isProcessing || item.fulfillment_status !== "fulfilled"}
-                                >
-                                  <CheckCircle className="h-3 w-3 mr-1" />
-                                  Mark Paid
-                                </Button>
-                              )}
-                            </TableCell>
-                          </TableRow>
+                              </TableCell>
+                              <TableCell>
+                                {item.is_paid ? (
+                                  <TooltipProvider>
+                                    <Tooltip>
+                                      <TooltipTrigger asChild>
+                                        <div className="flex items-center gap-2 cursor-help">
+                                          <Badge variant="default" className="bg-green-600">
+                                            Paid
+                                          </Badge>
+                                          {item.payout_reference && (
+                                            <span className="text-xs text-muted-foreground">
+                                              {item.payout_reference}
+                                            </span>
+                                          )}
+                                        </div>
+                                      </TooltipTrigger>
+                                      <TooltipContent>
+                                        <p className="text-sm">
+                                          This item has been marked as paid
+                                          {item.payout_reference && ` (Reference: ${item.payout_reference})`}
+                                        </p>
+                                      </TooltipContent>
+                                    </Tooltip>
+                                  </TooltipProvider>
+                                ) : item.fulfillment_status === "fulfilled" ? (
+                                  <TooltipProvider>
+                                    <Tooltip>
+                                      <TooltipTrigger asChild>
+                                        <Badge variant="outline" className="text-amber-600 cursor-help">
+                                          Pending Payout
+                                        </Badge>
+                                      </TooltipTrigger>
+                                      <TooltipContent>
+                                        <p className="text-sm">Ready to be marked as paid</p>
+                                      </TooltipContent>
+                                    </Tooltip>
+                                  </TooltipProvider>
+                                ) : (
+                                  <TooltipProvider>
+                                    <Tooltip>
+                                      <TooltipTrigger asChild>
+                                        <Badge
+                                          variant="outline"
+                                          className="text-muted-foreground bg-muted cursor-help"
+                                        >
+                                          Not Ready
+                                        </Badge>
+                                      </TooltipTrigger>
+                                      <TooltipContent>
+                                        <p className="text-sm">
+                                          Item must be fulfilled before it can be marked as paid
+                                        </p>
+                                      </TooltipContent>
+                                    </Tooltip>
+                                  </TooltipProvider>
+                                )}
+                              </TableCell>
+                              <TableCell className="text-right">
+                                {formatUSD(convertGBPToUSD(item.price))}
+                              </TableCell>
+                              <TableCell className="text-right">
+                                <div className="font-medium">{formatUSD(calculatePayoutAmount(item))}</div>
+                                <div className="text-xs text-muted-foreground">
+                                  {item.is_percentage ? `${item.payout_amount}%` : "Fixed"}
+                                </div>
+                              </TableCell>
+                              <TableCell>
+                                {!item.is_paid && (
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => {
+                                      handleMarkPaid(item.line_item_id)
+                                    }}
+                                    disabled={isProcessing || item.fulfillment_status !== "fulfilled"}
+                                  >
+                                    <CheckCircle className="h-3 w-3 mr-1" />
+                                    Mark Paid
+                                  </Button>
+                                )}
+                              </TableCell>
+                            </TableRow>
                           )
                         })}
                       </TableBody>
