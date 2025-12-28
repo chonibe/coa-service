@@ -6,8 +6,11 @@ import { Button } from "@/components/ui/button"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
-import { Loader2, AlertCircle, Send, ChevronLeft, ChevronRight } from "lucide-react"
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
+import { Badge } from "@/components/ui/badge"
+import { Loader2, AlertCircle, Send, ChevronLeft, ChevronRight, ChevronDown, Filter, X, Keyboard } from "lucide-react"
 import { useToast } from "@/components/ui/use-toast"
+import { formatUSD } from "@/lib/utils"
 import type { PendingPayout, PayoutPagination } from "../types"
 import { VendorPayoutRow } from "./vendor-payout-row"
 import { PayoutFiltersComponent } from "./payout-filters"
@@ -42,6 +45,7 @@ export function PendingPayoutsTab({
   onSelectionChange,
 }: PendingPayoutsTabProps) {
   const { toast } = useToast()
+  const [isFiltersOpen, setIsFiltersOpen] = useState(true)
 
   const filteredPayouts = pendingPayouts.filter((payout) => {
     const matchesSearch = payout.vendor_name
@@ -88,13 +92,39 @@ export function PendingPayoutsTab({
 
   const allSelected = selectedPayouts.length === filteredPayouts.length && filteredPayouts.length > 0
 
+  // Calculate active filter count
+  const activeFilterCount = [
+    filters.searchQuery,
+    filters.statusFilter !== "all",
+    filters.paymentMethodFilter !== "all",
+    filters.dateRange.start,
+    filters.dateRange.end,
+    filters.amountRange.min,
+    filters.amountRange.max,
+    filters.includePaid,
+  ].filter(Boolean).length
+
+  // Calculate selected payout total
+  const selectedPayoutTotal = getSelectedPayoutData().reduce((sum, p) => sum + p.amount, 0)
+
+  // Check if filters are active
+  const hasActiveFilters = activeFilterCount > 0
+  const isFiltered = filteredPayouts.length !== pendingPayouts.length
+
   return (
     <Card>
       <CardHeader>
         <div className="flex items-center justify-between">
           <div>
             <CardTitle>Pending Payouts</CardTitle>
-            <CardDescription>Process payments to vendors for their products</CardDescription>
+            <CardDescription>
+              Process payments to vendors for their products
+              {isFiltered && (
+                <span className="ml-2 text-xs">
+                  ({filteredPayouts.length} of {pendingPayouts.length} vendors)
+                </span>
+              )}
+            </CardDescription>
           </div>
           {selectedPayouts.length > 0 && (
             <Button onClick={handleProcessSelected}>
@@ -106,13 +136,73 @@ export function PendingPayoutsTab({
       </CardHeader>
       <CardContent>
         <div className="space-y-4">
-          <PayoutFiltersComponent
-            filters={filters}
-            onFilterChange={onFilterChange}
-            onClearFilters={onClearFilters}
-            showDateRange={true}
-            showIncludePaid={true}
-          />
+          {/* Selection Summary Banner */}
+          {selectedPayouts.length > 0 && (
+            <Alert className="bg-blue-50 dark:bg-blue-950/20 border-blue-200 dark:border-blue-800">
+              <div className="flex items-center justify-between w-full">
+                <div className="flex items-center gap-4">
+                  <div>
+                    <AlertTitle className="text-blue-900 dark:text-blue-100">
+                      {selectedPayouts.length} vendor{selectedPayouts.length !== 1 ? "s" : ""} selected
+                    </AlertTitle>
+                    <AlertDescription className="text-blue-700 dark:text-blue-300">
+                      Total payout amount: <span className="font-semibold">{formatUSD(selectedPayoutTotal)}</span>
+                    </AlertDescription>
+                  </div>
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    if (onSelectionChange) {
+                      onSelectionChange([])
+                    } else {
+                      internalSelection.clearSelection()
+                    }
+                  }}
+                  className="border-blue-300 dark:border-blue-700"
+                >
+                  <X className="h-4 w-4 mr-1" />
+                  Clear Selection
+                </Button>
+              </div>
+            </Alert>
+          )}
+
+          {/* Collapsible Filters */}
+          <Collapsible open={isFiltersOpen} onOpenChange={setIsFiltersOpen}>
+            <div className="flex items-center justify-between p-2 border rounded-lg bg-muted/30">
+              <CollapsibleTrigger asChild>
+                <Button variant="ghost" size="sm" className="flex items-center gap-2">
+                  <Filter className="h-4 w-4" />
+                  <span>Filters</span>
+                  {hasActiveFilters && (
+                    <Badge variant="secondary" className="ml-1">
+                      {activeFilterCount}
+                    </Badge>
+                  )}
+                  <ChevronDown className={`h-4 w-4 transition-transform ${isFiltersOpen ? "rotate-180" : ""}`} />
+                </Button>
+              </CollapsibleTrigger>
+              {hasActiveFilters && (
+                <Button variant="ghost" size="sm" onClick={onClearFilters}>
+                  <X className="h-4 w-4 mr-1" />
+                  Clear All
+                </Button>
+              )}
+            </div>
+            <CollapsibleContent>
+              <div className="pt-2">
+                <PayoutFiltersComponent
+                  filters={filters}
+                  onFilterChange={onFilterChange}
+                  onClearFilters={onClearFilters}
+                  showDateRange={true}
+                  showIncludePaid={true}
+                />
+              </div>
+            </CollapsibleContent>
+          </Collapsible>
 
           {isLoading ? (
             <div className="space-y-4">
@@ -171,9 +261,23 @@ export function PendingPayoutsTab({
               <Alert>
                 <AlertTitle>No pending payouts</AlertTitle>
                 <AlertDescription>
-                  {filters.searchQuery
-                    ? "No vendors match your search criteria. Try adjusting your filters."
-                    : "There are no pending payouts to process at this time."}
+                  {hasActiveFilters ? (
+                    <div className="space-y-2">
+                      <p>No vendors match your current filter criteria.</p>
+                      <div className="flex items-center justify-center gap-2 mt-3">
+                        <Button variant="outline" size="sm" onClick={onClearFilters}>
+                          <X className="h-4 w-4 mr-1" />
+                          Clear Filters
+                        </Button>
+                        <Button variant="outline" size="sm" onClick={() => setIsFiltersOpen(true)}>
+                          <Filter className="h-4 w-4 mr-1" />
+                          Adjust Filters
+                        </Button>
+                      </div>
+                    </div>
+                  ) : (
+                    "There are no pending payouts to process at this time."
+                  )}
                 </AlertDescription>
               </Alert>
             </div>
@@ -216,11 +320,16 @@ export function PendingPayoutsTab({
 
               {/* Pagination */}
               {pagination.total > 0 && (
-                <div className="flex items-center justify-between px-4 py-4 border-t">
+                <div className="flex flex-col sm:flex-row items-center justify-between gap-4 px-4 py-4 border-t">
                   <div className="text-sm text-muted-foreground">
                     Showing {(pagination.page - 1) * pagination.pageSize + 1} to{" "}
                     {Math.min(pagination.page * pagination.pageSize, pagination.total)} of{" "}
-                    {pagination.total} vendors
+                    {pagination.total} vendor{pagination.total !== 1 ? "s" : ""}
+                    {isFiltered && (
+                      <span className="ml-1">
+                        (filtered from {pendingPayouts.length} total)
+                      </span>
+                    )}
                   </div>
                   <div className="flex items-center gap-2">
                     <Button
@@ -247,6 +356,12 @@ export function PendingPayoutsTab({
                   </div>
                 </div>
               )}
+
+              {/* Keyboard Shortcuts Hint */}
+              <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground pt-2 border-t">
+                <Keyboard className="h-3 w-3" />
+                <span>Keyboard shortcuts: Space to select, Enter to view details</span>
+              </div>
             </>
           )}
         </div>
