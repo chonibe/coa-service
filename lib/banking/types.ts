@@ -20,7 +20,10 @@ export type CollectorTransactionType =
   | 'perk_redemption'
   | 'payout_earned'      // USD deposited when line items are fulfilled
   | 'payout_withdrawal'  // USD withdrawn when payout is processed
-  | 'payout_balance_purchase'; // USD spent from payout balance for store purchases
+  | 'payout_balance_purchase' // USD spent from payout balance for store purchases
+  | 'refund_deduction'   // USD deducted for refunds
+  | 'adjustment'         // Manual balance adjustments
+  | 'platform_fee';      // Platform fees or commissions
 
 // Account types
 export type CollectorAccountType = 'customer' | 'vendor';
@@ -97,6 +100,7 @@ export interface CollectorLedgerEntry {
   payoutId?: number; // Reference to vendor_payouts.id for payout_withdrawal transactions
   description?: string;
   metadata?: Record<string, any>;
+  taxYear?: number;
   createdAt: string;
   createdBy: string;
 }

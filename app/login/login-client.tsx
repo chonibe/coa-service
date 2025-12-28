@@ -272,7 +272,7 @@ export default function LoginClient() {
             <Button
               asChild
               disabled={googleLoading}
-              className="w-full h-14 text-base font-medium bg-slate-900 dark:bg-slate-800 hover:bg-slate-800 dark:hover:bg-slate-700 text-white border-2 border-slate-900 dark:border-slate-700 shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-[1.02] active:scale-[0.98]"
+              className="hidden w-full h-14 text-base font-medium bg-slate-900 dark:bg-slate-800 hover:bg-slate-800 dark:hover:bg-slate-700 text-white border-2 border-slate-900 dark:border-slate-700 shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-[1.02] active:scale-[0.98]"
               size="lg"
               aria-label="Continue with Google via Shopify"
             >

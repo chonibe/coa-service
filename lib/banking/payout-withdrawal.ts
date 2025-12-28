@@ -81,6 +81,7 @@ export async function recordPayoutWithdrawal(
       .single();
 
     // Create ledger entry for payout withdrawal (negative amount)
+    const currentYear = new Date().getFullYear();
     const { data: ledgerEntry, error: ledgerError } = await client
       .from('collector_ledger_entries')
       .insert({
@@ -97,6 +98,7 @@ export async function recordPayoutWithdrawal(
           payout_currency: payout?.currency || 'USD',
           payout_date: payout?.payout_date || new Date().toISOString(),
         },
+        tax_year: currentYear,
         created_by: 'system',
       })
       .select('id')

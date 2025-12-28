@@ -134,14 +134,6 @@ export async function depositPayoutEarnings(
       }
     }
 
-    // Get payout setting for this product
-    const { data: payoutSetting } = await client
-      .from('product_vendor_payouts')
-      .select('payout_amount, is_percentage')
-      .eq('product_id', lineItem.product_id)
-      .eq('vendor_name', vendorName)
-      .maybeSingle();
-
     // Convert to USD if order currency is GBP or NIS
     let priceForCalculation = originalPrice;
     if (isGBP) {
@@ -151,11 +143,8 @@ export async function depositPayoutEarnings(
     }
     
     // Calculate payout amount using the original price (before discount)
-    const payoutAmount = calculateLineItemPayout({
-      price: priceForCalculation,
-      payout_amount: payoutSetting?.payout_amount ?? null,
-      is_percentage: payoutSetting?.is_percentage ?? null,
-    });
+    // Enforce strict 25% payout rule
+    const payoutAmount = (priceForCalculation * 25) / 100;
 
     if (payoutAmount <= 0) {
       return {
@@ -167,6 +156,7 @@ export async function depositPayoutEarnings(
     }
 
     // Create ledger entry for payout deposit
+    const currentYear = new Date().getFullYear();
     const { data: ledgerEntry, error: ledgerError } = await client
       .from('collector_ledger_entries')
       .insert({
@@ -181,11 +171,12 @@ export async function depositPayoutEarnings(
           vendor_name: vendorName,
           product_id: lineItem.product_id,
           line_item_price: Number(lineItemPrice) || Number(lineItem.price) || 0,
-          payout_setting: payoutSetting ? {
-            payout_amount: payoutSetting.payout_amount,
-            is_percentage: payoutSetting.is_percentage,
-          } : null,
+          payout_setting: {
+            payout_amount: 25,
+            is_percentage: true,
+          },
         },
+        tax_year: currentYear,
         created_by: 'system',
       })
       .select('id')
