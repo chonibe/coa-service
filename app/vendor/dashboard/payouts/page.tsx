@@ -273,11 +273,18 @@ export default function PayoutsPage() {
       })
 
       console.log("[handleRedeem] Response status:", response.status)
-      const data = await response.json()
-      console.log("[handleRedeem] Response data:", data)
+      
+      let data
+      try {
+        data = await response.json()
+        console.log("[handleRedeem] Response data:", data)
+      } catch (parseError) {
+        console.error("[handleRedeem] Failed to parse response:", parseError)
+        throw new Error("Invalid response from server. Please try again.")
+      }
 
       if (!response.ok) {
-        throw new Error(data.error || "Failed to redeem payout")
+        throw new Error(data?.error || `Request failed with status ${response.status}`)
       }
 
       toast({
@@ -489,7 +496,12 @@ export default function PayoutsPage() {
         <div className="flex gap-2 flex-wrap">
           {pendingAmount > 0 && pendingLineItems.length > 0 && (
             <Button 
-              onClick={handleRedeem} 
+              onClick={(e) => {
+                e.preventDefault()
+                e.stopPropagation()
+                console.log("[Button] Request Payment clicked", { pendingAmount, pendingLineItems: pendingLineItems.length, isRedeeming, isLoading })
+                handleRedeem()
+              }} 
               disabled={isRedeeming || isLoading || pendingLineItems.length === 0} 
               className="flex items-center gap-1 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-lg"
             >

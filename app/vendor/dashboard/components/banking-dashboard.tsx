@@ -196,7 +196,12 @@ export function BankingDashboard({ collectorIdentifier }: BankingDashboardProps)
           </div>
           {data.account.accountType === 'vendor' && (
             <div className="pt-4 border-t">
-              <Button className="w-full">
+              <Button 
+                className="w-full"
+                onClick={() => {
+                  window.location.href = '/vendor/dashboard/payouts'
+                }}
+              >
                 Request Payout
               </Button>
             </div>
