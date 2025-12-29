@@ -789,25 +789,155 @@ export function Spline3DPreview({
       return null
     }
 
-    // Helper function to try updating texture on any object
+    // NEW APPROACH: Directly target texture layers based on our material analysis
     const tryUpdateTextureOnObject = async (obj: any, imageUrl: string, label: string) => {
       if (!obj) return false
-      
-      console.log(`[Spline3D] Trying to update texture on ${label}:`, {
+
+      console.log(`[Spline3D] TEXTURE UPDATE: Starting texture replacement on ${label}:`, {
         id: (obj as any).id || (obj as any).uuid,
         name: (obj as any).name,
-        type: (obj as any).type,
-        hasMaterial: !!(obj as any).material,
-        children: (obj as any).children?.length || 0
+        imageUrl: imageUrl.substring(0, 50) + '...'
       })
-      
-      // TEST: Try to modify visible properties first to verify we can affect this object
-      const testResult = testModifyObjectProperties(obj, `${label} (TEST)`)
-      if (testResult) {
-        console.log(`[Spline3D] ✓ TEST SUCCESS: We can modify ${label} properties!`)
-      } else {
-        console.warn(`[Spline3D] ✗ TEST FAILED: Cannot modify ${label} properties`)
+
+      // Get material (try object first, then children)
+      let material = (obj as any).material
+      if (!material && (obj as any).children) {
+        for (const child of (obj as any).children) {
+          if (child.material) {
+            material = child.material
+            console.log(`[Spline3D] TEXTURE UPDATE: Found material on child of ${label}`)
+            break
+          }
+        }
       }
+
+      if (!material?.layers) {
+        console.warn(`[Spline3D] TEXTURE UPDATE: No material layers found on ${label}`)
+        return false
+      }
+
+      console.log(`[Spline3D] TEXTURE UPDATE: Found ${material.layers.length} layers on ${label}`)
+
+      // Load the image
+      let imageElement: HTMLImageElement
+      try {
+        imageElement = await loadImageAsTexture(imageUrl)
+        console.log(`[Spline3D] TEXTURE UPDATE: Successfully loaded image for ${label}`)
+      } catch (err) {
+        console.error(`[Spline3D] TEXTURE UPDATE: Failed to load image for ${label}:`, err)
+        return false
+      }
+
+      // Iterate through material layers and find texture/image layers
+      for (let i = 0; i < material.layers.length; i++) {
+        const layer = material.layers[i]
+        console.log(`[Spline3D] TEXTURE UPDATE: Checking layer ${i}: ${layer.type}`)
+
+        // TARGET TEXTURE LAYERS (this is what we need to modify!)
+        if (layer.type === 'texture' || layer.type === 'image') {
+          console.log(`[Spline3D] 🎯 TEXTURE UPDATE: Found ${layer.type} layer ${i} on ${label}!`)
+
+          // Store original values for potential reversion
+          const originalImage = layer.image
+          const originalTexture = layer.texture
+          const originalUrl = layer.url
+          const originalSrc = layer.src
+
+          // Try multiple ways to set the texture/image
+          let success = false
+
+          // Method 1: Set layer.image directly
+          try {
+            layer.image = imageElement
+            console.log(`[Spline3D] ✓ TEXTURE UPDATE: Set layer.image for ${label} layer ${i}`)
+            success = true
+          } catch (err) {
+            console.warn(`[Spline3D] ✗ TEXTURE UPDATE: Failed to set layer.image:`, err)
+          }
+
+          // Method 2: Set layer.texture
+          if (!success && layer.texture !== undefined) {
+            try {
+              layer.texture = imageElement
+              console.log(`[Spline3D] ✓ TEXTURE UPDATE: Set layer.texture for ${label} layer ${i}`)
+              success = true
+            } catch (err) {
+              console.warn(`[Spline3D] ✗ TEXTURE UPDATE: Failed to set layer.texture:`, err)
+            }
+          }
+
+          // Method 3: Set layer.url or layer.src
+          if (!success) {
+            try {
+              if (layer.url !== undefined) {
+                layer.url = imageUrl
+                console.log(`[Spline3D] ✓ TEXTURE UPDATE: Set layer.url for ${label} layer ${i}`)
+                success = true
+              } else if (layer.src !== undefined) {
+                layer.src = imageUrl
+                console.log(`[Spline3D] ✓ TEXTURE UPDATE: Set layer.src for ${label} layer ${i}`)
+                success = true
+              }
+            } catch (err) {
+              console.warn(`[Spline3D] ✗ TEXTURE UPDATE: Failed to set layer url/src:`, err)
+            }
+          }
+
+          // Method 4: Try texture.setImage if available
+          if (!success && layer.texture && typeof layer.texture.setImage === 'function') {
+            try {
+              layer.texture.setImage(imageElement)
+              console.log(`[Spline3D] ✓ TEXTURE UPDATE: Called texture.setImage() for ${label} layer ${i}`)
+              success = true
+            } catch (err) {
+              console.warn(`[Spline3D] ✗ TEXTURE UPDATE: Failed to call texture.setImage():`, err)
+            }
+          }
+
+          // Force material update
+          if (success) {
+            if (material.needsUpdate !== undefined) {
+              material.needsUpdate = true
+              console.log(`[Spline3D] ✓ TEXTURE UPDATE: Set material.needsUpdate for ${label}`)
+            }
+            if (material.update && typeof material.update === 'function') {
+              material.update()
+              console.log(`[Spline3D] ✓ TEXTURE UPDATE: Called material.update() for ${label}`)
+            }
+
+            // Force render
+            if (splineAppRef.current && (splineAppRef.current as any).renderer) {
+              const app = splineAppRef.current as any
+              for (let r = 0; r < 5; r++) {
+                setTimeout(() => {
+                  if (app.renderer && app.scene && app.camera) {
+                    app.renderer.render(app.scene, app.camera)
+                  }
+                }, r * 100)
+              }
+            }
+
+            console.log(`[Spline3D] 🎉 TEXTURE UPDATE: SUCCESSFULLY UPDATED ${label} texture layer ${i}!`)
+
+            // Don't revert - this is the actual texture replacement we want to keep
+            return true
+          } else {
+            // Revert on failure
+            try {
+              if (originalImage !== undefined) layer.image = originalImage
+              if (originalTexture !== undefined) layer.texture = originalTexture
+              if (originalUrl !== undefined) layer.url = originalUrl
+              if (originalSrc !== undefined) layer.src = originalSrc
+              console.log(`[Spline3D] TEXTURE UPDATE: Reverted ${label} layer ${i} after failed update`)
+            } catch (err) {
+              console.warn(`[Spline3D] TEXTURE UPDATE: Could not revert ${label} layer ${i}:`, err)
+            }
+          }
+        }
+      }
+
+      console.log(`[Spline3D] TEXTURE UPDATE: No suitable texture layer found on ${label}`)
+      return false
 
       // Try to get material from object or children
       let material = (obj as any).material
