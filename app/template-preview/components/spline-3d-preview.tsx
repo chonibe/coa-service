@@ -799,6 +799,23 @@ export function Spline3DPreview({
         imageUrl: imageUrl.substring(0, 50) + '...'
       })
 
+      // EXTRA DEBUGGING: Log detailed material info for PC objects
+      if (label.includes('PC trans A') || label.includes('PC Trans B')) {
+        console.log(`[Spline3D] 🔍 EXTRA DEBUG: ${label} detailed material inspection:`, {
+          obj: obj,
+          material: (obj as any).material,
+          materialLayers: (obj as any).material?.layers,
+          layerCount: (obj as any).material?.layers?.length,
+          layerDetails: (obj as any).material?.layers?.map((l: any, idx: number) => ({
+            index: idx,
+            type: l.type,
+            visible: l.visible,
+            alpha: l.alpha,
+            allProps: Object.keys(l).filter(k => !k.startsWith('_'))
+          }))
+        })
+      }
+
       // Get material (try object first, then children)
       let objMaterial = (obj as any).material
       if (!objMaterial && (obj as any).children) {
@@ -828,14 +845,42 @@ export function Spline3DPreview({
         return false
       }
 
+      // DEBUG: Check what layers the PC objects actually have
+      if (label.includes('PC trans A') || label.includes('PC Trans B')) {
+        console.log(`[Spline3D] 🔍 DEBUG: ${label} has ${objMaterial.layers.length} layers:`)
+        objMaterial.layers.forEach((layer: any, idx: number) => {
+          console.log(`[Spline3D] 🔍 DEBUG: Layer ${idx}:`, {
+            type: layer.type,
+            visible: layer.visible,
+            alpha: layer.alpha,
+            properties: Object.keys(layer).filter(k => !k.startsWith('_'))
+          })
+        })
+      }
+
       // Iterate through material layers and find texture/image layers
+      let foundTextureLayer = false
       for (let i = 0; i < objMaterial.layers.length; i++) {
         const layer = objMaterial.layers[i]
         console.log(`[Spline3D] TEXTURE UPDATE: Checking layer ${i}: ${layer.type}`)
 
         // TARGET TEXTURE LAYERS (this is what we need to modify!)
         if (layer.type === 'texture' || layer.type === 'image') {
+          foundTextureLayer = true
           console.log(`[Spline3D] 🎯 TEXTURE UPDATE: Found ${layer.type} layer ${i} on ${label}!`)
+          console.log(`[Spline3D] 🎯 TEXTURE UPDATE: Layer details:`, {
+            type: layer.type,
+            visible: layer.visible,
+            alpha: layer.alpha,
+            hasImage: 'image' in layer,
+            hasTexture: 'texture' in layer,
+            hasUrl: 'url' in layer,
+            hasSrc: 'src' in layer,
+            currentImage: layer.image,
+            currentTexture: layer.texture,
+            currentUrl: layer.url,
+            currentSrc: layer.src
+          })
 
           // Store original values for potential reversion
           const originalImage = layer.image
@@ -848,8 +893,10 @@ export function Spline3DPreview({
 
           // Method 1: Set layer.image directly
           try {
+            console.log(`[Spline3D] 🎯 TEXTURE UPDATE: Trying to set layer.image...`)
             layer.image = imageElement
             console.log(`[Spline3D] ✓ TEXTURE UPDATE: Set layer.image for ${label} layer ${i}`)
+            console.log(`[Spline3D] ✓ TEXTURE UPDATE: After setting, layer.image is:`, layer.image)
             success = true
           } catch (err) {
             console.warn(`[Spline3D] ✗ TEXTURE UPDATE: Failed to set layer.image:`, err)
@@ -942,11 +989,14 @@ export function Spline3DPreview({
         }
       }
 
+      // DEBUG: Report if PC objects have texture layers
+      if ((label.includes('PC trans A') || label.includes('PC Trans B')) && !foundTextureLayer) {
+        console.warn(`[Spline3D] ⚠️  WARNING: ${label} has NO texture or image layers! Cannot apply texture replacement.`)
+        console.log(`[Spline3D] ⚠️  Available layers on ${label}:`, objMaterial.layers.map((l: any) => l.type))
+      }
+
       console.log(`[Spline3D] TEXTURE UPDATE: No suitable texture layer found on ${label}`)
       return false
-
-      // Try to get material from object or children
-      let material = (obj as any).material
       
       // If no material on object, try children
       if (!material && (obj as any).children && (obj as any).children.length > 0) {
