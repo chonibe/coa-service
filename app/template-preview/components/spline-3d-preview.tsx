@@ -30,11 +30,9 @@ export function Spline3DPreview({
   const [error, setError] = useState<string | null>(null)
   const [isModelVisible, setIsModelVisible] = useState(true)
   
-  // Store references to test image planes
-  const testPlanesSide1Ref = useRef<THREE.Mesh[]>([])
-  const testPlanesSide2Ref = useRef<THREE.Mesh[]>([])
-  const originalSide1Ref = useRef<any>(null)
-  const originalSide2Ref = useRef<any>(null)
+  // Store references to objects with image layers
+  const side1ObjectRef = useRef<any>(null)
+  const side2ObjectRef = useRef<any>(null)
 
   // Toggle model visibility
   const toggleModelVisibility = useCallback(() => {
@@ -48,7 +46,7 @@ export function Spline3DPreview({
   const updateTextures = useCallback(async () => {
     if (!splineAppRef.current || isLoading) return
 
-    console.log("[Spline3D] Creating image planes:", { 
+    console.log("[Spline3D] Adding image layers to materials:", { 
       hasImage1: !!image1, 
       hasImage2: !!image2,
       side1ObjectId,
@@ -78,223 +76,181 @@ export function Spline3DPreview({
       return null
     }
 
-    // Helper to get THREE.js mesh from Spline object
-    const getMesh = (obj: any): any => {
-      if (obj.mesh) return obj.mesh
-      if (obj.object3D) return obj.object3D
-      // Try to find mesh in scene
-      let foundMesh: any = null
-      scene.traverse((node: any) => {
-        if (node.uuid === obj.uuid || node.name === obj.name) {
-          if (node.isMesh) {
-            foundMesh = node
-          }
-        }
-      })
-      return foundMesh
-    }
+    // Helper to add image layer to Spline material
+    const addImageLayerToMaterial = async (obj: any, imageUrl: string, label: string) => {
+      if (!obj) {
+        console.warn(`[Spline3D] Cannot add image layer: ${label} object not found`)
+        return false
+      }
 
-    // Helper to create test image planes in multiple ways
-    const createTestImagePlanes = async (imageUrl: string, label: string) => {
       try {
-        console.log(`[Spline3D] Creating test image planes for ${label}...`)
-        console.log(`[Spline3D] Scene info:`, {
-          type: scene?.constructor?.name,
-          children: scene?.children?.length,
-          uuid: scene?.uuid
-        })
+        console.log(`[Spline3D] Attempting to add image layer to ${label} material...`)
         
-        const planes: THREE.Mesh[] = []
-
-        // Test 0: Simple RED plane first to verify visibility (no texture)
-        const test0Geometry = new THREE.PlaneGeometry(10, 10)
-        const test0Material = new THREE.MeshBasicMaterial({
-          color: 0xff0000, // Bright red
-          side: THREE.DoubleSide
-        })
-        const test0 = new THREE.Mesh(test0Geometry, test0Material)
-        test0.position.set(0, 0, 0)
-        test0.name = `${label}_test0_red`
-        scene.add(test0)
-        planes.push(test0)
-        console.log(`[Spline3D] ✓ Test 0: Added RED plane at origin to verify visibility`, test0.position)
-
-        // Load texture using imported THREE.js
-        const textureLoader = new THREE.TextureLoader()
-        const texture = await new Promise<THREE.Texture>((resolve, reject) => {
-          textureLoader.load(
-            imageUrl,
-            (tex: THREE.Texture) => {
-              tex.needsUpdate = true
-              resolve(tex)
-            },
-            undefined,
-            reject
-          )
-        })
-
-        // Get image dimensions with proper typing
-        const image = texture.image as HTMLImageElement
-        const imageWidth = image?.width || 1
-        const imageHeight = image?.height || 1
-        const imageAspect = imageWidth / imageHeight
-
-        console.log(`[Spline3D] ✓ Loaded texture for ${label}`, { 
-          width: imageWidth, 
-          height: imageHeight,
-          aspect: imageAspect
-        })
-
-        // Test 1: HUGE plane at origin with texture
-        const plane1Geometry = new THREE.PlaneGeometry(20, 20 / imageAspect)
-        const plane1Material = new THREE.MeshBasicMaterial({
-          map: texture,
-          side: THREE.DoubleSide,
-          transparent: false
-        })
-        const plane1 = new THREE.Mesh(plane1Geometry, plane1Material)
-        plane1.position.set(0, 0, 10) // Move forward
-        plane1.name = `${label}_test1_origin`
-        scene.add(plane1)
-        planes.push(plane1)
-        console.log(`[Spline3D] ✓ Test 1: Added HUGE plane at (0,0,10)`, plane1.position)
-
-        // Test 2: Try adding to scene.children directly
-        const plane2Geometry = new THREE.PlaneGeometry(15, 15 / imageAspect)
-        const plane2Material = new THREE.MeshBasicMaterial({
-          map: texture,
-          side: THREE.DoubleSide,
-          transparent: false
-        })
-        const plane2 = new THREE.Mesh(plane2Geometry, plane2Material)
-        plane2.position.set(15, 0, 0)
-        plane2.name = `${label}_test2_direct`
-        if (scene.children) {
-          scene.children.push(plane2)
-        } else {
-          scene.add(plane2)
+        // Get material from object
+        let material = obj.material
+        if (!material && obj.mesh) {
+          material = obj.mesh.material
         }
-        planes.push(plane2)
-        console.log(`[Spline3D] ✓ Test 2: Added plane via scene.children at (15,0,0)`, plane2.position)
-
-        // Test 3: Try as Sprite (always faces camera)
-        const spriteMap = new THREE.TextureLoader().load(imageUrl, (tex) => {
-          tex.needsUpdate = true
-        })
-        const spriteMaterial = new THREE.SpriteMaterial({ map: spriteMap })
-        const sprite = new THREE.Sprite(spriteMaterial)
-        sprite.scale.set(10, 10, 1)
-        sprite.position.set(-15, 0, 0)
-        sprite.name = `${label}_test3_sprite`
-        scene.add(sprite)
-        planes.push(sprite as any) // Store as any since it's not a Mesh
-        console.log(`[Spline3D] ✓ Test 3: Added SPRITE at (-15,0,0)`, sprite.position)
-
-        // Test 4: Try adding to a specific object in the scene
-        const plane4Geometry = new THREE.PlaneGeometry(12, 12 / imageAspect)
-        const plane4Material = new THREE.MeshBasicMaterial({
-          map: texture,
-          side: THREE.DoubleSide,
-          transparent: false
-        })
-        const plane4 = new THREE.Mesh(plane4Geometry, plane4Material)
-        plane4.position.set(0, 10, 0)
-        plane4.rotation.x = -Math.PI / 2
-        plane4.name = `${label}_test4_above`
         
-        // Try to find the lamp or a visible object and add as child
-        const lampObj = app.findObjectById?.('e9e829f2-cbcc-4740-bcca-f0ac77844cd7') || app.findObjectByName?.('LAMP')
-        if (lampObj?.mesh) {
-          lampObj.mesh.add(plane4)
-          console.log(`[Spline3D] ✓ Test 4: Added plane as child of LAMP object`)
-        } else {
-          scene.add(plane4)
-          console.log(`[Spline3D] ✓ Test 4: Added plane to scene at (0,10,0)`)
+        if (!material) {
+          console.warn(`[Spline3D] No material found on ${label} object`)
+          return false
         }
-        planes.push(plane4)
 
-        // Force render update
-        if (app.renderer && app.scene && app.camera) {
+        console.log(`[Spline3D] Found material for ${label}:`, {
+          hasLayers: !!material.layers,
+          layersCount: material.layers?.length,
+          layerTypes: material.layers?.map((l: any) => l.type)
+        })
+
+        // Load image as HTMLImageElement
+        const imageElement = await new Promise<HTMLImageElement>((resolve, reject) => {
+          const img = new Image()
+          img.crossOrigin = "anonymous"
+          img.onload = () => resolve(img)
+          img.onerror = reject
+          img.src = imageUrl
+        })
+
+        console.log(`[Spline3D] ✓ Loaded image element for ${label}`, {
+          width: imageElement.width,
+          height: imageElement.height
+        })
+
+        // Try multiple approaches to add image layer
+
+        // Approach 1: Try to create a new image layer using Spline API
+        if (material.addLayer && typeof material.addLayer === 'function') {
           try {
-            app.renderer.render(app.scene, app.camera)
-            console.log(`[Spline3D] ✓ Forced render update`)
+            const newLayer = material.addLayer('image')
+            if (newLayer) {
+              newLayer.image = imageElement
+              newLayer.visible = true
+              material.needsUpdate = true
+              console.log(`[Spline3D] ✓ Approach 1: Added image layer via addLayer() for ${label}`)
+              return true
+            }
           } catch (e) {
-            console.warn(`[Spline3D] Could not force render:`, e)
+            console.warn(`[Spline3D] Approach 1 failed:`, e)
           }
         }
 
-        console.log(`[Spline3D] ✓ Created ${planes.length} test objects for ${label}`)
-        console.log(`[Spline3D] Scene now has ${scene.children.length} children`)
-        
-        return planes
+        // Approach 2: Try to push a new layer to layers array
+        if (material.layers && Array.isArray(material.layers)) {
+          try {
+            // Create a new layer object
+            const newLayer: any = {
+              type: 'image',
+              image: imageElement,
+              visible: true,
+              alpha: 1,
+              mode: 0
+            }
+            material.layers.push(newLayer)
+            material.needsUpdate = true
+            console.log(`[Spline3D] ✓ Approach 2: Pushed new image layer to layers array for ${label}`)
+            return true
+          } catch (e) {
+            console.warn(`[Spline3D] Approach 2 failed:`, e)
+          }
+        }
+
+        // Approach 3: Try to update existing texture/image layer
+        if (material.layers && Array.isArray(material.layers)) {
+          for (let i = 0; i < material.layers.length; i++) {
+            const layer = material.layers[i]
+            if (layer.type === 'texture' || layer.type === 'image' || layer.type === 'matcap') {
+              try {
+                // Try setting image directly
+                if (layer.image !== undefined) {
+                  layer.image = imageElement
+                  layer.visible = true
+                  layer.alpha = 1
+                  if (layer.updateTexture) {
+                    layer.updateTexture(imageElement)
+                  }
+                  material.needsUpdate = true
+                  console.log(`[Spline3D] ✓ Approach 3: Updated existing ${layer.type} layer ${i} for ${label}`)
+                  return true
+                }
+              } catch (e) {
+                console.warn(`[Spline3D] Approach 3 failed for layer ${i}:`, e)
+              }
+            }
+          }
+        }
+
+        // Approach 4: Try using Spline's createLayer method if available
+        if (app.createLayer && typeof app.createLayer === 'function') {
+          try {
+            const newLayer = app.createLayer(material, 'image')
+            if (newLayer) {
+              newLayer.image = imageElement
+              newLayer.visible = true
+              material.needsUpdate = true
+              console.log(`[Spline3D] ✓ Approach 4: Created layer via app.createLayer() for ${label}`)
+              return true
+            }
+          } catch (e) {
+            console.warn(`[Spline3D] Approach 4 failed:`, e)
+          }
+        }
+
+        // Approach 5: Try to modify material directly
+        try {
+          // Try setting image on material itself
+          if (material.setImage) {
+            material.setImage(imageElement)
+            material.needsUpdate = true
+            console.log(`[Spline3D] ✓ Approach 5: Set image via material.setImage() for ${label}`)
+            return true
+          }
+        } catch (e) {
+          console.warn(`[Spline3D] Approach 5 failed:`, e)
+        }
+
+        console.warn(`[Spline3D] All approaches failed to add image layer for ${label}`)
+        return false
       } catch (err) {
-        console.error(`[Spline3D] Error creating test image planes for ${label}:`, err)
-        return []
+        console.error(`[Spline3D] Error adding image layer to ${label}:`, err)
+        return false
       }
     }
 
-    // Handle Side 1 - Create test planes
+    // Handle Side 1 - Add image layer to material
     if (image1) {
-      // Remove old test planes if they exist
-      testPlanesSide1Ref.current.forEach(plane => {
-        scene.remove(plane)
-        plane.geometry.dispose()
-        if (Array.isArray(plane.material)) {
-          plane.material.forEach(mat => mat.dispose())
+      const obj1 = findObject(side1ObjectId, side1ObjectName)
+      if (obj1) {
+        side1ObjectRef.current = obj1
+        const success = await addImageLayerToMaterial(obj1, image1, "Side 1")
+        if (success) {
+          console.log(`[Spline3D] ✓ Successfully added image layer to Side 1`)
         } else {
-          plane.material.dispose()
+          console.warn(`[Spline3D] Failed to add image layer to Side 1`)
         }
-      })
-      testPlanesSide1Ref.current = []
-
-      // Create new test planes
-      const planes = await createTestImagePlanes(image1, "Side 1")
-      testPlanesSide1Ref.current = planes
-      console.log(`[Spline3D] ✓ Created ${planes.length} test planes for Side 1`)
+      } else {
+        console.warn(`[Spline3D] Side 1 object not found`)
+      }
     } else {
-      // Remove test planes when no image
-      testPlanesSide1Ref.current.forEach(plane => {
-        scene.remove(plane)
-        plane.geometry.dispose()
-        if (Array.isArray(plane.material)) {
-          plane.material.forEach(mat => mat.dispose())
-        } else {
-          plane.material.dispose()
-        }
-      })
-      testPlanesSide1Ref.current = []
+      side1ObjectRef.current = null
     }
 
-    // Handle Side 2 - Create test planes
+    // Handle Side 2 - Add image layer to material
     if (image2) {
-      // Remove old test planes if they exist
-      testPlanesSide2Ref.current.forEach(plane => {
-        scene.remove(plane)
-        plane.geometry.dispose()
-        if (Array.isArray(plane.material)) {
-          plane.material.forEach(mat => mat.dispose())
+      const obj2 = findObject(side2ObjectId, side2ObjectName)
+      if (obj2) {
+        side2ObjectRef.current = obj2
+        const success = await addImageLayerToMaterial(obj2, image2, "Side 2")
+        if (success) {
+          console.log(`[Spline3D] ✓ Successfully added image layer to Side 2`)
         } else {
-          plane.material.dispose()
+          console.warn(`[Spline3D] Failed to add image layer to Side 2`)
         }
-      })
-      testPlanesSide2Ref.current = []
-
-      // Create new test planes
-      const planes = await createTestImagePlanes(image2, "Side 2")
-      testPlanesSide2Ref.current = planes
-      console.log(`[Spline3D] ✓ Created ${planes.length} test planes for Side 2`)
+      } else {
+        console.warn(`[Spline3D] Side 2 object not found`)
+      }
     } else {
-      // Remove test planes when no image
-      testPlanesSide2Ref.current.forEach(plane => {
-        scene.remove(plane)
-        plane.geometry.dispose()
-        if (Array.isArray(plane.material)) {
-          plane.material.forEach(mat => mat.dispose())
-        } else {
-          plane.material.dispose()
-        }
-      })
-      testPlanesSide2Ref.current = []
+      side2ObjectRef.current = null
     }
 
     // Force render
@@ -363,24 +319,6 @@ export function Spline3DPreview({
       if (resizeObserver) {
         resizeObserver.disconnect()
       }
-      
-      // Clean up test planes
-      const cleanupPlanes = (planes: THREE.Mesh[]) => {
-        const app = splineAppRef.current as any
-        planes.forEach(plane => {
-          if (app?.scene) {
-            app.scene.remove(plane)
-          }
-          plane.geometry.dispose()
-          if (Array.isArray(plane.material)) {
-            plane.material.forEach(mat => mat.dispose())
-          } else {
-            plane.material.dispose()
-          }
-        })
-      }
-      cleanupPlanes(testPlanesSide1Ref.current)
-      cleanupPlanes(testPlanesSide2Ref.current)
       
       if (splineAppRef.current) {
         try {
