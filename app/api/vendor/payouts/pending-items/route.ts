@@ -29,6 +29,7 @@ export async function GET() {
       .select("line_item_id, order_id, order_name, product_id, name, price, created_at, fulfillment_status, status, restocked")
       .eq("vendor_name", vendorName)
       .or("fulfillment_status.in.(fulfilled,unfulfilled,partially_fulfilled),created_at.lt.2025-10-01")
+      .neq("fulfillment_status", "restocked") // Explicitly exclude items with fulfillment_status = 'restocked'
 
     if (lineItemsError) {
       console.error("Error fetching line items:", lineItemsError)
@@ -39,12 +40,16 @@ export async function GET() {
     const unpaidItems = (lineItems || []).filter((item: any) => 
       !paidLineItemIds.has(item.line_item_id) &&
       item.status !== 'cancelled' &&
-      item.restocked !== true
+      item.restocked !== true &&
+      item.fulfillment_status !== 'restocked' // Also exclude items with fulfillment_status = 'restocked'
     )
 
     // Separate into fulfilled and unfulfilled
     const fulfilledItems = unpaidItems.filter((item: any) => item.fulfillment_status === 'fulfilled')
-    const unfulfilledItems = unpaidItems.filter((item: any) => item.fulfillment_status !== 'fulfilled')
+    const unfulfilledItems = unpaidItems.filter((item: any) => 
+      item.fulfillment_status !== 'fulfilled' && 
+      item.fulfillment_status !== 'restocked' // Double-check to exclude restocked items
+    )
 
     // Calculate payout amounts for each line item (always 25% or $10 minimum for historical)
     const processItem = (item: any, includePayout: boolean = true) => {
