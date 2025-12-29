@@ -315,11 +315,25 @@ export default function PayoutsPage() {
       setTimeout(() => setShowSuccessBanner(false), 15000)
     } catch (err) {
       console.error("Error redeeming payout:", err)
-      toast({
-        variant: "destructive",
-        title: "Request Failed",
-        description: err instanceof Error ? err.message : "We couldn't process your request. Please try again.",
-      })
+      const errorMessage = err instanceof Error ? err.message : "We couldn't process your request. Please try again."
+      
+      // Check if it's a PayPal email error and provide a helpful message with link
+      if (errorMessage.includes("PayPal email") || errorMessage.includes("paypal")) {
+        toast({
+          variant: "destructive",
+          title: "PayPal Email Required",
+          description: `${errorMessage} Click here to go to Settings and configure your PayPal email.`,
+        })
+        // Also show a persistent alert at the top of the page
+        setError(`PayPal email not configured. Please update your settings to request payouts.`)
+      } else {
+        toast({
+          variant: "destructive",
+          title: "Request Failed",
+          description: errorMessage,
+        })
+        setError(errorMessage)
+      }
     } finally {
       setIsRedeeming(false)
     }
@@ -480,6 +494,26 @@ export default function PayoutsPage() {
 
   return (
     <div className="w-full space-y-6">
+        {/* Show error alert if PayPal email is not configured */}
+        {error && (error.includes("PayPal email") || error.includes("paypal")) && (
+          <Alert variant="destructive" className="border-red-500 bg-red-50 dark:bg-red-950/20">
+            <AlertCircle className="h-4 w-4" />
+            <AlertTitle>PayPal Email Required</AlertTitle>
+            <AlertDescription className="flex items-center justify-between gap-4">
+              <span>{error}</span>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  window.location.href = "/vendor/dashboard/settings"
+                }}
+                className="shrink-0"
+              >
+                Go to Settings
+              </Button>
+            </AlertDescription>
+          </Alert>
+        )}
         {/* Contextual Onboarding for Payouts - floating */}
         <ContextualOnboarding context="payouts" onComplete={() => {
           fetchPayouts()
