@@ -59,12 +59,12 @@ export function Spline3DPreview({
     }
   }, [isModelVisible, isLoading])
 
-  // Change LAMP color to black
-  const changeLampToBlack = useCallback(() => {
+  // Toggle LAMP visibility on/off
+  const toggleLampVisibility = useCallback(() => {
     if (!splineAppRef.current || isLoading) return
 
     const lampObjectId = 'e9e829f2-cbcc-4740-bcca-f0ac77844cd7'
-    console.log(`[Spline3D] Attempting to change LAMP (${lampObjectId}) to black...`)
+    console.log(`[Spline3D] Attempting to toggle LAMP (${lampObjectId}) visibility...`)
 
     try {
       const app = splineAppRef.current as any
@@ -86,94 +86,71 @@ export function Spline3DPreview({
 
       console.log(`[Spline3D] Found LAMP object:`, lampObject)
 
-      // Try multiple approaches to change color to black
+      // Check current visibility state (default to visible if not set)
+      const currentVisible = (lampObject as any).visible !== false
+      const newVisible = !currentVisible
 
-      // Approach 1: Direct material modification
-      if ((lampObject as any).material) {
-        const material = (lampObject as any).material
-        console.log('[Spline3D] Changing LAMP material color to black...')
+      console.log(`[Spline3D] LAMP current visible: ${currentVisible}, setting to: ${newVisible}`)
 
-        // Try material.color directly
-        if (material.color !== undefined) {
-          if (typeof material.color.set === "function") {
-            material.color.set(0, 0, 0) // Black
-            console.log('[Spline3D] ✓ Set LAMP material.color to black via set()')
-          } else if (material.color.r !== undefined) {
-            material.color.r = 0
-            material.color.g = 0
-            material.color.b = 0
-            console.log('[Spline3D] ✓ Set LAMP material.color to black via rgb')
-          }
-          material.needsUpdate = true
-          if (material.update && typeof material.update === "function") material.update()
+      // Try multiple approaches to toggle visibility
+
+      // Approach 1: Direct object visibility
+      if ((lampObject as any).visible !== undefined) {
+        (lampObject as any).visible = newVisible
+        console.log(`[Spline3D] ✓ Set LAMP object.visible = ${newVisible}`)
+      }
+
+      // Approach 2: THREE.js mesh visibility
+      if ((lampObject as any).mesh?.visible !== undefined) {
+        (lampObject as any).mesh.visible = newVisible
+        console.log(`[Spline3D] ✓ Set LAMP mesh.visible = ${newVisible}`)
+      }
+
+      // Approach 3: Material visibility (less common but possible)
+      if ((lampObject as any).material?.visible !== undefined) {
+        (lampObject as any).material.visible = newVisible
+        console.log(`[Spline3D] ✓ Set LAMP material.visible = ${newVisible}`)
+      }
+
+      // Approach 4: Traverse and set visibility on all child meshes
+      const setVisibilityRecursive = (obj: any, visible: boolean) => {
+        if (obj.visible !== undefined) {
+          obj.visible = visible
         }
-
-        // Try material layers
-        if (material.layers) {
-          for (const layer of material.layers) {
-            if (layer.type === 'color' && layer.color !== undefined) {
-              if (typeof layer.color.set === "function") {
-                layer.color.set(0, 0, 0) // Black
-                console.log('[Spline3D] ✓ Set LAMP layer.color to black via set()')
-              } else if (layer.color.r !== undefined) {
-                layer.color.r = 0
-                layer.color.g = 0
-                layer.color.b = 0
-                console.log('[Spline3D] ✓ Set LAMP layer.color to black via rgb')
-              }
-              material.needsUpdate = true
-              if (material.update && typeof material.update === "function") material.update()
-            }
-          }
+        if (obj.mesh?.visible !== undefined) {
+          obj.mesh.visible = visible
+        }
+        if (obj.children) {
+          obj.children.forEach((child: any) => setVisibilityRecursive(child, visible))
         }
       }
 
-      // Approach 2: THREE.js mesh material
-      if ((lampObject as any).mesh?.material) {
-        const meshMaterial = (lampObject as any).mesh.material
-        console.log('[Spline3D] Changing LAMP mesh.material color to black...')
+      console.log('[Spline3D] Setting visibility recursively on LAMP and all children...')
+      setVisibilityRecursive(lampObject, newVisible)
+      console.log(`[Spline3D] ✓ Set recursive visibility on LAMP object = ${newVisible}`)
 
-        if (typeof meshMaterial.color?.set === "function") {
-          meshMaterial.color.set(0, 0, 0) // Black
-          console.log('[Spline3D] ✓ Set LAMP mesh.material.color to black')
-          meshMaterial.needsUpdate = true
-        } else if (meshMaterial.color?.r !== undefined) {
-          meshMaterial.color.r = 0
-          meshMaterial.color.g = 0
-          meshMaterial.color.b = 0
-          console.log('[Spline3D] ✓ Set LAMP mesh.material color.rgb to black')
-          meshMaterial.needsUpdate = true
-        }
-      }
-
-      // Approach 3: Complete material replacement
-      if ((lampObject as any).mesh) {
-        const mesh = (lampObject as any).mesh
-        console.log('[Spline3D] Replacing LAMP material completely...')
-
-        const THREE = (window as any).THREE || app.THREE
-        if (THREE && THREE.MeshBasicMaterial) {
-          const blackMaterial = new THREE.MeshBasicMaterial({
-            color: 0x000000, // Black
-            transparent: false
-          })
-
-          const originalMaterial = mesh.material
-          mesh.material = blackMaterial
-          console.log('[Spline3D] ✓ Completely replaced LAMP material with black THREE.js material')
-        }
+      // Approach 5: Try accessing underlying THREE.js object
+      const threeObject = (lampObject as any).object3D || (lampObject as any)._object3D || lampObject
+      if (threeObject && threeObject.traverse) {
+        console.log('[Spline3D] Setting visibility on THREE.js object...')
+        threeObject.traverse((child: any) => {
+          if (child.isMesh) {
+            child.visible = newVisible
+            console.log(`[Spline3D] ✓ Set THREE.js mesh visibility = ${newVisible}`)
+          }
+        })
       }
 
       // Force render
       if (app.renderer && app.scene && app.camera && typeof app.renderer.render === "function") {
         app.renderer.render(app.scene, app.camera)
-        console.log('[Spline3D] ✓ Force rendered after LAMP color change')
+        console.log('[Spline3D] ✓ Force rendered after LAMP visibility toggle')
       }
 
-      console.log('[Spline3D] LAMP color change attempt completed')
+      console.log(`[Spline3D] LAMP visibility toggle completed: ${newVisible ? 'VISIBLE' : 'HIDDEN'}`)
 
     } catch (err) {
-      console.error('[Spline3D] Error changing LAMP color:', err)
+      console.error('[Spline3D] Error toggling LAMP visibility:', err)
     }
   }, [isLoading])
 
@@ -1717,14 +1694,14 @@ export function Spline3DPreview({
           </Button>
 
           <Button
-            onClick={changeLampToBlack}
+            onClick={toggleLampVisibility}
             variant="outline"
             size="sm"
             disabled={isLoading || !!error}
             className="flex items-center gap-2"
           >
-            <Palette className="h-4 w-4" />
-            Make Lamp Black
+            <Eye className="h-4 w-4" />
+            Toggle Lamp
           </Button>
         </div>
       </CardContent>
