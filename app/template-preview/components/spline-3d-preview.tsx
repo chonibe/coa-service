@@ -55,6 +55,9 @@ export function Spline3DPreview({
     }
   }, [isModelVisible])
 
+  // Store original values for direct material properties
+  const originalMaterialValuesRef = useRef<Map<string, any>>(new Map())
+
   // Toggle individual layer visibility
   const toggleLayerVisibility = useCallback((layerInfo: LayerInfo) => {
     const app = splineAppRef.current as any
@@ -65,7 +68,32 @@ export function Spline3DPreview({
 
     try {
       const newVisible = !layerInfo.visible
-      layerInfo.layerRef.visible = newVisible
+      
+      // Handle direct material properties (not layers)
+      if (layerInfo.layerType === 'direct-material') {
+        const material = layerInfo.layerRef.material
+        const property = layerInfo.layerRef.property
+        const key = `${layerInfo.objectId}-${property}`
+        
+        if (newVisible) {
+          // Restore original value
+          const originalValue = originalMaterialValuesRef.current.get(key)
+          if (originalValue !== undefined) {
+            material[property] = originalValue
+            console.log(`[Spline3D] Restored ${property} on ${layerInfo.objectName}`)
+          }
+        } else {
+          // Store original and clear
+          if (!originalMaterialValuesRef.current.has(key)) {
+            originalMaterialValuesRef.current.set(key, material[property])
+          }
+          material[property] = null
+          console.log(`[Spline3D] Cleared ${property} on ${layerInfo.objectName}`)
+        }
+      } else {
+        // Handle regular layers
+        layerInfo.layerRef.visible = newVisible
+      }
       
       // Update material
       layerInfo.materialRef.needsUpdate = true
@@ -76,6 +104,11 @@ export function Spline3DPreview({
       // Force app update
       if (app.update && typeof app.update === 'function') {
         app.update()
+      }
+      
+      // Force render
+      if (app.renderer && app.scene && app.camera) {
+        app.renderer.render(app.scene, app.camera)
       }
       
       // Update state
@@ -548,6 +581,118 @@ export function Spline3DPreview({
                   layersCount: material.layers?.length
                 })
                 
+                // Check for direct image/texture on material (not in layers)
+                console.log(`[Spline3D] Checking direct material properties for images:`, {
+                  hasMap: material.map !== undefined,
+                  hasTexture: material.texture !== undefined,
+                  hasImage: material.image !== undefined,
+                  mapType: material.map?.constructor?.name,
+                  textureType: material.texture?.constructor?.name,
+                  imageType: material.image?.constructor?.name,
+                  allMaterialProperties: Object.keys(material).filter(key => 
+                    key.includes('map') || key.includes('texture') || key.includes('image')
+                  )
+                })
+                
+                // Check mesh material if different
+                if (obj.mesh && obj.mesh.material) {
+                  const meshMaterial = obj.mesh.material
+                  console.log(`[Spline3D] Checking mesh material for images:`, {
+                    hasMap: meshMaterial.map !== undefined,
+                    hasTexture: meshMaterial.texture !== undefined,
+                    hasImage: meshMaterial.image !== undefined,
+                    mapType: meshMaterial.map?.constructor?.name,
+                    allMeshMaterialProperties: Object.keys(meshMaterial).filter(key => 
+                      key.includes('map') || key.includes('texture') || key.includes('image')
+                    )
+                  })
+                  
+                  // If mesh material has image, add it as a toggleable item
+                  if (meshMaterial.map || meshMaterial.texture || meshMaterial.image) {
+                    allLayers.push({
+                      objectName: `${name} (Mesh Material)`,
+                      objectId: id,
+                      layerIndex: -1, // Special index for direct material
+                      layerType: 'direct-material',
+                      layerName: 'Direct Material Map/Texture',
+                      visible: true,
+                      layerRef: { 
+                        material: meshMaterial,
+                        property: meshMaterial.map ? 'map' : meshMaterial.texture ? 'texture' : 'image'
+                      },
+                      materialRef: meshMaterial
+                    })
+                  }
+                }
+                
+                // Check for direct material image/texture
+                if (material.map || material.texture || material.image) {
+                  allLayers.push({
+                    objectName: `${name} (Direct Material)`,
+                    objectId: id,
+                    layerIndex: -2, // Special index for direct material
+                    layerType: 'direct-material',
+                    layerName: 'Direct Material Map/Texture',
+                    visible: true,
+                    layerRef: { 
+                      material: material,
+                      property: material.map ? 'map' : material.texture ? 'texture' : 'image'
+                    },
+                    materialRef: material
+                  })
+                }
+                
+                // Check child objects for materials with images
+                const checkChildren = (parentObj: any, parentName: string) => {
+                  if (parentObj.children && Array.isArray(parentObj.children)) {
+                    parentObj.children.forEach((child: any, childIdx: number) => {
+                      let childMaterial = child.material
+                      if (!childMaterial && child.mesh) {
+                        childMaterial = child.mesh.material
+                      }
+                      
+                      if (childMaterial) {
+                        const hasImage = childMaterial.map || childMaterial.texture || childMaterial.image
+                        if (hasImage || (childMaterial.layers && childMaterial.layers.length > 0)) {
+                          console.log(`[Spline3D] Found child object ${childIdx} of ${parentName} with material:`, {
+                            childName: child.name || `Child ${childIdx}`,
+                            hasMap: !!childMaterial.map,
+                            hasTexture: !!childMaterial.texture,
+                            hasImage: !!childMaterial.image,
+                            layersCount: childMaterial.layers?.length
+                          })
+                          
+                          if (hasImage) {
+                            allLayers.push({
+                              objectName: `${parentName} > ${child.name || `Child ${childIdx}`}`,
+                              objectId: child.uuid || `${id}-child-${childIdx}`,
+                              layerIndex: -3, // Special index for child material
+                              layerType: 'child-material',
+                              layerName: 'Child Material Map/Texture',
+                              visible: true,
+                              layerRef: { 
+                                material: childMaterial,
+                                property: childMaterial.map ? 'map' : childMaterial.texture ? 'texture' : 'image'
+                              },
+                              materialRef: childMaterial
+                            })
+                          }
+                        }
+                      }
+                      
+                      // Recursively check grandchildren
+                      if (child.children && child.children.length > 0) {
+                        checkChildren(child, `${parentName} > ${child.name || `Child ${childIdx}`}`)
+                      }
+                    })
+                  }
+                }
+                
+                // Check children of the object
+                if (obj.children || (obj.mesh && obj.mesh.children)) {
+                  checkChildren(obj.mesh || obj, name)
+                }
+                
                 // Log all layers in detail and store them
                 if (material.layers && Array.isArray(material.layers)) {
                   console.log(`[Spline3D] Total layers: ${material.layers.length}`)
@@ -744,10 +889,18 @@ export function Spline3DPreview({
                         <EyeOff className="h-4 w-4" />
                       )}
                       <span className="text-xs">
-                        {layerInfo.objectName} - Layer {layerInfo.layerIndex} ({layerInfo.layerType})
+                        {layerInfo.layerIndex < 0 
+                          ? `${layerInfo.objectName} - ${layerInfo.layerName}`
+                          : `${layerInfo.objectName} - Layer ${layerInfo.layerIndex} (${layerInfo.layerType})`
+                        }
                       </span>
                       {layerInfo.layerType === 'image' && (
                         <span className="ml-auto text-xs bg-blue-500 text-white px-2 py-0.5 rounded">IMAGE</span>
+                      )}
+                      {(layerInfo.layerType === 'direct-material' || layerInfo.layerType === 'child-material') && (
+                        <span className="ml-auto text-xs bg-orange-500 text-white px-2 py-0.5 rounded">
+                          {layerInfo.layerType === 'direct-material' ? 'DIRECT' : 'CHILD'}
+                        </span>
                       )}
                     </Button>
                   </div>
