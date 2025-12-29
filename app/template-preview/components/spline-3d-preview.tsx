@@ -98,7 +98,27 @@ export function Spline3DPreview({
     const createTestImagePlanes = async (imageUrl: string, label: string) => {
       try {
         console.log(`[Spline3D] Creating test image planes for ${label}...`)
+        console.log(`[Spline3D] Scene info:`, {
+          type: scene?.constructor?.name,
+          children: scene?.children?.length,
+          uuid: scene?.uuid
+        })
         
+        const planes: THREE.Mesh[] = []
+
+        // Test 0: Simple RED plane first to verify visibility (no texture)
+        const test0Geometry = new THREE.PlaneGeometry(10, 10)
+        const test0Material = new THREE.MeshBasicMaterial({
+          color: 0xff0000, // Bright red
+          side: THREE.DoubleSide
+        })
+        const test0 = new THREE.Mesh(test0Geometry, test0Material)
+        test0.position.set(0, 0, 0)
+        test0.name = `${label}_test0_red`
+        scene.add(test0)
+        planes.push(test0)
+        console.log(`[Spline3D] ✓ Test 0: Added RED plane at origin to verify visibility`, test0.position)
+
         // Load texture using imported THREE.js
         const textureLoader = new THREE.TextureLoader()
         const texture = await new Promise<THREE.Texture>((resolve, reject) => {
@@ -125,66 +145,86 @@ export function Spline3DPreview({
           aspect: imageAspect
         })
 
-        const planes: THREE.Mesh[] = []
-
-        // Test 1: Large plane at origin (0, 0, 0)
-        const plane1Geometry = new THREE.PlaneGeometry(5, 5 / imageAspect)
+        // Test 1: HUGE plane at origin with texture
+        const plane1Geometry = new THREE.PlaneGeometry(20, 20 / imageAspect)
         const plane1Material = new THREE.MeshBasicMaterial({
           map: texture,
           side: THREE.DoubleSide,
           transparent: false
         })
         const plane1 = new THREE.Mesh(plane1Geometry, plane1Material)
-        plane1.position.set(0, 0, 0)
+        plane1.position.set(0, 0, 10) // Move forward
         plane1.name = `${label}_test1_origin`
         scene.add(plane1)
         planes.push(plane1)
-        console.log(`[Spline3D] ✓ Test 1: Added plane at origin (0,0,0)`, plane1.position)
+        console.log(`[Spline3D] ✓ Test 1: Added HUGE plane at (0,0,10)`, plane1.position)
 
-        // Test 2: Medium plane offset in front
-        const plane2Geometry = new THREE.PlaneGeometry(3, 3 / imageAspect)
+        // Test 2: Try adding to scene.children directly
+        const plane2Geometry = new THREE.PlaneGeometry(15, 15 / imageAspect)
         const plane2Material = new THREE.MeshBasicMaterial({
           map: texture,
           side: THREE.DoubleSide,
           transparent: false
         })
         const plane2 = new THREE.Mesh(plane2Geometry, plane2Material)
-        plane2.position.set(5, 2, 0)
-        plane2.name = `${label}_test2_offset`
-        scene.add(plane2)
+        plane2.position.set(15, 0, 0)
+        plane2.name = `${label}_test2_direct`
+        if (scene.children) {
+          scene.children.push(plane2)
+        } else {
+          scene.add(plane2)
+        }
         planes.push(plane2)
-        console.log(`[Spline3D] ✓ Test 2: Added plane at (5, 2, 0)`, plane2.position)
+        console.log(`[Spline3D] ✓ Test 2: Added plane via scene.children at (15,0,0)`, plane2.position)
 
-        // Test 3: Small plane to the side
-        const plane3Geometry = new THREE.PlaneGeometry(2, 2 / imageAspect)
-        const plane3Material = new THREE.MeshBasicMaterial({
-          map: texture,
-          side: THREE.DoubleSide,
-          transparent: false
+        // Test 3: Try as Sprite (always faces camera)
+        const spriteMap = new THREE.TextureLoader().load(imageUrl, (tex) => {
+          tex.needsUpdate = true
         })
-        const plane3 = new THREE.Mesh(plane3Geometry, plane3Material)
-        plane3.position.set(-5, 0, 0)
-        plane3.name = `${label}_test3_side`
-        scene.add(plane3)
-        planes.push(plane3)
-        console.log(`[Spline3D] ✓ Test 3: Added plane at (-5, 0, 0)`, plane3.position)
+        const spriteMaterial = new THREE.SpriteMaterial({ map: spriteMap })
+        const sprite = new THREE.Sprite(spriteMaterial)
+        sprite.scale.set(10, 10, 1)
+        sprite.position.set(-15, 0, 0)
+        sprite.name = `${label}_test3_sprite`
+        scene.add(sprite)
+        planes.push(sprite as any) // Store as any since it's not a Mesh
+        console.log(`[Spline3D] ✓ Test 3: Added SPRITE at (-15,0,0)`, sprite.position)
 
-        // Test 4: Plane above
-        const plane4Geometry = new THREE.PlaneGeometry(4, 4 / imageAspect)
+        // Test 4: Try adding to a specific object in the scene
+        const plane4Geometry = new THREE.PlaneGeometry(12, 12 / imageAspect)
         const plane4Material = new THREE.MeshBasicMaterial({
           map: texture,
           side: THREE.DoubleSide,
           transparent: false
         })
         const plane4 = new THREE.Mesh(plane4Geometry, plane4Material)
-        plane4.position.set(0, 5, 0)
-        plane4.rotation.x = -Math.PI / 2 // Face down
+        plane4.position.set(0, 10, 0)
+        plane4.rotation.x = -Math.PI / 2
         plane4.name = `${label}_test4_above`
-        scene.add(plane4)
+        
+        // Try to find the lamp or a visible object and add as child
+        const lampObj = app.findObjectById?.('e9e829f2-cbcc-4740-bcca-f0ac77844cd7') || app.findObjectByName?.('LAMP')
+        if (lampObj?.mesh) {
+          lampObj.mesh.add(plane4)
+          console.log(`[Spline3D] ✓ Test 4: Added plane as child of LAMP object`)
+        } else {
+          scene.add(plane4)
+          console.log(`[Spline3D] ✓ Test 4: Added plane to scene at (0,10,0)`)
+        }
         planes.push(plane4)
-        console.log(`[Spline3D] ✓ Test 4: Added plane above at (0, 5, 0)`, plane4.position)
 
-        console.log(`[Spline3D] ✓ Created ${planes.length} test planes for ${label}`)
+        // Force render update
+        if (app.renderer && app.scene && app.camera) {
+          try {
+            app.renderer.render(app.scene, app.camera)
+            console.log(`[Spline3D] ✓ Forced render update`)
+          } catch (e) {
+            console.warn(`[Spline3D] Could not force render:`, e)
+          }
+        }
+
+        console.log(`[Spline3D] ✓ Created ${planes.length} test objects for ${label}`)
+        console.log(`[Spline3D] Scene now has ${scene.children.length} children`)
         
         return planes
       } catch (err) {
