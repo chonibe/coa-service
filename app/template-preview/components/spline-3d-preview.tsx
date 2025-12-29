@@ -2,7 +2,8 @@
 
 import { useEffect, useRef, useState, useCallback } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Loader2 } from "lucide-react"
+import { Button } from "@/components/ui/button"
+import { Loader2, Eye, EyeOff, Palette } from "lucide-react"
 import { Application } from "@splinetool/runtime"
 
 interface Spline3DPreviewProps {
@@ -28,6 +29,153 @@ export function Spline3DPreview({
   const splineAppRef = useRef<Application | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [isModelVisible, setIsModelVisible] = useState(true)
+
+  // Toggle model visibility
+  const toggleModelVisibility = useCallback(() => {
+    if (!splineAppRef.current || isLoading) return
+
+    try {
+      const app = splineAppRef.current as any
+      const canvas = canvasRef.current
+
+      if (isModelVisible) {
+        // Hide the model by setting canvas opacity to 0
+        if (canvas) {
+          canvas.style.opacity = '0'
+          console.log('[Spline3D] Model hidden')
+        }
+      } else {
+        // Show the model by setting canvas opacity to 1
+        if (canvas) {
+          canvas.style.opacity = '1'
+          console.log('[Spline3D] Model shown')
+        }
+      }
+
+      setIsModelVisible(!isModelVisible)
+    } catch (err) {
+      console.error('[Spline3D] Error toggling visibility:', err)
+    }
+  }, [isModelVisible, isLoading])
+
+  // Change LAMP color to black
+  const changeLampToBlack = useCallback(() => {
+    if (!splineAppRef.current || isLoading) return
+
+    const lampObjectId = 'e9e829f2-cbcc-4740-bcca-f0ac77844cd7'
+    console.log(`[Spline3D] Attempting to change LAMP (${lampObjectId}) to black...`)
+
+    try {
+      const app = splineAppRef.current as any
+
+      // Try to find the object by ID first
+      let lampObject = null
+      if (app.findObjectById) {
+        lampObject = app.findObjectById(lampObjectId)
+      }
+
+      if (!lampObject && app.findObjectByName) {
+        lampObject = app.findObjectByName('LAMP')
+      }
+
+      if (!lampObject) {
+        console.warn(`[Spline3D] LAMP object not found with ID: ${lampObjectId} or name: LAMP`)
+        return
+      }
+
+      console.log(`[Spline3D] Found LAMP object:`, lampObject)
+
+      // Try multiple approaches to change color to black
+
+      // Approach 1: Direct material modification
+      if ((lampObject as any).material) {
+        const material = (lampObject as any).material
+        console.log('[Spline3D] Changing LAMP material color to black...')
+
+        // Try material.color directly
+        if (material.color !== undefined) {
+          if (typeof material.color.set === "function") {
+            material.color.set(0, 0, 0) // Black
+            console.log('[Spline3D] ✓ Set LAMP material.color to black via set()')
+          } else if (material.color.r !== undefined) {
+            material.color.r = 0
+            material.color.g = 0
+            material.color.b = 0
+            console.log('[Spline3D] ✓ Set LAMP material.color to black via rgb')
+          }
+          material.needsUpdate = true
+          if (material.update && typeof material.update === "function") material.update()
+        }
+
+        // Try material layers
+        if (material.layers) {
+          for (const layer of material.layers) {
+            if (layer.type === 'color' && layer.color !== undefined) {
+              if (typeof layer.color.set === "function") {
+                layer.color.set(0, 0, 0) // Black
+                console.log('[Spline3D] ✓ Set LAMP layer.color to black via set()')
+              } else if (layer.color.r !== undefined) {
+                layer.color.r = 0
+                layer.color.g = 0
+                layer.color.b = 0
+                console.log('[Spline3D] ✓ Set LAMP layer.color to black via rgb')
+              }
+              material.needsUpdate = true
+              if (material.update && typeof material.update === "function") material.update()
+            }
+          }
+        }
+      }
+
+      // Approach 2: THREE.js mesh material
+      if ((lampObject as any).mesh?.material) {
+        const meshMaterial = (lampObject as any).mesh.material
+        console.log('[Spline3D] Changing LAMP mesh.material color to black...')
+
+        if (typeof meshMaterial.color?.set === "function") {
+          meshMaterial.color.set(0, 0, 0) // Black
+          console.log('[Spline3D] ✓ Set LAMP mesh.material.color to black')
+          meshMaterial.needsUpdate = true
+        } else if (meshMaterial.color?.r !== undefined) {
+          meshMaterial.color.r = 0
+          meshMaterial.color.g = 0
+          meshMaterial.color.b = 0
+          console.log('[Spline3D] ✓ Set LAMP mesh.material color.rgb to black')
+          meshMaterial.needsUpdate = true
+        }
+      }
+
+      // Approach 3: Complete material replacement
+      if ((lampObject as any).mesh) {
+        const mesh = (lampObject as any).mesh
+        console.log('[Spline3D] Replacing LAMP material completely...')
+
+        const THREE = (window as any).THREE || app.THREE
+        if (THREE && THREE.MeshBasicMaterial) {
+          const blackMaterial = new THREE.MeshBasicMaterial({
+            color: 0x000000, // Black
+            transparent: false
+          })
+
+          const originalMaterial = mesh.material
+          mesh.material = blackMaterial
+          console.log('[Spline3D] ✓ Completely replaced LAMP material with black THREE.js material')
+        }
+      }
+
+      // Force render
+      if (app.renderer && app.scene && app.camera && typeof app.renderer.render === "function") {
+        app.renderer.render(app.scene, app.camera)
+        console.log('[Spline3D] ✓ Force rendered after LAMP color change')
+      }
+
+      console.log('[Spline3D] LAMP color change attempt completed')
+
+    } catch (err) {
+      console.error('[Spline3D] Error changing LAMP color:', err)
+    }
+  }, [isLoading])
 
   // TEST FUNCTION: Try to modify color/visible properties to verify we can affect the scene
   const testModifyObjectProperties = useCallback((obj: any, label: string) => {
@@ -1544,6 +1692,40 @@ export function Spline3DPreview({
                   : "Upload an image for Side 2 to see the full preview"}
             </div>
           )}
+        </div>
+
+        {/* Control Buttons */}
+        <div className="flex gap-2 mt-4">
+          <Button
+            onClick={toggleModelVisibility}
+            variant="outline"
+            size="sm"
+            disabled={isLoading || !!error}
+            className="flex items-center gap-2"
+          >
+            {isModelVisible ? (
+              <>
+                <EyeOff className="h-4 w-4" />
+                Hide Model
+              </>
+            ) : (
+              <>
+                <Eye className="h-4 w-4" />
+                Show Model
+              </>
+            )}
+          </Button>
+
+          <Button
+            onClick={changeLampToBlack}
+            variant="outline"
+            size="sm"
+            disabled={isLoading || !!error}
+            className="flex items-center gap-2"
+          >
+            <Palette className="h-4 w-4" />
+            Make Lamp Black
+          </Button>
         </div>
       </CardContent>
     </Card>
