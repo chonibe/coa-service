@@ -69,8 +69,39 @@ export function Spline3DPreview({
     try {
       const newVisible = !layerInfo.visible
       
+      // Handle clearing images from layers
+      if (layerInfo.layerType.startsWith('clear-')) {
+        const layer = layerInfo.layerRef
+        const key = `${layerInfo.objectId}-clear-${layerInfo.layerIndex}`
+        
+        if (newVisible) {
+          // Restore original image
+          const originalImage = originalMaterialValuesRef.current.get(`${key}-image`)
+          const originalMap = originalMaterialValuesRef.current.get(`${key}-map`)
+          const originalTexture = originalMaterialValuesRef.current.get(`${key}-texture`)
+          
+          if (originalImage !== undefined) layer.image = originalImage
+          if (originalMap !== undefined) layer.map = originalMap
+          if (originalTexture !== undefined) layer.texture = originalTexture
+          
+          console.log(`[Spline3D] Restored image on ${layerInfo.objectName}`)
+        } else {
+          // Store original and clear
+          if (!originalMaterialValuesRef.current.has(`${key}-image`)) {
+            originalMaterialValuesRef.current.set(`${key}-image`, layer.image)
+            originalMaterialValuesRef.current.set(`${key}-map`, layer.map)
+            originalMaterialValuesRef.current.set(`${key}-texture`, layer.texture)
+          }
+          
+          layer.image = null
+          layer.map = null
+          layer.texture = null
+          
+          console.log(`[Spline3D] Cleared image from ${layerInfo.objectName}`)
+        }
+      }
       // Handle direct material properties (not layers)
-      if (layerInfo.layerType === 'direct-material') {
+      else if (layerInfo.layerType === 'direct-material' || layerInfo.layerType === 'scene-direct-material') {
         const material = layerInfo.layerRef.material
         const property = layerInfo.layerRef.property
         const key = `${layerInfo.objectId}-${property}`
@@ -113,12 +144,14 @@ export function Spline3DPreview({
       
       // Update state
       setDiscoveredLayers(prev => 
-        prev.map(layer => 
-          layer.objectId === layerInfo.objectId && 
-          layer.layerIndex === layerInfo.layerIndex
-            ? { ...layer, visible: newVisible }
-            : layer
-        )
+        prev.map(layer => {
+          // Match by objectId and layerIndex, or by exact objectId match for clear-* types
+          const matches = layer.objectId === layerInfo.objectId && 
+            (layer.layerIndex === layerInfo.layerIndex || 
+             (layerInfo.layerType.startsWith('clear-') && layer.objectId === layerInfo.objectId))
+          
+          return matches ? { ...layer, visible: newVisible } : layer
+        })
       )
       
       console.log(`[Spline3D] Toggled ${layerInfo.objectName} layer ${layerInfo.layerIndex} (${layerInfo.layerType}) to ${newVisible ? 'visible' : 'hidden'}`)
@@ -529,6 +562,143 @@ export function Spline3DPreview({
           setTimeout(() => {
             setIsLoading(false)
             
+            // Search entire scene for all objects with images
+            const searchEntireSceneForImages = () => {
+              const app = splineAppRef.current as any
+              if (!app) return []
+              
+              console.log("[Spline3D] ===== SEARCHING ENTIRE SCENE FOR IMAGES =====")
+              
+              const allLayers: LayerInfo[] = []
+              const scene = app.scene || app._scene
+              
+              if (!scene) {
+                console.warn("[Spline3D] Scene not available")
+                return []
+              }
+              
+              // Get all objects from scene
+              const allObjects: any[] = []
+              
+              // Method 1: Try getAllObjects
+              if (app.getAllObjects && typeof app.getAllObjects === 'function') {
+                try {
+                  const objects = app.getAllObjects()
+                  if (Array.isArray(objects)) {
+                    allObjects.push(...objects)
+                    console.log(`[Spline3D] Found ${objects.length} objects via getAllObjects()`)
+                  }
+                } catch (e) {
+                  console.warn("[Spline3D] getAllObjects() failed:", e)
+                }
+              }
+              
+              // Method 2: Traverse scene
+              const traverseScene = (obj: any, path: string = '') => {
+                if (!obj) return
+                
+                const currentPath = path ? `${path} > ${obj.name || obj.type || 'unnamed'}` : (obj.name || obj.type || 'unnamed')
+                
+                // Check if this object has a material
+                let material = obj.material
+                if (!material && obj.mesh) {
+                  material = obj.mesh.material
+                }
+                
+                if (material) {
+                  // Check for direct material images
+                  const hasDirectImage = material.map || material.texture || material.image
+                  
+                  if (hasDirectImage) {
+                    console.log(`[Spline3D] Found direct image on: ${currentPath}`, {
+                      hasMap: !!material.map,
+                      hasTexture: !!material.texture,
+                      hasImage: !!material.image
+                    })
+                    
+                    allLayers.push({
+                      objectName: currentPath,
+                      objectId: obj.uuid || obj.id || `scene-${allLayers.length}`,
+                      layerIndex: -10, // Special index for scene-wide direct material
+                      layerType: 'scene-direct-material',
+                      layerName: 'Direct Material Image',
+                      visible: true,
+                      layerRef: { 
+                        material: material,
+                        property: material.map ? 'map' : material.texture ? 'texture' : 'image'
+                      },
+                      materialRef: material
+                    })
+                  }
+                  
+                  // Check layers
+                  if (material.layers && Array.isArray(material.layers)) {
+                    material.layers.forEach((layer: any, index: number) => {
+                      const hasImage = layer.image !== undefined && layer.image !== null
+                      const hasMap = layer.map !== undefined && layer.map !== null
+                      const hasTexture = layer.texture !== undefined && layer.texture !== null
+                      
+                      if (hasImage || hasMap || hasTexture) {
+                        console.log(`[Spline3D] Found image in layer on: ${currentPath}`, {
+                          layerIndex: index,
+                          layerType: layer.type,
+                          hasImage,
+                          hasMap,
+                          hasTexture,
+                          imageSrc: layer.image?.src || layer.image?.currentSrc || 'N/A'
+                        })
+                        
+                        allLayers.push({
+                          objectName: currentPath,
+                          objectId: obj.uuid || obj.id || `scene-${allLayers.length}`,
+                          layerIndex: index,
+                          layerType: layer.type,
+                          layerName: layer.name || layer.id || `Layer ${index}`,
+                          visible: layer.visible !== false,
+                          layerRef: layer,
+                          materialRef: material
+                        })
+                        
+                        // Add clear image option
+                        allLayers.push({
+                          objectName: `${currentPath} (Clear Image)`,
+                          objectId: `${obj.uuid || obj.id}-clear-${index}`,
+                          layerIndex: index,
+                          layerType: `clear-${layer.type}`,
+                          layerName: `Clear ${layer.type} Image`,
+                          visible: true,
+                          layerRef: layer,
+                          materialRef: material
+                        })
+                      }
+                    })
+                  }
+                }
+                
+                // Recursively check children
+                if (obj.children && Array.isArray(obj.children)) {
+                  obj.children.forEach((child: any) => {
+                    traverseScene(child, currentPath)
+                  })
+                }
+                
+                // Also check mesh children if different
+                if (obj.mesh && obj.mesh.children && Array.isArray(obj.mesh.children)) {
+                  obj.mesh.children.forEach((child: any) => {
+                    traverseScene(child, currentPath)
+                  })
+                }
+              }
+              
+              // Traverse scene
+              traverseScene(scene, 'Scene')
+              
+              console.log(`[Spline3D] Found ${allLayers.length} image sources in entire scene`)
+              console.log("[Spline3D] ===== END SCENE SEARCH =====")
+              
+              return allLayers
+            }
+            
             // Inspect PC material layers
             const inspectPCMaterials = () => {
               const app = splineAppRef.current as any
@@ -727,6 +897,39 @@ export function Spline3DPreview({
                       materialRef: material
                     })
                     
+                    // Check if texture/image layers have images set (even if hidden)
+                    if (layer.type === 'texture' || layer.type === 'image') {
+                      const hasImage = layer.image !== undefined && layer.image !== null
+                      const hasMap = layer.map !== undefined && layer.map !== null
+                      const hasTexture = layer.texture !== undefined && layer.texture !== null
+                      
+                      if (hasImage || hasMap || hasTexture) {
+                        console.log(`[Spline3D]   → ${layer.type.toUpperCase()} LAYER HAS IMAGE:`, {
+                          hasImage,
+                          hasMap,
+                          hasTexture,
+                          image: layer.image,
+                          map: layer.map,
+                          texture: layer.texture,
+                          imageSrc: layer.image?.src || layer.image?.currentSrc || 'N/A',
+                          imageWidth: layer.image?.width,
+                          imageHeight: layer.image?.height
+                        })
+                        
+                        // Add a separate toggle for clearing the image itself
+                        allLayers.push({
+                          objectName: `${name} (Clear Image)`,
+                          objectId: `${id}-clear-${index}`,
+                          layerIndex: index,
+                          layerType: `clear-${layer.type}`,
+                          layerName: `Clear ${layer.type} Image`,
+                          visible: hasImage || hasMap || hasTexture,
+                          layerRef: layer,
+                          materialRef: material
+                        })
+                      }
+                    }
+                    
                     // If it's an image layer, log more details
                     if (layer.type === 'image') {
                       console.log(`[Spline3D]   → IMAGE LAYER DETAILS:`, {
@@ -755,7 +958,31 @@ export function Spline3DPreview({
             
             // Inspect materials after a short delay to ensure scene is fully loaded
             setTimeout(() => {
+              // First do PC materials inspection
               inspectPCMaterials()
+              
+              // Then search entire scene for all images
+              const sceneLayers = searchEntireSceneForImages()
+              
+              // Combine results
+              setDiscoveredLayers(prev => {
+                // Create a map to avoid duplicates
+                const layerMap = new Map<string, LayerInfo>()
+                
+                // Add existing layers
+                prev.forEach(layer => {
+                  const key = `${layer.objectId}-${layer.layerIndex}`
+                  layerMap.set(key, layer)
+                })
+                
+                // Add scene layers (will overwrite duplicates)
+                sceneLayers.forEach(layer => {
+                  const key = `${layer.objectId}-${layer.layerIndex}`
+                  layerMap.set(key, layer)
+                })
+                
+                return Array.from(layerMap.values())
+              })
             }, 500)
             
             // Update textures after initialization
