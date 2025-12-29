@@ -359,8 +359,38 @@ export function Spline3DPreview({
         hasImage: l.image !== undefined,
         hasTexture: l.texture !== undefined,
         hasUrl: l.url !== undefined,
-        hasSource: l.source !== undefined
+        hasSource: l.source !== undefined,
+        // Log the actual layer object structure for debugging
+        layerStructure: Object.keys(l).reduce((acc: any, key: string) => {
+          if (!key.startsWith('_')) {
+            const value = l[key]
+            acc[key] = {
+              type: typeof value,
+              isFunction: typeof value === 'function',
+              isObject: typeof value === 'object' && value !== null,
+              value: typeof value === 'object' ? (Array.isArray(value) ? `Array[${value.length}]` : 'Object') : value
+            }
+          }
+          return acc
+        }, {})
       })))
+      
+      // Also log the material structure
+      console.log(`[Spline3D] ${label} material structure:`, {
+        type: material.type,
+        properties: Object.keys(material).filter(k => !k.startsWith('_')),
+        hasMap: material.map !== undefined,
+        hasMaps: material.maps !== undefined,
+        hasUniforms: material.uniforms !== undefined
+      })
+      
+      // Try accessing the object's mesh directly
+      console.log(`[Spline3D] ${label} object structure:`, {
+        type: (obj as any).type,
+        hasMesh: !!(obj as any).mesh,
+        hasGeometry: !!(obj as any).geometry,
+        properties: Object.keys(obj).filter(k => !k.startsWith('_') && k !== 'children').slice(0, 20)
+      })
 
       // Sort layers: prioritize 'texture' and 'image' types, then others
       const sortedLayers = [...allLayers].sort((a, b) => {
@@ -380,8 +410,34 @@ export function Spline3DPreview({
             try {
               await layer.updateTexture(imageUrl)
               console.log(`[Spline3D] ✓ Updated ${label} via layer.updateTexture()`, { layerType })
+              
+              // Force multiple update methods
               if (material.needsUpdate !== undefined) material.needsUpdate = true
-              if (material.update && typeof material.update === "function") material.update()
+              if (material.update && typeof material.update === "function") {
+                material.update()
+              }
+              
+              // Try to force render update on the app
+              if (splineAppRef.current) {
+                // Try different update methods
+                if (typeof (splineAppRef.current as any).update === "function") {
+                  (splineAppRef.current as any).update()
+                }
+                if (typeof (splineAppRef.current as any).render === "function") {
+                  (splineAppRef.current as any).render()
+                }
+                // Try accessing THREE.js renderer directly
+                const renderer = (splineAppRef.current as any).renderer
+                if (renderer && typeof renderer.render === "function") {
+                  const scene = (splineAppRef.current as any).scene
+                  const camera = (splineAppRef.current as any).camera
+                  if (scene && camera) {
+                    renderer.render(scene, camera)
+                    console.log(`[Spline3D] ✓ Force rendered via THREE.js renderer`)
+                  }
+                }
+              }
+              
               // Only return true if this is a texture/image layer, otherwise continue
               if (layerType === 'texture' || layerType === 'image') {
                 return true
@@ -573,6 +629,92 @@ export function Spline3DPreview({
             } catch (err) {
               console.warn(`[Spline3D] ✗ Spline createTexture failed for ${label} (${layerType}):`, err)
             }
+          }
+
+          // Method 8: Try directly accessing the object's mesh and updating its material
+          try {
+            const mesh = (obj as any).mesh
+            if (mesh && mesh.material) {
+              const meshMaterial = mesh.material
+              console.log(`[Spline3D] ${label} found mesh material:`, {
+                type: meshMaterial.type,
+                hasMap: meshMaterial.map !== undefined,
+                hasMaps: meshMaterial.maps !== undefined,
+                properties: Object.keys(meshMaterial).filter(k => !k.startsWith('_')).slice(0, 15)
+              })
+              
+              // Try updating mesh material map directly
+              if (meshMaterial.map !== undefined && imageElement) {
+                try {
+                  // Try to create a THREE.js texture if available
+                  const THREE = (window as any).THREE
+                  if (THREE && THREE.TextureLoader) {
+                    const loader = new THREE.TextureLoader()
+                    const texture = loader.load(imageUrl, (tex: any) => {
+                      meshMaterial.map = tex
+                      meshMaterial.needsUpdate = true
+                      console.log(`[Spline3D] ✓ Updated ${label} mesh material.map via THREE.js`)
+                      // Force render
+                      if (splineAppRef.current && (splineAppRef.current as any).renderer) {
+                        const renderer = (splineAppRef.current as any).renderer
+                        const scene = (splineAppRef.current as any).scene
+                        const camera = (splineAppRef.current as any).camera
+                        if (renderer && scene && camera && typeof renderer.render === "function") {
+                          renderer.render(scene, camera)
+                        }
+                      }
+                    })
+                  } else {
+                    // Fallback: try setting directly
+                    meshMaterial.map = imageElement
+                    meshMaterial.needsUpdate = true
+                    console.log(`[Spline3D] ✓ Set ${label} mesh material.map directly`)
+                  }
+                  if (layerType === 'texture' || layerType === 'image') {
+                    return true
+                  }
+                } catch (err) {
+                  console.warn(`[Spline3D] ✗ Updating mesh material.map failed for ${label}:`, err)
+                }
+              }
+            }
+          } catch (err) {
+            console.warn(`[Spline3D] ✗ Accessing mesh material failed for ${label}:`, err)
+          }
+
+          // Method 9: Try directly accessing and updating the layer's internal texture object
+          try {
+            // Try setting image directly on the layer object itself (not just layer.image)
+            if (imageElement) {
+              // Try all possible texture-related properties
+              const textureProps = ['textureImage', 'textureMap', 'map', 'diffuseMap', 'albedoMap', 'baseColorMap', 'baseMap']
+              for (const prop of textureProps) {
+                if (layer[prop] !== undefined) {
+                  try {
+                    layer[prop] = imageElement
+                    console.log(`[Spline3D] ✓ Set ${label} layer.${prop} = imageElement`, { layerType })
+                    if (material.needsUpdate !== undefined) material.needsUpdate = true
+                    if (material.update && typeof material.update === "function") material.update()
+                    // Force render
+                    if (splineAppRef.current && (splineAppRef.current as any).renderer) {
+                      const renderer = (splineAppRef.current as any).renderer
+                      const scene = (splineAppRef.current as any).scene
+                      const camera = (splineAppRef.current as any).camera
+                      if (renderer && scene && camera && typeof renderer.render === "function") {
+                        renderer.render(scene, camera)
+                      }
+                    }
+                    if (layerType === 'texture' || layerType === 'image') {
+                      return true
+                    }
+                  } catch (err) {
+                    // Continue to next property
+                  }
+                }
+              }
+            }
+          } catch (err) {
+            console.warn(`[Spline3D] ✗ Direct layer property update failed for ${label}:`, err)
           }
         } catch (err) {
           console.warn(`[Spline3D] ✗ Error updating ${label} layer (${layerType}):`, err)
