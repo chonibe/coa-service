@@ -11,6 +11,7 @@ COA Service is a comprehensive digital art authentication and management platfor
 - Edition management
 - Certificate generation
 - Collector dashboard for owned artworks, artist journeys, authentication status, and credits
+- **Template Preview**: Artist landing page to preview artwork on print templates before onboarding
 
 ### 🏷️ NFC Authentication
 - Web NFC tag scanning
@@ -87,6 +88,7 @@ npm run dev
 - [Vendor Dashboard UX/Analytics](/docs/features/vendor-dashboard/README.md)
 - [Advanced Payout System](/docs/features/vendor-payouts/README.md)
 - [CRM System](/docs/features/crm/README.md)
+- [Template Preview](/app/template-preview/README.md) - Artist template preview landing page
 - [MCP Servers](/docs/mcp/README.md) - Model Context Protocol servers for Cursor agents
 - [ChinaDivision Auto-Fulfillment](/docs/features/chinadivision-auto-fulfillment/README.md)
 
