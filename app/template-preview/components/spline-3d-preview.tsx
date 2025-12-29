@@ -319,6 +319,100 @@ export function Spline3DPreview({
         }
       }
 
+      // DIRECT MATERIAL TEST: Try to change material properties directly to verify we can modify materials
+      if (material) {
+        console.log(`[Spline3D] DIRECT MATERIAL TEST for ${label}: Attempting direct material modifications...`)
+        
+        try {
+          // Test 1: Change material color directly to GREEN (very visible)
+          if (material.color !== undefined) {
+            const originalColor = material.color
+            try {
+              if (typeof material.color.set === "function") {
+                material.color.set(0, 1, 0) // Green
+                console.log(`[Spline3D] ✓ DIRECT TEST: Changed ${label} material.color to GREEN via set()`)
+              } else if (material.color.r !== undefined) {
+                material.color.r = 0
+                material.color.g = 1
+                material.color.b = 0
+                console.log(`[Spline3D] ✓ DIRECT TEST: Changed ${label} material.color to GREEN via rgb`)
+              }
+              material.needsUpdate = true
+              if (material.update && typeof material.update === "function") material.update()
+              
+              // Force render
+              if (splineAppRef.current && (splineAppRef.current as any).renderer) {
+                const renderer = (splineAppRef.current as any).renderer
+                const scene = (splineAppRef.current as any).scene
+                const camera = (splineAppRef.current as any).camera
+                if (renderer && scene && camera && typeof renderer.render === "function") {
+                  renderer.render(scene, camera)
+                  console.log(`[Spline3D] ✓ DIRECT TEST: Force rendered after color change`)
+                }
+              }
+              
+              // Revert after 3 seconds
+              setTimeout(() => {
+                try {
+                  if (typeof material.color.set === "function") {
+                    material.color.set(originalColor.r || 1, originalColor.g || 1, originalColor.b || 1)
+                  } else if (material.color.r !== undefined) {
+                    material.color.r = originalColor.r || 1
+                    material.color.g = originalColor.g || 1
+                    material.color.b = originalColor.b || 1
+                  }
+                  material.needsUpdate = true
+                  if (material.update && typeof material.update === "function") material.update()
+                  console.log(`[Spline3D] DIRECT TEST: Reverted ${label} material.color`)
+                } catch (err) {
+                  console.warn(`[Spline3D] DIRECT TEST: Could not revert color:`, err)
+                }
+              }, 3000)
+            } catch (err) {
+              console.warn(`[Spline3D] ✗ DIRECT TEST: Failed to change material.color:`, err)
+            }
+          }
+          
+          // Test 2: Change material opacity to make it very transparent
+          if (material.opacity !== undefined) {
+            const originalOpacity = material.opacity
+            try {
+              material.opacity = 0.2 // Make very transparent
+              material.transparent = true
+              material.needsUpdate = true
+              if (material.update && typeof material.update === "function") material.update()
+              console.log(`[Spline3D] ✓ DIRECT TEST: Changed ${label} material.opacity to 0.2 (very transparent)`)
+              
+              // Force render
+              if (splineAppRef.current && (splineAppRef.current as any).renderer) {
+                const renderer = (splineAppRef.current as any).renderer
+                const scene = (splineAppRef.current as any).scene
+                const camera = (splineAppRef.current as any).camera
+                if (renderer && scene && camera && typeof renderer.render === "function") {
+                  renderer.render(scene, camera)
+                }
+              }
+              
+              // Revert after 3 seconds
+              setTimeout(() => {
+                try {
+                  material.opacity = originalOpacity
+                  material.needsUpdate = true
+                  if (material.update && typeof material.update === "function") material.update()
+                  console.log(`[Spline3D] DIRECT TEST: Reverted ${label} material.opacity`)
+                } catch (err) {
+                  console.warn(`[Spline3D] DIRECT TEST: Could not revert opacity:`, err)
+                }
+              }, 3000)
+            } catch (err) {
+              console.warn(`[Spline3D] ✗ DIRECT TEST: Failed to change material.opacity:`, err)
+            }
+          }
+        } catch (err) {
+          console.error(`[Spline3D] ✗ DIRECT TEST: Error in direct material modification:`, err)
+        }
+      }
+
       if (!material || !material.layers) {
         console.warn(`[Spline3D] ${label} has no material or layers`)
         // Try children recursively
@@ -349,6 +443,51 @@ export function Spline3DPreview({
         }
       } catch (err) {
         console.warn(`[Spline3D] Could not create THREE texture for ${label}:`, err)
+      }
+      
+      // Test 3: Try to set material.map directly with image (after image is loaded)
+      if (material && material.map !== undefined && imageElement) {
+        try {
+          const THREE = (window as any).THREE
+          if (THREE && THREE.TextureLoader) {
+            const loader = new THREE.TextureLoader()
+            loader.load(imageUrl, (texture: any) => {
+              material.map = texture
+              material.needsUpdate = true
+              if (material.update && typeof material.update === "function") material.update()
+              console.log(`[Spline3D] ✓ DIRECT TEST: Set ${label} material.map directly via THREE.js`)
+              
+              // Force render
+              if (splineAppRef.current && (splineAppRef.current as any).renderer) {
+                const renderer = (splineAppRef.current as any).renderer
+                const scene = (splineAppRef.current as any).scene
+                const camera = (splineAppRef.current as any).camera
+                if (renderer && scene && camera && typeof renderer.render === "function") {
+                  renderer.render(scene, camera)
+                  console.log(`[Spline3D] ✓ DIRECT TEST: Force rendered after material.map update`)
+                }
+              }
+            })
+          } else {
+            // Fallback: try setting directly
+            material.map = imageElement
+            material.needsUpdate = true
+            if (material.update && typeof material.update === "function") material.update()
+            console.log(`[Spline3D] ✓ DIRECT TEST: Set ${label} material.map directly`)
+            
+            // Force render
+            if (splineAppRef.current && (splineAppRef.current as any).renderer) {
+              const renderer = (splineAppRef.current as any).renderer
+              const scene = (splineAppRef.current as any).scene
+              const camera = (splineAppRef.current as any).camera
+              if (renderer && scene && camera && typeof renderer.render === "function") {
+                renderer.render(scene, camera)
+              }
+            }
+          }
+        } catch (err) {
+          console.warn(`[Spline3D] ✗ DIRECT TEST: Failed to set material.map:`, err)
+        }
       }
 
       // Get all layers and prioritize 'texture' and 'image' layers
