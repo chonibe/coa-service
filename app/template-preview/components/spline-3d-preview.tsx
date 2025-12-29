@@ -42,16 +42,33 @@ export function Spline3DPreview({
       side2ObjectName
     })
 
-    // List all objects in the scene for debugging
+    // List all objects in the scene for debugging with full details
     try {
       const allObjects = splineAppRef.current.getAllObjects?.() || []
-      console.log("[Spline3D] All objects in scene:", allObjects.map((o: any) => ({
-        id: o.id || o.uuid,
-        name: o.name,
-        type: o.type,
-        hasMaterial: !!o.material,
-        materialLayers: o.material?.layers?.map((l: any) => l.type) || []
-      })))
+      console.log("[Spline3D] ========== ALL OBJECTS IN SCENE ==========")
+      allObjects.forEach((o: any, index: number) => {
+        const obj = o as any
+        console.log(`[Spline3D] Object ${index + 1}:`, {
+          id: obj.id || obj.uuid,
+          name: obj.name,
+          type: obj.type,
+          hasMaterial: !!obj.material,
+          material: obj.material ? {
+            layers: obj.material.layers?.map((l: any) => ({
+              type: l.type,
+              properties: Object.keys(l).filter(k => !k.startsWith('_')),
+              hasImage: l.image !== undefined,
+              hasTexture: l.texture !== undefined,
+              hasUrl: l.url !== undefined,
+              image: l.image,
+              texture: l.texture,
+              url: l.url
+            })) || []
+          } : null,
+          children: obj.children?.length || 0
+        })
+      })
+      console.log("[Spline3D] ==========================================")
     } catch (err) {
       console.warn("[Spline3D] Could not list all objects:", err)
     }
@@ -68,6 +85,17 @@ export function Spline3DPreview({
       return null
     }
 
+    // Helper function to load image and create texture
+    const loadImageAsTexture = (imageUrl: string): Promise<HTMLImageElement> => {
+      return new Promise((resolve, reject) => {
+        const img = new Image()
+        img.crossOrigin = "anonymous"
+        img.onload = () => resolve(img)
+        img.onerror = reject
+        img.src = imageUrl
+      })
+    }
+
     // Helper function to try updating texture on any object
     const tryUpdateTextureOnObject = async (obj: any, imageUrl: string, label: string) => {
       if (!obj) return false
@@ -79,39 +107,101 @@ export function Spline3DPreview({
         hasMaterial: !!(obj as any).material
       })
 
-      const material = obj.material
+      const material = (obj as any).material
       if (!material || !material.layers) {
         console.warn(`[Spline3D] ${label} has no material or layers`)
         return false
       }
 
-      // Try all layers that might be texture/image layers
-      const textureLayers = material.layers.filter((layer: any) => 
-        layer.type === "image" || layer.type === "texture" || layer.type === "color"
-      )
+      // Try to load the image first
+      let imageElement: HTMLImageElement | null = null
+      try {
+        imageElement = await loadImageAsTexture(imageUrl)
+        console.log(`[Spline3D] Loaded image for ${label}:`, imageElement.width, 'x', imageElement.height)
+      } catch (err) {
+        console.warn(`[Spline3D] Failed to load image for ${label}:`, err)
+      }
 
-      console.log(`[Spline3D] ${label} texture layers:`, textureLayers.map((l: any) => ({
+      // Try all layers - don't filter, try ALL layers
+      const allLayers = material.layers || []
+      console.log(`[Spline3D] ${label} all layers (${allLayers.length}):`, allLayers.map((l: any) => ({
         type: l.type,
-        properties: Object.keys(l).filter(k => !k.startsWith('_'))
+        properties: Object.keys(l).filter(k => !k.startsWith('_')),
+        hasImage: l.image !== undefined,
+        hasTexture: l.texture !== undefined,
+        hasUrl: l.url !== undefined,
+        hasSource: l.source !== undefined
       })))
 
-      for (const layer of textureLayers) {
+      for (const layer of allLayers) {
         try {
+          // Method 1: updateTexture method
           if (typeof layer.updateTexture === "function") {
-            await layer.updateTexture(imageUrl)
-            console.log(`[Spline3D] Updated ${label} via layer.updateTexture()`, { layerType: layer.type })
-            if (material.needsUpdate !== undefined) material.needsUpdate = true
-            if (material.update && typeof material.update === "function") material.update()
-            return true
+            try {
+              await layer.updateTexture(imageUrl)
+              console.log(`[Spline3D] ✓ Updated ${label} via layer.updateTexture()`, { layerType: layer.type })
+              if (material.needsUpdate !== undefined) material.needsUpdate = true
+              if (material.update && typeof material.update === "function") material.update()
+              return true
+            } catch (err) {
+              console.warn(`[Spline3D] updateTexture() failed for ${label}:`, err)
+            }
           }
-          
-          // Try direct property updates
-          const propsToTry = ['image', 'texture', 'url', 'source', 'src', 'map', 'color']
+
+          // Method 2: Try setting image element directly if we have it
+          if (imageElement && layer.image !== undefined) {
+            try {
+              layer.image = imageElement
+              console.log(`[Spline3D] ✓ Set ${label} layer.image = imageElement`, { layerType: layer.type })
+              if (material.needsUpdate !== undefined) material.needsUpdate = true
+              if (material.update && typeof material.update === "function") material.update()
+              return true
+            } catch (err) {
+              console.warn(`[Spline3D] Setting image element failed for ${label}:`, err)
+            }
+          }
+
+          // Method 3: Try setting image URL
+          if (layer.image !== undefined) {
+            try {
+              layer.image = imageUrl
+              console.log(`[Spline3D] ✓ Set ${label} layer.image = imageUrl`, { layerType: layer.type })
+              if (material.needsUpdate !== undefined) material.needsUpdate = true
+              if (material.update && typeof material.update === "function") material.update()
+              return true
+            } catch (err) {
+              console.warn(`[Spline3D] Setting image URL failed for ${label}:`, err)
+            }
+          }
+
+          // Method 4: Try texture property
+          if (layer.texture) {
+            try {
+              if (typeof layer.texture.setImage === "function") {
+                layer.texture.setImage(imageElement || imageUrl)
+                console.log(`[Spline3D] ✓ Updated ${label} via texture.setImage()`, { layerType: layer.type })
+                if (material.needsUpdate !== undefined) material.needsUpdate = true
+                if (material.update && typeof material.update === "function") material.update()
+                return true
+              } else if (layer.texture.image !== undefined) {
+                layer.texture.image = imageElement || imageUrl
+                console.log(`[Spline3D] ✓ Set ${label} texture.image`, { layerType: layer.type })
+                if (material.needsUpdate !== undefined) material.needsUpdate = true
+                if (material.update && typeof material.update === "function") material.update()
+                return true
+              }
+            } catch (err) {
+              console.warn(`[Spline3D] Updating texture failed for ${label}:`, err)
+            }
+          }
+
+          // Method 5: Try other properties
+          const propsToTry = ['url', 'source', 'src', 'map']
           for (const prop of propsToTry) {
-            if (layer[prop] !== undefined || prop === 'image') {
+            if (layer[prop] !== undefined) {
               try {
                 layer[prop] = imageUrl
-                console.log(`[Spline3D] Set ${label} layer.${prop} = imageUrl`, { layerType: layer.type })
+                console.log(`[Spline3D] ✓ Set ${label} layer.${prop} = imageUrl`, { layerType: layer.type })
                 if (material.needsUpdate !== undefined) material.needsUpdate = true
                 if (material.update && typeof material.update === "function") material.update()
                 return true
@@ -121,10 +211,11 @@ export function Spline3DPreview({
             }
           }
         } catch (err) {
-          console.warn(`[Spline3D] Failed to update ${label} layer:`, err)
+          console.warn(`[Spline3D] Error updating ${label} layer (${layer.type}):`, err)
         }
       }
 
+      console.warn(`[Spline3D] ✗ Failed to update ${label} - no method worked`)
       return false
     }
 
