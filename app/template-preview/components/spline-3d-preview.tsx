@@ -30,9 +30,9 @@ export function Spline3DPreview({
   const [error, setError] = useState<string | null>(null)
   const [isModelVisible, setIsModelVisible] = useState(true)
   
-  // Store references to duplicate objects with textures
-  const duplicateSide1Ref = useRef<any>(null)
-  const duplicateSide2Ref = useRef<any>(null)
+  // Store references to test image planes
+  const testPlanesSide1Ref = useRef<THREE.Mesh[]>([])
+  const testPlanesSide2Ref = useRef<THREE.Mesh[]>([])
   const originalSide1Ref = useRef<any>(null)
   const originalSide2Ref = useRef<any>(null)
 
@@ -94,33 +94,10 @@ export function Spline3DPreview({
       return foundMesh
     }
 
-    // Helper to create a plane with image texture
-    const createImagePlane = async (originalObj: any, imageUrl: string, label: string) => {
-      if (!originalObj) {
-        console.warn(`[Spline3D] Cannot create image plane: ${label} object not found`)
-        return null
-      }
-
+    // Helper to create test image planes in multiple ways
+    const createTestImagePlanes = async (imageUrl: string, label: string) => {
       try {
-        // Get the original mesh
-        const originalMesh = getMesh(originalObj)
-        if (!originalMesh) {
-          console.warn(`[Spline3D] Cannot find mesh for ${label}`)
-          return null
-        }
-
-        console.log(`[Spline3D] Creating image plane for ${label}...`)
-
-        // Calculate bounding box to determine size
-        const box = new THREE.Box3().setFromObject(originalMesh)
-        const size = box.getSize(new THREE.Vector3())
-        const center = box.getCenter(new THREE.Vector3())
-        
-        // Use the larger dimension for the plane size, or default to 1 if size is invalid
-        const planeWidth = Math.max(size.x, size.z, 0.1) || 1
-        const planeHeight = Math.max(size.y, 0.1) || 1
-
-        console.log(`[Spline3D] Original object size:`, { width: planeWidth, height: planeHeight, size })
+        console.log(`[Spline3D] Creating test image planes for ${label}...`)
         
         // Load texture using imported THREE.js
         const textureLoader = new THREE.TextureLoader()
@@ -140,139 +117,144 @@ export function Spline3DPreview({
         const image = texture.image as HTMLImageElement
         const imageWidth = image?.width || 1
         const imageHeight = image?.height || 1
+        const imageAspect = imageWidth / imageHeight
 
         console.log(`[Spline3D] ✓ Loaded texture for ${label}`, { 
           width: imageWidth, 
-          height: imageHeight 
+          height: imageHeight,
+          aspect: imageAspect
         })
 
-        // Create plane geometry - adjust size based on image aspect ratio
-        const imageAspect = imageWidth / imageHeight
-        const finalWidth = planeHeight * imageAspect
-        const finalHeight = planeHeight
-        
-        const planeGeometry = new THREE.PlaneGeometry(finalWidth, finalHeight)
-        
-        // Create material with texture
-        const planeMaterial = new THREE.MeshBasicMaterial({
+        const planes: THREE.Mesh[] = []
+
+        // Test 1: Large plane at origin (0, 0, 0)
+        const plane1Geometry = new THREE.PlaneGeometry(5, 5 / imageAspect)
+        const plane1Material = new THREE.MeshBasicMaterial({
           map: texture,
           side: THREE.DoubleSide,
-          transparent: true,
-          opacity: 1
+          transparent: false
         })
+        const plane1 = new THREE.Mesh(plane1Geometry, plane1Material)
+        plane1.position.set(0, 0, 0)
+        plane1.name = `${label}_test1_origin`
+        scene.add(plane1)
+        planes.push(plane1)
+        console.log(`[Spline3D] ✓ Test 1: Added plane at origin (0,0,0)`, plane1.position)
 
-        console.log(`[Spline3D] ✓ Created plane geometry and material for ${label}`)
-
-        // Create plane mesh
-        const planeMesh = new THREE.Mesh(planeGeometry, planeMaterial)
-        
-        // Position at the original object's center
-        planeMesh.position.copy(center)
-        
-        // Copy rotation from original (or use a default orientation)
-        if (originalMesh.rotation) {
-          planeMesh.rotation.copy(originalMesh.rotation)
-        }
-        
-        // Set name for identification
-        planeMesh.name = `${label}_image_plane_${Date.now()}`
-        
-        // Add to scene
-        scene.add(planeMesh)
-        
-        console.log(`[Spline3D] ✓ Created and added image plane for ${label}`, {
-          position: planeMesh.position,
-          rotation: planeMesh.rotation,
-          size: { width: finalWidth, height: finalHeight }
+        // Test 2: Medium plane offset in front
+        const plane2Geometry = new THREE.PlaneGeometry(3, 3 / imageAspect)
+        const plane2Material = new THREE.MeshBasicMaterial({
+          map: texture,
+          side: THREE.DoubleSide,
+          transparent: false
         })
+        const plane2 = new THREE.Mesh(plane2Geometry, plane2Material)
+        plane2.position.set(5, 2, 0)
+        plane2.name = `${label}_test2_offset`
+        scene.add(plane2)
+        planes.push(plane2)
+        console.log(`[Spline3D] ✓ Test 2: Added plane at (5, 2, 0)`, plane2.position)
+
+        // Test 3: Small plane to the side
+        const plane3Geometry = new THREE.PlaneGeometry(2, 2 / imageAspect)
+        const plane3Material = new THREE.MeshBasicMaterial({
+          map: texture,
+          side: THREE.DoubleSide,
+          transparent: false
+        })
+        const plane3 = new THREE.Mesh(plane3Geometry, plane3Material)
+        plane3.position.set(-5, 0, 0)
+        plane3.name = `${label}_test3_side`
+        scene.add(plane3)
+        planes.push(plane3)
+        console.log(`[Spline3D] ✓ Test 3: Added plane at (-5, 0, 0)`, plane3.position)
+
+        // Test 4: Plane above
+        const plane4Geometry = new THREE.PlaneGeometry(4, 4 / imageAspect)
+        const plane4Material = new THREE.MeshBasicMaterial({
+          map: texture,
+          side: THREE.DoubleSide,
+          transparent: false
+        })
+        const plane4 = new THREE.Mesh(plane4Geometry, plane4Material)
+        plane4.position.set(0, 5, 0)
+        plane4.rotation.x = -Math.PI / 2 // Face down
+        plane4.name = `${label}_test4_above`
+        scene.add(plane4)
+        planes.push(plane4)
+        console.log(`[Spline3D] ✓ Test 4: Added plane above at (0, 5, 0)`, plane4.position)
+
+        console.log(`[Spline3D] ✓ Created ${planes.length} test planes for ${label}`)
         
-        return planeMesh
+        return planes
       } catch (err) {
-        console.error(`[Spline3D] Error creating image plane for ${label}:`, err)
-        return null
+        console.error(`[Spline3D] Error creating test image planes for ${label}:`, err)
+        return []
       }
     }
 
-    // Handle Side 1
+    // Handle Side 1 - Create test planes
     if (image1) {
-      // Find original object
-      const original1 = findObject(side1ObjectId, side1ObjectName)
-      if (original1) {
-        originalSide1Ref.current = original1
-        
-        // Hide original
-        original1.visible = false
-        const mesh1 = getMesh(original1)
-        if (mesh1) mesh1.visible = false
-        console.log(`[Spline3D] ✓ Hid original Side 1`)
-
-        // Create image plane if it doesn't exist
-        if (!duplicateSide1Ref.current) {
-          const plane = await createImagePlane(original1, image1, "Side 1")
-          if (plane) {
-            duplicateSide1Ref.current = plane
-            plane.visible = true
-            console.log(`[Spline3D] ✓ Created and showed Side 1 image plane`)
-          }
+      // Remove old test planes if they exist
+      testPlanesSide1Ref.current.forEach(plane => {
+        scene.remove(plane)
+        plane.geometry.dispose()
+        if (Array.isArray(plane.material)) {
+          plane.material.forEach(mat => mat.dispose())
         } else {
-          duplicateSide1Ref.current.visible = true
-          console.log(`[Spline3D] ✓ Showed existing Side 1 image plane`)
+          plane.material.dispose()
         }
-      }
+      })
+      testPlanesSide1Ref.current = []
+
+      // Create new test planes
+      const planes = await createTestImagePlanes(image1, "Side 1")
+      testPlanesSide1Ref.current = planes
+      console.log(`[Spline3D] ✓ Created ${planes.length} test planes for Side 1`)
     } else {
-      // No image - show original, hide/remove duplicate
-      if (originalSide1Ref.current) {
-        originalSide1Ref.current.visible = true
-        const mesh1 = getMesh(originalSide1Ref.current)
-        if (mesh1) mesh1.visible = true
-      }
-      if (duplicateSide1Ref.current) {
-        duplicateSide1Ref.current.visible = false
-        // Optionally remove from scene
-        // scene.remove(duplicateSide1Ref.current)
-        // duplicateSide1Ref.current = null
-      }
+      // Remove test planes when no image
+      testPlanesSide1Ref.current.forEach(plane => {
+        scene.remove(plane)
+        plane.geometry.dispose()
+        if (Array.isArray(plane.material)) {
+          plane.material.forEach(mat => mat.dispose())
+        } else {
+          plane.material.dispose()
+        }
+      })
+      testPlanesSide1Ref.current = []
     }
 
-    // Handle Side 2
+    // Handle Side 2 - Create test planes
     if (image2) {
-      // Find original object
-      const original2 = findObject(side2ObjectId, side2ObjectName)
-      if (original2) {
-        originalSide2Ref.current = original2
-        
-        // Hide original
-        original2.visible = false
-        const mesh2 = getMesh(original2)
-        if (mesh2) mesh2.visible = false
-        console.log(`[Spline3D] ✓ Hid original Side 2`)
-
-        // Create image plane if it doesn't exist
-        if (!duplicateSide2Ref.current) {
-          const plane = await createImagePlane(original2, image2, "Side 2")
-          if (plane) {
-            duplicateSide2Ref.current = plane
-            plane.visible = true
-            console.log(`[Spline3D] ✓ Created and showed Side 2 image plane`)
-          }
+      // Remove old test planes if they exist
+      testPlanesSide2Ref.current.forEach(plane => {
+        scene.remove(plane)
+        plane.geometry.dispose()
+        if (Array.isArray(plane.material)) {
+          plane.material.forEach(mat => mat.dispose())
         } else {
-          duplicateSide2Ref.current.visible = true
-          console.log(`[Spline3D] ✓ Showed existing Side 2 image plane`)
+          plane.material.dispose()
         }
-      }
+      })
+      testPlanesSide2Ref.current = []
+
+      // Create new test planes
+      const planes = await createTestImagePlanes(image2, "Side 2")
+      testPlanesSide2Ref.current = planes
+      console.log(`[Spline3D] ✓ Created ${planes.length} test planes for Side 2`)
     } else {
-      // No image - show original, hide/remove duplicate
-      if (originalSide2Ref.current) {
-        originalSide2Ref.current.visible = true
-        const mesh2 = getMesh(originalSide2Ref.current)
-        if (mesh2) mesh2.visible = true
-      }
-      if (duplicateSide2Ref.current) {
-        duplicateSide2Ref.current.visible = false
-        // Optionally remove from scene
-        // scene.remove(duplicateSide2Ref.current)
-        // duplicateSide2Ref.current = null
-      }
+      // Remove test planes when no image
+      testPlanesSide2Ref.current.forEach(plane => {
+        scene.remove(plane)
+        plane.geometry.dispose()
+        if (Array.isArray(plane.material)) {
+          plane.material.forEach(mat => mat.dispose())
+        } else {
+          plane.material.dispose()
+        }
+      })
+      testPlanesSide2Ref.current = []
     }
 
     // Force render
@@ -341,6 +323,25 @@ export function Spline3DPreview({
       if (resizeObserver) {
         resizeObserver.disconnect()
       }
+      
+      // Clean up test planes
+      const cleanupPlanes = (planes: THREE.Mesh[]) => {
+        const app = splineAppRef.current as any
+        planes.forEach(plane => {
+          if (app?.scene) {
+            app.scene.remove(plane)
+          }
+          plane.geometry.dispose()
+          if (Array.isArray(plane.material)) {
+            plane.material.forEach(mat => mat.dispose())
+          } else {
+            plane.material.dispose()
+          }
+        })
+      }
+      cleanupPlanes(testPlanesSide1Ref.current)
+      cleanupPlanes(testPlanesSide2Ref.current)
+      
       if (splineAppRef.current) {
         try {
           splineAppRef.current.dispose?.()
