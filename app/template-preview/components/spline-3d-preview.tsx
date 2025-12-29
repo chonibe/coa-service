@@ -1125,17 +1125,6 @@ export function Spline3DPreview({
 
       console.log(`[Spline3D] TEXTURE UPDATE: No suitable texture layer found on ${label}`)
       return false
-      
-      // If no material on object, try children
-      if (!material && (obj as any).children && (obj as any).children.length > 0) {
-        for (const child of (obj as any).children) {
-          if (child.material) {
-            material = child.material
-            console.log(`[Spline3D] Found material on child of ${label}`)
-            break
-          }
-        }
-      }
 
       // DIRECT MATERIAL TEST: Try to change material properties directly to verify we can modify materials
       if (material) {
