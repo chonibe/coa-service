@@ -47,20 +47,31 @@ export async function POST(request: NextRequest) {
     })
 
     if (lineItemsError) {
+      console.error("[redeem] Error fetching line items:", lineItemsError)
       return NextResponse.json(
         { error: `Failed to fetch line items: ${lineItemsError.message}` },
         { status: 500 }
       )
     }
 
-    if (!lineItems || lineItems.length === 0) {
-      return NextResponse.json({ error: "No pending payouts to redeem" }, { status: 400 })
+    console.log(`[redeem] Fetched ${lineItems?.length || 0} pending line items for ${vendorName}`)
+
+    // Filter to only fulfilled items - vendors can only request payout for fulfilled items
+    const fulfilledItems = (lineItems || []).filter((item: any) => item.fulfillment_status === 'fulfilled')
+    
+    console.log(`[redeem] Filtered to ${fulfilledItems.length} fulfilled items (out of ${lineItems?.length || 0} total)`)
+
+    if (!fulfilledItems || fulfilledItems.length === 0) {
+      console.log(`[redeem] No fulfilled items to redeem for ${vendorName}`)
+      return NextResponse.json({ 
+        error: "No pending payouts to redeem. Only fulfilled items are eligible for payout requests. You have unfulfilled items that need to be fulfilled first." 
+      }, { status: 400 })
     }
 
-    // Calculate total payout amount
+    // Calculate total payout amount using fulfilled items only
     // DISABLED: Custom payout settings - always use 25% of item price
     let totalAmount = 0
-    lineItems.forEach((item: any) => {
+    fulfilledItems.forEach((item: any) => {
       const price = typeof item.price === "string" ? Number.parseFloat(item.price || "0") : item.price || 0
       totalAmount += (price * 25) / 100 // Always 25% of item price
     })
@@ -80,7 +91,7 @@ export async function POST(request: NextRequest) {
         status: "requested", // Changed from "pending" to "requested" - requires admin approval
         payment_method: "paypal",
         reference,
-        product_count: lineItems.length,
+        product_count: fulfilledItems.length,
         currency: "USD",
         invoice_number: invoiceNumber,
         tax_rate: 0,
@@ -101,8 +112,8 @@ export async function POST(request: NextRequest) {
 
     const payoutId = payoutRecord.id
 
-    // Associate line items with this payout request
-    const payoutItems = lineItems.map((item: any) => ({
+    // Associate line items with this payout request (only fulfilled items)
+    const payoutItems = fulfilledItems.map((item: any) => ({
       payout_id: payoutId,
       line_item_id: item.line_item_id,
       order_id: item.order_id,
@@ -129,7 +140,7 @@ export async function POST(request: NextRequest) {
       payoutId,
       amount: totalAmount,
       reference,
-      itemsCount: lineItems.length,
+      itemsCount: fulfilledItems.length,
       paypalEmail: vendor.paypal_email,
       status: "requested",
       note: "Your payout request has been submitted and is awaiting admin approval. You will be notified once it's processed.",

@@ -249,12 +249,16 @@ export default function PayoutsPage() {
   const handleRedeem = async () => {
     try {
       setIsRedeeming(true)
+      console.log("[handleRedeem] Starting payout request...")
+      
       const response = await fetch("/api/vendor/payouts/redeem", {
         method: "POST",
         credentials: "include",
       })
 
+      console.log("[handleRedeem] Response status:", response.status)
       const data = await response.json()
+      console.log("[handleRedeem] Response data:", data)
 
       if (!response.ok) {
         throw new Error(data.error || "Failed to redeem payout")
@@ -265,8 +269,8 @@ export default function PayoutsPage() {
         description: data.note || "We've received your payment request and will process it soon. You'll be notified once it's approved.",
       })
 
-      // Refresh payouts
-      await fetchPayouts()
+      // Refresh payouts and pending items
+      await Promise.all([fetchPayouts(), fetchPendingItems()])
     } catch (err) {
       console.error("Error redeeming payout:", err)
       toast({
@@ -448,10 +452,10 @@ export default function PayoutsPage() {
             )}
           </div>
         <div className="flex gap-2 flex-wrap">
-          {pendingAmount > 0 && (
+          {pendingAmount > 0 && pendingLineItems.length > 0 && (
             <Button 
               onClick={handleRedeem} 
-              disabled={isRedeeming || isLoading} 
+              disabled={isRedeeming || isLoading || pendingLineItems.length === 0} 
               className="flex items-center gap-1 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-lg"
             >
               <Wallet className={`h-4 w-4 ${isRedeeming ? "animate-pulse" : ""}`} />
