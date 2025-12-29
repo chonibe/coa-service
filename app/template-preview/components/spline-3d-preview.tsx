@@ -814,6 +814,12 @@ export function Spline3DPreview({
             allProps: Object.keys(l).filter(k => !k.startsWith('_'))
           }))
         })
+
+        // Log before texture update
+        console.log(`[Spline3D] 🔍 EXTRA DEBUG: ${label} BEFORE texture update - layer states:`)
+        ;(obj as any).material?.layers?.forEach((layer: any, idx: number) => {
+          console.log(`[Spline3D] 🔍 Layer ${idx} (${layer.type}): visible=${layer.visible}, alpha=${layer.alpha}, image=${!!layer.image}, texture=${!!layer.texture}`)
+        })
       }
 
       // Get material (try object first, then children)
@@ -950,6 +956,40 @@ export function Spline3DPreview({
             if (objMaterial.update && typeof objMaterial.update === 'function') {
               objMaterial.update()
               console.log(`[Spline3D] ✓ TEXTURE UPDATE: Called material.update() for ${label}`)
+            }
+
+            // EXTRA DEBUGGING: For PC objects, check if other layers are interfering
+            if (label.includes('PC trans A') || label.includes('PC Trans B')) {
+              console.log(`[Spline3D] 🔍 EXTRA DEBUG: ${label} AFTER texture update - checking for layer interference:`)
+
+              // Check if matcap layer is blocking texture
+              const matcapLayer = objMaterial.layers.find((l: any) => l.type === 'matcap')
+              if (matcapLayer) {
+                console.log(`[Spline3D] 🔍 Matcap layer found: visible=${matcapLayer.visible}, alpha=${matcapLayer.alpha}`)
+                if (matcapLayer.visible && matcapLayer.alpha > 0) {
+                  console.log(`[Spline3D] ⚠️  POTENTIAL ISSUE: Matcap layer is visible and may be covering texture!`)
+
+                  // Try to reduce matcap alpha to let texture show through
+                  const originalMatcapAlpha = matcapLayer.alpha
+                  matcapLayer.alpha = 0.1 // Reduce matcap influence
+                  console.log(`[Spline3D] 🔧 Attempting to reduce matcap alpha from ${originalMatcapAlpha} to 0.1`)
+                }
+              }
+
+              // Check transmission layer
+              const transmissionLayer = objMaterial.layers.find((l: any) => l.type === 'transmission')
+              if (transmissionLayer) {
+                console.log(`[Spline3D] 🔍 Transmission layer found: visible=${transmissionLayer.visible}, alpha=${transmissionLayer.alpha}`)
+                if (transmissionLayer.visible && transmissionLayer.alpha > 0) {
+                  console.log(`[Spline3D] ⚠️  POTENTIAL ISSUE: Transmission layer is making object transparent!`)
+                }
+              }
+
+              // Log final layer states
+              console.log(`[Spline3D] 🔍 FINAL layer states after texture update:`)
+              objMaterial.layers.forEach((layer: any, idx: number) => {
+                console.log(`[Spline3D] 🔍 Layer ${idx} (${layer.type}): visible=${layer.visible}, alpha=${layer.alpha}, image=${!!layer.image}, texture=${!!layer.texture}`)
+              })
             }
 
             // Force render
