@@ -44,6 +44,7 @@ export function TemplatePreviewer({ artworkImage }: TemplatePreviewerProps) {
           <ImageMaskEditor
             image={productImage}
             onUpdate={handleMaskUpdate}
+            hideSaveButton={true}
           />
         </div>
       </div>

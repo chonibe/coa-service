@@ -144,7 +144,7 @@ export async function calculateOrderPayout(
         const october2025 = new Date('2025-10-01')
         
         let priceForCalculation = await convertToUSD(originalPrice, originalCurrency)
-        
+
         if (orderDate < october2025) {
           priceForCalculation = 40.00
         }

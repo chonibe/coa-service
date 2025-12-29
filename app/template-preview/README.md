@@ -79,10 +79,27 @@ app/api/template-preview/
 ## Usage
 
 1. Navigate to `/template-preview`
-2. Click "Load Template" to view the PDF template
-3. Upload an artwork image using the uploader
-4. Use controls to position, zoom, and rotate the artwork
-5. Download the template PDF for reference
+2. **Template Preview Tab:**
+   - Upload an artwork image using the uploader
+   - Use controls to position, zoom, and rotate the artwork
+   - Download the template PDF for reference
+3. **3D Lamp Preview Tab:**
+   - Upload images for Side 1 and Side 2 of the lamp
+   - View your artwork on the 3D lamp model
+   - Rotate and interact with the model
+
+## Spline 3D Integration
+
+The 3D lamp preview uses Spline 3D for interactive visualization. To set up:
+
+1. **See [SPLINE_SETUP.md](./SPLINE_SETUP.md)** for detailed instructions
+2. **Quick setup:**
+   - Create variables `image1` and `image2` in your Spline scene
+   - Connect variables to lamp materials/textures
+   - Publish your Spline scene
+   - Add scene URL to `NEXT_PUBLIC_SPLINE_SCENE_URL` environment variable
+
+The component automatically sends uploaded images to Spline via postMessage API.
 
 ## Technical Implementation
 

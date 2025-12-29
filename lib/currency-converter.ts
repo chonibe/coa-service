@@ -169,3 +169,4 @@ export const SUPPORTED_CURRENCIES = ["USD", "GBP", "EUR", "CAD", "AUD", "ILS", "
 
 export type SupportedCurrency = (typeof SUPPORTED_CURRENCIES)[number]
 
+

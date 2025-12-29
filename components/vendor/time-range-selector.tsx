@@ -8,7 +8,7 @@ import { format } from "date-fns"
 import { cn } from "@/lib/utils"
 import { useState } from "react"
 
-export type TimeRange = "7d" | "30d" | "90d" | "1y" | "custom"
+export type TimeRange = "7d" | "30d" | "90d" | "1y" | "all-time" | "custom"
 
 export interface DateRange {
   from: Date
@@ -24,7 +24,7 @@ interface TimeRangeSelectorProps {
 
 /**
  * Time range selector component for analytics
- * Supports preset ranges (7d, 30d, 90d, 1y) and custom date range
+ * Supports preset ranges (7d, 30d, 90d, 1y, all-time) and custom date range
  */
 export function TimeRangeSelector({
   value,
@@ -53,6 +53,9 @@ export function TimeRangeSelector({
   const getDateRangeLabel = () => {
     if (value === "custom" && customRange) {
       return `${format(customRange.from, "MMM d")} - ${format(customRange.to, "MMM d, yyyy")}`
+    }
+    if (value === "all-time") {
+      return "All Time"
     }
     return value.toUpperCase()
   }
@@ -91,6 +94,14 @@ export function TimeRangeSelector({
           className="h-8"
         >
           1Y
+        </Button>
+        <Button
+          variant={value === "all-time" ? "default" : "ghost"}
+          size="sm"
+          onClick={() => handlePresetChange("all-time")}
+          className="h-8"
+        >
+          All Time
         </Button>
       </div>
 

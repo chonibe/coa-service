@@ -11,6 +11,7 @@ export interface PendingPayout {
   vendor_name: string
   amount: number
   product_count: number
+  pending_fulfillment_count: number
   paypal_email: string | null
   tax_id: string | null
   tax_country: string | null
@@ -33,6 +34,7 @@ export interface PendingLineItem {
   is_paid?: boolean
   payout_reference?: string | null
   payout_id?: number | null
+  restocked?: boolean | null
 }
 
 export interface PayoutHistory {

@@ -20,7 +20,7 @@ export async function GET(request: NextRequest) {
 
     // Calculate date range
     const now = new Date()
-    let startDate = new Date()
+    let startDate: Date | null = new Date()
     switch (timeRange) {
       case "7d":
         startDate.setDate(now.getDate() - 7)
@@ -34,17 +34,24 @@ export async function GET(request: NextRequest) {
       case "1y":
         startDate.setFullYear(now.getFullYear() - 1)
         break
+      case "all-time":
+        startDate = null // All time - no date filter
+        break
       default:
-        startDate = new Date(0) // All time
+        startDate = new Date(0) // All time (fallback)
     }
 
     // Get payouts for this vendor
-    const { data: payouts, error: payoutsError } = await supabase
+    let payoutsQuery = supabase
       .from("vendor_payouts")
       .select("id, amount, payout_date, created_at, status")
       .eq("vendor_name", vendorName)
-      .gte("created_at", startDate.toISOString())
-      .order("created_at", { ascending: true })
+    
+    if (startDate) {
+      payoutsQuery = payoutsQuery.gte("created_at", startDate.toISOString())
+    }
+    
+    const { data: payouts, error: payoutsError } = await payoutsQuery.order("created_at", { ascending: true })
 
     if (payoutsError) {
       console.error("Error fetching vendor payouts:", payoutsError)
@@ -52,12 +59,16 @@ export async function GET(request: NextRequest) {
     }
 
     // Get revenue data from line items for this vendor
-    const { data: lineItems, error: lineItemsError } = await supabase
+    let lineItemsQuery = supabase
       .from("order_line_items_v2")
       .select("price, created_at")
       .eq("vendor_name", vendorName)
-      .gte("created_at", startDate.toISOString())
-      .eq("fulfillment_status", "fulfilled")
+    
+    if (startDate) {
+      lineItemsQuery = lineItemsQuery.gte("created_at", startDate.toISOString())
+    }
+    
+    const { data: lineItems, error: lineItemsError } = await lineItemsQuery.eq("fulfillment_status", "fulfilled")
 
     if (lineItemsError) {
       console.error("Error fetching line items:", lineItemsError)
@@ -70,7 +81,7 @@ export async function GET(request: NextRequest) {
     payouts?.forEach((payout) => {
       const date = new Date(payout.payout_date || payout.created_at).toISOString().split("T")[0]
       const existing = trendsMap.get(date) || { payoutAmount: 0, revenueAmount: 0, productCount: 0 }
-      existing.payoutAmount += convertGBPToUSD(payout.amount || 0)
+      existing.payoutAmount += payout.amount || 0
       trendsMap.set(date, existing)
     })
 
@@ -79,7 +90,7 @@ export async function GET(request: NextRequest) {
       const date = new Date(item.created_at).toISOString().split("T")[0]
       const existing = trendsMap.get(date) || { payoutAmount: 0, revenueAmount: 0, productCount: 0 }
       const price = typeof item.price === "string" ? parseFloat(item.price || "0") : item.price || 0
-      existing.revenueAmount += convertGBPToUSD(price)
+      existing.revenueAmount += price
       existing.productCount += 1
       trendsMap.set(date, existing)
     })

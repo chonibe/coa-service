@@ -3,14 +3,18 @@
 import { useState } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Download, FileText, Image as ImageIcon } from "lucide-react"
+import { Download, FileText, Image as ImageIcon, Box } from "lucide-react"
 import { TemplatePreviewer } from "./components/template-previewer"
 import { ArtworkUploader } from "./components/artwork-uploader"
+import { Spline3DPreview } from "./components/spline-3d-preview"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Badge } from "@/components/ui/badge"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 
 export default function TemplatePreviewPage() {
   const [uploadedImage, setUploadedImage] = useState<string | null>(null)
+  const [side1Image, setSide1Image] = useState<string | null>(null)
+  const [side2Image, setSide2Image] = useState<string | null>(null)
 
   const handleDownloadTemplate = async () => {
     try {
@@ -49,6 +53,22 @@ export default function TemplatePreviewPage() {
     setUploadedImage(null)
   }
 
+  const handleSide1Upload = (imageUrl: string) => {
+    setSide1Image(imageUrl)
+  }
+
+  const handleSide1Remove = () => {
+    setSide1Image(null)
+  }
+
+  const handleSide2Upload = (imageUrl: string) => {
+    setSide2Image(imageUrl)
+  }
+
+  const handleSide2Remove = () => {
+    setSide2Image(null)
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20">
       <div className="container mx-auto px-4 py-8 md:py-12">
@@ -67,12 +87,12 @@ export default function TemplatePreviewPage() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
           {/* Left Column - Upload & Controls */}
           <div className="lg:col-span-1 space-y-6">
-            {/* Artwork Upload Card */}
+            {/* Template Preview Upload Card */}
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <ImageIcon className="h-5 w-5" />
-                  Upload Your Artwork
+                  Template Preview
                 </CardTitle>
                 <CardDescription>
                   Upload an image to see how it looks on the template
@@ -84,6 +104,37 @@ export default function TemplatePreviewPage() {
                   onImageRemove={handleRemoveImage}
                   currentImage={uploadedImage}
                 />
+              </CardContent>
+            </Card>
+
+            {/* 3D Lamp Upload Card */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Box className="h-5 w-5" />
+                  3D Lamp Preview
+                </CardTitle>
+                <CardDescription>
+                  Upload images for both sides of the lamp
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div>
+                  <label className="text-sm font-medium mb-2 block">Side 1</label>
+                  <ArtworkUploader
+                    onImageUpload={handleSide1Upload}
+                    onImageRemove={handleSide1Remove}
+                    currentImage={side1Image}
+                  />
+                </div>
+                <div>
+                  <label className="text-sm font-medium mb-2 block">Side 2</label>
+                  <ArtworkUploader
+                    onImageUpload={handleSide2Upload}
+                    onImageRemove={handleSide2Remove}
+                    currentImage={side2Image}
+                  />
+                </div>
               </CardContent>
             </Card>
 
@@ -123,19 +174,19 @@ export default function TemplatePreviewPage() {
               <CardContent className="space-y-3 text-sm">
                 <div className="flex items-start gap-2">
                   <Badge variant="outline" className="mt-0.5">1</Badge>
-                  <p>Upload your artwork image above</p>
+                  <p>Upload artwork for template preview (optional)</p>
                 </div>
                 <div className="flex items-start gap-2">
                   <Badge variant="outline" className="mt-0.5">2</Badge>
-                  <p>View the preview on the template</p>
+                  <p>Upload images for both sides of the lamp</p>
                 </div>
                 <div className="flex items-start gap-2">
                   <Badge variant="outline" className="mt-0.5">3</Badge>
-                  <p>Download the template PDF for reference</p>
+                  <p>View your artwork in the 3D lamp preview</p>
                 </div>
                 <div className="flex items-start gap-2">
                   <Badge variant="outline" className="mt-0.5">4</Badge>
-                  <p>Ready to onboard? Contact us to get started!</p>
+                  <p>Download the template PDF for reference</p>
                 </div>
               </CardContent>
             </Card>
@@ -143,17 +194,34 @@ export default function TemplatePreviewPage() {
 
           {/* Right Column - Preview */}
           <div className="lg:col-span-2">
-            <Card>
-              <CardHeader>
-                <CardTitle>Template Preview</CardTitle>
-                <CardDescription>
-                  See how your artwork looks on the print template. Position and adjust your artwork within the frame.
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <TemplatePreviewer artworkImage={uploadedImage} />
-              </CardContent>
-            </Card>
+            <Tabs defaultValue="template" className="w-full">
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="template">Template Preview</TabsTrigger>
+                <TabsTrigger value="3d">3D Lamp Preview</TabsTrigger>
+              </TabsList>
+              <TabsContent value="template" className="mt-4">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Template Preview</CardTitle>
+                    <CardDescription>
+                      See how your artwork looks on the print template. Position and adjust your artwork within the frame.
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <TemplatePreviewer artworkImage={uploadedImage} />
+                  </CardContent>
+                </Card>
+              </TabsContent>
+              <TabsContent value="3d" className="mt-4">
+                <Spline3DPreview 
+                  image1={side1Image} 
+                  image2={side2Image}
+                  // Object IDs (UUIDs) from Spline scene
+                  side1ObjectId="2de1e7d2-4b53-4738-a749-be197641fa9a"
+                  side2ObjectId="2e33392b-21d8-441d-87b0-11527f3a8b70"
+                />
+              </TabsContent>
+            </Tabs>
           </div>
         </div>
 

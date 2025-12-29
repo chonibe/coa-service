@@ -7,7 +7,10 @@ import { getUsdBalance, calculateUnifiedCollectorBalance } from "@/lib/banking/b
 import { ensureCollectorAccount } from "@/lib/banking/account-manager"
 
 const DEFAULT_CURRENCY = "USD"
-const DEFAULT_PAYOUT_PERCENTAGE = 10
+const DEFAULT_PAYOUT_PERCENTAGE = 25
+const HISTORICAL_PRICE = 40.00
+const HISTORICAL_PAYOUT = 10.00
+const OCTOBER_2025 = new Date('2025-10-01')
 const RECENT_ACTIVITY_LIMIT = 5
 const CHART_WINDOW = 30
 
@@ -26,7 +29,7 @@ export async function GET() {
       fetchProductsByVendor(vendorName),
       supabase
         .from("order_line_items_v2")
-        .select("id, product_id, price, quantity, created_at, status, vendor_name")
+        .select("id, product_id, price, quantity, created_at, status, vendor_name, fulfillment_status")
       .eq("vendor_name", vendorName)
         .eq("status", "active"),
     ])
@@ -91,6 +94,8 @@ export async function GET() {
       totalPayout: totalPayout, // Now from collector ledger
       currentUsdBalance: currentUsdBalance, // Available balance
       totalUsdEarned: totalUsdEarned, // All-time earnings
+      pendingFulfillmentCount: stats.pendingFulfillmentCount,
+      pendingFulfillmentRevenue: stats.pendingFulfillmentRevenue,
       currency: stats.currency,
       salesByDate: stats.salesByDate,
       recentActivity: stats.recentActivity,
@@ -351,29 +356,63 @@ const buildFinancialSummary = (
   let totalSales = 0
   let totalRevenue = 0
   let totalPayout = 0
+  let pendingFulfillmentCount = 0
+  let pendingFulfillmentRevenue = 0
 
   for (const item of lineItems) {
-    const quantity = normaliseQuantity(item.quantity)
-    const unitPrice = normalisePrice(item.price)
-    const gross = unitPrice * quantity
-
-    const payout = payoutMap.get(item.product_id ?? "")
-    let vendorShare = 0
-
-    if (payout) {
-      vendorShare = payout.isPercentage ? gross * (payout.amount / 100) : payout.amount * quantity
-    } else {
-      vendorShare = gross * (DEFAULT_PAYOUT_PERCENTAGE / 100)
+    // 1. Completely exclude items that are cancelled or restocked
+    if (item.status === 'cancelled' || (item as any).restocked === true) {
+      continue
     }
 
+    const quantity = normaliseQuantity(item.quantity)
+    const createdAt = item.created_at ? new Date(item.created_at) : new Date()
+    let unitPrice = normalisePrice(item.price)
+    const gross = unitPrice * quantity
+
+    // 2. Handle Unfulfilled (Pending Fulfillment)
+    if (item.fulfillment_status !== 'fulfilled') {
+      pendingFulfillmentCount += quantity
+      pendingFulfillmentRevenue += gross
+      
+      // Still show in recent activity but don't count towards main metrics
+      recentActivity.push({
+        id: item.id ?? `activity-${recentActivity.length}`,
+        date: item.created_at ?? new Date().toISOString(),
+        product_id: item.product_id ?? "",
+        price: unitPrice,
+        quantity,
+        isPendingFulfillment: true
+      })
+      continue
+    }
+
+    // 3. Main Metrics (Fulfilled)
+    let vendorShare = 0
+
+    // Apply historical adjustment: Pre-Oct 2025 items are $40 revenue / $10 payout
+    if (createdAt < OCTOBER_2025) {
+      unitPrice = HISTORICAL_PRICE
+      vendorShare = HISTORICAL_PAYOUT * quantity
+    } else {
+      const payout = payoutMap.get(item.product_id ?? "")
+      
+      if (payout) {
+        vendorShare = payout.isPercentage ? gross * (payout.amount / 100) : payout.amount * quantity
+      } else {
+        vendorShare = gross * (DEFAULT_PAYOUT_PERCENTAGE / 100)
+      }
+    }
+
+    const recalculatedGross = unitPrice * quantity
     totalSales += quantity
-    totalRevenue += gross  // Total revenue is gross sales, not vendor share
-    totalPayout += vendorShare  // Vendor share is the payout amount
+    totalRevenue += recalculatedGross
+    totalPayout += vendorShare
 
     const dateKey = normaliseDateKey(item.created_at)
     const existing = salesByDate.get(dateKey) ?? { sales: 0, revenue: 0 }
     existing.sales += quantity
-    existing.revenue += gross  // Revenue is gross sales per date
+    existing.revenue += recalculatedGross
     salesByDate.set(dateKey, existing)
 
     recentActivity.push({
@@ -382,6 +421,7 @@ const buildFinancialSummary = (
       product_id: item.product_id ?? "",
       price: unitPrice,
       quantity,
+      isPendingFulfillment: false
     })
   }
 
@@ -400,8 +440,10 @@ const buildFinancialSummary = (
 
   return {
     totalSales,
-    totalRevenue: Number(totalRevenue.toFixed(2)),  // Gross sales
-    totalPayout: Number(totalPayout.toFixed(2)),  // Vendor share
+    totalRevenue: Number(totalRevenue.toFixed(2)),
+    totalPayout: Number(totalPayout.toFixed(2)),
+    pendingFulfillmentCount,
+    pendingFulfillmentRevenue: Number(pendingFulfillmentRevenue.toFixed(2)),
     currency: DEFAULT_CURRENCY,
     salesByDate: chartData,
     recentActivity: activity,

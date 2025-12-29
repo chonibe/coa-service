@@ -25,7 +25,7 @@ export async function POST(request: Request) {
     const supabase = createClient()
 
     // Get line items for this vendor that meet one of these criteria:
-    // 1. fulfillment_status = 'fulfilled' or 'partially_fulfilled' (will be filtered by financial_status later)
+    // 1. fulfillment_status = 'fulfilled', 'partially_fulfilled', or 'unfulfilled'
     // 2. Has an active edition number (edition_number IS NOT NULL AND status = 'active')
     // Note: Supabase has a default limit of 1000 rows, so we need to fetch in batches if needed
     // Exclude restocked items (restocked = false or null)
@@ -33,7 +33,7 @@ export async function POST(request: Request) {
       .from("order_line_items_v2")
       .select("line_item_id, order_id, order_name, product_id, price, created_at, fulfillment_status, edition_number, status, restocked, name", { count: 'exact' })
       .eq("vendor_name", vendorName)
-      .or("fulfillment_status.in.(fulfilled,partially_fulfilled),and(edition_number.not.is.null,status.eq.active)") // Either fulfilled/partially_fulfilled OR has active edition number
+      .or("fulfillment_status.in.(fulfilled,partially_fulfilled,unfulfilled),and(edition_number.not.is.null,status.eq.active),created_at.lt.2025-10-01") // Included unfulfilled
       .eq("restocked", false) // Exclude restocked items
       .order("created_at", { ascending: false }) // Order by date descending (newest first for display)
 
@@ -223,21 +223,20 @@ export async function POST(request: Request) {
 
       // Build response - include ALL items, even with $0 price
       const data = itemsToProcess.map((item: any) => {
-        const payoutSetting = payoutMap.get(item.product_id)
-        const itemPrice = item.price || 0
-        
-        // Always use exactly 25% of the item price for ALL payouts
-        // Custom payout settings are disabled
-        const payoutAmount = 25
-        const isPercentage = true // Always percentage
-
-        let calculatedPayout = isPercentage
-          ? (itemPrice * payoutAmount / 100)
-          : payoutAmount
-
-        // Apply $10 minimum for orders before October 2025
+        let itemPrice = Number(item.price || 0)
+        const payoutAmount = 25 // Always 25%
+        const isPercentage = true
         const orderDate = new Date(item.created_at)
         const october2025 = new Date('2025-10-01')
+
+        // Apply historical adjustment: Pre-Oct 2025
+        if (orderDate < october2025) {
+          itemPrice = 40.00
+        }
+
+        let calculatedPayout = (itemPrice * payoutAmount / 100)
+        
+        // Apply $10 minimum for orders before October 2025
         if (orderDate < october2025 && calculatedPayout < 10) {
           calculatedPayout = 10
         }
@@ -249,12 +248,13 @@ export async function POST(request: Request) {
           order_name: item.order_name,
           product_id: item.product_id,
           product_title: productMap.get(item.product_id) || item.name || 'Unknown Product',
-          price: item.price || 0,
+          price: itemPrice,
           created_at: item.created_at,
           payout_amount: payoutAmount,
           is_percentage: isPercentage,
           calculated_payout: calculatedPayout, // Actual payout amount (will be $0 if price is $0)
           fulfillment_status: item.fulfillment_status,
+          restocked: item.restocked,
           is_paid: paidLineItemIds.has(item.line_item_id),
           payout_reference: paidItem?.payout_reference || null,
           payout_id: paidItem?.payout_id || null,

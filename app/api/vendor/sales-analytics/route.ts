@@ -5,6 +5,10 @@ import { createClient } from "@/lib/supabase/server"
 import { getVendorFromCookieStore } from "@/lib/vendor-session"
 
 const DEFAULT_CURRENCY = "USD"
+const OCTOBER_2025 = new Date('2025-10-01')
+const HISTORICAL_PRICE = 40.00
+const HISTORICAL_PAYOUT = 10.00
+const DEFAULT_PAYOUT_PERCENTAGE = 25
 
 type SupabaseLineItem = {
   id?: string
@@ -15,6 +19,8 @@ type SupabaseLineItem = {
   quantity?: number | string | null
   status?: string | null
   img_url?: string | null
+  fulfillment_status?: string | null
+  restocked?: boolean | null
 }
 
 type ProductDetail = {
@@ -72,6 +78,11 @@ export async function GET(request: NextRequest) {
           startDate = new Date()
           startDate.setFullYear(startDate.getFullYear() - 1)
           break
+        case "all-time":
+          // For all-time, don't set dates - will skip date filtering
+          startDate = null
+          endDate = null
+          break
         default:
           // Default to 30 days
           startDate = new Date()
@@ -82,7 +93,7 @@ export async function GET(request: NextRequest) {
     // Build query with date filtering
     let query = supabase
       .from("order_line_items_v2")
-      .select("id, product_id, name, created_at, price, quantity, status, img_url")
+      .select("id, product_id, name, created_at, price, quantity, status, img_url, fulfillment_status, restocked")
       .eq("vendor_name", vendorName)
       .eq("status", "active")
 
@@ -257,9 +268,16 @@ const buildAnalytics = (
   const salesHistory = []
 
   for (const item of items) {
+    // 1. Completely exclude items that are cancelled or restocked
+    if (item.status === 'cancelled' || item.restocked === true) {
+      continue
+    }
+
     const quantity = parseQuantity(item.quantity)
-    const unitPrice = parseNumber(item.price)
+    const createdAt = item.created_at ? new Date(item.created_at) : new Date()
+    let unitPrice = parseNumber(item.price)
     const productId = item.product_id ?? "unknown"
+    const isFulfilled = item.fulfillment_status === 'fulfilled'
     
     // Get product name and image from productDetails map or fallback to line item name
     const productDetail = productDetails.get(productId)
@@ -269,41 +287,60 @@ const buildAnalytics = (
     const period = getPeriodKey(item.created_at)
 
     const payout = payoutMap.get(productId)
-    const payoutAmount = payout ? payout.amount : 0
-    const payoutType = payout?.isPercentage ? "percentage" : "flat"
-    const revenue = payout
-      ? payout.isPercentage
-        ? unitPrice * quantity * (payout.amount / 100)
-        : payout.amount * quantity
-      : unitPrice * quantity * 0.1
+    let payoutAmount = payout ? payout.amount : DEFAULT_PAYOUT_PERCENTAGE
+    let payoutType: "percentage" | "flat" = payout?.isPercentage ? "percentage" : "flat"
+    
+    let revenue = 0
+    let grossRevenue = 0
 
-    const periodEntry = salesByPeriod.get(period) ?? { sales: 0, revenue: 0 }
-    periodEntry.sales += quantity
-    periodEntry.revenue += revenue
-    salesByPeriod.set(period, periodEntry)
-
-    const productEntry =
-      salesByProduct.get(productId) ??
-      {
-        productId,
-        title,
-        imageUrl,
-        sales: 0,
-        revenue: 0,
-        payoutType,
-        payoutAmount,
+    // Handle calculation based on historical exception and payout rules
+    if (createdAt < OCTOBER_2025) {
+      unitPrice = HISTORICAL_PRICE
+      grossRevenue = HISTORICAL_PRICE * quantity
+      revenue = HISTORICAL_PAYOUT * quantity
+      payoutAmount = HISTORICAL_PAYOUT
+      payoutType = "flat"
+    } else {
+      grossRevenue = unitPrice * quantity
+      if (payout) {
+        revenue = payout.isPercentage
+          ? grossRevenue * (payout.amount / 100)
+          : payout.amount * quantity
+      } else {
+        revenue = grossRevenue * (DEFAULT_PAYOUT_PERCENTAGE / 100)
       }
-
-    productEntry.sales += quantity
-    productEntry.revenue += revenue
-    productEntry.payoutType = payoutType
-    productEntry.payoutAmount = payoutAmount
-    // Update imageUrl if we have a better one
-    if (imageUrl && !productEntry.imageUrl) {
-      productEntry.imageUrl = imageUrl
     }
-    salesByProduct.set(productId, productEntry)
 
+    // Only add to tallies if fulfilled
+    if (isFulfilled) {
+      const periodEntry = salesByPeriod.get(period) ?? { sales: 0, revenue: 0 }
+      periodEntry.sales += quantity
+      periodEntry.revenue += revenue
+      salesByPeriod.set(period, periodEntry)
+
+      const productEntry =
+        salesByProduct.get(productId) ??
+        {
+          productId,
+          title,
+          imageUrl,
+          sales: 0,
+          revenue: 0,
+          payoutType,
+          payoutAmount,
+        }
+
+      productEntry.sales += quantity
+      productEntry.revenue += revenue
+      productEntry.payoutType = payoutType
+      productEntry.payoutAmount = payoutAmount
+      if (imageUrl && !productEntry.imageUrl) {
+        productEntry.imageUrl = imageUrl
+      }
+      salesByProduct.set(productId, productEntry)
+    }
+
+    // Add all (fulfilled or pending) to history with status flags
     salesHistory.push({
       id: item.id || `item-${Math.random().toString(36).substring(2, 9)}`,
       product_id: productId,
@@ -314,6 +351,8 @@ const buildAnalytics = (
       quantity,
       revenue: Number(revenue.toFixed(2)),
       currency: DEFAULT_CURRENCY,
+      isFulfilled,
+      fulfillmentStatus: item.fulfillment_status || 'unfulfilled',
       payout: payout
         ? {
             type: payoutType,

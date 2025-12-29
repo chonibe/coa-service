@@ -98,15 +98,27 @@ export async function POST(request: NextRequest) {
         }
 
         // Associate line items with this payout
-        // DISABLED: Custom payout settings - always use 25% of item price
-        const payoutItems = lineItems.map((item: any) => ({
-          payout_id: payoutId,
-          line_item_id: item.line_item_id,
-          order_id: item.order_id,
-          product_id: item.product_id,
-          amount: (item.price * 25) / 100, // Always 25% of item price
-          created_at: new Date().toISOString(),
-        }))
+        // ALWAYS use 25% of item price or $10 minimum for historical data
+        const payoutItems = lineItems.map((item: any) => {
+          const price = Number(item.price)
+          const orderDate = new Date(item.created_at)
+          const october2025 = new Date('2025-10-01')
+          
+          let payoutAmount = (price * 25) / 100
+          
+          if (orderDate < october2025 && payoutAmount < 10) {
+            payoutAmount = 10
+          }
+
+          return {
+            payout_id: payoutId,
+            line_item_id: item.line_item_id,
+            order_id: item.order_id,
+            product_id: item.product_id,
+            amount: payoutAmount,
+            created_at: new Date().toISOString(),
+          }
+        })
 
         await supabase.from("vendor_payout_items").insert(payoutItems)
 

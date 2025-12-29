@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server"
 import { NextRequest } from "next/server"
-import { UnifiedBankingService } from "@/lib/banking/central-service"
+import { createClient } from "@/lib/supabase/server"
 
 // Vendors excluded from payout calculations (e.g., internal/company vendors)
 const EXCLUDED_VENDORS = ["Street Collector", "street collector", "street-collector"]
@@ -8,11 +8,11 @@ const EXCLUDED_VENDORS = ["Street Collector", "street collector", "street-collec
 /**
  * GET /api/vendors/payouts/pending
  * Returns all vendors with their current pending payout balances.
- * Now fully ledger-based for single source of truth.
+ * Uses get_pending_vendor_payouts() function which includes pending_fulfillment_count.
  */
 export async function GET(request: NextRequest) {
   try {
-    const banking = new UnifiedBankingService();
+    const supabase = createClient();
     
     // Get pagination parameters
     const searchParams = request.nextUrl.searchParams;
@@ -21,11 +21,16 @@ export async function GET(request: NextRequest) {
     const from = (page - 1) * pageSize;
     const to = from + pageSize - 1;
 
-    // Fetch all vendor balances from the unified ledger
-    const allBalances = await banking.getAllVendorBalances();
+    // Use the database function which includes pending_fulfillment_count
+    const { data: payouts, error } = await supabase.rpc('get_pending_vendor_payouts');
+
+    if (error) {
+      console.error("[pending-payouts] Error calling get_pending_vendor_payouts:", error);
+      throw error;
+    }
 
     // Filter out excluded vendors
-    const filteredBalances = allBalances.filter(vendor => 
+    const filteredBalances = (payouts || []).filter((vendor: any) => 
       !EXCLUDED_VENDORS.includes(vendor.vendor_name)
     );
 

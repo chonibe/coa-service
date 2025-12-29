@@ -22,3 +22,4 @@ FOR EACH ROW EXECUTE FUNCTION protect_ledger_immutability();
 
 COMMIT;
 
+

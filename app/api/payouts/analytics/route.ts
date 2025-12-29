@@ -31,7 +31,7 @@ export async function GET(request: NextRequest) {
 
     // Calculate date range
     const now = new Date()
-    let startDate = new Date()
+    let startDate: Date | null = new Date()
     switch (timeRange) {
       case "7d":
         startDate.setDate(now.getDate() - 7)
@@ -45,16 +45,23 @@ export async function GET(request: NextRequest) {
       case "1y":
         startDate.setFullYear(now.getFullYear() - 1)
         break
+      case "all-time":
+        startDate = null // All time - no date filter
+        break
       default:
-        startDate = new Date(0) // All time
+        startDate = new Date(0) // All time (fallback)
     }
 
     // Build query
     let query = supabase
       .from("vendor_payouts")
       .select("id, amount, payout_date, created_at, vendor_name, status")
-      .gte("created_at", startDate.toISOString())
-      .order("created_at", { ascending: true })
+    
+    if (startDate) {
+      query = query.gte("created_at", startDate.toISOString())
+    }
+    
+    query = query.order("created_at", { ascending: true })
 
     if (filterVendorName) {
       query = query.eq("vendor_name", filterVendorName)

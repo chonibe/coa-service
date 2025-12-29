@@ -10,6 +10,7 @@ interface ImageMaskEditorProps {
   image: ProductImage
   onUpdate: (settings: ProductImage["maskSettings"]) => void
   onMaskSaved?: (maskedImageUrl: string) => void // Callback when masked image is saved
+  hideSaveButton?: boolean // Hide the save button (for preview contexts without next step)
 }
 
 // Mask dimensions
@@ -50,7 +51,7 @@ const canvasHelpers = {
 // Export for external access if needed
 export const drawRoundRect = canvasHelpers.drawRoundRect
 
-export function ImageMaskEditor({ image, onUpdate, onMaskSaved }: ImageMaskEditorProps) {
+export function ImageMaskEditor({ image, onUpdate, onMaskSaved, hideSaveButton = false }: ImageMaskEditorProps) {
   const renderCountRef = useRef(0)
   const renderStartTime = useRef(performance.now())
   
@@ -823,41 +824,44 @@ export function ImageMaskEditor({ image, onUpdate, onMaskSaved }: ImageMaskEdito
         </div>
 
         {/* Save Masked Image Button */}
-        <div className="pt-2 border-t">
-          <Button
-            type="button"
-            onClick={handleSaveMaskedImage}
-            disabled={!imageLoaded || isSavingMask}
-            className="w-full"
-            variant={maskSaved ? "default" : "default"}
-          >
-            {isSavingMask ? (
-              <>
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                Saving Masked Image...
-              </>
-            ) : maskSaved ? (
-              <>
-                <CheckCircle2 className="h-4 w-4 mr-2" />
-                Masked Image Saved
-              </>
-            ) : (
-              <>
-                <Save className="h-4 w-4 mr-2" />
-                Save Masked Image
-              </>
+        {!hideSaveButton && (
+          <div className="pt-2 border-t">
+            <Button
+              type="button"
+              onClick={handleSaveMaskedImage}
+              disabled={!imageLoaded || isSavingMask}
+              className="w-full"
+              variant={maskSaved ? "default" : "default"}
+            >
+              {isSavingMask ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Saving Masked Image...
+                </>
+              ) : maskSaved ? (
+                <>
+                  <CheckCircle2 className="h-4 w-4 mr-2" />
+                  Masked Image Saved
+                </>
+              ) : (
+                <>
+                  <Save className="h-4 w-4 mr-2" />
+                  Save Masked Image
+                </>
+              )}
+            </Button>
+            {maskSaved && (
+              <p className="text-xs text-green-600 mt-2 text-center">
+                Masked image has been saved. You can continue to the next step.
+              </p>
             )}
-          </Button>
-          {maskSaved && (
-            <p className="text-xs text-green-600 mt-2 text-center">
-              Masked image has been saved. You can continue to the next step.
-            </p>
-          )}
-        </div>
+          </div>
+        )}
 
         <p className="text-xs text-muted-foreground">
           Click and drag the image to reposition it within the frame. Use the sliders to adjust
-          scale and rotation. Click "Save Masked Image" when you're ready to proceed.
+          scale and rotation.
+          {!hideSaveButton && ' Click "Save Masked Image" when you\'re ready to proceed.'}
         </p>
       </div>
     </div>

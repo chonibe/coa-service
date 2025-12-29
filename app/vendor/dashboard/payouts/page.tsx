@@ -433,14 +433,14 @@ export default function PayoutsPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="w-full space-y-6">
         {/* Contextual Onboarding for Payouts - floating */}
         <ContextualOnboarding context="payouts" onComplete={() => {
           fetchPayouts()
           fetchPendingItems()
         }} />
 
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 w-full">
           <div>
             <p className="text-muted-foreground text-lg">Your earnings and payment history</p>
             {lastUpdated && (
@@ -767,28 +767,30 @@ export default function PayoutsPage() {
                     ))}
                 </div>
               ) : filteredAndSortedPayouts.length > 0 ? (
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Date</TableHead>
-                      <TableHead>Amount</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead>Reference</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {filteredAndSortedPayouts.slice(0, 5).map((payout) => (
-                      <TableRow key={payout.id}>
-                        <TableCell>{format(new Date(payout.date), "MMM d, yyyy")}</TableCell>
-                        <TableCell className="font-medium">{formatCurrency(payout.amount)}</TableCell>
-                        <TableCell>{getStatusBadge(payout.status)}</TableCell>
-                        <TableCell className="text-muted-foreground">
-                          {payout.reference || "—"}
-                        </TableCell>
+                <div className="overflow-x-auto -mx-4 px-4 md:mx-0 md:px-0">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Date</TableHead>
+                        <TableHead>Amount</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead>Reference</TableHead>
                       </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
+                    </TableHeader>
+                    <TableBody>
+                      {filteredAndSortedPayouts.slice(0, 5).map((payout) => (
+                        <TableRow key={payout.id}>
+                          <TableCell>{format(new Date(payout.date), "MMM d, yyyy")}</TableCell>
+                          <TableCell className="font-medium">{formatCurrency(payout.amount)}</TableCell>
+                          <TableCell>{getStatusBadge(payout.status)}</TableCell>
+                          <TableCell className="text-muted-foreground">
+                            {payout.reference || "—"}
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
               ) : (
                 <div className="py-6 text-center text-muted-foreground">
                   No payments yet
@@ -863,7 +865,7 @@ export default function PayoutsPage() {
           </Card>
 
           {/* View Options */}
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between flex-wrap gap-3">
             <div className="flex items-center gap-2">
               <Button
                 variant={viewMode === "list" ? "default" : "outline"}
@@ -918,7 +920,7 @@ export default function PayoutsPage() {
                     const monthData = groupedPayouts[monthKey]
                     return (
                       <div key={monthKey} className="border rounded-lg p-4 space-y-4">
-                        <div className="flex items-center justify-between border-b pb-2">
+                        <div className="flex items-center justify-between border-b pb-2 flex-wrap gap-2">
                           <h3 className="text-lg font-semibold">{monthData.month}</h3>
                           <div className="text-sm text-muted-foreground">
                             Total: <span className="font-medium text-foreground">{formatCurrency(monthData.total)}</span>

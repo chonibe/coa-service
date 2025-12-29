@@ -76,14 +76,16 @@ export function SidebarLayout({ children }: SidebarLayoutProps) {
           <VendorSidebar />
 
           {/* Main content takes full width */}
-          <div className="w-full">
+          <div className="w-full overflow-x-hidden">
             <PullToRefresh onRefresh={async () => { await trigger(); return true }}>
-              <main id="main-content" className="p-4 md:p-8 max-w-7xl mx-auto pb-28 pt-20" role="main" aria-label="Main content">
+              <main id="main-content" className="p-4 md:p-8 max-w-7xl mx-auto pb-28 pt-20 w-full" role="main" aria-label="Main content">
                 {/* Impersonation context for admins */}
                 <ImpersonationBanner />
                 {/* Add breadcrumbs */}
                 <Breadcrumb />
-                {children}
+                <div className="w-full">
+                  {children}
+                </div>
               </main>
             </PullToRefresh>
           </div>

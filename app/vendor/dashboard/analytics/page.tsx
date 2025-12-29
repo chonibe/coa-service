@@ -33,7 +33,7 @@ import { PayoutTrendsChart } from "@/components/payouts/payout-trends-chart"
 import { ProductPerformanceHeatmap } from "@/components/payouts/product-performance-heatmap"
 import { PayoutMetricsCards } from "@/components/payouts/payout-metrics-cards"
 import { MetricCard } from "@/components/vendor/metric-card"
-import { ShoppingCart, DollarSign, TrendingUp } from "lucide-react"
+import { ShoppingCart, DollarSign, TrendingUp, Clock } from "lucide-react"
 
 const COLORS = ["#3b82f6", "#6366f1", "#8b5cf6", "#a855f7", "#ec4899", "#f43f5e"]
 
@@ -46,6 +46,8 @@ interface SaleItem {
   price: number
   currency: string
   quantity?: number
+  isFulfilled?: boolean
+  fulfillmentStatus?: string
 }
 
 export default function AnalyticsPage() {
@@ -65,6 +67,8 @@ export default function AnalyticsPage() {
     totalSales: 0,
     totalRevenue: 0,
     totalPayout: 0,
+    pendingFulfillmentCount: 0,
+    pendingFulfillmentRevenue: 0,
     currency: "USD",
   })
   const [previousMetrics, setPreviousMetrics] = useState({
@@ -160,6 +164,8 @@ export default function AnalyticsPage() {
           totalSales: statsData.totalSales ?? 0,
           totalRevenue: statsData.totalRevenue ?? 0,
           totalPayout: statsData.totalPayout ?? statsData.totalRevenue ?? 0,
+          pendingFulfillmentCount: statsData.pendingFulfillmentCount ?? 0,
+          pendingFulfillmentRevenue: statsData.pendingFulfillmentRevenue ?? 0,
           currency: "USD",
         })
         setPreviousMetrics({
@@ -339,9 +345,9 @@ export default function AnalyticsPage() {
         </TabsList>
 
         <TabsContent value="sales" className="space-y-6">
-          <div className="grid gap-4 md:grid-cols-2">
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
             {isMetricsLoading ? (
-              <LoadingSkeleton variant="metric" count={2} />
+              <LoadingSkeleton variant="metric" count={3} />
             ) : (
               <>
                 <MetricCard
@@ -353,12 +359,12 @@ export default function AnalyticsPage() {
                     label: "vs last period",
                     isPositive: salesData.totalSales >= previousSales,
                   }}
-                  description="Orders you've received"
+                  description="Fulfilled orders received"
                   variant="elevated"
                 />
 
                 <MetricCard
-                  title="Total Payout"
+                  title="Total Earned"
                   value={formatCurrency(salesData?.totalPayout || 0)}
                   icon={DollarSign}
                   trend={{
@@ -369,6 +375,17 @@ export default function AnalyticsPage() {
                   description="What you've earned so far"
                   variant="elevated"
                 />
+
+                {salesData.pendingFulfillmentCount > 0 && (
+                  <MetricCard
+                    title="Pending Fulfillment"
+                    value={salesData.pendingFulfillmentCount}
+                    icon={Clock}
+                    description={`Approx. ${formatCurrency(salesData.pendingFulfillmentRevenue)} in pending payouts`}
+                    variant="outline"
+                    className="border-amber-200 bg-amber-50/50 dark:bg-amber-900/10 dark:border-amber-900/30"
+                  />
+                )}
               </>
             )}
           </div>
@@ -622,7 +639,10 @@ export default function AnalyticsPage() {
                   </TableHeader>
                   <TableBody>
                     {sortedSalesHistory.map((sale) => (
-                      <TableRow key={sale.id}>
+                      <TableRow 
+                        key={sale.id}
+                        className={!sale.isFulfilled ? "opacity-50 grayscale bg-muted/30" : ""}
+                      >
                         <TableCell>{formatDate(sale.date)}</TableCell>
                         <TableCell>
                           <div className="flex items-center gap-2">
@@ -636,10 +656,26 @@ export default function AnalyticsPage() {
                                 }}
                               />
                             ) : null}
-                            <span className="font-medium">{sale.title}</span>
+                            <div className="flex flex-col">
+                              <span className="font-medium">{sale.title}</span>
+                              {!sale.isFulfilled && (
+                                <span className="text-[10px] uppercase tracking-wider text-amber-600 font-bold">
+                                  Pending Fulfillment
+                                </span>
+                              )}
+                            </div>
                           </div>
                         </TableCell>
-                        <TableCell className="text-right">{formatCurrency(sale.price)}</TableCell>
+                        <TableCell className="text-right">
+                          <div className="flex flex-col items-end">
+                            <span>{formatCurrency(sale.price)}</span>
+                            {!sale.isFulfilled && (
+                              <span className="text-[10px] text-muted-foreground italic">
+                                Not ready for payout
+                              </span>
+                            )}
+                          </div>
+                        </TableCell>
                       </TableRow>
                     ))}
                   </TableBody>
