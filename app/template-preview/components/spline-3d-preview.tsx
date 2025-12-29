@@ -96,6 +96,32 @@ export function Spline3DPreview({
       })
     }
 
+    // Helper function to create a THREE.js texture (if available)
+    const createTHREETexture = async (imageUrl: string): Promise<any> => {
+      try {
+        // Check if THREE is available through Spline
+        const THREE = (window as any).THREE || (splineAppRef.current as any)?.THREE
+        if (THREE && THREE.TextureLoader) {
+          const loader = new THREE.TextureLoader()
+          const texture = await new Promise((resolve, reject) => {
+            loader.load(
+              imageUrl,
+              (texture: any) => {
+                texture.needsUpdate = true
+                resolve(texture)
+              },
+              undefined,
+              reject
+            )
+          })
+          return texture
+        }
+      } catch (err) {
+        console.warn("[Spline3D] Could not create THREE.js texture:", err)
+      }
+      return null
+    }
+
     // Helper function to try updating texture on any object
     const tryUpdateTextureOnObject = async (obj: any, imageUrl: string, label: string) => {
       if (!obj) return false
@@ -141,6 +167,17 @@ export function Spline3DPreview({
         console.log(`[Spline3D] Loaded image for ${label}:`, imageElement.width, 'x', imageElement.height)
       } catch (err) {
         console.warn(`[Spline3D] Failed to load image for ${label}:`, err)
+      }
+
+      // Try to create a THREE.js texture
+      let threeTexture: any = null
+      try {
+        threeTexture = await createTHREETexture(imageUrl)
+        if (threeTexture) {
+          console.log(`[Spline3D] Created THREE.js texture for ${label}`)
+        }
+      } catch (err) {
+        console.warn(`[Spline3D] Could not create THREE texture for ${label}:`, err)
       }
 
       // Get all layers and prioritize 'texture' and 'image' layers
@@ -243,8 +280,53 @@ export function Spline3DPreview({
                   return true
                 }
               }
+              // Try replacing the entire texture object with a new THREE.js texture
+              if (threeTexture && layer.texture) {
+                try {
+                  // Try to replace the texture object
+                  layer.texture = threeTexture
+                  console.log(`[Spline3D] ✓ Replaced ${label} texture with THREE.js texture`, { layerType })
+                  if (material.needsUpdate !== undefined) material.needsUpdate = true
+                  if (material.update && typeof material.update === "function") material.update()
+                  if (layerType === 'texture' || layerType === 'image') {
+                    return true
+                  }
+                } catch (err) {
+                  console.warn(`[Spline3D] ✗ Replacing texture object failed for ${label} (${layerType}):`, err)
+                }
+              }
             } catch (err) {
               console.warn(`[Spline3D] ✗ Updating texture failed for ${label} (${layerType}):`, err)
+            }
+          }
+
+          // Method 4.5: Try replacing the entire layer.texture with THREE.js texture
+          if (threeTexture && layer.texture === undefined) {
+            try {
+              layer.texture = threeTexture
+              console.log(`[Spline3D] ✓ Set ${label} layer.texture = THREE.js texture`, { layerType })
+              if (material.needsUpdate !== undefined) material.needsUpdate = true
+              if (material.update && typeof material.update === "function") material.update()
+              if (layerType === 'texture' || layerType === 'image') {
+                return true
+              }
+            } catch (err) {
+              console.warn(`[Spline3D] ✗ Setting THREE texture on layer failed for ${label} (${layerType}):`, err)
+            }
+          }
+
+          // Method 4.6: Try accessing material.map directly (THREE.js standard)
+          if (threeTexture && material.map !== undefined) {
+            try {
+              material.map = threeTexture
+              material.needsUpdate = true
+              if (material.update && typeof material.update === "function") material.update()
+              console.log(`[Spline3D] ✓ Set ${label} material.map = THREE.js texture`, { layerType })
+              if (layerType === 'texture' || layerType === 'image') {
+                return true
+              }
+            } catch (err) {
+              console.warn(`[Spline3D] ✗ Setting material.map failed for ${label} (${layerType}):`, err)
             }
           }
 
@@ -300,6 +382,25 @@ export function Spline3DPreview({
               } catch (err) {
                 // Continue to next property
               }
+            }
+          }
+
+          // Method 7: Try using Spline's internal texture creation if available
+          if (splineAppRef.current && typeof (splineAppRef.current as any).createTexture === "function") {
+            try {
+              const splineTexture = await (splineAppRef.current as any).createTexture(imageUrl)
+              if (splineTexture) {
+                layer.texture = splineTexture
+                layer.image = imageUrl
+                console.log(`[Spline3D] ✓ Created Spline texture for ${label}`, { layerType })
+                if (material.needsUpdate !== undefined) material.needsUpdate = true
+                if (material.update && typeof material.update === "function") material.update()
+                if (layerType === 'texture' || layerType === 'image') {
+                  return true
+                }
+              }
+            } catch (err) {
+              console.warn(`[Spline3D] ✗ Spline createTexture failed for ${label} (${layerType}):`, err)
             }
           }
         } catch (err) {
