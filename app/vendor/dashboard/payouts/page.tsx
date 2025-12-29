@@ -79,6 +79,8 @@ export default function PayoutsPage() {
   const [isPageVisible, setIsPageVisible] = useState(true)
   const [balance, setBalance] = useState<VendorBalance | null>(null)
   const [isLoadingBalance, setIsLoadingBalance] = useState(false)
+  const [showSuccessBanner, setShowSuccessBanner] = useState(false)
+  const [lastRequestedPayout, setLastRequestedPayout] = useState<Payout | null>(null)
   const { toast } = useToast()
 
   // Fetch balance data
@@ -269,8 +271,22 @@ export default function PayoutsPage() {
         description: data.note || "We've received your payment request and will process it soon. You'll be notified once it's approved.",
       })
 
+      // Show success banner and switch to pending requests tab
+      setShowSuccessBanner(true)
+      setActiveTab("history")
+      
       // Refresh payouts and pending items
       await Promise.all([fetchPayouts(), fetchPendingItems()])
+      
+      // Find the newly created payout request
+      const updatedPayouts = await fetch("/api/vendor/payouts", { credentials: "include" }).then(r => r.json())
+      const requestedPayout = updatedPayouts.payouts?.find((p: Payout) => p.status === "requested" && p.reference === data.reference)
+      if (requestedPayout) {
+        setLastRequestedPayout(requestedPayout)
+      }
+      
+      // Auto-hide banner after 10 seconds
+      setTimeout(() => setShowSuccessBanner(false), 10000)
     } catch (err) {
       console.error("Error redeeming payout:", err)
       toast({
@@ -499,11 +515,165 @@ export default function PayoutsPage() {
         </Alert>
       )}
 
+      {/* Success Banner */}
+      {showSuccessBanner && (
+        <Alert className="bg-green-50 dark:bg-green-950/20 border-green-200 dark:border-green-800">
+          <AlertCircle className="h-4 w-4 text-green-600 dark:text-green-400" />
+          <AlertTitle className="text-green-800 dark:text-green-200">Payment Request Submitted Successfully!</AlertTitle>
+          <AlertDescription className="text-green-700 dark:text-green-300">
+            Your payout request has been submitted and is awaiting admin approval. 
+            {lastRequestedPayout && (
+              <span className="block mt-1">
+                Amount: {formatCurrency(lastRequestedPayout.amount)} • Reference: {lastRequestedPayout.reference}
+              </span>
+            )}
+            You can track its progress in the "Pending Requests" section below. You'll be notified once it's processed.
+          </AlertDescription>
+        </Alert>
+      )}
+
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-        <TabsList className="grid w-full grid-cols-2 bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-0 shadow-lg">
+        <TabsList className="grid w-full grid-cols-3 bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-0 shadow-lg">
           <TabsTrigger value="overview">Overview</TabsTrigger>
+          <TabsTrigger value="pending-requests">
+            Pending Requests
+            {payouts.filter(p => p.status === "requested").length > 0 && (
+              <Badge variant="secondary" className="ml-2 h-5 px-1.5 text-xs">
+                {payouts.filter(p => p.status === "requested").length}
+              </Badge>
+            )}
+          </TabsTrigger>
           <TabsTrigger value="history">History</TabsTrigger>
         </TabsList>
+
+        <TabsContent value="pending-requests" className="space-y-6">
+          <Card className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-0 shadow-xl">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Clock className="h-5 w-5 text-blue-500" />
+                Pending Payment Requests
+              </CardTitle>
+              <CardDescription>
+                Track the status of your payment requests. These are awaiting admin approval and processing.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {isLoading ? (
+                <div className="space-y-4">
+                  {Array(2).fill(0).map((_, i) => (
+                    <Skeleton key={i} className="h-32 w-full" />
+                  ))}
+                </div>
+              ) : payouts.filter(p => p.status === "requested").length === 0 ? (
+                <Alert>
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertTitle>No Pending Requests</AlertTitle>
+                  <AlertDescription>
+                    You don't have any pending payment requests. Click "Request Payment" above to submit a new payout request.
+                  </AlertDescription>
+                </Alert>
+              ) : (
+                <div className="space-y-4">
+                  {payouts
+                    .filter(p => p.status === "requested")
+                    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+                    .map((payout) => (
+                      <Card key={payout.id} className="border-blue-200 dark:border-blue-800 bg-blue-50/50 dark:bg-blue-950/20">
+                        <CardContent className="pt-6">
+                          <div className="space-y-4">
+                            {/* Header */}
+                            <div className="flex items-start justify-between flex-wrap gap-4">
+                              <div>
+                                <div className="flex items-center gap-3 mb-2">
+                                  <span className="text-2xl font-bold">{formatCurrency(payout.amount)}</span>
+                                  <Badge variant="outline" className="text-blue-600 dark:text-blue-400 border-blue-300 dark:border-blue-700">
+                                    Under Review
+                                  </Badge>
+                                </div>
+                                <div className="text-sm text-muted-foreground space-y-1">
+                                  <div>Requested: {format(new Date(payout.date), "MMM d, yyyy 'at' h:mm a")}</div>
+                                  {payout.reference && <div>Reference: {payout.reference}</div>}
+                                  {payout.invoice_number && <div>Invoice: {payout.invoice_number}</div>}
+                                  {payout.products > 0 && <div>{payout.products} item{payout.products !== 1 ? "s" : ""} included</div>}
+                                </div>
+                              </div>
+                            </div>
+
+                            {/* Progress Timeline */}
+                            <div className="border-t pt-4">
+                              <div className="space-y-3">
+                                <div className="flex items-center gap-3">
+                                  <div className="flex flex-col items-center">
+                                    <div className="w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center text-white text-xs font-semibold">
+                                      1
+                                    </div>
+                                    <div className="w-0.5 h-8 bg-blue-300 dark:bg-blue-700 mt-1" />
+                                  </div>
+                                  <div className="flex-1">
+                                    <div className="font-medium text-sm">Request Submitted</div>
+                                    <div className="text-xs text-muted-foreground">
+                                      Your payment request has been received
+                                    </div>
+                                  </div>
+                                  <Badge variant="outline" className="bg-green-50 text-green-700 border-green-300">
+                                    Completed
+                                  </Badge>
+                                </div>
+
+                                <div className="flex items-center gap-3">
+                                  <div className="flex flex-col items-center">
+                                    <div className="w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center text-white text-xs font-semibold">
+                                      2
+                                    </div>
+                                    <div className="w-0.5 h-8 bg-blue-300 dark:bg-blue-700 mt-1" />
+                                  </div>
+                                  <div className="flex-1">
+                                    <div className="font-medium text-sm">Admin Review</div>
+                                    <div className="text-xs text-muted-foreground">
+                                      Your request is being reviewed by our team
+                                    </div>
+                                  </div>
+                                  <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-300 animate-pulse">
+                                    In Progress
+                                  </Badge>
+                                </div>
+
+                                <div className="flex items-center gap-3">
+                                  <div className="flex flex-col items-center">
+                                    <div className="w-8 h-8 rounded-full bg-gray-300 dark:bg-gray-700 flex items-center justify-center text-gray-600 dark:text-gray-400 text-xs font-semibold">
+                                      3
+                                    </div>
+                                  </div>
+                                  <div className="flex-1">
+                                    <div className="font-medium text-sm text-muted-foreground">Payment Processing</div>
+                                    <div className="text-xs text-muted-foreground">
+                                      Once approved, your payment will be processed
+                                    </div>
+                                  </div>
+                                  <Badge variant="outline" className="bg-gray-50 text-gray-500 border-gray-300">
+                                    Pending
+                                  </Badge>
+                                </div>
+                              </div>
+                            </div>
+
+                            {/* Info Message */}
+                            <Alert className="bg-blue-50 dark:bg-blue-950/20 border-blue-200 dark:border-blue-800">
+                              <AlertCircle className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                              <AlertDescription className="text-blue-800 dark:text-blue-300 text-sm">
+                                You'll receive a notification once your payment request has been approved and processed. 
+                                Typically, this takes 1-3 business days.
+                              </AlertDescription>
+                            </Alert>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
 
         <TabsContent value="overview" className="space-y-6">
           {/* Enhanced Metrics Cards */}
@@ -902,137 +1072,4 @@ export default function PayoutsPage() {
           {/* Payout History */}
           <Card className="overflow-hidden bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-0 shadow-xl">
             <CardHeader>
-              <CardTitle>Your Payment History</CardTitle>
-              <CardDescription>
-                {filteredAndSortedPayouts.length === 0 
-                  ? "Your payment history will appear here"
-                  : `You have ${filteredAndSortedPayouts.length} payment${filteredAndSortedPayouts.length !== 1 ? "s" : ""} in your history`}
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              {isLoading ? (
-                <div className="space-y-2">
-                  {Array(3)
-                    .fill(0)
-                    .map((_, i) => (
-                      <Skeleton key={i} className="h-12 w-full" />
-                    ))}
-                </div>
-              ) : sortedMonths.length > 0 ? (
-                <div className="space-y-6">
-                  {sortedMonths.map((monthKey) => {
-                    const monthData = groupedPayouts[monthKey]
-                    return (
-                      <div key={monthKey} className="border rounded-lg p-4 space-y-4">
-                        <div className="flex items-center justify-between border-b pb-2 flex-wrap gap-2">
-                          <h3 className="text-lg font-semibold">{monthData.month}</h3>
-                          <div className="text-sm text-muted-foreground">
-                            Total: <span className="font-medium text-foreground">{formatCurrency(monthData.total)}</span>
-                          </div>
-                        </div>
-                        <div className="space-y-3">
-                          {monthData.payouts.map((payout) => (
-                            <div key={payout.id} className="border rounded-md p-4 space-y-2">
-                              <div className="flex items-center justify-between flex-wrap gap-2">
-                                <div className="flex items-center gap-3 flex-wrap">
-                                  <span className="font-medium">{formatCurrency(payout.amount)}</span>
-                                  {getStatusBadge(payout.status)}
-                                  {payout.reference && (
-                                    <Button
-                                      variant="ghost"
-                                      size="sm"
-                                      onClick={() => {
-                                        toast({
-                                          title: "Payment Reference",
-                                          description: `Reference: ${payout.reference}${payout.payout_batch_id ? `\nBatch ID: ${payout.payout_batch_id}` : ""}`,
-                                        })
-                                      }}
-                                      className="flex items-center gap-1 h-7 text-xs"
-                                    >
-                                      <ExternalLink className="h-3 w-3" />
-                                      {payout.reference}
-                                    </Button>
-                                  )}
-                                  {payout.status === "requested" && (
-                                    <Badge variant="outline" className="text-blue-500 border-blue-500 text-xs">
-                                      We're Reviewing Your Request
-                                    </Badge>
-                                  )}
-                                  {(payout.status === "paid" || payout.status === "completed") && (
-                                    <Button
-                                      variant="outline"
-                                      size="sm"
-                                      onClick={() => {
-                                        const link = document.createElement("a")
-                                        link.href = `/api/vendors/payouts/${payout.id}/invoice`
-                                        link.download = `invoice-${payout.invoice_number || payout.id}.pdf`
-                                        link.click()
-                                      }}
-                                      className="flex items-center gap-1 h-7 bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm"
-                                    >
-                                      <Download className="h-3 w-3" />
-                                      Invoice
-                                    </Button>
-                                  )}
-                                </div>
-                                <span className="text-sm text-muted-foreground">
-                                  {format(new Date(payout.date), "MMM d, yyyy")}
-                                </span>
-                              </div>
-                              {payout.items && payout.items.length > 0 && (
-                                <div className="mt-3 space-y-1 pl-4 border-l-2">
-                                  {payout.items.map((item, idx) => (
-                                    <div key={idx} className="flex items-center justify-between text-sm">
-                                      <div className="flex items-center gap-2">
-                                        <span className="text-muted-foreground">{item.item_name}</span>
-                                        {item.is_paid && (
-                                          <Badge variant="outline" className="bg-green-50 text-green-700 border-green-300 text-xs">
-                                            Paid
-                                          </Badge>
-                                        )}
-                                        {item.payout_reference && (
-                                          <Button
-                                            variant="ghost"
-                                            size="sm"
-                                            onClick={() => {
-                                              toast({
-                                                title: "Payment Details",
-                                                description: `Reference: ${item.payout_reference}${item.marked_at ? `\nPaid: ${format(new Date(item.marked_at), "MMM d, yyyy")}` : ""}`,
-                                              })
-                                            }}
-                                            className="h-5 px-1 text-xs"
-                                          >
-                                            <ExternalLink className="h-3 w-3" />
-                                          </Button>
-                                        )}
-                                      </div>
-                                      <div className="flex items-center gap-3">
-                                        <span className="text-muted-foreground">
-                                          {format(new Date(item.date), "MMM d, yyyy")}
-                                        </span>
-                                        <span className="font-medium">{formatCurrency(item.amount)}</span>
-                                      </div>
-                                    </div>
-                                  ))}
-                                </div>
-                              )}
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )
-                  })}
-                </div>
-              ) : (
-                <div className="py-6 text-center">
-                  <p className="text-muted-foreground">Your payment history will appear here</p>
-                  <p className="text-sm text-muted-foreground mt-1">Once your first payment is processed, you'll see it here.</p>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
-    </div>
-  )
-}
+              <CardTitle>Your Payment History</CardT

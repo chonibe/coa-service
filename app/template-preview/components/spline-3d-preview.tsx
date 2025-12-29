@@ -296,6 +296,118 @@ export function Spline3DPreview({
         }
       }
 
+      // CRITICAL FIX: Modify the VISIBLE material layers based on console inspection
+      if ((lampObject as any).material?.layers) {
+        const material = (lampObject as any).material
+        console.log(`[Spline3D] CRITICAL FIX: Found ${material.layers.length} material layers on LAMP`)
+
+        for (let i = 0; i < material.layers.length; i++) {
+          const layer = material.layers[i]
+          console.log(`[Spline3D] CRITICAL FIX: Layer ${i}: ${layer.type} (visible: ${layer.visible}, alpha: ${layer.alpha})`)
+
+          // MODIFY THE MATCAP LAYER (Layer 0) - THIS IS WHAT'S ACTUALLY VISIBLE!
+          if (layer.type === 'matcap' && layer.visible === true) {
+            console.log(`[Spline3D] CRITICAL FIX: Modifying VISIBLE matcap layer ${i} to RED tint...`)
+
+            const originalColor = layer.color
+            const originalAlpha = layer.alpha
+
+            // Set matcap color to red
+            if (layer.color !== undefined) {
+              if (typeof layer.color.set === "function") {
+                layer.color.set(1, 0, 0) // Bright red tint
+                console.log('[Spline3D] ✓ CRITICAL FIX: Set matcap color to RED')
+              } else if (layer.color.r !== undefined) {
+                layer.color.r = 1
+                layer.color.g = 0
+                layer.color.b = 0
+                console.log('[Spline3D] ✓ CRITICAL FIX: Set matcap color.r/g/b to RED')
+              }
+            }
+
+            // Force material update
+            if (material.needsUpdate !== undefined) {
+              material.needsUpdate = true
+              console.log('[Spline3D] ✓ CRITICAL FIX: Set material.needsUpdate')
+            }
+            if (material.update && typeof material.update === "function") {
+              material.update()
+              console.log('[Spline3D] ✓ CRITICAL FIX: Called material.update()')
+            }
+
+            // Revert after 10 seconds
+            setTimeout(() => {
+              if (layer.color !== undefined) {
+                if (typeof layer.color.set === "function") {
+                  layer.color.set(originalColor?.r || 1, originalColor?.g || 1, originalColor?.b || 1)
+                } else if (layer.color.r !== undefined) {
+                  layer.color.r = originalColor?.r || 1
+                  layer.color.g = originalColor?.g || 1
+                  layer.color.b = originalColor?.b || 1
+                }
+              }
+              if (material.needsUpdate !== undefined) material.needsUpdate = true
+              if (material.update && typeof material.update === "function") material.update()
+              console.log('[Spline3D] CRITICAL FIX: Reverted matcap layer color')
+            }, 10000)
+          }
+
+          // ENABLE AND MODIFY THE HIDDEN COLOR LAYER (Layer 4)
+          if (layer.type === 'color' && layer.visible === false) {
+            console.log(`[Spline3D] CRITICAL FIX: Enabling HIDDEN color layer ${i} and setting to BRIGHT RED...`)
+
+            const originalVisible = layer.visible
+            const originalAlpha = layer.alpha
+            const originalColor = layer.color
+
+            // Enable the layer
+            layer.visible = true
+            console.log('[Spline3D] ✓ CRITICAL FIX: Enabled color layer visibility')
+
+            // Set full opacity
+            layer.alpha = 1.0
+            console.log('[Spline3D] ✓ CRITICAL FIX: Set color layer alpha to 1.0')
+
+            // Set bright red color
+            if (typeof layer.color.set === "function") {
+              layer.color.set(1, 0, 0) // Bright red
+              console.log('[Spline3D] ✓ CRITICAL FIX: Set color layer to BRIGHT RED')
+            } else if (layer.color.r !== undefined) {
+              layer.color.r = 1
+              layer.color.g = 0
+              layer.color.b = 0
+              console.log('[Spline3D] ✓ CRITICAL FIX: Set color layer r/g/b to BRIGHT RED')
+            }
+
+            // Force material update
+            if (material.needsUpdate !== undefined) {
+              material.needsUpdate = true
+              console.log('[Spline3D] ✓ CRITICAL FIX: Set material.needsUpdate for color layer')
+            }
+            if (material.update && typeof material.update === "function") {
+              material.update()
+              console.log('[Spline3D] ✓ CRITICAL FIX: Called material.update() for color layer')
+            }
+
+            // Revert after 10 seconds
+            setTimeout(() => {
+              layer.visible = originalVisible
+              layer.alpha = originalAlpha
+              if (typeof layer.color.set === "function") {
+                layer.color.set(originalColor?.r || 1, originalColor?.g || 1, originalColor?.b || 1)
+              } else if (layer.color.r !== undefined) {
+                layer.color.r = originalColor?.r || 1
+                layer.color.g = originalColor?.g || 1
+                layer.color.b = originalColor?.b || 1
+              }
+              if (material.needsUpdate !== undefined) material.needsUpdate = true
+              if (material.update && typeof material.update === "function") material.update()
+              console.log('[Spline3D] CRITICAL FIX: Reverted color layer changes')
+            }, 10000)
+          }
+        }
+      }
+
       console.log('[Spline3D] RESEARCH: All material modification attempts completed!')
 
     } catch (err) {
