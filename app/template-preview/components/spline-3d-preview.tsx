@@ -42,6 +42,20 @@ export function Spline3DPreview({
       side2ObjectName
     })
 
+    // List all objects in the scene for debugging
+    try {
+      const allObjects = splineAppRef.current.getAllObjects?.() || []
+      console.log("[Spline3D] All objects in scene:", allObjects.map((o: any) => ({
+        id: o.id || o.uuid,
+        name: o.name,
+        type: o.type,
+        hasMaterial: !!o.material,
+        materialLayers: o.material?.layers?.map((l: any) => l.type) || []
+      })))
+    } catch (err) {
+      console.warn("[Spline3D] Could not list all objects:", err)
+    }
+
     // Helper function to find object by ID or name
     const findObject = (id?: string, name?: string) => {
       if (id && splineAppRef.current?.findObjectById) {
@@ -54,204 +68,134 @@ export function Spline3DPreview({
       return null
     }
 
-    // Update Side 1
+    // Helper function to try updating texture on any object
+    const tryUpdateTextureOnObject = async (obj: any, imageUrl: string, label: string) => {
+      if (!obj) return false
+      
+      console.log(`[Spline3D] Trying to update texture on ${label}:`, {
+        id: (obj as any).id || (obj as any).uuid,
+        name: (obj as any).name,
+        type: (obj as any).type,
+        hasMaterial: !!(obj as any).material
+      })
+
+      const material = obj.material
+      if (!material || !material.layers) {
+        console.warn(`[Spline3D] ${label} has no material or layers`)
+        return false
+      }
+
+      // Try all layers that might be texture/image layers
+      const textureLayers = material.layers.filter((layer: any) => 
+        layer.type === "image" || layer.type === "texture" || layer.type === "color"
+      )
+
+      console.log(`[Spline3D] ${label} texture layers:`, textureLayers.map((l: any) => ({
+        type: l.type,
+        properties: Object.keys(l).filter(k => !k.startsWith('_'))
+      })))
+
+      for (const layer of textureLayers) {
+        try {
+          if (typeof layer.updateTexture === "function") {
+            await layer.updateTexture(imageUrl)
+            console.log(`[Spline3D] Updated ${label} via layer.updateTexture()`, { layerType: layer.type })
+            if (material.needsUpdate !== undefined) material.needsUpdate = true
+            if (material.update && typeof material.update === "function") material.update()
+            return true
+          }
+          
+          // Try direct property updates
+          const propsToTry = ['image', 'texture', 'url', 'source', 'src', 'map', 'color']
+          for (const prop of propsToTry) {
+            if (layer[prop] !== undefined || prop === 'image') {
+              try {
+                layer[prop] = imageUrl
+                console.log(`[Spline3D] Set ${label} layer.${prop} = imageUrl`, { layerType: layer.type })
+                if (material.needsUpdate !== undefined) material.needsUpdate = true
+                if (material.update && typeof material.update === "function") material.update()
+                return true
+              } catch (err) {
+                // Continue to next property
+              }
+            }
+          }
+        } catch (err) {
+          console.warn(`[Spline3D] Failed to update ${label} layer:`, err)
+        }
+      }
+
+      return false
+    }
+
+    // Update Side 1 - try primary object first, then try all objects
     if (image1) {
       try {
-        const object = findObject(side1ObjectId, side1ObjectName)
-        if (object) {
-          console.log("[Spline3D] Found Side 1 object:", object)
-          const material = (object as any).material
-          if (material && material.layers) {
-            // Find the texture layer (could be 'image' or 'texture' type)
-            const textureLayer = material.layers.find((layer: any) => 
-              layer.type === "image" || layer.type === "texture"
-            )
-            if (textureLayer) {
-              console.log("[Spline3D] Found texture layer:", { 
-                type: textureLayer.type, 
-                properties: Object.keys(textureLayer),
-                fullLayer: textureLayer
-              })
-              
-              // Try multiple update methods
-              let updated = false
-              
-              // Method 1: updateTexture method
-              if (typeof textureLayer.updateTexture === "function") {
-                try {
-                  await textureLayer.updateTexture(image1)
-                  updated = true
-                  console.log("[Spline3D] Updated via updateTexture() method")
-                } catch (err: any) {
-                  console.warn("[Spline3D] updateTexture() failed:", err)
-                }
+        const primaryObject = findObject(side1ObjectId, side1ObjectName)
+        let updated = false
+
+        // Try primary object first
+        if (primaryObject) {
+          updated = await tryUpdateTextureOnObject(primaryObject, image1, "Side 1 (Primary)")
+        }
+
+        // If primary didn't work, try all objects in the scene
+        if (!updated) {
+          console.log("[Spline3D] Primary object update failed, trying all objects...")
+          try {
+            const allObjects = splineAppRef.current.getAllObjects?.() || []
+            for (const obj of allObjects) {
+              const objName = (obj as any).name || (obj as any).id || (obj as any).uuid || 'unnamed'
+              if (await tryUpdateTextureOnObject(obj, image1, `Object: ${objName}`)) {
+                updated = true
+                console.log(`[Spline3D] Successfully updated object: ${objName}`)
+                // Don't break - try to update multiple objects
               }
-              
-              // Method 2: Direct property updates (try all possible property names)
-              if (!updated) {
-                const propsToTry = ['image', 'texture', 'url', 'source', 'src', 'map']
-                for (const prop of propsToTry) {
-                  if (textureLayer[prop] !== undefined || prop === 'image') {
-                    try {
-                      textureLayer[prop] = image1
-                      console.log(`[Spline3D] Set textureLayer.${prop} = image1`)
-                      updated = true
-                      break
-                    } catch (err) {
-                      console.warn(`[Spline3D] Failed to set ${prop}:`, err)
-                    }
-                  }
-                }
-              }
-              
-              // Method 3: Try updating the texture object itself if it exists
-              if (!updated && textureLayer.texture) {
-                try {
-                  if (typeof textureLayer.texture.setImage === "function") {
-                    textureLayer.texture.setImage(image1)
-                    updated = true
-                    console.log("[Spline3D] Updated via texture.setImage()")
-                  } else if (textureLayer.texture.image) {
-                    textureLayer.texture.image = image1
-                    updated = true
-                    console.log("[Spline3D] Updated via texture.image")
-                  }
-                } catch (err) {
-                  console.warn("[Spline3D] Failed to update texture object:", err)
-                }
-              }
-              
-              // Mark material as needing update
-              if (updated) {
-                if (material.needsUpdate !== undefined) {
-                  material.needsUpdate = true
-                }
-                // Also try to trigger a refresh
-                if (material.update !== undefined && typeof material.update === "function") {
-                  material.update()
-                }
-                console.log("[Spline3D] Updated Side 1 texture", { layerType: textureLayer.type, method: "various" })
-              } else {
-                console.error("[Spline3D] Failed to update Side 1 texture - no method worked")
-              }
-            } else {
-              console.warn("[Spline3D] No texture/image layer found on Side 1 material. Available layers:", material.layers.map((l: any) => l.type))
             }
-          } else {
-            console.warn("[Spline3D] No material or layers found on Side 1 object. Material:", material)
+          } catch (err) {
+            console.error("[Spline3D] Error trying all objects:", err)
           }
-        } else {
-          const identifier = side1ObjectId || side1ObjectName
-          console.warn(`[Spline3D] Object "${identifier}" not found in scene.`, {
-            searchedById: !!side1ObjectId,
-            searchedByName: !!side1ObjectName,
-            availableObjects: splineAppRef.current.getAllObjects?.()?.map((o: any) => ({
-              id: o.id || o.uuid,
-              name: o.name
-            })) || "unknown"
-          })
+        }
+
+        if (!updated) {
+          console.error("[Spline3D] Failed to update Side 1 texture on any object")
         }
       } catch (err) {
         console.error("[Spline3D] Error updating Side 1:", err)
       }
     }
 
-    // Update Side 2
+    // Update Side 2 - try primary object first, then try all objects
     if (image2) {
       try {
-        const object = findObject(side2ObjectId, side2ObjectName)
-        if (object) {
-          console.log("[Spline3D] Found Side 2 object:", object)
-          const material = (object as any).material
-          if (material && material.layers) {
-            // Find the texture layer (could be 'image' or 'texture' type)
-            const textureLayer = material.layers.find((layer: any) => 
-              layer.type === "image" || layer.type === "texture"
-            )
-            if (textureLayer) {
-              console.log("[Spline3D] Found texture layer:", { 
-                type: textureLayer.type, 
-                properties: Object.keys(textureLayer),
-                fullLayer: textureLayer
-              })
-              
-              // Try multiple update methods
-              let updated = false
-              
-              // Method 1: updateTexture method
-              if (typeof textureLayer.updateTexture === "function") {
-                try {
-                  await textureLayer.updateTexture(image2)
-                  updated = true
-                  console.log("[Spline3D] Updated via updateTexture() method")
-                } catch (err: any) {
-                  console.warn("[Spline3D] updateTexture() failed:", err)
-                }
+        const primaryObject = findObject(side2ObjectId, side2ObjectName)
+        let updated = false
+
+        // Try primary object first
+        if (primaryObject) {
+          updated = await tryUpdateTextureOnObject(primaryObject, image2, "Side 2 (Primary)")
+        }
+
+        // If primary didn't work, try all objects in the scene
+        if (!updated) {
+          console.log("[Spline3D] Primary object update failed, trying all objects...")
+          try {
+            const allObjects = splineAppRef.current.getAllObjects?.() || []
+            for (const obj of allObjects) {
+              const objName = (obj as any).name || (obj as any).id || (obj as any).uuid || 'unnamed'
+              if (await tryUpdateTextureOnObject(obj, image2, `Object: ${objName}`)) {
+                updated = true
+                console.log(`[Spline3D] Successfully updated object: ${objName}`)
+                // Don't break - try to update multiple objects
               }
-              
-              // Method 2: Direct property updates (try all possible property names)
-              if (!updated) {
-                const propsToTry = ['image', 'texture', 'url', 'source', 'src', 'map']
-                for (const prop of propsToTry) {
-                  if (textureLayer[prop] !== undefined || prop === 'image') {
-                    try {
-                      textureLayer[prop] = image2
-                      console.log(`[Spline3D] Set textureLayer.${prop} = image2`)
-                      updated = true
-                      break
-                    } catch (err) {
-                      console.warn(`[Spline3D] Failed to set ${prop}:`, err)
-                    }
-                  }
-                }
-              }
-              
-              // Method 3: Try updating the texture object itself if it exists
-              if (!updated && textureLayer.texture) {
-                try {
-                  if (typeof textureLayer.texture.setImage === "function") {
-                    textureLayer.texture.setImage(image2)
-                    updated = true
-                    console.log("[Spline3D] Updated via texture.setImage()")
-                  } else if (textureLayer.texture.image) {
-                    textureLayer.texture.image = image2
-                    updated = true
-                    console.log("[Spline3D] Updated via texture.image")
-                  }
-                } catch (err) {
-                  console.warn("[Spline3D] Failed to update texture object:", err)
-                }
-              }
-              
-              // Mark material as needing update
-              if (updated) {
-                if (material.needsUpdate !== undefined) {
-                  material.needsUpdate = true
-                }
-                // Also try to trigger a refresh
-                if (material.update !== undefined && typeof material.update === "function") {
-                  material.update()
-                }
-                console.log("[Spline3D] Updated Side 2 texture", { layerType: textureLayer.type, method: "various" })
-              } else {
-                console.error("[Spline3D] Failed to update Side 2 texture - no method worked")
-              }
-            } else {
-              console.warn("[Spline3D] No texture/image layer found on Side 2 material. Available layers:", material.layers.map((l: any) => l.type))
             }
-          } else {
-            console.warn("[Spline3D] No material or layers found on Side 2 object. Material:", material)
+          } catch (err) {
+            console.error("[Spline3D] Error trying all objects:", err)
           }
-        } else {
-          const identifier = side2ObjectId || side2ObjectName
-          console.warn(`[Spline3D] Object "${identifier}" not found in scene.`, {
-            searchedById: !!side2ObjectId,
-            searchedByName: !!side2ObjectName,
-            availableObjects: splineAppRef.current.getAllObjects?.()?.map((o: any) => ({
-              id: o.id || o.uuid,
-              name: o.name
-            })) || "unknown"
-          })
+        }
+
+        if (!updated) {
+          console.error("[Spline3D] Failed to update Side 2 texture on any object")
         }
       } catch (err) {
         console.error("[Spline3D] Error updating Side 2:", err)
