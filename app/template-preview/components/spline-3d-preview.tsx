@@ -959,7 +959,7 @@ export function Spline3DPreview({
         }
 
         // TARGET TEXTURE LAYERS (this is what we need to modify!)
-        else if (layer.type === 'texture' || layer.type === 'image') {
+        if (layer.type === 'texture' || layer.type === 'image') {
           foundTextureLayer = true
           console.log(`[Spline3D] 🎯 TEXTURE UPDATE: Found ${layer.type} layer ${i} on ${label}!`)
           console.log(`[Spline3D] 🎯 TEXTURE UPDATE: Layer details:`, {
