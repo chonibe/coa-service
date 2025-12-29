@@ -43,11 +43,11 @@ export function Spline3DPreview({
     }
   }, [isModelVisible])
 
-  // Simple approach: Create duplicate objects with UV textures and toggle visibility
+  // Clone mesh, create new material with UV texture, toggle visibility
   const updateTextures = useCallback(async () => {
     if (!splineAppRef.current || isLoading) return
 
-    console.log("[Spline3D] Updating textures:", { 
+    console.log("[Spline3D] Creating duplicate meshes with UV textures:", { 
       hasImage1: !!image1, 
       hasImage2: !!image2,
       side1ObjectId,
@@ -55,6 +55,19 @@ export function Spline3DPreview({
     })
 
     const app = splineAppRef.current as any
+    const THREE = (window as any).THREE || app?.THREE
+
+    if (!THREE) {
+      console.error("[Spline3D] THREE.js not available")
+      return
+    }
+
+    // Get the THREE.js scene
+    const scene = app.scene || app._scene
+    if (!scene) {
+      console.error("[Spline3D] Scene not available")
+      return
+    }
 
     // Helper to find object by ID or name
     const findObject = (id?: string, name?: string) => {
@@ -68,79 +81,84 @@ export function Spline3DPreview({
       return null
     }
 
-    // Helper to load image
-    const loadImage = (url: string): Promise<HTMLImageElement> => {
-      return new Promise((resolve, reject) => {
-        const img = new Image()
-        img.crossOrigin = "anonymous"
-        img.onload = () => resolve(img)
-        img.onerror = reject
-        img.src = url
+    // Helper to get THREE.js mesh from Spline object
+    const getMesh = (obj: any): any => {
+      if (obj.mesh) return obj.mesh
+      if (obj.object3D) return obj.object3D
+      // Try to find mesh in scene
+      let foundMesh: any = null
+      scene.traverse((node: any) => {
+        if (node.uuid === obj.uuid || node.name === obj.name) {
+          if (node.isMesh) {
+            foundMesh = node
+          }
+        }
       })
+      return foundMesh
     }
 
-    // Helper to apply texture to object
-    const applyTextureToObject = async (obj: any, imageUrl: string, label: string) => {
-      if (!obj) {
-        console.warn(`[Spline3D] Cannot apply texture: ${label} object not found`)
-        return false
+    // Helper to create duplicate mesh with texture
+    const createDuplicateMesh = async (originalObj: any, imageUrl: string, label: string) => {
+      if (!originalObj) {
+        console.warn(`[Spline3D] Cannot create duplicate: ${label} object not found`)
+        return null
       }
 
       try {
-        // Load the image
-        const image = await loadImage(imageUrl)
-        console.log(`[Spline3D] ✓ Loaded image for ${label}`)
-
-        // Apply texture to material
-        if (obj.material) {
-          const material = obj.material
-          
-          // Try to find texture/image layer
-          if (material.layers && Array.isArray(material.layers)) {
-            // Find texture/image layer or use matcap layer
-            let textureLayer = material.layers.find((l: any) => l.type === 'texture' || l.type === 'image')
-            if (!textureLayer) {
-              textureLayer = material.layers.find((l: any) => l.type === 'matcap')
-            }
-
-            if (textureLayer) {
-              // Apply image to the layer
-              if (textureLayer.texture) {
-                textureLayer.texture.image = image
-                textureLayer.texture.needsUpdate = true
-                console.log(`[Spline3D] ✓ Applied image to ${label} texture layer`)
-              } else if (textureLayer.image !== undefined) {
-                textureLayer.image = image
-                console.log(`[Spline3D] ✓ Applied image to ${label} layer.image`)
-              }
-            }
-          }
-
-          // Also try direct THREE.js texture
-          if (obj.mesh?.material) {
-            const THREE = (window as any).THREE || app?.THREE
-            if (THREE && THREE.TextureLoader) {
-              const loader = new THREE.TextureLoader()
-              const texture = loader.load(imageUrl)
-              texture.needsUpdate = true
-              obj.mesh.material.map = texture
-              obj.mesh.material.needsUpdate = true
-              console.log(`[Spline3D] ✓ Applied texture via THREE.js to ${label}`)
-            }
-          }
-
-          if (material.needsUpdate !== undefined) {
-            material.needsUpdate = true
-          }
-          if (material.update && typeof material.update === "function") {
-            material.update()
-          }
+        // Get the original mesh
+        const originalMesh = getMesh(originalObj)
+        if (!originalMesh || !originalMesh.geometry) {
+          console.warn(`[Spline3D] Cannot find mesh geometry for ${label}`)
+          return null
         }
 
-        return true
+        console.log(`[Spline3D] Found mesh for ${label}, cloning...`)
+
+        // Clone the geometry
+        const clonedGeometry = originalMesh.geometry.clone()
+        
+        // Load texture
+        const textureLoader = new THREE.TextureLoader()
+        const texture = await new Promise<any>((resolve, reject) => {
+          textureLoader.load(
+            imageUrl,
+            (tex: any) => {
+              tex.needsUpdate = true
+              resolve(tex)
+            },
+            undefined,
+            reject
+          )
+        })
+
+        console.log(`[Spline3D] ✓ Loaded texture for ${label}`)
+
+        // Create new material with texture
+        const newMaterial = new THREE.MeshBasicMaterial({
+          map: texture,
+          transparent: false
+        })
+
+        // Create new mesh with cloned geometry and new material
+        const duplicateMesh = new THREE.Mesh(clonedGeometry, newMaterial)
+        
+        // Copy position, rotation, scale from original
+        duplicateMesh.position.copy(originalMesh.position)
+        duplicateMesh.rotation.copy(originalMesh.rotation)
+        duplicateMesh.scale.copy(originalMesh.scale)
+        
+        // Set name for identification
+        duplicateMesh.name = `${label}_duplicate_${Date.now()}`
+        
+        // Add to scene
+        scene.add(duplicateMesh)
+        
+        console.log(`[Spline3D] ✓ Created and added duplicate mesh for ${label}`)
+        
+        return duplicateMesh
       } catch (err) {
-        console.error(`[Spline3D] Error applying texture to ${label}:`, err)
-        return false
+        console.error(`[Spline3D] Error creating duplicate mesh for ${label}:`, err)
+        return null
       }
     }
 
@@ -153,28 +171,35 @@ export function Spline3DPreview({
         
         // Hide original
         original1.visible = false
+        const mesh1 = getMesh(original1)
+        if (mesh1) mesh1.visible = false
         console.log(`[Spline3D] ✓ Hid original Side 1`)
 
-        // Apply texture to original (we'll use it as the duplicate)
+        // Create duplicate if it doesn't exist
         if (!duplicateSide1Ref.current) {
-          const success = await applyTextureToObject(original1, image1, "Side 1")
-          if (success) {
-            duplicateSide1Ref.current = original1
-            original1.visible = true // Show it with texture
-            console.log(`[Spline3D] ✓ Applied texture to Side 1`)
+          const duplicate = await createDuplicateMesh(original1, image1, "Side 1")
+          if (duplicate) {
+            duplicateSide1Ref.current = duplicate
+            duplicate.visible = true
+            console.log(`[Spline3D] ✓ Created and showed Side 1 duplicate`)
           }
         } else {
           duplicateSide1Ref.current.visible = true
-          console.log(`[Spline3D] ✓ Showed Side 1 with texture`)
+          console.log(`[Spline3D] ✓ Showed existing Side 1 duplicate`)
         }
       }
     } else {
-      // No image - show original, hide duplicate
+      // No image - show original, hide/remove duplicate
       if (originalSide1Ref.current) {
         originalSide1Ref.current.visible = true
+        const mesh1 = getMesh(originalSide1Ref.current)
+        if (mesh1) mesh1.visible = true
       }
       if (duplicateSide1Ref.current) {
         duplicateSide1Ref.current.visible = false
+        // Optionally remove from scene
+        // scene.remove(duplicateSide1Ref.current)
+        // duplicateSide1Ref.current = null
       }
     }
 
@@ -187,34 +212,41 @@ export function Spline3DPreview({
         
         // Hide original
         original2.visible = false
+        const mesh2 = getMesh(original2)
+        if (mesh2) mesh2.visible = false
         console.log(`[Spline3D] ✓ Hid original Side 2`)
 
-        // Apply texture to original (we'll use it as the duplicate)
+        // Create duplicate if it doesn't exist
         if (!duplicateSide2Ref.current) {
-          const success = await applyTextureToObject(original2, image2, "Side 2")
-          if (success) {
-            duplicateSide2Ref.current = original2
-            original2.visible = true // Show it with texture
-            console.log(`[Spline3D] ✓ Applied texture to Side 2`)
+          const duplicate = await createDuplicateMesh(original2, image2, "Side 2")
+          if (duplicate) {
+            duplicateSide2Ref.current = duplicate
+            duplicate.visible = true
+            console.log(`[Spline3D] ✓ Created and showed Side 2 duplicate`)
           }
         } else {
           duplicateSide2Ref.current.visible = true
-          console.log(`[Spline3D] ✓ Showed Side 2 with texture`)
+          console.log(`[Spline3D] ✓ Showed existing Side 2 duplicate`)
         }
       }
     } else {
-      // No image - show original, hide duplicate
+      // No image - show original, hide/remove duplicate
       if (originalSide2Ref.current) {
         originalSide2Ref.current.visible = true
+        const mesh2 = getMesh(originalSide2Ref.current)
+        if (mesh2) mesh2.visible = true
       }
       if (duplicateSide2Ref.current) {
         duplicateSide2Ref.current.visible = false
+        // Optionally remove from scene
+        // scene.remove(duplicateSide2Ref.current)
+        // duplicateSide2Ref.current = null
       }
     }
 
     // Force render
-    if (app.renderer && app.scene && app.camera && typeof app.renderer.render === "function") {
-      app.renderer.render(app.scene, app.camera)
+    if (app.renderer && scene && app.camera && typeof app.renderer.render === "function") {
+      app.renderer.render(scene, app.camera)
     }
   }, [image1, image2, side1ObjectId, side2ObjectId, side1ObjectName, side2ObjectName, isLoading])
 
