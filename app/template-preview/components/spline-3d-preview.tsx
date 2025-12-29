@@ -71,7 +71,30 @@ export function Spline3DPreview({
               if (material.needsUpdate !== undefined) material.needsUpdate = true
               if (material.update && typeof material.update === "function") material.update()
               
-              // Revert after 3 seconds for testing
+              // DON'T REVERT - Keep the change so we can see if it worked
+              // Force multiple render attempts
+              for (let i = 0; i < 5; i++) {
+                setTimeout(() => {
+                  try {
+                    if (material.needsUpdate !== undefined) material.needsUpdate = true
+                    if (material.update && typeof material.update === "function") material.update()
+                    // Force render via THREE.js
+                    if (splineAppRef.current && (splineAppRef.current as any).renderer) {
+                      const renderer = (splineAppRef.current as any).renderer
+                      const scene = (splineAppRef.current as any).scene
+                      const camera = (splineAppRef.current as any).camera
+                      if (renderer && scene && camera && typeof renderer.render === "function") {
+                        renderer.render(scene, camera)
+                        console.log(`[Spline3D TEST] Force rendered ${label} (attempt ${i + 1})`)
+                      }
+                    }
+                  } catch (err) {
+                    console.warn(`[Spline3D TEST] Render attempt ${i + 1} failed:`, err)
+                  }
+                }, i * 500) // Stagger render attempts
+              }
+              
+              // Revert after 10 seconds (longer so user can see)
               setTimeout(() => {
                 try {
                   if (typeof layer.color.set === "function") {
@@ -83,11 +106,11 @@ export function Spline3DPreview({
                   }
                   if (material.needsUpdate !== undefined) material.needsUpdate = true
                   if (material.update && typeof material.update === "function") material.update()
-                  console.log(`[Spline3D TEST] Reverted ${label} color`)
+                  console.log(`[Spline3D TEST] Reverted ${label} color after 10 seconds`)
                 } catch (err) {
                   console.warn(`[Spline3D TEST] Could not revert color:`, err)
                 }
-              }, 3000)
+              }, 10000)
               
               return true
             } catch (err) {
@@ -322,8 +345,70 @@ export function Spline3DPreview({
       // DIRECT MATERIAL TEST: Try to change material properties directly to verify we can modify materials
       if (material) {
         console.log(`[Spline3D] DIRECT MATERIAL TEST for ${label}: Attempting direct material modifications...`)
+        console.log(`[Spline3D] DIRECT TEST: Material structure:`, {
+          hasColor: material.color !== undefined,
+          hasLayers: !!material.layers,
+          layerCount: material.layers?.length || 0,
+          hasMesh: !!(obj as any).mesh,
+          hasMeshMaterial: !!(obj as any).mesh?.material,
+          materialType: material.constructor?.name,
+          allKeys: Object.keys(material).filter(k => !k.startsWith('_'))
+        })
         
         try {
+          // Test 0: Try to modify mesh.material directly (THREE.js standard)
+          if ((obj as any).mesh?.material) {
+            const meshMaterial = (obj as any).mesh.material
+            console.log(`[Spline3D] DIRECT TEST: Found mesh.material for ${label}, attempting GREEN change...`)
+            try {
+              const originalColor = meshMaterial.color
+              if (typeof meshMaterial.color.set === "function") {
+                meshMaterial.color.set(0, 1, 0) // Green
+                console.log(`[Spline3D] ✓ DIRECT TEST: Changed ${label} mesh.material.color to GREEN via set()`)
+              } else if (meshMaterial.color.r !== undefined) {
+                meshMaterial.color.r = 0
+                meshMaterial.color.g = 1
+                meshMaterial.color.b = 0
+                console.log(`[Spline3D] ✓ DIRECT TEST: Changed ${label} mesh.material.color to GREEN via rgb`)
+              }
+              meshMaterial.needsUpdate = true
+              
+              // Force multiple renders
+              for (let i = 0; i < 10; i++) {
+                setTimeout(() => {
+                  if (splineAppRef.current && (splineAppRef.current as any).renderer) {
+                    const renderer = (splineAppRef.current as any).renderer
+                    const scene = (splineAppRef.current as any).scene
+                    const camera = (splineAppRef.current as any).camera
+                    if (renderer && scene && camera && typeof renderer.render === "function") {
+                      renderer.render(scene, camera)
+                      console.log(`[Spline3D] DIRECT TEST: Force rendered mesh.material GREEN (attempt ${i + 1})`)
+                    }
+                  }
+                }, i * 200)
+              }
+              
+              // Revert after 10 seconds
+              setTimeout(() => {
+                try {
+                  if (typeof meshMaterial.color.set === "function") {
+                    meshMaterial.color.set(originalColor.r || 1, originalColor.g || 1, originalColor.b || 1)
+                  } else if (meshMaterial.color.r !== undefined) {
+                    meshMaterial.color.r = originalColor.r || 1
+                    meshMaterial.color.g = originalColor.g || 1
+                    meshMaterial.color.b = originalColor.b || 1
+                  }
+                  meshMaterial.needsUpdate = true
+                  console.log(`[Spline3D] DIRECT TEST: Reverted ${label} mesh.material.color`)
+                } catch (err) {
+                  console.warn(`[Spline3D] DIRECT TEST: Could not revert mesh.material.color:`, err)
+                }
+              }, 10000)
+            } catch (err) {
+              console.warn(`[Spline3D] ✗ DIRECT TEST: Failed to change mesh.material.color:`, err)
+            }
+          }
+          
           // Test 1: Change material color directly to GREEN (very visible)
           if (material.color !== undefined) {
             const originalColor = material.color
@@ -351,7 +436,29 @@ export function Spline3DPreview({
                 }
               }
               
-              // Revert after 3 seconds
+              // Force multiple render attempts to ensure visibility
+              for (let i = 0; i < 10; i++) {
+                setTimeout(() => {
+                  try {
+                    material.needsUpdate = true
+                    if (material.update && typeof material.update === "function") material.update()
+                    // Force render via THREE.js
+                    if (splineAppRef.current && (splineAppRef.current as any).renderer) {
+                      const renderer = (splineAppRef.current as any).renderer
+                      const scene = (splineAppRef.current as any).scene
+                      const camera = (splineAppRef.current as any).camera
+                      if (renderer && scene && camera && typeof renderer.render === "function") {
+                        renderer.render(scene, camera)
+                        console.log(`[Spline3D] DIRECT TEST: Force rendered ${label} GREEN (attempt ${i + 1})`)
+                      }
+                    }
+                  } catch (err) {
+                    console.warn(`[Spline3D] DIRECT TEST: Render attempt ${i + 1} failed:`, err)
+                  }
+                }, i * 200) // Stagger render attempts every 200ms
+              }
+              
+              // Revert after 10 seconds (longer so user can see)
               setTimeout(() => {
                 try {
                   if (typeof material.color.set === "function") {
@@ -363,11 +470,11 @@ export function Spline3DPreview({
                   }
                   material.needsUpdate = true
                   if (material.update && typeof material.update === "function") material.update()
-                  console.log(`[Spline3D] DIRECT TEST: Reverted ${label} material.color`)
+                  console.log(`[Spline3D] DIRECT TEST: Reverted ${label} material.color after 10 seconds`)
                 } catch (err) {
                   console.warn(`[Spline3D] DIRECT TEST: Could not revert color:`, err)
                 }
-              }, 3000)
+              }, 10000)
             } catch (err) {
               console.warn(`[Spline3D] ✗ DIRECT TEST: Failed to change material.color:`, err)
             }
@@ -393,17 +500,39 @@ export function Spline3DPreview({
                 }
               }
               
-              // Revert after 3 seconds
+              // Force multiple render attempts
+              for (let i = 0; i < 10; i++) {
+                setTimeout(() => {
+                  try {
+                    material.needsUpdate = true
+                    if (material.update && typeof material.update === "function") material.update()
+                    // Force render via THREE.js
+                    if (splineAppRef.current && (splineAppRef.current as any).renderer) {
+                      const renderer = (splineAppRef.current as any).renderer
+                      const scene = (splineAppRef.current as any).scene
+                      const camera = (splineAppRef.current as any).camera
+                      if (renderer && scene && camera && typeof renderer.render === "function") {
+                        renderer.render(scene, camera)
+                        console.log(`[Spline3D] DIRECT TEST: Force rendered ${label} TRANSPARENT (attempt ${i + 1})`)
+                      }
+                    }
+                  } catch (err) {
+                    console.warn(`[Spline3D] DIRECT TEST: Render attempt ${i + 1} failed:`, err)
+                  }
+                }, i * 200)
+              }
+              
+              // Revert after 10 seconds
               setTimeout(() => {
                 try {
                   material.opacity = originalOpacity
                   material.needsUpdate = true
                   if (material.update && typeof material.update === "function") material.update()
-                  console.log(`[Spline3D] DIRECT TEST: Reverted ${label} material.opacity`)
+                  console.log(`[Spline3D] DIRECT TEST: Reverted ${label} material.opacity after 10 seconds`)
                 } catch (err) {
                   console.warn(`[Spline3D] DIRECT TEST: Could not revert opacity:`, err)
                 }
-              }, 3000)
+              }, 10000)
             } catch (err) {
               console.warn(`[Spline3D] ✗ DIRECT TEST: Failed to change material.opacity:`, err)
             }
