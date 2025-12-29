@@ -62,18 +62,51 @@ export function Spline3DPreview({
           console.log("[Spline3D] Found Side 1 object:", object)
           const material = (object as any).material
           if (material && material.layers) {
-            // Find the Image Layer
-            const imageLayer = material.layers.find((layer: any) => layer.type === "image")
-            if (imageLayer) {
-              // Update the image directly
-              imageLayer.image = image1
-              // Mark material as needing update
-              if (material.needsUpdate !== undefined) {
-                material.needsUpdate = true
+            // Find the texture layer (could be 'image' or 'texture' type)
+            const textureLayer = material.layers.find((layer: any) => 
+              layer.type === "image" || layer.type === "texture"
+            )
+            if (textureLayer) {
+              console.log("[Spline3D] Found texture layer:", { type: textureLayer.type, properties: Object.keys(textureLayer) })
+              
+              // Try updateTexture method first (if available)
+              if (typeof textureLayer.updateTexture === "function") {
+                textureLayer.updateTexture(image1).catch((err: any) => {
+                  console.warn("[Spline3D] updateTexture failed, trying direct property update:", err)
+                  // Fallback to direct property update
+                  if (textureLayer.image !== undefined) {
+                    textureLayer.image = image1
+                  } else if (textureLayer.texture !== undefined) {
+                    textureLayer.texture = image1
+                  } else if (textureLayer.url !== undefined) {
+                    textureLayer.url = image1
+                  } else {
+                    textureLayer.image = image1
+                  }
+                  if (material.needsUpdate !== undefined) {
+                    material.needsUpdate = true
+                  }
+                })
+              } else {
+                // Direct property update
+                if (textureLayer.image !== undefined) {
+                  textureLayer.image = image1
+                } else if (textureLayer.texture !== undefined) {
+                  textureLayer.texture = image1
+                } else if (textureLayer.url !== undefined) {
+                  textureLayer.url = image1
+                } else {
+                  // Try setting image property directly
+                  textureLayer.image = image1
+                }
+                // Mark material as needing update
+                if (material.needsUpdate !== undefined) {
+                  material.needsUpdate = true
+                }
               }
-              console.log("[Spline3D] Updated Side 1 texture")
+              console.log("[Spline3D] Updated Side 1 texture", { layerType: textureLayer.type })
             } else {
-              console.warn("[Spline3D] No Image Layer found on Side 1 material. Available layers:", material.layers.map((l: any) => l.type))
+              console.warn("[Spline3D] No texture/image layer found on Side 1 material. Available layers:", material.layers.map((l: any) => l.type))
             }
           } else {
             console.warn("[Spline3D] No material or layers found on Side 1 object. Material:", material)
@@ -102,18 +135,51 @@ export function Spline3DPreview({
           console.log("[Spline3D] Found Side 2 object:", object)
           const material = (object as any).material
           if (material && material.layers) {
-            // Find the Image Layer
-            const imageLayer = material.layers.find((layer: any) => layer.type === "image")
-            if (imageLayer) {
-              // Update the image directly
-              imageLayer.image = image2
-              // Mark material as needing update
-              if (material.needsUpdate !== undefined) {
-                material.needsUpdate = true
+            // Find the texture layer (could be 'image' or 'texture' type)
+            const textureLayer = material.layers.find((layer: any) => 
+              layer.type === "image" || layer.type === "texture"
+            )
+            if (textureLayer) {
+              console.log("[Spline3D] Found texture layer:", { type: textureLayer.type, properties: Object.keys(textureLayer) })
+              
+              // Try updateTexture method first (if available)
+              if (typeof textureLayer.updateTexture === "function") {
+                textureLayer.updateTexture(image2).catch((err: any) => {
+                  console.warn("[Spline3D] updateTexture failed, trying direct property update:", err)
+                  // Fallback to direct property update
+                  if (textureLayer.image !== undefined) {
+                    textureLayer.image = image2
+                  } else if (textureLayer.texture !== undefined) {
+                    textureLayer.texture = image2
+                  } else if (textureLayer.url !== undefined) {
+                    textureLayer.url = image2
+                  } else {
+                    textureLayer.image = image2
+                  }
+                  if (material.needsUpdate !== undefined) {
+                    material.needsUpdate = true
+                  }
+                })
+              } else {
+                // Direct property update
+                if (textureLayer.image !== undefined) {
+                  textureLayer.image = image2
+                } else if (textureLayer.texture !== undefined) {
+                  textureLayer.texture = image2
+                } else if (textureLayer.url !== undefined) {
+                  textureLayer.url = image2
+                } else {
+                  // Try setting image property directly
+                  textureLayer.image = image2
+                }
+                // Mark material as needing update
+                if (material.needsUpdate !== undefined) {
+                  material.needsUpdate = true
+                }
               }
-              console.log("[Spline3D] Updated Side 2 texture")
+              console.log("[Spline3D] Updated Side 2 texture", { layerType: textureLayer.type })
             } else {
-              console.warn("[Spline3D] No Image Layer found on Side 2 material. Available layers:", material.layers.map((l: any) => l.type))
+              console.warn("[Spline3D] No texture/image layer found on Side 2 material. Available layers:", material.layers.map((l: any) => l.type))
             }
           } else {
             console.warn("[Spline3D] No material or layers found on Side 2 object. Material:", material)

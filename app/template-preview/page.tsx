@@ -194,10 +194,10 @@ export default function TemplatePreviewPage() {
 
           {/* Right Column - Preview */}
           <div className="lg:col-span-2">
-            <Tabs defaultValue="template" className="w-full">
+            <Tabs defaultValue="3d" className="w-full">
               <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="template">Template Preview</TabsTrigger>
                 <TabsTrigger value="3d">3D Lamp Preview</TabsTrigger>
+                <TabsTrigger value="template">Template Preview</TabsTrigger>
               </TabsList>
               <TabsContent value="template" className="mt-4">
                 <Card>
