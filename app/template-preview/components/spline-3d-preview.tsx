@@ -29,6 +29,169 @@ export function Spline3DPreview({
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
+  // TEST FUNCTION: Try to modify color/visible properties to verify we can affect the scene
+  const testModifyObjectProperties = useCallback((obj: any, label: string) => {
+    if (!obj) return false
+    
+    try {
+      const material = (obj as any).material || (obj as any).children?.[0]?.material
+      if (!material) {
+        console.log(`[Spline3D TEST] ${label}: No material found`)
+        return false
+      }
+
+      console.log(`[Spline3D TEST] ${label}: Attempting to modify material properties...`)
+      
+      // Try modifying color layer
+      if (material.layers) {
+        for (const layer of material.layers) {
+          if (layer.type === 'color' && layer.color !== undefined) {
+            // Try to change color to bright red to test visibility
+            const originalColor = layer.color
+            try {
+              // Try different color formats
+              if (typeof layer.color.set === "function") {
+                layer.color.set(1, 0, 0) // Red
+                console.log(`[Spline3D TEST] ✓ Changed ${label} color via set() to red`)
+              } else if (layer.color.r !== undefined) {
+                layer.color.r = 1
+                layer.color.g = 0
+                layer.color.b = 0
+                console.log(`[Spline3D TEST] ✓ Changed ${label} color.rgb to red`)
+              } else if (Array.isArray(layer.color)) {
+                layer.color[0] = 1
+                layer.color[1] = 0
+                layer.color[2] = 0
+                console.log(`[Spline3D TEST] ✓ Changed ${label} color array to red`)
+              } else {
+                layer.color = { r: 1, g: 0, b: 0 }
+                console.log(`[Spline3D TEST] ✓ Set ${label} color object to red`)
+              }
+              
+              if (material.needsUpdate !== undefined) material.needsUpdate = true
+              if (material.update && typeof material.update === "function") material.update()
+              
+              // Revert after 3 seconds for testing
+              setTimeout(() => {
+                try {
+                  if (typeof layer.color.set === "function") {
+                    layer.color.set(originalColor.r || originalColor[0] || 1, originalColor.g || originalColor[1] || 1, originalColor.b || originalColor[2] || 1)
+                  } else if (layer.color.r !== undefined) {
+                    layer.color.r = originalColor.r || 1
+                    layer.color.g = originalColor.g || 1
+                    layer.color.b = originalColor.b || 1
+                  }
+                  if (material.needsUpdate !== undefined) material.needsUpdate = true
+                  if (material.update && typeof material.update === "function") material.update()
+                  console.log(`[Spline3D TEST] Reverted ${label} color`)
+                } catch (err) {
+                  console.warn(`[Spline3D TEST] Could not revert color:`, err)
+                }
+              }, 3000)
+              
+              return true
+            } catch (err) {
+              console.warn(`[Spline3D TEST] ✗ Failed to change color:`, err)
+            }
+          }
+          
+          // Try modifying opacity
+          if (layer.opacity !== undefined) {
+            try {
+              const originalOpacity = layer.opacity
+              layer.opacity = 0.5 // Make it semi-transparent
+              console.log(`[Spline3D TEST] ✓ Changed ${label} opacity to 0.5`)
+              if (material.needsUpdate !== undefined) material.needsUpdate = true
+              if (material.update && typeof material.update === "function") material.update()
+              
+              setTimeout(() => {
+                try {
+                  layer.opacity = originalOpacity
+                  if (material.needsUpdate !== undefined) material.needsUpdate = true
+                  if (material.update && typeof material.update === "function") material.update()
+                  console.log(`[Spline3D TEST] Reverted ${label} opacity`)
+                } catch (err) {
+                  console.warn(`[Spline3D TEST] Could not revert opacity:`, err)
+                }
+              }, 3000)
+              
+              return true
+            } catch (err) {
+              console.warn(`[Spline3D TEST] ✗ Failed to change opacity:`, err)
+            }
+          }
+        }
+      }
+      
+      // Try modifying material color directly
+      if (material.color !== undefined) {
+        try {
+          const originalColor = material.color
+          if (typeof material.color.set === "function") {
+            material.color.set(1, 0, 0) // Red
+            console.log(`[Spline3D TEST] ✓ Changed ${label} material.color via set() to red`)
+          } else if (material.color.r !== undefined) {
+            material.color.r = 1
+            material.color.g = 0
+            material.color.b = 0
+            console.log(`[Spline3D TEST] ✓ Changed ${label} material.color.rgb to red`)
+          }
+          material.needsUpdate = true
+          if (material.update && typeof material.update === "function") material.update()
+          
+          setTimeout(() => {
+            try {
+              if (typeof material.color.set === "function") {
+                material.color.set(originalColor.r || 1, originalColor.g || 1, originalColor.b || 1)
+              } else if (material.color.r !== undefined) {
+                material.color.r = originalColor.r || 1
+                material.color.g = originalColor.g || 1
+                material.color.b = originalColor.b || 1
+              }
+              material.needsUpdate = true
+              if (material.update && typeof material.update === "function") material.update()
+              console.log(`[Spline3D TEST] Reverted ${label} material.color`)
+            } catch (err) {
+              console.warn(`[Spline3D TEST] Could not revert material.color:`, err)
+            }
+          }, 3000)
+          
+          return true
+        } catch (err) {
+          console.warn(`[Spline3D TEST] ✗ Failed to change material.color:`, err)
+        }
+      }
+      
+      // Try modifying object position/scale as a last resort test
+      if ((obj as any).position !== undefined) {
+        try {
+          const originalY = (obj as any).position.y
+          (obj as any).position.y += 0.1 // Move up slightly
+          console.log(`[Spline3D TEST] ✓ Moved ${label} position.y up by 0.1`)
+          
+          setTimeout(() => {
+            try {
+              (obj as any).position.y = originalY
+              console.log(`[Spline3D TEST] Reverted ${label} position`)
+            } catch (err) {
+              console.warn(`[Spline3D TEST] Could not revert position:`, err)
+            }
+          }, 3000)
+          
+          return true
+        } catch (err) {
+          console.warn(`[Spline3D TEST] ✗ Failed to change position:`, err)
+        }
+      }
+      
+      console.log(`[Spline3D TEST] ${label}: No modifiable properties found`)
+      return false
+    } catch (err) {
+      console.error(`[Spline3D TEST] Error testing ${label}:`, err)
+      return false
+    }
+  }, [])
+
   // Update textures when images change
   const updateTextures = useCallback(async () => {
     if (!splineAppRef.current || isLoading) return
@@ -133,6 +296,14 @@ export function Spline3DPreview({
         hasMaterial: !!(obj as any).material,
         children: (obj as any).children?.length || 0
       })
+      
+      // TEST: Try to modify visible properties first to verify we can affect this object
+      const testResult = testModifyObjectProperties(obj, `${label} (TEST)`)
+      if (testResult) {
+        console.log(`[Spline3D] ✓ TEST SUCCESS: We can modify ${label} properties!`)
+      } else {
+        console.warn(`[Spline3D] ✗ TEST FAILED: Cannot modify ${label} properties`)
+      }
 
       // Try to get material from object or children
       let material = (obj as any).material
@@ -531,6 +702,45 @@ export function Spline3DPreview({
           // Wait longer for scene to fully initialize before updating textures
           setTimeout(() => {
             setIsLoading(false)
+            
+            // TEST: Try to modify primary objects to verify we can affect the scene
+            console.log("[Spline3D] ========== RUNNING PROPERTY MODIFICATION TESTS ==========")
+            if (side1ObjectId || side1ObjectName) {
+              const testObj1 = side1ObjectId 
+                ? app.findObjectById?.(side1ObjectId)
+                : app.findObjectByName?.(side1ObjectName || "Side1")
+              if (testObj1) {
+                testModifyObjectProperties(testObj1, "Side 1 (Initial Test)")
+              } else {
+                console.warn("[Spline3D TEST] Side 1 object not found for initial test")
+              }
+            }
+            
+            if (side2ObjectId || side2ObjectName) {
+              const testObj2 = side2ObjectId
+                ? app.findObjectById?.(side2ObjectId)
+                : app.findObjectByName?.(side2ObjectName || "Side2")
+              if (testObj2) {
+                testModifyObjectProperties(testObj2, "Side 2 (Initial Test)")
+              } else {
+                console.warn("[Spline3D TEST] Side 2 object not found for initial test")
+              }
+            }
+            
+            // Also test on a few random objects to see if we can modify anything
+            try {
+              const allObjects = app.getAllObjects?.() || []
+              console.log(`[Spline3D TEST] Testing property modification on ${Math.min(3, allObjects.length)} random objects...`)
+              for (let i = 0; i < Math.min(3, allObjects.length); i++) {
+                const testObj = allObjects[i]
+                const objName = (testObj as any).name || (testObj as any).id || (testObj as any).uuid || `Object ${i}`
+                testModifyObjectProperties(testObj, `Random Object ${i} (${objName})`)
+              }
+            } catch (err) {
+              console.warn("[Spline3D TEST] Could not test random objects:", err)
+            }
+            console.log("[Spline3D] =========================================================")
+            
             // Additional delay before first texture update
             setTimeout(() => {
               updateTextures()
