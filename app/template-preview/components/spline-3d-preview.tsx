@@ -686,22 +686,87 @@ export function Spline3DPreview({
 
   // Load Spline scene from local file
   useEffect(() => {
-    if (!canvasRef.current || typeof window === "undefined") return
+    console.log("[Spline3D] Initializing...", {
+      hasCanvas: !!canvasRef.current,
+      isClient: typeof window !== "undefined",
+      canvasWidth: canvasRef.current?.width,
+      canvasHeight: canvasRef.current?.height
+    })
+
+    if (typeof window === "undefined") {
+      console.warn("[Spline3D] Window not available, skipping initialization")
+      return
+    }
+
+    if (!canvasRef.current) {
+      console.warn("[Spline3D] Canvas ref not available yet, will retry...")
+      // Retry after a short delay
+      const timeout = setTimeout(() => {
+        if (canvasRef.current) {
+          console.log("[Spline3D] Canvas now available, initializing...")
+          // Trigger re-initialization by setting a flag or calling the effect again
+        }
+      }, 100)
+      return () => clearTimeout(timeout)
+    }
 
     setIsLoading(true)
     setError(null)
 
+    const canvas = canvasRef.current
+    console.log("[Spline3D] Canvas element:", {
+      width: canvas.width,
+      height: canvas.height,
+      clientWidth: canvas.clientWidth,
+      clientHeight: canvas.clientHeight,
+      offsetWidth: canvas.offsetWidth,
+      offsetHeight: canvas.offsetHeight
+    })
+
+    // Ensure canvas has dimensions - use getBoundingClientRect for accurate sizing
+    const setCanvasSize = () => {
+      const rect = canvas.getBoundingClientRect()
+      const width = Math.max(rect.width || canvas.clientWidth || 800, 100)
+      const height = Math.max(rect.height || canvas.clientHeight || 600, 100)
+      
+      if (canvas.width !== width || canvas.height !== height) {
+        canvas.width = width
+        canvas.height = height
+        console.log("[Spline3D] Set canvas dimensions:", canvas.width, "x", canvas.height)
+      }
+    }
+    
+    setCanvasSize()
+    
+    // Set up a resize observer to handle dynamic sizing
+    let resizeObserver: ResizeObserver | null = null
+    if (typeof ResizeObserver !== "undefined") {
+      resizeObserver = new ResizeObserver(() => {
+        if (canvas) {
+          setCanvasSize()
+        }
+      })
+      resizeObserver.observe(canvas)
+    }
+
     try {
-      const app = new Application(canvasRef.current)
+      console.log("[Spline3D] Creating Application instance...")
+      const app = new Application(canvas)
+      console.log("[Spline3D] Application created:", app)
+      
+      const scenePath = "/spline/scene.splinecode"
+      console.log("[Spline3D] Loading scene from:", scenePath)
       
       // Load scene from public directory
-      app.load("/spline/scene.splinecode")
+      app.load(scenePath)
         .then(() => {
+          console.log("[Spline3D] Scene loaded successfully!")
           splineAppRef.current = app
-          console.log("[Spline3D] Scene loaded successfully")
+          
           // Wait longer for scene to fully initialize before updating textures
           setTimeout(() => {
             setIsLoading(false)
+            console.log("[Spline3D] Scene initialization complete, running tests...")
             
             // TEST: Try to modify primary objects to verify we can affect the scene
             console.log("[Spline3D] ========== RUNNING PROPERTY MODIFICATION TESTS ==========")
@@ -771,19 +836,36 @@ export function Spline3DPreview({
         })
         .catch((err) => {
           console.error("[Spline3D] Error loading scene:", err)
+          console.error("[Spline3D] Error details:", {
+            message: err.message,
+            stack: err.stack,
+            name: err.name,
+            scenePath
+          })
           setError(`Failed to load 3D scene: ${err.message || err}. Please check the console for details.`)
           setIsLoading(false)
         })
     } catch (err: any) {
       console.error("[Spline3D] Error initializing Spline:", err)
+      console.error("[Spline3D] Initialization error details:", {
+        message: err.message,
+        stack: err.stack,
+        name: err.name
+      })
       setError(`Failed to initialize 3D viewer: ${err.message || err}. Please refresh the page.`)
       setIsLoading(false)
     }
 
     return () => {
+      console.log("[Spline3D] Cleaning up...")
+      if (resizeObserver) {
+        resizeObserver.disconnect()
+        resizeObserver = null
+      }
       if (splineAppRef.current) {
         try {
           splineAppRef.current.dispose?.()
+          console.log("[Spline3D] Scene disposed")
         } catch (err) {
           console.error("[Spline3D] Error disposing scene:", err)
         }
@@ -799,32 +881,14 @@ export function Spline3DPreview({
     }
   }, [image1, image2, isLoading, updateTextures])
 
-  if (!image1 && !image2) {
-    return (
-      <Card>
-        <CardHeader>
-          <CardTitle>3D Lamp Preview</CardTitle>
-          <CardDescription>
-            Upload images to see your artwork on the 3D lamp
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="flex flex-col items-center justify-center h-[600px] border-2 border-dashed border-muted-foreground/25 rounded-lg bg-muted/50">
-            <p className="text-muted-foreground text-center">
-              Upload images for both sides of the lamp to see the 3D preview
-            </p>
-          </div>
-        </CardContent>
-      </Card>
-    )
-  }
-
   return (
     <Card>
       <CardHeader>
         <CardTitle>3D Lamp Preview</CardTitle>
         <CardDescription>
-          See how your artwork looks on the 3D lamp. Rotate and interact with the model.
+          {!image1 && !image2
+            ? "Upload images to see your artwork on the 3D lamp"
+            : "See how your artwork looks on the 3D lamp. Rotate and interact with the model."}
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -850,7 +914,9 @@ export function Spline3DPreview({
           <canvas
             ref={canvasRef}
             className="w-full h-full"
-            style={{ display: "block" }}
+            style={{ display: "block", width: "100%", height: "100%" }}
+            width={800}
+            height={600}
           />
           {(!image1 || !image2) && !isLoading && !error && (
             <div className="absolute top-4 left-4 right-4 bg-yellow-500/90 text-yellow-900 px-4 py-2 rounded-md text-sm z-20">
