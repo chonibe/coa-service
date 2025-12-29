@@ -23,6 +23,8 @@ interface Product {
   image?: string
   totalSales?: number
   revenue?: number
+  edition_size?: number | null
+  sold_count?: number
 }
 
 interface SalesData {

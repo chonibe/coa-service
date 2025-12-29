@@ -5,6 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button"
 import { Loader2, Eye, EyeOff } from "lucide-react"
 import { Application } from "@splinetool/runtime"
+import * as THREE from "three"
 
 interface Spline3DPreviewProps {
   image1: string | null
@@ -56,80 +57,14 @@ export function Spline3DPreview({
 
     const app = splineAppRef.current as any
     
-    // Try multiple ways to access THREE.js
-    let THREE = (window as any).THREE || app?.THREE
-    
-    // Try to get THREE from renderer
-    if (!THREE && app.renderer) {
-      const renderer = app.renderer
-      THREE = renderer.constructor?.THREE || renderer._THREE
-    }
-    
-    // Try to get THREE from scene
+    // Get the THREE.js scene from Spline
     const scene = app.scene || app._scene
-    if (!THREE && scene) {
-      // Try to get THREE from a mesh in the scene
-      scene.traverse((node: any) => {
-        if (!THREE && node.constructor) {
-          // THREE.js objects have constructor.name like "Mesh", "Object3D", etc.
-          const constructorName = node.constructor.name
-          if (constructorName === "Mesh" || constructorName === "Object3D") {
-            // Try to access THREE from the constructor
-            THREE = node.constructor.THREE || (node.constructor as any).__proto__?.THREE
-            if (THREE) return
-          }
-        }
-      })
-    }
-
-    if (!THREE) {
-      console.error("[Spline3D] THREE.js not available - trying alternative approach")
-      // Fallback: try to get THREE from mesh constructor
-      const testObj = app.findObjectById?.(side1ObjectId) || app.findObjectByName?.(side1ObjectName)
-      if (testObj?.mesh) {
-        const MeshConstructor = testObj.mesh.constructor
-        if (MeshConstructor) {
-          // Try to find THREE in the constructor chain
-          let proto = MeshConstructor
-          while (proto && !THREE) {
-            if (proto.THREE) {
-              THREE = proto.THREE
-              break
-            }
-            proto = proto.__proto__
-          }
-        }
-      }
-    }
-
-    if (!THREE) {
-      // Last resort: try to extract THREE from mesh constructor
-      console.log("[Spline3D] Attempting to extract THREE.js from mesh constructors...")
-      const testObj = app.findObjectById?.(side1ObjectId) || app.findObjectByName?.(side1ObjectName)
-      if (testObj) {
-        const mesh = testObj.mesh || testObj.object3D
-        if (mesh) {
-          // Mesh should have geometry.clone() method - try using that
-          console.log("[Spline3D] Found mesh, checking for geometry.clone:", !!mesh.geometry?.clone)
-          if (mesh.geometry?.clone) {
-            // We can work with the geometry directly
-            console.log("[Spline3D] Geometry has clone method - will use mesh methods")
-          }
-        }
-      }
-      
-      if (!THREE) {
-        console.error("[Spline3D] THREE.js not available - trying to work with mesh directly")
-        // We'll try to work without THREE.js by using the mesh's own methods
-      }
-    } else {
-      console.log("[Spline3D] ✓ Found THREE.js:", !!THREE)
-    }
-
     if (!scene) {
       console.error("[Spline3D] Scene not available")
       return
     }
+
+    console.log("[Spline3D] ✓ Using imported THREE.js")
 
     // Helper to find object by ID or name
     const findObject = (id?: string, name?: string) => {
@@ -181,46 +116,16 @@ export function Spline3DPreview({
           materialType: originalMesh.material?.constructor?.name
         })
 
-        // Try to get THREE.js from the mesh/geometry/material constructors
-        let localTHREE = THREE
-        if (!localTHREE) {
-          const GeometryConstructor = originalMesh.geometry?.constructor
-          const MaterialConstructor = originalMesh.material?.constructor
-          const MeshConstructor = originalMesh.constructor
-          
-          // Try to find THREE in constructor chain
-          for (const constructor of [MeshConstructor, GeometryConstructor, MaterialConstructor]) {
-            if (constructor) {
-              let proto = constructor
-              while (proto && !localTHREE) {
-                if (proto.THREE) {
-                  localTHREE = proto.THREE
-                  break
-                }
-                proto = proto.__proto__
-              }
-              if (localTHREE) break
-            }
-          }
-        }
-
-        if (!localTHREE) {
-          console.error(`[Spline3D] Cannot access THREE.js for ${label} - cannot create duplicate`)
-          return null
-        }
-
-        console.log(`[Spline3D] ✓ Got THREE.js for ${label}`)
-
         // Clone the geometry
         const clonedGeometry = originalMesh.geometry.clone()
         console.log(`[Spline3D] ✓ Cloned geometry for ${label}`)
         
-        // Load texture
-        const textureLoader = new localTHREE.TextureLoader()
-        const texture = await new Promise<any>((resolve, reject) => {
+        // Load texture using imported THREE.js
+        const textureLoader = new THREE.TextureLoader()
+        const texture = await new Promise<THREE.Texture>((resolve, reject) => {
           textureLoader.load(
             imageUrl,
-            (tex: any) => {
+            (tex: THREE.Texture) => {
               tex.needsUpdate = true
               resolve(tex)
             },
@@ -232,7 +137,7 @@ export function Spline3DPreview({
         console.log(`[Spline3D] ✓ Loaded texture for ${label}`)
 
         // Create new material with texture
-        const newMaterial = new localTHREE.MeshBasicMaterial({
+        const newMaterial = new THREE.MeshBasicMaterial({
           map: texture,
           transparent: false
         })
@@ -240,7 +145,7 @@ export function Spline3DPreview({
         console.log(`[Spline3D] ✓ Created new material for ${label}`)
 
         // Create new mesh with cloned geometry and new material
-        const duplicateMesh = new localTHREE.Mesh(clonedGeometry, newMaterial)
+        const duplicateMesh = new THREE.Mesh(clonedGeometry, newMaterial)
         
         // Copy position, rotation, scale from original
         duplicateMesh.position.copy(originalMesh.position)

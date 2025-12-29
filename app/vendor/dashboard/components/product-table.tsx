@@ -7,6 +7,7 @@ import { useState } from "react"
 import { ChevronDown, ChevronUp, ExternalLink, Package } from "lucide-react"
 import Link from "next/link"
 import Image from "next/image"
+import { EditionBadge } from "./edition-badge"
 
 interface Product {
   id: string
@@ -18,6 +19,8 @@ interface Product {
   image?: string
   totalSales?: number
   revenue?: number
+  edition_size?: number | null
+  sold_count?: number
 }
 
 interface ProductTableProps {
@@ -92,6 +95,7 @@ export function ProductTable({ products }: ProductTableProps) {
               <TableHead>Image</TableHead>
               <SortHeader field="title" label="Product" />
               <SortHeader field="price" label="Price" />
+              <TableHead>Edition</TableHead>
               <SortHeader field="status" label="Status" />
               <TableHead>Actions</TableHead>
             </TableRow>
@@ -118,6 +122,16 @@ export function ProductTable({ products }: ProductTableProps) {
                 </TableCell>
                 <TableCell className="font-medium">{product.title}</TableCell>
                 <TableCell>${product.price}</TableCell>
+                <TableCell>
+                  {product.edition_size && product.edition_size > 0 ? (
+                    <EditionBadge
+                      soldCount={product.sold_count || 0}
+                      editionSize={product.edition_size}
+                    />
+                  ) : (
+                    <span className="text-muted-foreground text-sm">-</span>
+                  )}
+                </TableCell>
                 <TableCell>{getStatusBadge(product.status)}</TableCell>
                 <TableCell>
                   <Button variant="ghost" size="sm" asChild>
@@ -132,7 +146,7 @@ export function ProductTable({ products }: ProductTableProps) {
 
             {displayedProducts.length === 0 && (
               <TableRow>
-                <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
+                <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
                   No products found
                 </TableCell>
               </TableRow>

@@ -74,13 +74,59 @@ export async function GET(request: NextRequest) {
         console.error("Error fetching vendor payouts:", payoutsError)
       }
 
-      // Merge payout settings with product data
+      // Fetch edition sizes from products table
+      const { data: productEditions, error: editionsError } = await supabase
+        .from("products")
+        .select("product_id, edition_size")
+        .in("product_id", productIds)
+
+      if (editionsError) {
+        console.error("Error fetching edition sizes:", editionsError)
+      }
+
+      // Count sold items (fulfilled/active line items) for each product
+      const { data: soldCounts, error: soldCountsError } = await supabase
+        .from("order_line_items_v2")
+        .select("product_id")
+        .in("product_id", productIds)
+        .eq("status", "active")
+
+      if (soldCountsError) {
+        console.error("Error fetching sold counts:", soldCountsError)
+      }
+
+      // Create maps for efficient lookup
+      const editionSizeMap = new Map<string, number | null>()
+      productEditions?.forEach((p) => {
+        // Parse edition_size, treating null, empty string, "0", or invalid values as null (open edition)
+        let editionSize: number | null = null
+        if (p.edition_size) {
+          const parsed = parseInt(p.edition_size.toString(), 10)
+          if (!isNaN(parsed) && parsed > 0) {
+            editionSize = parsed
+          }
+        }
+        editionSizeMap.set(p.product_id, editionSize)
+      })
+
+      const soldCountMap = new Map<string, number>()
+      soldCounts?.forEach((item) => {
+        const current = soldCountMap.get(item.product_id) || 0
+        soldCountMap.set(item.product_id, current + 1)
+      })
+
+      // Merge payout settings and edition data with product data
       const productsWithPayouts = products.map((product) => {
         const payout = payouts?.find((p) => p.product_id === product.id)
+        const editionSize = editionSizeMap.get(product.id) ?? null
+        const soldCount = soldCountMap.get(product.id) ?? 0
+
         return {
           ...product,
           payout_amount: payout?.payout_amount || 0,
           is_percentage: payout?.is_percentage || false,
+          edition_size: editionSize,
+          sold_count: soldCount,
         }
       })
 

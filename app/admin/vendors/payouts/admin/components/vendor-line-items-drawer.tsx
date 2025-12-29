@@ -189,13 +189,13 @@ export function VendorLineItemsDrawer({
   // Group by order
   const groupedByOrder = useMemo(() => {
     return filteredLineItems.reduce((acc, item) => {
-      const orderId = item.order_id
-      if (!acc[orderId]) {
-        acc[orderId] = []
-      }
-      acc[orderId].push(item)
-      return acc
-    }, {} as Record<string, PendingLineItem[]>)
+    const orderId = item.order_id
+    if (!acc[orderId]) {
+      acc[orderId] = []
+    }
+    acc[orderId].push(item)
+    return acc
+  }, {} as Record<string, PendingLineItem[]>)
   }, [filteredLineItems])
 
   const totalAmount = filteredLineItems.reduce((sum, item) => sum + calculatePayoutAmount(item), 0)
@@ -310,19 +310,19 @@ export function VendorLineItemsDrawer({
 
   if (isLoading) {
     content = (
-      <div className="flex justify-center py-8">
-        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-      </div>
+          <div className="flex justify-center py-8">
+            <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+          </div>
     )
   } else if (lineItems.length === 0) {
     content = (
       <div className="py-12 text-center">
         <p className="text-muted-foreground mb-2 font-medium">No line items found for this vendor.</p>
         <p className="text-sm text-muted-foreground mb-4">
-          {includePaid
-            ? "Try adjusting the date range or check if items have been fulfilled."
-            : "Only fulfilled items are shown. Enable 'Include Paid Items' to see all items."}
-        </p>
+              {includePaid
+                ? "Try adjusting the date range or check if items have been fulfilled."
+                : "Only fulfilled items are shown. Enable 'Include Paid Items' to see all items."}
+            </p>
         <p className="text-xs text-muted-foreground">
           Make sure the vendor has fulfilled orders within the selected date range.
         </p>
@@ -335,41 +335,41 @@ export function VendorLineItemsDrawer({
         <Button variant="ghost" size="sm" onClick={() => setSearchQuery("")} className="mt-2">
           Clear Search
         </Button>
-      </div>
-    ) : (
+          </div>
+        ) : (
       <div className="space-y-6" role="region" aria-label="Line items by order">
-        {Object.entries(groupedByOrder).map(([orderId, items]) => {
-          const orderTotal = items.reduce((sum, item) => sum + calculatePayoutAmount(item), 0)
-          return (
+              {Object.entries(groupedByOrder).map(([orderId, items]) => {
+                const orderTotal = items.reduce((sum, item) => sum + calculatePayoutAmount(item), 0)
+                return (
             <div key={orderId} className="border rounded-lg overflow-hidden shadow-sm">
               <div className="p-4 bg-gradient-to-r from-muted/50 to-muted/30 border-b">
-                <div className="flex items-center justify-between">
-                  <a
-                    href={`/admin/orders/${orderId}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center gap-2 font-medium hover:text-primary transition-colors"
-                  >
-                    {items[0]?.order_name || orderId}
-                    <ExternalLink className="h-3 w-3" />
-                  </a>
+                      <div className="flex items-center justify-between">
+                        <a
+                          href={`/admin/orders/${orderId}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex items-center gap-2 font-medium hover:text-primary transition-colors"
+                        >
+                          {items[0]?.order_name || orderId}
+                          <ExternalLink className="h-3 w-3" />
+                        </a>
                   <div className="text-sm font-semibold">{formatUSD(orderTotal)}</div>
-                </div>
-              </div>
-              <Table>
-                <TableHeader>
-                  <TableRow>
+                      </div>
+                    </div>
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
                     <TableHead className="w-[50px]"></TableHead>
-                    <TableHead>Product</TableHead>
-                    <TableHead>Date</TableHead>
-                    <TableHead>Fulfillment</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead className="text-right">Price</TableHead>
-                    <TableHead className="text-right">Payout</TableHead>
-                    <TableHead className="w-[100px]">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
+                          <TableHead>Product</TableHead>
+                          <TableHead>Date</TableHead>
+                          <TableHead>Fulfillment</TableHead>
+                          <TableHead>Status</TableHead>
+                          <TableHead className="text-right">Price</TableHead>
+                          <TableHead className="text-right">Payout</TableHead>
+                          <TableHead className="w-[100px]">Actions</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
                   {items.map((item) => {
                     const isSelectable = !item.is_paid && item.fulfillment_status === "fulfilled"
                     const isSelected = selectedItems.has(item.line_item_id)
@@ -386,28 +386,28 @@ export function VendorLineItemsDrawer({
                             />
                           )}
                         </TableCell>
-                        <TableCell>
-                          <div className="text-sm font-medium">
-                            {item.product_title || "Unknown Product"}
-                          </div>
-                          <div className="text-xs text-muted-foreground">{item.product_id}</div>
-                        </TableCell>
-                        <TableCell>{formatDate(item.created_at)}</TableCell>
-                        <TableCell>
+                            <TableCell>
+                              <div className="text-sm font-medium">
+                                {item.product_title || "Unknown Product"}
+                              </div>
+                              <div className="text-xs text-muted-foreground">{item.product_id}</div>
+                            </TableCell>
+                            <TableCell>{formatDate(item.created_at)}</TableCell>
+                            <TableCell>
                           <TooltipProvider>
                             <Tooltip>
                               <TooltipTrigger asChild>
-                                <Badge
-                                  variant={
-                                    item.fulfillment_status === "fulfilled" ? "default" : "outline"
-                                  }
+                              <Badge
+                                variant={
+                                  item.fulfillment_status === "fulfilled" ? "default" : "outline"
+                                }
                                   className={cn(
                                     item.fulfillment_status !== "fulfilled" &&
                                       "text-amber-600 border-amber-200 bg-amber-50 cursor-help"
                                   )}
-                                >
-                                  {item.fulfillment_status || "Unfulfilled"}
-                                </Badge>
+                              >
+                                {item.fulfillment_status || "Unfulfilled"}
+                              </Badge>
                               </TooltipTrigger>
                               <TooltipContent>
                                 <p className="text-sm">
@@ -418,22 +418,22 @@ export function VendorLineItemsDrawer({
                               </TooltipContent>
                             </Tooltip>
                           </TooltipProvider>
-                        </TableCell>
-                        <TableCell>
-                          {item.is_paid ? (
+                            </TableCell>
+                            <TableCell>
+                              {item.is_paid ? (
                             <TooltipProvider>
                               <Tooltip>
                                 <TooltipTrigger asChild>
                                   <div className="flex items-center gap-2 cursor-help">
-                                    <Badge variant="default" className="bg-green-600">
-                                      Paid
-                                    </Badge>
-                                    {item.payout_reference && (
-                                      <span className="text-xs text-muted-foreground">
-                                        {item.payout_reference}
-                                      </span>
-                                    )}
-                                  </div>
+                                  <Badge variant="default" className="bg-green-600">
+                                    Paid
+                                  </Badge>
+                                  {item.payout_reference && (
+                                    <span className="text-xs text-muted-foreground">
+                                      {item.payout_reference}
+                                    </span>
+                                  )}
+                                </div>
                                 </TooltipTrigger>
                                 <TooltipContent>
                                   <p className="text-sm">
@@ -443,13 +443,13 @@ export function VendorLineItemsDrawer({
                                 </TooltipContent>
                               </Tooltip>
                             </TooltipProvider>
-                          ) : item.fulfillment_status === "fulfilled" ? (
+                              ) : item.fulfillment_status === "fulfilled" ? (
                             <TooltipProvider>
                               <Tooltip>
                                 <TooltipTrigger asChild>
                                   <Badge variant="outline" className="text-amber-600 cursor-help">
-                                    Pending Payout
-                                  </Badge>
+                                  Pending Payout
+                                </Badge>
                                 </TooltipTrigger>
                                 <TooltipContent>
                                   <p className="text-sm">Ready to be marked as paid</p>
@@ -464,8 +464,8 @@ export function VendorLineItemsDrawer({
                                     variant="outline"
                                     className="text-muted-foreground bg-muted cursor-help"
                                   >
-                                    Not Ready
-                                  </Badge>
+                                  Not Ready
+                                </Badge>
                                 </TooltipTrigger>
                                 <TooltipContent>
                                   <p className="text-sm">
@@ -474,41 +474,41 @@ export function VendorLineItemsDrawer({
                                 </TooltipContent>
                               </Tooltip>
                             </TooltipProvider>
-                          )}
-                        </TableCell>
-                        <TableCell className="text-right">
-                          {formatUSD(convertGBPToUSD(item.price))}
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <div className="font-medium">{formatUSD(calculatePayoutAmount(item))}</div>
-                          <div className="text-xs text-muted-foreground">
-                            {item.is_percentage ? `${item.payout_amount}%` : "Fixed"}
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          {!item.is_paid && (
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => {
-                                handleMarkPaid(item.line_item_id)
-                              }}
-                              disabled={isProcessing || item.fulfillment_status !== "fulfilled"}
-                            >
-                              <CheckCircle className="h-3 w-3 mr-1" />
-                              Mark Paid
-                            </Button>
-                          )}
-                        </TableCell>
-                      </TableRow>
+                              )}
+                            </TableCell>
+                            <TableCell className="text-right">
+                              {formatUSD(convertGBPToUSD(item.price))}
+                            </TableCell>
+                            <TableCell className="text-right">
+                              <div className="font-medium">{formatUSD(calculatePayoutAmount(item))}</div>
+                              <div className="text-xs text-muted-foreground">
+                                {item.is_percentage ? `${item.payout_amount}%` : "Fixed"}
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              {!item.is_paid && (
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => {
+                                    handleMarkPaid(item.line_item_id)
+                                  }}
+                                  disabled={isProcessing || item.fulfillment_status !== "fulfilled"}
+                                >
+                                  <CheckCircle className="h-3 w-3 mr-1" />
+                                  Mark Paid
+                                </Button>
+                              )}
+                            </TableCell>
+                          </TableRow>
                     )
                   })}
-                </TableBody>
-              </Table>
+                      </TableBody>
+                    </Table>
+                  </div>
+                )
+              })}
             </div>
-          )
-        })}
-      </div>
     )
 
     content = (
@@ -570,8 +570,8 @@ export function VendorLineItemsDrawer({
                   ? `${selectedItems.size} of ${selectableItems.length} selected`
                   : `Select all ${selectableItems.length} payable items`}
               </span>
-            </div>
-          )}
+          </div>
+        )}
         </div>
 
         {/* Line Items by Order */}
