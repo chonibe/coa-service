@@ -33,6 +33,19 @@ export function Spline3DPreview({
   // Store references to objects with image layers
   const side1ObjectRef = useRef<any>(null)
   const side2ObjectRef = useRef<any>(null)
+  
+  // Store discovered layers for toggling
+  interface LayerInfo {
+    objectName: string
+    objectId: string
+    layerIndex: number
+    layerType: string
+    layerName: string
+    visible: boolean
+    layerRef: any
+    materialRef: any
+  }
+  const [discoveredLayers, setDiscoveredLayers] = useState<LayerInfo[]>([])
 
   // Toggle model visibility
   const toggleModelVisibility = useCallback(() => {
@@ -41,6 +54,45 @@ export function Spline3DPreview({
       setIsModelVisible(!isModelVisible)
     }
   }, [isModelVisible])
+
+  // Toggle individual layer visibility
+  const toggleLayerVisibility = useCallback((layerInfo: LayerInfo) => {
+    const app = splineAppRef.current as any
+    if (!app || !layerInfo.layerRef || !layerInfo.materialRef) {
+      console.warn(`[Spline3D] Cannot toggle layer: missing references`)
+      return
+    }
+
+    try {
+      const newVisible = !layerInfo.visible
+      layerInfo.layerRef.visible = newVisible
+      
+      // Update material
+      layerInfo.materialRef.needsUpdate = true
+      if (layerInfo.materialRef.version !== undefined) {
+        layerInfo.materialRef.version++
+      }
+      
+      // Force app update
+      if (app.update && typeof app.update === 'function') {
+        app.update()
+      }
+      
+      // Update state
+      setDiscoveredLayers(prev => 
+        prev.map(layer => 
+          layer.objectId === layerInfo.objectId && 
+          layer.layerIndex === layerInfo.layerIndex
+            ? { ...layer, visible: newVisible }
+            : layer
+        )
+      )
+      
+      console.log(`[Spline3D] Toggled ${layerInfo.objectName} layer ${layerInfo.layerIndex} (${layerInfo.layerType}) to ${newVisible ? 'visible' : 'hidden'}`)
+    } catch (err) {
+      console.error(`[Spline3D] Error toggling layer:`, err)
+    }
+  }, [])
 
   // Clone mesh, create new material with UV texture, toggle visibility
   const updateTextures = useCallback(async () => {
@@ -460,6 +512,8 @@ export function Spline3DPreview({
                 { id: side2Id, name: "Side 2 (PC Trans B)" }
               ]
               
+              const allLayers: LayerInfo[] = []
+              
               objectsToCheck.forEach(({ id, name }) => {
                 const obj = app.findObjectById?.(id) || app.findObjectByName?.(name.split(" ")[0])
                 if (!obj) {
@@ -494,11 +548,11 @@ export function Spline3DPreview({
                   layersCount: material.layers?.length
                 })
                 
-                // Log all layers in detail
+                // Log all layers in detail and store them
                 if (material.layers && Array.isArray(material.layers)) {
                   console.log(`[Spline3D] Total layers: ${material.layers.length}`)
                   material.layers.forEach((layer: any, index: number) => {
-                    console.log(`[Spline3D] Layer ${index}:`, {
+                    const layerInfo = {
                       type: layer.type,
                       visible: layer.visible,
                       alpha: layer.alpha,
@@ -511,8 +565,21 @@ export function Spline3DPreview({
                       imageType: layer.image?.constructor?.name,
                       imageSrc: layer.image?.src || layer.image?.currentSrc || 'N/A',
                       name: layer.name || layer.id || 'unnamed',
-                      // Log all properties
                       allProperties: Object.keys(layer)
+                    }
+                    
+                    console.log(`[Spline3D] Layer ${index}:`, layerInfo)
+                    
+                    // Store layer for toggling
+                    allLayers.push({
+                      objectName: name,
+                      objectId: id,
+                      layerIndex: index,
+                      layerType: layer.type,
+                      layerName: layer.name || layer.id || `Layer ${index}`,
+                      visible: layer.visible !== false,
+                      layerRef: layer,
+                      materialRef: material
                     })
                     
                     // If it's an image layer, log more details
@@ -534,7 +601,11 @@ export function Spline3DPreview({
                 console.log(`[Spline3D] --- End ${name} Inspection ---\n`)
               })
               
+              // Store all discovered layers in state
+              setDiscoveredLayers(allLayers)
+              
               console.log("[Spline3D] ===== END PC MATERIAL INSPECTION =====")
+              console.log(`[Spline3D] Stored ${allLayers.length} layers for toggling`)
             }
             
             // Inspect materials after a short delay to ensure scene is fully loaded
@@ -630,26 +701,63 @@ export function Spline3DPreview({
           )}
         </div>
 
-        <div className="flex gap-2 mt-4">
-          <Button
-            onClick={toggleModelVisibility}
-            variant="outline"
-            size="sm"
-            disabled={isLoading || !!error}
-            className="flex items-center gap-2"
-          >
-            {isModelVisible ? (
-              <>
-                <EyeOff className="h-4 w-4" />
-                Hide Model
-              </>
-            ) : (
-              <>
-                <Eye className="h-4 w-4" />
-                Show Model
-              </>
-            )}
-          </Button>
+        <div className="flex flex-col gap-4 mt-4">
+          <div className="flex gap-2">
+            <Button
+              onClick={toggleModelVisibility}
+              variant="outline"
+              size="sm"
+              disabled={isLoading || !!error}
+              className="flex items-center gap-2"
+            >
+              {isModelVisible ? (
+                <>
+                  <EyeOff className="h-4 w-4" />
+                  Hide Model
+                </>
+              ) : (
+                <>
+                  <Eye className="h-4 w-4" />
+                  Show Model
+                </>
+              )}
+            </Button>
+          </div>
+
+          {/* Layer Toggle Controls */}
+          {discoveredLayers.length > 0 && (
+            <div className="border rounded-lg p-4 bg-muted/50">
+              <h3 className="text-sm font-semibold mb-3">Layer Controls</h3>
+              <div className="space-y-3">
+                {discoveredLayers.map((layerInfo, idx) => (
+                  <div key={`${layerInfo.objectId}-${layerInfo.layerIndex}`} className="flex items-center gap-2">
+                    <Button
+                      onClick={() => toggleLayerVisibility(layerInfo)}
+                      variant={layerInfo.visible ? "default" : "outline"}
+                      size="sm"
+                      disabled={isLoading || !!error}
+                      className="flex items-center gap-2 flex-1 justify-start"
+                    >
+                      {layerInfo.visible ? (
+                        <Eye className="h-4 w-4" />
+                      ) : (
+                        <EyeOff className="h-4 w-4" />
+                      )}
+                      <span className="text-xs">
+                        {layerInfo.objectName} - Layer {layerInfo.layerIndex} ({layerInfo.layerType})
+                      </span>
+                      {layerInfo.layerType === 'image' && (
+                        <span className="ml-auto text-xs bg-blue-500 text-white px-2 py-0.5 rounded">IMAGE</span>
+                      )}
+                    </Button>
+                  </div>
+                ))}
+              </div>
+              <p className="text-xs text-muted-foreground mt-3">
+                Toggle layers on/off to isolate which one is the image layer
+              </p>
+            </div>
+          )}
         </div>
       </CardContent>
     </Card>
