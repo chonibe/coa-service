@@ -356,6 +356,213 @@ export function Spline3DPreview({
         })
         
         try {
+          // Test -1: Try to COMPLETELY REPLACE the material with a new THREE.js material
+          if ((obj as any).mesh) {
+            const mesh = (obj as any).mesh
+            console.log(`[Spline3D] DIRECT TEST: Found mesh for ${label}, attempting COMPLETE MATERIAL REPLACEMENT...`)
+            try {
+              // Get THREE.js from window or Spline
+              const THREE = (window as any).THREE || (splineAppRef.current as any)?.THREE
+              if (THREE && THREE.MeshBasicMaterial) {
+                // Create a completely new material with bright GREEN color
+                const newMaterial = new THREE.MeshBasicMaterial({
+                  color: 0x00ff00, // Bright green
+                  transparent: false
+                })
+
+                // Store original material for reversion
+                const originalMaterial = mesh.material
+
+                // Replace the material completely
+                mesh.material = newMaterial
+                console.log(`[Spline3D] ✓ DIRECT TEST: COMPLETELY REPLACED ${label} material with new GREEN THREE.js material`)
+
+                // Force multiple renders
+                for (let i = 0; i < 15; i++) {
+                  setTimeout(() => {
+                    if (splineAppRef.current && (splineAppRef.current as any).renderer) {
+                      const renderer = (splineAppRef.current as any).renderer
+                      const scene = (splineAppRef.current as any).scene
+                      const camera = (splineAppRef.current as any).camera
+                      if (renderer && scene && camera && typeof renderer.render === "function") {
+                        renderer.render(scene, camera)
+                        console.log(`[Spline3D] DIRECT TEST: Force rendered COMPLETE MATERIAL REPLACEMENT (attempt ${i + 1})`)
+                      }
+                    }
+                  }, i * 100) // Every 100ms for 1.5 seconds
+                }
+
+                // Revert after 15 seconds
+                setTimeout(() => {
+                  try {
+                    mesh.material = originalMaterial
+                    console.log(`[Spline3D] DIRECT TEST: Reverted ${label} to original material after 15 seconds`)
+                    // Force render after reversion
+                    if (splineAppRef.current && (splineAppRef.current as any).renderer) {
+                      const renderer = (splineAppRef.current as any).renderer
+                      const scene = (splineAppRef.current as any).scene
+                      const camera = (splineAppRef.current as any).camera
+                      if (renderer && scene && camera && typeof renderer.render === "function") {
+                        renderer.render(scene, camera)
+                      }
+                    }
+                  } catch (err) {
+                    console.warn(`[Spline3D] DIRECT TEST: Could not revert material:`, err)
+                  }
+                }, 15000)
+              } else {
+                console.warn(`[Spline3D] ✗ DIRECT TEST: THREE.js not available for material replacement`)
+              }
+            } catch (err) {
+              console.warn(`[Spline3D] ✗ DIRECT TEST: Failed to replace material completely:`, err)
+            }
+          }
+
+          // Test -0.25: Try to find the actual THREE.js object and replace its material directly
+          try {
+            if (splineAppRef.current) {
+              const app = splineAppRef.current as any
+
+              // Try to get the underlying THREE.js object from Spline's object
+              const threeObject = (obj as any).object3D || (obj as any)._object3D || (obj as any).threeObject || obj
+
+              if (threeObject && threeObject.traverse) {
+                console.log(`[Spline3D] DIRECT TEST: Found THREE.js object for ${label}, traversing children...`)
+
+                let foundMeshes = 0
+                threeObject.traverse((child: any) => {
+                  if (child.isMesh) {
+                    foundMeshes++
+                    try {
+                      const originalMaterial = child.material
+
+                      // Create new material with bright RED color
+                      const THREE = (window as any).THREE || app.THREE
+                      if (THREE && THREE.MeshBasicMaterial) {
+                        const newMaterial = new THREE.MeshBasicMaterial({
+                          color: 0xff0000, // Bright red
+                          transparent: false
+                        })
+
+                        child.material = newMaterial
+                        console.log(`[Spline3D] ✓ DIRECT TEST: Replaced THREE.js mesh material for ${label} child ${foundMeshes} with RED`)
+
+                        // Force render immediately
+                        if (app.renderer && typeof app.renderer.render === "function") {
+                          const scene = app.scene || app._scene || app.threeScene
+                          if (scene) {
+                            app.renderer.render(scene, app.camera)
+                            console.log(`[Spline3D] ✓ DIRECT TEST: Immediate render after THREE.js material replacement`)
+                          }
+                        }
+
+                        // Revert after 10 seconds
+                        setTimeout(() => {
+                          try {
+                            child.material = originalMaterial
+                            console.log(`[Spline3D] DIRECT TEST: Reverted THREE.js mesh material for ${label} child ${foundMeshes}`)
+                            // Force render after reversion
+                            if (app.renderer && typeof app.renderer.render === "function") {
+                              const scene = app.scene || app._scene || app.threeScene
+                              if (scene) {
+                                app.renderer.render(scene, app.camera)
+                              }
+                            }
+                          } catch (err) {
+                            console.warn(`[Spline3D] DIRECT TEST: Could not revert THREE.js material for child ${foundMeshes}:`, err)
+                          }
+                        }, 10000)
+                      }
+                    } catch (err) {
+                      console.warn(`[Spline3D] DIRECT TEST: Could not replace THREE.js material for child ${foundMeshes}:`, err)
+                    }
+                  }
+                })
+
+                console.log(`[Spline3D] DIRECT TEST: Found ${foundMeshes} meshes in THREE.js object for ${label}`)
+              } else {
+                console.warn(`[Spline3D] ✗ DIRECT TEST: Could not access THREE.js object for ${label}`)
+              }
+            }
+          } catch (err) {
+            console.warn(`[Spline3D] ✗ DIRECT TEST: Error accessing THREE.js object:`, err)
+          }
+
+          // Test -0.5: Try to access THREE.js scene directly and modify all materials
+          try {
+            if (splineAppRef.current) {
+              const app = splineAppRef.current as any
+              // Try different ways to access the THREE.js scene
+              const threeScene = app.scene || app._scene || app.threeScene || (app.renderer && app.renderer.scene)
+
+              if (threeScene && threeScene.traverse) {
+                console.log(`[Spline3D] DIRECT TEST: Found THREE.js scene, traversing to modify ALL materials...`)
+
+                let modifiedCount = 0
+                threeScene.traverse((child: any) => {
+                  if (child.isMesh && child.material) {
+                    try {
+                      const originalMaterial = child.material
+
+                      // Create new material with bright BLUE color
+                      const THREE = (window as any).THREE || app.THREE
+                      if (THREE && THREE.MeshBasicMaterial) {
+                        const newMaterial = new THREE.MeshBasicMaterial({
+                          color: 0x0000ff, // Bright blue
+                          transparent: false
+                        })
+
+                        child.material = newMaterial
+                        modifiedCount++
+                        console.log(`[Spline3D] ✓ DIRECT TEST: Modified scene mesh ${modifiedCount} to BLUE`)
+
+                        // Revert this specific mesh after 12 seconds
+                        setTimeout(() => {
+                          try {
+                            child.material = originalMaterial
+                            console.log(`[Spline3D] DIRECT TEST: Reverted scene mesh ${modifiedCount} to original`)
+                          } catch (err) {
+                            console.warn(`[Spline3D] DIRECT TEST: Could not revert scene mesh ${modifiedCount}:`, err)
+                          }
+                        }, 12000)
+                      }
+                    } catch (err) {
+                      console.warn(`[Spline3D] DIRECT TEST: Could not modify scene mesh:`, err)
+                    }
+                  }
+                })
+
+                if (modifiedCount > 0) {
+                  console.log(`[Spline3D] ✓ DIRECT TEST: Modified ${modifiedCount} meshes in THREE.js scene`)
+
+                  // Force multiple renders
+                  for (let i = 0; i < 15; i++) {
+                    setTimeout(() => {
+                      if (app.renderer && typeof app.renderer.render === "function") {
+                        app.renderer.render(threeScene, app.camera)
+                        console.log(`[Spline3D] DIRECT TEST: Force rendered scene modifications (attempt ${i + 1})`)
+                      }
+                    }, i * 100)
+                  }
+
+                  // Force render after all modifications revert
+                  setTimeout(() => {
+                    if (app.renderer && typeof app.renderer.render === "function") {
+                      app.renderer.render(threeScene, app.camera)
+                      console.log(`[Spline3D] DIRECT TEST: Final render after scene modifications reverted`)
+                    }
+                  }, 12500)
+                } else {
+                  console.warn(`[Spline3D] ✗ DIRECT TEST: No meshes found in THREE.js scene to modify`)
+                }
+              } else {
+                console.warn(`[Spline3D] ✗ DIRECT TEST: Could not access THREE.js scene`)
+              }
+            }
+          } catch (err) {
+            console.warn(`[Spline3D] ✗ DIRECT TEST: Error accessing THREE.js scene:`, err)
+          }
+
           // Test 0: Try to modify mesh.material directly (THREE.js standard)
           if ((obj as any).mesh?.material) {
             const meshMaterial = (obj as any).mesh.material
