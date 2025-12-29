@@ -870,8 +870,96 @@ export function Spline3DPreview({
         const layer = objMaterial.layers[i]
         console.log(`[Spline3D] TEXTURE UPDATE: Checking layer ${i}: ${layer.type}`)
 
+        // SPECIAL HANDLING FOR PC OBJECTS: Target matcap layer instead of texture layer
+        if ((label.includes('PC trans A') || label.includes('PC Trans B')) && layer.type === 'matcap' && layer.visible) {
+          console.log(`[Spline3D] 🎯 PC SPECIAL: Found VISIBLE matcap layer ${i} on ${label} - using this instead of texture layer!`)
+
+          // Store original values for potential reversion
+          const originalImage = layer.image
+          const originalTexture = layer.texture
+          const originalUrl = layer.url
+          const originalSrc = layer.src
+          const originalAlpha = layer.alpha
+
+          // Try multiple ways to set the texture/image on the matcap layer
+          let success = false
+
+          // Method 1: Set layer.image directly
+          try {
+            console.log(`[Spline3D] 🎯 PC SPECIAL: Trying to set matcap layer.image...`)
+            layer.image = imageElement
+            console.log(`[Spline3D] ✓ PC SPECIAL: Set matcap layer.image for ${label} layer ${i}`)
+            console.log(`[Spline3D] ✓ PC SPECIAL: After setting, matcap layer.image is:`, layer.image)
+            success = true
+          } catch (err) {
+            console.warn(`[Spline3D] ✗ PC SPECIAL: Failed to set matcap layer.image:`, err)
+          }
+
+          // Method 2: Set layer.texture
+          if (!success && layer.texture !== undefined) {
+            try {
+              layer.texture = imageElement
+              console.log(`[Spline3D] ✓ PC SPECIAL: Set matcap layer.texture for ${label} layer ${i}`)
+              success = true
+            } catch (err) {
+              console.warn(`[Spline3D] ✗ PC SPECIAL: Failed to set matcap layer.texture:`, err)
+            }
+          }
+
+          // Force material update
+          if (success) {
+            if (objMaterial.needsUpdate !== undefined) {
+              objMaterial.needsUpdate = true
+              console.log(`[Spline3D] ✓ PC SPECIAL: Set material.needsUpdate for ${label}`)
+            }
+            if (objMaterial.update && typeof objMaterial.update === 'function') {
+              objMaterial.update()
+              console.log(`[Spline3D] ✓ PC SPECIAL: Called material.update() for ${label}`)
+            }
+
+            // Force render
+            if (splineAppRef.current && (splineAppRef.current as any).renderer) {
+              const app = splineAppRef.current as any
+              for (let r = 0; r < 5; r++) {
+                setTimeout(() => {
+                  if (app.renderer && app.scene && app.camera && typeof app.renderer.render === "function") {
+                    app.renderer.render(app.scene, app.camera)
+                  }
+                }, r * 100)
+              }
+            }
+
+            console.log(`[Spline3D] 🎉 PC SPECIAL: SUCCESSFULLY UPDATED ${label} matcap layer ${i}!`)
+            foundTextureLayer = true
+            return true
+          }
+        }
+
         // TARGET TEXTURE LAYERS (this is what we need to modify!)
         if (layer.type === 'texture' || layer.type === 'image') {
+          foundTextureLayer = true
+          } else {
+            // Revert on failure
+            try {
+              if (originalImage !== undefined) layer.image = originalImage
+              if (originalTexture !== undefined) layer.texture = originalTexture
+              if (originalUrl !== undefined) layer.url = originalUrl
+              if (originalSrc !== undefined) layer.src = originalSrc
+              if (objMaterial.needsUpdate !== undefined) {
+                objMaterial.needsUpdate = true
+              }
+              if (objMaterial.update && typeof objMaterial.update === 'function') {
+                objMaterial.update()
+              }
+              console.log(`[Spline3D] PC SPECIAL: Reverted ${label} matcap layer ${i} after failed update`)
+            } catch (err) {
+              console.warn(`[Spline3D] PC SPECIAL: Could not revert ${label} matcap layer ${i}:`, err)
+            }
+          }
+        }
+
+        // TARGET TEXTURE LAYERS (this is what we need to modify!)
+        else if (layer.type === 'texture' || layer.type === 'image') {
           foundTextureLayer = true
           console.log(`[Spline3D] 🎯 TEXTURE UPDATE: Found ${layer.type} layer ${i} on ${label}!`)
           console.log(`[Spline3D] 🎯 TEXTURE UPDATE: Layer details:`, {
