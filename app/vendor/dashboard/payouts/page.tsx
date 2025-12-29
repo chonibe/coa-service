@@ -132,9 +132,23 @@ export default function PayoutsPage() {
         fetchPendingItems()
         setLastUpdated(new Date())
       }
-    }, 45000)
+    }, 30000) // Refresh every 30 seconds if there are pending requests
     return () => clearInterval(interval)
   }, [isPageVisible, payouts])
+
+  // Auto-refresh when on pending requests tab
+  useEffect(() => {
+    if (activeTab === "pending-requests" && isPageVisible) {
+      const hasRequested = payouts.some(p => p.status === "requested")
+      if (hasRequested) {
+        const refreshInterval = setInterval(() => {
+          fetchPayouts()
+          setLastUpdated(new Date())
+        }, 30000) // Refresh every 30 seconds when viewing pending requests
+        return () => clearInterval(refreshInterval)
+      }
+    }
+  }, [activeTab, isPageVisible, payouts])
 
   const fetchVendorName = async () => {
     try {
@@ -273,20 +287,25 @@ export default function PayoutsPage() {
 
       // Show success banner and switch to pending requests tab
       setShowSuccessBanner(true)
-      setActiveTab("history")
       
       // Refresh payouts and pending items
       await Promise.all([fetchPayouts(), fetchPendingItems()])
       
       // Find the newly created payout request
-      const updatedPayouts = await fetch("/api/vendor/payouts", { credentials: "include" }).then(r => r.json())
-      const requestedPayout = updatedPayouts.payouts?.find((p: Payout) => p.status === "requested" && p.reference === data.reference)
-      if (requestedPayout) {
-        setLastRequestedPayout(requestedPayout)
+      const updatedPayoutsResponse = await fetch("/api/vendor/payouts", { credentials: "include" })
+      if (updatedPayoutsResponse.ok) {
+        const updatedPayouts = await updatedPayoutsResponse.json()
+        const requestedPayout = updatedPayouts.payouts?.find((p: Payout) => p.status === "requested" && p.reference === data.reference)
+        if (requestedPayout) {
+          setLastRequestedPayout(requestedPayout)
+        }
       }
       
-      // Auto-hide banner after 10 seconds
-      setTimeout(() => setShowSuccessBanner(false), 10000)
+      // Switch to pending requests tab to show the new request
+      setActiveTab("pending-requests")
+      
+      // Auto-hide banner after 15 seconds
+      setTimeout(() => setShowSuccessBanner(false), 15000)
     } catch (err) {
       console.error("Error redeeming payout:", err)
       toast({
@@ -1072,4 +1091,137 @@ export default function PayoutsPage() {
           {/* Payout History */}
           <Card className="overflow-hidden bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-0 shadow-xl">
             <CardHeader>
-              <CardTitle>Your Payment History</CardT
+              <CardTitle>Your Payment History</CardTitle>
+              <CardDescription>
+                {filteredAndSortedPayouts.length === 0 
+                  ? "Your payment history will appear here"
+                  : `You have ${filteredAndSortedPayouts.length} payment${filteredAndSortedPayouts.length !== 1 ? "s" : ""} in your history`}
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {isLoading ? (
+                <div className="space-y-2">
+                  {Array(3)
+                    .fill(0)
+                    .map((_, i) => (
+                      <Skeleton key={i} className="h-12 w-full" />
+                    ))}
+                </div>
+              ) : sortedMonths.length > 0 ? (
+                <div className="space-y-6">
+                  {sortedMonths.map((monthKey) => {
+                    const monthData = groupedPayouts[monthKey]
+                    return (
+                      <div key={monthKey} className="border rounded-lg p-4 space-y-4">
+                        <div className="flex items-center justify-between border-b pb-2 flex-wrap gap-2">
+                          <h3 className="text-lg font-semibold">{monthData.month}</h3>
+                          <div className="text-sm text-muted-foreground">
+                            Total: <span className="font-medium text-foreground">{formatCurrency(monthData.total)}</span>
+                          </div>
+                        </div>
+                        <div className="space-y-3">
+                          {monthData.payouts.map((payout) => (
+                            <div key={payout.id} className="border rounded-md p-4 space-y-2">
+                              <div className="flex items-center justify-between flex-wrap gap-2">
+                                <div className="flex items-center gap-3 flex-wrap">
+                                  <span className="font-medium">{formatCurrency(payout.amount)}</span>
+                                  {getStatusBadge(payout.status)}
+                                  {payout.reference && (
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      onClick={() => {
+                                        toast({
+                                          title: "Payment Reference",
+                                          description: `Reference: ${payout.reference}${payout.payout_batch_id ? `\nBatch ID: ${payout.payout_batch_id}` : ""}`,
+                                        })
+                                      }}
+                                      className="flex items-center gap-1 h-7 text-xs"
+                                    >
+                                      <ExternalLink className="h-3 w-3" />
+                                      {payout.reference}
+                                    </Button>
+                                  )}
+                                  {payout.status === "requested" && (
+                                    <Badge variant="outline" className="text-blue-500 border-blue-500 text-xs">
+                                      We're Reviewing Your Request
+                                    </Badge>
+                                  )}
+                                  {(payout.status === "paid" || payout.status === "completed") && (
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      onClick={() => {
+                                        const link = document.createElement("a")
+                                        link.href = `/api/vendors/payouts/${payout.id}/invoice`
+                                        link.download = `invoice-${payout.invoice_number || payout.id}.pdf`
+                                        link.click()
+                                      }}
+                                      className="flex items-center gap-1 h-7 bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm"
+                                    >
+                                      <Download className="h-3 w-3" />
+                                      Invoice
+                                    </Button>
+                                  )}
+                                </div>
+                                <span className="text-sm text-muted-foreground">
+                                  {format(new Date(payout.date), "MMM d, yyyy")}
+                                </span>
+                              </div>
+                              {payout.items && payout.items.length > 0 && (
+                                <div className="mt-3 space-y-1 pl-4 border-l-2">
+                                  {payout.items.map((item, idx) => (
+                                    <div key={idx} className="flex items-center justify-between text-sm">
+                                      <div className="flex items-center gap-2">
+                                        <span className="text-muted-foreground">{item.item_name}</span>
+                                        {item.is_paid && (
+                                          <Badge variant="outline" className="bg-green-50 text-green-700 border-green-300 text-xs">
+                                            Paid
+                                          </Badge>
+                                        )}
+                                        {item.payout_reference && (
+                                          <Button
+                                            variant="ghost"
+                                            size="sm"
+                                            onClick={() => {
+                                              toast({
+                                                title: "Payment Details",
+                                                description: `Reference: ${item.payout_reference}${item.marked_at ? `\nPaid: ${format(new Date(item.marked_at), "MMM d, yyyy")}` : ""}`,
+                                              })
+                                            }}
+                                            className="h-5 px-1 text-xs"
+                                          >
+                                            <ExternalLink className="h-3 w-3" />
+                                          </Button>
+                                        )}
+                                      </div>
+                                      <div className="flex items-center gap-3">
+                                        <span className="text-muted-foreground">
+                                          {format(new Date(item.date), "MMM d, yyyy")}
+                                        </span>
+                                        <span className="font-medium">{formatCurrency(item.amount)}</span>
+                                      </div>
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+              ) : (
+                <div className="py-6 text-center">
+                  <p className="text-muted-foreground">Your payment history will appear here</p>
+                  <p className="text-sm text-muted-foreground mt-1">Once your first payment is processed, you'll see it here.</p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
+    </div>
+  )
+}
