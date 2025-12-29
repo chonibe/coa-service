@@ -3,7 +3,7 @@
 import { useState } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Download, FileText, Upload, X, Image as ImageIcon } from "lucide-react"
+import { Download, FileText, Image as ImageIcon } from "lucide-react"
 import { TemplatePreviewer } from "./components/template-previewer"
 import { ArtworkUploader } from "./components/artwork-uploader"
 import { Alert, AlertDescription } from "@/components/ui/alert"
@@ -11,26 +11,6 @@ import { Badge } from "@/components/ui/badge"
 
 export default function TemplatePreviewPage() {
   const [uploadedImage, setUploadedImage] = useState<string | null>(null)
-  const [templateUrl, setTemplateUrl] = useState<string | null>(null)
-
-  const handleTemplateLoad = async () => {
-    try {
-      // Fetch template from public API
-      const response = await fetch("/api/template-preview/print-template")
-      if (response.ok) {
-        const blob = await response.blob()
-        const url = URL.createObjectURL(blob)
-        setTemplateUrl(url)
-      } else {
-        // Fallback to direct path
-        setTemplateUrl("/templates/print-file-template.pdf")
-      }
-    } catch (error) {
-      console.error("Error loading template:", error)
-      // Fallback to direct path
-      setTemplateUrl("/templates/print-file-template.pdf")
-    }
-  }
 
   const handleDownloadTemplate = async () => {
     try {
@@ -165,39 +145,13 @@ export default function TemplatePreviewPage() {
           <div className="lg:col-span-2">
             <Card>
               <CardHeader>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <CardTitle>Template Preview</CardTitle>
-                    <CardDescription>
-                      See how your artwork looks on the print template
-                    </CardDescription>
-                  </div>
-                  {!templateUrl && (
-                    <Button onClick={handleTemplateLoad} variant="outline" size="sm">
-                      <FileText className="h-4 w-4 mr-2" />
-                      Load Template
-                    </Button>
-                  )}
-                </div>
+                <CardTitle>Template Preview</CardTitle>
+                <CardDescription>
+                  See how your artwork looks on the print template. Position and adjust your artwork within the frame.
+                </CardDescription>
               </CardHeader>
               <CardContent>
-                {templateUrl ? (
-                  <TemplatePreviewer
-                    templateUrl={templateUrl}
-                    artworkImage={uploadedImage}
-                  />
-                ) : (
-                  <div className="flex flex-col items-center justify-center h-[600px] border-2 border-dashed border-muted-foreground/25 rounded-lg bg-muted/50">
-                    <FileText className="h-16 w-16 text-muted-foreground mb-4" />
-                    <p className="text-muted-foreground mb-4">
-                      Click "Load Template" to view the PDF template
-                    </p>
-                    <Button onClick={handleTemplateLoad} variant="outline">
-                      <FileText className="h-4 w-4 mr-2" />
-                      Load Template
-                    </Button>
-                  </div>
-                )}
+                <TemplatePreviewer artworkImage={uploadedImage} />
               </CardContent>
             </Card>
           </div>
