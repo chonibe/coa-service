@@ -705,39 +705,61 @@ export function Spline3DPreview({
             
             // TEST: Try to modify primary objects to verify we can affect the scene
             console.log("[Spline3D] ========== RUNNING PROPERTY MODIFICATION TESTS ==========")
+            console.log("[Spline3D TEST] Test function available:", typeof testModifyObjectProperties)
+            console.log("[Spline3D TEST] Side 1 ID:", side1ObjectId, "Name:", side1ObjectName)
+            console.log("[Spline3D TEST] Side 2 ID:", side2ObjectId, "Name:", side2ObjectName)
+            
             if (side1ObjectId || side1ObjectName) {
+              console.log("[Spline3D TEST] Attempting to find Side 1 object...")
               const testObj1 = side1ObjectId 
                 ? app.findObjectById?.(side1ObjectId)
                 : app.findObjectByName?.(side1ObjectName || "Side1")
+              console.log("[Spline3D TEST] Side 1 object found:", !!testObj1, testObj1 ? { id: (testObj1 as any).id, name: (testObj1 as any).name } : "not found")
               if (testObj1) {
-                testModifyObjectProperties(testObj1, "Side 1 (Initial Test)")
+                console.log("[Spline3D TEST] Calling testModifyObjectProperties for Side 1...")
+                const testResult = testModifyObjectProperties(testObj1, "Side 1 (Initial Test)")
+                console.log("[Spline3D TEST] Side 1 test result:", testResult)
               } else {
                 console.warn("[Spline3D TEST] Side 1 object not found for initial test")
               }
             }
             
             if (side2ObjectId || side2ObjectName) {
+              console.log("[Spline3D TEST] Attempting to find Side 2 object...")
               const testObj2 = side2ObjectId
                 ? app.findObjectById?.(side2ObjectId)
                 : app.findObjectByName?.(side2ObjectName || "Side2")
+              console.log("[Spline3D TEST] Side 2 object found:", !!testObj2, testObj2 ? { id: (testObj2 as any).id, name: (testObj2 as any).name } : "not found")
               if (testObj2) {
-                testModifyObjectProperties(testObj2, "Side 2 (Initial Test)")
+                console.log("[Spline3D TEST] Calling testModifyObjectProperties for Side 2...")
+                const testResult = testModifyObjectProperties(testObj2, "Side 2 (Initial Test)")
+                console.log("[Spline3D TEST] Side 2 test result:", testResult)
               } else {
                 console.warn("[Spline3D TEST] Side 2 object not found for initial test")
               }
             }
             
-            // Also test on a few random objects to see if we can modify anything
+            // Also test on ALL objects to see if we can modify anything
             try {
               const allObjects = app.getAllObjects?.() || []
-              console.log(`[Spline3D TEST] Testing property modification on ${Math.min(3, allObjects.length)} random objects...`)
-              for (let i = 0; i < Math.min(3, allObjects.length); i++) {
+              console.log(`[Spline3D TEST] Testing property modification on ALL ${allObjects.length} objects...`)
+              let successCount = 0
+              for (let i = 0; i < allObjects.length; i++) {
                 const testObj = allObjects[i]
-                const objName = (testObj as any).name || (testObj as any).id || (testObj as any).uuid || `Object ${i}`
-                testModifyObjectProperties(testObj, `Random Object ${i} (${objName})`)
+                const objId = (testObj as any).id || (testObj as any).uuid
+                const objName = (testObj as any).name || `Object ${i}`
+                console.log(`[Spline3D TEST] Testing object ${i + 1}/${allObjects.length}:`, { id: objId, name: objName })
+                const testResult = testModifyObjectProperties(testObj, `Object ${i + 1} (${objName})`)
+                if (testResult) {
+                  successCount++
+                  console.log(`[Spline3D TEST] ✓ Object ${i + 1} test SUCCESS`)
+                } else {
+                  console.log(`[Spline3D TEST] ✗ Object ${i + 1} test FAILED`)
+                }
               }
+              console.log(`[Spline3D TEST] Summary: ${successCount}/${allObjects.length} objects could be modified`)
             } catch (err) {
-              console.warn("[Spline3D TEST] Could not test random objects:", err)
+              console.error("[Spline3D TEST] Error testing all objects:", err)
             }
             console.log("[Spline3D] =========================================================")
             
@@ -768,7 +790,8 @@ export function Spline3DPreview({
         splineAppRef.current = null
       }
     }
-  }, [updateTextures])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []) // Only run once on mount
 
   useEffect(() => {
     if (splineAppRef.current && !isLoading) {
