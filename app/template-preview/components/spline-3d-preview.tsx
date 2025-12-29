@@ -579,6 +579,7 @@ export function Spline3DPreview({
               
               // Get all objects from scene
               const allObjects: any[] = []
+              const processedObjects = new Set<string>()
               
               // Method 1: Try getAllObjects
               if (app.getAllObjects && typeof app.getAllObjects === 'function') {
@@ -593,9 +594,16 @@ export function Spline3DPreview({
                 }
               }
               
-              // Method 2: Traverse scene
+              // Method 2: Traverse scene recursively
               const traverseScene = (obj: any, path: string = '') => {
                 if (!obj) return
+                
+                // Avoid processing same object twice
+                const objId = obj.uuid || obj.id || `obj-${allLayers.length}`
+                if (processedObjects.has(objId)) {
+                  return
+                }
+                processedObjects.add(objId)
                 
                 const currentPath = path ? `${path} > ${obj.name || obj.type || 'unnamed'}` : (obj.name || obj.type || 'unnamed')
                 
@@ -693,16 +701,22 @@ export function Spline3DPreview({
               // Traverse scene
               traverseScene(scene, 'Scene')
               
+              // Also traverse objects from getAllObjects()
+              allObjects.forEach((obj: any) => {
+                traverseScene(obj, `Object-${obj.name || obj.type || 'unnamed'}`)
+              })
+              
               console.log(`[Spline3D] Found ${allLayers.length} image sources in entire scene`)
+              console.log(`[Spline3D] Processed ${processedObjects.size} unique objects`)
               console.log("[Spline3D] ===== END SCENE SEARCH =====")
               
               return allLayers
             }
             
-            // Inspect PC material layers
-            const inspectPCMaterials = () => {
+            // Inspect PC material layers (returns layers, doesn't set state)
+            const inspectPCMaterials = (): LayerInfo[] => {
               const app = splineAppRef.current as any
-              if (!app) return
+              if (!app) return []
               
               console.log("[Spline3D] ===== INSPECTING PC MATERIALS =====")
               
@@ -949,40 +963,41 @@ export function Spline3DPreview({
                 console.log(`[Spline3D] --- End ${name} Inspection ---\n`)
               })
               
-              // Store all discovered layers in state
-              setDiscoveredLayers(allLayers)
-              
               console.log("[Spline3D] ===== END PC MATERIAL INSPECTION =====")
-              console.log(`[Spline3D] Stored ${allLayers.length} layers for toggling`)
+              console.log(`[Spline3D] Found ${allLayers.length} layers in PC materials`)
+              
+              return allLayers
             }
             
             // Inspect materials after a short delay to ensure scene is fully loaded
             setTimeout(() => {
-              // First do PC materials inspection
-              inspectPCMaterials()
-              
-              // Then search entire scene for all images
+              // Search entire scene for ALL images (primary search)
               const sceneLayers = searchEntireSceneForImages()
               
-              // Combine results
-              setDiscoveredLayers(prev => {
-                // Create a map to avoid duplicates
-                const layerMap = new Map<string, LayerInfo>()
-                
-                // Add existing layers
-                prev.forEach(layer => {
-                  const key = `${layer.objectId}-${layer.layerIndex}`
-                  layerMap.set(key, layer)
-                })
-                
-                // Add scene layers (will overwrite duplicates)
-                sceneLayers.forEach(layer => {
-                  const key = `${layer.objectId}-${layer.layerIndex}`
-                  layerMap.set(key, layer)
-                })
-                
-                return Array.from(layerMap.values())
+              // Also inspect PC materials for additional context
+              const pcLayers = inspectPCMaterials()
+              
+              // Combine results - scene-wide search is primary
+              const layerMap = new Map<string, LayerInfo>()
+              
+              // Add scene layers first (these are the most comprehensive)
+              sceneLayers.forEach(layer => {
+                const key = `${layer.objectId}-${layer.layerIndex}-${layer.layerType}`
+                layerMap.set(key, layer)
               })
+              
+              // Add PC layers (won't overwrite scene layers due to different keys)
+              pcLayers.forEach(layer => {
+                const key = `${layer.objectId}-${layer.layerIndex}-${layer.layerType}`
+                if (!layerMap.has(key)) {
+                  layerMap.set(key, layer)
+                }
+              })
+              
+              const allLayers = Array.from(layerMap.values())
+              setDiscoveredLayers(allLayers)
+              
+              console.log(`[Spline3D] Total layers found: ${allLayers.length} (${sceneLayers.length} from scene search, ${pcLayers.length} from PC inspection)`)
             }, 500)
             
             // Update textures after initialization
