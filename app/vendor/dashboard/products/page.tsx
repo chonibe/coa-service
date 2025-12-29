@@ -47,6 +47,7 @@ import { cn } from "@/lib/utils"
 import type { ArtworkSeries } from "@/types/artwork-series"
 import { DeleteSeriesDialog } from "../series/components/DeleteSeriesDialog"
 import { DuplicateSeriesDialog } from "../series/components/DuplicateSeriesDialog"
+import { EditionBadge } from "../components/edition-badge"
 
 // Sortable Artwork Component (Grid Item)
 function SortableArtworkItem({ artwork, seriesUnlockType }: { artwork: any; seriesUnlockType: string }) {
@@ -1407,6 +1408,12 @@ export default function ProductsPage() {
                                   <Sparkles className="h-3 w-3 mr-1" />
                                   {benefitCount} {benefitCount === 1 ? "treasure" : "treasures"}
                                 </Badge>
+                              )}
+                              {submission.edition_size && submission.edition_size > 0 && (
+                                <EditionBadge
+                                  soldCount={submission.sold_count || 0}
+                                  editionSize={submission.edition_size}
+                                />
                               )}
                             </div>
                             <p className="text-sm text-muted-foreground mt-1">

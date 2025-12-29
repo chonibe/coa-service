@@ -6,7 +6,7 @@ import { createClient } from "@/lib/supabase/server"
 
 export async function GET(request: NextRequest) {
   try {
-    const cookieStore = cookies()
+    const cookieStore = await cookies()
     const vendorName = getVendorFromCookieStore(cookieStore)
 
     if (!vendorName) {
@@ -48,7 +48,7 @@ export async function GET(request: NextRequest) {
 
     // Filter by status if provided
     if (status && ["pending", "approved", "rejected", "published"].includes(status)) {
-      query = query.eq("status", status)
+      query = query.eq("status", status as "pending" | "approved" | "rejected" | "published")
     }
 
     const { data: submissions, error } = await query
@@ -61,7 +61,57 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    // Map submissions to include series metadata
+    // Get shopify_product_ids from submissions to fetch edition data
+    // Handle both string and number IDs
+    const shopifyProductIds = (submissions || [])
+      .map((s: any) => {
+        const id = s.shopify_product_id
+        return id !== null && id !== undefined ? id.toString() : null
+      })
+      .filter((id: any) => id !== null && id !== undefined) as string[]
+
+    // Fetch edition sizes from products table
+    let editionSizeMap = new Map<string, number | null>()
+    if (shopifyProductIds.length > 0) {
+      const { data: productEditions } = await supabase
+        .from("products")
+        .select("product_id, edition_size")
+        .in("product_id", shopifyProductIds as any)
+
+      productEditions?.forEach((p) => {
+        let editionSize: number | null = null
+        if (p.edition_size) {
+          const parsed = parseInt(p.edition_size.toString(), 10)
+          if (!isNaN(parsed) && parsed > 0) {
+            editionSize = parsed
+          }
+        }
+        const productId = p.product_id?.toString() || ""
+        if (productId) {
+          editionSizeMap.set(productId, editionSize)
+        }
+      })
+    }
+
+    // Count sold items (fulfilled/active line items) for each product
+    let soldCountMap = new Map<string, number>()
+    if (shopifyProductIds.length > 0) {
+      const { data: soldCounts } = await supabase
+        .from("order_line_items_v2")
+        .select("product_id")
+        .in("product_id", shopifyProductIds as any)
+        .eq("status", "active")
+
+      soldCounts?.forEach((item) => {
+        const productId = item.product_id?.toString() || ""
+        if (productId) {
+          const current = soldCountMap.get(productId) || 0
+          soldCountMap.set(productId, current + 1)
+        }
+      })
+    }
+
+    // Map submissions to include series metadata and edition data
     const submissionsWithSeries = (submissions || []).map((submission: any) => {
       const members = submission.artwork_series_members || []
       // Get the first series (in case of duplicates, we'll show the first one)
@@ -72,11 +122,18 @@ export async function GET(request: NextRequest) {
         unlock_type: firstMember.artwork_series.unlock_type,
       } : null
 
+      // Get edition data for this submission
+      const shopifyProductId = submission.shopify_product_id?.toString()
+      const editionSize = shopifyProductId ? editionSizeMap.get(shopifyProductId) ?? null : null
+      const soldCount = shopifyProductId ? soldCountMap.get(shopifyProductId) ?? 0 : 0
+
       // Remove the nested members array from the response
       const { artwork_series_members, ...submissionData } = submission
       return {
         ...submissionData,
         series_metadata: seriesMetadata,
+        edition_size: editionSize,
+        sold_count: soldCount,
       }
     })
 
