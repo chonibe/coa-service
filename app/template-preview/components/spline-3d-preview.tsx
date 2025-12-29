@@ -97,10 +97,23 @@ export function Spline3DPreview({
           return false
         }
 
+        // Log all layers with detailed info
+        const layerInfo = material.layers?.map((l: any, idx: number) => ({
+          index: idx,
+          type: l.type,
+          visible: l.visible,
+          alpha: l.alpha,
+          hasImage: l.image !== undefined,
+          hasMap: l.map !== undefined,
+          hasTexture: l.texture !== undefined,
+          name: l.name || l.id || 'unnamed'
+        })) || []
+        
         console.log(`[Spline3D] Found material for ${label}:`, {
           hasLayers: !!material.layers,
           layersCount: material.layers?.length,
-          layerTypes: material.layers?.map((l: any) => l.type)
+          layerTypes: material.layers?.map((l: any) => l.type),
+          layerDetails: layerInfo
         })
 
         // Load image as HTMLImageElement
@@ -119,11 +132,67 @@ export function Spline3DPreview({
 
         // Try multiple approaches to add image layer
 
-        // Approach 1: Try to update existing texture/image layer (most reliable)
+        // Approach 1: Try to update existing image layer (prioritize image type layers first)
         if (material.layers && Array.isArray(material.layers)) {
+          // First pass: Look specifically for 'image' type layers (added in Spline)
           for (let i = 0; i < material.layers.length; i++) {
             const layer = material.layers[i]
-            if (layer.type === 'texture' || layer.type === 'image' || layer.type === 'matcap') {
+            if (layer.type === 'image') {
+              try {
+                console.log(`[Spline3D] Found image layer ${i} for ${label} - attempting to update`, {
+                  hasImage: layer.image !== undefined,
+                  hasMap: layer.map !== undefined,
+                  visible: layer.visible,
+                  alpha: layer.alpha,
+                  layerName: layer.name || layer.id || 'unnamed'
+                })
+                
+                // Try setting image directly - image layers should support this
+                layer.image = imageElement
+                if (layer.map !== undefined) layer.map = imageElement
+                if (layer.texture !== undefined) layer.texture = imageElement
+                
+                layer.visible = true
+                layer.alpha = 1
+                if (layer.opacity !== undefined) layer.opacity = 1
+                
+                // Try update methods
+                if (layer.updateTexture && typeof layer.updateTexture === 'function') {
+                  layer.updateTexture(imageElement)
+                }
+                if (layer.update && typeof layer.update === 'function') {
+                  layer.update()
+                }
+                if (layer.setImage && typeof layer.setImage === 'function') {
+                  layer.setImage(imageElement)
+                }
+                
+                material.needsUpdate = true
+                if (material.version !== undefined) {
+                  material.version++
+                }
+                
+                // Force app update
+                if (app.update && typeof app.update === 'function') {
+                  app.update()
+                }
+                
+                console.log(`[Spline3D] ✓ Approach 1a: Updated existing image layer ${i} for ${label}`, {
+                  layerVisible: layer.visible,
+                  layerAlpha: layer.alpha,
+                  layerImageSet: layer.image === imageElement
+                })
+                return true
+              } catch (e) {
+                console.warn(`[Spline3D] Approach 1a failed for image layer ${i}:`, e)
+              }
+            }
+          }
+          
+          // Second pass: Try texture/matcap layers if no image layer found
+          for (let i = 0; i < material.layers.length; i++) {
+            const layer = material.layers[i]
+            if (layer.type === 'texture' || layer.type === 'matcap') {
               try {
                 console.log(`[Spline3D] Attempting to update existing ${layer.type} layer ${i} for ${label}`, {
                   hasImage: layer.image !== undefined,
@@ -139,16 +208,16 @@ export function Spline3DPreview({
                   
                   layer.visible = true
                   layer.alpha = 1
-                  layer.opacity = 1
+                  if (layer.opacity !== undefined) layer.opacity = 1
                   
                   // Try update methods
-                  if (layer.updateTexture) {
+                  if (layer.updateTexture && typeof layer.updateTexture === 'function') {
                     layer.updateTexture(imageElement)
                   }
-                  if (layer.update) {
+                  if (layer.update && typeof layer.update === 'function') {
                     layer.update()
                   }
-                  if (layer.setImage) {
+                  if (layer.setImage && typeof layer.setImage === 'function') {
                     layer.setImage(imageElement)
                   }
                   
@@ -162,14 +231,14 @@ export function Spline3DPreview({
                     app.update()
                   }
                   
-                  console.log(`[Spline3D] ✓ Approach 1: Updated existing ${layer.type} layer ${i} for ${label}`, {
+                  console.log(`[Spline3D] ✓ Approach 1b: Updated existing ${layer.type} layer ${i} for ${label}`, {
                     layerVisible: layer.visible,
                     layerAlpha: layer.alpha
                   })
                   return true
                 }
               } catch (e) {
-                console.warn(`[Spline3D] Approach 1 failed for layer ${i}:`, e)
+                console.warn(`[Spline3D] Approach 1b failed for layer ${i}:`, e)
               }
             }
           }
