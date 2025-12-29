@@ -48,7 +48,7 @@ export function Spline3DPreview({
   const updateTextures = useCallback(async () => {
     if (!splineAppRef.current || isLoading) return
 
-    console.log("[Spline3D] Creating duplicate meshes with UV textures:", { 
+    console.log("[Spline3D] Creating image planes:", { 
       hasImage1: !!image1, 
       hasImage2: !!image2,
       side1ObjectId,
@@ -94,31 +94,33 @@ export function Spline3DPreview({
       return foundMesh
     }
 
-    // Helper to create duplicate mesh with texture
-    const createDuplicateMesh = async (originalObj: any, imageUrl: string, label: string) => {
+    // Helper to create a plane with image texture
+    const createImagePlane = async (originalObj: any, imageUrl: string, label: string) => {
       if (!originalObj) {
-        console.warn(`[Spline3D] Cannot create duplicate: ${label} object not found`)
+        console.warn(`[Spline3D] Cannot create image plane: ${label} object not found`)
         return null
       }
 
       try {
         // Get the original mesh
         const originalMesh = getMesh(originalObj)
-        if (!originalMesh || !originalMesh.geometry) {
-          console.warn(`[Spline3D] Cannot find mesh geometry for ${label}`)
+        if (!originalMesh) {
+          console.warn(`[Spline3D] Cannot find mesh for ${label}`)
           return null
         }
 
-        console.log(`[Spline3D] Found mesh for ${label}, cloning...`, {
-          hasGeometry: !!originalMesh.geometry,
-          hasMaterial: !!originalMesh.material,
-          geometryType: originalMesh.geometry?.constructor?.name,
-          materialType: originalMesh.material?.constructor?.name
-        })
+        console.log(`[Spline3D] Creating image plane for ${label}...`)
 
-        // Clone the geometry
-        const clonedGeometry = originalMesh.geometry.clone()
-        console.log(`[Spline3D] ✓ Cloned geometry for ${label}`)
+        // Calculate bounding box to determine size
+        const box = new THREE.Box3().setFromObject(originalMesh)
+        const size = box.getSize(new THREE.Vector3())
+        const center = box.getCenter(new THREE.Vector3())
+        
+        // Use the larger dimension for the plane size, or default to 1 if size is invalid
+        const planeWidth = Math.max(size.x, size.z, 0.1) || 1
+        const planeHeight = Math.max(size.y, 0.1) || 1
+
+        console.log(`[Spline3D] Original object size:`, { width: planeWidth, height: planeHeight, size })
         
         // Load texture using imported THREE.js
         const textureLoader = new THREE.TextureLoader()
@@ -134,35 +136,59 @@ export function Spline3DPreview({
           )
         })
 
-        console.log(`[Spline3D] ✓ Loaded texture for ${label}`)
+        // Get image dimensions with proper typing
+        const image = texture.image as HTMLImageElement
+        const imageWidth = image?.width || 1
+        const imageHeight = image?.height || 1
 
-        // Create new material with texture
-        const newMaterial = new THREE.MeshBasicMaterial({
-          map: texture,
-          transparent: false
+        console.log(`[Spline3D] ✓ Loaded texture for ${label}`, { 
+          width: imageWidth, 
+          height: imageHeight 
         })
 
-        console.log(`[Spline3D] ✓ Created new material for ${label}`)
-
-        // Create new mesh with cloned geometry and new material
-        const duplicateMesh = new THREE.Mesh(clonedGeometry, newMaterial)
+        // Create plane geometry - adjust size based on image aspect ratio
+        const imageAspect = imageWidth / imageHeight
+        const finalWidth = planeHeight * imageAspect
+        const finalHeight = planeHeight
         
-        // Copy position, rotation, scale from original
-        duplicateMesh.position.copy(originalMesh.position)
-        duplicateMesh.rotation.copy(originalMesh.rotation)
-        duplicateMesh.scale.copy(originalMesh.scale)
+        const planeGeometry = new THREE.PlaneGeometry(finalWidth, finalHeight)
+        
+        // Create material with texture
+        const planeMaterial = new THREE.MeshBasicMaterial({
+          map: texture,
+          side: THREE.DoubleSide,
+          transparent: true,
+          opacity: 1
+        })
+
+        console.log(`[Spline3D] ✓ Created plane geometry and material for ${label}`)
+
+        // Create plane mesh
+        const planeMesh = new THREE.Mesh(planeGeometry, planeMaterial)
+        
+        // Position at the original object's center
+        planeMesh.position.copy(center)
+        
+        // Copy rotation from original (or use a default orientation)
+        if (originalMesh.rotation) {
+          planeMesh.rotation.copy(originalMesh.rotation)
+        }
         
         // Set name for identification
-        duplicateMesh.name = `${label}_duplicate_${Date.now()}`
+        planeMesh.name = `${label}_image_plane_${Date.now()}`
         
         // Add to scene
-        scene.add(duplicateMesh)
+        scene.add(planeMesh)
         
-        console.log(`[Spline3D] ✓ Created and added duplicate mesh for ${label}`)
+        console.log(`[Spline3D] ✓ Created and added image plane for ${label}`, {
+          position: planeMesh.position,
+          rotation: planeMesh.rotation,
+          size: { width: finalWidth, height: finalHeight }
+        })
         
-        return duplicateMesh
+        return planeMesh
       } catch (err) {
-        console.error(`[Spline3D] Error creating duplicate mesh for ${label}:`, err)
+        console.error(`[Spline3D] Error creating image plane for ${label}:`, err)
         return null
       }
     }
@@ -180,17 +206,17 @@ export function Spline3DPreview({
         if (mesh1) mesh1.visible = false
         console.log(`[Spline3D] ✓ Hid original Side 1`)
 
-        // Create duplicate if it doesn't exist
+        // Create image plane if it doesn't exist
         if (!duplicateSide1Ref.current) {
-          const duplicate = await createDuplicateMesh(original1, image1, "Side 1")
-          if (duplicate) {
-            duplicateSide1Ref.current = duplicate
-            duplicate.visible = true
-            console.log(`[Spline3D] ✓ Created and showed Side 1 duplicate`)
+          const plane = await createImagePlane(original1, image1, "Side 1")
+          if (plane) {
+            duplicateSide1Ref.current = plane
+            plane.visible = true
+            console.log(`[Spline3D] ✓ Created and showed Side 1 image plane`)
           }
         } else {
           duplicateSide1Ref.current.visible = true
-          console.log(`[Spline3D] ✓ Showed existing Side 1 duplicate`)
+          console.log(`[Spline3D] ✓ Showed existing Side 1 image plane`)
         }
       }
     } else {
@@ -221,17 +247,17 @@ export function Spline3DPreview({
         if (mesh2) mesh2.visible = false
         console.log(`[Spline3D] ✓ Hid original Side 2`)
 
-        // Create duplicate if it doesn't exist
+        // Create image plane if it doesn't exist
         if (!duplicateSide2Ref.current) {
-          const duplicate = await createDuplicateMesh(original2, image2, "Side 2")
-          if (duplicate) {
-            duplicateSide2Ref.current = duplicate
-            duplicate.visible = true
-            console.log(`[Spline3D] ✓ Created and showed Side 2 duplicate`)
+          const plane = await createImagePlane(original2, image2, "Side 2")
+          if (plane) {
+            duplicateSide2Ref.current = plane
+            plane.visible = true
+            console.log(`[Spline3D] ✓ Created and showed Side 2 image plane`)
           }
         } else {
           duplicateSide2Ref.current.visible = true
-          console.log(`[Spline3D] ✓ Showed existing Side 2 duplicate`)
+          console.log(`[Spline3D] ✓ Showed existing Side 2 image plane`)
         }
       }
     } else {
