@@ -104,12 +104,33 @@ export function Spline3DPreview({
         id: (obj as any).id || (obj as any).uuid,
         name: (obj as any).name,
         type: (obj as any).type,
-        hasMaterial: !!(obj as any).material
+        hasMaterial: !!(obj as any).material,
+        children: (obj as any).children?.length || 0
       })
 
-      const material = (obj as any).material
+      // Try to get material from object or children
+      let material = (obj as any).material
+      
+      // If no material on object, try children
+      if (!material && (obj as any).children && (obj as any).children.length > 0) {
+        for (const child of (obj as any).children) {
+          if (child.material) {
+            material = child.material
+            console.log(`[Spline3D] Found material on child of ${label}`)
+            break
+          }
+        }
+      }
+
       if (!material || !material.layers) {
         console.warn(`[Spline3D] ${label} has no material or layers`)
+        // Try children recursively
+        if ((obj as any).children && (obj as any).children.length > 0) {
+          for (const child of (obj as any).children) {
+            const childResult = await tryUpdateTextureOnObject(child, imageUrl, `${label} -> child`)
+            if (childResult) return true
+          }
+        }
         return false
       }
 
@@ -165,10 +186,20 @@ export function Spline3DPreview({
           // Method 2: Try setting image element directly if we have it
           if (imageElement && layer.image !== undefined) {
             try {
-              layer.image = imageElement
-              console.log(`[Spline3D] ✓ Set ${label} layer.image = imageElement`, { layerType })
+              // Try both direct assignment and using a setter if it exists
+              if (typeof layer.setImage === "function") {
+                layer.setImage(imageElement)
+                console.log(`[Spline3D] ✓ Set ${label} via layer.setImage(imageElement)`, { layerType })
+              } else {
+                layer.image = imageElement
+                console.log(`[Spline3D] ✓ Set ${label} layer.image = imageElement`, { layerType })
+              }
               if (material.needsUpdate !== undefined) material.needsUpdate = true
               if (material.update && typeof material.update === "function") material.update()
+              // Force render update
+              if (splineAppRef.current && typeof (splineAppRef.current as any).update === "function") {
+                (splineAppRef.current as any).update()
+              }
               if (layerType === 'texture' || layerType === 'image') {
                 return true
               }
@@ -217,8 +248,45 @@ export function Spline3DPreview({
             }
           }
 
-          // Method 5: Try other properties (url, source, src, map)
-          const propsToTry = ['url', 'source', 'src', 'map']
+          // Method 5: Try creating a new texture/canvas and assigning it
+          if (imageElement) {
+            try {
+              // Try creating a canvas and using it as texture
+              const canvas = document.createElement('canvas')
+              canvas.width = imageElement.width
+              canvas.height = imageElement.height
+              const ctx = canvas.getContext('2d')
+              if (ctx) {
+                ctx.drawImage(imageElement, 0, 0)
+                // Try assigning canvas directly
+                if (layer.canvas !== undefined) {
+                  layer.canvas = canvas
+                  console.log(`[Spline3D] ✓ Set ${label} layer.canvas`, { layerType })
+                  if (material.needsUpdate !== undefined) material.needsUpdate = true
+                  if (material.update && typeof material.update === "function") material.update()
+                  if (layerType === 'texture' || layerType === 'image') {
+                    return true
+                  }
+                }
+                // Try using canvas.toDataURL
+                const canvasDataUrl = canvas.toDataURL('image/png')
+                if (layer.image !== undefined) {
+                  layer.image = canvasDataUrl
+                  console.log(`[Spline3D] ✓ Set ${label} layer.image = canvasDataUrl`, { layerType })
+                  if (material.needsUpdate !== undefined) material.needsUpdate = true
+                  if (material.update && typeof material.update === "function") material.update()
+                  if (layerType === 'texture' || layerType === 'image') {
+                    return true
+                  }
+                }
+              }
+            } catch (err) {
+              console.warn(`[Spline3D] ✗ Canvas method failed for ${label} (${layerType}):`, err)
+            }
+          }
+
+          // Method 6: Try other properties (url, source, src, map)
+          const propsToTry = ['url', 'source', 'src', 'map', 'textureUrl', 'imageUrl']
           for (const prop of propsToTry) {
             if (layer[prop] !== undefined) {
               try {
@@ -358,12 +426,15 @@ export function Spline3DPreview({
       app.load("/spline/scene.splinecode")
         .then(() => {
           splineAppRef.current = app
-          setIsLoading(false)
           console.log("[Spline3D] Scene loaded successfully")
-          // Update textures after scene loads
+          // Wait longer for scene to fully initialize before updating textures
           setTimeout(() => {
-            updateTextures()
-          }, 500)
+            setIsLoading(false)
+            // Additional delay before first texture update
+            setTimeout(() => {
+              updateTextures()
+            }, 1000)
+          }, 1000)
         })
         .catch((err) => {
           console.error("[Spline3D] Error loading scene:", err)
