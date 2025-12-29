@@ -59,12 +59,12 @@ export function Spline3DPreview({
     }
   }, [isModelVisible, isLoading])
 
-  // Change LAMP material properties within Spline system
+  // Research-based material modification approaches
   const changeLampMaterial = useCallback(() => {
     if (!splineAppRef.current || isLoading) return
 
     const lampObjectId = 'e9e829f2-cbcc-4740-bcca-f0ac77844cd7'
-    console.log(`[Spline3D] Attempting to change LAMP (${lampObjectId}) material properties...`)
+    console.log(`[Spline3D] RESEARCH: Attempting advanced LAMP (${lampObjectId}) material modification...`)
 
     try {
       const app = splineAppRef.current as any
@@ -80,206 +80,226 @@ export function Spline3DPreview({
       }
 
       if (!lampObject) {
-        console.warn(`[Spline3D] LAMP object not found with ID: ${lampObjectId} or name: LAMP`)
+        console.warn(`[Spline3D] RESEARCH: LAMP object not found`)
         return
       }
 
-      console.log(`[Spline3D] Found LAMP object for material change:`, lampObject)
+      console.log(`[Spline3D] RESEARCH: Found LAMP object:`, lampObject)
 
-      // Since THREE.js is not available, work within Spline's existing material system
-      // Try to modify existing material properties directly
+      // RESEARCH APPROACH 1: Try Spline's material.setColor method (from docs)
+      if (typeof (lampObject as any).material?.setColor === "function") {
+        console.log('[Spline3D] RESEARCH: Found material.setColor method!')
+        try {
+          (lampObject as any).material.setColor(1, 0, 0) // Red
+          console.log('[Spline3D] ✓ RESEARCH: Called material.setColor(1, 0, 0)')
+        } catch (err) {
+          console.warn('[Spline3D] ✗ RESEARCH: material.setColor failed:', err)
+        }
+      }
 
-      // Approach 1: Modify existing material properties (Spline layer system)
+      // RESEARCH APPROACH 2: Try updating material uniforms (common in WebGL)
+      if ((lampObject as any).material?.uniforms) {
+        console.log('[Spline3D] RESEARCH: Found material.uniforms, trying to modify...')
+
+        const uniforms = (lampObject as any).material.uniforms
+
+        // Try common uniform names for color
+        const colorUniformNames = ['color', 'diffuse', 'albedo', 'baseColor']
+        for (const uniformName of colorUniformNames) {
+          if (uniforms[uniformName]) {
+            console.log(`[Spline3D] RESEARCH: Found ${uniformName} uniform:`, uniforms[uniformName])
+
+            const originalValue = uniforms[uniformName].value
+            try {
+              if (uniforms[uniformName].value?.set) {
+                uniforms[uniformName].value.set(1, 0, 0) // Red
+                console.log(`[Spline3D] ✓ RESEARCH: Set ${uniformName} uniform to RED`)
+              } else if (Array.isArray(uniforms[uniformName].value)) {
+                uniforms[uniformName].value[0] = 1
+                uniforms[uniformName].value[1] = 0
+                uniforms[uniformName].value[2] = 0
+                console.log(`[Spline3D] ✓ RESEARCH: Set ${uniformName} uniform array to RED`)
+              }
+            } catch (err) {
+              console.warn(`[Spline3D] ✗ RESEARCH: Failed to modify ${uniformName} uniform:`, err)
+            }
+          }
+        }
+      }
+
+      // RESEARCH APPROACH 3: Try material properties that might trigger updates
       if ((lampObject as any).material) {
         const material = (lampObject as any).material
-        console.log('[Spline3D] Modifying LAMP material properties within Spline system...')
+        console.log('[Spline3D] RESEARCH: Inspecting material properties...')
 
-        // Try to modify material layers (Spline's system)
-        if (material.layers && Array.isArray(material.layers)) {
-          console.log(`[Spline3D] LAMP has ${material.layers.length} material layers`)
+        // Try to find and modify emissive properties (makes objects glow)
+        if (material.emissive !== undefined) {
+          console.log('[Spline3D] RESEARCH: Found emissive property')
+          const originalEmissive = material.emissive
 
-          for (let i = 0; i < material.layers.length; i++) {
-            const layer = material.layers[i]
-            console.log(`[Spline3D] Layer ${i}:`, layer.type, layer)
-
-            // Try to modify color layer
-            if (layer.type === 'color' && layer.color !== undefined) {
-              console.log(`[Spline3D] Modifying color layer ${i} to BRIGHT RED...`)
-
-              // Store original color
-              const originalColor = layer.color
-
-              // Try different color setting approaches
-              if (typeof layer.color.set === "function") {
-                layer.color.set(1, 0, 0) // Red via RGB
-                console.log(`[Spline3D] ✓ Set layer.color to RED via set()`)
-              } else if (layer.color.r !== undefined) {
-                layer.color.r = 1
-                layer.color.g = 0
-                layer.color.b = 0
-                console.log(`[Spline3D] ✓ Set layer.color.r/g/b to RED`)
-              } else if (Array.isArray(layer.color)) {
-                layer.color[0] = 1
-                layer.color[1] = 0
-                layer.color[2] = 0
-                console.log(`[Spline3D] ✓ Set layer.color array to RED`)
-              }
-
-              // Try to set material needsUpdate
-              if (material.needsUpdate !== undefined) {
-                material.needsUpdate = true
-                console.log('[Spline3D] ✓ Set material.needsUpdate = true')
-              }
-
-              // Try to call material.update()
-              if (material.update && typeof material.update === "function") {
-                material.update()
-                console.log('[Spline3D] ✓ Called material.update()')
-              }
-
-              // Revert after 10 seconds for testing
-              setTimeout(() => {
-                try {
-                  if (typeof layer.color.set === "function") {
-                    layer.color.set(originalColor.r || originalColor[0] || 1, originalColor.g || originalColor[1] || 1, originalColor.b || originalColor[2] || 1)
-                  } else if (layer.color.r !== undefined) {
-                    layer.color.r = originalColor.r || 1
-                    layer.color.g = originalColor.g || 1
-                    layer.color.b = originalColor.b || 1
-                  } else if (Array.isArray(layer.color)) {
-                    layer.color[0] = originalColor[0] || 1
-                    layer.color[1] = originalColor[1] || 1
-                    layer.color[2] = originalColor[2] || 1
-                  }
-                  if (material.needsUpdate !== undefined) material.needsUpdate = true
-                  if (material.update && typeof material.update === "function") material.update()
-                  console.log('[Spline3D] Reverted LAMP material color after 10 seconds')
-                } catch (err) {
-                  console.warn('[Spline3D] Could not revert material color:', err)
-                }
-              }, 10000)
-            }
-
-            // Try to modify other layer types that might affect appearance
-            if (layer.type === 'texture' && layer.texture !== undefined) {
-              console.log(`[Spline3D] Found texture layer ${i}, attempting to modify...`)
-
-              // Try to set texture properties to make it visible
-              if (layer.texture && typeof layer.texture === 'object') {
-                const originalTexture = layer.texture
-
-                // Try to set texture to a solid color or modify existing
-                if (layer.texture.image !== undefined) {
-                  console.log('[Spline3D] ✓ Found texture.image property')
-                  // We can't create new textures, but we can try to modify existing ones
-                }
-
-                // Try texture.setImage if it exists
-                if (typeof layer.texture.setImage === "function") {
-                  console.log('[Spline3D] ✓ Found texture.setImage method')
-                  // We would need an image source here
-                }
-              }
-            }
-          }
-        }
-
-        // Try direct material property modification
-        if (material.color !== undefined) {
-          console.log('[Spline3D] Modifying direct material.color...')
-
-          const originalMaterialColor = material.color
-
-          if (typeof material.color.set === "function") {
-            material.color.set(1, 0, 0) // Red
-            console.log('[Spline3D] ✓ Set material.color to RED via set()')
-          } else if (material.color.r !== undefined) {
-            material.color.r = 1
-            material.color.g = 0
-            material.color.b = 0
-            console.log('[Spline3D] ✓ Set material.color.r/g/b to RED')
-          }
-
-          if (material.needsUpdate !== undefined) {
-            material.needsUpdate = true
-          }
-          if (material.update && typeof material.update === "function") {
-            material.update()
-          }
-
-          // Revert after 10 seconds
-          setTimeout(() => {
-            try {
-              if (typeof material.color.set === "function") {
-                material.color.set(originalMaterialColor.r || 1, originalMaterialColor.g || 1, originalMaterialColor.b || 1)
-              } else if (material.color.r !== undefined) {
-                material.color.r = originalMaterialColor.r || 1
-                material.color.g = originalMaterialColor.g || 1
-                material.color.b = originalMaterialColor.b || 1
-              }
-              if (material.needsUpdate !== undefined) material.needsUpdate = true
-              if (material.update && typeof material.update === "function") material.update()
-              console.log('[Spline3D] Reverted direct material.color after 10 seconds')
-            } catch (err) {
-              console.warn('[Spline3D] Could not revert direct material color:', err)
-            }
-          }, 10000)
-        }
-      }
-
-      // Approach 2: Try mesh.material direct modification
-      if ((lampObject as any).mesh?.material) {
-        const meshMaterial = (lampObject as any).mesh.material
-        console.log('[Spline3D] Modifying mesh.material directly...')
-
-        const originalMeshColor = meshMaterial.color
-
-        if (typeof meshMaterial.color?.set === "function") {
-          meshMaterial.color.set(1, 0, 0) // Red
-          console.log('[Spline3D] ✓ Set mesh.material.color to RED')
-        } else if (meshMaterial.color?.r !== undefined) {
-          meshMaterial.color.r = 1
-          meshMaterial.color.g = 0
-          meshMaterial.color.b = 0
-          console.log('[Spline3D] ✓ Set mesh.material.color.r/g/b to RED')
-        }
-
-        if (meshMaterial.needsUpdate !== undefined) {
-          meshMaterial.needsUpdate = true
-        }
-
-        // Revert after 10 seconds
-        setTimeout(() => {
           try {
-            if (typeof meshMaterial.color?.set === "function") {
-              meshMaterial.color.set(originalMeshColor.r || 1, originalMeshColor.g || 1, originalMeshColor.b || 1)
-            } else if (meshMaterial.color?.r !== undefined) {
-              meshMaterial.color.r = originalMeshColor.r || 1
-              meshMaterial.color.g = originalMeshColor.g || 1
-              meshMaterial.color.b = originalMeshColor.b || 1
+            if (typeof material.emissive?.set === "function") {
+              material.emissive.set(1, 0, 0) // Red emissive
+              console.log('[Spline3D] ✓ RESEARCH: Set emissive to RED (should glow)')
+            } else if (material.emissive?.r !== undefined) {
+              material.emissive.r = 1
+              material.emissive.g = 0
+              material.emissive.b = 0
+              console.log('[Spline3D] ✓ RESEARCH: Set emissive.r/g/b to RED')
             }
-            if (meshMaterial.needsUpdate !== undefined) meshMaterial.needsUpdate = true
-            console.log('[Spline3D] Reverted mesh.material.color after 10 seconds')
-          } catch (err) {
-            console.warn('[Spline3D] Could not revert mesh.material color:', err)
-          }
-        }, 10000)
-      }
 
-      // Force multiple renders
-      if (app.renderer && app.scene && app.camera && typeof app.renderer.render === "function") {
-        for (let i = 0; i < 10; i++) {
-          setTimeout(() => {
-            app.renderer.render(app.scene, app.camera)
-            console.log(`[Spline3D] ✓ Force rendered after material modification (attempt ${i + 1})`)
-          }, i * 200) // Every 200ms for 2 seconds
+            if (material.emissiveIntensity !== undefined) {
+              material.emissiveIntensity = 0.5 // Make it glow
+              console.log('[Spline3D] ✓ RESEARCH: Set emissiveIntensity to 0.5')
+            }
+          } catch (err) {
+            console.warn('[Spline3D] ✗ RESEARCH: Failed to set emissive:', err)
+          }
+        }
+
+        // Try opacity changes (should be very visible)
+        if (material.opacity !== undefined) {
+          console.log('[Spline3D] RESEARCH: Found opacity property')
+          const originalOpacity = material.opacity
+
+          try {
+            material.opacity = 0.3 // Make semi-transparent
+            material.transparent = true
+            console.log('[Spline3D] ✓ RESEARCH: Set opacity to 0.3 (semi-transparent)')
+
+            setTimeout(() => {
+              material.opacity = originalOpacity
+              material.transparent = originalOpacity < 1
+              console.log('[Spline3D] RESEARCH: Reverted opacity')
+            }, 10000)
+          } catch (err) {
+            console.warn('[Spline3D] ✗ RESEARCH: Failed to set opacity:', err)
+          }
+        }
+
+        // Try wireframe mode (very visible change)
+        if (material.wireframe !== undefined) {
+          console.log('[Spline3D] RESEARCH: Found wireframe property')
+          const originalWireframe = material.wireframe
+
+          try {
+            material.wireframe = true
+            console.log('[Spline3D] ✓ RESEARCH: Set wireframe = true (should show wireframe)')
+
+            setTimeout(() => {
+              material.wireframe = originalWireframe
+              console.log('[Spline3D] RESEARCH: Reverted wireframe')
+            }, 10000)
+          } catch (err) {
+            console.warn('[Spline3D] ✗ RESEARCH: Failed to set wireframe:', err)
+          }
         }
       }
 
-      console.log('[Spline3D] LAMP material modification completed - should be BRIGHT RED for 10 seconds!')
+      // RESEARCH APPROACH 4: Try Spline-specific methods
+      if (typeof (lampObject as any).setColor === "function") {
+        console.log('[Spline3D] RESEARCH: Found object.setColor method!')
+        try {
+          (lampObject as any).setColor(1, 0, 0) // Red
+          console.log('[Spline3D] ✓ RESEARCH: Called object.setColor(1, 0, 0)')
+        } catch (err) {
+          console.warn('[Spline3D] ✗ RESEARCH: object.setColor failed:', err)
+        }
+      }
+
+      // RESEARCH APPROACH 5: Try to trigger material recompilation
+      if ((lampObject as any).material) {
+        const material = (lampObject as any).material
+
+        // Try version increment (common pattern for forcing updates)
+        if (material.version !== undefined) {
+          material.version++
+          console.log('[Spline3D] ✓ RESEARCH: Incremented material.version')
+        }
+
+        // Try to call dispose and recreate (extreme approach)
+        if (typeof material.dispose === "function") {
+          console.log('[Spline3D] RESEARCH: Found material.dispose method')
+          // Don't actually dispose as it might break things
+        }
+      }
+
+      // RESEARCH APPROACH 6: Try accessing through different object paths
+      const possiblePaths = [
+        (lampObject as any).material,
+        (lampObject as any).mesh?.material,
+        (lampObject as any)._material,
+        (lampObject as any).children?.[0]?.material,
+        (lampObject as any).object3D?.material,
+        (lampObject as any)._object3D?.material
+      ]
+
+      for (let i = 0; i < possiblePaths.length; i++) {
+        const mat = possiblePaths[i]
+        if (mat && mat.color !== undefined) {
+          console.log(`[Spline3D] RESEARCH: Found material at path ${i}`)
+
+          const originalColor = mat.color
+          try {
+            if (typeof mat.color.set === "function") {
+              mat.color.set(1, 0, 0) // Red
+              console.log(`[Spline3D] ✓ RESEARCH: Set color at path ${i} to RED`)
+            }
+
+            if (mat.needsUpdate !== undefined) {
+              mat.needsUpdate = true
+              console.log(`[Spline3D] ✓ RESEARCH: Set needsUpdate at path ${i}`)
+            }
+
+            setTimeout(() => {
+              if (typeof mat.color.set === "function") {
+                mat.color.set(originalColor.r || 1, originalColor.g || 1, originalColor.b || 1)
+              }
+              if (mat.needsUpdate !== undefined) mat.needsUpdate = true
+              console.log(`[Spline3D] RESEARCH: Reverted color at path ${i}`)
+            }, 10000)
+
+          } catch (err) {
+            console.warn(`[Spline3D] ✗ RESEARCH: Failed at path ${i}:`, err)
+          }
+        }
+      }
+
+      // Force multiple renders and try different render approaches
+      if (app.renderer && app.scene && app.camera) {
+        console.log('[Spline3D] RESEARCH: Force rendering with multiple approaches...')
+
+        // Standard render
+        for (let i = 0; i < 5; i++) {
+          setTimeout(() => {
+            if (typeof app.renderer.render === "function") {
+              app.renderer.render(app.scene, app.camera)
+              console.log(`[Spline3D] ✓ RESEARCH: Standard render ${i + 1}`)
+            }
+          }, i * 100)
+        }
+
+        // Try to trigger Spline's update cycle
+        if (typeof app.update === "function") {
+          setTimeout(() => {
+            app.update()
+            console.log('[Spline3D] ✓ RESEARCH: Called app.update()')
+          }, 500)
+        }
+
+        // Try to trigger scene update
+        if (typeof app.scene?.update === "function") {
+          setTimeout(() => {
+            app.scene.update()
+            console.log('[Spline3D] ✓ RESEARCH: Called scene.update()')
+          }, 600)
+        }
+      }
+
+      console.log('[Spline3D] RESEARCH: All material modification attempts completed!')
 
     } catch (err) {
-      console.error('[Spline3D] Error changing LAMP material:', err)
+      console.error('[Spline3D] RESEARCH: Error in advanced material modification:', err)
     }
   }, [isLoading])
 
