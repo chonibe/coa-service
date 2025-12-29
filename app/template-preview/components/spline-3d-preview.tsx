@@ -443,6 +443,105 @@ export function Spline3DPreview({
           splineAppRef.current = app
           setTimeout(() => {
             setIsLoading(false)
+            
+            // Inspect PC material layers
+            const inspectPCMaterials = () => {
+              const app = splineAppRef.current as any
+              if (!app) return
+              
+              console.log("[Spline3D] ===== INSPECTING PC MATERIALS =====")
+              
+              // Try to find PC Trans A and PC Trans B objects
+              const side1Id = "2de1e7d2-4b53-4738-a749-be197641fa9a"
+              const side2Id = "2e33392b-21d8-441d-87b0-11527f3a8b70"
+              
+              const objectsToCheck = [
+                { id: side1Id, name: "Side 1 (PC Trans A)" },
+                { id: side2Id, name: "Side 2 (PC Trans B)" }
+              ]
+              
+              objectsToCheck.forEach(({ id, name }) => {
+                const obj = app.findObjectById?.(id) || app.findObjectByName?.(name.split(" ")[0])
+                if (!obj) {
+                  console.warn(`[Spline3D] ${name} object not found`)
+                  return
+                }
+                
+                console.log(`[Spline3D] --- ${name} Material Inspection ---`)
+                console.log(`[Spline3D] Object found:`, {
+                  id: obj.id,
+                  name: obj.name,
+                  type: obj.type,
+                  uuid: obj.uuid
+                })
+                
+                // Get material
+                let material = obj.material
+                if (!material && obj.mesh) {
+                  material = obj.mesh.material
+                }
+                
+                if (!material) {
+                  console.warn(`[Spline3D] No material found on ${name}`)
+                  return
+                }
+                
+                console.log(`[Spline3D] Material found:`, {
+                  type: material.type,
+                  name: material.name,
+                  uuid: material.uuid,
+                  hasLayers: !!material.layers,
+                  layersCount: material.layers?.length
+                })
+                
+                // Log all layers in detail
+                if (material.layers && Array.isArray(material.layers)) {
+                  console.log(`[Spline3D] Total layers: ${material.layers.length}`)
+                  material.layers.forEach((layer: any, index: number) => {
+                    console.log(`[Spline3D] Layer ${index}:`, {
+                      type: layer.type,
+                      visible: layer.visible,
+                      alpha: layer.alpha,
+                      opacity: layer.opacity,
+                      mode: layer.mode,
+                      isMask: layer.isMask,
+                      hasImage: layer.image !== undefined,
+                      hasMap: layer.map !== undefined,
+                      hasTexture: layer.texture !== undefined,
+                      imageType: layer.image?.constructor?.name,
+                      imageSrc: layer.image?.src || layer.image?.currentSrc || 'N/A',
+                      name: layer.name || layer.id || 'unnamed',
+                      // Log all properties
+                      allProperties: Object.keys(layer)
+                    })
+                    
+                    // If it's an image layer, log more details
+                    if (layer.type === 'image') {
+                      console.log(`[Spline3D]   → IMAGE LAYER DETAILS:`, {
+                        image: layer.image,
+                        imageWidth: layer.image?.width,
+                        imageHeight: layer.image?.height,
+                        imageComplete: layer.image?.complete,
+                        imageNaturalWidth: layer.image?.naturalWidth,
+                        imageNaturalHeight: layer.image?.naturalHeight
+                      })
+                    }
+                  })
+                } else {
+                  console.warn(`[Spline3D] Material has no layers array`)
+                }
+                
+                console.log(`[Spline3D] --- End ${name} Inspection ---\n`)
+              })
+              
+              console.log("[Spline3D] ===== END PC MATERIAL INSPECTION =====")
+            }
+            
+            // Inspect materials after a short delay to ensure scene is fully loaded
+            setTimeout(() => {
+              inspectPCMaterials()
+            }, 500)
+            
             // Update textures after initialization
             setTimeout(() => {
               updateTextures()
