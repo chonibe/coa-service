@@ -57,6 +57,10 @@ export function Spline3DPreview({
     meshRef: any
   }
   const [discoveredObjects, setDiscoveredObjects] = useState<ObjectInfo[]>([])
+  
+  // Store Diffuser - B object layers for focused testing
+  const [diffuserBLayers, setDiffuserBLayers] = useState<LayerInfo[]>([])
+  const [showOtherControls, setShowOtherControls] = useState(false) // Hide other controls by default
 
   // Toggle model visibility
   const toggleModelVisibility = useCallback(() => {
@@ -1203,8 +1207,123 @@ export function Spline3DPreview({
               return allLayers
             }
             
+            // Find and inspect Diffuser - B object specifically
+            const inspectDiffuserB = (): LayerInfo[] => {
+              const app = splineAppRef.current as any
+              if (!app) return []
+              
+              console.log("[Spline3D] ===== INSPECTING DIFFUSER - B OBJECT =====")
+              
+              const scene = app.scene || app._scene
+              if (!scene) {
+                console.warn("[Spline3D] Scene not available")
+                return []
+              }
+              
+              // Path: Scene > Scene > White > Assembly Small Lamp 2025 v62 > Panel Side B > Diffuser - B
+              const path = ["Scene", "White", "Assembly Small Lamp 2025 v62", "Panel Side B", "Diffuser - B"]
+              
+              let currentObj: any = scene
+              for (const pathSegment of path) {
+                if (!currentObj) {
+                  console.warn(`[Spline3D] Could not find path segment: ${pathSegment}`)
+                  return []
+                }
+                
+                const children = currentObj.children || []
+                const found = children.find((child: any) => 
+                  child.name === pathSegment || 
+                  (typeof child.name === 'string' && child.name.includes(pathSegment))
+                )
+                
+                if (found) {
+                  currentObj = found
+                } else if (currentObj.mesh && currentObj.mesh.children) {
+                  const meshFound = currentObj.mesh.children.find((child: any) => 
+                    child.name === pathSegment || 
+                    (typeof child.name === 'string' && child.name.includes(pathSegment))
+                  )
+                  if (meshFound) {
+                    currentObj = meshFound
+                  } else {
+                    console.warn(`[Spline3D] Could not find path segment: ${pathSegment}`)
+                    return []
+                  }
+                } else {
+                  console.warn(`[Spline3D] Could not find path segment: ${pathSegment}`)
+                  return []
+                }
+              }
+              
+              if (!currentObj) {
+                console.warn(`[Spline3D] Diffuser - B object not found`)
+                return []
+              }
+              
+              console.log(`[Spline3D] Found Diffuser - B object:`, {
+                name: currentObj.name,
+                type: currentObj.type,
+                uuid: currentObj.uuid,
+                id: currentObj.id
+              })
+              
+              // Get material
+              let material = currentObj.material
+              if (!material && currentObj.mesh) {
+                material = currentObj.mesh.material
+              }
+              
+              if (!material) {
+                console.warn(`[Spline3D] No material found on Diffuser - B`)
+                return []
+              }
+              
+              console.log(`[Spline3D] Diffuser - B material:`, {
+                type: material.type,
+                hasLayers: !!material.layers,
+                layersCount: material.layers?.length
+              })
+              
+              const layers: LayerInfo[] = []
+              
+              // Inspect all layers
+              if (material.layers && Array.isArray(material.layers)) {
+                material.layers.forEach((layer: any, index: number) => {
+                  console.log(`[Spline3D] Diffuser - B Layer ${index}:`, {
+                    type: layer.type,
+                    visible: layer.visible,
+                    alpha: layer.alpha,
+                    hasImage: layer.image !== undefined,
+                    hasMap: layer.map !== undefined,
+                    hasTexture: layer.texture !== undefined,
+                    allProperties: Object.keys(layer)
+                  })
+                  
+                  layers.push({
+                    objectName: "Diffuser - B",
+                    objectId: currentObj.uuid || currentObj.id || 'diffuser-b',
+                    layerIndex: index,
+                    layerType: layer.type,
+                    layerName: layer.name || layer.id || `Layer ${index}`,
+                    visible: layer.visible !== false,
+                    layerRef: layer,
+                    materialRef: material
+                  })
+                })
+              }
+              
+              console.log(`[Spline3D] Found ${layers.length} layers on Diffuser - B`)
+              console.log("[Spline3D] ===== END DIFFUSER - B INSPECTION =====")
+              
+              return layers
+            }
+            
             // Inspect materials after a short delay to ensure scene is fully loaded
             setTimeout(() => {
+              // Inspect Diffuser - B object specifically
+              const diffuserBLayers = inspectDiffuserB()
+              setDiffuserBLayers(diffuserBLayers)
+              
               // Search entire scene for ALL objects (for toggling)
               const allObjects = searchEntireSceneForObjects()
               setDiscoveredObjects(allObjects)
@@ -1350,12 +1469,15 @@ export function Spline3DPreview({
             </Button>
           </div>
 
-          {/* Layer Toggle Controls */}
-          {discoveredLayers.length > 0 && (
+          {/* Diffuser - B Material Layer Controls */}
+          {diffuserBLayers.length > 0 && (
             <div className="border rounded-lg p-4 bg-muted/50">
-              <h3 className="text-sm font-semibold mb-3">Layer Controls</h3>
-              <div className="space-y-3">
-                {discoveredLayers.map((layerInfo, idx) => (
+              <h3 className="text-sm font-semibold mb-3">Diffuser - B Material Layers</h3>
+              <p className="text-xs text-muted-foreground mb-3">
+                Toggle material layers on the Diffuser - B object to test control
+              </p>
+              <div className="space-y-2">
+                {diffuserBLayers.map((layerInfo) => (
                   <div key={`${layerInfo.objectId}-${layerInfo.layerIndex}`} className="flex items-center gap-2">
                     <Button
                       onClick={() => toggleLayerVisibility(layerInfo)}
@@ -1370,63 +1492,100 @@ export function Spline3DPreview({
                         <EyeOff className="h-4 w-4" />
                       )}
                       <span className="text-xs">
-                        {layerInfo.layerIndex < 0 
-                          ? `${layerInfo.objectName} - ${layerInfo.layerName}`
-                          : `${layerInfo.objectName} - Layer ${layerInfo.layerIndex} (${layerInfo.layerType})`
-                        }
+                        Layer {layerInfo.layerIndex}: {layerInfo.layerType}
+                        {layerInfo.layerName && layerInfo.layerName !== `Layer ${layerInfo.layerIndex}` && ` (${layerInfo.layerName})`}
                       </span>
                       {layerInfo.layerType === 'image' && (
                         <span className="ml-auto text-xs bg-blue-500 text-white px-2 py-0.5 rounded">IMAGE</span>
                       )}
-                      {(layerInfo.layerType === 'direct-material' || layerInfo.layerType === 'child-material') && (
-                        <span className="ml-auto text-xs bg-orange-500 text-white px-2 py-0.5 rounded">
-                          {layerInfo.layerType === 'direct-material' ? 'DIRECT' : 'CHILD'}
-                        </span>
+                      {layerInfo.layerType === 'texture' && (
+                        <span className="ml-auto text-xs bg-green-500 text-white px-2 py-0.5 rounded">TEXTURE</span>
                       )}
                     </Button>
                   </div>
                 ))}
               </div>
               <p className="text-xs text-muted-foreground mt-3">
-                Toggle layers on/off to isolate which one is the image layer
+                Found {diffuserBLayers.length} layers. Toggle them to test if we can control the material.
               </p>
             </div>
           )}
 
-          {/* Object Toggle Controls */}
-          {discoveredObjects.length > 0 && (
-            <div className="border rounded-lg p-4 bg-muted/50">
-              <h3 className="text-sm font-semibold mb-3">Object Controls</h3>
-              <p className="text-xs text-muted-foreground mb-3">
-                Toggle entire objects on/off to find which object is displaying the image
-              </p>
-              <div className="space-y-2 max-h-[400px] overflow-y-auto">
-                {discoveredObjects.map((objectInfo) => (
-                  <div key={objectInfo.objectId} className="flex items-center gap-2">
-                    <Button
-                      onClick={() => toggleObjectVisibility(objectInfo)}
-                      variant={objectInfo.visible ? "default" : "outline"}
-                      size="sm"
-                      disabled={isLoading || !!error}
-                      className="flex items-center gap-2 flex-1 justify-start"
-                    >
-                      {objectInfo.visible ? (
-                        <Eye className="h-4 w-4" />
-                      ) : (
-                        <EyeOff className="h-4 w-4" />
-                      )}
-                      <span className="text-xs text-left">
-                        {objectInfo.objectPath}
-                      </span>
-                    </Button>
+          {/* Other Controls (Hidden by default) */}
+          {showOtherControls && (
+            <>
+              {/* Layer Toggle Controls */}
+              {discoveredLayers.length > 0 && (
+                <div className="border rounded-lg p-4 bg-muted/50">
+                  <h3 className="text-sm font-semibold mb-3">All Layer Controls</h3>
+                  <div className="space-y-3 max-h-[300px] overflow-y-auto">
+                    {discoveredLayers.map((layerInfo, idx) => (
+                      <div key={`${layerInfo.objectId}-${layerInfo.layerIndex}`} className="flex items-center gap-2">
+                        <Button
+                          onClick={() => toggleLayerVisibility(layerInfo)}
+                          variant={layerInfo.visible ? "default" : "outline"}
+                          size="sm"
+                          disabled={isLoading || !!error}
+                          className="flex items-center gap-2 flex-1 justify-start"
+                        >
+                          {layerInfo.visible ? (
+                            <Eye className="h-4 w-4" />
+                          ) : (
+                            <EyeOff className="h-4 w-4" />
+                          )}
+                          <span className="text-xs">
+                            {layerInfo.layerIndex < 0 
+                              ? `${layerInfo.objectName} - ${layerInfo.layerName}`
+                              : `${layerInfo.objectName} - Layer ${layerInfo.layerIndex} (${layerInfo.layerType})`
+                            }
+                          </span>
+                        </Button>
+                      </div>
+                    ))}
                   </div>
-                ))}
-              </div>
-              <p className="text-xs text-muted-foreground mt-3">
-                Found {discoveredObjects.length} objects in scene. Toggle them to find which one shows the image.
-              </p>
-            </div>
+                </div>
+              )}
+
+              {/* Object Toggle Controls */}
+              {discoveredObjects.length > 0 && (
+                <div className="border rounded-lg p-4 bg-muted/50">
+                  <h3 className="text-sm font-semibold mb-3">All Object Controls</h3>
+                  <div className="space-y-2 max-h-[300px] overflow-y-auto">
+                    {discoveredObjects.map((objectInfo) => (
+                      <div key={objectInfo.objectId} className="flex items-center gap-2">
+                        <Button
+                          onClick={() => toggleObjectVisibility(objectInfo)}
+                          variant={objectInfo.visible ? "default" : "outline"}
+                          size="sm"
+                          disabled={isLoading || !!error}
+                          className="flex items-center gap-2 flex-1 justify-start"
+                        >
+                          {objectInfo.visible ? (
+                            <Eye className="h-4 w-4" />
+                          ) : (
+                            <EyeOff className="h-4 w-4" />
+                          )}
+                          <span className="text-xs text-left">
+                            {objectInfo.objectPath}
+                          </span>
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </>
           )}
+
+          {/* Toggle to show/hide other controls */}
+          <Button
+            onClick={() => setShowOtherControls(!showOtherControls)}
+            variant="ghost"
+            size="sm"
+            className="w-full"
+          >
+            {showOtherControls ? "Hide" : "Show"} Other Controls
+          </Button>
         </div>
       </CardContent>
     </Card>
