@@ -453,41 +453,56 @@ export function Spline3DPreview({
                     hasName: originalImage.name !== undefined,
                     hasMagFilter: originalImage.magFilter !== undefined,
                     hasMinFilter: originalImage.minFilter !== undefined,
+                    currentOffset: originalImage.offset,
+                    currentRepeat: originalImage.repeat,
+                    currentRotation: originalImage.rotation,
                     allProperties: Object.keys(originalImage)
                   })
 
-                  // Replace just the data and essential properties, set specific transform values
+                  // Replace the image data
                   layer.texture.image.data = imageUint8Array
                   layer.texture.image.width = imageElement.width
                   layer.texture.image.height = imageElement.height
                   layer.texture.image.name = `uploaded-image-${label}`
 
-                  // Set the required transform values (instead of preserving originals)
+                  // SCALE BASED ON CURRENT VALUES: Current is 25x25, target is 21x15
+                  // Calculate scaling factors relative to current implementation
+                  const currentScaleX = originalImage.repeat ? originalImage.repeat[0] : 25
+                  const currentScaleY = originalImage.repeat ? originalImage.repeat[1] : 25
+                  const targetScaleX = 21
+                  const targetScaleY = 15
+
+                  // Scale down from current 25x25 to target 21x15
+                  const scaleFactorX = targetScaleX / currentScaleX  // 21/25 = 0.84
+                  const scaleFactorY = targetScaleY / currentScaleY  // 15/25 = 0.6
+
+                  layer.texture.image.repeat = [targetScaleX, targetScaleY]
+                  layer.texture.image.offset = [-0.05, -0.05]  // Target offset
+                  layer.texture.image.rotation = -90 * (Math.PI / 180)  // Target angle in radians
+
+                  // Preserve other properties
                   layer.texture.image.magFilter = originalImage.magFilter !== undefined ? originalImage.magFilter : 1006
                   layer.texture.image.minFilter = originalImage.minFilter !== undefined ? originalImage.minFilter : 1008
-                  layer.texture.image.offset = [-0.05, -0.05]  // Required offset
-                  layer.texture.image.repeat = [21, 15]  // Required scale - x:21, y:15
-                  layer.texture.image.rotation = -90 * (Math.PI / 180)  // Convert degrees to radians, required angle
                   layer.texture.image.wrapping = originalImage.wrapping !== undefined ? originalImage.wrapping : 1000
 
-                  console.log(`[Spline3D] ✓ REPLACED texture.image properties for layer ${i}`, {
+                  console.log(`[Spline3D] ✓ REPLACED texture.image with proper scaling for layer ${i}`, {
                     newImageName: layer.texture.image.name,
                     newImageSize: imageUint8Array.length,
                     newImageDimensions: `${imageElement.width}x${imageElement.height}`,
-                    appliedProperties: {
+                    scalingApplied: {
+                      currentScale: `${currentScaleX}x${currentScaleY}`,
+                      targetScale: `${targetScaleX}x${targetScaleY}`,
+                      scaleFactors: `${scaleFactorX.toFixed(2)}x${scaleFactorY.toFixed(2)}`,
+                      newRepeat: layer.texture.image.repeat,
+                      newOffset: layer.texture.image.offset,
+                      newRotationDegrees: layer.texture.image.rotation * (180 / Math.PI)
+                    },
+                    preservedProperties: {
                       magFilter: layer.texture.image.magFilter,
                       minFilter: layer.texture.image.minFilter,
-                      offset: layer.texture.image.offset,
-                      repeat: layer.texture.image.repeat,
-                      rotation: layer.texture.image.rotation * (180 / Math.PI), // Convert back to degrees for display
                       wrapping: layer.texture.image.wrapping
                     }
                   })
-
-                  // Apply the same transform properties to the texture object itself (may override image properties)
-                  if (layer.texture.offset !== undefined) layer.texture.offset = [-0.05, -0.05]
-                  if (layer.texture.repeat !== undefined) layer.texture.repeat = [21, 15]
-                  if (layer.texture.rotation !== undefined) layer.texture.rotation = -90 * (Math.PI / 180)
 
                   // CRITICAL: Mark the texture itself as needing update
                   if (layer.texture.needsUpdate !== undefined) {
