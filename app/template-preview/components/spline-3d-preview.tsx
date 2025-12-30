@@ -550,38 +550,37 @@ export function Spline3DPreview({
                   if (layer.map !== undefined) layer.map = imageElement
                   if (layer.texture !== undefined) layer.texture = imageElement
                 }
-                  
-                  layer.visible = true
-                  layer.alpha = 1
-                  if (layer.opacity !== undefined) layer.opacity = 1
-                  
-                  // Try update methods
-                  if (layer.updateTexture && typeof layer.updateTexture === 'function') {
-                    layer.updateTexture(imageElement)
-                  }
-                  if (layer.update && typeof layer.update === 'function') {
-                    layer.update()
-                  }
-                  if (layer.setImage && typeof layer.setImage === 'function') {
-                    layer.setImage(imageElement)
-                  }
-                  
-                  material.needsUpdate = true
-                  if (material.version !== undefined) {
-                    material.version++
-                  }
-                  
-                  // Force app update
-                  if (app.update && typeof app.update === 'function') {
-                    app.update()
-                  }
-                  
-                  console.log(`[Spline3D] ✓ Approach 1b: Updated existing ${layer.type} layer ${i} for ${label}`, {
-                    layerVisible: layer.visible,
-                    layerAlpha: layer.alpha
-                  })
-                  return true
+
+                layer.visible = true
+                layer.alpha = 1
+                if (layer.opacity !== undefined) layer.opacity = 1
+
+                // Try update methods
+                if (layer.updateTexture && typeof layer.updateTexture === 'function') {
+                  layer.updateTexture(imageElement)
                 }
+                if (layer.update && typeof layer.update === 'function') {
+                  layer.update()
+                }
+                if (layer.setImage && typeof layer.setImage === 'function') {
+                  layer.setImage(imageElement)
+                }
+
+                material.needsUpdate = true
+                if (material.version !== undefined) {
+                  material.version++
+                }
+
+                // Force app update
+                if (app.update && typeof app.update === 'function') {
+                  app.update()
+                }
+
+                console.log(`[Spline3D] ✓ Approach 1b: Updated existing ${layer.type} layer ${i} for ${label}`, {
+                  layerVisible: layer.visible,
+                  layerAlpha: layer.alpha
+                })
+                return true
               } catch (e) {
                 console.warn(`[Spline3D] Approach 1b failed for layer ${i}:`, e)
               }
