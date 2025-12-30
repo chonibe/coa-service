@@ -540,9 +540,24 @@ export function Spline3DPreview({
                   const scaleFactorX = targetScaleX / currentScaleX  // 18/25 = 0.72
                   const scaleFactorY = targetScaleY / currentScaleY  // 12/25 = 0.48
 
+                  // Set both texture and texture.image properties
                   layer.texture.image.repeat = [targetScaleX, targetScaleY]
                   layer.texture.image.offset = [-0.05, -0.05]  // Target offset
                   layer.texture.image.rotation = -90 * (Math.PI / 180)  // Target angle in radians
+
+                  // Also set the texture-level properties (these might be what actually control rendering)
+                  if (layer.texture.repeat !== undefined) {
+                    layer.texture.repeat.set(targetScaleX, targetScaleY)
+                    console.log(`[Spline3D] ✓ Set texture.repeat to [${targetScaleX}, ${targetScaleY}]`)
+                  }
+                  if (layer.texture.offset !== undefined) {
+                    layer.texture.offset.set(-0.05, -0.05)
+                    console.log(`[Spline3D] ✓ Set texture.offset to [-0.05, -0.05]`)
+                  }
+                  if (layer.texture.rotation !== undefined) {
+                    layer.texture.rotation = -90 * (Math.PI / 180)
+                    console.log(`[Spline3D] ✓ Set texture.rotation to -90°`)
+                  }
 
                   // Preserve other properties
                   layer.texture.image.magFilter = originalImage.magFilter !== undefined ? originalImage.magFilter : 1006
@@ -570,12 +585,17 @@ export function Spline3DPreview({
 
                   // Debug: Show what we're actually setting vs original
                   console.log(`[Spline3D] DEBUG - Texture scaling for layer ${i}:`, {
-                    originalRepeat: originalImage.repeat,
-                    newRepeat: layer.texture.image.repeat,
-                    originalOffset: originalImage.offset,
-                    newOffset: layer.texture.image.offset,
-                    originalRotation: originalImage.rotation,
-                    newRotation: layer.texture.image.rotation,
+                    originalImageRepeat: originalImage.repeat,
+                    newImageRepeat: layer.texture.image.repeat,
+                    originalImageOffset: originalImage.offset,
+                    newImageOffset: layer.texture.image.offset,
+                    originalImageRotation: originalImage.rotation,
+                    newImageRotation: layer.texture.image.rotation,
+                    // Also check texture-level properties
+                    originalTextureRepeat: layer.texture.repeat,
+                    newTextureRepeat: layer.texture.repeat, // This shouldn't change
+                    originalTextureOffset: layer.texture.offset,
+                    newTextureOffset: layer.texture.offset, // This shouldn't change
                     scaleChange: `From ${currentScaleX}x${currentScaleY} → ${targetScaleX}x${targetScaleY}`
                   })
 
@@ -585,14 +605,29 @@ export function Spline3DPreview({
                       textureRepeat: layer.texture.repeat,
                       textureOffset: layer.texture.offset,
                       textureRotation: layer.texture.rotation,
+                      textureScale: layer.texture.scale,
                       imageRepeat: layer.texture.image.repeat,
                       imageOffset: layer.texture.image.offset,
                       imageRotation: layer.texture.image.rotation,
                       imageWidth: layer.texture.image.width,
                       imageHeight: layer.texture.image.height,
-                      textureScale: layer.texture.scale,
-                      matrixNeedsUpdate: layer.texture.matrixNeedsUpdate
+                      matrixNeedsUpdate: layer.texture.matrixNeedsUpdate,
+                      // Check if there are any UV transform matrices
+                      matrix: layer.texture.matrix,
+                      uvTransform: layer.texture.uvTransform,
+                      // Check material properties that might affect scaling
+                      materialNeedsUpdate: material.needsUpdate,
+                      materialVersion: material.version
                     })
+
+                    // Also check if the texture has any parent scaling
+                    if (layer.texture.image && layer.texture.image.parent) {
+                      console.log(`[Spline3D] TEXTURE PARENT INFO for layer ${i}:`, {
+                        parentType: layer.texture.image.parent.type,
+                        parentScale: layer.texture.image.parent.scale,
+                        parentPosition: layer.texture.image.parent.position
+                      })
+                    }
                   }, 100)
 
                   // CRITICAL: Mark the texture itself as needing update
@@ -605,6 +640,15 @@ export function Spline3DPreview({
                   if (layer.texture.image.needsUpdate !== undefined) {
                     layer.texture.image.needsUpdate = true
                     console.log(`[Spline3D] ✓ Marked texture.image as needsUpdate`)
+                  }
+
+                  // Update texture matrix if the properties changed
+                  if (layer.texture.updateMatrix) {
+                    layer.texture.updateMatrix()
+                    console.log(`[Spline3D] ✓ Updated texture matrix`)
+                  } else if (layer.texture.matrixNeedsUpdate !== undefined) {
+                    layer.texture.matrixNeedsUpdate = true
+                    console.log(`[Spline3D] ✓ Marked texture matrix as needsUpdate`)
                   }
 
                   // Immediately update material and force refresh after texture.image replacement
