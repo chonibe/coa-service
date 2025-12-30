@@ -19,6 +19,7 @@ interface Order {
   currency_code: string;
   customer_email: string;
   line_items?: any[];
+  raw_shopify_order_data?: any;
 }
 
 export default function OrdersPage() {

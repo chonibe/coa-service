@@ -18,6 +18,7 @@ interface Order {
   customer_email: string;
   line_items?: any[];
   has_duplicates?: boolean;
+  raw_shopify_order_data?: any;
 }
 
 interface OrdersListProps {
@@ -96,19 +97,64 @@ export default function OrdersList({
                     {formatCurrency(order.total_price, order.currency_code)}
                   </TableCell>
                   <TableCell>
-                    <div className="flex gap-2">
+                    <div className="flex flex-wrap gap-2">
+                      {/* Financial Status */}
                       <Badge 
-                        variant={order.financial_status === 'paid' ? 'default' : 'secondary'}
+                        variant={
+                          order.financial_status === 'paid' ? 'default' : 
+                          order.financial_status === 'voided' || order.financial_status === 'refunded' ? 'destructive' : 
+                          'secondary'
+                        }
                         className="text-xs"
                       >
-                        {order.financial_status}
+                        {order.financial_status || 'unknown'}
                       </Badge>
+                      
+                      {/* Fulfillment Status */}
                       <Badge 
-                        variant={order.fulfillment_status === 'fulfilled' ? 'default' : 'secondary'}
+                        variant={
+                          order.fulfillment_status === 'fulfilled' ? 'default' : 
+                          order.fulfillment_status === 'partial' ? 'secondary' : 
+                          'outline'
+                        }
                         className="text-xs"
                       >
-                        {order.fulfillment_status || 'pending'}
+                        {order.fulfillment_status || 'unfulfilled'}
                       </Badge>
+                      
+                      {/* Cancelled Status */}
+                      {order.raw_shopify_order_data?.cancelled_at && (
+                        <Badge 
+                          variant="destructive"
+                          className="text-xs"
+                        >
+                          Cancelled
+                        </Badge>
+                      )}
+                      
+                      {/* Archived Status */}
+                      {((order.raw_shopify_order_data?.tags && 
+                         typeof order.raw_shopify_order_data.tags === 'string' &&
+                         order.raw_shopify_order_data.tags.toLowerCase().includes('archived')) ||
+                        order.raw_shopify_order_data?.status === 'closed') && (
+                        <Badge 
+                          variant="outline"
+                          className="text-xs"
+                        >
+                          Archived
+                        </Badge>
+                      )}
+                      
+                      {/* Shopify Order Status */}
+                      {order.raw_shopify_order_data?.status && 
+                       order.raw_shopify_order_data?.status !== 'open' && (
+                        <Badge 
+                          variant="outline"
+                          className="text-xs"
+                        >
+                          {order.raw_shopify_order_data.status}
+                        </Badge>
+                      )}
                     </div>
                   </TableCell>
                 </TableRow>
