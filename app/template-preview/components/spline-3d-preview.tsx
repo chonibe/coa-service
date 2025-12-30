@@ -1220,38 +1220,91 @@ export function Spline3DPreview({
                 return []
               }
               
-              // Path: Scene > Scene > White > Assembly Small Lamp 2025 v62 > Panel Side B > PC Trans B
-              const path = ["Scene", "White", "Assembly Small Lamp 2025 v62", "Panel Side B", "PC Trans B"]
+              // Try to find object by name first (most reliable)
+              let currentObj: any = null
               
-              let currentObj: any = scene
-              for (const pathSegment of path) {
-                if (!currentObj) {
-                  console.warn(`[Spline3D] Could not find path segment: ${pathSegment}`)
-                  return []
+              // Method 1: Try getAllObjects and find by name
+              if (app.getAllObjects && typeof app.getAllObjects === 'function') {
+                try {
+                  const allObjects = app.getAllObjects()
+                  if (Array.isArray(allObjects)) {
+                    currentObj = allObjects.find((obj: any) => 
+                      obj.name === "PC Trans B" || 
+                      (typeof obj.name === 'string' && obj.name.includes("PC Trans B"))
+                    )
+                    if (currentObj) {
+                      console.log(`[Spline3D] Found PC Trans B via getAllObjects()`)
+                    }
+                  }
+                } catch (e) {
+                  console.warn("[Spline3D] getAllObjects() failed:", e)
+                }
+              }
+              
+              // Method 2: Try findObjectByName
+              if (!currentObj && app.findObjectByName && typeof app.findObjectByName === 'function') {
+                try {
+                  currentObj = app.findObjectByName("PC Trans B")
+                  if (currentObj) {
+                    console.log(`[Spline3D] Found PC Trans B via findObjectByName()`)
+                  }
+                } catch (e) {
+                  console.warn("[Spline3D] findObjectByName() failed:", e)
+                }
+              }
+              
+              // Method 3: Path traversal (skip first "Scene" since we're already at scene)
+              // Path: Scene > Scene > White > Assembly Small Lamp 2025 v62 > Panel Side B > PC Trans B
+              if (!currentObj) {
+                const path = ["White", "Assembly Small Lamp 2025 v62", "Panel Side B", "PC Trans B"]
+                let pathObj: any = scene
+                
+                // First, try to find nested Scene if it exists
+                const sceneChildren = pathObj.children || []
+                const nestedScene = sceneChildren.find((child: any) => 
+                  child.name === "Scene" || child.type === "Scene"
+                )
+                if (nestedScene) {
+                  pathObj = nestedScene
+                  console.log(`[Spline3D] Found nested Scene, continuing traversal`)
                 }
                 
-                const children = currentObj.children || []
-                const found = children.find((child: any) => 
-                  child.name === pathSegment || 
-                  (typeof child.name === 'string' && child.name.includes(pathSegment))
-                )
-                
-                if (found) {
-                  currentObj = found
-                } else if (currentObj.mesh && currentObj.mesh.children) {
-                  const meshFound = currentObj.mesh.children.find((child: any) => 
+                for (const pathSegment of path) {
+                  if (!pathObj) {
+                    console.warn(`[Spline3D] Could not find path segment: ${pathSegment}`)
+                    break
+                  }
+                  
+                  const children = pathObj.children || []
+                  const found = children.find((child: any) => 
                     child.name === pathSegment || 
                     (typeof child.name === 'string' && child.name.includes(pathSegment))
                   )
-                  if (meshFound) {
-                    currentObj = meshFound
+                  
+                  if (found) {
+                    pathObj = found
+                    console.log(`[Spline3D] Found path segment: ${pathSegment}`)
+                  } else if (pathObj.mesh && pathObj.mesh.children) {
+                    const meshFound = pathObj.mesh.children.find((child: any) => 
+                      child.name === pathSegment || 
+                      (typeof child.name === 'string' && child.name.includes(pathSegment))
+                    )
+                    if (meshFound) {
+                      pathObj = meshFound
+                      console.log(`[Spline3D] Found path segment in mesh: ${pathSegment}`)
+                    } else {
+                      console.warn(`[Spline3D] Could not find path segment: ${pathSegment}`)
+                      break
+                    }
                   } else {
                     console.warn(`[Spline3D] Could not find path segment: ${pathSegment}`)
-                    return []
+                    break
                   }
-                } else {
-                  console.warn(`[Spline3D] Could not find path segment: ${pathSegment}`)
-                  return []
+                }
+                
+                if (pathObj && pathObj.name && pathObj.name.includes("PC Trans B")) {
+                  currentObj = pathObj
+                  console.log(`[Spline3D] Found PC Trans B via path traversal`)
                 }
               }
               
