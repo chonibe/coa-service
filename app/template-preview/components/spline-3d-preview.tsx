@@ -59,6 +59,67 @@ export function Spline3DPreview({
     objectRef: any
     meshRef: any
   }
+
+  // Debug function to inspect current texture sizes
+  const debugTextureSizes = useCallback(() => {
+    console.log("[Spline3D] ===== DEBUGGING TEXTURE SIZES =====")
+
+    const app = splineAppRef.current as any
+    if (!app) {
+      console.warn("[Spline3D] No app available for debugging")
+      return
+    }
+
+    const scene = app.scene || app._scene
+    if (!scene) {
+      console.warn("[Spline3D] No scene available for debugging")
+      return
+    }
+
+    // Find objects and inspect their textures
+    const findAndInspectTextures = (obj: any, path = "") => {
+      if (!obj) return
+
+      const currentPath = path ? `${path} > ${obj.name || obj.type}` : obj.name || obj.type
+
+      // Check if this object has materials/layers
+      let material = obj.material
+      if (!material && obj.mesh) {
+        material = obj.mesh.material
+      }
+
+      if (material && material.layers) {
+        console.log(`[Spline3D] Inspecting ${currentPath}:`)
+        material.layers.forEach((layer: any, index: number) => {
+          if (layer.texture && layer.texture.image) {
+            console.log(`  Layer ${index} (${layer.type}):`, {
+              textureRepeat: layer.texture.repeat,
+              textureOffset: layer.texture.offset,
+              textureRotation: layer.texture.rotation,
+              imageRepeat: layer.texture.image.repeat,
+              imageOffset: layer.texture.image.offset,
+              imageRotation: layer.texture.image.rotation,
+              imageSize: `${layer.texture.image.width}x${layer.texture.image.height}`,
+              textureScale: layer.texture.scale
+            })
+          }
+        })
+      }
+
+      // Recursively check children
+      if (obj.children) {
+        obj.children.forEach((child: any) => findAndInspectTextures(child, currentPath))
+      }
+
+      // Check mesh children
+      if (obj.mesh && obj.mesh.children) {
+        obj.mesh.children.forEach((child: any) => findAndInspectTextures(child, `${currentPath} (mesh)`))
+      }
+    }
+
+    findAndInspectTextures(scene)
+    console.log("[Spline3D] ===== END TEXTURE SIZE DEBUG =====")
+  }, [])
   const [discoveredObjects, setDiscoveredObjects] = useState<ObjectInfo[]>([])
   
   // Store PC Trans B object layers for focused testing
@@ -517,6 +578,22 @@ export function Spline3DPreview({
                     newRotation: layer.texture.image.rotation,
                     scaleChange: `From ${currentScaleX}x${currentScaleY} → ${targetScaleX}x${targetScaleY}`
                   })
+
+                  // Debug: Check final texture state after all updates
+                  setTimeout(() => {
+                    console.log(`[Spline3D] FINAL TEXTURE STATE for layer ${i}:`, {
+                      textureRepeat: layer.texture.repeat,
+                      textureOffset: layer.texture.offset,
+                      textureRotation: layer.texture.rotation,
+                      imageRepeat: layer.texture.image.repeat,
+                      imageOffset: layer.texture.image.offset,
+                      imageRotation: layer.texture.image.rotation,
+                      imageWidth: layer.texture.image.width,
+                      imageHeight: layer.texture.image.height,
+                      textureScale: layer.texture.scale,
+                      matrixNeedsUpdate: layer.texture.matrixNeedsUpdate
+                    })
+                  }, 100)
 
                   // CRITICAL: Mark the texture itself as needing update
                   if (layer.texture.needsUpdate !== undefined) {
@@ -1801,6 +1878,21 @@ export function Spline3DPreview({
                 </>
               )}
             </Button>
+          </div>
+
+          {/* Debug Texture Sizes Button */}
+          <div className="mb-4">
+            <Button
+              onClick={debugTextureSizes}
+              variant="outline"
+              size="sm"
+              className="w-full"
+            >
+              🔍 Debug Current Texture Sizes
+            </Button>
+            <p className="text-xs text-muted-foreground mt-1">
+              Click to inspect actual rendered texture sizes and properties
+            </p>
           </div>
 
           {/* PC Trans B Material Layer Controls - ALWAYS VISIBLE AND PROMINENT */}
