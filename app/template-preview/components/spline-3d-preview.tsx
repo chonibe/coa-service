@@ -2089,6 +2089,33 @@ export function Spline3DPreview({
             </Button>
           </div>
 
+          {/* Texture Controls Section */}
+          <div className="mb-6 space-y-6">
+            {/* Side 1 Controls */}
+            <div className="p-4 bg-background/50 rounded-lg border border-blue-200">
+              <h4 className="text-lg font-semibold mb-3 text-blue-600">🎨 Side 1 (PC Trans A) - Texture Controls</h4>
+              <p className="text-sm text-muted-foreground mb-4">
+                Adjust how the Side 1 uploaded image appears on the 3D model
+              </p>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {renderTextureControls(1, texturePropertiesSide1)}
+              </div>
+            </div>
+
+            {/* Side 2 Controls */}
+            <div className="p-4 bg-background/50 rounded-lg border border-green-200">
+              <h4 className="text-lg font-semibold mb-3 text-green-600">🎨 Side 2 (PC Trans B) - Texture Controls</h4>
+              <p className="text-sm text-muted-foreground mb-4">
+                Adjust how the Side 2 uploaded image appears on the 3D model
+              </p>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {renderTextureControls(2, texturePropertiesSide2)}
+              </div>
+            </div>
+          </div>
+
           {/* PC Trans B Material Layer Controls - ALWAYS VISIBLE AND PROMINENT */}
           <div className="border-4 border-primary rounded-xl p-6 bg-gradient-to-r from-primary/10 to-primary/5 shadow-lg">
             <div className="mb-4">
@@ -2105,173 +2132,6 @@ export function Spline3DPreview({
               </div>
             </div>
 
-            {/* Texture Controls Section */}
-            <div className="mb-6 space-y-6">
-              {/* Side 1 Controls */}
-              <div className="p-4 bg-background/50 rounded-lg border border-blue-200">
-                <h4 className="text-lg font-semibold mb-3 text-blue-600">🎨 Side 1 (PC Trans A) - Texture Controls</h4>
-                <p className="text-sm text-muted-foreground mb-4">
-                  Adjust how the Side 1 uploaded image appears on the 3D model
-                </p>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {renderTextureControls(1, texturePropertiesSide1)}
-                </div>
-              </div>
-
-              {/* Side 2 Controls */}
-              <div className="p-4 bg-background/50 rounded-lg border border-green-200">
-                <h4 className="text-lg font-semibold mb-3 text-green-600">🎨 Side 2 (PC Trans B) - Texture Controls</h4>
-                <p className="text-sm text-muted-foreground mb-4">
-                  Adjust how the Side 2 uploaded image appears on the 3D model
-                </p>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {renderTextureControls(2, texturePropertiesSide2)}
-                </div>
-              </div>
-            </div>
-                {/* Scale Controls */}
-                <div className="space-y-3">
-                  <h5 className="font-medium text-sm">🔍 Scale</h5>
-                  <div className="space-y-2">
-                    <div className="flex items-center gap-2">
-                      <label className="text-xs font-medium w-12">Width:</label>
-                      <input
-                        type="range"
-                        min="0.01"
-                        max="2.0"
-                        step="0.01"
-                        value={textureProperties.repeat[0]}
-                        className="flex-1 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
-                        onChange={(e) => updateTextureProperty('repeat', 0, parseFloat(e.target.value))}
-                      />
-                      <span className="text-xs w-12 text-right">{textureProperties.repeat[0].toFixed(2)}</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <label className="text-xs font-medium w-12">Height:</label>
-                      <input
-                        type="range"
-                        min="0.01"
-                        max="2.0"
-                        step="0.01"
-                        value={textureProperties.repeat[1]}
-                        className="flex-1 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
-                        onChange={(e) => updateTextureProperty('repeat', 1, parseFloat(e.target.value))}
-                      />
-                      <span className="text-xs w-12 text-right">{textureProperties.repeat[1].toFixed(2)}</span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Position Controls */}
-                <div className="space-y-3">
-                  <h5 className="font-medium text-sm">📍 Position</h5>
-                  <div className="space-y-2">
-                    <div className="flex items-center gap-2">
-                      <label className="text-xs font-medium w-12">X:</label>
-                      <input
-                        type="range"
-                        min="-1.0"
-                        max="1.0"
-                        step="0.01"
-                        value={textureProperties.offset[0]}
-                        className="flex-1 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
-                        onChange={(e) => updateTextureProperty('offset', 0, parseFloat(e.target.value))}
-                      />
-                      <span className="text-xs w-12 text-right">{textureProperties.offset[0].toFixed(2)}</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <label className="text-xs font-medium w-12">Y:</label>
-                      <input
-                        type="range"
-                        min="-1.0"
-                        max="1.0"
-                        step="0.01"
-                        value={textureProperties.offset[1]}
-                        className="flex-1 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
-                        onChange={(e) => updateTextureProperty('offset', 1, parseFloat(e.target.value))}
-                      />
-                      <span className="text-xs w-12 text-right">{textureProperties.offset[1].toFixed(2)}</span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Rotation Control */}
-                <div className="space-y-3">
-                  <h5 className="font-medium text-sm">🔄 Rotation</h5>
-                  <div className="flex items-center gap-2">
-                    <label className="text-xs font-medium w-12">Angle:</label>
-                    <input
-                      type="range"
-                      min="-180"
-                      max="180"
-                      step="1"
-                      value={textureProperties.rotation * 180 / Math.PI}
-                      className="flex-1 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
-                      onChange={(e) => updateTextureProperty('rotation', 0, parseFloat(e.target.value) * Math.PI / 180)}
-                    />
-                    <span className="text-xs w-12 text-right">{Math.round(textureProperties.rotation * 180 / Math.PI)}°</span>
-                  </div>
-                </div>
-
-                {/* Filter Controls */}
-                <div className="space-y-3">
-                  <h5 className="font-medium text-sm">⚙️ Filters</h5>
-                  <div className="space-y-2">
-                    <div className="flex items-center gap-2">
-                      <label className="text-xs font-medium w-16">Mag Filter:</label>
-                      <select
-                        value={textureProperties.magFilter}
-                        className="flex-1 text-xs p-1 border rounded"
-                        onChange={(e) => updateTextureProperty('magFilter', 0, parseInt(e.target.value))}
-                      >
-                        <option value="9728">Nearest</option>
-                        <option value="9729">Linear</option>
-                        <option value="9984">NearestMipmapNearest</option>
-                        <option value="9985">LinearMipmapNearest</option>
-                        <option value="9986">NearestMipmapLinear</option>
-                        <option value="9987">LinearMipmapLinear</option>
-                      </select>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <label className="text-xs font-medium w-16">Min Filter:</label>
-                      <select
-                        value={textureProperties.minFilter}
-                        className="flex-1 text-xs p-1 border rounded"
-                        onChange={(e) => updateTextureProperty('minFilter', 0, parseInt(e.target.value))}
-                      >
-                        <option value="9728">Nearest</option>
-                        <option value="9729">Linear</option>
-                        <option value="9984">NearestMipmapNearest</option>
-                        <option value="9985">LinearMipmapNearest</option>
-                        <option value="9986">NearestMipmapLinear</option>
-                        <option value="9987">LinearMipmapLinear</option>
-                      </select>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="mt-4 flex gap-2">
-                <Button
-                  onClick={() => resetTextureProperties()}
-                  variant="outline"
-                  size="sm"
-                  className="text-xs"
-                >
-                  🔄 Reset to Default
-                </Button>
-                <Button
-                  onClick={() => applyTextureUpdates()}
-                  variant="default"
-                  size="sm"
-                  className="text-xs"
-                >
-                  ✅ Apply Changes
-                </Button>
-              </div>
-            </div>
 
             {pcTransBLayers.length > 0 ? (
               <>
