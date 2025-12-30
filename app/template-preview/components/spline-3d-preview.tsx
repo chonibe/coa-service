@@ -328,13 +328,28 @@ export function Spline3DPreview({
     if (targetObj && targetObj.material && targetObj.material.layers) {
       let updatedLayers = 0
 
-      // Update all texture layers that have images
+      // Update all texture layers that have textures
       targetObj.material.layers.forEach((layer: any, layerIndex: number) => {
-        if (layer.type === 'texture' && layer.texture && layer.texture.image) {
-          if (Array.isArray(layer.texture[property])) {
-            layer.texture[property][index] = value
-          } else {
-            layer.texture[property] = value
+        if (layer.type === 'texture' && layer.texture) {
+          // Handle array properties (repeat, offset)
+          if (property === 'repeat') {
+            if (Array.isArray(layer.texture.repeat)) {
+              layer.texture.repeat[index] = value
+            } else {
+              layer.texture.repeat.set(index === 0 ? value : layer.texture.repeat.x, index === 1 ? value : layer.texture.repeat.y)
+            }
+          } else if (property === 'offset') {
+            if (Array.isArray(layer.texture.offset)) {
+              layer.texture.offset[index] = value
+            } else {
+              layer.texture.offset.set(index === 0 ? value : layer.texture.offset.x, index === 1 ? value : layer.texture.offset.y)
+            }
+          } else if (property === 'rotation') {
+            layer.texture.rotation = value
+          } else if (property === 'magFilter') {
+            layer.texture.magFilter = value
+          } else if (property === 'minFilter') {
+            layer.texture.minFilter = value
           }
 
           // For contrast and brightness, modify the material properties
@@ -342,6 +357,9 @@ export function Spline3DPreview({
             if (!layer.material) layer.material = {}
             layer.material[property] = value
           }
+
+          // Mark texture as needing update
+          layer.texture.needsUpdate = true
 
           updatedLayers++
         }
@@ -823,56 +841,39 @@ export function Spline3DPreview({
                 
                 // Try setting image data - prioritize texture.image for existing textures
                 if (layer.texture && layer.texture.image !== undefined) {
-                  // This is the key! Replace the texture.image completely with new image data
-                  // Keep the same structure as the original texture.image object
-                  const originalImage = layer.texture.image
+                  // Create a proper THREE.Texture object instead of just replacing data
+                  console.log(`[Spline3D] Creating new THREE.Texture from image data for layer ${i}`)
 
-                  console.log(`[Spline3D] Original texture.image structure:`, {
-                    hasData: !!originalImage.data,
-                    dataType: originalImage.data?.constructor?.name,
-                    dataLength: originalImage.data?.length,
-                    hasWidth: originalImage.width !== undefined,
-                    hasHeight: originalImage.height !== undefined,
-                    hasName: originalImage.name !== undefined,
-                    hasMagFilter: originalImage.magFilter !== undefined,
-                    hasMinFilter: originalImage.minFilter !== undefined,
-                    allProperties: Object.keys(originalImage)
-                  })
+                  // Create new THREE.Texture from the HTMLImageElement
+                  const newTexture = new (window as any).THREE.Texture(imageElement)
+                  newTexture.needsUpdate = true
 
-                  // Replace just the data and essential properties, keep the rest intact
-                  layer.texture.image.data = imageUint8Array
-                  layer.texture.image.width = imageElement.width
-                  layer.texture.image.height = imageElement.height
-                  layer.texture.image.name = `uploaded-image-${label}`
+                  // Copy all the important properties from the original texture
+                  const originalTexture = layer.texture
+                  newTexture.wrapS = originalTexture.wrapS || 1000
+                  newTexture.wrapT = originalTexture.wrapT || 1000
+                  newTexture.magFilter = originalTexture.magFilter || 1006
+                  newTexture.minFilter = originalTexture.minFilter || 1008
+                  newTexture.format = originalTexture.format || 1023
+                  newTexture.type = originalTexture.type || 1009
 
-                  // CRITICAL: Re-apply current texture properties from state after image replacement
-                  // This ensures the controls work after image upload
+                  // Apply current texture properties from state
                   const currentProps = side === 1 ? texturePropertiesSide1 : texturePropertiesSide2
-                  console.log(`[Spline3D] Re-applying texture properties after image replacement:`, currentProps)
+                  console.log(`[Spline3D] Applying texture properties to new texture:`, currentProps)
 
-                  if (Array.isArray(currentProps.repeat) && layer.texture.repeat) {
-                    layer.texture.repeat[0] = currentProps.repeat[0]
-                    layer.texture.repeat[1] = currentProps.repeat[1]
-                  }
-                  if (Array.isArray(currentProps.offset) && layer.texture.offset) {
-                    layer.texture.offset[0] = currentProps.offset[0]
-                    layer.texture.offset[1] = currentProps.offset[1]
-                  }
-                  if (layer.texture.rotation !== undefined) {
-                    layer.texture.rotation = currentProps.rotation
-                  }
-                  if (layer.texture.magFilter !== undefined) {
-                    layer.texture.magFilter = currentProps.magFilter
-                  }
-                  if (layer.texture.minFilter !== undefined) {
-                    layer.texture.minFilter = currentProps.minFilter
-                  }
+                  newTexture.repeat.set(currentProps.repeat[0], currentProps.repeat[1])
+                  newTexture.offset.set(currentProps.offset[0], currentProps.offset[1])
+                  newTexture.rotation = currentProps.rotation
+
+                  // Replace the texture completely
+                  layer.texture = newTexture
+
                   // Apply contrast/brightness to material
                   if (!layer.material) layer.material = {}
                   layer.material.contrast = currentProps.contrast
                   layer.material.brightness = currentProps.brightness
 
-                  console.log(`[Spline3D] ✓ Applied current texture properties after image replacement`)
+                  console.log(`[Spline3D] ✓ Created new THREE.Texture with proper properties`)
 
                   console.log(`[Spline3D] ✓ REPLACED texture.image properties for layer ${i}`, {
                     newImageName: layer.texture.image.name,
@@ -922,7 +923,7 @@ export function Spline3DPreview({
                     }
                   }, 100)
 
-                  console.log(`[Spline3D] ✓ REPLACED texture.image and updated material for layer ${i}`)
+                  console.log(`[Spline3D] ✓ Created new THREE.Texture and updated material for layer ${i}`)
                   updatedLayers++
 
                   // Continue to next layer instead of returning immediately
