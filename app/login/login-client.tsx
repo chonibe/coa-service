@@ -153,7 +153,7 @@ export default function LoginClient() {
 
     // Check if this is an admin login attempt
     const isAdminLogin = searchParams.get("admin") === "true"
-    const redirectParam = isAdminLogin ? "&redirect=/admin/dashboard" : ""
+    const redirectParam = isAdminLogin ? "?redirect=/admin/dashboard" : ""
 
     window.location.href = `/api/auth/google/start${redirectParam}`
   }
