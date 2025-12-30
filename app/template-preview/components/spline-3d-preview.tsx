@@ -845,6 +845,35 @@ export function Spline3DPreview({
                   layer.texture.image.height = imageElement.height
                   layer.texture.image.name = `uploaded-image-${label}`
 
+                  // CRITICAL: Re-apply current texture properties from state after image replacement
+                  // This ensures the controls work after image upload
+                  const currentProps = side === 1 ? texturePropertiesSide1 : texturePropertiesSide2
+                  console.log(`[Spline3D] Re-applying texture properties after image replacement:`, currentProps)
+
+                  if (Array.isArray(currentProps.repeat) && layer.texture.repeat) {
+                    layer.texture.repeat[0] = currentProps.repeat[0]
+                    layer.texture.repeat[1] = currentProps.repeat[1]
+                  }
+                  if (Array.isArray(currentProps.offset) && layer.texture.offset) {
+                    layer.texture.offset[0] = currentProps.offset[0]
+                    layer.texture.offset[1] = currentProps.offset[1]
+                  }
+                  if (layer.texture.rotation !== undefined) {
+                    layer.texture.rotation = currentProps.rotation
+                  }
+                  if (layer.texture.magFilter !== undefined) {
+                    layer.texture.magFilter = currentProps.magFilter
+                  }
+                  if (layer.texture.minFilter !== undefined) {
+                    layer.texture.minFilter = currentProps.minFilter
+                  }
+                  // Apply contrast/brightness to material
+                  if (!layer.material) layer.material = {}
+                  layer.material.contrast = currentProps.contrast
+                  layer.material.brightness = currentProps.brightness
+
+                  console.log(`[Spline3D] ✓ Applied current texture properties after image replacement`)
+
                   console.log(`[Spline3D] ✓ REPLACED texture.image properties for layer ${i}`, {
                     newImageName: layer.texture.image.name,
                     newImageSize: imageUint8Array.length,
