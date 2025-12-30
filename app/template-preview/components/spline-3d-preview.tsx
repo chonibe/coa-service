@@ -70,9 +70,9 @@ export function Spline3DPreview({
   // Aspect ratio: 20.84 / 14.06 ≈ 1.48
   // Increased repeat values to show more of the image (less zoomed in)
   const [texturePropertiesSide1, setTexturePropertiesSide1] = useState({
-    repeat: [0.08, 0.12], // Increased for better image visibility
-    offset: [0.0, 0.0],
-    rotation: -90 * Math.PI / 180,
+    repeat: [21, 15], // User requested scale x:21 y:15
+    offset: [-0.05, -0.05], // User requested offset x:-0.05 y:-0.05
+    rotation: -90 * Math.PI / 180, // User requested angle -90
     magFilter: 1006,
     minFilter: 1008,
     contrast: 1.2,
@@ -80,8 +80,8 @@ export function Spline3DPreview({
   })
 
   const [texturePropertiesSide2, setTexturePropertiesSide2] = useState({
-    repeat: [-0.08, 0.12], // Negative X scale to prevent mirroring, increased values
-    offset: [1.0, 0.0], // Offset to compensate for negative scale
+    repeat: [-21, 15], // Negative X scale to prevent mirroring, matching side 1 scale
+    offset: [0.95, -0.05], // Adjusted for anti-mirroring: 1.0 - 0.05 = 0.95, y:-0.05
     rotation: -90 * Math.PI / 180, // Same rotation as side 1
     magFilter: 1006,
     minFilter: 1008,
@@ -394,16 +394,16 @@ export function Spline3DPreview({
   // Reset texture properties to default values for specific side
   const resetTextureProperties = useCallback((side: 1 | 2) => {
     const defaultProps = side === 1 ? {
-      repeat: [0.08, 0.12], // Increased values for better image visibility
-      offset: [0.0, 0.0],
-      rotation: -90 * Math.PI / 180,
+      repeat: [21, 15], // User requested scale x:21 y:15
+      offset: [-0.05, -0.05], // User requested offset x:-0.05 y:-0.05
+      rotation: -90 * Math.PI / 180, // User requested angle -90
       magFilter: 1006,
       minFilter: 1008,
       contrast: 1.2,
       brightness: 1.1
     } : {
-      repeat: [-0.08, 0.12], // Negative X scale to prevent mirroring on side 2
-      offset: [1.0, 0.0], // Offset to compensate for negative scale
+      repeat: [-21, 15], // Negative X scale to prevent mirroring on side 2
+      offset: [0.95, -0.05], // Adjusted for anti-mirroring: 1.0 - 0.05 = 0.95, y:-0.05
       rotation: -90 * Math.PI / 180,
       magFilter: 1006,
       minFilter: 1008,
