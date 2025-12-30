@@ -97,8 +97,6 @@ export function Spline3DPreview({
   // Store original values for direct material properties
   const originalMaterialValuesRef = useRef<Map<string, any>>(new Map())
 
-  // Store timeout references for debouncing texture updates
-  const textureUpdateTimeouts = useRef<Map<string, NodeJS.Timeout>>(new Map())
   
   // Toggle entire object visibility
   const toggleObjectVisibility = useCallback((objectInfo: ObjectInfo) => {
