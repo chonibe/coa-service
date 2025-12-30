@@ -10,15 +10,19 @@ import * as THREE from "three"
 interface Spline3DPreviewProps {
   image1: string | null
   image2: string | null
+  side1Scale?: number
+  side2Scale?: number
   side1ObjectId?: string
   side2ObjectId?: string
   side1ObjectName?: string
   side2ObjectName?: string
 }
 
-export function Spline3DPreview({ 
-  image1, 
+export function Spline3DPreview({
+  image1,
   image2,
+  side1Scale = 21,
+  side2Scale = 21,
   side1ObjectId,
   side2ObjectId,
   side1ObjectName = "Side1",
@@ -466,7 +470,9 @@ export function Spline3DPreview({
                   layer.texture.image.magFilter = originalImage.magFilter !== undefined ? originalImage.magFilter : 1006
                   layer.texture.image.minFilter = originalImage.minFilter !== undefined ? originalImage.minFilter : 1008
                   layer.texture.image.offset = [-0.05, -0.05]  // Required offset
-                  layer.texture.image.repeat = [21, 15]        // Required scale
+                  // Use the scale prop for both x and y (linked scaling)
+                  const currentScale = label.includes("Side 1") ? side1Scale : side2Scale
+                  layer.texture.image.repeat = [currentScale, currentScale * (15/21)]  // Scale with aspect ratio
                   layer.texture.image.rotation = -90 * (Math.PI / 180)  // Convert degrees to radians, required angle
                   layer.texture.image.wrapping = originalImage.wrapping !== undefined ? originalImage.wrapping : 1000
 
@@ -486,7 +492,9 @@ export function Spline3DPreview({
 
                   // Apply the same transform properties to the texture object itself (may override image properties)
                   if (layer.texture.offset !== undefined) layer.texture.offset = [-0.05, -0.05]
-                  if (layer.texture.repeat !== undefined) layer.texture.repeat = [21, 15]
+                  // Use the scale prop for both x and y (linked scaling)
+                  const currentScale = label.includes("Side 1") ? side1Scale : side2Scale
+                  if (layer.texture.repeat !== undefined) layer.texture.repeat = [currentScale, currentScale * (15/21)]
                   if (layer.texture.rotation !== undefined) layer.texture.rotation = -90 * (Math.PI / 180)
 
                   // CRITICAL: Mark the texture itself as needing update
@@ -1701,7 +1709,7 @@ export function Spline3DPreview({
     if (splineAppRef.current && !isLoading) {
       updateTextures()
     }
-  }, [image1, image2, isLoading, updateTextures])
+  }, [image1, image2, side1Scale, side2Scale, isLoading, updateTextures])
 
   return (
     <Card>

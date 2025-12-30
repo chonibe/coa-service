@@ -3,18 +3,22 @@
 import { useState } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Download, FileText, Image as ImageIcon, Box } from "lucide-react"
+import { Download, FileText, Image as ImageIcon, Box, ZoomIn, ZoomOut } from "lucide-react"
 import { TemplatePreviewer } from "./components/template-previewer"
 import { ArtworkUploader } from "./components/artwork-uploader"
 import { Spline3DPreview } from "./components/spline-3d-preview"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Slider } from "@/components/ui/slider"
+import { Label } from "@/components/ui/label"
 
 export default function TemplatePreviewPage() {
   const [uploadedImage, setUploadedImage] = useState<string | null>(null)
   const [side1Image, setSide1Image] = useState<string | null>(null)
   const [side2Image, setSide2Image] = useState<string | null>(null)
+  const [side1Scale, setSide1Scale] = useState<number>(21)
+  const [side2Scale, setSide2Scale] = useState<number>(21)
 
   const handleDownloadTemplate = async () => {
     try {
@@ -118,7 +122,7 @@ export default function TemplatePreviewPage() {
                   Upload images for both sides of the lamp
                 </CardDescription>
               </CardHeader>
-              <CardContent className="space-y-4">
+              <CardContent className="space-y-6">
                 <div>
                   <label className="text-sm font-medium mb-2 block">Side 1</label>
                   <ArtworkUploader
@@ -126,6 +130,45 @@ export default function TemplatePreviewPage() {
                     onImageRemove={handleSide1Remove}
                     currentImage={side1Image}
                   />
+                  {side1Image && (
+                    <div className="mt-4 space-y-3">
+                      <div className="flex items-center justify-between">
+                        <Label className="text-sm font-medium flex items-center gap-2">
+                          <ZoomIn className="h-4 w-4" />
+                          Scale: {side1Scale}x
+                        </Label>
+                        <div className="flex items-center gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setSide1Scale(Math.max(1, side1Scale - 1))}
+                            disabled={side1Scale <= 1}
+                          >
+                            <ZoomOut className="h-3 w-3" />
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setSide1Scale(Math.min(50, side1Scale + 1))}
+                            disabled={side1Scale >= 50}
+                          >
+                            <ZoomIn className="h-3 w-3" />
+                          </Button>
+                        </div>
+                      </div>
+                      <Slider
+                        value={[side1Scale]}
+                        onValueChange={(value) => setSide1Scale(value[0])}
+                        min={1}
+                        max={50}
+                        step={0.5}
+                        className="w-full"
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        Adjust the image scale on the 3D lamp (both width and height scale together)
+                      </p>
+                    </div>
+                  )}
                 </div>
                 <div>
                   <label className="text-sm font-medium mb-2 block">Side 2</label>
@@ -134,6 +177,45 @@ export default function TemplatePreviewPage() {
                     onImageRemove={handleSide2Remove}
                     currentImage={side2Image}
                   />
+                  {side2Image && (
+                    <div className="mt-4 space-y-3">
+                      <div className="flex items-center justify-between">
+                        <Label className="text-sm font-medium flex items-center gap-2">
+                          <ZoomIn className="h-4 w-4" />
+                          Scale: {side2Scale}x
+                        </Label>
+                        <div className="flex items-center gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setSide2Scale(Math.max(1, side2Scale - 1))}
+                            disabled={side2Scale <= 1}
+                          >
+                            <ZoomOut className="h-3 w-3" />
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setSide2Scale(Math.min(50, side2Scale + 1))}
+                            disabled={side2Scale >= 50}
+                          >
+                            <ZoomIn className="h-3 w-3" />
+                          </Button>
+                        </div>
+                      </div>
+                      <Slider
+                        value={[side2Scale]}
+                        onValueChange={(value) => setSide2Scale(value[0])}
+                        min={1}
+                        max={50}
+                        step={0.5}
+                        className="w-full"
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        Adjust the image scale on the 3D lamp (both width and height scale together)
+                      </p>
+                    </div>
+                  )}
                 </div>
               </CardContent>
             </Card>
@@ -213,9 +295,11 @@ export default function TemplatePreviewPage() {
                 </Card>
               </TabsContent>
               <TabsContent value="3d" className="mt-4">
-                <Spline3DPreview 
-                  image1={side1Image} 
+                <Spline3DPreview
+                  image1={side1Image}
                   image2={side2Image}
+                  side1Scale={side1Scale}
+                  side2Scale={side2Scale}
                   // Object IDs (UUIDs) from Spline scene
                   side1ObjectId="2de1e7d2-4b53-4738-a749-be197641fa9a"
                   side2ObjectId="2e33392b-21d8-441d-87b0-11527f3a8b70"
