@@ -443,6 +443,18 @@ export function Spline3DPreview({
                   // Keep the same structure as the original texture.image object
                   const originalImage = layer.texture.image
 
+                  console.log(`[Spline3D] Original texture.image structure:`, {
+                    hasData: !!originalImage.data,
+                    dataType: originalImage.data?.constructor?.name,
+                    dataLength: originalImage.data?.length,
+                    hasWidth: originalImage.width !== undefined,
+                    hasHeight: originalImage.height !== undefined,
+                    hasName: originalImage.name !== undefined,
+                    hasMagFilter: originalImage.magFilter !== undefined,
+                    hasMinFilter: originalImage.minFilter !== undefined,
+                    allProperties: Object.keys(originalImage)
+                  })
+
                   // Create new image data with the same structure as the original
                   layer.texture.image = {
                     data: imageUint8Array,
@@ -469,12 +481,49 @@ export function Spline3DPreview({
                       wrapping: layer.texture.image.wrapping
                     }
                   })
+
+                  // Immediately update material and force refresh after texture.image replacement
+                  material.needsUpdate = true
+                  if (material.version !== undefined) {
+                    material.version++
+                  }
+
+                  // Force Spline to update
+                  if (app.update && typeof app.update === 'function') {
+                    app.update()
+                  }
+
+                  // Force render
+                  if (app.renderer && app.scene && app.camera) {
+                    app.renderer.render(app.scene, app.camera)
+                  }
+
+                  console.log(`[Spline3D] ✓ Updated material and triggered refresh after texture.image replacement`)
+                  return true
                 } else {
                   // Fallback to other approaches for layers without texture.image
                   layer.image = imageElement
                   if (layer.map !== undefined) layer.map = imageElement
                   if (layer.texture !== undefined) layer.texture = imageElement
                   console.log(`[Spline3D] Used fallback approach for layer ${i}`)
+
+                  // Update material for fallback approach too
+                  material.needsUpdate = true
+                  if (material.version !== undefined) {
+                    material.version++
+                  }
+
+                  // Force Spline to update
+                  if (app.update && typeof app.update === 'function') {
+                    app.update()
+                  }
+
+                  // Force render
+                  if (app.renderer && app.scene && app.camera) {
+                    app.renderer.render(app.scene, app.camera)
+                  }
+
+                  return true
                 }
                 
                 layer.visible = true
