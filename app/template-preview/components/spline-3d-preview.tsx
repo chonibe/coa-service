@@ -255,15 +255,81 @@ export function Spline3DPreview({
 
     console.log("[Spline3D] ✓ Using imported THREE.js")
 
-    // Helper to find object by ID or name
-    const findObject = (id?: string, name?: string) => {
+    // Helper to find object by traversing path or by name/ID
+    const findObject = (id?: string, name?: string, alternativeNames?: string[], path?: string[]) => {
+      // Try by ID first
       if (id && app.findObjectById) {
         const obj = app.findObjectById(id)
-        if (obj) return obj
+        if (obj) {
+          console.log(`[Spline3D] Found object by ID: ${id}`)
+          return obj
+        }
       }
+      
+      // Try by path traversal (most reliable)
+      if (path && path.length > 0) {
+        let currentObj: any = scene
+        for (const pathSegment of path) {
+          if (!currentObj) break
+          
+          // Try to find in children
+          const children = currentObj.children || []
+          const found = children.find((child: any) => 
+            child.name === pathSegment || 
+            child.type === pathSegment ||
+            (typeof child.name === 'string' && child.name.includes(pathSegment))
+          )
+          
+          if (found) {
+            currentObj = found
+          } else {
+            // Try mesh children
+            if (currentObj.mesh && currentObj.mesh.children) {
+              const meshFound = currentObj.mesh.children.find((child: any) => 
+                child.name === pathSegment || 
+                child.type === pathSegment ||
+                (typeof child.name === 'string' && child.name.includes(pathSegment))
+              )
+              if (meshFound) {
+                currentObj = meshFound
+              } else {
+                currentObj = null
+                break
+              }
+            } else {
+              currentObj = null
+              break
+            }
+          }
+        }
+        
+        if (currentObj) {
+          console.log(`[Spline3D] Found object by path: ${path.join(' > ')}`)
+          return currentObj
+        }
+      }
+      
+      // Try alternative names first (more specific)
+      if (alternativeNames && app.findObjectByName) {
+        for (const altName of alternativeNames) {
+          const obj = app.findObjectByName(altName)
+          if (obj) {
+            console.log(`[Spline3D] Found object by alternative name: ${altName}`)
+            return obj
+          }
+        }
+      }
+      
+      // Try provided name
       if (name && app.findObjectByName) {
-        return app.findObjectByName(name)
+        const obj = app.findObjectByName(name)
+        if (obj) {
+          console.log(`[Spline3D] Found object by name: ${name}`)
+          return obj
+        }
       }
+      
+      console.warn(`[Spline3D] Object not found - ID: ${id}, Name: ${name}, Path: ${path?.join(' > ')}`)
       return null
     }
 
@@ -554,36 +620,50 @@ export function Spline3DPreview({
     }
 
     // Handle Side 1 - Add image layer to material
+    // Target: "Panel Side A PC Trans A" (the object that displays the image)
+    // Full path: Scene > Scene > White > Assembly Small Lamp 2025 v62 > Panel Side A > PC Trans A
     if (image1) {
-      const obj1 = findObject(side1ObjectId, side1ObjectName)
+      const obj1 = findObject(
+        side1ObjectId, 
+        side1ObjectName,
+        ["Panel Side A PC Trans A", "PC Trans A", "Side A", "Panel Side A"],
+        ["Scene", "White", "Assembly Small Lamp 2025 v62", "Panel Side A", "PC Trans A"]
+      )
       if (obj1) {
         side1ObjectRef.current = obj1
-        const success = await addImageLayerToMaterial(obj1, image1, "Side 1")
+        const success = await addImageLayerToMaterial(obj1, image1, "Side 1 (Panel Side A PC Trans A)")
         if (success) {
           console.log(`[Spline3D] ✓ Successfully added image layer to Side 1`)
         } else {
           console.warn(`[Spline3D] Failed to add image layer to Side 1`)
         }
       } else {
-        console.warn(`[Spline3D] Side 1 object not found`)
+        console.warn(`[Spline3D] Side 1 object not found - tried path and names`)
       }
     } else {
       side1ObjectRef.current = null
     }
 
     // Handle Side 2 - Add image layer to material
+    // Target: "Panel Side B PC Trans B" (the object that displays the image)
+    // Full path: Scene > Scene > White > Assembly Small Lamp 2025 v62 > Panel Side B > PC Trans B
     if (image2) {
-      const obj2 = findObject(side2ObjectId, side2ObjectName)
+      const obj2 = findObject(
+        side2ObjectId, 
+        side2ObjectName,
+        ["Panel Side B PC Trans B", "PC Trans B", "Side B", "Panel Side B"],
+        ["Scene", "White", "Assembly Small Lamp 2025 v62", "Panel Side B", "PC Trans B"]
+      )
       if (obj2) {
         side2ObjectRef.current = obj2
-        const success = await addImageLayerToMaterial(obj2, image2, "Side 2")
+        const success = await addImageLayerToMaterial(obj2, image2, "Side 2 (Panel Side B PC Trans B)")
         if (success) {
           console.log(`[Spline3D] ✓ Successfully added image layer to Side 2`)
         } else {
           console.warn(`[Spline3D] Failed to add image layer to Side 2`)
         }
       } else {
-        console.warn(`[Spline3D] Side 2 object not found`)
+        console.warn(`[Spline3D] Side 2 object not found - tried path and names`)
       }
     } else {
       side2ObjectRef.current = null
