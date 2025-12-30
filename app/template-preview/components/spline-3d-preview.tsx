@@ -44,6 +44,9 @@ export function Spline3DPreview({
     visible: boolean
     layerRef: any
     materialRef: any
+    originalValue?: any // For direct material properties
+    property?: string // For direct material properties
+    hasTextureImage?: boolean // Track if layer has texture.image data
   }
   const [discoveredLayers, setDiscoveredLayers] = useState<LayerInfo[]>([])
   
@@ -150,30 +153,43 @@ export function Spline3DPreview({
       if (layerInfo.layerType.startsWith('clear-')) {
         const layer = layerInfo.layerRef
         const key = `${layerInfo.objectId}-clear-${layerInfo.layerIndex}`
-        
+
         if (newVisible) {
-          // Restore original image
+          // Restore original image - check all possible locations
           const originalImage = originalMaterialValuesRef.current.get(`${key}-image`)
           const originalMap = originalMaterialValuesRef.current.get(`${key}-map`)
           const originalTexture = originalMaterialValuesRef.current.get(`${key}-texture`)
-          
+          const originalTextureImage = originalMaterialValuesRef.current.get(`${key}-textureImage`)
+
           if (originalImage !== undefined) layer.image = originalImage
           if (originalMap !== undefined) layer.map = originalMap
           if (originalTexture !== undefined) layer.texture = originalTexture
-          
-          console.log(`[Spline3D] Restored image on ${layerInfo.objectName}`)
+          if (originalTextureImage !== undefined && layer.texture) {
+            layer.texture.image = originalTextureImage
+          }
+
+          console.log(`[Spline3D] Restored image on ${layerInfo.objectName} (including texture.image)`)
         } else {
-          // Store original and clear
+          // Store original and clear - check all possible locations
           if (!originalMaterialValuesRef.current.has(`${key}-image`)) {
             originalMaterialValuesRef.current.set(`${key}-image`, layer.image)
             originalMaterialValuesRef.current.set(`${key}-map`, layer.map)
             originalMaterialValuesRef.current.set(`${key}-texture`, layer.texture)
+            if (layer.texture?.image !== undefined) {
+              originalMaterialValuesRef.current.set(`${key}-textureImage`, layer.texture.image)
+            }
           }
-          
+
           layer.image = null
           layer.map = null
-          layer.texture = null
-          
+          // Clear texture.image specifically (this is where the JPEG data was found!)
+          if (layer.texture?.image !== undefined) {
+            layer.texture.image = null
+            console.log(`[Spline3D] Cleared texture.image from ${layerInfo.objectName} - this should remove the visible image!`)
+          } else {
+            layer.texture = null
+          }
+
           console.log(`[Spline3D] Cleared image from ${layerInfo.objectName}`)
         }
       }
@@ -1289,16 +1305,34 @@ export function Spline3DPreview({
               // Inspect all layers
               if (material.layers && Array.isArray(material.layers)) {
                 material.layers.forEach((layer: any, index: number) => {
-                  console.log(`[Spline3D] PC Trans B Layer ${index}:`, {
+                  // Check for images in multiple places - including texture.image!
+                  const hasImage = layer.image !== undefined && layer.image !== null
+                  const hasMap = layer.map !== undefined && layer.map !== null
+                  const hasTexture = layer.texture !== undefined && layer.texture !== null
+                  const hasTextureImage = layer.texture?.image !== undefined && layer.texture?.image !== null
+
+                  const layerInfo = {
                     type: layer.type,
                     visible: layer.visible,
                     alpha: layer.alpha,
-                    hasImage: layer.image !== undefined,
-                    hasMap: layer.map !== undefined,
-                    hasTexture: layer.texture !== undefined,
+                    opacity: layer.opacity,
+                    mode: layer.mode,
+                    isMask: layer.isMask,
+                    hasImage,
+                    hasMap,
+                    hasTexture,
+                    hasTextureImage,
+                    imageType: layer.image?.constructor?.name,
+                    textureImageType: layer.texture?.image?.constructor?.name,
+                    imageSrc: layer.image?.src || layer.image?.currentSrc || 'N/A',
+                    textureImageName: layer.texture?.image?.name,
+                    textureImageData: layer.texture?.image?.data ? `Uint8Array(${layer.texture.image.data.length})` : 'N/A',
+                    name: layer.name || layer.id || 'unnamed',
                     allProperties: Object.keys(layer)
-                  })
-                  
+                  }
+
+                  console.log(`[Spline3D] PC Trans B Layer ${index}:`, layerInfo)
+
                   layers.push({
                     objectName: "PC Trans B",
                     objectId: currentObj.uuid || currentObj.id || 'pc-trans-b',
@@ -1309,6 +1343,42 @@ export function Spline3DPreview({
                     layerRef: layer,
                     materialRef: material
                   })
+
+                  // If this layer has image data (including in texture.image), add a "Clear Image" option
+                  if (layer.type === 'image' || layer.type === 'texture') {
+                    if (hasImage || hasMap || hasTexture || hasTextureImage) {
+                      console.log(`[Spline3D]   → FOUND IMAGE DATA IN LAYER ${index}:`, {
+                        hasImage,
+                        hasMap,
+                        hasTexture,
+                        hasTextureImage,
+                        image: layer.image,
+                        map: layer.map,
+                        texture: layer.texture,
+                        textureImage: layer.texture?.image,
+                        imageSrc: layer.image?.src || layer.image?.currentSrc || 'N/A',
+                        textureImageName: layer.texture?.image?.name,
+                        textureImageWidth: layer.texture?.image?.width,
+                        textureImageHeight: layer.texture?.image?.height,
+                        textureImageDataLength: layer.texture?.image?.data?.length
+                      })
+
+                      // Add a "Clear Image" option for layers that have image data
+                      layers.push({
+                        objectName: `PC Trans B (Clear Image)`,
+                        objectId: `${currentObj.uuid || currentObj.id}-clear-${index}`,
+                        layerIndex: index,
+                        layerType: `clear-${layer.type}`,
+                        layerName: `Clear ${layer.type} Image`,
+                        visible: hasImage || hasMap || hasTexture || hasTextureImage,
+                        layerRef: layer,
+                        materialRef: material,
+                        originalValue: layer.texture?.image, // Store original for restoration
+                        property: 'texture.image', // Track what we're clearing
+                        hasTextureImage: hasTextureImage // Mark that this has texture.image data
+                      })
+                    }
+                  }
                 })
               }
               
@@ -1515,6 +1585,11 @@ export function Spline3DPreview({
                         )}
                         {layerInfo.layerType === 'texture' && (
                           <span className="ml-auto text-sm bg-green-500 text-white px-3 py-1 rounded-full font-semibold">TEXTURE</span>
+                        )}
+                        {layerInfo.layerType.startsWith('clear-') && (
+                          <span className="ml-auto text-sm bg-red-500 text-white px-3 py-1 rounded-full font-semibold">
+                            CLEAR IMAGE {layerInfo.hasTextureImage ? '(TEXTURE.IMAGE)' : ''}
+                          </span>
                         )}
                       </Button>
                     </div>
