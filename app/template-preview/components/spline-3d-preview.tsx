@@ -854,7 +854,7 @@ export function Spline3DPreview({
 
                   try {
                     // Create new THREE.Texture from the loaded HTMLImageElement
-                    const newTexture = new (window as any).THREE.Texture(imageElement)
+                    const newTexture = new THREE.Texture(imageElement)
                     newTexture.needsUpdate = true
 
                     console.log(`[Spline3D] ✓ THREE.Texture created successfully`, {
