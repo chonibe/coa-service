@@ -46,6 +46,17 @@ export function Spline3DPreview({
     materialRef: any
   }
   const [discoveredLayers, setDiscoveredLayers] = useState<LayerInfo[]>([])
+  
+  // Store discovered objects for toggling
+  interface ObjectInfo {
+    objectName: string
+    objectId: string
+    objectPath: string
+    visible: boolean
+    objectRef: any
+    meshRef: any
+  }
+  const [discoveredObjects, setDiscoveredObjects] = useState<ObjectInfo[]>([])
 
   // Toggle model visibility
   const toggleModelVisibility = useCallback(() => {
@@ -57,6 +68,68 @@ export function Spline3DPreview({
 
   // Store original values for direct material properties
   const originalMaterialValuesRef = useRef<Map<string, any>>(new Map())
+  
+  // Toggle entire object visibility
+  const toggleObjectVisibility = useCallback((objectInfo: ObjectInfo) => {
+    const app = splineAppRef.current as any
+    if (!app || !objectInfo.objectRef) {
+      console.warn(`[Spline3D] Cannot toggle object: missing references`)
+      return
+    }
+
+    try {
+      const newVisible = !objectInfo.visible
+      const obj = objectInfo.objectRef
+      const mesh = objectInfo.meshRef || obj.mesh
+      
+      // Try multiple ways to hide/show the object
+      if (obj.visible !== undefined) {
+        obj.visible = newVisible
+      }
+      if (mesh && mesh.visible !== undefined) {
+        mesh.visible = newVisible
+      }
+      
+      // Try Spline API methods
+      if (obj.setVisible && typeof obj.setVisible === 'function') {
+        obj.setVisible(newVisible)
+      }
+      if (obj.hide && typeof obj.hide === 'function' && !newVisible) {
+        obj.hide()
+      }
+      if (obj.show && typeof obj.show === 'function' && newVisible) {
+        obj.show()
+      }
+      
+      // Try THREE.js methods
+      if (mesh && mesh.visible !== undefined) {
+        mesh.visible = newVisible
+      }
+      
+      // Force app update
+      if (app.update && typeof app.update === 'function') {
+        app.update()
+      }
+      
+      // Force render
+      if (app.renderer && app.scene && app.camera) {
+        app.renderer.render(app.scene, app.camera)
+      }
+      
+      // Update state
+      setDiscoveredObjects(prev => 
+        prev.map(obj => 
+          obj.objectId === objectInfo.objectId
+            ? { ...obj, visible: newVisible }
+            : obj
+        )
+      )
+      
+      console.log(`[Spline3D] Toggled object ${objectInfo.objectName} to ${newVisible ? 'visible' : 'hidden'}`)
+    } catch (err) {
+      console.error(`[Spline3D] Error toggling object:`, err)
+    }
+  }, [])
 
   // Toggle individual layer visibility
   const toggleLayerVisibility = useCallback((layerInfo: LayerInfo) => {
@@ -562,6 +635,87 @@ export function Spline3DPreview({
           setTimeout(() => {
             setIsLoading(false)
             
+            // Search entire scene for all objects (for toggling)
+            const searchEntireSceneForObjects = (): ObjectInfo[] => {
+              const app = splineAppRef.current as any
+              if (!app) return []
+              
+              console.log("[Spline3D] ===== SEARCHING ENTIRE SCENE FOR ALL OBJECTS =====")
+              
+              const allObjectsInfo: ObjectInfo[] = []
+              const scene = app.scene || app._scene
+              
+              if (!scene) {
+                console.warn("[Spline3D] Scene not available")
+                return []
+              }
+              
+              const processedObjects = new Set<string>()
+              
+              // Method 1: Try getAllObjects
+              const objectsFromAPI: any[] = []
+              if (app.getAllObjects && typeof app.getAllObjects === 'function') {
+                try {
+                  const objects = app.getAllObjects()
+                  if (Array.isArray(objects)) {
+                    objectsFromAPI.push(...objects)
+                    console.log(`[Spline3D] Found ${objects.length} objects via getAllObjects()`)
+                  }
+                } catch (e) {
+                  console.warn("[Spline3D] getAllObjects() failed:", e)
+                }
+              }
+              
+              // Traverse function
+              const traverseScene = (obj: any, path: string = '') => {
+                if (!obj) return
+                
+                const objId = obj.uuid || obj.id || `obj-${allObjectsInfo.length}`
+                if (processedObjects.has(objId)) {
+                  return
+                }
+                processedObjects.add(objId)
+                
+                const currentPath = path ? `${path} > ${obj.name || obj.type || 'unnamed'}` : (obj.name || obj.type || 'unnamed')
+                
+                // Add this object to the list
+                allObjectsInfo.push({
+                  objectName: obj.name || obj.type || 'unnamed',
+                  objectId: objId,
+                  objectPath: currentPath,
+                  visible: obj.visible !== false,
+                  objectRef: obj,
+                  meshRef: obj.mesh
+                })
+                
+                // Recursively check children
+                if (obj.children && Array.isArray(obj.children)) {
+                  obj.children.forEach((child: any) => {
+                    traverseScene(child, currentPath)
+                  })
+                }
+                
+                if (obj.mesh && obj.mesh.children && Array.isArray(obj.mesh.children)) {
+                  obj.mesh.children.forEach((child: any) => {
+                    traverseScene(child, currentPath)
+                  })
+                }
+              }
+              
+              // Traverse scene
+              traverseScene(scene, 'Scene')
+              
+              // Also traverse objects from getAllObjects
+              objectsFromAPI.forEach((obj: any) => {
+                traverseScene(obj, `Object-${obj.name || obj.type || 'unnamed'}`)
+              })
+              
+              console.log(`[Spline3D] Found ${allObjectsInfo.length} objects in entire scene`)
+              console.log("[Spline3D] ===== END OBJECT SEARCH =====")
+              
+              return allObjectsInfo
+            }
+            
             // Search entire scene for all objects with images
             const searchEntireSceneForImages = () => {
               const app = splineAppRef.current as any
@@ -971,6 +1125,10 @@ export function Spline3DPreview({
             
             // Inspect materials after a short delay to ensure scene is fully loaded
             setTimeout(() => {
+              // Search entire scene for ALL objects (for toggling)
+              const allObjects = searchEntireSceneForObjects()
+              setDiscoveredObjects(allObjects)
+              
               // Search entire scene for ALL images (primary search)
               const sceneLayers = searchEntireSceneForImages()
               
@@ -997,6 +1155,7 @@ export function Spline3DPreview({
               const allLayers = Array.from(layerMap.values())
               setDiscoveredLayers(allLayers)
               
+              console.log(`[Spline3D] Total objects found: ${allObjects.length}`)
               console.log(`[Spline3D] Total layers found: ${allLayers.length} (${sceneLayers.length} from scene search, ${pcLayers.length} from PC inspection)`)
             }, 500)
             
@@ -1150,6 +1309,41 @@ export function Spline3DPreview({
               </div>
               <p className="text-xs text-muted-foreground mt-3">
                 Toggle layers on/off to isolate which one is the image layer
+              </p>
+            </div>
+          )}
+
+          {/* Object Toggle Controls */}
+          {discoveredObjects.length > 0 && (
+            <div className="border rounded-lg p-4 bg-muted/50">
+              <h3 className="text-sm font-semibold mb-3">Object Controls</h3>
+              <p className="text-xs text-muted-foreground mb-3">
+                Toggle entire objects on/off to find which object is displaying the image
+              </p>
+              <div className="space-y-2 max-h-[400px] overflow-y-auto">
+                {discoveredObjects.map((objectInfo) => (
+                  <div key={objectInfo.objectId} className="flex items-center gap-2">
+                    <Button
+                      onClick={() => toggleObjectVisibility(objectInfo)}
+                      variant={objectInfo.visible ? "default" : "outline"}
+                      size="sm"
+                      disabled={isLoading || !!error}
+                      className="flex items-center gap-2 flex-1 justify-start"
+                    >
+                      {objectInfo.visible ? (
+                        <Eye className="h-4 w-4" />
+                      ) : (
+                        <EyeOff className="h-4 w-4" />
+                      )}
+                      <span className="text-xs text-left">
+                        {objectInfo.objectPath}
+                      </span>
+                    </Button>
+                  </div>
+                ))}
+              </div>
+              <p className="text-xs text-muted-foreground mt-3">
+                Found {discoveredObjects.length} objects in scene. Toggle them to find which one shows the image.
               </p>
             </div>
           )}
