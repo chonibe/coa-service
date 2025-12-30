@@ -794,31 +794,39 @@ export function Spline3DPreview({
           layerDetails: layerInfo
         })
 
-        // Load image as blob and convert to Uint8Array (like the texture.image format)
-        const imageResponse = await fetch(imageUrl)
-        const imageBlob = await imageResponse.blob()
-        const imageArrayBuffer = await imageBlob.arrayBuffer()
-        const imageUint8Array = new Uint8Array(imageArrayBuffer)
-
-        console.log(`[Spline3D] ✓ Loaded image data for ${label}`, {
-          size: imageUint8Array.length,
-          type: imageBlob.type,
-          url: imageUrl
-        })
-
-        // Also create HTMLImageElement for fallback approaches
+        // Create HTMLImageElement from the data URL
         const imageElement = await new Promise<HTMLImageElement>((resolve, reject) => {
           const img = new Image()
           img.crossOrigin = "anonymous"
-          img.onload = () => resolve(img)
-          img.onerror = reject
+          img.onload = () => {
+            console.log(`[Spline3D] ✓ Image loaded successfully for ${label}:`, {
+              width: img.width,
+              height: img.height,
+              naturalWidth: img.naturalWidth,
+              naturalHeight: img.naturalHeight
+            })
+            resolve(img)
+          }
+          img.onerror = (e) => {
+            console.error(`[Spline3D] ❌ Failed to load image for ${label}:`, {
+              error: e,
+              src: imageUrl.substring(0, 100) + '...'
+            })
+            reject(new Error(`Failed to load image: ${e}`))
+          }
+          console.log(`[Spline3D] 🔄 Loading image for ${label}, src:`, imageUrl.substring(0, 50) + '...')
           img.src = imageUrl
         })
 
-        console.log(`[Spline3D] ✓ Also loaded HTMLImageElement for ${label}`, {
+        console.log(`[Spline3D] ✓ HTMLImageElement ready for ${label}`, {
           width: imageElement.width,
-          height: imageElement.height
+          height: imageElement.height,
+          naturalWidth: imageElement.naturalWidth,
+          naturalHeight: imageElement.naturalHeight
         })
+
+        // For THREE.Texture, we don't need the raw Uint8Array data
+        // The HTMLImageElement is sufficient for creating the texture
 
         // Try multiple approaches to add image layer
 
@@ -841,37 +849,61 @@ export function Spline3DPreview({
                 
                 // Try setting image data - prioritize texture.image for existing textures
                 if (layer.texture && layer.texture.image !== undefined) {
-                  // Create a proper THREE.Texture object instead of just replacing data
-                  console.log(`[Spline3D] Creating new THREE.Texture from image data for layer ${i}`)
+                  // Create a proper THREE.Texture object from the HTMLImageElement
+                  console.log(`[Spline3D] Creating new THREE.Texture from HTMLImageElement for layer ${i}`)
 
-                  // Create new THREE.Texture from the HTMLImageElement
-                  const newTexture = new (window as any).THREE.Texture(imageElement)
-                  newTexture.needsUpdate = true
+                  try {
+                    // Create new THREE.Texture from the loaded HTMLImageElement
+                    const newTexture = new (window as any).THREE.Texture(imageElement)
+                    newTexture.needsUpdate = true
 
-                  // Copy all the important properties from the original texture
-                  const originalTexture = layer.texture
-                  newTexture.wrapS = originalTexture.wrapS || 1000
-                  newTexture.wrapT = originalTexture.wrapT || 1000
-                  newTexture.magFilter = originalTexture.magFilter || 1006
-                  newTexture.minFilter = originalTexture.minFilter || 1008
-                  newTexture.format = originalTexture.format || 1023
-                  newTexture.type = originalTexture.type || 1009
+                    console.log(`[Spline3D] ✓ THREE.Texture created successfully`, {
+                      texture: !!newTexture,
+                      hasImage: !!newTexture.image,
+                      imageLoaded: newTexture.image?.complete,
+                      imageWidth: newTexture.image?.width,
+                      imageHeight: newTexture.image?.height
+                    })
 
-                  // Apply current texture properties from state
-                  const currentProps = side === 1 ? texturePropertiesSide1 : texturePropertiesSide2
-                  console.log(`[Spline3D] Applying texture properties to new texture:`, currentProps)
+                    // Copy all the important properties from the original texture
+                    const originalTexture = layer.texture
+                    newTexture.wrapS = originalTexture.wrapS || 1000
+                    newTexture.wrapT = originalTexture.wrapT || 1000
+                    newTexture.magFilter = originalTexture.magFilter || 1006
+                    newTexture.minFilter = originalTexture.minFilter || 1008
+                    newTexture.format = originalTexture.format || 1023
+                    newTexture.type = originalTexture.type || 1009
 
-                  newTexture.repeat.set(currentProps.repeat[0], currentProps.repeat[1])
-                  newTexture.offset.set(currentProps.offset[0], currentProps.offset[1])
-                  newTexture.rotation = currentProps.rotation
+                    // Apply current texture properties from state
+                    const currentProps = side === 1 ? texturePropertiesSide1 : texturePropertiesSide2
+                    console.log(`[Spline3D] Applying texture properties to new texture:`, currentProps)
 
-                  // Replace the texture completely
-                  layer.texture = newTexture
+                    newTexture.repeat.set(currentProps.repeat[0], currentProps.repeat[1])
+                    newTexture.offset.set(currentProps.offset[0], currentProps.offset[1])
+                    newTexture.rotation = currentProps.rotation
 
-                  // Apply contrast/brightness to material
-                  if (!layer.material) layer.material = {}
-                  layer.material.contrast = currentProps.contrast
-                  layer.material.brightness = currentProps.brightness
+                    // Replace the texture completely
+                    layer.texture = newTexture
+
+                    // Force texture update
+                    layer.texture.needsUpdate = true
+
+                    // Apply contrast/brightness to material
+                    if (!layer.material) layer.material = {}
+                    layer.material.contrast = currentProps.contrast
+                    layer.material.brightness = currentProps.brightness
+
+                    console.log(`[Spline3D] ✓ Created new THREE.Texture and updated material for layer ${i}`, {
+                      textureType: typeof newTexture,
+                      hasImage: !!newTexture.image,
+                      imageWidth: newTexture.image?.width,
+                      imageHeight: newTexture.image?.height
+                    })
+
+                  } catch (textureError) {
+                    console.error(`[Spline3D] ❌ Failed to create THREE.Texture for layer ${i}:`, textureError)
+                    throw textureError
+                  }
 
                   console.log(`[Spline3D] ✓ Created new THREE.Texture with proper properties`)
 
