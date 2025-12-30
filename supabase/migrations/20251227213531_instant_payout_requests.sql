@@ -39,3 +39,4 @@ ADD COLUMN IF NOT EXISTS payment_method TEXT DEFAULT 'paypal'
 CHECK (payment_method IN ('paypal', 'stripe', 'bank_transfer'));
 
 
+
