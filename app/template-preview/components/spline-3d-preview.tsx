@@ -575,6 +575,7 @@ export function Spline3DPreview({
                 console.warn(`[Spline3D] Approach 1b failed for layer ${i}:`, e)
               }
             }
+            }
           }
         }
 
