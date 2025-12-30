@@ -393,7 +393,19 @@ export function Spline3DPreview({
           layerDetails: layerInfo
         })
 
-        // Load image as HTMLImageElement
+        // Load image as blob and convert to Uint8Array (like the texture.image format)
+        const imageResponse = await fetch(imageUrl)
+        const imageBlob = await imageResponse.blob()
+        const imageArrayBuffer = await imageBlob.arrayBuffer()
+        const imageUint8Array = new Uint8Array(imageArrayBuffer)
+
+        console.log(`[Spline3D] ✓ Loaded image data for ${label}`, {
+          size: imageUint8Array.length,
+          type: imageBlob.type,
+          url: imageUrl
+        })
+
+        // Also create HTMLImageElement for fallback approaches
         const imageElement = await new Promise<HTMLImageElement>((resolve, reject) => {
           const img = new Image()
           img.crossOrigin = "anonymous"
@@ -402,7 +414,7 @@ export function Spline3DPreview({
           img.src = imageUrl
         })
 
-        console.log(`[Spline3D] ✓ Loaded image element for ${label}`, {
+        console.log(`[Spline3D] ✓ Also loaded HTMLImageElement for ${label}`, {
           width: imageElement.width,
           height: imageElement.height
         })
@@ -410,6 +422,7 @@ export function Spline3DPreview({
         // Try multiple approaches to add image layer
 
         // Approach 1: Try to update existing image layer (prioritize image type layers first)
+        // This approach specifically targets texture.image data which is where we found the actual image data
         if (material.layers && Array.isArray(material.layers)) {
           // First pass: Look specifically for 'image' type layers (added in Spline)
           for (let i = 0; i < material.layers.length; i++) {
@@ -424,10 +437,22 @@ export function Spline3DPreview({
                   layerName: layer.name || layer.id || 'unnamed'
                 })
                 
-                // Try setting image directly - image layers should support this
-                layer.image = imageElement
-                if (layer.map !== undefined) layer.map = imageElement
-                if (layer.texture !== undefined) layer.texture = imageElement
+                // Try setting image data - prioritize texture.image for existing textures
+                if (layer.texture && layer.texture.image !== undefined) {
+                  // This is the key! Set texture.image to Uint8Array data (like the existing format)
+                  layer.texture.image = {
+                    data: imageUint8Array,
+                    width: imageElement.width,
+                    height: imageElement.height,
+                    name: `uploaded-image-${label}`
+                  }
+                  console.log(`[Spline3D] ✓ Set texture.image data for layer ${i}`)
+                } else {
+                  // Fallback to other approaches
+                  layer.image = imageElement
+                  if (layer.map !== undefined) layer.map = imageElement
+                  if (layer.texture !== undefined) layer.texture = imageElement
+                }
                 
                 layer.visible = true
                 layer.alpha = 1
@@ -457,7 +482,8 @@ export function Spline3DPreview({
                 console.log(`[Spline3D] ✓ Approach 1a: Updated existing image layer ${i} for ${label}`, {
                   layerVisible: layer.visible,
                   layerAlpha: layer.alpha,
-                  layerImageSet: layer.image === imageElement
+                  textureImageSet: layer.texture?.image?.data === imageUint8Array,
+                  imageDataLength: imageUint8Array.length
                 })
                 return true
               } catch (e) {
@@ -477,11 +503,22 @@ export function Spline3DPreview({
                   alpha: layer.alpha
                 })
                 
-                // Try setting image directly
-                if (layer.image !== undefined || layer.map !== undefined) {
+                // Try setting image data - prioritize texture.image for existing textures
+                if (layer.texture && layer.texture.image !== undefined) {
+                  // This is the key! Set texture.image to Uint8Array data (like the existing format)
+                  layer.texture.image = {
+                    data: imageUint8Array,
+                    width: imageElement.width,
+                    height: imageElement.height,
+                    name: `uploaded-image-${label}`
+                  }
+                  console.log(`[Spline3D] ✓ Set texture.image data for ${layer.type} layer ${i}`)
+                } else {
+                  // Fallback to other approaches
                   if (layer.image !== undefined) layer.image = imageElement
                   if (layer.map !== undefined) layer.map = imageElement
                   if (layer.texture !== undefined) layer.texture = imageElement
+                }
                   
                   layer.visible = true
                   layer.alpha = 1
