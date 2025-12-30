@@ -65,13 +65,25 @@ export function Spline3DPreview({
   const [pcTransBLayers, setPcTransBLayers] = useState<LayerInfo[]>([])
   const [showOtherControls, setShowOtherControls] = useState(false) // Hide other controls by default
 
-  // State for texture controls
-  const [textureProperties, setTextureProperties] = useState({
+  // State for texture controls - separate for each side
+  const [texturePropertiesSide1, setTexturePropertiesSide1] = useState({
     repeat: [0.04, 0.04],
     offset: [0.0, 0.0],
     rotation: -90 * Math.PI / 180,
     magFilter: 1006,
-    minFilter: 1008
+    minFilter: 1008,
+    contrast: 1.2,
+    brightness: 1.1
+  })
+
+  const [texturePropertiesSide2, setTexturePropertiesSide2] = useState({
+    repeat: [0.04, 0.04],
+    offset: [0.0, 0.0],
+    rotation: -90 * Math.PI / 180,
+    magFilter: 1006,
+    minFilter: 1008,
+    contrast: 1.2,
+    brightness: 1.1
   })
 
   // Toggle model visibility
@@ -262,15 +274,16 @@ export function Spline3DPreview({
     }
   }, [])
 
-  // Update texture property and immediately apply to all texture layers
-  const updateTextureProperty = useCallback((property: string, index: number, value: number) => {
+  // Update texture property for specific side
+  const updateTextureProperty = useCallback((side: 1 | 2, property: string, index: number, value: number) => {
     const app = splineAppRef.current as any
     if (!app) return
 
-    console.log(`[Spline3D] Updating texture property: ${property}[${index}] = ${value}`)
+    console.log(`[Spline3D] Updating texture property for Side ${side}: ${property}[${index}] = ${value}`)
 
-    // Update local state
-    setTextureProperties(prev => {
+    // Update local state for the specific side
+    const setState = side === 1 ? setTexturePropertiesSide1 : setTexturePropertiesSide2
+    setState(prev => {
       const newProps = { ...prev }
       if (Array.isArray(newProps[property as keyof typeof newProps])) {
         (newProps[property as keyof typeof newProps] as number[])[index] = value
@@ -280,30 +293,46 @@ export function Spline3DPreview({
       return newProps
     })
 
-    // Find PC Trans B object and update its texture properties
-    const pcTransBId = "2e33392b-21d8-441d-87b0-11527f3a8b70"
-    let pcTransBObj = null
+    // Find the correct object for this side
+    const objectId = side === 1 ? side1ObjectId : side2ObjectId
+    const objectName = side === 1 ? side1ObjectName : side2ObjectName
 
-    if (app.findObjectById) {
-      pcTransBObj = app.findObjectById(pcTransBId)
+    let targetObj = null
+    if (app.findObjectById && objectId) {
+      targetObj = app.findObjectById(objectId)
+    }
+    if (!targetObj && app.findObjectByName && objectName) {
+      targetObj = app.findObjectByName(objectName)
     }
 
-    if (pcTransBObj && pcTransBObj.material && pcTransBObj.material.layers) {
+    if (targetObj && targetObj.material && targetObj.material.layers) {
       // Update all texture layers that have images
-      pcTransBObj.material.layers.forEach((layer: any, layerIndex: number) => {
+      targetObj.material.layers.forEach((layer: any, layerIndex: number) => {
         if (layer.type === 'texture' && layer.texture && layer.texture.image) {
           if (Array.isArray(layer.texture[property])) {
             layer.texture[property][index] = value
           } else {
             layer.texture[property] = value
           }
-          console.log(`[Spline3D] Updated ${property} on layer ${layerIndex}`)
+
+          // For contrast and brightness, we need to modify the material properties
+          if (property === 'contrast' || property === 'brightness') {
+            // Try to apply contrast/brightness through material properties
+            if (!layer.material) layer.material = {}
+            if (property === 'contrast') {
+              layer.material.contrast = value
+            } else if (property === 'brightness') {
+              layer.material.brightness = value
+            }
+          }
+
+          console.log(`[Spline3D] Updated ${property} on Side ${side} layer ${layerIndex}`)
         }
       })
 
       // Mark material and textures as needing update
-      pcTransBObj.material.needsUpdate = true
-      pcTransBObj.material.layers.forEach((layer: any) => {
+      targetObj.material.needsUpdate = true
+      targetObj.material.layers.forEach((layer: any) => {
         if (layer.texture) {
           layer.texture.needsUpdate = true
           if (layer.texture.image) {
@@ -317,40 +346,44 @@ export function Spline3DPreview({
         app.renderer.render(app.scene, app.camera)
       }
     }
-  }, [])
+  }, [side1ObjectId, side2ObjectId, side1ObjectName, side2ObjectName])
 
-  // Reset texture properties to default values
-  const resetTextureProperties = useCallback(() => {
+  // Reset texture properties to default values for specific side
+  const resetTextureProperties = useCallback((side: 1 | 2) => {
     const defaultProps = {
       repeat: [0.04, 0.04],
       offset: [0.0, 0.0],
       rotation: -90 * Math.PI / 180,
       magFilter: 1006,
-      minFilter: 1008
+      minFilter: 1008,
+      contrast: 1.2,
+      brightness: 1.1
     }
 
-    setTextureProperties(defaultProps)
+    // Update state for the specific side
+    const setState = side === 1 ? setTexturePropertiesSide1 : setTexturePropertiesSide2
+    setState(defaultProps)
 
     // Apply to actual textures
     Object.entries(defaultProps).forEach(([property, value]) => {
       if (Array.isArray(value)) {
         value.forEach((val, index) => {
-          updateTextureProperty(property, index, val)
+          updateTextureProperty(side, property, index, val)
         })
       } else {
-        updateTextureProperty(property, 0, value)
+        updateTextureProperty(side, property, 0, value)
       }
     })
 
-    console.log(`[Spline3D] Reset texture properties to defaults`)
+    console.log(`[Spline3D] Reset texture properties to defaults for Side ${side}`)
   }, [updateTextureProperty])
 
-  // Force apply all current texture updates
-  const applyTextureUpdates = useCallback(() => {
+  // Force apply all current texture updates for specific side
+  const applyTextureUpdates = useCallback((side: 1 | 2) => {
     const app = splineAppRef.current as any
     if (!app) return
 
-    console.log(`[Spline3D] Applying all texture updates`)
+    console.log(`[Spline3D] Applying all texture updates for Side ${side}`)
 
     // Force update and render
     if (app.update && typeof app.update === 'function') {
@@ -366,8 +399,189 @@ export function Spline3DPreview({
       }, 100)
     }
 
-    console.log(`[Spline3D] Applied texture updates and forced render`)
+    console.log(`[Spline3D] Applied texture updates and forced render for Side ${side}`)
   }, [])
+
+  // Render texture controls for a specific side
+  const renderTextureControls = useCallback((side: 1 | 2, properties: any) => {
+    return (
+      <>
+        {/* Scale Controls */}
+        <div className="space-y-3">
+          <h5 className="font-medium text-sm">🔍 Scale</h5>
+          <div className="space-y-2">
+            <div className="flex items-center gap-2">
+              <label className="text-xs font-medium w-12">Width:</label>
+              <input
+                type="range"
+                min="0.01"
+                max="2.0"
+                step="0.01"
+                value={properties.repeat[0]}
+                className="flex-1 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+                onChange={(e) => updateTextureProperty(side, 'repeat', 0, parseFloat(e.target.value))}
+              />
+              <span className="text-xs w-12 text-right">{properties.repeat[0].toFixed(2)}</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <label className="text-xs font-medium w-12">Height:</label>
+              <input
+                type="range"
+                min="0.01"
+                max="2.0"
+                step="0.01"
+                value={properties.repeat[1]}
+                className="flex-1 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+                onChange={(e) => updateTextureProperty(side, 'repeat', 1, parseFloat(e.target.value))}
+              />
+              <span className="text-xs w-12 text-right">{properties.repeat[1].toFixed(2)}</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Position Controls */}
+        <div className="space-y-3">
+          <h5 className="font-medium text-sm">📍 Position</h5>
+          <div className="space-y-2">
+            <div className="flex items-center gap-2">
+              <label className="text-xs font-medium w-12">X:</label>
+              <input
+                type="range"
+                min="-1.0"
+                max="1.0"
+                step="0.01"
+                value={properties.offset[0]}
+                className="flex-1 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+                onChange={(e) => updateTextureProperty(side, 'offset', 0, parseFloat(e.target.value))}
+              />
+              <span className="text-xs w-12 text-right">{properties.offset[0].toFixed(2)}</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <label className="text-xs font-medium w-12">Y:</label>
+              <input
+                type="range"
+                min="-1.0"
+                max="1.0"
+                step="0.01"
+                value={properties.offset[1]}
+                className="flex-1 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+                onChange={(e) => updateTextureProperty(side, 'offset', 1, parseFloat(e.target.value))}
+              />
+              <span className="text-xs w-12 text-right">{properties.offset[1].toFixed(2)}</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Rotation Control */}
+        <div className="space-y-3">
+          <h5 className="font-medium text-sm">🔄 Rotation</h5>
+          <div className="flex items-center gap-2">
+            <label className="text-xs font-medium w-12">Angle:</label>
+            <input
+              type="range"
+              min="-180"
+              max="180"
+              step="1"
+              value={properties.rotation * 180 / Math.PI}
+              className="flex-1 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+              onChange={(e) => updateTextureProperty(side, 'rotation', 0, parseFloat(e.target.value) * Math.PI / 180)}
+            />
+            <span className="text-xs w-12 text-right">{Math.round(properties.rotation * 180 / Math.PI)}°</span>
+          </div>
+        </div>
+
+        {/* Image Enhancement Controls */}
+        <div className="space-y-3">
+          <h5 className="font-medium text-sm">✨ Enhancement</h5>
+          <div className="space-y-2">
+            <div className="flex items-center gap-2">
+              <label className="text-xs font-medium w-16">Contrast:</label>
+              <input
+                type="range"
+                min="0.5"
+                max="3.0"
+                step="0.1"
+                value={properties.contrast}
+                className="flex-1 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+                onChange={(e) => updateTextureProperty(side, 'contrast', 0, parseFloat(e.target.value))}
+              />
+              <span className="text-xs w-12 text-right">{properties.contrast.toFixed(1)}x</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <label className="text-xs font-medium w-16">Brightness:</label>
+              <input
+                type="range"
+                min="0.5"
+                max="3.0"
+                step="0.1"
+                value={properties.brightness}
+                className="flex-1 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+                onChange={(e) => updateTextureProperty(side, 'brightness', 0, parseFloat(e.target.value))}
+              />
+              <span className="text-xs w-12 text-right">{properties.brightness.toFixed(1)}x</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Filter Controls */}
+        <div className="space-y-3 md:col-span-2">
+          <h5 className="font-medium text-sm">⚙️ Filters</h5>
+          <div className="flex gap-4">
+            <div className="flex items-center gap-2">
+              <label className="text-xs font-medium w-16">Mag Filter:</label>
+              <select
+                value={properties.magFilter}
+                className="flex-1 text-xs p-1 border rounded"
+                onChange={(e) => updateTextureProperty(side, 'magFilter', 0, parseInt(e.target.value))}
+              >
+                <option value="9728">Nearest</option>
+                <option value="9729">Linear</option>
+                <option value="9984">NearestMipmapNearest</option>
+                <option value="9985">LinearMipmapNearest</option>
+                <option value="9986">NearestMipmapLinear</option>
+                <option value="9987">LinearMipmapLinear</option>
+              </select>
+            </div>
+            <div className="flex items-center gap-2">
+              <label className="text-xs font-medium w-16">Min Filter:</label>
+              <select
+                value={properties.minFilter}
+                className="flex-1 text-xs p-1 border rounded"
+                onChange={(e) => updateTextureProperty(side, 'minFilter', 0, parseInt(e.target.value))}
+              >
+                <option value="9728">Nearest</option>
+                <option value="9729">Linear</option>
+                <option value="9984">NearestMipmapNearest</option>
+                <option value="9985">LinearMipmapNearest</option>
+                <option value="9986">NearestMipmapLinear</option>
+                <option value="9987">LinearMipmapLinear</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        {/* Action Buttons */}
+        <div className="md:col-span-2 flex gap-2 justify-center pt-2">
+          <Button
+            onClick={() => resetTextureProperties(side)}
+            variant="outline"
+            size="sm"
+            className="text-xs"
+          >
+            🔄 Reset Side {side}
+          </Button>
+          <Button
+            onClick={() => applyTextureUpdates(side)}
+            variant="default"
+            size="sm"
+            className="text-xs"
+          >
+            ✅ Apply Side {side}
+          </Button>
+        </div>
+      </>
+    )
+  }, [updateTextureProperty, resetTextureProperties, applyTextureUpdates])
 
   // Clone mesh, create new material with UV texture, toggle visibility
   const updateTextures = useCallback(async () => {
@@ -1892,13 +2106,31 @@ export function Spline3DPreview({
             </div>
 
             {/* Texture Controls Section */}
-            <div className="mb-6 p-4 bg-background/50 rounded-lg border">
-              <h4 className="text-lg font-semibold mb-3 text-primary">🎨 Texture Controls</h4>
-              <p className="text-sm text-muted-foreground mb-4">
-                Adjust how the uploaded image appears on the 3D model
-              </p>
+            <div className="mb-6 space-y-6">
+              {/* Side 1 Controls */}
+              <div className="p-4 bg-background/50 rounded-lg border border-blue-200">
+                <h4 className="text-lg font-semibold mb-3 text-blue-600">🎨 Side 1 (PC Trans A) - Texture Controls</h4>
+                <p className="text-sm text-muted-foreground mb-4">
+                  Adjust how the Side 1 uploaded image appears on the 3D model
+                </p>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {renderTextureControls(1, texturePropertiesSide1)}
+                </div>
+              </div>
+
+              {/* Side 2 Controls */}
+              <div className="p-4 bg-background/50 rounded-lg border border-green-200">
+                <h4 className="text-lg font-semibold mb-3 text-green-600">🎨 Side 2 (PC Trans B) - Texture Controls</h4>
+                <p className="text-sm text-muted-foreground mb-4">
+                  Adjust how the Side 2 uploaded image appears on the 3D model
+                </p>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {renderTextureControls(2, texturePropertiesSide2)}
+                </div>
+              </div>
+            </div>
                 {/* Scale Controls */}
                 <div className="space-y-3">
                   <h5 className="font-medium text-sm">🔍 Scale</h5>
