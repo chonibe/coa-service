@@ -498,7 +498,7 @@ export function Spline3DPreview({
                     app.renderer.render(app.scene, app.camera)
                   }
 
-                  console.log(`[Spline3D] ✓ Updated material and triggered refresh after texture.image replacement`)
+                  console.log(`[Spline3D] ✓ REPLACED texture.image and updated material for layer ${i}`)
                   return true
                 } else {
                   // Fallback to other approaches for layers without texture.image
@@ -523,41 +523,9 @@ export function Spline3DPreview({
                     app.renderer.render(app.scene, app.camera)
                   }
 
+                  console.log(`[Spline3D] ✓ Used fallback approach and updated material for layer ${i}`)
                   return true
                 }
-                
-                layer.visible = true
-                layer.alpha = 1
-                if (layer.opacity !== undefined) layer.opacity = 1
-                
-                // Try update methods
-                if (layer.updateTexture && typeof layer.updateTexture === 'function') {
-                  layer.updateTexture(imageElement)
-                }
-                if (layer.update && typeof layer.update === 'function') {
-                  layer.update()
-                }
-                if (layer.setImage && typeof layer.setImage === 'function') {
-                  layer.setImage(imageElement)
-                }
-                
-                material.needsUpdate = true
-                if (material.version !== undefined) {
-                  material.version++
-                }
-                
-                // Force app update
-                if (app.update && typeof app.update === 'function') {
-                  app.update()
-                }
-                
-                console.log(`[Spline3D] ✓ Approach 1a: Updated existing image layer ${i} for ${label}`, {
-                  layerVisible: layer.visible,
-                  layerAlpha: layer.alpha,
-                  textureImageSet: layer.texture?.image?.data === imageUint8Array,
-                  imageDataLength: imageUint8Array.length
-                })
-                return true
               } catch (e) {
                 console.warn(`[Spline3D] Approach 1a failed for image layer ${i}:`, e)
               }
