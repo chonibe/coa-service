@@ -455,30 +455,21 @@ export function Spline3DPreview({
                     allProperties: Object.keys(originalImage)
                   })
 
-                  // Create new image data with the same structure as the original
-                  layer.texture.image = {
-                    data: imageUint8Array,
-                    width: imageElement.width,
-                    height: imageElement.height,
-                    name: `uploaded-image-${label}`,
-                    // Preserve original texture properties if they exist
-                    magFilter: originalImage.magFilter !== undefined ? originalImage.magFilter : 1006,
-                    minFilter: originalImage.minFilter !== undefined ? originalImage.minFilter : 1008,
-                    offset: originalImage.offset !== undefined ? originalImage.offset : [0, 0],
-                    repeat: originalImage.repeat !== undefined ? originalImage.repeat : [1, 1],
-                    rotation: originalImage.rotation !== undefined ? originalImage.rotation : 0,
-                    wrapping: originalImage.wrapping !== undefined ? originalImage.wrapping : 1000
-                  }
+                  // Replace just the data and essential properties, keep the rest intact
+                  layer.texture.image.data = imageUint8Array
+                  layer.texture.image.width = imageElement.width
+                  layer.texture.image.height = imageElement.height
+                  layer.texture.image.name = `uploaded-image-${label}`
 
-                  console.log(`[Spline3D] ✓ REPLACED texture.image data for layer ${i}`, {
+                  console.log(`[Spline3D] ✓ REPLACED texture.image properties for layer ${i}`, {
                     newImageName: layer.texture.image.name,
                     newImageSize: imageUint8Array.length,
                     newImageDimensions: `${imageElement.width}x${imageElement.height}`,
                     preservedProperties: {
-                      magFilter: layer.texture.image.magFilter,
-                      minFilter: layer.texture.image.minFilter,
-                      rotation: layer.texture.image.rotation,
-                      wrapping: layer.texture.image.wrapping
+                      magFilter: originalImage.magFilter,
+                      minFilter: originalImage.minFilter,
+                      rotation: originalImage.rotation,
+                      wrapping: originalImage.wrapping
                     }
                   })
 
