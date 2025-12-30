@@ -68,9 +68,9 @@ export function Spline3DPreview({
   // State for texture controls - separate for each side
   // Panel dimensions: 14.06 x 20.84 (width x height)
   // Aspect ratio: 20.84 / 14.06 ≈ 1.48
-  // Default repeat values adjusted for proper aspect ratio
+  // Increased repeat values to show more of the image (less zoomed in)
   const [texturePropertiesSide1, setTexturePropertiesSide1] = useState({
-    repeat: [0.032, 0.048], // Adjusted for panel aspect ratio
+    repeat: [0.08, 0.12], // Increased for better image visibility
     offset: [0.0, 0.0],
     rotation: -90 * Math.PI / 180,
     magFilter: 1006,
@@ -80,7 +80,7 @@ export function Spline3DPreview({
   })
 
   const [texturePropertiesSide2, setTexturePropertiesSide2] = useState({
-    repeat: [-0.032, 0.048], // Negative X scale to prevent mirroring
+    repeat: [-0.08, 0.12], // Negative X scale to prevent mirroring, increased values
     offset: [1.0, 0.0], // Offset to compensate for negative scale
     rotation: -90 * Math.PI / 180, // Same rotation as side 1
     magFilter: 1006,
@@ -303,7 +303,7 @@ export function Spline3DPreview({
     const timeout = setTimeout(() => {
       applyTexturePropertyUpdate(side, property, index, value)
       textureUpdateTimeouts.current.delete(timeoutKey)
-    }, 150) // 150ms debounce
+    }, 50) // 50ms debounce for more responsive feedback
 
     textureUpdateTimeouts.current.set(timeoutKey, timeout)
   }, [])
@@ -376,7 +376,7 @@ export function Spline3DPreview({
   // Reset texture properties to default values for specific side
   const resetTextureProperties = useCallback((side: 1 | 2) => {
     const defaultProps = side === 1 ? {
-      repeat: [0.032, 0.048], // Panel aspect ratio: 14.06x20.84 (normal orientation)
+      repeat: [0.08, 0.12], // Increased values for better image visibility
       offset: [0.0, 0.0],
       rotation: -90 * Math.PI / 180,
       magFilter: 1006,
@@ -384,7 +384,7 @@ export function Spline3DPreview({
       contrast: 1.2,
       brightness: 1.1
     } : {
-      repeat: [-0.032, 0.048], // Negative X scale to prevent mirroring on side 2
+      repeat: [-0.08, 0.12], // Negative X scale to prevent mirroring on side 2
       offset: [1.0, 0.0], // Offset to compensate for negative scale
       rotation: -90 * Math.PI / 180,
       magFilter: 1006,
