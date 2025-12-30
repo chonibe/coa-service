@@ -421,13 +421,13 @@ export function Spline3DPreview({
 
         // Try multiple approaches to add image layer
 
-        // Approach 1: Try to update existing image layer (prioritize image type layers first)
+        // Approach 1: Try to update existing texture layers that have images
         // This approach specifically targets texture.image data which is where we found the actual image data
         if (material.layers && Array.isArray(material.layers)) {
-          // First pass: Look specifically for 'image' type layers (added in Spline)
+          // First pass: Look specifically for 'texture' type layers that have images
           for (let i = 0; i < material.layers.length; i++) {
             const layer = material.layers[i]
-            if (layer.type === 'image') {
+            if (layer.type === 'texture' && layer.texture && layer.texture.image) {
               try {
                 console.log(`[Spline3D] Found image layer ${i} for ${label} - attempting to update`, {
                   hasImage: layer.image !== undefined,
@@ -711,10 +711,10 @@ export function Spline3DPreview({
     // Full path: Scene > Scene > White > Assembly Small Lamp 2025 v62 > Panel Side A > PC Trans A
     if (image1) {
       const obj1 = findObject(
-        side1ObjectId, 
+        side1ObjectId,
         side1ObjectName,
         ["Panel Side A PC Trans A", "PC Trans A", "Side A", "Panel Side A"],
-        ["Scene", "White", "Assembly Small Lamp 2025 v62", "Panel Side A", "PC Trans A"]
+        ["Scene", "Scene", "White", "Assembly Small Lamp 2025 v62", "Panel Side A", "PC Trans A"]
       )
       if (obj1) {
         side1ObjectRef.current = obj1
@@ -736,10 +736,10 @@ export function Spline3DPreview({
     // Full path: Scene > Scene > White > Assembly Small Lamp 2025 v62 > Panel Side B > PC Trans B
     if (image2) {
       const obj2 = findObject(
-        side2ObjectId, 
+        side2ObjectId,
         side2ObjectName,
         ["Panel Side B PC Trans B", "PC Trans B", "Side B", "Panel Side B"],
-        ["Scene", "White", "Assembly Small Lamp 2025 v62", "Panel Side B", "PC Trans B"]
+        ["Scene", "Scene", "White", "Assembly Small Lamp 2025 v62", "Panel Side B", "PC Trans B"]
       )
       if (obj2) {
         side2ObjectRef.current = obj2
@@ -1304,7 +1304,7 @@ export function Spline3DPreview({
               }
               
               // Path: Scene > Scene > White > Assembly Small Lamp 2025 v62 > Panel Side B > PC Trans B
-              const path = ["Scene", "White", "Assembly Small Lamp 2025 v62", "Panel Side B", "PC Trans B"]
+              const path = ["Scene", "Scene", "White", "Assembly Small Lamp 2025 v62", "Panel Side B", "PC Trans B"]
               
               let currentObj: any = scene
               for (const pathSegment of path) {
@@ -1614,7 +1614,7 @@ export function Spline3DPreview({
               </h3>
               <div className="bg-primary/20 rounded-lg p-3 mb-4">
                 <p className="text-sm font-medium text-foreground">
-                  Path: <code className="bg-background px-2 py-1 rounded text-xs">Scene → White → Assembly Small Lamp 2025 v62 → Panel Side B → PC Trans B</code>
+                  Path: <code className="bg-background px-2 py-1 rounded text-xs">Scene → Scene → White → Assembly Small Lamp 2025 v62 → Panel Side B → PC Trans B</code>
                 </p>
                 <p className="text-sm text-primary font-semibold mt-1">
                   This is the object that displays your uploaded images!
