@@ -1220,91 +1220,38 @@ export function Spline3DPreview({
                 return []
               }
               
-              // Try to find object by name first (most reliable)
-              let currentObj: any = null
-              
-              // Method 1: Try getAllObjects and find by name
-              if (app.getAllObjects && typeof app.getAllObjects === 'function') {
-                try {
-                  const allObjects = app.getAllObjects()
-                  if (Array.isArray(allObjects)) {
-                    currentObj = allObjects.find((obj: any) => 
-                      obj.name === "PC Trans B" || 
-                      (typeof obj.name === 'string' && obj.name.includes("PC Trans B"))
-                    )
-                    if (currentObj) {
-                      console.log(`[Spline3D] Found PC Trans B via getAllObjects()`)
-                    }
-                  }
-                } catch (e) {
-                  console.warn("[Spline3D] getAllObjects() failed:", e)
-                }
-              }
-              
-              // Method 2: Try findObjectByName
-              if (!currentObj && app.findObjectByName && typeof app.findObjectByName === 'function') {
-                try {
-                  currentObj = app.findObjectByName("PC Trans B")
-                  if (currentObj) {
-                    console.log(`[Spline3D] Found PC Trans B via findObjectByName()`)
-                  }
-                } catch (e) {
-                  console.warn("[Spline3D] findObjectByName() failed:", e)
-                }
-              }
-              
-              // Method 3: Path traversal (skip first "Scene" since we're already at scene)
               // Path: Scene > Scene > White > Assembly Small Lamp 2025 v62 > Panel Side B > PC Trans B
-              if (!currentObj) {
-                const path = ["White", "Assembly Small Lamp 2025 v62", "Panel Side B", "PC Trans B"]
-                let pathObj: any = scene
-                
-                // First, try to find nested Scene if it exists
-                const sceneChildren = pathObj.children || []
-                const nestedScene = sceneChildren.find((child: any) => 
-                  child.name === "Scene" || child.type === "Scene"
-                )
-                if (nestedScene) {
-                  pathObj = nestedScene
-                  console.log(`[Spline3D] Found nested Scene, continuing traversal`)
+              const path = ["Scene", "White", "Assembly Small Lamp 2025 v62", "Panel Side B", "PC Trans B"]
+              
+              let currentObj: any = scene
+              for (const pathSegment of path) {
+                if (!currentObj) {
+                  console.warn(`[Spline3D] Could not find path segment: ${pathSegment}`)
+                  return []
                 }
                 
-                for (const pathSegment of path) {
-                  if (!pathObj) {
-                    console.warn(`[Spline3D] Could not find path segment: ${pathSegment}`)
-                    break
-                  }
-                  
-                  const children = pathObj.children || []
-                  const found = children.find((child: any) => 
+                const children = currentObj.children || []
+                const found = children.find((child: any) => 
+                  child.name === pathSegment || 
+                  (typeof child.name === 'string' && child.name.includes(pathSegment))
+                )
+                
+                if (found) {
+                  currentObj = found
+                } else if (currentObj.mesh && currentObj.mesh.children) {
+                  const meshFound = currentObj.mesh.children.find((child: any) => 
                     child.name === pathSegment || 
                     (typeof child.name === 'string' && child.name.includes(pathSegment))
                   )
-                  
-                  if (found) {
-                    pathObj = found
-                    console.log(`[Spline3D] Found path segment: ${pathSegment}`)
-                  } else if (pathObj.mesh && pathObj.mesh.children) {
-                    const meshFound = pathObj.mesh.children.find((child: any) => 
-                      child.name === pathSegment || 
-                      (typeof child.name === 'string' && child.name.includes(pathSegment))
-                    )
-                    if (meshFound) {
-                      pathObj = meshFound
-                      console.log(`[Spline3D] Found path segment in mesh: ${pathSegment}`)
-                    } else {
-                      console.warn(`[Spline3D] Could not find path segment: ${pathSegment}`)
-                      break
-                    }
+                  if (meshFound) {
+                    currentObj = meshFound
                   } else {
                     console.warn(`[Spline3D] Could not find path segment: ${pathSegment}`)
-                    break
+                    return []
                   }
-                }
-                
-                if (pathObj && pathObj.name && pathObj.name.includes("PC Trans B")) {
-                  currentObj = pathObj
-                  console.log(`[Spline3D] Found PC Trans B via path traversal`)
+                } else {
+                  console.warn(`[Spline3D] Could not find path segment: ${pathSegment}`)
+                  return []
                 }
               }
               
@@ -1522,50 +1469,70 @@ export function Spline3DPreview({
             </Button>
           </div>
 
-          {/* PC Trans B Material Layer Controls - Always Visible */}
-          <div className="border-2 border-primary rounded-lg p-4 bg-primary/5">
-            <h3 className="text-sm font-semibold mb-2 text-primary">PC Trans B Material Layers</h3>
-            <p className="text-xs text-muted-foreground mb-3">
-              Object: Scene {'>'} White {'>'} Assembly Small Lamp 2025 v62 {'>'} Panel Side B {'>'} PC Trans B
-            </p>
+          {/* PC Trans B Material Layer Controls - ALWAYS VISIBLE AND PROMINENT */}
+          <div className="border-4 border-primary rounded-xl p-6 bg-gradient-to-r from-primary/10 to-primary/5 shadow-lg">
+            <div className="mb-4">
+              <h3 className="text-xl font-bold text-primary mb-2 flex items-center gap-2">
+                🎯 TARGET OBJECT: PC Trans B Material Layers
+              </h3>
+              <div className="bg-primary/20 rounded-lg p-3 mb-4">
+                <p className="text-sm font-medium text-foreground">
+                  Path: <code className="bg-background px-2 py-1 rounded text-xs">Scene → White → Assembly Small Lamp 2025 v62 → Panel Side B → PC Trans B</code>
+                </p>
+                <p className="text-sm text-primary font-semibold mt-1">
+                  This is the object that displays your uploaded images!
+                </p>
+              </div>
+            </div>
+
             {pcTransBLayers.length > 0 ? (
               <>
-                <div className="space-y-2">
+                <div className="space-y-3">
                   {pcTransBLayers.map((layerInfo) => (
-                    <div key={`${layerInfo.objectId}-${layerInfo.layerIndex}`} className="flex items-center gap-2">
+                    <div key={`${layerInfo.objectId}-${layerInfo.layerIndex}`} className="flex items-center gap-3">
                       <Button
                         onClick={() => toggleLayerVisibility(layerInfo)}
                         variant={layerInfo.visible ? "default" : "outline"}
-                        size="sm"
+                        size="lg"
                         disabled={isLoading || !!error}
-                        className="flex items-center gap-2 flex-1 justify-start"
+                        className="flex items-center gap-3 flex-1 justify-start h-14 text-left"
                       >
                         {layerInfo.visible ? (
-                          <Eye className="h-4 w-4" />
+                          <Eye className="h-6 w-6" />
                         ) : (
-                          <EyeOff className="h-4 w-4" />
+                          <EyeOff className="h-6 w-6" />
                         )}
-                        <span className="text-xs">
-                          Layer {layerInfo.layerIndex}: {layerInfo.layerType}
-                          {layerInfo.layerName && layerInfo.layerName !== `Layer ${layerInfo.layerIndex}` && ` (${layerInfo.layerName})`}
-                        </span>
+                        <div className="flex-1">
+                          <div className="text-base font-medium">
+                            Layer {layerInfo.layerIndex}: {layerInfo.layerType}
+                          </div>
+                          {layerInfo.layerName && layerInfo.layerName !== `Layer ${layerInfo.layerIndex}` && (
+                            <div className="text-sm text-muted-foreground">{layerInfo.layerName}</div>
+                          )}
+                        </div>
                         {layerInfo.layerType === 'image' && (
-                          <span className="ml-auto text-xs bg-blue-500 text-white px-2 py-0.5 rounded">IMAGE</span>
+                          <span className="ml-auto text-sm bg-blue-500 text-white px-3 py-1 rounded-full font-semibold">IMAGE</span>
                         )}
                         {layerInfo.layerType === 'texture' && (
-                          <span className="ml-auto text-xs bg-green-500 text-white px-2 py-0.5 rounded">TEXTURE</span>
+                          <span className="ml-auto text-sm bg-green-500 text-white px-3 py-1 rounded-full font-semibold">TEXTURE</span>
                         )}
                       </Button>
                     </div>
                   ))}
                 </div>
-                <p className="text-xs text-muted-foreground mt-3">
-                  Found {pcTransBLayers.length} layers. Toggle them to test if we can control the material.
-                </p>
+                <div className="mt-6 p-4 bg-muted rounded-lg border">
+                  <p className="text-sm font-semibold text-center">
+                    📊 Found {pcTransBLayers.length} layers on PC Trans B object
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-2 text-center">
+                    Toggle these layers on/off to test material control and discover how images are displayed
+                  </p>
+                </div>
               </>
             ) : (
-              <div className="text-center py-4">
-                <p className="text-xs text-muted-foreground">
+              <div className="text-center py-8 bg-muted/50 rounded-lg">
+                <div className="text-2xl mb-2">🔍</div>
+                <p className="text-sm text-muted-foreground">
                   {isLoading ? "Loading PC Trans B object..." : "No layers found on PC Trans B object. Check console for details."}
                 </p>
               </div>
