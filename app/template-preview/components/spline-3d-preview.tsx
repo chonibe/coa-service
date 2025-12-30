@@ -1469,47 +1469,55 @@ export function Spline3DPreview({
             </Button>
           </div>
 
-          {/* PC Trans B Material Layer Controls */}
-          {pcTransBLayers.length > 0 && (
-            <div className="border rounded-lg p-4 bg-muted/50">
-              <h3 className="text-sm font-semibold mb-3">PC Trans B Material Layers</h3>
-              <p className="text-xs text-muted-foreground mb-3">
-                Toggle material layers on the PC Trans B object to test control
-              </p>
-              <div className="space-y-2">
-                {pcTransBLayers.map((layerInfo) => (
-                  <div key={`${layerInfo.objectId}-${layerInfo.layerIndex}`} className="flex items-center gap-2">
-                    <Button
-                      onClick={() => toggleLayerVisibility(layerInfo)}
-                      variant={layerInfo.visible ? "default" : "outline"}
-                      size="sm"
-                      disabled={isLoading || !!error}
-                      className="flex items-center gap-2 flex-1 justify-start"
-                    >
-                      {layerInfo.visible ? (
-                        <Eye className="h-4 w-4" />
-                      ) : (
-                        <EyeOff className="h-4 w-4" />
-                      )}
-                      <span className="text-xs">
-                        Layer {layerInfo.layerIndex}: {layerInfo.layerType}
-                        {layerInfo.layerName && layerInfo.layerName !== `Layer ${layerInfo.layerIndex}` && ` (${layerInfo.layerName})`}
-                      </span>
-                      {layerInfo.layerType === 'image' && (
-                        <span className="ml-auto text-xs bg-blue-500 text-white px-2 py-0.5 rounded">IMAGE</span>
-                      )}
-                      {layerInfo.layerType === 'texture' && (
-                        <span className="ml-auto text-xs bg-green-500 text-white px-2 py-0.5 rounded">TEXTURE</span>
-                      )}
-                    </Button>
-                  </div>
-                ))}
+          {/* PC Trans B Material Layer Controls - Always Visible */}
+          <div className="border-2 border-primary rounded-lg p-4 bg-primary/5">
+            <h3 className="text-sm font-semibold mb-2 text-primary">PC Trans B Material Layers</h3>
+            <p className="text-xs text-muted-foreground mb-3">
+              Object: Scene {'>'} White {'>'} Assembly Small Lamp 2025 v62 {'>'} Panel Side B {'>'} PC Trans B
+            </p>
+            {pcTransBLayers.length > 0 ? (
+              <>
+                <div className="space-y-2">
+                  {pcTransBLayers.map((layerInfo) => (
+                    <div key={`${layerInfo.objectId}-${layerInfo.layerIndex}`} className="flex items-center gap-2">
+                      <Button
+                        onClick={() => toggleLayerVisibility(layerInfo)}
+                        variant={layerInfo.visible ? "default" : "outline"}
+                        size="sm"
+                        disabled={isLoading || !!error}
+                        className="flex items-center gap-2 flex-1 justify-start"
+                      >
+                        {layerInfo.visible ? (
+                          <Eye className="h-4 w-4" />
+                        ) : (
+                          <EyeOff className="h-4 w-4" />
+                        )}
+                        <span className="text-xs">
+                          Layer {layerInfo.layerIndex}: {layerInfo.layerType}
+                          {layerInfo.layerName && layerInfo.layerName !== `Layer ${layerInfo.layerIndex}` && ` (${layerInfo.layerName})`}
+                        </span>
+                        {layerInfo.layerType === 'image' && (
+                          <span className="ml-auto text-xs bg-blue-500 text-white px-2 py-0.5 rounded">IMAGE</span>
+                        )}
+                        {layerInfo.layerType === 'texture' && (
+                          <span className="ml-auto text-xs bg-green-500 text-white px-2 py-0.5 rounded">TEXTURE</span>
+                        )}
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+                <p className="text-xs text-muted-foreground mt-3">
+                  Found {pcTransBLayers.length} layers. Toggle them to test if we can control the material.
+                </p>
+              </>
+            ) : (
+              <div className="text-center py-4">
+                <p className="text-xs text-muted-foreground">
+                  {isLoading ? "Loading PC Trans B object..." : "No layers found on PC Trans B object. Check console for details."}
+                </p>
               </div>
-              <p className="text-xs text-muted-foreground mt-3">
-                Found {pcTransBLayers.length} layers. Toggle them to test if we can control the material.
-              </p>
-            </div>
-          )}
+            )}
+          </div>
 
           {/* Other Controls (Hidden by default) */}
           {showOtherControls && (
