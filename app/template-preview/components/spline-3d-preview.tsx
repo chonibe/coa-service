@@ -166,6 +166,7 @@ export function Spline3DPreview({
           if (originalTexture !== undefined) layer.texture = originalTexture
           if (originalTextureImage !== undefined && layer.texture) {
             layer.texture.image = originalTextureImage
+            console.log(`[Spline3D] Restored texture.image data for ${layerInfo.objectName}`)
           }
 
           console.log(`[Spline3D] Restored image on ${layerInfo.objectName} (including texture.image)`)
@@ -177,6 +178,7 @@ export function Spline3DPreview({
             originalMaterialValuesRef.current.set(`${key}-texture`, layer.texture)
             if (layer.texture?.image !== undefined) {
               originalMaterialValuesRef.current.set(`${key}-textureImage`, layer.texture.image)
+              console.log(`[Spline3D] Stored original texture.image for restoration:`, layer.texture.image.name)
             }
           }
 
@@ -439,16 +441,34 @@ export function Spline3DPreview({
                 
                 // Try setting image data - prioritize texture.image for existing textures
                 if (layer.texture && layer.texture.image !== undefined) {
-                  // This is the key! Set texture.image to Uint8Array data (like the existing format)
-                  layer.texture.image = {
+                  // This is the key! Replace the entire texture.image with new image data
+                  // Create a new image object similar to the existing structure
+                  const newImageData = {
                     data: imageUint8Array,
                     width: imageElement.width,
                     height: imageElement.height,
-                    name: `uploaded-image-${label}`
+                    name: image1?.name || `uploaded-image-${label}-${Date.now()}.jpg`
                   }
-                  console.log(`[Spline3D] ✓ Set texture.image data for layer ${i}`)
+
+                  // Store original for potential restoration
+                  if (!originalMaterialValuesRef.current.has(`texture-image-${label}-layer-${i}`)) {
+                    originalMaterialValuesRef.current.set(`texture-image-${label}-layer-${i}`, layer.texture.image)
+                  }
+
+                  // Replace the texture.image completely
+                  layer.texture.image = newImageData
+
+                  // Also update texture properties that might be needed
+                  if (layer.texture.magFilter !== undefined) layer.texture.magFilter = 1006 // LinearFilter
+                  if (layer.texture.minFilter !== undefined) layer.texture.minFilter = 1008 // LinearMipmapLinearFilter
+
+                  console.log(`[Spline3D] ✓ REPLACED texture.image data for layer ${i}`, {
+                    newImageName: newImageData.name,
+                    newImageSize: imageUint8Array.length,
+                    newImageDimensions: `${imageElement.width}x${imageElement.height}`
+                  })
                 } else {
-                  // Fallback to other approaches
+                  // Fallback to other approaches for layers without texture.image
                   layer.image = imageElement
                   if (layer.map !== undefined) layer.map = imageElement
                   if (layer.texture !== undefined) layer.texture = imageElement
@@ -676,7 +696,7 @@ export function Spline3DPreview({
       }
     }
 
-    // Handle Side 1 - Add image layer to material
+    // Handle Side 1 - Replace image on material layer
     // Target: "Panel Side A PC Trans A" (the object that displays the image)
     // Full path: Scene > Scene > White > Assembly Small Lamp 2025 v62 > Panel Side A > PC Trans A
     if (image1) {
@@ -690,9 +710,9 @@ export function Spline3DPreview({
         side1ObjectRef.current = obj1
         const success = await addImageLayerToMaterial(obj1, image1, "Side 1 (Panel Side A PC Trans A)")
         if (success) {
-          console.log(`[Spline3D] ✓ Successfully added image layer to Side 1`)
+          console.log(`[Spline3D] ✓ Successfully REPLACED image on Side 1`)
         } else {
-          console.warn(`[Spline3D] Failed to add image layer to Side 1`)
+          console.warn(`[Spline3D] Failed to replace image on Side 1`)
         }
       } else {
         console.warn(`[Spline3D] Side 1 object not found - tried path and names`)
