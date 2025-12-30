@@ -65,30 +65,6 @@ export function Spline3DPreview({
   const [pcTransBLayers, setPcTransBLayers] = useState<LayerInfo[]>([])
   const [showOtherControls, setShowOtherControls] = useState(false) // Hide other controls by default
 
-  // State for texture controls - separate for each side
-  // Panel dimensions: 14.06 x 20.84 (width x height)
-  // Aspect ratio: 20.84 / 14.06 ≈ 1.48
-  // Increased repeat values to show more of the image (less zoomed in)
-  const [texturePropertiesSide1, setTexturePropertiesSide1] = useState({
-    repeat: [21, 15], // User requested scale x:21 y:15
-    offset: [-0.05, -0.05], // User requested offset x:-0.05 y:-0.05
-    rotation: -90 * Math.PI / 180, // User requested angle -90
-    magFilter: 1006,
-    minFilter: 1008,
-    contrast: 1.2,
-    brightness: 1.1
-  })
-
-  const [texturePropertiesSide2, setTexturePropertiesSide2] = useState({
-    repeat: [-21, 15], // Negative X scale to prevent mirroring, matching side 1 scale
-    offset: [0.95, -0.05], // Adjusted for anti-mirroring: 1.0 - 0.05 = 0.95, y:-0.05
-    rotation: -90 * Math.PI / 180, // Same rotation as side 1
-    magFilter: 1006,
-    minFilter: 1008,
-    contrast: 1.2,
-    brightness: 1.1
-  })
-
   // Toggle model visibility
   const toggleModelVisibility = useCallback(() => {
     if (canvasRef.current) {
@@ -99,7 +75,6 @@ export function Spline3DPreview({
 
   // Store original values for direct material properties
   const originalMaterialValuesRef = useRef<Map<string, any>>(new Map())
-
   
   // Toggle entire object visibility
   const toggleObjectVisibility = useCallback((objectInfo: ObjectInfo) => {
@@ -278,382 +253,6 @@ export function Spline3DPreview({
     }
   }, [])
 
-  // Update texture property for specific side (optimized for performance)
-  const updateTextureProperty = useCallback((side: 1 | 2, property: string, index: number, value: number) => {
-    console.log(`[Spline3D] Updating texture property for Side ${side}: ${property}[${index}] = ${value}`)
-
-    // Update local state for the specific side (immediate UI feedback)
-    const setState = side === 1 ? setTexturePropertiesSide1 : setTexturePropertiesSide2
-    setState(prev => {
-      const newProps = { ...prev }
-      if (Array.isArray(newProps[property as keyof typeof newProps])) {
-        (newProps[property as keyof typeof newProps] as number[])[index] = value
-      } else {
-        (newProps[property as keyof typeof newProps] as number) = value
-      }
-      return newProps
-    })
-
-    // Debounce the actual texture updates to avoid performance issues
-    const timeoutKey = `texture-update-${side}-${property}-${index}`
-    if (textureUpdateTimeouts.current.has(timeoutKey)) {
-      clearTimeout(textureUpdateTimeouts.current.get(timeoutKey))
-    }
-
-    const timeout = setTimeout(() => {
-      applyTexturePropertyUpdate(side, property, index, value)
-      textureUpdateTimeouts.current.delete(timeoutKey)
-    }, 50) // 50ms debounce for more responsive feedback
-
-    textureUpdateTimeouts.current.set(timeoutKey, timeout)
-  }, [])
-
-  // Apply the actual texture property update (debounced)
-  const applyTexturePropertyUpdate = useCallback((side: 1 | 2, property: string, index: number, value: number) => {
-    const app = splineAppRef.current as any
-    if (!app) return
-
-    // Find the correct object for this side
-    const objectId = side === 1 ? side1ObjectId : side2ObjectId
-    const objectName = side === 1 ? side1ObjectName : side2ObjectName
-
-    let targetObj = null
-    if (app.findObjectById && objectId) {
-      targetObj = app.findObjectById(objectId)
-    }
-    if (!targetObj && app.findObjectByName && objectName) {
-      targetObj = app.findObjectByName(objectName)
-    }
-
-    if (targetObj && targetObj.material && targetObj.material.layers) {
-      let updatedLayers = 0
-
-      // Update all texture layers that have textures
-      targetObj.material.layers.forEach((layer: any, layerIndex: number) => {
-        if (layer.type === 'texture' && layer.texture) {
-          // Handle array properties (repeat, offset)
-          if (property === 'repeat') {
-            if (Array.isArray(layer.texture.repeat)) {
-              layer.texture.repeat[index] = value
-            } else {
-              layer.texture.repeat.set(index === 0 ? value : layer.texture.repeat.x, index === 1 ? value : layer.texture.repeat.y)
-            }
-          } else if (property === 'offset') {
-            if (Array.isArray(layer.texture.offset)) {
-              layer.texture.offset[index] = value
-            } else {
-              layer.texture.offset.set(index === 0 ? value : layer.texture.offset.x, index === 1 ? value : layer.texture.offset.y)
-            }
-          } else if (property === 'rotation') {
-            layer.texture.rotation = value
-          } else if (property === 'magFilter') {
-            layer.texture.magFilter = value
-          } else if (property === 'minFilter') {
-            layer.texture.minFilter = value
-          }
-
-          // For contrast and brightness, modify the material properties
-          if (property === 'contrast' || property === 'brightness') {
-            if (!layer.material) layer.material = {}
-            layer.material[property] = value
-          }
-
-          // Mark texture as needing update
-          layer.texture.needsUpdate = true
-
-          updatedLayers++
-        }
-      })
-
-      if (updatedLayers > 0) {
-        // Mark material and textures as needing update (more efficiently)
-        targetObj.material.needsUpdate = true
-
-        // Only mark textures as needing update for properties that affect them
-        if (['repeat', 'offset', 'rotation', 'magFilter', 'minFilter'].includes(property)) {
-          targetObj.material.layers.forEach((layer: any) => {
-            if (layer.texture) {
-              layer.texture.needsUpdate = true
-            }
-          })
-        }
-
-        // Force render with minimal operations
-        if (app.renderer && app.scene && app.camera) {
-          app.renderer.render(app.scene, app.camera)
-        }
-
-        console.log(`[Spline3D] Applied ${property} update to ${updatedLayers} texture layers on Side ${side}`)
-      }
-    }
-  }, [side1ObjectId, side2ObjectId, side1ObjectName, side2ObjectName])
-
-  // Store timeout references for debouncing
-  const textureUpdateTimeouts = useRef<Map<string, NodeJS.Timeout>>(new Map())
-
-  // Reset texture properties to default values for specific side
-  const resetTextureProperties = useCallback((side: 1 | 2) => {
-    const defaultProps = side === 1 ? {
-      repeat: [21, 15], // User requested scale x:21 y:15
-      offset: [-0.05, -0.05], // User requested offset x:-0.05 y:-0.05
-      rotation: -90 * Math.PI / 180, // User requested angle -90
-      magFilter: 1006,
-      minFilter: 1008,
-      contrast: 1.2,
-      brightness: 1.1
-    } : {
-      repeat: [-21, 15], // Negative X scale to prevent mirroring on side 2
-      offset: [0.95, -0.05], // Adjusted for anti-mirroring: 1.0 - 0.05 = 0.95, y:-0.05
-      rotation: -90 * Math.PI / 180,
-      magFilter: 1006,
-      minFilter: 1008,
-      contrast: 1.2,
-      brightness: 1.1
-    }
-
-    // Clear any pending updates first
-    textureUpdateTimeouts.current.forEach((timeout, key) => {
-      if (key.startsWith(`texture-update-${side}`)) {
-        clearTimeout(timeout)
-        textureUpdateTimeouts.current.delete(key)
-      }
-    })
-
-    // Update state for the specific side
-    const setState = side === 1 ? setTexturePropertiesSide1 : setTexturePropertiesSide2
-    setState(defaultProps)
-
-    // Apply immediately to avoid debouncing delay
-    Object.entries(defaultProps).forEach(([property, value]) => {
-      if (Array.isArray(value)) {
-        value.forEach((val, index) => {
-          applyTexturePropertyUpdate(side, property, index, val)
-        })
-      } else {
-        applyTexturePropertyUpdate(side, property, 0, value)
-      }
-    })
-
-    console.log(`[Spline3D] Reset texture properties to defaults for Side ${side}`)
-  }, [applyTexturePropertyUpdate])
-
-  // Force apply all current texture updates for specific side (immediate)
-  const applyTextureUpdates = useCallback((side: 1 | 2) => {
-    const app = splineAppRef.current as any
-    if (!app) return
-
-    // Clear any pending debounced updates to apply immediately
-    textureUpdateTimeouts.current.forEach((timeout, key) => {
-      if (key.startsWith(`texture-update-${side}`)) {
-        clearTimeout(timeout)
-        textureUpdateTimeouts.current.delete(key)
-      }
-    })
-
-    console.log(`[Spline3D] Applying all texture updates immediately for Side ${side}`)
-
-    // Get current state and apply all properties immediately
-    const currentProps = side === 1 ? texturePropertiesSide1 : texturePropertiesSide2
-
-    Object.entries(currentProps).forEach(([property, value]) => {
-      if (Array.isArray(value)) {
-        value.forEach((val, index) => {
-          applyTexturePropertyUpdate(side, property, index, val)
-        })
-      } else {
-        applyTexturePropertyUpdate(side, property, 0, value as number)
-      }
-    })
-
-    // Force render
-    if (app.renderer && app.scene && app.camera) {
-      app.renderer.render(app.scene, app.camera)
-    }
-
-    console.log(`[Spline3D] Applied all texture updates immediately for Side ${side}`)
-  }, [texturePropertiesSide1, texturePropertiesSide2, applyTexturePropertyUpdate])
-
-  // Render texture controls for a specific side
-  const renderTextureControls = useCallback((side: 1 | 2, properties: any) => {
-    return (
-      <>
-        {/* Scale Controls */}
-        <div className="space-y-3">
-          <h5 className="font-medium text-sm">🔍 Scale</h5>
-          <div className="space-y-2">
-            <div className="flex items-center gap-2">
-              <label className="text-xs font-medium w-12">Width:</label>
-              <input
-                type="range"
-                min="0.01"
-                max="2.0"
-                step="0.01"
-                value={properties.repeat[0]}
-                className="flex-1 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
-                onChange={(e) => updateTextureProperty(side, 'repeat', 0, parseFloat(e.target.value))}
-              />
-              <span className="text-xs w-12 text-right">{properties.repeat[0].toFixed(2)}</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <label className="text-xs font-medium w-12">Height:</label>
-              <input
-                type="range"
-                min="0.01"
-                max="2.0"
-                step="0.01"
-                value={properties.repeat[1]}
-                className="flex-1 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
-                onChange={(e) => updateTextureProperty(side, 'repeat', 1, parseFloat(e.target.value))}
-              />
-              <span className="text-xs w-12 text-right">{properties.repeat[1].toFixed(2)}</span>
-            </div>
-          </div>
-        </div>
-
-        {/* Position Controls */}
-        <div className="space-y-3">
-          <h5 className="font-medium text-sm">📍 Position</h5>
-          <div className="space-y-2">
-            <div className="flex items-center gap-2">
-              <label className="text-xs font-medium w-12">X:</label>
-              <input
-                type="range"
-                min="-1.0"
-                max="1.0"
-                step="0.01"
-                value={properties.offset[0]}
-                className="flex-1 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
-                onChange={(e) => updateTextureProperty(side, 'offset', 0, parseFloat(e.target.value))}
-              />
-              <span className="text-xs w-12 text-right">{properties.offset[0].toFixed(2)}</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <label className="text-xs font-medium w-12">Y:</label>
-              <input
-                type="range"
-                min="-1.0"
-                max="1.0"
-                step="0.01"
-                value={properties.offset[1]}
-                className="flex-1 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
-                onChange={(e) => updateTextureProperty(side, 'offset', 1, parseFloat(e.target.value))}
-              />
-              <span className="text-xs w-12 text-right">{properties.offset[1].toFixed(2)}</span>
-            </div>
-          </div>
-        </div>
-
-        {/* Rotation Control */}
-        <div className="space-y-3">
-          <h5 className="font-medium text-sm">🔄 Rotation</h5>
-          <div className="flex items-center gap-2">
-            <label className="text-xs font-medium w-12">Angle:</label>
-            <input
-              type="range"
-              min="-180"
-              max="180"
-              step="1"
-              value={properties.rotation * 180 / Math.PI}
-              className="flex-1 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
-              onChange={(e) => updateTextureProperty(side, 'rotation', 0, parseFloat(e.target.value) * Math.PI / 180)}
-            />
-            <span className="text-xs w-12 text-right">{Math.round(properties.rotation * 180 / Math.PI)}°</span>
-          </div>
-        </div>
-
-        {/* Image Enhancement Controls */}
-        <div className="space-y-3">
-          <h5 className="font-medium text-sm">✨ Enhancement</h5>
-          <div className="space-y-2">
-            <div className="flex items-center gap-2">
-              <label className="text-xs font-medium w-16">Contrast:</label>
-              <input
-                type="range"
-                min="0.5"
-                max="3.0"
-                step="0.1"
-                value={properties.contrast}
-                className="flex-1 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
-                onChange={(e) => updateTextureProperty(side, 'contrast', 0, parseFloat(e.target.value))}
-              />
-              <span className="text-xs w-12 text-right">{properties.contrast.toFixed(1)}x</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <label className="text-xs font-medium w-16">Brightness:</label>
-              <input
-                type="range"
-                min="0.5"
-                max="3.0"
-                step="0.1"
-                value={properties.brightness}
-                className="flex-1 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
-                onChange={(e) => updateTextureProperty(side, 'brightness', 0, parseFloat(e.target.value))}
-              />
-              <span className="text-xs w-12 text-right">{properties.brightness.toFixed(1)}x</span>
-            </div>
-          </div>
-        </div>
-
-        {/* Filter Controls */}
-        <div className="space-y-3 md:col-span-2">
-          <h5 className="font-medium text-sm">⚙️ Filters</h5>
-          <div className="flex gap-4">
-            <div className="flex items-center gap-2">
-              <label className="text-xs font-medium w-16">Mag Filter:</label>
-              <select
-                value={properties.magFilter}
-                className="flex-1 text-xs p-1 border rounded"
-                onChange={(e) => updateTextureProperty(side, 'magFilter', 0, parseInt(e.target.value))}
-              >
-                <option value="9728">Nearest</option>
-                <option value="9729">Linear</option>
-                <option value="9984">NearestMipmapNearest</option>
-                <option value="9985">LinearMipmapNearest</option>
-                <option value="9986">NearestMipmapLinear</option>
-                <option value="9987">LinearMipmapLinear</option>
-              </select>
-            </div>
-            <div className="flex items-center gap-2">
-              <label className="text-xs font-medium w-16">Min Filter:</label>
-              <select
-                value={properties.minFilter}
-                className="flex-1 text-xs p-1 border rounded"
-                onChange={(e) => updateTextureProperty(side, 'minFilter', 0, parseInt(e.target.value))}
-              >
-                <option value="9728">Nearest</option>
-                <option value="9729">Linear</option>
-                <option value="9984">NearestMipmapNearest</option>
-                <option value="9985">LinearMipmapNearest</option>
-                <option value="9986">NearestMipmapLinear</option>
-                <option value="9987">LinearMipmapLinear</option>
-              </select>
-            </div>
-          </div>
-        </div>
-
-        {/* Action Buttons */}
-        <div className="md:col-span-2 flex gap-2 justify-center pt-2">
-          <Button
-            onClick={() => resetTextureProperties(side)}
-            variant="outline"
-            size="sm"
-            className="text-xs"
-          >
-            🔄 Reset Side {side}
-          </Button>
-          <Button
-            onClick={() => applyTextureUpdates(side)}
-            variant="default"
-            size="sm"
-            className="text-xs"
-          >
-            ✅ Apply Side {side}
-          </Button>
-        </div>
-      </>
-    )
-  }, [updateTextureProperty, resetTextureProperties, applyTextureUpdates])
-
   // Clone mesh, create new material with UV texture, toggle visibility
   const updateTextures = useCallback(async () => {
     if (!splineAppRef.current || isLoading) return
@@ -794,39 +393,31 @@ export function Spline3DPreview({
           layerDetails: layerInfo
         })
 
-        // Create HTMLImageElement from the data URL
+        // Load image as blob and convert to Uint8Array (like the texture.image format)
+        const imageResponse = await fetch(imageUrl)
+        const imageBlob = await imageResponse.blob()
+        const imageArrayBuffer = await imageBlob.arrayBuffer()
+        const imageUint8Array = new Uint8Array(imageArrayBuffer)
+
+        console.log(`[Spline3D] ✓ Loaded image data for ${label}`, {
+          size: imageUint8Array.length,
+          type: imageBlob.type,
+          url: imageUrl
+        })
+
+        // Also create HTMLImageElement for fallback approaches
         const imageElement = await new Promise<HTMLImageElement>((resolve, reject) => {
           const img = new Image()
           img.crossOrigin = "anonymous"
-          img.onload = () => {
-            console.log(`[Spline3D] ✓ Image loaded successfully for ${label}:`, {
-              width: img.width,
-              height: img.height,
-              naturalWidth: img.naturalWidth,
-              naturalHeight: img.naturalHeight
-            })
-            resolve(img)
-          }
-          img.onerror = (e) => {
-            console.error(`[Spline3D] ❌ Failed to load image for ${label}:`, {
-              error: e,
-              src: imageUrl.substring(0, 100) + '...'
-            })
-            reject(new Error(`Failed to load image: ${e}`))
-          }
-          console.log(`[Spline3D] 🔄 Loading image for ${label}, src:`, imageUrl.substring(0, 50) + '...')
+          img.onload = () => resolve(img)
+          img.onerror = reject
           img.src = imageUrl
         })
 
-        console.log(`[Spline3D] ✓ HTMLImageElement ready for ${label}`, {
+        console.log(`[Spline3D] ✓ Also loaded HTMLImageElement for ${label}`, {
           width: imageElement.width,
-          height: imageElement.height,
-          naturalWidth: imageElement.naturalWidth,
-          naturalHeight: imageElement.naturalHeight
+          height: imageElement.height
         })
-
-        // For THREE.Texture, we don't need the raw Uint8Array data
-        // The HTMLImageElement is sufficient for creating the texture
 
         // Try multiple approaches to add image layer
 
@@ -849,75 +440,54 @@ export function Spline3DPreview({
                 
                 // Try setting image data - prioritize texture.image for existing textures
                 if (layer.texture && layer.texture.image !== undefined) {
-                  // Create a proper THREE.Texture object from the HTMLImageElement
-                  console.log(`[Spline3D] Creating new THREE.Texture from HTMLImageElement for layer ${i}`)
+                  // This is the key! Replace the texture.image completely with new image data
+                  // Keep the same structure as the original texture.image object
+                  const originalImage = layer.texture.image
 
-                  try {
-                    // Create new THREE.Texture from the loaded HTMLImageElement
-                    const newTexture = new THREE.Texture(imageElement)
-                    newTexture.needsUpdate = true
+                  console.log(`[Spline3D] Original texture.image structure:`, {
+                    hasData: !!originalImage.data,
+                    dataType: originalImage.data?.constructor?.name,
+                    dataLength: originalImage.data?.length,
+                    hasWidth: originalImage.width !== undefined,
+                    hasHeight: originalImage.height !== undefined,
+                    hasName: originalImage.name !== undefined,
+                    hasMagFilter: originalImage.magFilter !== undefined,
+                    hasMinFilter: originalImage.minFilter !== undefined,
+                    allProperties: Object.keys(originalImage)
+                  })
 
-                    console.log(`[Spline3D] ✓ THREE.Texture created successfully`, {
-                      texture: !!newTexture,
-                      hasImage: !!newTexture.image,
-                      imageLoaded: newTexture.image?.complete,
-                      imageWidth: newTexture.image?.width,
-                      imageHeight: newTexture.image?.height
-                    })
+                  // Replace just the data and essential properties, set specific transform values
+                  layer.texture.image.data = imageUint8Array
+                  layer.texture.image.width = imageElement.width
+                  layer.texture.image.height = imageElement.height
+                  layer.texture.image.name = `uploaded-image-${label}`
 
-                    // Copy all the important properties from the original texture
-                    const originalTexture = layer.texture
-                    newTexture.wrapS = originalTexture.wrapS || 1000
-                    newTexture.wrapT = originalTexture.wrapT || 1000
-                    newTexture.magFilter = originalTexture.magFilter || 1006
-                    newTexture.minFilter = originalTexture.minFilter || 1008
-                    newTexture.format = originalTexture.format || 1023
-                    newTexture.type = originalTexture.type || 1009
-
-                    // Apply current texture properties from state
-                    const currentProps = side === 1 ? texturePropertiesSide1 : texturePropertiesSide2
-                    console.log(`[Spline3D] Applying texture properties to new texture:`, currentProps)
-
-                    newTexture.repeat.set(currentProps.repeat[0], currentProps.repeat[1])
-                    newTexture.offset.set(currentProps.offset[0], currentProps.offset[1])
-                    newTexture.rotation = currentProps.rotation
-
-                    // Replace the texture completely
-                    layer.texture = newTexture
-
-                    // Force texture update
-                    layer.texture.needsUpdate = true
-
-                    // Apply contrast/brightness to material
-                    if (!layer.material) layer.material = {}
-                    layer.material.contrast = currentProps.contrast
-                    layer.material.brightness = currentProps.brightness
-
-                    console.log(`[Spline3D] ✓ Created new THREE.Texture and updated material for layer ${i}`, {
-                      textureType: typeof newTexture,
-                      hasImage: !!newTexture.image,
-                      imageWidth: newTexture.image?.width,
-                      imageHeight: newTexture.image?.height
-                    })
-
-                  } catch (textureError) {
-                    console.error(`[Spline3D] ❌ Failed to create THREE.Texture for layer ${i}:`, textureError)
-                    throw textureError
-                  }
-
-                  console.log(`[Spline3D] ✓ Created new THREE.Texture with proper properties`)
+                  // Set the required transform values (instead of preserving originals)
+                  layer.texture.image.magFilter = originalImage.magFilter !== undefined ? originalImage.magFilter : 1006
+                  layer.texture.image.minFilter = originalImage.minFilter !== undefined ? originalImage.minFilter : 1008
+                  layer.texture.image.offset = [-0.05, -0.05]  // Required offset
+                  layer.texture.image.repeat = [21, 15]        // Required scale
+                  layer.texture.image.rotation = -90 * (Math.PI / 180)  // Convert degrees to radians, required angle
+                  layer.texture.image.wrapping = originalImage.wrapping !== undefined ? originalImage.wrapping : 1000
 
                   console.log(`[Spline3D] ✓ REPLACED texture.image properties for layer ${i}`, {
                     newImageName: layer.texture.image.name,
                     newImageSize: imageUint8Array.length,
                     newImageDimensions: `${imageElement.width}x${imageElement.height}`,
-                    preservedProperties: {
-                      magFilter: originalImage.magFilter,
-                      minFilter: originalImage.minFilter,
-                      rotation: originalImage.rotation,
-                      wrapping: originalImage.wrapping
+                    appliedProperties: {
+                      magFilter: layer.texture.image.magFilter,
+                      minFilter: layer.texture.image.minFilter,
+                      offset: layer.texture.image.offset,
+                      repeat: layer.texture.image.repeat,
+                      rotation: layer.texture.image.rotation * (180 / Math.PI), // Convert back to degrees for display
+                      wrapping: layer.texture.image.wrapping
                     }
                   })
+
+                  // Apply the same transform properties to the texture object itself (may override image properties)
+                  if (layer.texture.offset !== undefined) layer.texture.offset = [-0.05, -0.05]
+                  if (layer.texture.repeat !== undefined) layer.texture.repeat = [21, 15]
+                  if (layer.texture.rotation !== undefined) layer.texture.rotation = -90 * (Math.PI / 180)
 
                   // CRITICAL: Mark the texture itself as needing update
                   if (layer.texture.needsUpdate !== undefined) {
@@ -955,7 +525,7 @@ export function Spline3DPreview({
                     }
                   }, 100)
 
-                  console.log(`[Spline3D] ✓ Created new THREE.Texture and updated material for layer ${i}`)
+                  console.log(`[Spline3D] ✓ REPLACED texture.image and updated material for layer ${i}`)
                   updatedLayers++
 
                   // Continue to next layer instead of returning immediately
@@ -2114,11 +1684,7 @@ export function Spline3DPreview({
       if (resizeObserver) {
         resizeObserver.disconnect()
       }
-
-      // Clear any pending texture update timeouts
-      textureUpdateTimeouts.current.forEach(timeout => clearTimeout(timeout))
-      textureUpdateTimeouts.current.clear()
-
+      
       if (splineAppRef.current) {
         try {
           splineAppRef.current.dispose?.()
@@ -2208,33 +1774,6 @@ export function Spline3DPreview({
             </Button>
           </div>
 
-          {/* Texture Controls Section */}
-          <div className="mb-6 space-y-6">
-            {/* Side 1 Controls */}
-            <div className="p-4 bg-background/50 rounded-lg border border-blue-200">
-                <h4 className="text-lg font-semibold mb-3 text-blue-600">🎨 Side 1 (PC Trans A) - Texture Controls</h4>
-                <p className="text-sm text-muted-foreground mb-4">
-                  Panel dimensions: 14.06×20.84. Adjust how the Side 1 image appears on the 3D model.
-                </p>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {renderTextureControls(1, texturePropertiesSide1)}
-              </div>
-            </div>
-
-            {/* Side 2 Controls */}
-            <div className="p-4 bg-background/50 rounded-lg border border-green-200">
-                <h4 className="text-lg font-semibold mb-3 text-green-600">🎨 Side 2 (PC Trans B) - Texture Controls</h4>
-                <p className="text-sm text-muted-foreground mb-4">
-                  Panel dimensions: 14.06×20.84. Anti-mirroring applied. Adjust how the Side 2 image appears on the 3D model.
-                </p>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {renderTextureControls(2, texturePropertiesSide2)}
-              </div>
-            </div>
-          </div>
-
           {/* PC Trans B Material Layer Controls - ALWAYS VISIBLE AND PROMINENT */}
           <div className="border-4 border-primary rounded-xl p-6 bg-gradient-to-r from-primary/10 to-primary/5 shadow-lg">
             <div className="mb-4">
@@ -2250,7 +1789,6 @@ export function Spline3DPreview({
                 </p>
               </div>
             </div>
-
 
             {pcTransBLayers.length > 0 ? (
               <>
