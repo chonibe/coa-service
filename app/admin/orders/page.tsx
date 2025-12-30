@@ -7,6 +7,7 @@ import OrdersList from './OrdersList';
 import SyncAllOrdersButton from './SyncAllOrdersButton';
 import SyncOrderStatusesButton from './SyncOrderStatusesButton';
 import CompareOrdersButton from './CompareOrdersButton';
+import SyncOrdersButton from './SyncOrdersButton';
 
 interface Order {
   id: string;
@@ -79,6 +80,7 @@ export default function OrdersPage() {
           <h1 className="text-3xl font-bold tracking-tight bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">Orders</h1>
           <div className="flex gap-2">
             <CompareOrdersButton />
+            <SyncOrdersButton />
             <SyncOrderStatusesButton />
             <SyncAllOrdersButton />
           </div>
@@ -95,6 +97,7 @@ export default function OrdersPage() {
           <h1 className="text-3xl font-bold tracking-tight bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">Orders</h1>
           <div className="flex gap-2">
             <CompareOrdersButton />
+            <SyncOrdersButton />
             <SyncOrderStatusesButton />
             <SyncAllOrdersButton />
           </div>
@@ -110,6 +113,7 @@ export default function OrdersPage() {
         <h1 className="text-3xl font-bold tracking-tight bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">Orders</h1>
         <div className="flex gap-2">
           <CompareOrdersButton />
+          <SyncOrdersButton />
           <SyncAllOrdersButton />
         </div>
       </div>
