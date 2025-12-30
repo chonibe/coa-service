@@ -166,7 +166,6 @@ export function Spline3DPreview({
           if (originalTexture !== undefined) layer.texture = originalTexture
           if (originalTextureImage !== undefined && layer.texture) {
             layer.texture.image = originalTextureImage
-            console.log(`[Spline3D] Restored texture.image data for ${layerInfo.objectName}`)
           }
 
           console.log(`[Spline3D] Restored image on ${layerInfo.objectName} (including texture.image)`)
@@ -178,7 +177,6 @@ export function Spline3DPreview({
             originalMaterialValuesRef.current.set(`${key}-texture`, layer.texture)
             if (layer.texture?.image !== undefined) {
               originalMaterialValuesRef.current.set(`${key}-textureImage`, layer.texture.image)
-              console.log(`[Spline3D] Stored original texture.image for restoration:`, layer.texture.image.name)
             }
           }
 
@@ -441,37 +439,42 @@ export function Spline3DPreview({
                 
                 // Try setting image data - prioritize texture.image for existing textures
                 if (layer.texture && layer.texture.image !== undefined) {
-                  // This is the key! Replace the entire texture.image with new image data
-                  // Create a new image object similar to the existing structure
-                  const newImageData = {
+                  // This is the key! Replace the texture.image completely with new image data
+                  // Keep the same structure as the original texture.image object
+                  const originalImage = layer.texture.image
+
+                  // Create new image data with the same structure as the original
+                  layer.texture.image = {
                     data: imageUint8Array,
                     width: imageElement.width,
                     height: imageElement.height,
-                    name: image1?.name || `uploaded-image-${label}-${Date.now()}.jpg`
+                    name: `uploaded-image-${label}`,
+                    // Preserve original texture properties if they exist
+                    magFilter: originalImage.magFilter !== undefined ? originalImage.magFilter : 1006,
+                    minFilter: originalImage.minFilter !== undefined ? originalImage.minFilter : 1008,
+                    offset: originalImage.offset !== undefined ? originalImage.offset : [0, 0],
+                    repeat: originalImage.repeat !== undefined ? originalImage.repeat : [1, 1],
+                    rotation: originalImage.rotation !== undefined ? originalImage.rotation : 0,
+                    wrapping: originalImage.wrapping !== undefined ? originalImage.wrapping : 1000
                   }
-
-                  // Store original for potential restoration
-                  if (!originalMaterialValuesRef.current.has(`texture-image-${label}-layer-${i}`)) {
-                    originalMaterialValuesRef.current.set(`texture-image-${label}-layer-${i}`, layer.texture.image)
-                  }
-
-                  // Replace the texture.image completely
-                  layer.texture.image = newImageData
-
-                  // Also update texture properties that might be needed
-                  if (layer.texture.magFilter !== undefined) layer.texture.magFilter = 1006 // LinearFilter
-                  if (layer.texture.minFilter !== undefined) layer.texture.minFilter = 1008 // LinearMipmapLinearFilter
 
                   console.log(`[Spline3D] ✓ REPLACED texture.image data for layer ${i}`, {
-                    newImageName: newImageData.name,
+                    newImageName: layer.texture.image.name,
                     newImageSize: imageUint8Array.length,
-                    newImageDimensions: `${imageElement.width}x${imageElement.height}`
+                    newImageDimensions: `${imageElement.width}x${imageElement.height}`,
+                    preservedProperties: {
+                      magFilter: layer.texture.image.magFilter,
+                      minFilter: layer.texture.image.minFilter,
+                      rotation: layer.texture.image.rotation,
+                      wrapping: layer.texture.image.wrapping
+                    }
                   })
                 } else {
                   // Fallback to other approaches for layers without texture.image
                   layer.image = imageElement
                   if (layer.map !== undefined) layer.map = imageElement
                   if (layer.texture !== undefined) layer.texture = imageElement
+                  console.log(`[Spline3D] Used fallback approach for layer ${i}`)
                 }
                 
                 layer.visible = true
@@ -574,7 +577,6 @@ export function Spline3DPreview({
               } catch (e) {
                 console.warn(`[Spline3D] Approach 1b failed for layer ${i}:`, e)
               }
-            }
             }
           }
         }
@@ -697,7 +699,7 @@ export function Spline3DPreview({
       }
     }
 
-    // Handle Side 1 - Replace image on material layer
+    // Handle Side 1 - Add image layer to material
     // Target: "Panel Side A PC Trans A" (the object that displays the image)
     // Full path: Scene > Scene > White > Assembly Small Lamp 2025 v62 > Panel Side A > PC Trans A
     if (image1) {
@@ -711,9 +713,9 @@ export function Spline3DPreview({
         side1ObjectRef.current = obj1
         const success = await addImageLayerToMaterial(obj1, image1, "Side 1 (Panel Side A PC Trans A)")
         if (success) {
-          console.log(`[Spline3D] ✓ Successfully REPLACED image on Side 1`)
+          console.log(`[Spline3D] ✓ Successfully added image layer to Side 1`)
         } else {
-          console.warn(`[Spline3D] Failed to replace image on Side 1`)
+          console.warn(`[Spline3D] Failed to add image layer to Side 1`)
         }
       } else {
         console.warn(`[Spline3D] Side 1 object not found - tried path and names`)
