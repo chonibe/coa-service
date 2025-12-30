@@ -424,7 +424,8 @@ export function Spline3DPreview({
         // Approach 1: Try to update existing texture layers that have images
         // This approach specifically targets texture.image data which is where we found the actual image data
         if (material.layers && Array.isArray(material.layers)) {
-          // First pass: Look specifically for 'texture' type layers that have images
+          // Update ALL texture layers that have images (both layer 4 and 8)
+          let updatedLayers = 0
           for (let i = 0; i < material.layers.length; i++) {
             const layer = material.layers[i]
             if (layer.type === 'texture' && layer.texture && layer.texture.image) {
@@ -473,6 +474,18 @@ export function Spline3DPreview({
                     }
                   })
 
+                  // CRITICAL: Mark the texture itself as needing update
+                  if (layer.texture.needsUpdate !== undefined) {
+                    layer.texture.needsUpdate = true
+                    console.log(`[Spline3D] ✓ Marked texture as needsUpdate`)
+                  }
+
+                  // Also try to mark the image as needing update if it has that property
+                  if (layer.texture.image.needsUpdate !== undefined) {
+                    layer.texture.image.needsUpdate = true
+                    console.log(`[Spline3D] ✓ Marked texture.image as needsUpdate`)
+                  }
+
                   // Immediately update material and force refresh after texture.image replacement
                   material.needsUpdate = true
                   if (material.version !== undefined) {
@@ -489,8 +502,18 @@ export function Spline3DPreview({
                     app.renderer.render(app.scene, app.camera)
                   }
 
+                  // Additional force refresh - sometimes needed for texture updates
+                  setTimeout(() => {
+                    if (app.renderer && app.scene && app.camera) {
+                      app.renderer.render(app.scene, app.camera)
+                      console.log(`[Spline3D] ✓ Forced additional render after texture update`)
+                    }
+                  }, 100)
+
                   console.log(`[Spline3D] ✓ REPLACED texture.image and updated material for layer ${i}`)
-                  return true
+                  updatedLayers++
+
+                  // Continue to next layer instead of returning immediately
                 } else {
                   // Fallback to other approaches for layers without texture.image
                   layer.image = imageElement
@@ -515,14 +538,20 @@ export function Spline3DPreview({
                   }
 
                   console.log(`[Spline3D] ✓ Used fallback approach and updated material for layer ${i}`)
-                  return true
+                  updatedLayers++
                 }
               } catch (e) {
                 console.warn(`[Spline3D] Approach 1a failed for image layer ${i}:`, e)
               }
             }
           }
-          
+
+          // If we updated any layers in the first pass, return success
+          if (updatedLayers > 0) {
+            console.log(`[Spline3D] ✓ Successfully updated ${updatedLayers} texture layers for ${label}`)
+            return true
+          }
+
           // Second pass: Try texture/matcap layers if no image layer found
           for (let i = 0; i < material.layers.length; i++) {
             const layer = material.layers[i]
@@ -1290,22 +1319,146 @@ export function Spline3DPreview({
               return allLayers
             }
             
+            // Helper function to inspect material layers of a specific object
+            const inspectObjectMaterial = (obj: any, objectName: string): LayerInfo[] => {
+              console.log(`[Spline3D] Inspecting material for ${objectName}:`, {
+                name: obj.name,
+                type: obj.type,
+                uuid: obj.uuid,
+                id: obj.id
+              })
+
+              // Get material from object
+              let material = obj.material
+              if (!material && obj.mesh) {
+                material = obj.mesh.material
+              }
+
+              if (!material) {
+                console.warn(`[Spline3D] No material found on ${objectName}`)
+                return []
+              }
+
+              console.log(`[Spline3D] Material found for ${objectName}:`, {
+                type: material.type,
+                hasLayers: !!material.layers,
+                layersCount: material.layers?.length
+              })
+
+              const layers: LayerInfo[] = []
+
+              // Inspect all layers
+              if (material.layers && Array.isArray(material.layers)) {
+                material.layers.forEach((layer: any, index: number) => {
+                  // Check for images in multiple places
+                  const hasImage = layer.image !== undefined && layer.image !== null
+                  const hasMap = layer.map !== undefined && layer.map !== null
+                  const hasTexture = layer.texture !== undefined && layer.texture !== null
+                  const hasTextureImage = layer.texture?.image !== undefined && layer.texture?.image !== null
+
+                  const layerInfo = {
+                    type: layer.type,
+                    visible: layer.visible,
+                    alpha: layer.alpha,
+                    opacity: layer.opacity,
+                    mode: layer.mode,
+                    isMask: layer.isMask,
+                    hasImage,
+                    hasMap,
+                    hasTexture,
+                    hasTextureImage,
+                    imageType: layer.image?.constructor?.name,
+                    textureImageType: layer.texture?.image?.constructor?.name,
+                    imageSrc: layer.image?.src || layer.image?.currentSrc || 'N/A',
+                    textureImageName: layer.texture?.image?.name,
+                    textureImageData: layer.texture?.image?.data ? `Uint8Array(${layer.texture.image.data.length})` : 'N/A',
+                    name: layer.name || layer.id || 'unnamed',
+                    allProperties: Object.keys(layer)
+                  }
+
+                  console.log(`[Spline3D] ${objectName} Layer ${index}:`, layerInfo)
+
+                  layers.push({
+                    objectName: objectName,
+                    objectId: obj.uuid || obj.id || `obj-${Date.now()}`,
+                    layerIndex: index,
+                    layerType: layer.type,
+                    layerName: layer.name || layer.id || `Layer ${index}`,
+                    visible: layer.visible !== false,
+                    layerRef: layer,
+                    materialRef: material
+                  })
+
+                  // If this layer has image data, add a "Clear Image" option
+                  if (layer.type === 'texture' && (hasImage || hasMap || hasTexture || hasTextureImage)) {
+                    console.log(`[Spline3D]   → FOUND IMAGE DATA IN ${objectName} LAYER ${index}:`, {
+                      hasImage,
+                      hasMap,
+                      hasTexture,
+                      hasTextureImage,
+                      textureImageName: layer.texture?.image?.name,
+                      textureImageDataLength: layer.texture?.image?.data?.length
+                    })
+
+                    // Add a "Clear Image" option for layers that have image data
+                    layers.push({
+                      objectName: `${objectName} (Clear Image)`,
+                      objectId: `${obj.uuid || obj.id}-clear-${index}`,
+                      layerIndex: index,
+                      layerType: `clear-${layer.type}`,
+                      layerName: `Clear ${layer.type} Image`,
+                      visible: hasImage || hasMap || hasTexture || hasTextureImage,
+                      layerRef: layer,
+                      materialRef: material,
+                      originalValue: layer.texture?.image, // Store original for restoration
+                      property: 'texture.image', // Track what we're clearing
+                      hasTextureImage: hasTextureImage // Mark that this has texture.image data
+                    })
+                  }
+                })
+              }
+
+              console.log(`[Spline3D] Found ${layers.length} layers on ${objectName}`)
+              return layers
+            }
+
             // Find and inspect PC Trans B object specifically
             const inspectPcTransB = (): LayerInfo[] => {
               const app = splineAppRef.current as any
               if (!app) return []
-              
+
               console.log("[Spline3D] ===== INSPECTING PC TRANS B OBJECT =====")
-              
+
+              // Try to find by ID first (from scene search results)
+              const pcTransBId = "2e33392b-21d8-441d-87b0-11527f3a8b70"
+              if (app.findObjectById) {
+                const obj = app.findObjectById(pcTransBId)
+                if (obj) {
+                  console.log(`[Spline3D] Found PC Trans B object by ID: ${pcTransBId}`)
+                  return inspectObjectMaterial(obj, "PC Trans B")
+                }
+              }
+
+              // Fallback: try to find by name
+              if (app.findObjectByName) {
+                const obj = app.findObjectByName("PC Trans B")
+                if (obj) {
+                  console.log(`[Spline3D] Found PC Trans B object by name`)
+                  return inspectObjectMaterial(obj, "PC Trans B")
+                }
+              }
+
+              console.warn(`[Spline3D] PC Trans B object not found by ID or name, trying path traversal`)
+
               const scene = app.scene || app._scene
               if (!scene) {
                 console.warn("[Spline3D] Scene not available")
                 return []
               }
-              
+
               // Path: Scene > Scene > White > Assembly Small Lamp 2025 v62 > Panel Side B > PC Trans B
-              const path = ["Scene", "Scene", "White", "Assembly Small Lamp 2025 v62", "Panel Side B", "PC Trans B"]
-              
+              const path = ["Scene", "White", "Assembly Small Lamp 2025 v62", "Panel Side B", "PC Trans B"]
+
               let currentObj: any = scene
               for (const pathSegment of path) {
                 if (!currentObj) {
