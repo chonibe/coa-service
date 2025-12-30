@@ -96,6 +96,9 @@ export function Spline3DPreview({
 
   // Store original values for direct material properties
   const originalMaterialValuesRef = useRef<Map<string, any>>(new Map())
+
+  // Store timeout references for debouncing texture updates
+  const textureUpdateTimeouts = useRef<Map<string, NodeJS.Timeout>>(new Map())
   
   // Toggle entire object visibility
   const toggleObjectVisibility = useCallback((objectInfo: ObjectInfo) => {
@@ -274,14 +277,11 @@ export function Spline3DPreview({
     }
   }, [])
 
-  // Update texture property for specific side
+  // Update texture property for specific side (optimized for performance)
   const updateTextureProperty = useCallback((side: 1 | 2, property: string, index: number, value: number) => {
-    const app = splineAppRef.current as any
-    if (!app) return
-
     console.log(`[Spline3D] Updating texture property for Side ${side}: ${property}[${index}] = ${value}`)
 
-    // Update local state for the specific side
+    // Update local state for the specific side (immediate UI feedback)
     const setState = side === 1 ? setTexturePropertiesSide1 : setTexturePropertiesSide2
     setState(prev => {
       const newProps = { ...prev }
@@ -292,6 +292,25 @@ export function Spline3DPreview({
       }
       return newProps
     })
+
+    // Debounce the actual texture updates to avoid performance issues
+    const timeoutKey = `texture-update-${side}-${property}-${index}`
+    if (textureUpdateTimeouts.current.has(timeoutKey)) {
+      clearTimeout(textureUpdateTimeouts.current.get(timeoutKey))
+    }
+
+    const timeout = setTimeout(() => {
+      applyTexturePropertyUpdate(side, property, index, value)
+      textureUpdateTimeouts.current.delete(timeoutKey)
+    }, 150) // 150ms debounce
+
+    textureUpdateTimeouts.current.set(timeoutKey, timeout)
+  }, [])
+
+  // Apply the actual texture property update (debounced)
+  const applyTexturePropertyUpdate = useCallback((side: 1 | 2, property: string, index: number, value: number) => {
+    const app = splineAppRef.current as any
+    if (!app) return
 
     // Find the correct object for this side
     const objectId = side === 1 ? side1ObjectId : side2ObjectId
@@ -306,6 +325,8 @@ export function Spline3DPreview({
     }
 
     if (targetObj && targetObj.material && targetObj.material.layers) {
+      let updatedLayers = 0
+
       // Update all texture layers that have images
       targetObj.material.layers.forEach((layer: any, layerIndex: number) => {
         if (layer.type === 'texture' && layer.texture && layer.texture.image) {
@@ -315,38 +336,41 @@ export function Spline3DPreview({
             layer.texture[property] = value
           }
 
-          // For contrast and brightness, we need to modify the material properties
+          // For contrast and brightness, modify the material properties
           if (property === 'contrast' || property === 'brightness') {
-            // Try to apply contrast/brightness through material properties
             if (!layer.material) layer.material = {}
-            if (property === 'contrast') {
-              layer.material.contrast = value
-            } else if (property === 'brightness') {
-              layer.material.brightness = value
+            layer.material[property] = value
+          }
+
+          updatedLayers++
+        }
+      })
+
+      if (updatedLayers > 0) {
+        // Mark material and textures as needing update (more efficiently)
+        targetObj.material.needsUpdate = true
+
+        // Only mark textures as needing update for properties that affect them
+        if (['repeat', 'offset', 'rotation', 'magFilter', 'minFilter'].includes(property)) {
+          targetObj.material.layers.forEach((layer: any) => {
+            if (layer.texture) {
+              layer.texture.needsUpdate = true
             }
-          }
-
-          console.log(`[Spline3D] Updated ${property} on Side ${side} layer ${layerIndex}`)
+          })
         }
-      })
 
-      // Mark material and textures as needing update
-      targetObj.material.needsUpdate = true
-      targetObj.material.layers.forEach((layer: any) => {
-        if (layer.texture) {
-          layer.texture.needsUpdate = true
-          if (layer.texture.image) {
-            layer.texture.image.needsUpdate = true
-          }
+        // Force render with minimal operations
+        if (app.renderer && app.scene && app.camera) {
+          app.renderer.render(app.scene, app.camera)
         }
-      })
 
-      // Force render
-      if (app.renderer && app.scene && app.camera) {
-        app.renderer.render(app.scene, app.camera)
+        console.log(`[Spline3D] Applied ${property} update to ${updatedLayers} texture layers on Side ${side}`)
       }
     }
   }, [side1ObjectId, side2ObjectId, side1ObjectName, side2ObjectName])
+
+  // Store timeout references for debouncing
+  const textureUpdateTimeouts = useRef<Map<string, NodeJS.Timeout>>(new Map())
 
   // Reset texture properties to default values for specific side
   const resetTextureProperties = useCallback((side: 1 | 2) => {
@@ -360,47 +384,67 @@ export function Spline3DPreview({
       brightness: 1.1
     }
 
+    // Clear any pending updates first
+    textureUpdateTimeouts.current.forEach((timeout, key) => {
+      if (key.startsWith(`texture-update-${side}`)) {
+        clearTimeout(timeout)
+        textureUpdateTimeouts.current.delete(key)
+      }
+    })
+
     // Update state for the specific side
     const setState = side === 1 ? setTexturePropertiesSide1 : setTexturePropertiesSide2
     setState(defaultProps)
 
-    // Apply to actual textures
+    // Apply immediately to avoid debouncing delay
     Object.entries(defaultProps).forEach(([property, value]) => {
       if (Array.isArray(value)) {
         value.forEach((val, index) => {
-          updateTextureProperty(side, property, index, val)
+          applyTexturePropertyUpdate(side, property, index, val)
         })
       } else {
-        updateTextureProperty(side, property, 0, value)
+        applyTexturePropertyUpdate(side, property, 0, value)
       }
     })
 
     console.log(`[Spline3D] Reset texture properties to defaults for Side ${side}`)
-  }, [updateTextureProperty])
+  }, [applyTexturePropertyUpdate])
 
-  // Force apply all current texture updates for specific side
+  // Force apply all current texture updates for specific side (immediate)
   const applyTextureUpdates = useCallback((side: 1 | 2) => {
     const app = splineAppRef.current as any
     if (!app) return
 
-    console.log(`[Spline3D] Applying all texture updates for Side ${side}`)
+    // Clear any pending debounced updates to apply immediately
+    textureUpdateTimeouts.current.forEach((timeout, key) => {
+      if (key.startsWith(`texture-update-${side}`)) {
+        clearTimeout(timeout)
+        textureUpdateTimeouts.current.delete(key)
+      }
+    })
 
-    // Force update and render
-    if (app.update && typeof app.update === 'function') {
-      app.update()
-    }
+    console.log(`[Spline3D] Applying all texture updates immediately for Side ${side}`)
 
+    // Get current state and apply all properties immediately
+    const currentProps = side === 1 ? texturePropertiesSide1 : texturePropertiesSide2
+
+    Object.entries(currentProps).forEach(([property, value]) => {
+      if (Array.isArray(value)) {
+        value.forEach((val, index) => {
+          applyTexturePropertyUpdate(side, property, index, val)
+        })
+      } else {
+        applyTexturePropertyUpdate(side, property, 0, value as number)
+      }
+    })
+
+    // Force render
     if (app.renderer && app.scene && app.camera) {
       app.renderer.render(app.scene, app.camera)
-      setTimeout(() => {
-        if (app.renderer && app.scene && app.camera) {
-          app.renderer.render(app.scene, app.camera)
-        }
-      }, 100)
     }
 
-    console.log(`[Spline3D] Applied texture updates and forced render for Side ${side}`)
-  }, [])
+    console.log(`[Spline3D] Applied all texture updates immediately for Side ${side}`)
+  }, [texturePropertiesSide1, texturePropertiesSide2, applyTexturePropertyUpdate])
 
   // Render texture controls for a specific side
   const renderTextureControls = useCallback((side: 1 | 2, properties: any) => {
@@ -1999,7 +2043,11 @@ export function Spline3DPreview({
       if (resizeObserver) {
         resizeObserver.disconnect()
       }
-      
+
+      // Clear any pending texture update timeouts
+      textureUpdateTimeouts.current.forEach(timeout => clearTimeout(timeout))
+      textureUpdateTimeouts.current.clear()
+
       if (splineAppRef.current) {
         try {
           splineAppRef.current.dispose?.()
