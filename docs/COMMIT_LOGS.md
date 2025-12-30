@@ -1,3 +1,14 @@
+## Commit: Fix Google OAuth Login 404 Error (2025-12-30)
+
+### ✅ Implementation Checklist
+- [x] `app/login/login-client.tsx` – Fixed Google OAuth URL construction bug where admin login redirect parameter used '&' instead of '?' causing malformed URLs and 404 errors
+
+### 🔐 Highlights
+- **FIXED GOOGLE LOGIN 404**: Corrected URL query parameter construction from `/api/auth/google/start&redirect=/admin/dashboard` to `/api/auth/google/start?redirect=/admin/dashboard`
+- **RESOLVED ADMIN LOGIN ISSUE**: Admin users can now successfully access Google OAuth flow without encountering routing errors
+
+---
+
 ## Commit: Vendor Dashboard & Invoice Structure Updates (2025-12-28)
 
 ### ✅ Implementation Checklist
