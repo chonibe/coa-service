@@ -58,8 +58,8 @@ export function Spline3DPreview({
   }
   const [discoveredObjects, setDiscoveredObjects] = useState<ObjectInfo[]>([])
   
-  // Store Diffuser - B object layers for focused testing
-  const [diffuserBLayers, setDiffuserBLayers] = useState<LayerInfo[]>([])
+  // Store PC Trans B object layers for focused testing
+  const [pcTransBLayers, setPcTransBLayers] = useState<LayerInfo[]>([])
   const [showOtherControls, setShowOtherControls] = useState(false) // Hide other controls by default
 
   // Toggle model visibility
@@ -1207,12 +1207,12 @@ export function Spline3DPreview({
               return allLayers
             }
             
-            // Find and inspect Diffuser - B object specifically
-            const inspectDiffuserB = (): LayerInfo[] => {
+            // Find and inspect PC Trans B object specifically
+            const inspectPcTransB = (): LayerInfo[] => {
               const app = splineAppRef.current as any
               if (!app) return []
               
-              console.log("[Spline3D] ===== INSPECTING DIFFUSER - B OBJECT =====")
+              console.log("[Spline3D] ===== INSPECTING PC TRANS B OBJECT =====")
               
               const scene = app.scene || app._scene
               if (!scene) {
@@ -1220,8 +1220,8 @@ export function Spline3DPreview({
                 return []
               }
               
-              // Path: Scene > Scene > White > Assembly Small Lamp 2025 v62 > Panel Side B > Diffuser - B
-              const path = ["Scene", "White", "Assembly Small Lamp 2025 v62", "Panel Side B", "Diffuser - B"]
+              // Path: Scene > Scene > White > Assembly Small Lamp 2025 v62 > Panel Side B > PC Trans B
+              const path = ["Scene", "White", "Assembly Small Lamp 2025 v62", "Panel Side B", "PC Trans B"]
               
               let currentObj: any = scene
               for (const pathSegment of path) {
@@ -1256,11 +1256,11 @@ export function Spline3DPreview({
               }
               
               if (!currentObj) {
-                console.warn(`[Spline3D] Diffuser - B object not found`)
+                console.warn(`[Spline3D] PC Trans B object not found`)
                 return []
               }
               
-              console.log(`[Spline3D] Found Diffuser - B object:`, {
+              console.log(`[Spline3D] Found PC Trans B object:`, {
                 name: currentObj.name,
                 type: currentObj.type,
                 uuid: currentObj.uuid,
@@ -1274,11 +1274,11 @@ export function Spline3DPreview({
               }
               
               if (!material) {
-                console.warn(`[Spline3D] No material found on Diffuser - B`)
+                console.warn(`[Spline3D] No material found on PC Trans B`)
                 return []
               }
               
-              console.log(`[Spline3D] Diffuser - B material:`, {
+              console.log(`[Spline3D] PC Trans B material:`, {
                 type: material.type,
                 hasLayers: !!material.layers,
                 layersCount: material.layers?.length
@@ -1289,7 +1289,7 @@ export function Spline3DPreview({
               // Inspect all layers
               if (material.layers && Array.isArray(material.layers)) {
                 material.layers.forEach((layer: any, index: number) => {
-                  console.log(`[Spline3D] Diffuser - B Layer ${index}:`, {
+                  console.log(`[Spline3D] PC Trans B Layer ${index}:`, {
                     type: layer.type,
                     visible: layer.visible,
                     alpha: layer.alpha,
@@ -1300,8 +1300,8 @@ export function Spline3DPreview({
                   })
                   
                   layers.push({
-                    objectName: "Diffuser - B",
-                    objectId: currentObj.uuid || currentObj.id || 'diffuser-b',
+                    objectName: "PC Trans B",
+                    objectId: currentObj.uuid || currentObj.id || 'pc-trans-b',
                     layerIndex: index,
                     layerType: layer.type,
                     layerName: layer.name || layer.id || `Layer ${index}`,
@@ -1312,17 +1312,17 @@ export function Spline3DPreview({
                 })
               }
               
-              console.log(`[Spline3D] Found ${layers.length} layers on Diffuser - B`)
-              console.log("[Spline3D] ===== END DIFFUSER - B INSPECTION =====")
+              console.log(`[Spline3D] Found ${layers.length} layers on PC Trans B`)
+              console.log("[Spline3D] ===== END PC TRANS B INSPECTION =====")
               
               return layers
             }
             
             // Inspect materials after a short delay to ensure scene is fully loaded
             setTimeout(() => {
-              // Inspect Diffuser - B object specifically
-              const diffuserBLayers = inspectDiffuserB()
-              setDiffuserBLayers(diffuserBLayers)
+              // Inspect PC Trans B object specifically
+              const pcTransBLayers = inspectPcTransB()
+              setPcTransBLayers(pcTransBLayers)
               
               // Search entire scene for ALL objects (for toggling)
               const allObjects = searchEntireSceneForObjects()
@@ -1469,15 +1469,15 @@ export function Spline3DPreview({
             </Button>
           </div>
 
-          {/* Diffuser - B Material Layer Controls */}
-          {diffuserBLayers.length > 0 && (
+          {/* PC Trans B Material Layer Controls */}
+          {pcTransBLayers.length > 0 && (
             <div className="border rounded-lg p-4 bg-muted/50">
-              <h3 className="text-sm font-semibold mb-3">Diffuser - B Material Layers</h3>
+              <h3 className="text-sm font-semibold mb-3">PC Trans B Material Layers</h3>
               <p className="text-xs text-muted-foreground mb-3">
-                Toggle material layers on the Diffuser - B object to test control
+                Toggle material layers on the PC Trans B object to test control
               </p>
               <div className="space-y-2">
-                {diffuserBLayers.map((layerInfo) => (
+                {pcTransBLayers.map((layerInfo) => (
                   <div key={`${layerInfo.objectId}-${layerInfo.layerIndex}`} className="flex items-center gap-2">
                     <Button
                       onClick={() => toggleLayerVisibility(layerInfo)}
@@ -1506,7 +1506,7 @@ export function Spline3DPreview({
                 ))}
               </div>
               <p className="text-xs text-muted-foreground mt-3">
-                Found {diffuserBLayers.length} layers. Toggle them to test if we can control the material.
+                Found {pcTransBLayers.length} layers. Toggle them to test if we can control the material.
               </p>
             </div>
           )}
