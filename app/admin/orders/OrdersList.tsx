@@ -19,6 +19,9 @@ interface Order {
   line_items?: any[];
   has_duplicates?: boolean;
   raw_shopify_order_data?: any;
+  cancelled_at?: string | null;
+  archived?: boolean;
+  shopify_order_status?: string | null;
 }
 
 interface OrdersListProps {
@@ -123,7 +126,7 @@ export default function OrdersList({
                       </Badge>
                       
                       {/* Cancelled Status */}
-                      {order.raw_shopify_order_data?.cancelled_at && (
+                      {order.cancelled_at && (
                         <Badge 
                           variant="destructive"
                           className="text-xs"
@@ -133,10 +136,7 @@ export default function OrdersList({
                       )}
                       
                       {/* Archived Status */}
-                      {((order.raw_shopify_order_data?.tags && 
-                         typeof order.raw_shopify_order_data.tags === 'string' &&
-                         order.raw_shopify_order_data.tags.toLowerCase().includes('archived')) ||
-                        order.raw_shopify_order_data?.status === 'closed') && (
+                      {order.archived && (
                         <Badge 
                           variant="outline"
                           className="text-xs"
@@ -146,13 +146,13 @@ export default function OrdersList({
                       )}
                       
                       {/* Shopify Order Status */}
-                      {order.raw_shopify_order_data?.status && 
-                       order.raw_shopify_order_data?.status !== 'open' && (
+                      {order.shopify_order_status && 
+                       order.shopify_order_status !== 'open' && (
                         <Badge 
                           variant="outline"
                           className="text-xs"
                         >
-                          {order.raw_shopify_order_data.status}
+                          {order.shopify_order_status}
                         </Badge>
                       )}
                     </div>

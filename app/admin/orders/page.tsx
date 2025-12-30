@@ -20,6 +20,9 @@ interface Order {
   customer_email: string;
   line_items?: any[];
   raw_shopify_order_data?: any;
+  cancelled_at?: string | null;
+  archived?: boolean;
+  shopify_order_status?: string | null;
 }
 
 export default function OrdersPage() {

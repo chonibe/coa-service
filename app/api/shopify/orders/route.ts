@@ -212,6 +212,10 @@ async function syncShopifyDataToSupabase(orders: ShopifyOrder[]) {
         customerIdForOrderTable = shopifyOrder.customer.id;
       }
 
+      // Determine archived status
+      const tags = (shopifyOrder.tags || "").toLowerCase()
+      const archived = tags.includes("archived") || shopifyOrder.status === "closed" || false
+
       const orderData = {
         id: String(shopifyOrder.id),
         order_number: String(shopifyOrder.order_number),
@@ -229,6 +233,9 @@ async function syncShopifyDataToSupabase(orders: ShopifyOrder[]) {
         customer_reference: shopifyOrder.checkout_token || shopifyOrder.cart_token || null,
         raw_shopify_order_data: shopifyOrder as unknown as Json,
         created_at: shopifyOrder.created_at,
+        cancelled_at: shopifyOrder.cancelled_at || null,
+        archived: archived,
+        shopify_order_status: shopifyOrder.status || null,
       };
       
       const { data: syncedOrder, error: orderError } = await supabase

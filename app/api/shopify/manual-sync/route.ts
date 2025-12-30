@@ -29,6 +29,10 @@ export async function POST(request: NextRequest) {
 
     for (const order of orders) {
       try {
+        // Determine archived status
+        const tags = (order.tags || "").toLowerCase()
+        const archived = tags.includes("archived") || order.status === "closed" || false
+
         // First, upsert the order to the orders table
         const orderData: any = {
           id: order.id.toString(),
@@ -40,6 +44,9 @@ export async function POST(request: NextRequest) {
           customer_email: order.email || null,
           updated_at: new Date().toISOString(),
           raw_shopify_order_data: order,
+          cancelled_at: order.cancelled_at || null,
+          archived: archived,
+          shopify_order_status: order.status || null,
         }
 
         // Use processed_at if available, otherwise use created_at

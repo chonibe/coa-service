@@ -136,7 +136,36 @@ async function syncOrderWithShopify(dbOrder: any): Promise<SyncResult> {
       changes.push(`Fulfillment Status: ${dbOrder.fulfillment_status || "null"} → ${shopifyFulfillmentStatus || "null"}`)
     }
 
-    // 4. Update raw_shopify_order_data to keep it in sync
+    // 3. Update cancelled_at
+    const shopifyCancelledAt = shopifyOrder.cancelled_at || null
+    if (dbOrder.cancelled_at !== shopifyCancelledAt) {
+      updates.cancelled_at = shopifyCancelledAt
+      if (shopifyCancelledAt) {
+        changes.push(`Cancelled At: ${shopifyCancelledAt}`)
+      } else if (dbOrder.cancelled_at) {
+        changes.push(`Cancelled At: cleared (order no longer cancelled)`)
+      }
+    }
+
+    // 4. Update archived status
+    const shopifyTags = (shopifyOrder.tags || "").toLowerCase()
+    const shopifyArchived = 
+      shopifyTags.includes("archived") || 
+      shopifyOrder.status === "closed" ||
+      false
+    if (dbOrder.archived !== shopifyArchived) {
+      updates.archived = shopifyArchived
+      changes.push(`Archived: ${dbOrder.archived || false} → ${shopifyArchived}`)
+    }
+
+    // 5. Update shopify_order_status
+    const shopifyOrderStatus = shopifyOrder.status || null
+    if (dbOrder.shopify_order_status !== shopifyOrderStatus) {
+      updates.shopify_order_status = shopifyOrderStatus
+      changes.push(`Shopify Status: ${dbOrder.shopify_order_status || "null"} → ${shopifyOrderStatus || "null"}`)
+    }
+
+    // 6. Update raw_shopify_order_data to keep it in sync
     updates.raw_shopify_order_data = shopifyOrder
     updates.updated_at = new Date().toISOString()
 

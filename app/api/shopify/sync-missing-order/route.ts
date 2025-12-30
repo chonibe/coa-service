@@ -71,6 +71,10 @@ async function syncOrderToDatabase(order: any, supabase: any) {
   try {
     console.log(`[sync-missing-order] Syncing order ${order.id} (${order.name}) to database`)
 
+    // Determine archived status
+    const tags = (order.tags || "").toLowerCase()
+    const archived = tags.includes("archived") || order.status === "closed" || false
+
     // Upsert order
     const orderData: any = {
       id: order.id.toString(),
@@ -82,6 +86,9 @@ async function syncOrderToDatabase(order: any, supabase: any) {
       customer_email: order.email || null,
       updated_at: new Date().toISOString(),
       raw_shopify_order_data: order,
+      cancelled_at: order.cancelled_at || null,
+      archived: archived,
+      shopify_order_status: order.status || null,
     }
 
     // Use processed_at if available, otherwise use created_at
