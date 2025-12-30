@@ -66,8 +66,11 @@ export function Spline3DPreview({
   const [showOtherControls, setShowOtherControls] = useState(false) // Hide other controls by default
 
   // State for texture controls - separate for each side
+  // Panel dimensions: 14.06 x 20.84 (width x height)
+  // Aspect ratio: 20.84 / 14.06 ≈ 1.48
+  // Default repeat values adjusted for proper aspect ratio
   const [texturePropertiesSide1, setTexturePropertiesSide1] = useState({
-    repeat: [0.04, 0.04],
+    repeat: [0.032, 0.048], // Adjusted for panel aspect ratio
     offset: [0.0, 0.0],
     rotation: -90 * Math.PI / 180,
     magFilter: 1006,
@@ -77,9 +80,9 @@ export function Spline3DPreview({
   })
 
   const [texturePropertiesSide2, setTexturePropertiesSide2] = useState({
-    repeat: [0.04, 0.04],
-    offset: [0.0, 0.0],
-    rotation: -90 * Math.PI / 180,
+    repeat: [-0.032, 0.048], // Negative X scale to prevent mirroring
+    offset: [1.0, 0.0], // Offset to compensate for negative scale
+    rotation: -90 * Math.PI / 180, // Same rotation as side 1
     magFilter: 1006,
     minFilter: 1008,
     contrast: 1.2,
@@ -372,9 +375,17 @@ export function Spline3DPreview({
 
   // Reset texture properties to default values for specific side
   const resetTextureProperties = useCallback((side: 1 | 2) => {
-    const defaultProps = {
-      repeat: [0.04, 0.04],
+    const defaultProps = side === 1 ? {
+      repeat: [0.032, 0.048], // Panel aspect ratio: 14.06x20.84 (normal orientation)
       offset: [0.0, 0.0],
+      rotation: -90 * Math.PI / 180,
+      magFilter: 1006,
+      minFilter: 1008,
+      contrast: 1.2,
+      brightness: 1.1
+    } : {
+      repeat: [-0.032, 0.048], // Negative X scale to prevent mirroring on side 2
+      offset: [1.0, 0.0], // Offset to compensate for negative scale
       rotation: -90 * Math.PI / 180,
       magFilter: 1006,
       minFilter: 1008,
@@ -2139,10 +2150,10 @@ export function Spline3DPreview({
           <div className="mb-6 space-y-6">
             {/* Side 1 Controls */}
             <div className="p-4 bg-background/50 rounded-lg border border-blue-200">
-              <h4 className="text-lg font-semibold mb-3 text-blue-600">🎨 Side 1 (PC Trans A) - Texture Controls</h4>
-              <p className="text-sm text-muted-foreground mb-4">
-                Adjust how the Side 1 uploaded image appears on the 3D model
-              </p>
+                <h4 className="text-lg font-semibold mb-3 text-blue-600">🎨 Side 1 (PC Trans A) - Texture Controls</h4>
+                <p className="text-sm text-muted-foreground mb-4">
+                  Panel dimensions: 14.06×20.84. Adjust how the Side 1 image appears on the 3D model.
+                </p>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {renderTextureControls(1, texturePropertiesSide1)}
@@ -2151,10 +2162,10 @@ export function Spline3DPreview({
 
             {/* Side 2 Controls */}
             <div className="p-4 bg-background/50 rounded-lg border border-green-200">
-              <h4 className="text-lg font-semibold mb-3 text-green-600">🎨 Side 2 (PC Trans B) - Texture Controls</h4>
-              <p className="text-sm text-muted-foreground mb-4">
-                Adjust how the Side 2 uploaded image appears on the 3D model
-              </p>
+                <h4 className="text-lg font-semibold mb-3 text-green-600">🎨 Side 2 (PC Trans B) - Texture Controls</h4>
+                <p className="text-sm text-muted-foreground mb-4">
+                  Panel dimensions: 14.06×20.84. Anti-mirroring applied. Adjust how the Side 2 image appears on the 3D model.
+                </p>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {renderTextureControls(2, texturePropertiesSide2)}
