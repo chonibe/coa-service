@@ -465,16 +465,19 @@ export function Spline3DPreview({
                   layer.texture.image.height = imageElement.height
                   layer.texture.image.name = `uploaded-image-${label}`
 
-                  // SCALE BASED ON CURRENT VALUES: Current is 25x25, target is 21x15
-                  // Calculate scaling factors relative to current implementation
+                  // SCALE BASED ON CURRENT VALUES: Current is 25x25, target needs to be smaller
+                  // User says images are still slightly bigger, so let's make them smaller
                   const currentScaleX = originalImage.repeat ? originalImage.repeat[0] : 25
                   const currentScaleY = originalImage.repeat ? originalImage.repeat[1] : 25
-                  const targetScaleX = 21
-                  const targetScaleY = 15
 
-                  // Scale down from current 25x25 to target 21x15
-                  const scaleFactorX = targetScaleX / currentScaleX  // 21/25 = 0.84
-                  const scaleFactorY = targetScaleY / currentScaleY  // 15/25 = 0.6
+                  // Make images smaller since user says they're still too big
+                  // Try 19x13 as a middle ground (smaller than 21x15 but not as small as 18x12)
+                  const targetScaleX = 19
+                  const targetScaleY = 13
+
+                  // Calculate scaling factors relative to current implementation
+                  const scaleFactorX = targetScaleX / currentScaleX  // 18/25 = 0.72
+                  const scaleFactorY = targetScaleY / currentScaleY  // 12/25 = 0.48
 
                   layer.texture.image.repeat = [targetScaleX, targetScaleY]
                   layer.texture.image.offset = [-0.05, -0.05]  // Target offset
@@ -502,6 +505,17 @@ export function Spline3DPreview({
                       minFilter: layer.texture.image.minFilter,
                       wrapping: layer.texture.image.wrapping
                     }
+                  })
+
+                  // Debug: Show what we're actually setting vs original
+                  console.log(`[Spline3D] DEBUG - Texture scaling for layer ${i}:`, {
+                    originalRepeat: originalImage.repeat,
+                    newRepeat: layer.texture.image.repeat,
+                    originalOffset: originalImage.offset,
+                    newOffset: layer.texture.image.offset,
+                    originalRotation: originalImage.rotation,
+                    newRotation: layer.texture.image.rotation,
+                    scaleChange: `From ${currentScaleX}x${currentScaleY} → ${targetScaleX}x${targetScaleY}`
                   })
 
                   // CRITICAL: Mark the texture itself as needing update
