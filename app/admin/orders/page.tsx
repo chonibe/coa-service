@@ -31,6 +31,7 @@ export default function OrdersPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [refreshKey, setRefreshKey] = useState(0);
 
   useEffect(() => {
     async function fetchOrders() {
@@ -75,7 +76,11 @@ export default function OrdersPage() {
     }
 
     fetchOrders();
-  }, [currentPage]);
+  }, [currentPage, refreshKey]);
+
+  const handleRefresh = () => {
+    setRefreshKey(prev => prev + 1);
+  };
 
   if (isLoading) {
     return (
@@ -126,6 +131,7 @@ export default function OrdersPage() {
         currentPage={currentPage} 
         totalPages={totalPages} 
         onPageChange={setCurrentPage}
+        onRefresh={handleRefresh}
       />
     </div>
   );

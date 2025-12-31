@@ -520,13 +520,32 @@ export function Spline3DPreview({
                     allProperties: Object.keys(originalImage)
                   })
 
-                  // STEP 1: SET SCALING/POSITIONING FIRST (separate from image replacement)
-                  console.log(`[Spline3D] STEP 1: Setting texture scale/position BEFORE image replacement for layer ${i}`)
+                  // Replace the image data
+                  layer.texture.image.data = imageUint8Array
+                  layer.texture.image.width = imageElement.width
+                  layer.texture.image.height = imageElement.height
+                  layer.texture.image.name = `uploaded-image-${label}`
 
+                  // SCALE BASED ON CURRENT VALUES: Current is 25x25, target needs to be smaller
+                  // User says images are still slightly bigger, so let's make them smaller
+                  const currentScaleX = originalImage.repeat ? originalImage.repeat[0] : 25
+                  const currentScaleY = originalImage.repeat ? originalImage.repeat[1] : 25
+
+                  // Make images smaller since user says they're still too big
+                  // Try 19x13 as a middle ground (smaller than 21x15 but not as small as 18x12)
                   const targetScaleX = 19
                   const targetScaleY = 13
 
-                  // Set texture-level UV transform properties (these control how the texture is mapped)
+                  // Calculate scaling factors relative to current implementation
+                  const scaleFactorX = targetScaleX / currentScaleX  // 18/25 = 0.72
+                  const scaleFactorY = targetScaleY / currentScaleY  // 12/25 = 0.48
+
+                  // Set both texture and texture.image properties
+                  layer.texture.image.repeat = [targetScaleX, targetScaleY]
+                  layer.texture.image.offset = [-0.05, -0.05]  // Target offset
+                  layer.texture.image.rotation = -90 * (Math.PI / 180)  // Target angle in radians
+
+                  // Also set the texture-level properties (these might be what actually control rendering)
                   if (layer.texture.repeat !== undefined) {
                     layer.texture.repeat.set(targetScaleX, targetScaleY)
                     console.log(`[Spline3D] ✓ Set texture.repeat to [${targetScaleX}, ${targetScaleY}]`)
@@ -540,24 +559,7 @@ export function Spline3DPreview({
                     console.log(`[Spline3D] ✓ Set texture.rotation to -90°`)
                   }
 
-                  // Update texture matrix to apply UV transforms BEFORE image replacement
-                  if (layer.texture.updateMatrix) {
-                    layer.texture.updateMatrix()
-                    console.log(`[Spline3D] ✓ Updated texture matrix for UV transforms`)
-                  } else if (layer.texture.matrixNeedsUpdate !== undefined) {
-                    layer.texture.matrixNeedsUpdate = true
-                    console.log(`[Spline3D] ✓ Marked texture matrix as needsUpdate`)
-                  }
-
-                  // STEP 2: REPLACE IMAGE DATA AFTER SCALING IS SET
-                  console.log(`[Spline3D] STEP 2: Replacing image data AFTER scaling is set for layer ${i}`)
-
-                  layer.texture.image.data = imageUint8Array
-                  layer.texture.image.width = imageElement.width
-                  layer.texture.image.height = imageElement.height
-                  layer.texture.image.name = `uploaded-image-${label}`
-
-                  // Preserve image-level properties (don't override the UV transforms we just set)
+                  // Preserve other properties
                   layer.texture.image.magFilter = originalImage.magFilter !== undefined ? originalImage.magFilter : 1006
                   layer.texture.image.minFilter = originalImage.minFilter !== undefined ? originalImage.minFilter : 1008
                   layer.texture.image.wrapping = originalImage.wrapping !== undefined ? originalImage.wrapping : 1000

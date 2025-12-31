@@ -214,19 +214,24 @@ export async function POST(request: NextRequest) {
 
     const supabase = createClient()
     const body = await request.json()
-    const { orderNumber, orderId, limit = 100, dryRun = false } = body
+    const { orderNumber, orderId, orderIds, limit = 100, dryRun = false } = body
 
     // Fetch orders from database
     let dbQuery = supabase
       .from("orders")
       .select("id, order_number, financial_status, fulfillment_status, raw_shopify_order_data, created_at, updated_at, cancelled_at, archived, shopify_order_status")
       .order("created_at", { ascending: false })
-      .limit(limit)
 
-    if (orderNumber) {
+    if (orderIds && Array.isArray(orderIds) && orderIds.length > 0) {
+      // Sync specific orders by IDs
+      dbQuery = dbQuery.in("id", orderIds)
+    } else if (orderNumber) {
       dbQuery = dbQuery.eq("order_number", orderNumber)
     } else if (orderId) {
       dbQuery = dbQuery.eq("id", orderId)
+    } else {
+      // Default: limit to recent orders
+      dbQuery = dbQuery.limit(limit)
     }
 
     const { data: dbOrders, error: dbError } = await dbQuery

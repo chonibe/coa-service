@@ -1,11 +1,20 @@
 "use client";
 
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Checkbox } from '@/components/ui/checkbox';
 import { formatCurrency } from '@/lib/utils';
 import { Table, TableHeader, TableBody, TableCell, TableHead, TableRow } from '@/components/ui/table';
-import { AlertCircle } from "lucide-react";
+import { AlertCircle, MoreVertical, X, CheckCircle2, Archive, ArchiveRestore, RefreshCw } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { useToast } from "@/hooks/use-toast";
 
 interface Order {
   id: string;
@@ -29,14 +38,20 @@ interface OrdersListProps {
   currentPage: number;
   totalPages: number;
   onPageChange?: (page: number) => void;
+  onRefresh?: () => void;
 }
 
 export default function OrdersList({ 
   orders, 
   currentPage, 
   totalPages, 
-  onPageChange 
+  onPageChange,
+  onRefresh
 }: OrdersListProps) {
+  const [selectedOrders, setSelectedOrders] = useState<Set<string>>(new Set());
+  const [isUpdating, setIsUpdating] = useState(false);
+  const { toast } = useToast();
+
   const processOrderDuplicates = (orders: Order[]) => {
     return orders.map((order) => {
       const seen = new Set<string>();
@@ -53,6 +68,182 @@ export default function OrdersList({
 
   const processedOrders = processOrderDuplicates(orders);
 
+  const handleSelectAll = (checked: boolean) => {
+    if (checked) {
+      setSelectedOrders(new Set(processedOrders.map(o => o.id)));
+    } else {
+      setSelectedOrders(new Set());
+    }
+  };
+
+  const handleSelectOrder = (orderId: string, checked: boolean) => {
+    const newSelected = new Set(selectedOrders);
+    if (checked) {
+      newSelected.add(orderId);
+    } else {
+      newSelected.delete(orderId);
+    }
+    setSelectedOrders(newSelected);
+  };
+
+  const handleBulkAction = async (action: 'cancel' | 'uncancel' | 'archive' | 'unarchive' | 'sync') => {
+    if (selectedOrders.size === 0) {
+      toast({
+        title: "No orders selected",
+        description: "Please select at least one order to perform this action.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsUpdating(true);
+    try {
+      const orderIds = Array.from(selectedOrders);
+      
+      if (action === 'sync') {
+        // Sync selected orders with Shopify
+        const response = await fetch("/api/admin/orders/sync-shopify", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            orderIds,
+            limit: orderIds.length,
+            dryRun: false,
+          }),
+        });
+
+        const data = await response.json();
+        if (!response.ok) {
+          throw new Error(data.message || "Failed to sync orders");
+        }
+
+        toast({
+          title: "Orders synced",
+          description: `Successfully synced ${data.summary?.updated || 0} order(s) with Shopify.`,
+        });
+      } else {
+        // Update order status
+        const updates: any = {};
+        if (action === 'cancel') {
+          updates.cancelled = true;
+        } else if (action === 'uncancel') {
+          updates.cancelled = false;
+        } else if (action === 'archive') {
+          updates.archived = true;
+        } else if (action === 'unarchive') {
+          updates.archived = false;
+        }
+
+        const response = await fetch("/api/admin/orders/update-status", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            orderIds,
+            ...updates,
+          }),
+        });
+
+        const data = await response.json();
+        if (!response.ok) {
+          throw new Error(data.message || "Failed to update orders");
+        }
+
+        toast({
+          title: "Orders updated",
+          description: `Successfully updated ${data.updated || 0} order(s).`,
+        });
+      }
+
+      // Clear selection and refresh
+      setSelectedOrders(new Set());
+      if (onRefresh) {
+        onRefresh();
+      }
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "An error occurred",
+        variant: "destructive",
+      });
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
+  const handleSingleAction = async (orderId: string, action: 'cancel' | 'uncancel' | 'archive' | 'unarchive' | 'sync', e: React.MouseEvent) => {
+    e.stopPropagation(); // Prevent row click
+    
+    setIsUpdating(true);
+    try {
+      if (action === 'sync') {
+        const response = await fetch("/api/admin/orders/sync-shopify", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            orderId,
+            limit: 1,
+            dryRun: false,
+          }),
+        });
+
+        const data = await response.json();
+        if (!response.ok) {
+          throw new Error(data.message || "Failed to sync order");
+        }
+
+        toast({
+          title: "Order synced",
+          description: "Successfully synced order with Shopify.",
+        });
+      } else {
+        const updates: any = {};
+        if (action === 'cancel') {
+          updates.cancelled = true;
+        } else if (action === 'uncancel') {
+          updates.cancelled = false;
+        } else if (action === 'archive') {
+          updates.archived = true;
+        } else if (action === 'unarchive') {
+          updates.archived = false;
+        }
+
+        const response = await fetch("/api/admin/orders/update-status", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            orderIds: [orderId],
+            ...updates,
+          }),
+        });
+
+        const data = await response.json();
+        if (!response.ok) {
+          throw new Error(data.message || "Failed to update order");
+        }
+
+        toast({
+          title: "Order updated",
+          description: "Successfully updated order.",
+        });
+      }
+
+      if (onRefresh) {
+        onRefresh();
+      }
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "An error occurred",
+        variant: "destructive",
+      });
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
+  const allSelected = processedOrders.length > 0 && selectedOrders.size === processedOrders.length;
+  const someSelected = selectedOrders.size > 0 && selectedOrders.size < processedOrders.length;
+
   if (!orders || orders.length === 0) {
     return (
       <Card className="p-6 bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-0 shadow-xl">
@@ -65,26 +256,113 @@ export default function OrdersList({
 
   return (
     <div className="space-y-4">
+      {/* Bulk Actions Toolbar */}
+      {selectedOrders.size > 0 && (
+        <Card className="bg-blue-50 dark:bg-blue-950/20 border-blue-200 dark:border-blue-800">
+          <div className="p-4 flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <span className="text-sm font-medium">
+                {selectedOrders.size} order{selectedOrders.size !== 1 ? 's' : ''} selected
+              </span>
+              <div className="flex gap-2">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => handleBulkAction('sync')}
+                  disabled={isUpdating}
+                >
+                  <RefreshCw className="h-4 w-4 mr-2" />
+                  Sync with Shopify
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => handleBulkAction('cancel')}
+                  disabled={isUpdating}
+                >
+                  <X className="h-4 w-4 mr-2" />
+                  Mark Cancelled
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => handleBulkAction('uncancel')}
+                  disabled={isUpdating}
+                >
+                  <CheckCircle2 className="h-4 w-4 mr-2" />
+                  Mark Not Cancelled
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => handleBulkAction('archive')}
+                  disabled={isUpdating}
+                >
+                  <Archive className="h-4 w-4 mr-2" />
+                  Archive
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => handleBulkAction('unarchive')}
+                  disabled={isUpdating}
+                >
+                  <ArchiveRestore className="h-4 w-4 mr-2" />
+                  Unarchive
+                </Button>
+              </div>
+            </div>
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={() => setSelectedOrders(new Set())}
+            >
+              Clear Selection
+            </Button>
+          </div>
+        </Card>
+      )}
+
       <Card className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-0 shadow-xl">
         <div className="overflow-x-auto">
           <Table>
             <TableHeader>
               <TableRow>
+                <TableHead className="w-12">
+                  <Checkbox
+                    checked={allSelected}
+                    onCheckedChange={handleSelectAll}
+                    aria-label="Select all orders"
+                  />
+                </TableHead>
                 <TableHead>Order</TableHead>
                 <TableHead>Date</TableHead>
                 <TableHead>Customer</TableHead>
                 <TableHead className="text-right">Total</TableHead>
                 <TableHead>Status</TableHead>
+                <TableHead className="w-12">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {processedOrders.map((order) => (
                 <TableRow 
                   key={order.id}
-                  className="cursor-pointer hover:bg-white/50 dark:hover:bg-slate-900/50 backdrop-blur-sm transition-colors"
-                  onClick={() => window.location.href = `/admin/orders/${order.id}`}
+                  className={`hover:bg-white/50 dark:hover:bg-slate-900/50 backdrop-blur-sm transition-colors ${
+                    selectedOrders.has(order.id) ? 'bg-blue-50 dark:bg-blue-950/20' : ''
+                  }`}
                 >
-                  <TableCell className="font-medium">
+                  <TableCell>
+                    <Checkbox
+                      checked={selectedOrders.has(order.id)}
+                      onCheckedChange={(checked) => handleSelectOrder(order.id, checked as boolean)}
+                      onClick={(e) => e.stopPropagation()}
+                      aria-label={`Select order ${order.order_number}`}
+                    />
+                  </TableCell>
+                  <TableCell 
+                    className="font-medium cursor-pointer"
+                    onClick={() => window.location.href = `/admin/orders/${order.id}`}
+                  >
                     <div className="flex items-center gap-2">
                       <span className="hover:text-primary transition-colors">
                         #{order.order_number}
@@ -94,12 +372,28 @@ export default function OrdersList({
                       )}
                     </div>
                   </TableCell>
-                  <TableCell>{new Date(order.processed_at).toLocaleDateString()}</TableCell>
-                  <TableCell>{order.customer_email}</TableCell>
-                  <TableCell className="text-right">
+                  <TableCell 
+                    onClick={() => window.location.href = `/admin/orders/${order.id}`}
+                    className="cursor-pointer"
+                  >
+                    {new Date(order.processed_at).toLocaleDateString()}
+                  </TableCell>
+                  <TableCell 
+                    onClick={() => window.location.href = `/admin/orders/${order.id}`}
+                    className="cursor-pointer"
+                  >
+                    {order.customer_email}
+                  </TableCell>
+                  <TableCell 
+                    className="text-right cursor-pointer"
+                    onClick={() => window.location.href = `/admin/orders/${order.id}`}
+                  >
                     {formatCurrency(order.total_price, order.currency_code)}
                   </TableCell>
-                  <TableCell>
+                  <TableCell
+                    onClick={() => window.location.href = `/admin/orders/${order.id}`}
+                    className="cursor-pointer"
+                  >
                     <div className="flex flex-wrap gap-2">
                       {/* Financial Status */}
                       <Badge 
@@ -156,6 +450,58 @@ export default function OrdersList({
                         </Badge>
                       )}
                     </div>
+                  </TableCell>
+                  <TableCell onClick={(e) => e.stopPropagation()}>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                          <MoreVertical className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem
+                          onClick={(e) => handleSingleAction(order.id, 'sync', e)}
+                          disabled={isUpdating}
+                        >
+                          <RefreshCw className="h-4 w-4 mr-2" />
+                          Sync with Shopify
+                        </DropdownMenuItem>
+                        {order.cancelled_at ? (
+                          <DropdownMenuItem
+                            onClick={(e) => handleSingleAction(order.id, 'uncancel', e)}
+                            disabled={isUpdating}
+                          >
+                            <CheckCircle2 className="h-4 w-4 mr-2" />
+                            Mark Not Cancelled
+                          </DropdownMenuItem>
+                        ) : (
+                          <DropdownMenuItem
+                            onClick={(e) => handleSingleAction(order.id, 'cancel', e)}
+                            disabled={isUpdating}
+                          >
+                            <X className="h-4 w-4 mr-2" />
+                            Mark Cancelled
+                          </DropdownMenuItem>
+                        )}
+                        {order.archived ? (
+                          <DropdownMenuItem
+                            onClick={(e) => handleSingleAction(order.id, 'unarchive', e)}
+                            disabled={isUpdating}
+                          >
+                            <ArchiveRestore className="h-4 w-4 mr-2" />
+                            Unarchive
+                          </DropdownMenuItem>
+                        ) : (
+                          <DropdownMenuItem
+                            onClick={(e) => handleSingleAction(order.id, 'archive', e)}
+                            disabled={isUpdating}
+                          >
+                            <Archive className="h-4 w-4 mr-2" />
+                            Archive
+                          </DropdownMenuItem>
+                        )}
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   </TableCell>
                 </TableRow>
               ))}
