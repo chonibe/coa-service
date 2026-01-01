@@ -90,55 +90,50 @@ async function syncOrderWithShopify(
       return result
     }
 
-    // Prepare update object
+    // Prepare update object - Shopify is the source of truth
     const updates: any = {}
     const changes: string[] = []
 
-    // Check cancelled status first - this takes priority
-    const shopifyCancelled = !!shopifyOrder.cancelled_at
-    const dbCancelled = !!dbOrder.cancelled_at // Use cancelled_at column, not financial_status
-
-    // 1. Handle cancelled status - if cancelled in Shopify, ALWAYS set financial_status to voided
-    if (shopifyCancelled) {
-      // Order is cancelled in Shopify - must be voided in DB
-      if (dbOrder.financial_status !== "voided") {
-        updates.financial_status = "voided"
-        changes.push(`Financial Status: ${dbOrder.financial_status} → voided (Order cancelled in Shopify)`)
-      }
-    } else {
-      // Order is NOT cancelled in Shopify - sync financial_status from Shopify
-      if (dbOrder.financial_status !== shopifyOrder.financial_status) {
-        updates.financial_status = shopifyOrder.financial_status
-        changes.push(`Financial Status: ${dbOrder.financial_status} → ${shopifyOrder.financial_status}`)
-      }
+    // 1. Sync financial_status from Shopify (Shopify is source of truth)
+    const shopifyFinancialStatus = shopifyOrder.financial_status || null
+    if (dbOrder.financial_status !== shopifyFinancialStatus) {
+      updates.financial_status = shopifyFinancialStatus
+      changes.push(`Financial Status: ${dbOrder.financial_status || "null"} → ${shopifyFinancialStatus || "null"}`)
     }
 
-    // 2. Check and update fulfillment_status
+    // 2. Sync fulfillment_status from Shopify (Shopify is source of truth)
     const shopifyFulfillmentStatus = shopifyOrder.fulfillment_status || null
     if (dbOrder.fulfillment_status !== shopifyFulfillmentStatus) {
       updates.fulfillment_status = shopifyFulfillmentStatus
       changes.push(`Fulfillment Status: ${dbOrder.fulfillment_status || "null"} → ${shopifyFulfillmentStatus || "null"}`)
     }
 
-    // 3. Update cancelled_at (must always sync this field)
+    // 3. Sync cancelled_at from Shopify (Shopify is source of truth)
     const shopifyCancelledAt = shopifyOrder.cancelled_at || null
     const dbCancelledAt = dbOrder.cancelled_at || null
     
-    // Compare: both null = match, both have values = compare, one null one not = mismatch
-    const cancelledAtMatches = (dbCancelledAt === null && shopifyCancelledAt === null) ||
-      (dbCancelledAt !== null && shopifyCancelledAt !== null && 
-       new Date(dbCancelledAt).getTime() === new Date(shopifyCancelledAt).getTime())
+    // Compare timestamps properly (handle null, timezone differences)
+    let cancelledAtMatches = false
+    if (dbCancelledAt === null && shopifyCancelledAt === null) {
+      cancelledAtMatches = true
+    } else if (dbCancelledAt !== null && shopifyCancelledAt !== null) {
+      // Compare timestamps (allow small difference for timezone/format issues)
+      const dbTime = new Date(dbCancelledAt).getTime()
+      const shopifyTime = new Date(shopifyCancelledAt).getTime()
+      cancelledAtMatches = Math.abs(dbTime - shopifyTime) < 1000 // Within 1 second
+    }
     
     if (!cancelledAtMatches) {
       updates.cancelled_at = shopifyCancelledAt
       if (shopifyCancelledAt) {
-        changes.push(`Cancelled At: ${shopifyCancelledAt}`)
-      } else if (dbOrder.cancelled_at) {
-        changes.push(`Cancelled At: cleared (order no longer cancelled)`)
+        changes.push(`Cancelled At: ${dbCancelledAt || "null"} → ${shopifyCancelledAt}`)
+      } else {
+        changes.push(`Cancelled At: ${dbCancelledAt || "null"} → null (cleared)`)
       }
     }
 
-    // 4. Update archived status (must match comparison logic)
+    // 4. Sync archived status from Shopify (Shopify is source of truth)
+    // Archived in Shopify = has "archived" tag OR closed_at is not null OR cancel_reason is not null
     const shopifyTags = (shopifyOrder.tags || "").toLowerCase()
     const shopifyArchived = 
       shopifyTags.includes("archived") || 
@@ -150,23 +145,24 @@ async function syncOrderWithShopify(
       changes.push(`Archived: ${dbArchived} → ${shopifyArchived}`)
     }
 
-    // 5. Update shopify_order_status
+    // 5. Sync shopify_order_status from Shopify (Shopify is source of truth)
     const shopifyOrderStatus = shopifyOrder.status || null
     if (dbOrder.shopify_order_status !== shopifyOrderStatus) {
       updates.shopify_order_status = shopifyOrderStatus
       changes.push(`Shopify Status: ${dbOrder.shopify_order_status || "null"} → ${shopifyOrderStatus || "null"}`)
     }
 
-    // 6. Update raw_shopify_order_data to keep it in sync
+    // 6. Always update raw_shopify_order_data and updated_at to keep in sync
     updates.raw_shopify_order_data = shopifyOrder
     updates.updated_at = new Date().toISOString()
 
-    // Only update if there are actual changes (excluding raw_shopify_order_data and updated_at)
+    // Check if there are actual field changes (excluding metadata fields)
     const actualChanges = Object.keys(updates).filter(key => 
       key !== 'raw_shopify_order_data' && key !== 'updated_at'
     )
     
-    if (actualChanges.length > 0) {
+    // Always update to ensure raw_shopify_order_data is current, even if no other changes
+    if (actualChanges.length > 0 || changes.length > 0) {
       const { error: updateError } = await supabase
         .from("orders")
         .update(updates)
@@ -177,12 +173,20 @@ async function syncOrderWithShopify(
       } else {
         result.updated = true
         result.changes = changes
+        // If we only updated raw_shopify_order_data, note it
+        if (actualChanges.length === 0 && changes.length === 0) {
+          result.changes.push("Updated raw_shopify_order_data to match Shopify")
+        }
       }
+    } else {
+      // No changes needed - order is already in sync
+      result.changes.push("Order already in sync with Shopify")
     }
 
-    // 5. Also update line items if order is cancelled
+    // 7. Update line items based on Shopify status (Shopify is source of truth)
+    const shopifyCancelled = !!shopifyOrder.cancelled_at
     if (shopifyCancelled) {
-      // Update line items status to inactive if order is cancelled
+      // Order is cancelled in Shopify - mark line items as inactive
       const { error: lineItemsError } = await supabase
         .from("order_line_items_v2")
         .update({ 
@@ -203,7 +207,32 @@ async function syncOrderWithShopify(
           .eq("status", "inactive")
 
         if (count && count > 0) {
-          result.changes.push(`Updated line items to inactive status`)
+          result.changes.push(`Updated ${count} line item(s) to inactive (order cancelled in Shopify)`)
+        }
+      }
+    } else {
+      // Order is NOT cancelled in Shopify - if it was previously cancelled in DB, reactivate line items
+      // Only reactivate if order is fulfilled and was previously cancelled
+      if (dbOrder.cancelled_at && !shopifyCancelled && shopifyOrder.fulfillment_status === "fulfilled") {
+        const { error: lineItemsError } = await supabase
+          .from("order_line_items_v2")
+          .update({ 
+            status: "active",
+            updated_at: new Date().toISOString()
+          })
+          .eq("order_id", dbOrder.id)
+          .eq("status", "inactive")
+
+        if (!lineItemsError) {
+          const { count } = await supabase
+            .from("order_line_items_v2")
+            .select("*", { count: "exact", head: true })
+            .eq("order_id", dbOrder.id)
+            .eq("status", "active")
+
+          if (count && count > 0) {
+            result.changes.push(`Reactivated ${count} line item(s) (order no longer cancelled in Shopify)`)
+          }
         }
       }
     }
