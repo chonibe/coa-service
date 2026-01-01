@@ -32,16 +32,24 @@ export async function GET(request: NextRequest) {
     const searchParams = request.nextUrl.searchParams
     const orderNumber = searchParams.get("orderNumber") // e.g., "1114"
     const limit = parseInt(searchParams.get("limit") || "100")
+    const orderIdsParam = searchParams.get("orderIds") // Comma-separated order IDs
 
     // Fetch orders from database
     let dbQuery = supabase
       .from("orders")
-      .select("id, order_number, financial_status, fulfillment_status, raw_shopify_order_data, created_at, updated_at")
+      .select("id, order_number, financial_status, fulfillment_status, raw_shopify_order_data, created_at, updated_at, cancelled_at, archived, shopify_order_status")
       .order("created_at", { ascending: false })
-      .limit(limit)
 
-    if (orderNumber) {
+    if (orderIdsParam) {
+      // Compare specific orders by IDs
+      const orderIds = orderIdsParam.split(",").filter(id => id.trim())
+      if (orderIds.length > 0) {
+        dbQuery = dbQuery.in("id", orderIds)
+      }
+    } else if (orderNumber) {
       dbQuery = dbQuery.eq("order_number", orderNumber)
+    } else {
+      dbQuery = dbQuery.limit(limit)
     }
 
     const { data: dbOrders, error: dbError } = await dbQuery
@@ -166,18 +174,19 @@ export async function GET(request: NextRequest) {
         }
 
         // Compare order data
-        // Check cancelled status - in Shopify, cancelled_at is the definitive field
-        const dbCancelled = dbOrder.financial_status === "voided" || dbOrder.financial_status === "refunded"
+        // Check cancelled status - use the cancelled_at column from DB
+        const dbCancelled = !!dbOrder.cancelled_at
         const shopifyCancelled = !!shopifyOrder.cancelled_at
         
         // Check archived status - archived orders in Shopify may have tags or be in a different state
-        // Also check if order is in closed status (which includes archived)
         const shopifyTags = (shopifyOrder.tags || "").toLowerCase()
         const shopifyArchived = 
           shopifyTags.includes("archived") || 
-          shopifyOrder.status === "closed" ||
-          false
-        const dbArchived = null // We don't store archived status in DB currently
+          shopifyOrder.closed_at !== null ||
+          shopifyOrder.cancel_reason !== null
+        const dbArchived = dbOrder.archived ?? false
+        
+        const shopifyOrderStatus = shopifyOrder.status || null // "open", "closed"
 
         const comparison: OrderComparison = {
           order_id: dbOrder.id,
@@ -199,6 +208,7 @@ export async function GET(request: NextRequest) {
             note: shopifyOrder.note,
             status: shopifyOrder.status, // closed, open, etc.
             closed_at: shopifyOrder.closed_at,
+            cancel_reason: shopifyOrder.cancel_reason,
           },
         }
 
@@ -221,9 +231,15 @@ export async function GET(request: NextRequest) {
           )
         }
 
-        if (comparison.shopify_archived && !comparison.db_archived) {
+        if (comparison.db_archived !== comparison.shopify_archived) {
           comparison.mismatches.push(
-            `Archived Status: Order is archived in Shopify but not marked in DB`
+            `Archived Status: DB=${comparison.db_archived} vs Shopify=${comparison.shopify_archived}`
+          )
+        }
+
+        if (dbOrder.shopify_order_status !== shopifyOrderStatus) {
+          comparison.mismatches.push(
+            `Shopify Order Status: DB="${dbOrder.shopify_order_status || "null"}" vs Shopify="${shopifyOrderStatus || "null"}"`
           )
         }
 

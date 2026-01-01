@@ -24,3 +24,4 @@ COMMENT ON COLUMN "public"."orders"."cancelled_at" IS 'Timestamp when order was 
 COMMENT ON COLUMN "public"."orders"."archived" IS 'Whether the order is archived in Shopify (based on tags or closed status).';
 COMMENT ON COLUMN "public"."orders"."shopify_order_status" IS 'Shopify order status (open, closed, etc.).';
 
+

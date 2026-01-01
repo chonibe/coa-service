@@ -32,6 +32,7 @@ export default function OrdersPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
+  const [selectedOrderIds, setSelectedOrderIds] = useState<string[]>([]);
 
   useEffect(() => {
     async function fetchOrders() {
@@ -88,7 +89,10 @@ export default function OrdersPage() {
         <div className="flex justify-between items-center mb-8">
           <h1 className="text-3xl font-bold tracking-tight bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">Orders</h1>
           <div className="flex gap-2">
-            <CompareOrdersButton />
+            <CompareOrdersButton 
+              selectedOrderIds={selectedOrderIds}
+              onSyncComplete={handleRefresh}
+            />
             <SyncOrdersButton />
             <SyncOrderStatusesButton />
             <SyncAllOrdersButton />
@@ -105,7 +109,10 @@ export default function OrdersPage() {
         <div className="flex justify-between items-center mb-8">
           <h1 className="text-3xl font-bold tracking-tight bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">Orders</h1>
           <div className="flex gap-2">
-            <CompareOrdersButton />
+            <CompareOrdersButton 
+              selectedOrderIds={selectedOrderIds}
+              onSyncComplete={handleRefresh}
+            />
             <SyncOrdersButton />
             <SyncOrderStatusesButton />
             <SyncAllOrdersButton />
@@ -121,7 +128,10 @@ export default function OrdersPage() {
       <div className="flex justify-between items-center mb-8">
         <h1 className="text-3xl font-bold tracking-tight bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">Orders</h1>
         <div className="flex gap-2">
-          <CompareOrdersButton />
+          <CompareOrdersButton 
+            selectedOrderIds={selectedOrderIds}
+            onSyncComplete={handleRefresh}
+          />
           <SyncOrdersButton />
           <SyncAllOrdersButton />
         </div>
@@ -132,6 +142,7 @@ export default function OrdersPage() {
         totalPages={totalPages} 
         onPageChange={setCurrentPage}
         onRefresh={handleRefresh}
+        onSelectedOrdersChange={setSelectedOrderIds}
       />
     </div>
   );

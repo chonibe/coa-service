@@ -68,3 +68,4 @@ console.log('   • Payment: Dedicated section with status and details')
 console.log('   • Footer: Self-billing notice moved to bottom')
 
 
+

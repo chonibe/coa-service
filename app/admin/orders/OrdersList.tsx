@@ -39,6 +39,7 @@ interface OrdersListProps {
   totalPages: number;
   onPageChange?: (page: number) => void;
   onRefresh?: () => void;
+  onSelectedOrdersChange?: (selectedIds: string[]) => void;
 }
 
 export default function OrdersList({ 
@@ -46,11 +47,20 @@ export default function OrdersList({
   currentPage, 
   totalPages, 
   onPageChange,
-  onRefresh
+  onRefresh,
+  onSelectedOrdersChange
 }: OrdersListProps) {
   const [selectedOrders, setSelectedOrders] = useState<Set<string>>(new Set());
   const [isUpdating, setIsUpdating] = useState(false);
   const { toast } = useToast();
+
+  // Notify parent of selection changes
+  const updateSelection = (newSelection: Set<string>) => {
+    setSelectedOrders(newSelection);
+    if (onSelectedOrdersChange) {
+      onSelectedOrdersChange(Array.from(newSelection));
+    }
+  };
 
   const processOrderDuplicates = (orders: Order[]) => {
     return orders.map((order) => {
@@ -70,9 +80,10 @@ export default function OrdersList({
 
   const handleSelectAll = (checked: boolean) => {
     if (checked) {
-      setSelectedOrders(new Set(processedOrders.map(o => o.id)));
+      const newSelection = new Set(processedOrders.map(o => o.id));
+      updateSelection(newSelection);
     } else {
-      setSelectedOrders(new Set());
+      updateSelection(new Set());
     }
   };
 
@@ -83,7 +94,7 @@ export default function OrdersList({
     } else {
       newSelected.delete(orderId);
     }
-    setSelectedOrders(newSelected);
+    updateSelection(newSelected);
   };
 
   const handleBulkAction = async (action: 'cancel' | 'uncancel' | 'archive' | 'unarchive' | 'sync') => {
@@ -155,7 +166,7 @@ export default function OrdersList({
       }
 
       // Clear selection and refresh
-      setSelectedOrders(new Set());
+      updateSelection(new Set());
       if (onRefresh) {
         onRefresh();
       }
@@ -315,7 +326,7 @@ export default function OrdersList({
             <Button
               size="sm"
               variant="ghost"
-              onClick={() => setSelectedOrders(new Set())}
+              onClick={() => updateSelection(new Set())}
             >
               Clear Selection
             </Button>
