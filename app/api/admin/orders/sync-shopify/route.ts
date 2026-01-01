@@ -96,14 +96,14 @@ async function syncOrderWithShopify(
 
     // Check cancelled status first - this takes priority
     const shopifyCancelled = !!shopifyOrder.cancelled_at
-    const dbCancelled = dbOrder.financial_status === "voided" || dbOrder.financial_status === "refunded"
+    const dbCancelled = !!dbOrder.cancelled_at // Use cancelled_at column, not financial_status
 
     // 1. Handle cancelled status - if cancelled in Shopify, ALWAYS set financial_status to voided
     if (shopifyCancelled) {
       // Order is cancelled in Shopify - must be voided in DB
       if (dbOrder.financial_status !== "voided") {
         updates.financial_status = "voided"
-        changes.push(`Cancelled Status: Order is cancelled in Shopify (cancelled_at: ${shopifyOrder.cancelled_at}), updating financial_status to voided`)
+        changes.push(`Financial Status: ${dbOrder.financial_status} → voided (Order cancelled in Shopify)`)
       }
     } else {
       // Order is NOT cancelled in Shopify - sync financial_status from Shopify
@@ -120,9 +120,16 @@ async function syncOrderWithShopify(
       changes.push(`Fulfillment Status: ${dbOrder.fulfillment_status || "null"} → ${shopifyFulfillmentStatus || "null"}`)
     }
 
-    // 3. Update cancelled_at
+    // 3. Update cancelled_at (must always sync this field)
     const shopifyCancelledAt = shopifyOrder.cancelled_at || null
-    if (dbOrder.cancelled_at !== shopifyCancelledAt) {
+    const dbCancelledAt = dbOrder.cancelled_at || null
+    
+    // Compare: both null = match, both have values = compare, one null one not = mismatch
+    const cancelledAtMatches = (dbCancelledAt === null && shopifyCancelledAt === null) ||
+      (dbCancelledAt !== null && shopifyCancelledAt !== null && 
+       new Date(dbCancelledAt).getTime() === new Date(shopifyCancelledAt).getTime())
+    
+    if (!cancelledAtMatches) {
       updates.cancelled_at = shopifyCancelledAt
       if (shopifyCancelledAt) {
         changes.push(`Cancelled At: ${shopifyCancelledAt}`)
@@ -131,15 +138,16 @@ async function syncOrderWithShopify(
       }
     }
 
-    // 4. Update archived status
+    // 4. Update archived status (must match comparison logic)
     const shopifyTags = (shopifyOrder.tags || "").toLowerCase()
     const shopifyArchived = 
       shopifyTags.includes("archived") || 
-      shopifyOrder.status === "closed" ||
-      false
-    if (dbOrder.archived !== shopifyArchived) {
+      shopifyOrder.closed_at !== null ||
+      shopifyOrder.cancel_reason !== null
+    const dbArchived = dbOrder.archived ?? false
+    if (dbArchived !== shopifyArchived) {
       updates.archived = shopifyArchived
-      changes.push(`Archived: ${dbOrder.archived || false} → ${shopifyArchived}`)
+      changes.push(`Archived: ${dbArchived} → ${shopifyArchived}`)
     }
 
     // 5. Update shopify_order_status
@@ -153,8 +161,12 @@ async function syncOrderWithShopify(
     updates.raw_shopify_order_data = shopifyOrder
     updates.updated_at = new Date().toISOString()
 
-    // Only update if there are changes
-    if (Object.keys(updates).length > 0) {
+    // Only update if there are actual changes (excluding raw_shopify_order_data and updated_at)
+    const actualChanges = Object.keys(updates).filter(key => 
+      key !== 'raw_shopify_order_data' && key !== 'updated_at'
+    )
+    
+    if (actualChanges.length > 0) {
       const { error: updateError } = await supabase
         .from("orders")
         .update(updates)
@@ -272,9 +284,24 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // Transform results to match UI expectations
+    const updatedOrders = results
+      .filter(r => r.updated)
+      .map(r => ({
+        order_id: r.order_id,
+        order_number: r.order_number,
+        changes: r.changes,
+      }))
+    
+    const errors = results
+      .filter(r => r.errors.length > 0)
+      .flatMap(r => r.errors.map(err => `Order #${r.order_number}: ${err}`))
+
     return NextResponse.json({
       success: true,
       results,
+      updatedOrders, // For UI compatibility
+      errors, // For UI compatibility
       summary: {
         total_processed: results.length,
         updated: updatedCount,
