@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { createClient } from '@supabase/supabase-js';
+import { createClient } from '@/lib/supabase/client';
 import type { Database } from '@/types/supabase';
 import OrdersList from './OrdersList';
 import SyncAllOrdersButton from './SyncAllOrdersButton';
@@ -38,10 +38,7 @@ export default function OrdersPage() {
     async function fetchOrders() {
       try {
         setIsLoading(true);
-        const supabase = createClient<Database>(
-          process.env.NEXT_PUBLIC_SUPABASE_URL!,
-          process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-        );
+        const supabase = createClient<Database>();
 
         const limit = 10;
         const offset = (currentPage - 1) * limit;

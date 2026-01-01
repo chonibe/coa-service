@@ -112,7 +112,7 @@ export default function CompareOrdersButton({ selectedOrderIds = [], onSyncCompl
   }
 
   const syncMismatchedOrders = async () => {
-    if (!result || result.mismatches.length === 0) {
+    if (!result || !result.mismatches || result.mismatches.length === 0) {
       toast({
         title: "No mismatches to sync",
         description: "All orders are already in sync.",
@@ -126,7 +126,7 @@ export default function CompareOrdersButton({ selectedOrderIds = [], onSyncCompl
     setError(null)
 
     try {
-      const orderIds = result.mismatches.map(m => m.order_id)
+      const orderIds = (result.mismatches || []).map(m => m.order_id)
       
       const response = await fetch("/api/admin/orders/sync-shopify", {
         method: "POST",
@@ -288,7 +288,7 @@ export default function CompareOrdersButton({ selectedOrderIds = [], onSyncCompl
               </Alert>
 
               {/* Sync All Mismatched Orders Button */}
-              {result.mismatches.length > 0 && (
+              {result.mismatches && result.mismatches.length > 0 && (
                 <div className="flex items-center gap-2 p-4 bg-yellow-50 dark:bg-yellow-950/20 rounded-md border border-yellow-200 dark:border-yellow-800">
                   <div className="flex-1">
                     <p className="font-semibold text-sm mb-1">
@@ -344,7 +344,7 @@ export default function CompareOrdersButton({ selectedOrderIds = [], onSyncCompl
                     </AlertDescription>
                   </Alert>
 
-                  {syncResult.updatedOrders.length > 0 && (
+                  {syncResult.updatedOrders && syncResult.updatedOrders.length > 0 && (
                     <div className="space-y-2">
                       <h4 className="font-medium text-sm">Updated Orders:</h4>
                       <div className="space-y-2 max-h-60 overflow-y-auto">
@@ -400,7 +400,7 @@ export default function CompareOrdersButton({ selectedOrderIds = [], onSyncCompl
                     </div>
                   )}
 
-                  {syncResult.errors.length > 0 && (
+                  {syncResult.errors && syncResult.errors.length > 0 && (
                     <div className="space-y-2">
                       <h4 className="font-medium text-sm text-destructive">Errors:</h4>
                       <ul className="list-disc list-inside space-y-1 text-sm text-destructive">
@@ -414,7 +414,7 @@ export default function CompareOrdersButton({ selectedOrderIds = [], onSyncCompl
               )}
 
               {/* Mismatches List */}
-              {result.mismatches.length > 0 && (
+              {result.mismatches && result.mismatches.length > 0 && (
                 <div className="space-y-2">
                   <h3 className="font-semibold text-lg">Mismatches Found:</h3>
                   <div className="space-y-4">
