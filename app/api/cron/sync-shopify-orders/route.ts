@@ -37,6 +37,11 @@ interface ShopifyOrder {
   checkout_token: string | null;
   cart_token: string | null;
   line_items: ShopifyLineItem[];
+  cancelled_at: string | null;
+  closed_at: string | null;
+  cancel_reason: string | null;
+  tags: string | null;
+  status: string | null;
 }
 
 interface SyncLog {
@@ -93,7 +98,7 @@ async function fetchAllOrdersFromShopify(startDate: Date): Promise<ShopifyOrder[
   return allOrders;
 }
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   const supabase = createClient()
   
   try {
@@ -144,13 +149,20 @@ export async function GET() {
     if (orders.length > 0) {
       for (const order of orders) {
         try {
-          // Sync order data
+          // Sync order data - Shopify is the source of truth
+          // Determine archived status from Shopify
+          const shopifyTags = (order.tags || "").toLowerCase()
+          const shopifyArchived = 
+            shopifyTags.includes("archived") || 
+            order.closed_at !== null ||
+            order.cancel_reason !== null
+
           const orderData = {
             id: String(order.id),
             order_number: String(order.order_number),
             processed_at: order.processed_at || order.created_at,
-            financial_status: order.financial_status,
-            fulfillment_status: order.fulfillment_status,
+            financial_status: order.financial_status, // Shopify is source of truth
+            fulfillment_status: order.fulfillment_status, // Shopify is source of truth
             total_price: order.current_total_price ? parseFloat(order.current_total_price) : null,
             currency_code: order.currency,
             customer_email: order.email,
@@ -162,6 +174,9 @@ export async function GET() {
             customer_reference: order.checkout_token || order.cart_token || null,
             raw_shopify_order_data: order as unknown as Json,
             created_at: order.created_at,
+            cancelled_at: order.cancelled_at || null, // Shopify is source of truth
+            archived: shopifyArchived, // Shopify is source of truth
+            shopify_order_status: order.status || null, // Shopify is source of truth
           };
 
           const { error: orderError } = await db
@@ -172,6 +187,24 @@ export async function GET() {
             console.error(`[Cron] Error syncing order ${order.name}:`, orderError);
             errorCount++;
             continue;
+          }
+
+          // Update line items based on Shopify cancellation status (Shopify is source of truth)
+          const shopifyCancelled = !!order.cancelled_at
+          if (shopifyCancelled) {
+            // Order is cancelled in Shopify - mark line items as inactive
+            const { error: lineItemsError } = await db
+              .from("order_line_items_v2")
+              .update({ 
+                status: "inactive",
+                updated_at: new Date().toISOString()
+              })
+              .eq("order_id", String(order.id))
+              .eq("status", "active")
+
+            if (lineItemsError) {
+              console.error(`[Cron] Error updating line items for cancelled order ${order.name}:`, lineItemsError);
+            }
           }
 
           // Sync line items
