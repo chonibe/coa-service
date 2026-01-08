@@ -2,6 +2,7 @@ import { NextResponse } from "next/server"
 import { cookies } from "next/headers"
 import { createClient } from "@/lib/supabase/server"
 import { getVendorFromCookieStore } from "@/lib/vendor-session"
+import { convertGBPToUSD, convertNISToUSD } from "@/lib/utils"
 
 export async function GET() {
   const cookieStore = cookies()
@@ -22,13 +23,25 @@ export async function GET() {
 
     const paidLineItemIds = new Set((paidItems || []).map((item: any) => item.line_item_id))
 
-    // Get all line items (fulfilled, unfulfilled, or pre-Oct 2025, but not paid and not restocked/cancelled)
+    // Get all line items
     const { data: lineItems, error: lineItemsError } = await supabase
       .from("order_line_items_v2")
-      .select("line_item_id, order_id, order_name, product_id, name, price, created_at, fulfillment_status, status, restocked")
+      .select(`
+        line_item_id, 
+        order_id, 
+        order_name, 
+        product_id, 
+        name, 
+        price, 
+        created_at, 
+        fulfillment_status, 
+        status, 
+        restocked,
+        orders!inner(currency_code)
+      `)
       .eq("vendor_name", vendorName)
       .or("fulfillment_status.in.(fulfilled,unfulfilled,partially_fulfilled),created_at.lt.2025-10-01")
-      .neq("fulfillment_status", "restocked") // Explicitly exclude items with fulfillment_status = 'restocked'
+      .neq("fulfillment_status", "restocked")
 
     if (lineItemsError) {
       console.error("Error fetching line items:", lineItemsError)
@@ -50,15 +63,25 @@ export async function GET() {
       item.fulfillment_status !== 'restocked' // Double-check to exclude restocked items
     )
 
-    // Calculate payout amounts for each line item (always 25% or $10 minimum for historical)
+    // Calculate payout amounts for each line item
     const processItem = (item: any, includePayout: boolean = true) => {
-      const originalPrice = Number(item.price || 0)
+      let originalPrice = Number(item.price || 0)
+      const orderCurrency = item.orders?.currency_code || 'USD'
+      const currencyUpper = orderCurrency.toUpperCase()
+      
+      // Only convert to USD if the source currency is NOT USD
+      if (currencyUpper === 'GBP') {
+        originalPrice = convertGBPToUSD(originalPrice)
+      } else if (currencyUpper === 'NIS' || currencyUpper === 'ILS') {
+        originalPrice = convertNISToUSD(originalPrice)
+      }
+
       const createdAt = item.created_at ? new Date(item.created_at) : new Date()
       const october2025 = new Date('2025-10-01')
       
       let price = originalPrice
       
-      // Apply historical adjustment: Pre-Oct 2025
+      // Apply historical adjustment: Pre-Oct 2025 (Historical price is always USD)
       if (createdAt < october2025) {
         price = 40.00
       }

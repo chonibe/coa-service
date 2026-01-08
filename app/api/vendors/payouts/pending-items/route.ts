@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server"
 import { createClient } from "@/lib/supabase-server"
+import { convertGBPToUSD, convertNISToUSD } from "@/lib/utils"
 
 // Vendors excluded from payout calculations (e.g., internal/company vendors)
 const EXCLUDED_VENDORS = ["Street Collector", "street collector", "street-collector"]
@@ -24,18 +25,28 @@ export async function POST(request: Request) {
 
     const supabase = createClient()
 
-    // Get line items for this vendor that meet one of these criteria:
-    // 1. fulfillment_status = 'fulfilled', 'partially_fulfilled', or 'unfulfilled'
-    // 2. Has an active edition number (edition_number IS NOT NULL AND status = 'active')
-    // Note: Supabase has a default limit of 1000 rows, so we need to fetch in batches if needed
-    // Exclude restocked items (restocked = false or null)
+    // Get line items for this vendor
+    // Join with orders to get the currency_code
     let query = supabase
       .from("order_line_items_v2")
-      .select("line_item_id, order_id, order_name, product_id, price, created_at, fulfillment_status, edition_number, status, restocked, name", { count: 'exact' })
+      .select(`
+        line_item_id, 
+        order_id, 
+        order_name, 
+        product_id, 
+        price, 
+        created_at, 
+        fulfillment_status, 
+        edition_number, 
+        status, 
+        restocked, 
+        name,
+        orders!inner(currency_code)
+      `, { count: 'exact' })
       .eq("vendor_name", vendorName)
-      .or("fulfillment_status.in.(fulfilled,partially_fulfilled,unfulfilled),and(edition_number.not.is.null,status.eq.active),created_at.lt.2025-10-01") // Included unfulfilled
-      .eq("restocked", false) // Exclude restocked items
-      .order("created_at", { ascending: false }) // Order by date descending (newest first for display)
+      .or("fulfillment_status.in.(fulfilled,partially_fulfilled,unfulfilled),and(edition_number.not.is.null,status.eq.active),created_at.lt.2025-10-01")
+      .eq("restocked", false)
+      .order("created_at", { ascending: false })
 
     // Apply date range filter ONLY if explicitly provided
     if (startDate) {
@@ -224,6 +235,15 @@ export async function POST(request: Request) {
       // Build response - include ALL items, even with $0 price
       const data = itemsToProcess.map((item: any) => {
         let itemPrice = Number(item.price || 0)
+        const orderCurrency = item.orders?.currency_code || 'USD'
+        const currencyUpper = orderCurrency.toUpperCase()
+        
+        // Only convert to USD if the source currency is NOT USD
+        if (currencyUpper === 'GBP') {
+          itemPrice = convertGBPToUSD(itemPrice)
+        } else if (currencyUpper === 'NIS' || currencyUpper === 'ILS') {
+          itemPrice = convertNISToUSD(itemPrice)
+        }
         
         // Get payout settings for this specific product
         const setting = payoutMap.get(item.product_id)
@@ -233,7 +253,7 @@ export async function POST(request: Request) {
         const orderDate = new Date(item.created_at)
         const october2025 = new Date('2025-10-01')
 
-        // Apply historical adjustment: Pre-Oct 2025
+        // Apply historical adjustment: Pre-Oct 2025 (Historical price is always USD)
         if (orderDate < october2025) {
           itemPrice = 40.00
         }
@@ -242,7 +262,7 @@ export async function POST(request: Request) {
           ? (itemPrice * payoutAmount / 100)
           : payoutAmount
         
-        // Apply $10 minimum for orders before October 2025
+        // Apply $10 minimum for orders before October 2025 (Minimum is always USD)
         if (orderDate < october2025 && calculatedPayout < 10) {
           calculatedPayout = 10
         }
