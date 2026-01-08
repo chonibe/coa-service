@@ -1,7 +1,7 @@
 const fs = require('fs');
 const { createClient } = require('@supabase/supabase-js');
 
-async function fullSync() {
+async function syncFromSept2024() {
   const envContent = fs.readFileSync('.env', 'utf8');
   const urlMatch = envContent.match(/NEXT_PUBLIC_SUPABASE_URL=["']?(.*?)["']?(\r|\n|$)/);
   const keyMatch = envContent.match(/SUPABASE_SERVICE_ROLE_KEY=["']?(.*?)["']?(\r|\n|$)/);
@@ -15,29 +15,25 @@ async function fullSync() {
 
   const supabase = createClient(url, key);
 
-  console.log('🚀 Starting FULL Historical Shopify Sync...');
+  console.log('🚀 Syncing orders from September 2024 onwards...');
 
-  let nextUrl = `https://${SHOPIFY_SHOP}/admin/api/2024-01/orders.json?status=any&limit=250`;
-  let processedCount = 0;
+  const startDate = "2024-09-01T00:00:00Z";
+  let nextUrl = `https://${SHOPIFY_SHOP}/admin/api/2024-01/orders.json?status=any&created_at_min=${startDate}&limit=250`;
+  let totalOrders = 0;
 
   while (nextUrl) {
-    console.log(`Fetching from: ${nextUrl}`);
+    console.log(`Fetching: ${nextUrl}`);
     const response = await fetch(nextUrl, {
-      headers: {
-        "X-Shopify-Access-Token": SHOPIFY_ACCESS_TOKEN,
-        "Content-Type": "application/json",
-      },
+      headers: { "X-Shopify-Access-Token": SHOPIFY_ACCESS_TOKEN, "Content-Type": "application/json" },
     });
 
     if (!response.ok) {
-      const errorText = await response.text();
-      console.error(`Failed to fetch: ${response.status} ${errorText}`);
+      console.error(`Failed: ${response.status}`);
       break;
     }
 
     const data = await response.json();
     const orders = data.orders || [];
-    
     if (orders.length === 0) break;
 
     const ordersToUpsert = orders.map(order => ({
@@ -63,21 +59,12 @@ async function fullSync() {
       shopify_order_status: order.status || null,
     }));
 
-    const { error: upsertError } = await supabase
-      .from('orders')
-      .upsert(ordersToUpsert, { onConflict: 'id' });
+    await supabase.from('orders').upsert(ordersToUpsert, { onConflict: 'id' });
+    totalOrders += orders.length;
 
-    if (upsertError) {
-      console.error('Error upserting orders:', upsertError);
-    } else {
-      processedCount += orders.length;
-      console.log(`✅ Processed ${orders.length} orders (Total: ${processedCount})`);
-    }
-
-    // Handle line items for these orders
     for (const order of orders) {
-      if (order.line_items && order.line_items.length > 0) {
-        const v2LineItems = order.line_items.map(li => ({
+      if (order.line_items) {
+        const lineItems = order.line_items.map(li => ({
           line_item_id: String(li.id),
           order_id: String(order.id),
           order_name: order.name,
@@ -88,7 +75,7 @@ async function fullSync() {
           sku: li.sku || null,
           vendor_name: li.vendor,
           quantity: li.quantity,
-          price: parseFloat(li.price),
+          price: parseFloat(li.price || '0'),
           fulfillment_status: li.fulfillment_status,
           status: order.cancelled_at ? "inactive" : "active",
           created_at: order.created_at,
@@ -96,49 +83,16 @@ async function fullSync() {
           owner_email: order.email?.toLowerCase() || null,
           customer_id: order.customer?.id ? String(order.customer.id) : null,
         }));
-
-        await supabase.from('order_line_items_v2').upsert(v2LineItems, { onConflict: 'line_item_id' });
+        await supabase.from('order_line_items_v2').upsert(lineItems, { onConflict: 'line_item_id' });
       }
     }
 
-    // Check for next page
     const linkHeader = response.headers.get("link");
-    if (linkHeader) {
-      const match = linkHeader.match(/<([^>]+)>; rel="next"/);
-      nextUrl = match ? match[1] : null;
-    } else {
-      nextUrl = null;
-    }
+    nextUrl = linkHeader?.match(/<([^>]+)>; rel="next"/) ? linkHeader.match(/<([^>]+)>; rel="next"/)[1] : null;
   }
 
-  console.log(`\n🎉 Full sync complete! Processed ${processedCount} orders.`);
-  
-  // Final enrichment step: Pull PII from warehouse for any orders missing emails
-  console.log('🌉 Running PII enrichment for missing emails...');
-  const { data: missingOrders } = await supabase
-    .from('orders')
-    .select('id, order_name')
-    .is('customer_email', null);
-  
-  if (missingOrders && missingOrders.length > 0) {
-    let reconciled = 0;
-    for (const order of missingOrders) {
-      const cleanName = order.order_name.replace('#', '');
-      const { data: matched } = await supabase
-        .from('warehouse_orders')
-        .select('ship_email')
-        .or(`order_id.eq."${order.order_name}",order_id.eq."${cleanName}",shopify_order_id.eq."${order.id}"`)
-        .not('ship_email', 'is', null)
-        .maybeSingle();
-      
-      if (matched) {
-        await supabase.from('orders').update({ customer_email: matched.ship_email.toLowerCase() }).eq('id', order.id);
-        reconciled++;
-      }
-    }
-    console.log(`Reconciled ${reconciled} orders from warehouse data.`);
-  }
+  console.log(`✅ Synced ${totalOrders} Shopify orders.`);
 }
 
-fullSync();
+syncFromSept2024();
 

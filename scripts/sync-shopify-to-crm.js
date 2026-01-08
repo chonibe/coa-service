@@ -37,12 +37,18 @@ async function syncShopifyCustomersToCRM() {
 
     const data = await response.json();
     const customers = data.customers || [];
+    console.log(`Fetched ${customers.length} customers from Shopify.`);
+    if (customers.length > 0) {
+      console.log('Sample customer fields:', Object.keys(customers[0]));
+      console.log('Sample customer email:', customers[0].email);
+    }
     
     if (customers.length === 0) break;
 
     const customersToUpsert = customers.map(c => {
       // Generate a stable UUID from the Shopify ID
-      const hash = require('crypto').createHash('md5').update('shopify-' + c.id).digest('hex');
+      const crypto = require('crypto');
+      const hash = crypto.createHash('md5').update('shopify-' + c.id).digest('hex');
       const uuid = `${hash.slice(0, 8)}-${hash.slice(8, 12)}-${hash.slice(12, 16)}-${hash.slice(16, 20)}-${hash.slice(20, 32)}`;
       
       return {
@@ -59,7 +65,9 @@ async function syncShopifyCustomersToCRM() {
         address: c.default_address || null,
         enrichment_data: { shopify_raw: c }
       };
-    }).filter(c => c.email); // Only sync those with emails
+    }).filter(c => c.email);
+
+    console.log(`Mapping ${customersToUpsert.length} customers with emails.`);
 
     const { error: upsertError } = await supabase
       .from('crm_customers')
