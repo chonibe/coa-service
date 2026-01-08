@@ -18,6 +18,7 @@ interface Order {
   total_price: number;
   currency_code: string;
   customer_email: string;
+  customer_profile?: any;
   line_items?: any[];
   raw_shopify_order_data?: any;
   cancelled_at?: string | null;
@@ -63,7 +64,24 @@ export default function OrdersPage() {
           throw error;
         }
 
-        setOrders(fetchedOrders as Order[]);
+        const ordersList = fetchedOrders as Order[];
+        
+        // Fetch profiles for these orders
+        const emails = ordersList.map(o => o.customer_email).filter(Boolean);
+        if (emails.length > 0) {
+          const { data: profiles } = await supabase
+            .from('collector_profile_comprehensive')
+            .select('*')
+            .in('user_email', emails);
+          
+          if (profiles) {
+            ordersList.forEach(order => {
+              order.customer_profile = profiles.find(p => p.user_email === order.customer_email);
+            });
+          }
+        }
+
+        setOrders(ordersList);
         setTotalPages(Math.ceil((count || 0) / limit));
         setIsLoading(false);
       } catch (err) {

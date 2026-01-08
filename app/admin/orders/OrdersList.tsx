@@ -25,6 +25,7 @@ interface Order {
   total_price: number;
   currency_code: string;
   customer_email: string;
+  customer_profile?: any;
   line_items?: any[];
   has_duplicates?: boolean;
   raw_shopify_order_data?: any;
@@ -393,7 +394,12 @@ export default function OrdersList({
                     onClick={() => window.location.href = `/admin/orders/${order.id}`}
                     className="cursor-pointer"
                   >
-                    {order.customer_email}
+                    <div className="flex flex-col">
+                      <span className="font-medium text-slate-900 dark:text-slate-100">
+                        {order.customer_profile?.display_name || 'Guest Customer'}
+                      </span>
+                      <span className="text-xs text-muted-foreground">{order.customer_email}</span>
+                    </div>
                   </TableCell>
                   <TableCell 
                     className="text-right cursor-pointer"

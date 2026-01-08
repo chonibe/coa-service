@@ -12,7 +12,7 @@ import { logFailedLoginAttempt } from "@/lib/audit-logger"
 
 const ADMIN_DASHBOARD_REDIRECT = "/admin/dashboard"
 const VENDOR_DASHBOARD_REDIRECT = "/vendor/dashboard"
-const NOT_REGISTERED_MESSAGE = "User is not registered. Please contact support@thestreetlamp.com."
+const NOT_REGISTERED_MESSAGE = "User is not registered. Please contact support."
 
 export async function POST(request: Request) {
   const cookieStore = cookies()

@@ -32,7 +32,9 @@ export async function GET(request: NextRequest) {
   // Check if account selection is required (user logged out previously)
   const requireAccountSelection = cookieStore.get(REQUIRE_ACCOUNT_SELECTION_COOKIE)?.value === "true"
 
-  const redirectTo = `${origin}/auth/callback`
+  // Ensure we use the correct origin for redirects
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL || origin
+  const redirectTo = `${appUrl.replace(/\/$/, "")}/auth/callback`
 
   // Automatically request Gmail scopes for admin redirects or when explicitly requested
   const isAdminRedirect = redirectParam?.startsWith("/admin/")

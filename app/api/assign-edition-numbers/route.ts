@@ -6,7 +6,7 @@ export async function OPTIONS(request: NextRequest) {
   return new NextResponse(null, {
     status: 200,
     headers: {
-      "Access-Control-Allow-Origin": "https://www.thestreetlamp.com",
+      "Access-Control-Allow-Origin": "*",
       "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
       "Access-Control-Allow-Headers": "Content-Type, Authorization",
       "Access-Control-Allow-Credentials": "true",
@@ -25,9 +25,9 @@ export async function GET(request: NextRequest) {
       { message: "Product ID parameter is required" },
       {
         status: 400,
-        headers: {
-          "Access-Control-Allow-Origin": "https://www.thestreetlamp.com",
-          "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+    headers: {
+      "Access-Control-Allow-Origin": "*", // Allow all origins for the assignment API
+      "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
           "Access-Control-Allow-Headers": "Content-Type, Authorization",
           "Access-Control-Allow-Credentials": "true",
         },
@@ -56,9 +56,9 @@ export async function GET(request: NextRequest) {
       },
       {
         status: 200,
-        headers: {
-          "Access-Control-Allow-Origin": "https://www.thestreetlamp.com",
-          "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+    headers: {
+      "Access-Control-Allow-Origin": "*", // Allow all origins for the assignment API
+      "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
           "Access-Control-Allow-Headers": "Content-Type, Authorization",
           "Access-Control-Allow-Credentials": "true",
         },
@@ -70,9 +70,9 @@ export async function GET(request: NextRequest) {
       { message: "Error assigning edition numbers", error: error.message },
       {
         status: 500,
-        headers: {
-          "Access-Control-Allow-Origin": "https://www.thestreetlamp.com",
-          "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+    headers: {
+      "Access-Control-Allow-Origin": "*", // Allow all origins for the assignment API
+      "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
           "Access-Control-Allow-Headers": "Content-Type, Authorization",
           "Access-Control-Allow-Credentials": "true",
         },

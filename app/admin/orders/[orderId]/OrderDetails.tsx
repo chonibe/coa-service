@@ -49,6 +49,7 @@ interface Order {
   total_price: number;
   currency_code: string;
   customer_email: string;
+  customer_profile?: any;
   line_items: OrderLineItem[];
   total_discounts: number;
   subtotal_price: number;
@@ -384,7 +385,43 @@ export default function OrderDetails({ order }: OrderDetailsProps) {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
             <div>
               <h3 className="text-sm font-medium text-muted-foreground mb-1">Customer</h3>
+              <p className="text-base break-all font-semibold">{order.customer_profile?.display_name || 'Guest Customer'}</p>
               <p className="text-base break-all">{order.customer_email}</p>
+              {order.customer_profile?.display_phone && (
+                <p className="text-sm text-muted-foreground mt-1">{order.customer_profile.display_phone}</p>
+              )}
+              
+              {order.customer_profile?.pii_sources?.warehouse?.address && (
+                <div className="mt-4 pt-4 border-t">
+                  <h4 className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-2">Warehouse Shipping Address</h4>
+                  <div className="text-sm text-muted-foreground">
+                    <p>{order.customer_profile.pii_sources.warehouse.address.address1}</p>
+                    {order.customer_profile.pii_sources.warehouse.address.address2 && (
+                      <p>{order.customer_profile.pii_sources.warehouse.address.address2}</p>
+                    )}
+                    <p>
+                      {order.customer_profile.pii_sources.warehouse.address.city}, {order.customer_profile.pii_sources.warehouse.address.state} {order.customer_profile.pii_sources.warehouse.address.zip}
+                    </p>
+                    <p>{order.customer_profile.pii_sources.warehouse.address.country}</p>
+                  </div>
+                </div>
+              )}
+
+              {order.customer_profile?.pii_sources?.shopify?.address && !order.customer_profile?.pii_sources?.warehouse?.address && (
+                <div className="mt-4 pt-4 border-t">
+                  <h4 className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-2">Shopify Default Address</h4>
+                  <div className="text-sm text-muted-foreground">
+                    <p>{order.customer_profile.pii_sources.shopify.address.address1}</p>
+                    {order.customer_profile.pii_sources.shopify.address.address2 && (
+                      <p>{order.customer_profile.pii_sources.shopify.address.address2}</p>
+                    )}
+                    <p>
+                      {order.customer_profile.pii_sources.shopify.address.city}, {order.customer_profile.pii_sources.shopify.address.province_code} {order.customer_profile.pii_sources.shopify.address.zip}
+                    </p>
+                    <p>{order.customer_profile.pii_sources.shopify.address.country_code}</p>
+                  </div>
+                </div>
+              )}
             </div>
             <div>
               <h3 className="text-sm font-medium text-muted-foreground mb-1">Total</h3>

@@ -10,7 +10,7 @@ export async function GET(request: NextRequest) {
     const shopDomain =
       process.env.SHOPIFY_STORE_DOMAIN ||
       process.env.SHOPIFY_SHOP ||
-      "thestreetlamp-9103.myshopify.com"
+      "thestreetlamp.myshopify.com"
     const appUrl = process.env.NEXT_PUBLIC_APP_URL || request.nextUrl.origin
 
     const state = crypto.randomBytes(16).toString("hex")

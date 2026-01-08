@@ -27,9 +27,9 @@ interface AuthStatusResponse {
   vendor: { id: number; vendor_name: string } | null
 }
 
-const NOT_REGISTERED_ERROR = "You are not registered. Contact support@thestreetlamp.com."
+const NOT_REGISTERED_ERROR = "You are not registered. Contact support@thestreetcollector.com."
 
-const SUPPORT_EMAIL = "support@thestreetlamp.com"
+const SUPPORT_EMAIL = "support@thestreetcollector.com"
 const MAILTO_SUBJECT = encodeURIComponent("Street Collector Vendor Access Request")
 const MAILTO_BODY = encodeURIComponent(
   [

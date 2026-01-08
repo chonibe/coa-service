@@ -4,12 +4,15 @@
 
 // Base URL for API calls
 export const API_BASE_URL = (() => {
-  const url = process.env.NEXT_PUBLIC_APP_URL || "https://v0-image-analysis-wine-six.vercel.app"
+  const url = process.env.NEXT_PUBLIC_APP_URL || ""
   // Ensure URL has https:// prefix
-  if (!url.startsWith("https://")) {
-    return `https://${url.replace(/^http:\/\/|^https:\/\/|^ttps:\/\//, "")}`
+  if (url) {
+    if (!url.startsWith("https://")) {
+      return `https://${url.replace(/^http:\/\/|^https:\/\/|^ttps:\/\//, "")}`
+    }
+    return url
   }
-  return url
+  return "http://localhost:3000"
 })()
 
 // Default pagination limit

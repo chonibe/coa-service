@@ -26,9 +26,9 @@ export async function POST(request: NextRequest) {
         { message: "Product ID, Line Item ID, and Order ID are required" },
         {
           status: 400,
-          headers: {
-            "Access-Control-Allow-Origin": "https://www.thestreetlamp.com",
-            "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+    headers: {
+      "Access-Control-Allow-Origin": "*", // Allow all origins for the UUID API
+      "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
             "Access-Control-Allow-Headers": "Content-Type, Authorization",
             "Access-Control-Allow-Credentials": "true",
           },
@@ -63,9 +63,9 @@ export async function POST(request: NextRequest) {
       },
       {
         status: 200,
-        headers: {
-          "Access-Control-Allow-Origin": "https://www.thestreetlamp.com",
-          "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+    headers: {
+      "Access-Control-Allow-Origin": "*", // Allow all origins for the UUID API
+      "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
           "Access-Control-Allow-Headers": "Content-Type, Authorization",
           "Access-Control-Allow-Credentials": "true",
         },
@@ -77,9 +77,9 @@ export async function POST(request: NextRequest) {
       { message: "Error generating sequential UUID", error: error.message },
       {
         status: 500,
-        headers: {
-          "Access-Control-Allow-Origin": "https://www.thestreetlamp.com",
-          "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+    headers: {
+      "Access-Control-Allow-Origin": "*", // Allow all origins for the UUID API
+      "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
           "Access-Control-Allow-Headers": "Content-Type, Authorization",
           "Access-Control-Allow-Credentials": "true",
         },

@@ -16,21 +16,23 @@ const supabase = createClient(supabaseUrl, supabaseAnonKey, {
 
 export async function GET(request: NextRequest) {
   const { searchParams, origin } = request.nextUrl
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL || origin
+  const finalRedirectBase = appUrl.replace(/\/$/, "")
   const code = searchParams.get("code")
   const redirectParam = searchParams.get("redirect") || "/collector/dashboard"
 
   if (!code) {
-    return NextResponse.redirect(new URL(`/login?error=missing_code`, origin))
+    return NextResponse.redirect(new URL(`/login?error=missing_code`, finalRedirectBase))
   }
 
   const { data, error } = await supabase.auth.exchangeCodeForSession({
     code,
-    redirectTo: `${origin}/auth/collector/callback`,
+    redirectTo: `${finalRedirectBase}/auth/collector/callback`,
   })
 
   if (error || !data.session?.user?.email) {
     console.error("[collector-google-callback] exchange failed", error)
-    return NextResponse.redirect(new URL(`/login?error=oauth_failed`, origin))
+    return NextResponse.redirect(new URL(`/login?error=oauth_failed`, finalRedirectBase))
   }
 
   const email = data.session.user.email.toLowerCase()
@@ -47,14 +49,14 @@ export async function GET(request: NextRequest) {
 
   if (orderError) {
     console.error("[collector-google-callback] order lookup failed", orderError)
-    return NextResponse.redirect(new URL(`/login?error=lookup_failed`, origin))
+    return NextResponse.redirect(new URL(`/login?error=lookup_failed`, finalRedirectBase))
   }
 
   const shopifyCustomerId = orderMatch?.customer_id || orderMatch?.shopify_id
   
   // If no order match found at all, then they can't log in as a collector
   if (!orderMatch && !orderError) {
-    return NextResponse.redirect(new URL(`/login?error=no_collector_profile`, origin))
+    return NextResponse.redirect(new URL(`/login?error=no_collector_profile`, finalRedirectBase))
   }
 
   const collectorCookie = buildCollectorSessionCookie({
@@ -65,7 +67,7 @@ export async function GET(request: NextRequest) {
     issuedAt: Date.now(),
   })
 
-  const response = NextResponse.redirect(new URL(redirectParam, origin))
+  const response = NextResponse.redirect(new URL(redirectParam, finalRedirectBase))
   response.cookies.set(collectorCookie.name, collectorCookie.value, collectorCookie.options)
   
   if (shopifyCustomerId) {

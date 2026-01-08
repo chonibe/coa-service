@@ -22,12 +22,12 @@ const API_BASE_URL = (() => {
   }
 
   // For server-side rendering
-  const url = process.env.NEXT_PUBLIC_APP_URL || "https://v0-image-analysis-wine-six.vercel.app"
+  const url = process.env.NEXT_PUBLIC_APP_URL || ""
   // Ensure URL has https:// prefix
-  if (!url.startsWith("http")) {
+  if (url && !url.startsWith("http")) {
     return `https://${url}`
   }
-  return url
+  return url || "http://localhost:3000"
 })()
 
 console.log(`API Base URL: ${API_BASE_URL}`)

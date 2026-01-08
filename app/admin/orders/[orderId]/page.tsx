@@ -90,8 +90,9 @@ interface Order {
   fulfillment_status: string;
   total_price: number;
   currency_code: string;
-  customer_email: string;
-  line_items: OrderLineItem[];
+    customer_email: string;
+    customer_profile?: any;
+    line_items: OrderLineItem[];
   total_discounts: number;
   subtotal_price: number;
   total_tax: number;
@@ -140,6 +141,13 @@ async function getOrderData(orderId: string) {
     console.error('Order not found in Supabase');
     return null;
   }
+
+  // Fetch comprehensive profile for the customer email
+  const { data: profileData } = await supabase
+    .from('collector_profile_comprehensive')
+    .select('*')
+    .eq('user_email', orderData.customer_email)
+    .maybeSingle();
 
   // Fetch line items without join
   const { data: lineItems, error: lineItemsError } = await supabase
@@ -239,6 +247,7 @@ async function getOrderData(orderId: string) {
         total_price: parseFloat(shopifyOrder.current_total_price),
         currency_code: shopifyOrder.currency,
         customer_email: shopifyOrder.email,
+        customer_profile: profileData,
         total_discounts: parseFloat(shopifyOrder.total_discounts || '0'),
         subtotal_price: parseFloat(shopifyOrder.subtotal_price || '0'),
         total_tax: parseFloat(shopifyOrder.total_tax || '0'),
@@ -265,6 +274,7 @@ async function getOrderData(orderId: string) {
     total_price: orderData.total_price,
     currency_code: orderData.currency_code,
     customer_email: orderData.customer_email,
+    customer_profile: profileData,
     total_discounts: orderData.total_discounts || 0,
     subtotal_price: orderData.subtotal_price || 0,
     total_tax: orderData.total_tax || 0,

@@ -58,8 +58,8 @@ export async function GET(request: NextRequest) {
     if (customerId) {
       console.log('✅ Customer ID found, setting authentication cookies');
       
-      // Use the standard domain for cookies
-      const cookieDomain = process.env.NODE_ENV === 'production' ? '.thestreetcollector.com' : undefined;
+      // Let browser handle domain automatically
+      const cookieDomain = undefined;
       const postLoginRedirect = request.cookies.get('shopify_login_redirect')?.value || '/collector/dashboard';
 
       // Redirect to destination (default collector dashboard)

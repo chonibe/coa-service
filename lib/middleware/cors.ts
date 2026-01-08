@@ -10,6 +10,8 @@ function getAllowedOrigins(): string[] {
   // Always include the app URL and localhost for development
   const origins = new Set([
     defaultOrigin,
+    'https://app.thestreetcollector.com',
+    'https://thestreetcollector.com',
     'http://localhost:3000',
     'http://localhost:3001',
     ...allowedOrigins,
