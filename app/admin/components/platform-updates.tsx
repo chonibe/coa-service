@@ -13,7 +13,9 @@ import {
   Info, 
   ChevronRight, 
   AlertTriangle,
-  History
+  History,
+  Code,
+  Users
 } from "lucide-react"
 import { 
   Dialog, 
@@ -31,6 +33,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Checkbox } from "@/components/ui/checkbox"
 import { useToast } from "@/hooks/use-toast"
 import Link from "next/link"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 
 interface PlatformUpdate {
   id: string
@@ -49,6 +52,7 @@ export function PlatformUpdates() {
   const [updates, setUpdates] = useState<PlatformUpdate[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [isFormOpen, setIsFormOpen] = useState(false)
+  const [selectedUpdate, setSelectedUpdate] = useState<PlatformUpdate | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const { toast } = useToast()
 
@@ -288,11 +292,15 @@ export function PlatformUpdates() {
         ) : (
           <div className="space-y-3">
             {updates.map((update) => (
-              <div key={update.id} className="flex flex-col gap-1 rounded-md border bg-muted/30 p-3 text-sm transition-colors hover:bg-muted/50 border-slate-200/60 dark:border-slate-800/60">
+              <button 
+                key={update.id} 
+                onClick={() => setSelectedUpdate(update)}
+                className="w-full text-left flex flex-col gap-1 rounded-md border bg-muted/30 p-3 text-sm transition-all hover:bg-muted/50 hover:border-blue-200/50 dark:hover:border-blue-800/50 border-slate-200/60 dark:border-slate-800/60 group"
+              >
                 <div className="flex items-center justify-between gap-2">
                   <div className="flex items-center gap-2 font-medium">
                     {getCategoryIcon(update.category)}
-                    <span className="truncate max-w-[140px]">{update.title}</span>
+                    <span className="truncate max-w-[140px] group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">{update.title}</span>
                   </div>
                   <div className="flex items-center gap-1.5 shrink-0">
                     {getImpactBadge(update.impact_level)}
@@ -316,10 +324,77 @@ export function PlatformUpdates() {
                   </span>
                   <Badge variant="outline" className="text-[9px] h-4 uppercase py-0">{update.category}</Badge>
                 </div>
-              </div>
+              </button>
             ))}
           </div>
         )}
+
+        {/* Release Note Detail Dialog */}
+        <Dialog open={!!selectedUpdate} onOpenChange={(open) => !open && setSelectedUpdate(null)}>
+          <DialogContent className="max-w-2xl">
+            {selectedUpdate && (
+              <>
+                <DialogHeader>
+                  <div className="flex items-center gap-2 mb-1">
+                    {getCategoryIcon(selectedUpdate.category)}
+                    <Badge variant="outline" className="capitalize text-[10px]">{selectedUpdate.category}</Badge>
+                    {getImpactBadge(selectedUpdate.impact_level)}
+                    {selectedUpdate.version && (
+                      <span className="text-[10px] font-mono bg-blue-50 text-blue-600 px-1.5 py-0.5 rounded border border-blue-100">
+                        v{selectedUpdate.version}
+                      </span>
+                    )}
+                  </div>
+                  <DialogTitle className="text-2xl">{selectedUpdate.title}</DialogTitle>
+                  <DialogDescription>
+                    Published on {new Date(selectedUpdate.created_at).toLocaleDateString(undefined, { 
+                      weekday: 'long', 
+                      year: 'numeric', 
+                      month: 'long', 
+                      day: 'numeric' 
+                    })}
+                  </DialogDescription>
+                </DialogHeader>
+
+                <Tabs defaultValue="stakeholders" className="w-full mt-4">
+                  <TabsList className="grid w-full grid-cols-2">
+                    <TabsTrigger value="stakeholders" className="gap-2">
+                      <Users className="h-4 w-4" />
+                      Stakeholders
+                    </TabsTrigger>
+                    <TabsTrigger value="technical" className="gap-2">
+                      <Code className="h-4 w-4" />
+                      Technical
+                    </TabsTrigger>
+                  </TabsList>
+                  <div className="mt-4 max-h-[40vh] overflow-y-auto pr-2">
+                    <TabsContent value="stakeholders" className="mt-0">
+                      <div className="prose prose-sm dark:prose-invert">
+                        <p className="text-slate-700 dark:text-slate-300 leading-relaxed whitespace-pre-wrap">
+                          {selectedUpdate.stakeholder_summary || selectedUpdate.description}
+                        </p>
+                      </div>
+                    </TabsContent>
+                    <TabsContent value="technical" className="mt-0">
+                      <div className="bg-slate-50 dark:bg-slate-950 p-4 rounded-lg border border-slate-200 dark:border-slate-800">
+                        <p className="text-xs font-mono text-slate-600 dark:text-slate-400 whitespace-pre-wrap leading-relaxed">
+                          {selectedUpdate.technical_details || "No technical details provided for this release."}
+                        </p>
+                      </div>
+                    </TabsContent>
+                  </div>
+                </Tabs>
+
+                <DialogFooter className="mt-6">
+                  <Button variant="outline" onClick={() => setSelectedUpdate(null)}>Close</Button>
+                  <Button asChild>
+                    <Link href="/admin/release-notes">View Full History</Link>
+                  </Button>
+                </DialogFooter>
+              </>
+            )}
+          </DialogContent>
+        </Dialog>
         <div className="pt-2 border-t">
           <Button variant="ghost" size="sm" asChild className="w-full text-xs text-blue-600 hover:text-blue-700 hover:bg-blue-50 group">
             <Link href="/admin/release-notes">
