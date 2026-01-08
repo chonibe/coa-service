@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server"
 import { createClient } from "@/lib/supabase-server"
-import { convertGBPToUSD, convertNISToUSD } from "@/lib/utils"
 
 // Vendors excluded from payout calculations (e.g., internal/company vendors)
 const EXCLUDED_VENDORS = ["Street Collector", "street collector", "street-collector"]
@@ -25,7 +24,17 @@ export async function POST(request: Request) {
 
     const supabase = createClient()
 
-    // Get line items for this vendor
+    // 1. Fetch current exchange rates from the database
+    const { data: rateData } = await supabase
+      .from('exchange_rates')
+      .select('from_currency, rate');
+    
+    const ratesMap = new Map<string, number>();
+    rateData?.forEach(r => ratesMap.set(r.from_currency.toUpperCase(), Number(r.rate)));
+    
+    const getRate = (currency: string) => ratesMap.get(currency.toUpperCase()) || 1.0;
+
+    // 2. Get line items for this vendor
     // Join with orders to get the currency_code
     let query = supabase
       .from("order_line_items_v2")
@@ -239,10 +248,9 @@ export async function POST(request: Request) {
         const currencyUpper = orderCurrency.toUpperCase()
         
         // Only convert to USD if the source currency is NOT USD
-        if (currencyUpper === 'GBP') {
-          itemPrice = convertGBPToUSD(itemPrice)
-        } else if (currencyUpper === 'NIS' || currencyUpper === 'ILS') {
-          itemPrice = convertNISToUSD(itemPrice)
+        if (currencyUpper !== 'USD') {
+          const rate = getRate(currencyUpper)
+          itemPrice = itemPrice * rate
         }
         
         // Get payout settings for this specific product

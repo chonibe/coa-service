@@ -206,11 +206,64 @@ export async function POST(request: NextRequest) {
 
           // 1. Cross-reference with our 'orders' table to find the Shopify Customer ID
           // We search by both the long Shopify ID and the 'Order Name' (e.g. #1174)
-          const { data: dbOrder } = await supabase
+          let { data: dbOrder } = await supabase
             .from('orders')
             .select('id, customer_id, customer_email')
             .or(`id.eq.${platformOrderId},order_name.eq.${platformOrderId}`)
             .maybeSingle()
+
+          // If order doesn't exist in our DB, it might be a manual warehouse order
+          if (!dbOrder && !dryRun) {
+            console.log(`[auto-fulfill] Order ${platformOrderId} not found in DB. Ingesting as manual warehouse order.`);
+            
+            const manualOrderId = `WH-${order.sys_order_id || order.order_id}`;
+            const { error: insertError } = await supabase.from('orders').insert({
+              id: manualOrderId,
+              order_number: 900000 + (order.sys_order_id ? parseInt(order.sys_order_id.toString().slice(-6)) : Math.floor(Math.random() * 100000)),
+              order_name: order.order_id,
+              processed_at: order.created_at || new Date().toISOString(),
+              financial_status: 'paid',
+              fulfillment_status: 'fulfilled',
+              total_price: parseFloat(order.raw_data?.freight || '0'),
+              currency_code: 'USD',
+              customer_email: ownerEmail,
+              updated_at: new Date().toISOString(),
+              created_at: order.created_at || new Date().toISOString(),
+              raw_shopify_order_data: {
+                source: 'manual_warehouse',
+                warehouse_id: order.sys_order_id,
+                original_order_id: order.order_id,
+              },
+            });
+
+            if (!insertError) {
+              // Now that it's inserted, we can proceed with standard logic
+              dbOrder = { id: manualOrderId, customer_id: null, customer_email: ownerEmail };
+              
+              // Also ingest line items for this manual order
+              if (order.raw_data?.info && Array.isArray(order.raw_data.info)) {
+                const lineItems = order.raw_data.info.map((item: any) => ({
+                  id: `${manualOrderId}-${item.sku || Math.random().toString(36).substring(7)}`,
+                  order_id: manualOrderId,
+                  order_name: order.order_id,
+                  line_item_id: `${manualOrderId}-${item.sku || Math.random().toString(36).substring(7)}`,
+                  name: item.product_name || item.sku || 'Manual Item',
+                  description: item.product_name || item.sku || 'Manual Item',
+                  price: parseFloat(item.price || '0'),
+                  quantity: parseInt(item.quantity || '1', 10),
+                  vendor_name: item.supplier || 'Manual',
+                  fulfillment_status: 'fulfilled',
+                  status: 'active',
+                  created_at: order.created_at || new Date().toISOString(),
+                  updated_at: new Date().toISOString(),
+                  owner_email: ownerEmail,
+                  owner_name: ownerName,
+                }));
+
+                await supabase.from('order_line_items_v2').upsert(lineItems, { onConflict: 'line_item_id' });
+              }
+            }
+          }
 
           const targetOrderId = dbOrder?.id || platformOrderId
           let customerId = dbOrder?.customer_id

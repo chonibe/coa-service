@@ -2,7 +2,6 @@ import { NextResponse } from "next/server"
 import { cookies } from "next/headers"
 import { createClient } from "@/lib/supabase/server"
 import { getVendorFromCookieStore } from "@/lib/vendor-session"
-import { convertGBPToUSD, convertNISToUSD } from "@/lib/utils"
 
 export async function GET() {
   const cookieStore = cookies()
@@ -15,7 +14,17 @@ export async function GET() {
   try {
     const supabase = createClient()
 
-    // Get all line items that have already been paid
+    // 1. Fetch current exchange rates from the database
+    const { data: rateData } = await supabase
+      .from('exchange_rates')
+      .select('from_currency, rate');
+    
+    const ratesMap = new Map<string, number>();
+    rateData?.forEach(r => ratesMap.set(r.from_currency.toUpperCase(), Number(r.rate)));
+    
+    const getRate = (currency: string) => ratesMap.get(currency.toUpperCase()) || 1.0;
+
+    // 2. Get all line items that have already been paid
     const { data: paidItems } = await supabase
       .from("vendor_payout_items")
       .select("line_item_id")
@@ -70,10 +79,9 @@ export async function GET() {
       const currencyUpper = orderCurrency.toUpperCase()
       
       // Only convert to USD if the source currency is NOT USD
-      if (currencyUpper === 'GBP') {
-        originalPrice = convertGBPToUSD(originalPrice)
-      } else if (currencyUpper === 'NIS' || currencyUpper === 'ILS') {
-        originalPrice = convertNISToUSD(originalPrice)
+      if (currencyUpper !== 'USD') {
+        const rate = getRate(currencyUpper)
+        originalPrice = originalPrice * rate
       }
 
       const createdAt = item.created_at ? new Date(item.created_at) : new Date()

@@ -15,7 +15,7 @@ async function applyMigration() {
   const key = keyMatch[1].trim();
   const supabase = createClient(url, key);
 
-  const migrationPath = 'supabase/migrations/20260108000007_add_unique_line_item_id.sql';
+  const migrationPath = 'supabase/migrations/20260108000008_improve_collector_view.sql';
   const sql = fs.readFileSync(migrationPath, 'utf8');
 
   console.log('🚀 Applying PII Bridge Trigger migration...');

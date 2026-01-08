@@ -2,7 +2,6 @@ import { createClient } from '@/lib/supabase/server';
 import type { PayoutDepositResult } from './types';
 import { ensureCollectorAccount } from './account-manager';
 import { calculateLineItemPayout } from '@/lib/payout-calculator';
-import { convertGBPToUSD, convertNISToUSD } from '@/lib/utils';
 
 const DEFAULT_PAYOUT_PERCENTAGE = 25;
 
@@ -134,12 +133,18 @@ export async function depositPayoutEarnings(
       }
     }
 
-    // Convert to USD if order currency is GBP or NIS
+    // 3. Get exchange rate if needed
     let priceForCalculation = originalPrice;
-    if (isGBP) {
-      priceForCalculation = convertGBPToUSD(originalPrice);
-    } else if (isNIS) {
-      priceForCalculation = convertNISToUSD(originalPrice);
+    if (currencyUpper !== 'USD') {
+      const { data: rateData } = await client
+        .from('exchange_rates')
+        .select('rate')
+        .eq('from_currency', currencyUpper === 'NIS' || currencyUpper === 'ILS' ? 'ILS' : currencyUpper)
+        .eq('to_currency', 'USD')
+        .maybeSingle();
+      
+      const rate = Number(rateData?.rate) || (currencyUpper === 'GBP' ? 1.27 : (currencyUpper === 'ILS' || currencyUpper === 'NIS' ? 0.27 : 1.0));
+      priceForCalculation = originalPrice * rate;
     }
     
     // Calculate payout amount using the original price (before discount)
