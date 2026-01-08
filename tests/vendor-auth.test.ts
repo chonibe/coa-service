@@ -194,14 +194,14 @@ describe("vendor auth helpers", () => {
   })
 
   describe("sanitizeRedirectTarget", () => {
-    const origin = "https://street-collector.vercel.app"
+    const origin = "https://app.thestreetcollector.com"
 
     it("allows relative paths", () => {
       expect(sanitizeRedirectTarget("/vendor/dashboard?tab=sales", origin)).toBe("/vendor/dashboard?tab=sales")
     })
 
     it("allows same-origin absolute URLs", () => {
-      expect(sanitizeRedirectTarget("https://street-collector.vercel.app/vendor/dashboard", origin)).toBe(
+      expect(sanitizeRedirectTarget("https://app.thestreetcollector.com/vendor/dashboard", origin)).toBe(
         "/vendor/dashboard",
       )
     })

@@ -17,8 +17,8 @@ This is why the admin OAuth callback is failing with "Missing OAuth code" - Supa
 
 You need to add the admin callback URL to Supabase:
 
-1. `https://dashboard.thestreetlamp.com/auth/admin/callback` (Admin callback - **ADD THIS**)
-2. `https://dashboard.thestreetlamp.com/auth/callback` (Vendor callback - already configured, vendor login works)
+1. `https://app.thestreetcollector.com/auth/admin/callback` (Admin callback - **ADD THIS**)
+2. `https://app.thestreetcollector.com/auth/callback` (Vendor callback - already configured, vendor login works)
 
 ## How to Fix (Manual Steps)
 
@@ -37,10 +37,10 @@ Since the API endpoint doesn't support updating redirect URLs programmatically, 
 ### Step 3: Add Admin Callback URL
 
 1. Find the **Redirect URLs** text area
-2. You should already see: `https://dashboard.thestreetlamp.com/auth/callback` (vendor callback)
+2. You should already see: `https://app.thestreetcollector.com/auth/callback` (vendor callback)
 3. **Add this new line**:
    ```
-   https://dashboard.thestreetlamp.com/auth/admin/callback
+   https://app.thestreetcollector.com/auth/admin/callback
    ```
 4. **Important**: 
    - No trailing slashes
@@ -54,7 +54,7 @@ Since the API endpoint doesn't support updating redirect URLs programmatically, 
 1. Click **Save** button
 2. Wait 1-2 minutes for changes to propagate
 
-### Step 5: Verify
+### Step-by-Step Verification
 
 Run this command to verify the URLs were added:
 
@@ -64,8 +64,8 @@ node scripts/check-supabase-redirects.js
 
 You should see:
 ```
-✅ Admin callback URL is configured: https://dashboard.thestreetlamp.com/auth/admin/callback
-✅ Vendor callback URL is configured: https://dashboard.thestreetlamp.com/auth/callback
+✅ Admin callback URL is configured: https://app.thestreetcollector.com/auth/admin/callback
+✅ Vendor callback URL is configured: https://app.thestreetcollector.com/auth/callback
 ```
 
 **Note**: Since vendor login works, the vendor callback is already configured. You just need to add the admin callback URL.

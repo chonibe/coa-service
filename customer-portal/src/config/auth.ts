@@ -125,7 +125,7 @@ export const shopifyAuthConfig = {
     type: 'oauth',
     grantMode: 'online',
     redirectHandling: {
-      primary: 'https://dashboard.thestreetlamp.com/dashboard/{customer_id}',
+      primary: 'https://app.thestreetcollector.com/dashboard/{customer_id}',
       fallback: '/account',
       errorRedirect: '/login'
     }

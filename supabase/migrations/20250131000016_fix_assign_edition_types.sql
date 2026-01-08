@@ -78,20 +78,44 @@ BEGIN
             RAISE EXCEPTION 'Cannot assign edition number %: exceeds edition size of %', next_available_number, v_edition_size_int;
         END IF;
 
-        -- Linkage Logic: Try to find owner PII
+        -- Linkage Logic: Try to find owner PII with preference hierarchy:
+        -- 1. Existing line item data (already assigned)
+        -- 2. Collector profile (current user preference)
+        -- 3. Orders table (Shopify data)
+        -- 4. Warehouse cache (original purchase data)
         v_owner_email := line_item.owner_email;
         v_owner_name := line_item.owner_name;
         v_shopify_customer_id := line_item.shopify_customer_id;
         v_supabase_user_id := line_item.owner_id;
 
-        -- 1. Check Orders table
+        -- 1. Check for existing Supabase User ID and get their current profile
+        IF v_supabase_user_id IS NOT NULL THEN
+            -- User has an account - use their current profile preferences
+            DECLARE
+                profile_first_name TEXT;
+                profile_last_name TEXT;
+                profile_email TEXT;
+            BEGIN
+                SELECT first_name, last_name, email INTO profile_first_name, profile_last_name, profile_email
+                FROM collector_profiles
+                WHERE user_id = v_supabase_user_id
+                LIMIT 1;
+
+                IF profile_email IS NOT NULL THEN
+                    v_owner_email := profile_email;
+                    v_owner_name := TRIM(COALESCE(profile_first_name || ' ', '') || COALESCE(profile_last_name, ''));
+                END IF;
+            END;
+        END IF;
+
+        -- 2. If still no data, check Orders table
         IF v_owner_email IS NULL OR v_owner_email = '' THEN
             SELECT customer_email, customer_id::TEXT INTO v_owner_email, v_shopify_customer_id
             FROM orders
             WHERE id::TEXT = line_item.order_id_text;
         END IF;
 
-        -- 2. Check Warehouse cache
+        -- 3. Check Warehouse cache as final fallback
         IF v_owner_email IS NULL OR v_owner_email = '' OR v_owner_name IS NULL OR v_owner_name = '' THEN
             DECLARE
                 wh_email TEXT;
@@ -102,7 +126,7 @@ BEGIN
                 FROM warehouse_orders
                 WHERE order_id = line_item.order_name OR id = line_item.order_name OR shopify_order_id = line_item.order_id_text
                 LIMIT 1;
-                
+
                 IF wh_email IS NOT NULL THEN
                     v_owner_email := COALESCE(v_owner_email, wh_email);
                     v_owner_name := COALESCE(v_owner_name, wh_name);
@@ -111,7 +135,7 @@ BEGIN
             END;
         END IF;
 
-        -- 3. Match Supabase User ID by email if missing
+        -- 4. Match Supabase User ID by email if missing
         IF v_supabase_user_id IS NULL AND v_owner_email IS NOT NULL THEN
             SELECT id INTO v_supabase_user_id
             FROM users

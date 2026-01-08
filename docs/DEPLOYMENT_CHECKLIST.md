@@ -9,7 +9,7 @@ Verify all these are set in Vercel Dashboard → Settings → Environment Variab
 - [x] `PAYPAL_CLIENT_SECRET` - Your PayPal Client Secret
 - [x] `PAYPAL_ENVIRONMENT` - Set to `sandbox` or `production`
 - [x] `PAYPAL_WEBHOOK_SECRET` - PayPal webhook secret (if provided)
-- [x] `NEXT_PUBLIC_APP_URL` - Should be `https://dashboard.thestreetlamp.com`
+- [x] `NEXT_PUBLIC_APP_URL` - Should be `https://app.thestreetcollector.com`
 - [x] `CRON_SECRET` - Random secret for cron authentication
 - [x] `SUPABASE_SERVICE_ROLE_KEY` - Supabase service role key
 
@@ -23,7 +23,7 @@ Verify all these are set in Vercel Dashboard → Settings → Environment Variab
 ### PayPal Dashboard
 - [x] REST API app created
 - [x] Client ID and Secret copied
-- [x] Webhook URL configured: `https://dashboard.thestreetlamp.com/api/webhooks/paypal`
+- [x] Webhook URL configured: `https://app.thestreetcollector.com/api/webhooks/paypal`
 - [x] Webhook events subscribed:
   - `PAYMENT.PAYOUTSBATCH.SUCCESS`
   - `PAYMENT.PAYOUTSBATCH.DENIED`
@@ -33,7 +33,7 @@ Verify all these are set in Vercel Dashboard → Settings → Environment Variab
 
 ## ✅ Domain Configuration
 
-- [x] `dashboard.thestreetlamp.com` added to Vercel project
+- [x] `app.thestreetcollector.com` added to Vercel project
 - [x] DNS records configured correctly
 - [x] SSL certificate active (HTTPS working)
 - [x] Domain verified in Vercel

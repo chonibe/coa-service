@@ -11,6 +11,8 @@ COA Service is a comprehensive digital art authentication and management platfor
 - Edition management
 - Certificate generation
 - Collector dashboard for owned artworks, artist journeys, authentication status, and credits
+- **Collector Profile Management**: User-controlled profiles with immutable change history, guest purchase linking, and preference-based edition naming
+- **Holistic Collector Profile**: Comprehensive view aggregating all data sources including Shopify orders, warehouse PII, edition assignments, and activity history
 - **Template Preview**: Artist landing page to preview artwork on print templates before onboarding
 
 ### 🏷️ NFC Authentication
@@ -473,7 +475,7 @@ The edition number assignment system allows for automatic assignment of edition 
 ## Deployment
 
 ### Vercel Production
-- **URL:** https://street-collector-lymtrdiem-chonibes-projects.vercel.app
+- **URL:** https://app.thestreetcollector.com
 - **Latest Commit:** 8432db33
 - **Environment:** Production
 

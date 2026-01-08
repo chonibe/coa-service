@@ -383,6 +383,11 @@ export default function AdminDashboard() {
                       View sales reports <ChevronRight className="h-4 w-4" />
                     </Link>
                   </Button>
+                  <Button variant="ghost" className="justify-between" asChild>
+                    <Link href="/admin/collector-profile">
+                      Your collector profile <ChevronRight className="h-4 w-4" />
+                    </Link>
+                  </Button>
                 </div>
               </CardContent>
             </Card>

@@ -26,8 +26,8 @@ const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY
 
 // Required redirect URLs
 const requiredRedirects = [
-  "https://dashboard.thestreetlamp.com/auth/admin/callback",
-  "https://dashboard.thestreetlamp.com/auth/callback",
+  "https://app.thestreetcollector.com/auth/admin/callback",
+  "https://app.thestreetcollector.com/auth/callback",
 ]
 
 async function addRedirectUrls() {

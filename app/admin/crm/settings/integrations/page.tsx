@@ -281,7 +281,7 @@ function IntegrationsContent() {
                 <ol className="list-decimal list-inside space-y-2 text-sm text-muted-foreground mt-2">
                   <li>Get your WhatsApp Business API credentials from your provider</li>
                   <li>Enter your account details above</li>
-                  <li>Configure webhook URL: <code className="bg-muted px-1 rounded">https://dashboard.thestreetlamp.com/api/webhooks/whatsapp</code></li>
+                  <li>Configure webhook URL: <code className="bg-muted px-1 rounded">https://app.thestreetcollector.com/api/webhooks/whatsapp</code></li>
                   <li>Click "Connect" to save and start syncing</li>
                 </ol>
               </div>

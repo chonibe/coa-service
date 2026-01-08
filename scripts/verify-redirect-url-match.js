@@ -20,12 +20,12 @@ const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL.replace(/\/+$/, "")
 
 // These are the exact URLs that should be in Supabase
 const expectedUrls = {
-  vendor: "https://dashboard.thestreetlamp.com/auth/callback",
-  admin: "https://dashboard.thestreetlamp.com/auth/admin/callback",
+  vendor: "https://app.thestreetcollector.com/auth/callback",
+  admin: "https://app.thestreetcollector.com/auth/admin/callback",
 }
 
 // These are the URLs that the code sends (based on origin)
-const productionOrigin = "https://dashboard.thestreetlamp.com"
+const productionOrigin = "https://app.thestreetcollector.com"
 const codeSends = {
   vendor: `${productionOrigin}/auth/callback`,
   admin: `${productionOrigin}/auth/admin/callback`,

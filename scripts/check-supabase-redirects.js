@@ -63,7 +63,7 @@ async function checkRedirectUrls() {
     }
     
     // Check for admin callback
-    const adminCallback = 'https://dashboard.thestreetlamp.com/auth/admin/callback'
+    const adminCallback = 'https://app.thestreetcollector.com/auth/admin/callback'
     const hasAdminCallback = redirectUrls.some(url => url === adminCallback || url.trim() === adminCallback)
     
     console.log("\n=== Admin Callback Check ===")
@@ -76,7 +76,7 @@ async function checkRedirectUrls() {
     }
     
     // Check vendor callback
-    const vendorCallback = 'https://dashboard.thestreetlamp.com/auth/callback'
+    const vendorCallback = 'https://app.thestreetcollector.com/auth/callback'
     const hasVendorCallback = redirectUrls.some(url => url === vendorCallback || url.trim() === vendorCallback)
     
     console.log("\n=== Vendor Callback Check ===")

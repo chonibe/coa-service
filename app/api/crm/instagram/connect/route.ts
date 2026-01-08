@@ -91,7 +91,7 @@ export async function GET(request: NextRequest) {
           "In left sidebar: Click 'Settings' → 'Basic'",
           "Scroll to 'App Domains' field",
           `Add this domain: ${appDomain}`,
-          "Also add the base domain (e.g., if domain is 'dashboard.thestreetlamp.com', also add 'thestreetlamp.com')",
+          "Also add the base domain (e.g., if domain is 'app.thestreetcollector.com', also add 'thestreetcollector.com')",
           "Click 'Save Changes' at bottom of page"
         ]
       },
@@ -120,7 +120,7 @@ export async function GET(request: NextRequest) {
       common_issues: [
         "Make sure you're using the Facebook App ID (not Instagram App ID)",
         "The redirect URI must match EXACTLY (including ?provider=instagram)",
-        "App Domain should be just the domain (e.g., 'dashboard.thestreetlamp.com'), not the full URL",
+        "App Domain should be just the domain (e.g., 'app.thestreetcollector.com'), not the full URL",
         "Both 'Client OAuth Login' and 'Web OAuth Login' must be enabled"
       ]
     }

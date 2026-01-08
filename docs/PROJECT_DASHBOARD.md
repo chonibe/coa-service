@@ -29,7 +29,7 @@
 ### Vercel Production Deployment
 **Commit:** 8432db33
 **Date:** [Current Date]
-**URL:** https://street-collector-lymtrdiem-chonibes-projects.vercel.app
+**URL:** https://app.thestreetcollector.com
 
 #### Deployment Highlights
 - [x] Resolved environment configuration issues

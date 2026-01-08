@@ -11,6 +11,7 @@ interface DashboardTabsProps {
     artists: ReactNode
     certifications: ReactNode
     hiddenContent: ReactNode
+    profile: ReactNode
   }
   defaultTab?: string
 }
@@ -18,12 +19,13 @@ interface DashboardTabsProps {
 export function DashboardTabs({ children, defaultTab = "overview" }: DashboardTabsProps) {
   return (
     <Tabs defaultValue={defaultTab} className="w-full">
-      <TabsList className="grid w-full grid-cols-2 md:grid-cols-3 lg:grid-cols-6 mb-6">
+      <TabsList className="grid w-full grid-cols-2 md:grid-cols-3 lg:grid-cols-7 mb-6">
         <TabsTrigger value="overview">Overview</TabsTrigger>
         <TabsTrigger value="collection">My Collection</TabsTrigger>
         <TabsTrigger value="editions">Editions</TabsTrigger>
         <TabsTrigger value="artists">Artists & Series</TabsTrigger>
         <TabsTrigger value="certifications">Certifications</TabsTrigger>
+        <TabsTrigger value="profile">Profile</TabsTrigger>
         <TabsTrigger value="hiddenContent">Hidden Content</TabsTrigger>
       </TabsList>
       <TabsContent value="overview" className="mt-6">
@@ -40,6 +42,9 @@ export function DashboardTabs({ children, defaultTab = "overview" }: DashboardTa
       </TabsContent>
       <TabsContent value="certifications" className="mt-6">
         {children.certifications}
+      </TabsContent>
+      <TabsContent value="profile" className="mt-6">
+        {children.profile}
       </TabsContent>
       <TabsContent value="hiddenContent" className="mt-6">
         {children.hiddenContent}

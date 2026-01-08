@@ -20,9 +20,9 @@ PAYPAL_WEBHOOK_ID=your_webhook_id # Required for automated status updates
 
 ### 2. Application URL (Required)
 ```
-NEXT_PUBLIC_APP_URL=https://dashboard.thestreetlamp.com
+NEXT_PUBLIC_APP_URL=https://app.thestreetcollector.com
 ```
-**Note:** Use your custom domain (if configured) or your Vercel deployment URL
+**Note:** Your new production domain.
 
 ### 3. Cron Secret (Required for Scheduled Payouts)
 ```
@@ -161,7 +161,7 @@ Add these in Vercel Dashboard:
 PAYPAL_CLIENT_ID=
 PAYPAL_CLIENT_SECRET=
 PAYPAL_ENVIRONMENT=sandbox
-NEXT_PUBLIC_APP_URL=https://dashboard.thestreetlamp.com
+NEXT_PUBLIC_APP_URL=https://app.thestreetcollector.com
 CRON_SECRET=
 SUPABASE_SERVICE_ROLE_KEY=
 CHINADIVISION_API_KEY=5f91972f8d59ec8039cecfec3adcead5
@@ -175,11 +175,11 @@ Replace empty values with your actual credentials!
 
 You've configured:
 ```
-https://dashboard.thestreetlamp.com/api/webhooks/paypal
+https://app.thestreetcollector.com/api/webhooks/paypal
 ```
 
 **Make sure:**
-- ✅ Domain `dashboard.thestreetlamp.com` is configured in Vercel
+- ✅ Domain `app.thestreetcollector.com` is configured in Vercel
 - ✅ Domain points to your Vercel deployment
 - ✅ SSL certificate is active (HTTPS works)
 - ✅ Webhook events are subscribed in PayPal dashboard

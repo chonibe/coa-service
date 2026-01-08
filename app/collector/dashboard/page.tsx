@@ -19,6 +19,7 @@ import { EditionsGallery } from "./components/editions-gallery"
 import { ArtistsCollection } from "./components/artists-collection"
 import { CertificationsHub } from "./components/certifications-hub"
 import { HiddenContentComponent } from "./components/hidden-content"
+import { ProfileSection } from "./components/profile-section"
 import type { CollectorEdition, CollectorCertification, HiddenContent, ArtistCollectionStats } from "@/types/collector"
 
 type ApiResponse = {
@@ -281,6 +282,7 @@ export default function CollectorDashboardPage() {
             <ArtistsCollection artists={data.artistStats || []} />
           ),
           certifications: <CertificationsHub certifications={certifications.length > 0 ? certifications : (data.certifications || [])} />,
+          profile: <ProfileSection />,
           hiddenContent: (
             <HiddenContentComponent
               hiddenContent={hiddenContent || data.hiddenContent || { hiddenSeries: [], bonusContent: [] }}

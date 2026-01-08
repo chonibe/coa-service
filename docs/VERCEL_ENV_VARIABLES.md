@@ -17,7 +17,7 @@ Add these environment variables in your Vercel Dashboard → Settings → Enviro
 - ⚠️ `PAYPAL_WEBHOOK_SECRET` - (Optional but recommended) For webhook signature verification
 
 ### 3. Application URL
-- ⚠️ `NEXT_PUBLIC_APP_URL` - **REQUIRED** - Your Vercel deployment URL (e.g., `https://your-project.vercel.app`)
+- ⚠️ `NEXT_PUBLIC_APP_URL` - **REQUIRED** - Your production domain: `https://app.thestreetcollector.com`
   - Used for invoice links, callback URLs, etc.
 
 ### 4. Cron Jobs
@@ -42,7 +42,7 @@ Add these environment variables in your Vercel Dashboard → Settings → Enviro
    PAYPAL_CLIENT_ID=your_paypal_client_id
    PAYPAL_CLIENT_SECRET=your_paypal_client_secret
    PAYPAL_ENVIRONMENT=sandbox  # or 'production'
-   NEXT_PUBLIC_APP_URL=https://your-project.vercel.app
+   NEXT_PUBLIC_APP_URL=https://app.thestreetcollector.com
    CRON_SECRET=your_random_secret_string
    ```
 
@@ -88,7 +88,7 @@ After adding variables, verify:
 
 3. Test PayPal webhooks:
    - Configure webhook URL in PayPal dashboard
-   - URL: `https://your-project.vercel.app/api/webhooks/paypal`
+   - URL: `https://app.thestreetcollector.com/api/webhooks/paypal`
 
 ## Important Notes
 
