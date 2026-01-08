@@ -42,16 +42,16 @@ async function fullSync() {
 
     const ordersToUpsert = orders.map(order => ({
       id: String(order.id),
-      order_number: String(order.order_number),
+      order_number: parseInt(String(order.order_number), 10),
       order_name: order.name,
       processed_at: order.processed_at || order.created_at,
       financial_status: order.financial_status,
       fulfillment_status: order.fulfillment_status,
-      total_price: order.current_total_price ? parseFloat(order.current_total_price) : null,
-      currency_code: order.currency,
+      total_price: order.current_total_price ? parseFloat(order.current_total_price) : 0,
+      currency_code: order.currency || 'USD',
       customer_email: order.email?.toLowerCase() || null,
       updated_at: order.updated_at,
-      customer_id: order.customer?.id || null,
+      customer_id: order.customer?.id ? String(order.customer.id) : null,
       shopify_id: String(order.id),
       subtotal_price: order.subtotal_price ? parseFloat(order.subtotal_price) : null,
       total_tax: order.total_tax ? parseFloat(order.total_tax) : null,
@@ -59,7 +59,7 @@ async function fullSync() {
       raw_shopify_order_data: order,
       created_at: order.created_at,
       cancelled_at: order.cancelled_at || null,
-      archived: order.closed_at !== null || order.cancel_reason !== null || (order.tags && order.tags.toLowerCase().includes('archived')),
+      archived: !!(order.closed_at || order.cancel_reason || (order.tags && order.tags.toLowerCase().includes('archived'))),
       shopify_order_status: order.status || null,
     }));
 

@@ -161,7 +161,7 @@ export async function POST(request: NextRequest) {
 
     // Step 3: Send notifications for successful/failed payouts
     for (const result of processorResults) {
-      if (result.success && result.status === "completed") {
+      if (result.success && (result.status === "completed" || result.status === "processing")) {
         const record = payoutRecords.find((r) => r.vendor_name === result.vendor_name)
         if (record) {
           const { data: payout } = await supabase

@@ -1,7 +1,7 @@
 const fs = require('fs');
 const { createClient } = require('@supabase/supabase-js');
 
-async function listTables() {
+async function checkShopifyCustomers() {
   const envContent = fs.readFileSync('.env', 'utf8');
   const urlMatch = envContent.match(/NEXT_PUBLIC_SUPABASE_URL=["']?(.*?)["']?(\r|\n|$)/);
   const keyMatch = envContent.match(/SUPABASE_SERVICE_ROLE_KEY=["']?(.*?)["']?(\r|\n|$)/);
@@ -9,15 +9,12 @@ async function listTables() {
   const key = keyMatch[1].trim();
   const supabase = createClient(url, key);
 
-  const { data, error } = await supabase.rpc('exec_sql', { 
-    sql_query: "SELECT table_name FROM information_schema.tables WHERE table_schema = 'public';" 
-  });
-  
-  if (error) {
-    console.error(error);
-  } else {
-    console.table(data);
-  }
+  const { count, error } = await supabase.from('shopify_customers').select('*', { count: 'exact', head: true });
+  console.log({ shopify_customers_count: count, error: error?.message });
+
+  const { count: crm_count } = await supabase.from('crm_customers').select('*', { count: 'exact', head: true });
+  console.log({ crm_customers_count: crm_count });
 }
 
-listTables();
+checkShopifyCustomers();
+

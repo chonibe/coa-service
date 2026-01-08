@@ -93,6 +93,8 @@ export function PayoutProcessDialog({
     }
 
     setIsProcessing(true)
+    console.log("[PayoutProcessDialog] Starting payout process for", selectedPayouts.length, "vendors")
+    
     try {
       const response = await fetch("/api/vendors/payouts/process", {
         method: "POST",
@@ -107,12 +109,22 @@ export function PayoutProcessDialog({
         }),
       })
 
-      if (!response.ok) {
-        const errorData = await response.json()
-        throw new Error(errorData.message || "Failed to process payouts")
+      console.log("[PayoutProcessDialog] Response received:", response.status, response.statusText)
+
+      let result
+      try {
+        result = await response.json()
+      } catch (jsonErr) {
+        console.error("[PayoutProcessDialog] Failed to parse response JSON:", jsonErr)
+        throw new Error(`Server returned an invalid response (Status: ${response.status})`)
       }
 
-      const result = await response.json()
+      if (!response.ok) {
+        console.error("[PayoutProcessDialog] API Error:", result)
+        throw new Error(result.message || result.error || result.details || "Failed to process payouts")
+      }
+
+      console.log("[PayoutProcessDialog] Success:", result)
 
       // Reset form before closing
       setPayoutNotes("")
@@ -123,11 +135,11 @@ export function PayoutProcessDialog({
       // Notify parent of success - parent will handle closing and toast
       onSuccess()
     } catch (err: any) {
-      console.error("Error processing payouts:", err)
+      console.error("[PayoutProcessDialog] Catch block error:", err)
       toast({
         variant: "destructive",
-        title: "Error",
-        description: err.message || "Failed to process payouts",
+        title: "Process Failed",
+        description: err.message || "An unexpected error occurred while processing payouts.",
       })
     } finally {
       setIsProcessing(false)

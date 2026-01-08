@@ -7,21 +7,25 @@ export async function GET(request: NextRequest) {
   const supabase = createClient()
 
   const collectorSession = verifyCollectorSessionToken(request.cookies.get("collector_session")?.value)
-  const customerId = collectorSession?.shopifyCustomerId || request.cookies.get("shopify_customer_id")?.value
-  if (!customerId) {
+  let customerId = collectorSession?.shopifyCustomerId || request.cookies.get("shopify_customer_id")?.value
+  const searchParams = request.nextUrl.searchParams
+  const emailParam = searchParams.get("email")
+
+  if (!customerId && !emailParam) {
     return NextResponse.json(
-      { success: false, message: "Missing customer session" },
+      { success: false, message: "Missing customer session or email" },
       { status: 401 },
     )
   }
 
   try {
-    const { data: orders, error: ordersError } = await supabase
+    let query = supabase
       .from("orders")
       .select(
         `
         id,
         processed_at,
+        customer_email,
         order_line_items_v2 (
           id,
           line_item_id,
@@ -34,12 +38,21 @@ export async function GET(request: NextRequest) {
           edition_total,
           price,
           certificate_url,
-          created_at
+          created_at,
+          status,
+          nfc_claimed_at
         )
       `,
       )
-      .eq("customer_id", customerId)
       .order("processed_at", { ascending: false })
+
+    if (customerId) {
+      query = query.eq("customer_id", customerId)
+    } else if (emailParam) {
+      query = query.eq("customer_email", emailParam.toLowerCase().trim())
+    }
+
+    const { data: orders, error: ordersError } = await query
 
     if (ordersError) {
       console.error("collector editions error", ordersError)
@@ -49,7 +62,9 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    const allLineItems = (orders || []).flatMap((order) => order.order_line_items_v2 || [])
+    const allLineItems = (orders || []).flatMap((order) => 
+      (order.order_line_items_v2 || []).map(li => ({ ...li, order_processed_at: order.processed_at }))
+    )
 
     // Get series information for products
     const productIds = Array.from(
@@ -84,25 +99,29 @@ export async function GET(request: NextRequest) {
       })
     }
 
+    // Filter for active items. We include "Street Collector" items even if they don't have edition numbers
+    // but we might want to distinguish them in the UI.
     const editions: CollectorEdition[] = allLineItems
-      .filter((li: any) => li.edition_number !== null || li.edition_total !== null)
+      .filter((li: any) => li.status === 'active')
       .map((li: any) => {
         const series = (li.product_id || li.shopify_product_id)
           ? seriesMap.get(li.product_id || li.shopify_product_id)
           : null
 
         // Determine edition type
-        let editionType: "limited" | "open" | null = null
+        let editionType: "limited" | "open" | "accessory" | null = null
         if (li.edition_total && li.edition_total > 0) {
           editionType = "limited"
         } else if (li.edition_number !== null) {
           editionType = "open"
+        } else if (li.vendor_name === 'Street Collector' || !li.vendor_name) {
+          editionType = "accessory"
         }
 
-        // Determine verification source (simplified - would need more logic based on actual data)
+        // Determine verification source
         let verificationSource: CollectorEdition["verificationSource"] = null
-        if (li.edition_number && li.edition_total) {
-          verificationSource = "supabase" // Assume verified if both exist
+        if (li.nfc_claimed_at) {
+          verificationSource = "supabase"
         }
 
         return {
@@ -115,7 +134,7 @@ export async function GET(request: NextRequest) {
           editionType,
           verificationSource,
           imgUrl: li.img_url,
-          vendorName: li.vendor_name,
+          vendorName: li.vendor_name || 'Street Collector',
           series: series
             ? {
                 id: series.id,
@@ -123,7 +142,7 @@ export async function GET(request: NextRequest) {
                 vendorName: series.vendor_name,
               }
             : null,
-          purchaseDate: li.created_at || new Date().toISOString(),
+          purchaseDate: li.created_at || li.order_processed_at || new Date().toISOString(),
           price: li.price,
           certificateUrl: li.certificate_url,
         }

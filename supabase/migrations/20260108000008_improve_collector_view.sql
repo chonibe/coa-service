@@ -23,13 +23,15 @@ AND o.customer_email IS NOT NULL;
 
 -- 4. Recreate the view with more robust pairing logic for statistics
 DROP VIEW IF EXISTS collector_profile_comprehensive;
-CREATE VIEW collector_profile_comprehensive AS
+CREATE OR REPLACE VIEW collector_profile_comprehensive AS
 WITH contact_base AS (
   SELECT LOWER(email) as email FROM auth.users WHERE email IS NOT NULL
   UNION
   SELECT LOWER(customer_email) as email FROM orders WHERE customer_email IS NOT NULL
   UNION
   SELECT LOWER(ship_email) as email FROM warehouse_orders WHERE ship_email IS NOT NULL
+  UNION
+  SELECT LOWER(email) as email FROM crm_customers WHERE email IS NOT NULL
 )
 SELECT
   -- Primary Identifier
