@@ -96,7 +96,7 @@ async function ingestManualOrders() {
         }, { onConflict: 'line_item_id' });
 
       if (itemError) {
-        console.error(`❌ Error ingesting item ${lineItemId}:`, itemError.message);
+        console.error(`❌ Error ingesting item ${lineItemId}:`, itemError.message, itemError);
       } else {
         ingestedItems++;
       }

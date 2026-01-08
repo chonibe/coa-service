@@ -25,9 +25,22 @@ export function formatDate(date: Date | string, options?: Intl.DateTimeFormatOpt
   return new Intl.DateTimeFormat('en-US', options || defaultOptions).format(dateObj);
 }
 
+// Currency conversion: GBP to USD
+// Using a conservative exchange rate (can be updated or made dynamic)
+const GBP_TO_USD_RATE = 1.27
+
 // Currency conversion: NIS (ILS) to USD
 // Using a conservative exchange rate (can be updated or made dynamic)
 const NIS_TO_USD_RATE = 0.27
+
+/**
+ * Converts GBP amount to USD
+ * @param gbpAmount Amount in GBP
+ * @returns Amount in USD
+ */
+export function convertGBPToUSD(gbpAmount: number): number {
+  return gbpAmount * GBP_TO_USD_RATE
+}
 
 /**
  * Converts NIS (ILS) amount to USD
