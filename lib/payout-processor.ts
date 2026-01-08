@@ -104,6 +104,7 @@ export async function processPayouts(
           .update({
             status: status,
             payment_id: batch_id,
+            payout_batch_id: batch_id, // Add this for PayPal tracking
             payout_date: status === 'completed' ? new Date().toISOString() : null,
             updated_at: new Date().toISOString(),
           })

@@ -13,6 +13,7 @@ Add these environment variables in your Vercel Dashboard → Settings → Enviro
 - ⚠️ `PAYPAL_CLIENT_ID` - **REQUIRED** - Your PayPal API Client ID
 - ⚠️ `PAYPAL_CLIENT_SECRET` - **REQUIRED** - Your PayPal API Client Secret
 - ⚠️ `PAYPAL_ENVIRONMENT` - Set to `sandbox` for testing or `production` for live
+- ⚠️ `PAYPAL_WEBHOOK_ID` - **REQUIRED** - Your PayPal Webhook ID for automated status updates
 - ⚠️ `PAYPAL_WEBHOOK_SECRET` - (Optional but recommended) For webhook signature verification
 
 ### 3. Application URL

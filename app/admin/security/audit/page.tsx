@@ -1,13 +1,12 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { AdminShell } from "@/app/admin/admin-shell"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
-import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
-import { AlertCircle, CheckCircle2, ShieldAlert, Search, RefreshCw } from "lucide-react"
+import { Input } from "@/components/ui/label" // Using label as placeholder if Input is not available
+import { Search, Shield, ShieldAlert, ShieldCheck, Clock, User, Database } from "lucide-react"
 import { format } from "date-fns"
 
 interface AuditLog {
@@ -17,22 +16,29 @@ interface AuditLog {
   sql_query: string
   query_type: string
   allowed: boolean
-  error_message: string | null
+  error_message?: string
 }
 
 export default function SecurityAuditPage() {
   const [logs, setLogs] = useState<AuditLog[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [searchTerm, setSearchBy] = useState("")
+  const [pagination, setPagination] = useState({ total: 0, limit: 50, offset: 0 })
+
+  useEffect(() => {
+    fetchLogs()
+  }, [pagination.offset])
 
   const fetchLogs = async () => {
     try {
       setLoading(true)
-      const response = await fetch("/api/admin/security/audit?limit=50")
-      if (!response.ok) throw new Error("Failed to fetch logs")
+      const response = await fetch(`/api/admin/security/audit?limit=${pagination.limit}&offset=${pagination.offset}`)
+      if (!response.ok) {
+        throw new Error("Failed to fetch audit logs")
+      }
       const data = await response.json()
-      setLogs(data.logs || [])
+      setLogs(data.logs)
+      setPagination(prev => ({ ...prev, total: data.pagination.total }))
     } catch (err: any) {
       setError(err.message)
     } finally {
@@ -40,109 +46,129 @@ export default function SecurityAuditPage() {
     }
   }
 
-  useEffect(() => {
-    fetchLogs()
-  }, [])
+  const handleNextPage = () => {
+    if (pagination.offset + pagination.limit < pagination.total) {
+      setPagination(prev => ({ ...prev, offset: prev.offset + prev.limit }))
+    }
+  }
 
-  const filteredLogs = logs.filter(log => 
-    log.executed_by.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    log.sql_query.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    log.query_type.toLowerCase().includes(searchTerm.toLowerCase())
-  )
+  const handlePrevPage = () => {
+    if (pagination.offset > 0) {
+      setPagination(prev => ({ ...prev, offset: Math.max(0, prev.offset - prev.limit) }))
+    }
+  }
 
   return (
-    <AdminShell>
-      <div className="space-y-6">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Security Audit Logs</h1>
-          <p className="text-muted-foreground">
-            Monitor all manual SQL executions and security events.
-          </p>
-        </div>
-
-        <div className="flex items-center gap-4">
-          <div className="relative flex-1">
-            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Search by user, query, or type..."
-              className="pl-8"
-              value={searchTerm}
-              onChange={(e) => setSearchBy(e.target.value)}
-            />
+    <div className="p-6 space-y-6">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <Shield className="h-8 w-8 text-primary" />
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight">Security Audit Logs</h1>
+            <p className="text-muted-foreground">Monitor all raw SQL executions and security-critical events.</p>
           </div>
-          <Button variant="outline" onClick={fetchLogs} disabled={loading}>
-            <RefreshCw className={`mr-2 h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
-            Refresh
-          </Button>
         </div>
+        <Button onClick={fetchLogs} disabled={loading} variant="outline">
+          Refresh
+        </Button>
+      </div>
 
+      <div className="grid gap-4 md:grid-cols-3">
         <Card>
-          <CardHeader>
-            <CardTitle>SQL Execution History</CardTitle>
-            <CardDescription>
-              A detailed log of all queries processed through the secure exec_sql function.
-            </CardDescription>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total Executions</CardTitle>
+            <Database className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            {error && (
-              <div className="bg-destructive/10 text-destructive p-4 rounded-md mb-4 flex items-center gap-2">
-                <AlertCircle className="h-4 w-4" />
-                <span>{error}</span>
-              </div>
-            )}
+            <div className="text-2xl font-bold">{pagination.total}</div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Successful</CardTitle>
+            <ShieldCheck className="h-4 w-4 text-green-500" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-green-600">
+              {logs.filter(l => l.allowed && !l.error_message).length} (Current Page)
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Blocked/Failed</CardTitle>
+            <ShieldAlert className="h-4 w-4 text-destructive" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-destructive">
+              {logs.filter(l => !l.allowed || l.error_message).length} (Current Page)
+            </div>
+          </CardContent>
+        </Card>
+      </div>
 
+      <Card>
+        <CardHeader>
+          <CardTitle>Recent SQL Operations</CardTitle>
+          <CardDescription>A list of all raw SQL queries executed via the exec_sql function.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="rounded-md border">
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Timestamp</TableHead>
-                  <TableHead>Executed By</TableHead>
+                  <TableHead className="w-[180px]">Timestamp</TableHead>
+                  <TableHead>User</TableHead>
                   <TableHead>Type</TableHead>
+                  <TableHead className="w-[300px]">Query Snippet</TableHead>
                   <TableHead>Status</TableHead>
-                  <TableHead className="max-w-[400px]">Query</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {loading ? (
                   <TableRow>
-                    <TableCell colSpan={5} className="text-center py-10">
+                    <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
                       Loading logs...
                     </TableCell>
                   </TableRow>
-                ) : filteredLogs.length === 0 ? (
+                ) : logs.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={5} className="text-center py-10">
-                      No audit logs found.
+                    <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
+                      No logs found.
                     </TableCell>
                   </TableRow>
                 ) : (
-                  filteredLogs.map((log) => (
+                  logs.map((log) => (
                     <TableRow key={log.id}>
-                      <TableCell className="whitespace-nowrap text-xs">
-                        {format(new Date(log.executed_at), "MMM d, HH:mm:ss")}
+                      <TableCell className="font-medium whitespace-nowrap">
+                        <div className="flex items-center gap-2">
+                          <Clock className="h-3 w-3" />
+                          {format(new Date(log.executed_at), "MMM d, HH:mm:ss")}
+                        </div>
                       </TableCell>
-                      <TableCell className="font-medium">{log.executed_by}</TableCell>
                       <TableCell>
-                        <Badge variant="outline">{log.query_type}</Badge>
+                        <div className="flex items-center gap-2">
+                          <User className="h-3 w-3" />
+                          {log.executed_by}
+                        </div>
                       </TableCell>
                       <TableCell>
-                        {log.allowed ? (
-                          <div className="flex items-center gap-1 text-green-600">
-                            <CheckCircle2 className="h-4 w-4" />
-                            <span className="text-xs">Allowed</span>
-                          </div>
+                        <Badge variant="secondary">{log.query_type}</Badge>
+                      </TableCell>
+                      <TableCell className="max-w-[300px]">
+                        <code className="text-xs block bg-muted p-1 rounded truncate" title={log.sql_query}>
+                          {log.sql_query}
+                        </code>
+                      </TableCell>
+                      <TableCell>
+                        {!log.allowed ? (
+                          <Badge variant="destructive">Blocked</Badge>
+                        ) : log.error_message ? (
+                          <Badge variant="destructive">Failed</Badge>
                         ) : (
-                          <div className="flex items-center gap-1 text-destructive font-bold">
-                            <ShieldAlert className="h-4 w-4" />
-                            <span className="text-xs">Blocked</span>
-                          </div>
-                        )}
-                      </TableCell>
-                      <TableCell className="font-mono text-[10px] max-w-[400px] truncate" title={log.sql_query}>
-                        {log.sql_query}
-                        {log.error_message && (
-                          <p className="text-destructive mt-1 text-[9px] italic">
-                            Error: {log.error_message}
-                          </p>
+                          <Badge variant="success" className="bg-green-100 text-green-800 border-green-200">
+                            Allowed
+                          </Badge>
                         )}
                       </TableCell>
                     </TableRow>
@@ -150,10 +176,33 @@ export default function SecurityAuditPage() {
                 )}
               </TableBody>
             </Table>
-          </CardContent>
-        </Card>
-      </div>
-    </AdminShell>
+          </div>
+          
+          <div className="flex items-center justify-between py-4">
+            <div className="text-sm text-muted-foreground">
+              Showing {pagination.offset + 1} to {Math.min(pagination.offset + pagination.limit, pagination.total)} of {pagination.total} entries
+            </div>
+            <div className="flex gap-2">
+              <Button 
+                onClick={handlePrevPage} 
+                disabled={pagination.offset === 0 || loading} 
+                variant="outline" 
+                size="sm"
+              >
+                Previous
+              </Button>
+              <Button 
+                onClick={handleNextPage} 
+                disabled={pagination.offset + pagination.limit >= pagination.total || loading} 
+                variant="outline" 
+                size="sm"
+              >
+                Next
+              </Button>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
   )
 }
-

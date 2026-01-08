@@ -224,8 +224,12 @@ export async function POST(request: Request) {
       // Build response - include ALL items, even with $0 price
       const data = itemsToProcess.map((item: any) => {
         let itemPrice = Number(item.price || 0)
-        const payoutAmount = 25 // Always 25%
-        const isPercentage = true
+        
+        // Get payout settings for this specific product
+        const setting = payoutMap.get(item.product_id)
+        const payoutAmount = setting ? Number(setting.payout_amount) : 25
+        const isPercentage = setting ? Boolean(setting.is_percentage) : true
+        
         const orderDate = new Date(item.created_at)
         const october2025 = new Date('2025-10-01')
 
@@ -234,7 +238,9 @@ export async function POST(request: Request) {
           itemPrice = 40.00
         }
 
-        let calculatedPayout = (itemPrice * payoutAmount / 100)
+        let calculatedPayout = isPercentage 
+          ? (itemPrice * payoutAmount / 100)
+          : payoutAmount
         
         // Apply $10 minimum for orders before October 2025
         if (orderDate < october2025 && calculatedPayout < 10) {

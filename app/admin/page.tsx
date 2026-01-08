@@ -13,6 +13,7 @@ import { Loader2, CheckCircle, AlertCircle, RefreshCw, Search, ChevronLeft, Chev
 import { Progress } from "@/components/ui/progress"
 import Image from "next/image"
 import Link from "next/link"
+import { PlatformUpdates } from "./components/platform-updates"
 
 export default function AdminDashboard() {
   const [isLoading, setIsLoading] = useState(false)
@@ -445,29 +446,7 @@ export default function AdminDashboard() {
               </CardContent>
             </Card>
 
-            <Card className="shadow-sm">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-base">Recent activity</CardTitle>
-                <CardDescription>Last sync + audit log highlights</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <div className="rounded-md border bg-muted/40 p-3 text-sm text-muted-foreground">
-                  <p>Recent sync steps:</p>
-                  <ul className="mt-2 space-y-1">
-                    {progressMessages.slice(-3).map((message, idx) => (
-                      <li key={idx} className="flex items-start gap-2">
-                        <span className="mt-1 h-1.5 w-1.5 rounded-full bg-blue-500" />
-                        <span>{message}</span>
-                      </li>
-                    ))}
-                    {progressMessages.length === 0 && <li className="text-xs">No activity yet. Start a sync to populate logs.</li>}
-                  </ul>
-                </div>
-                <Button variant="outline" size="sm" onClick={() => setProgressMessages([])}>
-                  Clear activity
-                </Button>
-              </CardContent>
-            </Card>
+            <PlatformUpdates />
           </div>
         </div>
 

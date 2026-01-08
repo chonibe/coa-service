@@ -2,18 +2,21 @@
 
 ## 🔴 CRITICAL - Must Add These
 
-### 1. PayPal (Required for Vendor Redeem Feature)
+### 1. PayPal (Required for Vendor Redeem & Payout Processing)
 ```
 PAYPAL_CLIENT_ID=your_paypal_client_id
 PAYPAL_CLIENT_SECRET=your_paypal_client_secret
 PAYPAL_ENVIRONMENT=sandbox  # or 'production' for live
+PAYPAL_WEBHOOK_ID=your_webhook_id # Required for automated status updates
 ```
 
 **How to get:**
 - Go to https://developer.paypal.com/dashboard/
 - Create a REST API app
 - Copy Client ID and Secret
-- Use `sandbox` for testing, `production` for live
+- Go to Developers -> Webhooks to create a webhook and get the Webhook ID
+- URL: `https://your-domain.com/api/webhooks/paypal`
+- Events: `PAYMENT.PAYOUTSBATCH.SUCCESS`, `PAYMENT.PAYOUTSBATCH.DENIED`, `PAYMENT.PAYOUTSBATCH.CANCELED`, `PAYMENT.PAYOUTSBATCH.PROCESSING`
 
 ### 2. Application URL (Required)
 ```

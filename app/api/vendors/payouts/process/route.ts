@@ -98,14 +98,18 @@ export async function POST(request: NextRequest) {
         }
 
         // Associate line items with this payout
-        // ALWAYS use 25% of item price or $10 minimum for historical data
+        // Use payout settings from the RPC (which pulls from product_vendor_payouts)
         const payoutItems = lineItems.map((item: any) => {
           const price = Number(item.price)
           const orderDate = new Date(item.created_at)
           const october2025 = new Date('2025-10-01')
           
-          let payoutAmount = (price * 25) / 100
+          // Calculate amount for this item based on its settings
+          let payoutAmount = item.is_percentage 
+            ? (price * (item.payout_amount || 25)) / 100 
+            : (item.payout_amount || (price * 25) / 100)
           
+          // Maintain $10 minimum for historical orders (pre-October 2025)
           if (orderDate < october2025 && payoutAmount < 10) {
             payoutAmount = 10
           }
