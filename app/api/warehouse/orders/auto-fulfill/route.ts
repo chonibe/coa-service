@@ -55,6 +55,32 @@ export async function POST(request: NextRequest) {
       }
 
       try {
+        // Cache in warehouse_orders table
+        if (!dryRun) {
+          await supabase
+            .from('warehouse_orders')
+            .upsert({
+              id: order.sys_order_id || orderId,
+              order_id: order.order_id,
+              ship_email: order.ship_email?.toLowerCase(),
+              ship_name: `${order.first_name || ''} ${order.last_name || ''}`.trim(),
+              ship_phone: order.ship_phone,
+              ship_address: {
+                address1: order.ship_address1,
+                address2: order.ship_address2,
+                city: order.ship_city,
+                state: order.ship_state,
+                zip: order.ship_zip,
+                country: order.ship_country
+              },
+              tracking_number: order.tracking_number,
+              status: order.status,
+              status_name: order.status_name,
+              raw_data: order as any,
+              updated_at: new Date().toISOString()
+            }, { onConflict: 'id' })
+        }
+
         // Find existing tracking link
         const { data: existingLink } = await supabase
           .from('shared_order_tracking_links')

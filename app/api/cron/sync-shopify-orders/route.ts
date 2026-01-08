@@ -2,6 +2,7 @@ import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
 import { SHOPIFY_SHOP, SHOPIFY_ACCESS_TOKEN, CRON_SECRET } from "@/lib/env"
 import { createClient } from "@/lib/supabase/server"
+import { createChinaDivisionClient } from "@/lib/chinadivision/client"
 import crypto from "crypto"
 import type { Json } from "@/types/supabase"
 
@@ -253,6 +254,17 @@ async function syncOrderFromDatabaseWithShopify(
     updates.raw_shopify_order_data = shopifyOrder
     updates.updated_at = new Date().toISOString()
 
+    // 6.5 Pull PII from warehouse cache if available
+    const { data: whOrder } = await supabase
+      .from('warehouse_orders')
+      .select('ship_email, ship_name')
+      .or(`order_id.eq."${shopifyOrder.name}",shopify_order_id.eq."${shopifyOrder.id}"`)
+      .maybeSingle()
+    
+    if (whOrder) {
+      updates.customer_email = whOrder.ship_email || updates.customer_email || dbOrder.customer_email
+    }
+
     // Check if there are actual field changes
     const actualChanges = Object.keys(updates).filter(key => 
       key !== 'raw_shopify_order_data' && key !== 'updated_at'
@@ -397,10 +409,46 @@ export async function GET(request: NextRequest) {
       const orders = await fetchAllOrdersFromShopify(startDate);
       console.log(`[Cron] Found ${orders.length} orders to sync from Shopify`);
 
+      const chinaClient = createChinaDivisionClient()
+
       // Sync orders to database
       if (orders.length > 0) {
       for (const order of orders) {
         try {
+          // Pull PII from Warehouse if possible
+          let ownerEmail = order.email?.toLowerCase()
+          let ownerName = order.customer ? `${(order as any).customer.first_name || ''} ${(order as any).customer.last_name || ''}`.trim() : null
+          
+          try {
+            console.log(`[Cron] Pulling warehouse PII for order ${order.name}...`);
+            const warehouseOrders = await chinaClient.getOrdersInfo(
+              new Date(new Date(order.created_at).getTime() - 2 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // 2 days before
+              new Date(new Date(order.created_at).getTime() + 2 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]  // 2 days after
+            );
+            
+            const matched = warehouseOrders.find(o => o.order_id === order.name || o.order_id === order.id.toString());
+            
+            if (matched) {
+              ownerEmail = matched.ship_email?.toLowerCase() || ownerEmail;
+              ownerName = `${matched.first_name || ''} ${matched.last_name || ''}`.trim() || ownerName;
+              
+              // Store in warehouse_orders cache
+              await db.from('warehouse_orders').upsert({
+                id: matched.sys_order_id || matched.order_id,
+                order_id: matched.order_id,
+                shopify_order_id: order.id.toString(),
+                ship_email: ownerEmail,
+                ship_name: ownerName,
+                raw_data: matched as any,
+                updated_at: new Date().toISOString()
+              }, { onConflict: 'id' });
+              
+              console.log(`[Cron] Successfully matched warehouse PII for ${order.name}: ${ownerEmail}`);
+            }
+          } catch (cdError) {
+            console.warn(`[Cron] Could not pull warehouse PII for ${order.name}:`, cdError);
+          }
+
           // Sync order data - Shopify is the source of truth
           // Determine archived status from Shopify
           const shopifyTags = (order.tags || "").toLowerCase()
@@ -417,7 +465,7 @@ export async function GET(request: NextRequest) {
             fulfillment_status: order.fulfillment_status, // Shopify is source of truth
             total_price: order.current_total_price ? parseFloat(order.current_total_price) : null,
             currency_code: order.currency,
-            customer_email: order.email,
+            customer_email: ownerEmail || order.email, // Use warehouse email if found
             updated_at: order.updated_at,
             customer_id: order.customer?.id || null,
             shopify_id: String(order.id),
@@ -490,6 +538,31 @@ export async function GET(request: NextRequest) {
               tax_lines: li.tax_lines as unknown as Json,
               raw_shopify_line_item_data: li as unknown as Json,
               img_url: li.product_id ? productMap.get(li.product_id.toString()) || null : null,
+              owner_email: ownerEmail || null,
+              owner_name: ownerName || null,
+            }));
+
+            // Sync to v2 table as well
+            const v2LineItemsData = order.line_items.map((li: ShopifyLineItem) => ({
+              line_item_id: String(li.id),
+              order_id: String(order.id),
+              order_name: order.name,
+              product_id: String(li.product_id),
+              variant_id: String(li.variant_id),
+              name: li.title,
+              description: li.title,
+              sku: li.sku || null,
+              vendor_name: li.vendor,
+              quantity: li.quantity,
+              price: parseFloat(li.price),
+              fulfillment_status: li.fulfillment_status,
+              status: order.cancelled_at ? "inactive" : "active",
+              created_at: order.created_at,
+              updated_at: new Date().toISOString(),
+              img_url: li.product_id ? productMap.get(li.product_id.toString()) || null : null,
+              owner_email: ownerEmail || null,
+              owner_name: ownerName || null,
+              customer_id: order.customer?.id ? String(order.customer.id) : null,
             }));
 
             // Delete existing line items for this order
@@ -508,6 +581,11 @@ export async function GET(request: NextRequest) {
               errorCount++;
               continue;
             }
+
+            // Sync to v2
+            await db
+              .from("order_line_items_v2")
+              .upsert(v2LineItemsData, { onConflict: "line_item_id" });
           }
 
           processedCount++;

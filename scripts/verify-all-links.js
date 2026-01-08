@@ -9,14 +9,9 @@ async function run() {
   const key = keyMatch[1].trim();
   const s = createClient(url, key);
   
-  const { data } = await s.rpc('get_table_columns_v2', { p_table_name: 'order_line_items_v2' });
-  if (!data) {
-     // Fallback to manual check if RPC doesn't exist
-     const { data: sample } = await s.from('order_line_items_v2').select('*').limit(1);
-     console.log('Sample:', sample);
-     return;
-  }
-  console.log(data);
+  const { data } = await s.from('order_line_items_v2').select('name, edition_number, owner_email, owner_name').eq('status', 'active').not('owner_email', 'is', null).limit(20);
+  console.table(data);
 }
 
 run();
+

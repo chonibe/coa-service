@@ -75,6 +75,7 @@
 ### Sprint: Collector Experience
 - **Epic**: Collector Dashboard
   - **Story**: [Collector dashboard launch](./docs/features/collector-dashboard/README.md) — Completed 2025-12-11. Added aggregated collector dashboard with purchased artworks grid, artist journeys, series binder, authentication queue, and credits/subscription management. API aggregator ties orders to series and Shopify purchase links.
+  - **Story**: [Automated Edition Numbering & Warehouse PII Bridge](./docs/edition-numbering-system.md) — Completed 2026-01-08. Implemented a "Hybrid Bridge" to link Personal Identifiable Information (PII) from ChinaDivision warehouse sync to Shopify orders. Automated edition assignment for 521 historical line items and established an immutable event ledger for edition provenance.
 
 ### Sprint: CRM Apollo Foundations
 - **Epic**: Apollo-grade CRM uplift
