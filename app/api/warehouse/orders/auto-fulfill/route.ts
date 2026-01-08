@@ -176,10 +176,35 @@ export async function POST(request: NextRequest) {
           const updatedAt = new Date().toISOString()
           const ownerEmail = order.ship_email?.toLowerCase()
           const ownerName = `${order.first_name || ''} ${order.last_name || ''}`.trim()
-          
-          // Try to find a matching registered user for owner_id
+          const platformOrderId = order.order_id?.toString()
+
+          // 1. Cross-reference with our 'orders' table to find the Shopify Customer ID
+          // We search by both the long Shopify ID and the 'Order Name' (e.g. #1174)
+          const { data: dbOrder } = await supabase
+            .from('orders')
+            .select('id, customer_id, customer_email')
+            .or(`id.eq."${platformOrderId}",order_name.eq."${platformOrderId}"`)
+            .maybeSingle()
+
+          const targetOrderId = dbOrder?.id || platformOrderId
+          let customerId = dbOrder?.customer_id
+
+          // 2. If we found a customer ID, try to find their Supabase User UUID
           let ownerId: string | null = null
-          if (ownerEmail) {
+          if (customerId) {
+            const { data: shopifyCustomer } = await supabase
+              .from('shopify_customers')
+              .select('user_id')
+              .eq('shopify_customer_id', customerId)
+              .maybeSingle()
+            
+            if (shopifyCustomer) {
+              ownerId = shopifyCustomer.user_id
+            }
+          }
+
+          // 3. Fallback: Try to find user by email if no Shopify Customer ID link found
+          if (!ownerId && ownerEmail) {
             const { data: userData } = await supabase
               .from('users')
               .select('id')
@@ -191,17 +216,30 @@ export async function POST(request: NextRequest) {
             }
           }
 
-          // Update orders table
+          // 4. Update the order record with the warehouse email
           await supabase
             .from('orders')
             .update({
               fulfillment_status: 'fulfilled',
-              customer_email: ownerEmail || undefined,
+              customer_email: ownerEmail || dbOrder?.customer_email,
               updated_at: updatedAt,
             })
-            .eq('id', order.order_id.toString())
+            .eq('id', targetOrderId)
 
-          // Update legacy line items
+          // 5. Update v2 line items with the complete linked profile
+          await supabase
+            .from('order_line_items_v2')
+            .update({
+              fulfillment_status: 'fulfilled',
+              owner_name: ownerName || null,
+              owner_email: ownerEmail || null,
+              owner_id: ownerId, // This is the Supabase User UUID
+              customer_id: customerId || null, // This is the Shopify Customer ID
+              updated_at: updatedAt,
+            })
+            .eq('order_id', targetOrderId)
+
+          // 6. Update legacy line items for compatibility
           await supabase
             .from('order_line_items')
             .update({
@@ -209,21 +247,11 @@ export async function POST(request: NextRequest) {
               tracking_number: order.tracking_number,
               tracking_url: order.last_mile_tracking || order.tracking_number || null,
               tracking_company: order.carrier || 'ChinaDivision',
-              updated_at: updatedAt,
-            })
-            .eq('order_id', order.order_id.toString())
-
-          // Update v2 line items with PII linkage
-          await supabase
-            .from('order_line_items_v2')
-            .update({
-              fulfillment_status: 'fulfilled',
               owner_name: ownerName || null,
               owner_email: ownerEmail || null,
-              owner_id: ownerId,
               updated_at: updatedAt,
             })
-            .eq('order_id', order.order_id.toString())
+            .eq('order_id', targetOrderId)
         }
 
         results.push({ orderId, status: dryRun ? 'dry-run' : 'processed' })
