@@ -3,6 +3,7 @@
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Image as ImageIcon, DollarSign, Video, Lock, LockOpen } from "lucide-react"
+import DOMPurify from "dompurify"
 import type { ProductSubmissionData, ProductCreationFields } from "@/types/product-submission"
 
 interface ReviewStepProps {
@@ -83,7 +84,12 @@ export function ReviewStep({ formData, fieldsConfig }: ReviewStepProps) {
                 <div>
                   <div
                     className="text-sm prose prose-sm max-w-none line-clamp-3"
-                    dangerouslySetInnerHTML={{ __html: formData.description }}
+                    dangerouslySetInnerHTML={{
+                      __html: DOMPurify.sanitize(formData.description, {
+                        ALLOWED_TAGS: ['p', 'br', 'strong', 'em', 'u', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'ul', 'ol', 'li', 'a'],
+                        ALLOWED_ATTR: ['href', 'target', 'rel'],
+                      }),
+                    }}
                   />
                 </div>
               )}

@@ -57,6 +57,7 @@ export async function GET(request: NextRequest) {
           id,
           line_item_id,
           product_id,
+          shopify_product_id,
           name,
           description,
           price,
@@ -68,7 +69,9 @@ export async function GET(request: NextRequest) {
           certificate_url,
           certificate_token,
           edition_number,
-          status
+          edition_total,
+          status,
+          created_at
         )
       `,
       )
@@ -158,7 +161,9 @@ export async function GET(request: NextRequest) {
             certificateUrl: li.certificate_url,
             certificateToken: li.certificate_token,
             editionNumber: li.edition_number,
+            editionTotal: li.edition_total,
             status: li.status,
+            purchaseDate: order.processed_at,
             series: series
               ? {
                   id: series.id,
@@ -221,6 +226,205 @@ export async function GET(request: NextRequest) {
       s.ownedCount = allLineItems.filter((li) => li.series?.id === s.id).length
     })
 
+    // Get hidden series unlocked through product benefits
+    const lineItemIds = allLineItems.map((li) => li.lineItemId).filter(Boolean)
+    let hiddenSeries: any[] = []
+    let bonusContent: any[] = []
+
+    if (lineItemIds.length > 0) {
+      // Query product benefits for hidden series and bonus content
+      const { data: benefits } = await supabase
+        .from("product_benefits")
+        .select(
+          `
+          id,
+          benefit_type_id,
+          title,
+          description,
+          content_url,
+          access_code,
+          starts_at,
+          expires_at,
+          hidden_series_id,
+          benefit_types!inner (
+            name
+          ),
+          vendor_product_submissions!inner (
+            id,
+            product_data,
+            vendor_id,
+            vendors (
+              vendor_name
+            )
+          )
+        `,
+        )
+        .in(
+          "vendor_product_submissions.id",
+          allLineItems
+            .map((li) => li.productId)
+            .filter(Boolean)
+            .map((id) => parseInt(id || "0"))
+            .filter((id) => id > 0),
+        )
+
+      if (benefits) {
+        // Extract hidden series
+        const hiddenSeriesMap = new Map<string, any>()
+        benefits.forEach((benefit: any) => {
+          if (benefit.hidden_series_id && benefit.benefit_types?.name?.toLowerCase().includes("hidden")) {
+            const key = benefit.hidden_series_id
+            if (!hiddenSeriesMap.has(key)) {
+              hiddenSeriesMap.set(key, {
+                id: benefit.hidden_series_id,
+                unlockedVia: {
+                  artworkId: benefit.vendor_product_submissions?.id,
+                  artworkName: benefit.vendor_product_submissions?.product_data?.title || "Unknown Artwork",
+                  purchaseDate: allLineItems.find(
+                    (li) => li.productId === benefit.vendor_product_submissions?.id?.toString(),
+                  )?.purchaseDate || new Date().toISOString(),
+                },
+              })
+            }
+          }
+        })
+
+        // Get hidden series details
+        if (hiddenSeriesMap.size > 0) {
+          const { data: seriesData } = await supabase
+            .from("artwork_series")
+            .select("id, name, description, thumbnail_url, teaser_image_url, vendors!inner(vendor_name)")
+            .in("id", Array.from(hiddenSeriesMap.keys()))
+
+          if (seriesData) {
+            hiddenSeries = seriesData.map((s: any) => ({
+              id: s.id,
+              name: s.name,
+              description: s.description,
+              thumbnailUrl: s.thumbnail_url,
+              teaserImageUrl: s.teaser_image_url,
+              vendorName: s.vendors?.vendor_name || "Unknown Artist",
+              unlockedAt: hiddenSeriesMap.get(s.id)?.unlockedVia?.purchaseDate || new Date().toISOString(),
+              unlockedVia: hiddenSeriesMap.get(s.id)?.unlockedVia,
+            }))
+          }
+        }
+
+        // Extract bonus content
+        bonusContent = benefits
+          .filter(
+            (b: any) =>
+              b.benefit_types?.name &&
+              !b.benefit_types.name.toLowerCase().includes("hidden") &&
+              (b.content_url || b.access_code || b.title),
+          )
+          .map((benefit: any) => {
+            const lineItem = allLineItems.find(
+              (li) => li.productId === benefit.vendor_product_submissions?.id?.toString(),
+            )
+            return {
+              id: benefit.id,
+              benefitType: benefit.benefit_types?.name || "Bonus Content",
+              title: benefit.title,
+              description: benefit.description,
+              contentUrl: benefit.content_url,
+              accessCode: benefit.access_code,
+              unlockedAt: lineItem?.purchaseDate || new Date().toISOString(),
+              unlockedVia: {
+                artworkId: benefit.vendor_product_submissions?.id,
+                artworkName: benefit.vendor_product_submissions?.product_data?.title || "Unknown Artwork",
+                vendorName: benefit.vendor_product_submissions?.vendors?.vendor_name || "Unknown Artist",
+                purchaseDate: lineItem?.purchaseDate || new Date().toISOString(),
+              },
+              expiresAt: benefit.expires_at,
+            }
+          })
+      }
+    }
+
+    // Group purchases by artist
+    const purchasesByArtist = allLineItems.reduce((acc, li) => {
+      const vendor = li.vendorName || "Unknown Artist"
+      if (!acc[vendor]) {
+        acc[vendor] = []
+      }
+      acc[vendor].push(li)
+      return acc
+    }, {} as Record<string, typeof allLineItems>)
+
+    // Group purchases by series
+    const purchasesBySeries = allLineItems.reduce((acc, li) => {
+      if (li.series) {
+        const seriesId = li.series.id
+        if (!acc[seriesId]) {
+          acc[seriesId] = {
+            series: li.series,
+            items: [],
+          }
+        }
+        acc[seriesId].items.push(li)
+      }
+      return acc
+    }, {} as Record<string, { series: any; items: typeof allLineItems }>)
+
+    // Enhanced artist collection stats
+    const artistStats = Object.entries(purchasesByArtist).map(([vendorName, items]) => {
+      const vendorPurchases = items
+      const seriesSet = new Set<string>()
+      const seriesDetails: any[] = []
+      const seriesMap = new Map<string, any>()
+
+      vendorPurchases.forEach((item) => {
+        if (item.series?.id) {
+          seriesSet.add(item.series.id)
+          if (!seriesMap.has(item.series.id)) {
+            seriesMap.set(item.series.id, {
+              seriesId: item.series.id,
+              seriesName: item.series.name,
+              ownedCount: 0,
+              thumbnailUrl: item.series.thumbnailUrl,
+            })
+          }
+          const seriesInfo = seriesMap.get(item.series.id)
+          seriesInfo.ownedCount++
+        }
+      })
+
+      seriesMap.forEach((info) => {
+        seriesDetails.push({
+          ...info,
+          totalPieces: 0, // Would need additional query to get total
+          completionPercentage: 0, // Would need additional query
+        })
+      })
+
+      const purchaseDates = vendorPurchases
+        .map((item) => item.purchaseDate)
+        .filter(Boolean)
+        .sort()
+      const totalSpent = vendorPurchases.reduce((sum, item) => sum + (item.price || 0), 0)
+
+      return {
+        vendorName,
+        totalArtworksOwned: vendorPurchases.length,
+        totalSeriesCollected: seriesSet.size,
+        seriesDetails,
+        hiddenSeriesUnlocked: hiddenSeries.filter((hs) => hs.vendorName === vendorName).length,
+        firstPurchaseDate: purchaseDates[0] || null,
+        lastPurchaseDate: purchaseDates[purchaseDates.length - 1] || null,
+        totalSpent,
+        completionRate: 0, // Would need additional calculation
+        recentPurchases: vendorPurchases
+          .slice(0, 5)
+          .map((item) => ({
+            id: item.id,
+            name: item.name,
+            purchaseDate: item.purchaseDate,
+            price: item.price,
+          })),
+      }
+    })
+
     // Collector identifier for banking
     const origin = request.nextUrl.origin
     let collectorIdentifier: string | null = collectorSession?.collectorIdentifier || null
@@ -262,6 +466,35 @@ export async function GET(request: NextRequest) {
       console.error("collector dashboard banking/subscription fetch error", err)
     }
 
+    // Certification summary
+    const certifications = allLineItems.map((li) => {
+      let status: "authenticated" | "pending" | "certificate_available" | "no_nfc" = "no_nfc"
+      if (li.nfcTagId && li.nfcClaimedAt) {
+        status = "authenticated"
+      } else if (li.nfcTagId && !li.nfcClaimedAt) {
+        status = "pending"
+      } else if (li.certificateUrl) {
+        status = "certificate_available"
+      }
+
+      return {
+        id: li.id,
+        lineItemId: li.lineItemId,
+        name: li.name,
+        vendorName: li.vendorName,
+        seriesName: li.series?.name || null,
+        nfcTagId: li.nfcTagId,
+        nfcClaimedAt: li.nfcClaimedAt,
+        certificateUrl: li.certificateUrl,
+        certificateToken: li.certificateToken,
+        status,
+        imgUrl: li.imgUrl,
+        purchaseDate: li.purchaseDate,
+        editionNumber: li.editionNumber,
+        editionTotal: li.editionTotal,
+      }
+    })
+
     return NextResponse.json({
       success: true,
       collectorIdentifier,
@@ -275,6 +508,14 @@ export async function GET(request: NextRequest) {
         unauthenticatedCount,
         certificatesReady: certificateCount,
       },
+      purchasesByArtist,
+      purchasesBySeries,
+      hiddenContent: {
+        hiddenSeries,
+        bonusContent,
+      },
+      certifications,
+      artistStats,
       banking,
       subscriptions,
     })

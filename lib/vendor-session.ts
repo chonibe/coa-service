@@ -81,11 +81,14 @@ export const buildVendorSessionCookie = (
 ) => {
   const token = createVendorSessionToken(vendorName)
 
+  // Always use secure cookies in production (HTTPS required)
+  const isProduction = process.env.NODE_ENV === "production" || process.env.VERCEL === "1"
+  
   const cookieOptions = {
     path: "/",
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "lax" as const, // Changed from "strict" to "lax" to allow cookies on redirects
+    httpOnly: true, // Prevent JavaScript access
+    secure: isProduction, // HTTPS only in production
+    sameSite: "lax" as const, // CSRF protection while allowing redirects
     maxAge: options.maxAge ?? DEFAULT_MAX_AGE_SECONDS,
   }
   

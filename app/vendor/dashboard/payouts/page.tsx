@@ -61,6 +61,7 @@ export default function PayoutsPage() {
   const [isRefreshing, setIsRefreshing] = useState(false)
   const [isRedeeming, setIsRedeeming] = useState(false)
   const [vendorName, setVendorName] = useState<string | null>(null)
+  const [isPayPalEmailMissing, setIsPayPalEmailMissing] = useState(false)
   const [viewMode, setViewMode] = useState<ViewMode>("list")
   const [sortOption, setSortOption] = useState<SortOption>("date-desc")
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all")
@@ -158,6 +159,14 @@ export default function PayoutsPage() {
       if (response.ok) {
         const data = await response.json()
         setVendorName(data.vendor?.vendor_name || null)
+        
+        // Check if PayPal email is missing
+        if (!data.vendor?.paypal_email) {
+          setIsPayPalEmailMissing(true)
+          setError("PayPal email not configured. Please go to Settings to set your PayPal email to request payouts.")
+        } else {
+          setIsPayPalEmailMissing(false)
+        }
       }
     } catch (err) {
       console.error("Error fetching vendor name:", err)

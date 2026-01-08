@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react"
 import { useParams } from "next/navigation"
 import Image from "next/image"
+import DOMPurify from "dompurify"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
@@ -251,7 +252,14 @@ export default function CertificatePage() {
                   <h3 className="font-semibold text-gray-900 mb-2">Product Description</h3>
                   <div className="text-gray-600 prose prose-sm max-w-none">
                     {certificate.product.description ? (
-                      <div dangerouslySetInnerHTML={{ __html: certificate.product.description }} />
+                      <div
+                        dangerouslySetInnerHTML={{
+                          __html: DOMPurify.sanitize(certificate.product.description, {
+                            ALLOWED_TAGS: ['p', 'br', 'strong', 'em', 'u', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'ul', 'ol', 'li', 'a'],
+                            ALLOWED_ATTR: ['href', 'target', 'rel'],
+                          }),
+                        }}
+                      />
                     ) : (
                       <p>{certificate.product.title}</p>
                     )}

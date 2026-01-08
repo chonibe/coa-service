@@ -175,20 +175,13 @@ export async function POST() {
           console.log(`Successfully inserted ${lineItems.length} line items for order ${order.id}`);
           syncedLineItems += lineItems.length;
           
-          // Collect product IDs that have active items for edition number assignment
-          // Also collect products that had restocked items (need resequencing)
-            // Collect product IDs for edition number assignment
-            // Assign edition numbers to all active items (not just fulfilled ones)
-            // This ensures edition numbers are visible even for in-progress orders
-            lineItems.forEach((item: any) => {
-              if (item.status === 'active' && item.product_id) {
-                productIdsToResequence.add(item.product_id);
-              }
-              // If item was restocked, we need to resequence the product
-              if (item.restocked && item.product_id) {
-                productIdsToResequence.add(item.product_id);
-              }
-            });
+          // Collect product IDs for logging/debugging purposes only
+          // Edition numbers are automatically assigned by database triggers
+          lineItems.forEach((item: any) => {
+            if (item.status === 'active' && item.product_id) {
+              productIdsToResequence.add(item.product_id);
+            }
+          });
         }
       } catch (error) {
         console.error(`Error processing order ${order.id}:`, error);
@@ -196,30 +189,9 @@ export async function POST() {
       }
     }
 
-    // Assign edition numbers for all products with active items
-    let editionAssignmentErrors = 0;
-    let editionAssignments = 0;
-    
+    // Log products with active items (edition numbers auto-assigned by triggers)
     if (productIdsToResequence.size > 0) {
-      console.log(`Assigning edition numbers for ${productIdsToResequence.size} products...`);
-      
-      for (const productId of productIdsToResequence) {
-        try {
-          const { data, error: assignError } = await supabase
-            .rpc('assign_edition_numbers', { p_product_id: productId });
-          
-          if (assignError) {
-            console.error(`Error assigning edition numbers for product ${productId}:`, assignError);
-            editionAssignmentErrors++;
-          } else {
-            console.log(`Assigned ${data} edition numbers for product ${productId}`);
-            editionAssignments++;
-          }
-        } catch (error) {
-          console.error(`Error in edition assignment for product ${productId}:`, error);
-          editionAssignmentErrors++;
-        }
-      }
+      console.log(`Synced active items for ${productIdsToResequence.size} products. Edition numbers will be auto-assigned by triggers.`);
     }
 
     console.log('Sync completed. Summary:', {

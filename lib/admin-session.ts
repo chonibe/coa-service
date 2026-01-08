@@ -69,14 +69,17 @@ export const verifyAdminSessionToken = (token: string | undefined): AdminSession
 
 export const buildAdminSessionCookie = (email: string) => {
   const token = createAdminSessionToken(email)
+  // Always use secure cookies in production (HTTPS required)
+  const isProduction = process.env.NODE_ENV === "production" || process.env.VERCEL === "1"
+  
   return {
     name: ADMIN_SESSION_COOKIE,
     value: token,
     options: {
       path: "/",
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "strict" as const,
+      httpOnly: true, // Prevent JavaScript access
+      secure: isProduction, // HTTPS only in production
+      sameSite: "strict" as const, // Strict CSRF protection for admin
       maxAge: DEFAULT_MAX_AGE_SECONDS,
     },
   }

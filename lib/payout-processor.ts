@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { recordPayoutWithdrawal } from '@/lib/banking/payout-withdrawal'
+import { createPayPalPayout, isValidPayPalEmail } from './paypal/payouts'
 
 export type PaymentMethod = 'stripe' | 'paypal' | 'bank_transfer' | 'manual'
 
@@ -44,21 +45,66 @@ export async function processPayouts(
 
   for (const payout of payouts) {
     try {
-      console.log(`Processing payout for ${payout.vendor_name}: $${payout.amount}`)
+      console.log(`Processing payout for ${payout.vendor_name}: $${payout.amount} via ${payment_method}`)
 
-      // For now, we'll simulate successful processing
-      // In a real implementation, this would integrate with Stripe, PayPal, etc.
-      const success = true
-      const transfer_id = `simulated_${Date.now()}_${payout.payout_id}`
-      const batch_id = `batch_${Date.now()}`
+      let success = false
+      let transfer_id = ''
+      let batch_id = ''
+      let error = ''
+
+      if (payment_method === 'paypal') {
+        // 1. Get vendor's PayPal email
+        const { data: vendor, error: vendorError } = await client
+          .from('vendors')
+          .select('paypal_email')
+          .eq('vendor_name', payout.vendor_name)
+          .single()
+
+        if (vendorError || !vendor?.paypal_email) {
+          error = `Vendor PayPal email not found: ${vendorError?.message || 'Email missing'}`
+        } else if (!isValidPayPalEmail(vendor.paypal_email)) {
+          error = `Invalid PayPal email format: ${vendor.paypal_email}`
+        } else {
+          // 2. Call PayPal Payouts API
+          try {
+            const paypalResponse = await createPayPalPayout([
+              {
+                email: vendor.paypal_email,
+                amount: payout.amount,
+                note: notes || `Payout for ${payout.vendor_name} - Ref: ${payout.reference}`,
+                senderItemId: payout.reference,
+              },
+            ])
+
+            if (paypalResponse.batch_header) {
+              success = true
+              batch_id = paypalResponse.batch_header.payout_batch_id
+              transfer_id = paypalResponse.batch_header.payout_batch_id // Batch ID is our primary reference
+            } else {
+              error = 'PayPal API response missing batch header'
+            }
+          } catch (err: any) {
+            console.error('PayPal API error:', err)
+            error = `PayPal API error: ${err.message || 'Unknown error'}`
+          }
+        }
+      } else {
+        // For other methods (manual, bank_transfer, stripe), we still use simulation for now
+        // as per the requirement that only PayPal is active.
+        success = true
+        transfer_id = `simulated_${Date.now()}_${payout.payout_id}`
+        batch_id = `batch_${Date.now()}`
+      }
 
       if (success) {
-        // Update payout status to completed
+        // Update payout status to completed (or processing for PayPal as it's asynchronous)
+        const status = payment_method === 'paypal' ? 'processing' : 'completed'
         const { error: updateError } = await client
           .from('vendor_payouts')
           .update({
-            status: 'completed',
-            payout_date: new Date().toISOString(),
+            status: status,
+            payment_id: batch_id,
+            payout_date: status === 'completed' ? new Date().toISOString() : null,
             updated_at: new Date().toISOString(),
           })
           .eq('id', payout.payout_id)
@@ -89,14 +135,14 @@ export async function processPayouts(
           // Don't fail the payout for ledger errors, but log it
         }
 
-        console.log(`Successfully processed payout for ${payout.vendor_name}: ${withdrawalResult.usdWithdrawn} USD withdrawn, new balance: ${withdrawalResult.newUsdBalance} USD`)
+        console.log(`Successfully initiated payout for ${payout.vendor_name}: ${withdrawalResult.usdWithdrawn} USD withdrawn, status: ${status}`)
 
         results.push({
           vendor_name: payout.vendor_name,
           success: true,
           payout_id: payout.payout_id,
           reference: payout.reference,
-          status: 'completed',
+          status: status,
           transfer_id,
           batch_id,
         })
@@ -106,6 +152,7 @@ export async function processPayouts(
           .from('vendor_payouts')
           .update({
             status: 'failed',
+            notes: error,
             updated_at: new Date().toISOString(),
           })
           .eq('id', payout.payout_id)
@@ -115,7 +162,7 @@ export async function processPayouts(
           success: false,
           payout_id: payout.payout_id,
           reference: payout.reference,
-          error: 'Payout processing failed',
+          error: error || 'Payout processing failed',
         })
       }
 

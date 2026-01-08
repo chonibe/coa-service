@@ -13,6 +13,13 @@ import { ArtistList } from "./components/artist-list"
 import { SeriesBinder } from "./components/series-binder"
 import { AuthenticationQueue } from "./components/authentication-queue"
 import { CreditsPanel } from "./components/credits-panel"
+import { DashboardTabs } from "./components/dashboard-tabs"
+import { PurchasesSection } from "./components/purchases-section"
+import { EditionsGallery } from "./components/editions-gallery"
+import { ArtistsCollection } from "./components/artists-collection"
+import { CertificationsHub } from "./components/certifications-hub"
+import { HiddenContentComponent } from "./components/hidden-content"
+import type { CollectorEdition, CollectorCertification, HiddenContent, ArtistCollectionStats } from "@/types/collector"
 
 type ApiResponse = {
   success: boolean
@@ -37,6 +44,11 @@ type ApiResponse = {
   collectorIdentifier: string | null
   banking: any
   subscriptions: any
+  purchasesByArtist?: Record<string, any[]>
+  purchasesBySeries?: Record<string, { series: any; items: any[] }>
+  hiddenContent?: HiddenContent
+  certifications?: CollectorCertification[]
+  artistStats?: ArtistCollectionStats[]
 }
 
 export default function CollectorDashboardPage() {
@@ -44,18 +56,50 @@ export default function CollectorDashboardPage() {
   const [data, setData] = useState<ApiResponse | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [editions, setEditions] = useState<CollectorEdition[]>([])
+  const [certifications, setCertifications] = useState<CollectorCertification[]>([])
+  const [hiddenContent, setHiddenContent] = useState<HiddenContent | null>(null)
 
   useEffect(() => {
     const load = async () => {
       try {
         setIsLoading(true)
-        const res = await fetch("/api/collector/dashboard", { credentials: "include" })
-        if (!res.ok) {
-          const payload = await res.json().catch(() => ({}))
+        const [dashboardRes, editionsRes, certificationsRes, hiddenContentRes] = await Promise.all([
+          fetch("/api/collector/dashboard", { credentials: "include" }),
+          fetch("/api/collector/editions", { credentials: "include" }),
+          fetch("/api/collector/certifications", { credentials: "include" }),
+          fetch("/api/collector/hidden-content", { credentials: "include" }),
+        ])
+
+        if (!dashboardRes.ok) {
+          const payload = await dashboardRes.json().catch(() => ({}))
           throw new Error(payload.message || "Failed to load collector dashboard")
         }
-        const payload = (await res.json()) as ApiResponse
-        setData(payload)
+
+        const dashboardData = (await dashboardRes.json()) as ApiResponse
+        setData(dashboardData)
+
+        // Load additional data
+        if (editionsRes.ok) {
+          const editionsData = await editionsRes.json()
+          if (editionsData.success) {
+            setEditions(editionsData.editions || [])
+          }
+        }
+
+        if (certificationsRes.ok) {
+          const certData = await certificationsRes.json()
+          if (certData.success) {
+            setCertifications(certData.certifications || [])
+          }
+        }
+
+        if (hiddenContentRes.ok) {
+          const hiddenData = await hiddenContentRes.json()
+          if (hiddenData.success) {
+            setHiddenContent(hiddenData.hiddenContent || { hiddenSeries: [], bonusContent: [] })
+          }
+        }
       } catch (err: any) {
         setError(err.message || "Failed to load collector dashboard")
         // If missing session, bounce to login
@@ -168,57 +212,82 @@ export default function CollectorDashboardPage() {
         />
       </div>
 
-      <section className="space-y-3">
-        <div className="flex items-center justify-between flex-wrap gap-2">
-          <div>
-            <h2 className="text-xl font-semibold">Purchased artworks</h2>
-            <p className="text-sm text-muted-foreground">Every line item you own.</p>
-          </div>
-        </div>
-        <ArtworkGrid items={lineItems} />
-      </section>
+      <DashboardTabs>
+        {{
+          overview: (
+            <div className="space-y-8">
+              <section className="space-y-3">
+                <div className="flex items-center justify-between flex-wrap gap-2">
+                  <div>
+                    <h2 className="text-xl font-semibold">Purchased artworks</h2>
+                    <p className="text-sm text-muted-foreground">Every line item you own.</p>
+                  </div>
+                </div>
+                <ArtworkGrid items={lineItems} />
+              </section>
 
-      <Separator />
+              <Separator />
 
-      <section className="grid grid-cols-1 xl:grid-cols-3 gap-6">
-        <div className="space-y-3 xl:col-span-2">
-          <div className="flex items-center justify-between flex-wrap gap-2">
-            <div>
-              <h2 className="text-xl font-semibold">Artists</h2>
-              <p className="text-sm text-muted-foreground">Jump into an artist journey.</p>
+              <section className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+                <div className="space-y-3 xl:col-span-2">
+                  <div className="flex items-center justify-between flex-wrap gap-2">
+                    <div>
+                      <h2 className="text-xl font-semibold">Artists</h2>
+                      <p className="text-sm text-muted-foreground">Jump into an artist journey.</p>
+                    </div>
+                  </div>
+                  <ArtistList artists={data.artists} />
+                </div>
+                <div className="space-y-3">
+                  <h2 className="text-xl font-semibold">Authentication</h2>
+                  <AuthenticationQueue items={pendingAuth} />
+                </div>
+              </section>
+
+              <section className="space-y-3">
+                <div className="flex items-center justify-between flex-wrap gap-2">
+                  <div>
+                    <h2 className="text-xl font-semibold">Series binder</h2>
+                    <p className="text-sm text-muted-foreground">See progress for each series you own.</p>
+                  </div>
+                </div>
+                <SeriesBinder series={data.series} />
+              </section>
+
+              <Separator />
+
+              <section className="space-y-3">
+                <div className="flex items-center justify-between flex-wrap gap-2">
+                  <div>
+                    <h2 className="text-xl font-semibold">Credits & subscriptions</h2>
+                    <p className="text-sm text-muted-foreground">
+                      Manage credit balance and recurring plans to buy more art.
+                    </p>
+                  </div>
+                </div>
+                <CreditsPanel collectorIdentifier={data.collectorIdentifier} />
+              </section>
             </div>
-          </div>
-          <ArtistList artists={data.artists} />
-        </div>
-        <div className="space-y-3">
-          <h2 className="text-xl font-semibold">Authentication</h2>
-          <AuthenticationQueue items={pendingAuth} />
-        </div>
-      </section>
-
-      <section className="space-y-3">
-        <div className="flex items-center justify-between flex-wrap gap-2">
-          <div>
-            <h2 className="text-xl font-semibold">Series binder</h2>
-            <p className="text-sm text-muted-foreground">See progress for each series you own.</p>
-          </div>
-        </div>
-        <SeriesBinder series={data.series} />
-      </section>
-
-      <Separator />
-
-      <section className="space-y-3">
-        <div className="flex items-center justify-between flex-wrap gap-2">
-          <div>
-            <h2 className="text-xl font-semibold">Credits & subscriptions</h2>
-            <p className="text-sm text-muted-foreground">
-              Manage credit balance and recurring plans to buy more art.
-            </p>
-          </div>
-        </div>
-        <CreditsPanel collectorIdentifier={data.collectorIdentifier} />
-      </section>
+          ),
+          collection: (
+            <PurchasesSection
+              items={lineItems}
+              purchasesByArtist={data.purchasesByArtist}
+              purchasesBySeries={data.purchasesBySeries}
+            />
+          ),
+          editions: <EditionsGallery editions={editions} />,
+          artists: (
+            <ArtistsCollection artists={data.artistStats || []} />
+          ),
+          certifications: <CertificationsHub certifications={certifications.length > 0 ? certifications : (data.certifications || [])} />,
+          hiddenContent: (
+            <HiddenContentComponent
+              hiddenContent={hiddenContent || data.hiddenContent || { hiddenSeries: [], bonusContent: [] }}
+            />
+          ),
+        }}
+      </DashboardTabs>
     </div>
   )
 }

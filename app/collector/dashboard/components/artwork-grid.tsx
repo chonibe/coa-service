@@ -5,6 +5,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
+import { ShieldCheck, Clock, FileText } from "lucide-react"
 
 export interface CollectorLineItem {
   id: number
@@ -92,16 +93,35 @@ export function ArtworkGrid({ items }: ArtworkGridProps) {
 
             <CardContent className="flex-1 space-y-3">
               <div className="flex flex-wrap gap-2">
-                {item.certificateUrl && <Badge className="bg-emerald-600">Certificate</Badge>}
-                {isAuthenticated && <Badge className="bg-blue-600">Authenticated</Badge>}
+                {item.certificateUrl && (
+                  <Badge className="bg-emerald-600 hover:bg-emerald-700">
+                    <FileText className="h-3 w-3 mr-1" />
+                    Certificate
+                  </Badge>
+                )}
+                {isAuthenticated && (
+                  <Badge className="bg-green-600 hover:bg-green-700">
+                    <ShieldCheck className="h-3 w-3 mr-1" />
+                    Authenticated
+                  </Badge>
+                )}
                 {needsAuth && (
                   <Badge variant="destructive" className="bg-amber-500 text-black hover:bg-amber-600">
+                    <Clock className="h-3 w-3 mr-1" />
                     Pending Authentication
                   </Badge>
                 )}
               </div>
               {item.editionNumber !== undefined && item.editionNumber !== null && (
-                <p className="text-sm text-muted-foreground">Edition #{item.editionNumber}</p>
+                <div className="flex items-center gap-2">
+                  <Badge variant="outline" className="font-mono">
+                    #{item.editionNumber}
+                    {item.editionTotal ? ` of ${item.editionTotal}` : ""}
+                  </Badge>
+                  {item.editionTotal && (
+                    <span className="text-xs text-muted-foreground">Limited Edition</span>
+                  )}
+                </div>
               )}
             </CardContent>
 

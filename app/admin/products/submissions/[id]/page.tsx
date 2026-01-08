@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { useRouter, useParams } from "next/navigation"
+import DOMPurify from "dompurify"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -415,7 +416,12 @@ export default function SubmissionDetailPage() {
               <div className="text-sm font-medium text-muted-foreground">Description</div>
               <div
                 className="text-sm prose prose-sm max-w-none"
-                dangerouslySetInnerHTML={{ __html: productData.description }}
+                dangerouslySetInnerHTML={{
+                  __html: DOMPurify.sanitize(productData.description, {
+                    ALLOWED_TAGS: ['p', 'br', 'strong', 'em', 'u', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'ul', 'ol', 'li', 'a'],
+                    ALLOWED_ATTR: ['href', 'target', 'rel'],
+                  }),
+                }}
               />
             </div>
           )}

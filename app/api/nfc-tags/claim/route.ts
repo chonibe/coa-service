@@ -51,6 +51,55 @@ export async function POST(request: NextRequest) {
 
     const { tagId, lineItemId, orderId, customerId } = validationResult.data
 
+    // Get the line item to validate edition number exists
+    const { data: lineItem, error: lineItemError } = await supabase
+      .from("order_line_items_v2")
+      .select("line_item_id, order_id, edition_number, status")
+      .eq("line_item_id", lineItemId)
+      .eq("order_id", orderId)
+      .maybeSingle()
+
+    if (lineItemError) {
+      await logNfcTagAction("line_item_lookup_failed", {
+        tagId,
+        lineItemId,
+        orderId,
+        error: lineItemError.message
+      })
+      return NextResponse.json({ success: false, message: "Failed to find line item" }, { status: 500 })
+    }
+
+    if (!lineItem) {
+      return NextResponse.json({ success: false, message: "Line item not found" }, { status: 404 })
+    }
+
+    // Validate that edition number exists before claiming
+    if (!lineItem.edition_number) {
+      await logNfcTagAction("claim_failed_no_edition", {
+        tagId,
+        lineItemId,
+        orderId
+      })
+      return NextResponse.json(
+        { success: false, message: "Cannot claim NFC tag: edition number not assigned" },
+        { status: 400 }
+      )
+    }
+
+    // Validate that item is active
+    if (lineItem.status !== 'active') {
+      await logNfcTagAction("claim_failed_inactive", {
+        tagId,
+        lineItemId,
+        orderId,
+        status: lineItem.status
+      })
+      return NextResponse.json(
+        { success: false, message: "Cannot claim NFC tag: item is not active" },
+        { status: 400 }
+      )
+    }
+
     // Check if the tag exists
     const { data: existingTag, error: tagError } = await supabase
       .from("nfc_tags")
@@ -93,24 +142,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, message: "This NFC tag has already been claimed" }, { status: 400 })
     }
 
-    // Check if the certificate exists
-    const { data: certificate, error: certError } = await supabase
-      .from("order_line_items_v2")
-      .select("certificate_url, certificate_token, name, product_id, submission_id, series_id")
-      .eq("line_item_id", lineItemId)
-      .eq("order_id", orderId)
-      .maybeSingle()
-
-    if (certError) {
-      await logNfcTagAction("certificate_lookup_failed", {
-        lineItemId,
-        orderId,
-        error: certError.message
-      })
-      return NextResponse.json({ success: false, message: "Failed to check certificate" }, { status: 500 })
-    }
-
-    if (!certificate || !certificate.certificate_url) {
+    // Validate certificate exists (already fetched in lineItem above)
+    if (!lineItem.certificate_url) {
       await logNfcTagAction("certificate_not_found", {
         lineItemId,
         orderId
@@ -119,6 +152,16 @@ export async function POST(request: NextRequest) {
         { success: false, message: "Certificate not found for the provided line item and order" },
         { status: 404 },
       )
+    }
+
+    // Use certificate data from lineItem
+    const certificate = {
+      certificate_url: lineItem.certificate_url,
+      certificate_token: lineItem.certificate_token,
+      name: lineItem.name,
+      product_id: lineItem.product_id,
+      submission_id: lineItem.submission_id,
+      series_id: lineItem.series_id,
     }
 
     // Update the NFC tag with the certificate information
@@ -147,6 +190,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Also update the order_line_items_v2 table to mark this certificate as claimed
+    // The trigger will automatically log the nfc_authenticated event
     const { error: updateError } = await supabase
       .from("order_line_items_v2")
       .update({

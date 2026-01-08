@@ -9,15 +9,20 @@ export async function GET(request: NextRequest) {
   const token = searchParams.get("hub.verify_token")
   const challenge = searchParams.get("hub.challenge")
 
-  // Verify token (should match your Instagram app's webhook verify token)
-  const VERIFY_TOKEN = process.env.INSTAGRAM_WEBHOOK_VERIFY_TOKEN || "your_verify_token_here"
+  // Require environment variable - fail if not set
+  const VERIFY_TOKEN = process.env.INSTAGRAM_WEBHOOK_VERIFY_TOKEN
+  
+  if (!VERIFY_TOKEN) {
+    console.error("[Instagram Webhook] INSTAGRAM_WEBHOOK_VERIFY_TOKEN environment variable is not set")
+    return new NextResponse("Webhook verification token not configured", { status: 500 })
+  }
 
   if (mode === "subscribe" && token === VERIFY_TOKEN) {
     console.log("[Instagram Webhook] Verification successful")
     return new NextResponse(challenge, { status: 200 })
   }
 
-  console.log("[Instagram Webhook] Verification failed")
+  console.log("[Instagram Webhook] Verification failed - token mismatch")
   return new NextResponse("Forbidden", { status: 403 })
 }
 

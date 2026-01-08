@@ -169,30 +169,9 @@ export async function POST() {
       }
     }
 
-    // Assign edition numbers for all products with active items
-    let editionAssignmentErrors = 0;
-    let editionAssignments = 0;
-    
+    // Log products with active items (edition numbers auto-assigned by triggers)
     if (productIdsToResequence.size > 0) {
-      console.log(`Assigning edition numbers for ${productIdsToResequence.size} products...`);
-      
-      for (const productId of productIdsToResequence) {
-        try {
-          const { data, error: assignError } = await supabase
-            .rpc('assign_edition_numbers', { p_product_id: productId });
-          
-          if (assignError) {
-            console.error(`Error assigning edition numbers for product ${productId}:`, assignError);
-            editionAssignmentErrors++;
-          } else {
-            console.log(`Assigned ${data} edition numbers for product ${productId}`);
-            editionAssignments++;
-          }
-        } catch (error) {
-          console.error(`Error in edition assignment for product ${productId}:`, error);
-          editionAssignmentErrors++;
-        }
-      }
+      console.log(`Synced active items for ${productIdsToResequence.size} products. Edition numbers will be auto-assigned by triggers.`);
     }
 
     return NextResponse.json({ 

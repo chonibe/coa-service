@@ -10,17 +10,71 @@ const nextConfig = {
     unoptimized: true,
   },
   async headers() {
+    // Get allowed origins from environment variable
+    // Format: comma-separated list of origins, e.g., "https://example.com,https://app.example.com"
+    const allowedOrigins = process.env.ALLOWED_ORIGINS?.split(',') || []
+    const defaultOrigin = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
+    
+    // If no specific origins configured, use the app URL only
+    const origins = allowedOrigins.length > 0 ? allowedOrigins : [defaultOrigin]
+    
+    // Build CSP directive
+    const cspDirectives = [
+      "default-src 'self'",
+      "script-src 'self' 'unsafe-eval' 'unsafe-inline'", // 'unsafe-eval' needed for Next.js, 'unsafe-inline' for some libraries
+      "style-src 'self' 'unsafe-inline'",
+      "img-src 'self' data: https: blob:",
+      "font-src 'self' data:",
+      "connect-src 'self' https://*.supabase.co https://*.shopify.com https://api.paypal.com https://api-m.paypal.com https://api-m.sandbox.paypal.com",
+      "frame-src 'self' https://*.supabase.co",
+      "object-src 'none'",
+      "base-uri 'self'",
+      "form-action 'self'",
+      "frame-ancestors 'none'",
+      "upgrade-insecure-requests",
+    ]
+    
     return [
       {
         source: "/api/:path*",
         headers: [
           { key: "Access-Control-Allow-Credentials", value: "true" },
-          { key: "Access-Control-Allow-Origin", value: "*" }, // We'll handle specific origins in the API routes
+          // Note: CORS origin will be set dynamically in middleware for security
+          // This header is set per-request based on origin validation
           { key: "Access-Control-Allow-Methods", value: "GET,OPTIONS,PATCH,DELETE,POST,PUT" },
           {
             key: "Access-Control-Allow-Headers",
             value:
               "X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version",
+          },
+        ],
+      },
+      {
+        source: "/:path*",
+        headers: [
+          {
+            key: "Content-Security-Policy",
+            value: cspDirectives.join("; "),
+          },
+          {
+            key: "X-Frame-Options",
+            value: "DENY",
+          },
+          {
+            key: "X-Content-Type-Options",
+            value: "nosniff",
+          },
+          {
+            key: "Referrer-Policy",
+            value: "strict-origin-when-cross-origin",
+          },
+          {
+            key: "Permissions-Policy",
+            value: "camera=(), microphone=(), geolocation=()",
+          },
+          {
+            key: "Strict-Transport-Security",
+            value: "max-age=31536000; includeSubDomains; preload",
           },
         ],
       },

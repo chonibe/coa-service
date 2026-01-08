@@ -200,13 +200,102 @@ export interface ArtistApiResponse {
   artworks: ArtistArtwork[]
   series: ArtistSeries[]
 }
-{
-  "cells": [],
-  "metadata": {
-    "language_info": {
-      "name": "python"
+
+// Enhanced collector profile types
+
+export interface CollectorEdition {
+  id: number
+  lineItemId: string
+  productId: string | null
+  name: string
+  editionNumber: number | null
+  editionTotal: number | null
+  editionType: "limited" | "open" | null
+  verificationSource: "supabase" | "sequential_uuid" | "sequential_order" | "order_sequence" | "random" | null
+  imgUrl: string | null
+  vendorName: string | null
+  series?: {
+    id: string
+    name: string
+    vendorName: string
+  } | null
+  purchaseDate: string
+  price: number | null
+  certificateUrl: string | null
+}
+
+export interface CollectorCertification {
+  id: number
+  lineItemId: string
+  name: string
+  vendorName: string | null
+  seriesName: string | null
+  nfcTagId: string | null
+  nfcClaimedAt: string | null
+  certificateUrl: string | null
+  certificateToken: string | null
+  status: "authenticated" | "pending" | "certificate_available" | "no_nfc"
+  imgUrl: string | null
+  purchaseDate: string
+  editionNumber: number | null
+  editionTotal: number | null
+}
+
+export interface HiddenContent {
+  hiddenSeries: Array<{
+    id: string
+    name: string
+    description?: string
+    thumbnailUrl?: string | null
+    teaserImageUrl?: string | null
+    vendorName: string
+    unlockedAt: string
+    unlockedVia: {
+      artworkId: string
+      artworkName: string
+      purchaseDate: string
     }
-  },
-  "nbformat": 4,
-  "nbformat_minor": 2
+  }>
+  bonusContent: Array<{
+    id: number
+    benefitType: string
+    title: string
+    description?: string
+    contentUrl?: string
+    accessCode?: string
+    unlockedAt: string
+    unlockedVia: {
+      artworkId: string
+      artworkName: string
+      vendorName: string
+      purchaseDate: string
+    }
+    expiresAt?: string | null
+  }>
+}
+
+export interface ArtistCollectionStats {
+  vendorName: string
+  vendorId?: number
+  totalArtworksOwned: number
+  totalSeriesCollected: number
+  seriesDetails: Array<{
+    seriesId: string
+    seriesName: string
+    ownedCount: number
+    totalPieces: number
+    completionPercentage: number
+    thumbnailUrl?: string | null
+  }>
+  hiddenSeriesUnlocked: number
+  firstPurchaseDate: string | null
+  lastPurchaseDate: string | null
+  totalSpent: number
+  completionRate: number
+  recentPurchases: Array<{
+    id: number
+    name: string
+    purchaseDate: string
+    price: number | null
+  }>
 }

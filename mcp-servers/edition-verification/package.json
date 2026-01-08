@@ -1,0 +1,21 @@
+{
+  "name": "edition-verification-mcp-server",
+  "version": "1.0.0",
+  "description": "MCP server for edition number verification and provenance tracking",
+  "type": "module",
+  "main": "index.js",
+  "scripts": {
+    "build": "tsc",
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.0.0",
+    "@supabase/supabase-js": "^2.39.0",
+    "dotenv": "^16.5.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.15.32",
+    "typescript": "^5.8.3"
+  }
+}
+

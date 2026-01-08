@@ -186,31 +186,17 @@ async function syncOrderToDatabase(order: any, supabase: any) {
       } else {
         console.log(`[sync-missing-order] Synced ${lineItems.length} line items for order ${order.name}`)
         
-        // Collect product IDs for edition number assignment
-        // Assign edition numbers to all active items (not just fulfilled ones)
-        // This ensures edition numbers are visible even for in-progress orders
-        const productIdsToResequence = new Set<string>()
+        // Collect product IDs for logging/debugging purposes only
+        // Edition numbers are automatically assigned by database triggers
+        const productIdsWithActiveItems = new Set<string>()
         lineItems.forEach((item: any) => {
           if (item.status === 'active' && item.product_id) {
-            productIdsToResequence.add(item.product_id)
-          }
-          if (item.restocked && item.product_id) {
-            productIdsToResequence.add(item.product_id)
+            productIdsWithActiveItems.add(item.product_id)
           }
         })
-
-        // Assign edition numbers
-        for (const productId of productIdsToResequence) {
-          try {
-            const { error: assignError } = await supabase
-              .rpc('assign_edition_numbers', { p_product_id: productId })
-            
-            if (assignError) {
-              console.error(`[sync-missing-order] Error assigning edition numbers for product ${productId}:`, assignError)
-            }
-          } catch (error) {
-            console.error(`[sync-missing-order] Error in edition assignment for product ${productId}:`, error)
-          }
+        
+        if (productIdsWithActiveItems.size > 0) {
+          console.log(`[sync-missing-order] Active items synced for ${productIdsWithActiveItems.size} products. Edition numbers will be auto-assigned by triggers.`)
         }
       }
     }
