@@ -8,7 +8,6 @@ import { Button } from "@/components/ui/button"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { AlertCircle, DollarSign, Users, TrendingUp, AlertTriangle, Info, ArrowRight } from "lucide-react"
 import { formatUSD } from "@/lib/utils"
-import { convertGBPToUSD } from "@/lib/utils"
 import { cn } from "@/lib/utils"
 import type { PendingPayout, PayoutHistory } from "../types"
 
@@ -216,7 +215,7 @@ export function PayoutOverview({
               {metrics.vendorsWithNegativeBalance.length !== 1 ? "s" : ""} have negative balances
               due to refunds. They owe money that will be deducted from their next payout:{" "}
               {metrics.vendorsWithNegativeBalance
-                .map((v) => `${v.vendor_name} (${formatUSD(Math.abs(convertGBPToUSD(v.amount)))})`)
+                .map((v) => `${v.vendor_name} (${formatUSD(Math.abs(v.amount))})`)
                 .join(", ")}
             </AlertDescription>
             {onFilterToIssues && (

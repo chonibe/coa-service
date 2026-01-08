@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { guardAdminRequest } from "@/lib/auth-guards"
 import { createClient } from "@/lib/supabase/server"
-import { convertGBPToUSD } from "@/lib/utils"
 import { getVendorFromCookieStore } from "@/lib/vendor-session"
 import { cookies } from "next/headers"
 
@@ -50,7 +49,7 @@ export async function GET(request: NextRequest) {
     // 3. Detect discrepancies
 
     const records = (payouts || []).map((payout) => {
-      const expectedAmount = convertGBPToUSD(payout.amount || 0)
+      const expectedAmount = payout.amount || 0
       // Mock actual amount - in production, fetch from payment provider
       const actualAmount = expectedAmount // Would be fetched from PayPal/Stripe
       const discrepancy = actualAmount - expectedAmount

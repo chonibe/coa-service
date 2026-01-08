@@ -2,7 +2,6 @@ import { NextResponse } from "next/server"
 import { cookies } from "next/headers"
 import { createClient } from "@/lib/supabase/server"
 import { getVendorFromCookieStore } from "@/lib/vendor-session"
-import { convertGBPToUSD } from "@/lib/utils"
 
 export async function GET() {
   const cookieStore = cookies()

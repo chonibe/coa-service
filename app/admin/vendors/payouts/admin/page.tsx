@@ -98,10 +98,26 @@ export default function AdminPayoutsPage() {
     setIsProcessDialogOpen(true)
   }
 
-  const handleProcessSuccess = () => {
-    fetchPayoutData()
-    setSelectedPayoutsForProcessing([])
-    setSelectedPayoutVendors([])
+  const handleProcessSuccess = async () => {
+    try {
+      setIsProcessDialogOpen(false) // Force close dialog first
+      setSelectedPayoutsForProcessing([])
+      setSelectedPayoutVendors([])
+      
+      // Refresh data
+      await fetchPayoutData()
+      
+      setActiveTab("history")
+      toast({
+        title: "Success",
+        description: "Payouts processed successfully and moved to history.",
+      })
+    } catch (err) {
+      console.error("Error in process success handler:", err)
+      // Still close dialog and switch tab even if data refresh fails
+      setIsProcessDialogOpen(false)
+      setActiveTab("history")
+    }
   }
 
 

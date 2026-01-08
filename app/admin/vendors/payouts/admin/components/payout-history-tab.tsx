@@ -8,7 +8,6 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Loader2, AlertCircle, RefreshCw, FileText } from "lucide-react"
 import { format } from "date-fns"
 import { formatUSD } from "@/lib/utils"
-import { convertGBPToUSD } from "@/lib/utils"
 import type { PayoutHistory } from "../types"
 import { PayoutFiltersComponent } from "./payout-filters"
 import type { PayoutFilters } from "../hooks/use-payout-filters"
@@ -38,8 +37,9 @@ export function PayoutHistoryTab({
     }
   }
 
-  const convertPayoutAmount = (gbpAmount: number): number => {
-    return convertGBPToUSD(gbpAmount)
+  const convertPayoutAmount = (amount: number): number => {
+    // Database amounts are already in USD
+    return amount
   }
 
   const getStatusBadge = (status: string) => {

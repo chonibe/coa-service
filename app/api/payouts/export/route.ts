@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { guardAdminRequest } from "@/lib/auth-guards"
 import { createClient } from "@/lib/supabase/server"
-import { convertGBPToUSD, formatUSD } from "@/lib/utils"
+import { formatUSD } from "@/lib/utils"
 import { getVendorFromCookieStore } from "@/lib/vendor-session"
 import { cookies } from "next/headers"
 
@@ -73,7 +73,7 @@ export async function POST(request: NextRequest) {
             row["Vendor"] = payout.vendor_name
             break
           case "amount":
-            row["Amount"] = formatUSD(convertGBPToUSD(payout.amount || 0))
+            row["Amount"] = formatUSD(payout.amount || 0)
             break
           case "status":
             row["Status"] = payout.status
@@ -91,7 +91,7 @@ export async function POST(request: NextRequest) {
             row["Product Count"] = payout.product_count || 0
             break
           case "taxAmount":
-            row["Tax Amount"] = formatUSD(convertGBPToUSD(payout.tax_amount || 0))
+            row["Tax Amount"] = formatUSD(payout.tax_amount || 0)
             break
           case "processedBy":
             row["Processed By"] = payout.processed_by || "N/A"

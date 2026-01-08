@@ -114,19 +114,13 @@ export function PayoutProcessDialog({
 
       const result = await response.json()
 
-      toast({
-        title: "Payouts processed",
-        description: `Successfully processed ${result.processed} payouts.`,
-      })
-
-      // Reset form
+      // Reset form before closing
       setPayoutNotes("")
       setPaymentMethod("paypal")
       setGenerateInvoices(true)
       setShowConfirmation(false)
 
-      // Close dialog and notify parent
-      onOpenChange(false)
+      // Notify parent of success - parent will handle closing and toast
       onSuccess()
     } catch (err: any) {
       console.error("Error processing payouts:", err)

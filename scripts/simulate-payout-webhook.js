@@ -54,41 +54,9 @@ async function simulateWebhookSuccess() {
       if (updateError) throw updateError;
       console.log("✅ Database status updated to 'completed'.");
 
-      // Record withdrawal in ledger
-      try {
-        // We'll simulate the ledger update directly if we can't easily import the lib
-        console.log("Updating vendor ledger...");
-        const { data: balanceData } = await supabase
-          .from("vendors")
-          .select("store_balance")
-          .eq("vendor_name", payout.vendor_name)
-          .single();
-        
-        const currentBalance = balanceData?.store_balance || 0;
-        const newBalance = currentBalance - payout.amount;
-
-        const { error: balanceError } = await supabase
-          .from("vendors")
-          .update({ store_balance: newBalance })
-          .eq("vendor_name", payout.vendor_name);
-
-        if (balanceError) throw balanceError;
-        
-        // Add ledger entry
-        await supabase.from("vendor_ledger").insert({
-          vendor_name: payout.vendor_name,
-          amount: -payout.amount,
-          type: "payout_withdrawal",
-          description: `Payout completed - Ref: ${payout.reference}`,
-          payout_id: payout.id,
-          balance_after: newBalance,
-          created_at: new Date().toISOString()
-        });
-
-        console.log(`✅ Ledger updated: ${payout.amount} USD withdrawn. New Balance: ${newBalance}`);
-      } catch (ledgerError) {
-        console.error(`❌ Ledger update failed:`, ledgerError.message);
-      }
+      // Database trigger automatically handles the ledger withdrawal (collector_ledger_entries)
+      // when status is set to 'completed'
+      console.log("✅ Database trigger will automatically update the ledger.");
 
       // Notifications would usually be handled by Resend/SendGrid in the real webhook
       console.log("✅ Notifications and Invoice generation simulated.");

@@ -17,7 +17,6 @@ import {
 import { Loader2, ExternalLink, CheckCircle, Search, Download, Info } from "lucide-react"
 import { format } from "date-fns"
 import { formatUSD } from "@/lib/utils"
-import { convertGBPToUSD } from "@/lib/utils"
 import { useToast } from "@/components/ui/use-toast"
 import { cn } from "@/lib/utils"
 import type { PendingLineItem } from "../types"
@@ -101,11 +100,11 @@ export function VendorLineItemsDrawer({
     if (item.calculated_payout !== undefined && item.calculated_payout !== null) {
       return item.calculated_payout // Already in USD from API
     }
-    const priceUSD = convertGBPToUSD(item.price)
+    const priceUSD = item.price
     if (item.is_percentage) {
       return (priceUSD * item.payout_amount) / 100
     }
-    return convertGBPToUSD(item.payout_amount)
+    return item.payout_amount
   }
 
   const formatDate = (dateString: string): string => {
@@ -280,7 +279,7 @@ export function VendorLineItemsDrawer({
           item.product_id,
           item.product_title || "",
           formatDateForExport(item.created_at),
-          convertGBPToUSD(item.price),
+          item.price,
           calculatePayoutAmount(item),
           item.is_paid ? "Paid" : "Pending",
           item.fulfillment_status || "Unfulfilled",
@@ -477,7 +476,7 @@ export function VendorLineItemsDrawer({
                               )}
                             </TableCell>
                             <TableCell className="text-right">
-                              {formatUSD(convertGBPToUSD(item.price))}
+                              {formatUSD(item.price)}
                             </TableCell>
                             <TableCell className="text-right">
                               <div className="font-medium">{formatUSD(calculatePayoutAmount(item))}</div>

@@ -8,7 +8,6 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Loader2, AlertCircle, RefreshCw, CheckCircle, X } from "lucide-react"
 import { format } from "date-fns"
 import { formatUSD } from "@/lib/utils"
-import { convertGBPToUSD } from "@/lib/utils"
 import { useToast } from "@/components/ui/use-toast"
 import type { RedemptionRequest } from "../types"
 
@@ -128,7 +127,7 @@ export function RedemptionRequestsTab({
                 {requests.map((request) => (
                   <TableRow key={request.id}>
                     <TableCell className="font-medium">{request.vendorName}</TableCell>
-                    <TableCell>{formatUSD(convertGBPToUSD(request.amount))}</TableCell>
+                    <TableCell>{formatUSD(request.amount)}</TableCell>
                     <TableCell>{request.productCount}</TableCell>
                     <TableCell>
                       {request.paypalEmail ? (

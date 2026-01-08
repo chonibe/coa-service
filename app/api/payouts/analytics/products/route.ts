@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { guardAdminRequest } from "@/lib/auth-guards"
 import { createClient } from "@/lib/supabase/server"
-import { convertGBPToUSD } from "@/lib/utils"
 import { getVendorFromCookieStore } from "@/lib/vendor-session"
 import { cookies } from "next/headers"
 
@@ -132,11 +131,11 @@ export async function GET(request: NextRequest) {
       // Sum up all payout amounts for this line item
       const payoutItemsForLineItem = payoutItemsByLineItem.get(lineItem.line_item_id) || []
       payoutItemsForLineItem.forEach((payoutItem: any) => {
-        existing.payoutAmount += convertGBPToUSD(payoutItem.amount || 0)
+        existing.payoutAmount += payoutItem.amount || 0
       })
 
       const price = typeof lineItem.price === "string" ? parseFloat(lineItem.price || "0") : lineItem.price || 0
-      existing.revenueAmount += convertGBPToUSD(price)
+      existing.revenueAmount += price
       existing.salesCount += 1
 
       productMap.set(productId, existing)

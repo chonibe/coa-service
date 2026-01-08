@@ -20,7 +20,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge"
 import { format } from "date-fns"
 import type { VendorPayoutSummary, OrderPayout } from "@/lib/payout-calculator"
-import { convertGBPToUSD, formatUSD } from "@/lib/utils"
+import { formatUSD } from "@/lib/utils"
 
 export default function CalculatePayoutPage() {
   const [vendors, setVendors] = useState<Array<{ vendor_name: string; amount: number }>>([])
@@ -179,7 +179,7 @@ export default function CalculatePayoutPage() {
                 <SelectContent>
                   {vendors.map((vendor) => (
                     <SelectItem key={vendor.vendor_name} value={vendor.vendor_name}>
-                      {vendor.vendor_name} - {formatUSD(convertGBPToUSD(vendor.amount))} pending
+                      {vendor.vendor_name} - {formatUSD(vendor.amount)} pending
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -231,7 +231,7 @@ export default function CalculatePayoutPage() {
                   <div>
                     <div className="text-sm text-muted-foreground">Total Payout</div>
                     <div className="text-2xl font-bold text-green-600">
-                      {formatUSD(convertGBPToUSD(payoutData.total_payout_amount))}
+                      {formatUSD(payoutData.total_payout_amount)}
                     </div>
                   </div>
                 </div>
@@ -275,11 +275,11 @@ export default function CalculatePayoutPage() {
                           <div className="flex items-center gap-4">
                             <div className="text-right">
                               <div className="text-sm text-muted-foreground">Order Total</div>
-                              <div className="font-medium">{formatUSD(convertGBPToUSD(order.order_total))}</div>
+                              <div className="font-medium">{formatUSD(order.order_total)}</div>
                             </div>
                             <div className="text-right">
                               <div className="text-sm text-muted-foreground">Payout</div>
-                              <div className="font-bold text-green-600">{formatUSD(convertGBPToUSD(order.payout_amount))}</div>
+                              <div className="font-bold text-green-600">{formatUSD(order.payout_amount)}</div>
                             </div>
                             {expandedOrders.has(order.order_id) ? (
                               <ChevronUp className="h-5 w-5 text-muted-foreground" />
@@ -308,14 +308,14 @@ export default function CalculatePayoutPage() {
                                       <div className="font-medium">{item.product_title || "Unknown Product"}</div>
                                       <div className="text-xs text-muted-foreground">{item.product_id}</div>
                                     </TableCell>
-                                    <TableCell>{formatUSD(convertGBPToUSD(item.price))}</TableCell>
+                                    <TableCell>{formatUSD(item.price)}</TableCell>
                                     <TableCell>
                                       {item.is_percentage
                                         ? `${item.payout_percentage}%`
                                         : "Fixed Amount"}
                                     </TableCell>
                                     <TableCell className="text-right">
-                                      <div className="font-medium">{formatUSD(convertGBPToUSD(item.payout_amount))}</div>
+                                      <div className="font-medium">{formatUSD(item.payout_amount)}</div>
                                     </TableCell>
                                     <TableCell>
                                       <Badge variant={item.is_paid ? "default" : "outline"}>
