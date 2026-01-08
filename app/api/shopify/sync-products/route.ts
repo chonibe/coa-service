@@ -87,7 +87,7 @@ async function fetchAllProductsFromShopify(): Promise<ShopifyProduct[]> {
   while (hasNextPage) {
     try {
       const url: string = nextPageUrl || 
-        `https://${SHOPIFY_SHOP}/admin/api/2024-01/products.json?limit=250`;
+        `https://${SHOPIFY_SHOP}/admin/api/2024-01/products.json?limit=250&status=any`;
       
       console.log(`[Product Sync] Fetching products from: ${url}`);
       
@@ -298,10 +298,40 @@ export async function POST() {
           image_url: productData.image_url
         });
 
-        // Upsert product
-        const { error: productError } = await db
+        // Check if product with same product_id already exists
+        const { data: existingProduct } = await db
           .from("products")
-          .upsert(productData, { onConflict: "id" });
+          .select("id")
+          .eq("product_id", productData.product_id)
+          .single();
+
+        if (existingProduct) {
+          // Update existing product by product_id
+          const { error: productError } = await db
+            .from("products")
+            .update({
+              ...productData,
+              id: existingProduct.id, // Keep the existing UUID
+            })
+            .eq("product_id", productData.product_id);
+          
+          if (productError) {
+            console.error(`[Product Sync] Error updating product ${product.title}:`, productError);
+            errorCount++;
+            continue;
+          }
+        } else {
+          // Insert new product
+          const { error: productError } = await db
+            .from("products")
+            .insert(productData);
+          
+          if (productError) {
+            console.error(`[Product Sync] Error inserting product ${product.title}:`, productError);
+            errorCount++;
+            continue;
+          }
+        }
 
         if (productError) {
           console.error(`[Product Sync] Error syncing product ${product.title}:`, productError);
