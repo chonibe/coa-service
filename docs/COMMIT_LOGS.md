@@ -1,3 +1,28 @@
+## Commit: Collector Data Enrichment Unification (2026-01-08)
+
+### ✅ Implementation Checklist
+- [x] `supabase/migrations/20260108000005_case_insensitive_collector_view.sql` – Created case-insensitive database view and lowercased legacy email data across `orders`, `warehouse_orders`, and `collector_profiles`.
+- [x] `app/api/cron/sync-shopify-orders/route.ts` – Updated sync logic to enforce lowercased emails for all incoming Shopify and warehouse data.
+- [x] `app/api/collector/dashboard/route.ts` – Refactored to fetch stats and profile from the comprehensive view, ensuring stats match the profile page.
+- [x] `app/api/collector/profile/comprehensive/route.ts` – Refactored to use the database view as the single source of truth for all collector data.
+- [x] `app/admin/orders/page.tsx` & `app/admin/orders/[orderId]/page.tsx` – Implemented case-insensitive matching when linking orders to fetched profiles in the Admin UI.
+
+### 🔐 Highlights
+- **FIXED GUEST CUSTOMER ISSUE**: Orders with warehouse data but mixed-case emails now correctly resolve to their enriched profiles in the Admin UI.
+- **SINGLE SOURCE OF TRUTH**: Established the `collector_profile_comprehensive` view as the authoritative source for collector stats and identity throughout the app.
+- **UNIFIED CASE SENSITIVITY**: All email-based lookups and joins are now case-insensitive, preventing data fragmentation between Shopify, Warehouse, and Supabase Auth.
+
+### 🧪 Verification
+- Local build (`npm run build`) succeeded after fixing a duplicate variable declaration in the dashboard API.
+- Verified that the database view now uses `LOWER()` for all email comparisons and joins.
+- Checked that Admin Order pages use `.ilike` or `.toLowerCase()` for matching.
+
+### 📌 Deployment Notes
+- Applied migration `20260108000005_case_insensitive_collector_view.sql`.
+- Deployed to Vercel production.
+
+---
+
 ## Commit: Fix Google OAuth Login 404 Error (2025-12-30)
 
 ### ✅ Implementation Checklist

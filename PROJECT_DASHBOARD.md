@@ -78,6 +78,7 @@
   - **Story**: [Automated Edition Numbering & Warehouse PII Bridge](./docs/edition-numbering-system.md) — Completed 2026-01-08. Implemented a "Hybrid Bridge" to link Personal Identifiable Information (PII) from ChinaDivision warehouse sync to Shopify orders. Automated edition assignment for 521 historical line items and established an immutable event ledger for edition provenance.
   - **Story**: [Collector Profile Management System](./docs/features/collector-profile/README.md) — Completed 2026-01-09. Created user-managed profile system with immutable change history, guest purchase linking, and preference-based edition naming. Collectors can update their names while preserving purchase history and activity logs.
   - **Story**: [Holistic Collector Profile](./docs/features/collector-profile/README.md#comprehensive-profile) — Completed 2026-01-09. Implemented comprehensive collector profile aggregating all data sources: Shopify orders, warehouse PII, edition assignments, authentication status, and activity history in a single unified view.
+  - **Story**: [Collector Data Enrichment Unification](./docs/features/collector-profile-management.md) — Completed 2026-01-08. Unified collector data enrichment protocol by establishing a case-insensitive database view as the single source of truth. Refactored APIs and Admin UI to rely on this unified profile, resolving the "Guest Customer" display issue for enriched orders.
 
 ### Sprint: CRM Apollo Foundations
 - **Epic**: Apollo-grade CRM uplift

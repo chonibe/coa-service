@@ -1,3 +1,26 @@
+## Collector Data Enrichment Unification
+
+### Deployment Status
+- [x] Completed
+  - Environment: Production (Vercel)
+  - Date: 2026-01-08
+  - Migration: `20260108000005_case_insensitive_collector_view.sql`
+
+### Tasks
+- [x] [Unify Collector Data Enrichment](/docs/features/collector-profile-management.md)
+  - [x] Create case-insensitive database view (`collector_profile_comprehensive`)
+  - [x] Lowercase legacy email data in `orders`, `warehouse_orders`, and `collector_profiles`
+  - [x] Update Shopify sync cron to enforce lowercased emails
+  - [x] Refactor Collector Dashboard API to use comprehensive view as source of truth
+  - [x] Refactor Comprehensive Profile API to use comprehensive view
+  - [x] Implement case-insensitive profile matching in Admin Orders UI
+
+### Success Criteria
+- [x] Admin orders list correctly resolves "Guest Customer" to enriched warehouse names
+- [x] Collector dashboard stats match the comprehensive profile page
+- [x] All email-based lookups are case-insensitive across the platform
+- [x] Single source of truth (database view) is utilized in all major collector touchpoints
+
 ## AI Gateway Integration
 
 ### Deployment Status
