@@ -19,22 +19,24 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    // 1. Get collector profile
-    const { data: profile, error: profileError } = await supabase
-      .from('collector_profiles')
+    // 1. Get authoritative comprehensive profile from view
+    const { data: comprehensiveView, error: viewError } = await supabase
+      .from('collector_profile_comprehensive')
       .select('*')
-      .eq('user_id', user.id)
-      .single()
+      .or(`user_id.eq.${user.id},user_email.eq.${user.email?.toLowerCase()}`)
+      .maybeSingle()
 
-    if (profileError && profileError.code !== 'PGRST116') { // PGRST116 = no rows
-      console.error('Profile fetch error:', profileError)
+    if (viewError) {
+      console.error('Comprehensive view fetch error:', viewError)
       return NextResponse.json(
-        { success: false, message: 'Failed to fetch profile' },
+        { success: false, message: 'Failed to fetch comprehensive profile' },
         { status: 500 }
       )
     }
 
-    // 2. Get all editions owned by this user
+    const authoritativeEmail = comprehensiveView?.user_email || user.email?.toLowerCase()
+
+    // 2. Get all editions owned by this user (linked by ID or authoritative email)
     const { data: editions, error: editionsError } = await supabase
       .from('order_line_items_v2')
       .select(`
@@ -62,7 +64,7 @@ export async function GET(request: NextRequest) {
           fulfillment_status
         )
       `)
-      .eq('owner_id', user.id)
+      .or(`owner_id.eq.${user.id},owner_email.eq.${authoritativeEmail}`)
       .eq('status', 'active')
       .order('created_at', { ascending: false })
 
@@ -105,7 +107,7 @@ export async function GET(request: NextRequest) {
           )
         )
       `)
-      .or(`customer_id.eq."${user.id}",customer_email.eq."${profile?.email || ''}"`)
+      .or(`customer_id.eq."${user.id}",customer_email.eq."${authoritativeEmail}"`)
       .order('created_at', { ascending: false })
 
     if (ordersError) {
@@ -120,8 +122,7 @@ export async function GET(request: NextRequest) {
     const { data: warehouseData, error: warehouseError } = await supabase
       .from('warehouse_orders')
       .select('*')
-      .eq('shopify_order_id', user.id)
-      .or(`ship_email.eq."${profile?.email || ''}",ship_email.eq."${user.email || ''}"`)
+      .or(`ship_email.eq."${authoritativeEmail}",shopify_order_id.eq."${user.id}"`)
       .order('created_at', { ascending: false })
 
     if (warehouseError) {
@@ -153,21 +154,21 @@ export async function GET(request: NextRequest) {
       console.error('Edition events fetch error:', eventsError)
     }
 
-    // 7. Calculate collector statistics
+    // 7. Calculate collector statistics (using view as primary source)
     const stats = {
-      totalEditions: editions?.length || 0,
-      authenticatedEditions: editions?.filter(e => e.nfc_claimed_at).length || 0,
-      totalOrders: orders?.length || 0,
-      totalSpent: orders?.reduce((sum, order) => sum + (order.total_price || 0), 0) || 0,
-      firstPurchaseDate: orders?.length > 0 ? orders[orders.length - 1]?.created_at : null,
-      lastPurchaseDate: orders?.length > 0 ? orders[0]?.created_at : null,
-      profileChangesCount: profileChanges?.length || 0,
+      totalEditions: comprehensiveView?.total_editions ?? editions?.length ?? 0,
+      authenticatedEditions: comprehensiveView?.authenticated_editions ?? editions?.filter(e => e.nfc_claimed_at).length ?? 0,
+      totalOrders: comprehensiveView?.total_orders ?? orders?.length ?? 0,
+      totalSpent: comprehensiveView?.total_spent ?? orders?.reduce((sum, order) => sum + (order.total_price || 0), 0) ?? 0,
+      firstPurchaseDate: comprehensiveView?.first_purchase_date ?? (orders?.length > 0 ? orders[orders.length - 1]?.created_at : null),
+      lastPurchaseDate: comprehensiveView?.last_purchase_date ?? (orders?.length > 0 ? orders[0]?.created_at : null),
+      profileChangesCount: comprehensiveView?.profile_changes_count ?? profileChanges?.length ?? 0,
       warehouseRecords: warehouseData?.length || 0
     }
 
     // 8. Group editions by artist/vendor
     const editionsByArtist = editions?.reduce((acc: any, edition) => {
-      const artist = edition.products?.vendor_name || 'Unknown Artist'
+      const artist = edition.vendor_name || 'Unknown Artist'
       if (!acc[artist]) {
         acc[artist] = []
       }
@@ -175,19 +176,9 @@ export async function GET(request: NextRequest) {
       return acc
     }, {}) || {}
 
-    // 9. Extract PII from various sources
-    const piiSources = {
-      profile: profile ? {
-        source: 'collector_profile',
-        first_name: profile.first_name,
-        last_name: profile.last_name,
-        email: profile.email,
-        phone: profile.phone,
-        bio: profile.bio,
-        avatar_url: profile.avatar_url,
-        updated_at: profile.updated_at
-      } : null,
-
+    // 9. Extract PII from view or fallback
+    const piiSources = comprehensiveView?.pii_sources || {
+      profile: null,
       shopify: orders?.find(o => o.customer_id)?.raw_shopify_order_data?.customer ? {
         source: 'shopify_customer',
         first_name: orders.find(o => o.customer_id)?.raw_shopify_order_data.customer.first_name,
@@ -196,7 +187,6 @@ export async function GET(request: NextRequest) {
         phone: orders.find(o => o.customer_id)?.raw_shopify_order_data.customer.phone,
         address: orders.find(o => o.customer_id)?.raw_shopify_order_data.customer.default_address
       } : null,
-
       warehouse: warehouseData?.[0] ? {
         source: 'warehouse_order',
         first_name: warehouseData[0].first_name,
@@ -225,7 +215,15 @@ export async function GET(request: NextRequest) {
           email: user.email,
           created_at: user.created_at
         },
-        collectorProfile: profile,
+        collectorProfile: comprehensiveView ? {
+          first_name: comprehensiveView.first_name,
+          last_name: comprehensiveView.last_name,
+          email: comprehensiveView.profile_email || comprehensiveView.user_email,
+          phone: comprehensiveView.profile_phone || comprehensiveView.display_phone,
+          bio: comprehensiveView.bio,
+          avatar_url: comprehensiveView.avatar_url,
+          display_name: comprehensiveView.display_name,
+        } : null,
         statistics: stats,
         piiSources,
         editions: {

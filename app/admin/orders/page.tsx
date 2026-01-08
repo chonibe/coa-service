@@ -76,7 +76,9 @@ export default function OrdersPage() {
           
           if (profiles) {
             ordersList.forEach(order => {
-              order.customer_profile = profiles.find(p => p.user_email === order.customer_email);
+              order.customer_profile = profiles.find(p => 
+                p.user_email?.toLowerCase() === order.customer_email?.toLowerCase()
+              );
             });
           }
         }

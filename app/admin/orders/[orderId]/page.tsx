@@ -146,7 +146,7 @@ async function getOrderData(orderId: string) {
   const { data: profileData } = await supabase
     .from('collector_profile_comprehensive')
     .select('*')
-    .eq('user_email', orderData.customer_email)
+    .ilike('user_email', orderData.customer_email)
     .maybeSingle();
 
   // Fetch line items without join

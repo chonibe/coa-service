@@ -262,7 +262,7 @@ async function syncOrderFromDatabaseWithShopify(
       .maybeSingle()
     
     if (whOrder) {
-      updates.customer_email = whOrder.ship_email || updates.customer_email || dbOrder.customer_email
+      updates.customer_email = (whOrder.ship_email || updates.customer_email || dbOrder.customer_email)?.toLowerCase()
     }
 
     // Check if there are actual field changes
@@ -465,7 +465,7 @@ export async function GET(request: NextRequest) {
             fulfillment_status: order.fulfillment_status, // Shopify is source of truth
             total_price: order.current_total_price ? parseFloat(order.current_total_price) : null,
             currency_code: order.currency,
-            customer_email: ownerEmail || order.email, // Use warehouse email if found
+            customer_email: (ownerEmail || order.email)?.toLowerCase() || null, // Use warehouse email if found, always lowercase
             updated_at: order.updated_at,
             customer_id: order.customer?.id || null,
             shopify_id: String(order.id),

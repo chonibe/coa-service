@@ -45,6 +45,16 @@ export async function GET(request: NextRequest) {
   }
 
   try {
+    // 1. Get comprehensive profile data first
+    const { data: profile } = await supabase
+      .from("collector_profile_comprehensive")
+      .select("*")
+      .or(`user_email.eq.${email?.toLowerCase()},user_id.eq.${collectorSession?.userId || 'null'}`)
+      .maybeSingle()
+
+    // Use the authoritative email from the profile if found, otherwise fallback to session email
+    const authoritativeEmail = profile?.user_email || email?.toLowerCase()
+
     let query = supabase
       .from("orders")
       .select(
@@ -85,13 +95,13 @@ export async function GET(request: NextRequest) {
       .order("processed_at", { ascending: false })
       .limit(100)
 
-    // Filter by customer ID or email
-    if (customerId && email) {
-      query = query.or(`customer_id.eq.${customerId},customer_email.eq.${email}`)
+    // Filter by customer ID or authoritative email
+    if (customerId && authoritativeEmail) {
+      query = query.or(`customer_id.eq.${customerId},customer_email.eq.${authoritativeEmail}`)
     } else if (customerId) {
       query = query.eq("customer_id", customerId)
-    } else if (email) {
-      query = query.eq("customer_email", email)
+    } else if (authoritativeEmail) {
+      query = query.eq("customer_email", authoritativeEmail)
     }
 
     const { data: orders, error: ordersError } = await query
@@ -102,6 +112,18 @@ export async function GET(request: NextRequest) {
         { success: false, message: "Failed to load orders" },
         { status: 500 },
       )
+    }
+
+    // Fetch comprehensive profile for enriched display and authoritative stats
+    const resolvedEmail = email || orders?.[0]?.customer_email;
+    let profile = null;
+    if (resolvedEmail) {
+      const { data: profileData } = await supabase
+        .from("collector_profile_comprehensive")
+        .select("*")
+        .eq("user_email", resolvedEmail.toLowerCase())
+        .maybeSingle();
+      profile = profileData;
     }
 
     const productIds = Array.from(
@@ -196,13 +218,17 @@ export async function GET(request: NextRequest) {
       })) || []
 
     const allLineItems = enrichedOrders.flatMap((o) => o.lineItems)
-    const authenticatedCount = allLineItems.filter(
+    
+    // Use comprehensive profile stats if available, otherwise calculate from fetched orders
+    const authenticatedCount = profile?.authenticated_editions ?? allLineItems.filter(
       (li) => li.nfcTagId && li.nfcClaimedAt,
     ).length
-    const unauthenticatedCount = allLineItems.filter(
-      (li) => li.nfcTagId && !li.nfcClaimedAt,
-    ).length
+    const totalArtworksOwned = profile?.total_editions ?? allLineItems.length
+    const unauthenticatedCount = profile 
+      ? (profile.total_editions - profile.authenticated_editions) 
+      : allLineItems.filter((li) => li.nfcTagId && !li.nfcClaimedAt).length
     const certificateCount = allLineItems.filter((li) => li.certificateUrl).length
+    const totalOrdersCount = profile?.total_orders ?? enrichedOrders.length
 
     const artists = Object.values(
       allLineItems.reduce((acc, li) => {
@@ -518,11 +544,17 @@ export async function GET(request: NextRequest) {
       orders: enrichedOrders,
       artists,
       series,
+      profile: profile ? {
+        display_name: profile.display_name,
+        display_phone: profile.display_phone,
+        user_email: profile.user_email,
+        avatar_url: profile.avatar_url,
+      } : null,
       stats: {
-        totalOrders: enrichedOrders.length,
-        totalArtworksOwned: allLineItems.length,
-        authenticatedCount,
-        unauthenticatedCount,
+        totalOrders: profile?.total_orders ?? enrichedOrders.length,
+        totalArtworksOwned: profile?.total_editions ?? allLineItems.length,
+        authenticatedCount: profile?.authenticated_editions ?? authenticatedCount,
+        unauthenticatedCount: profile ? (profile.total_editions - profile.authenticated_editions) : unauthenticatedCount,
         certificatesReady: certificateCount,
       },
       purchasesByArtist,
