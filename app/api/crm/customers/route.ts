@@ -16,15 +16,15 @@ export async function GET(request: NextRequest) {
     const offset = parseInt(searchParams.get("offset") || "0")
 
     let query = supabase
-      .from("crm_customers")
-      .select("*")
-      .order("created_at", { ascending: false })
+      .from("collector_profile_comprehensive")
+      .select("*", { count: "exact" })
+      .order("last_purchase_date", { ascending: false })
       .range(offset, offset + limit - 1)
 
     // Add search filter if provided
     if (search) {
       query = query.or(
-        `email.ilike.%${search}%,first_name.ilike.%${search}%,last_name.ilike.%${search}%,instagram_username.ilike.%${search}%`
+        `user_email.ilike.%${search}%,display_name.ilike.%${search}%,display_phone.ilike.%${search}%`
       )
     }
 
@@ -34,14 +34,23 @@ export async function GET(request: NextRequest) {
       throw error
     }
 
-    // Get total count for pagination
-    const { count: totalCount } = await supabase
-      .from("crm_customers")
-      .select("*", { count: "exact", head: true })
+    // Map the view data to match the expected CRM Customer interface
+    const mappedCustomers = (data || []).map(collector => ({
+      id: collector.user_id || collector.user_email,
+      shopify_customer_id: collector.pii_sources?.shopify?.id || null,
+      email: collector.user_email,
+      first_name: collector.first_name || (collector.display_name?.split(' ')[0]) || null,
+      last_name: collector.last_name || (collector.display_name?.split(' ').slice(1).join(' ')) || null,
+      total_orders: collector.total_orders,
+      total_spent: collector.total_spent,
+      last_order_date: collector.last_purchase_date,
+      created_at: collector.profile_created_at || collector.user_created_at,
+      pii_sources: collector.pii_sources
+    }))
 
     return NextResponse.json({
-      customers: data || [],
-      total: totalCount || 0,
+      customers: mappedCustomers,
+      total: count || 0,
       limit,
       offset,
     })

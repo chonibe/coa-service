@@ -496,3 +496,4 @@ export default function AdminCollectorProfilePage() {
     </div>
   )
 }
+

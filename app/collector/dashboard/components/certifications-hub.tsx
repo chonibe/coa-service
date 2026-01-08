@@ -264,3 +264,4 @@ export function CertificationsHub({ certifications }: CertificationsHubProps) {
   )
 }
 
+

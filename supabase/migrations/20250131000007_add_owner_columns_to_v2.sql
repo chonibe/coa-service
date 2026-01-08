@@ -15,3 +15,4 @@ COMMENT ON COLUMN order_line_items_v2.owner_name IS 'Full name of the current ed
 COMMENT ON COLUMN order_line_items_v2.owner_email IS 'Email of the current edition owner, used to link guest orders to registered collector profiles.';
 COMMENT ON COLUMN order_line_items_v2.owner_id IS 'UUID of the registered collector profile if the owner has an account.';
 
+

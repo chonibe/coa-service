@@ -9,3 +9,4 @@ COMMENT ON COLUMN order_line_items_v2.shopify_customer_id IS 'The numeric Shopif
 -- Backfill from existing UUID customer_id is not possible as they are different ID spaces
 -- But we can backfill from the orders table during the next resequencing.
 
+

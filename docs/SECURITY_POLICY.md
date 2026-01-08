@@ -66,3 +66,4 @@ In the event of a secret leak:
 4. Redeploy the application.
 5. Invalidate any sessions associated with the compromised key.
 
+

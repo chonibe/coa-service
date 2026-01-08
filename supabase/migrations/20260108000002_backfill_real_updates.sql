@@ -68,3 +68,4 @@ VALUES
   'admin@streetcollector.com'
 );
 
+

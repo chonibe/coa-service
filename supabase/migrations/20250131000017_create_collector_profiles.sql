@@ -160,3 +160,4 @@ CREATE TRIGGER trg_update_collector_profile_updated_at
 BEFORE UPDATE ON collector_profiles
 FOR EACH ROW EXECUTE FUNCTION update_collector_profile_updated_at();
 
+

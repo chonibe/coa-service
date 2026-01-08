@@ -11,6 +11,7 @@
 ### Technical Design
 - [Project Overview](/technical-design/overview.md)
 - [Architecture](/architecture/README.md)
+- [Data Enrichment Protocol (PII Bridge)](/docs/features/data-enrichment-protocol.md) 🆕
 - [**Data Fetching Strategies**](/data-fetching/README.md) 🆕
 
 ### Authentication

@@ -286,6 +286,11 @@ export function AdminShell({ children }: AdminShellProps) {
       icon: <Icon size="md"><UsersIcon className="h-5 w-5" /></Icon>,
       submenu: [
         {
+          title: "Collectors",
+          href: "/admin/collectors",
+          icon: <Icon size="sm"><UserIcon className="h-4 w-4" /></Icon>,
+        },
+        {
           title: "People",
           href: "/admin/crm/people",
           icon: <Icon size="sm"><UsersIcon className="h-4 w-4" /></Icon>,

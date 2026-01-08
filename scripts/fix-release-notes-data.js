@@ -70,3 +70,4 @@ async function fixReleaseNotesData() {
 }
 
 fixReleaseNotesData().catch(console.error)
+

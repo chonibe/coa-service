@@ -12,6 +12,7 @@ import { Label } from "@/components/ui/label";
 import { formatCurrency } from '@/lib/utils';
 import { useState, useEffect } from 'react';
 import DuplicateItemsBox from '../DuplicateItemsBox';
+import { CollectorCard } from "@/app/admin/components/collector-card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 import { useRouter } from 'next/navigation';
@@ -382,52 +383,34 @@ export default function OrderDetails({ order }: OrderDetailsProps) {
           </div>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
-            <div>
-              <h3 className="text-sm font-medium text-muted-foreground mb-1">Customer</h3>
-              <p className="text-base break-all font-semibold">{order.customer_profile?.display_name || 'Guest Customer'}</p>
-              <p className="text-base break-all">{order.customer_email}</p>
-              {order.customer_profile?.display_phone && (
-                <p className="text-sm text-muted-foreground mt-1">{order.customer_profile.display_phone}</p>
-              )}
-              
-              {order.customer_profile?.pii_sources?.warehouse?.address && (
-                <div className="mt-4 pt-4 border-t">
-                  <h4 className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-2">Warehouse Shipping Address</h4>
-                  <div className="text-sm text-muted-foreground">
-                    <p>{order.customer_profile.pii_sources.warehouse.address.address1}</p>
-                    {order.customer_profile.pii_sources.warehouse.address.address2 && (
-                      <p>{order.customer_profile.pii_sources.warehouse.address.address2}</p>
-                    )}
-                    <p>
-                      {order.customer_profile.pii_sources.warehouse.address.city}, {order.customer_profile.pii_sources.warehouse.address.state} {order.customer_profile.pii_sources.warehouse.address.zip}
-                    </p>
-                    <p>{order.customer_profile.pii_sources.warehouse.address.country}</p>
-                  </div>
-                </div>
-              )}
-
-              {order.customer_profile?.pii_sources?.shopify?.address && !order.customer_profile?.pii_sources?.warehouse?.address && (
-                <div className="mt-4 pt-4 border-t">
-                  <h4 className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-2">Shopify Default Address</h4>
-                  <div className="text-sm text-muted-foreground">
-                    <p>{order.customer_profile.pii_sources.shopify.address.address1}</p>
-                    {order.customer_profile.pii_sources.shopify.address.address2 && (
-                      <p>{order.customer_profile.pii_sources.shopify.address.address2}</p>
-                    )}
-                    <p>
-                      {order.customer_profile.pii_sources.shopify.address.city}, {order.customer_profile.pii_sources.shopify.address.province_code} {order.customer_profile.pii_sources.shopify.address.zip}
-                    </p>
-                    <p>{order.customer_profile.pii_sources.shopify.address.country_code}</p>
-                  </div>
-                </div>
-              )}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="md:col-span-2">
+              <h3 className="text-sm font-medium text-muted-foreground mb-3 uppercase tracking-wider">Collector Details</h3>
+              <CollectorCard profile={order.customer_profile} className="border-none shadow-none p-0" />
             </div>
-            <div>
-              <h3 className="text-sm font-medium text-muted-foreground mb-1">Total</h3>
-              <p className="text-xl sm:text-2xl font-bold">
-                {formatCurrency(order.total_price, order.currency_code)}
-              </p>
+            
+            <div className="border-t pt-4 md:border-t-0 md:pt-0 md:border-l md:pl-6">
+              <h3 className="text-sm font-medium text-muted-foreground mb-3 uppercase tracking-wider">Order Financials</h3>
+              <div className="space-y-3">
+                <div>
+                  <span className="text-xs text-muted-foreground block">Order Total</span>
+                  <p className="text-2xl font-bold text-primary">
+                    {formatCurrency(order.total_price, order.currency_code)}
+                  </p>
+                </div>
+                <div>
+                  <span className="text-xs text-muted-foreground block">Financial Status</span>
+                  <Badge variant={order.financial_status === 'paid' ? 'default' : 'secondary'} className="mt-1">
+                    {order.financial_status}
+                  </Badge>
+                </div>
+                <div>
+                  <span className="text-xs text-muted-foreground block">Fulfillment</span>
+                  <Badge variant={order.fulfillment_status === 'fulfilled' ? 'default' : 'secondary'} className="mt-1">
+                    {order.fulfillment_status || 'pending'}
+                  </Badge>
+                </div>
+              </div>
             </div>
           </div>
         </CardContent>
