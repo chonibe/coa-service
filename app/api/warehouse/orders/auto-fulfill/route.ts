@@ -183,7 +183,7 @@ export async function POST(request: NextRequest) {
           const { data: dbOrder } = await supabase
             .from('orders')
             .select('id, customer_id, customer_email')
-            .or(`id.eq."${platformOrderId}",order_name.eq."${platformOrderId}"`)
+            .or(`id.eq.${platformOrderId},order_name.eq.${platformOrderId}`)
             .maybeSingle()
 
           const targetOrderId = dbOrder?.id || platformOrderId

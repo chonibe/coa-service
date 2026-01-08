@@ -1,7 +1,7 @@
 const fs = require('fs');
 const { createClient } = require('@supabase/supabase-js');
 
-async function demo() {
+async function run() {
   const env = fs.readFileSync('.env', 'utf8');
   const urlMatch = env.match(/NEXT_PUBLIC_SUPABASE_URL=["']?(.*?)["']?(\r|\n|$)/);
   const keyMatch = env.match(/SUPABASE_SERVICE_ROLE_KEY=["']?(.*?)["']?(\r|\n|$)/) || 
@@ -9,43 +9,58 @@ async function demo() {
 
   const supabase = createClient(urlMatch[1].trim(), keyMatch[1].trim());
 
-  const orderId = "12182601859458";
-  const productId = "8693340209379";
-  const testEmail = "collector-demo@example.com";
+  // Finding the real order name for 12182601859458
+  const { data: realOrder } = await supabase.from('orders').select('id, order_name, order_number').eq('id', '12182601859458').single();
+  const platformId = realOrder.order_name || '#' + realOrder.order_number;
 
-  console.log('--- STARTING REAL DEMO ---');
+  console.log(`--- Simulation: Warehouse Sync for ${platformId} ---`);
 
-  // 1. Simulate Warehouse PII Sync (Setting email on order)
-  console.log(`1. Simulating Warehouse sync: Setting email ${testEmail} on Order #1279...`);
-  await supabase.from('orders').update({ customer_email: testEmail }).eq('id', orderId);
+  // 1. Cross-reference with our 'orders' table
+  console.log(`Searching for order in DB matching ID or Name: ${platformId}`);
+  const { data: dbOrder, error: orderError } = await supabase
+    .from('orders')
+    .select('id, order_number, customer_id, customer_email, order_name')
+    .or(`id.eq.${realOrder.id},order_name.eq.${platformId}`)
+    .maybeSingle();
 
-  // 2. Trigger Edition Assignment (This is what happens automatically now)
-  console.log(`2. Triggering automatic edition assignment/backfill for Product ID ${productId}...`);
-  const { data: count, error: rpcError } = await supabase.rpc('assign_edition_numbers', { p_product_id: productId });
-  
-  if (rpcError) {
-    console.error('RPC Error:', rpcError);
+  if (orderError) {
+    console.error('Error finding order:', orderError);
     return;
   }
 
-  // 3. Verify the Results
-  console.log('3. Verifying the results in order_line_items_v2:');
-  const { data: items } = await supabase
-    .from('order_line_items_v2')
-    .select('name, edition_number, owner_email')
-    .eq('order_id', orderId);
-  console.log(JSON.stringify(items, null, 2));
+  if (!dbOrder) {
+    console.log('No order found matching that platform ID.');
+    return;
+  }
 
-  // 4. Check the Immutable Ledger
-  console.log('\n4. Checking the Immutable Ledger (edition_events):');
-  const { data: events } = await supabase
-    .from('edition_events')
-    .select('event_type, owner_email, created_at')
-    .eq('product_id', productId)
-    .order('created_at', { ascending: false })
-    .limit(1);
-  console.log(JSON.stringify(events, null, 2));
+  console.log('✅ Found Order in Database:');
+  console.log(`- Long Shopify ID: ${dbOrder.id}`);
+  console.log(`- Shopify Customer ID: ${dbOrder.customer_id || 'NOT LINKED IN SHOPIFY'}`);
+  console.log(`- DB Order Name: ${dbOrder.order_name}`);
+
+  // 2. Capture and Linkage Simulation
+  const ownerEmail = "collector-demo@example.com";
+  const ownerName = "Demo Collector";
+  const customerId = dbOrder.customer_id;
+
+  console.log('\n--- Linkage Result ---');
+  console.log(`Will link Edition to:`);
+  console.log(`- Email (from Warehouse): ${ownerEmail}`);
+  console.log(`- Name (from Warehouse): ${ownerName}`);
+  console.log(`- Customer ID (from Shopify): ${customerId || 'N/A'}`);
+
+  // 3. Check for Supabase User
+  const { data: userData } = await supabase
+    .from('users')
+    .select('id')
+    .eq('email', ownerEmail)
+    .maybeSingle();
+
+  if (userData) {
+    console.log(`- ✅ Matched Supabase User UUID: ${userData.id}`);
+  } else {
+    console.log(`- ℹ️ No Supabase user found for this email yet (Guest)`);
+  }
 }
 
-demo();
-
+run();
