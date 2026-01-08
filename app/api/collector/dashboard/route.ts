@@ -114,18 +114,6 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    // Fetch comprehensive profile for enriched display and authoritative stats
-    const resolvedEmail = email || orders?.[0]?.customer_email;
-    let profile = null;
-    if (resolvedEmail) {
-      const { data: profileData } = await supabase
-        .from("collector_profile_comprehensive")
-        .select("*")
-        .eq("user_email", resolvedEmail.toLowerCase())
-        .maybeSingle();
-      profile = profileData;
-    }
-
     const productIds = Array.from(
       new Set(
         (orders || [])
