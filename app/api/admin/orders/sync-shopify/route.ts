@@ -45,8 +45,40 @@ async function syncOrderWithShopify(
         const data = await response.json()
         shopifyOrder = data.order
       } else if (response.status === 404) {
-        // Order not found in Shopify - might be deleted/archived
+        // Order not found in Shopify - mark as archived and voided in DB
         result.errors.push("Order not found in Shopify (may be deleted/archived)")
+        
+        // Mark order as archived and voided in database
+        const updates: any = {
+          archived: true,
+          cancelled_at: new Date().toISOString(), // Mark as cancelled
+          financial_status: "voided", // Mark as voided
+          shopify_order_status: "archived",
+          updated_at: new Date().toISOString(),
+        }
+        
+        const { error: updateError } = await supabase
+          .from("orders")
+          .update(updates)
+          .eq("id", dbOrder.id)
+
+        if (updateError) {
+          result.errors.push(`Database update error for deleted order: ${updateError.message}`)
+        } else {
+          result.updated = true
+          result.changes.push("Order not found in Shopify, marked as archived/voided in DB")
+        }
+        
+        // Also update line items to inactive
+        await supabase
+          .from("order_line_items_v2")
+          .update({ 
+            status: "inactive",
+            updated_at: new Date().toISOString()
+          })
+          .eq("order_id", dbOrder.id)
+          .eq("status", "active")
+        
         return result
       }
     } catch (fetchError: any) {
@@ -86,7 +118,40 @@ async function syncOrderWithShopify(
     }
 
     if (!shopifyOrder) {
+      // Order not found in Shopify after all search attempts - mark as archived and voided
       result.errors.push("Order not found in Shopify")
+      
+      // Mark order as archived and voided in database
+      const updates: any = {
+        archived: true,
+        cancelled_at: new Date().toISOString(), // Mark as cancelled
+        financial_status: "voided", // Mark as voided
+        shopify_order_status: "archived",
+        updated_at: new Date().toISOString(),
+      }
+      
+      const { error: updateError } = await supabase
+        .from("orders")
+        .update(updates)
+        .eq("id", dbOrder.id)
+
+      if (updateError) {
+        result.errors.push(`Database update error for deleted order: ${updateError.message}`)
+      } else {
+        result.updated = true
+        result.changes.push("Order not found in Shopify, marked as archived/voided in DB")
+      }
+      
+      // Also update line items to inactive
+      await supabase
+        .from("order_line_items_v2")
+        .update({ 
+          status: "inactive",
+          updated_at: new Date().toISOString()
+        })
+        .eq("order_id", dbOrder.id)
+        .eq("status", "active")
+      
       return result
     }
 
