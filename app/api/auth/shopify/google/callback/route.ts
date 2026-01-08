@@ -26,7 +26,8 @@ export async function GET(request: NextRequest) {
       return NextResponse.redirect(new URL("/login?error=missing_customer", request.url))
     }
 
-    const cookieDomain = process.env.NODE_ENV === "production" ? ".thestreetlamp.com" : undefined
+    // Use the standard domain for cookies
+    const cookieDomain = process.env.NODE_ENV === "production" ? ".thestreetcollector.com" : undefined
 
     // Build collector session to keep dashboard data fetching consistent
     const collectorCookie = buildCollectorSessionCookie(

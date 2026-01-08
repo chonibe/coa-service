@@ -459,6 +459,12 @@ The edition number assignment system allows for automatic assignment of edition 
 
 ## Recent Updates
 
+### Admin Collector Profile Access (2025-01-08)
+- **Issue Fixed**: Admin users couldn't access collector profile functionality
+- **Solution**: Added dedicated collector profile access for admin users at `/admin/collector-profile`
+- **Impact**: Admin users like `chonibe@gmail.com` can now manage their collector profiles, view editions, orders, and change history
+- **Files**: [`app/admin/collector-profile/page.tsx`](./app/admin/collector-profile/page.tsx), updated [`app/admin/page.tsx`](./app/admin/page.tsx)
+
 ### Collector Marketplace Vendor Profile Fix
 - Corrected vendor profile field selection to use existing Supabase columns in collector APIs [`app/api/collector/marketplace/route.ts`](./app/api/collector/marketplace/route.ts), [`app/api/collector/products/[id]/route.ts`](./app/api/collector/products/%5Bid%5D/route.ts), [`app/api/collector/series/[id]/route.ts`](./app/api/collector/series/%5Bid%5D/route.ts), [`app/api/collector/artists/[name]/route.ts`](./app/api/collector/artists/%5Bname%5D/route.ts).
 
