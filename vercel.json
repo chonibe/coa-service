@@ -41,6 +41,10 @@
     {
       "path": "/api/cron/sync-shopify-orders",
       "schedule": "0 */6 * * *"
+    },
+    {
+      "path": "/api/cron/sync-shopify-orders?full=true",
+      "schedule": "0 2 * * *"
     }
   ]
 }

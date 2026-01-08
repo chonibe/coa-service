@@ -98,6 +98,200 @@ async function fetchAllOrdersFromShopify(startDate: Date): Promise<ShopifyOrder[
   return allOrders;
 }
 
+/**
+ * Sync a single order from database with Shopify
+ * Uses the same logic as the admin sync endpoint
+ */
+async function syncOrderFromDatabaseWithShopify(
+  dbOrder: any,
+  supabase: any
+): Promise<SyncResult> {
+  const result: SyncResult = {
+    order_id: dbOrder.id,
+    order_number: dbOrder.order_number?.toString() || "N/A",
+    updated: false,
+    changes: [],
+    errors: [],
+  }
+
+  try {
+    // Fetch order from Shopify
+    let shopifyOrder: any = null
+    const shopifyOrderId = dbOrder.id
+
+    // Try fetching by order ID first
+    try {
+      const response = await fetch(
+        `https://${SHOPIFY_SHOP}/admin/api/2024-01/orders/${shopifyOrderId}.json?status=any`,
+        {
+          headers: {
+            "X-Shopify-Access-Token": SHOPIFY_ACCESS_TOKEN,
+            "Content-Type": "application/json",
+          },
+        }
+      )
+
+      if (response.ok) {
+        const data = await response.json()
+        shopifyOrder = data.order
+      } else if (response.status === 404) {
+        // Order not found in Shopify - mark as archived
+        result.errors.push("Order not found in Shopify (may be deleted/archived)")
+        // Mark order as archived in database
+        await supabase
+          .from("orders")
+          .update({ archived: true, updated_at: new Date().toISOString() })
+          .eq("id", dbOrder.id)
+        return result
+      }
+    } catch (fetchError: any) {
+      // If ID fetch fails, try searching by order number
+      if (dbOrder.order_number) {
+        try {
+          const orderNumberStr = dbOrder.order_number.toString()
+          const searchTerms = [`#${orderNumberStr}`, orderNumberStr]
+          
+          for (const searchTerm of searchTerms) {
+            const searchResponse = await fetch(
+              `https://${SHOPIFY_SHOP}/admin/api/2024-01/orders.json?name=${encodeURIComponent(searchTerm)}&status=any&limit=1`,
+              {
+                headers: {
+                  "X-Shopify-Access-Token": SHOPIFY_ACCESS_TOKEN,
+                  "Content-Type": "application/json",
+                },
+              }
+            )
+
+            if (searchResponse.ok) {
+              const searchData = await searchResponse.json()
+              if (searchData.orders && searchData.orders.length > 0) {
+                shopifyOrder = searchData.orders[0]
+                break
+              }
+            }
+          }
+        } catch (searchError: any) {
+          result.errors.push(`Error searching for order: ${searchError.message}`)
+          return result
+        }
+      } else {
+        result.errors.push(`Error fetching order: ${fetchError.message}`)
+        return result
+      }
+    }
+
+    if (!shopifyOrder) {
+      result.errors.push("Order not found in Shopify")
+      // Mark as archived
+      await supabase
+        .from("orders")
+        .update({ archived: true, updated_at: new Date().toISOString() })
+        .eq("id", dbOrder.id)
+      return result
+    }
+
+    // Prepare update object - Shopify is the source of truth
+    const updates: any = {}
+    const changes: string[] = []
+
+    // 1. Sync financial_status from Shopify
+    const shopifyFinancialStatus = shopifyOrder.financial_status || null
+    if (dbOrder.financial_status !== shopifyFinancialStatus) {
+      updates.financial_status = shopifyFinancialStatus
+      changes.push(`Financial Status: ${dbOrder.financial_status || "null"} → ${shopifyFinancialStatus || "null"}`)
+    }
+
+    // 2. Sync fulfillment_status from Shopify
+    const shopifyFulfillmentStatus = shopifyOrder.fulfillment_status || null
+    if (dbOrder.fulfillment_status !== shopifyFulfillmentStatus) {
+      updates.fulfillment_status = shopifyFulfillmentStatus
+      changes.push(`Fulfillment Status: ${dbOrder.fulfillment_status || "null"} → ${shopifyFulfillmentStatus || "null"}`)
+    }
+
+    // 3. Sync cancelled_at from Shopify
+    const shopifyCancelledAt = shopifyOrder.cancelled_at || null
+    const dbCancelledAt = dbOrder.cancelled_at || null
+    
+    let cancelledAtMatches = false
+    if (dbCancelledAt === null && shopifyCancelledAt === null) {
+      cancelledAtMatches = true
+    } else if (dbCancelledAt !== null && shopifyCancelledAt !== null) {
+      const dbTime = new Date(dbCancelledAt).getTime()
+      const shopifyTime = new Date(shopifyCancelledAt).getTime()
+      cancelledAtMatches = Math.abs(dbTime - shopifyTime) < 1000
+    }
+    
+    if (!cancelledAtMatches) {
+      updates.cancelled_at = shopifyCancelledAt
+      if (shopifyCancelledAt) {
+        changes.push(`Cancelled At: ${dbCancelledAt || "null"} → ${shopifyCancelledAt}`)
+      } else {
+        changes.push(`Cancelled At: ${dbCancelledAt || "null"} → null (cleared)`)
+      }
+    }
+
+    // 4. Sync archived status from Shopify
+    const shopifyTags = (shopifyOrder.tags || "").toLowerCase()
+    const shopifyArchived = 
+      shopifyTags.includes("archived") || 
+      shopifyOrder.closed_at !== null ||
+      shopifyOrder.cancel_reason !== null
+    const dbArchived = dbOrder.archived ?? false
+    if (dbArchived !== shopifyArchived) {
+      updates.archived = shopifyArchived
+      changes.push(`Archived: ${dbArchived} → ${shopifyArchived}`)
+    }
+
+    // 5. Sync shopify_order_status from Shopify
+    const shopifyOrderStatus = shopifyOrder.status || null
+    if (dbOrder.shopify_order_status !== shopifyOrderStatus) {
+      updates.shopify_order_status = shopifyOrderStatus
+      changes.push(`Shopify Status: ${dbOrder.shopify_order_status || "null"} → ${shopifyOrderStatus || "null"}`)
+    }
+
+    // 6. Always update raw_shopify_order_data and updated_at
+    updates.raw_shopify_order_data = shopifyOrder
+    updates.updated_at = new Date().toISOString()
+
+    // Check if there are actual field changes
+    const actualChanges = Object.keys(updates).filter(key => 
+      key !== 'raw_shopify_order_data' && key !== 'updated_at'
+    )
+    
+    if (actualChanges.length > 0 || changes.length > 0) {
+      const { error: updateError } = await supabase
+        .from("orders")
+        .update(updates)
+        .eq("id", dbOrder.id)
+
+      if (updateError) {
+        result.errors.push(`Database update error: ${updateError.message}`)
+      } else {
+        result.updated = true
+        result.changes = changes
+      }
+    }
+
+    // 7. Update line items based on Shopify cancellation status
+    const shopifyCancelled = !!shopifyOrder.cancelled_at
+    if (shopifyCancelled) {
+      await supabase
+        .from("order_line_items_v2")
+        .update({ 
+          status: "inactive",
+          updated_at: new Date().toISOString()
+        })
+        .eq("order_id", dbOrder.id)
+        .eq("status", "active")
+    }
+
+  } catch (error: any) {
+    result.errors.push(`Unexpected error: ${error.message}`)
+  }
+
+  return result
+}
+
 export async function GET(request: NextRequest) {
   const supabase = createClient()
   
@@ -119,34 +313,92 @@ export async function GET(request: NextRequest) {
 
     const db = supabase; // Create a non-null reference
 
-    // Get the last sync timestamp from the database
-    let startDate = new Date();
-    startDate.setHours(startDate.getHours() - 1); // Default to last hour
-
-    const { data: lastSync, error: syncError } = await db
-      .from("sync_logs")
-      .select("created_at")
-      .order("created_at", { ascending: false })
-      .limit(1);
-
-    if (!syncError && lastSync && lastSync.length > 0) {
-      const lastSyncDate = new Date((lastSync[0] as SyncLog).created_at);
-      // Add a small buffer to avoid missing orders
-      lastSyncDate.setMinutes(lastSyncDate.getMinutes() - 5);
-      startDate = lastSyncDate;
-    }
-
-    console.log(`[Cron] Fetching orders since ${startDate.toISOString()}`);
-
-    // Fetch all orders from Shopify
-    const orders = await fetchAllOrdersFromShopify(startDate);
-    console.log(`[Cron] Found ${orders.length} orders to sync`);
+    // Check if this is a full sync (runs less frequently)
+    // Full sync: sync all orders from database with Shopify
+    // Incremental sync: sync recent orders from Shopify
+    const { searchParams } = new URL(request.url);
+    const fullSync = searchParams.get("full") === "true";
 
     let processedCount = 0;
     let errorCount = 0;
+    let updatedCount = 0;
 
-    // Sync orders to database
-    if (orders.length > 0) {
+    if (fullSync) {
+      // FULL SYNC: Fetch orders from database and sync each with Shopify
+      console.log(`[Cron] Starting FULL sync - syncing all orders from database with Shopify`);
+      
+      // Fetch all orders from database (limit to avoid timeout, process in batches)
+      const { data: dbOrders, error: dbError } = await db
+        .from("orders")
+        .select("id, order_number, financial_status, fulfillment_status, raw_shopify_order_data, created_at, updated_at, cancelled_at, archived, shopify_order_status")
+        .order("created_at", { ascending: false })
+        .limit(1000); // Process up to 1000 orders per run
+
+      if (dbError) {
+        console.error("[Cron] Error fetching orders from database:", dbError);
+        return NextResponse.json(
+          { error: "Failed to fetch orders from database", details: dbError.message },
+          { status: 500 }
+        );
+      }
+
+      if (!dbOrders || dbOrders.length === 0) {
+        console.log("[Cron] No orders found in database");
+        return NextResponse.json({
+          success: true,
+          orders_synced: 0,
+          errors: 0,
+          updated: 0,
+          message: "No orders found in database",
+        });
+      }
+
+      console.log(`[Cron] Found ${dbOrders.length} orders in database to sync with Shopify`);
+
+      // Sync each order from database with Shopify
+      for (const dbOrder of dbOrders) {
+        try {
+          const syncResult = await syncOrderFromDatabaseWithShopify(dbOrder, db);
+          processedCount++;
+          if (syncResult.updated) {
+            updatedCount++;
+          }
+          if (syncResult.errors.length > 0) {
+            errorCount++;
+            console.error(`[Cron] Error syncing order ${dbOrder.order_number}:`, syncResult.errors);
+          }
+        } catch (error: any) {
+          errorCount++;
+          console.error(`[Cron] Error processing order ${dbOrder.order_number}:`, error);
+        }
+      }
+    } else {
+      // INCREMENTAL SYNC: Fetch recent orders from Shopify and sync to database
+      let startDate = new Date();
+      startDate.setHours(startDate.getHours() - 1); // Default to last hour
+
+      const { data: lastSync, error: syncError } = await db
+        .from("sync_logs")
+        .select("created_at")
+        .eq("type", "cron_job")
+        .order("created_at", { ascending: false })
+        .limit(1);
+
+      if (!syncError && lastSync && lastSync.length > 0) {
+        const lastSyncDate = new Date((lastSync[0] as SyncLog).created_at);
+        // Add a small buffer to avoid missing orders
+        lastSyncDate.setMinutes(lastSyncDate.getMinutes() - 5);
+        startDate = lastSyncDate;
+      }
+
+      console.log(`[Cron] Fetching orders from Shopify since ${startDate.toISOString()}`);
+
+      // Fetch all orders from Shopify
+      const orders = await fetchAllOrdersFromShopify(startDate);
+      console.log(`[Cron] Found ${orders.length} orders to sync from Shopify`);
+
+      // Sync orders to database
+      if (orders.length > 0) {
       for (const order of orders) {
         try {
           // Sync order data - Shopify is the source of truth
@@ -264,30 +516,32 @@ export async function GET(request: NextRequest) {
           errorCount++;
         }
       }
+    }
+    }
 
-      // Log successful sync
-      const syncLog = {
-        type: "cron_job",
-        details: {
-          orders_synced: processedCount,
-          errors: errorCount,
-          start_date: startDate.toISOString(),
-          end_date: new Date().toISOString(),
-          period: `${startDate.toISOString()} to ${new Date().toISOString()}`,
-        } as Json,
-      };
+    // Log successful sync
+    const syncLog = {
+      type: "cron_job",
+      details: {
+        sync_type: fullSync ? "full" : "incremental",
+        orders_synced: processedCount,
+        orders_updated: updatedCount,
+        errors: errorCount,
+        end_date: new Date().toISOString(),
+      } as Json,
+    };
 
-      const { error: logError } = await db.from("sync_logs").insert(syncLog);
-      if (logError) {
-        console.error("[Cron] Error logging sync:", logError);
-      }
+    const { error: logError } = await db.from("sync_logs").insert(syncLog);
+    if (logError) {
+      console.error("[Cron] Error logging sync:", logError);
     }
 
     return NextResponse.json({
       success: true,
+      sync_type: fullSync ? "full" : "incremental",
       orders_synced: processedCount,
+      orders_updated: updatedCount,
       errors: errorCount,
-      start_date: startDate.toISOString(),
       end_date: new Date().toISOString(),
     });
   } catch (error: any) {
