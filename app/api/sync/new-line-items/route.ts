@@ -211,19 +211,17 @@ export async function POST() {
       totalNewOrders: newOrders?.length || 0,
       syncedLineItems,
       errors,
-      productsWithEditionsAssigned: editionAssignments,
-      editionAssignmentErrors
+      productsWithActiveItems: productIdsToResequence.size
     });
 
     return NextResponse.json({ 
       success: true, 
-      message: `Synced ${syncedLineItems} line items from ${newOrders?.length || 0} new orders. Assigned edition numbers for ${editionAssignments} products.`,
+      message: `Synced ${syncedLineItems} line items from ${newOrders?.length || 0} new orders. Edition numbers will be auto-assigned by triggers.`,
       stats: {
         totalNewOrders: newOrders?.length || 0,
         syncedLineItems,
         errors,
-        productsWithEditionsAssigned: editionAssignments,
-        editionAssignmentErrors
+        productsWithActiveItems: productIdsToResequence.size
       }
     });
 

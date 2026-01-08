@@ -1,7 +1,7 @@
 import { createHmac, timingSafeEqual } from "crypto"
 
 export interface CollectorSessionPayload {
-  shopifyCustomerId: string
+  shopifyCustomerId: string | null
   email: string | null
   collectorIdentifier?: string | null
   impersonated?: boolean
@@ -48,7 +48,8 @@ export const verifyCollectorSessionToken = (token: string | undefined): Collecto
 
   try {
     const payload = JSON.parse(base64UrlDecode(encodedPayload))
-    if (!payload?.shopifyCustomerId) return null
+    // Require either a shopifyCustomerId or an email
+    if (!payload?.shopifyCustomerId && !payload?.email) return null
     return payload
   } catch (error) {
     console.error("[collector-session] parse error", error)

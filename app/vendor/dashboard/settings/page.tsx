@@ -691,7 +691,9 @@ export default function VendorSettingsPage() {
                   </CardHeader>
                   <CardContent className="space-y-4">
                     <div className="space-y-2">
-                      <Label htmlFor="paypal_email">PayPal Email</Label>
+                      <Label htmlFor="paypal_email" className={!formState.paypal_email ? "text-amber-600 dark:text-amber-400 font-bold" : ""}>
+                        PayPal Email {!formState.paypal_email && "(Required for Payouts)"}
+                      </Label>
                       <Input
                         id="paypal_email"
                         name="paypal_email"
@@ -699,10 +701,17 @@ export default function VendorSettingsPage() {
                         placeholder="paypal@example.com"
                         value={formState.paypal_email}
                         onChange={handleInputChange}
+                        className={!formState.paypal_email ? "border-amber-500 ring-amber-500" : ""}
                       />
-                      <p className="text-sm text-muted-foreground">
-                        We primarily use PayPal for vendor payments. Please ensure this is correct.
-                      </p>
+                      {!formState.paypal_email ? (
+                        <p className="text-sm text-amber-600 dark:text-amber-400 font-medium">
+                          You must provide a PayPal email address to receive payouts.
+                        </p>
+                      ) : (
+                        <p className="text-sm text-muted-foreground">
+                          We primarily use PayPal for vendor payments. Please ensure this is correct.
+                        </p>
+                      )}
                     </div>
 
                     <Separator className="my-4" />

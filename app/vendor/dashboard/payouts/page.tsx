@@ -545,7 +545,7 @@ export default function PayoutsPage() {
                 console.log("[Button] Request Payment clicked", { pendingAmount, pendingLineItems: pendingLineItems.length, isRedeeming, isLoading })
                 handleRedeem()
               }} 
-              disabled={isRedeeming || isLoading || pendingLineItems.length === 0} 
+              disabled={isRedeeming || isLoading || pendingLineItems.length === 0 || isPayPalEmailMissing} 
               className="flex items-center gap-1 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-lg"
             >
               <Wallet className={`h-4 w-4 ${isRedeeming ? "animate-pulse" : ""}`} />

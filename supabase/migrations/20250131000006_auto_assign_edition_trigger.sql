@@ -13,8 +13,7 @@ BEGIN
     -- 3. Product ID exists
     IF NEW.status = 'active' 
        AND NEW.edition_number IS NULL 
-       AND NEW.product_id IS NOT NULL 
-       AND NEW.product_id != '' THEN
+       AND NEW.product_id IS NOT NULL THEN
         
         -- Call assign_edition_numbers function for this product
         -- This will assign numbers to all active items without numbers
@@ -39,7 +38,7 @@ DROP TRIGGER IF EXISTS trg_auto_assign_edition ON order_line_items_v2;
 CREATE TRIGGER trg_auto_assign_edition
 AFTER INSERT OR UPDATE ON order_line_items_v2
 FOR EACH ROW
-WHEN (NEW.status = 'active' AND NEW.edition_number IS NULL AND NEW.product_id IS NOT NULL AND NEW.product_id != '')
+WHEN (NEW.status = 'active' AND NEW.edition_number IS NULL AND NEW.product_id IS NOT NULL)
 EXECUTE FUNCTION auto_assign_edition_on_insert_or_update();
 
 -- Add comment

@@ -35,7 +35,9 @@ export async function GET(request: NextRequest) {
 
   const collectorSession = verifyCollectorSessionToken(request.cookies.get("collector_session")?.value)
   const customerId = collectorSession?.shopifyCustomerId || request.cookies.get("shopify_customer_id")?.value
-  if (!customerId) {
+  const email = collectorSession?.email
+
+  if (!customerId && !email) {
     return NextResponse.json(
       { success: false, message: "Missing customer session" },
       { status: 401 },
@@ -43,7 +45,7 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    const { data: orders, error: ordersError } = await supabase
+    let query = supabase
       .from("orders")
       .select(
         `
@@ -53,6 +55,8 @@ export async function GET(request: NextRequest) {
         total_price,
         financial_status,
         fulfillment_status,
+        customer_id,
+        customer_email,
         order_line_items_v2 (
           id,
           line_item_id,
@@ -71,13 +75,26 @@ export async function GET(request: NextRequest) {
           edition_number,
           edition_total,
           status,
-          created_at
+          created_at,
+          owner_name,
+          owner_email,
+          owner_id
         )
       `,
       )
-      .eq("customer_id", customerId)
       .order("processed_at", { ascending: false })
-      .limit(50)
+      .limit(100)
+
+    // Filter by customer ID or email
+    if (customerId && email) {
+      query = query.or(`customer_id.eq.${customerId},customer_email.eq.${email}`)
+    } else if (customerId) {
+      query = query.eq("customer_id", customerId)
+    } else if (email) {
+      query = query.eq("customer_email", email)
+    }
+
+    const { data: orders, error: ordersError } = await query
 
     if (ordersError) {
       console.error("collector dashboard orders error", ordersError)

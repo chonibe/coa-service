@@ -27,10 +27,14 @@
   },
   "lint-staged": {
     "*.{ts,tsx,js,jsx}": [
-      "eslint --fix"
+      "eslint --fix",
+      "node scripts/scan-secrets.js"
     ],
     "vercel.json": [
-      "node -e \"const fs=require('fs'); const c=fs.readFileSync('vercel.json','utf8'); if(c.includes('ANON_KEY') || c.includes('SECRET')) { console.error('Error: vercel.json contains potential secrets!'); process.exit(1); }\""
+      "node scripts/scan-secrets.js"
+    ],
+    ".env*": [
+      "node scripts/scan-secrets.js"
     ]
   },
   "dependencies": {

@@ -69,11 +69,25 @@ export async function POST(request: NextRequest) {
     }
 
     // Calculate total payout amount using fulfilled items only
-    // DISABLED: Custom payout settings - always use 25% of item price
+    // Follows the protocol: uses item-specific payout settings (already fetched in lineItems)
     let totalAmount = 0
-    fulfilledItems.forEach((item: any) => {
+    const payoutItems = fulfilledItems.map((item: any) => {
       const price = typeof item.price === "string" ? Number.parseFloat(item.price || "0") : item.price || 0
-      totalAmount += (price * 25) / 100 // Always 25% of item price
+      
+      // Calculate amount for this item based on its settings
+      const itemPayoutAmount = item.is_percentage 
+        ? (price * (item.payout_amount || 25)) / 100 
+        : (item.payout_amount || (price * 25) / 100)
+      
+      totalAmount += itemPayoutAmount
+
+      return {
+        line_item_id: item.line_item_id,
+        order_id: item.order_id,
+        product_id: item.product_id,
+        amount: itemPayoutAmount,
+        created_at: new Date().toISOString(),
+      }
     })
 
     // Generate a unique reference number
@@ -113,16 +127,12 @@ export async function POST(request: NextRequest) {
     const payoutId = payoutRecord.id
 
     // Associate line items with this payout request (only fulfilled items)
-    const payoutItems = fulfilledItems.map((item: any) => ({
-      payout_id: payoutId,
-      line_item_id: item.line_item_id,
-      order_id: item.order_id,
-      product_id: item.product_id,
-      amount: item.is_percentage ? (item.price * item.payout_amount) / 100 : item.payout_amount,
-      created_at: new Date().toISOString(),
+    const payoutItemsWithId = payoutItems.map(item => ({
+      ...item,
+      payout_id: payoutId
     }))
 
-    const { error: insertError } = await supabase.from("vendor_payout_items").insert(payoutItems)
+    const { error: insertError } = await supabase.from("vendor_payout_items").insert(payoutItemsWithId)
 
     if (insertError) {
       // Rollback payout record

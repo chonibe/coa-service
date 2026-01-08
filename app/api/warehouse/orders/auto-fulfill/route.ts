@@ -174,14 +174,34 @@ export async function POST(request: NextRequest) {
         // Update Supabase order + line items
         if (!dryRun) {
           const updatedAt = new Date().toISOString()
+          const ownerEmail = order.ship_email?.toLowerCase()
+          const ownerName = `${order.first_name || ''} ${order.last_name || ''}`.trim()
+          
+          // Try to find a matching registered user for owner_id
+          let ownerId: string | null = null
+          if (ownerEmail) {
+            const { data: userData } = await supabase
+              .from('users')
+              .select('id')
+              .eq('email', ownerEmail)
+              .maybeSingle()
+            
+            if (userData) {
+              ownerId = userData.id
+            }
+          }
+
+          // Update orders table
           await supabase
             .from('orders')
             .update({
               fulfillment_status: 'fulfilled',
+              customer_email: ownerEmail || undefined,
               updated_at: updatedAt,
             })
             .eq('id', order.order_id.toString())
 
+          // Update legacy line items
           await supabase
             .from('order_line_items')
             .update({
@@ -189,6 +209,18 @@ export async function POST(request: NextRequest) {
               tracking_number: order.tracking_number,
               tracking_url: order.last_mile_tracking || order.tracking_number || null,
               tracking_company: order.carrier || 'ChinaDivision',
+              updated_at: updatedAt,
+            })
+            .eq('order_id', order.order_id.toString())
+
+          // Update v2 line items with PII linkage
+          await supabase
+            .from('order_line_items_v2')
+            .update({
+              fulfillment_status: 'fulfilled',
+              owner_name: ownerName || null,
+              owner_email: ownerEmail || null,
+              owner_id: ownerId,
               updated_at: updatedAt,
             })
             .eq('order_id', order.order_id.toString())

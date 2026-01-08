@@ -11,18 +11,20 @@ BEGIN
     event_type_value := NULL;
     event_data_value := '{}'::jsonb;
 
-    -- Check if edition_number was assigned (NEW has it, OLD doesn't)
-    IF NEW.edition_number IS NOT NULL AND (OLD.edition_number IS NULL OR OLD.edition_number IS DISTINCT FROM NEW.edition_number) THEN
+    -- Check if edition_number was assigned (NEW has it, OLD doesn't or is different)
+    -- Handle INSERT case (OLD is NULL) and UPDATE case (OLD exists)
+    IF NEW.edition_number IS NOT NULL AND 
+       (OLD IS NULL OR OLD.edition_number IS NULL OR OLD.edition_number IS DISTINCT FROM NEW.edition_number) THEN
         event_type_value := 'edition_assigned';
         event_data_value := jsonb_build_object(
             'edition_number', NEW.edition_number,
             'edition_total', NEW.edition_total,
-            'previous_edition_number', OLD.edition_number
+            'previous_edition_number', CASE WHEN OLD IS NULL THEN NULL ELSE OLD.edition_number END
         );
     END IF;
 
     -- Check if NFC was authenticated (NEW has nfc_claimed_at, OLD doesn't)
-    IF NEW.nfc_claimed_at IS NOT NULL AND (OLD.nfc_claimed_at IS NULL) THEN
+    IF NEW.nfc_claimed_at IS NOT NULL AND (OLD IS NULL OR OLD.nfc_claimed_at IS NULL) THEN
         event_type_value := 'nfc_authenticated';
         event_data_value := jsonb_build_object(
             'nfc_tag_id', NEW.nfc_tag_id,
@@ -31,10 +33,11 @@ BEGIN
         );
     END IF;
 
-    -- Check if ownership changed
-    IF (OLD.owner_name IS DISTINCT FROM NEW.owner_name) OR 
-       (OLD.owner_email IS DISTINCT FROM NEW.owner_email) OR
-       (OLD.owner_id IS DISTINCT FROM NEW.owner_id) THEN
+    -- Check if ownership changed (only on UPDATE, not INSERT)
+    IF OLD IS NOT NULL AND 
+       ((OLD.owner_name IS DISTINCT FROM NEW.owner_name) OR 
+        (OLD.owner_email IS DISTINCT FROM NEW.owner_email) OR
+        (OLD.owner_id IS DISTINCT FROM NEW.owner_id)) THEN
         event_type_value := 'ownership_transfer';
         event_data_value := jsonb_build_object(
             'from_owner_name', OLD.owner_name,
@@ -46,8 +49,8 @@ BEGIN
         );
     END IF;
 
-    -- Check if status changed
-    IF OLD.status IS DISTINCT FROM NEW.status THEN
+    -- Check if status changed (only on UPDATE, not INSERT)
+    IF OLD IS NOT NULL AND OLD.status IS DISTINCT FROM NEW.status THEN
         event_type_value := 'status_changed';
         event_data_value := jsonb_build_object(
             'from_status', OLD.status,
@@ -57,7 +60,7 @@ BEGIN
     END IF;
 
     -- Check if certificate was generated
-    IF NEW.certificate_url IS NOT NULL AND (OLD.certificate_url IS NULL) THEN
+    IF NEW.certificate_url IS NOT NULL AND (OLD IS NULL OR OLD.certificate_url IS NULL) THEN
         event_type_value := 'certificate_generated';
         event_data_value := jsonb_build_object(
             'certificate_url', NEW.certificate_url,

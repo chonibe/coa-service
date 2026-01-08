@@ -51,33 +51,37 @@ export async function GET(request: NextRequest) {
   }
 
   const shopifyCustomerId = orderMatch?.customer_id || orderMatch?.shopify_id
-  if (!shopifyCustomerId) {
+  
+  // If no order match found at all, then they can't log in as a collector
+  if (!orderMatch && !orderError) {
     return NextResponse.redirect(new URL(`/login?error=no_collector_profile`, origin))
   }
 
   const collectorCookie = buildCollectorSessionCookie({
-    shopifyCustomerId: shopifyCustomerId.toString(),
+    shopifyCustomerId: shopifyCustomerId ? shopifyCustomerId.toString() : null,
     email,
     collectorIdentifier: null,
     impersonated: false,
     issuedAt: Date.now(),
   })
 
-  const shopifyCookie = {
-    name: "shopify_customer_id",
-    value: shopifyCustomerId.toString(),
-    options: {
-      path: "/",
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "lax" as const,
-      maxAge: 60 * 60 * 24,
-    },
-  }
-
   const response = NextResponse.redirect(new URL(redirectParam, origin))
   response.cookies.set(collectorCookie.name, collectorCookie.value, collectorCookie.options)
-  response.cookies.set(shopifyCookie.name, shopifyCookie.value, shopifyCookie.options)
+  
+  if (shopifyCustomerId) {
+    const shopifyCookie = {
+      name: "shopify_customer_id",
+      value: shopifyCustomerId.toString(),
+      options: {
+        path: "/",
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "lax" as const,
+        maxAge: 60 * 60 * 24,
+      },
+    }
+    response.cookies.set(shopifyCookie.name, shopifyCookie.value, shopifyCookie.options)
+  }
   // Clear any stale collector session if present
   response.cookies.set(clearCollectorSessionCookie().name, "", clearCollectorSessionCookie().options)
 
