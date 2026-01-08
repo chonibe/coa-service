@@ -41,8 +41,11 @@ export async function POST(request: NextRequest) {
         const { vendor_name, amount, product_count } = payout
 
         if (!vendor_name || !amount) {
+          console.warn(`[payouts/process] Skipping payout record: missing vendor_name or amount`, payout)
           continue
         }
+
+        console.log(`[payouts/process] Creating payout record for ${vendor_name} ($${amount})`)
 
         // Generate a unique reference number
         const reference = `PAY-${Date.now()}-${crypto.randomBytes(4).toString("hex").toUpperCase()}`
@@ -84,6 +87,7 @@ export async function POST(request: NextRequest) {
         const payoutId = data[0].id
 
         // Get all pending fulfilled line items for this vendor
+        console.log(`[payouts/process] Fetching pending line items for ${vendor_name}`)
         const { data: lineItems, error: lineItemsError } = await supabase.rpc("get_vendor_pending_line_items", {
           p_vendor_name: vendor_name,
         })
@@ -94,37 +98,39 @@ export async function POST(request: NextRequest) {
         }
 
         if (!lineItems || lineItems.length === 0) {
-          continue
+          console.warn(`[payouts/process] No pending line items found for ${vendor_name}. Payout record created but no items associated.`)
+          // We still keep the payout record as the admin manually initiated it with a specific amount
+          // but we won't have individual line items linked to it.
+        } else {
+          // Associate line items with this payout
+          // Use payout settings from the RPC (which pulls from product_vendor_payouts)
+          const payoutItems = lineItems.map((item: any) => {
+            const price = Number(item.price)
+            const orderDate = new Date(item.created_at)
+            const october2025 = new Date('2025-10-01')
+            
+            // Calculate amount for this item based on its settings
+            let payoutAmount = item.is_percentage 
+              ? (price * (item.payout_amount || 25)) / 100 
+              : (item.payout_amount || (price * 25) / 100)
+            
+            // Maintain $10 minimum for historical orders (pre-October 2025)
+            if (orderDate < october2025 && payoutAmount < 10) {
+              payoutAmount = 10
+            }
+
+            return {
+              payout_id: payoutId,
+              line_item_id: item.line_item_id,
+              order_id: item.order_id,
+              product_id: item.product_id,
+              amount: payoutAmount,
+              created_at: new Date().toISOString(),
+            }
+          })
+
+          await supabase.from("vendor_payout_items").insert(payoutItems)
         }
-
-        // Associate line items with this payout
-        // Use payout settings from the RPC (which pulls from product_vendor_payouts)
-        const payoutItems = lineItems.map((item: any) => {
-          const price = Number(item.price)
-          const orderDate = new Date(item.created_at)
-          const october2025 = new Date('2025-10-01')
-          
-          // Calculate amount for this item based on its settings
-          let payoutAmount = item.is_percentage 
-            ? (price * (item.payout_amount || 25)) / 100 
-            : (item.payout_amount || (price * 25) / 100)
-          
-          // Maintain $10 minimum for historical orders (pre-October 2025)
-          if (orderDate < october2025 && payoutAmount < 10) {
-            payoutAmount = 10
-          }
-
-          return {
-            payout_id: payoutId,
-            line_item_id: item.line_item_id,
-            order_id: item.order_id,
-            product_id: item.product_id,
-            amount: payoutAmount,
-            created_at: new Date().toISOString(),
-          }
-        })
-
-        await supabase.from("vendor_payout_items").insert(payoutItems)
 
         payoutRecords.push({
           vendor_name,

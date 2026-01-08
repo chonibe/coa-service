@@ -30,7 +30,6 @@ export async function GET(request: NextRequest) {
           id,
           line_item_id,
           product_id,
-          shopify_product_id,
           name,
           img_url,
           vendor_name,
@@ -63,14 +62,14 @@ export async function GET(request: NextRequest) {
     }
 
     const allLineItems = (orders || []).flatMap((order) => 
-      (order.order_line_items_v2 || []).map(li => ({ ...li, order_processed_at: order.processed_at }))
+      (order.order_line_items_v2 || []).map((li: any) => ({ ...li, order_processed_at: order.processed_at }))
     )
 
     // Get series information for products
     const productIds = Array.from(
       new Set(
         allLineItems
-          .map((li: any) => li.product_id || li.shopify_product_id)
+          .map((li: any) => li.product_id)
           .filter(Boolean) as string[],
       ),
     )
@@ -104,8 +103,8 @@ export async function GET(request: NextRequest) {
     const editions: CollectorEdition[] = allLineItems
       .filter((li: any) => li.status === 'active')
       .map((li: any) => {
-        const series = (li.product_id || li.shopify_product_id)
-          ? seriesMap.get(li.product_id || li.shopify_product_id)
+        const series = li.product_id
+          ? seriesMap.get(li.product_id)
           : null
 
         // Determine edition type
@@ -127,7 +126,7 @@ export async function GET(request: NextRequest) {
         return {
           id: li.id,
           lineItemId: li.line_item_id,
-          productId: li.product_id || li.shopify_product_id,
+          productId: li.product_id,
           name: li.name,
           editionNumber: li.edition_number,
           editionTotal: li.edition_total,

@@ -40,13 +40,13 @@ export default function CollectorDetailPage() {
         // Actually, the view has counts, but for full lists we might need more APIs.
         // For now, let's use the email to fetch orders from existing APIs.
         
-        const ordersRes = await fetch(`/api/orders?customer_email=${profileData.user_email}&limit=100`);
+        const ordersRes = await fetch(`/api/admin/collectors/${id}/activity`);
         if (ordersRes.ok) {
-          const ordersData = await ordersRes.json();
-          setOrders(ordersData.orders || []);
+          const activityData = await ordersRes.json();
+          setOrders(activityData.orders || []);
         }
 
-        // We can fetch editions via email too
+        // Keep editions fetch as is for now, or use the orders data to derive it
         const editionsRes = await fetch(`/api/collector/editions?email=${profileData.user_email}`);
         if (editionsRes.ok) {
           const editionsData = await editionsRes.json();
@@ -230,29 +230,33 @@ export default function CollectorDetailPage() {
                 </div>
               ) : (
                 orders.map((order) => (
-                  <Card key={order.id} className="hover:border-primary/20 transition-colors shadow-none">
-                    <CardContent className="p-4">
+                  <Card key={order.id} className="hover:border-primary/20 transition-colors shadow-none overflow-hidden">
+                    <CardHeader className="p-4 bg-slate-50/50 border-b">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-4">
-                          <div className="bg-blue-50 p-2.5 rounded-lg border border-blue-100">
-                            <ShoppingBag className="h-5 w-5 text-blue-600" />
+                          <div className="bg-blue-50 p-2 rounded-lg border border-blue-100">
+                            <ShoppingBag className="h-4 w-4 text-blue-600" />
                           </div>
                           <div>
                             <div className="flex items-center gap-2">
-                              <h4 className="font-bold">Order #{order.order_number}</h4>
+                              <h4 className="font-bold text-sm">Order #{order.order_number || order.order_name}</h4>
                               <Badge variant={order.financial_status === 'paid' ? 'default' : 'secondary'} className="text-[10px] h-4">
                                 {order.financial_status}
                               </Badge>
+                              {order.fulfillment_status && (
+                                <Badge variant="outline" className="text-[10px] h-4 uppercase">
+                                  {order.fulfillment_status}
+                                </Badge>
+                              )}
                             </div>
-                            <p className="text-xs text-muted-foreground mt-0.5">
+                            <p className="text-[10px] text-muted-foreground mt-0.5">
                               {new Date(order.processed_at).toLocaleDateString()} at {new Date(order.processed_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                             </p>
                           </div>
                         </div>
                         <div className="text-right flex items-center gap-4">
                           <div>
-                            <p className="font-bold">{formatCurrency(order.total_price, order.currency_code)}</p>
-                            <p className="text-[10px] text-muted-foreground uppercase font-medium">{order.fulfillment_status || 'Pending'}</p>
+                            <p className="font-bold text-sm">{formatCurrency(order.total_price, order.currency_code)}</p>
                           </div>
                           <Link href={`/admin/orders/${order.id}`}>
                             <Button size="sm" variant="ghost" className="h-8 w-8 p-0">
@@ -260,6 +264,48 @@ export default function CollectorDetailPage() {
                             </Button>
                           </Link>
                         </div>
+                      </div>
+                    </CardHeader>
+                    <CardContent className="p-0">
+                      <div className="divide-y">
+                        {(order.order_line_items_v2 || []).map((item: any) => (
+                          <div key={item.id} className="p-3 flex items-center gap-3 hover:bg-slate-50/30 transition-colors">
+                            <div className="h-10 w-10 bg-slate-100 rounded overflow-hidden flex-shrink-0 border border-slate-200">
+                              {item.img_url ? (
+                                <img src={item.img_url} alt={item.name} className="h-full w-full object-cover" />
+                              ) : (
+                                <div className="h-full w-full flex items-center justify-center">
+                                  <Award className="h-5 w-5 text-slate-300" />
+                                </div>
+                              )}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center justify-between gap-2">
+                                <p className="text-sm font-medium truncate">{item.name}</p>
+                                <div className="flex items-center gap-1.5 flex-shrink-0">
+                                  {item.edition_number ? (
+                                    <Badge variant="secondary" className="text-[10px] h-4 font-bold bg-amber-50 text-amber-700 border-amber-200">
+                                      Edition #{item.edition_number}{item.edition_total ? ` / ${item.edition_total}` : ''}
+                                    </Badge>
+                                  ) : (
+                                    <Badge variant="outline" className="text-[10px] h-4 text-muted-foreground border-slate-200 uppercase font-semibold">
+                                      {item.vendor_name === 'Street Collector' || !item.vendor_name ? 'Accessory' : 'No Edition'}
+                                    </Badge>
+                                  )}
+                                  {item.nfc_claimed_at && (
+                                    <ShieldCheck className="h-3.5 w-3.5 text-green-600" title="Authenticated" />
+                                  )}
+                                </div>
+                              </div>
+                              <div className="flex items-center justify-between mt-0.5">
+                                <p className="text-[10px] text-muted-foreground uppercase tracking-tight">
+                                  {item.vendor_name || 'Street Collector'} • Qty: {item.quantity}
+                                </p>
+                                <p className="text-xs font-semibold">{formatCurrency(item.price, order.currency_code)}</p>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
                       </div>
                     </CardContent>
                   </Card>
@@ -276,38 +322,53 @@ export default function CollectorDetailPage() {
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {editions.map((edition) => (
-                    <Card key={edition.id} className="shadow-none group overflow-hidden">
+                    <Card key={edition.id} className="shadow-none group overflow-hidden border-slate-200/60 hover:border-primary/30 transition-all">
                       <div className="flex">
-                        <div className="w-24 h-24 bg-slate-100 relative overflow-hidden flex-shrink-0">
-                          {edition.products?.img_url ? (
-                            <img src={edition.products.img_url} alt={edition.name} className="object-cover w-full h-full" />
+                        <div className="w-24 h-24 bg-slate-50 relative overflow-hidden flex-shrink-0 border-r border-slate-100">
+                          {edition.imgUrl ? (
+                            <img src={edition.imgUrl} alt={edition.name} className="object-cover w-full h-full" />
                           ) : (
-                            <div className="flex items-center justify-center h-full text-slate-300">
-                              <Award className="h-8 w-8" />
+                            <div className="flex items-center justify-center h-full text-slate-200">
+                              <Award className="h-10 w-10" />
                             </div>
                           )}
                         </div>
-                        <div className="p-3 flex-1 min-w-0">
-                          <div className="flex items-start justify-between gap-2">
-                            <h4 className="font-bold text-sm truncate group-hover:text-primary transition-colors">{edition.name}</h4>
-                            <Badge variant="outline" className="text-[10px] h-4 whitespace-nowrap">
-                              #{edition.edition_number}/{edition.edition_total}
-                            </Badge>
+                        <div className="p-3 flex-1 min-w-0 flex flex-col justify-between">
+                          <div>
+                            <div className="flex items-start justify-between gap-2">
+                              <h4 className="font-bold text-xs truncate group-hover:text-primary transition-colors">{edition.name}</h4>
+                              {edition.editionNumber ? (
+                                <Badge variant="secondary" className="text-[9px] h-3.5 px-1.5 bg-amber-50 text-amber-700 border-amber-200 whitespace-nowrap">
+                                  #{edition.editionNumber}{edition.editionTotal ? ` / ${edition.editionTotal}` : ''}
+                                </Badge>
+                              ) : (
+                                <Badge variant="outline" className="text-[9px] h-3.5 px-1.5 text-muted-foreground border-slate-200 whitespace-nowrap">
+                                  Accessory
+                                </Badge>
+                              )}
+                            </div>
+                            <p className="text-[9px] text-muted-foreground uppercase font-semibold mt-0.5 tracking-tight">
+                              {edition.vendorName || 'Street Collector'}
+                            </p>
                           </div>
-                          <p className="text-[10px] text-muted-foreground uppercase font-medium mt-1">
-                            {edition.products?.vendor_name || 'Unknown Artist'}
-                          </p>
-                          <div className="mt-2 flex items-center justify-between">
-                            {edition.nfc_claimed_at ? (
-                              <Badge variant="default" className="text-[9px] h-3.5 bg-green-600 hover:bg-green-600 gap-1">
-                                <ShieldCheck className="h-2.5 w-2.5" />
-                                Authenticated
-                              </Badge>
-                            ) : (
-                              <Badge variant="secondary" className="text-[9px] h-3.5">Unclaimed</Badge>
-                            )}
-                            <span className="text-[9px] text-muted-foreground">
-                              Acquired {new Date(edition.created_at).toLocaleDateString()}
+                          <div className="flex items-center justify-between mt-2">
+                            <div className="flex items-center gap-1.5">
+                              {edition.nfc_claimed_at || edition.verificationSource === 'supabase' ? (
+                                <Badge variant="default" className="text-[8px] h-3.5 px-1 bg-green-600 hover:bg-green-600 gap-0.5">
+                                  <ShieldCheck className="h-2 w-2" />
+                                  Verified
+                                </Badge>
+                              ) : (
+                                <Badge variant="secondary" className="text-[8px] h-3.5 px-1">Unclaimed</Badge>
+                              )}
+                              {edition.editionType && (
+                                <Badge variant="outline" className="text-[8px] h-3.5 px-1 capitalize">
+                                  {edition.editionType}
+                                </Badge>
+                              )}
+                            </div>
+                            <span className="text-[8px] text-muted-foreground font-medium">
+                              {new Date(edition.purchaseDate || edition.created_at).toLocaleDateString()}
                             </span>
                           </div>
                         </div>
