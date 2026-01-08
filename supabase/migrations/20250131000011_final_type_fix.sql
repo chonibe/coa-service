@@ -1,5 +1,5 @@
--- Migration: Ultra Defensive Types for assign_edition_numbers
--- Fixes type mismatch errors (character varying = integer)
+-- Migration: Final Type Fix for assign_edition_numbers
+-- Fixes "character varying = integer" error by correctly handling edition_size as text
 
 CREATE OR REPLACE FUNCTION assign_edition_numbers(p_product_id TEXT)
 RETURNS INTEGER
@@ -8,19 +8,28 @@ AS $$
 DECLARE
     edition_count INTEGER := 0;
     line_item RECORD;
-    v_edition_size INTEGER;
+    v_edition_size_text TEXT;
+    v_edition_size_int INTEGER;
     v_is_open_edition BOOLEAN;
     next_available_number INTEGER := 1;
     used_edition_numbers INTEGER[];
     v_order_customer_email TEXT;
 BEGIN
-    -- Get the edition_size and check if it's an open edition
-    -- Use explicit casts to handle cases where product_id might be bigint or text
+    -- Get the edition_size as text first
     SELECT 
-        edition_size,
-        (edition_size IS NULL OR edition_size = 0) INTO v_edition_size, v_is_open_edition
+        edition_size INTO v_edition_size_text
     FROM products
     WHERE product_id::TEXT = p_product_id::TEXT;
+
+    -- Determine if it's an open edition
+    v_is_open_edition := (v_edition_size_text IS NULL OR v_edition_size_text = '' OR v_edition_size_text = '0');
+    
+    -- Convert to integer for comparison if not open edition
+    IF NOT v_is_open_edition THEN
+        v_edition_size_int := v_edition_size_text::INTEGER;
+    ELSE
+        v_edition_size_int := NULL;
+    END IF;
 
     -- Get all edition numbers currently used by authenticated items (preserve these)
     SELECT ARRAY_AGG(edition_number) INTO used_edition_numbers
@@ -66,8 +75,8 @@ BEGIN
         END LOOP;
         
         -- For limited editions, check if we've exceeded the edition size
-        IF NOT v_is_open_edition AND next_available_number > v_edition_size THEN
-            RAISE EXCEPTION 'Cannot assign edition number %: exceeds edition size of %', next_available_number, v_edition_size;
+        IF NOT v_is_open_edition AND next_available_number > v_edition_size_int THEN
+            RAISE EXCEPTION 'Cannot assign edition number %: exceeds edition size of %', next_available_number, v_edition_size_int;
         END IF;
 
         -- Try to get owner email from orders table if not present in line item
@@ -84,10 +93,7 @@ BEGIN
             SET 
                 edition_number = next_available_number,
                 owner_email = COALESCE(owner_email, v_order_customer_email),
-                edition_total = CASE 
-                    WHEN v_is_open_edition THEN NULL
-                    ELSE v_edition_size
-                END
+                edition_total = v_edition_size_int
             WHERE id = line_item.id;
             
             edition_count := edition_count + 1;
@@ -102,3 +108,4 @@ BEGIN
     RETURN edition_count;
 END;
 $$;
+
