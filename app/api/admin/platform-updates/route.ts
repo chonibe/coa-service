@@ -9,17 +9,29 @@ export async function GET(request: NextRequest) {
   }
 
   const { searchParams } = request.nextUrl
-  const limit = Math.min(Number.parseInt(searchParams.get("limit") || "10", 10), 50)
+  const limit = Math.min(Number.parseInt(searchParams.get("limit") || "10", 10), 100)
+  const category = searchParams.get("category")
+  const impact = searchParams.get("impact")
 
   const serviceClient = createServiceClient()
 
   try {
-    const { data, error } = await serviceClient
+    let query = serviceClient
       .from("platform_updates")
       .select("*")
       .eq("is_published", true)
       .order("created_at", { ascending: false })
       .limit(limit)
+
+    if (category && category !== "all") {
+      query = query.eq("category", category)
+    }
+
+    if (impact && impact !== "all") {
+      query = query.eq("impact_level", impact)
+    }
+
+    const { data, error } = await query
 
     if (error) {
       console.error("Failed to fetch platform updates", error)
@@ -47,7 +59,16 @@ export async function POST(request: NextRequest) {
 
   try {
     const body = await request.json()
-    const { title, description, category, version } = body
+    const { 
+      title, 
+      description, 
+      category, 
+      version, 
+      stakeholder_summary, 
+      technical_details, 
+      impact_level, 
+      is_breaking 
+    } = body
 
     if (!title || !description || !category) {
       return NextResponse.json(
@@ -65,6 +86,10 @@ export async function POST(request: NextRequest) {
           description,
           category,
           version,
+          stakeholder_summary: stakeholder_summary || description,
+          technical_details: technical_details || "",
+          impact_level: impact_level || "low",
+          is_breaking: is_breaking || false,
           admin_email: auth.email,
         },
       ])
@@ -88,4 +113,3 @@ export async function POST(request: NextRequest) {
     )
   }
 }
-

@@ -28,6 +28,7 @@ import {
   EnvelopeIcon,
   PencilIcon,
   BuildingOffice2Icon,
+  MegaphoneIcon,
 } from "@heroicons/react/24/outline"
 import { Icon } from "@/components/icon"
 import { Button } from "@/components/ui/button"
@@ -94,6 +95,12 @@ export function AdminShell({ children }: AdminShellProps) {
       title: "Dashboard",
       href: "/admin/dashboard",
       icon: <Icon size="md"><HomeIcon className="h-5 w-5" /></Icon>,
+    },
+    {
+      group: "Overview",
+      title: "Release Notes",
+      href: "/admin/release-notes",
+      icon: <Icon size="md"><MegaphoneIcon className="h-5 w-5" /></Icon>,
     },
     {
       group: "Products",
@@ -356,6 +363,32 @@ export function AdminShell({ children }: AdminShellProps) {
   const [savingEmail, setSavingEmail] = useState(false)
   const [impersonateConfirmOpen, setImpersonateConfirmOpen] = useState(false)
   const [pendingImpersonateVendor, setPendingImpersonateVendor] = useState<VendorRecord | null>(null)
+  const [hasNewUpdates, setHasNewUpdates] = useState(false)
+
+  // Check for new release notes
+  useEffect(() => {
+    const checkNewUpdates = async () => {
+      try {
+        const response = await fetch("/api/admin/platform-updates?limit=1")
+        if (!response.ok) return
+        const data = await response.json()
+        if (data.updates && data.updates.length > 0) {
+          const latestUpdate = data.updates[0]
+          const fortyEightHoursAgo = new Date()
+          fortyEightHoursAgo.setHours(fortyEightHoursAgo.getHours() - 48)
+          
+          if (new Date(latestUpdate.created_at) > fortyEightHoursAgo) {
+            setHasNewUpdates(true)
+          }
+        }
+      } catch (error) {
+        console.error("Failed to check for new updates", error)
+      }
+    }
+    
+    checkNewUpdates()
+  }, [])
+
   const commandItems = useMemo(() => {
     const entries: { title: string; href: string; group?: string }[] = []
     navItems.forEach((item) => {
@@ -873,6 +906,9 @@ export function AdminShell({ children }: AdminShellProps) {
                                 <div className="flex items-center gap-3">
                                   {item.icon}
                                   <span>{item.title}</span>
+                                  {item.title === "Release Notes" && hasNewUpdates && (
+                                    <span className="flex h-2 w-2 rounded-full bg-blue-500 animate-pulse" />
+                                  )}
                                 </div>
                                 <svg
                                   xmlns="http://www.w3.org/2000/svg"
@@ -919,6 +955,9 @@ export function AdminShell({ children }: AdminShellProps) {
                             >
                               {item.icon}
                               <span>{item.title}</span>
+                              {item.title === "Release Notes" && hasNewUpdates && (
+                                <span className="flex h-2 w-2 rounded-full bg-blue-500 animate-pulse" />
+                              )}
                             </Link>
                           )}
                         </div>

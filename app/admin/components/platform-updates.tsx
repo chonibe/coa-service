@@ -4,13 +4,33 @@ import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Loader2, Plus, Sparkles, Wrench, ArrowUpCircle, Info } from "lucide-react"
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
+import { 
+  Loader2, 
+  Plus, 
+  Sparkles, 
+  Wrench, 
+  ArrowUpCircle, 
+  Info, 
+  ChevronRight, 
+  AlertTriangle,
+  History
+} from "lucide-react"
+import { 
+  Dialog, 
+  DialogContent, 
+  DialogDescription, 
+  DialogFooter, 
+  DialogHeader, 
+  DialogTitle, 
+  DialogTrigger 
+} from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Checkbox } from "@/components/ui/checkbox"
 import { useToast } from "@/hooks/use-toast"
+import Link from "next/link"
 
 interface PlatformUpdate {
   id: string
@@ -18,6 +38,10 @@ interface PlatformUpdate {
   description: string
   category: "feature" | "fix" | "improvement" | "update"
   version?: string
+  stakeholder_summary?: string
+  technical_details?: string
+  impact_level: "low" | "medium" | "high" | "critical"
+  is_breaking: boolean
   created_at: string
 }
 
@@ -33,6 +57,10 @@ export function PlatformUpdates() {
   const [description, setDescription] = useState("")
   const [category, setCategory] = useState<string>("feature")
   const [version, setVersion] = useState("")
+  const [stakeholderSummary, setStakeholderSummary] = useState("")
+  const [technicalDetails, setTechnicalDetails] = useState("")
+  const [impactLevel, setImpactLevel] = useState<string>("low")
+  const [isBreaking, setIsBreaking] = useState(false)
 
   const fetchUpdates = async () => {
     try {
@@ -45,7 +73,7 @@ export function PlatformUpdates() {
       console.error("Error fetching updates:", error)
       toast({
         title: "Error",
-        description: "Could not load platform updates.",
+        description: "Could not load release notes.",
         variant: "destructive",
       })
     } finally {
@@ -65,14 +93,23 @@ export function PlatformUpdates() {
       const response = await fetch("/api/admin/platform-updates", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ title, description, category, version }),
+        body: JSON.stringify({ 
+          title, 
+          description, 
+          category, 
+          version,
+          stakeholder_summary: stakeholderSummary || description,
+          technical_details: technicalDetails,
+          impact_level: impactLevel,
+          is_breaking: isBreaking
+        }),
       })
 
-      if (!response.ok) throw new Error("Failed to create update")
+      if (!response.ok) throw new Error("Failed to create release note")
 
       toast({
         title: "Success",
-        description: "Platform update published successfully.",
+        description: "Release note published successfully.",
       })
 
       setIsFormOpen(false)
@@ -81,6 +118,10 @@ export function PlatformUpdates() {
       setDescription("")
       setCategory("feature")
       setVersion("")
+      setStakeholderSummary("")
+      setTechnicalDetails("")
+      setImpactLevel("low")
+      setIsBreaking(false)
       
       // Refresh list
       fetchUpdates()
@@ -88,7 +129,7 @@ export function PlatformUpdates() {
       console.error("Error creating update:", error)
       toast({
         title: "Error",
-        description: "Failed to publish update.",
+        description: "Failed to publish release note.",
         variant: "destructive",
       })
     } finally {
@@ -105,76 +146,136 @@ export function PlatformUpdates() {
     }
   }
 
-  const getCategoryBadge = (cat: string) => {
-    switch (cat) {
-      case "feature": return <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200">Feature</Badge>
-      case "fix": return <Badge variant="outline" className="bg-emerald-50 text-emerald-700 border-emerald-200">Fix</Badge>
-      case "improvement": return <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">Improvement</Badge>
-      default: return <Badge variant="outline">Update</Badge>
-    }
+  const getImpactBadge = (level: string) => {
+    if (level === "critical") return <Badge variant="destructive" className="text-[10px] h-4">CRITICAL</Badge>
+    if (level === "high") return <Badge variant="destructive" className="bg-orange-500 text-[10px] h-4">HIGH</Badge>
+    return null
   }
 
   return (
-    <Card className="shadow-sm">
+    <Card className="shadow-sm border-slate-200/60 dark:border-slate-800/60">
       <CardHeader className="pb-2">
         <div className="flex items-center justify-between">
-          <div>
-            <CardTitle className="text-base">Platform Updates</CardTitle>
-            <CardDescription>Latest changes and improvements</CardDescription>
+          <div className="flex items-center gap-2">
+            <History className="h-4 w-4 text-blue-500" />
+            <div>
+              <CardTitle className="text-base">Release Notes</CardTitle>
+              <CardDescription>Latest platform improvements</CardDescription>
+            </div>
           </div>
-          <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
-            <DialogTrigger asChild>
-              <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                <Plus className="h-4 w-4" />
-                <span className="sr-only">Add update</span>
-              </Button>
-            </DialogTrigger>
-            <DialogContent>
-              <form onSubmit={handleSubmit}>
-                <DialogHeader>
-                  <DialogTitle>Add Platform Update</DialogTitle>
-                  <DialogDescription>
-                    Publish a new update or feature announcement to the dashboard.
-                  </DialogDescription>
-                </DialogHeader>
-                <div className="grid gap-4 py-4">
-                  <div className="grid gap-2">
-                    <Label htmlFor="title">Title</Label>
-                    <Input id="title" value={title} onChange={(e) => setTitle(e.target.value)} placeholder="e.g. New Analytics Dashboard" required />
+          <div className="flex items-center gap-1">
+            <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
+              <DialogTrigger asChild>
+                <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                  <Plus className="h-4 w-4" />
+                  <span className="sr-only">Add release note</span>
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+                <form onSubmit={handleSubmit}>
+                  <DialogHeader>
+                    <DialogTitle>Publish Release Note</DialogTitle>
+                    <DialogDescription>
+                      Share new features, fixes, or improvements with the team and stakeholders.
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className="grid gap-6 py-4">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="grid gap-2">
+                        <Label htmlFor="title">Release Title</Label>
+                        <Input id="title" value={title} onChange={(e) => setTitle(e.target.value)} placeholder="e.g. Unified Ledger System" required />
+                      </div>
+                      <div className="grid gap-2">
+                        <Label htmlFor="version">Version</Label>
+                        <Input id="version" value={version} onChange={(e) => setVersion(e.target.value)} placeholder="e.g. 1.2.0" />
+                      </div>
+                    </div>
+                    
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="grid gap-2">
+                        <Label htmlFor="category">Category</Label>
+                        <Select value={category} onValueChange={setCategory}>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select category" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="feature">Feature</SelectItem>
+                            <SelectItem value="improvement">Improvement</SelectItem>
+                            <SelectItem value="fix">Fix</SelectItem>
+                            <SelectItem value="update">General Update</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="grid gap-2">
+                        <Label htmlFor="impact">Impact Level</Label>
+                        <Select value={impactLevel} onValueChange={setImpactLevel}>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select impact" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="low">Low Impact</SelectItem>
+                            <SelectItem value="medium">Medium Impact</SelectItem>
+                            <SelectItem value="high">High Impact</SelectItem>
+                            <SelectItem value="critical">Critical Impact</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center space-x-2 bg-slate-50 dark:bg-slate-900 p-3 rounded-md border">
+                      <Checkbox 
+                        id="is-breaking" 
+                        checked={isBreaking} 
+                        onCheckedChange={(checked) => setIsBreaking(checked as boolean)} 
+                      />
+                      <div className="grid gap-1.5 leading-none">
+                        <label
+                          htmlFor="is-breaking"
+                          className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 flex items-center gap-2"
+                        >
+                          <AlertTriangle className="h-3 w-3 text-orange-500" />
+                          Contains Breaking Changes
+                        </label>
+                        <p className="text-xs text-muted-foreground">
+                          Mark this if the update requires manual action or changes existing behavior.
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="grid gap-2">
+                      <Label htmlFor="stakeholder-summary">Stakeholder Summary (Business Impact)</Label>
+                      <Textarea 
+                        id="stakeholder-summary" 
+                        value={stakeholderSummary} 
+                        onChange={(e) => setStakeholderSummary(e.target.value)} 
+                        placeholder="What does this mean for the business and users?" 
+                        className="min-h-[100px]"
+                        required 
+                      />
+                    </div>
+
+                    <div className="grid gap-2">
+                      <Label htmlFor="technical-details">Technical Details (For Developers)</Label>
+                      <Textarea 
+                        id="technical-details" 
+                        value={technicalDetails} 
+                        onChange={(e) => setTechnicalDetails(e.target.value)} 
+                        placeholder="Internal notes, schema changes, API updates..." 
+                        className="min-h-[100px] font-mono text-sm"
+                      />
+                    </div>
                   </div>
-                  <div className="grid gap-2">
-                    <Label htmlFor="category">Category</Label>
-                    <Select value={category} onValueChange={setCategory}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select category" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="feature">Feature</SelectItem>
-                        <SelectItem value="fix">Fix</SelectItem>
-                        <SelectItem value="improvement">Improvement</SelectItem>
-                        <SelectItem value="update">General Update</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="grid gap-2">
-                    <Label htmlFor="version">Version (optional)</Label>
-                    <Input id="version" value={version} onChange={(e) => setVersion(e.target.value)} placeholder="e.g. 1.2.0" />
-                  </div>
-                  <div className="grid gap-2">
-                    <Label htmlFor="description">Description</Label>
-                    <Textarea id="description" value={description} onChange={(e) => setDescription(e.target.value)} placeholder="What's new?" required />
-                  </div>
-                </div>
-                <DialogFooter>
-                  <Button type="button" variant="outline" onClick={() => setIsFormOpen(false)}>Cancel</Button>
-                  <Button type="submit" disabled={isSubmitting}>
-                    {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-                    Publish Update
-                  </Button>
-                </DialogFooter>
-              </form>
-            </DialogContent>
-          </Dialog>
+                  <DialogFooter>
+                    <Button type="button" variant="outline" onClick={() => setIsFormOpen(false)}>Cancel</Button>
+                    <Button type="submit" disabled={isSubmitting}>
+                      {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                      Publish Release Note
+                    </Button>
+                  </DialogFooter>
+                </form>
+              </DialogContent>
+            </Dialog>
+          </div>
         </div>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -183,44 +284,51 @@ export function PlatformUpdates() {
             <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
           </div>
         ) : updates.length === 0 ? (
-          <p className="text-sm text-muted-foreground text-center py-4">No recent updates.</p>
+          <p className="text-sm text-muted-foreground text-center py-4">No recent release notes.</p>
         ) : (
-          <div className="space-y-4">
+          <div className="space-y-3">
             {updates.map((update) => (
-              <div key={update.id} className="flex flex-col gap-1 rounded-md border bg-muted/30 p-3 text-sm transition-colors hover:bg-muted/50">
+              <div key={update.id} className="flex flex-col gap-1 rounded-md border bg-muted/30 p-3 text-sm transition-colors hover:bg-muted/50 border-slate-200/60 dark:border-slate-800/60">
                 <div className="flex items-center justify-between gap-2">
                   <div className="flex items-center gap-2 font-medium">
                     {getCategoryIcon(update.category)}
-                    <span>{update.title}</span>
+                    <span className="truncate max-w-[140px]">{update.title}</span>
                   </div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    {getImpactBadge(update.impact_level)}
+                    {update.is_breaking && <AlertTriangle className="h-3 w-3 text-orange-500" />}
                     {update.version && (
-                      <span className="text-[10px] font-mono bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded border border-slate-200">
+                      <span className="text-[10px] font-mono bg-slate-100 dark:bg-slate-800 text-slate-500 px-1.5 py-0.5 rounded border border-slate-200 dark:border-slate-700">
                         v{update.version}
                       </span>
                     )}
-                    {getCategoryBadge(update.category)}
                   </div>
                 </div>
-                <p className="text-muted-foreground line-clamp-2 mt-1">
-                  {update.description}
+                <p className="text-muted-foreground line-clamp-2 mt-1 text-xs">
+                  {update.stakeholder_summary || update.description}
                 </p>
-                <div className="mt-2 text-[10px] text-slate-400">
-                  {new Date(update.created_at).toLocaleDateString(undefined, {
-                    month: "short",
-                    day: "numeric",
-                    year: "numeric"
-                  })}
+                <div className="mt-2 flex items-center justify-between">
+                  <span className="text-[10px] text-slate-400">
+                    {new Date(update.created_at).toLocaleDateString(undefined, {
+                      month: "short",
+                      day: "numeric"
+                    })}
+                  </span>
+                  <Badge variant="outline" className="text-[9px] h-4 uppercase py-0">{update.category}</Badge>
                 </div>
               </div>
             ))}
           </div>
         )}
-        <Button variant="ghost" size="sm" className="w-full text-xs text-muted-foreground hover:text-foreground" onClick={fetchUpdates}>
-          Refresh logs
-        </Button>
+        <div className="pt-2 border-t">
+          <Button variant="ghost" size="sm" asChild className="w-full text-xs text-blue-600 hover:text-blue-700 hover:bg-blue-50 group">
+            <Link href="/admin/release-notes">
+              View all release notes
+              <ChevronRight className="h-3 w-3 ml-1 transition-transform group-hover:translate-x-0.5" />
+            </Link>
+          </Button>
+        </div>
       </CardContent>
     </Card>
   )
 }
-
