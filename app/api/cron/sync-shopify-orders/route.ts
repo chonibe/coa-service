@@ -424,6 +424,8 @@ export async function GET(request: NextRequest) {
           // Pull PII from Warehouse if possible
           let ownerEmail = order.email?.toLowerCase()
           let ownerName = order.customer ? `${(order as any).customer.first_name || ''} ${(order as any).customer.last_name || ''}`.trim() : null
+          let ownerPhone = null;
+          let ownerAddress = null;
           
           try {
             console.log(`[Cron] Pulling warehouse PII for order ${order.name}...`);
@@ -437,6 +439,8 @@ export async function GET(request: NextRequest) {
             if (matched) {
               ownerEmail = matched.ship_email?.toLowerCase() || ownerEmail;
               ownerName = `${matched.first_name || ''} ${matched.last_name || ''}`.trim() || ownerName;
+              ownerPhone = matched.ship_phone || null;
+              ownerAddress = matched.ship_address || null;
               
               // Store in warehouse_orders cache
               await db.from('warehouse_orders').upsert({
@@ -445,6 +449,8 @@ export async function GET(request: NextRequest) {
                 shopify_order_id: order.id.toString(),
                 ship_email: ownerEmail,
                 ship_name: ownerName,
+                ship_phone: ownerPhone,
+                ship_address: ownerAddress as any,
                 raw_data: matched as any,
                 updated_at: new Date().toISOString()
               }, { onConflict: 'id' });
@@ -464,11 +470,6 @@ export async function GET(request: NextRequest) {
             order.cancel_reason !== null
 
           const isGift = order.name.toLowerCase().startsWith('simply');
-
-          const ownerEmail = matched.ship_email?.toLowerCase() || ownerEmail;
-          const ownerName = `${matched.first_name || ''} ${matched.last_name || ''}`.trim() || ownerName;
-          const ownerPhone = matched.ship_phone || null;
-          const ownerAddress = matched.ship_address || null;
           
           const orderData = {
             id: String(order.id),
