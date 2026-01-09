@@ -5,120 +5,139 @@ const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
 const supabase = createClient(url, key);
 
-async function syncManualOrdersAndItems() {
-  console.log('🚀 Starting deep sync of manual warehouse orders and line items...');
+async function cleanAndSyncManualOrders() {
+  console.log('🚀 Starting clean sync of manual warehouse orders...');
 
-  // 1. Fetch all products for SKU matching
-  const { data: products } = await supabase.from('products').select('product_id, sku, name, img_url, vendor_name');
-  const skuMap = new Map();
-  products?.forEach(p => {
-    if (p.sku) skuMap.set(p.sku.toLowerCase().trim(), p);
-  });
-
-  // 2. Fetch manual warehouse orders (no shopify_order_id)
+  // 1. Fetch all manual orders from warehouse_orders (no shopify link)
   const { data: whOrders, error: whError } = await supabase
     .from('warehouse_orders')
     .select('*')
     .is('shopify_order_id', null);
 
-  if (whError) return console.error('Error fetching warehouse orders:', whError);
+  if (whError) return console.error('Error fetching wh orders:', whError);
 
   console.log(`Found ${whOrders.length} manual warehouse orders.`);
 
+  // 2. Fetch all products for SKU mapping
+  const { data: products } = await supabase.from('products').select('sku, product_id, img_url, name, edition_size, vendor_name');
+  const productMap = new Map();
+  products?.forEach(p => {
+    if (p.sku) productMap.set(p.sku.toLowerCase().trim(), p);
+  });
+
   let ordersCreated = 0;
-  let itemsCreated = 0;
-  const affectedProductIds = new Set();
+  let itemsSyncedV2 = 0;
+  let itemsSyncedLegacy = 0;
 
   for (const wo of whOrders) {
-    const orderId = `WH-${wo.id}`;
-    
-    // Check if order record exists
-    const { data: existingOrder } = await supabase.from('orders').select('id, customer_email').eq('id', orderId).maybeSingle();
+    const mainOrderId = `WH-${wo.id}`;
+    const items = wo.raw_data?.info || [];
+    const ownerEmail = wo.ship_email?.toLowerCase() || wo.raw_data?.ship_email?.toLowerCase();
+    const ownerName = wo.ship_name || wo.raw_data?.ship_name;
+
+    // A. Ensure the order exists in main table
+    const { data: existingOrder } = await supabase.from('orders').select('id').eq('id', mainOrderId).maybeSingle();
     
     if (!existingOrder) {
-      console.log(`Creating order record for ${wo.order_id} (${orderId})...`);
-      const { error: orderErr } = await supabase.from('orders').insert({
-        id: orderId,
-        order_number: 900000 + (parseInt(wo.id.toString().slice(-6)) || Math.floor(Math.random() * 100000)),
+      console.log(`Creating order ${mainOrderId} (${wo.order_id})...`);
+      const { error: ordErr } = await supabase.from('orders').insert({
+        id: mainOrderId,
+        order_number: 900000 + Math.floor(Math.random() * 100000), 
         order_name: wo.order_id,
-        processed_at: wo.created_at,
+        processed_at: wo.created_at || new Date().toISOString(),
         financial_status: 'paid',
         fulfillment_status: wo.status_name?.toLowerCase().trim() || 'fulfilled',
         total_price: parseFloat(wo.raw_data?.freight || '0'),
         currency_code: 'USD',
-        customer_email: wo.ship_email?.toLowerCase().trim(),
-        raw_shopify_order_data: { source: 'manual_warehouse', warehouse_id: wo.id },
-        created_at: wo.created_at,
-        updated_at: new Date().toISOString()
+        customer_email: ownerEmail,
+        updated_at: new Date().toISOString(),
+        raw_shopify_order_data: {
+          source: 'manual_warehouse',
+          warehouse_id: wo.id,
+          original_order_id: wo.order_id,
+        },
+        created_at: wo.created_at || new Date().toISOString()
       });
-      if (orderErr) {
-        console.error(`  ❌ Error creating order: ${orderErr.message}`);
+      if (ordErr) {
+        console.error(`Error creating order ${mainOrderId}:`, ordErr.message);
         continue;
       }
       ordersCreated++;
-    } else if (!existingOrder.customer_email && wo.ship_email) {
-      // Backfill email if missing
-      await supabase.from('orders').update({ customer_email: wo.ship_email.toLowerCase().trim() }).eq('id', orderId);
     }
 
-    // Process line items from raw_data.info
-    const items = wo.raw_data?.info;
-    if (Array.isArray(items)) {
-      for (const item of items) {
-        const rawSku = item.sku || '';
-        const cleanSku = rawSku.toLowerCase().trim();
+    // B. DELETE all existing line items for this order to start clean
+    await Promise.all([
+      supabase.from('order_line_items_v2').delete().eq('order_id', mainOrderId),
+      supabase.from('order_line_items').delete().eq('order_id', mainOrderId)
+    ]);
+
+    // C. Map and insert all items from raw_data.info
+    if (items.length > 0) {
+      const v2Items = items.map((item, index) => {
+        const cleanSku = item.sku?.toLowerCase().trim();
+        const match = productMap.get(cleanSku);
+        const lineItemId = `WH-ITEM-${wo.id}-${cleanSku || 'idx' + index}`.toLowerCase();
         
-        // Fuzzy match for specific user-mentioned SKUs if direct match fails
-        let product = skuMap.get(cleanSku);
-        if (!product) {
-          if (cleanSku === 'marcdavid002') product = skuMap.get('marcspeng002'); // Guessed mapping
-          if (cleanSku === 'erezoo002') product = skuMap.get('erezoo002');
-        }
-
-        const lineItemId = `WH-ITEM-${wo.id}-${cleanSku || Math.random().toString(36).substring(7)}`;
-
-        const itemData = {
-          order_id: orderId,
+        return {
+          order_id: mainOrderId,
+          order_name: wo.order_id,
           line_item_id: lineItemId,
-          name: product?.name || item.product_name || item.sku || 'Manual Item',
+          name: match?.name || item.product_name || item.sku || 'Manual Item',
+          description: item.product_name || item.sku || 'Manual Item',
           price: parseFloat(item.price || '0'),
           quantity: parseInt(item.quantity || '1', 10),
-          sku: item.sku || null,
-          vendor_name: product?.vendor_name || item.supplier || 'Street Collector',
-          img_url: product?.img_url || null,
-          product_id: product?.product_id || '999999999', // Default if missing but column is NOT NULL
-          status: 'active',
+          vendor_name: match?.vendor_name || item.supplier || (match ? 'Sancho' : 'Street Collector'),
           fulfillment_status: wo.status_name?.toLowerCase().trim() || 'fulfilled',
-          owner_email: wo.ship_email?.toLowerCase().trim(),
-          owner_name: wo.ship_name,
-          created_at: wo.created_at,
-          updated_at: new Date().toISOString()
+          status: 'active',
+          created_at: wo.created_at || new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+          owner_email: ownerEmail,
+          owner_name: ownerName,
+          sku: item.sku || null,
+          product_id: match?.product_id || null,
+          img_url: match?.img_url || item.img_url || null,
+          edition_total: match?.edition_size ? parseInt(match.edition_size) : null
         };
+      });
 
-        // Specify onConflict: 'line_item_id' instead of relying on default 'id'
-        const { error: itemErr } = await supabase.from('order_line_items_v2').upsert(itemData, { onConflict: 'line_item_id' });
-        if (itemErr) {
-          console.error(`  ❌ Error upserting item ${cleanSku}: ${itemErr.message}`);
-        } else {
-          itemsCreated++;
-          if (product?.product_id) affectedProductIds.add(product.product_id.toString());
-        }
-      }
+      const legacyItems = items.map((item, index) => {
+        const cleanSku = item.sku?.toLowerCase().trim();
+        const match = productMap.get(cleanSku);
+        
+        return {
+          order_id: mainOrderId,
+          shopify_line_item_id: `WH-LEGACY-${wo.id}-${index}`,
+          title: match?.name || item.product_name || item.sku || 'Manual Item',
+          quantity: parseInt(item.quantity || '1', 10),
+          price: parseFloat(item.price || '0'),
+          sku: item.sku || null,
+          vendor: match?.vendor_name || item.supplier || (match ? 'Sancho' : 'Street Collector'),
+          fulfillment_status: wo.status_name?.toLowerCase().trim() || 'fulfilled',
+          owner_email: ownerEmail,
+          owner_name: ownerName,
+          created_at: wo.created_at || new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+          image_url: match?.img_url || item.img_url || null,
+        };
+      });
+
+      const [v2Res, legacyRes] = await Promise.all([
+        supabase.from('order_line_items_v2').insert(v2Items),
+        supabase.from('order_line_items').insert(legacyItems)
+      ]);
+
+      if (v2Res.error) console.error(`Error v2 for ${mainOrderId}:`, v2Res.error.message);
+      else itemsSyncedV2 += v2Items.length;
+
+      if (legacyRes.error) console.error(`Error legacy for ${mainOrderId}:`, legacyRes.error.message);
+      else itemsSyncedLegacy += legacyItems.length;
     }
   }
 
-  console.log(`\n✅ Sync complete. Created ${ordersCreated} new order records and upserted ${itemsCreated} line items.`);
-
-  if (affectedProductIds.size > 0) {
-    console.log(`\n🚀 Triggering edition re-assignment for ${affectedProductIds.size} products...`);
-    for (const pid of affectedProductIds) {
-      const { error } = await supabase.rpc('assign_edition_numbers', { p_product_id: pid });
-      if (error) console.log(`  ❌ ${pid}: ${error.message}`);
-      else console.log(`  ✅ ${pid}: Done.`);
-    }
-  }
-
-  console.log('\n🎉 All manual warehouse data is now synced, matched, and numbered.');
+  console.log(`\n🎉 Sync complete!`);
+  console.log(`- Orders created/verified: ${whOrders.length}`);
+  console.log(`- V2 items synced: ${itemsSyncedV2}`);
+  console.log(`- Legacy items synced: ${itemsSyncedLegacy}`);
 }
 
-syncManualOrdersAndItems();
+cleanAndSyncManualOrders();

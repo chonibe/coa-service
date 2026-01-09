@@ -200,79 +200,74 @@ async function getOrderData(orderId: string) {
   console.log('DEBUG productDetails:', productDetails);
   console.log('DEBUG lineItems before mapping:', lineItems);
 
-  // Try to fetch additional details from Shopify
-  try {
-    const shop = process.env.SHOPIFY_SHOP;
-    const token = process.env.SHOPIFY_ACCESS_TOKEN;
-    
-    // Use the Shopify ID from the raw data
-    const shopifyOrderId = orderData.raw_shopify_order_data?.id;
-    if (!shopifyOrderId) {
-      console.error('No Shopify ID found in order data');
-      return null;
-    }
+  // Try to fetch additional details from Shopify ONLY if it's a Shopify order
+  const shopifyOrderId = orderData.raw_shopify_order_data?.id;
+  if (shopifyOrderId && !orderId.startsWith('WH-')) {
+    try {
+      const shop = process.env.SHOPIFY_SHOP;
+      const token = process.env.SHOPIFY_ACCESS_TOKEN;
+      
+      const res = await fetch(`https://${shop}/admin/api/2023-10/orders/${shopifyOrderId}.json`, {
+        headers: {
+          'X-Shopify-Access-Token': token!,
+          'Content-Type': 'application/json',
+        },
+      });
 
-    const res = await fetch(`https://${shop}/admin/api/2023-10/orders/${shopifyOrderId}.json`, {
-      headers: {
-        'X-Shopify-Access-Token': token!,
-        'Content-Type': 'application/json',
-      },
-    });
-
-    if (res.ok) {
-      const { order: shopifyOrder } = await res.json();
-      const shopifyMappedLineItems = mappedLineItems.map(item => ({
-        id: item.line_item_id,
-        title: item.name,
-        product_name: item.product_name || item.name,
-        quantity: item.quantity || 1,
-        price: item.price,
-        sku: item.sku || null,
-        vendor_name: item.vendor_name,
-        product_id: item.product_id,
-        variant_id: item.variant_id,
-        fulfillment_status: item.fulfillment_status || 'pending',
-        status: item.status || 'active',
-        image_url: item.image_url || undefined,
-        edition_number: item.edition_number,
-        edition_size: productDetails[item.product_id]?.edition_size
-      }));
-      console.log('DEBUG mappedLineItems:', shopifyMappedLineItems);
-      return {
-        id: shopifyOrder.id.toString(),
-        order_number: shopifyOrder.name.replace('#', ''),
-        processed_at: shopifyOrder.created_at,
-        financial_status: shopifyOrder.financial_status,
-        fulfillment_status: shopifyOrder.fulfillment_status || 'pending',
-        total_price: parseFloat(shopifyOrder.current_total_price),
-        currency_code: shopifyOrder.currency,
-        customer_email: shopifyOrder.email,
-        customer_profile: profileData,
-        total_discounts: parseFloat(shopifyOrder.total_discounts || '0'),
-        subtotal_price: parseFloat(shopifyOrder.subtotal_price || '0'),
-        total_tax: parseFloat(shopifyOrder.total_tax || '0'),
-        discount_codes: shopifyOrder.discount_codes?.map((code: { code: string; amount: string; type: string }) => ({
-          code: code.code,
-          amount: parseFloat(code.amount),
-          type: code.type,
-        })) || [],
-        line_items: shopifyMappedLineItems,
-      };
+      if (res.ok) {
+        const { order: shopifyOrder } = await res.json();
+        const shopifyMappedLineItems = mappedLineItems.map(item => ({
+          id: item.line_item_id || item.id.toString(),
+          title: item.name,
+          product_name: item.product_name || item.name,
+          quantity: item.quantity || 1,
+          price: item.price,
+          sku: item.sku || null,
+          vendor_name: item.vendor_name,
+          product_id: item.product_id,
+          variant_id: item.variant_id,
+          fulfillment_status: item.fulfillment_status || 'pending',
+          status: item.status || 'active',
+          image_url: item.img_url || item.image_url || undefined,
+          edition_number: item.edition_number,
+          edition_size: productDetails[item.product_id]?.edition_size
+        }));
+        
+        return {
+          id: shopifyOrder.id.toString(),
+          order_number: shopifyOrder.name.replace('#', ''),
+          processed_at: shopifyOrder.created_at,
+          financial_status: shopifyOrder.financial_status,
+          fulfillment_status: shopifyOrder.fulfillment_status || 'pending',
+          total_price: parseFloat(shopifyOrder.current_total_price),
+          currency_code: shopifyOrder.currency,
+          customer_email: shopifyOrder.email,
+          customer_profile: profileData,
+          total_discounts: parseFloat(shopifyOrder.total_discounts || '0'),
+          subtotal_price: parseFloat(shopifyOrder.subtotal_price || '0'),
+          total_tax: parseFloat(shopifyOrder.total_tax || '0'),
+          discount_codes: shopifyOrder.discount_codes?.map((code: { code: string; amount: string; type: string }) => ({
+            code: code.code,
+            amount: parseFloat(code.amount),
+            type: code.type,
+          })) || [],
+          line_items: shopifyMappedLineItems,
+        };
+      }
+    } catch (err) {
+      console.error('Error fetching order from Shopify:', err);
     }
-  } catch (err) {
-    console.error('Error fetching order from Shopify:', err);
   }
 
-  // If Shopify fetch fails, return data from Supabase
-  console.log('DEBUG mappedLineItems:', mappedLineItems);
+  // For Manual Warehouse orders or failed Shopify fetch, return data from Supabase
   return {
     id: orderData.id,
-    order_number: orderData.order_number,
-    processed_at: orderData.processed_at,
-    financial_status: orderData.financial_status,
-    fulfillment_status: orderData.fulfillment_status || 'pending',
-    total_price: orderData.total_price,
-    currency_code: orderData.currency_code,
+    order_number: orderData.order_number?.toString() || orderData.order_name?.replace('#', '') || 'Manual',
+    processed_at: orderData.processed_at || orderData.created_at,
+    financial_status: orderData.financial_status || 'paid',
+    fulfillment_status: orderData.fulfillment_status || 'fulfilled',
+    total_price: orderData.total_price || 0,
+    currency_code: orderData.currency_code || 'USD',
     customer_email: orderData.customer_email,
     customer_profile: profileData,
     total_discounts: orderData.total_discounts || 0,
@@ -283,7 +278,13 @@ async function getOrderData(orderId: string) {
       amount: parseFloat(code.amount),
       type: code.type
     })) || [],
-    line_items: mappedLineItems
+    line_items: mappedLineItems.map(item => ({
+      ...item,
+      id: item.line_item_id || item.id.toString(),
+      title: item.name,
+      image_url: item.img_url || item.image_url,
+      edition_size: productDetails[item.product_id]?.edition_size
+    }))
   };
 }
 

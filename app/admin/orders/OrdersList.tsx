@@ -18,7 +18,7 @@ import { useToast } from "@/hooks/use-toast";
 
 interface Order {
   id: string;
-  order_number: number;
+  order_number: number | string;
   processed_at: string;
   financial_status: string;
   fulfillment_status: string | null;
@@ -32,6 +32,7 @@ interface Order {
   cancelled_at?: string | null;
   archived?: boolean;
   shopify_order_status?: string | null;
+  source?: 'shopify' | 'warehouse';
 }
 
 interface OrdersListProps {
@@ -348,6 +349,7 @@ export default function OrdersList({
                   />
                 </TableHead>
                 <TableHead>Order</TableHead>
+                <TableHead>Source</TableHead>
                 <TableHead>Date</TableHead>
                 <TableHead>Customer</TableHead>
                 <TableHead className="text-right">Total</TableHead>
@@ -377,12 +379,23 @@ export default function OrdersList({
                   >
                     <div className="flex items-center gap-2">
                       <span className="hover:text-primary transition-colors">
-                        #{order.order_number}
+                        {String(order.order_number).startsWith('#') ? order.order_number : `#${order.order_number}`}
                       </span>
                       {order.has_duplicates && (
                         <AlertCircle className="h-4 w-4 text-yellow-500" title="This order has duplicate items" />
                       )}
                     </div>
+                  </TableCell>
+                  <TableCell
+                    className="cursor-pointer"
+                    onClick={() => window.location.href = `/admin/orders/${order.id}`}
+                  >
+                    <Badge 
+                      variant={order.source === 'warehouse' ? 'secondary' : 'outline'}
+                      className={order.source === 'warehouse' ? 'bg-orange-100 text-orange-800 border-orange-200 hover:bg-orange-100' : 'bg-blue-100 text-blue-800 border-blue-200 hover:bg-blue-100'}
+                    >
+                      {order.source === 'warehouse' ? 'Warehouse' : 'Shopify'}
+                    </Badge>
                   </TableCell>
                   <TableCell 
                     onClick={() => window.location.href = `/admin/orders/${order.id}`}

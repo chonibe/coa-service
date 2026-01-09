@@ -16,7 +16,7 @@ import { CollectorCard } from "@/app/admin/components/collector-card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 import { useRouter } from 'next/navigation';
-import NextImage from "next/image"
+import Image from "next/image"
 
 interface OrderLineItem {
   id: string;
@@ -451,7 +451,7 @@ export default function OrderDetails({ order }: OrderDetailsProps) {
                     <TableCell>
                       {item.image_url ? (
                         <div className="relative w-12 h-12">
-                          <NextImage 
+                          <Image 
                             src={item.image_url} 
                             alt={item.title}
                             fill
@@ -549,7 +549,7 @@ export default function OrderDetails({ order }: OrderDetailsProps) {
                   <div className="flex-shrink-0">
                     {item.image_url ? (
                       <div className="relative w-16 h-16">
-                        <NextImage 
+                        <Image 
                           src={item.image_url} 
                           alt={item.title}
                           fill
@@ -648,22 +648,22 @@ export default function OrderDetails({ order }: OrderDetailsProps) {
                 <TableBody>
                   {inactiveItems.map((item) => (
                     <TableRow key={item.id}>
-                    <TableCell>
-                      {item.image_url ? (
-                        <div className="relative w-12 h-12">
-                          <NextImage 
-                            src={item.image_url} 
-                            alt={item.title}
-                            fill
-                            className="object-cover rounded-md opacity-50"
-                          />
-                        </div>
-                      ) : (
-                        <div className="w-12 h-12 bg-gray-100 rounded-md flex items-center justify-center opacity-50">
-                          <span className="text-gray-400 text-xs">No image</span>
-                        </div>
-                      )}
-                    </TableCell>
+                      <TableCell>
+                        {item.image_url ? (
+                          <div className="relative w-12 h-12">
+                            <Image 
+                              src={item.image_url} 
+                              alt={item.title}
+                              fill
+                              className="object-cover rounded-md opacity-50"
+                            />
+                          </div>
+                        ) : (
+                          <div className="w-12 h-12 bg-gray-100 rounded-md flex items-center justify-center opacity-50">
+                            <span className="text-gray-400 text-xs">No image</span>
+                          </div>
+                        )}
+                      </TableCell>
                       <TableCell className="font-medium">
                         <div className="flex items-center gap-2">
                           {item.product_id ? (
@@ -722,7 +722,7 @@ export default function OrderDetails({ order }: OrderDetailsProps) {
                     <div className="flex-shrink-0">
                       {item.image_url ? (
                         <div className="relative w-16 h-16">
-                          <NextImage 
+                          <Image 
                             src={item.image_url} 
                             alt={item.title}
                             fill
