@@ -79,7 +79,7 @@ export default function TrackOrdersPage() {
   const [copied, setCopied] = useState(false)
   const [logoUrl, setLogoUrl] = useState<string | null>(null)
   const [primaryColor, setPrimaryColor] = useState<string>('#8217ff')
-  const [viewMode, setViewMode] = useState<'card' | 'list' | 'alerts'>('alerts')
+  const [viewMode, setViewMode] = useState<'card' | 'list' | 'alerts'>('card')
   const [sortBy, setSortBy] = useState<'default' | 'name'>('default')
   const [notifiedOrders, setNotifiedOrders] = useState<Set<string>>(new Set())
   const [arrivedInCountryOrders, setArrivedInCountryOrders] = useState<Set<string>>(new Set())
@@ -1578,9 +1578,16 @@ export default function TrackOrdersPage() {
                           {order.tracking_number && (
                             <div className="flex items-center gap-1.5">
                               <Icon size="sm"><TruckIcon className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-slate-400 flex-shrink-0" /></Icon>
-                              <span className="font-mono font-medium truncate" style={{ color: primaryColor }}>
+                              <a 
+                                href={`https://stone3pl.com/?route=services/track&nums=${order.tracking_number}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="font-mono font-medium truncate hover:underline"
+                                style={{ color: primaryColor }}
+                                onClick={(e) => e.stopPropagation()}
+                              >
                                 {order.tracking_number}
-                              </span>
+                              </a>
                             </div>
                           )}
                         </div>
@@ -1724,7 +1731,16 @@ export default function TrackOrdersPage() {
                               {order.tracking_number && (
                                 <>
                                   <span className="mx-1.5">•</span>
-                                  <span className="font-mono truncate" style={{ color: primaryColor }}>{order.tracking_number}</span>
+                                  <a 
+                                    href={`https://stone3pl.com/?route=services/track&nums=${order.tracking_number}`}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="font-mono truncate hover:underline"
+                                    style={{ color: primaryColor }}
+                                    onClick={(e) => e.stopPropagation()}
+                                  >
+                                    {order.tracking_number}
+                                  </a>
                                 </>
                               )}
                             </div>
@@ -1856,10 +1872,30 @@ export default function TrackOrdersPage() {
                                 <div className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 space-y-0.5">
                                   <p className="font-medium text-slate-900 dark:text-slate-100 mb-1">Tracking</p>
                                   {selectedOrder.tracking_number && (
-                                    <p className="font-mono break-all">{selectedOrder.tracking_number}</p>
+                                    <p className="font-mono break-all">
+                                      <a 
+                                        href={`https://stone3pl.com/?route=services/track&nums=${selectedOrder.tracking_number}`}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="hover:underline"
+                                        style={{ color: primaryColor }}
+                                      >
+                                        {selectedOrder.tracking_number}
+                                      </a>
+                                    </p>
                                   )}
                                   {selectedOrder.last_mile_tracking && (
-                                    <p className="font-mono break-all">{selectedOrder.last_mile_tracking}</p>
+                                    <p className="font-mono break-all">
+                                      <a 
+                                        href={`https://stone3pl.com/?route=services/track&nums=${selectedOrder.last_mile_tracking}`}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="hover:underline"
+                                        style={{ color: primaryColor }}
+                                      >
+                                        {selectedOrder.last_mile_tracking}
+                                      </a>
+                                    </p>
                                   )}
                                 </div>
                               </div>

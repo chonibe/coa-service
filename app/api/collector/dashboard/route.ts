@@ -209,13 +209,13 @@ export async function GET(request: NextRequest) {
     
     // Use comprehensive profile stats if available, otherwise calculate from fetched orders
     const authenticatedCount = profile?.authenticated_editions ?? allLineItems.filter(
-      (li) => li.nfcTagId && li.nfcClaimedAt,
+      (li) => li.nfcTagId && li.nfcClaimedAt && li.editionNumber,
     ).length
-    const totalArtworksOwned = profile?.total_editions ?? allLineItems.length
+    const totalArtworksOwned = profile?.total_editions ?? allLineItems.filter(li => li.editionNumber).length
     const unauthenticatedCount = profile 
       ? (profile.total_editions - profile.authenticated_editions) 
-      : allLineItems.filter((li) => li.nfcTagId && !li.nfcClaimedAt).length
-    const certificateCount = allLineItems.filter((li) => li.certificateUrl).length
+      : allLineItems.filter((li) => li.nfcTagId && !li.nfcClaimedAt && li.editionNumber).length
+    const certificateCount = allLineItems.filter((li) => li.certificateUrl && li.editionNumber).length
     const totalOrdersCount = profile?.total_orders ?? enrichedOrders.length
 
     const artists = Object.values(

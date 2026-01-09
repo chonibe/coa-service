@@ -4,30 +4,36 @@
 Due to privacy restrictions, PII (Personally Identifiable Information) such as customer emails and names are often redacted or missing in the Shopify data ingested into our system. To provide a comprehensive collector experience, we implement a **Data Enrichment Protocol** (also known as the **PII Bridge**).
 
 ## The "Hybrid Bridge" Mechanism
-The system relies on matching data from two primary sources to recover missing PII:
+The system relies on matching data from two primary sources to recover missing PII while ensuring transaction integrity:
 
 1.  **Shopify Orders (`orders` table)**:
-    *   Contains order IDs, line items, and transaction states.
-    *   PII fields like `customer_email` are often `NULL`.
+    *   Primary source for transaction history, pricing, and authentic customer IDs.
+    *   PII fields like `customer_email` are often `NULL` due to privacy redaction.
 2.  **Warehouse Fulfillment (`warehouse_orders` table)**:
-    *   Contains shipping data from fulfillment providers (e.g., ChinaDivision).
-    *   Includes full `ship_email` and `ship_name`.
+    *   Authoritative source for shipping PII (full `ship_email` and `ship_name`).
+    *   Acts as a fallback for "Manual Orders" created directly in the warehouse app.
 
-### How Matching Works
-Enrichment occurs by matching the Shopify `order_name` (e.g., `#1234`) with the Warehouse `order_id`. When a match is found, the authoritative email from the warehouse is copied into the `orders.customer_email` column.
+### How Matching and Deduplication Work
+*   **Enrichment**: The system matches Shopify orders with Warehouse records using the `order_name` (e.g., `#1234`). When a match occurs, the Warehouse email is used to "enrich" the Shopify order.
+*   **Prioritization**: In all lists and statistics, **Shopify orders take absolute precedence**. 
+*   **Deduplication**: If a manual warehouse record (`WH-` prefix) exists for the same order number as a Shopify record, the Shopify record is displayed and counted, while the manual record is hidden.
+*   **Manual Orders**: Warehouse records that *do not* have a matching Shopify order (e.g., direct sales or gifts added in the warehouse) are displayed as legitimate "first orders" using their warehouse PII.
+
+### Dynamic Customer ID Pairing
+If an order is initially matched to a collector via email (Guest), and that collector later places an order with a Shopify `customer_id`, the system automatically groups all enriched historical orders under that same `customer_id` via the email-based contact base.
 
 ## Source of Truth Hierarchy
 When displaying collector information, the system follows this priority:
 
-1.  **Manual Profile (`collector_profiles`)**: If a user has registered and updated their profile, this is the absolute source of truth.
-2.  **Warehouse PII**: If no manual profile exists, shipping names from the warehouse are used.
-3.  **Shopify PII**: Used as a fallback if available.
-4.  **Email Address**: Final fallback for display.
+1.  **Manual Profile (`collector_profiles`)**: Authoritative for name, phone, and bio.
+2.  **Warehouse PII**: Authoritative for shipping addresses and name fallback.
+3.  **Shopify PII**: Fallback for guest transactions.
+4.  **Email Address**: Final fallback.
 
 ## Development Rules
-*   **Always query the `collector_profile_comprehensive` view**: Do not query `orders` or `collector_profiles` directly for display data. The view automatically handles the enrichment logic and case-sensitivity.
+*   **Always query the `collector_profile_comprehensive` view**: This view implements the `DISTINCT ON (order_name)` logic to ensure no duplicates are counted in stats.
+*   **Activity API**: Use `/api/admin/collectors/[id]/activity` for order history, as it handles the Shopify-first deduplication logic in memory.
 *   **Case-Insensitivity**: All email-based lookups MUST use `LOWER(email)` or `.ilike()`.
-*   **Cron Synchronization**: The Shopify sync cron job (`app/api/cron/sync-shopify-orders/route.ts`) now automatically attempts to lowercase and enrich emails during ingestion.
 
 ## Maintenance
 If you notice "Guest Customer" entries in the admin panel for orders that should be fulfilled, run the PII Bridge enrichment script:

@@ -48,7 +48,20 @@ export async function GET(request: NextRequest) {
     if (customerId) {
       query = query.eq("customer_id", customerId)
     } else if (emailParam) {
-      query = query.eq("customer_email", emailParam.toLowerCase().trim())
+      // If we only have an email, we should also try to find the Shopify Customer ID
+      // to catch orders where the email might be missing but the ID is present.
+      const { data: profile } = await supabase
+        .from("collector_profile_comprehensive")
+        .select("pii_sources")
+        .eq("user_email", emailParam.toLowerCase().trim())
+        .maybeSingle();
+
+      const shopifyId = profile?.pii_sources?.shopify?.id;
+      if (shopifyId) {
+        query = query.or(`customer_email.eq.${emailParam.toLowerCase().trim()},customer_id.eq.${shopifyId}`);
+      } else {
+        query = query.eq("customer_email", emailParam.toLowerCase().trim());
+      }
     }
 
     const { data: orders, error: ordersError } = await query
@@ -61,8 +74,30 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    const allLineItems = (orders || []).flatMap((order) => 
-      (order.order_line_items_v2 || []).map((li: any) => ({ ...li, order_processed_at: order.processed_at }))
+    // Deduplicate orders by numeric name prefix, prioritizing Shopify over Manual
+    const orderMap = new Map();
+    (orders || []).forEach(order => {
+      const match = order.order_name?.replace('#', '').match(/^\d+/);
+      const cleanName = match ? match[0] : (order.order_name?.toLowerCase() || order.id);
+      
+      const existing = orderMap.get(cleanName);
+      const isManual = order.id.startsWith('WH-');
+      const existingIsManual = existing?.id.startsWith('WH-');
+
+      if (!existing || (existingIsManual && !isManual)) {
+        orderMap.set(cleanName, order);
+      }
+    });
+
+    const deduplicatedOrders = Array.from(orderMap.values());
+
+    const allLineItems = deduplicatedOrders.flatMap((order) => 
+      (order.order_line_items_v2 || []).map((li: any) => ({ 
+        ...li, 
+        order_processed_at: order.processed_at,
+        order_fulfillment_status: order.fulfillment_status,
+        order_financial_status: order.financial_status
+      }))
     )
 
     // Get series information for products
@@ -98,10 +133,14 @@ export async function GET(request: NextRequest) {
       })
     }
 
-    // Filter for active items. We include "Street Collector" items even if they don't have edition numbers
-    // but we might want to distinguish them in the UI.
+    // Filter for active items that have an assigned edition number.
+    // Explicitly exclude restocked and cancelled items.
     const editions: CollectorEdition[] = allLineItems
-      .filter((li: any) => li.status === 'active')
+      .filter((li: any) => {
+        const isValidOrder = !['restocked', 'canceled'].includes(li.order_fulfillment_status) && 
+                           !['refunded', 'voided'].includes(li.order_financial_status);
+        return li.status === 'active' && li.edition_number !== null && isValidOrder;
+      })
       .map((li: any) => {
         const series = li.product_id
           ? seriesMap.get(li.product_id)

@@ -37,7 +37,8 @@ export async function GET(
 
     const email = profile.user_email;
 
-    // 2. Fetch orders and line items from v2 tables
+    // 2. Fetch orders and line items from v2 tables with deduplication
+    // We prioritize Shopify (non-WH) over Manual (WH-) for the same order name
     const { data: orders, error: ordersError } = await supabase
       .from("orders")
       .select(`
@@ -50,6 +51,7 @@ export async function GET(
         total_price,
         currency_code,
         customer_email,
+        customer_id,
         order_line_items_v2 (
           id,
           line_item_id,
@@ -75,11 +77,30 @@ export async function GET(
       return NextResponse.json({ error: "Failed to fetch orders" }, { status: 500 });
     }
 
-    // 3. Transform data to be more UI-friendly if needed
-    // For now, the raw Supabase response is quite close to what we need.
+    // 3. Deduplicate orders by name in memory
+    // Priority: Shopify (no WH- prefix) > Manual (WH- prefix)
+    // Use numeric prefix for deduplication to catch cases like #1188 and 1188A
+    const orderMap = new Map();
+    (orders || []).forEach(order => {
+      const match = order.order_name?.replace('#', '').match(/^\d+/);
+      const cleanName = match ? match[0] : (order.order_name?.toLowerCase() || order.id);
+      
+      const existing = orderMap.get(cleanName);
+      
+      const isManual = order.id.startsWith('WH-');
+      const existingIsManual = existing?.id.startsWith('WH-');
+
+      if (!existing || (existingIsManual && !isManual)) {
+        orderMap.set(cleanName, order);
+      }
+    });
+
+    const deduplicatedOrders = Array.from(orderMap.values()).sort((a, b) => 
+      new Date(b.processed_at).getTime() - new Date(a.processed_at).getTime()
+    );
     
     return NextResponse.json({
-      orders: orders || [],
+      orders: deduplicatedOrders,
       profile: {
         id: profile.user_id,
         email: profile.user_email,

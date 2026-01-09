@@ -206,10 +206,14 @@ export async function POST(request: NextRequest) {
 
           // 1. Cross-reference with our 'orders' table to find the Shopify Customer ID
           // We search by both the long Shopify ID and the 'Order Name' (e.g. #1174)
+          // We also try to match warehouse order IDs that might have an extra suffix (like 1188A)
+          const cleanWhName = order.order_id?.toString().replace('#', '').trim();
+          const numericPart = cleanWhName?.match(/^\d+/)?.[0];
+
           let { data: dbOrder } = await supabase
             .from('orders')
-            .select('id, customer_id, customer_email')
-            .or(`id.eq.${platformOrderId},order_name.eq.${platformOrderId}`)
+            .select('id, customer_id, customer_email, order_name')
+            .or(`id.eq.${platformOrderId},order_name.eq.${platformOrderId},order_name.eq.#${cleanWhName},order_name.eq.#${numericPart || 'null'}`)
             .maybeSingle()
 
           // If order doesn't exist in our DB, it might be a manual warehouse order
@@ -237,28 +241,46 @@ export async function POST(request: NextRequest) {
             });
 
             if (!insertError) {
-              // Now that it's inserted, we can proceed with standard logic
-              dbOrder = { id: manualOrderId, customer_id: null, customer_email: ownerEmail };
+              dbOrder = { id: manualOrderId, customer_id: null, customer_email: ownerEmail, order_name: order.order_id };
               
-              // Also ingest line items for this manual order
+              // Only ingest line items for manual orders that don't exist in Shopify
               if (order.raw_data?.info && Array.isArray(order.raw_data.info)) {
-                const lineItems = order.raw_data.info.map((item: any) => ({
-                  id: `${manualOrderId}-${item.sku || Math.random().toString(36).substring(7)}`,
-                  order_id: manualOrderId,
-                  order_name: order.order_id,
-                  line_item_id: `${manualOrderId}-${item.sku || Math.random().toString(36).substring(7)}`,
-                  name: item.product_name || item.sku || 'Manual Item',
-                  description: item.product_name || item.sku || 'Manual Item',
-                  price: parseFloat(item.price || '0'),
-                  quantity: parseInt(item.quantity || '1', 10),
-                  vendor_name: item.supplier || 'Manual',
-                  fulfillment_status: 'fulfilled',
-                  status: 'active',
-                  created_at: order.created_at || new Date().toISOString(),
-                  updated_at: new Date().toISOString(),
-                  owner_email: ownerEmail,
-                  owner_name: ownerName,
-                }));
+                // Pre-fetch product data for SKU matching
+                const skus = order.raw_data.info.map((item: any) => item.sku).filter(Boolean);
+                let productMap = new Map();
+                if (skus.length > 0) {
+                  const { data: matchedProducts } = await supabase
+                    .from('products')
+                    .select('sku, product_id, img_url, name')
+                    .in('sku', skus);
+                  matchedProducts?.forEach(p => productMap.set(p.sku.toLowerCase().trim(), p));
+                }
+
+                const lineItems = order.raw_data.info.map((item: any) => {
+                  const match = productMap.get(item.sku?.toLowerCase().trim());
+                  const itemId = `${manualOrderId}-${item.sku || Math.random().toString(36).substring(7)}`;
+                  
+                  return {
+                    id: itemId,
+                    order_id: manualOrderId,
+                    order_name: order.order_id,
+                    line_item_id: itemId,
+                    name: match?.name || item.product_name || item.sku || 'Manual Item',
+                    description: item.product_name || item.sku || 'Manual Item',
+                    price: parseFloat(item.price || '0'),
+                    quantity: parseInt(item.quantity || '1', 10),
+                    vendor_name: item.supplier || 'Manual',
+                    fulfillment_status: 'fulfilled',
+                    status: 'active',
+                    created_at: order.created_at || new Date().toISOString(),
+                    updated_at: new Date().toISOString(),
+                    owner_email: ownerEmail,
+                    owner_name: ownerName,
+                    sku: item.sku || null,
+                    product_id: match?.product_id || null,
+                    img_url: match?.img_url || null,
+                  };
+                });
 
                 await supabase.from('order_line_items_v2').upsert(lineItems, { onConflict: 'line_item_id' });
               }
@@ -267,6 +289,8 @@ export async function POST(request: NextRequest) {
 
           const targetOrderId = dbOrder?.id || platformOrderId
           let customerId = dbOrder?.customer_id
+
+          // ... rest of the linkage logic ...
 
           // 2. If we found a customer ID, try to find their Supabase User UUID
           let ownerId: string | null = null

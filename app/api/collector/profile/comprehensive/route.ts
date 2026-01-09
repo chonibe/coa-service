@@ -66,6 +66,7 @@ export async function GET(request: NextRequest) {
       `)
       .or(`owner_id.eq.${user.id},owner_email.eq.${authoritativeEmail}`)
       .eq('status', 'active')
+      .not('edition_number', 'is', null)
       .order('created_at', { ascending: false })
 
     if (editionsError) {
