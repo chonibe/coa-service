@@ -45,6 +45,9 @@ async function ingestManualOrders() {
         total_price: 0,
         currency_code: 'USD',
         customer_email: email,
+        customer_name: orphan.ship_name || null,
+        customer_phone: orphan.ship_phone || null,
+        shipping_address: orphan.ship_address || null,
         created_at: orphan.created_at,
         updated_at: new Date().toISOString(),
         raw_shopify_order_data: { 

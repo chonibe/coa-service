@@ -26,6 +26,9 @@ interface Order {
   total_price: number;
   currency_code: string;
   customer_email: string;
+  customer_name?: string | null;
+  customer_phone?: string | null;
+  shipping_address?: any | null;
   customer_profile?: any;
   line_items?: any[];
   has_duplicates?: boolean;
@@ -428,9 +431,12 @@ export default function OrdersList({
                   >
                     <div className="flex flex-col">
                       <span className="font-medium text-slate-900 dark:text-slate-100">
-                        {order.customer_profile?.display_name || 'Guest Customer'}
+                        {order.customer_profile?.display_name || order.customer_name || 'Guest Customer'}
                       </span>
                       <span className="text-xs text-muted-foreground">{order.customer_email}</span>
+                      {order.customer_phone && (
+                        <span className="text-[10px] text-muted-foreground">{order.customer_phone}</span>
+                      )}
                     </div>
                   </TableCell>
                   <TableCell 

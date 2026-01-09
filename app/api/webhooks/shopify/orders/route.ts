@@ -130,20 +130,28 @@ async function syncOrderToDatabase(order: any, supabase: any) {
     const tags = (order.tags || "").toLowerCase()
     const archived = tags.includes("archived") || order.status === "closed" || false
 
+    const isGift = (order.name || "").toLowerCase().startsWith('simply')
+
     // Upsert order
     const orderData: any = {
       id: order.id.toString(),
       order_number: order.name.replace('#', ''),
+      order_name: order.name,
       financial_status: order.financial_status,
       fulfillment_status: order.fulfillment_status || 'pending',
       total_price: parseFloat(order.current_total_price || order.total_price || '0'),
       currency_code: order.currency || 'USD',
-      customer_email: order.email || null,
+      customer_email: (order.email || "").toLowerCase().trim() || null,
+      customer_name: (order.customer ? `${order.customer.first_name || ''} ${order.customer.last_name || ''}`.trim() : null) || 
+                     (order.shipping_address ? `${order.shipping_address.first_name || ''} ${order.shipping_address.last_name || ''}`.trim() : null),
+      customer_phone: order.customer?.phone || order.shipping_address?.phone || order.billing_address?.phone || null,
+      shipping_address: order.shipping_address || null,
       updated_at: new Date().toISOString(),
       raw_shopify_order_data: order,
       cancelled_at: order.cancelled_at || null,
       archived: archived,
       shopify_order_status: order.status || null,
+      source: isGift ? 'warehouse' : 'shopify',
     }
 
     // Use processed_at if available, otherwise use created_at

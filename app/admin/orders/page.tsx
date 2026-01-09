@@ -20,6 +20,9 @@ interface Order {
   total_price: number;
   currency_code: string;
   customer_email: string;
+  customer_name?: string | null;
+  customer_phone?: string | null;
+  shipping_address?: any | null;
   customer_profile?: any;
   line_items?: any[];
   raw_shopify_order_data?: any;

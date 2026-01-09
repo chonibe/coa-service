@@ -225,6 +225,25 @@ async function syncOrderWithShopify(
       changes.push(`Source: ${dbOrder.source || "null"} → ${targetSource}`)
     }
 
+    // 5.6 Sync contact info
+    const shopifyName = (shopifyOrder.customer ? `${shopifyOrder.customer.first_name || ''} ${shopifyOrder.customer.last_name || ''}`.trim() : null) || 
+                        (shopifyOrder.shipping_address ? `${shopifyOrder.shipping_address.first_name || ''} ${shopifyOrder.shipping_address.last_name || ''}`.trim() : null);
+    const shopifyPhone = shopifyOrder.customer?.phone || shopifyOrder.shipping_address?.phone || shopifyOrder.billing_address?.phone || null;
+    const shopifyAddress = shopifyOrder.shipping_address || null;
+
+    if (dbOrder.customer_name !== shopifyName) {
+      updates.customer_name = shopifyName;
+      changes.push(`Name: ${dbOrder.customer_name || "null"} → ${shopifyName || "null"}`);
+    }
+    if (dbOrder.customer_phone !== shopifyPhone) {
+      updates.customer_phone = shopifyPhone;
+      changes.push(`Phone: ${dbOrder.customer_phone || "null"} → ${shopifyPhone || "null"}`);
+    }
+    if (JSON.stringify(dbOrder.shipping_address) !== JSON.stringify(shopifyAddress)) {
+      updates.shipping_address = shopifyAddress;
+      changes.push(`Address updated`);
+    }
+
     // 6. Always update raw_shopify_order_data and updated_at to keep in sync
     updates.raw_shopify_order_data = shopifyOrder
     updates.updated_at = new Date().toISOString()

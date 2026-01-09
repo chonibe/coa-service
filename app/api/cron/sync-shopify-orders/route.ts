@@ -465,6 +465,11 @@ export async function GET(request: NextRequest) {
 
           const isGift = order.name.toLowerCase().startsWith('simply');
 
+          const ownerEmail = matched.ship_email?.toLowerCase() || ownerEmail;
+          const ownerName = `${matched.first_name || ''} ${matched.last_name || ''}`.trim() || ownerName;
+          const ownerPhone = matched.ship_phone || null;
+          const ownerAddress = matched.ship_address || null;
+          
           const orderData = {
             id: String(order.id),
             order_number: String(order.order_number),
@@ -475,6 +480,9 @@ export async function GET(request: NextRequest) {
             total_price: order.current_total_price ? parseFloat(order.current_total_price) : null,
             currency_code: order.currency,
             customer_email: (ownerEmail || order.email)?.toLowerCase() || null, // Use warehouse email if found, always lowercase
+            customer_name: ownerName || (order.customer ? `${order.customer.first_name || ''} ${order.customer.last_name || ''}`.trim() : null),
+            customer_phone: ownerPhone || order.customer?.phone || (order as any).shipping_address?.phone || null,
+            shipping_address: ownerAddress || (order as any).shipping_address || null,
             updated_at: order.updated_at,
             customer_id: order.customer?.id || null,
             shopify_id: String(order.id),
