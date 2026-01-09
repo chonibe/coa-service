@@ -12,6 +12,7 @@ import SyncOrdersButton from './SyncOrdersButton';
 interface Order {
   id: string;
   order_number: number | string;
+  order_name?: string | null;
   processed_at: string;
   financial_status: string;
   fulfillment_status: string | null;
@@ -73,14 +74,16 @@ export default function OrdersPage() {
         // Deduplicate and prefer Shopify source (handle 1234 and 1234A)
         const orderMap = new Map<string, Order>();
         for (const order of ordersList) {
-          const numStr = String(order.order_number).replace('#', '');
+          // Use order_name (e.g. #1234) if available, otherwise fallback to order_number
+          const platformName = order.order_name || (typeof order.order_number === 'number' ? `#${order.order_number}` : String(order.order_number));
+          const numStr = platformName.replace('#', '');
           const baseNumStr = numStr.toUpperCase().endsWith('A') ? numStr.slice(0, -1) : numStr;
           
           const existing = orderMap.get(baseNumStr);
           // Prefer Shopify source, or the one without the 'A' if both are same source
           const isBetter = !existing || 
             (order.source === 'shopify' && existing.source !== 'shopify') ||
-            (order.source === existing.source && !numStr.toUpperCase().endsWith('A') && String(existing.order_number).toUpperCase().endsWith('A'));
+            (order.source === existing.source && !numStr.toUpperCase().endsWith('A') && (String(existing.order_name || existing.order_number)).toUpperCase().endsWith('A'));
           
           if (isBetter) {
             orderMap.set(baseNumStr, order);
@@ -121,6 +124,7 @@ export default function OrdersPage() {
             const mappedWarehouse: Order[] = uniqueWarehouseOrders.map(wo => ({
               id: wo.id,
               order_number: wo.order_id,
+              order_name: wo.order_id, // Warehouse order_id is usually the platform name like #1234
               processed_at: wo.created_at,
               financial_status: 'paid',
               fulfillment_status: wo.status_name?.toLowerCase().includes('shipped') ? 'fulfilled' : 'unfulfilled',
@@ -132,36 +136,41 @@ export default function OrdersPage() {
 
             // Only add if not already in the list and doesn't exist in the orders table
             for (const wo of mappedWarehouse) {
-              const rawOrderNumStr = String(wo.order_number).replace('#', '');
+              const rawOrderName = String(wo.order_name || wo.order_number);
+              const rawOrderNumStr = rawOrderName.replace('#', '');
               const baseOrderNumStr = rawOrderNumStr.toUpperCase().endsWith('A') ? rawOrderNumStr.slice(0, -1) : rawOrderNumStr;
+              const baseOrderName = `#${baseOrderNumStr}`;
               
               const existsInPage = ordersList.some(o => {
-                const oNumStr = String(o.order_number).replace('#', '');
+                const oName = String(o.order_name || o.order_number);
+                const oNumStr = oName.replace('#', '');
                 const oBaseNumStr = oNumStr.toUpperCase().endsWith('A') ? oNumStr.slice(0, -1) : oNumStr;
                 return oBaseNumStr === baseOrderNumStr;
               });
               
               if (!existsInPage) {
-                // Check if the base order number exists in the orders table at all
-                const baseNum = parseInt(baseOrderNumStr);
-                const rawNum = parseInt(rawOrderNumStr);
-                
-                let inDbQuery = supabase
+                // Check if the base order number or name exists in the orders table at all
+                // Following the Hybrid Bridge mechanism: check order_name first
+                const { count: inDbByName } = await supabase
                   .from('orders')
-                  .select('id', { count: 'exact', head: true });
+                  .select('id', { count: 'exact', head: true })
+                  .or(`order_name.eq.${baseOrderName},order_name.eq.#${rawOrderNumStr},order_name.eq.${baseOrderNumStr},order_name.eq.${rawOrderNumStr}`);
                 
-                if (!isNaN(baseNum) && !isNaN(rawNum) && baseNum !== rawNum) {
-                  inDbQuery = inDbQuery.or(`order_number.eq.${baseNum},order_number.eq.${rawNum}`);
-                } else if (!isNaN(baseNum)) {
-                  inDbQuery = inDbQuery.eq('order_number', baseNum);
-                } else {
-                  inDbQuery = inDbQuery.eq('order_number', baseOrderNumStr);
-                }
-
-                const { count: inDb } = await inDbQuery;
-                
-                if (!inDb || inDb === 0) {
-                  ordersList.push(wo);
+                if (!inDbByName || inDbByName === 0) {
+                  // Fallback to numeric order_number if name match fails
+                  const baseNum = parseInt(baseOrderNumStr);
+                  if (!isNaN(baseNum)) {
+                    const { count: inDbByNum } = await supabase
+                      .from('orders')
+                      .select('id', { count: 'exact', head: true })
+                      .eq('order_number', baseNum);
+                    
+                    if (!inDbByNum || inDbByNum === 0) {
+                      ordersList.push(wo);
+                    }
+                  } else {
+                    ordersList.push(wo);
+                  }
                 }
               }
             }

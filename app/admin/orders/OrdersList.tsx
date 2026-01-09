@@ -19,6 +19,7 @@ import { useToast } from "@/hooks/use-toast";
 interface Order {
   id: string;
   order_number: number | string;
+  order_name?: string | null;
   processed_at: string;
   financial_status: string;
   fulfillment_status: string | null;
@@ -379,7 +380,7 @@ export default function OrdersList({
                   >
                     <div className="flex items-center gap-2">
                       <span className="hover:text-primary transition-colors">
-                        {String(order.order_number).startsWith('#') ? order.order_number : `#${order.order_number}`}
+                        {order.order_name || (String(order.order_number).startsWith('#') ? order.order_number : `#${order.order_number}`)}
                       </span>
                       {order.has_duplicates && (
                         <AlertCircle className="h-4 w-4 text-yellow-500" title="This order has duplicate items" />
