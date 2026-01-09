@@ -217,10 +217,12 @@ async function syncOrderWithShopify(
       changes.push(`Shopify Status: ${dbOrder.shopify_order_status || "null"} → ${shopifyOrderStatus || "null"}`)
     }
 
-    // 5.5 Set source to shopify
-    if (dbOrder.source !== 'shopify') {
-      updates.source = 'shopify'
-      changes.push(`Source: ${dbOrder.source || "null"} → shopify`)
+    // 5.5 Set source to shopify (or warehouse if it's a gift)
+    const isGift = (shopifyOrder.name || "").toLowerCase().startsWith('simply')
+    const targetSource = isGift ? 'warehouse' : 'shopify'
+    if (dbOrder.source !== targetSource) {
+      updates.source = targetSource
+      changes.push(`Source: ${dbOrder.source || "null"} → ${targetSource}`)
     }
 
     // 6. Always update raw_shopify_order_data and updated_at to keep in sync

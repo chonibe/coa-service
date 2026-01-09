@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import type { Database } from '@/types/supabase';
 import OrdersList from './OrdersList';
@@ -8,6 +8,7 @@ import SyncAllOrdersButton from './SyncAllOrdersButton';
 import SyncOrderStatusesButton from './SyncOrderStatusesButton';
 import CompareOrdersButton from './CompareOrdersButton';
 import SyncOrdersButton from './SyncOrdersButton';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 interface Order {
   id: string;
@@ -28,6 +29,7 @@ interface Order {
   source?: 'shopify' | 'warehouse';
   kickstarter_backing_amount_gbp?: number | null;
   kickstarter_backing_amount_usd?: number | null;
+  is_gift?: boolean;
 }
 
 export default function OrdersPage() {
@@ -39,6 +41,7 @@ export default function OrdersPage() {
   const [error, setError] = useState<string | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
   const [selectedOrderIds, setSelectedOrderIds] = useState<string[]>([]);
+  const [activeTab, setActiveTab] = useState<'shopify' | 'warehouse'>('shopify');
 
   useEffect(() => {
     async function fetchOrders() {
@@ -77,9 +80,13 @@ export default function OrdersPage() {
         };
 
         let ordersList = (fetchedOrders || []).map(order => {
+          const orderName = order.order_name || String(order.order_number || '');
+          const isGift = orderName.toLowerCase().startsWith('simply');
+          
           return {
             ...order,
-            source: order.source || 'warehouse'
+            source: order.source || (isGift ? 'warehouse' : 'shopify'),
+            is_gift: isGift
           };
         }) as Order[];
 
@@ -151,6 +158,7 @@ export default function OrdersPage() {
                   .or(`order_name.eq.#${baseNumStr},order_name.eq.#${rawNumStr},order_number.eq.${parseInt(baseNumStr) || -1}`);
 
                 if (!inDb || inDb === 0) {
+                  const isGift = wo.order_id.toLowerCase().startsWith('simply');
                   warehouseMadeOrders.push({
                     id: wo.id,
                     order_number: wo.order_id,
@@ -162,7 +170,8 @@ export default function OrdersPage() {
                     currency_code: 'USD',
                     customer_email: wo.ship_email || '',
                     source: 'warehouse',
-                    line_items: wo.raw_data?.info || []
+                    line_items: wo.raw_data?.info || [],
+                    is_gift: isGift
                   });
                 }
               }
@@ -177,11 +186,6 @@ export default function OrdersPage() {
         // Re-sort everything by date
         ordersList.sort((a, b) => new Date(b.processed_at).getTime() - new Date(a.processed_at).getTime());
         
-        // Final slice
-        if (ordersList.length > limit) {
-          ordersList = ordersList.slice(0, limit);
-        }
-
         // Fetch profiles for these orders
         const emails = ordersList.map(o => o.customer_email).filter(Boolean);
         if (emails.length > 0) {
@@ -211,6 +215,9 @@ export default function OrdersPage() {
 
     fetchOrders();
   }, [currentPage, limit, refreshKey]);
+
+  const shopifyOrders = useMemo(() => orders.filter(o => o.source === 'shopify'), [orders]);
+  const warehouseOrders = useMemo(() => orders.filter(o => o.source === 'warehouse'), [orders]);
 
   const handleRefresh = () => {
     setRefreshKey(prev => prev + 1);
@@ -281,14 +288,49 @@ export default function OrdersPage() {
           <SyncAllOrdersButton />
         </div>
       </div>
-      <OrdersList 
-        orders={orders} 
-        currentPage={currentPage} 
-        totalPages={totalPages} 
-        onPageChange={setCurrentPage}
-        onRefresh={handleRefresh}
-        onSelectedOrdersChange={setSelectedOrderIds}
-      />
+
+      <Tabs defaultValue="shopify" value={activeTab} onValueChange={(v) => setActiveTab(v as any)} className="w-full">
+        <TabsList className="grid w-full grid-cols-2 mb-8">
+          <TabsTrigger value="shopify" className="relative">
+            Shopify Orders
+            {shopifyOrders.length > 0 && (
+              <Badge variant="secondary" className="ml-2 bg-blue-100 text-blue-700 hover:bg-blue-100">
+                {shopifyOrders.length}
+              </Badge>
+            )}
+          </TabsTrigger>
+          <TabsTrigger value="warehouse">
+            Warehouse Orders
+            {warehouseOrders.length > 0 && (
+              <Badge variant="secondary" className="ml-2 bg-orange-100 text-orange-700 hover:bg-orange-100">
+                {warehouseOrders.length}
+              </Badge>
+            )}
+          </TabsTrigger>
+        </TabsList>
+        
+        <TabsContent value="shopify" className="mt-0">
+          <OrdersList 
+            orders={shopifyOrders} 
+            currentPage={currentPage} 
+            totalPages={totalPages} 
+            onPageChange={setCurrentPage}
+            onRefresh={handleRefresh}
+            onSelectedOrdersChange={setSelectedOrderIds}
+          />
+        </TabsContent>
+        
+        <TabsContent value="warehouse" className="mt-0">
+          <OrdersList 
+            orders={warehouseOrders} 
+            currentPage={currentPage} 
+            totalPages={totalPages} 
+            onPageChange={setCurrentPage}
+            onRefresh={handleRefresh}
+            onSelectedOrdersChange={setSelectedOrderIds}
+          />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }

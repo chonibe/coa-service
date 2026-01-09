@@ -36,6 +36,7 @@ interface Order {
   source?: 'shopify' | 'warehouse' | 'warehouse_made';
   kickstarter_backing_amount_gbp?: number | null;
   kickstarter_backing_amount_usd?: number | null;
+  is_gift?: boolean;
 }
 
 interface OrdersListProps {
@@ -387,6 +388,11 @@ export default function OrdersList({
                       {(order.kickstarter_backing_amount_gbp || order.customer_profile?.is_kickstarter_backer) && (
                         <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200 text-[10px] h-5 px-1.5 font-black uppercase tracking-tight">
                           Kickstarter
+                        </Badge>
+                      )}
+                      {order.is_gift && (
+                        <Badge variant="outline" className="bg-pink-50 text-pink-700 border-pink-200 text-[10px] h-5 px-1.5 font-black uppercase tracking-tight">
+                          Simply Gift
                         </Badge>
                       )}
                       {order.has_duplicates && (

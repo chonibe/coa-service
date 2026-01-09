@@ -169,6 +169,7 @@ async function cleanupOrders(live = false) {
     for (const shopifyOrder of shopifyOrders) {
         const shopifyId = String(shopifyOrder.id);
         const orderName = shopifyOrder.name;
+        const isGift = orderName.toLowerCase().startsWith('simply');
         
         // Find matching warehouse order for enrichment
         // Priority 1: Match by shopify_order_id in warehouse data
@@ -200,7 +201,7 @@ async function cleanupOrders(live = false) {
             cancelled_at: shopifyOrder.cancelled_at,
             archived: !!(shopifyOrder.closed_at || (shopifyOrder.tags || "").toLowerCase().includes("archived")),
             shopify_order_status: shopifyOrder.status,
-            source: 'shopify',
+            source: isGift ? 'warehouse' : 'shopify',
             updated_at: new Date().toISOString()
         };
 
@@ -244,10 +245,11 @@ async function cleanupOrders(live = false) {
         // So we only mark as shopify if we actually found a match in our fetched list.
         const source = 'warehouse';
         const dbId = `WH-${whOrder.sys_order_id || whOrder.order_id}`;
+        const isGift = whOrder.order_id.toLowerCase().startsWith('simply');
 
         const orderData = {
             id: dbId,
-            order_number: parseInt(whOrder.order_id.replace('#', '')) || 0,
+            order_number: parseInt(whOrder.order_id.replace(/\D/g, '')) || 0,
             order_name: whOrder.order_id,
             processed_at: whOrder.date_added || new Date().toISOString(),
             financial_status: 'paid',
@@ -256,6 +258,7 @@ async function cleanupOrders(live = false) {
             currency_code: 'USD',
             customer_email: whOrder.ship_email?.toLowerCase() || null,
             source: source,
+            raw_shopify_order_data: { source: isGift ? 'simply_gift' : 'warehouse_manual' },
             updated_at: new Date().toISOString()
         };
 

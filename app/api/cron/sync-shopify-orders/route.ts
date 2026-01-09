@@ -463,6 +463,8 @@ export async function GET(request: NextRequest) {
             order.closed_at !== null ||
             order.cancel_reason !== null
 
+          const isGift = order.name.toLowerCase().startsWith('simply');
+
           const orderData = {
             id: String(order.id),
             order_number: String(order.order_number),
@@ -474,7 +476,7 @@ export async function GET(request: NextRequest) {
             currency_code: order.currency,
             customer_email: (ownerEmail || order.email)?.toLowerCase() || null, // Use warehouse email if found, always lowercase
             updated_at: order.updated_at,
-            customer_id: order.customer?.id ? String(order.customer.id) : null,
+            customer_id: order.customer?.id || null,
             shopify_id: String(order.id),
             subtotal_price: order.subtotal_price ? parseFloat(order.subtotal_price) : null,
             total_tax: order.total_tax ? parseFloat(order.total_tax) : null,
@@ -484,7 +486,7 @@ export async function GET(request: NextRequest) {
             cancelled_at: order.cancelled_at || null, // Shopify is source of truth
             archived: shopifyArchived, // Shopify is source of truth
             shopify_order_status: order.status || null, // Shopify is source of truth
-            source: 'shopify',
+            source: isGift ? 'warehouse' : 'shopify',
           };
 
           const { error: orderError } = await db
