@@ -16,7 +16,6 @@ import { CollectorCard } from "@/app/admin/components/collector-card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 import { useRouter } from 'next/navigation';
-import NextImage from "next/image"
 
 interface OrderLineItem {
   id: string;
@@ -451,11 +450,10 @@ export default function OrderDetails({ order }: OrderDetailsProps) {
                     <TableCell>
                       {item.image_url ? (
                         <div className="relative w-12 h-12">
-                          <NextImage 
+                          <img 
                             src={item.image_url} 
                             alt={item.title}
-                            fill
-                            className="object-cover rounded-md"
+                            className="w-full h-full object-cover rounded-md"
                           />
                         </div>
                       ) : (
@@ -549,11 +547,10 @@ export default function OrderDetails({ order }: OrderDetailsProps) {
                   <div className="flex-shrink-0">
                     {item.image_url ? (
                       <div className="relative w-16 h-16">
-                        <NextImage 
+                        <img 
                           src={item.image_url} 
                           alt={item.title}
-                          fill
-                          className="object-cover rounded-md"
+                          className="w-full h-full object-cover rounded-md"
                         />
                       </div>
                     ) : (

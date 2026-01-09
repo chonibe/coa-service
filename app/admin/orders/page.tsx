@@ -31,6 +31,7 @@ export default function OrdersPage() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [totalPages, setTotalPages] = useState(0);
   const [currentPage, setCurrentPage] = useState(1);
+  const [limit, setLimit] = useState(50);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
@@ -42,7 +43,6 @@ export default function OrdersPage() {
         setIsLoading(true);
         const supabase = createClient<Database>();
 
-        const limit = 10;
         const offset = (currentPage - 1) * limit;
 
         // Get total count
@@ -77,7 +77,7 @@ export default function OrdersPage() {
             .select('*')
             .is('shopify_order_id', null)
             .order('created_at', { ascending: false })
-            .limit(40); // Fetch more to allow for filtering
+            .limit(limit * 2);
 
           if (warehouseOnly && warehouseOnly.length > 0) {
             // Deduplicate warehouse-only orders (e.g. if we have both 1234 and 1234A)
@@ -151,7 +151,10 @@ export default function OrdersPage() {
             
             // Re-sort and take the top ones for the current page
             ordersList.sort((a, b) => new Date(b.processed_at).getTime() - new Date(a.processed_at).getTime());
-            ordersList = ordersList.slice(0, limit);
+            
+            if (ordersList.length > limit) {
+              ordersList = ordersList.slice(0, limit);
+            }
           }
         } catch (wErr) {
           console.error('Error fetching warehouse orders:', wErr);
@@ -176,7 +179,7 @@ export default function OrdersPage() {
         }
 
         setOrders(ordersList);
-        setTotalPages(Math.ceil((count || 0) / limit));
+        setTotalPages(Math.ceil(((count || 0) + 50) / limit)); // Estimate total pages including warehouse
         setIsLoading(false);
       } catch (err) {
         console.error('Error fetching orders:', err);
@@ -186,7 +189,7 @@ export default function OrdersPage() {
     }
 
     fetchOrders();
-  }, [currentPage, refreshKey]);
+  }, [currentPage, limit, refreshKey]);
 
   const handleRefresh = () => {
     setRefreshKey(prev => prev + 1);
@@ -237,6 +240,18 @@ export default function OrdersPage() {
       <div className="flex justify-between items-center mb-8">
         <h1 className="text-3xl font-bold tracking-tight bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">Orders</h1>
         <div className="flex gap-2">
+          <select 
+            className="px-3 py-1 border rounded-md bg-white dark:bg-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            value={limit}
+            onChange={(e) => {
+              setLimit(parseInt(e.target.value));
+              setCurrentPage(1); // Reset to page 1 when limit changes
+            }}
+          >
+            <option value={50}>50 per page</option>
+            <option value={100}>100 per page</option>
+            <option value={200}>200 per page</option>
+          </select>
           <CompareOrdersButton 
             selectedOrderIds={selectedOrderIds}
             onSyncComplete={handleRefresh}

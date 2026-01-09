@@ -15,6 +15,93 @@ interface CollectorCardProps {
   showLink?: boolean;
 }
 
+const CardWrapper = ({ children, className }: { children: React.ReactNode, className?: string }) => (
+  <Card className={`overflow-hidden border-slate-200/60 shadow-sm hover:shadow-md transition-all duration-200 ${className}`}>
+    {children}
+  </Card>
+);
+
+const ProfileContent = ({ profile, initials, address, pii, showLink }: any) => (
+  <div className="flex flex-col gap-4">
+    <div className="flex items-center gap-4">
+      <Avatar className="h-16 w-16 border-2 border-background shadow-sm">
+        <AvatarImage src={profile.avatar_url} />
+        <AvatarFallback className="bg-primary/5 text-primary text-xl font-bold">
+          {initials}
+        </AvatarFallback>
+      </Avatar>
+      <div className="flex-1 min-w-0">
+        <h3 className="text-xl font-bold truncate">{profile.display_name}</h3>
+        <div className="flex items-center gap-2 mt-1">
+          {profile.user_id ? (
+            <Badge variant="default" className="text-[10px] h-5 bg-blue-600 hover:bg-blue-600">
+              <ShieldCheck className="h-3 w-3 mr-1" /> Registered
+            </Badge>
+          ) : (
+            <Badge variant="secondary" className="text-[10px] h-5">Guest Customer</Badge>
+          )}
+        </div>
+      </div>
+    </div>
+
+    <Separator />
+
+    <div className="grid gap-3 text-sm">
+      <div className="flex items-center gap-3 text-muted-foreground bg-slate-50/50 p-2 rounded-lg border border-slate-100">
+        <Mail className="h-4 w-4 text-primary/60" />
+        <span className="truncate font-medium text-slate-700">{profile.user_email}</span>
+      </div>
+      
+      {profile.display_phone && (
+        <div className="flex items-center gap-3 text-muted-foreground bg-slate-50/50 p-2 rounded-lg border border-slate-100">
+          <Phone className="h-4 w-4 text-primary/60" />
+          <span className="font-medium text-slate-700">{profile.display_phone}</span>
+        </div>
+      )}
+
+      {address && (
+        <div className="flex items-start gap-3 text-muted-foreground bg-slate-50/50 p-3 rounded-lg border border-slate-100">
+          <MapPin className="h-4 w-4 mt-0.5 text-primary/60" />
+          <div className="text-xs space-y-0.5">
+            <p className="font-semibold text-slate-800">{address.address1}</p>
+            {address.address2 && <p className="text-slate-600">{address.address2}</p>}
+            <p className="text-slate-600">{address.city}, {address.state || address.province_code} {address.zip}</p>
+            <p className="text-slate-600 font-medium">{address.country || address.country_code}</p>
+            {pii.warehouse && <Badge variant="outline" className="mt-2 text-[9px] h-4 border-primary/20 text-primary bg-primary/5">Verified Shipping Address</Badge>}
+          </div>
+        </div>
+      )}
+    </div>
+
+    <div className="grid grid-cols-2 gap-3 mt-2">
+      <div className="bg-slate-50 rounded-xl p-3 border border-slate-100 flex flex-col items-center justify-center text-center">
+        <span className="text-[10px] uppercase text-muted-foreground font-bold mb-1 tracking-tight">Active Editions</span>
+        <div className="flex items-center gap-1.5 font-black text-lg text-amber-600">
+          <Award className="h-4 w-4" />
+          {profile.total_editions || 0}
+        </div>
+      </div>
+      <div className="bg-slate-50 rounded-xl p-3 border border-slate-100 flex flex-col items-center justify-center text-center">
+        <span className="text-[10px] uppercase text-muted-foreground font-bold mb-1 tracking-tight">Total Orders</span>
+        <div className="flex items-center gap-1.5 font-black text-lg text-blue-600">
+          <ShoppingBag className="h-4 w-4" />
+          {profile.total_orders || 0}
+        </div>
+      </div>
+    </div>
+
+    {showLink && (
+      <Link 
+        href={`/admin/collectors/${profile.user_id || profile.user_email}`}
+        className="mt-2 flex items-center justify-center gap-2 w-full py-2.5 rounded-lg bg-primary text-primary-foreground font-bold text-sm hover:opacity-90 transition-all shadow-sm"
+      >
+        View Full Collector Profile
+        <ChevronRight className="h-4 w-4" />
+      </Link>
+    )}
+  </div>
+);
+
 export function CollectorCard({ profile, className, showLink = true }: CollectorCardProps) {
   if (!profile) return null;
 
@@ -29,96 +116,9 @@ export function CollectorCard({ profile, className, showLink = true }: Collector
   const shopifyAddr = pii.shopify?.address;
   const address = warehouseAddr || shopifyAddr;
 
-  const CardWrapper = ({ children }: { children: React.ReactNode }) => (
-    <Card className={`overflow-hidden border-slate-200/60 shadow-sm hover:shadow-md transition-all duration-200 ${className}`}>
-      {children}
-    </Card>
-  );
-
-  const ProfileContent = () => (
-    <div className="flex flex-col gap-4">
-      <div className="flex items-center gap-4">
-        <Avatar className="h-16 w-16 border-2 border-background shadow-sm">
-          <AvatarImage src={profile.avatar_url} />
-          <AvatarFallback className="bg-primary/5 text-primary text-xl font-bold">
-            {initials}
-          </AvatarFallback>
-        </Avatar>
-        <div className="flex-1 min-w-0">
-          <h3 className="text-xl font-bold truncate">{profile.display_name}</h3>
-          <div className="flex items-center gap-2 mt-1">
-            {profile.user_id ? (
-              <Badge variant="default" className="text-[10px] h-5 bg-blue-600 hover:bg-blue-600">
-                <ShieldCheck className="h-3 w-3 mr-1" /> Registered
-              </Badge>
-            ) : (
-              <Badge variant="secondary" className="text-[10px] h-5">Guest Customer</Badge>
-            )}
-          </div>
-        </div>
-      </div>
-
-      <Separator />
-
-      <div className="grid gap-3 text-sm">
-        <div className="flex items-center gap-3 text-muted-foreground bg-slate-50/50 p-2 rounded-lg border border-slate-100">
-          <Mail className="h-4 w-4 text-primary/60" />
-          <span className="truncate font-medium text-slate-700">{profile.user_email}</span>
-        </div>
-        
-        {profile.display_phone && (
-          <div className="flex items-center gap-3 text-muted-foreground bg-slate-50/50 p-2 rounded-lg border border-slate-100">
-            <Phone className="h-4 w-4 text-primary/60" />
-            <span className="font-medium text-slate-700">{profile.display_phone}</span>
-          </div>
-        )}
-
-        {address && (
-          <div className="flex items-start gap-3 text-muted-foreground bg-slate-50/50 p-3 rounded-lg border border-slate-100">
-            <MapPin className="h-4 w-4 mt-0.5 text-primary/60" />
-            <div className="text-xs space-y-0.5">
-              <p className="font-semibold text-slate-800">{address.address1}</p>
-              {address.address2 && <p className="text-slate-600">{address.address2}</p>}
-              <p className="text-slate-600">{address.city}, {address.state || address.province_code} {address.zip}</p>
-              <p className="text-slate-600 font-medium">{address.country || address.country_code}</p>
-              {pii.warehouse && <Badge variant="outline" className="mt-2 text-[9px] h-4 border-primary/20 text-primary bg-primary/5">Verified Shipping Address</Badge>}
-            </div>
-          </div>
-        )}
-      </div>
-
-      <div className="grid grid-cols-2 gap-3 mt-2">
-        <div className="bg-slate-50 rounded-xl p-3 border border-slate-100 flex flex-col items-center justify-center text-center">
-          <span className="text-[10px] uppercase text-muted-foreground font-bold mb-1 tracking-tight">Active Editions</span>
-          <div className="flex items-center gap-1.5 font-black text-lg text-amber-600">
-            <Award className="h-4 w-4" />
-            {profile.total_editions || 0}
-          </div>
-        </div>
-        <div className="bg-slate-50 rounded-xl p-3 border border-slate-100 flex flex-col items-center justify-center text-center">
-          <span className="text-[10px] uppercase text-muted-foreground font-bold mb-1 tracking-tight">Total Orders</span>
-          <div className="flex items-center gap-1.5 font-black text-lg text-blue-600">
-            <ShoppingBag className="h-4 w-4" />
-            {profile.total_orders || 0}
-          </div>
-        </div>
-      </div>
-
-      {showLink && (
-        <Link 
-          href={`/admin/collectors/${profile.user_id || profile.user_email}`}
-          className="mt-2 flex items-center justify-center gap-2 w-full py-2.5 rounded-lg bg-primary text-primary-foreground font-bold text-sm hover:opacity-90 transition-all shadow-sm"
-        >
-          View Full Collector Profile
-          <ChevronRight className="h-4 w-4" />
-        </Link>
-      )}
-    </div>
-  );
-
   return (
     <Sheet>
-      <CardWrapper>
+      <CardWrapper className={className}>
         <CardContent className="p-5">
           <div className="flex items-center justify-between group">
             <div className="flex items-center gap-4">
@@ -167,7 +167,13 @@ export function CollectorCard({ profile, className, showLink = true }: Collector
           </SheetTitle>
         </SheetHeader>
         <div className="py-2">
-          <ProfileContent />
+          <ProfileContent 
+            profile={profile} 
+            initials={initials} 
+            address={address} 
+            pii={pii} 
+            showLink={showLink} 
+          />
         </div>
       </SheetContent>
     </Sheet>

@@ -11,12 +11,12 @@ import {
   Award, Clock, MapPin, ExternalLink, ShieldCheck,
   User, Database, Globe, Calendar, DollarSign,
   Package, LayoutGrid, Heart, TrendingUp, Info,
-  Map as MapIcon, Share2, MoreHorizontal
+  Map as MapIcon, Share2, MoreHorizontal, History,
+  ChevronRight
 } from "lucide-react";
 import { formatCurrency } from "@/lib/utils";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
-import Image from "next/image";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 
