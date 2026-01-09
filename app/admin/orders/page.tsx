@@ -58,7 +58,7 @@ export default function OrdersPage() {
         // Get paginated orders
         const { data: fetchedOrders, error } = await supabase
           .from('orders')
-          .select('*')
+          .select('*, line_items:order_line_items_v2(*)')
           .order('processed_at', { ascending: false })
           .range(offset, offset + limit - 1);
 
@@ -66,27 +66,45 @@ export default function OrdersPage() {
           throw error;
         }
 
+        const getFingerprint = (items: any[]) => {
+          if (!items || items.length === 0) return null;
+          return items
+            .map(item => `${item.sku || item.sku_code || ''}:${item.quantity}`)
+            .sort()
+            .join('|');
+        };
+
         let ordersList = (fetchedOrders || []).map(order => ({
           ...order,
           source: (order as any).shopify_id || (order as any).raw_shopify_order_data ? 'shopify' : 'warehouse'
         })) as Order[];
 
-        // Deduplicate and prefer Shopify source (handle 1234 and 1234A)
+        // Deduplicate and prefer Shopify source (handle 1234, 1234A, and same SKUs)
         const orderMap = new Map<string, Order>();
+        const fingerprintMap = new Map<string, string>(); // fingerprint -> baseNumStr
+
         for (const order of ordersList) {
-          // Use order_name (e.g. #1234) if available, otherwise fallback to order_number
           const platformName = order.order_name || (typeof order.order_number === 'number' ? `#${order.order_number}` : String(order.order_number));
           const numStr = platformName.replace('#', '');
           const baseNumStr = numStr.toUpperCase().endsWith('A') ? numStr.slice(0, -1) : numStr;
           
-          const existing = orderMap.get(baseNumStr);
+          const fingerprint = getFingerprint(order.line_items || []);
+          
+          const existingByNum = orderMap.get(baseNumStr);
+          const existingByFingerprintBase = fingerprint ? fingerprintMap.get(fingerprint) : null;
+          const existing = existingByNum || (existingByFingerprintBase ? orderMap.get(existingByFingerprintBase) : null);
+
           // Prefer Shopify source, or the one without the 'A' if both are same source
           const isBetter = !existing || 
             (order.source === 'shopify' && existing.source !== 'shopify') ||
             (order.source === existing.source && !numStr.toUpperCase().endsWith('A') && (String(existing.order_name || existing.order_number)).toUpperCase().endsWith('A'));
           
           if (isBetter) {
+            if (existing && existingByFingerprintBase && existingByFingerprintBase !== baseNumStr) {
+              orderMap.delete(existingByFingerprintBase);
+            }
             orderMap.set(baseNumStr, order);
+            if (fingerprint) fingerprintMap.set(fingerprint, baseNumStr);
           }
         }
         ordersList = Array.from(orderMap.values());
@@ -102,9 +120,10 @@ export default function OrdersPage() {
             .limit(limit * 2);
 
           if (warehouseOnly && warehouseOnly.length > 0) {
-            // Deduplicate warehouse-only orders (e.g. if we have both 1234 and 1234A)
+            // Deduplicate warehouse-only orders (e.g. if we have both 1234 and 1234A or same SKUs)
             const uniqueWarehouseOrders: any[] = [];
             const seenBaseNumbers = new Set<string>();
+            const seenFingerprints = new Set<string>();
 
             // Sort by creation date so we process newest first if there are multiple
             const sortedWO = [...warehouseOnly].sort((a, b) => 
@@ -114,10 +133,15 @@ export default function OrdersPage() {
             for (const wo of sortedWO) {
               const numStr = String(wo.order_id).replace('#', '');
               const baseNumStr = numStr.toUpperCase().endsWith('A') ? numStr.slice(0, -1) : numStr;
+              const fingerprint = getFingerprint(wo.raw_data?.info || []);
               
-              if (!seenBaseNumbers.has(baseNumStr)) {
+              const alreadySeenNum = seenBaseNumbers.has(baseNumStr);
+              const alreadySeenFingerprint = fingerprint && seenFingerprints.has(fingerprint);
+
+              if (!alreadySeenNum && !alreadySeenFingerprint) {
                 uniqueWarehouseOrders.push(wo);
                 seenBaseNumbers.add(baseNumStr);
+                if (fingerprint) seenFingerprints.add(fingerprint);
               }
             }
 
@@ -131,7 +155,8 @@ export default function OrdersPage() {
               total_price: 0,
               currency_code: 'USD',
               customer_email: wo.ship_email || '',
-              source: 'warehouse'
+              source: 'warehouse',
+              line_items: wo.raw_data?.info || []
             }));
 
             // Only add if not already in the list and doesn't exist in the orders table
@@ -140,12 +165,16 @@ export default function OrdersPage() {
               const rawOrderNumStr = rawOrderName.replace('#', '');
               const baseOrderNumStr = rawOrderNumStr.toUpperCase().endsWith('A') ? rawOrderNumStr.slice(0, -1) : rawOrderNumStr;
               const baseOrderName = `#${baseOrderNumStr}`;
+              const woFingerprint = getFingerprint(wo.line_items || []);
               
               const existsInPage = ordersList.some(o => {
                 const oName = String(o.order_name || o.order_number);
                 const oNumStr = oName.replace('#', '');
                 const oBaseNumStr = oNumStr.toUpperCase().endsWith('A') ? oNumStr.slice(0, -1) : oNumStr;
-                return oBaseNumStr === baseOrderNumStr;
+                if (oBaseNumStr === baseOrderNumStr) return true;
+                
+                const oFingerprint = getFingerprint(o.line_items || []);
+                return woFingerprint && oFingerprint && woFingerprint === oFingerprint;
               });
               
               if (!existsInPage) {

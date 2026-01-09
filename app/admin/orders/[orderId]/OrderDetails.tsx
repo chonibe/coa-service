@@ -647,14 +647,13 @@ export default function OrderDetails({ order }: OrderDetailsProps) {
                     <TableRow key={item.id}>
                       <TableCell>
                         {item.image_url ? (
-                          <div className="relative w-12 h-12">
-                            <Image 
-                              src={item.image_url} 
-                              alt={item.title}
-                              fill
-                              className="object-cover rounded-md opacity-50"
-                            />
-                          </div>
+                        <div className="relative w-12 h-12">
+                          <img 
+                            src={item.image_url} 
+                            alt={item.title}
+                            className="w-full h-full object-cover rounded-md opacity-50"
+                          />
+                        </div>
                         ) : (
                           <div className="w-12 h-12 bg-gray-100 rounded-md flex items-center justify-center opacity-50">
                             <span className="text-gray-400 text-xs">No image</span>
@@ -719,11 +718,10 @@ export default function OrderDetails({ order }: OrderDetailsProps) {
                     <div className="flex-shrink-0">
                       {item.image_url ? (
                         <div className="relative w-16 h-16">
-                          <Image 
+                          <img 
                             src={item.image_url} 
                             alt={item.title}
-                            fill
-                            className="object-cover rounded-md"
+                            className="w-full h-full object-cover rounded-md"
                           />
                         </div>
                       ) : (
