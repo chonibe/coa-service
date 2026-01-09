@@ -67,7 +67,7 @@ export default function OrdersPage() {
 
         let ordersList = (fetchedOrders || []).map(order => ({
           ...order,
-          source: (order as any).raw_shopify_order_data ? 'shopify' : 'warehouse'
+          source: (order as any).shopify_id ? 'shopify' : 'warehouse'
         })) as Order[];
         
         // Try to fetch warehouse-only orders that aren't in the orders table
@@ -77,10 +77,29 @@ export default function OrdersPage() {
             .select('*')
             .is('shopify_order_id', null)
             .order('created_at', { ascending: false })
-            .limit(10);
+            .limit(40); // Fetch more to allow for filtering
 
           if (warehouseOnly && warehouseOnly.length > 0) {
-            const mappedWarehouse: Order[] = warehouseOnly.map(wo => ({
+            // Deduplicate warehouse-only orders (e.g. if we have both 1234 and 1234A)
+            const uniqueWarehouseOrders: any[] = [];
+            const seenBaseNumbers = new Set<string>();
+
+            // Sort by creation date so we process newest first if there are multiple
+            const sortedWO = [...warehouseOnly].sort((a, b) => 
+              new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+            );
+
+            for (const wo of sortedWO) {
+              const numStr = String(wo.order_id).replace('#', '');
+              const baseNumStr = numStr.toUpperCase().endsWith('A') ? numStr.slice(0, -1) : numStr;
+              
+              if (!seenBaseNumbers.has(baseNumStr)) {
+                uniqueWarehouseOrders.push(wo);
+                seenBaseNumbers.add(baseNumStr);
+              }
+            }
+
+            const mappedWarehouse: Order[] = uniqueWarehouseOrders.map(wo => ({
               id: wo.id,
               order_number: wo.order_id,
               processed_at: wo.created_at,
@@ -94,15 +113,35 @@ export default function OrdersPage() {
 
             // Only add if not already in the list and doesn't exist in the orders table
             for (const wo of mappedWarehouse) {
-              const orderNum = String(wo.order_number).replace('#', '');
-              const existsInPage = ordersList.some(o => String(o.order_number) === orderNum);
+              const rawOrderNumStr = String(wo.order_number).replace('#', '');
+              // If it ends with 'A', it's a warehouse recreation - check base order
+              const isRecreation = rawOrderNumStr.toUpperCase().endsWith('A');
+              const baseOrderNumStr = isRecreation ? rawOrderNumStr.slice(0, -1) : rawOrderNumStr;
+              
+              const existsInPage = ordersList.some(o => {
+                const oNumStr = String(o.order_number).replace('#', '');
+                return oNumStr === rawOrderNumStr || oNumStr === baseOrderNumStr;
+              });
               
               if (!existsInPage) {
-                // Check if it exists in the orders table at all
-                const { count: inDb } = await supabase
+                // Check if the base order number exists in the orders table at all
+                // We use a numeric check if possible
+                const baseNum = parseInt(baseOrderNumStr);
+                const rawNum = parseInt(rawOrderNumStr);
+                
+                let inDbQuery = supabase
                   .from('orders')
-                  .select('id', { count: 'exact', head: true })
-                  .eq('order_number', orderNum);
+                  .select('id', { count: 'exact', head: true });
+                
+                if (!isNaN(baseNum) && !isNaN(rawNum) && baseNum !== rawNum) {
+                  inDbQuery = inDbQuery.or(`order_number.eq.${baseNum},order_number.eq.${rawNum}`);
+                } else if (!isNaN(baseNum)) {
+                  inDbQuery = inDbQuery.eq('order_number', baseNum);
+                } else {
+                  inDbQuery = inDbQuery.eq('order_number', baseOrderNumStr);
+                }
+
+                const { count: inDb } = await inDbQuery;
                 
                 if (!inDb || inDb === 0) {
                   ordersList.push(wo);

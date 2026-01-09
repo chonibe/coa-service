@@ -258,11 +258,6 @@ export function AdminShell({ children }: AdminShellProps) {
           icon: <Icon size="sm"><Cog6ToothIcon className="h-4 w-4" /></Icon>,
         },
         {
-          title: "Sync",
-          href: "/admin/certificates/sync",
-          icon: <Icon size="sm"><ArrowPathIcon className="h-4 w-4" /></Icon>,
-        },
-        {
           title: "Bulk Operations",
           href: "/admin/certificates/bulk",
           icon: <Icon size="sm"><ArrowUpTrayIcon className="h-4 w-4" /></Icon>,
