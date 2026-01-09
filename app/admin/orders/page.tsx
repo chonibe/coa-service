@@ -67,11 +67,30 @@ export default function OrdersPage() {
 
         let ordersList = (fetchedOrders || []).map(order => ({
           ...order,
-          source: (order as any).shopify_id ? 'shopify' : 'warehouse'
+          source: (order as any).shopify_id || (order as any).raw_shopify_order_data ? 'shopify' : 'warehouse'
         })) as Order[];
+
+        // Deduplicate and prefer Shopify source (handle 1234 and 1234A)
+        const orderMap = new Map<string, Order>();
+        for (const order of ordersList) {
+          const numStr = String(order.order_number).replace('#', '');
+          const baseNumStr = numStr.toUpperCase().endsWith('A') ? numStr.slice(0, -1) : numStr;
+          
+          const existing = orderMap.get(baseNumStr);
+          // Prefer Shopify source, or the one without the 'A' if both are same source
+          const isBetter = !existing || 
+            (order.source === 'shopify' && existing.source !== 'shopify') ||
+            (order.source === existing.source && !numStr.toUpperCase().endsWith('A') && String(existing.order_number).toUpperCase().endsWith('A'));
+          
+          if (isBetter) {
+            orderMap.set(baseNumStr, order);
+          }
+        }
+        ordersList = Array.from(orderMap.values());
         
         // Try to fetch warehouse-only orders that aren't in the orders table
         try {
+          // We fetch a larger batch of warehouse orders to ensure we have enough after filtering
           const { data: warehouseOnly } = await supabase
             .from('warehouse_orders')
             .select('*')
@@ -114,18 +133,16 @@ export default function OrdersPage() {
             // Only add if not already in the list and doesn't exist in the orders table
             for (const wo of mappedWarehouse) {
               const rawOrderNumStr = String(wo.order_number).replace('#', '');
-              // If it ends with 'A', it's a warehouse recreation - check base order
-              const isRecreation = rawOrderNumStr.toUpperCase().endsWith('A');
-              const baseOrderNumStr = isRecreation ? rawOrderNumStr.slice(0, -1) : rawOrderNumStr;
+              const baseOrderNumStr = rawOrderNumStr.toUpperCase().endsWith('A') ? rawOrderNumStr.slice(0, -1) : rawOrderNumStr;
               
               const existsInPage = ordersList.some(o => {
                 const oNumStr = String(o.order_number).replace('#', '');
-                return oNumStr === rawOrderNumStr || oNumStr === baseOrderNumStr;
+                const oBaseNumStr = oNumStr.toUpperCase().endsWith('A') ? oNumStr.slice(0, -1) : oNumStr;
+                return oBaseNumStr === baseOrderNumStr;
               });
               
               if (!existsInPage) {
                 // Check if the base order number exists in the orders table at all
-                // We use a numeric check if possible
                 const baseNum = parseInt(baseOrderNumStr);
                 const rawNum = parseInt(rawOrderNumStr);
                 
@@ -149,9 +166,10 @@ export default function OrdersPage() {
               }
             }
             
-            // Re-sort and take the top ones for the current page
+            // Re-sort everything by date
             ordersList.sort((a, b) => new Date(b.processed_at).getTime() - new Date(a.processed_at).getTime());
             
+            // Keep the total list size to the limit
             if (ordersList.length > limit) {
               ordersList = ordersList.slice(0, limit);
             }
