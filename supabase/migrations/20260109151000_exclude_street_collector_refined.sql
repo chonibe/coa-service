@@ -49,14 +49,17 @@ BEGIN
     AND edition_number IS NOT NULL
     AND LOWER(COALESCE(vendor_name, '')) NOT IN ('street collector', 'street-collector');
 
-    -- 3. Reset numbers for non-authenticated OR Street Collector items
+    -- 3. Reset numbers for:
+    --    a) Inactive items
+    --    b) Non-authenticated active items (re-assignment pool)
+    --    c) Street Collector items
     UPDATE "public"."order_line_items_v2"
     SET edition_number = NULL,
         edition_total = NULL
     WHERE product_id::TEXT = p_product_id::TEXT
-    AND status = 'active'
     AND (
-        nfc_claimed_at IS NULL 
+        status != 'active'
+        OR nfc_claimed_at IS NULL 
         OR LOWER(COALESCE(vendor_name, '')) IN ('street collector', 'street-collector')
     );
 

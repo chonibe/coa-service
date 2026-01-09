@@ -153,7 +153,7 @@ export async function syncShopifyOrder(
       const isRemovedByQty = (li.fulfillable_quantity === 0 || li.fulfillable_quantity === '0') && 
                              li.fulfillment_status !== 'fulfilled'
       
-      const isCancelled = order.financial_status === 'voided'
+      const isCancelled = order.financial_status === 'voided' || order.cancelled_at !== null
       const isFulfilled = li.fulfillment_status === 'fulfilled'
       const isPaid = ['paid', 'authorized', 'pending', 'partially_paid'].includes(order.financial_status)
       
