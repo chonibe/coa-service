@@ -34,6 +34,8 @@ interface Order {
   archived?: boolean;
   shopify_order_status?: string | null;
   source?: 'shopify' | 'warehouse';
+  kickstarter_backing_amount_gbp?: number | null;
+  kickstarter_backing_amount_usd?: number | null;
 }
 
 interface OrdersListProps {
@@ -382,6 +384,11 @@ export default function OrdersList({
                       <span className="hover:text-primary transition-colors">
                         {order.order_name || (String(order.order_number).startsWith('#') ? order.order_number : `#${order.order_number}`)}
                       </span>
+                      {order.kickstarter_backing_amount_gbp && (
+                        <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200 text-[10px] h-5 px-1.5 font-black uppercase tracking-tight">
+                          Kickstarter
+                        </Badge>
+                      )}
                       {order.has_duplicates && (
                         <AlertCircle className="h-4 w-4 text-yellow-500" title="This order has duplicate items" />
                       )}

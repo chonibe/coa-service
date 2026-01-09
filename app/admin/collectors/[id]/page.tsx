@@ -11,7 +11,7 @@ import {
   Award, Clock, MapPin, ExternalLink, ShieldCheck,
   User, Database, Globe, Calendar, DollarSign,
   Package, LayoutGrid, Heart, TrendingUp, Info,
-  Map as MapIcon, Share2, MoreHorizontal, History,
+  Map as MapIcon, Share2, MoreHorizontal, History as HistoryIcon,
   ChevronRight
 } from "lucide-react";
 import { formatCurrency } from "@/lib/utils";
@@ -168,9 +168,14 @@ export default function CollectorDetailPage() {
                     <div className="flex items-center gap-2">
                       <h1 className="text-3xl font-black tracking-tight text-slate-900">{profile.display_name}</h1>
                       {profile.user_id && (
-                        <div className="h-6 w-6 bg-blue-100 rounded-full flex items-center justify-center border border-blue-200 shadow-sm">
+                        <div className="h-6 w-6 bg-blue-100 rounded-full flex items-center justify-center border border-blue-200 shadow-sm" title="Verified User">
                           <ShieldCheck className="h-3.5 w-3.5 text-blue-600" />
                         </div>
+                      )}
+                      {profile.is_kickstarter_backer && (
+                        <Badge className="bg-amber-100 text-amber-700 hover:bg-amber-100 border-amber-200 font-black text-[10px] px-2 py-0.5 rounded-full flex items-center gap-1">
+                          <Award className="h-3 w-3" /> Kickstarter Backer
+                        </Badge>
                       )}
                     </div>
                     <div className="flex flex-wrap items-center gap-x-4 gap-y-2 mt-1">
@@ -320,7 +325,7 @@ export default function CollectorDetailPage() {
                       <Card className="rounded-[2.5rem] border-none shadow-xl bg-white overflow-hidden p-8">
                         <div className="flex items-center justify-between mb-6">
                           <h3 className="text-lg font-black text-slate-900 tracking-tight">Recent Activity</h3>
-                          <History className="h-5 w-5 text-slate-300" />
+                          <HistoryIcon className="h-5 w-5 text-slate-300" />
                         </div>
                         <div className="space-y-6">
                           {orders.slice(0, 3).map((order, idx) => (

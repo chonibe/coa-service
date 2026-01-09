@@ -1,6 +1,6 @@
 "use client"
 
-import { Paperclip, File, Image, FileText, Download } from "lucide-react"
+import { Paperclip, File, Image as ImageIcon, FileText, Download } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { formatFileSize } from "@/lib/utils"
 
@@ -18,7 +18,7 @@ export interface AttachmentsListProps {
 
 const getFileIcon = (contentType?: string, filename?: string) => {
   if (contentType?.startsWith("image/")) {
-    return <Image className="h-4 w-4" />
+    return <ImageIcon className="h-4 w-4" />
   }
   if (contentType === "application/pdf" || filename?.endsWith(".pdf")) {
     return <FileText className="h-4 w-4" />

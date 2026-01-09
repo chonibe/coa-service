@@ -20,7 +20,7 @@ import {
   Search,
   Edit,
   Palette,
-  Image,
+  Image as ImageIcon,
   Grid3x3,
   List,
   TrendingUp,
@@ -755,7 +755,7 @@ export default function ManageLinksPage() {
                         <div className="flex items-center gap-2">
                           {link.logoUrl && (
                             <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                              <Image className="h-3 w-3" />
+                              <ImageIcon className="h-3 w-3" />
                               Logo
                             </div>
                           )}

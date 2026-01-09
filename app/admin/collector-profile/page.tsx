@@ -12,7 +12,7 @@ import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { useToast } from '@/hooks/use-toast'
-import { Loader2, Save, History, User, Mail, Phone, Edit, ArrowLeft } from 'lucide-react'
+import { Loader2, Save, History as HistoryIcon, User, Mail, Phone, Edit, ArrowLeft } from 'lucide-react'
 import Link from 'next/link'
 
 interface CollectorProfile {
@@ -452,7 +452,7 @@ export default function AdminCollectorProfilePage() {
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <History className="h-5 w-5" />
+                <HistoryIcon className="h-5 w-5" />
                 Profile Change History
               </CardTitle>
               <CardDescription>

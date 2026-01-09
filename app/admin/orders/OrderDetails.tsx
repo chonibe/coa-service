@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, ExternalLink, ChevronLeft, ChevronRight, ChevronUp, ChevronDown, AlertCircle } from "lucide-react";
+import { ArrowLeft, ExternalLink, ChevronLeft, ChevronRight, ChevronUp, ChevronDown, AlertCircle, Award } from "lucide-react";
 import { formatCurrency } from '@/lib/utils';
 import { useState, useEffect } from 'react';
 import DuplicateItemsBox from './DuplicateItemsBox';
@@ -43,6 +43,8 @@ interface Order {
   total_discounts: number;
   subtotal_price: number;
   total_tax: number;
+  kickstarter_backing_amount_gbp?: number | null;
+  kickstarter_backing_amount_usd?: number | null;
   discount_codes: Array<{
     code: string;
     amount: number;
@@ -290,9 +292,26 @@ export default function OrderDetails({ order }: OrderDetailsProps) {
               </div>
               <div>
                 <h3 className="text-sm font-medium text-muted-foreground mb-1">Total</h3>
-                <p className="text-2xl font-bold">
-                  {formatCurrency(order.total_price, order.currency_code)}
-                </p>
+                <div className="flex flex-col">
+                  <p className="text-2xl font-bold">
+                    {formatCurrency(order.total_price, order.currency_code)}
+                  </p>
+                  {order.kickstarter_backing_amount_gbp && (
+                    <div className="mt-2 p-2 bg-amber-50 border border-amber-100 rounded-lg">
+                      <div className="flex items-center gap-1.5 text-xs font-black text-amber-700 uppercase tracking-tight mb-1">
+                        <Award className="h-3 w-3" /> Kickstarter Backer
+                      </div>
+                      <div className="flex items-baseline gap-2">
+                        <span className="text-sm font-bold text-slate-900">
+                          {formatCurrency(order.kickstarter_backing_amount_gbp, 'GBP')}
+                        </span>
+                        <span className="text-[10px] text-slate-400 font-bold">
+                          ({formatCurrency(order.kickstarter_backing_amount_usd || 0, 'USD')})
+                        </span>
+                      </div>
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
           </CardContent>

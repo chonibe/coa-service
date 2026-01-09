@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button"
 import { Logo } from "@/components/logo"
 import {
-  Image,
+  Image as ImageIcon,
   Lock,
   ChartBarIcon,
   DollarSign,
@@ -46,7 +46,7 @@ const MAILTO_BODY = encodeURIComponent(
 
 const features = [
   {
-    icon: Image,
+    icon: ImageIcon,
     title: "Product Creation",
     description: "Create and submit your artworks through our intuitive product wizard. Manage all your pieces in one place with full control over pricing, images, and descriptions.",
     color: "from-purple-500 to-pink-500",

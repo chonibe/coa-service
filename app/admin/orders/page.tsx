@@ -74,10 +74,23 @@ export default function OrdersPage() {
             .join('|');
         };
 
-        let ordersList = (fetchedOrders || []).map(order => ({
-          ...order,
-          source: (order as any).shopify_id || (order as any).raw_shopify_order_data ? 'shopify' : 'warehouse'
-        })) as Order[];
+        let ordersList = (fetchedOrders || []).map(order => {
+          // Strictly define Shopify source: must have a customer_id from Shopify
+          // and either shopify_id or raw_shopify_order_data.
+          // Also, orders with specific warehouse prefixes like "#Order #" are warehouse orders.
+          const hasShopifyCustomer = (order as any).customer_id !== null && (order as any).customer_id !== undefined;
+          const platformName = order.order_name || String(order.order_number);
+          const hasWarehousePrefix = platformName.includes('#Order #');
+          
+          const isShopifyOrder = hasShopifyCustomer && 
+                                !hasWarehousePrefix && 
+                                ((order as any).shopify_id || (order as any).raw_shopify_order_data);
+          
+          return {
+            ...order,
+            source: isShopifyOrder ? 'shopify' : 'warehouse'
+          };
+        }) as Order[];
 
         // Deduplicate and prefer Shopify source (handle 1234, 1234A, and same SKUs)
         const orderMap = new Map<string, Order>();

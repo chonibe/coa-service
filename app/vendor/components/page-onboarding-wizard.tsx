@@ -4,7 +4,7 @@ import { useState, useEffect } from "react"
 import { usePathname } from "next/navigation"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { X, Home, Image, Lock, BarChart3, Wallet, ShoppingBag, MessageSquare, UserCircle, HelpCircle } from "lucide-react"
+import { X, Home, Image as ImageIcon, Lock, BarChart3, Wallet, ShoppingBag, MessageSquare, UserCircle, HelpCircle } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 interface PageTip {
@@ -24,7 +24,7 @@ const PAGE_TIPS: Record<string, PageTip> = {
   "/vendor/dashboard/products": {
     title: "Manage your artworks 🎨",
     description: "View all your products, check their status, and submit new artworks for review. You can also track submissions here.",
-    icon: <Image className="h-5 w-5" />,
+    icon: <ImageIcon className="h-5 w-5" />,
     highlight: "Your product catalog",
   },
   "/vendor/dashboard/series": {
