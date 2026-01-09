@@ -132,6 +132,23 @@ async function syncOrderToDatabase(order: any, supabase: any) {
 
     const isGift = (order.name || "").toLowerCase().startsWith('simply')
 
+    const getShopifyName = (order: any) => {
+      const sources = [
+        order.customer,
+        order.shipping_address,
+        order.billing_address
+      ]
+      for (const s of sources) {
+        if (s && (s.first_name || s.last_name)) {
+          return `${s.first_name || ''} ${s.last_name || ''}`.trim()
+        }
+      }
+      return null
+    }
+
+    const customerName = getShopifyName(order)
+    const customerPhone = order.customer?.phone || order.shipping_address?.phone || order.billing_address?.phone || null
+
     // Upsert order
     const orderData: any = {
       id: order.id.toString(),
@@ -142,9 +159,8 @@ async function syncOrderToDatabase(order: any, supabase: any) {
       total_price: parseFloat(order.current_total_price || order.total_price || '0'),
       currency_code: order.currency || 'USD',
       customer_email: (order.email || "").toLowerCase().trim() || null,
-      customer_name: (order.customer ? `${order.customer.first_name || ''} ${order.customer.last_name || ''}`.trim() : null) || 
-                     (order.shipping_address ? `${order.shipping_address.first_name || ''} ${order.shipping_address.last_name || ''}`.trim() : null),
-      customer_phone: order.customer?.phone || order.shipping_address?.phone || order.billing_address?.phone || null,
+      customer_name: customerName,
+      customer_phone: customerPhone,
       shipping_address: order.shipping_address || null,
       updated_at: new Date().toISOString(),
       raw_shopify_order_data: order,
@@ -237,6 +253,8 @@ async function syncOrderToDatabase(order: any, supabase: any) {
           edition_total: shouldClearEdition ? null : undefined, // Will be set by assign_edition_numbers
           created_at: orderData.created_at,
           updated_at: new Date().toISOString(),
+          owner_email: orderData.customer_email,
+          owner_name: orderData.customer_name,
         }
       })
 

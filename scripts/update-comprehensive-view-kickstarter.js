@@ -70,15 +70,15 @@ async function updateView() {
       -- Computed Display Fields
       COALESCE(
         TRIM(cp.first_name || ' ' || cp.last_name),
-        (SELECT TRIM(wo.ship_name) FROM warehouse_orders wo WHERE LOWER(wo.ship_email) = cb.email AND wo.ship_name IS NOT NULL ORDER BY wo.created_at DESC LIMIT 1),
-        (SELECT TRIM(concat_ws(' ', raw_shopify_order_data->'customer'->>'first_name', raw_shopify_order_data->'customer'->>'last_name')) FROM orders o WHERE LOWER(o.customer_email) = cb.email AND raw_shopify_order_data->'customer' IS NOT NULL ORDER BY o.processed_at DESC LIMIT 1),
+        (SELECT TRIM(o.customer_name) FROM orders o WHERE LOWER(o.customer_email) = cb.email AND o.customer_name IS NOT NULL AND o.customer_name != '' ORDER BY o.processed_at DESC LIMIT 1),
+        (SELECT TRIM(wo.ship_name) FROM warehouse_orders wo WHERE LOWER(wo.ship_email) = cb.email AND wo.ship_name IS NOT NULL AND wo.ship_name != '' ORDER BY wo.created_at DESC LIMIT 1),
         cb.email
       ) as display_name,
 
       COALESCE(
         cp.phone,
-        (SELECT wo.ship_phone FROM warehouse_orders wo WHERE LOWER(wo.ship_email) = cb.email AND wo.ship_phone IS NOT NULL ORDER BY wo.created_at DESC LIMIT 1),
-        (SELECT raw_shopify_order_data->'customer'->>'phone' FROM orders o WHERE LOWER(o.customer_email) = cb.email AND raw_shopify_order_data->'customer'->>'phone' IS NOT NULL ORDER BY o.processed_at DESC LIMIT 1)
+        (SELECT o.customer_phone FROM orders o WHERE LOWER(o.customer_email) = cb.email AND o.customer_phone IS NOT NULL AND o.customer_phone != '' ORDER BY o.processed_at DESC LIMIT 1),
+        (SELECT wo.ship_phone FROM warehouse_orders wo WHERE LOWER(wo.ship_email) = cb.email AND wo.ship_phone IS NOT NULL AND wo.ship_phone != '' ORDER BY wo.created_at DESC LIMIT 1)
       ) as display_phone,
 
       -- Statistics

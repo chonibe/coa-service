@@ -40,6 +40,7 @@ async function cleanAndSyncManualOrders() {
     
     if (!existingOrder) {
       console.log(`Creating order ${mainOrderId} (${wo.order_id})...`);
+      const isGift = wo.order_id.toLowerCase().startsWith('simply');
       const { error: ordErr } = await supabase.from('orders').insert({
         id: mainOrderId,
         order_number: 900000 + Math.floor(Math.random() * 100000), 
@@ -56,7 +57,8 @@ async function cleanAndSyncManualOrders() {
           warehouse_id: wo.id,
           original_order_id: wo.order_id,
         },
-        created_at: wo.created_at || new Date().toISOString()
+        created_at: wo.created_at || new Date().toISOString(),
+        source: 'warehouse'
       });
       if (ordErr) {
         console.error(`Error creating order ${mainOrderId}:`, ordErr.message);

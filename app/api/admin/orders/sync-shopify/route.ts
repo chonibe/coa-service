@@ -226,8 +226,21 @@ async function syncOrderWithShopify(
     }
 
     // 5.6 Sync contact info
-    const shopifyName = (shopifyOrder.customer ? `${shopifyOrder.customer.first_name || ''} ${shopifyOrder.customer.last_name || ''}`.trim() : null) || 
-                        (shopifyOrder.shipping_address ? `${shopifyOrder.shipping_address.first_name || ''} ${shopifyOrder.shipping_address.last_name || ''}`.trim() : null);
+    const getShopifyName = (order: any) => {
+      const sources = [
+        order.customer,
+        order.shipping_address,
+        order.billing_address
+      ]
+      for (const s of sources) {
+        if (s && (s.first_name || s.last_name)) {
+          return `${s.first_name || ''} ${s.last_name || ''}`.trim()
+        }
+      }
+      return null
+    }
+
+    const shopifyName = getShopifyName(shopifyOrder);
     const shopifyPhone = shopifyOrder.customer?.phone || shopifyOrder.shipping_address?.phone || shopifyOrder.billing_address?.phone || null;
     const shopifyAddress = shopifyOrder.shipping_address || null;
 

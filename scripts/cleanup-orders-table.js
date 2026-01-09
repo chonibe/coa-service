@@ -184,6 +184,24 @@ async function cleanupOrders(live = false) {
 
         if (matchedWh) matchedWhSysIds.add(matchedWh.sys_order_id);
 
+        // Helper to extract name from Shopify data
+        const getShopifyName = (order) => {
+            const sources = [
+                order.customer,
+                order.shipping_address,
+                order.billing_address
+            ]
+            for (const s of sources) {
+                if (s && (s.first_name || s.last_name)) {
+                    return `${s.first_name || ''} ${s.last_name || ''}`.trim()
+                }
+            }
+            return null
+        }
+
+        const shopifyName = getShopifyName(shopifyOrder);
+        const shopifyPhone = shopifyOrder.customer?.phone || shopifyOrder.shipping_address?.phone || shopifyOrder.billing_address?.phone || null;
+
         const orderData = {
             id: shopifyId,
             order_number: shopifyOrder.order_number,
@@ -191,11 +209,11 @@ async function cleanupOrders(live = false) {
             processed_at: shopifyOrder.processed_at || shopifyOrder.created_at,
             financial_status: shopifyOrder.financial_status,
             fulfillment_status: shopifyOrder.fulfillment_status,
-            total_price: parseFloat(shopifyOrder.current_total_price || "0"),
+            total_price: parseFloat(shopifyOrder.current_total_price || shopifyOrder.total_price || "0"),
             currency_code: shopifyOrder.currency,
             customer_email: (matchedWh?.ship_email || shopifyOrder.email || "").toLowerCase().trim(),
-            customer_name: (matchedWh?.ship_name || (shopifyOrder.customer ? `${shopifyOrder.customer.first_name || ''} ${shopifyOrder.customer.last_name || ''}`.trim() : null) || "").trim(),
-            customer_phone: matchedWh?.ship_phone || shopifyOrder.customer?.phone || shopifyOrder.shipping_address?.phone || null,
+            customer_name: (matchedWh?.ship_name || shopifyName || "").trim(),
+            customer_phone: matchedWh?.ship_phone || shopifyPhone || null,
             shipping_address: matchedWh?.ship_address || shopifyOrder.shipping_address || null,
             customer_id: shopifyOrder.customer?.id ? String(shopifyOrder.customer.id) : null,
             shopify_id: shopifyId,
