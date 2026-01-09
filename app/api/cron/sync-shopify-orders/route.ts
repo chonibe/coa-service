@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { createClient } from "@supabase/supabase-js"
-import { createChinaDivisionClient } from "@/lib/china-division/client"
+import { createChinaDivisionClient } from "@/lib/chinadivision/client"
 
 // Constants
 const SHOPIFY_SHOP = process.env.SHOPIFY_SHOP_DOMAIN
