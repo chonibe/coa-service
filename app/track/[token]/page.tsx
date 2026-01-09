@@ -1590,6 +1590,22 @@ export default function TrackOrdersPage() {
                               </a>
                             </div>
                           )}
+                          {!order.tracking_number && order.last_mile_tracking && (
+                            <div className="flex items-center gap-1.5">
+                              <Icon size="sm"><TruckIcon className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-slate-400 flex-shrink-0" /></Icon>
+                              <a 
+                                href={`https://stone3pl.com/?route=services/track&nums=${order.last_mile_tracking}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="font-mono font-medium truncate hover:underline"
+                                style={{ color: primaryColor }}
+                                onClick={(e) => e.stopPropagation()}
+                              >
+                                {order.last_mile_tracking}
+                              </a>
+                              <Badge variant="outline" className="text-[8px] px-1 py-0 h-3">Last Mile</Badge>
+                            </div>
+                          )}
                         </div>
 
                         {labels.length > 0 && (
@@ -1683,8 +1699,39 @@ export default function TrackOrdersPage() {
                               {getStatusBadge(order.status, order.status_name)}
                               {getTrackStatusBadge(order.track_status, order.track_status_name)}
                             </div>
-                            <div className="text-[10px] sm:text-[11px] text-slate-600 dark:text-slate-400 flex flex-wrap gap-1.5 sm:gap-2 mt-0.5">
+                            <div className="text-[10px] sm:text-[11px] text-slate-600 dark:text-slate-400 flex flex-wrap gap-1.5 sm:gap-2 mt-0.5 items-center">
                               <span>Order {order.order_id}</span>
+                              {order.tracking_number && (
+                                <>
+                                  <span className="text-slate-300 dark:text-slate-600">•</span>
+                                  <a 
+                                    href={`https://stone3pl.com/?route=services/track&nums=${order.tracking_number}`}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="font-mono hover:underline"
+                                    style={{ color: primaryColor }}
+                                    onClick={(e) => e.stopPropagation()}
+                                  >
+                                    {order.tracking_number}
+                                  </a>
+                                </>
+                              )}
+                              {!order.tracking_number && order.last_mile_tracking && (
+                                <>
+                                  <span className="text-slate-300 dark:text-slate-600">•</span>
+                                  <a 
+                                    href={`https://stone3pl.com/?route=services/track&nums=${order.last_mile_tracking}`}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="font-mono hover:underline"
+                                    style={{ color: primaryColor }}
+                                    onClick={(e) => e.stopPropagation()}
+                                  >
+                                    {order.last_mile_tracking}
+                                  </a>
+                                  <Badge variant="outline" className="text-[8px] px-1 py-0 h-3 leading-none">Last Mile</Badge>
+                                </>
+                              )}
                             </div>
                           </div>
                           <Button
@@ -2950,6 +2997,24 @@ function AlertsOrderCard({
             {getStatusBadge(order.status, order.status_name)}
             {getTrackStatusBadge(order.track_status, order.track_status_name)}
           </div>
+          {(order.tracking_number || order.last_mile_tracking) && (
+            <div className="text-[10px] sm:text-xs font-mono">
+              <a 
+                href={`https://stone3pl.com/?route=services/track&nums=${order.tracking_number || order.last_mile_tracking}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="hover:underline flex items-center gap-1"
+                style={{ color: primaryColor }}
+                onClick={(e) => e.stopPropagation()}
+              >
+                <Icon size="xs"><TruckIcon className="h-3 w-3" /></Icon>
+                {order.tracking_number || order.last_mile_tracking}
+                {!order.tracking_number && order.last_mile_tracking && (
+                  <Badge variant="outline" className="text-[8px] px-1 py-0 h-3 leading-none scale-90 origin-left">Last Mile</Badge>
+                )}
+              </a>
+            </div>
+          )}
           {order.ship_city && order.ship_state && (
             <p className="text-xs text-slate-600 dark:text-slate-400">
               📍 {order.ship_city}, {order.ship_state}
