@@ -55,7 +55,7 @@ export default function OrdersPage() {
           throw countError;
         }
 
-        // Get paginated orders
+        // Get paginated orders from main table
         const { data: fetchedOrders, error } = await supabase
           .from('orders')
           .select('*, line_items:order_line_items_v2(*)')
@@ -130,7 +130,7 @@ export default function OrdersPage() {
 
           if (warehouseOnly && warehouseOnly.length > 0) {
             // Filter and label as "Warehouse Made"
-            const uniqueWarehouseOrders: any[] = [];
+            const warehouseMadeOrders: Order[] = [];
             
             for (const wo of warehouseOnly) {
               const rawNumStr = String(wo.order_id).replace('#', '');
@@ -140,7 +140,8 @@ export default function OrdersPage() {
 
               // Check if it already exists in our matched ordersList
               const existsInPage = ordersList.some(o => {
-                const oNumStr = String(o.order_name || o.order_number).replace('#', '');
+                const oName = String(o.order_name || o.order_number);
+                const oNumStr = oName.replace('#', '');
                 const oBaseNumStr = oNumStr.toUpperCase().endsWith('A') ? oNumStr.slice(0, -1) : oNumStr;
                 if (oBaseNumStr === baseNumStr) return true;
                 
@@ -159,69 +160,50 @@ export default function OrdersPage() {
                   .or(`order_name.eq.#${baseNumStr},order_name.eq.#${rawNumStr},order_number.eq.${parseInt(baseNumStr) || -1}`);
 
                 if (!inDb || inDb === 0) {
-                  uniqueWarehouseOrders.push(wo);
+                  const email = wo.ship_email?.toLowerCase();
+                  let hasShopifyConnection = false;
+                  
+                  if (email) {
+                    const { count: shopifyCount } = await supabase
+                      .from('orders')
+                      .select('id', { count: 'exact', head: true })
+                      .eq('customer_email', email)
+                      .not('shopify_id', 'is', null);
+                    
+                    if (shopifyCount && shopifyCount > 0) {
+                      hasShopifyConnection = true;
+                    }
+                  }
+
+                  warehouseMadeOrders.push({
+                    id: wo.id,
+                    order_number: wo.order_id,
+                    order_name: wo.order_id,
+                    processed_at: wo.created_at,
+                    financial_status: 'paid',
+                    fulfillment_status: wo.status_name?.toLowerCase().includes('shipped') ? 'fulfilled' : 'unfulfilled',
+                    total_price: 0,
+                    currency_code: 'USD',
+                    customer_email: wo.ship_email || '',
+                    source: hasShopifyConnection ? 'warehouse' : 'warehouse_made',
+                    line_items: wo.raw_data?.info || []
+                  });
                 }
               }
             }
 
-            const mappedWarehouseMade: Order[] = [];
-            
-            for (const wo of uniqueWarehouseOrders) {
-              const email = wo.ship_email?.toLowerCase();
-              let hasShopifyConnection = false;
-              
-              if (email) {
-                // Check if this email is associated with any Shopify order
-                const { count: shopifyCount } = await supabase
-                  .from('orders')
-                  .select('id', { count: 'exact', head: true })
-                  .eq('customer_email', email)
-                  .not('shopify_id', 'is', null);
-                
-                if (shopifyCount && shopifyCount > 0) {
-                  hasShopifyConnection = true;
-                }
-              }
-
-              mappedWarehouseMade.push({
-                id: wo.id,
-                order_number: wo.order_id,
-                order_name: wo.order_id,
-                processed_at: wo.created_at,
-                financial_status: 'paid',
-                fulfillment_status: wo.status_name?.toLowerCase().includes('shipped') ? 'fulfilled' : 'unfulfilled',
-                total_price: 0,
-                currency_code: 'USD',
-                customer_email: wo.ship_email || '',
-                source: hasShopifyConnection ? 'warehouse' : 'warehouse_made', // Rule 2: Mark gifts/off-shopify as warehouse made if no shopify connection
-                line_items: wo.raw_data?.info || []
-              });
-            }
-
-            ordersList = [...ordersList, ...mappedWarehouseMade];
-            
-            // Re-sort everything by date
-            ordersList.sort((a, b) => new Date(b.processed_at).getTime() - new Date(a.processed_at).getTime());
-            
-            if (ordersList.length > limit) {
-              ordersList = ordersList.slice(0, limit);
-            }
+            ordersList = [...ordersList, ...warehouseMadeOrders];
           }
         } catch (wErr) {
           console.error('Error fetching warehouse-made orders:', wErr);
         }
-            
-            // Re-sort everything by date
-            ordersList.sort((a, b) => new Date(b.processed_at).getTime() - new Date(a.processed_at).getTime());
-            
-            // Keep the total list size to the limit
-            if (ordersList.length > limit) {
-              ordersList = ordersList.slice(0, limit);
-            }
-          }
-        } catch (wErr) {
-          console.error('Error fetching warehouse orders:', wErr);
-          // Continue with what we have
+
+        // Re-sort everything by date
+        ordersList.sort((a, b) => new Date(b.processed_at).getTime() - new Date(a.processed_at).getTime());
+        
+        // Final slice to keep page size consistent
+        if (ordersList.length > limit) {
+          ordersList = ordersList.slice(0, limit);
         }
 
         // Fetch profiles for these orders
@@ -242,7 +224,7 @@ export default function OrdersPage() {
         }
 
         setOrders(ordersList);
-        setTotalPages(Math.ceil(((count || 0) + 50) / limit)); // Estimate total pages including warehouse
+        setTotalPages(Math.ceil(((count || 0) + 100) / limit)); // Estimate total pages
         setIsLoading(false);
       } catch (err) {
         console.error('Error fetching orders:', err);

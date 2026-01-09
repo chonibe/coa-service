@@ -12,38 +12,27 @@ async function ingestManualOrders() {
   console.log('🚀 Starting Refined Manual Warehouse Order Ingestion...');
 
   const { data: wh } = await supabase.from('warehouse_orders').select('*');
-  const { data: ord } = await supabase.from('orders').select('id, order_name');
-  const ordIds = new Set(ord.map(o => o.id));
-  const ordNames = new Set(ord.map(o => o.order_name));
+  
+  // Filter for manual orders (no shopify link)
+  const manualWhOrders = wh.filter(w => !w.shopify_order_id);
 
-  const orphans = wh.filter(w => {
-    if (w.shopify_order_id && ordIds.has(w.shopify_order_id)) return false;
-    if (w.order_id && ordNames.has(w.order_id)) return false;
-    return true;
-  });
-
-  console.log(`Found ${orphans.length} manual/orphan warehouse orders.`);
+  console.log(`Found ${manualWhOrders.length} manual warehouse orders.`);
 
   let ingestedOrders = 0;
   let ingestedItems = 0;
 
-  for (const orphan of orphans) {
+  for (const orphan of manualWhOrders) {
     const manualOrderId = `WH-${orphan.id}`;
     const email = (orphan.ship_email || '').toLowerCase().trim() || null;
     
-    // Extract a numeric value for order_number or use a safe range
-    // Sarah's order_id is "Simply48" -> number 48
     const numericPart = orphan.order_id.replace(/\D/g, '');
     let orderNumber = parseInt(numericPart);
     if (isNaN(orderNumber)) {
-      // If no digits, use a unique number from the UUID
       orderNumber = 900000 + (parseInt(orphan.id.slice(-4), 16) % 100000);
     } else if (orderNumber < 10000) {
-      // Offset warehouse numbers to distinguish them
       orderNumber += 900000;
     }
 
-    // Create the Order record
     const { error: orderError } = await supabase
       .from('orders')
       .upsert({
@@ -66,15 +55,23 @@ async function ingestManualOrders() {
       }, { onConflict: 'id' });
 
     if (orderError) {
-      console.error(`❌ Error ingesting order ${orphan.order_id} (Number: ${orderNumber}):`, orderError.message);
+      console.error(`❌ Error ingesting order ${orphan.order_id}:`, orderError.message);
       continue;
     }
     ingestedOrders++;
 
     // Ingest Line Items from raw_data.info
     const items = orphan.raw_data?.info || [];
-    for (const item of items) {
-      const lineItemId = `WH-ITEM-${orphan.id}-${item.sku || Math.random().toString(36).slice(2, 7)}`;
+    
+    // First, delete old manual items for this order to avoid duplicates
+    await supabase.from('order_line_items_v2')
+      .delete()
+      .eq('order_id', manualOrderId)
+      .like('line_item_id', 'WH-ITEM-%');
+
+    for (let i = 0; i < items.length; i++) {
+      const item = items[i];
+      const lineItemId = `WH-ITEM-${orphan.id}-${item.sku || 'no-sku'}-${i}`;
       
       const { error: itemError } = await supabase
         .from('order_line_items_v2')
@@ -96,7 +93,7 @@ async function ingestManualOrders() {
         }, { onConflict: 'line_item_id' });
 
       if (itemError) {
-        console.error(`❌ Error ingesting item ${lineItemId}:`, itemError.message, itemError);
+        console.error(`❌ Error ingesting item ${lineItemId}:`, itemError.message);
       } else {
         ingestedItems++;
       }
@@ -104,7 +101,7 @@ async function ingestManualOrders() {
   }
 
   console.log('\n--- Refined Ingestion Summary ---');
-  console.log(`Manual Orders Created: ${ingestedOrders}`);
+  console.log(`Manual Orders Processed: ${ingestedOrders}`);
   console.log(`Line Items Created: ${ingestedItems}`);
   console.log('---------------------------');
 }
