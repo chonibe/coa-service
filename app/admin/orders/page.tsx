@@ -25,7 +25,9 @@ interface Order {
   cancelled_at?: string | null;
   archived?: boolean;
   shopify_order_status?: string | null;
-  source?: 'shopify' | 'warehouse' | 'warehouse_made';
+  source?: 'shopify' | 'warehouse';
+  kickstarter_backing_amount_gbp?: number | null;
+  kickstarter_backing_amount_usd?: number | null;
 }
 
 export default function OrdersPage() {
@@ -75,9 +77,7 @@ export default function OrdersPage() {
         };
 
         let ordersList = (fetchedOrders || []).map(order => {
-          // Rule 1: Shopify is top level of truth.
-          // If it has shopify_id, it's a Shopify order.
-          const isShopifyOrder = !!(order as any).shopify_id;
+          const isShopifyOrder = !!(order as any).shopify_id || !!(order as any).raw_shopify_order_data;
           
           return {
             ...order,
@@ -86,13 +86,12 @@ export default function OrdersPage() {
         }) as Order[];
 
         // Deduplicate and pair (Bridge Mechanism)
-        const orderMap = new Map<string, Order>(); // key is base platform name (e.g. 1234)
-        const customerFingerprintMap = new Map<string, string>(); // customerEmail:fingerprint -> baseNumStr
+        const orderMap = new Map<string, Order>(); 
+        const customerFingerprintMap = new Map<string, string>(); 
 
         for (const order of ordersList) {
           const platformName = order.order_name || (typeof order.order_number === 'number' ? `#${order.order_number}` : String(order.order_number));
           const numStr = platformName.replace('#', '');
-          // Handle 'A' suffix: #1234A is paired with #1234
           const baseNumStr = numStr.toUpperCase().endsWith('A') ? numStr.slice(0, -1) : numStr;
           
           const fingerprint = getFingerprint(order.line_items || []);
@@ -102,9 +101,6 @@ export default function OrdersPage() {
           const existingByFingerprintKey = customerKey ? customerFingerprintMap.get(customerKey) : null;
           const existing = existingByNum || (existingByFingerprintKey ? orderMap.get(existingByFingerprintKey) : null);
 
-          // Priority: 
-          // 1. Shopify source takes absolute precedence
-          // 2. Original order number (no 'A') takes precedence if same source
           const isBetter = !existing || 
             (order.source === 'shopify' && existing.source !== 'shopify') ||
             (order.source === existing.source && !numStr.toUpperCase().endsWith('A') && (String(existing.order_name || existing.order_number)).toUpperCase().endsWith('A'));
@@ -119,7 +115,7 @@ export default function OrdersPage() {
         }
         ordersList = Array.from(orderMap.values());
         
-        // Try to fetch warehouse-only orders (Gifts / Off-Shopify)
+        // Try to fetch warehouse-only orders
         try {
           const { data: warehouseOnly } = await supabase
             .from('warehouse_orders')
@@ -129,7 +125,6 @@ export default function OrdersPage() {
             .limit(limit * 2);
 
           if (warehouseOnly && warehouseOnly.length > 0) {
-            // Filter and label as "Warehouse Made"
             const warehouseMadeOrders: Order[] = [];
             
             for (const wo of warehouseOnly) {
@@ -138,7 +133,6 @@ export default function OrdersPage() {
               const fingerprint = getFingerprint(wo.raw_data?.info || []);
               const customerKey = wo.ship_email ? `${wo.ship_email.toLowerCase()}:${fingerprint}` : null;
 
-              // Check if it already exists in our matched ordersList
               const existsInPage = ordersList.some(o => {
                 const oName = String(o.order_name || o.order_number);
                 const oNumStr = oName.replace('#', '');
@@ -153,28 +147,12 @@ export default function OrdersPage() {
               });
 
               if (!existsInPage) {
-                // Check database for existing Shopify order with same name or base name
                 const { count: inDb } = await supabase
                   .from('orders')
                   .select('id', { count: 'exact', head: true })
                   .or(`order_name.eq.#${baseNumStr},order_name.eq.#${rawNumStr},order_number.eq.${parseInt(baseNumStr) || -1}`);
 
                 if (!inDb || inDb === 0) {
-                  const email = wo.ship_email?.toLowerCase();
-                  let hasShopifyConnection = false;
-                  
-                  if (email) {
-                    const { count: shopifyCount } = await supabase
-                      .from('orders')
-                      .select('id', { count: 'exact', head: true })
-                      .eq('customer_email', email)
-                      .not('shopify_id', 'is', null);
-                    
-                    if (shopifyCount && shopifyCount > 0) {
-                      hasShopifyConnection = true;
-                    }
-                  }
-
                   warehouseMadeOrders.push({
                     id: wo.id,
                     order_number: wo.order_id,
@@ -185,7 +163,7 @@ export default function OrdersPage() {
                     total_price: 0,
                     currency_code: 'USD',
                     customer_email: wo.ship_email || '',
-                    source: hasShopifyConnection ? 'warehouse' : 'warehouse_made',
+                    source: 'warehouse',
                     line_items: wo.raw_data?.info || []
                   });
                 }
@@ -195,13 +173,13 @@ export default function OrdersPage() {
             ordersList = [...ordersList, ...warehouseMadeOrders];
           }
         } catch (wErr) {
-          console.error('Error fetching warehouse-made orders:', wErr);
+          console.error('Error fetching warehouse orders:', wErr);
         }
 
         // Re-sort everything by date
         ordersList.sort((a, b) => new Date(b.processed_at).getTime() - new Date(a.processed_at).getTime());
         
-        // Final slice to keep page size consistent
+        // Final slice
         if (ordersList.length > limit) {
           ordersList = ordersList.slice(0, limit);
         }
@@ -224,7 +202,7 @@ export default function OrdersPage() {
         }
 
         setOrders(ordersList);
-        setTotalPages(Math.ceil(((count || 0) + 100) / limit)); // Estimate total pages
+        setTotalPages(Math.ceil(((count || 0) + 100) / limit)); 
         setIsLoading(false);
       } catch (err) {
         console.error('Error fetching orders:', err);
@@ -290,7 +268,7 @@ export default function OrdersPage() {
             value={limit}
             onChange={(e) => {
               setLimit(parseInt(e.target.value));
-              setCurrentPage(1); // Reset to page 1 when limit changes
+              setCurrentPage(1); 
             }}
           >
             <option value={50}>50 per page</option>
@@ -315,4 +293,4 @@ export default function OrdersPage() {
       />
     </div>
   );
-} 
+}
