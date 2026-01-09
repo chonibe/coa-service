@@ -25,7 +25,7 @@ interface Order {
   cancelled_at?: string | null;
   archived?: boolean;
   shopify_order_status?: string | null;
-  source?: 'shopify' | 'warehouse';
+  source?: 'shopify' | 'warehouse' | 'warehouse_made';
 }
 
 export default function OrdersPage() {
@@ -69,22 +69,15 @@ export default function OrdersPage() {
         const getFingerprint = (items: any[]) => {
           if (!items || items.length === 0) return null;
           return items
-            .map(item => `${item.sku || item.sku_code || ''}:${item.quantity}`)
+            .map(item => `${(item.sku || item.sku_code || '').toLowerCase()}:${item.quantity}`)
             .sort()
             .join('|');
         };
 
         let ordersList = (fetchedOrders || []).map(order => {
-          // Strictly define Shopify source: must have a customer_id from Shopify
-          // and either shopify_id or raw_shopify_order_data.
-          // Also, orders with specific warehouse prefixes like "#Order #" are warehouse orders.
-          const hasShopifyCustomer = (order as any).customer_id !== null && (order as any).customer_id !== undefined;
-          const platformName = order.order_name || String(order.order_number);
-          const hasWarehousePrefix = platformName.includes('#Order #');
-          
-          const isShopifyOrder = hasShopifyCustomer && 
-                                !hasWarehousePrefix && 
-                                ((order as any).shopify_id || (order as any).raw_shopify_order_data);
+          // Rule 1: Shopify is top level of truth.
+          // If it has shopify_id, it's a Shopify order.
+          const isShopifyOrder = !!(order as any).shopify_id;
           
           return {
             ...order,
@@ -92,39 +85,42 @@ export default function OrdersPage() {
           };
         }) as Order[];
 
-        // Deduplicate and prefer Shopify source (handle 1234, 1234A, and same SKUs)
-        const orderMap = new Map<string, Order>();
-        const fingerprintMap = new Map<string, string>(); // fingerprint -> baseNumStr
+        // Deduplicate and pair (Bridge Mechanism)
+        const orderMap = new Map<string, Order>(); // key is base platform name (e.g. 1234)
+        const customerFingerprintMap = new Map<string, string>(); // customerEmail:fingerprint -> baseNumStr
 
         for (const order of ordersList) {
           const platformName = order.order_name || (typeof order.order_number === 'number' ? `#${order.order_number}` : String(order.order_number));
           const numStr = platformName.replace('#', '');
+          // Handle 'A' suffix: #1234A is paired with #1234
           const baseNumStr = numStr.toUpperCase().endsWith('A') ? numStr.slice(0, -1) : numStr;
           
           const fingerprint = getFingerprint(order.line_items || []);
+          const customerKey = order.customer_email ? `${order.customer_email.toLowerCase()}:${fingerprint}` : null;
           
           const existingByNum = orderMap.get(baseNumStr);
-          const existingByFingerprintBase = fingerprint ? fingerprintMap.get(fingerprint) : null;
-          const existing = existingByNum || (existingByFingerprintBase ? orderMap.get(existingByFingerprintBase) : null);
+          const existingByFingerprintKey = customerKey ? customerFingerprintMap.get(customerKey) : null;
+          const existing = existingByNum || (existingByFingerprintKey ? orderMap.get(existingByFingerprintKey) : null);
 
-          // Prefer Shopify source, or the one without the 'A' if both are same source
+          // Priority: 
+          // 1. Shopify source takes absolute precedence
+          // 2. Original order number (no 'A') takes precedence if same source
           const isBetter = !existing || 
             (order.source === 'shopify' && existing.source !== 'shopify') ||
             (order.source === existing.source && !numStr.toUpperCase().endsWith('A') && (String(existing.order_name || existing.order_number)).toUpperCase().endsWith('A'));
           
           if (isBetter) {
-            if (existing && existingByFingerprintBase && existingByFingerprintBase !== baseNumStr) {
-              orderMap.delete(existingByFingerprintBase);
+            if (existing && existingByFingerprintKey && existingByFingerprintKey !== baseNumStr) {
+              orderMap.delete(existingByFingerprintKey);
             }
             orderMap.set(baseNumStr, order);
-            if (fingerprint) fingerprintMap.set(fingerprint, baseNumStr);
+            if (customerKey) customerFingerprintMap.set(customerKey, baseNumStr);
           }
         }
         ordersList = Array.from(orderMap.values());
         
-        // Try to fetch warehouse-only orders that aren't in the orders table
+        // Try to fetch warehouse-only orders (Gifts / Off-Shopify)
         try {
-          // We fetch a larger batch of warehouse orders to ensure we have enough after filtering
           const { data: warehouseOnly } = await supabase
             .from('warehouse_orders')
             .select('*')
@@ -133,89 +129,87 @@ export default function OrdersPage() {
             .limit(limit * 2);
 
           if (warehouseOnly && warehouseOnly.length > 0) {
-            // Deduplicate warehouse-only orders (e.g. if we have both 1234 and 1234A or same SKUs)
+            // Filter and label as "Warehouse Made"
             const uniqueWarehouseOrders: any[] = [];
-            const seenBaseNumbers = new Set<string>();
-            const seenFingerprints = new Set<string>();
-
-            // Sort by creation date so we process newest first if there are multiple
-            const sortedWO = [...warehouseOnly].sort((a, b) => 
-              new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-            );
-
-            for (const wo of sortedWO) {
-              const numStr = String(wo.order_id).replace('#', '');
-              const baseNumStr = numStr.toUpperCase().endsWith('A') ? numStr.slice(0, -1) : numStr;
+            
+            for (const wo of warehouseOnly) {
+              const rawNumStr = String(wo.order_id).replace('#', '');
+              const baseNumStr = rawNumStr.toUpperCase().endsWith('A') ? rawNumStr.slice(0, -1) : rawNumStr;
               const fingerprint = getFingerprint(wo.raw_data?.info || []);
-              
-              const alreadySeenNum = seenBaseNumbers.has(baseNumStr);
-              const alreadySeenFingerprint = fingerprint && seenFingerprints.has(fingerprint);
+              const customerKey = wo.ship_email ? `${wo.ship_email.toLowerCase()}:${fingerprint}` : null;
 
-              if (!alreadySeenNum && !alreadySeenFingerprint) {
-                uniqueWarehouseOrders.push(wo);
-                seenBaseNumbers.add(baseNumStr);
-                if (fingerprint) seenFingerprints.add(fingerprint);
-              }
-            }
-
-            const mappedWarehouse: Order[] = uniqueWarehouseOrders.map(wo => ({
-              id: wo.id,
-              order_number: wo.order_id,
-              order_name: wo.order_id, // Warehouse order_id is usually the platform name like #1234
-              processed_at: wo.created_at,
-              financial_status: 'paid',
-              fulfillment_status: wo.status_name?.toLowerCase().includes('shipped') ? 'fulfilled' : 'unfulfilled',
-              total_price: 0,
-              currency_code: 'USD',
-              customer_email: wo.ship_email || '',
-              source: 'warehouse',
-              line_items: wo.raw_data?.info || []
-            }));
-
-            // Only add if not already in the list and doesn't exist in the orders table
-            for (const wo of mappedWarehouse) {
-              const rawOrderName = String(wo.order_name || wo.order_number);
-              const rawOrderNumStr = rawOrderName.replace('#', '');
-              const baseOrderNumStr = rawOrderNumStr.toUpperCase().endsWith('A') ? rawOrderNumStr.slice(0, -1) : rawOrderNumStr;
-              const baseOrderName = `#${baseOrderNumStr}`;
-              const woFingerprint = getFingerprint(wo.line_items || []);
-              
+              // Check if it already exists in our matched ordersList
               const existsInPage = ordersList.some(o => {
-                const oName = String(o.order_name || o.order_number);
-                const oNumStr = oName.replace('#', '');
+                const oNumStr = String(o.order_name || o.order_number).replace('#', '');
                 const oBaseNumStr = oNumStr.toUpperCase().endsWith('A') ? oNumStr.slice(0, -1) : oNumStr;
-                if (oBaseNumStr === baseOrderNumStr) return true;
+                if (oBaseNumStr === baseNumStr) return true;
                 
-                const oFingerprint = getFingerprint(o.line_items || []);
-                return woFingerprint && oFingerprint && woFingerprint === oFingerprint;
+                if (customerKey && o.customer_email) {
+                  const oFingerprint = getFingerprint(o.line_items || []);
+                  return customerKey === `${o.customer_email.toLowerCase()}:${oFingerprint}`;
+                }
+                return false;
               });
-              
+
               if (!existsInPage) {
-                // Check if the base order number or name exists in the orders table at all
-                // Following the Hybrid Bridge mechanism: check order_name first
-                const { count: inDbByName } = await supabase
+                // Check database for existing Shopify order with same name or base name
+                const { count: inDb } = await supabase
                   .from('orders')
                   .select('id', { count: 'exact', head: true })
-                  .or(`order_name.eq.${baseOrderName},order_name.eq.#${rawOrderNumStr},order_name.eq.${baseOrderNumStr},order_name.eq.${rawOrderNumStr}`);
-                
-                if (!inDbByName || inDbByName === 0) {
-                  // Fallback to numeric order_number if name match fails
-                  const baseNum = parseInt(baseOrderNumStr);
-                  if (!isNaN(baseNum)) {
-                    const { count: inDbByNum } = await supabase
-                      .from('orders')
-                      .select('id', { count: 'exact', head: true })
-                      .eq('order_number', baseNum);
-                    
-                    if (!inDbByNum || inDbByNum === 0) {
-                      ordersList.push(wo);
-                    }
-                  } else {
-                    ordersList.push(wo);
-                  }
+                  .or(`order_name.eq.#${baseNumStr},order_name.eq.#${rawNumStr},order_number.eq.${parseInt(baseNumStr) || -1}`);
+
+                if (!inDb || inDb === 0) {
+                  uniqueWarehouseOrders.push(wo);
                 }
               }
             }
+
+            const mappedWarehouseMade: Order[] = [];
+            
+            for (const wo of uniqueWarehouseOrders) {
+              const email = wo.ship_email?.toLowerCase();
+              let hasShopifyConnection = false;
+              
+              if (email) {
+                // Check if this email is associated with any Shopify order
+                const { count: shopifyCount } = await supabase
+                  .from('orders')
+                  .select('id', { count: 'exact', head: true })
+                  .eq('customer_email', email)
+                  .not('shopify_id', 'is', null);
+                
+                if (shopifyCount && shopifyCount > 0) {
+                  hasShopifyConnection = true;
+                }
+              }
+
+              mappedWarehouseMade.push({
+                id: wo.id,
+                order_number: wo.order_id,
+                order_name: wo.order_id,
+                processed_at: wo.created_at,
+                financial_status: 'paid',
+                fulfillment_status: wo.status_name?.toLowerCase().includes('shipped') ? 'fulfilled' : 'unfulfilled',
+                total_price: 0,
+                currency_code: 'USD',
+                customer_email: wo.ship_email || '',
+                source: hasShopifyConnection ? 'warehouse' : 'warehouse_made', // Rule 2: Mark gifts/off-shopify as warehouse made if no shopify connection
+                line_items: wo.raw_data?.info || []
+              });
+            }
+
+            ordersList = [...ordersList, ...mappedWarehouseMade];
+            
+            // Re-sort everything by date
+            ordersList.sort((a, b) => new Date(b.processed_at).getTime() - new Date(a.processed_at).getTime());
+            
+            if (ordersList.length > limit) {
+              ordersList = ordersList.slice(0, limit);
+            }
+          }
+        } catch (wErr) {
+          console.error('Error fetching warehouse-made orders:', wErr);
+        }
             
             // Re-sort everything by date
             ordersList.sort((a, b) => new Date(b.processed_at).getTime() - new Date(a.processed_at).getTime());

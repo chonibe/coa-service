@@ -17,6 +17,7 @@ export interface CollectorProfile {
   total_spent: number;
   first_purchase_date: string | null;
   last_purchase_date: string | null;
+  is_kickstarter_backer: boolean;
   pii_sources: {
     profile?: any;
     shopify?: any;

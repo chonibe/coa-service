@@ -252,6 +252,8 @@ async function getOrderData(orderId: string) {
             type: code.type,
           })) || [],
           line_items: shopifyMappedLineItems,
+          kickstarter_backing_amount_gbp: orderData.kickstarter_backing_amount_gbp,
+          kickstarter_backing_amount_usd: orderData.kickstarter_backing_amount_usd,
         };
       }
     } catch (err) {
@@ -273,6 +275,8 @@ async function getOrderData(orderId: string) {
     total_discounts: orderData.total_discounts || 0,
     subtotal_price: orderData.subtotal_price || 0,
     total_tax: orderData.total_tax || 0,
+    kickstarter_backing_amount_gbp: orderData.kickstarter_backing_amount_gbp,
+    kickstarter_backing_amount_usd: orderData.kickstarter_backing_amount_usd,
     discount_codes: orderData.raw_shopify_order_data?.discount_codes?.map((code: { code: string; amount: string; type: string }) => ({
       code: code.code,
       amount: parseFloat(code.amount),

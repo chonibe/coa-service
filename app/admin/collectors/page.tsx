@@ -20,6 +20,7 @@ interface Collector {
   total_editions: number;
   last_purchase_date: string | null;
   avatar_url: string | null;
+  is_kickstarter_backer: boolean;
 }
 
 export default function CollectorsDirectoryPage() {
@@ -150,6 +151,11 @@ export default function CollectorsDirectoryPage() {
                         <Badge variant="default" className="text-[10px] h-4 py-0">Registered</Badge>
                       ) : (
                         <Badge variant="secondary" className="text-[10px] h-4 py-0">Guest</Badge>
+                      )}
+                      {collector.is_kickstarter_backer && (
+                        <Badge variant="outline" className="bg-amber-100 text-amber-700 border-amber-200 text-[10px] h-4 py-0 font-bold uppercase">
+                          Kickstarter
+                        </Badge>
                       )}
                     </div>
                     <span className="text-[10px] text-muted-foreground">

@@ -11,7 +11,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
 import { useToast } from '@/hooks/use-toast'
-import { Loader2, History, Save, User, Eye } from 'lucide-react'
+import { Loader2, History as HistoryIcon, Save, User, Eye } from 'lucide-react'
 import Link from 'next/link'
 
 interface CollectorProfile {
@@ -292,7 +292,7 @@ export default function CollectorProfilePage() {
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <History className="h-5 w-5" />
+                <HistoryIcon className="h-5 w-5" />
                 Change History
               </CardTitle>
               <CardDescription>

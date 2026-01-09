@@ -256,9 +256,10 @@ export async function POST(request: NextRequest) {
                   matchedProducts?.forEach(p => productMap.set(p.sku.toLowerCase().trim(), p));
                 }
 
-                const lineItems = order.raw_data.info.map((item: any) => {
+                const lineItems = order.raw_data.info.map((item: any, index: number) => {
                   const match = productMap.get(item.sku?.toLowerCase().trim());
-                  const itemId = `${manualOrderId}-${item.sku || Math.random().toString(36).substring(7)}`;
+                  // Ensure uniqueness even with duplicate SKUs by including index
+                  const itemId = `${manualOrderId}-${item.sku || 'no-sku'}-${index}`;
                   
                   return {
                     id: itemId,

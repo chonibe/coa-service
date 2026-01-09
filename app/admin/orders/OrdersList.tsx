@@ -33,7 +33,7 @@ interface Order {
   cancelled_at?: string | null;
   archived?: boolean;
   shopify_order_status?: string | null;
-  source?: 'shopify' | 'warehouse';
+  source?: 'shopify' | 'warehouse' | 'warehouse_made';
   kickstarter_backing_amount_gbp?: number | null;
   kickstarter_backing_amount_usd?: number | null;
 }
@@ -399,10 +399,15 @@ export default function OrdersList({
                     onClick={() => window.location.href = `/admin/orders/${order.id}`}
                   >
                     <Badge 
-                      variant={order.source === 'warehouse' ? 'secondary' : 'outline'}
-                      className={order.source === 'warehouse' ? 'bg-orange-100 text-orange-800 border-orange-200 hover:bg-orange-100' : 'bg-blue-100 text-blue-800 border-blue-200 hover:bg-blue-100'}
+                      variant={order.source === 'shopify' ? 'outline' : 'secondary'}
+                      className={
+                        order.source === 'shopify' ? 'bg-blue-100 text-blue-800 border-blue-200 hover:bg-blue-100' :
+                        order.source === 'warehouse_made' ? 'bg-purple-100 text-purple-800 border-purple-200 hover:bg-purple-100' :
+                        'bg-orange-100 text-orange-800 border-orange-200 hover:bg-orange-100'
+                      }
                     >
-                      {order.source === 'warehouse' ? 'Warehouse' : 'Shopify'}
+                      {order.source === 'shopify' ? 'Shopify' : 
+                       order.source === 'warehouse_made' ? 'Warehouse Made' : 'Warehouse'}
                     </Badge>
                   </TableCell>
                   <TableCell 
