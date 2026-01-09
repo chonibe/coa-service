@@ -250,6 +250,12 @@ async function syncOrderFromDatabaseWithShopify(
       changes.push(`Shopify Status: ${dbOrder.shopify_order_status || "null"} → ${shopifyOrderStatus || "null"}`)
     }
 
+    // 5.5 Set source to shopify
+    if (dbOrder.source !== 'shopify') {
+      updates.source = 'shopify'
+      changes.push(`Source: ${dbOrder.source || "null"} → shopify`)
+    }
+
     // 6. Always update raw_shopify_order_data and updated_at
     updates.raw_shopify_order_data = shopifyOrder
     updates.updated_at = new Date().toISOString()
@@ -460,6 +466,7 @@ export async function GET(request: NextRequest) {
           const orderData = {
             id: String(order.id),
             order_number: String(order.order_number),
+            order_name: order.name,
             processed_at: order.processed_at || order.created_at,
             financial_status: order.financial_status, // Shopify is source of truth
             fulfillment_status: order.fulfillment_status, // Shopify is source of truth
@@ -467,7 +474,7 @@ export async function GET(request: NextRequest) {
             currency_code: order.currency,
             customer_email: (ownerEmail || order.email)?.toLowerCase() || null, // Use warehouse email if found, always lowercase
             updated_at: order.updated_at,
-            customer_id: order.customer?.id || null,
+            customer_id: order.customer?.id ? String(order.customer.id) : null,
             shopify_id: String(order.id),
             subtotal_price: order.subtotal_price ? parseFloat(order.subtotal_price) : null,
             total_tax: order.total_tax ? parseFloat(order.total_tax) : null,
@@ -477,6 +484,7 @@ export async function GET(request: NextRequest) {
             cancelled_at: order.cancelled_at || null, // Shopify is source of truth
             archived: shopifyArchived, // Shopify is source of truth
             shopify_order_status: order.status || null, // Shopify is source of truth
+            source: 'shopify',
           };
 
           const { error: orderError } = await db

@@ -11,3 +11,4 @@ COMMENT ON COLUMN "public"."collector_profiles"."is_kickstarter_backer" IS 'Indi
 COMMENT ON COLUMN "public"."orders"."kickstarter_backing_amount_gbp" IS 'The original backing amount in GBP from the Kickstarter campaign.';
 COMMENT ON COLUMN "public"."orders"."kickstarter_backing_amount_usd" IS 'The Kickstarter backing amount converted to USD.';
 
+

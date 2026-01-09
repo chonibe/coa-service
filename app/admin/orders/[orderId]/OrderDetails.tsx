@@ -54,6 +54,7 @@ interface Order {
   total_discounts: number;
   subtotal_price: number;
   total_tax: number;
+  source?: 'shopify' | 'warehouse' | 'warehouse_made';
   discount_codes: Array<{
     code: string;
     amount: number;
@@ -351,15 +352,24 @@ export default function OrderDetails({ order }: OrderDetailsProps) {
           <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4">
             <div>
               <CardTitle className="text-xl sm:text-2xl">
-                <a 
-                  href={`https://admin.shopify.com/store/thestreetlamp-9103/orders/${order.id}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center gap-2 hover:text-primary transition-colors"
-                >
-                  Order #{order.order_number}
-                  <ExternalLink className="h-4 w-4" />
-                </a>
+                {order.source === 'shopify' ? (
+                  <a 
+                    href={`https://admin.shopify.com/store/thestreetlamp-9103/orders/${order.id}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-2 hover:text-primary transition-colors"
+                  >
+                    Order #{order.order_number}
+                    <ExternalLink className="h-4 w-4" />
+                  </a>
+                ) : (
+                  <div className="flex items-center gap-2">
+                    Order #{order.order_number}
+                    <Badge variant="secondary" className="bg-purple-100 text-purple-800 border-purple-200">
+                      Warehouse Made
+                    </Badge>
+                  </div>
+                )}
               </CardTitle>
               <CardDescription className="mt-1">
                 Processed on {new Date(order.processed_at).toLocaleDateString()}

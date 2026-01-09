@@ -51,7 +51,8 @@ async function ingestManualOrders() {
           source: 'manual_warehouse',
           warehouse_id: orphan.id,
           original_order_id: orphan.order_id 
-        }
+        },
+        source: 'warehouse'
       }, { onConflict: 'id' });
 
     if (orderError) {

@@ -384,7 +384,7 @@ export default function OrdersList({
                       <span className="hover:text-primary transition-colors">
                         {order.order_name || (String(order.order_number).startsWith('#') ? order.order_number : `#${order.order_number}`)}
                       </span>
-                      {order.kickstarter_backing_amount_gbp && (
+                      {(order.kickstarter_backing_amount_gbp || order.customer_profile?.is_kickstarter_backer) && (
                         <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200 text-[10px] h-5 px-1.5 font-black uppercase tracking-tight">
                           Kickstarter
                         </Badge>
@@ -402,12 +402,12 @@ export default function OrdersList({
                       variant={order.source === 'shopify' ? 'outline' : 'secondary'}
                       className={
                         order.source === 'shopify' ? 'bg-blue-100 text-blue-800 border-blue-200 hover:bg-blue-100' :
-                        order.source === 'warehouse_made' ? 'bg-purple-100 text-purple-800 border-purple-200 hover:bg-purple-100' :
-                        'bg-orange-100 text-orange-800 border-orange-200 hover:bg-orange-100'
+                        order.source === 'warehouse' ? 'bg-orange-100 text-orange-800 border-orange-200 hover:bg-orange-100' :
+                        'bg-purple-100 text-purple-800 border-purple-200 hover:bg-purple-100'
                       }
                     >
                       {order.source === 'shopify' ? 'Shopify' : 
-                       order.source === 'warehouse_made' ? 'Warehouse Made' : 'Warehouse'}
+                       order.source === 'warehouse' ? 'Warehouse' : 'Warehouse Made'}
                     </Badge>
                   </TableCell>
                   <TableCell 

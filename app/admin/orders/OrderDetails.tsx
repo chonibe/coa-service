@@ -296,19 +296,21 @@ export default function OrderDetails({ order }: OrderDetailsProps) {
                   <p className="text-2xl font-bold">
                     {formatCurrency(order.total_price, order.currency_code)}
                   </p>
-                  {order.kickstarter_backing_amount_gbp && (
+                  {(order.kickstarter_backing_amount_gbp || (order as any).customer_profile?.is_kickstarter_backer) && (
                     <div className="mt-2 p-2 bg-amber-50 border border-amber-100 rounded-lg">
                       <div className="flex items-center gap-1.5 text-xs font-black text-amber-700 uppercase tracking-tight mb-1">
                         <Award className="h-3 w-3" /> Kickstarter Backer
                       </div>
-                      <div className="flex items-baseline gap-2">
-                        <span className="text-sm font-bold text-slate-900">
-                          {formatCurrency(order.kickstarter_backing_amount_gbp, 'GBP')}
-                        </span>
-                        <span className="text-[10px] text-slate-400 font-bold">
-                          ({formatCurrency(order.kickstarter_backing_amount_usd || 0, 'USD')})
-                        </span>
-                      </div>
+                      {order.kickstarter_backing_amount_gbp && (
+                        <div className="flex items-baseline gap-2">
+                          <span className="text-sm font-bold text-slate-900">
+                            {formatCurrency(order.kickstarter_backing_amount_gbp, 'GBP')}
+                          </span>
+                          <span className="text-[10px] text-slate-400 font-bold">
+                            ({formatCurrency(order.kickstarter_backing_amount_usd || 0, 'USD')})
+                          </span>
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>

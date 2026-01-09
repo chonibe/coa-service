@@ -202,7 +202,10 @@ async function getOrderData(orderId: string) {
 
   // Try to fetch additional details from Shopify ONLY if it's a Shopify order
   const shopifyOrderId = orderData.raw_shopify_order_data?.id;
-  if (shopifyOrderId && !orderId.startsWith('WH-')) {
+  const orderName = orderData.order_name || '';
+  const isWhNumber = orderName.startsWith('#9') || orderName.startsWith('9');
+  
+  if (shopifyOrderId && !orderId.startsWith('WH-') && !isWhNumber) {
     try {
       const shop = process.env.SHOPIFY_SHOP;
       const token = process.env.SHOPIFY_ACCESS_TOKEN;
@@ -236,6 +239,7 @@ async function getOrderData(orderId: string) {
         return {
           id: shopifyOrder.id.toString(),
           order_number: shopifyOrder.name.replace('#', ''),
+          source: 'shopify',
           processed_at: shopifyOrder.created_at,
           financial_status: shopifyOrder.financial_status,
           fulfillment_status: shopifyOrder.fulfillment_status || 'pending',
@@ -265,6 +269,7 @@ async function getOrderData(orderId: string) {
   return {
     id: orderData.id,
     order_number: orderData.order_number?.toString() || orderData.order_name?.replace('#', '') || 'Manual',
+    source: isWhNumber || orderId.startsWith('WH-') ? 'warehouse_made' : 'shopify',
     processed_at: orderData.processed_at || orderData.created_at,
     financial_status: orderData.financial_status || 'paid',
     fulfillment_status: orderData.fulfillment_status || 'fulfilled',

@@ -26,6 +26,8 @@ async function updateView() {
       SELECT LOWER(ship_email) as email FROM warehouse_orders WHERE ship_email IS NOT NULL
       UNION
       SELECT LOWER(email) as email FROM crm_customers WHERE email IS NOT NULL
+      UNION
+      SELECT LOWER(email) as email FROM kickstarter_backers_list -- Ensure all backers are included
     ),
     unified_orders AS (
       -- Deduplicate orders by name, prioritizing Shopify (numeric/gid) over Manual (WH-)
@@ -54,7 +56,14 @@ async function updateView() {
       cp.phone as profile_phone,
       cp.bio,
       cp.avatar_url,
-      cp.is_kickstarter_backer, -- Added this column
+      
+      -- Kickstarter Backer Flag (Source of truth: kickstarter_backers_list OR collector_profiles)
+      COALESCE(
+        (SELECT TRUE FROM kickstarter_backers_list kbl WHERE LOWER(kbl.email) = cb.email LIMIT 1),
+        cp.is_kickstarter_backer,
+        FALSE
+      ) as is_kickstarter_backer,
+
       cp.created_at as profile_created_at,
       cp.updated_at as profile_updated_at,
 
@@ -176,4 +185,3 @@ async function updateView() {
 }
 
 updateView().catch(console.error);
-

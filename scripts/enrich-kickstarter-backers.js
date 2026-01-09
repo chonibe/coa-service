@@ -87,7 +87,7 @@ async function enrichKickstarterData() {
   const supabase = createClient(url, key);
 
   // 1. Fetch current exchange rate
-  const { data: rateData, error: rateError } = await supabase
+  const { data: rateData } = await supabase
     .from('exchange_rates')
     .select('rate')
     .eq('from_currency', 'GBP')
@@ -119,27 +119,42 @@ async function enrichKickstarterData() {
     const gbpPrice = parseFloat(gbpPriceStr.replace('£', '').replace(',', '')) || 0;
     const usdPrice = gbpPrice * exchangeRate;
 
+    const emailLower = email.toLowerCase();
+    
     // Split order numbers if multiple exist (e.g. #1252 & #1257)
     const orderNumbers = orderPart ? orderPart.split(/&|,/).map(n => n.trim()) : [''];
 
-    for (const orderNum of orderNumbers) {
-      backers.push({
-        order_name: orderNum,
-        email: email.toLowerCase(),
-        gbp_price: gbpPrice,
-        usd_price: usdPrice
-      });
-    }
+    // Collect info for the backer table
+    backers.push({
+      email: emailLower,
+      gbp_price: gbpPrice,
+      usd_price: usdPrice,
+      order_names: orderNumbers.filter(n => !!n)
+    });
   }
 
   console.log(`Parsed ${backers.length} backer records.`);
 
-  // 3. Update collector_profiles and orders
+  // 3. Update kickstarter_backers_list and orders
   for (const backer of backers) {
-    console.log(`\nProcessing: ${backer.email} (Order: ${backer.order_name})`);
+    console.log(`\nProcessing: ${backer.email}`);
 
-    // Update collector profile
-    const { data: profileUpdate, error: profileError } = await supabase
+    // Insert into kickstarter_backers_list
+    const { error: backerError } = await supabase
+      .from('kickstarter_backers_list')
+      .upsert({
+        email: backer.email,
+        backing_amount_gbp: backer.gbp_price
+      }, { onConflict: 'email' });
+
+    if (backerError) {
+      console.error(`  Error upserting backer ${backer.email}:`, backerError.message);
+    } else {
+      console.log(`  Upserted into kickstarter_backers_list`);
+    }
+
+    // Update collector profile if exists
+    const { error: profileError } = await supabase
       .from('collector_profiles')
       .update({ is_kickstarter_backer: true })
       .ilike('email', backer.email);
@@ -147,23 +162,23 @@ async function enrichKickstarterData() {
     if (profileError) {
       console.error(`  Error updating profile for ${backer.email}:`, profileError.message);
     } else {
-      console.log(`  Updated collector profile for ${backer.email}`);
+      console.log(`  Updated existing collector profile (if any)`);
     }
 
-    // Update orders if order_name exists
-    if (backer.order_name) {
-      const { data: orderUpdate, error: orderError } = await supabase
+    // Update orders
+    for (const orderName of backer.order_names) {
+      const { error: orderError } = await supabase
         .from('orders')
         .update({
           kickstarter_backing_amount_gbp: backer.gbp_price,
           kickstarter_backing_amount_usd: backer.usd_price
         })
-        .eq('order_name', backer.order_name);
+        .eq('order_name', orderName);
 
       if (orderError) {
-        console.error(`  Error updating order ${backer.order_name}:`, orderError.message);
+        console.error(`  Error updating order ${orderName}:`, orderError.message);
       } else {
-        console.log(`  Updated order ${backer.order_name} with $${backer.usd_price.toFixed(2)}`);
+        console.log(`  Updated order ${orderName} with $${backer.usd_price.toFixed(2)}`);
       }
     }
   }
@@ -172,4 +187,3 @@ async function enrichKickstarterData() {
 }
 
 enrichKickstarterData().catch(console.error);
-

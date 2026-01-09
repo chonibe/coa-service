@@ -78,7 +78,7 @@ export async function GET(
     }
 
     // 3. Deduplicate orders by name in memory
-    // Priority: Shopify (no WH- prefix) > Manual (WH- prefix)
+    // Priority: Shopify (no WH- prefix and no #9/9 prefix) > Manual (WH- prefix or #9/9 prefix)
     // Use numeric prefix for deduplication to catch cases like #1188 and 1188A
     const orderMap = new Map();
     (orders || []).forEach(order => {
@@ -87,8 +87,9 @@ export async function GET(
       
       const existing = orderMap.get(cleanName);
       
-      const isManual = order.id.startsWith('WH-');
-      const existingIsManual = existing?.id.startsWith('WH-');
+      const orderName = order.order_name || '';
+      const isManual = order.id.startsWith('WH-') || orderName.startsWith('#9') || orderName.startsWith('9');
+      const existingIsManual = existing?.id.startsWith('WH-') || (existing?.order_name || '').startsWith('#9') || (existing?.order_name || '').startsWith('9');
 
       if (!existing || (existingIsManual && !isManual)) {
         orderMap.set(cleanName, order);

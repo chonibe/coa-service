@@ -77,11 +77,9 @@ export default function OrdersPage() {
         };
 
         let ordersList = (fetchedOrders || []).map(order => {
-          const isShopifyOrder = !!(order as any).shopify_id || !!(order as any).raw_shopify_order_data;
-          
           return {
             ...order,
-            source: isShopifyOrder ? 'shopify' : 'warehouse'
+            source: order.source || 'warehouse'
           };
         }) as Order[];
 

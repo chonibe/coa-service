@@ -217,6 +217,12 @@ async function syncOrderWithShopify(
       changes.push(`Shopify Status: ${dbOrder.shopify_order_status || "null"} → ${shopifyOrderStatus || "null"}`)
     }
 
+    // 5.5 Set source to shopify
+    if (dbOrder.source !== 'shopify') {
+      updates.source = 'shopify'
+      changes.push(`Source: ${dbOrder.source || "null"} → shopify`)
+    }
+
     // 6. Always update raw_shopify_order_data and updated_at to keep in sync
     updates.raw_shopify_order_data = shopifyOrder
     updates.updated_at = new Date().toISOString()

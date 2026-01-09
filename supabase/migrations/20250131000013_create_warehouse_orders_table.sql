@@ -26,3 +26,4 @@ CREATE INDEX IF NOT EXISTS idx_warehouse_orders_shopify_order_id ON "public"."wa
 COMMENT ON TABLE "public"."warehouse_orders" IS 'Local cache of ChinaDivision warehouse order data, including PII for cross-referencing.';
 
 
+

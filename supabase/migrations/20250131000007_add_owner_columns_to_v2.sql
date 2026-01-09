@@ -16,3 +16,4 @@ COMMENT ON COLUMN order_line_items_v2.owner_email IS 'Email of the current editi
 COMMENT ON COLUMN order_line_items_v2.owner_id IS 'UUID of the registered collector profile if the owner has an account.';
 
 
+

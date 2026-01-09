@@ -19,3 +19,4 @@ VALUES
 ON CONFLICT (from_currency, to_currency) 
 DO UPDATE SET rate = EXCLUDED.rate, last_updated = NOW();
 
+

@@ -132,9 +132,14 @@ export function CollectorCard({ profile, className, showLink = true }: Collector
                 <div className="flex items-center gap-2">
                   <h3 className="font-bold text-lg text-slate-900 leading-tight">{profile.display_name}</h3>
                   {profile.user_id ? (
-                    <ShieldCheck className="h-4 w-4 text-blue-500" />
+                    <ShieldCheck className="h-4 w-4 text-blue-500" title="Registered User" />
                   ) : (
-                    <User className="h-4 w-4 text-slate-400" />
+                    <User className="h-4 w-4 text-slate-400" title="Guest Customer" />
+                  )}
+                  {profile.is_kickstarter_backer && (
+                    <Badge variant="outline" className="bg-amber-100 text-amber-700 border-amber-200 text-[10px] h-4 py-0 font-bold uppercase">
+                      Kickstarter
+                    </Badge>
                   )}
                 </div>
                 <p className="text-sm text-muted-foreground font-medium">{profile.user_email}</p>

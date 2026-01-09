@@ -144,3 +144,4 @@ REVOKE EXECUTE ON FUNCTION exec_sql(TEXT, TEXT) FROM PUBLIC;
 -- Note: Grant to specific roles as needed via Supabase dashboard
 
 
+

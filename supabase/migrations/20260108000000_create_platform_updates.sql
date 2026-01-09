@@ -33,3 +33,4 @@ VALUES
 ('Collector Dashboard Launch', 'Added aggregated collector dashboard with artworks grid, artist journeys, and credits management.', 'feature', '1.1.0', 'admin@streetcollector.com');
 
 
+
