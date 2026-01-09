@@ -388,7 +388,7 @@ export default function OrdersList({
                       <span className="hover:text-primary transition-colors">
                         {order.order_name || (String(order.order_number).startsWith('#') ? order.order_number : `#${order.order_number}`)}
                       </span>
-                      {(order.kickstarter_backing_amount_gbp || order.customer_profile?.is_kickstarter_backer) && (
+                      {order.kickstarter_backing_amount_gbp && (
                         <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200 text-[10px] h-5 px-1.5 font-black uppercase tracking-tight">
                           Kickstarter
                         </Badge>
@@ -426,14 +426,32 @@ export default function OrdersList({
                     {new Date(order.processed_at).toLocaleDateString()}
                   </TableCell>
                   <TableCell 
-                    onClick={() => window.location.href = `/admin/orders/${order.id}`}
                     className="cursor-pointer"
                   >
                     <div className="flex flex-col">
-                      <span className="font-medium text-slate-900 dark:text-slate-100">
-                        {order.customer_profile?.display_name || order.customer_name || 'Guest Customer'}
+                      <div className="flex items-center gap-1">
+                        <span 
+                          className="font-medium text-slate-900 dark:text-slate-100 hover:text-primary transition-colors"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            window.location.href = `/admin/collectors/${order.customer_email}`;
+                          }}
+                        >
+                          {order.customer_profile?.display_name || order.customer_name || 'Guest Customer'}
+                        </span>
+                        {order.customer_profile && (
+                          <CheckCircle2 className="h-3 w-3 text-blue-500" title="CRM Profile Active" />
+                        )}
+                      </div>
+                      <span 
+                        className="text-xs text-muted-foreground hover:text-primary transition-colors"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          window.location.href = `/admin/orders/${order.id}`;
+                        }}
+                      >
+                        {order.customer_email}
                       </span>
-                      <span className="text-xs text-muted-foreground">{order.customer_email}</span>
                       {order.customer_phone && (
                         <span className="text-[10px] text-muted-foreground">{order.customer_phone}</span>
                       )}

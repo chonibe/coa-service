@@ -1,42 +1,36 @@
-const fs = require('fs');
 const { createClient } = require('@supabase/supabase-js');
+const fs = require('fs');
 
-async function updateView() {
-  const envContent = fs.readFileSync('.env', 'utf8');
-  const urlMatch = envContent.match(/NEXT_PUBLIC_SUPABASE_URL=["']?(.*?)["']?(\r|\n|$)/);
-  const keyMatch = envContent.match(/SUPABASE_SERVICE_ROLE_KEY=["']?(.*?)["']?(\r|\n|$)/);
-  
-  if (!urlMatch || !keyMatch) {
-    console.error('Could not find Supabase URL or Service Role Key in .env');
-    return;
-  }
-  
-  const url = urlMatch[1].trim();
-  const key = keyMatch[1].trim();
+async function updateComprehensiveView() {
+  const env = fs.readFileSync('.env', 'utf8');
+  const url = env.match(/NEXT_PUBLIC_SUPABASE_URL=["']?(.*?)["']?(\r|\n|$)/)[1];
+  const key = env.match(/SUPABASE_SERVICE_ROLE_KEY=["']?(.*?)["']?(\r|\n|$)/)[1];
   const supabase = createClient(url, key);
 
+  console.log('--- Updating collector_profile_comprehensive view ---');
+  
   const sql = `
     DROP VIEW IF EXISTS collector_profile_comprehensive CASCADE;
     CREATE VIEW collector_profile_comprehensive AS
     WITH contact_base AS (
       SELECT LOWER(email) as email FROM auth.users WHERE email IS NOT NULL
       UNION
+      SELECT LOWER(email) as email FROM collector_profiles WHERE email IS NOT NULL
+      UNION
       SELECT LOWER(customer_email) as email FROM orders WHERE customer_email IS NOT NULL
       UNION
       SELECT LOWER(ship_email) as email FROM warehouse_orders WHERE ship_email IS NOT NULL
       UNION
       SELECT LOWER(email) as email FROM crm_customers WHERE email IS NOT NULL
-      UNION
-      SELECT LOWER(email) as email FROM kickstarter_backers_list -- Ensure all backers are included
     ),
     unified_orders AS (
-      -- Deduplicate orders by name, prioritizing Shopify (numeric/gid) over Manual (WH-)
+      -- Deduplicate orders by name, prioritizing Shopify (no WH- prefix and no #9 prefix) over Manual
       SELECT DISTINCT ON (LOWER(REPLACE(order_name, '#', ''))) 
         *
       FROM orders
       ORDER BY LOWER(REPLACE(order_name, '#', '')), 
         CASE 
-          WHEN id NOT LIKE 'WH-%' THEN 1 
+          WHEN id NOT LIKE 'WH-%' AND order_name NOT LIKE '#9%' AND order_name NOT LIKE '9%' THEN 1 
           ELSE 2 
         END ASC
     )
@@ -56,29 +50,22 @@ async function updateView() {
       cp.phone as profile_phone,
       cp.bio,
       cp.avatar_url,
-      
-      -- Kickstarter Backer Flag (Source of truth: kickstarter_backers_list OR collector_profiles)
-      COALESCE(
-        (SELECT TRUE FROM kickstarter_backers_list kbl WHERE LOWER(kbl.email) = cb.email LIMIT 1),
-        cp.is_kickstarter_backer,
-        FALSE
-      ) as is_kickstarter_backer,
-
       cp.created_at as profile_created_at,
       cp.updated_at as profile_updated_at,
+      cp.shopify_customer_id,
 
       -- Computed Display Fields
       COALESCE(
         TRIM(cp.first_name || ' ' || cp.last_name),
-        (SELECT TRIM(o.customer_name) FROM orders o WHERE LOWER(o.customer_email) = cb.email AND o.customer_name IS NOT NULL AND o.customer_name != '' ORDER BY o.processed_at DESC LIMIT 1),
-        (SELECT TRIM(wo.ship_name) FROM warehouse_orders wo WHERE LOWER(wo.ship_email) = cb.email AND wo.ship_name IS NOT NULL AND wo.ship_name != '' ORDER BY wo.created_at DESC LIMIT 1),
+        (SELECT TRIM(wo.ship_name) FROM warehouse_orders wo WHERE LOWER(wo.ship_email) = cb.email AND wo.ship_name IS NOT NULL ORDER BY wo.created_at DESC LIMIT 1),
+        (SELECT TRIM(concat_ws(' ', raw_shopify_order_data->'customer'->>'first_name', raw_shopify_order_data->'customer'->>'last_name')) FROM orders o WHERE LOWER(o.customer_email) = cb.email AND raw_shopify_order_data->'customer' IS NOT NULL ORDER BY o.processed_at DESC LIMIT 1),
         cb.email
       ) as display_name,
 
       COALESCE(
         cp.phone,
-        (SELECT o.customer_phone FROM orders o WHERE LOWER(o.customer_email) = cb.email AND o.customer_phone IS NOT NULL AND o.customer_phone != '' ORDER BY o.processed_at DESC LIMIT 1),
-        (SELECT wo.ship_phone FROM warehouse_orders wo WHERE LOWER(wo.ship_email) = cb.email AND wo.ship_phone IS NOT NULL AND wo.ship_phone != '' ORDER BY wo.created_at DESC LIMIT 1)
+        (SELECT wo.ship_phone FROM warehouse_orders wo WHERE LOWER(wo.ship_email) = cb.email AND wo.ship_phone IS NOT NULL ORDER BY wo.created_at DESC LIMIT 1),
+        (SELECT raw_shopify_order_data->'customer'->>'phone' FROM orders o WHERE LOWER(o.customer_email) = cb.email AND raw_shopify_order_data->'customer'->>'phone' IS NOT NULL ORDER BY o.processed_at DESC LIMIT 1)
       ) as display_phone,
 
       -- Statistics
@@ -115,7 +102,7 @@ async function updateView() {
       (SELECT COALESCE(SUM(uo.total_price), 0) FROM unified_orders uo WHERE LOWER(uo.customer_email) = cb.email) as total_spent,
       (SELECT MIN(uo.processed_at) FROM unified_orders uo WHERE LOWER(uo.customer_email) = cb.email) as first_purchase_date,
       (SELECT MAX(uo.processed_at) FROM unified_orders uo WHERE LOWER(uo.customer_email) = cb.email) as last_purchase_date,
-      (SELECT COUNT(cpc.id) FROM collector_profile_changes cpc WHERE cpc.user_id = u.id) as profile_changes_count,
+      (SELECT COUNT(cpc.id) FROM collector_profile_changes cpc WHERE cpc.user_id = u.id OR (cpc.user_id IS NULL AND cpc.profile_id = cp.id)) as profile_changes_count,
 
       -- PII Sources as JSON
       json_build_object(
@@ -128,8 +115,8 @@ async function updateView() {
             'phone', cp.phone,
             'bio', cp.bio,
             'avatar_url', cp.avatar_url,
-            'is_kickstarter_backer', cp.is_kickstarter_backer,
-            'updated_at', cp.updated_at
+            'updated_at', cp.updated_at,
+            'shopify_customer_id', cp.shopify_customer_id
           )
         ELSE NULL END,
 
@@ -172,16 +159,17 @@ async function updateView() {
 
     FROM contact_base cb
     LEFT JOIN auth.users u ON LOWER(u.email) = cb.email
-    LEFT JOIN collector_profiles cp ON cp.user_id = u.id;
+    LEFT JOIN collector_profiles cp ON LOWER(cp.email) = cb.email;
   `;
 
   const { error } = await supabase.rpc('exec_sql', { sql_query: sql });
 
   if (error) {
-    console.error('Error updating view:', error);
+    console.error('Migration Error:', error.message);
   } else {
-    console.log('✅ Successfully updated collector_profile_comprehensive view with Kickstarter data.');
+    console.log('View Updated Successfully!');
   }
 }
 
-updateView().catch(console.error);
+updateComprehensiveView();
+

@@ -1,9 +1,8 @@
 import { NextResponse } from "next/server"
 import { createClient } from "@/lib/supabase/server"
 import { cookies } from "next/headers"
-import { resequenceEditionNumbers } from "@/lib/resequence-edition-numbers"
 
-const VALID_STATUSES = ["active", "inactive"] as const;
+const VALID_STATUSES = ["active", "inactive", "removed"] as const;
 type Status = typeof VALID_STATUSES[number];
 
 export async function POST(request: Request) {
@@ -65,15 +64,16 @@ export async function POST(request: Request) {
       )
     }
 
-    // If the item is becoming active, resequence edition numbers
-    if (status === 'active') {
-      const { error: resequenceError } = await resequenceEditionNumbers(supabase, orderId)
-      if (resequenceError) {
-        console.error("Error resequencing edition numbers:", resequenceError)
-        return NextResponse.json(
-          { error: "Failed to resequence edition numbers" },
-          { status: 500 }
-        )
+    // ALWAYS re-assign edition numbers globally for the product when status changes
+    // to ensure no gaps or duplicates in the sequence.
+    if (currentItem.product_id) {
+      const { error: rpcError } = await supabase.rpc('assign_edition_numbers', { 
+        p_product_id: currentItem.product_id.toString()
+      });
+      
+      if (rpcError) {
+        console.error("Error re-assigning editions via RPC:", rpcError);
+        // We still continue as the status was updated
       }
     }
 

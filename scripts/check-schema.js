@@ -1,34 +1,34 @@
-const fs = require('fs');
 const { createClient } = require('@supabase/supabase-js');
+const fs = require('fs');
 
-async function run() {
+async function checkSchema() {
   const env = fs.readFileSync('.env', 'utf8');
-  const urlMatch = env.match(/NEXT_PUBLIC_SUPABASE_URL=["']?(.*?)["']?(\r|\n|$)/);
-  const keyMatch = env.match(/SUPABASE_SERVICE_ROLE_KEY=["']?(.*?)["']?(\r|\n|$)/) || 
-                   env.match(/SUPABASE_SERVICE_KEY=["']?(.*?)["']?(\r|\n|$)/);
+  const url = env.match(/NEXT_PUBLIC_SUPABASE_URL=["']?(.*?)["']?(\r|\n|$)/)[1];
+  const key = env.match(/SUPABASE_SERVICE_ROLE_KEY=["']?(.*?)["']?(\r|\n|$)/)[1];
+  const supabase = createClient(url, key);
 
-  const supabase = createClient(urlMatch[1].trim(), keyMatch[1].trim());
-
-  console.log('Querying products table schema...');
-  const { data, error } = await supabase.rpc('exec_sql', { 
-    sql_query: "SELECT column_name, data_type FROM information_schema.columns WHERE table_name = 'products'" 
-  });
-
-  if (error) {
-    console.error('Error:', error);
-    // Fallback if rpc failed
-    const { data: sample } = await supabase.from('products').select('*').limit(1);
-    console.log('Sample product:', JSON.stringify(sample, null, 2));
-  } else {
-    console.log('Products columns:', JSON.stringify(data, null, 2));
-  }
+  console.log('--- Products Schema Sample ---');
+  const { data: products, error: pError } = await supabase
+    .from('products')
+    .select('*')
+    .limit(1);
   
-  console.log('\nQuerying order_line_items_v2 table schema...');
-  const { data: v2Data } = await supabase.rpc('exec_sql', { 
-    sql_query: "SELECT column_name, data_type FROM information_schema.columns WHERE table_name = 'order_line_items_v2'" 
-  });
-  console.log('V2 columns:', JSON.stringify(v2Data, null, 2));
+  if (pError) console.error(pError);
+  else console.log(Object.keys(products[0]));
+
+  console.log('\n--- Line Items Schema Sample ---');
+  const { data: lineItems, error: lError } = await supabase
+    .from('order_line_items_v2')
+    .select('*')
+    .limit(1);
+  
+  console.log('\n--- Raw Shopify Line Items for Order #1331 ---');
+  const { data: raw1331 } = await supabase
+    .from('orders')
+    .select('raw_shopify_order_data')
+    .eq('id', '12547767796098')
+    .single();
+  console.log(JSON.stringify(raw1331?.raw_shopify_order_data?.line_items, null, 2));
 }
 
-run();
-
+checkSchema();

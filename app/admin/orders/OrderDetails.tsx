@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, ExternalLink, ChevronLeft, ChevronRight, ChevronUp, ChevronDown, AlertCircle, Award } from "lucide-react";
+import { ArrowLeft, ExternalLink, ChevronLeft, ChevronRight, ChevronUp, ChevronDown, AlertCircle, Award, User } from "lucide-react";
 import { formatCurrency } from '@/lib/utils';
 import { useState, useEffect } from 'react';
 import DuplicateItemsBox from './DuplicateItemsBox';
@@ -39,6 +39,7 @@ interface Order {
   total_price: number;
   currency_code: string;
   customer_email: string;
+  customer_profile?: any;
   line_items: OrderLineItem[];
   total_discounts: number;
   subtotal_price: number;
@@ -288,7 +289,31 @@ export default function OrderDetails({ order }: OrderDetailsProps) {
             <div className="grid sm:grid-cols-2 gap-6">
               <div>
                 <h3 className="text-sm font-medium text-muted-foreground mb-1">Customer</h3>
-                <p className="text-base">{order.customer_email}</p>
+                <div className="flex flex-col gap-1">
+                  {order.customer_profile ? (
+                    <Link 
+                      href={`/admin/collectors/${order.customer_email}`}
+                      className="group inline-flex items-center gap-2"
+                    >
+                      <div className="h-10 w-10 rounded-full bg-slate-100 flex items-center justify-center border border-slate-200 group-hover:bg-slate-200 transition-colors">
+                        <User className="h-5 w-5 text-slate-500" />
+                      </div>
+                      <div className="flex flex-col">
+                        <span className="text-base font-bold text-slate-900 group-hover:text-primary transition-colors">
+                          {order.customer_profile.display_name || 'Guest Collector'}
+                        </span>
+                        <span className="text-xs text-muted-foreground">
+                          {order.customer_email}
+                        </span>
+                      </div>
+                    </Link>
+                  ) : (
+                    <div className="flex flex-col">
+                      <p className="text-base font-medium">{order.customer_email}</p>
+                      <span className="text-xs text-muted-foreground italic">No CRM profile found</span>
+                    </div>
+                  )}
+                </div>
               </div>
               <div>
                 <h3 className="text-sm font-medium text-muted-foreground mb-1">Total</h3>
@@ -296,21 +321,19 @@ export default function OrderDetails({ order }: OrderDetailsProps) {
                   <p className="text-2xl font-bold">
                     {formatCurrency(order.total_price, order.currency_code)}
                   </p>
-                  {(order.kickstarter_backing_amount_gbp || (order as any).customer_profile?.is_kickstarter_backer) && (
+                  {order.kickstarter_backing_amount_gbp && (
                     <div className="mt-2 p-2 bg-amber-50 border border-amber-100 rounded-lg">
                       <div className="flex items-center gap-1.5 text-xs font-black text-amber-700 uppercase tracking-tight mb-1">
                         <Award className="h-3 w-3" /> Kickstarter Backer
                       </div>
-                      {order.kickstarter_backing_amount_gbp && (
-                        <div className="flex items-baseline gap-2">
-                          <span className="text-sm font-bold text-slate-900">
-                            {formatCurrency(order.kickstarter_backing_amount_gbp, 'GBP')}
-                          </span>
-                          <span className="text-[10px] text-slate-400 font-bold">
-                            ({formatCurrency(order.kickstarter_backing_amount_usd || 0, 'USD')})
-                          </span>
-                        </div>
-                      )}
+                      <div className="flex items-baseline gap-2">
+                        <span className="text-sm font-bold text-slate-900">
+                          {formatCurrency(order.kickstarter_backing_amount_gbp, 'GBP')}
+                        </span>
+                        <span className="text-[10px] text-slate-400 font-bold">
+                          ({formatCurrency(order.kickstarter_backing_amount_usd || 0, 'USD')})
+                        </span>
+                      </div>
                     </div>
                   )}
                 </div>

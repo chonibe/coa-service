@@ -47,6 +47,8 @@ export default function OrdersPage() {
   const [selectedOrderIds, setSelectedOrderIds] = useState<string[]>([]);
   const [activeTab, setActiveTab] = useState<'shopify' | 'warehouse'>('shopify');
 
+  const [counts, setCounts] = useState({ shopify: 0, warehouse: 0 });
+
   useEffect(() => {
     async function fetchOrders() {
       try {
@@ -55,19 +57,22 @@ export default function OrdersPage() {
 
         const offset = (currentPage - 1) * limit;
 
-        // Get total count
-        const { count, error: countError } = await supabase
-          .from('orders')
-          .select('*', { count: 'exact', head: true });
+        // Get total counts for both sources
+        const [{ count: shopifyCount }, { count: warehouseCount }] = await Promise.all([
+          supabase.from('orders').select('*', { count: 'exact', head: true }).eq('source', 'shopify'),
+          supabase.from('orders').select('*', { count: 'exact', head: true }).eq('source', 'warehouse')
+        ]);
 
-        if (countError) {
-          throw countError;
-        }
+        setCounts({ 
+          shopify: shopifyCount || 0, 
+          warehouse: warehouseCount || 0 
+        });
 
-        // Get paginated orders from main table
+        // Get paginated orders for the specific source
         const { data: fetchedOrders, error } = await supabase
           .from('orders')
           .select('*, line_items:order_line_items_v2(*)')
+          .eq('source', activeTab)
           .order('processed_at', { ascending: false })
           .range(offset, offset + limit - 1);
 
@@ -124,67 +129,69 @@ export default function OrdersPage() {
         }
         ordersList = Array.from(orderMap.values());
         
-        // Try to fetch warehouse-only orders
-        try {
-          const { data: warehouseOnly } = await supabase
-            .from('warehouse_orders')
-            .select('*')
-            .is('shopify_order_id', null)
-            .order('created_at', { ascending: false })
-            .limit(limit * 2);
+        // Try to fetch warehouse-only orders (only for warehouse tab)
+        if (activeTab === 'warehouse') {
+          try {
+            const { data: warehouseOnly } = await supabase
+              .from('warehouse_orders')
+              .select('*')
+              .is('shopify_order_id', null)
+              .order('created_at', { ascending: false })
+              .limit(limit * 2);
 
-          if (warehouseOnly && warehouseOnly.length > 0) {
-            const warehouseMadeOrders: Order[] = [];
-            
-            for (const wo of warehouseOnly) {
-              const rawNumStr = String(wo.order_id).replace('#', '');
-              const baseNumStr = rawNumStr.toUpperCase().endsWith('A') ? rawNumStr.slice(0, -1) : rawNumStr;
-              const fingerprint = getFingerprint(wo.raw_data?.info || []);
-              const customerKey = wo.ship_email ? `${wo.ship_email.toLowerCase()}:${fingerprint}` : null;
+            if (warehouseOnly && warehouseOnly.length > 0) {
+              const warehouseMadeOrders: Order[] = [];
+              
+              for (const wo of warehouseOnly) {
+                const rawNumStr = String(wo.order_id).replace('#', '');
+                const baseNumStr = rawNumStr.toUpperCase().endsWith('A') ? rawNumStr.slice(0, -1) : rawNumStr;
+                const fingerprint = getFingerprint(wo.raw_data?.info || []);
+                const customerKey = wo.ship_email ? `${wo.ship_email.toLowerCase()}:${fingerprint}` : null;
 
-              const existsInPage = ordersList.some(o => {
-                const oName = String(o.order_name || o.order_number);
-                const oNumStr = oName.replace('#', '');
-                const oBaseNumStr = oNumStr.toUpperCase().endsWith('A') ? oNumStr.slice(0, -1) : oNumStr;
-                if (oBaseNumStr === baseNumStr) return true;
-                
-                if (customerKey && o.customer_email) {
-                  const oFingerprint = getFingerprint(o.line_items || []);
-                  return customerKey === `${o.customer_email.toLowerCase()}:${oFingerprint}`;
-                }
-                return false;
-              });
+                const existsInPage = ordersList.some(o => {
+                  const oName = String(o.order_name || o.order_number);
+                  const oNumStr = oName.replace('#', '');
+                  const oBaseNumStr = oNumStr.toUpperCase().endsWith('A') ? oNumStr.slice(0, -1) : oNumStr;
+                  if (oBaseNumStr === baseNumStr) return true;
+                  
+                  if (customerKey && o.customer_email) {
+                    const oFingerprint = getFingerprint(o.line_items || []);
+                    return customerKey === `${o.customer_email.toLowerCase()}:${oFingerprint}`;
+                  }
+                  return false;
+                });
 
-              if (!existsInPage) {
-                const { count: inDb } = await supabase
-                  .from('orders')
-                  .select('id', { count: 'exact', head: true })
-                  .or(`order_name.eq.#${baseNumStr},order_name.eq.#${rawNumStr},order_number.eq.${parseInt(baseNumStr) || -1}`);
+                if (!existsInPage) {
+                  const { count: inDb } = await supabase
+                    .from('orders')
+                    .select('id', { count: 'exact', head: true })
+                    .or(`order_name.eq.#${baseNumStr},order_name.eq.#${rawNumStr},order_number.eq.${parseInt(baseNumStr) || -1}`);
 
-                if (!inDb || inDb === 0) {
-                  const isGift = wo.order_id.toLowerCase().startsWith('simply');
-                  warehouseMadeOrders.push({
-                    id: wo.id,
-                    order_number: wo.order_id,
-                    order_name: wo.order_id,
-                    processed_at: wo.created_at,
-                    financial_status: 'paid',
-                    fulfillment_status: wo.status_name?.toLowerCase().includes('shipped') ? 'fulfilled' : 'unfulfilled',
-                    total_price: 0,
-                    currency_code: 'USD',
-                    customer_email: wo.ship_email || '',
-                    source: 'warehouse',
-                    line_items: wo.raw_data?.info || [],
-                    is_gift: isGift
-                  });
+                  if (!inDb || inDb === 0) {
+                    const isGift = wo.order_id.toLowerCase().startsWith('simply');
+                    warehouseMadeOrders.push({
+                      id: wo.id,
+                      order_number: wo.order_id,
+                      order_name: wo.order_id,
+                      processed_at: wo.created_at,
+                      financial_status: 'paid',
+                      fulfillment_status: wo.status_name?.toLowerCase().includes('shipped') ? 'fulfilled' : 'unfulfilled',
+                      total_price: 0,
+                      currency_code: 'USD',
+                      customer_email: wo.ship_email || '',
+                      source: 'warehouse',
+                      line_items: wo.raw_data?.info || [],
+                      is_gift: isGift
+                    });
+                  }
                 }
               }
-            }
 
-            ordersList = [...ordersList, ...warehouseMadeOrders];
+              ordersList = [...ordersList, ...warehouseMadeOrders];
+            }
+          } catch (wErr) {
+            console.error('Error fetching warehouse orders:', wErr);
           }
-        } catch (wErr) {
-          console.error('Error fetching warehouse orders:', wErr);
         }
 
         // Re-sort everything by date
@@ -208,7 +215,7 @@ export default function OrdersPage() {
         }
 
         setOrders(ordersList);
-        setTotalPages(Math.ceil(((count || 0) + 100) / limit)); 
+        setTotalPages(Math.ceil((activeTab === 'shopify' ? (shopifyCount || 0) : (warehouseCount || 0)) / limit)); 
         setIsLoading(false);
       } catch (err) {
         console.error('Error fetching orders:', err);
@@ -218,10 +225,10 @@ export default function OrdersPage() {
     }
 
     fetchOrders();
-  }, [currentPage, limit, refreshKey]);
+  }, [currentPage, limit, refreshKey, activeTab]);
 
-  const shopifyOrders = useMemo(() => orders.filter(o => o.source === 'shopify'), [orders]);
-  const warehouseOrders = useMemo(() => orders.filter(o => o.source === 'warehouse'), [orders]);
+  const shopifyOrders = useMemo(() => activeTab === 'shopify' ? orders : [], [orders, activeTab]);
+  const warehouseOrders = useMemo(() => activeTab === 'warehouse' ? orders : [], [orders, activeTab]);
 
   const handleRefresh = () => {
     setRefreshKey(prev => prev + 1);
@@ -293,21 +300,29 @@ export default function OrdersPage() {
         </div>
       </div>
 
-      <Tabs defaultValue="shopify" value={activeTab} onValueChange={(v) => setActiveTab(v as any)} className="w-full">
+      <Tabs 
+        defaultValue="shopify" 
+        value={activeTab} 
+        onValueChange={(v) => {
+          setActiveTab(v as any);
+          setCurrentPage(1);
+        }} 
+        className="w-full"
+      >
         <TabsList className="grid w-full grid-cols-2 mb-8">
           <TabsTrigger value="shopify" className="relative">
             Shopify Orders
-            {shopifyOrders.length > 0 && (
+            {counts.shopify > 0 && (
               <Badge variant="secondary" className="ml-2 bg-blue-100 text-blue-700 hover:bg-blue-100">
-                {shopifyOrders.length}
+                {counts.shopify}
               </Badge>
             )}
           </TabsTrigger>
           <TabsTrigger value="warehouse">
             Warehouse Orders
-            {warehouseOrders.length > 0 && (
+            {counts.warehouse > 0 && (
               <Badge variant="secondary" className="ml-2 bg-orange-100 text-orange-700 hover:bg-orange-100">
-                {warehouseOrders.length}
+                {counts.warehouse}
               </Badge>
             )}
           </TabsTrigger>

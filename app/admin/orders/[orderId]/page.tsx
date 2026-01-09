@@ -219,22 +219,48 @@ async function getOrderData(orderId: string) {
 
       if (res.ok) {
         const { order: shopifyOrder } = await res.json();
-        const shopifyMappedLineItems = mappedLineItems.map(item => ({
-          id: item.line_item_id || item.id.toString(),
-          title: item.name,
-          product_name: item.product_name || item.name,
-          quantity: item.quantity || 1,
-          price: item.price,
-          sku: item.sku || null,
-          vendor_name: item.vendor_name,
-          product_id: item.product_id,
-          variant_id: item.variant_id,
-          fulfillment_status: item.fulfillment_status || 'pending',
-          status: item.status || 'active',
-          image_url: item.img_url || item.image_url || undefined,
-          edition_number: item.edition_number,
-          edition_size: productDetails[item.product_id]?.edition_size
-        }));
+        
+        // Use database line items as the base (since they now include warehouse-only items)
+        // but ensure we have all Shopify items too.
+        const shopifyLineItems = shopifyOrder.line_items || [];
+        
+        const finalLineItems = mappedLineItems.map(item => {
+          const sMatch = shopifyLineItems.find((sli: ShopifyLineItem) => sli.id.toString() === item.line_item_id);
+          
+          return {
+            ...item,
+            id: item.line_item_id || item.id.toString(),
+            title: item.name,
+            fulfillment_status: sMatch?.fulfillment_status || item.fulfillment_status || 'pending',
+            price: item.price || (sMatch ? parseFloat(sMatch.price) : 0),
+            quantity: item.quantity || (sMatch ? sMatch.quantity : 1),
+            image_url: item.img_url || item.image_url || (sMatch ? productDetails[sMatch.product_id.toString()]?.image_url : null),
+            edition_size: productDetails[item.product_id]?.edition_size
+          };
+        });
+
+        // Add any Shopify items that are missing from our database (sync failure safety)
+        shopifyLineItems.forEach((sli: ShopifyLineItem) => {
+          if (!finalLineItems.some(fli => fli.id === sli.id.toString())) {
+            finalLineItems.push({
+              id: sli.id.toString(),
+              line_item_id: sli.id.toString(),
+              title: sli.title,
+              product_name: sli.title,
+              quantity: sli.quantity,
+              price: parseFloat(sli.price),
+              sku: sli.sku || null,
+              vendor_name: sli.vendor,
+              product_id: sli.product_id.toString(),
+              variant_id: sli.variant_id?.toString() || null,
+              fulfillment_status: sli.fulfillment_status || 'pending',
+              status: 'active',
+              image_url: productDetails[sli.product_id.toString()]?.image_url || null,
+              edition_number: undefined,
+              edition_size: productDetails[sli.product_id.toString()]?.edition_size
+            });
+          }
+        });
         
         return {
           id: shopifyOrder.id.toString(),
@@ -255,7 +281,7 @@ async function getOrderData(orderId: string) {
             amount: parseFloat(code.amount),
             type: code.type,
           })) || [],
-          line_items: shopifyMappedLineItems,
+          line_items: finalLineItems,
           kickstarter_backing_amount_gbp: orderData.kickstarter_backing_amount_gbp,
           kickstarter_backing_amount_usd: orderData.kickstarter_backing_amount_usd,
         };

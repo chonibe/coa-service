@@ -80,6 +80,12 @@ async function cleanAndSyncManualOrders() {
         const match = productMap.get(cleanSku);
         const lineItemId = `WH-ITEM-${wo.id}-${cleanSku || 'idx' + index}`.toLowerCase();
         
+        // Artwork detection: 
+        // 1. If it matches a product in our DB, it's potentially an artwork
+        // 2. If edition_size exists, it's definitely an artwork
+        // 3. Unless the vendor is "Street Collector" and it's not a known artwork
+        const isArtwork = match && (match.edition_size || match.vendor_name !== 'Street Collector');
+        
         return {
           order_id: mainOrderId,
           order_name: wo.order_id,
@@ -90,13 +96,13 @@ async function cleanAndSyncManualOrders() {
           quantity: parseInt(item.quantity || '1', 10),
           vendor_name: match?.vendor_name || item.supplier || (match ? 'Sancho' : 'Street Collector'),
           fulfillment_status: wo.status_name?.toLowerCase().trim() || 'fulfilled',
-          status: 'active',
+          status: isArtwork ? 'active' : 'inactive', // Non-artworks don't get editions
           created_at: wo.created_at || new Date().toISOString(),
           updated_at: new Date().toISOString(),
           owner_email: ownerEmail,
           owner_name: ownerName,
           sku: item.sku || null,
-          product_id: match?.product_id || null,
+          product_id: match?.shopify_id || match?.product_id || null, // Prefer shopify_id if available
           img_url: match?.img_url || item.img_url || null,
           edition_total: match?.edition_size ? parseInt(match.edition_size) : null
         };

@@ -8,7 +8,7 @@ const supabase = createClient(
 );
 
 async function run() {
-  const sql = fs.readFileSync('supabase/migrations/20250131000020_recreate_collector_profile_view.sql', 'utf8');
+  const sql = fs.readFileSync('supabase/migrations/20260109000002_exclude_street_collector_from_editions.sql', 'utf8');
   
   const { error } = await supabase.rpc('exec_sql', { sql_query: sql });
 

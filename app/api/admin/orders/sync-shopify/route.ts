@@ -3,6 +3,7 @@ import type { NextRequest } from "next/server"
 import { createClient } from "@/lib/supabase/server"
 import { SHOPIFY_SHOP, SHOPIFY_ACCESS_TOKEN } from "@/lib/env"
 import { ADMIN_SESSION_COOKIE_NAME, verifyAdminSessionToken } from "@/lib/admin-session"
+import { syncShopifyOrder } from "@/lib/shopify/order-sync-utils"
 
 interface SyncResult {
   order_id: string
@@ -155,191 +156,13 @@ async function syncOrderWithShopify(
       return result
     }
 
-    // Prepare update object - Shopify is the source of truth
-    const updates: any = {}
-    const changes: string[] = []
-
-    // 1. Sync financial_status from Shopify (Shopify is source of truth)
-    const shopifyFinancialStatus = shopifyOrder.financial_status || null
-    if (dbOrder.financial_status !== shopifyFinancialStatus) {
-      updates.financial_status = shopifyFinancialStatus
-      changes.push(`Financial Status: ${dbOrder.financial_status || "null"} → ${shopifyFinancialStatus || "null"}`)
-    }
-
-    // 2. Sync fulfillment_status from Shopify (Shopify is source of truth)
-    const shopifyFulfillmentStatus = shopifyOrder.fulfillment_status || null
-    if (dbOrder.fulfillment_status !== shopifyFulfillmentStatus) {
-      updates.fulfillment_status = shopifyFulfillmentStatus
-      changes.push(`Fulfillment Status: ${dbOrder.fulfillment_status || "null"} → ${shopifyFulfillmentStatus || "null"}`)
-    }
-
-    // 3. Sync cancelled_at from Shopify (Shopify is source of truth)
-    const shopifyCancelledAt = shopifyOrder.cancelled_at || null
-    const dbCancelledAt = dbOrder.cancelled_at || null
-    
-    // Compare timestamps properly (handle null, timezone differences)
-    let cancelledAtMatches = false
-    if (dbCancelledAt === null && shopifyCancelledAt === null) {
-      cancelledAtMatches = true
-    } else if (dbCancelledAt !== null && shopifyCancelledAt !== null) {
-      // Compare timestamps (allow small difference for timezone/format issues)
-      const dbTime = new Date(dbCancelledAt).getTime()
-      const shopifyTime = new Date(shopifyCancelledAt).getTime()
-      cancelledAtMatches = Math.abs(dbTime - shopifyTime) < 1000 // Within 1 second
-    }
-    
-    if (!cancelledAtMatches) {
-      updates.cancelled_at = shopifyCancelledAt
-      if (shopifyCancelledAt) {
-        changes.push(`Cancelled At: ${dbCancelledAt || "null"} → ${shopifyCancelledAt}`)
-      } else {
-        changes.push(`Cancelled At: ${dbCancelledAt || "null"} → null (cleared)`)
-      }
-    }
-
-    // 4. Sync archived status from Shopify (Shopify is source of truth)
-    // Archived in Shopify = has "archived" tag OR closed_at is not null OR cancel_reason is not null
-    const shopifyTags = (shopifyOrder.tags || "").toLowerCase()
-    const shopifyArchived = 
-      shopifyTags.includes("archived") || 
-      shopifyOrder.closed_at !== null ||
-      shopifyOrder.cancel_reason !== null
-    const dbArchived = dbOrder.archived ?? false
-    if (dbArchived !== shopifyArchived) {
-      updates.archived = shopifyArchived
-      changes.push(`Archived: ${dbArchived} → ${shopifyArchived}`)
-    }
-
-    // 5. Sync shopify_order_status from Shopify (Shopify is source of truth)
-    const shopifyOrderStatus = shopifyOrder.status || null
-    if (dbOrder.shopify_order_status !== shopifyOrderStatus) {
-      updates.shopify_order_status = shopifyOrderStatus
-      changes.push(`Shopify Status: ${dbOrder.shopify_order_status || "null"} → ${shopifyOrderStatus || "null"}`)
-    }
-
-    // 5.5 Set source to shopify (or warehouse if it's a gift)
-    const isGift = (shopifyOrder.name || "").toLowerCase().startsWith('simply')
-    const targetSource = isGift ? 'warehouse' : 'shopify'
-    if (dbOrder.source !== targetSource) {
-      updates.source = targetSource
-      changes.push(`Source: ${dbOrder.source || "null"} → ${targetSource}`)
-    }
-
-    // 5.6 Sync contact info
-    const getShopifyName = (order: any) => {
-      const sources = [
-        order.customer,
-        order.shipping_address,
-        order.billing_address
-      ]
-      for (const s of sources) {
-        if (s && (s.first_name || s.last_name)) {
-          return `${s.first_name || ''} ${s.last_name || ''}`.trim()
-        }
-      }
-      return null
-    }
-
-    const shopifyName = getShopifyName(shopifyOrder);
-    const shopifyPhone = shopifyOrder.customer?.phone || shopifyOrder.shipping_address?.phone || shopifyOrder.billing_address?.phone || null;
-    const shopifyAddress = shopifyOrder.shipping_address || null;
-
-    if (dbOrder.customer_name !== shopifyName) {
-      updates.customer_name = shopifyName;
-      changes.push(`Name: ${dbOrder.customer_name || "null"} → ${shopifyName || "null"}`);
-    }
-    if (dbOrder.customer_phone !== shopifyPhone) {
-      updates.customer_phone = shopifyPhone;
-      changes.push(`Phone: ${dbOrder.customer_phone || "null"} → ${shopifyPhone || "null"}`);
-    }
-    if (JSON.stringify(dbOrder.shipping_address) !== JSON.stringify(shopifyAddress)) {
-      updates.shipping_address = shopifyAddress;
-      changes.push(`Address updated`);
-    }
-
-    // 6. Always update raw_shopify_order_data and updated_at to keep in sync
-    updates.raw_shopify_order_data = shopifyOrder
-    updates.updated_at = new Date().toISOString()
-
-    // Check if there are actual field changes (excluding metadata fields)
-    const actualChanges = Object.keys(updates).filter(key => 
-      key !== 'raw_shopify_order_data' && key !== 'updated_at'
-    )
-    
-    // Always update to ensure raw_shopify_order_data is current, even if no other changes
-    if (actualChanges.length > 0 || changes.length > 0) {
-      const { error: updateError } = await supabase
-        .from("orders")
-        .update(updates)
-        .eq("id", dbOrder.id)
-
-      if (updateError) {
-        result.errors.push(`Database update error: ${updateError.message}`)
-      } else {
-        result.updated = true
-        result.changes = changes
-        // If we only updated raw_shopify_order_data, note it
-        if (actualChanges.length === 0 && changes.length === 0) {
-          result.changes.push("Updated raw_shopify_order_data to match Shopify")
-        }
-      }
+    // Use shared utility for the actual sync
+    const syncRes = await syncShopifyOrder(supabase, shopifyOrder, { forceWarehouseSync: true })
+    if (syncRes.success) {
+      result.updated = true
+      result.changes = ["Synced with Shopify and enriched from Warehouse", ...(syncRes.results || [])]
     } else {
-      // No changes needed - order is already in sync
-      result.changes.push("Order already in sync with Shopify")
-    }
-
-    // 7. Update line items based on Shopify status (Shopify is source of truth)
-    const shopifyCancelled = !!shopifyOrder.cancelled_at
-    if (shopifyCancelled) {
-      // Order is cancelled in Shopify - mark line items as inactive
-      const { error: lineItemsError } = await supabase
-        .from("order_line_items_v2")
-        .update({ 
-          status: "inactive",
-          updated_at: new Date().toISOString()
-        })
-        .eq("order_id", dbOrder.id)
-        .eq("status", "active")
-
-      if (lineItemsError) {
-        result.errors.push(`Line items update error: ${lineItemsError.message}`)
-      } else {
-        // Check if any line items were updated
-        const { count } = await supabase
-          .from("order_line_items_v2")
-          .select("*", { count: "exact", head: true })
-          .eq("order_id", dbOrder.id)
-          .eq("status", "inactive")
-
-        if (count && count > 0) {
-          result.changes.push(`Updated ${count} line item(s) to inactive (order cancelled in Shopify)`)
-        }
-      }
-    } else {
-      // Order is NOT cancelled in Shopify - if it was previously cancelled in DB, reactivate line items
-      // Only reactivate if order is fulfilled and was previously cancelled
-      if (dbOrder.cancelled_at && !shopifyCancelled && shopifyOrder.fulfillment_status === "fulfilled") {
-        const { error: lineItemsError } = await supabase
-          .from("order_line_items_v2")
-          .update({ 
-            status: "active",
-            updated_at: new Date().toISOString()
-          })
-          .eq("order_id", dbOrder.id)
-          .eq("status", "inactive")
-
-        if (!lineItemsError) {
-          const { count } = await supabase
-            .from("order_line_items_v2")
-            .select("*", { count: "exact", head: true })
-            .eq("order_id", dbOrder.id)
-            .eq("status", "active")
-
-          if (count && count > 0) {
-            result.changes.push(`Reactivated ${count} line item(s) (order no longer cancelled in Shopify)`)
-          }
-        }
-      }
+      result.errors.push(`Sync failed: ${syncRes.error}`)
     }
 
   } catch (error: any) {
