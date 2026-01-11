@@ -68,6 +68,8 @@ export async function GET(request: NextRequest) {
         updatedAt: lineItemData.updated_at,
         certificateGeneratedAt: lineItemData.certificate_generated_at,
         accessToken: lineItemData.certificate_token,
+        ownerEmail: lineItemData.owner_email,
+        ownerId: lineItemData.owner_id,
       },
       product: productData,
       order: {

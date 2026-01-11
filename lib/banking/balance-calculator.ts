@@ -33,7 +33,8 @@ export async function calculateCollectorBalance(
 
     if (amount > 0) {
       // Positive amounts are credits earned
-      if (entry.transaction_type === 'credit_earned' || entry.transaction_type === 'subscription_credit') {
+      const earningTypes = ['credit_earned', 'subscription_credit', 'nfc_scan_reward', 'series_completion_reward'];
+      if (earningTypes.includes(entry.transaction_type)) {
         creditsEarned += amount;
       }
     } else {
@@ -80,7 +81,8 @@ export async function calculateUnifiedCollectorBalance(
 
     if (currency === 'CREDITS') {
       creditsBalance += amount;
-      if (amount > 0 && (entry.transaction_type === 'credit_earned' || entry.transaction_type === 'subscription_credit')) {
+      const earningTypes = ['credit_earned', 'subscription_credit', 'nfc_scan_reward', 'series_completion_reward'];
+      if (amount > 0 && earningTypes.includes(entry.transaction_type)) {
         totalCreditsEarned += amount;
       }
     } else if (currency === 'USD') {
@@ -114,7 +116,7 @@ export async function getTotalCreditsEarned(
     .select('amount')
     .eq('collector_identifier', collectorIdentifier)
     .eq('currency', 'CREDITS')
-    .in('transaction_type', ['credit_earned', 'subscription_credit']);
+    .in('transaction_type', ['credit_earned', 'subscription_credit', 'nfc_scan_reward', 'series_completion_reward']);
 
   if (error) {
     console.error('Error getting total credits earned:', error);

@@ -2,6 +2,8 @@ import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
 import { createClient } from "@/lib/supabase/server"
 import { z } from "zod"  // Add zod for validation
+import { rewardCreditsForNfcScan } from "@/lib/banking/credit-reward"
+import { checkAndRewardSeriesCompletion } from "@/lib/gamification/series"
 
 // Input validation schema
 const NfcClaimSchema = z.object({
@@ -271,11 +273,49 @@ export async function POST(request: NextRequest) {
       artworkName: certificate.name
     })
 
+    // --- Ink-O-Gatchi Gamification: Reward Credits for NFC Scan ---
+    let rewardResult = null
+    let seriesRewardResult = null
+    try {
+      // Find the collector identifier (email or customer ID)
+      const { data: liData } = await supabase
+        .from("order_line_items_v2")
+        .select("owner_email, owner_id, series_id")
+        .eq("line_item_id", lineItemId)
+        .eq("order_id", orderId)
+        .single()
+
+      const identifier = liData?.owner_id || liData?.owner_email || customerId
+      const email = liData?.owner_email || (customerId?.includes('@') ? customerId : null)
+
+      if (identifier) {
+        rewardResult = await rewardCreditsForNfcScan(
+          identifier,
+          tagId,
+          lineItemId,
+          orderId
+        )
+
+        // Check for series completion reward
+        if (liData?.series_id && liData?.owner_id && email) {
+          seriesRewardResult = await checkAndRewardSeriesCompletion(
+            liData.owner_id,
+            email,
+            liData.series_id
+          )
+        }
+      }
+    } catch (rewardError) {
+      console.error("Failed to reward credits for NFC scan:", rewardError)
+    }
+
     return NextResponse.json({
       success: true,
       nfcTag: data[0],
       artworkName: certificate.name,
       seriesUnlocked,
+      reward: rewardResult,
+      seriesReward: seriesRewardResult,
     })
   } catch (error: any) {
     console.error("Error in claim NFC tag API:", error)

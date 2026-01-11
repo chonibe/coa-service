@@ -9,8 +9,10 @@ import { createClient } from "@/lib/supabase/server";
 export interface CollectorProfile {
   user_email: string;
   user_id: string | null;
+  shopify_customer_id: string | null;
   display_name: string;
   display_phone: string | null;
+  associated_order_names: string[] | null;
   total_editions: number;
   authenticated_editions: number;
   total_orders: number;
@@ -26,7 +28,7 @@ export interface CollectorProfile {
 }
 
 /**
- * Fetch a single collector by email or ID
+ * Fetch a single collector by email, ID, or Shopify ID
  */
 export async function getCollectorProfile(identifier: string): Promise<CollectorProfile | null> {
   const supabase = createClient();
@@ -38,7 +40,11 @@ export async function getCollectorProfile(identifier: string): Promise<Collector
 
   if (isEmail) {
     query.eq('user_email', identifier.toLowerCase().trim());
+  } else if (identifier.match(/^[0-9]+$/)) {
+    // Likely a Shopify Customer ID
+    query.eq('shopify_customer_id', identifier);
   } else {
+    // Likely a Supabase User ID (UUID)
     query.eq('user_id', identifier);
   }
 

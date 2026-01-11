@@ -13,13 +13,13 @@ if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
-async function globalOrderAudit() {
-  console.log('--- Starting Global Order Audit & Edition Re-sync ---');
+async function globalOrderAuditV2() {
+  console.log('--- Starting Global Order Audit V2 (Including Cancellation Check) ---');
   
   // 1. Fetch all orders with raw data
   const { data: orders, error: ordersError } = await supabase
     .from('orders')
-    .select('id, order_name, raw_shopify_order_data, customer_email, customer_name')
+    .select('id, order_name, raw_shopify_order_data, customer_email, customer_name, cancelled_at')
     .not('raw_shopify_order_data', 'is', null);
 
   if (ordersError) {
@@ -29,30 +29,18 @@ async function globalOrderAudit() {
 
   console.log(`Processing ${orders.length} orders...`);
 
-  // Map products to get images (optional but good for consistency)
-  const { data: products } = await supabase.from('products').select('product_id, img_url');
-  const productMap = new Map(products?.map(p => [p.shopify_id, p.img_url]) || []);
-
-  // Fetch all warehouse orders for PII recovery
-  const { data: warehouseOrders } = await supabase.from('warehouse_orders').select('shopify_order_id, ship_email, ship_name');
-  const warehouseMap = new Map(warehouseOrders?.map(wo => [wo.shopify_order_id, wo]) || []);
-
   const productIdsToResequence = new Set();
   let updatedLineItems = 0;
-  let skippedOrders = 0;
 
   for (const orderRecord of orders) {
     const order = orderRecord.raw_shopify_order_data;
-    if (!order || !order.line_items) {
-      skippedOrders++;
-      continue;
-    }
+    if (!order || !order.line_items) continue;
 
     const orderId = orderRecord.id;
     const orderName = orderRecord.order_name;
     const financialStatus = order.financial_status;
+    const cancelledAt = order.cancelled_at || orderRecord.cancelled_at;
 
-    // A. Identify removed items via refunds
     const removedLineItemIds = new Set();
     if (order.refunds && Array.isArray(order.refunds)) {
       order.refunds.forEach((refund) => {
@@ -62,28 +50,6 @@ async function globalOrderAudit() {
       });
     }
 
-    // B. PII Recovery (Basic)
-    let ownerEmail = orderRecord.customer_email || order.email?.toLowerCase()?.trim() || null;
-    let ownerName = orderRecord.customer_name || null;
-    
-    if (!ownerName) {
-      const sources = [order.customer, order.shipping_address, order.billing_address];
-      for (const s of sources) {
-        if (s && (s.first_name || s.last_name)) {
-          ownerName = `${s.first_name || ''} ${s.last_name || ''}`.trim();
-          break;
-        }
-      }
-    }
-
-    // Warehouse Fallback
-    const whMatched = warehouseMap.get(orderId);
-    if (whMatched) {
-      ownerEmail = whMatched.ship_email?.toLowerCase()?.trim() || ownerEmail;
-      ownerName = whMatched.ship_name || ownerName;
-    }
-
-    // C. Process Line Items
     const dbLineItems = order.line_items.map((li) => {
       const isRefunded = removedLineItemIds.has(li.id.toString());
       
@@ -96,7 +62,8 @@ async function globalOrderAudit() {
       const isRemovedByQty = (li.fulfillable_quantity === 0 || li.fulfillable_quantity === '0') && 
                              li.fulfillment_status !== 'fulfilled';
       
-      const isCancelled = financialStatus === 'voided';
+      // CRITICAL FIX: Include cancelled_at check
+      const isCancelled = financialStatus === 'voided' || cancelledAt !== null;
       const isFulfilled = li.fulfillment_status === 'fulfilled';
       const isPaid = ['paid', 'authorized', 'pending', 'partially_paid'].includes(financialStatus);
       
@@ -119,9 +86,8 @@ async function globalOrderAudit() {
         vendor_name: li.vendor,
         fulfillment_status: li.fulfillment_status,
         status: status,
-        owner_email: ownerEmail,
-        owner_name: ownerName,
-        img_url: li.product_id ? productMap.get(li.product_id.toString()) || null : null,
+        owner_email: orderRecord.customer_email?.toLowerCase()?.trim(),
+        owner_name: orderRecord.customer_name,
         created_at: order.created_at,
         updated_at: new Date().toISOString()
       };
@@ -133,39 +99,26 @@ async function globalOrderAudit() {
         .upsert(dbLineItems, { onConflict: 'line_item_id' });
       
       if (liError) {
-        console.error(`Error upserting line items for order ${orderName}:`, liError.message);
+        console.error(`Error upserting for ${orderName}:`, liError.message);
       } else {
         updatedLineItems += dbLineItems.length;
       }
     }
-    
-    // Periodically log progress
-    if (updatedLineItems % 100 === 0) {
-      console.log(`Updated ${updatedLineItems} line items so far...`);
-    }
   }
 
-  console.log(`\nStep 1 Complete: Updated ${updatedLineItems} line items across ${orders.length} orders.`);
+  console.log(`\nStep 1 Complete: Updated ${updatedLineItems} line items.`);
   
   // 2. Resequence Edition Numbers
   console.log(`\nStep 2: Resequencing edition numbers for ${productIdsToResequence.size} products...`);
   let productsProcessed = 0;
   for (const pid of productIdsToResequence) {
-    const { error: rpcError } = await supabase.rpc('assign_edition_numbers', { p_product_id: pid });
-    if (rpcError) {
-      console.error(`Error resequencing product ${pid}:`, rpcError.message);
-    }
+    await supabase.rpc('assign_edition_numbers', { p_product_id: pid });
     productsProcessed++;
-    if (productsProcessed % 10 === 0) {
-      console.log(`Processed ${productsProcessed}/${productIdsToResequence.size} products...`);
-    }
+    if (productsProcessed % 20 === 0) console.log(`Processed ${productsProcessed}...`);
   }
 
-  console.log(`\n--- Global Audit Finished Successfully ---`);
-  console.log(`Total Orders Processed: ${orders.length}`);
-  console.log(`Total Line Items Upserted: ${updatedLineItems}`);
-  console.log(`Total Products Re-sequenced: ${productsProcessed}`);
+  console.log(`\nGlobal Audit V2 Finished Successfully.`);
 }
 
-globalOrderAudit();
+globalOrderAuditV2();
 

@@ -13,6 +13,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 interface Collector {
   user_email: string;
   user_id: string | null;
+  shopify_customer_id: string | null;
   display_name: string;
   display_phone: string | null;
   total_orders: number;
@@ -99,7 +100,7 @@ export default function CollectorsDirectoryPage() {
           {collectors.map((collector) => (
             <Link 
               key={collector.user_email} 
-              href={`/admin/collectors/${collector.user_id || collector.user_email}`}
+              href={`/admin/collectors/${collector.shopify_customer_id || collector.user_id || collector.user_email}`}
               className="block group"
             >
               <Card className="h-full hover:shadow-md transition-all duration-200 border-slate-200/60 group-hover:border-primary/40">

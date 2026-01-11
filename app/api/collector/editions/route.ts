@@ -100,37 +100,50 @@ export async function GET(request: NextRequest) {
       }))
     )
 
-    // Get series information for products
-    const productIds = Array.from(
-      new Set(
-        allLineItems
-          .map((li: any) => li.product_id)
-          .filter(Boolean) as string[],
-      ),
-    )
+    // Get series information and fallback images for products
+    const productIds = Array.from(new Set(allLineItems.map((li: any) => li.product_id).filter(Boolean) as string[]))
+    const skus = Array.from(new Set(allLineItems.map((li: any) => li.sku).filter(Boolean) as string[]))
+    const names = Array.from(new Set(allLineItems.map((li: any) => li.name).filter(Boolean) as string[]))
 
     let seriesMap = new Map<string, any>()
-    if (productIds.length > 0) {
-      const { data: seriesMembers } = await supabase
-        .from("artwork_series_members")
-        .select(
-          `
-          shopify_product_id,
-          series_id,
-          artwork_series!inner (
-            id,
-            name,
-            vendor_name
-          )
-        `,
-        )
-        .in("shopify_product_id", productIds)
+    let imageMap = new Map<string, string>()
 
-      seriesMembers?.forEach((member: any) => {
-        if (member.shopify_product_id && member.artwork_series) {
-          seriesMap.set(member.shopify_product_id, member.artwork_series)
-        }
-      })
+    if (productIds.length > 0 || skus.length > 0 || names.length > 0) {
+      // 1. Fetch series
+      if (productIds.length > 0) {
+        const { data: seriesMembers } = await supabase
+          .from("artwork_series_members")
+          .select(`
+            shopify_product_id,
+            series_id,
+            artwork_series!inner (id, name, vendor_name)
+          `)
+          .in("shopify_product_id", productIds)
+
+        seriesMembers?.forEach((member: any) => {
+          if (member.shopify_product_id && member.artwork_series) {
+            seriesMap.set(member.shopify_product_id, member.artwork_series)
+          }
+        })
+      }
+
+      // 2. Fetch fallback images
+      const filters = [];
+      if (productIds.length > 0) filters.push(`product_id.in.(${productIds.join(',')})`);
+      if (skus.length > 0) filters.push(`sku.in.(${skus.map(s => `"${s}"`).join(',')})`);
+      if (names.length > 0) filters.push(`name.in.(${names.map(n => `"${n}"`).join(',')})`);
+
+      const { data: products } = await supabase
+        .from('products')
+        .select('product_id, sku, name, img_url, image_url')
+        .or(filters.join(','));
+
+      products?.forEach(p => {
+        const img = p.img_url || p.image_url;
+        if (p.product_id) imageMap.set(`id_${p.product_id}`, img);
+        if (p.sku) imageMap.set(`sku_${p.sku.toLowerCase().trim()}`, img);
+        if (p.name) imageMap.set(`name_${p.name.toLowerCase().trim()}`, img);
+      });
     }
 
     // Filter for active items that have an assigned edition number.
@@ -145,6 +158,16 @@ export async function GET(request: NextRequest) {
         const series = li.product_id
           ? seriesMap.get(li.product_id)
           : null
+
+        // Apply fallback image
+        let imgUrl = li.img_url;
+        if (!imgUrl || imgUrl.includes('placehold')) {
+          imgUrl = 
+            (li.product_id && imageMap.get(`id_${li.product_id}`)) ||
+            (li.sku && imageMap.get(`sku_${li.sku.toLowerCase().trim()}`)) ||
+            (li.name && imageMap.get(`name_${li.name.toLowerCase().trim()}`)) ||
+            imgUrl;
+        }
 
         // Determine edition type
         let editionType: "limited" | "open" | "accessory" | null = null
@@ -171,7 +194,7 @@ export async function GET(request: NextRequest) {
           editionTotal: li.edition_total,
           editionType,
           verificationSource,
-          imgUrl: li.img_url,
+          imgUrl: imgUrl,
           vendorName: li.vendor_name || 'Street Collector',
           series: series
             ? {

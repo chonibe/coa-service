@@ -17,6 +17,8 @@ import {
 import { formatCurrency } from "@/lib/utils";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
+import { InkOGatchi } from "@/app/collector/dashboard/components/ink-o-gatchi";
+import { InkOGatchiWidget } from "@/app/collector/dashboard/components/inkogatchi-widget";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -153,12 +155,27 @@ export default function CollectorDetailPage() {
                   <div className="absolute -bottom-16 left-8">
                     <div className="relative group">
                       <div className="absolute inset-0 bg-primary/20 rounded-full blur-xl group-hover:blur-2xl transition-all" />
-                      <Avatar className="h-32 w-32 border-[6px] border-white shadow-2xl shadow-slate-900/10 rounded-full bg-white relative z-10">
-                        <AvatarImage src={profile.avatar_url} className="object-cover" />
-                        <AvatarFallback className="bg-slate-50 text-primary text-4xl font-black">
-                          {profile.display_name?.split(' ').map((n: string) => n[0]).join('').toUpperCase() || '?'}
-                        </AvatarFallback>
-                      </Avatar>
+                      {profile.avatar ? (
+                        <div className="h-32 w-32 border-[6px] border-white shadow-2xl shadow-slate-900/10 rounded-full bg-white relative z-10 flex items-center justify-center overflow-hidden">
+                          <InkOGatchi 
+                            stage={profile.avatar.evolutionStage} 
+                            equippedItems={{
+                              hat: profile.avatar.equippedItems?.hat?.asset_url,
+                              eyes: profile.avatar.equippedItems?.eyes?.asset_url,
+                              body: profile.avatar.equippedItems?.body?.asset_url,
+                              accessory: profile.avatar.equippedItems?.accessory?.asset_url,
+                            }}
+                            size={120} 
+                          />
+                        </div>
+                      ) : (
+                        <Avatar className="h-32 w-32 border-[6px] border-white shadow-2xl shadow-slate-900/10 rounded-full bg-white relative z-10">
+                          <AvatarImage src={profile.avatar_url} className="object-cover" />
+                          <AvatarFallback className="bg-slate-50 text-primary text-4xl font-black">
+                            {profile.display_name?.split(' ').map((n: string) => n[0]).join('').toUpperCase() || '?'}
+                          </AvatarFallback>
+                        </Avatar>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -167,6 +184,11 @@ export default function CollectorDetailPage() {
                   <div className="flex flex-col gap-1 mb-6">
                     <div className="flex items-center gap-2">
                       <h1 className="text-3xl font-black tracking-tight text-slate-900">{profile.display_name}</h1>
+                      {profile.avatar && (
+                        <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20 font-black px-3 py-1 rounded-full">
+                          LVL {profile.avatar.level}
+                        </Badge>
+                      )}
                       {profile.user_id && (
                         <div className="h-6 w-6 bg-blue-100 rounded-full flex items-center justify-center border border-blue-200 shadow-sm" title="Verified User">
                           <ShieldCheck className="h-3.5 w-3.5 text-blue-600" />
@@ -314,14 +336,15 @@ export default function CollectorDetailPage() {
                   </TabsList>
                 </div>
 
-                <AnimatePresence mode="wait">
-                  <TabsContent value="overview" className="mt-0">
-                    <motion.div 
-                      initial={{ opacity: 0, x: 20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      exit={{ opacity: 0, x: -20 }}
-                      className="grid grid-cols-1 md:grid-cols-2 gap-6"
-                    >
+                <TabsContent value="overview" className="mt-0">
+                  <motion.div 
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="space-y-8"
+                  >
+                    <InkOGatchiWidget userId={profile.user_id} email={profile.user_email} />
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       <Card className="rounded-[2.5rem] border-none shadow-xl bg-white overflow-hidden p-8">
                         <div className="flex items-center justify-between mb-6">
                           <h3 className="text-lg font-black text-slate-900 tracking-tight">Recent Activity</h3>
@@ -342,7 +365,7 @@ export default function CollectorDetailPage() {
                                 <div className="mt-2 flex -space-x-2">
                                   {order.order_line_items_v2?.slice(0, 4).map((item: any) => (
                                     <div key={item.id} className="h-8 w-8 rounded-lg border-2 border-white shadow-md overflow-hidden bg-slate-50">
-                                      {item.img_url && <img src={item.img_url} alt="" className="h-full w-full object-cover" />}
+                                      {(item.img_url || item.image_url) && <img src={item.img_url || item.image_url} alt="" className="h-full w-full object-cover" />}
                                     </div>
                                   ))}
                                 </div>
@@ -376,141 +399,139 @@ export default function CollectorDetailPage() {
                           </div>
                         </div>
                       </Card>
-                    </motion.div>
-                  </TabsContent>
+                    </div>
+                  </motion.div>
+                </TabsContent>
 
-                  <TabsContent value="orders" className="mt-0">
-                    <motion.div 
-                      initial={{ opacity: 0, x: 20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      exit={{ opacity: 0, x: -20 }}
-                      className="space-y-4"
-                    >
-                      {orders.map((order) => (
-                        <Card key={order.id} className="rounded-[2rem] border-none shadow-xl bg-white overflow-hidden hover:shadow-2xl transition-all group">
-                          <div className="flex flex-col md:flex-row">
-                            <div className="md:w-64 bg-slate-50 border-r border-slate-100 p-8 flex flex-col justify-between">
-                              <div>
-                                <div className="flex items-center gap-2 mb-2">
-                                  <h4 className="text-xl font-black text-slate-900 tracking-tight">#{order.order_number}</h4>
-                                  <Badge className={`${order.financial_status === 'paid' ? 'bg-emerald-500' : 'bg-amber-500'} border-none text-[9px] font-black uppercase tracking-widest h-5`}>
-                                    {order.financial_status}
-                                  </Badge>
-                                </div>
-                                <p className="text-xs font-black text-slate-400 uppercase tracking-widest">{new Date(order.processed_at).toLocaleDateString()}</p>
+                <TabsContent value="orders" className="mt-0">
+                  <motion.div 
+                    initial={{ opacity: 0, x: 20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    className="space-y-4"
+                  >
+                    {orders.map((order) => (
+                      <Card key={order.id} className="rounded-[2rem] border-none shadow-xl bg-white overflow-hidden hover:shadow-2xl transition-all group">
+                        <div className="flex flex-col md:flex-row">
+                          <div className="md:w-64 bg-slate-50 border-r border-slate-100 p-8 flex flex-col justify-between">
+                            <div>
+                              <div className="flex items-center gap-2 mb-2">
+                                <h4 className="text-xl font-black text-slate-900 tracking-tight">#{order.order_number}</h4>
+                                <Badge className={`${order.financial_status === 'paid' ? 'bg-emerald-500' : 'bg-amber-500'} border-none text-[9px] font-black uppercase tracking-widest h-5`}>
+                                  {order.financial_status}
+                                </Badge>
                               </div>
-                              <div className="mt-8">
-                                <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-1">Total</p>
-                                <p className="text-2xl font-black text-slate-900">{formatCurrency(order.total_price, order.currency_code)}</p>
-                                <Link href={`/admin/orders/${order.id}`}>
-                                  <Button variant="outline" size="sm" className="mt-4 w-full rounded-xl border-slate-200 font-bold text-xs h-10 group-hover:bg-primary group-hover:text-white group-hover:border-primary transition-all">
-                                    Full Details <ExternalLink className="h-3 w-3 ml-2" />
-                                  </Button>
-                                </Link>
-                              </div>
+                              <p className="text-xs font-black text-slate-400 uppercase tracking-widest">{new Date(order.processed_at).toLocaleDateString()}</p>
                             </div>
-                            <div className="flex-1 p-8">
-                              <div className="space-y-4">
-                                {(order.order_line_items_v2 || []).map((item: any) => (
-                                  <div key={item.id} className="flex items-center gap-5 p-3 rounded-2xl hover:bg-slate-50 transition-colors group/item">
-                                    <div className="h-16 w-16 bg-slate-100 rounded-2xl overflow-hidden flex-shrink-0 shadow-lg shadow-slate-200/50 relative border border-slate-100">
-                                      {item.img_url ? (
-                                        <img src={item.img_url} alt={item.name} className="h-full w-full object-cover group-hover/item:scale-110 transition-transform duration-500" />
-                                      ) : (
-                                        <Award className="h-6 w-6 text-slate-300 absolute inset-0 m-auto" />
-                                      )}
-                                    </div>
-                                    <div className="flex-1 min-w-0">
-                                      <div className="flex items-start justify-between gap-4">
-                                        <div>
-                                          <h5 className="font-black text-slate-900 tracking-tight leading-tight mb-1">{item.name}</h5>
-                                          <div className="flex items-center gap-2">
-                                            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{item.vendor_name || 'Street Collector'}</span>
-                                            <span className="h-1 w-1 rounded-full bg-slate-300" />
-                                            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Qty {item.quantity}</span>
-                                          </div>
+                            <div className="mt-8">
+                              <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-1">Total</p>
+                              <p className="text-2xl font-black text-slate-900">{formatCurrency(order.total_price, order.currency_code)}</p>
+                              <Link href={`/admin/orders/${order.id}`}>
+                                <Button variant="outline" size="sm" className="mt-4 w-full rounded-xl border-slate-200 font-bold text-xs h-10 group-hover:bg-primary group-hover:text-white group-hover:border-primary transition-all">
+                                  Full Details <ExternalLink className="h-3 w-3 ml-2" />
+                                </Button>
+                              </Link>
+                            </div>
+                          </div>
+                          <div className="flex-1 p-8">
+                            <div className="space-y-4">
+                              {(order.order_line_items_v2 || []).map((item: any) => (
+                                <div key={item.id} className="flex items-center gap-5 p-3 rounded-2xl hover:bg-slate-50 transition-colors group/item">
+                                  <div className="h-16 w-16 bg-slate-100 rounded-2xl overflow-hidden flex-shrink-0 shadow-lg shadow-slate-200/50 relative border border-slate-100">
+                                    {(item.img_url || item.image_url) ? (
+                                      <img src={item.img_url || item.image_url} alt={item.name} className="h-full w-full object-cover group-hover/item:scale-110 transition-transform duration-500" />
+                                    ) : (
+                                      <Award className="h-6 w-6 text-slate-300 absolute inset-0 m-auto" />
+                                    )}
+                                  </div>
+                                  <div className="flex-1 min-w-0">
+                                    <div className="flex items-start justify-between gap-4">
+                                      <div>
+                                        <h5 className="font-black text-slate-900 tracking-tight leading-tight mb-1">{item.name}</h5>
+                                        <div className="flex items-center gap-2">
+                                          <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{item.vendor_name || 'Street Collector'}</span>
+                                          <span className="h-1 w-1 rounded-full bg-slate-300" />
+                                          <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Qty {item.quantity}</span>
                                         </div>
-                                        <div className="flex flex-col items-end gap-2">
-                                          {item.edition_number ? (
-                                            <Badge className="bg-amber-100 text-amber-700 hover:bg-amber-100 border-none font-black text-[10px] rounded-lg h-6 px-2.5">
-                                              EDITION #{item.edition_number}
-                                            </Badge>
-                                          ) : (
-                                            <Badge variant="outline" className="text-[9px] font-black tracking-widest text-slate-400 border-slate-200 h-6">ACCESSORY</Badge>
-                                          )}
-                                          {item.nfc_claimed_at && <ShieldCheck className="h-4 w-4 text-emerald-500 drop-shadow-sm" />}
-                                        </div>
+                                      </div>
+                                      <div className="flex flex-col items-end gap-2">
+                                        {item.edition_number ? (
+                                          <Badge className="bg-amber-100 text-amber-700 hover:bg-amber-100 border-none font-black text-[10px] rounded-lg h-6 px-2.5">
+                                            EDITION #{item.edition_number}
+                                          </Badge>
+                                        ) : (
+                                          <Badge variant="outline" className="text-[9px] font-black tracking-widest text-slate-400 border-slate-200 h-6">ACCESSORY</Badge>
+                                        )}
+                                        {item.nfc_claimed_at && <ShieldCheck className="h-4 w-4 text-emerald-500 drop-shadow-sm" />}
                                       </div>
                                     </div>
                                   </div>
-                                ))}
-                              </div>
+                                </div>
+                              ))}
                             </div>
                           </div>
-                        </Card>
-                      ))}
-                    </motion.div>
-                  </TabsContent>
+                        </div>
+                      </Card>
+                    ))}
+                  </motion.div>
+                </TabsContent>
 
-                  <TabsContent value="editions" className="mt-0">
-                    <motion.div 
-                      initial={{ opacity: 0, x: 20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      exit={{ opacity: 0, x: -20 }}
-                      className="grid grid-cols-1 md:grid-cols-2 gap-6"
-                    >
-                      {editions.map((edition) => (
-                        <Card key={edition.id} className="rounded-[2.5rem] border-none shadow-xl bg-white overflow-hidden group hover:scale-[1.02] transition-all duration-500 cursor-pointer">
-                          <div className="flex h-full">
-                            <div className="w-40 h-auto bg-slate-50 relative overflow-hidden flex-shrink-0">
-                              {edition.imgUrl ? (
-                                <img src={edition.imgUrl} alt={edition.name} className="object-cover w-full h-full group-hover:scale-110 transition-transform duration-700" />
-                              ) : (
-                                <div className="flex items-center justify-center h-full bg-slate-100">
-                                  <Award className="h-12 w-12 text-slate-300" />
-                                </div>
-                              )}
-                              <div className="absolute top-4 left-4">
-                                <Badge className="bg-white/90 backdrop-blur-md text-slate-900 border-none font-black text-[10px] px-3 py-1.5 shadow-xl">
-                                  #{edition.editionNumber}
-                                </Badge>
+                <TabsContent value="editions" className="mt-0">
+                  <motion.div 
+                    initial={{ opacity: 0, x: 20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    className="grid grid-cols-1 md:grid-cols-2 gap-6"
+                  >
+                    {editions.map((edition) => (
+                      <Card key={edition.id} className="rounded-[2.5rem] border-none shadow-xl bg-white overflow-hidden group hover:scale-[1.02] transition-all duration-500 cursor-pointer">
+                        <div className="flex h-full">
+                          <div className="w-40 h-auto bg-slate-50 relative overflow-hidden flex-shrink-0">
+                            {(edition.imgUrl || edition.imageUrl) ? (
+                              <img src={edition.imgUrl || edition.imageUrl} alt={edition.name} className="object-cover w-full h-full group-hover:scale-110 transition-transform duration-700" />
+                            ) : (
+                              <div className="flex items-center justify-center h-full bg-slate-100">
+                                <Award className="h-12 w-12 text-slate-300" />
+                              </div>
+                            )}
+                            <div className="absolute top-4 left-4">
+                              <Badge className="bg-white/90 backdrop-blur-md text-slate-900 border-none font-black text-[10px] px-3 py-1.5 shadow-xl">
+                                #{edition.editionNumber}
+                              </Badge>
+                            </div>
+                          </div>
+                          <div className="p-8 flex-1 min-w-0 flex flex-col justify-between">
+                            <div>
+                              <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2">{edition.vendorName || 'Street Collector'}</p>
+                              <h4 className="text-xl font-black text-slate-900 tracking-tight leading-tight mb-4 group-hover:text-primary transition-colors">{edition.name}</h4>
+                              <div className="flex flex-wrap gap-2">
+                                {edition.nfc_claimed_at || edition.verificationSource === 'supabase' ? (
+                                  <Badge className="bg-emerald-50 text-emerald-600 hover:bg-emerald-50 border border-emerald-100 font-black text-[9px] tracking-widest px-3 h-6 rounded-full flex items-center gap-1.5 shadow-sm">
+                                    <ShieldCheck className="h-3 w-3" /> VERIFIED
+                                  </Badge>
+                                ) : (
+                                  <Badge variant="outline" className="text-slate-400 border-slate-200 font-black text-[9px] tracking-widest px-3 h-6 rounded-full">UNCLAIMED</Badge>
+                                )}
+                                {edition.editionType && (
+                                  <Badge variant="secondary" className="bg-slate-100 text-slate-600 border-none font-black text-[9px] tracking-widest px-3 h-6 rounded-full uppercase">
+                                    {edition.editionType}
+                                  </Badge>
+                                )}
                               </div>
                             </div>
-                            <div className="p-8 flex-1 min-w-0 flex flex-col justify-between">
-                              <div>
-                                <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2">{edition.vendorName || 'Street Collector'}</p>
-                                <h4 className="text-xl font-black text-slate-900 tracking-tight leading-tight mb-4 group-hover:text-primary transition-colors">{edition.name}</h4>
-                                <div className="flex flex-wrap gap-2">
-                                  {edition.nfc_claimed_at || edition.verificationSource === 'supabase' ? (
-                                    <Badge className="bg-emerald-50 text-emerald-600 hover:bg-emerald-50 border border-emerald-100 font-black text-[9px] tracking-widest px-3 h-6 rounded-full flex items-center gap-1.5 shadow-sm">
-                                      <ShieldCheck className="h-3 w-3" /> VERIFIED
-                                    </Badge>
-                                  ) : (
-                                    <Badge variant="outline" className="text-slate-400 border-slate-200 font-black text-[9px] tracking-widest px-3 h-6 rounded-full">UNCLAIMED</Badge>
-                                  )}
-                                  {edition.editionType && (
-                                    <Badge variant="secondary" className="bg-slate-100 text-slate-600 border-none font-black text-[9px] tracking-widest px-3 h-6 rounded-full uppercase">
-                                      {edition.editionType}
-                                    </Badge>
-                                  )}
-                                </div>
+                            <div className="pt-6 mt-6 border-t border-slate-50 flex items-center justify-between">
+                              <div className="flex items-center gap-2">
+                                <Calendar className="h-3.5 w-3.5 text-slate-300" />
+                                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{new Date(edition.purchaseDate).toLocaleDateString()}</span>
                               </div>
-                              <div className="pt-6 mt-6 border-t border-slate-50 flex items-center justify-between">
-                                <div className="flex items-center gap-2">
-                                  <Calendar className="h-3.5 w-3.5 text-slate-300" />
-                                  <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{new Date(edition.purchaseDate).toLocaleDateString()}</span>
-                                </div>
-                                <div className="h-8 w-8 rounded-full bg-slate-50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                                  <ChevronRight className="h-4 w-4 text-slate-400" />
-                                </div>
+                              <div className="h-8 w-8 rounded-full bg-slate-50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                                <ChevronRight className="h-4 w-4 text-slate-400" />
                               </div>
                             </div>
                           </div>
-                        </Card>
-                      ))}
-                    </motion.div>
-                  </TabsContent>
-                </AnimatePresence>
+                        </div>
+                      </Card>
+                    ))}
+                  </motion.div>
+                </TabsContent>
               </Tabs>
             </div>
           </div>
@@ -519,4 +540,3 @@ export default function CollectorDetailPage() {
     </div>
   );
 }
-

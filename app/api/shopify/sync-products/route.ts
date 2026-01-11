@@ -285,6 +285,7 @@ export async function POST() {
           sku: sku,
           edition_size: editionSize,
           image_url: product.images?.[0]?.src || null,
+          img_url: product.images?.[0]?.src || null, // Ensure both image fields are populated
           created_at: product.created_at,
           updated_at: product.updated_at
         };

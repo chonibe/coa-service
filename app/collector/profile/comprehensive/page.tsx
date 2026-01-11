@@ -10,23 +10,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Progress } from '@/components/ui/progress'
 import { useToast } from '@/hooks/use-toast'
-import {
-  Loader2,
-  User,
-  ShoppingCart,
-  Award,
-  History,
-  MapPin,
-  Phone,
-  Mail,
-  Calendar,
-  DollarSign,
-  Package,
-  ShieldCheck,
-  TrendingUp,
-  Users,
-  Eye
-} from 'lucide-react'
+import { Eye, ShieldCheck, TrendingUp, Users, Award, ShoppingBag, History, MapPin, Phone, Mail, Calendar, DollarSign, Package, Loader2 } from 'lucide-react'
+import { InkOGatchiWidget } from '@/app/collector/dashboard/components/inkogatchi-widget'
+import { InkOGatchi } from '@/app/collector/dashboard/components/ink-o-gatchi'
 
 interface ComprehensiveProfile {
   user: {
@@ -132,6 +118,10 @@ export default function ComprehensiveProfilePage() {
         </p>
       </div>
 
+      <div className="mb-8">
+        <InkOGatchiWidget />
+      </div>
+
       {/* Statistics Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
         <Card>
@@ -201,12 +191,20 @@ export default function ComprehensiveProfilePage() {
           <Card>
             <CardContent className="pt-6">
               <div className="flex items-start space-x-4">
-                <Avatar className="h-20 w-20">
-                  <AvatarImage src={profile.collectorProfile?.avatar_url} />
-                  <AvatarFallback className="text-lg">
-                    {profile.collectorProfile?.first_name?.[0] || profile.user.email[0].toUpperCase()}
-                  </AvatarFallback>
-                </Avatar>
+                <div className="h-20 w-20 bg-muted rounded-full flex items-center justify-center overflow-hidden border">
+                  {profile.collectorProfile?.avatar_url ? (
+                    <Avatar className="h-full w-full">
+                      <AvatarImage src={profile.collectorProfile.avatar_url} />
+                      <AvatarFallback>
+                        {profile.collectorProfile?.first_name?.[0] || profile.user.email[0].toUpperCase()}
+                      </AvatarFallback>
+                    </Avatar>
+                  ) : (
+                    <div className="scale-50">
+                      <InkOGatchi stage={statistics.totalEditions >= 20 ? 4 : statistics.totalEditions >= 10 ? 3 : statistics.totalEditions >= 5 ? 2 : 1} size={160} />
+                    </div>
+                  )}
+                </div>
                 <div className="flex-1">
                   <h2 className="text-2xl font-bold">
                     {profile.collectorProfile?.first_name} {profile.collectorProfile?.last_name}

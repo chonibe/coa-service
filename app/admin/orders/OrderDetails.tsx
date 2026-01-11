@@ -373,9 +373,9 @@ export default function OrderDetails({ order }: OrderDetailsProps) {
                   {activeItems.map((item) => (
                     <TableRow key={item.id}>
                       <TableCell>
-                        {item.image_url ? (
+                        {(item.image_url || item.img_url) ? (
                           <img 
-                            src={item.image_url} 
+                            src={item.image_url || item.img_url} 
                             alt={item.title}
                             className="w-12 h-12 object-cover rounded-md"
                           />
@@ -494,9 +494,9 @@ export default function OrderDetails({ order }: OrderDetailsProps) {
                     {inactiveItems.map((item) => (
                       <TableRow key={item.id}>
                         <TableCell>
-                          {item.image_url ? (
+                          {(item.image_url || item.img_url) ? (
                             <img 
-                              src={item.image_url} 
+                              src={item.image_url || item.img_url} 
                               alt={item.title}
                               className="w-12 h-12 object-cover rounded-md opacity-50"
                             />

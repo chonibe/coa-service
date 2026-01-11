@@ -20,6 +20,7 @@ import { ArtistsCollection } from "./components/artists-collection"
 import { CertificationsHub } from "./components/certifications-hub"
 import { HiddenContentComponent } from "./components/hidden-content"
 import { ProfileSection } from "./components/profile-section"
+import { InkOGatchiWidget } from "./components/inkogatchi-widget"
 import type { CollectorEdition, CollectorCertification, HiddenContent, ArtistCollectionStats } from "@/types/collector"
 
 type ApiResponse = {
@@ -217,6 +218,8 @@ export default function CollectorDashboardPage() {
         {{
           overview: (
             <div className="space-y-8">
+              <InkOGatchiWidget />
+              
               <section className="space-y-3">
                 <div className="flex items-center justify-between flex-wrap gap-2">
                   <div>

@@ -18,12 +18,14 @@ import {
   User,
   BadgeIcon as Certificate,
 } from "lucide-react"
+import { InkOGatchi } from "@/app/collector/dashboard/components/ink-o-gatchi"
 
 export default function CertificatePage() {
   const params = useParams()
   const lineItemId = params.lineItemId as string
 
   const [certificate, setCertificate] = useState<any>(null)
+  const [ownerAvatar, setOwnerAvatar] = useState<any>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
@@ -41,6 +43,20 @@ export default function CertificatePage() {
 
         const data = await response.json()
         setCertificate(data.certificate)
+
+        // Fetch owner avatar if they have one
+        const ownerEmail = data.certificate.lineItem.ownerEmail
+        const ownerId = data.certificate.lineItem.ownerId
+        
+        if (ownerEmail || ownerId) {
+          const avatarRes = await fetch(`/api/collector/avatar?email=${ownerEmail || ''}&userId=${ownerId || ''}`)
+          if (avatarRes.ok) {
+            const avatarData = await avatarRes.json()
+            if (avatarData.success) {
+              setOwnerAvatar(avatarData.avatar)
+            }
+          }
+        }
       } catch (err: any) {
         console.error("Error fetching certificate:", err)
         setError(err.message || "Failed to load certificate")
@@ -215,16 +231,37 @@ export default function CertificatePage() {
                   <div className="border rounded-lg p-4">
                     <div className="flex items-start">
                       <User className="h-5 w-5 text-indigo-600 mt-0.5 mr-2" />
-                      <div>
+                      <div className="flex-1">
                         <h3 className="font-semibold text-gray-900">Ownership</h3>
-                        {certificate.order.customer ? (
-                          <p className="text-gray-600">
-                            {certificate.order.customer.firstName} {certificate.order.customer.lastName}
-                          </p>
-                        ) : (
-                          <p className="text-gray-600">Verified Owner</p>
-                        )}
-                        <p className="text-sm text-gray-500">Original Purchaser</p>
+                        <div className="flex items-center gap-3 mt-1">
+                          {ownerAvatar && (
+                            <div className="h-12 w-12 bg-gray-50 rounded-full border border-gray-100 flex items-center justify-center overflow-hidden">
+                              <InkOGatchi 
+                                stage={ownerAvatar.evolutionStage} 
+                                equippedItems={{
+                                  hat: ownerAvatar.equippedItems?.hat?.asset_url,
+                                  eyes: ownerAvatar.equippedItems?.eyes?.asset_url,
+                                  body: ownerAvatar.equippedItems?.body?.asset_url,
+                                  accessory: ownerAvatar.equippedItems?.accessory?.asset_url,
+                                }}
+                                size={48} 
+                              />
+                            </div>
+                          )}
+                          <div>
+                            {certificate.order.customer ? (
+                              <p className="text-gray-600 font-medium">
+                                {certificate.order.customer.firstName} {certificate.order.customer.lastName}
+                              </p>
+                            ) : (
+                              <p className="text-gray-600 font-medium">Verified Owner</p>
+                            )}
+                            {ownerAvatar?.level && (
+                              <p className="text-[10px] uppercase font-bold text-indigo-500">LVL {ownerAvatar.level} Collector</p>
+                            )}
+                          </div>
+                        </div>
+                        <p className="text-sm text-gray-500 mt-1">Original Purchaser</p>
                       </div>
                     </div>
                   </div>

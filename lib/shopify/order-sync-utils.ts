@@ -135,9 +135,9 @@ export async function syncShopifyOrder(
     const shopifyProductIds = order.line_items.map((li: any) => li.product_id).filter(Boolean)
     const { data: products } = await supabase
       .from('products')
-      .select('shopify_id, img_url')
-      .in('shopify_id', shopifyProductIds)
-    const productMap = new Map(products?.map(p => [p.shopify_id, p.img_url]) || [])
+      .select('product_id, img_url, image_url')
+      .in('product_id', shopifyProductIds)
+    const productMap = new Map(products?.map(p => [p.product_id?.toString(), p.image_url || p.img_url]) || [])
 
     const dbLineItems = order.line_items.map((li: any) => {
       // Protocol: Define 'removed' status based on refunds, properties, and fulfillable quantity
