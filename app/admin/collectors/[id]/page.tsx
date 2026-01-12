@@ -598,15 +598,18 @@ export default function CollectorDetailPage() {
                                     >
                                       {hasMultiple && (
                                         <>
-                                          <motion.div 
-                                            className="absolute inset-0 bg-slate-100 border border-slate-200 rounded-2xl shadow-sm"
-                                            style={{ zIndex: 1 }}
-                                            variants={{
-                                              hover: { x: 15, y: -8, rotate: 4, opacity: 1 }
-                                            }}
-                                            initial={{ x: 6, y: -3, rotate: 1.5, opacity: 0.4 }}
-                                            transition={{ type: "spring", stiffness: 200, damping: 20 }}
-                                          />
+                                          {/* Visual Stack Layers */}
+                                          {count >= 3 && (
+                                            <motion.div 
+                                              className="absolute inset-0 bg-slate-100 border border-slate-200 rounded-2xl shadow-sm"
+                                              style={{ zIndex: 1 }}
+                                              variants={{
+                                                hover: { x: 15, y: -8, rotate: 4, opacity: 1 }
+                                              }}
+                                              initial={{ x: 6, y: -3, rotate: 1.5, opacity: 0.4 }}
+                                              transition={{ type: "spring", stiffness: 200, damping: 20 }}
+                                            />
+                                          )}
                                           <motion.div 
                                             className="absolute inset-0 bg-slate-50 border border-slate-200 rounded-2xl shadow-md"
                                             style={{ zIndex: 2 }}
@@ -766,10 +769,11 @@ export default function CollectorDetailPage() {
                             initial="initial"
                             onClick={() => hasMultiple && setExpandedGroup(displayGroup)}
                           >
-                            {/* Visual Stack Layers with Animation */}
-                            {hasMultiple && (
-                              <>
-                                {/* Deepest Card */}
+                          {/* Visual Stack Layers with Animation */}
+                          {hasMultiple && (
+                            <>
+                              {/* Deepest Card (Only if 3+ items) */}
+                              {count >= 3 && (
                                 <motion.div 
                                   className="absolute inset-0 bg-slate-100 border border-slate-200 rounded-[2.5rem] shadow-sm"
                                   style={{ zIndex: 1 }}
@@ -779,16 +783,17 @@ export default function CollectorDetailPage() {
                                   initial={{ x: 12, y: -6, rotate: 3, opacity: 0.6 }}
                                   transition={{ type: "spring", stiffness: 250, damping: 20 }}
                                 />
-                                {/* Middle Card */}
-                                <motion.div 
-                                  className="absolute inset-0 bg-slate-50 border border-slate-200 rounded-[2.5rem] shadow-md"
-                                  style={{ zIndex: 2 }}
-                                  variants={{
-                                    hover: { x: 15, y: -8, rotate: 4, opacity: 1 }
-                                  }}
-                                  initial={{ x: 6, y: -3, rotate: 1.5, opacity: 0.8 }}
-                                  transition={{ type: "spring", stiffness: 250, damping: 20 }}
-                                />
+                              )}
+                              {/* Middle Card */}
+                              <motion.div 
+                                className="absolute inset-0 bg-slate-50 border border-slate-200 rounded-[2.5rem] shadow-md"
+                                style={{ zIndex: 2 }}
+                                variants={{
+                                  hover: { x: 15, y: -8, rotate: 4, opacity: 1 }
+                                }}
+                                initial={{ x: 6, y: -3, rotate: 1.5, opacity: 0.8 }}
+                                transition={{ type: "spring", stiffness: 250, damping: 20 }}
+                              />
                                 
                                 {/* Quantity Badge */}
                                 <motion.div 
