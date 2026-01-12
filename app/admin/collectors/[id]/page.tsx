@@ -437,7 +437,7 @@ export default function CollectorDetailPage() {
                                   )}
                                   <div className="absolute top-4 left-4">
                                     <Badge className="bg-white/90 backdrop-blur-md text-slate-900 border-none font-black text-[10px] px-3 py-1.5 shadow-xl">
-                                      #{edition.editionNumber || 'OPEN'}
+                                      #{edition.editionNumber}{edition.editionTotal ? `/${edition.editionTotal}` : ''}
                                     </Badge>
                                   </div>
                                 </div>
@@ -696,7 +696,7 @@ export default function CollectorDetailPage() {
                                                   </Badge>
                                                 ) : leadItem.edition_number ? (
                                                   <Badge className="bg-amber-100 text-amber-700 hover:bg-amber-100 border-none font-black text-[10px] rounded-lg h-6 px-2.5">
-                                                    EDITION #{leadItem.edition_number}
+                                                    EDITION #{leadItem.edition_number}{leadItem.edition_total ? `/${leadItem.edition_total}` : ''}
                                                   </Badge>
                                                 ) : (
                                                   <Badge variant="outline" className="text-[9px] font-black tracking-widest text-slate-400 border-slate-200 h-6">
@@ -850,15 +850,15 @@ export default function CollectorDetailPage() {
                                         <Award className="h-12 w-12 text-slate-300" />
                                       </div>
                                     )}
-                                    <div className="absolute top-4 left-4">
-                                      <Badge className="bg-white/90 backdrop-blur-md text-slate-900 border-none font-black text-[10px] px-3 py-1.5 shadow-xl">
-                                        {isStreetCollector 
-                                          ? 'COLLECTIBLE' 
-                                          : (groupingMode === 'product' && hasMultiple 
-                                              ? `IDS: ${group.map((e: any) => `#${e.editionNumber}`).join(', ')}` 
-                                              : leadItem.editionNumber ? `#${leadItem.editionNumber}` : 'ARTIST')}
-                                      </Badge>
-                                    </div>
+                                  <div className="absolute top-4 left-4">
+                                    <Badge className="bg-white/90 backdrop-blur-md text-slate-900 border-none font-black text-[10px] px-3 py-1.5 shadow-xl">
+                                      {isStreetCollector 
+                                        ? 'COLLECTIBLE' 
+                                        : (groupingMode === 'product' && hasMultiple 
+                                            ? `IDS: ${group.map((e: any) => `#${e.editionNumber}${e.editionTotal ? '/' + e.editionTotal : ''}`).join(', ')}` 
+                                            : leadItem.editionNumber ? `#${leadItem.editionNumber}${leadItem.editionTotal ? '/' + leadItem.editionTotal : ''}` : 'ARTIST')}
+                                    </Badge>
+                                  </div>
                                   </div>
                                   <div className="p-6 flex-1 min-w-0 flex flex-col justify-between overflow-hidden">
                                     <div className="space-y-2">
