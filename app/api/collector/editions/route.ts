@@ -147,7 +147,7 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    // 5. Get series information
+    // 5. Get series and product edition info
     const productIds = Array.from(
       new Set(
         allLineItems
@@ -157,6 +157,8 @@ export async function GET(request: NextRequest) {
     )
 
     let seriesMap = new Map<string, any>()
+    let productTotalMap = new Map<string, number>()
+
     if (productIds.length > 0) {
       const { data: seriesMembers } = await supabase
         .from("artwork_series_members")
@@ -178,6 +180,18 @@ export async function GET(request: NextRequest) {
           seriesMap.set(member.shopify_product_id, member.artwork_series)
         }
       })
+
+      // Fetch edition_size from products table as fallback
+      const { data: products } = await supabase
+        .from('products')
+        .select('product_id, edition_size')
+        .in('product_id', productIds);
+      
+      products?.forEach(p => {
+        if (p.edition_size) {
+          productTotalMap.set(p.product_id.toString(), parseInt(p.edition_size.toString()));
+        }
+      });
     }
 
     // 6. Map to CollectorEdition format
@@ -199,9 +213,15 @@ export async function GET(request: NextRequest) {
           ? seriesMap.get(li.product_id)
           : null
 
+        // Fallback for edition total
+        let editionTotal = li.edition_total ? Number(li.edition_total) : null;
+        if (!editionTotal && li.product_id) {
+          editionTotal = productTotalMap.get(li.product_id.toString()) || null;
+        }
+
         // Determine edition type
         let editionType: "limited" | "open" | "accessory" | null = null
-        if (li.edition_total && li.edition_total > 0) {
+        if (editionTotal && editionTotal > 0) {
           editionType = "limited"
         } else if (li.edition_number !== null) {
           editionType = "open"
@@ -221,7 +241,7 @@ export async function GET(request: NextRequest) {
           productId: li.product_id,
           name: li.name,
           editionNumber: li.edition_number ? Number(li.edition_number) : null,
-          editionTotal: li.edition_total ? Number(li.edition_total) : null,
+          editionTotal: editionTotal,
           editionType,
           verificationSource,
           imgUrl: li.img_url,
