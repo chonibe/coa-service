@@ -27,15 +27,6 @@ export async function POST(request: NextRequest) {
     let errors = 0
     const productIdsToResequence = new Set<string>()
 
-    // Fetch all products to have a local map of images
-    const { data: products } = await supabase.from('products').select('product_id, img_url, image_url')
-    const productImageMap = new Map<string, string>()
-    products?.forEach(p => {
-      if (p.image_url || p.img_url) {
-        productImageMap.set(p.product_id?.toString() || '', (p.image_url || p.img_url) as string)
-      }
-    })
-
     for (const order of orders) {
       try {
         // Determine archived status
@@ -124,10 +115,6 @@ export async function POST(request: NextRequest) {
             // - active if fulfilled
             const status = (isRestocked || isCancelled) ? 'inactive' : (isOrderPaid || isFulfilled ? 'active' : 'inactive')
             
-            // Get product image from our local map
-            const productIdStr = item.product_id?.toString() || ''
-            const imgUrl = productImageMap.get(productIdStr) || null
-
             // Edition numbers will be assigned by assign_edition_numbers function for all active items
             // Set to undefined so it gets assigned, or null if restocked/cancelled
             const shouldClearEdition = isRestocked || isCancelled
@@ -147,7 +134,6 @@ export async function POST(request: NextRequest) {
               fulfillment_status: item.fulfillment_status || null,
               restocked: isRestocked,
               status: status,
-              img_url: imgUrl, // Include the image URL here
               edition_number: shouldClearEdition ? null : undefined, // Will be assigned by assign_edition_numbers for active items
               edition_total: shouldClearEdition ? null : undefined, // Will be set by assign_edition_numbers
               created_at: orderData.created_at,

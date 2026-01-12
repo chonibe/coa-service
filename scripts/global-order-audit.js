@@ -30,7 +30,7 @@ async function globalOrderAudit() {
   console.log(`Processing ${orders.length} orders...`);
 
   // Map products to get images (optional but good for consistency)
-  const { data: products } = await supabase.from('products').select('product_id, img_url');
+  const { data: products } = await supabase.from('products').select('shopify_id, img_url');
   const productMap = new Map(products?.map(p => [p.shopify_id, p.img_url]) || []);
 
   // Fetch all warehouse orders for PII recovery

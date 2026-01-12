@@ -137,7 +137,43 @@ export async function syncShopifyOrder(
       .from('products')
       .select('product_id, img_url, image_url')
       .in('product_id', shopifyProductIds)
-    const productMap = new Map(products?.map(p => [p.product_id?.toString(), p.image_url || p.img_url]) || [])
+    
+    const productMap = new Map(products?.map(p => [p.product_id?.toString(), p.img_url || p.image_url]) || [])
+
+    // Proactively fetch missing products or update stale images from Shopify if needed
+    for (const li of order.line_items) {
+      if (!li.product_id) continue;
+      const pid = li.product_id.toString();
+      
+      if (!productMap.has(pid)) {
+        try {
+          // Fetch from Shopify directly to get the latest image
+          const shopifyRes = await fetch(`https://${process.env.SHOPIFY_SHOP}/admin/api/2024-01/products/${pid}.json`, {
+            headers: { "X-Shopify-Access-Token": process.env.SHOPIFY_ACCESS_TOKEN || "" }
+          });
+          
+          if (shopifyRes.ok) {
+            const { product } = await shopifyRes.json();
+            const img = product.image?.src || (product.images && product.images[0]?.src) || null;
+            if (img) {
+              productMap.set(pid, img);
+              // Update/Insert into products table so it's fresh for next time
+              await supabase.from('products').upsert({
+                product_id: product.id,
+                name: product.title,
+                handle: product.handle,
+                vendor_name: product.vendor,
+                img_url: img,
+                image_url: img,
+                updated_at: new Date().toISOString()
+              }, { onConflict: 'product_id' });
+            }
+          }
+        } catch (e) {
+          console.error(`Failed to fetch product ${pid} from Shopify:`, e);
+        }
+      }
+    }
 
     const dbLineItems = order.line_items.map((li: any) => {
       // Protocol: Define 'removed' status based on refunds, properties, and fulfillable quantity

@@ -12,7 +12,7 @@ import {
   User, Database, Globe, Calendar, DollarSign,
   Package, LayoutGrid, Heart, TrendingUp, Info,
   Map as MapIcon, Share2, MoreHorizontal, History as HistoryIcon,
-  ChevronRight
+  ChevronRight, ChevronLeft, X
 } from "lucide-react";
 import { formatCurrency } from "@/lib/utils";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -31,6 +31,46 @@ export default function CollectorDetailPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState("overview");
+  const [groupingMode, setGroupingMode] = useState<"product" | "artist">("product");
+  const [expandedGroup, setExpandedGroup] = useState<any[] | null>(null);
+  const [activeIndices, setActiveIndices] = useState<Record<string, number>>({});
+
+  const getActiveIndex = (groupId: string) => activeIndices[groupId] || 0;
+  
+  const cycleNext = (e: React.MouseEvent, groupId: string, count: number) => {
+    e.stopPropagation();
+    setActiveIndices(prev => ({
+      ...prev,
+      [groupId]: ((prev[groupId] || 0) + 1) % count
+    }));
+  };
+
+  const cyclePrev = (e: React.MouseEvent, groupId: string, count: number) => {
+    e.stopPropagation();
+    setActiveIndices(prev => ({
+      ...prev,
+      [groupId]: ((prev[groupId] || 0) - 1 + count) % count
+    }));
+  };
+
+  // Group editions by product_id/SKU for the "Stacked Deck" effect
+  const groupedByProduct = editions.reduce((acc: any, edition: any) => {
+    const key = edition.productId || edition.name;
+    if (!acc[key]) acc[key] = [];
+    acc[key].push(edition);
+    return acc;
+  }, {});
+
+  // Group editions by Vendor/Artist
+  const groupedByArtist = editions.reduce((acc: any, edition: any) => {
+    const key = edition.vendorName || 'Street Collector';
+    if (!acc[key]) acc[key] = [];
+    acc[key].push(edition);
+    return acc;
+  }, {});
+
+  const groupedEditionsList = Object.values(groupedByProduct);
+  const groupedByArtistList = Object.values(groupedByArtist);
 
   useEffect(() => {
     async function fetchData() {
@@ -47,10 +87,19 @@ export default function CollectorDetailPage() {
           setOrders(activityData.orders || []);
         }
 
-        const editionsRes = await fetch(`/api/collector/editions?email=${profileData.user_email}`);
+        // Pass BOTH email and ID for robust matching
+        const editionsUrl = `/api/collector/editions?id=${profileData.shopify_customer_id || id}&email=${profileData.user_email || ''}`;
+        console.log('[CollectorPage] Fetching editions from:', editionsUrl);
+        const editionsRes = await fetch(editionsUrl);
         if (editionsRes.ok) {
           const editionsData = await editionsRes.json();
+          console.log('[CollectorPage] Received editions count:', editionsData.editions?.length);
+          if (editionsData.editions?.length > 0) {
+            console.log('[CollectorPage] Sample edition:', editionsData.editions[0]);
+          }
           setEditions(editionsData.editions || []);
+        } else {
+          console.error('[CollectorPage] Failed to fetch editions:', editionsRes.status);
         }
 
       } catch (err: any) {
@@ -102,11 +151,13 @@ export default function CollectorDetailPage() {
     { key: 'shopify', name: 'Transactional Data', data: pii.shopify, icon: Globe, color: 'bg-green-500' },
   ].filter(s => s.data);
 
+  const validOrders = orders.filter(o => o.fulfillment_status !== 'canceled' && o.financial_status !== 'voided');
+
   const stats = [
     { label: 'Active Collection', value: profile.total_editions, icon: Award, color: 'text-amber-600', bg: 'bg-amber-50' },
     { label: 'Market Value', value: formatCurrency(profile.total_spent, 'USD'), icon: DollarSign, color: 'text-emerald-600', bg: 'bg-emerald-50' },
-    { label: 'Total Acquisitions', value: orders.length, icon: ShoppingBag, color: 'text-blue-600', bg: 'bg-blue-50' },
-    { label: 'Items Tracked', value: orders.reduce((sum, o) => sum + (o.order_line_items_v2?.length || 0), 0), icon: LayoutGrid, color: 'text-purple-600', bg: 'bg-purple-50' },
+    { label: 'Total Acquisitions', value: validOrders.length, icon: ShoppingBag, color: 'text-blue-600', bg: 'bg-blue-50' },
+    { label: 'Items Tracked', value: validOrders.reduce((sum, o) => sum + (o.order_line_items_v2?.length || 0), 0), icon: LayoutGrid, color: 'text-purple-600', bg: 'bg-purple-50' },
   ];
 
   return (
@@ -336,6 +387,82 @@ export default function CollectorDetailPage() {
                   </TabsList>
                 </div>
 
+                {/* MODAL OVERLAY FOR EXPANDED STACK */}
+                <AnimatePresence>
+                  {expandedGroup && (
+                    <motion.div 
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0 }}
+                      className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-slate-900/60 backdrop-blur-xl"
+                      onClick={() => setExpandedGroup(null)}
+                    >
+                      <motion.div 
+                        initial={{ scale: 0.9, y: 20 }}
+                        animate={{ scale: 1, y: 0 }}
+                        exit={{ scale: 0.9, y: 20 }}
+                        className="bg-white rounded-[3rem] shadow-2xl max-w-5xl w-full max-h-[85vh] overflow-hidden flex flex-col"
+                        onClick={e => e.stopPropagation()}
+                      >
+                        <div className="p-8 border-b border-slate-100 flex items-center justify-between">
+                          <div>
+                            <h3 className="text-2xl font-black text-slate-900 tracking-tight">
+                              {groupingMode === 'product' ? expandedGroup[0].name : expandedGroup[0].vendorName}
+                            </h3>
+                            <p className="text-sm font-bold text-slate-400 uppercase tracking-widest mt-1">
+                              {expandedGroup.length} Editions in this Stack
+                            </p>
+                          </div>
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            onClick={() => setExpandedGroup(null)}
+                            className="rounded-full h-12 w-12 p-0 hover:bg-slate-100"
+                          >
+                            <X className="h-6 w-6 text-slate-400" />
+                          </Button>
+                        </div>
+                        
+                        <div className="flex-1 overflow-y-auto p-8 bg-slate-50/50">
+                          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                            {expandedGroup.map((edition: any) => (
+                              <Card key={edition.id} className="rounded-3xl border-none shadow-xl bg-white overflow-hidden hover:scale-[1.02] transition-transform">
+                                <div className="aspect-[4/5] bg-slate-100 relative">
+                                  {edition.imgUrl ? (
+                                    <img src={edition.imgUrl} alt={edition.name} className="h-full w-full object-cover" />
+                                  ) : (
+                                    <div className="h-full w-full flex items-center justify-center">
+                                      <Award className="h-12 w-12 text-slate-300" />
+                                    </div>
+                                  )}
+                                  <div className="absolute top-4 left-4">
+                                    <Badge className="bg-white/90 backdrop-blur-md text-slate-900 border-none font-black text-[10px] px-3 py-1.5 shadow-xl">
+                                      #{edition.editionNumber || 'OPEN'}
+                                    </Badge>
+                                  </div>
+                                </div>
+                                <div className="p-5">
+                                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">{edition.vendorName}</p>
+                                  <h5 className="font-black text-slate-900 line-clamp-1 mb-3">{edition.name}</h5>
+                                  <div className="flex items-center justify-between pt-3 border-t border-slate-50">
+                                    <div className="flex items-center gap-1.5">
+                                      <Calendar className="h-3 w-3 text-slate-300" />
+                                      <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">
+                                        {new Date(edition.purchaseDate).toLocaleDateString()}
+                                      </span>
+                                    </div>
+                                    {edition.nfc_claimed_at && <ShieldCheck className="h-4 w-4 text-emerald-500" />}
+                                  </div>
+                                </div>
+                              </Card>
+                            ))}
+                          </div>
+                        </div>
+                      </motion.div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+
                 <TabsContent value="overview" className="mt-0">
                   <motion.div 
                     initial={{ opacity: 0, y: 20 }}
@@ -351,9 +478,9 @@ export default function CollectorDetailPage() {
                           <HistoryIcon className="h-5 w-5 text-slate-300" />
                         </div>
                         <div className="space-y-6">
-                          {orders.slice(0, 3).map((order, idx) => (
+                          {validOrders.slice(0, 3).map((order, idx) => (
                             <div key={order.id} className="flex gap-4 relative">
-                              {idx < orders.slice(0, 3).length - 1 && (
+                              {idx < validOrders.slice(0, 3).length - 1 && (
                                 <div className="absolute left-[19px] top-10 bottom-[-24px] w-[2px] bg-slate-100" />
                               )}
                               <div className="h-10 w-10 rounded-full bg-slate-100 border-4 border-white shadow-sm flex items-center justify-center flex-shrink-0 relative z-10">
@@ -365,7 +492,7 @@ export default function CollectorDetailPage() {
                                 <div className="mt-2 flex -space-x-2">
                                   {order.order_line_items_v2?.slice(0, 4).map((item: any) => (
                                     <div key={item.id} className="h-8 w-8 rounded-lg border-2 border-white shadow-md overflow-hidden bg-slate-50">
-                                      {(item.img_url || item.image_url) && <img src={item.img_url || item.image_url} alt="" className="h-full w-full object-cover" />}
+                                      {item.img_url && <img src={item.img_url} alt="" className="h-full w-full object-cover" />}
                                     </div>
                                   ))}
                                 </div>
@@ -416,9 +543,14 @@ export default function CollectorDetailPage() {
                             <div>
                               <div className="flex items-center gap-2 mb-2">
                                 <h4 className="text-xl font-black text-slate-900 tracking-tight">#{order.order_number}</h4>
-                                <Badge className={`${order.financial_status === 'paid' ? 'bg-emerald-500' : 'bg-amber-500'} border-none text-[9px] font-black uppercase tracking-widest h-5`}>
-                                  {order.financial_status}
-                                </Badge>
+                                <div className="flex gap-1.5">
+                                  <Badge className={`${order.financial_status === 'paid' ? 'bg-emerald-500' : 'bg-amber-500'} border-none text-[9px] font-black uppercase tracking-widest h-5`}>
+                                    {order.financial_status}
+                                  </Badge>
+                                  <Badge className={`${order.fulfillment_status === 'fulfilled' ? 'bg-blue-500' : 'bg-slate-400'} border-none text-[9px] font-black uppercase tracking-widest h-5`}>
+                                    {order.fulfillment_status || 'pending'}
+                                  </Badge>
+                                </div>
                               </div>
                               <p className="text-xs font-black text-slate-400 uppercase tracking-widest">{new Date(order.processed_at).toLocaleDateString()}</p>
                             </div>
@@ -434,39 +566,150 @@ export default function CollectorDetailPage() {
                           </div>
                           <div className="flex-1 p-8">
                             <div className="space-y-4">
-                              {(order.order_line_items_v2 || []).map((item: any) => (
-                                <div key={item.id} className="flex items-center gap-5 p-3 rounded-2xl hover:bg-slate-50 transition-colors group/item">
-                                  <div className="h-16 w-16 bg-slate-100 rounded-2xl overflow-hidden flex-shrink-0 shadow-lg shadow-slate-200/50 relative border border-slate-100">
-                                    {(item.img_url || item.image_url) ? (
-                                      <img src={item.img_url || item.image_url} alt={item.name} className="h-full w-full object-cover group-hover/item:scale-110 transition-transform duration-500" />
-                                    ) : (
-                                      <Award className="h-6 w-6 text-slate-300 absolute inset-0 m-auto" />
-                                    )}
-                                  </div>
-                                  <div className="flex-1 min-w-0">
-                                    <div className="flex items-start justify-between gap-4">
-                                      <div>
-                                        <h5 className="font-black text-slate-900 tracking-tight leading-tight mb-1">{item.name}</h5>
-                                        <div className="flex items-center gap-2">
-                                          <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{item.vendor_name || 'Street Collector'}</span>
-                                          <span className="h-1 w-1 rounded-full bg-slate-300" />
-                                          <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Qty {item.quantity}</span>
+                              {(() => {
+                                // Group items by product_id within the order
+                                const groupedOrderItems = (order.order_line_items_v2 || []).reduce((acc: any, item: any) => {
+                                  const key = item.product_id || item.name;
+                                  if (!acc[key]) acc[key] = [];
+                                  acc[key].push(item);
+                                  return acc;
+                                }, {});
+
+                                return Object.values(groupedOrderItems).map((group: any) => {
+                                  const count = group.length;
+                                  const hasMultiple = count > 1;
+                                  const groupId = `order-${order.id}-${group[0].product_id || group[0].name}`;
+                                  const activeIndex = getActiveIndex(groupId);
+                                  const leadItem = group[activeIndex] || group[0];
+
+                                  return (
+                                    <motion.div 
+                                      key={groupId} 
+                                      className="relative group/stack"
+                                      whileHover="hover"
+                                      initial="initial"
+                                      onClick={() => hasMultiple && setExpandedGroup(group.map((li: any) => ({
+                                        ...li,
+                                        purchaseDate: order.processed_at,
+                                        vendorName: li.vendor_name,
+                                        imgUrl: li.img_url,
+                                        editionNumber: li.edition_number
+                                      })))}
+                                    >
+                                      {hasMultiple && (
+                                        <>
+                                          <motion.div 
+                                            className="absolute inset-0 bg-slate-100 border border-slate-200 rounded-2xl shadow-sm"
+                                            style={{ zIndex: 1 }}
+                                            variants={{
+                                              hover: { x: 15, y: -8, rotate: 4, opacity: 1 }
+                                            }}
+                                            initial={{ x: 6, y: -3, rotate: 1.5, opacity: 0.4 }}
+                                            transition={{ type: "spring", stiffness: 200, damping: 20 }}
+                                          />
+                                          <motion.div 
+                                            className="absolute inset-0 bg-slate-50 border border-slate-200 rounded-2xl shadow-md"
+                                            style={{ zIndex: 2 }}
+                                            variants={{
+                                              hover: { x: 8, y: -4, rotate: 2, opacity: 1 }
+                                            }}
+                                            initial={{ x: 3, y: -1.5, rotate: 0.5, opacity: 0.6 }}
+                                            transition={{ type: "spring", stiffness: 200, damping: 20 }}
+                                          />
+                                          <motion.div 
+                                            className="absolute -top-2 -right-2 z-[60] h-6 w-6 bg-slate-900 text-white rounded-full flex items-center justify-center font-black text-[10px] shadow-lg border-2 border-white"
+                                            variants={{
+                                              hover: { scale: 1.2, rotate: 12, x: 5, y: -3 }
+                                            }}
+                                          >
+                                            {count}
+                                          </motion.div>
+
+                                          {/* Navigation Arrows */}
+                                          <div className="absolute inset-y-0 -left-4 -right-4 flex items-center justify-between opacity-0 group-hover/stack:opacity-100 transition-opacity z-[70] pointer-events-none">
+                                            <Button 
+                                              variant="secondary" 
+                                              size="sm" 
+                                              className="h-6 w-6 rounded-full p-0 shadow-lg pointer-events-auto hover:scale-110"
+                                              onClick={(e) => cyclePrev(e, groupId, count)}
+                                            >
+                                              <ChevronLeft className="h-3 w-3" />
+                                            </Button>
+                                            <Button 
+                                              variant="secondary" 
+                                              size="sm" 
+                                              className="h-6 w-6 rounded-full p-0 shadow-lg pointer-events-auto hover:scale-110"
+                                              onClick={(e) => cycleNext(e, groupId, count)}
+                                            >
+                                              <ChevronRight className="h-3 w-3" />
+                                            </Button>
+                                          </div>
+                                        </>
+                                      )}
+                                      
+                                      <motion.div
+                                        className="relative"
+                                        style={{ zIndex: 10 }}
+                                        variants={{
+                                          hover: { y: -2 }
+                                        }}
+                                        transition={{ type: "spring", stiffness: 400, damping: 25 }}
+                                      >
+                                        <div className={`flex items-center gap-5 p-3 rounded-2xl bg-white border border-transparent hover:border-slate-100 hover:bg-slate-50 transition-all group/item cursor-pointer ${leadItem.status !== 'active' ? 'opacity-60 grayscale-[0.5]' : ''}`}>
+                                          <div className="h-16 w-16 bg-slate-100 rounded-2xl overflow-hidden flex-shrink-0 shadow-lg shadow-slate-200/50 relative border border-slate-100">
+                                            {leadItem.img_url ? (
+                                              <img 
+                                                key={leadItem.id}
+                                                src={leadItem.img_url} 
+                                                alt={leadItem.name} 
+                                                className={`h-full w-full object-cover group-hover/item:scale-110 transition-transform duration-500`} 
+                                              />
+                                            ) : (
+                                              <Award className="h-6 w-6 text-slate-300 absolute inset-0 m-auto" />
+                                            )}
+                                          </div>
+                                          <div className="flex-1 min-w-0">
+                                            <div className="flex items-start justify-between gap-4">
+                                              <div>
+                                                <h5 className={`font-black text-slate-900 tracking-tight leading-tight mb-1 ${leadItem.status !== 'active' ? 'line-through text-slate-400' : ''}`}>{leadItem.name}</h5>
+                                                <div className="flex items-center gap-2">
+                                                  <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{leadItem.vendor_name || 'Street Collector'}</span>
+                                                  <span className="h-1 w-1 rounded-full bg-slate-300" />
+                                                  <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Qty {leadItem.quantity || 1}</span>
+                                                  {leadItem.status !== 'active' && (
+                                                    <>
+                                                      <span className="h-1 w-1 rounded-full bg-slate-300" />
+                                                      <Badge variant="outline" className="text-[8px] font-black uppercase tracking-widest px-1.5 h-4 border-slate-200 text-slate-400">
+                                                        {leadItem.status}
+                                                      </Badge>
+                                                    </>
+                                                  )}
+                                                </div>
+                                              </div>
+                                              <div className="flex flex-col items-end gap-2">
+                                                {hasMultiple ? (
+                                                  <Badge className="bg-amber-100 text-amber-700 border-none font-black text-[9px] rounded-lg h-6 px-2">
+                                                    {count} EDITIONS
+                                                  </Badge>
+                                                ) : leadItem.edition_number ? (
+                                                  <Badge className="bg-amber-100 text-amber-700 hover:bg-amber-100 border-none font-black text-[10px] rounded-lg h-6 px-2.5">
+                                                    EDITION #{leadItem.edition_number}
+                                                  </Badge>
+                                                ) : (
+                                                  <Badge variant="outline" className="text-[9px] font-black tracking-widest text-slate-400 border-slate-200 h-6">
+                                                    {leadItem.vendor_name === 'Street Collector' ? 'ACCESSORY' : 'PENDING'}
+                                                  </Badge>
+                                                )}
+                                                {(leadItem.nfc_claimed_at || group.some((i: any) => i.nfc_claimed_at)) && <ShieldCheck className="h-4 w-4 text-emerald-500 drop-shadow-sm" />}
+                                              </div>
+                                            </div>
+                                          </div>
                                         </div>
-                                      </div>
-                                      <div className="flex flex-col items-end gap-2">
-                                        {item.edition_number ? (
-                                          <Badge className="bg-amber-100 text-amber-700 hover:bg-amber-100 border-none font-black text-[10px] rounded-lg h-6 px-2.5">
-                                            EDITION #{item.edition_number}
-                                          </Badge>
-                                        ) : (
-                                          <Badge variant="outline" className="text-[9px] font-black tracking-widest text-slate-400 border-slate-200 h-6">ACCESSORY</Badge>
-                                        )}
-                                        {item.nfc_claimed_at && <ShieldCheck className="h-4 w-4 text-emerald-500 drop-shadow-sm" />}
-                                      </div>
-                                    </div>
-                                  </div>
-                                </div>
-                              ))}
+                                      </motion.div>
+                                    </motion.div>
+                                  );
+                                });
+                              })()}
                             </div>
                           </div>
                         </div>
@@ -476,60 +719,190 @@ export default function CollectorDetailPage() {
                 </TabsContent>
 
                 <TabsContent value="editions" className="mt-0">
+                  <div className="flex items-center justify-between mb-8 px-2">
+                    <h3 className="text-xl font-black text-slate-900 tracking-tight">Artworks Gallery</h3>
+                    <div className="flex bg-slate-100 p-1 rounded-xl border border-slate-200/50">
+                      <Button 
+                        variant={groupingMode === 'product' ? 'default' : 'ghost'} 
+                        size="sm" 
+                        onClick={() => setGroupingMode('product')}
+                        className={`rounded-lg px-4 h-8 text-[10px] font-black uppercase tracking-widest transition-all ${groupingMode === 'product' ? 'bg-white text-primary shadow-sm border-slate-200' : 'text-slate-500'}`}
+                      >
+                        By Item
+                      </Button>
+                      <Button 
+                        variant={groupingMode === 'artist' ? 'default' : 'ghost'} 
+                        size="sm" 
+                        onClick={() => setGroupingMode('artist')}
+                        className={`rounded-lg px-4 h-8 text-[10px] font-black uppercase tracking-widest transition-all ${groupingMode === 'artist' ? 'bg-white text-primary shadow-sm border-slate-200' : 'text-slate-500'}`}
+                      >
+                        By Artist
+                      </Button>
+                    </div>
+                  </div>
+
                   <motion.div 
-                    initial={{ opacity: 0, x: 20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    className="grid grid-cols-1 md:grid-cols-2 gap-6"
+                    key={groupingMode}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-12"
                   >
-                    {editions.map((edition) => (
-                      <Card key={edition.id} className="rounded-[2.5rem] border-none shadow-xl bg-white overflow-hidden group hover:scale-[1.02] transition-all duration-500 cursor-pointer">
-                        <div className="flex h-full">
-                          <div className="w-40 h-auto bg-slate-50 relative overflow-hidden flex-shrink-0">
-                            {(edition.imgUrl || edition.imageUrl) ? (
-                              <img src={edition.imgUrl || edition.imageUrl} alt={edition.name} className="object-cover w-full h-full group-hover:scale-110 transition-transform duration-700" />
-                            ) : (
-                              <div className="flex items-center justify-center h-full bg-slate-100">
-                                <Award className="h-12 w-12 text-slate-300" />
-                              </div>
+                    {groupedEditionsList.length > 0 ? (
+                      (groupingMode === 'product' ? groupedEditionsList : groupedByArtistList).map((group: any) => {
+                        const count = group.length;
+                        const hasMultiple = count > 1;
+                        const groupId = group[0].productId || group[0].vendorName;
+                        const activeIndex = getActiveIndex(groupId);
+                        
+                        const displayGroup = [...group].sort((a, b) => new Date(b.purchaseDate).getTime() - new Date(a.purchaseDate).getTime());
+                        const leadItem = displayGroup[activeIndex] || displayGroup[0];
+                        const isStreetCollector = leadItem.vendorName?.toLowerCase().includes('street collector') || leadItem.vendorName?.toLowerCase().includes('street-collector');
+
+                        return (
+                          <motion.div 
+                            key={groupId + groupingMode} 
+                            className="relative group h-[220px]"
+                            whileHover="hover"
+                            initial="initial"
+                            onClick={() => hasMultiple && setExpandedGroup(displayGroup)}
+                          >
+                            {/* Visual Stack Layers with Animation */}
+                            {hasMultiple && (
+                              <>
+                                {/* Deepest Card */}
+                                <motion.div 
+                                  className="absolute inset-0 bg-slate-100 border border-slate-200 rounded-[2.5rem] shadow-sm"
+                                  style={{ zIndex: 1 }}
+                                  variants={{
+                                    hover: { x: 30, y: -15, rotate: 8, opacity: 1 }
+                                  }}
+                                  initial={{ x: 12, y: -6, rotate: 3, opacity: 0.6 }}
+                                  transition={{ type: "spring", stiffness: 250, damping: 20 }}
+                                />
+                                {/* Middle Card */}
+                                <motion.div 
+                                  className="absolute inset-0 bg-slate-50 border border-slate-200 rounded-[2.5rem] shadow-md"
+                                  style={{ zIndex: 2 }}
+                                  variants={{
+                                    hover: { x: 15, y: -8, rotate: 4, opacity: 1 }
+                                  }}
+                                  initial={{ x: 6, y: -3, rotate: 1.5, opacity: 0.8 }}
+                                  transition={{ type: "spring", stiffness: 250, damping: 20 }}
+                                />
+                                
+                                {/* Quantity Badge */}
+                                <motion.div 
+                                  className="absolute -top-3 -right-3 z-[60] h-10 w-10 bg-slate-900 text-white rounded-full flex items-center justify-center font-black text-sm shadow-xl border-4 border-white"
+                                  variants={{
+                                    hover: { scale: 1.2, rotate: 12, x: 5, y: -5 }
+                                  }}
+                                >
+                                  {count}
+                                </motion.div>
+
+                                {/* Navigation Arrows (Only on Hover) */}
+                                <div className="absolute inset-y-0 -left-6 -right-6 flex items-center justify-between opacity-0 group-hover:opacity-100 transition-opacity z-[70] pointer-events-none">
+                                  <Button 
+                                    variant="secondary" 
+                                    size="sm" 
+                                    className="h-8 w-8 rounded-full p-0 shadow-lg pointer-events-auto hover:scale-110"
+                                    onClick={(e) => cyclePrev(e, groupId, count)}
+                                  >
+                                    <ChevronLeft className="h-4 w-4" />
+                                  </Button>
+                                  <Button 
+                                    variant="secondary" 
+                                    size="sm" 
+                                    className="h-8 w-8 rounded-full p-0 shadow-lg pointer-events-auto hover:scale-110"
+                                    onClick={(e) => cycleNext(e, groupId, count)}
+                                  >
+                                    <ChevronRight className="h-4 w-4" />
+                                  </Button>
+                                </div>
+                              </>
                             )}
-                            <div className="absolute top-4 left-4">
-                              <Badge className="bg-white/90 backdrop-blur-md text-slate-900 border-none font-black text-[10px] px-3 py-1.5 shadow-xl">
-                                #{edition.editionNumber}
-                              </Badge>
-                            </div>
-                          </div>
-                          <div className="p-8 flex-1 min-w-0 flex flex-col justify-between">
-                            <div>
-                              <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2">{edition.vendorName || 'Street Collector'}</p>
-                              <h4 className="text-xl font-black text-slate-900 tracking-tight leading-tight mb-4 group-hover:text-primary transition-colors">{edition.name}</h4>
-                              <div className="flex flex-wrap gap-2">
-                                {edition.nfc_claimed_at || edition.verificationSource === 'supabase' ? (
-                                  <Badge className="bg-emerald-50 text-emerald-600 hover:bg-emerald-50 border border-emerald-100 font-black text-[9px] tracking-widest px-3 h-6 rounded-full flex items-center gap-1.5 shadow-sm">
-                                    <ShieldCheck className="h-3 w-3" /> VERIFIED
-                                  </Badge>
-                                ) : (
-                                  <Badge variant="outline" className="text-slate-400 border-slate-200 font-black text-[9px] tracking-widest px-3 h-6 rounded-full">UNCLAIMED</Badge>
-                                )}
-                                {edition.editionType && (
-                                  <Badge variant="secondary" className="bg-slate-100 text-slate-600 border-none font-black text-[9px] tracking-widest px-3 h-6 rounded-full uppercase">
-                                    {edition.editionType}
-                                  </Badge>
-                                )}
-                              </div>
-                            </div>
-                            <div className="pt-6 mt-6 border-t border-slate-50 flex items-center justify-between">
-                              <div className="flex items-center gap-2">
-                                <Calendar className="h-3.5 w-3.5 text-slate-300" />
-                                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{new Date(edition.purchaseDate).toLocaleDateString()}</span>
-                              </div>
-                              <div className="h-8 w-8 rounded-full bg-slate-50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                                <ChevronRight className="h-4 w-4 text-slate-400" />
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      </Card>
-                    ))}
+
+                            <motion.div
+                              className="h-full w-full relative"
+                              style={{ zIndex: 10 }}
+                              variants={{
+                                hover: { y: -5 }
+                              }}
+                              transition={{ type: "spring", stiffness: 400, damping: 25 }}
+                            >
+                              <Card className={`rounded-[2.5rem] border-none shadow-xl bg-white overflow-hidden group-hover:shadow-2xl transition-all duration-500 cursor-pointer h-full ${hasMultiple ? 'ring-1 ring-slate-100' : ''}`}>
+                                <div className="flex h-full">
+                                  <div className="w-44 aspect-[4/5] bg-slate-50 relative overflow-hidden flex-shrink-0">
+                                    {leadItem.imgUrl ? (
+                                      <img 
+                                        key={leadItem.id} 
+                                        src={leadItem.imgUrl} 
+                                        alt={leadItem.name} 
+                                        className="object-cover w-full h-full group-hover:scale-110 transition-transform duration-700" 
+                                      />
+                                    ) : (
+                                      <div className="flex items-center justify-center h-full bg-slate-100">
+                                        <Award className="h-12 w-12 text-slate-300" />
+                                      </div>
+                                    )}
+                                    <div className="absolute top-4 left-4">
+                                      <Badge className="bg-white/90 backdrop-blur-md text-slate-900 border-none font-black text-[10px] px-3 py-1.5 shadow-xl">
+                                        {isStreetCollector 
+                                          ? 'COLLECTIBLE' 
+                                          : (groupingMode === 'product' && hasMultiple 
+                                              ? `IDS: ${group.map((e: any) => `#${e.editionNumber}`).join(', ')}` 
+                                              : leadItem.editionNumber ? `#${leadItem.editionNumber}` : 'ARTIST')}
+                                      </Badge>
+                                    </div>
+                                  </div>
+                                  <div className="p-6 flex-1 min-w-0 flex flex-col justify-between overflow-hidden">
+                                    <div className="space-y-2">
+                                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] truncate">
+                                        {groupingMode === 'artist' ? `${count} Pieces Owned` : (leadItem.vendorName || 'Street Collector')}
+                                      </p>
+                                      <h4 className="text-lg font-black text-slate-900 tracking-tight leading-tight line-clamp-2 group-hover:text-primary transition-colors min-h-[3rem]">
+                                        {groupingMode === 'artist' ? (leadItem.vendorName || 'Street Collector') : leadItem.name}
+                                      </h4>
+                                      <div className="flex flex-wrap gap-2">
+                                        {group.some((e: any) => e.nfc_claimed_at || e.verificationSource === 'supabase') ? (
+                                          <Badge className="bg-emerald-50 text-emerald-600 hover:bg-emerald-50 border border-emerald-100 font-black text-[9px] tracking-widest px-3 h-6 rounded-full flex items-center gap-1.5 shadow-sm">
+                                            <ShieldCheck className="h-3 w-3" /> {group.every((e: any) => e.nfc_claimed_at) ? 'ALL VERIFIED' : 'PARTIAL VERIFIED'}
+                                          </Badge>
+                                        ) : (
+                                          <Badge variant="outline" className="text-slate-400 border-slate-200 font-black text-[9px] tracking-widest px-3 h-6 rounded-full">UNCLAIMED</Badge>
+                                        )}
+                                        {leadItem.editionType && groupingMode === 'product' && !isStreetCollector && (
+                                          <Badge variant="secondary" className="bg-slate-100 text-slate-600 border-none font-black text-[9px] tracking-widest px-3 h-6 rounded-full uppercase">
+                                            {leadItem.editionType}
+                                          </Badge>
+                                        )}
+                                      </div>
+                                    </div>
+                                    <div className="pt-4 mt-2 border-t border-slate-50 flex items-center justify-between flex-shrink-0">
+                                      <div className="flex items-center gap-2">
+                                        <Calendar className="h-3.5 w-3.5 text-slate-300" />
+                                        <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">
+                                          {hasMultiple ? `Last: ${new Date(leadItem.purchaseDate).toLocaleDateString()}` : new Date(leadItem.purchaseDate).toLocaleDateString()}
+                                        </span>
+                                      </div>
+                                      <div className="h-7 w-7 rounded-full bg-slate-50 flex items-center justify-center">
+                                        <ChevronRight className="h-4 w-4 text-slate-400" />
+                                      </div>
+                                    </div>
+                                  </div>
+                                </div>
+                              </Card>
+                            </motion.div>
+                          </motion.div>
+                        );
+                      })
+                    ) : (
+                      <div className="col-span-full py-20 text-center bg-slate-50 rounded-[3rem] border-2 border-dashed border-slate-200">
+                        <Award className="h-12 w-12 text-slate-300 mx-auto mb-4" />
+                        <h4 className="text-lg font-black text-slate-900 tracking-tight">No Artworks Found</h4>
+                        <p className="text-sm text-slate-400 font-medium">This collector hasn't acquired any authenticated pieces yet.</p>
+                      </div>
+                    )}
                   </motion.div>
                 </TabsContent>
               </Tabs>

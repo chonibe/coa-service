@@ -164,21 +164,12 @@ async function getOrderData(orderId: string) {
   // Collect unique product IDs (as bigint)
   const productIds = Array.from(new Set((lineItems || []).map(item => item.product_id).filter(Boolean)));
   let productDetails: Record<string, { sku?: string | null; edition_number?: number; edition_size?: number; image_url?: string; name?: string }> = {};
-  
-  // Also collect unique SKUs and Names for fallback matching
-  const productSkus = Array.from(new Set((lineItems || []).map(item => item.sku).filter(Boolean)));
-  const productNames = Array.from(new Set((lineItems || []).map(item => item.name).filter(Boolean)));
-
-  if (productIds.length > 0 || productSkus.length > 0 || productNames.length > 0) {
-    // Fetch product details using multiple possible identifiers
-    let query = supabase.from('products').select('product_id, sku, image_url, img_url, name');
-    
-    const filters = [];
-    if (productIds.length > 0) filters.push(`product_id.in.(${productIds.join(',')})`);
-    if (productSkus.length > 0) filters.push(`sku.in.(${productSkus.map(s => `"${s}"`).join(',')})`);
-    if (productNames.length > 0) filters.push(`name.in.(${productNames.map(n => `"${n}"`).join(',')})`);
-    
-    const { data: products } = await query.or(filters.join(','));
+  if (productIds.length > 0) {
+    // Fetch product details using the correct field (shopify_id or id as bigint)
+    const { data: products } = await supabase
+      .from('products')
+      .select('shopify_id, product_id, sku, image_url, img_url, name')
+      .in('shopify_id', productIds);
 
     // Fetch edition counters if needed
     const { data: editionCounters } = await supabase
@@ -187,53 +178,24 @@ async function getOrderData(orderId: string) {
       .in('product_id', productIds);
 
     if (products) {
-      // Create maps for efficient lookup
-      const byId = new Map();
-      const bySku = new Map();
-      const byName = new Map();
-
-      products.forEach(p => {
-        const details = {
-          sku: p.sku,
-          image_url: p.image_url || p.img_url,
-          img_url: p.img_url || p.image_url,
-          name: p.name || null,
-          edition_size: editionCounters?.find(ec => ec.product_id === p.product_id?.toString())?.edition_total ? 
-            Number.parseInt(editionCounters.find(ec => ec.product_id === p.product_id?.toString())?.edition_total || '0', 10) : 
-            undefined
-        };
-        if (p.product_id) byId.set(p.product_id.toString(), details);
-        if (p.sku) bySku.set(p.sku.toLowerCase().trim(), details);
-        if (p.name) byName.set(p.name.toLowerCase().trim(), details);
-      });
-
-      // Map line items to their details using priority: ID > SKU > Name
-      lineItems?.forEach(item => {
-        let details = null;
-        if (item.product_id) details = byId.get(item.product_id.toString());
-        if (!details && item.sku) details = bySku.get(item.sku.toLowerCase().trim());
-        if (!details && item.name) details = byName.get(item.name.toLowerCase().trim());
-        
-        if (details && item.product_id) {
-          productDetails[item.product_id] = details;
-        } else if (details) {
-          // If no product_id on item, use a temp key
-          productDetails[`temp_${item.id}`] = details;
-        }
-      });
+      productDetails = Object.fromEntries(products.map(p => [p.shopify_id, {
+        sku: p.sku,
+        image_url: p.image_url || p.img_url,
+        name: p.name || null,
+        edition_size: editionCounters?.find(ec => ec.product_id === p.shopify_id)?.edition_total ? 
+          Number.parseInt(editionCounters.find(ec => ec.product_id === p.shopify_id)?.edition_total || '0', 10) : 
+          undefined
+      }]));
     }
   }
 
   // Merge product data into line items
-  const mappedLineItems = lineItems?.map(item => {
-    const details = (item.product_id ? productDetails[item.product_id] : productDetails[`temp_${item.id}`]) || {};
-    return {
-      ...item,
-      sku: item.sku || details.sku || null,
-      image_url: details.image_url || details.img_url || null,
-      product_name: details.name || item.name || 'Unknown Product',
-    };
-  }) || [];
+  const mappedLineItems = lineItems?.map(item => ({
+    ...item,
+    sku: productDetails[item.product_id]?.sku || null,
+    image_url: productDetails[item.product_id]?.image_url || null,
+    product_name: productDetails[item.product_id]?.name || item.name || 'Unknown Product',
+  })) || [];
 
   console.log('DEBUG productDetails:', productDetails);
   console.log('DEBUG lineItems before mapping:', lineItems);

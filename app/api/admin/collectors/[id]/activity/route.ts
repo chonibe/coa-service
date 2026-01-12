@@ -90,14 +90,31 @@ export async function GET(
       return NextResponse.json({ error: "Failed to fetch orders" }, { status: 500 });
     }
 
+    // 2.5 Fetch missing images from products table
+    const allLineItems = (orders || []).flatMap(o => o.order_line_items_v2 || []);
+    const itemsMissingImages = allLineItems.filter(li => !li.img_url && li.product_id);
+    
+    if (itemsMissingImages.length > 0) {
+      const missingProductIds = Array.from(new Set(itemsMissingImages.map(li => li.product_id)));
+      const { data: products } = await supabase
+        .from('products')
+        .select('product_id, image_url, img_url')
+        .in('product_id', missingProductIds);
+      
+      if (products && products.length > 0) {
+        const productImgMap = new Map(products.map(p => [p.product_id?.toString(), p.image_url || p.img_url]));
+        allLineItems.forEach(li => {
+          if (!li.img_url && li.product_id) {
+            li.img_url = productImgMap.get(li.product_id.toString()) || null;
+          }
+        });
+      }
+    }
+
     // 3. Deduplicate orders by name in memory
     // Priority: Shopify (no WH- prefix and no #9/9 prefix) > Manual (WH- prefix or #9/9 prefix)
     // Use numeric prefix for deduplication to catch cases like #1188 and 1188A
     const orderMap = new Map();
-    const allProductIds = new Set();
-    const allSkus = new Set();
-    const allNames = new Set();
-
     (orders || []).forEach(order => {
       const match = order.order_name?.replace('#', '').match(/^\d+/);
       const cleanName = match ? match[0] : (order.order_name?.toLowerCase() || order.id);
@@ -110,51 +127,10 @@ export async function GET(
 
       if (!existing || (existingIsManual && !isManual)) {
         orderMap.set(cleanName, order);
-        
-        // Collect identifying info for fallback image matching
-        order.order_line_items_v2?.forEach((li: any) => {
-          if (li.product_id) allProductIds.add(li.product_id.toString());
-          if (li.sku) allSkus.add(li.sku.toLowerCase().trim());
-          if (li.name) allNames.add(li.name.toLowerCase().trim());
-        });
       }
     });
 
-    // 4. Fetch missing product images for fallback
-    const productMap = new Map();
-    if (allProductIds.size > 0 || allSkus.size > 0 || allNames.size > 0) {
-      const filters = [];
-      if (allProductIds.size > 0) filters.push(`product_id.in.(${Array.from(allProductIds).join(',')})`);
-      if (allSkus.size > 0) filters.push(`sku.in.(${Array.from(allSkus).map(s => `"${s}"`).join(',')})`);
-      if (allNames.size > 0) filters.push(`name.in.(${Array.from(allNames).map(n => `"${n}"`).join(',')})`);
-
-      const { data: products } = await supabase
-        .from('products')
-        .select('product_id, sku, name, img_url, image_url')
-        .or(filters.join(','));
-
-      products?.forEach(p => {
-        const img = p.img_url || p.image_url;
-        if (p.product_id) productMap.set(`id_${p.product_id}`, img);
-        if (p.sku) productMap.set(`sku_${p.sku.toLowerCase().trim()}`, img);
-        if (p.name) productMap.set(`name_${p.name.toLowerCase().trim()}`, img);
-      });
-    }
-
-    const deduplicatedOrders = Array.from(orderMap.values()).map(order => {
-      // Apply fallback images to line items
-      const items = order.order_line_items_v2?.map((li: any) => {
-        if (li.img_url && !li.img_url.includes('placehold')) return li;
-        
-        const fallback = 
-          (li.product_id && productMap.get(`id_${li.product_id}`)) ||
-          (li.sku && productMap.get(`sku_${li.sku.toLowerCase().trim()}`)) ||
-          (li.name && productMap.get(`name_${li.name.toLowerCase().trim()}`));
-          
-        return { ...li, img_url: fallback || li.img_url };
-      });
-      return { ...order, order_line_items_v2: items };
-    }).sort((a, b) => 
+    const deduplicatedOrders = Array.from(orderMap.values()).sort((a, b) => 
       new Date(b.processed_at).getTime() - new Date(a.processed_at).getTime()
     );
     
@@ -172,4 +148,3 @@ export async function GET(
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }
-

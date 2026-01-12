@@ -2,23 +2,44 @@ import { NextRequest, NextResponse } from "next/server"
 import { createClient } from "@/lib/supabase/server"
 import { verifyCollectorSessionToken } from "@/lib/collector-session"
 import type { CollectorEdition } from "@/types/collector"
+import { getCollectorProfile } from "@/lib/collectors"
 
 export async function GET(request: NextRequest) {
   const supabase = createClient()
 
-  const collectorSession = verifyCollectorSessionToken(request.cookies.get("collector_session")?.value)
-  let customerId = collectorSession?.shopifyCustomerId || request.cookies.get("shopify_customer_id")?.value
   const searchParams = request.nextUrl.searchParams
   const emailParam = searchParams.get("email")
+  const idParam = searchParams.get("id")
 
-  if (!customerId && !emailParam) {
+  // Check for admin session cookie to allow overriding customer session
+  const isAdmin = request.cookies.get('admin_session')?.value !== undefined;
+
+  const collectorSession = verifyCollectorSessionToken(request.cookies.get("collector_session")?.value)
+  let customerId = collectorSession?.shopifyCustomerId || request.cookies.get("shopify_customer_id")?.value
+
+  // Priority: URL params (especially for Admin) > Session
+  let shopifyCustomerId = idParam || customerId;
+  let email = emailParam;
+
+  if (!shopifyCustomerId && !email) {
     return NextResponse.json(
-      { success: false, message: "Missing customer session or email" },
+      { success: false, message: "Missing identifier" },
       { status: 401 },
     )
   }
+    let associatedOrderNames: string[] = [];
 
-  try {
+    const lookupId = idParam || emailParam || customerId;
+    if (lookupId) {
+      const profile = await getCollectorProfile(lookupId);
+      if (profile) {
+        shopifyCustomerId = profile.shopify_customer_id || shopifyCustomerId;
+        email = profile.user_email || email;
+        associatedOrderNames = profile.associated_order_names || [];
+      }
+    }
+
+    // 2. Fetch orders and line items
     let query = supabase
       .from("orders")
       .select(
@@ -26,45 +47,32 @@ export async function GET(request: NextRequest) {
         id,
         processed_at,
         customer_email,
+        customer_id,
+        order_name,
+        order_number,
+        fulfillment_status,
+        financial_status,
         order_line_items_v2 (
-          id,
-          line_item_id,
-          product_id,
-          name,
-          img_url,
-          vendor_name,
-          edition_number,
-          edition_total,
-          price,
-          certificate_url,
-          created_at,
-          status,
-          nfc_claimed_at
+          *
         )
       `,
-      )
-      .order("processed_at", { ascending: false })
+      );
 
-    if (customerId) {
-      query = query.eq("customer_id", customerId)
-    } else if (emailParam) {
-      // If we only have an email, we should also try to find the Shopify Customer ID
-      // to catch orders where the email might be missing but the ID is present.
-      const { data: profile } = await supabase
-        .from("collector_profile_comprehensive")
-        .select("pii_sources")
-        .eq("user_email", emailParam.toLowerCase().trim())
-        .maybeSingle();
-
-      const shopifyId = profile?.pii_sources?.shopify?.id;
-      if (shopifyId) {
-        query = query.or(`customer_email.eq.${emailParam.toLowerCase().trim()},customer_id.eq.${shopifyId}`);
-      } else {
-        query = query.eq("customer_email", emailParam.toLowerCase().trim());
-      }
+    const filters = [];
+    if (shopifyCustomerId) filters.push(`customer_id.eq.${shopifyCustomerId}`);
+    if (email) filters.push(`customer_email.ilike.${email}`);
+    if (associatedOrderNames && associatedOrderNames.length > 0) {
+      const namesList = associatedOrderNames.map((n: string) => `"${n}"`).join(',');
+      filters.push(`order_name.in.(${namesList})`);
     }
 
-    const { data: orders, error: ordersError } = await query
+    if (filters.length > 0) {
+      query = query.or(filters.join(','));
+    } else {
+      return NextResponse.json({ success: true, editions: [] });
+    }
+
+    const { data: orders, error: ordersError } = await query.order("processed_at", { ascending: false });
 
     if (ordersError) {
       console.error("collector editions error", ordersError)
@@ -74,7 +82,7 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    // Deduplicate orders by numeric name prefix, prioritizing Shopify over Manual
+    // 3. Deduplicate orders
     const orderMap = new Map();
     (orders || []).forEach(order => {
       const match = order.order_name?.replace('#', '').match(/^\d+/);
@@ -82,10 +90,27 @@ export async function GET(request: NextRequest) {
       
       const existing = orderMap.get(cleanName);
       const isManual = order.id.startsWith('WH-');
-      const existingIsManual = existing?.id.startsWith('WH-');
+      
+      // NEW: Prioritize orders that are NOT canceled/voided
+      const isCanceled = ['restocked', 'canceled'].includes(order.fulfillment_status) || 
+                         ['refunded', 'voided'].includes(order.financial_status);
+      const existingIsCanceled = existing ? 
+                         (['restocked', 'canceled'].includes(existing.fulfillment_status) || 
+                          ['refunded', 'voided'].includes(existing.financial_status)) : true;
 
-      if (!existing || (existingIsManual && !isManual)) {
+      // Decision logic:
+      // 1. If no existing order, take this one
+      // 2. If this one is NOT canceled but the existing one IS, replace it
+      // 3. If both have same cancellation status, prefer Shopify over Manual
+      if (!existing) {
         orderMap.set(cleanName, order);
+      } else if (!isCanceled && existingIsCanceled) {
+        orderMap.set(cleanName, order);
+      } else if (isCanceled === existingIsCanceled) {
+        const existingIsManual = existing.id.startsWith('WH-');
+        if (existingIsManual && !isManual) {
+          orderMap.set(cleanName, order);
+        }
       }
     });
 
@@ -98,76 +123,78 @@ export async function GET(request: NextRequest) {
         order_fulfillment_status: order.fulfillment_status,
         order_financial_status: order.financial_status
       }))
-    )
+    );
 
-    // Get series information and fallback images for products
-    const productIds = Array.from(new Set(allLineItems.map((li: any) => li.product_id).filter(Boolean) as string[]))
-    const skus = Array.from(new Set(allLineItems.map((li: any) => li.sku).filter(Boolean) as string[]))
-    const names = Array.from(new Set(allLineItems.map((li: any) => li.name).filter(Boolean) as string[]))
-
-    let seriesMap = new Map<string, any>()
-    let imageMap = new Map<string, string>()
-
-    if (productIds.length > 0 || skus.length > 0 || names.length > 0) {
-      // 1. Fetch series
-      if (productIds.length > 0) {
-        const { data: seriesMembers } = await supabase
-          .from("artwork_series_members")
-          .select(`
-            shopify_product_id,
-            series_id,
-            artwork_series!inner (id, name, vendor_name)
-          `)
-          .in("shopify_product_id", productIds)
-
-        seriesMembers?.forEach((member: any) => {
-          if (member.shopify_product_id && member.artwork_series) {
-            seriesMap.set(member.shopify_product_id, member.artwork_series)
-          }
-        })
-      }
-
-      // 2. Fetch fallback images
-      const filters = [];
-      if (productIds.length > 0) filters.push(`product_id.in.(${productIds.join(',')})`);
-      if (skus.length > 0) filters.push(`sku.in.(${skus.map(s => `"${s}"`).join(',')})`);
-      if (names.length > 0) filters.push(`name.in.(${names.map(n => `"${n}"`).join(',')})`);
-
+    // 4. Batch fetch missing images
+    const itemsMissingImages = allLineItems.filter(li => !li.img_url && li.product_id);
+    if (itemsMissingImages.length > 0) {
+      const missingProductIds = Array.from(new Set(itemsMissingImages.map(li => li.product_id)));
       const { data: products } = await supabase
         .from('products')
-        .select('product_id, sku, name, img_url, image_url')
-        .or(filters.join(','));
-
-      products?.forEach(p => {
-        const img = p.img_url || p.image_url;
-        if (p.product_id) imageMap.set(`id_${p.product_id}`, img);
-        if (p.sku) imageMap.set(`sku_${p.sku.toLowerCase().trim()}`, img);
-        if (p.name) imageMap.set(`name_${p.name.toLowerCase().trim()}`, img);
-      });
+        .select('product_id, image_url, img_url')
+        .in('product_id', missingProductIds);
+      
+      if (products && products.length > 0) {
+        const productImgMap = new Map(products.map(p => [p.product_id?.toString(), p.image_url || p.img_url]));
+        allLineItems.forEach(li => {
+          if (!li.img_url && li.product_id) {
+            li.img_url = productImgMap.get(li.product_id.toString()) || null;
+          }
+        });
+      }
     }
 
-    // Filter for active items that have an assigned edition number.
-    // Explicitly exclude restocked and cancelled items.
+    // 5. Get series information
+    const productIds = Array.from(
+      new Set(
+        allLineItems
+          .map((li: any) => li.product_id)
+          .filter(Boolean) as string[],
+      ),
+    )
+
+    let seriesMap = new Map<string, any>()
+    if (productIds.length > 0) {
+      const { data: seriesMembers } = await supabase
+        .from("artwork_series_members")
+        .select(
+          `
+          shopify_product_id,
+          series_id,
+          artwork_series!inner (
+            id,
+            name,
+            vendor_name
+          )
+        `,
+        )
+        .in("shopify_product_id", productIds)
+
+      seriesMembers?.forEach((member: any) => {
+        if (member.shopify_product_id && member.artwork_series) {
+          seriesMap.set(member.shopify_product_id, member.artwork_series)
+        }
+      })
+    }
+
+    // 6. Map to CollectorEdition format
     const editions: CollectorEdition[] = allLineItems
       .filter((li: any) => {
         const isValidOrder = !['restocked', 'canceled'].includes(li.order_fulfillment_status) && 
                            !['refunded', 'voided'].includes(li.order_financial_status);
-        return li.status === 'active' && li.edition_number !== null && isValidOrder;
+        
+        // Robust check for active status
+        const isActuallyActive = li.status !== 'inactive' && 
+                               li.status !== 'removed' &&
+                               li.restocked !== true && 
+                               (li.refund_status === 'none' || li.refund_status === null);
+
+        return isActuallyActive && isValidOrder;
       })
       .map((li: any) => {
         const series = li.product_id
           ? seriesMap.get(li.product_id)
           : null
-
-        // Apply fallback image
-        let imgUrl = li.img_url;
-        if (!imgUrl || imgUrl.includes('placehold')) {
-          imgUrl = 
-            (li.product_id && imageMap.get(`id_${li.product_id}`)) ||
-            (li.sku && imageMap.get(`sku_${li.sku.toLowerCase().trim()}`)) ||
-            (li.name && imageMap.get(`name_${li.name.toLowerCase().trim()}`)) ||
-            imgUrl;
-        }
 
         // Determine edition type
         let editionType: "limited" | "open" | "accessory" | null = null
@@ -175,8 +202,8 @@ export async function GET(request: NextRequest) {
           editionType = "limited"
         } else if (li.edition_number !== null) {
           editionType = "open"
-        } else if (li.vendor_name === 'Street Collector' || !li.vendor_name) {
-          editionType = "accessory"
+        } else {
+          editionType = (li.vendor_name === 'Street Collector' || !li.vendor_name) ? "accessory" : "open";
         }
 
         // Determine verification source
@@ -190,11 +217,11 @@ export async function GET(request: NextRequest) {
           lineItemId: li.line_item_id,
           productId: li.product_id,
           name: li.name,
-          editionNumber: li.edition_number,
-          editionTotal: li.edition_total,
+          editionNumber: li.edition_number ? Number(li.edition_number) : null,
+          editionTotal: li.edition_total ? Number(li.edition_total) : null,
           editionType,
           verificationSource,
-          imgUrl: imgUrl,
+          imgUrl: li.img_url,
           vendorName: li.vendor_name || 'Street Collector',
           series: series
             ? {
@@ -221,5 +248,3 @@ export async function GET(request: NextRequest) {
     )
   }
 }
-
-

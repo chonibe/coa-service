@@ -26,7 +26,7 @@ async function resyncLineItems() {
     console.log('🚀 Starting re-sync of all Shopify line items...');
 
     // 1. Fetch products for image mapping
-    const { data: products } = await supabase.from('products').select('product_id, img_url, name');
+    const { data: products } = await supabase.from('products').select('shopify_id, img_url, name');
     const productMap = new Map(products?.map(p => [p.shopify_id, p]) || []);
 
     // 2. Fetch recent orders from DB (last 500)
