@@ -27,6 +27,9 @@ export async function GET(request: NextRequest) {
       { status: 401 },
     )
   }
+
+  try {
+    // 1. Get identifiers for robust linkage
     let associatedOrderNames: string[] = [];
 
     const lookupId = idParam || emailParam || customerId;
