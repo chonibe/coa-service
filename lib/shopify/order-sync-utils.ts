@@ -176,8 +176,13 @@ export async function syncShopifyOrder(
     }
 
     const dbLineItems = order.line_items.map((li: any) => {
-      // Protocol: Define 'removed' status based on refunds, properties, and fulfillable quantity
-      const isRefunded = removedLineItemIds.has(li.id)
+      // Robust detection of refunds and restocks
+      const liIdStr = li.id.toString();
+      const refundEntry = order.refunds?.flatMap((r: any) => r.refund_line_items || [])
+                                       .find((ri: any) => ri.line_item_id.toString() === liIdStr);
+      
+      const isRefunded = removedLineItemIds.has(li.id) || li.refund_status === 'refunded' || refundEntry !== undefined || (li.refunded_quantity && li.refunded_quantity > 0);
+      const isRestocked = li.restocked === true || (li.restock_type && li.restock_type !== null) || li.fulfillment_status === 'restocked' || (refundEntry?.restock_type && refundEntry?.restock_type !== undefined);
       
       const removedProperty = li.properties?.find((p: any) => 
         (p.name === 'removed' || p.key === 'removed') && 
@@ -189,18 +194,18 @@ export async function syncShopifyOrder(
       const isRemovedByQty = (li.fulfillable_quantity === 0 || li.fulfillable_quantity === '0') && 
                              li.fulfillment_status !== 'fulfilled'
       
-      const isCancelled = order.financial_status === 'voided' || order.cancelled_at !== null
+      const isCancelled = order.financial_status === 'voided' || order.cancelled_at !== null || order.fulfillment_status === 'canceled'
       const isFulfilled = li.fulfillment_status === 'fulfilled'
       const isPaid = ['paid', 'authorized', 'pending', 'partially_paid'].includes(order.financial_status)
       
       // Final status determination
-      const isInactive = isRefunded || isRemovedByProperty || isRemovedByQty || isCancelled
+      const isInactive = isRefunded || isRemovedByProperty || isRemovedByQty || isCancelled || isRestocked
       const status = isInactive ? 'inactive' : (isPaid || isFulfilled ? 'active' : 'inactive')
 
       return {
         order_id: orderId,
         order_name: orderName,
-        line_item_id: li.id.toString(),
+        line_item_id: liIdStr,
         product_id: li.product_id?.toString() || '',
         variant_id: li.variant_id?.toString() || null,
         name: li.title,
@@ -216,6 +221,8 @@ export async function syncShopifyOrder(
         img_url: li.product_id ? productMap.get(li.product_id.toString()) || null : null,
         created_at: order.created_at,
         updated_at: new Date().toISOString(),
+        restocked: isRestocked,
+        refund_status: 'none'
       }
     })
 
