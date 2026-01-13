@@ -58,7 +58,6 @@ export async function POST(request: NextRequest) {
       instagram_url: formData.instagram_url,
       bio: formData.bio,
       paypal_email: formData.paypal_email,
-      bank_account: formData.bank_account,
       is_company: formData.is_company,
       tax_id: formData.tax_id,
       tax_country: formData.tax_country,

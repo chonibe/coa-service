@@ -13,7 +13,6 @@ interface VendorProfile {
   tax_id: string | null
   tax_country: string | null
   is_company: boolean
-  bank_account: string | null
   address: string | null
   phone: string | null
 }

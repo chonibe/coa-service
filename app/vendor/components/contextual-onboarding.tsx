@@ -84,7 +84,6 @@ export function ContextualOnboarding({ context, onComplete }: ContextualOnboardi
         // Initialize form data
         setFormData({
           paypal_email: data.vendor?.paypal_email || "",
-          bank_account: data.vendor?.bank_account || "",
           tax_id: data.vendor?.tax_id || "",
           tax_country: data.vendor?.tax_country || "",
           is_company: data.vendor?.is_company || false,

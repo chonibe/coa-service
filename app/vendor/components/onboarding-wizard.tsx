@@ -81,7 +81,6 @@ export function OnboardingWizard({ initialData, onComplete }: OnboardingWizardPr
     instagram_url: "",
     bio: "",
     paypal_email: "",
-    bank_account: "",
     is_company: false,
     tax_id: "",
     tax_country: "",
@@ -116,8 +115,8 @@ export function OnboardingWizard({ initialData, onComplete }: OnboardingWizardPr
     },
     {
       title: "Payment Information",
-      description: "How would you like to get paid",
-      fields: ["paypal_email", "bank_account"],
+      description: "Setup your PayPal payouts",
+      fields: ["paypal_email"],
       icon: <Circle className="h-5 w-5" />,
     },
     {
@@ -180,7 +179,6 @@ export function OnboardingWizard({ initialData, onComplete }: OnboardingWizardPr
         instagram_url: initialData.instagram_url || "",
         bio: initialData.bio || "",
         paypal_email: initialData.paypal_email || "",
-        bank_account: initialData.bank_account || "",
         is_company: initialData.is_company || false,
         tax_id: initialData.tax_id || "",
         tax_country: initialData.tax_country || "",
@@ -278,9 +276,8 @@ export function OnboardingWizard({ initialData, onComplete }: OnboardingWizardPr
       case "address":
         if (!value?.trim()) return { isValid: false, error: "Business address is required" }
         return { isValid: true }
-      case "paypal_email":
-        if (!value?.trim() && !formData.bank_account?.trim()) {
-          return { isValid: false, error: "Either PayPal email or bank account is required" }
+        if (!value?.trim()) {
+          return { isValid: false, error: "PayPal email is required for payouts" }
         }
         if (value?.trim() && !/\S+@\S+\.\S+/.test(value)) {
           return { isValid: false, error: "Please enter a valid email address" }
@@ -305,7 +302,7 @@ export function OnboardingWizard({ initialData, onComplete }: OnboardingWizardPr
       default:
         return { isValid: true }
     }
-  }, [formData.bank_account])
+  }, [])
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target
@@ -642,7 +639,7 @@ export function OnboardingWizard({ initialData, onComplete }: OnboardingWizardPr
               <ul className="list-disc pl-5 text-blue-800 space-y-2 text-left">
                 <li>Your contact information</li>
                 <li>Business address</li>
-                <li>Payment details (PayPal or bank account)</li>
+                <li>PayPal email for payouts</li>
                 <li>Tax identification information</li>
               </ul>
             </div>
@@ -856,18 +853,19 @@ export function OnboardingWizard({ initialData, onComplete }: OnboardingWizardPr
       case 3: // Payment Information
         return (
           <div className="space-y-6">
-            <Alert className="bg-amber-50 border-amber-200">
-              <AlertCircle className="h-4 w-4 text-amber-600" />
-              <AlertDescription className="text-amber-800">
-                You must provide either a PayPal email or bank account details to receive payments.
+            <Alert className="bg-blue-50 border-blue-200">
+              <Info className="h-4 w-4 text-blue-600" />
+              <AlertDescription className="text-blue-800">
+                All vendor payouts are processed via PayPal. Please provide your PayPal email address below.
               </AlertDescription>
             </Alert>
 
             <FormField
               label="PayPal Email"
               name="paypal_email"
-              tooltip="We primarily use PayPal for vendor payments. This is the fastest way to receive your funds."
-              hint="Recommended: Fastest payment method"
+              required
+              tooltip="We use PayPal for all vendor payouts. This is required to receive your earnings."
+              hint="Your payouts will be sent to this email address"
             >
               <Input
                 id="paypal_email"
@@ -887,31 +885,6 @@ export function OnboardingWizard({ initialData, onComplete }: OnboardingWizardPr
                     ? "border-green-500"
                     : ""
                 )}
-              />
-            </FormField>
-
-            <div className="relative my-6">
-              <div className="absolute inset-0 flex items-center">
-                <span className="w-full border-t border-gray-300" />
-              </div>
-              <div className="relative flex justify-center text-xs uppercase">
-                <span className="bg-white px-2 text-gray-500">OR</span>
-              </div>
-            </div>
-
-            <FormField
-              label="Bank Account Details"
-              name="bank_account"
-              tooltip="Only provide bank details if you cannot use PayPal. Additional verification may be required."
-              hint="Alternative payment method"
-            >
-              <Textarea
-                id="bank_account"
-                name="bank_account"
-                placeholder="Bank name, Account number, Sort code/Routing number, etc."
-                value={formData.bank_account}
-                onChange={handleInputChange}
-                rows={3}
               />
             </FormField>
           </div>

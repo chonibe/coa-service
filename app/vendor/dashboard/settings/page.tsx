@@ -14,8 +14,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Separator } from "@/components/ui/separator"
 import { useToast } from "@/components/ui/use-toast"
-import { Loader2, AlertCircle, CheckCircle, Save, DollarSign, FileText, User, CreditCard, Sparkles, Clock, Zap } from "lucide-react"
-import { StripeConnect } from "../components/stripe-connect"
+import { Loader2, AlertCircle, CheckCircle, Save, DollarSign, FileText, User, Sparkles, Clock, Zap } from "lucide-react"
 
 interface VendorProfile {
   id: string
@@ -24,7 +23,6 @@ interface VendorProfile {
   tax_id: string | null
   tax_country: string | null
   is_company: boolean
-  bank_account: string | null
   address: string | null
   delivery_address1: string | null
   delivery_address2: string | null
@@ -45,7 +43,6 @@ interface FormState {
   tax_id: string
   tax_country: string
   is_company: boolean
-  bank_account: string
   address: string
   delivery_address1: string
   delivery_address2: string
@@ -97,7 +94,6 @@ export default function VendorSettingsPage() {
     tax_id: "",
     tax_country: "",
     is_company: false,
-    bank_account: "",
     address: "",
     delivery_address1: "",
     delivery_address2: "",
@@ -132,7 +128,6 @@ export default function VendorSettingsPage() {
             tax_id: data.vendor.tax_id || "",
             tax_country: data.vendor.tax_country || "",
             is_company: data.vendor.is_company || false,
-            bank_account: data.vendor.bank_account || "",
             address: data.vendor.address || "",
             delivery_address1: data.vendor.delivery_address1 || "",
             delivery_address2: data.vendor.delivery_address2 || "",
@@ -164,7 +159,7 @@ export default function VendorSettingsPage() {
   const updateCompletionSteps = (vendor: VendorProfile) => {
     setCompletionSteps({
       profile: !!(vendor.contact_name && vendor.contact_email && vendor.phone && vendor.address),
-      payment: !!(vendor.paypal_email || vendor.bank_account),
+      payment: !!vendor.paypal_email,
       tax: !!(vendor.tax_id && vendor.tax_country),
     })
   }
@@ -223,7 +218,6 @@ export default function VendorSettingsPage() {
           delivery_phone: result.vendor.delivery_phone || "",
           delivery_name: result.vendor.delivery_name || "",
           paypal_email: result.vendor.paypal_email || "",
-          bank_account: result.vendor.bank_account || "",
           tax_id: result.vendor.tax_id || "",
           tax_country: result.vendor.tax_country || "",
           is_company: result.vendor.is_company || false,
@@ -438,7 +432,7 @@ export default function VendorSettingsPage() {
               <AlertCircle className="h-4 w-4" />
               <AlertTitle>Payment Method Setup</AlertTitle>
               <AlertDescription>
-                Configure your preferred payment methods in the Payment and Stripe tabs. PayPal is used by default for most payouts.
+                Configure your PayPal email in the Payment tab. PayPal is used by default for all vendor payouts.
               </AlertDescription>
             </Alert>
           </div>
@@ -499,7 +493,7 @@ export default function VendorSettingsPage() {
       <div className="grid gap-6 md:grid-cols-7">
         <div className="md:col-span-5">
           <Tabs value={activeTab} onValueChange={setActiveTab}>
-            <TabsList className="grid w-full grid-cols-5 bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-0 shadow-lg">
+            <TabsList className="grid w-full grid-cols-4 bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-0 shadow-lg">
               <TabsTrigger value="profile" className="flex items-center gap-2">
                 <User className="h-4 w-4" />
                 <span>Profile</span>
@@ -514,10 +508,6 @@ export default function VendorSettingsPage() {
                 <FileText className="h-4 w-4" />
                 <span>Tax Info</span>
                 {completionSteps.tax && <CheckCircle className="h-3 w-3 text-green-500 ml-1" />}
-              </TabsTrigger>
-              <TabsTrigger value="stripe" className="flex items-center gap-2">
-                <CreditCard className="h-4 w-4" />
-                <span>Stripe</span>
               </TabsTrigger>
               <TabsTrigger value="payouts" className="flex items-center gap-2">
                 <DollarSign className="h-4 w-4" />
@@ -713,23 +703,6 @@ export default function VendorSettingsPage() {
                         </p>
                       )}
                     </div>
-
-                    <Separator className="my-4" />
-
-                    <div className="space-y-2">
-                      <Label htmlFor="bank_account">Bank Account Details (Alternative)</Label>
-                      <Textarea
-                        id="bank_account"
-                        name="bank_account"
-                        placeholder="Bank name, Account number, Sort code/Routing number, etc."
-                        value={formState.bank_account}
-                        onChange={handleInputChange}
-                        rows={3}
-                      />
-                      <p className="text-sm text-muted-foreground">
-                        Only provide bank details if you cannot use PayPal. Additional verification may be required.
-                      </p>
-                    </div>
                   </CardContent>
                 </Card>
               </TabsContent>
@@ -803,16 +776,11 @@ export default function VendorSettingsPage() {
                 </Card>
               </TabsContent>
 
-              <TabsContent value="stripe" className="space-y-4 mt-4">
-                {profile && <StripeConnect vendorName={profile.vendor_name} />}
-              </TabsContent>
-
               <TabsContent value="payouts" className="space-y-4 mt-4">
                 <PayoutSettings profile={profile} />
               </TabsContent>
 
-              {activeTab !== "stripe" && (
-                <div className="mt-6 flex justify-end">
+              <div className="mt-6 flex justify-end">
                   <Button 
                     type="submit" 
                     disabled={isSaving} 
@@ -831,7 +799,6 @@ export default function VendorSettingsPage() {
                     )}
                   </Button>
                 </div>
-              )}
             </form>
           </Tabs>
         </div>
@@ -876,7 +843,7 @@ export default function VendorSettingsPage() {
                       <div className="h-5 w-5 rounded-full border-2 border-gray-300 mr-2"></div>
                     )}
                     <span className={completionSteps.payment ? "text-green-700" : "text-gray-600"}>
-                      Payment Details
+                      PayPal Email
                     </span>
                   </div>
 

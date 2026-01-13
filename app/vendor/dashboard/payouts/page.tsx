@@ -836,29 +836,29 @@ export default function PayoutsPage() {
             </Card>
           </div>
 
-          {/* Orders being Processed (Pending Fulfillment) */}
+          {/* Orders in Process (Awaiting Platform Fulfillment) */}
           {unfulfilledGroupedByMonth.length > 0 && (
-            <Card className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-0 shadow-xl border-amber-200 dark:border-amber-900/30 opacity-75">
+            <Card className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-0 shadow-xl border-blue-200 dark:border-blue-900/30 opacity-75">
               <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-amber-700 dark:text-amber-400">
+                <CardTitle className="flex items-center gap-2 text-blue-700 dark:text-blue-400">
                   <Clock className="h-5 w-5" />
-                  Orders being Processed
+                  Orders in Process
                 </CardTitle>
                 <CardDescription>
-                  These orders have been placed and are currently being fulfilled by our team. Once fulfillment is complete, they will appear in "Ready to Request Payment."
+                  These orders have been placed and are being fulfilled by our team. Once fulfillment is complete, they'll appear in "Ready to Request Payment" and you can request your payout via PayPal.
                 </CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
                   {unfulfilledGroupedByMonth.map((monthData) => (
-                    <div key={monthData.monthKey} className="border rounded-lg p-4 space-y-3 border-amber-200 dark:border-amber-900/30 bg-amber-50/30 dark:bg-amber-950/10">
+                    <div key={monthData.monthKey} className="border rounded-lg p-4 space-y-3 border-blue-200 dark:border-blue-900/30 bg-blue-50/30 dark:bg-blue-950/10">
                       <div
                         className="flex items-center justify-between cursor-pointer"
                         onClick={() => toggleUnfulfilledMonthExpansion(monthData.monthKey)}
                       >
                         <div className="flex items-center gap-3">
                           <h3 className="text-lg font-semibold">{monthData.month}</h3>
-                          <Badge variant="outline" className="border-amber-300 text-amber-700">{monthData.itemCount} items</Badge>
+                          <Badge variant="outline" className="border-blue-300 text-blue-700">{monthData.itemCount} items</Badge>
                         </div>
                         <div className="flex items-center gap-3">
                           <span className="text-sm text-muted-foreground">
@@ -872,9 +872,9 @@ export default function PayoutsPage() {
                         </div>
                       </div>
                       {expandedUnfulfilledMonths.has(monthData.monthKey) && (
-                        <div className="space-y-2 pt-2 border-t border-amber-200 dark:border-amber-900/30">
+                        <div className="space-y-2 pt-2 border-t border-blue-200 dark:border-blue-900/30">
                           {monthData.items.map((item: any) => (
-                            <div key={item.line_item_id} className="flex items-center justify-between p-2 rounded bg-white/50 dark:bg-slate-900/50 backdrop-blur-sm border border-amber-200/50 dark:border-amber-900/20">
+                            <div key={item.line_item_id} className="flex items-center justify-between p-2 rounded bg-white/50 dark:bg-slate-900/50 backdrop-blur-sm border border-blue-200/50 dark:border-blue-900/20">
                               <div className="flex-1 min-w-0">
                                 <div className="font-medium truncate">{item.product_title}</div>
                                 <div className="text-sm text-muted-foreground">
@@ -885,7 +885,7 @@ export default function PayoutsPage() {
                                 <div className="text-sm text-muted-foreground">Order Value</div>
                                 <div className="font-medium">{formatCurrency(item.price)}</div>
                                 <div className="text-sm text-muted-foreground mt-1">Payout</div>
-                                <div className="font-bold text-amber-600 dark:text-amber-400">{formatCurrency(item.payout_amount)}</div>
+                                <div className="font-bold text-blue-600 dark:text-blue-400">{formatCurrency(item.payout_amount)}</div>
                               </div>
                             </div>
                           ))}
@@ -893,10 +893,10 @@ export default function PayoutsPage() {
                       )}
                     </div>
                   ))}
-                  <Alert className="bg-amber-50 dark:bg-amber-950/20 border-amber-200 dark:border-amber-900/30">
-                    <AlertCircle className="h-4 w-4 text-amber-600 dark:text-amber-400" />
-                    <AlertDescription className="text-amber-800 dark:text-amber-300">
-                      <strong>Processing in progress.</strong> Our team is currently preparing these orders for fulfillment. You will be able to request your PayPal payout as soon as they are marked as fulfilled.
+                  <Alert className="bg-blue-50 dark:bg-blue-950/20 border-blue-200 dark:border-blue-900/30">
+                    <AlertCircle className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                    <AlertDescription className="text-blue-800 dark:text-blue-300">
+                      <strong>Awaiting platform fulfillment.</strong> Our team is currently preparing these orders. Once shipped, they'll move to "Ready to Request Payment" and you can request your payout.
                     </AlertDescription>
                   </Alert>
                 </div>
@@ -912,7 +912,7 @@ export default function PayoutsPage() {
                 Ready to Request Payment
               </CardTitle>
               <CardDescription>
-                Great news! These orders have been fulfilled and are ready for payment. Click "Request Payment" above to get paid for all of these items.
+                Great news! These orders have been fulfilled by our team and are ready for payment. Click "Request Payment" above to get paid to your PayPal account.
               </CardDescription>
             </CardHeader>
             <CardContent>

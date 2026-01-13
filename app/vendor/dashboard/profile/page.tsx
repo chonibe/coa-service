@@ -55,7 +55,6 @@ interface VendorProfile {
   tax_id?: string | null
   tax_country?: string | null
   is_company?: boolean
-  bank_account?: string | null
   created_at?: string
 }
 
@@ -68,7 +67,6 @@ interface SettingsFormState {
   tax_id: string
   tax_country: string
   is_company: boolean
-  bank_account: string
 }
 
 interface ProfileFormState {
@@ -150,7 +148,6 @@ export default function VendorProfilePage() {
     tax_id: "",
     tax_country: "",
     is_company: false,
-    bank_account: "",
   })
 
   // Update completion steps - must be defined first as it has no dependencies
@@ -184,17 +181,16 @@ export default function VendorProfilePage() {
       })
 
       // Initialize settings form state
-      setSettingsFormState({
-        contact_name: vendor.contact_name || "",
-        contact_email: vendor.contact_email || "",
-        phone: vendor.phone || "",
-        address: vendor.address || "",
-        paypal_email: vendor.paypal_email || "",
-        tax_id: vendor.tax_id || "",
-        tax_country: vendor.tax_country || "",
-        is_company: vendor.is_company || false,
-        bank_account: vendor.bank_account || "",
-      })
+        setSettingsFormState({
+          contact_name: vendor.contact_name || "",
+          contact_email: vendor.contact_email || "",
+          phone: vendor.phone || "",
+          address: vendor.address || "",
+          paypal_email: vendor.paypal_email || "",
+          tax_id: vendor.tax_id || "",
+          tax_country: vendor.tax_country || "",
+          is_company: vendor.is_company || false,
+        })
 
       // Check completion steps
       updateCompletionSteps(vendor)
@@ -549,7 +545,6 @@ export default function VendorProfilePage() {
           phone: result.vendor.phone || "",
           address: result.vendor.address || "",
           paypal_email: result.vendor.paypal_email || "",
-          bank_account: result.vendor.bank_account || "",
           tax_id: result.vendor.tax_id || "",
           tax_country: result.vendor.tax_country || "",
           is_company: result.vendor.is_company || false,
