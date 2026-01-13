@@ -1,15 +1,18 @@
 "use client"
 
 import Image from "next/image"
+import { useState } from "react"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import { ShieldCheck, Clock, FileText } from "lucide-react"
+import { NFCAuthSheet } from "@/components/nfc/nfc-auth-sheet"
 
 export interface CollectorLineItem {
   id: number
   lineItemId: string
+  orderId: string
   productId: string | null
   name: string
   description?: string | null
@@ -38,6 +41,9 @@ interface ArtworkGridProps {
 }
 
 export function ArtworkGrid({ items }: ArtworkGridProps) {
+  const [selectedItem, setSelectedItem] = useState<CollectorLineItem | null>(null)
+  const [isNfcSheetOpen, setIsNfcSheetOpen] = useState(false)
+
   if (!items.length) {
     return (
       <Card>
@@ -49,105 +55,126 @@ export function ArtworkGrid({ items }: ArtworkGridProps) {
     )
   }
 
-  return (
-    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-      {items.map((item) => {
-        const isAuthenticated = !!(item.nfcTagId && item.nfcClaimedAt)
-        const needsAuth = item.nfcTagId && !item.nfcClaimedAt
+  const handleAuthenticate = (item: CollectorLineItem) => {
+    setSelectedItem(item)
+    setIsNfcSheetOpen(true)
+  }
 
-        return (
-          <Card key={item.id} className="h-full flex flex-col">
-            <CardHeader className="space-y-3">
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-base leading-tight line-clamp-2">{item.name}</CardTitle>
-                <Badge variant="outline" className="capitalize">
-                  {item.vendorName || "Artist"}
-                </Badge>
-              </div>
-              {item.series && (
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <Badge variant="secondary" className="capitalize">
-                    {item.series.name}
+  return (
+    <>
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+        {items.map((item) => {
+          const isAuthenticated = !!(item.nfcTagId && item.nfcClaimedAt)
+          const needsAuth = item.nfcTagId && !item.nfcClaimedAt
+
+          return (
+            <Card key={item.id} className="h-full flex flex-col">
+              <CardHeader className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-base leading-tight line-clamp-2">{item.name}</CardTitle>
+                  <Badge variant="outline" className="capitalize">
+                    {item.vendorName || "Artist"}
                   </Badge>
-                  <span>Series</span>
+                </div>
+                {item.series && (
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <Badge variant="secondary" className="capitalize">
+                      {item.series.name}
+                    </Badge>
+                    <span>Series</span>
+                  </div>
+                )}
+                {item.price !== undefined && (
+                  <CardDescription>
+                    ${item.price?.toFixed(2)} · Qty {item.quantity ?? 1}
+                  </CardDescription>
+                )}
+              </CardHeader>
+
+              {item.imgUrl && (
+                <div className="relative w-full h-48">
+                  <Image
+                    src={item.imgUrl}
+                    alt={item.name}
+                    fill
+                    className="object-cover rounded-none rounded-b-lg"
+                    sizes="(max-width: 768px) 100vw, 33vw"
+                  />
                 </div>
               )}
-              {item.price !== undefined && (
-                <CardDescription>
-                  ${item.price?.toFixed(2)} · Qty {item.quantity ?? 1}
-                </CardDescription>
-              )}
-            </CardHeader>
 
-            {item.imgUrl && (
-              <div className="relative w-full h-48">
-                <Image
-                  src={item.imgUrl}
-                  alt={item.name}
-                  fill
-                  className="object-cover rounded-none rounded-b-lg"
-                  sizes="(max-width: 768px) 100vw, 33vw"
-                />
-              </div>
-            )}
-
-            <CardContent className="flex-1 space-y-3">
-              <div className="flex flex-wrap gap-2">
-                {item.certificateUrl && (
-                  <Badge className="bg-emerald-600 hover:bg-emerald-700">
-                    <FileText className="h-3 w-3 mr-1" />
-                    Certificate
-                  </Badge>
-                )}
-                {isAuthenticated && (
-                  <Badge className="bg-green-600 hover:bg-green-700">
-                    <ShieldCheck className="h-3 w-3 mr-1" />
-                    Authenticated
-                  </Badge>
-                )}
-                {needsAuth && (
-                  <Badge variant="destructive" className="bg-amber-500 text-black hover:bg-amber-600">
-                    <Clock className="h-3 w-3 mr-1" />
-                    Pending Authentication
-                  </Badge>
-                )}
-              </div>
-              {item.editionNumber !== undefined && item.editionNumber !== null && (
-                <div className="flex items-center gap-2">
-                  <Badge variant="outline" className="font-mono">
-                    #{item.editionNumber}
-                    {item.editionTotal ? ` of ${item.editionTotal}` : ""}
-                  </Badge>
-                  {item.editionTotal && (
-                    <span className="text-xs text-muted-foreground">Limited Edition</span>
+              <CardContent className="flex-1 space-y-3">
+                <div className="flex flex-wrap gap-2">
+                  {item.certificateUrl && (
+                    <Badge className="bg-emerald-600 hover:bg-emerald-700">
+                      <FileText className="h-3 w-3 mr-1" />
+                      Certificate
+                    </Badge>
+                  )}
+                  {isAuthenticated && (
+                    <Badge className="bg-green-600 hover:bg-green-700">
+                      <ShieldCheck className="h-3 w-3 mr-1" />
+                      Authenticated
+                    </Badge>
+                  )}
+                  {needsAuth && (
+                    <Badge variant="destructive" className="bg-amber-500 text-black hover:bg-amber-600">
+                      <Clock className="h-3 w-3 mr-1" />
+                      Pending Authentication
+                    </Badge>
                   )}
                 </div>
-              )}
-            </CardContent>
+                {item.editionNumber !== undefined && item.editionNumber !== null && (
+                  <div className="flex items-center gap-2">
+                    <Badge variant="outline" className="font-mono">
+                      #{item.editionNumber}
+                    </Badge>
+                    <span className="text-xs text-muted-foreground">Limited Edition</span>
+                  </div>
+                )}
+              </CardContent>
 
-            <CardFooter className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-              {item.certificateUrl && (
-                <Button variant="outline" onClick={() => window.open(item.certificateUrl!, "_blank")}>
-                  View certificate
+              <CardFooter className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                {item.certificateUrl && (
+                  <Button variant="outline" onClick={() => window.open(item.certificateUrl!, "_blank")}>
+                    View certificate
+                  </Button>
+                )}
+                <Button
+                  variant={needsAuth ? "default" : "outline"}
+                  className={cn("w-full", needsAuth ? "" : "sm:col-span-1")}
+                  onClick={() => handleAuthenticate(item)}
+                >
+                  {needsAuth ? "Authenticate" : "Authenticate again"}
                 </Button>
-              )}
-              <Button
-                variant={needsAuth ? "default" : "outline"}
-                className={cn("w-full", needsAuth ? "" : "sm:col-span-1")}
-                onClick={() => (window.location.href = "/pages/authenticate")}
-              >
-                {needsAuth ? "Authenticate" : "Authenticate again"}
-              </Button>
-              {item.productUrl && (
-                <Button variant="secondary" onClick={() => window.open(item.productUrl!, "_blank")}>
-                  View on Shopify
-                </Button>
-              )}
-            </CardFooter>
-          </Card>
-        )
-      })}
-    </div>
+                {item.productUrl && (
+                  <Button variant="secondary" onClick={() => window.open(item.productUrl!, "_blank")}>
+                    View on Shopify
+                  </Button>
+                )}
+              </CardFooter>
+            </Card>
+          )
+        })}
+      </div>
+
+      {selectedItem && (
+        <NFCAuthSheet
+          isOpen={isNfcSheetOpen}
+          onClose={() => setIsNfcSheetOpen(false)}
+          item={{
+            line_item_id: selectedItem.lineItemId,
+            order_id: selectedItem.orderId,
+            name: selectedItem.name,
+            edition_number: selectedItem.editionNumber,
+            img_url: selectedItem.imgUrl
+          }}
+          onSuccess={() => {
+            // Success logic
+          }}
+        />
+      )}
+    </>
   )
 }
 

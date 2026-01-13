@@ -35,7 +35,6 @@ import {
   LogOut,
 } from "lucide-react"
 import Image from "next/image"
-import { StripeConnect } from "../components/stripe-connect"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { Badge } from "@/components/ui/badge"
 import { ThemeToggle } from "@/components/theme-toggle"
@@ -158,7 +157,7 @@ export default function VendorProfilePage() {
   const updateCompletionSteps = useCallback((vendor: VendorProfile) => {
     setCompletionSteps({
       profile: !!(vendor.contact_name && vendor.contact_email && vendor.phone && vendor.address),
-      payment: !!(vendor.paypal_email || vendor.bank_account),
+      payment: !!vendor.paypal_email,
       tax: !!(vendor.tax_id && vendor.tax_country),
     })
   }, [])
@@ -734,7 +733,7 @@ export default function VendorProfilePage() {
       )}
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className="grid w-full max-w-2xl grid-cols-5">
+        <TabsList className="grid w-full max-w-xl grid-cols-4">
           <TabsTrigger value="public-profile">Public Profile</TabsTrigger>
           <TabsTrigger value="settings-profile" className="flex items-center gap-2">
             <User className="h-4 w-4" />
@@ -750,10 +749,6 @@ export default function VendorProfilePage() {
             <FileText className="h-4 w-4" />
             <span>Tax</span>
             {completionSteps.tax && <CheckCircle className="h-3 w-3 text-green-500" />}
-          </TabsTrigger>
-          <TabsTrigger value="settings-stripe" className="flex items-center gap-2">
-            <CreditCard className="h-4 w-4" />
-            <span>Stripe</span>
           </TabsTrigger>
         </TabsList>
 
@@ -1138,14 +1133,14 @@ export default function VendorProfilePage() {
               <CardContent className="space-y-4">
                 <div className="space-y-2">
                   <Label htmlFor="paypal_email" className="flex items-center gap-2">
-                    PayPal Email
+                    PayPal Email *
                     <TooltipProvider>
                       <Tooltip>
                         <TooltipTrigger asChild>
                           <HelpCircle className="h-4 w-4 text-muted-foreground cursor-help" />
                         </TooltipTrigger>
                         <TooltipContent>
-                          <p>Your PayPal email address for receiving payments</p>
+                          <p>Your PayPal email address for receiving payments. This is required for all payouts.</p>
                         </TooltipContent>
                       </Tooltip>
                     </TooltipProvider>
@@ -1166,6 +1161,7 @@ export default function VendorProfilePage() {
                           ? "border-green-500 focus:border-green-500 pr-10"
                           : ""
                       }
+                      required
                     />
                     {validationState.paypal_email === "valid" && (
                       <CheckCircle className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-green-500" />
@@ -1181,24 +1177,7 @@ export default function VendorProfilePage() {
                     </p>
                   )}
                   <p className="text-sm text-muted-foreground">
-                    We primarily use PayPal for vendor payments. Please ensure this is correct.
-                  </p>
-                </div>
-
-                <Separator className="my-4" />
-
-                <div className="space-y-2">
-                  <Label htmlFor="bank_account">Bank Account Details (Alternative)</Label>
-                  <Textarea
-                    id="bank_account"
-                    name="bank_account"
-                    placeholder="Bank name, Account number, Sort code/Routing number, etc."
-                    value={settingsFormState.bank_account}
-                    onChange={handleInputChange}
-                    rows={3}
-                  />
-                  <p className="text-sm text-muted-foreground">
-                    Only provide bank details if you cannot use PayPal. Additional verification may be required.
+                    All vendor payouts are processed via PayPal. Please ensure this is the correct email address for your PayPal account.
                   </p>
                 </div>
               </CardContent>
@@ -1310,11 +1289,6 @@ export default function VendorProfilePage() {
               </CardFooter>
             </Card>
           </form>
-        </TabsContent>
-
-        {/* Settings - Stripe Tab */}
-        <TabsContent value="settings-stripe" className="space-y-4">
-          {profile && <StripeConnect vendorName={profile.vendor_name} />}
         </TabsContent>
       </Tabs>
 

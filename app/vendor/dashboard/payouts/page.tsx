@@ -836,16 +836,16 @@ export default function PayoutsPage() {
             </Card>
           </div>
 
-          {/* Unfulfilled Orders (Pending Fulfillment) */}
+          {/* Orders being Processed (Pending Fulfillment) */}
           {unfulfilledGroupedByMonth.length > 0 && (
             <Card className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-0 shadow-xl border-amber-200 dark:border-amber-900/30 opacity-75">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-amber-700 dark:text-amber-400">
                   <Clock className="h-5 w-5" />
-                  Pending Fulfillment
+                  Orders being Processed
                 </CardTitle>
                 <CardDescription>
-                  These orders have been placed but haven't been fulfilled yet. Once they're fulfilled, they'll appear in "Ready to Request Payment" and you can request your payout.
+                  These orders have been placed and are currently being fulfilled by our team. Once fulfillment is complete, they will appear in "Ready to Request Payment."
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -896,7 +896,7 @@ export default function PayoutsPage() {
                   <Alert className="bg-amber-50 dark:bg-amber-950/20 border-amber-200 dark:border-amber-900/30">
                     <AlertCircle className="h-4 w-4 text-amber-600 dark:text-amber-400" />
                     <AlertDescription className="text-amber-800 dark:text-amber-300">
-                      <strong>Awaiting fulfillment.</strong> These items have been sold but haven't been fulfilled yet. Once they're fulfilled, they'll move to "Ready to Request Payment" and you can request your payout.
+                      <strong>Processing in progress.</strong> Our team is currently preparing these orders for fulfillment. You will be able to request your PayPal payout as soon as they are marked as fulfilled.
                     </AlertDescription>
                   </Alert>
                 </div>

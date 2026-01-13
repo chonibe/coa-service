@@ -15,7 +15,6 @@ import { MetricCard } from "@/components/vendor/metric-card"
 import { LoadingSkeleton } from "@/components/vendor/loading-skeleton"
 import { EmptyState } from "@/components/vendor/empty-state"
 import { KeyboardShortcutsManager, defaultShortcuts } from "@/lib/keyboard-shortcuts"
-import { BankingDashboard } from "./components/banking-dashboard"
 import { TimeRangeSelector, type TimeRange, type DateRange } from "@/components/vendor/time-range-selector"
 
 interface SalesData {
@@ -311,7 +310,7 @@ export default function VendorDashboardPage() {
                   label: "vs last period",
                   isPositive: salesData.totalPayout >= previousPayout,
                 }}
-                description="What you've earned so far"
+                description="Earnings ready for PayPal transfer"
                 variant="elevated"
               />
             </div>
@@ -363,80 +362,8 @@ export default function VendorDashboardPage() {
               )}
             </CardContent>
           </Card>
-
-          <Card className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-0 shadow-xl">
-            <CardContent>
-              <BankingSection vendorName={vendorName} />
-            </CardContent>
-          </Card>
           </div>
       </div>
     </div>
   )
-}
-
-// Banking section component
-function BankingSection({ vendorName }: { vendorName: string }) {
-  const [collectorIdentifier, setCollectorIdentifier] = useState<string | null>(null)
-  const [isLoading, setIsLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-
-  const loadCollector = async () => {
-    setIsLoading(true)
-    setError(null)
-    try {
-      const response = await fetch("/api/banking/collector-identifier", {
-        credentials: "include",
-      })
-
-      if (response.ok) {
-        const data = await response.json()
-        if (data.success && data.collectorIdentifier) {
-          setCollectorIdentifier(data.collectorIdentifier)
-        } else {
-          setCollectorIdentifier(null)
-          setError(data.error || "Bank account setup incomplete")
-        }
-      } else {
-        const errorText = await response.text()
-        setError(errorText || "Unable to load account information")
-      }
-    } catch (err: any) {
-      setError(err?.message || "Unable to load account information")
-    } finally {
-      setIsLoading(false)
-    }
-  }
-
-  useEffect(() => {
-    void loadCollector()
-  }, [vendorName])
-
-  if (isLoading) {
-    return <Skeleton className="h-64 w-full" />
-  }
-
-  if (!collectorIdentifier) {
-    return (
-      <div className="text-center py-8 text-muted-foreground space-y-3">
-        <p>{error || "Unable to load account information"}</p>
-        <div className="flex items-center justify-center gap-2">
-          <button
-            onClick={loadCollector}
-            className="inline-flex items-center justify-center rounded-md border border-input bg-background px-3 py-2 text-sm font-medium shadow-sm transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-          >
-            Retry
-          </button>
-          <a
-            href="mailto:support@street-lamp.xyz"
-            className="inline-flex items-center justify-center rounded-md border border-transparent bg-primary px-3 py-2 text-sm font-medium text-primary-foreground shadow-sm transition-colors hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-          >
-            Contact support
-          </a>
-        </div>
-      </div>
-    )
-  }
-
-  return <BankingDashboard collectorIdentifier={collectorIdentifier} />
 }

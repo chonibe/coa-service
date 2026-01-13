@@ -10,9 +10,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Progress } from '@/components/ui/progress'
 import { useToast } from '@/hooks/use-toast'
-import { Eye, ShieldCheck, TrendingUp, Users, Award, ShoppingBag, History, MapPin, Phone, Mail, Calendar, DollarSign, Package, Loader2 } from 'lucide-react'
+import { Eye, ShieldCheck, TrendingUp, Users, Award, ShoppingBag, History, MapPin, Phone, Mail, Calendar, DollarSign, Package, Loader2, Wifi, WifiOff } from 'lucide-react'
 import { InkOGatchiWidget } from '@/app/collector/dashboard/components/inkogatchi-widget'
 import { InkOGatchi } from '@/app/collector/dashboard/components/ink-o-gatchi'
+import { NFCAuthSheet } from '@/components/nfc/nfc-auth-sheet'
 
 interface ComprehensiveProfile {
   user: {
@@ -53,6 +54,8 @@ interface ComprehensiveProfile {
 export default function ComprehensiveProfilePage() {
   const [profile, setProfile] = useState<ComprehensiveProfile | null>(null)
   const [loading, setLoading] = useState(true)
+  const [selectedEdition, setSelectedEdition] = useState<any>(null)
+  const [isNfcSheetOpen, setIsNfcSheetOpen] = useState(false)
   const { toast } = useToast()
   const router = useRouter()
 
@@ -83,6 +86,11 @@ export default function ComprehensiveProfilePage() {
     } finally {
       setLoading(false)
     }
+  }
+
+  const handleAuthenticate = (edition: any) => {
+    setSelectedEdition(edition)
+    setIsNfcSheetOpen(true)
   }
 
   if (loading) {
@@ -387,10 +395,20 @@ export default function ComprehensiveProfilePage() {
                           Authenticated
                         </Badge>
                       ) : (
-                        <Badge variant="outline">
-                          <Eye className="h-3 w-3 mr-1" />
-                          Pending
-                        </Badge>
+                        <div className="flex items-center gap-2">
+                          <Badge variant="outline">
+                            <Eye className="h-3 w-3 mr-1" />
+                            Pending
+                          </Badge>
+                          <Button 
+                            size="sm" 
+                            variant="default"
+                            className="h-8 rounded-full"
+                            onClick={() => handleAuthenticate(edition)}
+                          >
+                            Authenticate
+                          </Button>
+                        </div>
                       )}
                     </div>
                   </div>
@@ -572,6 +590,22 @@ export default function ComprehensiveProfilePage() {
           </Card>
         </TabsContent>
       </Tabs>
+
+      {selectedEdition && (
+        <NFCAuthSheet
+          isOpen={isNfcSheetOpen}
+          onClose={() => setIsNfcSheetOpen(false)}
+          item={{
+            line_item_id: selectedEdition.line_item_id,
+            order_id: selectedEdition.order_id,
+            name: selectedEdition.name,
+            edition_number: selectedEdition.edition_number
+          }}
+          onSuccess={() => {
+            fetchComprehensiveProfile()
+          }}
+        />
+      )}
     </div>
   )
 }

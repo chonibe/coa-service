@@ -22,7 +22,6 @@ interface ContextualOnboardingProps {
 
 interface MissingFields {
   paypal_email?: boolean
-  bank_account?: boolean
   tax_id?: boolean
   tax_country?: boolean
   address?: boolean
@@ -99,14 +98,13 @@ export function ContextualOnboarding({ context, onComplete }: ContextualOnboardi
         const missing: MissingFields = {}
         
         if (context === "payouts") {
-          if (!data.vendor?.paypal_email && !data.vendor?.bank_account) {
+          if (!data.vendor?.paypal_email) {
             missing.paypal_email = true
-            missing.bank_account = true
           }
           if (!data.vendor?.tax_id) missing.tax_id = true
           if (!data.vendor?.tax_country) missing.tax_country = true
         } else if (context === "settings") {
-          if (!data.vendor?.paypal_email && !data.vendor?.bank_account) {
+          if (!data.vendor?.paypal_email) {
             missing.paypal_email = true
           }
           if (!data.vendor?.tax_id) missing.tax_id = true
@@ -158,9 +156,9 @@ export function ContextualOnboarding({ context, onComplete }: ContextualOnboardi
     const errors: Record<string, string> = {}
     
     if (context === "payouts" || context === "settings") {
-      if (missingFields.paypal_email || missingFields.bank_account) {
-        if (!formData.paypal_email?.trim() && !formData.bank_account?.trim()) {
-          errors.paypal_email = "Either PayPal email or bank account is required"
+      if (missingFields.paypal_email) {
+        if (!formData.paypal_email?.trim()) {
+          errors.paypal_email = "PayPal email is required for payouts"
         }
         if (formData.paypal_email?.trim() && !/\S+@\S+\.\S+/.test(formData.paypal_email)) {
           errors.paypal_email = "Please enter a valid email address"
@@ -340,7 +338,7 @@ export function ContextualOnboarding({ context, onComplete }: ContextualOnboardi
             ) : (context === "payouts" || context === "settings") && (
               <>
                 {/* Payment Information */}
-                {(missingFields.paypal_email || missingFields.bank_account) && (
+                {missingFields.paypal_email && (
                   <div className="space-y-3 p-4 bg-gradient-to-br from-blue-50/50 to-indigo-50/50 dark:from-blue-950/20 dark:to-indigo-950/20 rounded-lg border border-blue-200/50 dark:border-blue-800/50">
                     <div className="flex items-center gap-2">
                       <Wallet className="h-4 w-4 text-blue-600 dark:text-blue-400" />
@@ -367,10 +365,6 @@ export function ContextualOnboarding({ context, onComplete }: ContextualOnboardi
                         {validationErrors.paypal_email && (
                           <p className="text-xs text-red-500">{validationErrors.paypal_email}</p>
                         )}
-                      </div>
-
-                      <div className="text-xs text-muted-foreground">
-                        Or provide bank account details in settings
                       </div>
                     </div>
                   </div>
