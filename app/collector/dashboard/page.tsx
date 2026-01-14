@@ -7,7 +7,13 @@ import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
-import { ShieldCheck, Timer, Wallet, Wand2 } from "lucide-react"
+import { 
+  ShieldCheck, Timer, Wallet, Wand2, 
+  Award, DollarSign, LayoutGrid, ArrowLeft,
+  Share2, MoreHorizontal, History as HistoryIcon, Heart
+} from "lucide-react"
+import { formatCurrency } from "@/lib/utils"
+import { motion, AnimatePresence } from "framer-motion"
 import { ArtworkGrid } from "./components/artwork-grid"
 import { ArtistList } from "./components/artist-list"
 import { SeriesBinder } from "./components/series-binder"
@@ -21,6 +27,10 @@ import { CertificationsHub } from "./components/certifications-hub"
 import { HiddenContentComponent } from "./components/hidden-content"
 import { ProfileSection } from "./components/profile-section"
 import { InkOGatchiWidget } from "./components/inkogatchi-widget"
+import { PremiumProfileHero } from "./components/premium/PremiumProfileHero"
+import { PremiumStatsGrid } from "./components/premium/PremiumStatsGrid"
+import { PremiumOrderCard } from "./components/premium/PremiumOrderCard"
+import { PremiumExpandedStackModal } from "./components/premium/PremiumExpandedStackModal"
 import type { CollectorEdition, CollectorCertification, HiddenContent, ArtistCollectionStats } from "@/types/collector"
 
 type ApiResponse = {
@@ -61,16 +71,20 @@ export default function CollectorDashboardPage() {
   const [editions, setEditions] = useState<CollectorEdition[]>([])
   const [certifications, setCertifications] = useState<CollectorCertification[]>([])
   const [hiddenContent, setHiddenContent] = useState<HiddenContent | null>(null)
+  const [avatar, setAvatar] = useState<any>(null)
+  const [expandedGroup, setExpandedGroup] = useState<any[] | null>(null)
+  const [groupingMode, setGroupingMode] = useState<'product' | 'artist'>('product')
 
   useEffect(() => {
     const load = async () => {
       try {
         setIsLoading(true)
-        const [dashboardRes, editionsRes, certificationsRes, hiddenContentRes] = await Promise.all([
+        const [dashboardRes, editionsRes, certificationsRes, hiddenContentRes, avatarRes] = await Promise.all([
           fetch("/api/collector/dashboard", { credentials: "include" }),
           fetch("/api/collector/editions", { credentials: "include" }),
           fetch("/api/collector/certifications", { credentials: "include" }),
           fetch("/api/collector/hidden-content", { credentials: "include" }),
+          fetch("/api/collector/avatar", { credentials: "include" }),
         ])
 
         if (!dashboardRes.ok) {
@@ -102,6 +116,13 @@ export default function CollectorDashboardPage() {
             setHiddenContent(hiddenData.hiddenContent || { hiddenSeries: [], bonusContent: [] })
           }
         }
+
+        if (avatarRes.ok) {
+          const avatarData = await avatarRes.json()
+          if (avatarData.success) {
+            setAvatar(avatarData.avatar)
+          }
+        }
       } catch (err: any) {
         setError(err.message || "Failed to load collector dashboard")
         // If missing session, bounce to login
@@ -130,6 +151,16 @@ export default function CollectorDashboardPage() {
         })),
     [lineItems],
   )
+
+  const stats = useMemo(() => {
+    if (!data) return []
+    return [
+      { label: 'Active Collection', value: data.stats.totalArtworksOwned, icon: Award, color: 'text-amber-600', bg: 'bg-amber-50' },
+      { label: 'Market Value', value: formatCurrency(lineItems.reduce((sum, li) => sum + (li.price || 0), 0), 'USD'), icon: DollarSign, color: 'text-emerald-600', bg: 'bg-emerald-50' },
+      { label: 'Total Acquisitions', value: data.stats.totalOrders, icon: ShoppingBag, color: 'text-blue-600', bg: 'bg-blue-50' },
+      { label: 'Items Tracked', value: lineItems.length, icon: LayoutGrid, color: 'text-purple-600', bg: 'bg-purple-50' },
+    ]
+  }, [data, lineItems])
 
   if (isLoading) {
     return (
@@ -166,159 +197,146 @@ export default function CollectorDashboardPage() {
   }
 
   return (
-    <div className="container mx-auto px-4 py-8 space-y-8">
-      <header className="space-y-3">
-        <p className="text-sm text-muted-foreground">Collector dashboard</p>
-        <div className="flex flex-wrap items-center gap-3">
-          <h1 className="text-3xl font-bold">Your collection binder</h1>
-          <Badge variant="outline">Shopify customer</Badge>
-          {data.collectorIdentifier && (
-            <Badge variant="secondary">ID: {data.collectorIdentifier.slice(0, 12)}…</Badge>
-          )}
+    <div className="min-h-screen bg-[#f8fafc]/50">
+      {/* Top Navigation Bar */}
+      <div className="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-slate-200 px-6 py-4">
+        <div className="max-w-7xl mx-auto flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <div className="flex flex-col">
+              <span className="text-[10px] uppercase font-black text-slate-400 tracking-widest leading-none">Collector Dashboard</span>
+              <h2 className="text-lg font-black text-slate-900 leading-tight tracking-tight">Your collection binder</h2>
+            </div>
+          </div>
+          <div className="flex items-center gap-3">
+            <Button variant="outline" size="sm" className="rounded-full font-bold text-xs px-4 h-9">
+              <Share2 className="h-3.5 w-3.5 mr-2" /> Share
+            </Button>
+            <Button variant="default" size="sm" className="rounded-full font-bold text-xs px-4 h-9 shadow-lg shadow-primary/20">
+              Actions <MoreHorizontal className="h-3.5 w-3.5 ml-2" />
+            </Button>
+          </div>
         </div>
-        <p className="text-muted-foreground">
-          See purchased artworks, artist journeys, authentication status, and manage credits.
-        </p>
-      </header>
-
-      <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
-        <StatCard
-          title="Owned artworks"
-          value={data.stats.totalArtworksOwned}
-          description="All purchased items"
-          icon={<Wand2 className="h-4 w-4" />}
-        />
-        <StatCard
-          title="Authenticated"
-          value={data.stats.authenticatedCount}
-          description="NFC paired"
-          icon={<ShieldCheck className="h-4 w-4" />}
-        />
-        <StatCard
-          title="Pending auth"
-          value={data.stats.unauthenticatedCount}
-          description="Finish NFC pairing"
-          icon={<Timer className="h-4 w-4" />}
-        />
-        <StatCard
-          title="Certificates"
-          value={data.stats.certificatesReady}
-          description="Ready to view"
-          icon={<ShieldCheck className="h-4 w-4" />}
-        />
-        <StatCard
-          title="Orders"
-          value={data.stats.totalOrders}
-          description="Recent purchases"
-          icon={<Wallet className="h-4 w-4" />}
-        />
       </div>
 
-      <DashboardTabs>
-        {{
-          overview: (
-            <div className="space-y-8">
-              <InkOGatchiWidget />
-              
-              <section className="space-y-3">
-                <div className="flex items-center justify-between flex-wrap gap-2">
-                  <div>
-                    <h2 className="text-xl font-semibold">Purchased artworks</h2>
-                    <p className="text-sm text-muted-foreground">Every line item you own.</p>
-                  </div>
-                </div>
-                <ArtworkGrid items={lineItems} />
-              </section>
+      <div className="max-w-7xl mx-auto px-6 py-8">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+          
+          {/* LEFT PANEL: Profile & Identity */}
+          <div className="lg:col-span-4 space-y-6">
+            <PremiumProfileHero 
+              profile={data.profile || { 
+                display_name: "Collector", 
+                user_email: data.collectorIdentifier ? `ID: ${data.collectorIdentifier.slice(0, 8)}` : "Guest",
+                avatar_url: null
+              }} 
+              avatar={avatar} 
+            />
+          </div>
 
-              <Separator />
+          {/* RIGHT PANEL: Experience & Activity */}
+          <div className="lg:col-span-8 space-y-8">
+            {/* Quick Stats Grid */}
+            <PremiumStatsGrid stats={stats} />
 
-              <section className="grid grid-cols-1 xl:grid-cols-3 gap-6">
-                <div className="space-y-3 xl:col-span-2">
-                  <div className="flex items-center justify-between flex-wrap gap-2">
-                    <div>
-                      <h2 className="text-xl font-semibold">Artists</h2>
-                      <p className="text-sm text-muted-foreground">Jump into an artist journey.</p>
+            {/* Interactive Activity Section */}
+            <div className="space-y-6">
+              <DashboardTabs>
+                {{
+                  overview: (
+                    <div className="space-y-8">
+                      <InkOGatchiWidget userId={avatar?.user_id} email={avatar?.user_email} />
+                      
+                      <section className="space-y-6">
+                        <div className="flex items-center justify-between px-2">
+                          <h3 className="text-xl font-black text-slate-900 tracking-tight">Recent Activity</h3>
+                          <HistoryIcon className="h-5 w-5 text-slate-300" />
+                        </div>
+                        <div className="space-y-4">
+                          {data.orders.slice(0, 5).map((order) => (
+                            <PremiumOrderCard 
+                              key={order.id} 
+                              order={order} 
+                              onExpandStack={(group) => {
+                                setGroupingMode('product')
+                                setExpandedGroup(group)
+                              }}
+                            />
+                          ))}
+                        </div>
+                      </section>
+
+                      <Separator className="bg-slate-200/60" />
+
+                      <section className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+                        <div className="space-y-3 xl:col-span-2">
+                          <div className="flex items-center justify-between flex-wrap gap-2 px-2">
+                            <h2 className="text-xl font-black text-slate-900 tracking-tight">Artists</h2>
+                          </div>
+                          <ArtistList artists={data.artists} />
+                        </div>
+                        <div className="space-y-3">
+                          <h2 className="text-xl font-black text-slate-900 tracking-tight px-2">Authentication</h2>
+                          <AuthenticationQueue items={pendingAuth} />
+                        </div>
+                      </section>
+
+                      <section className="space-y-3">
+                        <div className="flex items-center justify-between flex-wrap gap-2 px-2">
+                          <h2 className="text-xl font-black text-slate-900 tracking-tight">Series binder</h2>
+                        </div>
+                        <SeriesBinder series={data.series} />
+                      </section>
+
+                      <Separator className="bg-slate-200/60" />
+
+                      <section className="space-y-3">
+                        <div className="flex items-center justify-between flex-wrap gap-2 px-2">
+                          <h2 className="text-xl font-black text-slate-900 tracking-tight">Credits & subscriptions</h2>
+                        </div>
+                        <CreditsPanel collectorIdentifier={data.collectorIdentifier} />
+                      </section>
                     </div>
-                  </div>
-                  <ArtistList artists={data.artists} />
-                </div>
-                <div className="space-y-3">
-                  <h2 className="text-xl font-semibold">Authentication</h2>
-                  <AuthenticationQueue items={pendingAuth} />
-                </div>
-              </section>
-
-              <section className="space-y-3">
-                <div className="flex items-center justify-between flex-wrap gap-2">
-                  <div>
-                    <h2 className="text-xl font-semibold">Series binder</h2>
-                    <p className="text-sm text-muted-foreground">See progress for each series you own.</p>
-                  </div>
-                </div>
-                <SeriesBinder series={data.series} />
-              </section>
-
-              <Separator />
-
-              <section className="space-y-3">
-                <div className="flex items-center justify-between flex-wrap gap-2">
-                  <div>
-                    <h2 className="text-xl font-semibold">Credits & subscriptions</h2>
-                    <p className="text-sm text-muted-foreground">
-                      Manage credit balance and recurring plans to buy more art.
-                    </p>
-                  </div>
-                </div>
-                <CreditsPanel collectorIdentifier={data.collectorIdentifier} />
-              </section>
+                  ),
+                  collection: (
+                    <PurchasesSection
+                      items={lineItems}
+                      purchasesByArtist={data.purchasesByArtist}
+                      purchasesBySeries={data.purchasesBySeries}
+                    />
+                  ),
+                  editions: (
+                    <EditionsGallery 
+                      editions={editions} 
+                      onExpandStack={(group, mode) => {
+                        setGroupingMode(mode)
+                        setExpandedGroup(group)
+                      }}
+                    />
+                  ),
+                  artists: (
+                    <ArtistsCollection artists={data.artistStats || []} />
+                  ),
+                  certifications: <CertificationsHub certifications={certifications.length > 0 ? certifications : (data.certifications || [])} />,
+                  profile: <ProfileSection />,
+                  hiddenContent: (
+                    <HiddenContentComponent
+                      hiddenContent={hiddenContent || data.hiddenContent || { hiddenSeries: [], bonusContent: [] }}
+                    />
+                  ),
+                }}
+              </DashboardTabs>
             </div>
-          ),
-          collection: (
-            <PurchasesSection
-              items={lineItems}
-              purchasesByArtist={data.purchasesByArtist}
-              purchasesBySeries={data.purchasesBySeries}
-            />
-          ),
-          editions: <EditionsGallery editions={editions} />,
-          artists: (
-            <ArtistsCollection artists={data.artistStats || []} />
-          ),
-          certifications: <CertificationsHub certifications={certifications.length > 0 ? certifications : (data.certifications || [])} />,
-          profile: <ProfileSection />,
-          hiddenContent: (
-            <HiddenContentComponent
-              hiddenContent={hiddenContent || data.hiddenContent || { hiddenSeries: [], bonusContent: [] }}
-            />
-          ),
-        }}
-      </DashboardTabs>
-    </div>
-  )
-}
+          </div>
+        </div>
+      </div>
 
-function StatCard({
-  title,
-  value,
-  description,
-  icon,
-}: {
-  title: string
-  value: number
-  description: string
-  icon: React.ReactNode
-}) {
-  return (
-    <Card>
-      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-        <CardTitle className="text-sm font-medium">{title}</CardTitle>
-        <div className="text-muted-foreground">{icon}</div>
-      </CardHeader>
-      <CardContent>
-        <div className="text-2xl font-bold">{value}</div>
-        <p className="text-xs text-muted-foreground">{description}</p>
-      </CardContent>
-    </Card>
+      <PremiumExpandedStackModal 
+        isOpen={!!expandedGroup}
+        onClose={() => setExpandedGroup(null)}
+        group={expandedGroup}
+        groupingMode={groupingMode}
+      />
+    </div>
   )
 }
 

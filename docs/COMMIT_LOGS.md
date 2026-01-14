@@ -1,3 +1,26 @@
+## Commit: Premium Collector Dashboard UI/UX (2026-01-14)
+
+### ✅ Implementation Checklist
+- [x] `app/collector/dashboard/page.tsx` – Replaced legacy dashboard layout with premium two-column layout, sticky header, premium stats grid, and stacked activity cards.
+- [x] `app/collector/dashboard/components/premium/PremiumProfileHero.tsx` – Added premium hero/profile card matching Admin CRM collector profile styling.
+- [x] `app/collector/dashboard/components/premium/PremiumStatsGrid.tsx` – Added premium metric cards to match Admin CRM quick stats grid.
+- [x] `app/collector/dashboard/components/premium/PremiumArtworkStack.tsx` – Added “stacked deck” gallery card UX with hover animation and next/prev cycling.
+- [x] `app/collector/dashboard/components/premium/PremiumExpandedStackModal.tsx` – Added expanded stack modal for viewing grouped editions/items.
+- [x] `app/collector/dashboard/components/premium/PremiumOrderCard.tsx` – Added premium acquisitions card UI with stacked line items and expand behavior.
+- [x] `app/collector/dashboard/components/editions-gallery.tsx` – Refactored to support “By Item” / “By Artist” premium stacked view.
+- [x] `app/collector/dashboard/components/purchases-section.tsx` – Refactored to use premium stacking for purchases grouping.
+- [x] `app/collector/dashboard/components/dashboard-tabs.tsx` – Updated tabs styling to match premium rounded pill design.
+- [x] `components/ui/button.tsx` – Added `xs` button size (used by Ink‑O‑Gatchi widget).
+
+### 🧪 Verification
+- TypeScript/lints: clean for touched files.
+- Manual: confirm `/collector/dashboard` shows premium layout (sticky header, left profile hero, right stats + stacked sections).
+
+### 📌 Deployment Notes
+- Deploy to Vercel production required after commit.
+
+---
+
 ## Commit: Collector Data Enrichment Unification (2026-01-08)
 
 ### ✅ Implementation Checklist

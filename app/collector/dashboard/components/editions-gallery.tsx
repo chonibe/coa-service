@@ -6,20 +6,24 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import Image from "next/image"
-import { CheckCircle2, FileText, ExternalLink } from "lucide-react"
+import { CheckCircle2, FileText, ExternalLink, Award, ChevronRight, Calendar } from "lucide-react"
+import { motion } from "framer-motion"
+import { PremiumArtworkStack } from "./premium/PremiumArtworkStack"
 import type { CollectorEdition } from "@/types/collector"
 
 interface EditionsGalleryProps {
   editions: CollectorEdition[]
+  onExpandStack: (group: any[], mode: 'product' | 'artist') => void
 }
 
 type FilterBy = "all" | "limited" | "open"
 type SortBy = "number" | "date" | "artist" | "series"
 
-export function EditionsGallery({ editions }: EditionsGalleryProps) {
+export function EditionsGallery({ editions, onExpandStack }: EditionsGalleryProps) {
   const [filterBy, setFilterBy] = useState<FilterBy>("all")
-  const [sortBy, setSortBy] = useState<SortBy>("number")
+  const [sortBy, setSortBy] = useState<SortBy>("date")
   const [selectedArtist, setSelectedArtist] = useState<string>("all")
+  const [viewMode, setViewMode] = useState<'product' | 'artist'>('product')
 
   const artists = useMemo(() => {
     const artistSet = new Set(editions.map((e) => e.vendorName).filter(Boolean))
@@ -63,54 +67,63 @@ export function EditionsGallery({ editions }: EditionsGalleryProps) {
     return filtered
   }, [editions, filterBy, sortBy, selectedArtist])
 
-  const getEditionBadge = (edition: CollectorEdition) => {
-    if (edition.editionType === "limited" && edition.editionNumber && edition.editionTotal) {
-      return (
-        <Badge className="bg-purple-600 hover:bg-purple-700 font-mono">
-          #{edition.editionNumber} of {edition.editionTotal}
-        </Badge>
-      )
+  const groupedEditions = useMemo(() => {
+    if (viewMode === 'product') {
+      return Object.values(filteredAndSorted.reduce((acc: any, edition: any) => {
+        const key = edition.productId || edition.name;
+        if (!acc[key]) acc[key] = [];
+        acc[key].push(edition);
+        return acc;
+      }, {}));
+    } else {
+      return Object.values(filteredAndSorted.reduce((acc: any, edition: any) => {
+        const key = edition.vendorName || 'Unknown Artist';
+        if (!acc[key]) acc[key] = [];
+        acc[key].push(edition);
+        return acc;
+      }, {}));
     }
-    if (edition.editionNumber) {
-      return (
-        <Badge variant="outline" className="font-mono">
-          #{edition.editionNumber}
-        </Badge>
-      )
-    }
-    return null
-  }
-
-  const getVerificationBadge = (edition: CollectorEdition) => {
-    if (edition.verificationSource === "supabase") {
-      return (
-        <Badge variant="secondary" className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100">
-          <CheckCircle2 className="h-3 w-3 mr-1" />
-          Verified
-        </Badge>
-      )
-    }
-    return null
-  }
+  }, [filteredAndSorted, viewMode]);
 
   if (!editions.length) {
     return (
-      <Card>
-        <CardHeader>
-          <CardTitle>No editions yet</CardTitle>
-          <CardDescription>Editions from your purchases will appear here.</CardDescription>
-        </CardHeader>
+      <Card className="rounded-[2.5rem] border-none shadow-xl bg-white overflow-hidden p-12 text-center">
+        <Award className="h-12 w-12 text-slate-200 mx-auto mb-4" />
+        <CardTitle>No editions yet</CardTitle>
+        <CardDescription>Editions from your purchases will appear here.</CardDescription>
       </Card>
     )
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-wrap items-center gap-4">
+    <div className="space-y-8">
+      <div className="flex items-center justify-between px-2">
+        <h3 className="text-xl font-black text-slate-900 tracking-tight">Artworks Gallery</h3>
+        <div className="flex bg-slate-100 p-1 rounded-xl border border-slate-200/50">
+          <Button 
+            variant={viewMode === 'product' ? 'default' : 'ghost'} 
+            size="sm" 
+            onClick={() => setViewMode('product')}
+            className={`rounded-lg px-4 h-8 text-[10px] font-black uppercase tracking-widest transition-all ${viewMode === 'product' ? 'bg-white text-primary shadow-sm border-slate-200' : 'text-slate-500'}`}
+          >
+            By Item
+          </Button>
+          <Button 
+            variant={viewMode === 'artist' ? 'default' : 'ghost'} 
+            size="sm" 
+            onClick={() => setViewMode('artist')}
+            className={`rounded-lg px-4 h-8 text-[10px] font-black uppercase tracking-widest transition-all ${viewMode === 'artist' ? 'bg-white text-primary shadow-sm border-slate-200' : 'text-slate-500'}`}
+          >
+            By Artist
+          </Button>
+        </div>
+      </div>
+
+      <div className="flex flex-wrap items-center gap-4 px-2">
         <div className="flex items-center gap-2">
-          <label className="text-sm font-medium">Filter:</label>
+          <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Filter:</label>
           <Select value={filterBy} onValueChange={(value) => setFilterBy(value as FilterBy)}>
-            <SelectTrigger className="w-[140px]">
+            <SelectTrigger className="w-[140px] rounded-full h-9 text-xs font-bold border-slate-200">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -121,116 +134,36 @@ export function EditionsGallery({ editions }: EditionsGalleryProps) {
           </Select>
         </div>
         <div className="flex items-center gap-2">
-          <label className="text-sm font-medium">Sort by:</label>
+          <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Sort:</label>
           <Select value={sortBy} onValueChange={(value) => setSortBy(value as SortBy)}>
-            <SelectTrigger className="w-[140px]">
+            <SelectTrigger className="w-[140px] rounded-full h-9 text-xs font-bold border-slate-200">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="number">Edition Number</SelectItem>
-              <SelectItem value="date">Purchase Date</SelectItem>
+              <SelectItem value="date">Date</SelectItem>
+              <SelectItem value="number">Edition #</SelectItem>
               <SelectItem value="artist">Artist</SelectItem>
               <SelectItem value="series">Series</SelectItem>
             </SelectContent>
           </Select>
         </div>
-        <div className="flex items-center gap-2">
-          <label className="text-sm font-medium">Artist:</label>
-          <Select value={selectedArtist} onValueChange={setSelectedArtist}>
-            <SelectTrigger className="w-[180px]">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Artists</SelectItem>
-              {artists.map((artist) => (
-                <SelectItem key={artist} value={artist}>
-                  {artist}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-        {filteredAndSorted.map((edition) => (
-          <Card key={edition.id} className="h-full flex flex-col">
-            {edition.imgUrl && (
-              <div className="relative w-full h-48">
-                <Image
-                  src={edition.imgUrl}
-                  alt={edition.name}
-                  fill
-                  className="object-cover rounded-t-lg"
-                  sizes="(max-width: 768px) 100vw, 33vw"
-                />
-              </div>
-            )}
-            <CardHeader className="space-y-3">
-              <div className="flex items-center justify-between flex-wrap gap-2">
-                <CardTitle className="text-base leading-tight line-clamp-2 flex-1">{edition.name}</CardTitle>
-                {getVerificationBadge(edition)}
-              </div>
-              <div className="flex items-center gap-2 flex-wrap">
-                {getEditionBadge(edition)}
-                {edition.editionType === "limited" && (
-                  <Badge variant="outline" className="text-xs">
-                    Limited Edition
-                  </Badge>
-                )}
-                {edition.editionType === "open" && (
-                  <Badge variant="outline" className="text-xs">
-                    Open Edition
-                  </Badge>
-                )}
-              </div>
-              {edition.series && (
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <Badge variant="secondary" className="capitalize">
-                    {edition.series.name}
-                  </Badge>
-                  <span>Series</span>
-                </div>
-              )}
-              {edition.vendorName && (
-                <CardDescription className="capitalize">{edition.vendorName}</CardDescription>
-              )}
-            </CardHeader>
-            <CardContent className="flex-1 space-y-3">
-              <div className="text-xs text-muted-foreground">
-                Purchased: {new Date(edition.purchaseDate).toLocaleDateString()}
-              </div>
-              {edition.price && (
-                <div className="text-sm font-medium">${edition.price.toFixed(2)}</div>
-              )}
-            </CardContent>
-            <CardContent className="flex gap-2 pt-0">
-              {edition.certificateUrl && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => window.open(edition.certificateUrl!, "_blank")}
-                  className="flex-1"
-                >
-                  <FileText className="h-4 w-4 mr-2" />
-                  Certificate
-                </Button>
-              )}
-              {edition.productId && (
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  onClick={() => window.open(`/products/${edition.productId}`, "_blank")}
-                  className="flex-1"
-                >
-                  <ExternalLink className="h-4 w-4 mr-2" />
-                  View
-                </Button>
-              )}
-            </CardContent>
-          </Card>
+      <motion.div 
+        key={viewMode}
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-12"
+      >
+        {groupedEditions.map((group: any) => (
+          <PremiumArtworkStack 
+            key={(group[0].productId || group[0].name) + viewMode} 
+            group={group} 
+            groupingMode={viewMode} 
+            onExpand={(expandedGroup) => onExpandStack(expandedGroup, viewMode)}
+          />
         ))}
-      </div>
+      </motion.div>
     </div>
   )
 }
