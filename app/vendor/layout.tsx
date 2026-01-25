@@ -7,6 +7,7 @@ import { createClient as createRouteClient } from "@/lib/supabase-server"
 import { getVendorFromCookieStore } from "@/lib/vendor-session"
 import { buildVendorSessionCookie } from "@/lib/vendor-session"
 import { linkSupabaseUserToVendor, isAdminEmail } from "@/lib/vendor-auth"
+import { handleAuthError, isAuthError } from "@/lib/auth-error-handler"
 
 const PENDING_ACCESS_ROUTE = "/vendor/access-pending"
 const ACCESS_DENIED_ROUTE = "/vendor/access-denied"
@@ -16,13 +17,14 @@ interface VendorLayoutProps {
 }
 
 export default async function VendorLayout({ children }: VendorLayoutProps) {
-  const cookieStore = cookies()
-  
-  // Debug: Log all cookies to see what's available
-  const allCookies = cookieStore.getAll()
-  console.log(`[vendor/layout] All cookies:`, allCookies.map(c => c.name).join(", "))
-  
-  let vendorName = getVendorFromCookieStore(cookieStore)
+  try {
+    const cookieStore = cookies()
+    
+    // Debug: Log all cookies to see what's available
+    const allCookies = cookieStore.getAll()
+    console.log(`[vendor/layout] All cookies:`, allCookies.map(c => c.name).join(", "))
+    
+    let vendorName = getVendorFromCookieStore(cookieStore)
 
   // If no vendor session cookie, try to get vendor from Supabase session
   if (!vendorName) {
@@ -40,9 +42,11 @@ export default async function VendorLayout({ children }: VendorLayoutProps) {
       if (session?.user) {
         const email = session.user.email?.toLowerCase()
         
-        // Don't create vendor session for admins
+        // Only redirect admin to admin dashboard if they DON'T have a vendor session
+        // This allows admins who switched to vendor role to stay
+        // If admin has vendor session cookie (set via role switching), allow access
         if (email && isAdminEmail(email)) {
-          console.log("[vendor/layout] Admin user detected, redirecting to admin dashboard")
+          console.log("[vendor/layout] Admin without vendor session, redirecting to admin dashboard")
           redirect("/admin/dashboard")
         }
         
@@ -170,5 +174,22 @@ export default async function VendorLayout({ children }: VendorLayoutProps) {
 
   console.log(`[vendor/layout] All checks passed, rendering content`)
 
-  return <SidebarLayout>{children}</SidebarLayout>
+    return <SidebarLayout>{children}</SidebarLayout>
+  } catch (error: any) {
+    // Check if it's an auth error
+    if (isAuthError(error)) {
+      console.error('[vendor/layout] Authentication error caught:', error)
+      handleAuthError(error, { redirectTo: '/login' })
+    }
+    
+    // Check if it's a redirect (expected behavior)
+    if (error?.digest?.startsWith('NEXT_REDIRECT')) {
+      throw error
+    }
+    
+    // For any other error, log and redirect to login with error message
+    console.error('[vendor/layout] Unexpected error:', error)
+    const errorMessage = encodeURIComponent('An error occurred. Please log in again.')
+    redirect(`/login?error=${errorMessage}`)
+  }
 }
