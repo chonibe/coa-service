@@ -247,7 +247,7 @@ export default function VendorDashboardPage() {
   const formattedLastUpdated = lastUpdated ? new Intl.DateTimeFormat("en-GB", { hour: "2-digit", minute: "2-digit", hour12: false }).format(lastUpdated) : null
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
         <div className="flex items-center justify-between gap-3">
           <div className="space-y-1">
             <p className="text-muted-foreground text-lg">Welcome back, {vendorName}! Here's what's happening with your business.</p>
@@ -269,21 +269,21 @@ export default function VendorDashboardPage() {
         <ContextualOnboarding context="dashboard" />
 
       {statsError && (
-        <Alert variant="destructive" className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-0 shadow-lg">
+        <Alert variant="destructive" className="border shadow-sm">
           <AlertCircle className="h-4 w-4" />
           <AlertTitle>Stats issue</AlertTitle>
           <AlertDescription>{statsError}</AlertDescription>
         </Alert>
       )}
       {analyticsError && (
-        <Alert variant="destructive" className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-0 shadow-lg">
+        <Alert variant="destructive" className="border shadow-sm">
           <AlertCircle className="h-4 w-4" />
           <AlertTitle>Analytics issue</AlertTitle>
           <AlertDescription>{analyticsError}</AlertDescription>
         </Alert>
       )}
 
-      <div className="space-y-6">
+      <div className="space-y-4">
           {isLoading ? (
             <LoadingSkeleton variant="metric" count={3} />
           ) : (
@@ -317,7 +317,7 @@ export default function VendorDashboardPage() {
           )}
 
           <div className="grid gap-6 md:grid-cols-2">
-            <Card className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-0 shadow-xl">
+            <Card className="border shadow-sm">
               <CardHeader>
                 <CardTitle>Recent Activity</CardTitle>
                 <CardDescription>Your latest sales and what's happening</CardDescription>

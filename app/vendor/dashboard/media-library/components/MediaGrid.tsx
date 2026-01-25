@@ -56,13 +56,13 @@ export function MediaGrid({
 
   if (viewMode === "list") {
     return (
-      <div className="space-y-2">
-        <div className="flex items-center gap-2 p-2 border-b">
+      <div className="space-y-1">
+        <div className="flex items-center gap-2 px-3 py-2 border-b">
           <Checkbox
             checked={selectedItems.size === media.length && media.length > 0}
             onCheckedChange={onSelectAll}
           />
-          <div className="flex-1 grid grid-cols-4 gap-4 text-sm font-medium">
+          <div className="flex-1 grid grid-cols-4 gap-4 text-xs font-medium">
             <div>Name</div>
             <div>Type</div>
             <div>Size</div>
@@ -72,7 +72,7 @@ export function MediaGrid({
         {media.map((item) => (
           <div
             key={item.id}
-            className="flex items-center gap-2 p-2 hover:bg-accent rounded-lg cursor-pointer"
+            className="flex items-center gap-2 px-3 py-2 hover:bg-accent rounded cursor-pointer"
             onClick={() => onSelectItem(item)}
           >
             <Checkbox
@@ -83,7 +83,7 @@ export function MediaGrid({
             <div className="flex-1 grid grid-cols-4 gap-4 text-sm items-center">
               <div className="flex items-center gap-2 min-w-0">
                 {item.type === "image" ? (
-                  <div className="relative w-10 h-10 flex-shrink-0">
+                  <div className="relative w-8 h-8 flex-shrink-0">
                     <Image
                       src={item.url}
                       alt={item.name}
@@ -92,17 +92,17 @@ export function MediaGrid({
                     />
                   </div>
                 ) : (
-                  <div className="w-10 h-10 flex items-center justify-center bg-muted rounded flex-shrink-0">
+                  <div className="w-8 h-8 flex items-center justify-center bg-muted rounded flex-shrink-0">
                     {getMediaIcon(item.type)}
                   </div>
                 )}
-                <span className="truncate">{item.name}</span>
+                <span className="truncate text-sm">{item.name}</span>
               </div>
               <div>
-                <Badge variant="outline">{item.type}</Badge>
+                <Badge variant="outline" className="text-xs">{item.type}</Badge>
               </div>
-              <div className="text-muted-foreground">{formatFileSize(item.size)}</div>
-              <div className="text-muted-foreground">{formatDate(item.created_at)}</div>
+              <div className="text-muted-foreground text-xs">{formatFileSize(item.size)}</div>
+              <div className="text-muted-foreground text-xs">{formatDate(item.created_at)}</div>
             </div>
           </div>
         ))}

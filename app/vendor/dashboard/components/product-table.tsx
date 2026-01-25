@@ -63,18 +63,18 @@ export function ProductTable({ products }: ProductTableProps) {
   const getStatusBadge = (status: string) => {
     switch (status.toLowerCase()) {
       case "active":
-        return <Badge className="bg-green-500">Active</Badge>
+        return <Badge className="bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400 hover:bg-green-100 dark:hover:bg-green-900/30">Active</Badge>
       case "draft":
-        return <Badge variant="outline">Draft</Badge>
+        return <Badge className="bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800" variant="outline">Draft</Badge>
       case "archived":
-        return <Badge variant="destructive">Archived</Badge>
+        return <Badge className="bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/30" variant="outline">Archived</Badge>
       default:
         return <Badge variant="secondary">{status}</Badge>
     }
   }
 
   const SortHeader = ({ field, label }: { field: keyof Product; label: string }) => (
-    <TableHead className="cursor-pointer hover:bg-white/30 dark:hover:bg-slate-900/30 backdrop-blur-sm transition-colors" onClick={() => handleSort(field)}>
+    <TableHead className="cursor-pointer hover:bg-muted/50 transition-colors" onClick={() => handleSort(field)}>
       <div className="flex items-center space-x-1">
         <span>{label}</span>
         {sortField === field && (
@@ -88,7 +88,7 @@ export function ProductTable({ products }: ProductTableProps) {
 
   return (
     <div>
-      <div className="rounded-md border">
+      <div className="rounded border">
         <Table>
           <TableHeader>
             <TableRow>
@@ -105,18 +105,18 @@ export function ProductTable({ products }: ProductTableProps) {
               <TableRow key={product.id}>
                 <TableCell>
                   {product.image ? (
-                    <div className="relative h-12 w-12 rounded-md overflow-hidden">
+                    <div className="relative h-8 w-8 rounded overflow-hidden">
                       <Image
                         src={product.image || "/placeholder.svg"}
                         alt={product.title}
                         fill
                         className="object-cover"
-                        sizes="48px"
+                        sizes="32px"
                       />
                     </div>
                   ) : (
-                    <div className="h-12 w-12 rounded-md bg-muted flex items-center justify-center">
-                      <Package className="h-6 w-6 text-muted-foreground" />
+                    <div className="h-8 w-8 rounded bg-muted flex items-center justify-center">
+                      <Package className="h-4 w-4 text-muted-foreground" />
                     </div>
                   )}
                 </TableCell>
@@ -169,12 +169,11 @@ export function ProductTable({ products }: ProductTableProps) {
       </div>
 
       {totalPages > 1 && (
-        <div className="flex items-center justify-between py-4">
-          <div className="text-sm text-muted-foreground">
-            Showing {(page - 1) * itemsPerPage + 1}-{Math.min(page * itemsPerPage, products.length)} of{" "}
-            {products.length}
+        <div className="flex items-center justify-between py-3 px-3">
+          <div className="text-xs text-muted-foreground">
+            {(page - 1) * itemsPerPage + 1}-{Math.min(page * itemsPerPage, products.length)} of {products.length}
           </div>
-          <div className="flex items-center space-x-2">
+          <div className="flex items-center gap-2">
             <Button
               variant="outline"
               size="sm"

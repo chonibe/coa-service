@@ -198,45 +198,45 @@ export default function MediaLibraryPage() {
   }
 
   return (
-    <div className="container mx-auto py-6 px-4 max-w-7xl">
+    <div className="container mx-auto py-4 px-4 max-w-7xl">
       {/* Header */}
-      <div className="mb-6">
-        <h1 className="text-3xl font-bold mb-2">Media Library</h1>
-        <p className="text-muted-foreground">
+      <div className="mb-4">
+        <h1 className="text-2xl font-bold mb-1">Media Library</h1>
+        <p className="text-muted-foreground text-sm">
           Manage all your media files in one place
         </p>
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-2 md:grid-cols-6 gap-4 mb-6">
-        <div className="bg-card p-4 rounded-lg border">
-          <div className="text-2xl font-bold">{stats.total}</div>
+      <div className="grid grid-cols-2 md:grid-cols-6 gap-3 mb-4">
+        <div className="bg-card p-3 rounded border shadow-sm">
+          <div className="text-xl font-bold">{stats.total}</div>
           <div className="text-xs text-muted-foreground">Total Files</div>
         </div>
-        <div className="bg-card p-4 rounded-lg border">
-          <div className="text-2xl font-bold">{stats.images}</div>
+        <div className="bg-card p-3 rounded border shadow-sm">
+          <div className="text-xl font-bold">{stats.images}</div>
           <div className="text-xs text-muted-foreground">Images</div>
         </div>
-        <div className="bg-card p-4 rounded-lg border">
-          <div className="text-2xl font-bold">{stats.videos}</div>
+        <div className="bg-card p-3 rounded border shadow-sm">
+          <div className="text-xl font-bold">{stats.videos}</div>
           <div className="text-xs text-muted-foreground">Videos</div>
         </div>
-        <div className="bg-card p-4 rounded-lg border">
-          <div className="text-2xl font-bold">{stats.audio}</div>
+        <div className="bg-card p-3 rounded border shadow-sm">
+          <div className="text-xl font-bold">{stats.audio}</div>
           <div className="text-xs text-muted-foreground">Audio</div>
         </div>
-        <div className="bg-card p-4 rounded-lg border">
-          <div className="text-2xl font-bold">{stats.pdfs}</div>
+        <div className="bg-card p-3 rounded border shadow-sm">
+          <div className="text-xl font-bold">{stats.pdfs}</div>
           <div className="text-xs text-muted-foreground">PDFs</div>
         </div>
-        <div className="bg-card p-4 rounded-lg border">
-          <div className="text-2xl font-bold">{formatSize(stats.totalSize)}</div>
+        <div className="bg-card p-3 rounded border shadow-sm">
+          <div className="text-xl font-bold">{formatSize(stats.totalSize)}</div>
           <div className="text-xs text-muted-foreground">Storage Used</div>
         </div>
       </div>
 
       {/* Toolbar */}
-      <div className="flex flex-col sm:flex-row gap-4 mb-6">
+      <div className="flex flex-col sm:flex-row gap-3 mb-4">
         <div className="flex-1 flex gap-2">
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />

@@ -59,8 +59,8 @@ export default function SeriesDetailPage() {
 
   if (loading) {
     return (
-      <div className="p-6">
-        <Skeleton className="h-8 w-48 mb-4" />
+      <div className="p-4">
+        <Skeleton className="h-6 w-48 mb-4" />
         <Skeleton className="h-[600px]" />
       </div>
     )
@@ -68,12 +68,12 @@ export default function SeriesDetailPage() {
 
   if (error || !series) {
     return (
-      <div className="p-6 space-y-6">
+      <div className="p-4 space-y-4">
         <Button variant="outline" onClick={() => router.push("/vendor/dashboard/products")}>
           <ArrowLeft className="h-4 w-4 mr-2" />
           Back to Artworks
         </Button>
-        <Alert variant="destructive">
+        <Alert variant="destructive" className="border shadow-sm">
           <AlertCircle className="h-4 w-4" />
           <AlertDescription>{error || "Series not found"}</AlertDescription>
         </Alert>
@@ -82,7 +82,7 @@ export default function SeriesDetailPage() {
   }
 
   return (
-    <div className="p-6">
+    <div className="p-4">
       <ShopifyStyleSeriesForm
         initialData={series}
         seriesId={seriesId}

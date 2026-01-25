@@ -1108,16 +1108,16 @@ export default function ProductsPage() {
   }
 
   return (
-    <div className="space-y-8 px-1">
+    <div className="space-y-4 px-1">
       {/* Series Section */}
-      <div className="space-y-6">
+      <div className="space-y-4">
         <div>
           <div className="flex items-center justify-between">
       <div>
-              <h1 className="text-3xl font-bold tracking-tight bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
+              <h1 className="text-2xl font-bold tracking-tight">
                 Artwork Series
               </h1>
-              <p className="text-muted-foreground mt-1">
+              <p className="text-muted-foreground mt-1 text-sm">
                 Manage your artwork series and unlock configurations
               </p>
               {isSavingOrder && (
@@ -1289,15 +1289,15 @@ export default function ProductsPage() {
       </div>
 
       {/* Artworks Section */}
-      <div className="space-y-6">
+      <div className="space-y-4">
         <div>
-          <h2 className="text-2xl font-bold tracking-tight">Your Artworks</h2>
-          <p className="text-muted-foreground mt-1">
+          <h2 className="text-xl font-bold tracking-tight">Your Artworks</h2>
+          <p className="text-muted-foreground mt-1 text-sm">
             Manage and track your individual artworks
           </p>
       </div>
 
-      <Tabs defaultValue="catalog" className="space-y-6">
+      <Tabs defaultValue="catalog" className="space-y-4">
         <TabsList>
           <TabsTrigger value="catalog">Artwork Catalog</TabsTrigger>
           <TabsTrigger value="submissions">
@@ -1310,13 +1310,13 @@ export default function ProductsPage() {
           </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="catalog" className="space-y-6">
-      <Card className="overflow-hidden w-full bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-0 shadow-xl">
+        <TabsContent value="catalog" className="space-y-4">
+      <Card className="overflow-hidden w-full border shadow-sm">
         <CardHeader>
           <CardTitle>Your Artworks</CardTitle>
           <CardDescription>All your artworks in one place - manage and track them here</CardDescription>
         </CardHeader>
-        <CardContent className="p-0 sm:p-2">
+        <CardContent className="p-0 sm:p-1">
           {isLoading ? (
             <div className="space-y-2 p-4">
               {Array(5)
@@ -1332,8 +1332,8 @@ export default function ProductsPage() {
       </Card>
         </TabsContent>
 
-        <TabsContent value="submissions" className="space-y-6">
-          <Card className="overflow-hidden w-full bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-0 shadow-xl">
+        <TabsContent value="submissions" className="space-y-4">
+          <Card className="overflow-hidden w-full border shadow-sm">
             <CardHeader>
               <CardTitle>Artwork Submissions</CardTitle>
               <CardDescription>
@@ -1351,8 +1351,8 @@ export default function ProductsPage() {
                 </div>
               ) : submissions.length === 0 ? (
                 <div className="text-center py-8 text-muted-foreground">
-                  <Package className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                  <p>No artwork submissions yet.</p>
+                  <Package className="h-10 w-10 mx-auto mb-3 opacity-50" />
+                  <p className="text-sm">No artwork submissions yet.</p>
                   <Button
                     variant="outline"
                     className="mt-4"
@@ -1374,12 +1374,12 @@ export default function ProductsPage() {
                     return (
                       <div
                         key={submission.id}
-                        className="border rounded-lg p-4 hover:bg-muted/50 transition-colors"
+                        className="border rounded p-3 hover:bg-muted/50 transition-colors"
                       >
-                        <div className="flex items-start gap-4">
+                        <div className="flex items-start gap-3">
                           {/* Preview Image */}
                           {previewImage ? (
-                            <div className="flex-shrink-0 w-24 h-24 rounded-lg overflow-hidden bg-muted border">
+                            <div className="flex-shrink-0 w-16 h-16 rounded overflow-hidden bg-muted border">
                               <img
                                 src={previewImage}
                                 alt={productData?.title || "Artwork"}
@@ -1387,8 +1387,8 @@ export default function ProductsPage() {
                               />
                             </div>
                           ) : (
-                            <div className="flex-shrink-0 w-24 h-24 rounded-lg bg-muted border flex items-center justify-center">
-                              <Package className="h-8 w-8 text-muted-foreground" />
+                            <div className="flex-shrink-0 w-16 h-16 rounded bg-muted border flex items-center justify-center">
+                              <Package className="h-6 w-6 text-muted-foreground" />
                             </div>
                           )}
                           

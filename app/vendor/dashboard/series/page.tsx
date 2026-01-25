@@ -245,8 +245,8 @@ export default function SeriesPage() {
 
   if (error) {
     return (
-      <div className="space-y-6">
-        <Alert variant="destructive">
+      <div className="space-y-4">
+        <Alert variant="destructive" className="border shadow-sm">
           <AlertCircle className="h-4 w-4" />
           <AlertDescription>{error}</AlertDescription>
         </Alert>
@@ -255,14 +255,14 @@ export default function SeriesPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <div>
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold tracking-tight bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
+            <h1 className="text-2xl font-bold tracking-tight">
               Artwork Series
             </h1>
-            <p className="text-muted-foreground mt-1">
+            <p className="text-muted-foreground mt-1 text-sm">
               Manage your artwork series and unlock configurations
             </p>
           </div>
@@ -300,7 +300,7 @@ export default function SeriesPage() {
       )}
 
       {viewMode === "binder" ? (
-        <div className="space-y-6">
+        <div className="space-y-4">
           {loadingArtworks ? (
             <div className="grid gap-4 grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
               {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((i) => (
@@ -310,10 +310,10 @@ export default function SeriesPage() {
               ))}
             </div>
           ) : allArtworks.length === 0 ? (
-            <Card>
+            <Card className="border shadow-sm">
               <CardContent className="flex flex-col items-center justify-center py-12">
-                <ImageIcon className="h-12 w-12 text-muted-foreground mb-4" />
-                <h3 className="text-lg font-semibold mb-2">No Artworks Found</h3>
+                <ImageIcon className="h-10 w-10 text-muted-foreground mb-3" />
+                <h3 className="text-base font-semibold mb-2">No Artworks Found</h3>
                 <p className="text-sm text-muted-foreground mb-4 text-center">
                   Add artworks to your series to see them here.
                 </p>
@@ -426,10 +426,10 @@ export default function SeriesPage() {
           )}
         </div>
       ) : series.length === 0 ? (
-        <Card>
+        <Card className="border shadow-sm">
           <CardContent className="flex flex-col items-center justify-center py-12">
-            <Lock className="h-12 w-12 text-muted-foreground mb-4" />
-            <h3 className="text-lg font-semibold mb-2">No Series Yet</h3>
+            <Lock className="h-10 w-10 text-muted-foreground mb-3" />
+            <h3 className="text-base font-semibold mb-2">No Series Yet</h3>
             <p className="text-sm text-muted-foreground mb-4 text-center">
               Create your first series to organize your artworks with unlock mechanics.
             </p>
@@ -440,10 +440,10 @@ export default function SeriesPage() {
           </CardContent>
         </Card>
       ) : filteredSeries.length === 0 ? (
-        <Card>
+        <Card className="border shadow-sm">
           <CardContent className="flex flex-col items-center justify-center py-12">
-            <AlertCircle className="h-12 w-12 text-muted-foreground mb-4" />
-            <h3 className="text-lg font-semibold mb-2">No Series Found</h3>
+            <AlertCircle className="h-10 w-10 text-muted-foreground mb-3" />
+            <h3 className="text-base font-semibold mb-2">No Series Found</h3>
             <p className="text-sm text-muted-foreground mb-4 text-center">
               No series match your search criteria. Try adjusting your filters.
             </p>
