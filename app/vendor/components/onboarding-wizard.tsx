@@ -10,7 +10,7 @@ import { useState, useEffect, useRef, useCallback } from "react"
 
 
 
-import { Progress } from "@/components/ui/progress"
+import { Progress } from "@/components/ui"
 import { useToast } from "@/components/ui/use-toast"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import {

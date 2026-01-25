@@ -6,7 +6,7 @@ import { useParams, useRouter } from "next/navigation"
 
 
 
-import { Skeleton } from "@/components/ui/skeleton"
+import { Skeleton } from "@/components/ui"
 
 import {
   ArrowLeft,

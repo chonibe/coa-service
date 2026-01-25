@@ -136,6 +136,18 @@ export {
   type PolarisNavigationProps as NavigationProps,
 } from '@/components/polaris/polaris-navigation'
 
+export {
+  PageContainer,
+  type PageContainerProps,
+  type PageContainerMaxWidth,
+  type PageContainerPadding,
+} from '@/components/polaris/polaris-page-container'
+
+export {
+  PageHeader,
+  type PageHeaderProps,
+} from '@/components/polaris/polaris-page-header'
+
 // Advanced components
 export {
   PolarisAutocomplete as Autocomplete,
@@ -183,3 +195,17 @@ export {
   toast,
   type ToasterProps,
 } from '@/components/polaris/polaris-toaster'
+
+export {
+  Collapsible,
+  CollapsibleTrigger,
+  CollapsibleContent,
+  type CollapsibleProps,
+  type CollapsibleTriggerProps,
+  type CollapsibleContentProps,
+} from '@/components/polaris/polaris-collapsible'
+
+export {
+  Slider,
+  type SliderProps,
+} from '@/components/polaris/polaris-slider'

@@ -1,7 +1,7 @@
 "use client"
 
 
-import { Skeleton } from "@/components/ui/skeleton"
+import { Skeleton } from "@/components/ui"
 import { useEffect, useState, useRef } from "react"
 import { Play, AlertCircle, RefreshCw, Maximize } from "lucide-react"
 import { motion } from "framer-motion"

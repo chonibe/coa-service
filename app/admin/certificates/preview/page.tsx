@@ -5,7 +5,7 @@ import Image from "next/image"
 
 
 
-import { Skeleton } from "@/components/ui/skeleton"
+import { Skeleton } from "@/components/ui"
 import {
   AlertCircle,
   CheckCircle,

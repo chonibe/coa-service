@@ -1,11 +1,42 @@
 'use client'
 
-import React, { useEffect, useRef } from 'react'
-import type { PolarisStackProps } from './types'
+import * as React from 'react'
+import { cn } from '@/lib/utils'
 
-/**
- * React wrapper for Polaris p-stack web component
- */
+const spacingMap = {
+  extraTight: 'gap-1',
+  tight: 'gap-2',
+  base: 'gap-4',
+  loose: 'gap-6',
+  extraLoose: 'gap-8',
+} as const
+
+const distributionMap = {
+  equalSpacing: 'justify-between',
+  leading: 'justify-start',
+  trailing: 'justify-end',
+  center: 'justify-center',
+  fill: 'flex-1 [&>*]:flex-1',
+  fillEvenly: 'justify-evenly',
+} as const
+
+const alignmentMap = {
+  leading: 'items-start',
+  trailing: 'items-end',
+  center: 'items-center',
+  fill: 'items-stretch',
+  baseline: 'items-baseline',
+} as const
+
+export interface PolarisStackProps extends React.HTMLAttributes<HTMLDivElement> {
+  spacing?: 'extraTight' | 'tight' | 'base' | 'loose' | 'extraLoose'
+  distribution?: 'equalSpacing' | 'leading' | 'trailing' | 'center' | 'fill' | 'fillEvenly'
+  alignment?: 'leading' | 'trailing' | 'center' | 'fill' | 'baseline'
+  vertical?: boolean
+  wrap?: boolean
+  children?: React.ReactNode
+}
+
 export function PolarisStack({
   spacing = 'base',
   distribution,
@@ -14,25 +45,22 @@ export function PolarisStack({
   wrap = false,
   children,
   className,
-  style,
   ...props
 }: PolarisStackProps) {
-  const ref = useRef<HTMLElement>(null)
-
-  useEffect(() => {
-    const element = ref.current
-    if (!element) return
-
-    if (spacing) element.setAttribute('spacing', spacing)
-    if (distribution) element.setAttribute('distribution', distribution)
-    if (alignment) element.setAttribute('alignment', alignment)
-    if (vertical) element.setAttribute('vertical', '')
-    if (wrap) element.setAttribute('wrap', '')
-    if (className) element.className = className
-    if (style) {
-      Object.assign(element.style, style)
-    }
-  }, [spacing, distribution, alignment, vertical, wrap, className, style])
-
-  return React.createElement('p-stack', { ref, ...props }, children)
+  return (
+    <div
+      className={cn(
+        'flex',
+        vertical ? 'flex-col' : 'flex-row',
+        spacingMap[spacing],
+        distribution && distributionMap[distribution],
+        alignment && alignmentMap[alignment],
+        wrap && 'flex-wrap',
+        className
+      )}
+      {...props}
+    >
+      {children}
+    </div>
+  )
 }

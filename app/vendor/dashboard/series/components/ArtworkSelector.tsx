@@ -6,7 +6,7 @@ import { useState, useEffect, useMemo } from "react"
 
 
 
-import { Skeleton } from "@/components/ui/skeleton"
+import { Skeleton } from "@/components/ui"
 
 import { Search, Plus, X, Image as ImageIcon, AlertCircle } from "lucide-react"
 import { cn } from "@/lib/utils"

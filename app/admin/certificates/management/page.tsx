@@ -36,7 +36,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 
-import { Progress } from "@/components/ui/progress"
+import { Progress } from "@/components/ui"
 
 import { CardFooter, Card, CardContent, CardDescription, CardHeader, CardTitle, Button, Alert, AlertDescription, AlertTitle, Input, Label, Table, TableBody, TableCell, TableHead, TableHeader, TableRow, Badge, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, Checkbox } from "@/components/ui"
 export default function CertificateManagementPage() {

@@ -25,14 +25,14 @@ import {
 } from "lucide-react"
 import { NfcTagScanner } from '@/src/components/NfcTagScanner'
 import { toast } from "@/components/ui/use-toast"
-import { Toaster } from "@/components/ui/toaster"
+import { Toaster } from "@/components/ui"
 import { CertificateModal } from '../../customer/dashboard/certificate-modal'
 import { useNFCScan } from '@/hooks/use-nfc-scan'
 import { motion, LayoutGroup, Variants, useScroll } from "framer-motion"
 
 
 
-import { Skeleton } from "@/components/ui/skeleton"
+import { Skeleton } from "@/components/ui"
 import { AnimatePresence } from "framer-motion"
 
 

@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react"
 import { useParams, useSearchParams } from "next/navigation"
 
-import { Skeleton } from "@/components/ui/skeleton"
+import { Skeleton } from "@/components/ui"
 
 
 import { CheckCircle2, Lock, TrendingUp } from "lucide-react"

@@ -43,3 +43,6 @@ next-env.d.ts
 # large files
 postgresql-installer.exe
 .env.production
+
+# mobile NFC writer (separate app with own node_modules)
+/mobile-nfc-writer/

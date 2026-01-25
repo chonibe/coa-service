@@ -2,9 +2,9 @@
 
 import { useState, useEffect } from "react"
 
-import { Progress } from "@/components/ui/progress"
+import { Progress } from "@/components/ui"
 
-import { Skeleton } from "@/components/ui/skeleton"
+import { Skeleton } from "@/components/ui"
 import { 
   Wallet, 
   Gift, 

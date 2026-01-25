@@ -3,12 +3,7 @@
 import React from "react"
 import { AlertCircle, Settings, Smartphone, MoveHorizontal } from "lucide-react"
 
-import { Button } from "@/components/ui"
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "@/components/ui/collapsible"
+import { Button, Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui"
 
 interface NFCTroubleshootingProps {
   onUseManualCode: () => void

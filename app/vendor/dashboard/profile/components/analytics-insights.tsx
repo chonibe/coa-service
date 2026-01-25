@@ -5,7 +5,7 @@ import { useState, useEffect, Suspense } from "react"
 
 import { AlertCircle, Download, BarChart3 } from "lucide-react"
 
-import { Skeleton } from "@/components/ui/skeleton"
+import { Skeleton } from "@/components/ui"
 import { useToast } from "@/components/ui/use-toast"
 import { TimeRangeSelector, type TimeRange, type DateRange } from "@/components/vendor/time-range-selector"
 import { LoadingSkeleton } from "@/components/vendor/loading-skeleton"

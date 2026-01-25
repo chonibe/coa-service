@@ -4,16 +4,10 @@ import {
   CardContent, 
   CardDescription, 
   CardHeader, 
-  CardTitle 
-} from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { 
-  NfcIcon, 
-  CheckCircle2, 
-  AlertCircle, 
-  Loader2 
-} from "lucide-react";
-import { Badge } from "@/components/ui/badge";
+  CardTitle,
+  Button,
+  Badge
+} from "@/components/ui";
 import { toast } from "@/components/ui/use-toast";
 
 // Declare Web NFC types if not already available

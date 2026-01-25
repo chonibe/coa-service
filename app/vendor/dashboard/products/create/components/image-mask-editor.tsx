@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect, useCallback, useMemo } from "react"
 
-import { Slider } from "@/components/ui/slider"
+import { Slider } from "@/components/ui"
 import { RotateCcw, ZoomIn, Move, Save, CheckCircle2, Loader2 } from "lucide-react"
 import type { ProductImage } from "@/types/product-submission"
 

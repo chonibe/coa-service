@@ -16,7 +16,7 @@ import {
 } from "lucide-react";
 import { formatCurrency } from "@/lib/utils";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Separator } from "@/components/ui/separator";
+import { Separator } from "@/components/ui";
 import { InkOGatchi } from "@/app/collector/dashboard/components/ink-o-gatchi";
 import { InkOGatchiWidget } from "@/app/collector/dashboard/components/inkogatchi-widget";
 import Link from "next/link";

@@ -1,7 +1,7 @@
 "use client"
 
 import { cn } from "@/lib/utils"
-import { Skeleton } from "@/components/ui/skeleton"
+import { Skeleton } from "@/components/ui"
 
 interface LoadingSkeletonProps {
   variant?: "card" | "table" | "list" | "metric" | "chart"

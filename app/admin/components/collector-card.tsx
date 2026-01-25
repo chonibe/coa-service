@@ -7,7 +7,7 @@ import { Mail, Phone, ShoppingBag, Award, Clock, MapPin, ChevronRight, ShieldChe
 import Link from "next/link";
 import { formatCurrency } from "@/lib/utils";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
-import { Separator } from "@/components/ui/separator";
+import { Separator } from "@/components/ui";
 
 import { Card, CardContent, Badge } from "@/components/ui"
 interface CollectorCardProps {

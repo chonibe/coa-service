@@ -3,7 +3,7 @@
 import Image from "next/image"
 
 
-import { Progress } from "@/components/ui/progress"
+import { Progress } from "@/components/ui"
 
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, Badge, Button } from "@/components/ui"

@@ -1,7 +1,7 @@
 "use client"
 
 
-import { Skeleton } from "@/components/ui/skeleton"
+import { Skeleton } from "@/components/ui"
 
 import { Card, CardContent, CardHeader } from "@/components/ui"
 export function PersonListSkeleton() {

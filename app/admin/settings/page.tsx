@@ -6,7 +6,7 @@ import { useState } from "react"
 
 
 
-import { Separator } from "@/components/ui/separator"
+import { Separator } from "@/components/ui"
 
 import { Save } from "lucide-react"
 import { SettingsLayout } from "@/components/settings-layout"

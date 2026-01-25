@@ -7,7 +7,7 @@ import Link from "next/link"
 
 
 
-import { Skeleton } from "@/components/ui/skeleton"
+import { Skeleton } from "@/components/ui"
 import { ProductApiResponse, ProductArtwork } from "@/types/collector"
 
 import { Badge, Button, Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui"
@@ -47,7 +47,7 @@ export default function ProductDetailPage({ params }: { params: { id: string } }
 
   if (isLoading) {
     return (
-      <div className="container mx-auto px-4 py-8 grid grid-cols-1 md:grid-cols-2 gap-8">
+      <div className="mx-auto max-w-5xl px-4 py-8 grid grid-cols-1 md:grid-cols-2 gap-8">
         <Skeleton className="w-full h-[500px]" />
         <div className="space-y-6">
           <Skeleton className="h-10 w-3/4" />
@@ -72,7 +72,7 @@ export default function ProductDetailPage({ params }: { params: { id: string } }
   const primaryVariant = artwork.variants?.[0]
 
   return (
-    <div className="container mx-auto px-4 py-8">
+    <div className="mx-auto max-w-5xl px-4 py-8">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
         <div className="relative">
           <div className="aspect-square w-full relative mb-4 rounded-lg overflow-hidden bg-muted">

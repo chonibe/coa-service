@@ -8,7 +8,7 @@ import { SortDropdown, SortOption } from "./sort-dropdown"
 import { EnrichmentPanel } from "./enrichment-panel"
 import { TagsPanel } from "./tags-panel"
 import { ScrollArea } from "@/components/ui/scroll-area"
-import { Separator } from "@/components/ui/separator"
+import { Separator } from "@/components/ui"
 
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui"

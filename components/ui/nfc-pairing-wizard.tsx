@@ -2,7 +2,7 @@
 
 import React, { useState, useCallback, useEffect } from 'react'
 
-import { Progress } from "@/components/ui/progress"
+import { Progress } from "@/components/ui"
 import { 
   Nfc, 
   Check, 

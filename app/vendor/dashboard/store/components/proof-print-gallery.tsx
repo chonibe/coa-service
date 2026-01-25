@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Skeleton } from "@/components/ui/skeleton"
+import { Skeleton } from "@/components/ui"
 
 import { ArtworkCard } from "./artwork-card"
 import { useToast } from "@/components/ui/use-toast"

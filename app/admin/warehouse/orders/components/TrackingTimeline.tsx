@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 
 
-import { Skeleton } from '@/components/ui/skeleton'
+import { Skeleton } from "@/components/ui"
 
 import { TruckIcon, ClockIcon, CheckCircleIcon, ExclamationCircleIcon, ArrowPathIcon, MapPinIcon } from '@heroicons/react/24/outline'
 import { Icon } from '@/components/icon'

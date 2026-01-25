@@ -1,10 +1,11 @@
 'use client'
 
-import React, { useEffect, useRef } from 'react'
+import * as React from 'react'
+import { cn } from '@/lib/utils'
 import type { PolarisDataTableProps } from './types'
 
 /**
- * React wrapper for Polaris p-data-table web component
+ * Polaris-styled DataTable. Renders from headings/rows when provided, or children (compound usage).
  */
 export function PolarisDataTable({
   columnContentTypes = [],
@@ -19,115 +20,193 @@ export function PolarisDataTable({
   style,
   ...props
 }: PolarisDataTableProps) {
-  const ref = useRef<HTMLElement>(null)
+  const [sortCol, setSortCol] = React.useState<number | null>(
+    initialSortColumnIndex ?? (sortable.length > 0 ? 0 : null)
+  )
+  const [sortDir, setSortDir] = React.useState<'ascending' | 'descending'>(
+    defaultSortDirection ?? 'ascending'
+  )
 
-  useEffect(() => {
-    const element = ref.current
-    if (!element) return
+  const handleSort = React.useCallback(
+    (colIndex: number) => {
+      if (!sortable[colIndex]) return
+      const next = sortCol === colIndex && sortDir === 'ascending' ? 'descending' : 'ascending'
+      setSortCol(colIndex)
+      setSortDir(next)
+      onSort?.(colIndex, next)
+    },
+    [sortable, sortCol, sortDir, onSort]
+  )
 
-    if (columnContentTypes.length > 0) {
-      element.setAttribute('column-content-types', JSON.stringify(columnContentTypes))
-    }
-    if (headings.length > 0) {
-      element.setAttribute('headings', JSON.stringify(headings))
-    }
-    if (rows.length > 0) {
-      // Convert rows to the format expected by Polaris
-      const formattedRows = rows.map((row) => {
-        if (Array.isArray(row)) {
-          return row
-        } else {
-          // Convert object to array based on headings
-          return headings.map((heading) => row[heading] ?? '')
-        }
-      })
-      element.setAttribute('rows', JSON.stringify(formattedRows))
-    }
-    if (sortable.length > 0) {
-      element.setAttribute('sortable', JSON.stringify(sortable))
-    }
-    if (defaultSortDirection) {
-      element.setAttribute('default-sort-direction', defaultSortDirection)
-    }
-    if (initialSortColumnIndex !== undefined) {
-      element.setAttribute('initial-sort-column-index', String(initialSortColumnIndex))
-    }
-    if (className) element.className = className
-    if (style) {
-      Object.assign(element.style, style)
-    }
+  const formattedRows = React.useMemo(() => {
+    return rows.map((row) => {
+      if (Array.isArray(row)) return row
+      return headings.map((h) => String((row as Record<string, unknown>)[h] ?? ''))
+    })
+  }, [rows, headings])
 
-    // Handle sort events
-    if (onSort) {
-      const handleSort = (event: Event) => {
-        const customEvent = event as CustomEvent<{ columnIndex: number; direction: 'ascending' | 'descending' }>
-        onSort(customEvent.detail.columnIndex, customEvent.detail.direction)
+  const sortedRows = React.useMemo(() => {
+    if (sortCol == null || !formattedRows.length) return formattedRows
+    const type = columnContentTypes[sortCol] ?? 'text'
+    return [...formattedRows].sort((a, b) => {
+      const av = a[sortCol]
+      const bv = b[sortCol]
+      if (type === 'numeric') {
+        const an = Number(av)
+        const bn = Number(bv)
+        return sortDir === 'ascending' ? an - bn : bn - an
       }
-      element.addEventListener('sort', handleSort)
-      return () => {
-        element.removeEventListener('sort', handleSort)
-      }
-    }
-  }, [
-    columnContentTypes,
-    headings,
-    rows,
-    sortable,
-    defaultSortDirection,
-    initialSortColumnIndex,
-    onSort,
-    className,
-    style,
-  ])
+      const cmp = String(av).localeCompare(String(bv))
+      return sortDir === 'ascending' ? cmp : -cmp
+    })
+  }, [formattedRows, sortCol, sortDir, columnContentTypes])
 
-  return React.createElement('p-data-table', { ref, ...props }, children)
-}
+  if (children != null) {
+    return (
+      <div className={cn('relative w-full overflow-auto', className)} style={style} {...props}>
+        <table className="w-full caption-bottom text-sm border-collapse">{children}</table>
+      </div>
+    )
+  }
 
-// Table sub-components for backward compatibility (using standard HTML table elements)
-export function PolarisTable({ children, className, ...props }: React.HTMLAttributes<HTMLTableElement>) {
   return (
-    <table className={className} {...props}>
-      {children}
-    </table>
+    <div
+      className={cn(
+        'relative w-full overflow-auto rounded-[var(--p-border-radius-200)] border border-[var(--p-color-border)]',
+        className
+      )}
+      style={style}
+      {...props}
+    >
+      <table className="w-full caption-bottom text-sm">
+        <thead>
+          <tr className="border-b border-[var(--p-color-border)] bg-[var(--p-color-bg-surface-secondary)]">
+            {headings.map((h, i) => (
+              <th
+                key={i}
+                className={cn(
+                  'h-10 px-4 text-left align-middle font-medium text-[var(--p-color-text-secondary)]',
+                  sortable[i] && 'cursor-pointer hover:text-[var(--p-color-text)]'
+                )}
+                onClick={sortable[i] ? () => handleSort(i) : undefined}
+              >
+                {h}
+                {sortable[i] && sortCol === i && (
+                  <span className="ml-1" aria-hidden>
+                    {sortDir === 'ascending' ? '↑' : '↓'}
+                  </span>
+                )}
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {sortedRows.map((row, ri) => (
+            <tr
+              key={ri}
+              className="border-b border-[var(--p-color-border)] transition-colors hover:bg-[var(--p-color-bg-surface-secondary)]/50"
+            >
+              {row.map((cell, ci) => (
+                <td
+                  key={ci}
+                  className={cn(
+                    'px-4 py-3 align-middle text-[var(--p-color-text)]',
+                    (columnContentTypes[ci] ?? 'text') === 'numeric' && 'text-right tabular-nums'
+                  )}
+                >
+                  {cell}
+                </td>
+              ))}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
   )
 }
 
-export function PolarisTableHeader({ children, className, ...props }: React.HTMLAttributes<HTMLTableSectionElement>) {
-  return (
-    <thead className={className} {...props}>
-      {children}
-    </thead>
-  )
-}
+export const PolarisTable = React.forwardRef<
+  HTMLTableElement,
+  React.HTMLAttributes<HTMLTableElement>
+>(({ className, ...props }, ref) => (
+  <div className="relative w-full overflow-auto">
+    <table
+      ref={ref}
+      className={cn(
+        'w-full caption-bottom text-sm border-collapse rounded-[var(--p-border-radius-200)]',
+        className
+      )}
+      {...props}
+    />
+  </div>
+))
+PolarisTable.displayName = 'PolarisTable'
 
-export function PolarisTableBody({ children, className, ...props }: React.HTMLAttributes<HTMLTableSectionElement>) {
-  return (
-    <tbody className={className} {...props}>
-      {children}
-    </tbody>
-  )
-}
+export const PolarisTableHeader = React.forwardRef<
+  HTMLTableSectionElement,
+  React.HTMLAttributes<HTMLTableSectionElement>
+>(({ className, ...props }, ref) => (
+  <thead
+    ref={ref}
+    className={cn('[&_tr]:border-b [&_tr]:border-[var(--p-color-border)]', className)}
+    {...props}
+  />
+))
+PolarisTableHeader.displayName = 'PolarisTableHeader'
 
-export function PolarisTableRow({ children, className, ...props }: React.HTMLAttributes<HTMLTableRowElement>) {
-  return (
-    <tr className={className} {...props}>
-      {children}
-    </tr>
-  )
-}
+export const PolarisTableBody = React.forwardRef<
+  HTMLTableSectionElement,
+  React.HTMLAttributes<HTMLTableSectionElement>
+>(({ className, ...props }, ref) => (
+  <tbody
+    ref={ref}
+    className={cn('[&_tr:last-child]:border-0', className)}
+    {...props}
+  />
+))
+PolarisTableBody.displayName = 'PolarisTableBody'
 
-export function PolarisTableHead({ children, className, ...props }: React.HTMLAttributes<HTMLTableCellElement>) {
-  return (
-    <th className={className} {...props}>
-      {children}
-    </th>
-  )
-}
+export const PolarisTableRow = React.forwardRef<
+  HTMLTableRowElement,
+  React.HTMLAttributes<HTMLTableRowElement>
+>(({ className, ...props }, ref) => (
+  <tr
+    ref={ref}
+    className={cn(
+      'border-b border-[var(--p-color-border)] transition-colors hover:bg-[var(--p-color-bg-surface-secondary)]/50 data-[state=selected]:bg-[var(--p-color-bg-surface-secondary)]',
+      className
+    )}
+    {...props}
+  />
+))
+PolarisTableRow.displayName = 'PolarisTableRow'
 
-export function PolarisTableCell({ children, className, ...props }: React.HTMLAttributes<HTMLTableCellElement>) {
-  return (
-    <td className={className} {...props}>
-      {children}
-    </td>
-  )
-}
+export const PolarisTableHead = React.forwardRef<
+  HTMLTableCellElement,
+  React.ThHTMLAttributes<HTMLTableCellElement>
+>(({ className, ...props }, ref) => (
+  <th
+    ref={ref}
+    className={cn(
+      'h-10 px-4 text-left align-middle font-medium text-[var(--p-color-text-secondary)] [&:has([role=checkbox])]:pr-0',
+      className
+    )}
+    {...props}
+  />
+))
+PolarisTableHead.displayName = 'PolarisTableHead'
+
+export const PolarisTableCell = React.forwardRef<
+  HTMLTableCellElement,
+  React.TdHTMLAttributes<HTMLTableCellElement>
+>(({ className, ...props }, ref) => (
+  <td
+    ref={ref}
+    className={cn(
+      'px-4 py-3 align-middle text-[var(--p-color-text)] [&:has([role=checkbox])]:pr-0',
+      className
+    )}
+    {...props}
+  />
+))
+PolarisTableCell.displayName = 'PolarisTableCell'

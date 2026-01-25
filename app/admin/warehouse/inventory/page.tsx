@@ -5,7 +5,7 @@ import { useState, useEffect, useMemo } from 'react'
 
 
 
-import { Skeleton } from '@/components/ui/skeleton'
+import { Skeleton } from "@/components/ui"
 
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, Button, Input, Alert, AlertDescription, Badge, Table, TableBody, TableCell, TableHead, TableHeader, TableRow, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Label } from "@/components/ui"

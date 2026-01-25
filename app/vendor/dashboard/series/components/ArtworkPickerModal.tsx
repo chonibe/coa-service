@@ -7,7 +7,7 @@ import { useState, useEffect, useMemo } from "react"
 
 
 import { ScrollArea } from "@/components/ui/scroll-area"
-import { Skeleton } from "@/components/ui/skeleton"
+import { Skeleton } from "@/components/ui"
 
 
 import { Search, Image as ImageIcon, AlertCircle, Loader2, Package } from "lucide-react"

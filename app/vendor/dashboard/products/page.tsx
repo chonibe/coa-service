@@ -2,8 +2,8 @@
 
 import { useState, useEffect, useMemo } from "react"
 import { useRouter } from "next/navigation"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle, Button, Badge, Alert, AlertDescription, Input, Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui"
-import { Skeleton } from "@/components/ui/skeleton"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, Button, Badge, Alert, AlertDescription, Input, Tabs, TabsContent, TabsList, TabsTrigger, PageHeader } from "@/components/ui"
+import { Skeleton } from "@/components/ui"
 import { ProductTable } from "../components/product-table"
 import { useVendorData } from "@/hooks/use-vendor-data"
 import { Plus, Package, Clock, XCircle, Trash2, Loader2, Sparkles, AlertCircle, Lock, ArrowRight, Crown, Image as ImageIcon, GripVertical } from "lucide-react"
@@ -1285,14 +1285,12 @@ export default function ProductsPage() {
 
       {/* Artworks Section */}
       <div className="space-y-4">
-        <div>
-          <h2 className="text-xl font-bold tracking-tight">Your Artworks</h2>
-          <p className="text-muted-foreground mt-1 text-sm">
-            Manage and track your individual artworks
-          </p>
-      </div>
+        <PageHeader
+          title="Your Artworks"
+          description="Manage and track your individual artworks"
+        />
 
-      <Tabs defaultValue="catalog" className="space-y-4">
+        <Tabs defaultValue="catalog" className="space-y-4">
         <TabsList>
           <TabsTrigger value="catalog">Artwork Catalog</TabsTrigger>
           <TabsTrigger value="submissions">

@@ -10,12 +10,12 @@ import { useState, useEffect } from "react"
 
 
 import { Loader2, CheckCircle, AlertCircle, RefreshCw, Search, ChevronLeft, ChevronRight } from "lucide-react"
-import { Progress } from "@/components/ui/progress"
+import { Progress } from "@/components/ui"
 import Image from "next/image"
 import Link from "next/link"
 import { PlatformUpdates } from "./components/platform-updates"
 
-import { Button, Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle, Checkbox, Tabs, TabsList, TabsTrigger, TabsContent, Alert, AlertDescription, AlertTitle, Badge, Input, Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui"
+import { Button, Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle, Checkbox, Tabs, TabsList, TabsTrigger, TabsContent, Alert, AlertDescription, AlertTitle, Badge, Input, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, PageHeader } from "@/components/ui"
 export default function AdminDashboard() {
   const [isLoading, setIsLoading] = useState(false)
   const [isFetchingProducts, setIsFetchingProducts] = useState(false)
@@ -302,17 +302,12 @@ export default function AdminDashboard() {
   }
 
   return (
-    <div className="container mx-auto max-w-6xl py-10">
-      <div className="space-y-10">
-        <div className="space-y-3">
-          <div className="flex flex-col gap-2">
-            <p className="text-sm font-semibold text-blue-600">Admin overview</p>
-            <h1 className="text-3xl font-bold tracking-tight">Operations & sync health</h1>
-            <p className="text-muted-foreground">
-              Check system health, quick tasks, and manage product sync without losing context.
-            </p>
-          </div>
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+    <div className="space-y-6">
+      <PageHeader
+        title="Operations & sync health"
+        description="Check system health, quick tasks, and manage product sync without losing context."
+      />
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
             <Card className="shadow-sm">
               <CardHeader className="pb-2">
                 <CardTitle className="text-base">System health</CardTitle>
@@ -454,7 +449,6 @@ export default function AdminDashboard() {
 
             <PlatformUpdates />
           </div>
-        </div>
 
         <Card className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-0 shadow-xl">
           <CardHeader className="pb-4">
@@ -847,8 +841,7 @@ export default function AdminDashboard() {
               </Tabs>
             </CardContent>
           </Card>
-        </div>
-      </div>
+    </div>
     </div>
   )
 }

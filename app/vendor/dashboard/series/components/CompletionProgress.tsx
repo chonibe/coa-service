@@ -1,7 +1,7 @@
 "use client"
 
 
-import { Progress } from "@/components/ui/progress"
+import { Progress } from "@/components/ui"
 
 import { CheckCircle2, Circle, TrendingUp } from "lucide-react"
 import type { CompletionProgress, MilestoneConfig } from "@/types/artwork-series"

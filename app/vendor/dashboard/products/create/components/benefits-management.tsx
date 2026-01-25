@@ -9,7 +9,7 @@ import { useState, useEffect } from "react"
 
 
 
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui"
 import { FileText, Key, Video, Package, Percent, Eye, Plus, Edit, Trash2, X, ChevronDown, ChevronUp, Lock, Loader2 } from "lucide-react"
 import { format } from "date-fns"
 import { motion, AnimatePresence } from "framer-motion"

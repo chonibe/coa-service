@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui"
 
 import { Loader2, AlertCircle, Send, ChevronLeft, ChevronRight, ChevronDown, Filter, X, Keyboard } from "lucide-react"
 import { useToast } from "@/components/ui/use-toast"

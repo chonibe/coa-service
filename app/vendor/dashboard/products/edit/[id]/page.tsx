@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react"
 import { useRouter, useParams } from "next/navigation"
 import { ShopifyStyleArtworkForm } from "../../create/components/shopify-style-form"
-import { Skeleton } from "@/components/ui/skeleton"
+import { Skeleton } from "@/components/ui"
 
 import { AlertCircle, ArrowLeft } from "lucide-react"
 

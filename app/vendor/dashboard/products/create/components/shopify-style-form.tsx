@@ -7,7 +7,7 @@ import { useState, useEffect } from "react"
 
 
 
-import { Separator } from "@/components/ui/separator"
+import { Separator } from "@/components/ui"
 
 
 import { Loader2, Save, X, Plus } from "lucide-react"

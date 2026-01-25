@@ -6,7 +6,7 @@ import { usePathname, useRouter } from "next/navigation"
 import Link from "next/link"
 
 import { ScrollArea } from "@/components/ui/scroll-area"
-import { Toaster } from "@/components/ui/toaster"
+import { Toaster } from "@/components/ui"
 import { useMobile } from "@/hooks/use-mobile"
 import {
   ArrowRightOnRectangleIcon,
@@ -285,28 +285,6 @@ export function VendorSidebar() {
             <span className="sr-only">Search</span>
           </Button>
           <NotificationCenter />
-          <Button
-            variant="outline"
-            size="icon"
-            className="relative flex items-center justify-center transition-all hover:bg-primary/10 min-h-[44px] min-w-[44px] focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
-            onClick={() => router.push("/vendor/dashboard/messages")}
-            aria-label={unreadMessages > 0 ? `Messages, ${unreadMessages} unread` : "Messages"}
-          >
-            <Icon size="lg">
-              <ChatBubbleLeftRightIcon className="h-6 w-6" aria-hidden="true" />
-            </Icon>
-            {unreadMessages > 0 && (
-              <Badge 
-                variant="destructive" 
-                className="absolute -top-1 -right-1 h-5 min-w-5 flex items-center justify-center p-0 text-xs" 
-                aria-label={`${unreadMessages} unread messages`}
-              >
-                {unreadMessages > 99 ? "99+" : unreadMessages}
-              </Badge>
-            )}
-            <span className="sr-only">Messages</span>
-          </Button>
-          <CreateMenu />
           <Button
             variant="outline"
             size="icon"

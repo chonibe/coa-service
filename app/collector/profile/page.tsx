@@ -9,7 +9,7 @@ import { useRouter } from 'next/navigation'
 
 
 
-import { Separator } from '@/components/ui/separator'
+import { Separator } from "@/components/ui"
 import { useToast } from '@/hooks/use-toast'
 import { Loader2, History as HistoryIcon, Save, User, Eye, Sparkles } from 'lucide-react'
 import { InkOGatchiWidget } from '@/app/collector/dashboard/components/inkogatchi-widget'
@@ -175,7 +175,7 @@ export default function CollectorProfilePage() {
   }
 
   return (
-    <div className="container mx-auto px-4 py-8 max-w-4xl">
+    <div className="mx-auto max-w-5xl px-4 py-8">
       <div className="mb-8">
         <div className="flex items-center justify-between">
           <div>

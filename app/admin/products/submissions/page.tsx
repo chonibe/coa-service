@@ -7,7 +7,7 @@ import { useRouter } from "next/navigation"
 
 
 
-import { Skeleton } from "@/components/ui/skeleton"
+import { Skeleton } from "@/components/ui"
 
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, Button, Badge, Input, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Alert, AlertDescription, Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui"

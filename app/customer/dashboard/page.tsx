@@ -10,7 +10,7 @@ import { Loader2, Link, AlertCircle, Wifi, WifiOff, Scan, Hash, User, Album } fr
 
 import { NfcTagScanner } from '@/src/components/NfcTagScanner'
 import { toast } from "@/components/ui/use-toast"
-import { Toaster } from "@/components/ui/toaster"
+import { Toaster } from "@/components/ui"
 import { CertificateModal } from './certificate-modal'
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter, Button, Badge, Alert, AlertDescription, AlertTitle } from "@/components/ui"

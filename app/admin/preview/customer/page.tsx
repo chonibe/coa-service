@@ -21,7 +21,7 @@ import {
 } from "lucide-react"
 import { NfcTagScanner } from '@/src/components/NfcTagScanner'
 import { toast } from "@/components/ui/use-toast"
-import { Toaster } from "@/components/ui/toaster"
+import { Toaster } from "@/components/ui"
 import { CertificateModal } from './certificate-modal'
 
 import { Badge, Button } from "@/components/ui"

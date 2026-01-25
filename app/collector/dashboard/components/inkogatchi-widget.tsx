@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react'
 
-import { Progress } from '@/components/ui/progress'
+import { Progress } from "@/components/ui"
 
 import { InkOGatchi } from './ink-o-gatchi'
 import { Loader2, Shirt, ShoppingBag, Sparkles } from 'lucide-react'

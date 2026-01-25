@@ -3,7 +3,7 @@
 
 
 
-import { Separator } from "@/components/ui/separator"
+import { Separator } from "@/components/ui"
 import { 
   FileText, 
   Image as ImageIcon, 

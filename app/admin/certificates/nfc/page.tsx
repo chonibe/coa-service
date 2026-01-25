@@ -42,7 +42,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 
 
-import { Separator } from "@/components/ui/separator"
+import { Separator } from "@/components/ui"
 
 import { Button, Card, CardContent, CardDescription, CardHeader, CardTitle, Input, Label, Tabs, TabsList, TabsTrigger, Alert, AlertDescription, AlertTitle, Badge, Table, TableBody, TableCell, TableHead, TableHeader, TableRow, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, Textarea, Checkbox } from "@/components/ui"
 export default function NFCManagementPage() {

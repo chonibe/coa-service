@@ -1,20 +1,18 @@
 'use client'
 
-import React, { useEffect, useRef } from 'react'
+import * as React from 'react'
+import { cn } from '@/lib/utils'
 
-/**
- * React wrapper for Polaris p-date-picker web component
- */
-export interface PolarisDatePickerProps extends React.HTMLAttributes<HTMLElement> {
+const inputBase =
+  'flex h-10 w-full rounded-[var(--p-border-radius-200)] border border-[var(--p-color-border)] bg-[var(--p-color-bg-surface)] px-3 py-2 text-sm text-[var(--p-color-text)] placeholder:text-[var(--p-color-text-secondary)] transition-colors focus:outline-none focus:ring-2 focus:ring-[hsl(var(--ring))] focus:ring-offset-0 disabled:cursor-not-allowed disabled:opacity-50'
+
+export interface PolarisDatePickerProps extends Omit<React.InputHTMLAttributes<HTMLInputElement>, 'value' | 'onChange'> {
   label?: string
   labelHidden?: boolean
   helpText?: string
   error?: string | boolean
   requiredIndicator?: boolean
-  disabled?: boolean
   value?: string
-  min?: string
-  max?: string
   onChange?: (value: string) => void
 }
 
@@ -30,43 +28,47 @@ export function PolarisDatePicker({
   max,
   onChange,
   className,
-  style,
+  id: idProp,
   ...props
 }: PolarisDatePickerProps) {
-  const ref = useRef<HTMLElement>(null)
+  const id = idProp ?? React.useId()
+  const errorMessage = typeof error === 'string' ? error : undefined
+  const hasError = Boolean(error)
 
-  useEffect(() => {
-    const element = ref.current
-    if (!element) return
-
-    if (label) element.setAttribute('label', label)
-    if (labelHidden) element.setAttribute('label-hidden', '')
-    if (helpText) element.setAttribute('help-text', helpText)
-    if (error) {
-      element.setAttribute('error', typeof error === 'string' ? error : '')
-    }
-    if (requiredIndicator) element.setAttribute('required-indicator', '')
-    if (disabled) element.setAttribute('disabled', '')
-    if (value) element.setAttribute('value', value)
-    if (min) element.setAttribute('min', min)
-    if (max) element.setAttribute('max', max)
-    if (className) element.className = className
-    if (style) {
-      Object.assign(element.style, style)
-    }
-
-    // Handle change events
-    if (onChange) {
-      const handleChange = (event: Event) => {
-        const customEvent = event as CustomEvent<{ value: string }>
-        onChange(customEvent.detail.value)
-      }
-      element.addEventListener('change', handleChange)
-      return () => {
-        element.removeEventListener('change', handleChange)
-      }
-    }
-  }, [label, labelHidden, helpText, error, requiredIndicator, disabled, value, min, max, onChange, className, style])
-
-  return React.createElement('p-date-picker', { ref, ...props })
+  return (
+    <div className="space-y-1.5">
+      {label && !labelHidden && (
+        <label
+          htmlFor={id}
+          className="block text-sm font-medium text-[var(--p-color-text)]"
+        >
+          {label}
+          {requiredIndicator && <span className="text-red-500 ml-0.5" aria-hidden>*</span>}
+        </label>
+      )}
+      <input
+        type="date"
+        id={id}
+        value={value ?? ''}
+        min={min}
+        max={max}
+        disabled={disabled}
+        onChange={(e) => onChange?.(e.target.value)}
+        className={cn(
+          inputBase,
+          hasError && 'border-red-500 focus:ring-red-500',
+          className
+        )}
+        {...props}
+      />
+      {helpText && !hasError && (
+        <p className="text-sm text-[var(--p-color-text-secondary)]">{helpText}</p>
+      )}
+      {errorMessage && (
+        <p className="text-sm text-red-600 dark:text-red-400" role="alert">
+          {errorMessage}
+        </p>
+      )}
+    </div>
+  )
 }

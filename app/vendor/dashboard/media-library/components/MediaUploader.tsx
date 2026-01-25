@@ -2,7 +2,7 @@
 
 import { useState, useCallback } from "react"
 
-import { Progress } from "@/components/ui/progress"
+import { Progress } from "@/components/ui"
 import { Upload, X, Loader2, CheckCircle, AlertCircle } from "lucide-react"
 import { useToast } from "@/components/ui/use-toast"
 

@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 
-import { Progress } from "@/components/ui/progress"
+import { Progress } from "@/components/ui"
 
 import { Loader2, CheckCircle, AlertCircle, RefreshCw } from "lucide-react"
 

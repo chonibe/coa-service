@@ -2,7 +2,7 @@
 
 
 
-import { Skeleton } from "@/components/ui/skeleton"
+import { Skeleton } from "@/components/ui"
 import { useRef, useState, useEffect } from "react"
 import { Music, AlertCircle, RefreshCw, Play, Pause } from "lucide-react"
 

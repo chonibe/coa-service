@@ -22,7 +22,7 @@ import {
   Clock,
   Settings,
 } from "lucide-react"
-import { Progress } from "@/components/ui/progress"
+import { Progress } from "@/components/ui"
 import Image from "next/image"
 import Link from "next/link"
 

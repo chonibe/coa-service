@@ -3,7 +3,7 @@
 
 
 
-import { Progress } from "@/components/ui/progress"
+import { Progress } from "@/components/ui"
 import Image from "next/image"
 import { Calendar, DollarSign, TrendingUp, ExternalLink, Sparkles } from "lucide-react"
 import { format } from "date-fns"

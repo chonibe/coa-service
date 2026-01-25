@@ -4,7 +4,7 @@ import Link from "next/link"
 import { useEffect, useState, useRef } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 
-import { Separator } from "@/components/ui/separator"
+import { Separator } from "@/components/ui"
 import { Logo } from "@/components/logo"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle, Button, Alert, AlertDescription, AlertTitle } from "@/components/ui"
 import {

@@ -1,10 +1,8 @@
 'use client'
 
-import React, { useEffect, useRef } from 'react'
+import * as React from 'react'
+import { cn } from '@/lib/utils'
 
-/**
- * React wrapper for Polaris p-navigation web component
- */
 export interface PolarisNavigationProps extends React.HTMLAttributes<HTMLElement> {
   location?: string
   children?: React.ReactNode
@@ -17,18 +15,17 @@ export function PolarisNavigation({
   style,
   ...props
 }: PolarisNavigationProps) {
-  const ref = useRef<HTMLElement>(null)
-
-  useEffect(() => {
-    const element = ref.current
-    if (!element) return
-
-    if (location) element.setAttribute('location', location)
-    if (className) element.className = className
-    if (style) {
-      Object.assign(element.style, style)
-    }
-  }, [location, className, style])
-
-  return React.createElement('p-navigation', { ref, ...props }, children)
+  return (
+    <nav
+      aria-label={location ?? 'Navigation'}
+      className={cn(
+        'flex flex-col gap-1 rounded-[var(--p-border-radius-200)] bg-[var(--p-color-bg-surface)] p-2',
+        className
+      )}
+      style={style}
+      {...(props as React.HTMLAttributes<HTMLElement>)}
+    >
+      {children}
+    </nav>
+  )
 }

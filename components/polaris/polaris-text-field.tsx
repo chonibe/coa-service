@@ -1,112 +1,137 @@
 'use client'
 
-import React, { useEffect, useRef } from 'react'
-import type { PolarisTextFieldProps } from './types'
+import * as React from 'react'
+import { cn } from '@/lib/utils'
 
-/**
- * React wrapper for Polaris p-text-field web component
- */
-export function PolarisTextField({
-  label,
-  labelHidden,
-  helpText,
-  error,
-  requiredIndicator,
-  disabled,
-  readonly,
-  placeholder,
-  value,
-  type = 'text',
-  multiline,
-  rows,
-  maxLength,
-  showCharacterCount,
-  clearButton,
-  onChange,
-  onInput,
-  onFocus,
-  onBlur,
-  className,
-  style,
-  ...props
-}: PolarisTextFieldProps) {
-  const ref = useRef<HTMLElement>(null)
+const inputBase =
+  'flex h-10 w-full rounded-[var(--p-border-radius-200)] border border-[var(--p-color-border)] bg-[var(--p-color-bg-surface)] px-3 py-2 text-sm text-[var(--p-color-text)] placeholder:text-[var(--p-color-text-secondary)] transition-colors focus:outline-none focus:ring-2 focus:ring-[hsl(var(--ring))] focus:ring-offset-0 disabled:cursor-not-allowed disabled:opacity-50'
 
-  useEffect(() => {
-    const element = ref.current
-    if (!element) return
-
-    // Set attributes
-    if (label) element.setAttribute('label', label)
-    if (labelHidden) element.setAttribute('label-hidden', '')
-    if (helpText) element.setAttribute('help-text', helpText)
-    if (error) {
-      element.setAttribute('error', typeof error === 'string' ? error : '')
-    }
-    if (requiredIndicator) element.setAttribute('required-indicator', '')
-    if (disabled) element.setAttribute('disabled', '')
-    if (readonly) element.setAttribute('readonly', '')
-    if (placeholder) element.setAttribute('placeholder', placeholder)
-    if (value !== undefined) element.setAttribute('value', String(value))
-    if (type) element.setAttribute('type', type)
-    if (multiline !== undefined) {
-      element.setAttribute('multiline', multiline === true ? '' : String(multiline))
-    }
-    if (rows) element.setAttribute('rows', String(rows))
-    if (maxLength) element.setAttribute('max-length', String(maxLength))
-    if (showCharacterCount) element.setAttribute('show-character-count', '')
-    if (clearButton) element.setAttribute('clear-button', '')
-    if (className) element.className = className
-    if (style) {
-      Object.assign(element.style, style)
-    }
-
-    // Handle events
-    if (onChange) {
-      element.addEventListener('change', onChange as EventListener)
-    }
-    if (onInput) {
-      element.addEventListener('input', onInput as EventListener)
-    }
-    if (onFocus) {
-      element.addEventListener('focus', onFocus as EventListener)
-    }
-    if (onBlur) {
-      element.addEventListener('blur', onBlur as EventListener)
-    }
-
-    return () => {
-      if (onChange) element.removeEventListener('change', onChange as EventListener)
-      if (onInput) element.removeEventListener('input', onInput as EventListener)
-      if (onFocus) element.removeEventListener('focus', onFocus as EventListener)
-      if (onBlur) element.removeEventListener('blur', onBlur as EventListener)
-    }
-  }, [
-    label,
-    labelHidden,
-    helpText,
-    error,
-    requiredIndicator,
-    disabled,
-    readonly,
-    placeholder,
-    value,
-    type,
-    multiline,
-    rows,
-    maxLength,
-    showCharacterCount,
-    clearButton,
-    onChange,
-    onInput,
-    onFocus,
-    onBlur,
-    className,
-    style,
-  ])
-
-  return React.createElement('p-text-field', { ref, ...props })
+export interface PolarisTextFieldProps
+  extends Omit<React.InputHTMLAttributes<HTMLInputElement>, 'value' | 'onChange' | 'onInput'> {
+  label?: string
+  labelHidden?: boolean
+  helpText?: string
+  error?: string | boolean
+  requiredIndicator?: boolean
+  readonly?: boolean
+  readOnly?: boolean
+  value?: string
+  multiline?: boolean | number
+  rows?: number
+  maxLength?: number
+  showCharacterCount?: boolean
+  clearButton?: boolean
+  onChange?: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => void
+  onInput?: (e: React.FormEvent<HTMLInputElement | HTMLTextAreaElement>) => void
 }
 
-// Alias for backward compatibility with Input
+export const PolarisTextField = React.forwardRef<HTMLInputElement | HTMLTextAreaElement, PolarisTextFieldProps>(
+  function PolarisTextField(
+    {
+      label,
+      labelHidden,
+      helpText,
+      error,
+      requiredIndicator,
+      disabled,
+      readonly,
+      readOnly,
+      placeholder,
+      value,
+      type = 'text',
+      multiline,
+      rows = 3,
+      maxLength,
+      showCharacterCount,
+      clearButton,
+      onChange,
+      onInput,
+      onFocus,
+      onBlur,
+      className,
+      id: idProp,
+      ...props
+    },
+    ref
+  ) {
+    const id = idProp ?? React.useId()
+    const errorMessage = typeof error === 'string' ? error : undefined
+    const hasError = Boolean(error)
+    const isReadOnly = readonly ?? readOnly
+
+    const inputEl = multiline ? (
+      <textarea
+        ref={ref as React.Ref<HTMLTextAreaElement>}
+        id={id}
+        value={value}
+        placeholder={placeholder}
+        rows={typeof multiline === 'number' ? multiline : rows}
+        maxLength={maxLength}
+        disabled={disabled}
+        readOnly={isReadOnly}
+        onChange={onChange as React.ChangeEventHandler<HTMLTextAreaElement>}
+        onInput={onInput as React.FormEventHandler<HTMLTextAreaElement>}
+        onFocus={onFocus as React.FocusEventHandler<HTMLTextAreaElement>}
+        onBlur={onBlur as React.FocusEventHandler<HTMLTextAreaElement>}
+        className={cn(
+          inputBase,
+          'min-h-[80px] resize-y py-2',
+          hasError && 'border-red-500 focus:ring-red-500',
+          className
+        )}
+        {...(props as React.TextareaHTMLAttributes<HTMLTextAreaElement>)}
+      />
+    ) : (
+      <input
+        ref={ref as React.Ref<HTMLInputElement>}
+        id={id}
+        type={type}
+        value={value}
+        placeholder={placeholder}
+        maxLength={maxLength}
+        disabled={disabled}
+        readOnly={isReadOnly}
+        onChange={onChange as React.ChangeEventHandler<HTMLInputElement>}
+        onInput={onInput as React.FormEventHandler<HTMLInputElement>}
+        onFocus={onFocus as React.FocusEventHandler<HTMLInputElement>}
+        onBlur={onBlur as React.FocusEventHandler<HTMLInputElement>}
+        className={cn(
+          inputBase,
+          hasError && 'border-red-500 focus:ring-red-500',
+          className
+        )}
+        {...props}
+      />
+    )
+
+    return (
+      <div className="space-y-1.5">
+        {label && !labelHidden && (
+          <label
+            htmlFor={id}
+            className="block text-sm font-medium text-[var(--p-color-text)]"
+          >
+            {label}
+            {requiredIndicator && <span className="text-red-500 ml-0.5" aria-hidden>*</span>}
+          </label>
+        )}
+        {inputEl}
+        {helpText && !hasError && (
+          <p className="text-sm text-[var(--p-color-text-secondary)]">{helpText}</p>
+        )}
+        {errorMessage && (
+          <p className="text-sm text-red-600 dark:text-red-400" role="alert">
+            {errorMessage}
+          </p>
+        )}
+        {showCharacterCount && maxLength && typeof value === 'string' && (
+          <p className="text-xs text-[var(--p-color-text-secondary)] text-right">
+            {value.length} / {maxLength}
+          </p>
+        )}
+      </div>
+    )
+  }
+)
+
 export const PolarisInput = PolarisTextField

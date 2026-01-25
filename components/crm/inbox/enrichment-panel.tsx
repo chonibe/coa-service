@@ -3,7 +3,7 @@
 import { Building2, Briefcase, MapPin, Link as LinkIcon, User, Mail, Phone, Calendar } from "lucide-react"
 
 
-import { Separator } from "@/components/ui/separator"
+import { Separator } from "@/components/ui"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { formatDate } from "@/lib/utils"
 

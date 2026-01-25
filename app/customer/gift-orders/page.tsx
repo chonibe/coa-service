@@ -5,7 +5,7 @@ import { useState, useEffect } from 'react'
 
 
 
-import { Skeleton } from '@/components/ui/skeleton'
+import { Skeleton } from "@/components/ui"
 
 
 import { ScrollArea } from '@/components/ui/scroll-area'

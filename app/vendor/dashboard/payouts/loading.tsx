@@ -1,4 +1,4 @@
-import { Skeleton } from "@/components/ui/skeleton"
+import { Skeleton } from "@/components/ui"
 
 import { DollarSign, Calendar, ArrowUpRight, Download } from "lucide-react"
 

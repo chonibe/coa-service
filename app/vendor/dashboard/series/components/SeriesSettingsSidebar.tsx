@@ -7,7 +7,7 @@ import { useState } from "react"
 
 
 
-import { Separator } from "@/components/ui/separator"
+import { Separator } from "@/components/ui"
 import { ChevronLeft, ChevronRight, Save, X, Loader2, Trash2, Copy, Info } from "lucide-react"
 import { cn } from "@/lib/utils"
 import type { ArtworkSeries, SeriesMember, UnlockType } from "@/types/artwork-series"

@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo } from "react"
 
-import { Skeleton } from "@/components/ui/skeleton"
+import { Skeleton } from "@/components/ui"
 
 
 import { DollarSign, RefreshCw, AlertCircle, Download, Wallet, ExternalLink, Search, Filter, Calendar, TrendingUp, TrendingDown, Grid3x3, List, FileText, FileSpreadsheet, BarChart3, LayoutGrid, Clock, ChevronDown, ChevronUp } from "lucide-react"

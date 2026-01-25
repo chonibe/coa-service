@@ -9,7 +9,7 @@ import { useRouter } from 'next/navigation'
 
 
 
-import { Separator } from '@/components/ui/separator'
+import { Separator } from "@/components/ui"
 
 import { useToast } from '@/hooks/use-toast'
 import { Loader2, Save, History as HistoryIcon, User, Mail, Phone, Edit, ArrowLeft } from 'lucide-react'

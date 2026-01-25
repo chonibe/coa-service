@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 
-import { Skeleton } from "@/components/ui/skeleton"
+import { Skeleton } from "@/components/ui"
 import { Wallet } from "lucide-react"
 import { useToast } from "@/components/ui/use-toast"
 

@@ -5,9 +5,6 @@
 /* Import mobile-first utilities */
 @import './globals-mobile.css';
 
-/* Polaris Web Components - Loaded via CDN in layout.tsx */
-/* Polaris design tokens will be integrated here */
-
 @layer utilities {
   .scrollbar-hide {
     -ms-overflow-style: none;
@@ -93,6 +90,35 @@ button[aria-label] svg {
     --chart-4: 43 74% 66%;
 
     --chart-5: 27 87% 67%;
+
+    /* Polaris design tokens */
+    --p-color-bg: #ffffff;
+    --p-color-bg-surface: #ffffff;
+    --p-color-bg-surface-secondary: #f6f6f7;
+    --p-color-border: #e3e3e3;
+    --p-color-text: #202223;
+    --p-color-text-secondary: #6d7175;
+    --p-color-bg-info: #e0f5ff;
+    --p-color-bg-info-strong: #b3e8ff;
+    --p-color-bg-success: #e3f1df;
+    --p-color-bg-success-strong: #b8e0b0;
+    --p-color-bg-warning: #fff5ea;
+    --p-color-bg-warning-strong: #ffd79d;
+    --p-color-bg-critical: #fff4f4;
+    --p-color-bg-critical-strong: #fecaca;
+    --p-color-bg-attention: #fff8e7;
+    --p-color-bg-attention-strong: #ffea8a;
+    --p-space-100: 4px;
+    --p-space-200: 8px;
+    --p-space-300: 12px;
+    --p-space-400: 16px;
+    --p-space-500: 20px;
+    --p-space-600: 24px;
+    --p-space-800: 32px;
+    --p-border-radius-100: 4px;
+    --p-border-radius-200: 8px;
+    --p-border-radius-300: 12px;
+    --p-border-radius-400: 16px;
   }
 
   .dark {
@@ -128,6 +154,24 @@ button[aria-label] svg {
     --chart-3: 30 80% 55%;
     --chart-4: 280 65% 60%;
     --chart-5: 340 75% 55%;
+
+    /* Polaris design tokens (dark) */
+    --p-color-bg: #1a1a1a;
+    --p-color-bg-surface: #1e1e1e;
+    --p-color-bg-surface-secondary: #2d2d2d;
+    --p-color-border: #404040;
+    --p-color-text: #f4f4f5;
+    --p-color-text-secondary: #a1a1aa;
+    --p-color-bg-info: #0c3d5c;
+    --p-color-bg-info-strong: #0e5a87;
+    --p-color-bg-success: #1e4620;
+    --p-color-bg-success-strong: #2d6a2f;
+    --p-color-bg-warning: #5c3d0c;
+    --p-color-bg-warning-strong: #8a5c0e;
+    --p-color-bg-critical: #5c1e1e;
+    --p-color-bg-critical-strong: #8a2d2d;
+    --p-color-bg-attention: #5c4d0c;
+    --p-color-bg-attention-strong: #8a7a0e;
   }
 }
 

@@ -12,7 +12,7 @@ import { useState, useEffect } from "react"
 
 
 
-import { Separator } from "@/components/ui/separator"
+import { Separator } from "@/components/ui"
 
 import { useToast } from "@/components/ui/use-toast"
 import { Loader2, AlertCircle, CheckCircle, Save, DollarSign, FileText, User, Sparkles, Clock, Zap } from "lucide-react"

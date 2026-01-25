@@ -4,7 +4,7 @@ import { useState, useEffect } from "react"
 
 
 
-import { Skeleton } from "@/components/ui/skeleton"
+import { Skeleton } from "@/components/ui"
 import { 
   CreditCard, 
   Loader2,

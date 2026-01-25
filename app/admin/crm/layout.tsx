@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation"
 import { Search } from "lucide-react"
 
 import { GlobalSearch } from "@/components/crm/global-search"
-import { Toaster } from "@/components/ui/toaster"
+import { Toaster } from "@/components/ui"
 import { CRMErrorBoundary } from "@/components/crm/error-boundary"
 
 import { Button } from "@/components/ui"

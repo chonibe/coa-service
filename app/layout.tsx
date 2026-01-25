@@ -29,9 +29,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="en" suppressHydrationWarning>
       <head>
         <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
-        {/* Polaris Web Components - Load from CDN */}
-        <script type="module" src="https://cdn.shopify.com/shopifycloud/app-bridge.js" async />
-        <link rel="stylesheet" href="https://cdn.shopify.com/shopifycloud/polaris-web-components/polaris-web-components.css" />
       </head>
       <body className={`${barlow.variable} ${fraunces.variable} font-sans min-h-screen bg-background text-foreground antialiased`} style={{ fontFamily: 'var(--font-barlow), system-ui, sans-serif' }}>
         <Providers>

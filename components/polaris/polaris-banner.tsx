@@ -1,67 +1,119 @@
 'use client'
 
-import React, { useEffect, useRef } from 'react'
-import type { PolarisBannerProps } from './types'
+import * as React from 'react'
+import { cn } from '@/lib/utils'
 
-/**
- * React wrapper for Polaris p-banner web component (Alert equivalent)
- */
+const variantToTone: Record<string, 'info' | 'success' | 'warning' | 'critical'> = {
+  default: 'info',
+  destructive: 'critical',
+  info: 'info',
+  success: 'success',
+  warning: 'warning',
+  critical: 'critical',
+}
+
+const toneClasses: Record<string, string> = {
+  info: 'bg-[var(--p-color-bg-info)] border-[#b3e8ff] dark:border-[var(--p-color-bg-info-strong)] text-[var(--p-color-text)]',
+  success: 'bg-[var(--p-color-bg-success)] border-[#b8e0b0] dark:border-[var(--p-color-bg-success-strong)] text-[var(--p-color-text)]',
+  warning: 'bg-[var(--p-color-bg-warning)] border-[#ffd79d] dark:border-[var(--p-color-bg-warning-strong)] text-[var(--p-color-text)]',
+  critical: 'bg-[var(--p-color-bg-critical)] border-[#fecaca] dark:border-[var(--p-color-bg-critical-strong)] text-[var(--p-color-text)]',
+}
+
+export interface PolarisBannerProps extends React.HTMLAttributes<HTMLDivElement> {
+  tone?: 'info' | 'success' | 'warning' | 'critical'
+  variant?: 'default' | 'destructive' | 'info' | 'success' | 'warning' | 'critical'
+  status?: 'info' | 'success' | 'warning' | 'critical'
+  title?: string
+  onDismiss?: () => void
+  children?: React.ReactNode
+}
+
 export function PolarisBanner({
-  tone = 'info',
-  title,
+  tone,
+  variant,
   status,
+  title,
   onDismiss,
   children,
   className,
-  style,
   ...props
 }: PolarisBannerProps) {
-  const ref = useRef<HTMLElement>(null)
+  const resolvedTone = tone ?? status ?? (variant ? variantToTone[variant] ?? 'info' : 'info')
+  const isCritical = resolvedTone === 'critical'
+  const role = isCritical ? 'alert' : 'status'
 
-  useEffect(() => {
-    const element = ref.current
-    if (!element) return
-
-    // Use status if provided, otherwise use tone
-    const bannerTone = status || tone
-    if (bannerTone) element.setAttribute('tone', bannerTone)
-    if (title) element.setAttribute('title', title)
-    if (className) element.className = className
-    if (style) {
-      Object.assign(element.style, style)
-    }
-
-    // Handle dismiss events
-    if (onDismiss) {
-      const handleDismiss = () => {
-        onDismiss()
-      }
-      element.addEventListener('dismiss', handleDismiss)
-      return () => {
-        element.removeEventListener('dismiss', handleDismiss)
-      }
-    }
-  }, [tone, title, status, onDismiss, className, style])
-
-  return React.createElement('p-banner', { ref, ...props }, children)
-}
-
-// Alert sub-components for backward compatibility
-export function PolarisAlert({ children, className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
-  return <PolarisBanner className={className} {...props}>{children}</PolarisBanner>
-}
-
-export function PolarisAlertTitle({ children, className, ...props }: React.HTMLAttributes<HTMLHeadingElement>) {
   return (
-    <h4 className={className} {...props}>
+    <div
+      role={role}
+      aria-live={isCritical ? 'assertive' : 'polite'}
+      className={cn(
+        'rounded-[var(--p-border-radius-200)] border px-4 py-3',
+        toneClasses[resolvedTone] ?? toneClasses.info,
+        className
+      )}
+      {...props}
+    >
+      <div className="flex items-start justify-between gap-3">
+        <div className="flex-1 min-w-0">
+          {title && (
+            <h4 className="font-semibold text-[var(--p-color-text)] mb-1">{title}</h4>
+          )}
+          {children}
+        </div>
+        {onDismiss && (
+          <button
+            type="button"
+            onClick={onDismiss}
+            className="shrink-0 rounded p-1 hover:bg-black/10 dark:hover:bg-white/10 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--ring))]"
+            aria-label="Dismiss"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        )}
+      </div>
+    </div>
+  )
+}
+
+export function PolarisAlert({
+  children,
+  className,
+  ...props
+}: React.HTMLAttributes<HTMLDivElement> & { variant?: string; tone?: string; status?: string; title?: string; onDismiss?: () => void }) {
+  return (
+    <PolarisBanner className={className} {...props}>
+      {children}
+    </PolarisBanner>
+  )
+}
+
+export function PolarisAlertTitle({
+  children,
+  className,
+  ...props
+}: React.HTMLAttributes<HTMLHeadingElement>) {
+  return (
+    <h4
+      className={cn('font-semibold text-[var(--p-color-text)]', className)}
+      {...props}
+    >
       {children}
     </h4>
   )
 }
 
-export function PolarisAlertDescription({ children, className, ...props }: React.HTMLAttributes<HTMLParagraphElement>) {
+export function PolarisAlertDescription({
+  children,
+  className,
+  ...props
+}: React.HTMLAttributes<HTMLParagraphElement>) {
   return (
-    <p className={className} {...props}>
+    <p
+      className={cn('text-sm text-[var(--p-color-text-secondary)]', className)}
+      {...props}
+    >
       {children}
     </p>
   )

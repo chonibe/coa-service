@@ -1,97 +1,88 @@
 'use client'
 
-import React, { useEffect, useRef } from 'react'
+import * as React from 'react'
+import { cn } from '@/lib/utils'
 import type { PolarisTextareaProps } from './types'
 
-/**
- * React wrapper for Polaris p-textarea web component
- */
-export function PolarisTextarea({
-  label,
-  labelHidden,
-  helpText,
-  error,
-  requiredIndicator,
-  disabled,
-  readonly,
-  placeholder,
-  value,
-  rows,
-  maxLength,
-  showCharacterCount,
-  onChange,
-  onInput,
-  onFocus,
-  onBlur,
-  className,
-  style,
-  ...props
-}: PolarisTextareaProps) {
-  const ref = useRef<HTMLElement>(null)
+const textareaBase =
+  'flex min-h-[80px] w-full resize-y rounded-[var(--p-border-radius-200)] border border-[var(--p-color-border)] bg-[var(--p-color-bg-surface)] px-3 py-2 text-sm text-[var(--p-color-text)] placeholder:text-[var(--p-color-text-secondary)] transition-colors focus:outline-none focus:ring-2 focus:ring-[hsl(var(--ring))] focus:ring-offset-0 disabled:cursor-not-allowed disabled:opacity-50'
 
-  useEffect(() => {
-    const element = ref.current
-    if (!element) return
+export const PolarisTextarea = React.forwardRef<HTMLTextAreaElement, PolarisTextareaProps>(
+  function PolarisTextarea(
+    {
+      label,
+      labelHidden,
+      helpText,
+      error,
+      requiredIndicator,
+      disabled,
+      readonly,
+      readOnly,
+      placeholder,
+      value,
+      rows = 3,
+      maxLength,
+      showCharacterCount,
+      onChange,
+      onInput,
+      onFocus,
+      onBlur,
+      className,
+      id: idProp,
+      ...props
+    },
+    ref
+  ) {
+    const id = idProp ?? React.useId()
+    const errorMessage = typeof error === 'string' ? error : undefined
+    const hasError = Boolean(error)
+    const isReadOnly = readonly ?? readOnly
 
-    if (label) element.setAttribute('label', label)
-    if (labelHidden) element.setAttribute('label-hidden', '')
-    if (helpText) element.setAttribute('help-text', helpText)
-    if (error) {
-      element.setAttribute('error', typeof error === 'string' ? error : '')
-    }
-    if (requiredIndicator) element.setAttribute('required-indicator', '')
-    if (disabled) element.setAttribute('disabled', '')
-    if (readonly) element.setAttribute('readonly', '')
-    if (placeholder) element.setAttribute('placeholder', placeholder)
-    if (value !== undefined) element.setAttribute('value', String(value))
-    if (rows) element.setAttribute('rows', String(rows))
-    if (maxLength) element.setAttribute('max-length', String(maxLength))
-    if (showCharacterCount) element.setAttribute('show-character-count', '')
-    if (className) element.className = className
-    if (style) {
-      Object.assign(element.style, style)
-    }
-
-    // Handle events
-    if (onChange) {
-      element.addEventListener('change', onChange as EventListener)
-    }
-    if (onInput) {
-      element.addEventListener('input', onInput as EventListener)
-    }
-    if (onFocus) {
-      element.addEventListener('focus', onFocus as EventListener)
-    }
-    if (onBlur) {
-      element.addEventListener('blur', onBlur as EventListener)
-    }
-
-    return () => {
-      if (onChange) element.removeEventListener('change', onChange as EventListener)
-      if (onInput) element.removeEventListener('input', onInput as EventListener)
-      if (onFocus) element.removeEventListener('focus', onFocus as EventListener)
-      if (onBlur) element.removeEventListener('blur', onBlur as EventListener)
-    }
-  }, [
-    label,
-    labelHidden,
-    helpText,
-    error,
-    requiredIndicator,
-    disabled,
-    readonly,
-    placeholder,
-    value,
-    rows,
-    maxLength,
-    showCharacterCount,
-    onChange,
-    onInput,
-    onFocus,
-    onBlur,
-    className,
-    style,
-  ])
-
-  return React.createElement('p-textarea', { ref, ...props })
-}
+    return (
+      <div className="space-y-1.5">
+        {label && !labelHidden && (
+          <label
+            htmlFor={id}
+            className="block text-sm font-medium text-[var(--p-color-text)]"
+          >
+            {label}
+            {requiredIndicator && <span className="text-red-500 ml-0.5" aria-hidden>*</span>}
+          </label>
+        )}
+        <textarea
+          ref={ref}
+          id={id}
+          value={value}
+          placeholder={placeholder}
+          rows={rows}
+          maxLength={maxLength}
+          disabled={disabled}
+          readOnly={isReadOnly}
+          onChange={onChange as React.ChangeEventHandler<HTMLTextAreaElement>}
+          onInput={onInput as React.FormEventHandler<HTMLTextAreaElement>}
+          onFocus={onFocus as React.FocusEventHandler<HTMLTextAreaElement>}
+          onBlur={onBlur as React.FocusEventHandler<HTMLTextAreaElement>}
+          className={cn(
+            textareaBase,
+            hasError && 'border-red-500 focus:ring-red-500',
+            className
+          )}
+          {...(props as React.TextareaHTMLAttributes<HTMLTextAreaElement>)}
+        />
+        {helpText && !hasError && (
+          <p className="text-sm text-[var(--p-color-text-secondary)]">{helpText}</p>
+        )}
+        {errorMessage && (
+          <p className="text-sm text-red-600 dark:text-red-400" role="alert">
+            {errorMessage}
+          </p>
+        )}
+        {showCharacterCount && maxLength && typeof value === 'string' && (
+          <p className="text-xs text-[var(--p-color-text-secondary)] text-right">
+            {value.length} / {maxLength}
+          </p>
+        )}
+      </div>
+    )
+  }
+)

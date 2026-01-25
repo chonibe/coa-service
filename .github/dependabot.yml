@@ -1,0 +1,51 @@
+version: 2
+updates:
+  # Monitor npm dependencies
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+    open-pull-requests-limit: 10
+    
+    # Group Polaris updates together
+    groups:
+      polaris:
+        patterns:
+          - "@shopify/polaris*"
+        update-types:
+          - "minor"
+          - "patch"
+    
+    # Labels for organization
+    labels:
+      - "dependencies"
+      - "polaris"
+      - "automated"
+    
+    # Assign reviewers
+    reviewers:
+      - "frontend-team"
+    
+    # Commit message prefix
+    commit-message:
+      prefix: "chore"
+      prefix-development: "chore"
+      include: "scope"
+    
+    # Version update strategy
+    versioning-strategy: increase
+    
+    # Allow version requirements (to avoid breaking changes)
+    allow:
+      - dependency-type: "direct"
+    
+    # Ignore major version updates (require manual review)
+    ignore:
+      - dependency-name: "@shopify/polaris"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "@shopify/polaris-icons"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "@shopify/polaris-tokens"
+        update-types: ["version-update:semver-major"]

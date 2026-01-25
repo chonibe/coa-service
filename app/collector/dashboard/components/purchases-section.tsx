@@ -5,7 +5,7 @@ import { useState, useMemo, useEffect } from "react"
 
 
 
-import { Separator } from "@/components/ui/separator"
+import { Separator } from "@/components/ui"
 import Image from "next/image"
 import { ShieldCheck, Clock, FileText, ExternalLink, Scan, Award } from "lucide-react"
 import { cn } from "@/lib/utils"

@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react"
 
 
-import { Progress } from "@/components/ui/progress"
+import { Progress } from "@/components/ui"
 import { AlertCircle, ChevronRight } from "lucide-react"
 import Link from "next/link"
 

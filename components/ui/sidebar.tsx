@@ -9,9 +9,9 @@ import { useIsMobile } from "@/hooks/use-mobile"
 import { cn } from "@/lib/utils"
 
 
-import { Separator } from "@/components/ui/separator"
+import { Separator } from "@/components/ui"
 import { Sheet, SheetContent } from "@/components/ui/sheet"
-import { Skeleton } from "@/components/ui/skeleton"
+import { Skeleton } from "@/components/ui"
 import { Button, Input } from "@/components/ui"
 import {
   Tooltip,

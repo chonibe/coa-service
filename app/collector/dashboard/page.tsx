@@ -5,8 +5,8 @@ import { useRouter } from "next/navigation"
 
 
 
-import { Separator } from "@/components/ui/separator"
-import { Skeleton } from "@/components/ui/skeleton"
+import { Separator } from "@/components/ui"
+import { Skeleton } from "@/components/ui"
 
 import {
   DropdownMenu,
@@ -199,7 +199,7 @@ export default function CollectorDashboardPage() {
 
   if (isLoading) {
     return (
-      <div className="container mx-auto px-4 py-8 space-y-6">
+      <div className="mx-auto max-w-7xl px-4 py-8 space-y-6">
         <Skeleton className="h-10 w-64" />
         <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
           <Skeleton className="h-24" />
@@ -214,7 +214,7 @@ export default function CollectorDashboardPage() {
 
   if (error || !data) {
     return (
-      <div className="container mx-auto px-4 py-8">
+      <div className="mx-auto max-w-7xl px-4 py-8">
         <Alert variant="destructive">
           <AlertTitle>Unable to load dashboard</AlertTitle>
           <AlertDescription>{error || "Something went wrong"}</AlertDescription>

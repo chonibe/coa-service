@@ -3,7 +3,7 @@
 
 
 
-import { Slider } from "@/components/ui/slider"
+import { Slider } from "@/components/ui"
 
 import { useEffect, useState } from "react"
 import { useRouter, useSearchParams } from "next/navigation"

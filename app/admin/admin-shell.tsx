@@ -35,7 +35,7 @@ import { Icon } from "@/components/icon"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
 
-import { Toaster } from "@/components/ui/toaster"
+import { Toaster } from "@/components/ui"
 import { useToast } from "@/hooks/use-toast"
 import LogoutButton from "./logout-button"
 import { useMobile } from "@/hooks/use-mobile"
@@ -48,6 +48,7 @@ import { UnifiedSearch } from "@/components/unified-search"
 import { ThemeToggle } from "@/components/theme-toggle"
 import { Logo } from "@/components/logo"
 import { MagnifyingGlassIcon } from "@heroicons/react/24/solid"
+import { PolarisUpdateNotifications } from "./components/polaris-update-notifications"
 import { AdminCommandPalette } from "./components/command-palette"
 import { DashboardSwitcher } from "@/components/dashboard-switcher"
 
@@ -850,6 +851,10 @@ export function AdminShell({ children }: AdminShellProps) {
       >
         Skip to main content
       </a>
+      
+      {/* Polaris Update Notification Banner */}
+      <PolarisUpdateNotifications />
+      
       <header className="sticky top-0 z-30 flex h-16 items-center gap-4 border-b border-slate-200/50 dark:border-slate-800/50 bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl px-4 sm:px-6">
         <div className="flex items-center gap-2">
           <SmartBackButton dashboardBase="/admin" className="hidden md:flex" />
@@ -1098,8 +1103,10 @@ export function AdminShell({ children }: AdminShellProps) {
             </div>
           </ScrollArea>
         </aside>
-        <main id="admin-main" className="flex-1 pb-16 md:pb-0">
-          {activeView === "admin" ? children : vendorChooser}
+        <main id="admin-main" className="flex-1 pb-16 md:pb-0 overflow-auto">
+          <div className="mx-auto w-full max-w-7xl px-4 py-6 md:px-6 md:py-8 lg:px-8">
+            {activeView === "admin" ? children : vendorChooser}
+          </div>
         </main>
       </div>
       <AdminCommandPalette open={isCommandOpen} onOpenChange={setIsCommandOpen} items={commandItems} />

@@ -5,9 +5,9 @@ import { useParams, useRouter } from "next/navigation"
 
 
 
-import { Skeleton } from "@/components/ui/skeleton"
+import { Skeleton } from "@/components/ui"
 
-import { Separator } from "@/components/ui/separator"
+import { Separator } from "@/components/ui"
 import {
   Loader2,
   AlertCircle,

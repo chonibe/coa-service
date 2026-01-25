@@ -4,11 +4,7 @@ import React, { useState, useRef, useEffect } from "react"
 import { motion } from "framer-motion"
 
 import { Loader2, HelpCircle, ChevronDown, ArrowLeft } from "lucide-react"
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "@/components/ui/collapsible"
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui"
 import Image from "next/image"
 
 import { Button } from "@/components/ui"

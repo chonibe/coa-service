@@ -11,7 +11,7 @@ import { useRouter } from "next/navigation"
 
 
 
-import { Separator } from "@/components/ui/separator"
+import { Separator } from "@/components/ui"
 import { useToast } from "@/components/ui/use-toast"
 import {
   Loader2,

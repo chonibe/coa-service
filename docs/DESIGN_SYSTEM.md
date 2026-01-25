@@ -1,28 +1,22 @@
 # Street Collector Design System
 
 ## Overview
-Our design system is built using **Shopify Polaris Web Components** with React wrapper components. This provides a consistent, accessible, and professional UI that aligns with Shopify's design language while maintaining flexibility for our application needs.
+Our design system uses **React components** styled with Tailwind CSS and Polaris-inspired design tokens. Components follow the Shopify Polaris design language while rendering native HTML elements for consistency, accessibility, and compatibility with our Next.js application.
 
 ## Core Principles
 - **Polaris Design Language**: All components follow Shopify Polaris design guidelines
-- **Accessibility**: WCAG 2.1 AA compliant (built into Polaris)
-- **Performance**: Web components with efficient rendering
-- **Consistency**: Unified component API across the application
+- **Accessibility**: WCAG 2.1 AA compliant patterns (focus, ARIA, keyboard)
+- **Performance**: Native HTML + Tailwind; no custom element runtime
+- **Consistency**: Unified component API via `@/components/ui`
 - **Type Safety**: Full TypeScript support for all components
 
 ## Design Language
 
-### Polaris Components
-All UI components are built on Shopify Polaris Web Components:
-- **Web Components**: Native browser components for optimal performance
-- **React Wrappers**: Seamless React integration via wrapper components
-- **Design Tokens**: Consistent spacing, colors, and typography from Polaris
-- **Responsive**: Mobile-first design with breakpoint system
-
 ### Component Architecture
-- **Base Components**: Polaris web components (`p-button`, `p-card`, etc.)
-- **React Wrappers**: Located in `components/polaris/`
+- **React Components**: Styled with Tailwind and CSS variables (`--p-color-*`, `--p-space-*`, `--p-border-radius-*`)
+- **Location**: `components/polaris/`
 - **Exports**: Backward-compatible exports in `components/ui/index.ts`
+- **No web components**: All UI uses standard HTML elements (e.g. `button`, `div`, `input`)
 
 ## Color Palette
 Polaris uses a semantic color system:
@@ -93,8 +87,9 @@ import { Button, Card, Input, Dialog, Badge } from '@/components/ui'
 - **Multiline**: Support for textarea via `multiline` prop
 
 ### Dialog / Modal
-- **Props**: `open`, `title`, `size` (`small`, `medium`, `large`, `fullWidth`)
-- **Events**: `onClose` callback
+- **Dialog**: Compound component. Use with `DialogContent`, `DialogHeader`, `DialogTitle`, `DialogDescription`, `DialogFooter`, `DialogTrigger`
+- **Props**: `open`, `onOpenChange`, `onClose`, `title`, `size` (`small`, `medium`, `large`, `fullWidth`)
+- **Modal**: Single component with `open`, `title`, `size`, `onClose`
 
 ### Badge
 - **Tones**: `info`, `success`, `attention`, `warning`, `critical`
@@ -113,8 +108,8 @@ import { Button, Card, Input, Dialog, Badge } from '@/components/ui'
 - **Events**: `onSort`
 
 ### Tabs
-- **Props**: `tabs` (array), `selected` (index)
-- **Events**: `onSelect`
+- **Compound**: `Tabs`, `TabsList`, `TabsTrigger`, `TabsContent`
+- **Props**: `value`, `defaultValue`, `onValueChange`; `TabsTrigger`/`TabsContent` use `value`
 
 ## Accessibility
 - WCAG 2.1 AA Compliance
@@ -147,49 +142,59 @@ import { ThemeToggle } from "@/components/theme-toggle"
 <ThemeToggle />
 ```
 
+## Layout Utilities
+
+### PageContainer
+Standardized page wrapper with max-width and padding.
+```typescript
+import { PageContainer } from '@/components/ui'
+
+<PageContainer maxWidth="7xl" padding="md">
+  {children}
+</PageContainer>
+```
+- **maxWidth**: `'4xl' | '5xl' | '6xl' | '7xl' | 'full'`
+- **padding**: `'none' | 'sm' | 'md' | 'lg'`
+
+### PageHeader
+Consistent page header with title, description, and actions.
+```typescript
+import { PageHeader } from '@/components/ui'
+
+<PageHeader
+  title="Dashboard"
+  description="Manage your products and settings"
+  actions={<Button>Create</Button>}
+/>
+```
+
 ## Performance Considerations
-- Minimal CSS overhead
-- No runtime dependencies
+- Minimal CSS overhead (Tailwind + CSS variables)
+- No custom element runtime
 - Tree-shakeable components
 
 ## Implementation Notes
-- Web components loaded via CDN for optimal performance
-- React wrappers provide seamless integration
-- TypeScript definitions ensure type safety
-- Polaris design tokens available via `@shopify/polaris-tokens`
+- Components render native HTML; styling via Tailwind and `app/globals.css` tokens
+- TypeScript definitions for all components
+- Use `--p-*` CSS variables for custom styles
 
 ## Implementation
 
 ### Component Usage
-All Polaris components are available through backward-compatible exports:
 ```typescript
-// Import from unified export
-import { Button, Card, Input } from '@/components/ui'
-
-// Or import directly from Polaris wrappers
+import { Button, Card, Input, PageHeader, PageContainer } from '@/components/ui'
 import { PolarisButton } from '@/components/polaris/polaris-button'
 ```
 
 ### Styling
-- Polaris components use their own CSS (loaded via CDN)
-- Custom styling via `className` prop (may have limitations)
-- Use Polaris design tokens for consistent spacing/colors
-
-### Design Tokens
-Import Polaris design tokens:
-```typescript
-import { tokens } from '@shopify/polaris-tokens'
-
-// Access tokens
-const spacing = tokens.space
-const colors = tokens.color
-```
+- Tailwind classes; Polaris tokens via `var(--p-color-*)`, etc.
+- `className` prop supported on all components
 
 ## Migration from Shadcn UI
 
 See [Polaris Migration Guide](/docs/features/polaris-migration/MIGRATION_GUIDE.md) for detailed migration instructions.
 
 ## Version
-- Design System Version: 3.0.0 (Polaris Web Components)
+- Design System Version: 3.1.0 (Polaris-styled React components)
 - Last Updated: 2025-01-25
-- Breaking Changes: Migrated from Shadcn UI to Polaris Web Components 
+- Architecture: React components with Tailwind + CSS variables; no `p-*` web components

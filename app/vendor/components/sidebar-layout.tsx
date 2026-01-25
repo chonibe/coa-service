@@ -80,7 +80,7 @@ export function SidebarLayout({ children }: SidebarLayoutProps) {
           {/* Main content takes full width */}
           <div className="w-full overflow-x-hidden">
             <PullToRefresh onRefresh={async () => { await trigger(); return true }}>
-              <main id="main-content" className="px-4 md:px-8 pt-28 pb-28 max-w-7xl mx-auto w-full" role="main" aria-label="Main content">
+              <main id="main-content" className="px-4 md:px-6 pt-20 pb-20 lg:px-8 max-w-7xl mx-auto w-full" role="main" aria-label="Main content">
                 {/* Impersonation context for admins */}
                 <ComponentErrorBoundary componentName="ImpersonationBanner" fallbackMode="silent">
                   <ImpersonationBanner />

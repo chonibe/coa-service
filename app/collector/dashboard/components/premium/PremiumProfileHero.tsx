@@ -9,7 +9,7 @@ import {
 ;
 ;
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Separator } from "@/components/ui/separator";
+import { Separator } from "@/components/ui";
 import { InkOGatchi } from "../ink-o-gatchi";
 
 import { Badge, Card, CardContent, CardHeader, CardTitle } from "@/components/ui"

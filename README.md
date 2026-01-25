@@ -99,6 +99,8 @@ npm run dev
 - [UI Components Cleanup](/components/ui/CLEANUP_SUMMARY.md) - Details on removed and retained components
 - [UI Migration Strategy](/docs/UI_MIGRATION_STRATEGY.md) - ✨ **NEW** Future-proof architecture for easy UI library changes
 - [UI Quick Reference](/components/ui/QUICK_REFERENCE.md) - Developer guide for using UI components
+- [Polaris Update Strategy](/docs/POLARIS_UPDATE_STRATEGY.md) - ✨ **NEW** Keep Polaris up-to-date with automated checks
+- [Admin Polaris Updates](/docs/ADMIN_POLARIS_UPDATES.md) - ✨ **NEW** In-app update review and approval system
 
 ## Contributing
 

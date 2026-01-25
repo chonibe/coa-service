@@ -1,11 +1,9 @@
 'use client'
 
-import React, { useEffect, useRef } from 'react'
+import * as React from 'react'
+import { cn } from '@/lib/utils'
 
-/**
- * React wrapper for Polaris p-layout web component
- */
-export interface PolarisLayoutProps extends React.HTMLAttributes<HTMLElement> {
+export interface PolarisLayoutProps extends React.HTMLAttributes<HTMLDivElement> {
   sectioned?: boolean
   children?: React.ReactNode
 }
@@ -17,47 +15,46 @@ export function PolarisLayout({
   style,
   ...props
 }: PolarisLayoutProps) {
-  const ref = useRef<HTMLElement>(null)
-
-  useEffect(() => {
-    const element = ref.current
-    if (!element) return
-
-    if (sectioned) element.setAttribute('sectioned', '')
-    if (className) element.className = className
-    if (style) {
-      Object.assign(element.style, style)
-    }
-  }, [sectioned, className, style])
-
-  return React.createElement('p-layout', { ref, ...props }, children)
+  return (
+    <div
+      className={cn(
+        'flex flex-col',
+        sectioned && 'gap-6 divide-y divide-[var(--p-color-border)] [&>*:first-child]:pt-0 [&>*]:pt-6',
+        className
+      )}
+      style={style}
+      {...props}
+    >
+      {children}
+    </div>
+  )
 }
 
-// Layout Section
-export interface PolarisLayoutSectionProps extends React.HTMLAttributes<HTMLElement> {
+export interface PolarisLayoutSectionProps extends React.HTMLAttributes<HTMLDivElement> {
   variant?: 'oneHalf' | 'oneThird' | 'fullWidth'
   children?: React.ReactNode
 }
 
+const variantMap = {
+  oneHalf: 'md:w-1/2',
+  oneThird: 'md:w-1/3',
+  fullWidth: 'w-full',
+} as const
+
 export function PolarisLayoutSection({
-  variant,
+  variant = 'fullWidth',
   children,
   className,
   style,
   ...props
 }: PolarisLayoutSectionProps) {
-  const ref = useRef<HTMLElement>(null)
-
-  useEffect(() => {
-    const element = ref.current
-    if (!element) return
-
-    if (variant) element.setAttribute('variant', variant)
-    if (className) element.className = className
-    if (style) {
-      Object.assign(element.style, style)
-    }
-  }, [variant, className, style])
-
-  return React.createElement('p-layout-section', { ref, ...props }, children)
+  return (
+    <div
+      className={cn('w-full', variantMap[variant], className)}
+      style={style}
+      {...props}
+    >
+      {children}
+    </div>
+  )
 }

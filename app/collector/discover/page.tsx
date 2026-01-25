@@ -4,7 +4,7 @@ import { Suspense, useEffect, useState } from "react"
 import { useSearchParams } from "next/navigation"
 
 
-import { Skeleton } from "@/components/ui/skeleton"
+import { Skeleton } from "@/components/ui"
 import { Artwork, MarketplaceApiResponse } from "@/types/collector"
 import { ArtworkCard } from "./components/artwork-card"
 import { FilterSidebar } from "./components/filter-sidebar"
@@ -49,14 +49,14 @@ function DiscoverContent() {
 
   if (error) {
     return (
-      <div className="container mx-auto px-4 py-8 text-red-500">
+      <div className="mx-auto max-w-7xl px-4 py-8 text-red-500">
         <p>Unable to load marketplace: {error}</p>
       </div>
     )
   }
 
   return (
-    <div className="container mx-auto px-4 py-8">
+    <div className="mx-auto max-w-7xl px-4 py-8">
       <h1 className="text-3xl font-bold mb-6">Discover Artworks</h1>
 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-8">

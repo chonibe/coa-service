@@ -6,7 +6,7 @@ import { useState, useEffect } from 'react'
 
 
 
-import { Skeleton } from '@/components/ui/skeleton'
+import { Skeleton } from "@/components/ui"
 
 import { WarehouseOrderCard } from './components/WarehouseOrderCard'
 import { PackageTracker } from './components/PackageTracker'
@@ -18,7 +18,7 @@ import { AlertCircle, Calendar, Search, RefreshCw, Share2, Check, Copy, ChevronL
 
 import type { ChinaDivisionOrderInfo } from '@/lib/chinadivision/client'
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle, Button, Input, Label, Alert, AlertDescription, Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Checkbox, Tabs, TabsList, TabsTrigger, TabsContent, Badge, Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, Button, Input, Label, Alert, AlertDescription, Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Checkbox, Tabs, TabsList, TabsTrigger, TabsContent, Badge, Table, TableBody, TableCell, TableHead, TableHeader, TableRow, PageHeader } from "@/components/ui"
 export default function WarehouseOrdersPage() {
   const [orders, setOrders] = useState<ChinaDivisionOrderInfo[]>([])
   const [isLoading, setIsLoading] = useState(false)
@@ -354,34 +354,29 @@ export default function WarehouseOrdersPage() {
   }, [searchQuery, statusFilter, tagFilter, sortField, sortDirection])
 
   return (
-    <div className="container mx-auto py-8 space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
-            Warehouse Orders
-          </h1>
-          <p className="text-muted-foreground mt-1">
-            Track orders from ChinaDivision warehouse
-          </p>
-        </div>
-        <div className="flex gap-2">
-          {selectedOrderIds.size > 0 && (
-            <Button 
-              onClick={handleGenerateLink} 
-              disabled={isGeneratingLink}
-              variant="default"
-            >
-              <Share2 className="h-4 w-4 mr-2" />
-              Generate Link ({selectedOrderIds.size})
+    <div className="space-y-6">
+      <PageHeader
+        title="Warehouse Orders"
+        description="Track orders from ChinaDivision warehouse"
+        actions={
+          <>
+            {selectedOrderIds.size > 0 && (
+              <Button
+                onClick={handleGenerateLink}
+                disabled={isGeneratingLink}
+                variant="default"
+              >
+                <Share2 className="h-4 w-4 mr-2" />
+                Generate Link ({selectedOrderIds.size})
+              </Button>
+            )}
+            <Button onClick={fetchOrders} disabled={isLoading} variant="outline">
+              <RefreshCw className={`h-4 w-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
+              Refresh
             </Button>
-          )}
-          <Button onClick={fetchOrders} disabled={isLoading} variant="outline">
-            <RefreshCw className={`h-4 w-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
-            Refresh
-          </Button>
-        </div>
-      </div>
+          </>
+        }
+      />
 
       {/* Status Tabs */}
       <Card className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-0 shadow-lg">

@@ -5,7 +5,7 @@ import { useEffect, useState } from "react"
 import { ChevronLeft, MoreVertical } from "lucide-react"
 import Link from "next/link"
 
-import { Skeleton } from "@/components/ui/skeleton"
+import { Skeleton } from "@/components/ui"
 import { CollectorSeries, SeriesApiResponse } from "@/types/collector"
 import { ProgressBar } from "./components/ProgressBar"
 import { CollectionGrid } from "./components/CollectionGrid"
@@ -135,7 +135,7 @@ export default function SeriesDetailPage({ params }: { params: { id: string } })
       </header>
 
       {/* Main Content */}
-      <main className="px-4 py-6 space-y-6">
+      <main className="mx-auto max-w-5xl px-4 py-6 space-y-6">
         {/* Progress Section */}
         <ProgressBar
           current={ownedArtworks}

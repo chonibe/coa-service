@@ -5,10 +5,10 @@ import { useRouter } from 'next/navigation'
 
 
 
-import { Separator } from '@/components/ui/separator'
+import { Separator } from "@/components/ui"
 
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { Progress } from '@/components/ui/progress'
+import { Progress } from "@/components/ui"
 import { useToast } from '@/hooks/use-toast'
 import { Eye, ShieldCheck, TrendingUp, Users, Award, ShoppingBag, History, MapPin, Phone, Mail, Calendar, DollarSign, Package, Loader2, Wifi, WifiOff } from 'lucide-react'
 import { InkOGatchiWidget } from '@/app/collector/dashboard/components/inkogatchi-widget'

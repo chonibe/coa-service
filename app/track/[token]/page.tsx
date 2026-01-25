@@ -4,7 +4,7 @@ import { useState, useEffect, useMemo, useCallback } from 'react'
 import type { KeyboardEvent } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 
-import { Skeleton } from '@/components/ui/skeleton'
+import { Skeleton } from "@/components/ui"
 
 import { ScrollArea } from '@/components/ui/scroll-area'
 

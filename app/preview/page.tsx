@@ -6,7 +6,7 @@ import { useState, useEffect, useRef, ReactNode } from "react"
 
 
 
-import { Skeleton } from "@/components/ui/skeleton"
+import { Skeleton } from "@/components/ui"
 
 import { AlertCircle, CheckCircle, Clock, ShoppingBag, User, BadgeIcon as Certificate, Tag } from "lucide-react"
 import { toast } from "sonner"

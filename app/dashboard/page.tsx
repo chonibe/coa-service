@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
 
-import { Separator } from '@/components/ui/separator'
+import { Separator } from "@/components/ui"
 
 import { formatCurrency, formatDate } from '@/lib/utils'
 

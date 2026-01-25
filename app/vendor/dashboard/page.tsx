@@ -2,9 +2,9 @@
 
 import { useState, useEffect, useRef, useMemo } from "react"
 import { useRouter } from "next/navigation"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, PageHeader } from "@/components/ui"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui"
-import { Skeleton } from "@/components/ui/skeleton"
+import { Skeleton } from "@/components/ui"
 import { AlertCircle, DollarSign, Package, TrendingUp, ShoppingCart } from "lucide-react"
 import { OnboardingAlert } from "./components/onboarding-alert"
 import { OnboardingBanner } from "./components/onboarding-banner"
@@ -248,25 +248,23 @@ export default function VendorDashboardPage() {
 
   return (
     <div className="space-y-4">
-        <div className="flex items-center justify-between gap-3">
-          <div className="space-y-1">
-            <p className="text-muted-foreground text-lg">Welcome back, {vendorName}! Here's what's happening with your business.</p>
-            {formattedLastUpdated && <p className="text-xs text-muted-foreground">Last updated {formattedLastUpdated}</p>}
-          </div>
-          <div className="flex items-center gap-2">
-            <TimeRangeSelector
-              value={timeRange}
-              dateRange={dateRange}
-              onChange={(range, customRange) => {
-                setTimeRange(range)
-                setDateRange(customRange)
-              }}
-            />
-          </div>
-        </div>
+      <PageHeader
+        title={`Welcome back, ${vendorName}`}
+        description={formattedLastUpdated ? `Here's what's happening with your business. Last updated ${formattedLastUpdated}.` : "Here's what's happening with your business."}
+        actions={
+          <TimeRangeSelector
+            value={timeRange}
+            dateRange={dateRange}
+            onChange={(range, customRange) => {
+              setTimeRange(range)
+              setDateRange(customRange)
+            }}
+          />
+        }
+      />
 
-        {/* Contextual onboarding - floating card */}
-        <ContextualOnboarding context="dashboard" />
+      {/* Contextual onboarding - floating card */}
+      <ContextualOnboarding context="dashboard" />
 
       {statsError && (
         <Alert variant="destructive" className="border shadow-sm">

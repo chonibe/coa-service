@@ -6,8 +6,8 @@ import Image from "next/image"
 import Link from "next/link"
 
 
-import { Separator } from "@/components/ui/separator"
-import { Skeleton } from "@/components/ui/skeleton"
+import { Separator } from "@/components/ui"
+import { Skeleton } from "@/components/ui"
 import { ArtistApiResponse, ArtistArtwork, ArtistSeries } from "@/types/collector"
 import { ArtworkCard } from "@/app/collector/discover/components/artwork-card"
 

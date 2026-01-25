@@ -3,7 +3,7 @@
 import Image from "next/image"
 
 
-import { Separator } from "@/components/ui/separator"
+import { Separator } from "@/components/ui"
 import { X, Copy, Trash2, Download, Image as ImageIcon, Video, Music, FileText } from "lucide-react"
 import type { MediaItem } from "../page"
 

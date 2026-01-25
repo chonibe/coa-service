@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 
-import { Separator } from '@/components/ui/separator'
+import { Separator } from "@/components/ui"
 import { useToast } from '@/hooks/use-toast'
 import { Loader2, History, Save, User, Link as LinkIcon, Mail, ExternalLink } from 'lucide-react'
 import Link from 'next/link'

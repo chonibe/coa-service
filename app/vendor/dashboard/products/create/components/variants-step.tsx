@@ -4,10 +4,10 @@ import { useEffect, useState } from "react"
 
 
 
-import { Slider } from "@/components/ui/slider"
+import { Slider } from "@/components/ui"
 
 import { cn } from "@/lib/utils"
-import { Progress } from "@/components/ui/progress"
+import { Progress } from "@/components/ui"
 
 import { Lock, TrendingUp, Info, Clock, Check } from "lucide-react"
 
