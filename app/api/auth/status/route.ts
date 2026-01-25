@@ -33,6 +33,8 @@ export async function GET() {
   
   // Check if admin also has collector orders (for role selection)
   let adminHasCollectorAccess = false
+  let adminHasVendorAccess = false
+  
   if (isAdmin && email) {
     const { data: adminOrderMatch } = await serviceClient
       .from("orders")
@@ -42,6 +44,17 @@ export async function GET() {
       .maybeSingle()
     
     adminHasCollectorAccess = !!adminOrderMatch
+    
+    // Check if admin has vendor access via vendor_users table
+    if (user?.id) {
+      const { data: adminVendorUser } = await serviceClient
+        .from("vendor_users")
+        .select("vendor_id")
+        .eq("auth_id", user.id)
+        .maybeSingle()
+      
+      adminHasVendorAccess = !!adminVendorUser
+    }
   }
   
   // Check if admin session cookie exists
@@ -104,10 +117,12 @@ export async function GET() {
     isAdmin,
     hasAdminSession,
     adminHasCollectorAccess,
+    adminHasVendorAccess,
     hasCollectorSession,
     collectorEmail: collectorSession?.email || null,
     vendorSession: vendorSessionName,
     vendor,
+    hasVendorAccess: !!vendor,
     requireAccountSelection,
   })
 }

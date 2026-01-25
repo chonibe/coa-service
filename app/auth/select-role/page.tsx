@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { Shield, Package, Loader2, AlertCircle } from "lucide-react"
+import { Shield, Package, Loader2, AlertCircle, Store } from "lucide-react"
 import { Logo } from "@/components/logo"
 
 export default function SelectRolePage() {
@@ -13,9 +13,11 @@ export default function SelectRolePage() {
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [isVerifying, setIsVerifying] = useState(true)
+  const [hasVendorAccess, setHasVendorAccess] = useState(false)
+  const [hasCollectorAccess, setHasCollectorAccess] = useState(false)
 
   useEffect(() => {
-    // Verify admin session exists
+    // Verify admin session exists and check access levels
     const verifySession = async () => {
       try {
         const response = await fetch("/api/auth/status", {
@@ -34,6 +36,10 @@ export default function SelectRolePage() {
           return
         }
 
+        // Set access flags
+        setHasVendorAccess(data.adminHasVendorAccess || false)
+        setHasCollectorAccess(data.adminHasCollectorAccess || false)
+
         setIsVerifying(false)
       } catch (err: any) {
         console.error("Session verification failed:", err)
@@ -45,7 +51,7 @@ export default function SelectRolePage() {
     verifySession()
   }, [router])
 
-  const handleSelectRole = async (role: "admin" | "collector") => {
+  const handleSelectRole = async (role: "admin" | "vendor" | "collector") => {
     setIsLoading(true)
     setError(null)
 
@@ -53,6 +59,20 @@ export default function SelectRolePage() {
       if (role === "admin") {
         // Already have admin session, just redirect
         window.location.href = "/admin/dashboard"
+      } else if (role === "vendor") {
+        // Switch to vendor role
+        const response = await fetch("/api/auth/admin/switch-to-vendor", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+        })
+
+        if (!response.ok) {
+          const errorData = await response.json()
+          throw new Error(errorData.message || "Failed to switch to vendor role")
+        }
+
+        window.location.href = "/vendor/dashboard"
       } else {
         // Switch to collector role
         const response = await fetch("/api/auth/admin/switch-to-collector", {
@@ -117,7 +137,7 @@ export default function SelectRolePage() {
             </Alert>
           )}
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className={`grid grid-cols-1 ${hasVendorAccess || hasCollectorAccess ? 'md:grid-cols-2' : ''} ${hasVendorAccess && hasCollectorAccess ? 'md:grid-cols-3' : ''} gap-4`}>
             {/* Admin Role Card */}
             <button
               onClick={() => handleSelectRole("admin")}
@@ -145,32 +165,63 @@ export default function SelectRolePage() {
               </div>
             </button>
 
+            {/* Vendor Role Card */}
+            {hasVendorAccess && (
+              <button
+                onClick={() => handleSelectRole("vendor")}
+                disabled={isLoading}
+                className="group relative overflow-hidden rounded-xl border-2 border-slate-200 dark:border-slate-700 bg-gradient-to-br from-slate-50 to-white dark:from-slate-800 dark:to-slate-900 p-6 text-left transition-all hover:border-green-500 hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <div className="absolute inset-0 bg-gradient-to-br from-green-500/10 to-emerald-500/10 opacity-0 group-hover:opacity-100 transition-opacity" />
+                <div className="relative space-y-4">
+                  <div className="flex items-center justify-center w-12 h-12 rounded-full bg-gradient-to-br from-green-500 to-emerald-600 text-white">
+                    <Store className="h-6 w-6" />
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-bold text-slate-900 dark:text-slate-100 mb-2">
+                      Vendor Dashboard
+                    </h3>
+                    <p className="text-sm text-slate-600 dark:text-slate-400">
+                      Manage your products, series, artwork pages, and sales.
+                    </p>
+                  </div>
+                  <div className="pt-2">
+                    <span className="inline-flex items-center text-sm font-medium text-green-600 dark:text-green-400 group-hover:translate-x-1 transition-transform">
+                      Access Vendor →
+                    </span>
+                  </div>
+                </div>
+              </button>
+            )}
+
             {/* Collector Role Card */}
-            <button
-              onClick={() => handleSelectRole("collector")}
-              disabled={isLoading}
-              className="group relative overflow-hidden rounded-xl border-2 border-slate-200 dark:border-slate-700 bg-gradient-to-br from-slate-50 to-white dark:from-slate-800 dark:to-slate-900 p-6 text-left transition-all hover:border-indigo-500 hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/10 to-purple-500/10 opacity-0 group-hover:opacity-100 transition-opacity" />
-              <div className="relative space-y-4">
-                <div className="flex items-center justify-center w-12 h-12 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 text-white">
-                  <Package className="h-6 w-6" />
+            {hasCollectorAccess && (
+              <button
+                onClick={() => handleSelectRole("collector")}
+                disabled={isLoading}
+                className="group relative overflow-hidden rounded-xl border-2 border-slate-200 dark:border-slate-700 bg-gradient-to-br from-slate-50 to-white dark:from-slate-800 dark:to-slate-900 p-6 text-left transition-all hover:border-indigo-500 hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/10 to-purple-500/10 opacity-0 group-hover:opacity-100 transition-opacity" />
+                <div className="relative space-y-4">
+                  <div className="flex items-center justify-center w-12 h-12 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 text-white">
+                    <Package className="h-6 w-6" />
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-bold text-slate-900 dark:text-slate-100 mb-2">
+                      Collector Dashboard
+                    </h3>
+                    <p className="text-sm text-slate-600 dark:text-slate-400">
+                      View your art collection, authenticate pieces, and explore exclusive content.
+                    </p>
+                  </div>
+                  <div className="pt-2">
+                    <span className="inline-flex items-center text-sm font-medium text-indigo-600 dark:text-indigo-400 group-hover:translate-x-1 transition-transform">
+                      Access Collection →
+                    </span>
+                  </div>
                 </div>
-                <div>
-                  <h3 className="text-xl font-bold text-slate-900 dark:text-slate-100 mb-2">
-                    Collector Dashboard
-                  </h3>
-                  <p className="text-sm text-slate-600 dark:text-slate-400">
-                    View your art collection, authenticate pieces, and explore exclusive content.
-                  </p>
-                </div>
-                <div className="pt-2">
-                  <span className="inline-flex items-center text-sm font-medium text-indigo-600 dark:text-indigo-400 group-hover:translate-x-1 transition-transform">
-                    Access Collection →
-                  </span>
-                </div>
-              </div>
-            </button>
+              </button>
+            )}
           </div>
 
           {isLoading && (

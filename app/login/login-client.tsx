@@ -136,9 +136,11 @@ export default function LoginClient() {
         }
 
         if (data.isAdmin && data.hasAdminSession) {
-          // Check if admin also has collector access to show role selection
-          if ((data as any).hasCollectorSession || (data as any).collectorEmail) {
-            console.log(`[login-client] Admin with collector access - redirecting to role selection`)
+          // Check if admin has multiple role options (collector or vendor access)
+          const hasMultipleRoles = (data as any).adminHasCollectorAccess || (data as any).adminHasVendorAccess
+          
+          if (hasMultipleRoles) {
+            console.log(`[login-client] Admin with multiple roles - redirecting to role selection`)
             hasRedirected.current = true
             window.location.replace("/auth/select-role")
             return
