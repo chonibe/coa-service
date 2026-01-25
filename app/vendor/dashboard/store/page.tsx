@@ -39,7 +39,7 @@ export default function StorePage() {
 
   if (isLoading) {
     return (
-      <div className="container mx-auto p-6 space-y-6">
+      <div className="container mx-auto p-4 space-y-4">
         <Skeleton className="h-8 w-64" />
         <Skeleton className="h-64 w-full" />
       </div>
@@ -60,9 +60,9 @@ export default function StorePage() {
   }
 
   return (
-    <div className="container mx-auto p-6 space-y-6">
+    <div className="container mx-auto p-4 space-y-4">
       <div>
-        <h1 className="text-3xl font-bold tracking-tight">Store</h1>
+        <h1 className="text-2xl font-bold tracking-tight">Store</h1>
         <p className="text-muted-foreground mt-2">
           Purchase Lamps and proof prints of your artwork
         </p>
@@ -77,8 +77,8 @@ export default function StorePage() {
           <TabsTrigger value="history">Purchase History</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="products" className="space-y-6">
-          <div className="space-y-6">
+        <TabsContent value="products" className="space-y-4">
+          <div className="space-y-4">
             <div>
               <h2 className="text-2xl font-semibold mb-4">Lamps</h2>
               <p className="text-muted-foreground mb-4">

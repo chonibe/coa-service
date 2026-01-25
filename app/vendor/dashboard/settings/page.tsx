@@ -346,12 +346,12 @@ export default function VendorSettingsPage() {
     }
 
     return (
-      <Card className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-0 shadow-xl">
+      <Card className="border shadow-sm">
         <CardHeader>
           <CardTitle>Payout Preferences</CardTitle>
           <CardDescription>Configure your payout schedule and instant payout options</CardDescription>
         </CardHeader>
-        <CardContent className="space-y-6">
+        <CardContent className="space-y-4">
           {/* Payout Schedule Info */}
           <div className="space-y-4">
             <div className="flex items-center gap-2">
@@ -467,20 +467,20 @@ export default function VendorSettingsPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <div>
         <p className="text-muted-foreground text-lg">Your account settings and preferences</p>
       </div>
 
       {error && (
-        <Alert variant="destructive" className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-0 shadow-lg">
+        <Alert variant="destructive" className="border shadow-sm">
           <AlertCircle className="h-4 w-4" />
           <AlertTitle>Error</AlertTitle>
           <AlertDescription>{error}</AlertDescription>
         </Alert>
       )}
 
-      <Card className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-0 shadow-lg">
+      <Card className="border shadow-sm">
         <CardHeader className="flex flex-row items-center justify-between">
           <div className="space-y-1">
             <CardTitle className="flex items-center gap-2">
@@ -499,7 +499,7 @@ export default function VendorSettingsPage() {
       <div className="grid gap-6 md:grid-cols-7">
         <div className="md:col-span-5">
           <Tabs value={activeTab} onValueChange={setActiveTab}>
-            <TabsList className="grid w-full grid-cols-5 bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-0 shadow-lg">
+            <TabsList className="grid w-full grid-cols-5 border shadow-sm">
               <TabsTrigger value="profile" className="flex items-center gap-2">
                 <User className="h-4 w-4" />
                 <span>Profile</span>
@@ -527,7 +527,7 @@ export default function VendorSettingsPage() {
 
             <form onSubmit={handleSubmit}>
               <TabsContent value="profile" className="space-y-4 mt-4">
-                <Card className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-0 shadow-xl">
+                <Card className="border shadow-sm">
                   <CardHeader>
                     <CardTitle>Profile Information</CardTitle>
                     <CardDescription>Keep your contact details current so we can stay in touch</CardDescription>
@@ -684,7 +684,7 @@ export default function VendorSettingsPage() {
               </TabsContent>
 
               <TabsContent value="payment" className="space-y-4 mt-4">
-                <Card className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-0 shadow-xl">
+                <Card className="border shadow-sm">
                   <CardHeader>
                     <CardTitle>Payment Information</CardTitle>
                     <CardDescription>Tell us how you'd like to receive your earnings</CardDescription>
@@ -718,7 +718,7 @@ export default function VendorSettingsPage() {
               </TabsContent>
 
               <TabsContent value="tax" className="space-y-4 mt-4">
-                <Card className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-0 shadow-xl">
+                <Card className="border shadow-sm">
                   <CardHeader>
                     <CardTitle>Tax Information</CardTitle>
                     <CardDescription>Help us keep everything compliant by sharing your tax details</CardDescription>
@@ -791,12 +791,12 @@ export default function VendorSettingsPage() {
               </TabsContent>
 
               <TabsContent value="notifications" className="space-y-4 mt-4">
-                <Card className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-0 shadow-xl">
+                <Card className="border shadow-sm">
                   <CardHeader>
                     <CardTitle>Notification Preferences</CardTitle>
                     <CardDescription>Choose how you want to be notified about collector activity</CardDescription>
                   </CardHeader>
-                  <CardContent className="space-y-6">
+                  <CardContent className="space-y-4">
                     <div className="flex items-center justify-between">
                       <div className="space-y-1">
                         <Label>Notify me when collectors authenticate</Label>
@@ -889,7 +889,7 @@ export default function VendorSettingsPage() {
         </div>
 
         <div className="md:col-span-2">
-          <Card className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-0 shadow-xl">
+          <Card className="border shadow-sm">
             <CardHeader>
               <CardTitle>Profile Completion</CardTitle>
               <CardDescription>Complete your profile to get paid faster and unlock all features</CardDescription>

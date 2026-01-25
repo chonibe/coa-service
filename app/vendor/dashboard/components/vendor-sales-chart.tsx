@@ -68,7 +68,7 @@ export function VendorSalesChart({ vendorName }: VendorSalesChartProps) {
   const customTooltip = ({ active, payload, label }: any) => {
     if (active && payload && payload.length) {
       return (
-        <div className="bg-white/90 dark:bg-slate-900/90 backdrop-blur-md border border-border/50 p-3 rounded-lg shadow-xl">
+        <div className="bg-background border shadow-sm border border-border/50 p-3 rounded-lg shadow-xl">
           <p className="font-medium text-sm">{formatDate(label)}</p>
           <p className="text-xs text-muted-foreground">
             <span className="text-[#3b82f6]">●</span> Sales: {payload[0].value}
@@ -92,7 +92,7 @@ export function VendorSalesChart({ vendorName }: VendorSalesChartProps) {
 
   if (error) {
     return (
-      <Alert variant="destructive" className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-0 shadow-lg">
+      <Alert variant="destructive" className="border shadow-sm">
         <AlertCircle className="h-4 w-4" />
         <AlertDescription>{error}</AlertDescription>
       </Alert>

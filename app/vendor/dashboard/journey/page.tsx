@@ -47,7 +47,7 @@ export default function JourneyMapPage() {
 
   if (loading) {
     return (
-      <div className="space-y-6">
+      <div className="space-y-4">
         <Skeleton className="h-8 w-48" />
         <Skeleton className="h-[600px] w-full" />
       </div>
@@ -56,7 +56,7 @@ export default function JourneyMapPage() {
 
   if (error) {
     return (
-      <div className="space-y-6">
+      <div className="space-y-4">
         <Button variant="outline" onClick={() => router.push("/vendor/dashboard/series")}>
           <ArrowLeft className="h-4 w-4 mr-2" />
           Back to Series
@@ -69,7 +69,7 @@ export default function JourneyMapPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {/* Header */}
       <div className="flex items-center gap-4">
         <Button variant="outline" onClick={() => router.push("/vendor/dashboard/series")}>
@@ -77,7 +77,7 @@ export default function JourneyMapPage() {
           Back to Series
         </Button>
         <div>
-          <h1 className="text-3xl font-bold">Journey Map</h1>
+          <h1 className="text-2xl font-bold">Journey Map</h1>
           <p className="text-muted-foreground text-sm mt-1">
             Arrange your series on the grid to create a visual journey for your collectors
           </p>

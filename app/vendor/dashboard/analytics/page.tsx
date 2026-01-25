@@ -283,7 +283,7 @@ export default function AnalyticsPage() {
   const previousPayout = previousMetrics.totalPayout || salesData.totalPayout * 0.95
 
   return (
-    <div className="space-y-6 pb-20 px-1">
+    <div className="space-y-4 pb-20 px-1">
         <div className="flex items-center justify-between">
         <div>
           <p className="text-muted-foreground text-lg">Your complete analytics and insights</p>
@@ -310,7 +310,7 @@ export default function AnalyticsPage() {
       </div>
 
       {error && (
-        <Alert variant="destructive" className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-0 shadow-lg">
+        <Alert variant="destructive" className="border shadow-sm">
           <AlertCircle className="h-4 w-4" />
           <AlertTitle>Error</AlertTitle>
           <AlertDescription>
@@ -337,14 +337,14 @@ export default function AnalyticsPage() {
         />
       )}
 
-      <Tabs defaultValue="sales" className="space-y-6">
-        <TabsList className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-0 shadow-lg">
+      <Tabs defaultValue="sales" className="space-y-4">
+        <TabsList className="border shadow-sm">
           <TabsTrigger value="sales">Sales Analytics</TabsTrigger>
           <TabsTrigger value="payouts">Payout Analytics</TabsTrigger>
           <TabsTrigger value="products">Product Performance</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="sales" className="space-y-6">
+        <TabsContent value="sales" className="space-y-4">
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
             {isMetricsLoading ? (
               <LoadingSkeleton variant="metric" count={3} />
@@ -390,7 +390,7 @@ export default function AnalyticsPage() {
             )}
           </div>
 
-          <Card className="w-full bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-0 shadow-xl">
+          <Card className="w-full border shadow-sm">
         <CardHeader>
           <CardTitle>Sales Over Time</CardTitle>
           <CardDescription>Monthly sales and revenue trends</CardDescription>
@@ -440,7 +440,7 @@ export default function AnalyticsPage() {
       </Card>
 
       <div className="grid gap-4 md:grid-cols-2">
-        <Card className="w-full bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-0 shadow-xl">
+        <Card className="w-full border shadow-sm">
           <CardHeader>
             <CardTitle>Sales Trend</CardTitle>
             <CardDescription>Monthly sales trend</CardDescription>
@@ -474,7 +474,7 @@ export default function AnalyticsPage() {
           </CardContent>
         </Card>
 
-        <Card className="w-full bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-0 shadow-xl">
+        <Card className="w-full border shadow-sm">
           <CardHeader>
             <CardTitle>Revenue Trend</CardTitle>
             <CardDescription>Monthly revenue trend</CardDescription>
@@ -509,7 +509,7 @@ export default function AnalyticsPage() {
         </Card>
       </div>
 
-      <Card className="w-full bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-0 shadow-xl">
+      <Card className="w-full border shadow-sm">
         <CardHeader>
           <CardTitle>Sales by Product</CardTitle>
           <CardDescription>Distribution of sales across products</CardDescription>
@@ -583,7 +583,7 @@ export default function AnalyticsPage() {
         </CardContent>
       </Card>
 
-      <Card className="w-full bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-0 shadow-xl">
+      <Card className="w-full border shadow-sm">
         <CardHeader>
           <CardTitle>Sales History</CardTitle>
           <CardDescription>Detailed record of individual sales</CardDescription>
@@ -691,7 +691,7 @@ export default function AnalyticsPage() {
       </Card>
         </TabsContent>
 
-        <TabsContent value="payouts" className="space-y-6">
+        <TabsContent value="payouts" className="space-y-4">
           {vendorName && <PayoutMetricsCards vendorName={vendorName} isAdmin={false} />}
           {vendorName && <PayoutTrendsChart vendorName={vendorName} isAdmin={false} timeRange="30d" />}
           {vendorName && (
@@ -699,7 +699,7 @@ export default function AnalyticsPage() {
           )}
         </TabsContent>
 
-        <TabsContent value="products" className="space-y-6">
+        <TabsContent value="products" className="space-y-4">
           <ProductPerformance
             products={salesByProduct?.map((p) => ({
               productId: p.productId || p.id || "",

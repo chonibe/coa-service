@@ -107,7 +107,7 @@ export default function NotificationsPage() {
   }
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="p-6 space-y-4">
       <div className="flex justify-between items-center">
         <div>
           <p className="text-muted-foreground text-lg mt-1">
@@ -118,7 +118,7 @@ export default function NotificationsPage() {
           <Button 
             onClick={markAllAsRead} 
             variant="outline"
-            className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm"
+            className="border shadow-sm"
           >
             Mark All Read
           </Button>
@@ -127,7 +127,7 @@ export default function NotificationsPage() {
 
       <div className="space-y-4">
         {notifications.length === 0 ? (
-          <Card className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-0 shadow-xl">
+          <Card className="border shadow-sm">
             <CardContent className="py-12 text-center">
               <Bell className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
               <p className="text-muted-foreground">You're all caught up! No notifications right now.</p>
@@ -137,7 +137,7 @@ export default function NotificationsPage() {
           notifications.map((notification) => (
             <Card
               key={notification.id}
-              className={`bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-0 shadow-xl ${notification.is_read ? "opacity-75" : "border-l-4 border-l-blue-600"}`}
+              className={`border shadow-sm ${notification.is_read ? "opacity-75" : "border-l-4 border-l-blue-600"}`}
             >
               <CardContent className="p-4">
                 <div className="flex items-start gap-4">

@@ -122,7 +122,7 @@ export function MilestoneCelebration({
 
               {/* Title */}
               <div>
-                <h2 className="text-3xl font-bold mb-2">Milestone Completed!</h2>
+                <h2 className="text-2xl font-bold mb-2">Milestone Completed!</h2>
                 <p className="text-xl text-muted-foreground">{series.name}</p>
               </div>
 

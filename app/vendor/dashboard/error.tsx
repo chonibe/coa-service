@@ -5,6 +5,7 @@ import Link from "next/link"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Button } from "@/components/ui/button"
 import { AlertCircle, LayoutDashboard, RefreshCw } from "lucide-react"
+import { errorLogger } from "@/lib/error-logging"
 
 export default function VendorDashboardError({
   error,
@@ -14,7 +15,11 @@ export default function VendorDashboardError({
   reset: () => void
 }) {
   useEffect(() => {
-    console.error("[vendor-dashboard-error-boundary]", error)
+    // Log error with enhanced context
+    errorLogger.logComponentError(error, 'VendorDashboard', {
+      digest: error.digest,
+      pathname: typeof window !== 'undefined' ? window.location.pathname : undefined,
+    })
   }, [error])
 
   return (

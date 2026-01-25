@@ -117,7 +117,7 @@ export function BalanceDisplay() {
         </div>
       </CardHeader>
       <CardContent>
-        <div className="text-3xl font-bold">{formatCurrency(balance || 0)}</div>
+        <div className="text-2xl font-bold">{formatCurrency(balance || 0)}</div>
         <p className="text-sm text-muted-foreground mt-2">
           This balance can be used to purchase Lamps and proof prints
         </p>

@@ -42,6 +42,7 @@ import { Badge } from "@/components/ui/badge"
 import { ThemeToggle } from "@/components/theme-toggle"
 import { useDirtyFormGuard, useRefreshRegistry } from "../../components/sidebar-layout"
 import { MediaLibraryModal, type MediaItem } from "@/components/vendor/MediaLibraryModal"
+import { SectionErrorBoundary, ComponentErrorBoundary } from "@/components/error-boundaries"
 
 interface VendorProfile {
   id: number | string
@@ -851,10 +852,10 @@ export default function VendorProfilePage() {
   }
 
   return (
-    <div className="container mx-auto py-8 max-w-6xl space-y-6">
+    <div className="container mx-auto py-8 max-w-6xl space-y-4">
       <div className="flex items-center justify-between flex-wrap gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Profile & Settings</h1>
+          <h1 className="text-2xl font-bold tracking-tight">Profile & Settings</h1>
           <p className="text-muted-foreground text-lg mt-1">
             Manage your public profile and account settings
           </p>
@@ -898,7 +899,7 @@ export default function VendorProfilePage() {
         </Alert>
       )}
 
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
         <TabsList className="grid w-full max-w-xl grid-cols-4">
           <TabsTrigger value="public-profile">Public Profile</TabsTrigger>
           <TabsTrigger value="settings-profile" className="flex items-center gap-2">
@@ -920,6 +921,7 @@ export default function VendorProfilePage() {
 
         {/* Public Profile Tab */}
         <TabsContent value="public-profile" className="space-y-4">
+          <SectionErrorBoundary sectionName="Public Profile">
           <Card>
             <CardHeader>
               <CardTitle>Your Artist Profile</CardTitle>
@@ -927,7 +929,7 @@ export default function VendorProfilePage() {
                 This is how collectors will see you - make it shine! Your profile appears on all your product pages.
               </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-6">
+            <CardContent className="space-y-4">
               {/* Instagram-style Profile Header */}
               <div className="flex flex-col sm:flex-row gap-8 sm:gap-12 items-start pb-6 border-b">
                 <div
@@ -1280,10 +1282,12 @@ export default function VendorProfilePage() {
               )}
             </CardContent>
           </Card>
+          </SectionErrorBoundary>
         </TabsContent>
 
         {/* Settings - Profile Information Tab */}
         <TabsContent value="settings-profile" className="space-y-4">
+          <SectionErrorBoundary sectionName="Contact Information">
           <form onSubmit={handleSettingsSave}>
             <Card>
               <CardHeader>
@@ -1398,10 +1402,12 @@ export default function VendorProfilePage() {
               </CardFooter>
             </Card>
           </form>
+          </SectionErrorBoundary>
         </TabsContent>
 
         {/* Settings - Payment Tab */}
         <TabsContent value="settings-payment" className="space-y-4">
+          <SectionErrorBoundary sectionName="Payment Information">
           <form onSubmit={handleSettingsSave}>
             <Card>
               <CardHeader>
@@ -1476,10 +1482,12 @@ export default function VendorProfilePage() {
               </CardFooter>
             </Card>
           </form>
+          </SectionErrorBoundary>
         </TabsContent>
 
         {/* Settings - Tax Tab */}
         <TabsContent value="settings-tax" className="space-y-4">
+          <SectionErrorBoundary sectionName="Tax Information">
           <form onSubmit={handleSettingsSave}>
             <Card>
               <CardHeader>
@@ -1567,10 +1575,12 @@ export default function VendorProfilePage() {
               </CardFooter>
             </Card>
           </form>
+          </SectionErrorBoundary>
         </TabsContent>
       </Tabs>
 
       {/* Profile Completion Card - Only show if not 100% complete */}
+      <ComponentErrorBoundary componentName="ProfileCompletion" fallbackMode="silent">
       {getCompletionPercentage() < 100 && (
         <Card className="max-w-2xl">
         <CardHeader>
@@ -1657,14 +1667,16 @@ export default function VendorProfilePage() {
         </CardContent>
       </Card>
       )}
+      </ComponentErrorBoundary>
 
       {/* Settings Section - Theme & Logout */}
+      <ComponentErrorBoundary componentName="PreferencesCard" fallbackMode="minimal">
       <Card className="mt-6">
         <CardHeader>
           <CardTitle>Preferences</CardTitle>
           <CardDescription>Manage your account preferences and settings</CardDescription>
         </CardHeader>
-        <CardContent className="space-y-6">
+        <CardContent className="space-y-4">
           <div className="flex items-center justify-between">
             <div className="space-y-0.5">
               <Label className="text-base">Theme</Label>
@@ -1689,8 +1701,10 @@ export default function VendorProfilePage() {
           </div>
         </CardContent>
       </Card>
+      </ComponentErrorBoundary>
 
       {/* Media Library Modals */}
+      <ComponentErrorBoundary componentName="MediaLibraryModals" fallbackMode="silent">
       <MediaLibraryModal
         open={showImageLibrary}
         onOpenChange={setShowImageLibrary}
@@ -1707,6 +1721,7 @@ export default function VendorProfilePage() {
         allowedTypes={["image"]}
         title="Select Signature"
       />
+      </ComponentErrorBoundary>
     </div>
   )
 }

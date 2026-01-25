@@ -126,7 +126,7 @@ export default function MessagesPage() {
 
   return (
     <SidebarLayout>
-      <div className="space-y-6">
+      <div className="space-y-4">
         <div className="flex items-center justify-between">
           <div>
             <p className="text-muted-foreground text-lg">Your conversations with customers and our team</p>
@@ -141,14 +141,14 @@ export default function MessagesPage() {
         </div>
 
         {error && (
-          <Card className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-0 shadow-xl">
+          <Card className="border shadow-sm">
             <CardContent className="pt-6">
               <p className="text-destructive">{error}</p>
             </CardContent>
           </Card>
         )}
 
-        <Card className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-0 shadow-xl">
+        <Card className="border shadow-sm">
           <CardHeader>
             <div className="flex items-center justify-between">
               <div>

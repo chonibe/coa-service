@@ -106,7 +106,7 @@ export default function ArtworkPagesPage() {
 
   if (isLoading) {
     return (
-      <div className="container mx-auto py-8 max-w-7xl space-y-6">
+      <div className="container mx-auto py-8 max-w-7xl space-y-4">
         <div className="space-y-2">
           <Skeleton className="h-10 w-64" />
           <Skeleton className="h-5 w-96" />
@@ -138,10 +138,10 @@ export default function ArtworkPagesPage() {
   }
 
   return (
-    <div className="container mx-auto py-8 max-w-7xl space-y-6">
+    <div className="container mx-auto py-8 max-w-7xl space-y-4">
       <div className="flex items-center justify-between flex-wrap gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Artwork Pages</h1>
+          <h1 className="text-2xl font-bold tracking-tight">Artwork Pages</h1>
           <p className="text-muted-foreground text-lg mt-1">
             Create and manage unlockable content for collectors after NFC authentication
           </p>

@@ -502,7 +502,7 @@ export default function PayoutsPage() {
   }
 
   return (
-    <div className="w-full space-y-6">
+    <div className="w-full space-y-4">
         {/* Show error alert if PayPal email is not configured */}
         {error && (error.includes("PayPal email") || error.includes("paypal")) && (
           <Alert variant="destructive" className="border-red-500 bg-red-50 dark:bg-red-950/20">
@@ -556,7 +556,7 @@ export default function PayoutsPage() {
             variant="outline" 
             onClick={handleRefresh} 
             disabled={isRefreshing} 
-            className="flex items-center gap-1 bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm"
+            className="flex items-center gap-1 border shadow-sm"
           >
             <RefreshCw className={`h-4 w-4 ${isRefreshing ? "animate-spin" : ""}`} />
             Refresh
@@ -580,7 +580,7 @@ export default function PayoutsPage() {
                 variant="outline" 
                 size="sm" 
                 onClick={handleRefresh}
-                className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm"
+                className="border shadow-sm"
               >
                 Try Again
               </Button>
@@ -607,7 +607,7 @@ export default function PayoutsPage() {
       )}
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-        <TabsList className="grid w-full grid-cols-3 bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-0 shadow-lg">
+        <TabsList className="grid w-full grid-cols-3 border shadow-sm">
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="pending-requests">
             Pending Requests
@@ -620,8 +620,8 @@ export default function PayoutsPage() {
           <TabsTrigger value="history">History</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="pending-requests" className="space-y-6">
-          <Card className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-0 shadow-xl">
+        <TabsContent value="pending-requests" className="space-y-4">
+          <Card className="border shadow-sm">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Clock className="h-5 w-5 text-blue-500" />
@@ -749,13 +749,13 @@ export default function PayoutsPage() {
           </Card>
         </TabsContent>
 
-        <TabsContent value="overview" className="space-y-6">
+        <TabsContent value="overview" className="space-y-4">
           {/* Enhanced Metrics Cards */}
           {vendorName && <PayoutMetricsCards vendorName={vendorName} isAdmin={false} />}
 
           {/* Quick Stats */}
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-            <Card className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-0 shadow-xl">
+            <Card className="border shadow-sm">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">Total Earned</CardTitle>
                 <DollarSign className="h-4 w-4 text-muted-foreground" />
@@ -770,7 +770,7 @@ export default function PayoutsPage() {
               </CardContent>
             </Card>
 
-            <Card className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-0 shadow-xl">
+            <Card className="border shadow-sm">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">Ready to Request</CardTitle>
                 <Clock className="h-4 w-4 text-amber-500" />
@@ -789,7 +789,7 @@ export default function PayoutsPage() {
               </CardContent>
             </Card>
 
-            <Card className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-0 shadow-xl">
+            <Card className="border shadow-sm">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">Payments Received</CardTitle>
                 <Wallet className="h-4 w-4 text-muted-foreground" />
@@ -806,7 +806,7 @@ export default function PayoutsPage() {
               </CardContent>
             </Card>
 
-            <Card className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-0 shadow-xl">
+            <Card className="border shadow-sm">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">This Month</CardTitle>
                 <Calendar className="h-4 w-4 text-muted-foreground" />
@@ -838,7 +838,7 @@ export default function PayoutsPage() {
 
           {/* Orders in Process (Awaiting Platform Fulfillment) */}
           {unfulfilledGroupedByMonth.length > 0 && (
-            <Card className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-0 shadow-xl border-blue-200 dark:border-blue-900/30 opacity-75">
+            <Card className="border shadow-sm border-blue-200 dark:border-blue-900/30 opacity-75">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-blue-700 dark:text-blue-400">
                   <Clock className="h-5 w-5" />
@@ -905,7 +905,7 @@ export default function PayoutsPage() {
           )}
 
           {/* Pending Orders Breakdown */}
-          <Card className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-0 shadow-xl">
+          <Card className="border shadow-sm">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Clock className="h-5 w-5" />
@@ -1048,7 +1048,7 @@ export default function PayoutsPage() {
           </Card>
         </TabsContent>
 
-        <TabsContent value="history" className="space-y-6">
+        <TabsContent value="history" className="space-y-4">
           {/* Filters */}
           <Card>
             <CardHeader>
@@ -1136,7 +1136,7 @@ export default function PayoutsPage() {
               variant="outline" 
               size="sm" 
               onClick={handleExportCSV}
-              className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm"
+              className="border shadow-sm"
             >
               <FileSpreadsheet className="h-4 w-4 mr-2" />
               Export CSV
@@ -1144,7 +1144,7 @@ export default function PayoutsPage() {
           </div>
 
           {/* Payout History */}
-          <Card className="overflow-hidden bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-0 shadow-xl">
+          <Card className="overflow-hidden border shadow-sm">
             <CardHeader>
               <CardTitle>Your Payment History</CardTitle>
               <CardDescription>
@@ -1163,7 +1163,7 @@ export default function PayoutsPage() {
                     ))}
                 </div>
               ) : sortedMonths.length > 0 ? (
-                <div className="space-y-6">
+                <div className="space-y-4">
                   {sortedMonths.map((monthKey) => {
                     const monthData = groupedPayouts[monthKey]
                     return (
@@ -1212,7 +1212,7 @@ export default function PayoutsPage() {
                                         link.download = `invoice-${payout.invoice_number || payout.id}.pdf`
                                         link.click()
                                       }}
-                                      className="flex items-center gap-1 h-7 bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm"
+                                      className="flex items-center gap-1 h-7 border shadow-sm"
                                     >
                                       <Download className="h-3 w-3" />
                                       Invoice
