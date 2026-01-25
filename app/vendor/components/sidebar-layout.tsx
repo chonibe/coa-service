@@ -3,9 +3,9 @@ import type { ReactNode } from "react"
 import { createContext, useCallback, useContext, useMemo, useRef, useState } from "react"
 import { VendorSidebar } from "./vendor-sidebar"
 import { PullToRefresh } from "@/components/pull-to-refresh"
-import { Breadcrumb } from "./breadcrumb"
 import { ImpersonationBanner } from "./impersonation-banner"
 import { PageOnboardingWizard } from "./page-onboarding-wizard"
+import { ComponentErrorBoundary } from "@/components/error-boundaries"
 
 type RefreshHandler = () => Promise<void> | void
 
@@ -73,16 +73,18 @@ export function SidebarLayout({ children }: SidebarLayoutProps) {
             Skip to content
           </a>
           {/* The sidebar is now a true overlay */}
-          <VendorSidebar />
+          <ComponentErrorBoundary componentName="VendorSidebar" fallbackMode="silent">
+            <VendorSidebar />
+          </ComponentErrorBoundary>
 
           {/* Main content takes full width */}
           <div className="w-full overflow-x-hidden">
             <PullToRefresh onRefresh={async () => { await trigger(); return true }}>
               <main id="main-content" className="px-4 md:px-8 pt-28 pb-28 max-w-7xl mx-auto w-full" role="main" aria-label="Main content">
                 {/* Impersonation context for admins */}
-                <ImpersonationBanner />
-                {/* Add breadcrumbs */}
-                <Breadcrumb />
+                <ComponentErrorBoundary componentName="ImpersonationBanner" fallbackMode="silent">
+                  <ImpersonationBanner />
+                </ComponentErrorBoundary>
                 <div className="w-full">
                   {children}
                 </div>
@@ -91,7 +93,9 @@ export function SidebarLayout({ children }: SidebarLayoutProps) {
           </div>
           
           {/* Contextual onboarding wizard */}
-          <PageOnboardingWizard />
+          <ComponentErrorBoundary componentName="PageOnboardingWizard" fallbackMode="silent">
+            <PageOnboardingWizard />
+          </ComponentErrorBoundary>
         </div>
       </DirtyFormContext.Provider>
     </RefreshContext.Provider>

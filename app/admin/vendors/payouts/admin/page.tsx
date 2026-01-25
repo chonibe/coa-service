@@ -6,7 +6,6 @@ import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Badge } from "@/components/ui/badge"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
-import { Breadcrumb } from "@/app/admin/components/breadcrumb"
 import { RefreshCw, AlertCircle, Clock, Calendar, Keyboard, Info } from "lucide-react"
 import { useToast } from "@/components/ui/use-toast"
 import { PayoutOverview } from "./components/payout-overview"
@@ -182,9 +181,6 @@ export default function AdminPayoutsPage() {
   return (
     <div className="container mx-auto py-10 max-w-7xl">
       <div className="flex flex-col space-y-6">
-        {/* Breadcrumb */}
-        <Breadcrumb />
-
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>

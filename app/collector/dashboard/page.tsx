@@ -20,8 +20,10 @@ import {
   ShieldCheck, Timer, Wallet, Wand2, 
   Award, DollarSign, LayoutGrid, ArrowLeft,
   Share2, MoreHorizontal, History as HistoryIcon, Heart,
-  ExternalLink, ShoppingBag, Settings, LogOut, User, Store, Shield
+  ExternalLink, ShoppingBag, Settings, LogOut, User, Store, Shield, Search
 } from "lucide-react"
+import { SmartBackButton } from "@/components/smart-back-button"
+import { UnifiedSearch } from "@/components/unified-search"
 import Link from "next/link"
 import { formatCurrency } from "@/lib/utils"
 import { motion, AnimatePresence } from "framer-motion"
@@ -85,6 +87,7 @@ export default function CollectorDashboardPage() {
   const [data, setData] = useState<ApiResponse | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [searchOpen, setSearchOpen] = useState(false)
   const [editions, setEditions] = useState<CollectorEdition[]>([])
   const [certifications, setCertifications] = useState<CollectorCertification[]>([])
   const [hiddenContent, setHiddenContent] = useState<HiddenContent | null>(null)
@@ -233,12 +236,21 @@ export default function CollectorDashboardPage() {
       <div className="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-slate-200 px-6 py-4">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-4">
+            <SmartBackButton dashboardBase="/collector/dashboard" />
             <div className="flex flex-col">
               <span className="text-[10px] uppercase font-black text-slate-400 tracking-widest leading-none">Collector Dashboard</span>
               <h2 className="text-lg font-black text-slate-900 leading-tight tracking-tight">Your collection binder</h2>
             </div>
           </div>
           <div className="flex items-center gap-3">
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="rounded-full font-bold text-xs px-4 h-9"
+              onClick={() => setSearchOpen(true)}
+            >
+              <Search className="h-3.5 w-3.5 mr-2" /> Search
+            </Button>
             {isAdmin && data?.collectorIdentifier && (
               <Link href={`/admin/collectors/${data.collectorIdentifier}`}>
                 <Button variant="outline" size="sm" className="rounded-full font-bold text-xs px-4 h-9">
@@ -488,6 +500,13 @@ export default function CollectorDashboardPage() {
         onClose={() => setExpandedGroup(null)}
         group={expandedGroup}
         groupingMode={groupingMode}
+      />
+
+      {/* Unified Search */}
+      <UnifiedSearch 
+        dashboard="collector" 
+        open={searchOpen} 
+        onOpenChange={setSearchOpen} 
       />
     </div>
   )

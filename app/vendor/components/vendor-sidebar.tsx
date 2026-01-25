@@ -21,7 +21,7 @@ import {
   UserCircleIcon,
   ShoppingBagIcon,
 } from "@heroicons/react/24/outline"
-import { Lock, Image as ImageIcon, FileText, Folder } from "lucide-react"
+import { Lock, Image as ImageIcon, FileText, Folder, Package, Search } from "lucide-react"
 import { CreateMenu } from "./create-menu"
 import { Icon } from "@/components/icon"
 import { cn } from "@/lib/utils"
@@ -29,6 +29,8 @@ import { NotificationCenter } from "@/components/vendor/notification-center"
 import { Badge } from "@/components/ui/badge"
 import { useSwipeGesture } from "@/components/vendor/mobile-gestures"
 import { Logo } from "@/components/logo"
+import { SmartBackButton } from "@/components/smart-back-button"
+import { UnifiedSearch } from "@/components/unified-search"
 
 interface NavItem {
   title: string
@@ -48,6 +50,8 @@ export function VendorSidebar() {
   const [profileComplete, setProfileComplete] = useState<boolean>(true)
   const [unreadMessages, setUnreadMessages] = useState(0)
   const [unreadNotifications, setUnreadNotifications] = useState(0)
+  const [hasCollectorAccess, setHasCollectorAccess] = useState(false)
+  const [searchOpen, setSearchOpen] = useState(false)
   const sidebarRef = useRef<HTMLElement>(null)
   useEffect(() => {
     // Restore collapsed state on desktop
@@ -183,8 +187,21 @@ export function VendorSidebar() {
       }
     }
 
+    const fetchAuthStatus = async () => {
+      try {
+        const response = await fetch("/api/auth/status", { credentials: "include" })
+        if (response.ok) {
+          const data = await response.json()
+          setHasCollectorAccess(data.vendorHasCollectorAccess || false)
+        }
+      } catch (error) {
+        console.error("Error fetching auth status:", error)
+      }
+    }
+
     fetchVendorProfile()
     fetchUnreadCounts()
+    fetchAuthStatus()
     // Poll for unread counts every 30 seconds
     const interval = setInterval(fetchUnreadCounts, 30000)
     return () => clearInterval(interval)
@@ -224,36 +241,71 @@ export function VendorSidebar() {
     <>
       {/* Fixed header */}
       <header className="fixed top-0 left-0 right-0 z-40 flex h-16 items-center gap-4 border-b bg-background px-4 sm:px-6" role="banner">
-        {/* Left: Menu Button, Notifications */}
+        {/* Left: Back Button, Menu Button */}
         <div className="flex items-center gap-2">
-        <Button
-          variant="outline"
-          size="icon"
-          className="flex items-center justify-center transition-all hover:bg-primary/10 min-h-[44px] min-w-[44px] focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
-          onClick={toggleSidebar}
-          aria-label="Toggle navigation menu"
-          aria-expanded={sidebarOpen}
-        >
-          <Icon size="lg">
-            <Bars3Icon className="h-6 w-6" aria-hidden="true" />
-          </Icon>
-          <span className="sr-only">Toggle menu</span>
-        </Button>
-          <NotificationCenter />
+          <SmartBackButton dashboardBase="/vendor/dashboard" />
+          <Button
+            variant="outline"
+            size="icon"
+            className="flex items-center justify-center transition-all hover:bg-primary/10 min-h-[44px] min-w-[44px] focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+            onClick={toggleSidebar}
+            aria-label="Toggle navigation menu"
+            aria-expanded={sidebarOpen}
+          >
+            <Icon size="lg">
+              <Bars3Icon className="h-6 w-6" aria-hidden="true" />
+            </Icon>
+            <span className="sr-only">Toggle menu</span>
+          </Button>
         </div>
 
         {/* Center: Logo */}
         <div className="flex-1 flex justify-center">
-        <Link href="/vendor/dashboard" className="flex items-center gap-2 font-semibold">
-          <Logo 
-            className="h-8 w-auto object-contain"
-            alt="Street Lamp Logo"
-          />
-        </Link>
+          <Link href="/vendor/dashboard" className="flex items-center gap-2 font-semibold">
+            <Logo 
+              className="h-8 w-auto object-contain"
+              alt="Street Lamp Logo"
+            />
+          </Link>
         </div>
 
-        {/* Right: Messages and Create Menu */}
+        {/* Right: Search, Notifications, Messages and Create Menu */}
         <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="icon"
+            className="flex items-center justify-center transition-all hover:bg-primary/10 min-h-[44px] min-w-[44px] focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+            onClick={() => setSearchOpen(true)}
+            aria-label="Search pages"
+          >
+            <Icon size="lg">
+              <Search className="h-5 w-5" aria-hidden="true" />
+            </Icon>
+            <span className="sr-only">Search</span>
+          </Button>
+          <NotificationCenter />
+          <Button
+            variant="outline"
+            size="icon"
+            className="relative flex items-center justify-center transition-all hover:bg-primary/10 min-h-[44px] min-w-[44px] focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+            onClick={() => router.push("/vendor/dashboard/messages")}
+            aria-label={unreadMessages > 0 ? `Messages, ${unreadMessages} unread` : "Messages"}
+          >
+            <Icon size="lg">
+              <ChatBubbleLeftRightIcon className="h-6 w-6" aria-hidden="true" />
+            </Icon>
+            {unreadMessages > 0 && (
+              <Badge 
+                variant="destructive" 
+                className="absolute -top-1 -right-1 h-5 min-w-5 flex items-center justify-center p-0 text-xs" 
+                aria-label={`${unreadMessages} unread messages`}
+              >
+                {unreadMessages > 99 ? "99+" : unreadMessages}
+              </Badge>
+            )}
+            <span className="sr-only">Messages</span>
+          </Button>
+          <CreateMenu />
           <Button
             variant="outline"
             size="icon"
@@ -372,6 +424,33 @@ export function VendorSidebar() {
                   )}
                 </Link>
               ))}
+              {hasCollectorAccess && (
+                <Button
+                  variant="ghost"
+                  className="w-full justify-start text-sm font-medium transition-all duration-200 hover:bg-accent hover:text-accent-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+                  onClick={async () => {
+                    closeSidebar()
+                    try {
+                      const response = await fetch("/api/auth/vendor/switch-to-collector", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        credentials: "include",
+                      })
+                      if (response.ok) {
+                        router.push("/collector/dashboard")
+                      } else {
+                        const errorData = await response.json().catch(() => ({}))
+                        console.error("Failed to switch to collector:", errorData)
+                      }
+                    } catch (error) {
+                      console.error("Error switching to collector:", error)
+                    }
+                  }}
+                >
+                  <Icon size="md"><Package className="h-5 w-5" /></Icon>
+                  <span className={cn("transition-opacity", isCollapsed ? "md:opacity-0 md:hidden opacity-100" : "opacity-100")}>Collector Dashboard</span>
+                </Button>
+              )}
             </nav>
           </div>
         </ScrollArea>
@@ -442,6 +521,13 @@ export function VendorSidebar() {
           ))}
         </div>
       </nav>
+
+      {/* Unified Search */}
+      <UnifiedSearch 
+        dashboard="vendor" 
+        open={searchOpen} 
+        onOpenChange={setSearchOpen} 
+      />
 
       <Toaster />
     </>

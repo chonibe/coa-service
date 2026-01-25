@@ -40,8 +40,9 @@ import { useToast } from "@/hooks/use-toast"
 import LogoutButton from "./logout-button"
 import { useMobile } from "@/hooks/use-mobile"
 import { BottomNav } from "./components/bottom-nav"
-import { Breadcrumb } from "./components/breadcrumb"
 import { Badge } from "@/components/ui/badge"
+import { SmartBackButton } from "@/components/smart-back-button"
+import { UnifiedSearch } from "@/components/unified-search"
 import {
   Select,
   SelectContent,
@@ -54,6 +55,7 @@ import { ThemeToggle } from "@/components/theme-toggle"
 import { Logo } from "@/components/logo"
 import { MagnifyingGlassIcon } from "@heroicons/react/24/solid"
 import { AdminCommandPalette } from "./components/command-palette"
+import { DashboardSwitcher } from "@/components/dashboard-switcher"
 
 interface NavItem {
   title: string
@@ -88,6 +90,7 @@ export function AdminShell({ children }: AdminShellProps) {
   const [currentSection, setCurrentSection] = useState("Dashboard")
   const [activeView, setActiveView] = useState<AdminView>("admin")
   const [isCommandOpen, setIsCommandOpen] = useState(false)
+  const [searchOpen, setSearchOpen] = useState(false)
   // Initialize nav items with auto-expansion based on current path
   const initialNavItems: NavItem[] = [
     {
@@ -853,15 +856,17 @@ export function AdminShell({ children }: AdminShellProps) {
         Skip to main content
       </a>
       <header className="sticky top-0 z-30 flex h-16 items-center gap-4 border-b border-slate-200/50 dark:border-slate-800/50 bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl px-4 sm:px-6">
-        <Sheet open={open} onOpenChange={setOpen}>
-          <SheetTrigger asChild>
-            <Button variant="outline" size="icon" className="md:hidden flex items-center justify-center">
-              <Icon size="lg">
-                <Bars3Icon className="h-6 w-6" />
-              </Icon>
-              <span className="sr-only">Toggle menu</span>
-            </Button>
-          </SheetTrigger>
+        <div className="flex items-center gap-2">
+          <SmartBackButton dashboardBase="/admin" className="hidden md:flex" />
+          <Sheet open={open} onOpenChange={setOpen}>
+            <SheetTrigger asChild>
+              <Button variant="outline" size="icon" className="md:hidden flex items-center justify-center">
+                <Icon size="lg">
+                  <Bars3Icon className="h-6 w-6" />
+                </Icon>
+                <span className="sr-only">Toggle menu</span>
+              </Button>
+            </SheetTrigger>
           <SheetContent side="left" className="w-[300px] sm:w-[400px] pr-0 bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl border-r border-slate-200/50 dark:border-slate-800/50">
             <div className="flex flex-col h-full">
               <div className="flex items-center border-b border-slate-200/50 dark:border-slate-800/50 h-16 px-6">
@@ -972,7 +977,8 @@ export function AdminShell({ children }: AdminShellProps) {
               </div>
             </div>
           </SheetContent>
-        </Sheet>
+          </Sheet>
+        </div>
         <Link href="/admin" className="flex items-center gap-2 font-semibold">
           <Logo 
             className="h-8 w-auto object-contain"
@@ -990,14 +996,17 @@ export function AdminShell({ children }: AdminShellProps) {
           <div className="hidden md:flex gap-2">
             {renderViewToggle("hidden md:flex")}
           </div>
-          <Button variant="ghost" size="sm" className="hidden md:inline-flex" onClick={() => setIsCommandOpen(true)}>
+          <div className="hidden md:block">
+            <DashboardSwitcher />
+          </div>
+          <Button variant="ghost" size="sm" className="hidden md:inline-flex" onClick={() => setSearchOpen(true)}>
             <Icon size="sm">
               <MagnifyingGlassIcon className="h-4 w-4" />
             </Icon>
-            <span className="ml-2">Quick jump</span>
+            <span className="ml-2">Search</span>
             <span className="ml-2 rounded border px-1 text-[11px] text-muted-foreground">⌘K</span>
           </Button>
-          <Button variant="outline" size="sm" className="md:hidden" onClick={() => setIsCommandOpen(true)}>
+          <Button variant="outline" size="sm" className="md:hidden" onClick={() => setSearchOpen(true)}>
             <Icon size="sm">
               <MagnifyingGlassIcon className="h-4 w-4" />
             </Icon>
@@ -1095,13 +1104,15 @@ export function AdminShell({ children }: AdminShellProps) {
           </ScrollArea>
         </aside>
         <main id="admin-main" className="flex-1 pb-16 md:pb-0">
-          <div className="px-4 py-2 md:px-6 md:py-4">
-            {activeView === "admin" ? <Breadcrumb className="hidden md:flex" /> : null}
-          </div>
           {activeView === "admin" ? children : vendorChooser}
         </main>
       </div>
       <AdminCommandPalette open={isCommandOpen} onOpenChange={setIsCommandOpen} items={commandItems} />
+      <UnifiedSearch 
+        dashboard="admin" 
+        open={searchOpen} 
+        onOpenChange={setSearchOpen} 
+      />
       <BottomNav />
       <Toaster />
     </div>
