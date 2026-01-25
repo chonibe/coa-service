@@ -656,10 +656,27 @@ async function storeInstagramAccount(
 
 export async function GET(request: NextRequest) {
   try {
-    const cookieStore = cookies()
-    const supabase = createRouteClient(cookieStore)
-
     const { searchParams, origin } = request.nextUrl
+    
+    // Log the incoming request for debugging
+    console.log("[auth/callback] Incoming request:", {
+      url: request.url,
+      searchParams: Object.fromEntries(searchParams.entries()),
+      origin
+    })
+    
+    const cookieStore = cookies()
+    let supabase
+    
+    try {
+      supabase = createRouteClient(cookieStore)
+    } catch (clientError: any) {
+      console.error("[auth/callback] Failed to create Supabase client:", clientError)
+      return NextResponse.redirect(
+        new URL(`/login?error=${encodeURIComponent('Authentication service unavailable. Please try again.')}`, origin),
+        { status: 307 }
+      )
+    }
 
     // Create a separate Supabase client for session operations (not tied to cookies)
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
@@ -748,15 +765,29 @@ export async function GET(request: NextRequest) {
   deleteCookie(response, POST_LOGIN_REDIRECT_COOKIE)
 
   if (code) {
-    const { data: sessionData, error: exchangeError } = await supabase.auth.exchangeCodeForSession(code)
+    let sessionData, exchangeError
+    
+    try {
+      const result = await supabase.auth.exchangeCodeForSession(code)
+      sessionData = result.data
+      exchangeError = result.error
+    } catch (err: any) {
+      console.error("[auth/callback] Exception during exchangeCodeForSession:", err)
+      return NextResponse.redirect(
+        new URL(`/login?error=${encodeURIComponent('Authentication failed. Please try again.')}`, origin),
+        { status: 307 }
+      )
+    }
 
     if (exchangeError) {
       console.error("Failed to exchange Supabase auth code:", exchangeError)
       deleteCookie(response, VENDOR_SESSION_COOKIE_NAME)
       response.cookies.set("auth_error", "exchange_failed", { path: "/", maxAge: 60 })
       await logFailedLoginAttempt({ method: "oauth", reason: exchangeError.message })
-      response.headers.set("Location", new URL("/vendor/login?error=oauth_exchange_failed", origin).toString())
-      return response
+      return NextResponse.redirect(
+        new URL(`/login?error=${encodeURIComponent('Authentication failed. Please try again.')}`, origin),
+        { status: 307 }
+      )
     }
 
     // After code exchange, immediately get the session to capture provider tokens
