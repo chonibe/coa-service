@@ -39,10 +39,34 @@ async function processUserLogin(user: any, email: string | null, origin: string,
 
   console.log(`[auth/callback] Processing login for email: ${email}, isAdmin: ${isAdmin}`)
 
-  // Handle admin users - set admin session and redirect to admin dashboard
+  // Handle admin users - check if they also have collector access
   if (isAdmin && email) {
-    console.log(`[auth/callback] Admin user detected - setting admin session and redirecting to dashboard`)
+    console.log(`[auth/callback] Admin user detected - checking for collector access`)
 
+    // Check if admin also has collector orders
+    const serviceClient = createServiceClient()
+    const { data: adminOrderMatch } = await serviceClient
+      .from("orders")
+      .select("customer_id, shopify_id")
+      .eq("customer_email", email)
+      .order("processed_at", { ascending: false })
+      .limit(1)
+      .maybeSingle()
+
+    // If admin has collector access, redirect to role selection page
+    if (adminOrderMatch) {
+      console.log(`[auth/callback] Admin also has collector access - redirecting to role selection`)
+      const adminCookie = buildAdminSessionCookie(email)
+      const roleSelectionRedirect = NextResponse.redirect(new URL("/auth/select-role", origin), { status: 307 })
+      
+      roleSelectionRedirect.cookies.set(ADMIN_SESSION_COOKIE_NAME, adminCookie.value, adminCookie.options)
+      deleteCookie(roleSelectionRedirect, PENDING_VENDOR_EMAIL_COOKIE)
+      deleteCookie(roleSelectionRedirect, REQUIRE_ACCOUNT_SELECTION_COOKIE)
+      
+      return roleSelectionRedirect
+    }
+
+    // Admin without collector access - go straight to admin dashboard
     const adminCookie = buildAdminSessionCookie(email)
     const adminRedirect = NextResponse.redirect(new URL("/admin/dashboard", origin), { status: 307 })
 

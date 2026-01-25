@@ -128,6 +128,14 @@ export default function LoginClient() {
         }
 
         if (data.isAdmin && data.hasAdminSession) {
+          // Check if admin also has collector access to show role selection
+          if ((data as any).hasCollectorSession || (data as any).collectorEmail) {
+            console.log(`[login-client] Admin with collector access - redirecting to role selection`)
+            hasRedirected.current = true
+            window.location.replace("/auth/select-role")
+            return
+          }
+          
           console.log(`[login-client] Redirecting to admin dashboard: isAdmin=true, hasAdminSession=true`)
           hasRedirected.current = true
           window.location.replace("/admin/dashboard")

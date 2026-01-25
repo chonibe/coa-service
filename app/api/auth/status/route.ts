@@ -31,6 +31,19 @@ export async function GET() {
   const collectorSession = verifyCollectorSessionToken(collectorSessionToken)
   const hasCollectorSession = !!collectorSession?.email
   
+  // Check if admin also has collector orders (for role selection)
+  let adminHasCollectorAccess = false
+  if (isAdmin && email) {
+    const { data: adminOrderMatch } = await serviceClient
+      .from("orders")
+      .select("customer_id")
+      .eq("customer_email", email)
+      .limit(1)
+      .maybeSingle()
+    
+    adminHasCollectorAccess = !!adminOrderMatch
+  }
+  
   // Check if admin session cookie exists
   const adminSessionToken = cookieStore.get(ADMIN_SESSION_COOKIE_NAME)?.value
   const adminSessionPayload = verifyAdminSessionToken(adminSessionToken)
@@ -88,6 +101,7 @@ export async function GET() {
       : null,
     isAdmin,
     hasAdminSession,
+    adminHasCollectorAccess,
     hasCollectorSession,
     collectorEmail: collectorSession?.email || null,
     vendorSession: vendorSessionName,
