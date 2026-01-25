@@ -5,6 +5,7 @@ import { createClient as createServiceClient } from "@/lib/supabase/server"
 import { getVendorFromCookieStore } from "@/lib/vendor-session"
 import { isAdminEmail } from "@/lib/vendor-auth"
 import { ADMIN_SESSION_COOKIE_NAME, verifyAdminSessionToken } from "@/lib/admin-session"
+import { verifyCollectorSessionToken } from "@/lib/collector-session"
 
 export async function GET() {
   const cookieStore = cookies()
@@ -24,6 +25,11 @@ export async function GET() {
   const email = user?.email?.toLowerCase() ?? null
   const isAdmin = isAdminEmail(email)
   const vendorSessionName = getVendorFromCookieStore(cookieStore)
+  
+  // Check collector session
+  const collectorSessionToken = cookieStore.get("collector_session")?.value
+  const collectorSession = verifyCollectorSessionToken(collectorSessionToken)
+  const hasCollectorSession = !!collectorSession?.email
   
   // Check if admin session cookie exists
   const adminSessionToken = cookieStore.get(ADMIN_SESSION_COOKIE_NAME)?.value
@@ -82,6 +88,8 @@ export async function GET() {
       : null,
     isAdmin,
     hasAdminSession,
+    hasCollectorSession,
+    collectorEmail: collectorSession?.email || null,
     vendorSession: vendorSessionName,
     vendor,
   })

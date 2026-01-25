@@ -52,6 +52,7 @@ export default function LoginClient() {
   const [checkingSession, setCheckingSession] = useState(true)
   const [googleLoading, setGoogleLoading] = useState(false)
   const [successMessage, setSuccessMessage] = useState<string | null>(null)
+  const [loginType, setLoginType] = useState<"vendor" | "collector">("collector")
 
   useEffect(() => {
     const errorParam = searchParams.get("error")
@@ -111,6 +112,14 @@ export default function LoginClient() {
           return
         }
 
+        // Check for collector session first
+        if ((data as any).hasCollectorSession) {
+          console.log(`[login-client] Redirecting to collector dashboard: hasCollectorSession=true`)
+          hasRedirected.current = true
+          window.location.replace("/collector/dashboard")
+          return
+        }
+
         if (data.vendorSession || data.vendor) {
           console.log(`[login-client] Redirecting to vendor dashboard: vendorSession=${data.vendorSession}, vendor=${data.vendor?.vendor_name}`)
           hasRedirected.current = true
@@ -153,9 +162,16 @@ export default function LoginClient() {
 
     // Check if this is an admin login attempt
     const isAdminLogin = searchParams.get("admin") === "true"
-    const redirectParam = isAdminLogin ? "?redirect=/admin/dashboard" : ""
+    
+    let endpoint = `/api/auth/google/start`
+    
+    if (loginType === "collector") {
+      endpoint = `/api/auth/collector/google/start`
+    } else if (isAdminLogin) {
+      endpoint = `/api/auth/google/start?redirect=/admin/dashboard`
+    }
 
-    window.location.href = `/api/auth/google/start${redirectParam}`
+    window.location.href = endpoint
   }
 
   if (checkingSession) {
@@ -199,7 +215,9 @@ export default function LoginClient() {
               Welcome Back
             </CardTitle>
             <CardDescription className="text-base">
-              Sign in with your Google account to access your Street Collector dashboard
+              {loginType === "collector" 
+                ? "Sign in to access your art collection and exclusive content"
+                : "Sign in with your Google account to access your Street Collector dashboard"}
             </CardDescription>
           </div>
         </CardHeader>
@@ -232,6 +250,32 @@ export default function LoginClient() {
           )}
 
           <div className="space-y-4">
+            {/* Login Type Selector */}
+            <div className="flex gap-2 p-1 bg-muted rounded-lg">
+              <button
+                type="button"
+                onClick={() => setLoginType("collector")}
+                className={`flex-1 py-2.5 px-4 rounded-md text-sm font-medium transition-all ${
+                  loginType === "collector"
+                    ? "bg-background shadow-sm text-foreground"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                Collector
+              </button>
+              <button
+                type="button"
+                onClick={() => setLoginType("vendor")}
+                className={`flex-1 py-2.5 px-4 rounded-md text-sm font-medium transition-all ${
+                  loginType === "vendor"
+                    ? "bg-background shadow-sm text-foreground"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                Vendor
+              </button>
+            </div>
+
             <Button
               onClick={handleGoogleLogin}
               disabled={googleLoading}
