@@ -12,6 +12,7 @@ import { Input } from "@/components/ui/input"
 import { ProductTable } from "../components/product-table"
 import { useVendorData } from "@/hooks/use-vendor-data"
 import { Plus, Package, Clock, XCircle, Trash2, Loader2, Sparkles, AlertCircle, Lock, ArrowRight, Crown, Image as ImageIcon, GripVertical } from "lucide-react"
+import { SectionErrorBoundary, ComponentErrorBoundary } from "@/components/error-boundaries"
 import {
   DndContext,
   closestCenter,
@@ -1110,31 +1111,32 @@ export default function ProductsPage() {
   return (
     <div className="space-y-8 px-1">
       {/* Series Section */}
-      <div className="space-y-6">
-        <div>
-          <div className="flex items-center justify-between">
-      <div>
-              <h1 className="text-3xl font-bold tracking-tight bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
-                Artwork Series
-              </h1>
-              <p className="text-muted-foreground mt-1">
-                Manage your artwork series and unlock configurations
-              </p>
-              {isSavingOrder && (
-                <Badge variant="outline" className="mt-2 text-amber-600 border-amber-300">
-                  <Loader2 className="h-3 w-3 mr-1 animate-spin" />
-                  Saving ordering...
-                </Badge>
-              )}
+      <SectionErrorBoundary sectionName="Artwork Series">
+        <div className="space-y-6">
+          <div>
+            <div className="flex items-center justify-between">
+              <div>
+                <h1 className="text-3xl font-bold tracking-tight bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
+                  Artwork Series
+                </h1>
+                <p className="text-muted-foreground mt-1">
+                  Manage your artwork series and unlock configurations
+                </p>
+                {isSavingOrder && (
+                  <Badge variant="outline" className="mt-2 text-amber-600 border-amber-300">
+                    <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+                    Saving ordering...
+                  </Badge>
+                )}
+              </div>
+              <Button onClick={() => router.push("/vendor/dashboard/series/create")}>
+                <Plus className="h-4 w-4 mr-2" />
+                Create Series
+              </Button>
             </div>
-            <Button onClick={() => router.push("/vendor/dashboard/series/create")}>
-              <Plus className="h-4 w-4 mr-2" />
-              Create Series
-            </Button>
           </div>
-      </div>
 
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
           <div className="space-y-1">
             <p className="text-sm text-muted-foreground">Open box shows artworks not yet in a series.</p>
             <p className="text-xs text-muted-foreground">
@@ -1286,7 +1288,9 @@ export default function ProductsPage() {
             </DragOverlay>
           </DndContext>
         )}
+        </div>
       </div>
+      </SectionErrorBoundary>
 
       {/* Artworks Section */}
       <div className="space-y-6">
@@ -1295,7 +1299,7 @@ export default function ProductsPage() {
           <p className="text-muted-foreground mt-1">
             Manage and track your individual artworks
           </p>
-      </div>
+        </div>
 
       <Tabs defaultValue="catalog" className="space-y-6">
         <TabsList>
@@ -1330,9 +1334,11 @@ export default function ProductsPage() {
           )}
         </CardContent>
       </Card>
+          </SectionErrorBoundary>
         </TabsContent>
 
         <TabsContent value="submissions" className="space-y-6">
+          <SectionErrorBoundary sectionName="Artwork Submissions">
           <Card className="overflow-hidden w-full bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-0 shadow-xl">
             <CardHeader>
               <CardTitle>Artwork Submissions</CardTitle>
@@ -1528,6 +1534,7 @@ export default function ProductsPage() {
         originalName={selectedSeries?.name || ""}
         isDuplicating={isDuplicatingSeries}
       />
+      </ComponentErrorBoundary>
     </div>
   )
 }
