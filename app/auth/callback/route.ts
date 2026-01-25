@@ -35,48 +35,62 @@ const deleteCookie = (response: NextResponse, name: string) => {
  * Process user login after authentication - handles vendor/collector/admin routing
  */
 async function processUserLogin(user: any, email: string | null, origin: string, cookieStore: ReturnType<typeof cookies>) {
-  const isAdmin = isAdminEmail(email)
+  try {
+    const isAdmin = isAdminEmail(email)
 
-  console.log(`[auth/callback] Processing login for email: ${email}, isAdmin: ${isAdmin}`)
+    console.log(`[auth/callback] Processing login for email: ${email}, isAdmin: ${isAdmin}`)
 
-  // Handle admin users - check if they also have collector access
-  if (isAdmin && email) {
-    console.log(`[auth/callback] Admin user detected - checking for collector access`)
+    // Handle admin users - check if they also have collector access
+    if (isAdmin && email) {
+      console.log(`[auth/callback] Admin user detected - checking for collector access`)
 
-    // Check if admin also has collector orders
-    const serviceClient = createServiceClient()
-    const { data: adminOrderMatch } = await serviceClient
-      .from("orders")
-      .select("customer_id, shopify_id")
-      .eq("customer_email", email)
-      .order("processed_at", { ascending: false })
-      .limit(1)
-      .maybeSingle()
+      // Check if admin also has collector orders
+      const serviceClient = createServiceClient()
+      const { data: adminOrderMatch, error: orderError } = await serviceClient
+        .from("orders")
+        .select("customer_id, shopify_id")
+        .eq("customer_email", email)
+        .order("processed_at", { ascending: false })
+        .limit(1)
+        .maybeSingle()
 
-    // If admin has collector access, redirect to role selection page
-    if (adminOrderMatch) {
-      console.log(`[auth/callback] Admin also has collector access - redirecting to role selection`)
+      if (orderError) {
+        console.error(`[auth/callback] Error checking admin collector access:`, orderError)
+        // Continue with admin-only flow
+      }
+
+      // If admin has collector access, redirect to role selection page
+      if (adminOrderMatch) {
+        console.log(`[auth/callback] Admin also has collector access - redirecting to role selection`)
+        const adminCookie = buildAdminSessionCookie(email)
+        const roleSelectionRedirect = NextResponse.redirect(new URL("/auth/select-role", origin), { status: 307 })
+        
+        roleSelectionRedirect.cookies.set(ADMIN_SESSION_COOKIE_NAME, adminCookie.value, adminCookie.options)
+        deleteCookie(roleSelectionRedirect, PENDING_VENDOR_EMAIL_COOKIE)
+        deleteCookie(roleSelectionRedirect, REQUIRE_ACCOUNT_SELECTION_COOKIE)
+        
+        return roleSelectionRedirect
+      }
+
+      // Admin without collector access - go straight to admin dashboard
       const adminCookie = buildAdminSessionCookie(email)
-      const roleSelectionRedirect = NextResponse.redirect(new URL("/auth/select-role", origin), { status: 307 })
-      
-      roleSelectionRedirect.cookies.set(ADMIN_SESSION_COOKIE_NAME, adminCookie.value, adminCookie.options)
-      deleteCookie(roleSelectionRedirect, PENDING_VENDOR_EMAIL_COOKIE)
-      deleteCookie(roleSelectionRedirect, REQUIRE_ACCOUNT_SELECTION_COOKIE)
-      
-      return roleSelectionRedirect
+      const adminRedirect = NextResponse.redirect(new URL("/admin/dashboard", origin), { status: 307 })
+
+      adminRedirect.cookies.set(ADMIN_SESSION_COOKIE_NAME, adminCookie.value, adminCookie.options)
+      adminRedirect.cookies.set(VENDOR_SESSION_COOKIE_NAME, "", { ...clearVendorSessionCookie().options, maxAge: 0 })
+      deleteCookie(adminRedirect, PENDING_VENDOR_EMAIL_COOKIE)
+      deleteCookie(adminRedirect, REQUIRE_ACCOUNT_SELECTION_COOKIE)
+
+      console.log(`[auth/callback] Admin login successful for ${email}, redirecting to admin dashboard`)
+      return adminRedirect
     }
-
-    // Admin without collector access - go straight to admin dashboard
-    const adminCookie = buildAdminSessionCookie(email)
-    const adminRedirect = NextResponse.redirect(new URL("/admin/dashboard", origin), { status: 307 })
-
-    adminRedirect.cookies.set(ADMIN_SESSION_COOKIE_NAME, adminCookie.value, adminCookie.options)
-    adminRedirect.cookies.set(VENDOR_SESSION_COOKIE_NAME, "", { ...clearVendorSessionCookie().options, maxAge: 0 })
-    deleteCookie(adminRedirect, PENDING_VENDOR_EMAIL_COOKIE)
-    deleteCookie(adminRedirect, REQUIRE_ACCOUNT_SELECTION_COOKIE)
-
-    console.log(`[auth/callback] Admin login successful for ${email}, redirecting to admin dashboard`)
-    return adminRedirect
+  } catch (error: any) {
+    console.error('[auth/callback] Error in processUserLogin:', error)
+    // Return error response instead of throwing
+    return NextResponse.redirect(
+      new URL(`/login?error=${encodeURIComponent('Login processing failed. Please try again.')}`, origin),
+      { status: 307 }
+    )
   }
 
   // For non-admins, try to link vendor
@@ -641,18 +655,23 @@ async function storeInstagramAccount(
 }
 
 export async function GET(request: NextRequest) {
-  const cookieStore = cookies()
-  const supabase = createRouteClient(cookieStore)
+  try {
+    const cookieStore = cookies()
+    const supabase = createRouteClient(cookieStore)
 
-  const { searchParams, origin } = request.nextUrl
+    const { searchParams, origin } = request.nextUrl
 
-  // Create a separate Supabase client for session operations (not tied to cookies)
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+    // Create a separate Supabase client for session operations (not tied to cookies)
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+    const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 
-  if (!supabaseUrl || !supabaseAnonKey) {
-    throw new Error("Supabase environment variables are required")
-  }
+    if (!supabaseUrl || !supabaseAnonKey) {
+      console.error("[auth/callback] Missing Supabase environment variables")
+      return NextResponse.redirect(
+        new URL("/login?error=configuration_error", origin),
+        { status: 307 }
+      )
+    }
 
   const sessionSupabase = createClient(supabaseUrl, supabaseAnonKey, {
     auth: { autoRefreshToken: false, persistSession: false },
@@ -981,4 +1000,28 @@ export async function GET(request: NextRequest) {
   })
 
   return notRegisteredResponse
+  } catch (error: any) {
+    // Catch all errors and redirect to login with error message
+    console.error('[auth/callback] Unexpected error in auth callback:', {
+      message: error?.message,
+      code: error?.code,
+      error_code: error?.error_code,
+      stack: error?.stack,
+    })
+    
+    // Check if it's a redirect (expected behavior)
+    if (error?.digest?.startsWith('NEXT_REDIRECT')) {
+      throw error
+    }
+    
+    // For any other error, redirect to login with error message
+    const errorMessage = error?.error_code === 'unexpected_failure' 
+      ? 'Authentication failed. Please try again.'
+      : 'An error occurred during login. Please try again.'
+    
+    return NextResponse.redirect(
+      new URL(`/login?error=${encodeURIComponent(errorMessage)}`, request.nextUrl.origin),
+      { status: 307 }
+    )
+  }
 } 
