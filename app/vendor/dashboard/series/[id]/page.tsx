@@ -11,6 +11,7 @@ import { Label } from "@/components/ui/label"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Loader2, ArrowLeft, Lock, Edit, Save, X, AlertCircle, Image as ImageIcon, ArrowRight, Crown, Clock, LayoutGrid, GalleryHorizontal, Info, FileText } from "lucide-react"
+import Link from "next/link"
 import { useToast } from "@/components/ui/use-toast"
 import { motion } from "framer-motion"
 import { cn } from "@/lib/utils"
@@ -27,6 +28,7 @@ import { DuplicateSeriesDialog } from "../components/DuplicateSeriesDialog"
 import { UnlockTypeTooltip } from "../components/UnlockTypeTooltip"
 import { UnlockCountdown } from "../components/UnlockCountdown"
 import { VIPBadge } from "../components/VIPBadge"
+import { SectionErrorBoundary, ComponentErrorBoundary } from "@/components/error-boundaries"
 import { CompletionProgress } from "../components/CompletionProgress"
 import { Copy, Trash2 } from "lucide-react"
 
@@ -654,47 +656,67 @@ export default function SeriesDetailPage() {
                 <ArtworkCarousel members={members} editable={true} seriesId={seriesId} />
               ) : (
                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-                  {members.map((member, index) => (
-                    <Card key={member.id} className="overflow-hidden group">
-                      <div className="aspect-square relative bg-muted">
-                        {member.artwork_image ? (
-                          <img
-                            src={member.artwork_image}
-                            alt={member.artwork_title || "Artwork"}
-                            className="w-full h-full object-cover transition-transform group-hover:scale-105"
-                          />
-                        ) : (
-                          <div className="w-full h-full flex items-center justify-center">
-                            <ImageIcon className="h-8 w-8 text-muted-foreground/50" />
-                          </div>
-                        )}
-                        {member.is_locked && (
-                          <div className="absolute top-2 right-2 bg-black/60 p-1.5 rounded-full text-white backdrop-blur-sm">
-                            <Lock className="h-3 w-3" />
-                          </div>
-                        )}
-                        <div className="absolute top-2 left-2 bg-black/60 px-2 py-0.5 rounded text-[10px] text-white backdrop-blur-sm font-mono">
-                          #{index + 1}
-                        </div>
-                      </div>
-                      <div className="p-3">
-                        <h4 className="font-medium text-sm truncate" title={member.artwork_title}>
-                          {member.artwork_title || "Untitled Artwork"}
-                        </h4>
-                        <div className="flex items-center justify-between mt-2">
-                          <Badge variant="secondary" className="text-[10px] h-5">
-                            {member.is_locked ? "Locked" : "Unlocked"}
-                          </Badge>
-                          {member.has_benefits && (
-                            <div className="flex items-center text-[10px] text-amber-600 bg-amber-50 dark:bg-amber-900/20 px-1.5 py-0.5 rounded-full border border-amber-200 dark:border-amber-800">
-                              <Crown className="h-3 w-3 mr-1" />
-                              {member.benefit_count || 1}
+                  {members.map((member, index) => {
+                    // Determine the artwork page URL
+                    // Priority: submission_id (for pending) > product_id (from API) > shopify_product_id lookup
+                    const artworkPageUrl = member.submission_id 
+                      ? `/vendor/dashboard/artwork-pages/${member.submission_id}`
+                      : (member as any).product_id
+                        ? `/vendor/dashboard/artwork-pages/${(member as any).product_id}`
+                        : null
+                    
+                    const CardContent = (
+                      <Card className="overflow-hidden group cursor-pointer hover:shadow-lg transition-all">
+                        <div className="aspect-square relative bg-muted">
+                          {member.artwork_image ? (
+                            <img
+                              src={member.artwork_image}
+                              alt={member.artwork_title || "Artwork"}
+                              className="w-full h-full object-cover transition-transform group-hover:scale-105"
+                            />
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center">
+                              <ImageIcon className="h-8 w-8 text-muted-foreground/50" />
                             </div>
                           )}
+                          {member.is_locked && (
+                            <div className="absolute top-2 right-2 bg-black/60 p-1.5 rounded-full text-white backdrop-blur-sm">
+                              <Lock className="h-3 w-3" />
+                            </div>
+                          )}
+                          <div className="absolute top-2 left-2 bg-black/60 px-2 py-0.5 rounded text-[10px] text-white backdrop-blur-sm font-mono">
+                            #{index + 1}
+                          </div>
                         </div>
-                      </div>
-                    </Card>
-                  ))}
+                        <div className="p-3">
+                          <h4 className="font-medium text-sm truncate" title={member.artwork_title}>
+                            {member.artwork_title || "Untitled Artwork"}
+                          </h4>
+                          <div className="flex items-center justify-between mt-2">
+                            <Badge variant="secondary" className="text-[10px] h-5">
+                              {member.is_locked ? "Locked" : "Unlocked"}
+                            </Badge>
+                            {member.has_benefits && (
+                              <div className="flex items-center text-[10px] text-amber-600 bg-amber-50 dark:bg-amber-900/20 px-1.5 py-0.5 rounded-full border border-amber-200 dark:border-amber-800">
+                                <Crown className="h-3 w-3 mr-1" />
+                                {member.benefit_count || 1}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </Card>
+                    )
+
+                    if (artworkPageUrl) {
+                      return (
+                        <Link key={member.id} href={artworkPageUrl}>
+                          {CardContent}
+                        </Link>
+                      )
+                    }
+
+                    return <div key={member.id}>{CardContent}</div>
+                  })}
                 </div>
               )}
             </div>

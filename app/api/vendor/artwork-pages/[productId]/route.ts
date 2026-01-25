@@ -20,18 +20,46 @@ export async function GET(
     const supabase = createClient()
     const { productId } = params
 
-    // Verify product belongs to vendor
-    // Note: This allows editing artwork pages for products with any submission status
-    // (pending/submitted, approved, rejected, published) - all can be edited
-    const { data: product, error: productError } = await supabase
-      .from("products")
-      .select("id, name, vendor_name")
-      .eq("id", productId)
-      .eq("vendor_name", vendorName)
-      .single()
+    // Check if productId is a UUID (submission ID) or a product ID
+    const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(productId)
+    
+    let product: { id: string; name: string; vendor_name: string } | null = null
+    let submission: { id: string; product_data: any; vendor_name: string } | null = null
 
-    if (productError || !product) {
-      return NextResponse.json({ error: "Product not found" }, { status: 404 })
+    if (isUUID) {
+      // It's a submission ID - fetch from vendor_product_submissions
+      const { data: submissionData, error: submissionError } = await supabase
+        .from("vendor_product_submissions")
+        .select("id, product_data, vendor_name")
+        .eq("id", productId)
+        .eq("vendor_name", vendorName)
+        .single()
+
+      if (submissionError || !submissionData) {
+        return NextResponse.json({ error: "Submission not found" }, { status: 404 })
+      }
+
+      submission = submissionData
+      const productData = submissionData.product_data as any
+      product = {
+        id: submissionData.id,
+        name: productData?.title || "Untitled Artwork",
+        vendor_name: submissionData.vendor_name,
+      }
+    } else {
+      // It's a product ID - fetch from products table
+      const { data: productData, error: productError } = await supabase
+        .from("products")
+        .select("id, name, vendor_name")
+        .eq("id", productId)
+        .eq("vendor_name", vendorName)
+        .single()
+
+      if (productError || !productData) {
+        return NextResponse.json({ error: "Product not found" }, { status: 404 })
+      }
+
+      product = productData
     }
 
     // Get benefit type IDs for artwork content blocks
@@ -47,24 +75,34 @@ export async function GET(
 
     const artworkBlockTypeIds = benefitTypes?.map((bt) => bt.id) || []
 
-    // Get existing content blocks with benefit type names
-    // Try to order by display_order, but if column doesn't exist, order by id instead
-    let { data: contentBlocks, error: blocksError } = await supabase
-      .from("product_benefits")
-      .select(`
-        *,
-        benefit_types:benefit_type_id (
-          name
-        )
-      `)
-      .eq("product_id", productId)
-      .in("benefit_type_id", artworkBlockTypeIds)
-      .order("display_order", { ascending: true })
-
-    // If display_order column doesn't exist, retry without ordering by it
-    if (blocksError && blocksError.message?.includes("display_order")) {
-      console.warn("display_order column not found, ordering by id instead. Please run migration 20260125000001_ensure_content_block_fields.sql")
-      const retryResult = await supabase
+    // Get existing content blocks
+    // For submissions, check product_data first; for products, check product_benefits table
+    let contentBlocks: any[] = []
+    
+    if (submission) {
+      // For pending submissions, get content blocks from product_data
+      const productData = submission.product_data as any
+      const productDataBenefits = productData?.benefits || []
+      const artworkBlocks = productDataBenefits.filter((b: any) => 
+        ["Artwork Text Block", "Artwork Image Block", "Artwork Video Block", "Artwork Audio Block"].includes(b.type)
+      )
+      
+      // Map to content block format
+      contentBlocks = artworkBlocks.map((block: any, index: number) => ({
+        id: `temp-${index}`,
+        benefit_type_id: 0, // Will be resolved by block_type
+        title: block.title || "",
+        description: block.description || null,
+        content_url: block.content_url || null,
+        block_config: block.config || {},
+        display_order: block.display_order || index,
+        is_published: true,
+        block_type: block.type,
+      }))
+    } else {
+      // For accepted products, get from product_benefits table
+      // Try to order by display_order, but if column doesn't exist, order by id instead
+      let { data: dbBlocks, error: blocksError } = await supabase
         .from("product_benefits")
         .select(`
           *,
@@ -74,24 +112,42 @@ export async function GET(
         `)
         .eq("product_id", productId)
         .in("benefit_type_id", artworkBlockTypeIds)
-        .order("id", { ascending: true })
-      
-      contentBlocks = retryResult.data
-      blocksError = retryResult.error
-    }
+        .order("display_order", { ascending: true })
 
-    if (blocksError) {
-      console.error("Error fetching content blocks:", blocksError)
-      return NextResponse.json(
-        { 
-          error: "Failed to fetch content blocks", 
-          message: blocksError.message,
-          hint: blocksError.message?.includes("display_order") 
-            ? "Please run migration 20260125000001_ensure_content_block_fields.sql to add required columns."
-            : undefined
-        },
-        { status: 500 },
-      )
+      // If display_order column doesn't exist, retry without ordering by it
+      if (blocksError && blocksError.message?.includes("display_order")) {
+        console.warn("display_order column not found, ordering by id instead. Please run migration 20260125000001_ensure_content_block_fields.sql")
+        const retryResult = await supabase
+          .from("product_benefits")
+          .select(`
+            *,
+            benefit_types:benefit_type_id (
+              name
+            )
+          `)
+          .eq("product_id", productId)
+          .in("benefit_type_id", artworkBlockTypeIds)
+          .order("id", { ascending: true })
+        
+        dbBlocks = retryResult.data
+        blocksError = retryResult.error
+      }
+
+      if (blocksError) {
+        console.error("Error fetching content blocks:", blocksError)
+        return NextResponse.json(
+          { 
+            error: "Failed to fetch content blocks", 
+            message: blocksError.message,
+            hint: blocksError.message?.includes("display_order") 
+              ? "Please run migration 20260125000001_ensure_content_block_fields.sql to add required columns."
+              : undefined
+          },
+          { status: 500 },
+        )
+      }
+
+      contentBlocks = dbBlocks || []
     }
 
     // Get vendor profile for signature and bio
@@ -111,11 +167,12 @@ export async function GET(
         signature_url: vendor?.signature_url || null,
         bio: vendor?.bio || null,
       },
-      contentBlocks: (contentBlocks || []).map((block: any) => ({
+      contentBlocks: contentBlocks.map((block: any) => ({
         ...block,
-        block_type: block.benefit_types?.name || null,
+        block_type: block.block_type || block.benefit_types?.name || null,
       })),
-      hasTemplate: (contentBlocks?.length || 0) > 0,
+      hasTemplate: contentBlocks.length > 0,
+      isPendingSubmission: !!submission,
     })
   } catch (error: any) {
     console.error("Error in content blocks GET API:", error)

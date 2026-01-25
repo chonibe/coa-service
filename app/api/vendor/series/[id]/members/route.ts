@@ -262,6 +262,19 @@ export async function GET(
           }
         }
 
+        // Get product ID if shopify_product_id exists
+        let productId: string | null = null
+        if (submission?.shopify_product_id) {
+          const { data: product } = await supabase
+            .from("products")
+            .select("id")
+            .eq("product_id", submission.shopify_product_id)
+            .eq("vendor_name", vendorName)
+            .maybeSingle()
+          
+          productId = product?.id || null
+        }
+
         return {
           ...member,
           artwork_title: artworkTitle,
@@ -269,6 +282,7 @@ export async function GET(
           has_benefits: hasBenefits,
           benefit_count: benefitCount,
           connections: Object.keys(connections).length > 0 ? connections : undefined,
+          product_id: productId, // Add product_id for linking
         }
       })
     )

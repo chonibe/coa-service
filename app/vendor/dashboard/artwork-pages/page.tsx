@@ -29,6 +29,8 @@ interface Product {
   status: "complete" | "incomplete" | "not_started"
   content_blocks_count: number
   total_blocks_needed: number
+  submission_status?: "pending" | "approved" | "published"
+  is_pending?: boolean
   analytics?: {
     views: number
     video_plays: number
@@ -249,22 +251,33 @@ export default function ArtworkPagesPage() {
                     variant="default"
                     className="flex-1"
                   >
-                    <Link href={`/vendor/dashboard/artwork-pages/${product.id}`}>
+                    <Link href={product.is_pending 
+                      ? `/vendor/dashboard/artwork-pages/${product.id}` 
+                      : `/vendor/dashboard/artwork-pages/${product.id}`}>
                       <Edit className="h-4 w-4 mr-2" />
                       {product.status === "not_started" ? "Set Up" : "Edit"}
                     </Link>
                   </Button>
-                  <Button
-                    asChild
-                    variant="outline"
-                    size="icon"
-                    title="View as Collector"
-                  >
-                    <Link href={`/vendor/dashboard/artwork-pages/${product.id}/preview`} target="_blank">
-                      <Eye className="h-4 w-4" />
-                    </Link>
-                  </Button>
+                  {!product.is_pending && (
+                    <Button
+                      asChild
+                      variant="outline"
+                      size="icon"
+                      title="View as Collector"
+                    >
+                      <Link href={`/vendor/dashboard/artwork-pages/${product.id}/preview`} target="_blank">
+                        <Eye className="h-4 w-4" />
+                      </Link>
+                    </Button>
+                  )}
                 </div>
+                {product.is_pending && product.submission_status && (
+                  <div className="mt-2">
+                    <Badge variant="outline" className="text-xs">
+                      {product.submission_status === "pending" ? "Pending Review" : "Approved - Not Published"}
+                    </Badge>
+                  </div>
+                )}
               </CardContent>
             </Card>
           ))}
