@@ -27,7 +27,7 @@ import {
 } from "lucide-react"
 import Image from "next/image"
 import { useToast } from "@/components/ui/use-toast"
-import { ContentLibraryModal } from "../components/ContentLibraryModal"
+import { MediaLibraryModal, type MediaItem } from "@/components/vendor/MediaLibraryModal"
 
 interface ContentBlock {
   id: number
@@ -662,19 +662,22 @@ export default function SeriesTemplateEditor() {
       </div>
 
       {/* Content Library Modal */}
-      <ContentLibraryModal
+      <MediaLibraryModal
         open={showContentLibrary}
         onOpenChange={setShowContentLibrary}
-        onSelect={(url) => {
+        onSelect={(media) => {
+          const selectedMedia = Array.isArray(media) ? media[0] : media
           if (contentLibraryBlockId !== null) {
-            updateBlock(contentLibraryBlockId, { content_url: url })
+            updateBlock(contentLibraryBlockId, { content_url: selectedMedia.url })
             toast({
               title: "Media Selected",
               description: "Media has been added to this block.",
             })
           }
         }}
-        mediaType={contentLibraryType}
+        mode="single"
+        allowedTypes={contentLibraryType ? [contentLibraryType] : undefined}
+        title="Select Media for Content Block"
       />
     </div>
   )

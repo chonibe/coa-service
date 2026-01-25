@@ -28,7 +28,7 @@ import { VideoBlock } from "@/app/collector/artwork/[id]/components/VideoBlock"
 import { AudioBlock } from "@/app/collector/artwork/[id]/components/AudioBlock"
 import { ArtistSignatureBlock } from "@/app/collector/artwork/[id]/components/ArtistSignatureBlock"
 import { ArtistBioBlock } from "@/app/collector/artwork/[id]/components/ArtistBioBlock"
-import { MobileFrame } from "../components/MobileFrame"
+import { MobileFrame } from "../../components/MobileFrame"
 
 interface ArtworkDetail {
   artwork: {
