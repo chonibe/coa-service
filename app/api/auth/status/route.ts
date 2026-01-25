@@ -22,8 +22,7 @@ export async function GET() {
   }
 
   const user = session?.user ?? null
-  const email = user?.email?.toLowerCase() ?? null
-  const isAdmin = isAdminEmail(email)
+  const supabaseEmail = user?.email?.toLowerCase() ?? null
   const vendorSessionName = getVendorFromCookieStore(cookieStore)
   
   // Check collector session
@@ -31,21 +30,40 @@ export async function GET() {
   const collectorSession = verifyCollectorSessionToken(collectorSessionToken)
   const hasCollectorSession = !!collectorSession?.email
   
+  // Check if admin session cookie exists - this is our source of truth for admin status
+  const adminSessionToken = cookieStore.get(ADMIN_SESSION_COOKIE_NAME)?.value
+  const adminSessionPayload = verifyAdminSessionToken(adminSessionToken)
+  const adminSessionEmail = adminSessionPayload?.email?.toLowerCase() ?? null
+  const hasAdminSession = !!adminSessionEmail && isAdminEmail(adminSessionEmail)
+  
+  // Use admin session email as fallback when Supabase session is missing
+  // This prevents login loops when the Supabase session expires but admin cookie is still valid
+  const email = supabaseEmail ?? adminSessionEmail
+  
+  // isAdmin should be true if EITHER:
+  // 1. The Supabase session user has an admin email, OR
+  // 2. There's a valid admin session cookie with an admin email
+  const isAdmin = isAdminEmail(supabaseEmail) || hasAdminSession
+  
   // Check if admin also has collector orders (for role selection)
   let adminHasCollectorAccess = false
   let adminHasVendorAccess = false
   
-  if (isAdmin && email) {
+  // Use the effective email (from Supabase or admin session) for access checks
+  const effectiveAdminEmail = isAdmin ? (supabaseEmail ?? adminSessionEmail) : null
+  
+  if (isAdmin && effectiveAdminEmail) {
     const { data: adminOrderMatch } = await serviceClient
       .from("orders")
       .select("customer_id")
-      .eq("customer_email", email)
+      .eq("customer_email", effectiveAdminEmail)
       .limit(1)
       .maybeSingle()
     
     adminHasCollectorAccess = !!adminOrderMatch
     
     // Check if admin has vendor access via vendor_users table
+    // Note: This requires Supabase session for user.id - if not available, we skip this check
     if (user?.id) {
       const { data: adminVendorUser } = await serviceClient
         .from("vendor_users")
@@ -56,15 +74,11 @@ export async function GET() {
       adminHasVendorAccess = !!adminVendorUser
     }
   }
-  
-  // Check if admin session cookie exists
-  const adminSessionToken = cookieStore.get(ADMIN_SESSION_COOKIE_NAME)?.value
-  const adminSessionPayload = verifyAdminSessionToken(adminSessionToken)
-  const hasAdminSession = !!adminSessionPayload?.email && isAdminEmail(adminSessionPayload.email)
 
   const requireAccountSelection = cookieStore.get(REQUIRE_ACCOUNT_SELECTION_COOKIE)?.value === "true"
 
   let vendor = null as null | { id: number; vendor_name: string; status: string | null }
+  let vendorHasCollectorAccess = false
 
   // Check if admin is impersonating via vendor session cookie
   if (vendorSessionName) {
@@ -105,6 +119,25 @@ export async function GET() {
     }
   }
 
+  // Check if vendor has collector access (has orders or collector profile)
+  if (vendor && email) {
+    const { data: vendorOrderMatch } = await serviceClient
+      .from("orders")
+      .select("customer_id")
+      .eq("customer_email", email)
+      .limit(1)
+      .maybeSingle()
+
+    const { data: vendorProfileMatch } = await serviceClient
+      .from("collector_profiles")
+      .select("id")
+      .eq("email", email)
+      .limit(1)
+      .maybeSingle()
+
+    vendorHasCollectorAccess = !!(vendorOrderMatch || vendorProfileMatch)
+  }
+
   return NextResponse.json({
     authenticated: !!user,
     user: user
@@ -123,6 +156,7 @@ export async function GET() {
     vendorSession: vendorSessionName,
     vendor,
     hasVendorAccess: !!vendor,
+    vendorHasCollectorAccess,
     requireAccountSelection,
   })
 }
