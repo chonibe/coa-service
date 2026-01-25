@@ -234,7 +234,7 @@ export default function CollectorArtworkPage() {
   const isAuthenticated = artwork.isAuthenticated
 
   return (
-    <>
+    <div>
       {/* Unlock Reveal Animation */}
       {showUnlockReveal && (
         <UnlockReveal
@@ -454,6 +454,6 @@ export default function CollectorArtworkPage() {
           onSuccess={handleNfcSuccess}
         />
       )}
-    </>
+    </div>
   )
 }
