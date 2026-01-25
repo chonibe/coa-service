@@ -2,11 +2,11 @@
 
 import { useState, useEffect } from "react"
 import { useRouter, useParams } from "next/navigation"
-import { ProductWizard } from "../../create/components/product-wizard"
-import { Card, CardContent } from "@/components/ui/card"
+import { ShopifyStyleArtworkForm } from "../../create/components/shopify-style-form"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { AlertCircle } from "lucide-react"
+import { AlertCircle, ArrowLeft } from "lucide-react"
+import { Button } from "@/components/ui/button"
 import type { ProductSubmissionData } from "@/types/product-submission"
 
 export default function EditProductPage() {
@@ -41,10 +41,11 @@ export default function EditProductPage() {
           // Check if submission can be edited
           if (
             data.submission.status !== "pending" &&
-            data.submission.status !== "rejected"
+            data.submission.status !== "rejected" &&
+            data.submission.status !== "draft"
           ) {
             setError(
-              `Cannot edit submission with status: ${data.submission.status}. Only pending or rejected submissions can be edited.`,
+              `Cannot edit submission with status: ${data.submission.status}. Only pending, draft, or rejected submissions can be edited.`,
             )
             setLoading(false)
             return
@@ -84,37 +85,31 @@ export default function EditProductPage() {
 
   if (loading) {
     return (
-      <div className="space-y-6">
-        <Skeleton className="h-8 w-64" />
-        <Skeleton className="h-[600px] w-full" />
+      <div className="p-6">
+        <Skeleton className="h-8 w-48 mb-4" />
+        <Skeleton className="h-[600px]" />
       </div>
     )
   }
 
   if (error) {
     return (
-      <div className="space-y-6">
+      <div className="p-6 space-y-6">
+        <Button variant="outline" onClick={() => router.push("/vendor/dashboard/products")}>
+          <ArrowLeft className="h-4 w-4 mr-2" />
+          Back to Products
+        </Button>
         <Alert variant="destructive">
           <AlertCircle className="h-4 w-4" />
           <AlertDescription>{error}</AlertDescription>
         </Alert>
-        <Card>
-          <CardContent className="p-6">
-            <button
-              onClick={() => router.push("/vendor/dashboard/products")}
-              className="text-primary hover:underline"
-            >
-              ← Back to Products
-            </button>
-          </CardContent>
-        </Card>
       </div>
     )
   }
 
   if (!initialData) {
     return (
-      <div className="space-y-6">
+      <div className="p-6 space-y-6">
         <Alert variant="destructive">
           <AlertCircle className="h-4 w-4" />
           <AlertDescription>No submission data found</AlertDescription>
@@ -124,26 +119,13 @@ export default function EditProductPage() {
   }
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
-          Edit Artwork Submission
-        </h1>
-        <p className="text-muted-foreground mt-1">
-          Update your artwork submission. Changes will reset the status to pending for admin review.
-        </p>
-      </div>
-
-      <Card className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-0 shadow-xl">
-        <CardContent className="p-6">
-          <ProductWizard
-            onComplete={handleComplete}
-            onCancel={handleCancel}
-            initialData={initialData}
-            submissionId={submissionId}
-          />
-        </CardContent>
-      </Card>
+    <div className="p-6">
+      <ShopifyStyleArtworkForm
+        initialData={initialData}
+        submissionId={submissionId}
+        onComplete={handleComplete}
+        onCancel={handleCancel}
+      />
     </div>
   )
 }

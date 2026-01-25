@@ -7,8 +7,6 @@ import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
-import { Switch } from "@/components/ui/switch"
-import { Separator } from "@/components/ui/separator"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Loader2, Info } from "lucide-react"
 import { useToast } from "@/components/ui/use-toast"
@@ -56,9 +54,8 @@ export function ShopifyStyleSeriesForm({
     (initialData as any)?.sort_order || "manual"
   )
   const [selectedArtworks, setSelectedArtworks] = useState<string[]>([])
-  const [syncToShopify, setSyncToShopify] = useState(
-    (initialData as any)?.sync_to_shopify || false
-  )
+  // Always sync to Shopify - no toggle needed for vendors
+  const syncToShopify = true
 
   // Behavior settings
   const [unlockTypeEnabled, setUnlockTypeEnabled] = useState(!!initialData?.unlock_type)
@@ -287,30 +284,6 @@ export function ShopifyStyleSeriesForm({
 
         {/* Right Sidebar - Organization */}
         <div className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Status</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex items-center justify-between">
-                <Label htmlFor="sync-shopify">Sync to Shopify</Label>
-                <Switch
-                  id="sync-shopify"
-                  checked={syncToShopify}
-                  onCheckedChange={setSyncToShopify}
-                />
-              </div>
-              {syncToShopify && (
-                <Alert>
-                  <Info className="h-4 w-4" />
-                  <AlertDescription className="text-xs">
-                    This series will be created as a collection in Shopify
-                  </AlertDescription>
-                </Alert>
-              )}
-            </CardContent>
-          </Card>
-
           {collectionType === "smart" && (
             <Card>
               <CardHeader>
