@@ -244,9 +244,9 @@ export default function CollectorArtworkPage() {
       )}
 
       <div className="min-h-screen bg-background pb-safe-4">
-      {/* Mobile-first header - compact */}
-      <div className="sticky top-0 z-40 bg-background/95 backdrop-blur-md border-b px-4 py-3">
-        <div className="flex items-center gap-3">
+        {/* Mobile-first header - compact */}
+        <div className="sticky top-0 z-40 bg-background/95 backdrop-blur-md border-b px-4 py-3">
+          <div className="flex items-center gap-3">
           <Button
             variant="ghost"
             size="icon"
@@ -454,6 +454,7 @@ export default function CollectorArtworkPage() {
           onSuccess={handleNfcSuccess}
         />
       )}
+      </div>
     </div>
   )
 }
