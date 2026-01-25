@@ -172,3 +172,14 @@ export {
   PolarisLabel as Label,
   type PolarisLabelProps as LabelProps,
 } from '@/components/polaris/polaris-label'
+
+export {
+  Progress,
+  type ProgressProps,
+} from '@/components/polaris/polaris-progress'
+
+export {
+  Toaster,
+  toast,
+  type ToasterProps,
+} from '@/components/polaris/polaris-toaster'
