@@ -1,5 +1,6 @@
 "use client"
 
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
@@ -7,6 +8,10 @@ import { Input } from "@/components/ui/input"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Plus, X } from "lucide-react"
 import { Card } from "@/components/ui/card"
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem } from "@/components/ui/command"
+import { Check, ChevronsUpDown } from "lucide-react"
+import { cn } from "@/lib/utils"
 
 interface SmartCondition {
   field: 'tag' | 'title' | 'type' | 'price' | 'created_at'
@@ -61,6 +66,40 @@ export function SmartConditionsBuilder({
   match,
   onMatchChange,
 }: SmartConditionsBuilderProps) {
+  const [availableTags, setAvailableTags] = useState<string[]>([])
+  const [loading, setLoading] = useState(true)
+
+  // Fetch available tags from artworks
+  useEffect(() => {
+    const fetchTags = async () => {
+      try {
+        const response = await fetch("/api/vendor/products/submissions", {
+          credentials: "include",
+        })
+        
+        if (response.ok) {
+          const data = await response.json()
+          const submissions = data.submissions || []
+          
+          // Extract unique tags
+          const tagsSet = new Set<string>()
+          submissions.forEach((sub: any) => {
+            const tags = sub.product_data?.tags || []
+            tags.forEach((tag: string) => tagsSet.add(tag))
+          })
+          
+          setAvailableTags(Array.from(tagsSet).sort())
+        }
+      } catch (error) {
+        console.error("Error fetching tags:", error)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchTags()
+  }, [])
+
   const handleAddCondition = () => {
     const newCondition: SmartCondition = {
       field: 'tag',
@@ -149,26 +188,69 @@ export function SmartConditionsBuilder({
                   </SelectContent>
                 </Select>
 
-                <Input
-                  value={condition.value}
-                  onChange={(e) =>
-                    handleUpdateCondition(index, {
-                      value:
-                        condition.field === 'price'
-                          ? parseFloat(e.target.value) || 0
-                          : e.target.value,
-                    })
-                  }
-                  placeholder={
-                    condition.field === 'price'
-                      ? '0.00'
-                      : condition.field === 'created_at'
-                      ? 'YYYY-MM-DD'
-                      : 'Value...'
-                  }
-                  type={condition.field === 'price' ? 'number' : 'text'}
-                  className="flex-1"
-                />
+                {condition.field === 'tag' && availableTags.length > 0 ? (
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        role="combobox"
+                        className={cn(
+                          "flex-1 justify-between",
+                          !condition.value && "text-muted-foreground"
+                        )}
+                      >
+                        {condition.value || "Select tag..."}
+                        <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-[300px] p-0">
+                      <Command>
+                        <CommandInput placeholder="Search tags..." />
+                        <CommandEmpty>No tag found.</CommandEmpty>
+                        <CommandGroup className="max-h-64 overflow-auto">
+                          {availableTags.map((tag) => (
+                            <CommandItem
+                              key={tag}
+                              value={tag}
+                              onSelect={() => {
+                                handleUpdateCondition(index, { value: tag })
+                              }}
+                            >
+                              <Check
+                                className={cn(
+                                  "mr-2 h-4 w-4",
+                                  condition.value === tag ? "opacity-100" : "opacity-0"
+                                )}
+                              />
+                              {tag}
+                            </CommandItem>
+                          ))}
+                        </CommandGroup>
+                      </Command>
+                    </PopoverContent>
+                  </Popover>
+                ) : (
+                  <Input
+                    value={condition.value}
+                    onChange={(e) =>
+                      handleUpdateCondition(index, {
+                        value:
+                          condition.field === 'price'
+                            ? parseFloat(e.target.value) || 0
+                            : e.target.value,
+                      })
+                    }
+                    placeholder={
+                      condition.field === 'price'
+                        ? '0.00'
+                        : condition.field === 'created_at'
+                        ? 'YYYY-MM-DD'
+                        : 'Value...'
+                    }
+                    type={condition.field === 'price' ? 'number' : 'text'}
+                    className="flex-1"
+                  />
+                )}
 
                 <Button
                   variant="ghost"

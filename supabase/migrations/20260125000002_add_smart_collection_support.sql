@@ -5,6 +5,7 @@
 ALTER TABLE artwork_series 
   ADD COLUMN IF NOT EXISTS collection_type TEXT DEFAULT 'manual',
   ADD COLUMN IF NOT EXISTS smart_conditions JSONB DEFAULT '[]'::jsonb,
+  ADD COLUMN IF NOT EXISTS smart_match TEXT DEFAULT 'all',
   ADD COLUMN IF NOT EXISTS sort_order TEXT DEFAULT 'manual',
   ADD COLUMN IF NOT EXISTS sync_to_shopify BOOLEAN DEFAULT false,
   ADD COLUMN IF NOT EXISTS shopify_collection_id TEXT;
@@ -14,6 +15,15 @@ DO $$ BEGIN
   ALTER TABLE artwork_series 
     ADD CONSTRAINT artwork_series_collection_type_check 
     CHECK (collection_type IN ('manual', 'smart'));
+EXCEPTION
+  WHEN duplicate_object THEN NULL;
+END $$;
+
+-- Add check constraint for smart_match
+DO $$ BEGIN
+  ALTER TABLE artwork_series 
+    ADD CONSTRAINT artwork_series_smart_match_check 
+    CHECK (smart_match IN ('all', 'any'));
 EXCEPTION
   WHEN duplicate_object THEN NULL;
 END $$;
@@ -43,6 +53,7 @@ CREATE INDEX IF NOT EXISTS idx_artwork_series_smart_conditions
 -- Add comment explaining the columns
 COMMENT ON COLUMN artwork_series.collection_type IS 'Type of collection: manual (artworks added manually) or smart (artworks auto-added by conditions)';
 COMMENT ON COLUMN artwork_series.smart_conditions IS 'Array of condition objects for smart collections. Each condition has: field, operator, value';
+COMMENT ON COLUMN artwork_series.smart_match IS 'How to match conditions: all (AND) or any (OR)';
 COMMENT ON COLUMN artwork_series.sort_order IS 'How artworks are sorted in the series: manual, alphabetical, created_desc, created_asc, price_asc, price_desc';
 COMMENT ON COLUMN artwork_series.sync_to_shopify IS 'Whether to sync this series as a Shopify collection';
 COMMENT ON COLUMN artwork_series.shopify_collection_id IS 'Shopify collection ID if synced to Shopify';

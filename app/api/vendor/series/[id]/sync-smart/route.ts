@@ -149,8 +149,8 @@ export async function POST(
         evaluateCondition(submission, condition)
       )
 
-      // Match all or any based on series config (default to 'all')
-      const matchType = 'all' // Could be extended to support 'any'
+      // Match all or any based on series config
+      const matchType = series.smart_match || 'all'
       return matchType === 'all' ? results.every((r) => r) : results.some((r) => r)
     })
 

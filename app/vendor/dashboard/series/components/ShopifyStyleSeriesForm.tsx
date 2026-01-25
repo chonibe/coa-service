@@ -49,7 +49,9 @@ export function ShopifyStyleSeriesForm({
   const [smartConditions, setSmartConditions] = useState<SmartCondition[]>(
     (initialData as any)?.smart_conditions || []
   )
-  const [smartMatch, setSmartMatch] = useState<"all" | "any">("all")
+  const [smartMatch, setSmartMatch] = useState<"all" | "any">(
+    (initialData as any)?.smart_match || "all"
+  )
   const [sortOrder, setSortOrder] = useState<string>(
     (initialData as any)?.sort_order || "manual"
   )
@@ -99,6 +101,7 @@ export function ShopifyStyleSeriesForm({
 
       if (collectionType === "smart") {
         payload.smart_conditions = smartConditions
+        payload.smart_match = smartMatch
       }
 
       const url = seriesId ? `/api/vendor/series/${seriesId}` : "/api/vendor/series"
