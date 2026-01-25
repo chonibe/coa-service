@@ -8,11 +8,19 @@ import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 import { 
   ShieldCheck, Timer, Wallet, Wand2, 
   Award, DollarSign, LayoutGrid, ArrowLeft,
   Share2, MoreHorizontal, History as HistoryIcon, Heart,
-  ExternalLink, ShoppingBag
+  ExternalLink, ShoppingBag, Settings, LogOut, User, Store, Shield
 } from "lucide-react"
 import Link from "next/link"
 import { formatCurrency } from "@/lib/utils"
@@ -59,6 +67,12 @@ type ApiResponse = {
   collectorIdentifier: string | null
   banking: any
   subscriptions: any
+  profile?: {
+    display_name?: string | null
+    display_phone?: string | null
+    user_email?: string | null
+    avatar_url?: string | null
+  } | null
   purchasesByArtist?: Record<string, any[]>
   purchasesBySeries?: Record<string, { series: any; items: any[] }>
   hiddenContent?: HiddenContent
@@ -78,6 +92,7 @@ export default function CollectorDashboardPage() {
   const [expandedGroup, setExpandedGroup] = useState<any[] | null>(null)
   const [groupingMode, setGroupingMode] = useState<'product' | 'artist'>('product')
   const [isAdmin, setIsAdmin] = useState(false)
+  const [authStatus, setAuthStatus] = useState<any>(null)
 
   useEffect(() => {
     const load = async () => {
@@ -133,6 +148,7 @@ export default function CollectorDashboardPage() {
         if (authStatusRes.ok) {
           const authData = await authStatusRes.json()
           setIsAdmin(authData.isAdmin || false)
+          setAuthStatus(authData)
           if (authData.requireAccountSelection === true) {
             router.replace("/login")
             return
@@ -230,12 +246,102 @@ export default function CollectorDashboardPage() {
                 </Button>
               </Link>
             )}
-            <Button variant="outline" size="sm" className="rounded-full font-bold text-xs px-4 h-9">
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="rounded-full font-bold text-xs px-4 h-9"
+              onClick={() => {
+                // Share functionality - copy current URL to clipboard
+                navigator.clipboard.writeText(window.location.href)
+                // You could add a toast notification here
+              }}
+            >
               <Share2 className="h-3.5 w-3.5 mr-2" /> Share
             </Button>
-            <Button variant="default" size="sm" className="rounded-full font-bold text-xs px-4 h-9 shadow-lg shadow-primary/20">
-              Actions <MoreHorizontal className="h-3.5 w-3.5 ml-2" />
-            </Button>
+            <DropdownMenu modal={false}>
+              <DropdownMenuTrigger asChild>
+                <Button 
+                  variant="default" 
+                  size="sm" 
+                  className="rounded-full font-bold text-xs px-4 h-9 shadow-lg shadow-primary/20"
+                  type="button"
+                >
+                  Actions <MoreHorizontal className="h-3.5 w-3.5 ml-2" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56 z-[100]" sideOffset={5}>
+                <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                {authStatus && (authStatus.hasVendorAccess || authStatus.adminHasVendorAccess) && (
+                  <DropdownMenuItem
+                    onSelect={async (e) => {
+                      e.preventDefault()
+                      try {
+                        const response = await fetch("/api/auth/admin/switch-to-vendor", {
+                          method: "POST",
+                          headers: { "Content-Type": "application/json" },
+                          credentials: "include",
+                        })
+                        if (response.ok) {
+                          router.push("/vendor/dashboard")
+                        }
+                      } catch (error) {
+                        console.error("Failed to switch to vendor:", error)
+                      }
+                    }}
+                  >
+                    <Store className="h-4 w-4 mr-2" />
+                    Switch to Vendor Dashboard
+                  </DropdownMenuItem>
+                )}
+                {authStatus && authStatus.isAdmin && authStatus.hasAdminSession && (
+                  <DropdownMenuItem
+                    onSelect={(e) => {
+                      e.preventDefault()
+                      router.push("/admin/dashboard")
+                    }}
+                  >
+                    <Shield className="h-4 w-4 mr-2" />
+                    Switch to Admin Dashboard
+                  </DropdownMenuItem>
+                )}
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  onSelect={(e) => {
+                    e.preventDefault()
+                    router.push("/collector/profile")
+                  }}
+                >
+                  <User className="h-4 w-4 mr-2" />
+                  Profile Settings
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onSelect={(e) => {
+                    e.preventDefault()
+                    router.push("/collector/profile/comprehensive")
+                  }}
+                >
+                  <Settings className="h-4 w-4 mr-2" />
+                  Comprehensive Profile
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  onSelect={async (e) => {
+                    e.preventDefault()
+                    try {
+                      await fetch("/api/auth/logout", { method: "POST", credentials: "include" })
+                      router.push("/login")
+                    } catch (error) {
+                      console.error("Logout error:", error)
+                    }
+                  }}
+                  className="text-destructive focus:text-destructive"
+                >
+                  <LogOut className="h-4 w-4 mr-2" />
+                  Logout
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </div>
       </div>

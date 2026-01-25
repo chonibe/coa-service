@@ -34,6 +34,7 @@ import {
   Info,
   LogOut,
   PenTool,
+  Image as ImageIcon,
 } from "lucide-react"
 import Image from "next/image"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"

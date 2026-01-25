@@ -18,7 +18,7 @@ import {
   Minimize,
   ScrollText,
   UserCircle,
-  ImageIcon,
+  Image as ImageIcon,
   BookOpen
 } from "lucide-react"
 import { Badge } from "@/components/ui/badge"

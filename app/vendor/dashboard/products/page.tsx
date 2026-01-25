@@ -11,7 +11,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Input } from "@/components/ui/input"
 import { ProductTable } from "../components/product-table"
 import { useVendorData } from "@/hooks/use-vendor-data"
-import { Plus, Package, Clock, XCircle, Trash2, Loader2, Sparkles, AlertCircle, Lock, ArrowRight, Crown, ImageIcon, GripVertical } from "lucide-react"
+import { Plus, Package, Clock, XCircle, Trash2, Loader2, Sparkles, AlertCircle, Lock, ArrowRight, Crown, Image as ImageIcon, GripVertical } from "lucide-react"
 import {
   DndContext,
   closestCenter,
