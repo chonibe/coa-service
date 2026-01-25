@@ -10,7 +10,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { Loader2, ArrowLeft, Lock, Edit, Save, X, AlertCircle, ImageIcon, ArrowRight, Crown, Clock, LayoutGrid, GalleryHorizontal, Info } from "lucide-react"
+import { Loader2, ArrowLeft, Lock, Edit, Save, X, AlertCircle, ImageIcon, ArrowRight, Crown, Clock, LayoutGrid, GalleryHorizontal, Info, FileText } from "lucide-react"
 import { useToast } from "@/components/ui/use-toast"
 import { motion } from "framer-motion"
 import { cn } from "@/lib/utils"
@@ -229,6 +229,13 @@ export default function SeriesDetailPage() {
         </Button>
         {!isEditing && (
           <div className="flex gap-2">
+            <Button
+              variant="outline"
+              onClick={() => router.push(`/vendor/dashboard/artwork-pages/series/${seriesId}`)}
+            >
+              <FileText className="h-4 w-4 mr-2" />
+              Set Series Template
+            </Button>
             <Button
               variant="outline"
               onClick={() => {

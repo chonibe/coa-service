@@ -71,7 +71,6 @@ export async function GET(request: NextRequest) {
           id,
           line_item_id,
           product_id,
-          shopify_product_id,
           name,
           description,
           price,

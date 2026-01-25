@@ -4,7 +4,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { useState } from "react"
-import { ChevronDown, ChevronUp, ExternalLink, Package } from "lucide-react"
+import { ChevronDown, ChevronUp, ExternalLink, Package, FileText } from "lucide-react"
 import Link from "next/link"
 import Image from "next/image"
 import { EditionBadge } from "./edition-badge"
@@ -134,12 +134,25 @@ export function ProductTable({ products }: ProductTableProps) {
                 </TableCell>
                 <TableCell>{getStatusBadge(product.status)}</TableCell>
                 <TableCell>
-                  <Button variant="ghost" size="sm" asChild>
-                    <Link href={`/vendor/dashboard/products/${product.handle}`}>
-                      <ExternalLink className="h-4 w-4" />
-                      <span className="sr-only">View</span>
-                    </Link>
-                  </Button>
+                  <div className="flex items-center gap-1">
+                    <Button variant="ghost" size="sm" asChild>
+                      <Link href={`/vendor/dashboard/products/${product.handle}`}>
+                        <ExternalLink className="h-4 w-4" />
+                        <span className="sr-only">View</span>
+                      </Link>
+                    </Button>
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      asChild
+                      title="Edit Artwork Page"
+                    >
+                      <Link href={`/vendor/dashboard/artwork-pages/by-handle/${product.handle}`}>
+                        <FileText className="h-4 w-4" />
+                        <span className="sr-only">Edit Artwork Page</span>
+                      </Link>
+                    </Button>
+                  </div>
                 </TableCell>
               </TableRow>
             ))}

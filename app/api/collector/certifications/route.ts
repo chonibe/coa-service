@@ -26,7 +26,6 @@ export async function GET(request: NextRequest) {
           id,
           line_item_id,
           product_id,
-          shopify_product_id,
           name,
           img_url,
           vendor_name,
@@ -57,7 +56,7 @@ export async function GET(request: NextRequest) {
     const productIds = Array.from(
       new Set(
         allLineItems
-          .map((li: any) => li.product_id || li.shopify_product_id)
+          .map((li: any) => li.product_id)
           .filter(Boolean) as string[],
       ),
     )

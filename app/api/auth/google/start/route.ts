@@ -33,8 +33,46 @@ export async function GET(request: NextRequest) {
   const requireAccountSelection = cookieStore.get(REQUIRE_ACCOUNT_SELECTION_COOKIE)?.value === "true"
 
   // Ensure we use the correct origin for redirects
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL || origin
-  const redirectTo = `${appUrl.replace(/\/$/, "")}/auth/callback`
+  // Validate and construct the redirect URL properly
+  let appUrl = process.env.NEXT_PUBLIC_APP_URL || origin
+  
+  // Ensure appUrl is a valid absolute URL
+  if (!appUrl) {
+    console.error("NEXT_PUBLIC_APP_URL is not set and origin is missing")
+    return NextResponse.json(
+      { error: "Application URL is not configured. Please set NEXT_PUBLIC_APP_URL environment variable." },
+      { status: 500 }
+    )
+  }
+  
+  // Remove trailing slash and ensure it has a protocol
+  appUrl = appUrl.replace(/\/$/, "")
+  if (!appUrl.startsWith("http://") && !appUrl.startsWith("https://")) {
+    // If origin doesn't have protocol, try to construct it
+    if (origin && origin.startsWith("http")) {
+      appUrl = origin
+    } else {
+      console.error(`Invalid appUrl format: ${appUrl}`)
+      return NextResponse.json(
+        { error: "Application URL is improperly formatted. It must start with http:// or https://" },
+        { status: 500 }
+      )
+    }
+  }
+  
+  // Construct the redirect URL
+  const redirectTo = `${appUrl}/auth/callback`
+  
+  // Validate the redirect URL is properly formatted
+  try {
+    new URL(redirectTo)
+  } catch (urlError) {
+    console.error(`Invalid redirectTo URL: ${redirectTo}`, urlError)
+    return NextResponse.json(
+      { error: "Redirect URL is improperly formatted" },
+      { status: 500 }
+    )
+  }
 
   // Automatically request Gmail scopes for admin redirects or when explicitly requested
   const isAdminRedirect = redirectParam?.startsWith("/admin/")
@@ -73,14 +111,44 @@ export async function GET(request: NextRequest) {
     }
   }
 
+  // Log the redirectTo URL for debugging (without exposing sensitive data)
+  console.log("[auth/google/start] Starting OAuth with redirectTo:", redirectTo.replace(/\/[^\/]*$/, "/***"))
+  
   const { data, error } = await supabase.auth.signInWithOAuth({
     provider: "google",
     options: oauthOptions,
   })
 
   if (error || !data?.url) {
-    console.error("Failed to start Google sign-in:", error)
-    return NextResponse.json({ error: error?.message || "Unable to start Google sign-in" }, { status: 400 })
+    console.error("[auth/google/start] Failed to start Google sign-in:", {
+      error: error,
+      errorMessage: error?.message,
+      errorCode: (error as any)?.code,
+      errorStatusCode: (error as any)?.status,
+      redirectTo: redirectTo.replace(/\/[^\/]*$/, "/***"), // Log partial URL for debugging
+      appUrl: appUrl.replace(/\/[^\/]*$/, "/***"), // Log partial URL for debugging
+      hasNEXT_PUBLIC_APP_URL: !!process.env.NEXT_PUBLIC_APP_URL,
+    })
+    
+    // Check if it's a URL formatting error
+    if (error?.message?.toLowerCase().includes("url") || error?.message?.toLowerCase().includes("format")) {
+      return NextResponse.json(
+        { 
+          error: "Redirect URL is improperly formatted",
+          details: "Please ensure NEXT_PUBLIC_APP_URL is set correctly (e.g., https://app.thestreetcollector.com without trailing slash)",
+          error_code: (error as any)?.code || "url_format_error"
+        },
+        { status: 500 }
+      )
+    }
+    
+    return NextResponse.json(
+      { 
+        error: error?.message || "Unable to start Google sign-in",
+        error_code: (error as any)?.code || "oauth_error"
+      },
+      { status: 400 }
+    )
   }
 
   const response = NextResponse.redirect(data.url)

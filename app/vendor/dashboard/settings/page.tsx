@@ -108,6 +108,11 @@ export default function VendorSettingsPage() {
     contact_email: "",
   })
 
+  const [notificationPrefs, setNotificationPrefs] = useState({
+    notify_on_collector_auth: true,
+    weekly_auth_digest: false,
+  })
+
   useEffect(() => {
     const fetchVendorProfile = async () => {
       try {
@@ -493,7 +498,7 @@ export default function VendorSettingsPage() {
       <div className="grid gap-6 md:grid-cols-7">
         <div className="md:col-span-5">
           <Tabs value={activeTab} onValueChange={setActiveTab}>
-            <TabsList className="grid w-full grid-cols-4 bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-0 shadow-lg">
+            <TabsList className="grid w-full grid-cols-5 bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-0 shadow-lg">
               <TabsTrigger value="profile" className="flex items-center gap-2">
                 <User className="h-4 w-4" />
                 <span>Profile</span>
@@ -512,6 +517,10 @@ export default function VendorSettingsPage() {
               <TabsTrigger value="payouts" className="flex items-center gap-2">
                 <DollarSign className="h-4 w-4" />
                 <span>Payouts</span>
+              </TabsTrigger>
+              <TabsTrigger value="notifications" className="flex items-center gap-2">
+                <Zap className="h-4 w-4" />
+                <span>Notifications</span>
               </TabsTrigger>
             </TabsList>
 
@@ -778,6 +787,81 @@ export default function VendorSettingsPage() {
 
               <TabsContent value="payouts" className="space-y-4 mt-4">
                 <PayoutSettings profile={profile} />
+              </TabsContent>
+
+              <TabsContent value="notifications" className="space-y-4 mt-4">
+                <Card className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-0 shadow-xl">
+                  <CardHeader>
+                    <CardTitle>Notification Preferences</CardTitle>
+                    <CardDescription>Choose how you want to be notified about collector activity</CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-6">
+                    <div className="flex items-center justify-between">
+                      <div className="space-y-1">
+                        <Label>Notify me when collectors authenticate</Label>
+                        <p className="text-sm text-muted-foreground">
+                          Get real-time notifications when collectors authenticate your artworks
+                        </p>
+                      </div>
+                      <Checkbox
+                        checked={notificationPrefs.notify_on_collector_auth}
+                        onCheckedChange={(checked) =>
+                          setNotificationPrefs((prev) => ({
+                            ...prev,
+                            notify_on_collector_auth: checked === true,
+                          }))
+                        }
+                      />
+                    </div>
+                    <Separator />
+                    <div className="flex items-center justify-between">
+                      <div className="space-y-1">
+                        <Label>Weekly authentication digest</Label>
+                        <p className="text-sm text-muted-foreground">
+                          Receive a weekly email summary of all collector authentications
+                        </p>
+                      </div>
+                      <Checkbox
+                        checked={notificationPrefs.weekly_auth_digest}
+                        onCheckedChange={(checked) =>
+                          setNotificationPrefs((prev) => ({
+                            ...prev,
+                            weekly_auth_digest: checked === true,
+                          }))
+                        }
+                      />
+                    </div>
+                  </CardContent>
+                  <CardFooter>
+                    <Button
+                      onClick={async () => {
+                        try {
+                          const response = await fetch("/api/vendor/notification-preferences", {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            credentials: "include",
+                            body: JSON.stringify(notificationPrefs),
+                          })
+                          if (response.ok) {
+                            toast({
+                              title: "Preferences saved",
+                              description: "Your notification preferences have been updated.",
+                            })
+                          }
+                        } catch (err) {
+                          toast({
+                            variant: "destructive",
+                            title: "Error",
+                            description: "Failed to save notification preferences",
+                          })
+                        }
+                      }}
+                    >
+                      <Save className="h-4 w-4 mr-2" />
+                      Save Preferences
+                    </Button>
+                  </CardFooter>
+                </Card>
               </TabsContent>
 
               <div className="mt-6 flex justify-end">

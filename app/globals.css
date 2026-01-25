@@ -2,6 +2,9 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Import mobile-first utilities */
+@import './globals-mobile.css';
+
 @layer utilities {
   .scrollbar-hide {
     -ms-overflow-style: none;

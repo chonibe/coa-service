@@ -7,8 +7,9 @@ import { Textarea } from "@/components/ui/textarea"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Upload, Mic, Video, FileText, Loader2, Sparkles, MessageSquare } from "lucide-react"
+import { Upload, Mic, Video, FileText, Loader2, Sparkles, MessageSquare, Folder } from "lucide-react"
 import { motion } from "framer-motion"
+import { MediaLibraryModal, type MediaItem } from "@/components/vendor/MediaLibraryModal"
 
 interface ArtistCommentaryFormProps {
   formData: {
@@ -25,6 +26,7 @@ export function ArtistCommentaryForm({ formData, setFormData }: ArtistCommentary
   const [commentaryType, setCommentaryType] = useState<CommentaryType>("audio")
   const [uploading, setUploading] = useState(false)
   const [uploadedFile, setUploadedFile] = useState<{ url: string; name: string } | null>(null)
+  const [showLibrary, setShowLibrary] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
@@ -94,6 +96,20 @@ export function ArtistCommentaryForm({ formData, setFormData }: ArtistCommentary
     } finally {
       setUploading(false)
     }
+  }
+
+  const handleLibrarySelect = (media: MediaItem | MediaItem[]) => {
+    const selectedMedia = Array.isArray(media) ? media[0] : media
+    const fileData = {
+      url: selectedMedia.url,
+      name: selectedMedia.name,
+    }
+    setUploadedFile(fileData)
+    setFormData({
+      ...formData,
+      contentUrl: JSON.stringify(fileData),
+    })
+    setShowLibrary(false)
   }
 
   const getCommentaryIcon = () => {
@@ -190,6 +206,17 @@ export function ArtistCommentaryForm({ formData, setFormData }: ArtistCommentary
           <Label className="text-base font-semibold">
             {commentaryType === "audio" ? "Upload Audio Recording" : "Upload Video Commentary"}
           </Label>
+          <div className="flex gap-2 mb-2">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => setShowLibrary(true)}
+            >
+              <Folder className="h-4 w-4 mr-2" />
+              Select from Library
+            </Button>
+          </div>
           <div
             className="border-2 border-dashed rounded-lg p-8 text-center cursor-pointer hover:border-primary/50 transition-colors"
             onClick={() => fileInputRef.current?.click()}
@@ -336,6 +363,16 @@ export function ArtistCommentaryForm({ formData, setFormData }: ArtistCommentary
           </Card>
         </motion.div>
       )}
+
+      {/* Media Library Modal */}
+      <MediaLibraryModal
+        open={showLibrary}
+        onOpenChange={setShowLibrary}
+        onSelect={handleLibrarySelect}
+        mode="single"
+        allowedTypes={commentaryType === "audio" ? ["audio"] : commentaryType === "video" ? ["video"] : undefined}
+        title={`Select ${commentaryType === "audio" ? "Audio" : "Video"} Commentary`}
+      />
     </div>
   )
 }

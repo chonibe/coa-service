@@ -21,7 +21,7 @@ import {
   UserCircleIcon,
   ShoppingBagIcon,
 } from "@heroicons/react/24/outline"
-import { Lock, Image as ImageIcon } from "lucide-react"
+import { Lock, Image as ImageIcon, FileText, Folder } from "lucide-react"
 import { CreateMenu } from "./create-menu"
 import { Icon } from "@/components/icon"
 import { cn } from "@/lib/utils"
@@ -88,6 +88,16 @@ export function VendorSidebar() {
       title: "Artworks",
       href: "/vendor/dashboard/products",
       icon: <Icon size="md"><ImageIcon className="h-5 w-5" /></Icon>,
+    },
+    {
+      title: "Artwork Pages",
+      href: "/vendor/dashboard/artwork-pages",
+      icon: <Icon size="md"><FileText className="h-5 w-5" /></Icon>,
+    },
+    {
+      title: "Media Library",
+      href: "/vendor/dashboard/media-library",
+      icon: <Icon size="md"><Folder className="h-5 w-5" /></Icon>,
     },
     // Series now combined with Artworks page
     // {

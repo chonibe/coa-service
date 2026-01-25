@@ -273,6 +273,50 @@ export async function POST(request: NextRequest) {
       artworkName: certificate.name
     })
 
+    // Trigger vendor notification for collector authentication
+    try {
+      const { data: productData } = await supabase
+        .from("products")
+        .select("vendor_name, name")
+        .eq("id", (certificate as any)?.product_id)
+        .single()
+
+      if (productData?.vendor_name) {
+        // Check vendor notification preferences
+        const { data: prefs } = await supabase
+          .from("vendor_notification_preferences")
+          .select("notify_on_collector_auth, email_enabled")
+          .eq("vendor_name", productData.vendor_name)
+          .single()
+
+        const shouldNotify = prefs?.notify_on_collector_auth !== false // Default to true if not set
+
+        if (shouldNotify) {
+          // Create in-app notification
+          await supabase
+            .from("vendor_notifications")
+            .insert({
+              vendor_name: productData.vendor_name,
+              type: "collector_authenticated",
+              title: "Collector Authenticated Artwork",
+              message: `A collector just authenticated "${productData.name || certificate.name}"`,
+              link: `/vendor/dashboard/artwork-pages`,
+              metadata: {
+                product_id: (certificate as any)?.product_id,
+                line_item_id: lineItemId,
+                artwork_name: productData.name || certificate.name,
+              },
+              is_read: false,
+            })
+
+          // TODO: Send real-time toast notification via websocket if vendor is online
+        }
+      }
+    } catch (notifError) {
+      console.error("Failed to send vendor notification:", notifError)
+      // Don't fail the claim if notification fails
+    }
+
     // --- Ink-O-Gatchi Gamification: Reward Credits for NFC Scan ---
     let rewardResult = null
     let seriesRewardResult = null

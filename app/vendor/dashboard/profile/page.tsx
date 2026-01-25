@@ -33,12 +33,14 @@ import {
   HelpCircle,
   Info,
   LogOut,
+  PenTool,
 } from "lucide-react"
 import Image from "next/image"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { Badge } from "@/components/ui/badge"
 import { ThemeToggle } from "@/components/theme-toggle"
 import { useDirtyFormGuard, useRefreshRegistry } from "../../components/sidebar-layout"
+import { MediaLibraryModal, type MediaItem } from "@/components/vendor/MediaLibraryModal"
 
 interface VendorProfile {
   id: number | string
@@ -47,6 +49,8 @@ interface VendorProfile {
   bio?: string | null
   artist_history?: string | null
   instagram_url?: string | null
+  signature_url?: string | null
+  signature_uploaded_at?: string | null
   contact_name?: string | null
   contact_email?: string | null
   phone?: string | null
@@ -99,6 +103,7 @@ export default function VendorProfilePage() {
   const [isLoading, setIsLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
   const [isUploadingImage, setIsUploadingImage] = useState(false)
+  const [isUploadingSignature, setIsUploadingSignature] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [isEditingProfile, setIsEditingProfile] = useState(false)
   const [activeTab, setActiveTab] = useState("public-profile")
@@ -112,10 +117,13 @@ export default function VendorProfilePage() {
     payment: false,
     tax: false,
   })
+  const [showImageLibrary, setShowImageLibrary] = useState(false)
+  const [showSignatureLibrary, setShowSignatureLibrary] = useState(false)
   const { isDirty, setDirty } = useDirtyFormGuard()
   const { register } = useRefreshRegistry()
   const { toast } = useToast()
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const signatureInputRef = useRef<HTMLInputElement>(null)
   const dropZoneRef = useRef<HTMLDivElement>(null)
   const autoSaveTimeoutRef = useRef<NodeJS.Timeout | null>(null)
 
@@ -422,6 +430,168 @@ export default function VendorProfilePage() {
       setIsUploadingImage(false)
     }
   }, [toast, fetchProfile])
+
+  // Handle signature upload
+  const handleSignatureUpload = useCallback(async (file: File) => {
+    setIsUploadingSignature(true)
+    setError(null)
+
+    try {
+      if (!file.type.startsWith("image/")) {
+        throw new Error("Please upload an image file")
+      }
+
+      const MAX_SIZE = 5 * 1024 * 1024
+      if (file.size > MAX_SIZE) {
+        throw new Error(`Image is too large. Maximum size is ${MAX_SIZE / 1024 / 1024}MB`)
+      }
+
+      const formData = new FormData()
+      formData.append("file", file)
+
+      const uploadResponse = await fetch("/api/vendor/profile/upload-signature", {
+        method: "POST",
+        credentials: "include",
+        body: formData,
+      })
+
+      if (!uploadResponse.ok) {
+        const errorData = await uploadResponse.json().catch(() => ({ error: "Upload failed" }))
+        throw new Error(errorData.error || "Failed to upload signature")
+      }
+
+      await fetchProfile()
+
+      toast({
+        title: "Success",
+        description: "Signature uploaded successfully",
+      })
+    } catch (err: any) {
+      console.error("Error uploading signature:", err)
+      setError(err.message || "Failed to upload signature")
+      toast({
+        title: "Error",
+        description: err.message || "Failed to upload signature",
+        variant: "destructive",
+      })
+    } finally {
+      setIsUploadingSignature(false)
+    }
+  }, [toast, fetchProfile])
+
+  // Handle signature deletion
+  const handleSignatureDelete = useCallback(async () => {
+    if (!confirm("Are you sure you want to remove your signature? This will remove it from all artwork pages.")) {
+      return
+    }
+
+    setIsUploadingSignature(true)
+    setError(null)
+
+    try {
+      const deleteResponse = await fetch("/api/vendor/profile/upload-signature", {
+        method: "DELETE",
+        credentials: "include",
+      })
+
+      if (!deleteResponse.ok) {
+        const errorData = await deleteResponse.json().catch(() => ({ error: "Delete failed" }))
+        throw new Error(errorData.error || "Failed to delete signature")
+      }
+
+      await fetchProfile()
+
+      toast({
+        title: "Success",
+        description: "Signature removed successfully",
+      })
+    } catch (err: any) {
+      console.error("Error deleting signature:", err)
+      setError(err.message || "Failed to delete signature")
+      toast({
+        title: "Error",
+        description: err.message || "Failed to delete signature",
+        variant: "destructive",
+      })
+    } finally {
+      setIsUploadingSignature(false)
+    }
+  }, [toast, fetchProfile])
+
+  const handleImageLibrarySelect = async (media: MediaItem | MediaItem[]) => {
+    const selectedMedia = Array.isArray(media) ? media[0] : media
+    
+    try {
+      const updateResponse = await fetch("/api/vendor/profile/update", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "include",
+        body: JSON.stringify({
+          profile_image: selectedMedia.url,
+        }),
+      })
+
+      if (!updateResponse.ok) {
+        const errorData = await updateResponse.json().catch(() => ({ error: "Update failed" }))
+        throw new Error(errorData.message || errorData.error || "Failed to update profile with image")
+      }
+
+      await fetchProfile()
+      setShowImageLibrary(false)
+
+      toast({
+        title: "Success",
+        description: "Profile image updated successfully",
+      })
+    } catch (err: any) {
+      console.error("Error updating profile image:", err)
+      toast({
+        title: "Error",
+        description: err.message || "Failed to update profile image",
+        variant: "destructive",
+      })
+    }
+  }
+
+  const handleSignatureLibrarySelect = async (media: MediaItem | MediaItem[]) => {
+    const selectedMedia = Array.isArray(media) ? media[0] : media
+    
+    try {
+      // We'll use the signature URL directly from library
+      const updateResponse = await fetch("/api/vendor/profile/update", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "include",
+        body: JSON.stringify({
+          signature_url: selectedMedia.url,
+        }),
+      })
+
+      if (!updateResponse.ok) {
+        const errorData = await updateResponse.json().catch(() => ({ error: "Update failed" }))
+        throw new Error(errorData.message || errorData.error || "Failed to update signature")
+      }
+
+      await fetchProfile()
+      setShowSignatureLibrary(false)
+
+      toast({
+        title: "Success",
+        description: "Signature updated successfully",
+      })
+    } catch (err: any) {
+      console.error("Error updating signature:", err)
+      toast({
+        title: "Error",
+        description: err.message || "Failed to update signature",
+        variant: "destructive",
+      })
+    }
+  }
 
   // Drag & Drop handlers - must be defined after handleImageUpload
   const handleDragOver = useCallback((e: React.DragEvent) => {
@@ -839,6 +1009,17 @@ export default function VendorProfilePage() {
                 </div>
 
                 <div className="flex-1 w-full space-y-4">
+                  <div className="flex gap-2 mb-4">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setShowImageLibrary(true)}
+                      disabled={isUploadingImage}
+                    >
+                      <ImageIcon className="h-4 w-4 mr-2" />
+                      Select from Library
+                    </Button>
+                  </div>
                   <div className="space-y-3">
                     <div className="flex items-center gap-4 flex-wrap">
                       <h2 className="text-xl sm:text-2xl font-light">{profile.vendor_name}</h2>
@@ -887,6 +1068,107 @@ export default function VendorProfilePage() {
                         )}
                       </div>
                     )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Signature Upload Section */}
+              <div className="space-y-4 pt-6 border-t">
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <Label className="text-base font-semibold">Artist Signature</Label>
+                      <p className="text-sm text-muted-foreground mt-1">
+                        Your signature will appear on all artwork pages after collectors authenticate with NFC.
+                        PNG with transparency is recommended.
+                      </p>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-start gap-4">
+                    {profile.signature_url ? (
+                      <div className="relative group">
+                        <div className="relative w-48 h-24 border-2 border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden bg-white dark:bg-gray-900 flex items-center justify-center">
+                          <Image
+                            src={profile.signature_url}
+                            alt="Artist signature"
+                            width={192}
+                            height={96}
+                            className="object-contain max-w-full max-h-full"
+                          />
+                        </div>
+                        {profile.signature_uploaded_at && (
+                          <p className="text-xs text-muted-foreground mt-1">
+                            Uploaded {new Date(profile.signature_uploaded_at).toLocaleDateString()}
+                          </p>
+                        )}
+                      </div>
+                    ) : (
+                      <div className="w-48 h-24 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg flex items-center justify-center bg-gray-50 dark:bg-gray-800">
+                        <div className="text-center">
+                          <Upload className="h-6 w-6 mx-auto text-muted-foreground mb-1" />
+                          <p className="text-xs text-muted-foreground">No signature</p>
+                        </div>
+                      </div>
+                    )}
+                    
+                    <div className="flex flex-col gap-2">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => signatureInputRef.current?.click()}
+                        disabled={isUploadingSignature}
+                      >
+                        {isUploadingSignature ? (
+                          <>
+                            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                            Uploading...
+                          </>
+                        ) : (
+                          <>
+                            <Upload className="h-4 w-4 mr-2" />
+                            {profile.signature_url ? "Replace" : "Upload"} Signature
+                          </>
+                        )}
+                      </Button>
+                      {profile.signature_url && (
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={handleSignatureDelete}
+                          disabled={isUploadingSignature}
+                          className="text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950"
+                        >
+                          <X className="h-4 w-4 mr-2" />
+                          Remove
+                        </Button>
+                      )}
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setShowSignatureLibrary(true)}
+                        disabled={isUploadingSignature}
+                      >
+                        <ImageIcon className="h-4 w-4 mr-2" />
+                        Select from Library
+                      </Button>
+                      <input
+                        ref={signatureInputRef}
+                        type="file"
+                        accept="image/png,image/jpeg,image/jpg,image/webp"
+                        className="hidden"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0]
+                          if (file) {
+                            handleSignatureUpload(file)
+                          }
+                          e.target.value = ""
+                        }}
+                      />
+                    </div>
                   </div>
                 </div>
               </div>
@@ -1406,6 +1688,24 @@ export default function VendorProfilePage() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Media Library Modals */}
+      <MediaLibraryModal
+        open={showImageLibrary}
+        onOpenChange={setShowImageLibrary}
+        onSelect={handleImageLibrarySelect}
+        mode="single"
+        allowedTypes={["image"]}
+        title="Select Profile Image"
+      />
+      <MediaLibraryModal
+        open={showSignatureLibrary}
+        onOpenChange={setShowSignatureLibrary}
+        onSelect={handleSignatureLibrarySelect}
+        mode="single"
+        allowedTypes={["image"]}
+        title="Select Signature"
+      />
     </div>
   )
 }

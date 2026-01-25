@@ -2,11 +2,12 @@
 
 import Image from "next/image"
 import { useState } from "react"
+import Link from "next/link"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
-import { ShieldCheck, Clock, FileText } from "lucide-react"
+import { ShieldCheck, Clock, FileText, ExternalLink } from "lucide-react"
 import { NFCAuthSheet } from "@/components/nfc/nfc-auth-sheet"
 
 export interface CollectorLineItem {
@@ -25,6 +26,7 @@ export interface CollectorLineItem {
   certificateUrl?: string | null
   certificateToken?: string | null
   editionNumber?: number | null
+  editionTotal?: number | null
   status?: string | null
   series?: {
     id: string
@@ -68,10 +70,14 @@ export function ArtworkGrid({ items }: ArtworkGridProps) {
           const needsAuth = item.nfcTagId && !item.nfcClaimedAt
 
           return (
-            <Card key={item.id} className="h-full flex flex-col">
+            <Card key={item.id} className="h-full flex flex-col group hover:shadow-lg transition-shadow">
               <CardHeader className="space-y-3">
                 <div className="flex items-center justify-between">
-                  <CardTitle className="text-base leading-tight line-clamp-2">{item.name}</CardTitle>
+                  <Link href={`/collector/artwork/${item.lineItemId}`} className="flex-1">
+                    <CardTitle className="text-base leading-tight line-clamp-2 group-hover:text-primary transition-colors">
+                      {item.name}
+                    </CardTitle>
+                  </Link>
                   <Badge variant="outline" className="capitalize">
                     {item.vendorName || "Artist"}
                   </Badge>
@@ -92,15 +98,15 @@ export function ArtworkGrid({ items }: ArtworkGridProps) {
               </CardHeader>
 
               {item.imgUrl && (
-                <div className="relative w-full h-48">
+                <Link href={`/collector/artwork/${item.lineItemId}`} className="relative w-full h-48 block">
                   <Image
                     src={item.imgUrl}
                     alt={item.name}
                     fill
-                    className="object-cover rounded-none rounded-b-lg"
+                    className="object-cover rounded-none rounded-b-lg group-hover:scale-105 transition-transform duration-300"
                     sizes="(max-width: 768px) 100vw, 33vw"
                   />
-                </div>
+                </Link>
               )}
 
               <CardContent className="flex-1 space-y-3">
@@ -127,7 +133,7 @@ export function ArtworkGrid({ items }: ArtworkGridProps) {
                 {item.editionNumber !== undefined && item.editionNumber !== null && (
                   <div className="flex items-center gap-2">
                     <Badge variant="outline" className="font-mono">
-                      #{item.editionNumber}
+                      #{item.editionNumber}{item.editionTotal ? `/${item.editionTotal}` : ''}
                     </Badge>
                     <span className="text-xs text-muted-foreground">Limited Edition</span>
                   </div>
@@ -135,21 +141,31 @@ export function ArtworkGrid({ items }: ArtworkGridProps) {
               </CardContent>
 
               <CardFooter className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                <Button
+                  asChild
+                  variant="default"
+                  className="w-full"
+                >
+                  <Link href={`/collector/artwork/${item.lineItemId}`}>
+                    View Details
+                    <ExternalLink className="h-4 w-4 ml-2" />
+                  </Link>
+                </Button>
                 {item.certificateUrl && (
                   <Button variant="outline" onClick={() => window.open(item.certificateUrl!, "_blank")}>
-                    View certificate
+                    Certificate
                   </Button>
                 )}
-                <Button
-                  variant={needsAuth ? "default" : "outline"}
-                  className={cn("w-full", needsAuth ? "" : "sm:col-span-1")}
-                  onClick={() => handleAuthenticate(item)}
-                >
-                  {needsAuth ? "Authenticate" : "Authenticate again"}
-                </Button>
-                {item.productUrl && (
-                  <Button variant="secondary" onClick={() => window.open(item.productUrl!, "_blank")}>
-                    View on Shopify
+                {needsAuth && (
+                  <Button
+                    variant="secondary"
+                    className="w-full"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      handleAuthenticate(item)
+                    }}
+                  >
+                    Authenticate
                   </Button>
                 )}
               </CardFooter>

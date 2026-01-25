@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Award, Calendar, ShieldCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -55,35 +56,37 @@ export function PremiumExpandedStackModal({ isOpen, onClose, group, groupingMode
             <div className="flex-1 overflow-y-auto p-8 bg-slate-50/50">
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                 {group.map((edition: any) => (
-                  <Card key={edition.id} className="rounded-3xl border-none shadow-xl bg-white overflow-hidden hover:scale-[1.02] transition-transform">
-                    <div className="aspect-[4/5] bg-slate-100 relative">
-                      {edition.imgUrl ? (
-                        <img src={edition.imgUrl} alt={edition.name} className="h-full w-full object-cover" />
-                      ) : (
-                        <div className="h-full w-full flex items-center justify-center">
-                          <Award className="h-12 w-12 text-slate-300" />
+                  <Link key={edition.id} href={`/collector/artwork/${edition.lineItemId}`}>
+                    <Card className="rounded-3xl border-none shadow-xl bg-white overflow-hidden hover:scale-[1.02] transition-transform cursor-pointer">
+                      <div className="aspect-[4/5] bg-slate-100 relative">
+                        {edition.imgUrl ? (
+                          <img src={edition.imgUrl} alt={edition.name} className="h-full w-full object-cover" />
+                        ) : (
+                          <div className="h-full w-full flex items-center justify-center">
+                            <Award className="h-12 w-12 text-slate-300" />
+                          </div>
+                        )}
+                        <div className="absolute top-4 left-4">
+                          <Badge className="bg-white/90 backdrop-blur-md text-slate-900 border-none font-black text-[10px] px-3 py-1.5 shadow-xl">
+                            #{edition.editionNumber}{edition.editionTotal ? `/${edition.editionTotal}` : ''}
+                          </Badge>
                         </div>
-                      )}
-                      <div className="absolute top-4 left-4">
-                        <Badge className="bg-white/90 backdrop-blur-md text-slate-900 border-none font-black text-[10px] px-3 py-1.5 shadow-xl">
-                          #{edition.editionNumber}{edition.editionTotal ? `/${edition.editionTotal}` : ''}
-                        </Badge>
                       </div>
-                    </div>
-                    <div className="p-5">
-                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">{edition.vendorName}</p>
-                      <h5 className="font-black text-slate-900 line-clamp-1 mb-3">{edition.name}</h5>
-                      <div className="flex items-center justify-between pt-3 border-t border-slate-50">
-                        <div className="flex items-center gap-1.5">
-                          <Calendar className="h-3 w-3 text-slate-300" />
-                          <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">
-                            {new Date(edition.purchaseDate).toLocaleDateString()}
-                          </span>
+                      <div className="p-5">
+                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">{edition.vendorName}</p>
+                        <h5 className="font-black text-slate-900 line-clamp-1 mb-3">{edition.name}</h5>
+                        <div className="flex items-center justify-between pt-3 border-t border-slate-50">
+                          <div className="flex items-center gap-1.5">
+                            <Calendar className="h-3 w-3 text-slate-300" />
+                            <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">
+                              {new Date(edition.purchaseDate).toLocaleDateString()}
+                            </span>
+                          </div>
+                          {(edition.nfc_claimed_at || edition.verificationSource === 'supabase') && <ShieldCheck className="h-4 w-4 text-emerald-500" />}
                         </div>
-                        {(edition.nfc_claimed_at || edition.verificationSource === 'supabase') && <ShieldCheck className="h-4 w-4 text-emerald-500" />}
                       </div>
-                    </div>
-                  </Card>
+                    </Card>
+                  </Link>
                 ))}
               </div>
             </div>

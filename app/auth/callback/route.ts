@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { cookies } from "next/headers"
+import { createClient } from "@supabase/supabase-js"
 import { createClient as createRouteClient } from "@/lib/supabase-server"
 import { buildVendorSessionCookie, clearVendorSessionCookie, VENDOR_SESSION_COOKIE_NAME } from "@/lib/vendor-session"
 import {
@@ -14,6 +15,7 @@ import {
   clearAdminSessionCookie,
   ADMIN_SESSION_COOKIE_NAME,
 } from "@/lib/admin-session"
+import { buildCollectorSessionCookie } from "@/lib/collector-session"
 import { logFailedLoginAttempt } from "@/lib/audit-logger"
 import { createClient as createServiceClient } from "@/lib/supabase/server"
 import { syncInstagramHistory } from "@/lib/crm/instagram-helper"
@@ -138,6 +140,7 @@ async function processUserLogin(user: any, email: string | null, origin: string,
   const notRegisteredResponse = NextResponse.redirect(new URL(NOT_REGISTERED_REDIRECT, origin), { status: 307 })
   deleteCookie(notRegisteredResponse, VENDOR_SESSION_COOKIE_NAME)
 
+  const supabase = createRouteClient(cookieStore)
   await supabase.auth.signOut()
   notRegisteredResponse.cookies.set(ADMIN_SESSION_COOKIE_NAME, "", { ...clearAdminSessionCookie().options, maxAge: 0 })
   await logFailedLoginAttempt({
@@ -801,8 +804,38 @@ export async function GET(request: NextRequest) {
   console.log(`[auth/callback] Processing login for email: ${email}, isAdmin: ${isAdmin}`)
 
   // Determine redirect destination
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL || origin
-  const finalRedirectBase = appUrl.replace(/\/$/, "")
+  // Validate and construct the base URL properly
+  let appUrl = process.env.NEXT_PUBLIC_APP_URL || origin
+  
+  if (!appUrl) {
+    console.error("[auth/callback] appUrl is missing - NEXT_PUBLIC_APP_URL not set and origin is missing")
+    const errorResponse = NextResponse.redirect(new URL("/login?error=configuration_error", origin || "http://localhost:3000"), { status: 307 })
+    return errorResponse
+  }
+  
+  // Remove trailing slash and ensure it has a protocol
+  appUrl = appUrl.replace(/\/$/, "")
+  if (!appUrl.startsWith("http://") && !appUrl.startsWith("https://")) {
+    // If origin has protocol, use it
+    if (origin && (origin.startsWith("http://") || origin.startsWith("https://"))) {
+      appUrl = origin.replace(/\/$/, "")
+    } else {
+      console.error(`[auth/callback] Invalid appUrl format: ${appUrl}`)
+      const errorResponse = NextResponse.redirect(new URL("/login?error=url_format_error", origin || "http://localhost:3000"), { status: 307 })
+      return errorResponse
+    }
+  }
+  
+  const finalRedirectBase = appUrl
+  
+  // Validate finalRedirectBase is a valid URL
+  try {
+    new URL(finalRedirectBase)
+  } catch (urlError) {
+    console.error(`[auth/callback] Invalid finalRedirectBase URL: ${finalRedirectBase}`, urlError)
+    const errorResponse = NextResponse.redirect(new URL("/login?error=url_format_error", origin || "http://localhost:3000"), { status: 307 })
+    return errorResponse
+  }
 
   // Handle admin users - set admin session and redirect to admin dashboard
   if (isAdmin && email) {

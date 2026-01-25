@@ -27,7 +27,6 @@ export async function GET(request: NextRequest) {
           id,
           line_item_id,
           product_id,
-          shopify_product_id,
           name,
           created_at
         )
@@ -38,7 +37,7 @@ export async function GET(request: NextRequest) {
 
     const allLineItems = (orders || []).flatMap((order) => order.order_line_items_v2 || [])
     const productIds = allLineItems
-      .map((li: any) => li.product_id || li.shopify_product_id)
+      .map((li: any) => li.product_id)
       .filter(Boolean)
       .map((id: string) => parseInt(id))
       .filter((id: number) => !isNaN(id) && id > 0)
@@ -98,8 +97,7 @@ export async function GET(request: NextRequest) {
           const key = benefit.hidden_series_id
           const lineItem = allLineItems.find(
             (li: any) =>
-              li.product_id === benefit.vendor_product_submissions?.id?.toString() ||
-              li.shopify_product_id === benefit.vendor_product_submissions?.id?.toString(),
+              li.product_id === benefit.vendor_product_submissions?.id?.toString(),
           )
           if (!hiddenSeriesMap.has(key)) {
             hiddenSeriesMap.set(key, {
@@ -149,8 +147,7 @@ export async function GET(request: NextRequest) {
         ) {
           const lineItem = allLineItems.find(
             (li: any) =>
-              li.product_id === benefit.vendor_product_submissions?.id?.toString() ||
-              li.shopify_product_id === benefit.vendor_product_submissions?.id?.toString(),
+              li.product_id === benefit.vendor_product_submissions?.id?.toString(),
           )
           bonusContent.push({
             id: benefit.id,

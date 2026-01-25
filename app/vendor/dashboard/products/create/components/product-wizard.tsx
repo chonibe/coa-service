@@ -88,6 +88,8 @@ export function ProductWizard({ onComplete, onCancel, initialData, submissionId 
   const [fieldsConfig, setFieldsConfig] = useState<ProductCreationFields | null>(null)
   const [loadingFields, setLoadingFields] = useState(true)
   const [maskSaved, setMaskSaved] = useState(false) // Track if masked artwork image has been saved
+  const [showCollectorExperience, setShowCollectorExperience] = useState(false)
+  const [skipCollectorExperience, setSkipCollectorExperience] = useState(false)
   const { toast } = useToast()
 
   const [formData, setFormData] = useState<ProductSubmissionData>({
@@ -220,6 +222,21 @@ export function ProductWizard({ onComplete, onCancel, initialData, submissionId 
           : "Your artwork has been submitted for admin approval.",
       })
 
+      // If collector experience step was shown and user chose to set up now
+      // Note: product_id is only available after publication, so we'll use submission.id
+      // and navigate to artwork pages list where they can set up content after approval
+      if (showCollectorExperience && !skipCollectorExperience) {
+        toast({
+          title: "Artwork Submitted",
+          description: "After admin approval, you can set up the collector experience in the Artwork Pages section.",
+        })
+        // Navigate to artwork pages list
+        setTimeout(() => {
+          window.location.href = `/vendor/dashboard/artwork-pages`
+        }, 1500)
+        return
+      }
+
       onComplete()
     } catch (err: any) {
       console.error("Error submitting artwork:", err)
@@ -347,7 +364,44 @@ export function ProductWizard({ onComplete, onCancel, initialData, submissionId 
             />
           )}
           {currentStep === 5 && (
-            <ReviewStep formData={formData} fieldsConfig={fieldsConfig} />
+            <>
+              {!showCollectorExperience ? (
+                <ReviewStep formData={formData} fieldsConfig={fieldsConfig} />
+              ) : (
+                <div className="space-y-6">
+                  <div className="text-center py-8">
+                    <h3 className="text-xl font-semibold mb-2">Collector Experience (Optional)</h3>
+                    <p className="text-muted-foreground mb-6">
+                      Would you like to set up the artwork page collectors will see after authentication?
+                    </p>
+                    <div className="flex gap-4 justify-center">
+                      <Button
+                        onClick={() => {
+                          // Navigate to artwork pages editor after product is created
+                          // For now, we'll skip and let them do it later
+                          setSkipCollectorExperience(true)
+                          handleSubmit()
+                        }}
+                        variant="outline"
+                      >
+                        I'll do this later
+                      </Button>
+                      <Button
+                        onClick={async () => {
+                          // Submit product first, then navigate to content editor
+                          await handleSubmit()
+                          // After successful submission, navigate to artwork pages
+                          // This will be handled in the onComplete callback
+                          setSkipCollectorExperience(false)
+                        }}
+                      >
+                        Set up now
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </>
           )}
         </CardContent>
         <CardFooter className="flex justify-between">
@@ -355,7 +409,35 @@ export function ProductWizard({ onComplete, onCancel, initialData, submissionId 
             <ChevronLeft className="h-4 w-4 mr-2" />
             {currentStep === 0 ? "Cancel" : "Back"}
           </Button>
-          {currentStep < steps.length - 1 ? (
+          {currentStep === 5 && !showCollectorExperience ? (
+            <div className="flex gap-2">
+              <Button onClick={() => setShowCollectorExperience(true)} variant="outline">
+                Next: Collector Experience (Optional)
+                <ChevronRight className="h-4 w-4 ml-2" />
+              </Button>
+              <Button onClick={handleSubmit} disabled={isSubmitting || !canProceed()}>
+                {isSubmitting ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Submitting...
+                  </>
+                ) : (
+                  submissionId ? "Update Submission" : "Submit for Approval"
+                )}
+              </Button>
+            </div>
+          ) : currentStep === 5 && showCollectorExperience ? (
+            <Button onClick={handleSubmit} disabled={isSubmitting || !canProceed()}>
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Submitting...
+                </>
+              ) : (
+                submissionId ? "Update Submission" : "Submit for Approval"
+              )}
+            </Button>
+          ) : currentStep < steps.length - 1 ? (
             <Button 
               onClick={handleNext} 
               disabled={!canProceed() || isSubmitting}
@@ -368,18 +450,7 @@ export function ProductWizard({ onComplete, onCancel, initialData, submissionId 
               Next
               <ChevronRight className="h-4 w-4 ml-2" />
             </Button>
-          ) : (
-            <Button onClick={handleSubmit} disabled={isSubmitting || !canProceed()}>
-              {isSubmitting ? (
-                <>
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  Submitting...
-                </>
-              ) : (
-                submissionId ? "Update Submission" : "Submit for Approval"
-              )}
-            </Button>
-          )}
+          ) : null}
         </CardFooter>
       </Card>
     </div>

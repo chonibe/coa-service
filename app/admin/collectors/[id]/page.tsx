@@ -233,7 +233,7 @@ export default function CollectorDetailPage() {
                 
                 <div className="px-8 pt-20 pb-10">
                   <div className="flex flex-col gap-1 mb-6">
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 flex-wrap">
                       <h1 className="text-3xl font-black tracking-tight text-slate-900">{profile.display_name}</h1>
                       {profile.avatar && (
                         <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20 font-black px-3 py-1 rounded-full">
@@ -256,6 +256,17 @@ export default function CollectorDetailPage() {
                         <Mail className="h-4 w-4 text-slate-400" />
                         {profile.user_email}
                       </div>
+                      {profile.shopify_customer_id && (
+                        <Link 
+                          href={`/collector/dashboard?customerId=${profile.shopify_customer_id}`}
+                          target="_blank"
+                        >
+                          <Button variant="outline" size="sm" className="rounded-full text-xs font-bold">
+                            <ExternalLink className="h-3.5 w-3.5 mr-2" />
+                            View as Collector
+                          </Button>
+                        </Link>
+                      )}
                       {profile.display_phone && (
                         <div className="flex items-center gap-1.5 text-sm font-bold text-slate-500">
                           <Phone className="h-4 w-4 text-slate-400" />

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { motion } from "framer-motion";
 import { 
   ChevronLeft, ChevronRight, Award, 
@@ -108,39 +109,40 @@ export function PremiumArtworkStack({ group, groupingMode, onExpand }: PremiumAr
         }}
         transition={{ type: "spring", stiffness: 400, damping: 25 }}
       >
-        <Card className={`rounded-[2.5rem] border-none shadow-xl bg-white overflow-hidden group-hover:shadow-2xl transition-all duration-500 cursor-pointer h-full ${hasMultiple ? 'ring-1 ring-slate-100' : ''}`}>
-          <div className="flex h-full">
-            <div className="w-44 aspect-[4/5] bg-slate-50 relative overflow-hidden flex-shrink-0">
-              {leadItem.imgUrl ? (
-                <img 
-                  key={leadItem.id} 
-                  src={leadItem.imgUrl} 
-                  alt={leadItem.name} 
-                  className="object-cover w-full h-full group-hover:scale-110 transition-transform duration-700" 
-                />
-              ) : (
-                <div className="flex items-center justify-center h-full bg-slate-100">
-                  <Award className="h-12 w-12 text-slate-300" />
-                </div>
-              )}
-            <div className="absolute top-4 left-4">
-              <Badge className="bg-white/90 backdrop-blur-md text-slate-900 border-none font-black text-[10px] px-3 py-1.5 shadow-xl">
-                {isStreetCollector 
-                  ? 'COLLECTIBLE' 
-                  : (groupingMode === 'product' && hasMultiple 
-                      ? `EDITIONS: ${group.length}` 
-                      : leadItem.editionNumber ? `#${leadItem.editionNumber}${leadItem.editionTotal ? '/' + leadItem.editionTotal : ''}` : 'PIECE')}
-              </Badge>
-            </div>
-            </div>
-            <div className="p-6 flex-1 min-w-0 flex flex-col justify-between overflow-hidden">
-              <div className="space-y-2">
-                <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] truncate">
-                  {groupingMode === 'artist' ? `${count} Pieces Owned` : (leadItem.vendorName || 'Street Collector')}
-                </p>
-                <h4 className="text-lg font-black text-slate-900 tracking-tight leading-tight line-clamp-2 group-hover:text-primary transition-colors min-h-[3rem]">
-                  {groupingMode === 'artist' ? (leadItem.vendorName || 'Street Collector') : leadItem.name}
-                </h4>
+        <Link href={`/collector/artwork/${leadItem.lineItemId}`} className="block h-full">
+          <Card className={`rounded-[2.5rem] border-none shadow-xl bg-white overflow-hidden group-hover:shadow-2xl transition-all duration-500 cursor-pointer h-full ${hasMultiple ? 'ring-1 ring-slate-100' : ''}`}>
+            <div className="flex h-full">
+              <div className="w-44 aspect-[4/5] bg-slate-50 relative overflow-hidden flex-shrink-0">
+                {leadItem.imgUrl ? (
+                  <img 
+                    key={leadItem.id} 
+                    src={leadItem.imgUrl} 
+                    alt={leadItem.name} 
+                    className="object-cover w-full h-full group-hover:scale-110 transition-transform duration-700" 
+                  />
+                ) : (
+                  <div className="flex items-center justify-center h-full bg-slate-100">
+                    <Award className="h-12 w-12 text-slate-300" />
+                  </div>
+                )}
+              <div className="absolute top-4 left-4">
+                <Badge className="bg-white/90 backdrop-blur-md text-slate-900 border-none font-black text-[10px] px-3 py-1.5 shadow-xl">
+                  {isStreetCollector 
+                    ? 'COLLECTIBLE' 
+                    : (groupingMode === 'product' && hasMultiple 
+                        ? `EDITIONS: ${group.length}` 
+                        : leadItem.editionNumber ? `#${leadItem.editionNumber}${leadItem.editionTotal ? '/' + leadItem.editionTotal : ''}` : 'PIECE')}
+                </Badge>
+              </div>
+              </div>
+              <div className="p-6 flex-1 min-w-0 flex flex-col justify-between overflow-hidden">
+                <div className="space-y-2">
+                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] truncate">
+                    {groupingMode === 'artist' ? `${count} Pieces Owned` : (leadItem.vendorName || 'Street Collector')}
+                  </p>
+                  <h4 className="text-lg font-black text-slate-900 tracking-tight leading-tight line-clamp-2 group-hover:text-primary transition-colors min-h-[3rem]">
+                    {groupingMode === 'artist' ? (leadItem.vendorName || 'Street Collector') : leadItem.name}
+                  </h4>
                 <div className="flex flex-wrap gap-2">
                   {group.some((e: any) => e.nfc_claimed_at || e.verificationSource === 'supabase') ? (
                     <Badge className="bg-emerald-50 text-emerald-600 hover:bg-emerald-50 border border-emerald-100 font-black text-[9px] tracking-widest px-3 h-6 rounded-full flex items-center gap-1.5 shadow-sm">
@@ -169,7 +171,8 @@ export function PremiumArtworkStack({ group, groupingMode, onExpand }: PremiumAr
               </div>
             </div>
           </div>
-        </Card>
+          </Card>
+        </Link>
       </motion.div>
     </motion.div>
   );

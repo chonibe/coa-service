@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useMemo } from "react"
+import { useState, useMemo, useEffect } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -18,14 +18,30 @@ interface PurchasesSectionProps {
   items: CollectorLineItem[]
   purchasesByArtist?: Record<string, CollectorLineItem[]>
   purchasesBySeries?: Record<string, { series: any; items: CollectorLineItem[] }>
+  groupingMode?: 'product' | 'artist'
+  onGroupingModeChange?: (mode: 'product' | 'artist') => void
 }
 
 type GroupBy = "artist" | "series" | "date" | "auth" | "product"
 type SortBy = "date" | "name" | "artist" | "price"
 
-export function PurchasesSection({ items, purchasesByArtist, purchasesBySeries }: PurchasesSectionProps) {
-  const [groupBy, setGroupBy] = useState<GroupBy>("product")
+export function PurchasesSection({ items, purchasesByArtist, purchasesBySeries, groupingMode = 'product', onGroupingModeChange }: PurchasesSectionProps) {
+  const [groupBy, setGroupBy] = useState<GroupBy>(groupingMode === 'artist' ? 'artist' : "product")
   const [sortBy, setSortBy] = useState<SortBy>("date")
+  
+  // Sync with parent grouping mode
+  useEffect(() => {
+    if (groupingMode) {
+      setGroupBy(groupingMode === 'artist' ? 'artist' : 'product')
+    }
+  }, [groupingMode])
+  
+  // Notify parent of changes
+  useEffect(() => {
+    if (onGroupingModeChange && (groupBy === 'artist' || groupBy === 'product')) {
+      onGroupingModeChange(groupBy)
+    }
+  }, [groupBy, onGroupingModeChange])
   const [selectedArtist, setSelectedArtist] = useState<string>("all")
   const [selectedSeries, setSelectedSeries] = useState<string>("all")
   const [expandedGroup, setExpandedGroup] = useState<any[] | null>(null)

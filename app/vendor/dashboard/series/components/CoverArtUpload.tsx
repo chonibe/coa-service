@@ -2,8 +2,9 @@
 
 import { useState, useRef } from "react"
 import { Button } from "@/components/ui/button"
-import { Loader2, Upload, X, Image as ImageIcon } from "lucide-react"
+import { Loader2, Upload, X, Image as ImageIcon, Folder } from "lucide-react"
 import { motion } from "framer-motion"
+import { MediaLibraryModal, type MediaItem } from "@/components/vendor/MediaLibraryModal"
 
 interface CoverArtUploadProps {
   value?: string | null
@@ -15,6 +16,7 @@ interface CoverArtUploadProps {
 export function CoverArtUpload({ value, onChange, onUpload, seriesId }: CoverArtUploadProps) {
   const [uploading, setUploading] = useState(false)
   const [preview, setPreview] = useState<string | null>(value || null)
+  const [showLibrary, setShowLibrary] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -190,6 +192,25 @@ export function CoverArtUpload({ value, onChange, onUpload, seriesId }: CoverArt
         accept="image/*"
         className="hidden"
         onChange={handleFileSelect}
+      />
+      <div className="mt-3 flex gap-2 justify-center">
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          onClick={() => setShowLibrary(true)}
+        >
+          <Folder className="h-4 w-4 mr-2" />
+          Select from Library
+        </Button>
+      </div>
+      <MediaLibraryModal
+        open={showLibrary}
+        onOpenChange={setShowLibrary}
+        onSelect={handleLibrarySelect}
+        mode="single"
+        allowedTypes={["image"]}
+        title="Select Cover Art"
       />
     </div>
   )

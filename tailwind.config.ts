@@ -80,9 +80,48 @@ const config: Config = {
       perspective: {
         '1000': '1000px',
       },
+      // Mobile-first touch target sizes
+      height: {
+        '12': '3rem',    // 48px - minimum touch target
+        '14': '3.5rem',  // 56px - comfortable mobile button
+      },
+      minHeight: {
+        '44': '2.75rem', // 44px - iOS minimum
+        '48': '3rem',    // 48px - Android minimum
+      },
+      // Safe area utilities
+      spacing: {
+        'safe-top': 'env(safe-area-inset-top)',
+        'safe-bottom': 'env(safe-area-inset-bottom)',
+        'safe-left': 'env(safe-area-inset-left)',
+        'safe-right': 'env(safe-area-inset-right)',
+      },
     },
   },
-  plugins: [require("tailwindcss-animate")],
+  plugins: [
+    require("tailwindcss-animate"),
+    // Scrollbar hide utility
+    function({ addUtilities }: any) {
+      addUtilities({
+        '.scrollbar-hide': {
+          /* IE and Edge */
+          '-ms-overflow-style': 'none',
+          /* Firefox */
+          'scrollbar-width': 'none',
+          /* Safari and Chrome */
+          '&::-webkit-scrollbar': {
+            display: 'none'
+          }
+        },
+        '.touch-pan-x': {
+          'touch-action': 'pan-x'
+        },
+        '.touch-pan-y': {
+          'touch-action': 'pan-y'
+        }
+      })
+    }
+  ],
 }
 
 export default config

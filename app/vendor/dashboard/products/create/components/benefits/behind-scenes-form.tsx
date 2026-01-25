@@ -7,8 +7,9 @@ import { Textarea } from "@/components/ui/textarea"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Upload, Video, Image as ImageIcon, FileText, X, Loader2, Eye, Sparkles } from "lucide-react"
+import { Upload, Video, Image as ImageIcon, FileText, X, Loader2, Eye, Sparkles, Folder } from "lucide-react"
 import { motion, AnimatePresence } from "framer-motion"
+import { MediaLibraryModal, type MediaItem } from "@/components/vendor/MediaLibraryModal"
 
 interface BehindScenesFormProps {
   formData: {
@@ -22,6 +23,7 @@ interface BehindScenesFormProps {
 export function BehindScenesForm({ formData, setFormData }: BehindScenesFormProps) {
   const [uploading, setUploading] = useState(false)
   const [uploadedFiles, setUploadedFiles] = useState<Array<{ url: string; type: string; name: string }>>([])
+  const [showLibrary, setShowLibrary] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   // Parse existing contentUrl if it's a JSON array of files
@@ -111,6 +113,23 @@ export function BehindScenesForm({ formData, setFormData }: BehindScenesFormProp
     })
   }
 
+  const handleLibrarySelect = (media: MediaItem | MediaItem[]) => {
+    const mediaArray = Array.isArray(media) ? media : [media]
+    const newFiles = mediaArray.map(item => ({
+      url: item.url,
+      type: item.type === "video" ? "video" : "image",
+      name: item.name,
+    }))
+    
+    const updatedFiles = [...uploadedFiles, ...newFiles]
+    setUploadedFiles(updatedFiles)
+    setFormData({
+      ...formData,
+      contentUrl: JSON.stringify(updatedFiles),
+    })
+    setShowLibrary(false)
+  }
+
   const getFileIcon = (type: string) => {
     if (type === "video") return <Video className="h-4 w-4" />
     if (type === "image") return <ImageIcon className="h-4 w-4" />
@@ -150,6 +169,17 @@ export function BehindScenesForm({ formData, setFormData }: BehindScenesFormProp
         <p className="text-sm text-muted-foreground">
           Share videos of your process, sketches, iterations, or studio photos
         </p>
+        <div className="flex gap-2">
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => setShowLibrary(true)}
+          >
+            <Folder className="h-4 w-4 mr-2" />
+            Select from Library
+          </Button>
+        </div>
         
         <div
           className="border-2 border-dashed rounded-lg p-8 text-center cursor-pointer hover:border-primary/50 transition-colors"
@@ -286,6 +316,16 @@ export function BehindScenesForm({ formData, setFormData }: BehindScenesFormProp
           </Card>
         </motion.div>
       )}
+
+      {/* Media Library Modal */}
+      <MediaLibraryModal
+        open={showLibrary}
+        onOpenChange={setShowLibrary}
+        onSelect={handleLibrarySelect}
+        mode="multiple"
+        allowedTypes={["image", "video"]}
+        title="Select Behind-the-Scenes Media"
+      />
     </div>
   )
 }

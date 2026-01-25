@@ -4,10 +4,11 @@ import { cookies } from "next/headers"
 import { getVendorFromCookieStore } from "@/lib/vendor-session"
 import { createClient } from "@/lib/supabase/server"
 
-// Maximum file size: 10MB for images, 50MB for PDFs and videos
+// Maximum file size: 10MB for images, 50MB for PDFs and videos, 20MB for audio
 const MAX_IMAGE_SIZE = 10 * 1024 * 1024 // 10MB
 const MAX_PDF_SIZE = 50 * 1024 * 1024 // 50MB
 const MAX_VIDEO_SIZE = 50 * 1024 * 1024 // 50MB
+const MAX_AUDIO_SIZE = 20 * 1024 * 1024 // 20MB
 
 export async function POST(request: NextRequest) {
   const startTime = Date.now()
@@ -72,14 +73,16 @@ export async function POST(request: NextRequest) {
     const supabase = createClient()
     console.log(`[${uploadId}] Supabase client initialized`)
 
-    // Generate file path: vendor_name/product_submissions/timestamp_filename
+    // Generate file path: vendor_name/content_library/timestamp_filename
+    // This makes files available in the content library for reuse
     const timestamp = Date.now()
     const sanitizedVendorName = vendorName.replace(/[^a-z0-9]/gi, "_").toLowerCase()
     const fileExtension = file.name.split(".").pop()
     const fileName = `${timestamp}_${file.name.replace(/[^a-z0-9.]/gi, "_")}`
-    const filePath = `product_submissions/${sanitizedVendorName}/${fileName}`
+    // Store in content_library folder for easy access via content library feature
+    const filePath = `content_library/${sanitizedVendorName}/${fileName}`
 
-    // Determine bucket based on file type (videos go to product-images bucket)
+    // Determine bucket based on file type (videos and audio go to product-images bucket)
     const bucket = fileType === "pdf" ? "print-files" : "product-images"
 
     console.log(`[${uploadId}] Uploading to bucket: ${bucket}, path: ${filePath}`)

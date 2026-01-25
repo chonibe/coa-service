@@ -10,8 +10,10 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { 
   ShieldCheck, Timer, Wallet, Wand2, 
   Award, DollarSign, LayoutGrid, ArrowLeft,
-  Share2, MoreHorizontal, History as HistoryIcon, Heart
+  Share2, MoreHorizontal, History as HistoryIcon, Heart,
+  ExternalLink
 } from "lucide-react"
+import Link from "next/link"
 import { formatCurrency } from "@/lib/utils"
 import { motion, AnimatePresence } from "framer-motion"
 import { ArtworkGrid } from "./components/artwork-grid"
@@ -74,17 +76,19 @@ export default function CollectorDashboardPage() {
   const [avatar, setAvatar] = useState<any>(null)
   const [expandedGroup, setExpandedGroup] = useState<any[] | null>(null)
   const [groupingMode, setGroupingMode] = useState<'product' | 'artist'>('product')
+  const [isAdmin, setIsAdmin] = useState(false)
 
   useEffect(() => {
     const load = async () => {
       try {
         setIsLoading(true)
-        const [dashboardRes, editionsRes, certificationsRes, hiddenContentRes, avatarRes] = await Promise.all([
+        const [dashboardRes, editionsRes, certificationsRes, hiddenContentRes, avatarRes, authStatusRes] = await Promise.all([
           fetch("/api/collector/dashboard", { credentials: "include" }),
           fetch("/api/collector/editions", { credentials: "include" }),
           fetch("/api/collector/certifications", { credentials: "include" }),
           fetch("/api/collector/hidden-content", { credentials: "include" }),
           fetch("/api/collector/avatar", { credentials: "include" }),
+          fetch("/api/auth/status", { credentials: "include" }),
         ])
 
         if (!dashboardRes.ok) {
@@ -122,6 +126,12 @@ export default function CollectorDashboardPage() {
           if (avatarData.success) {
             setAvatar(avatarData.avatar)
           }
+        }
+
+        // Check if user is admin
+        if (authStatusRes.ok) {
+          const authData = await authStatusRes.json()
+          setIsAdmin(authData.isAdmin || false)
         }
       } catch (err: any) {
         setError(err.message || "Failed to load collector dashboard")
@@ -208,6 +218,13 @@ export default function CollectorDashboardPage() {
             </div>
           </div>
           <div className="flex items-center gap-3">
+            {isAdmin && data?.collectorIdentifier && (
+              <Link href={`/admin/collectors/${data.collectorIdentifier}`}>
+                <Button variant="outline" size="sm" className="rounded-full font-bold text-xs px-4 h-9">
+                  <ExternalLink className="h-3.5 w-3.5 mr-2" /> Admin View
+                </Button>
+              </Link>
+            )}
             <Button variant="outline" size="sm" className="rounded-full font-bold text-xs px-4 h-9">
               <Share2 className="h-3.5 w-3.5 mr-2" /> Share
             </Button>
@@ -298,11 +315,36 @@ export default function CollectorDashboardPage() {
                     </div>
                   ),
                   collection: (
-                    <PurchasesSection
-                      items={lineItems}
-                      purchasesByArtist={data.purchasesByArtist}
-                      purchasesBySeries={data.purchasesBySeries}
-                    />
+                    <div className="space-y-4">
+                      <div className="flex items-center justify-between px-2">
+                        <h2 className="text-xl font-black text-slate-900 tracking-tight">Your Collection</h2>
+                        <div className="flex items-center gap-2">
+                          <Button
+                            variant={groupingMode === 'product' ? 'default' : 'outline'}
+                            size="sm"
+                            onClick={() => setGroupingMode('product')}
+                            className="rounded-full text-xs"
+                          >
+                            By Product
+                          </Button>
+                          <Button
+                            variant={groupingMode === 'artist' ? 'default' : 'outline'}
+                            size="sm"
+                            onClick={() => setGroupingMode('artist')}
+                            className="rounded-full text-xs"
+                          >
+                            By Artist
+                          </Button>
+                        </div>
+                      </div>
+                      <PurchasesSection
+                        items={lineItems}
+                        purchasesByArtist={data.purchasesByArtist}
+                        purchasesBySeries={data.purchasesBySeries}
+                        groupingMode={groupingMode}
+                        onGroupingModeChange={setGroupingMode}
+                      />
+                    </div>
                   ),
                   editions: (
                     <EditionsGallery 
