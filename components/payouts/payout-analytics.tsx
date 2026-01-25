@@ -20,6 +20,7 @@ import {
   BarChart,
   Bar,
   PieChart as RechartsPieChart,
+  Pie,
   Cell,
   Area,
   AreaChart,

@@ -2,7 +2,7 @@
 
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
-import { ArrowRight, Lock, ShoppingBag } from "lucide-react"
+import { ArrowRight, Lock, ShoppingBag, Check } from "lucide-react"
 import Link from "next/link"
 import Image from "next/image"
 
@@ -110,6 +110,3 @@ export function NextUnlock({ nextArtwork, unlockType, className }: NextUnlockPro
     </div>
   )
 }
-
-// Missing import
-import { Check } from "lucide-react"
