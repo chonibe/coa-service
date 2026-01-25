@@ -1,5 +1,10 @@
 {
   "version": 2,
+  "build": {
+    "env": {
+      "NEXT_TELEMETRY_DISABLED": "1"
+    }
+  },
   "env": {
     "NODE_ENV": "production"
   },
@@ -49,6 +54,10 @@
     {
       "path": "/api/cron/update-exchange-rates",
       "schedule": "0 4 * * *"
+    },
+    {
+      "path": "/api/cron/check-polaris-updates",
+      "schedule": "0 9 * * 1"
     }
   ]
 }
