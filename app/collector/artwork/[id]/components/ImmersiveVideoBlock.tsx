@@ -1,11 +1,12 @@
 "use client"
 
-import { Button } from "@/components/ui/button"
+
 import { Skeleton } from "@/components/ui/skeleton"
 import { useEffect, useState, useRef } from "react"
 import { Play, AlertCircle, RefreshCw, Maximize } from "lucide-react"
 import { motion } from "framer-motion"
 
+import { Button } from "@/components/ui"
 interface ImmersiveVideoBlockProps {
   title?: string | null
   contentUrl: string | null

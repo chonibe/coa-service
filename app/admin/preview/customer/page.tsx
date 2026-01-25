@@ -3,8 +3,8 @@
 import { useState, useRef, useEffect, useMemo } from "react"
 import { useRouter, useParams } from "next/navigation"
 import { motion, AnimatePresence, useMotionValue, useTransform, LayoutGroup, Variants, useScroll } from "framer-motion"
-import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
+
+
 import { 
   Loader2, 
   AlertCircle, 
@@ -24,6 +24,7 @@ import { toast } from "@/components/ui/use-toast"
 import { Toaster } from "@/components/ui/toaster"
 import { CertificateModal } from './certificate-modal'
 
+import { Badge, Button } from "@/components/ui"
 // Type Definitions
 export interface LineItem {
   line_item_id: string

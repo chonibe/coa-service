@@ -2,12 +2,12 @@
 
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Badge } from "@/components/ui/badge"
+
+
+
+
 import { Loader2, Search, Plus, Mail, Instagram, Facebook, MessageCircle, ShoppingBag, Filter } from "lucide-react"
-import { Checkbox } from "@/components/ui/checkbox"
+
 import Link from "next/link"
 import { FilterBuilder } from "@/components/crm/filter-builder"
 import { BulkActionsToolbar } from "@/components/crm/bulk-actions-toolbar"
@@ -18,6 +18,7 @@ import { EmptyState } from "@/components/crm/empty-state"
 import { ColumnCustomizer } from "@/components/crm/column-customizer"
 import { useCRMShortcuts } from "@/hooks/use-keyboard-shortcuts"
 
+import { Card, CardContent, CardHeader, CardTitle, Button, Input, Badge, Checkbox } from "@/components/ui"
 interface Person {
   id: string
   email: string | null

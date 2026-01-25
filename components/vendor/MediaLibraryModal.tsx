@@ -1,18 +1,11 @@
 "use client"
 
 import { useState, useEffect, useCallback } from "react"
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from "@/components/ui/dialog"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Badge } from "@/components/ui/badge"
+
+
+
+
+
 import { useToast } from "@/components/ui/use-toast"
 import {
   Loader2,
@@ -25,8 +18,9 @@ import {
   X,
 } from "lucide-react"
 import Image from "next/image"
-import { Checkbox } from "@/components/ui/checkbox"
 
+
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter, Button, Input, Tabs, TabsContent, TabsList, TabsTrigger, Badge, Checkbox } from "@/components/ui"
 export interface MediaItem {
   id: string
   url: string

@@ -1,13 +1,14 @@
 "use client"
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
+
+
+
 import Image from "next/image"
 import { Lock, Sparkles, ExternalLink, Calendar, Gift } from "lucide-react"
 import { format } from "date-fns"
 import type { HiddenContent } from "@/types/collector"
 
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, Badge, Button } from "@/components/ui"
 interface HiddenContentProps {
   hiddenContent: HiddenContent
 }

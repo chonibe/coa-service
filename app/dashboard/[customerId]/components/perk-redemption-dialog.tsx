@@ -1,19 +1,13 @@
 "use client"
 
 import { useState } from "react"
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog"
-import { Button } from "@/components/ui/button"
+
+
 import { useToast } from "@/components/ui/use-toast"
 import { Loader2, Gift } from "lucide-react"
 import type { CollectorPerkType } from "@/lib/banking/types"
 
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, Button } from "@/components/ui"
 interface PerkRedemptionDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void

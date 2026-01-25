@@ -4,7 +4,7 @@ import type React from "react"
 import { useState, useEffect, useRef, useCallback } from "react"
 import { usePathname, useRouter } from "next/navigation"
 import Link from "next/link"
-import { Button } from "@/components/ui/button"
+
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Toaster } from "@/components/ui/toaster"
 import { useMobile } from "@/hooks/use-mobile"
@@ -26,12 +26,13 @@ import { CreateMenu } from "./create-menu"
 import { Icon } from "@/components/icon"
 import { cn } from "@/lib/utils"
 import { NotificationCenter } from "@/components/vendor/notification-center"
-import { Badge } from "@/components/ui/badge"
+
 import { useSwipeGesture } from "@/components/vendor/mobile-gestures"
 import { Logo } from "@/components/logo"
 import { SmartBackButton } from "@/components/smart-back-button"
 import { UnifiedSearch } from "@/components/unified-search"
 
+import { Button, Badge } from "@/components/ui"
 interface NavItem {
   title: string
   href: string

@@ -1,11 +1,12 @@
 "use client"
 
 import { useState, useRef } from "react"
-import { Button } from "@/components/ui/button"
+
 import { Loader2, Upload, X, Image as ImageIcon, Folder } from "lucide-react"
 import { motion } from "framer-motion"
 import { MediaLibraryModal, type MediaItem } from "@/components/vendor/MediaLibraryModal"
 
+import { Button } from "@/components/ui"
 interface CoverArtUploadProps {
   value?: string | null
   onChange: (url: string | null) => void

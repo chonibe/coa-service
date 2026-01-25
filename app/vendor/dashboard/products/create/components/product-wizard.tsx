@@ -1,10 +1,10 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
+
+
 import { Progress } from "@/components/ui/progress"
-import { Alert, AlertDescription } from "@/components/ui/alert"
+
 import { useToast } from "@/components/ui/use-toast"
 import {
   ChevronLeft,
@@ -28,6 +28,7 @@ import { SeriesStep } from "./series-step"
 import { ReviewStep } from "./review-step"
 import type { ProductSubmissionData, ProductCreationFields } from "@/types/product-submission"
 
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle, Button, Alert, AlertDescription } from "@/components/ui"
 interface ProductWizardProps {
   onComplete: () => void
   onCancel: () => void

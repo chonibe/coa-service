@@ -1,11 +1,11 @@
 "use client"
 
 import { useState } from "react"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
+
 import { toast } from "@/components/ui/use-toast"
 import { Loader2 } from "lucide-react"
 
+import { Button, Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui"
 export function OnboardingSetup() {
   const [isLoading, setIsLoading] = useState(false)
 

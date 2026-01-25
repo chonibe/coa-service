@@ -3,7 +3,7 @@
 import * as React from "react"
 import { SunIcon, MoonIcon, ComputerDesktopIcon } from "@heroicons/react/24/outline"
 import { useTheme } from "next-themes"
-import { Button } from "@/components/ui/button"
+
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Icon } from "@/components/icon"
 
+import { Button } from "@/components/ui"
 export function ThemeToggle() {
   const { setTheme, theme } = useTheme()
   const [mounted, setMounted] = React.useState(false)

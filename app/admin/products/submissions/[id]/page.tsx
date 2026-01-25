@@ -3,12 +3,12 @@
 import { useState, useEffect } from "react"
 import { useRouter, useParams } from "next/navigation"
 import DOMPurify from "dompurify"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
-import { Textarea } from "@/components/ui/textarea"
-import { Label } from "@/components/ui/label"
-import { Alert, AlertDescription } from "@/components/ui/alert"
+
+
+
+
+
+
 import {
   Clock,
   CheckCircle,
@@ -34,6 +34,7 @@ import {
 } from "@/components/ui/alert-dialog"
 import { useToast } from "@/components/ui/use-toast"
 
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, Button, Badge, Textarea, Label, Alert, AlertDescription } from "@/components/ui"
 export default function SubmissionDetailPage() {
   const router = useRouter()
   const params = useParams()

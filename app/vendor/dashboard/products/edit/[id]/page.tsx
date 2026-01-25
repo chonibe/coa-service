@@ -4,11 +4,12 @@ import { useState, useEffect } from "react"
 import { useRouter, useParams } from "next/navigation"
 import { ShopifyStyleArtworkForm } from "../../create/components/shopify-style-form"
 import { Skeleton } from "@/components/ui/skeleton"
-import { Alert, AlertDescription } from "@/components/ui/alert"
+
 import { AlertCircle, ArrowLeft } from "lucide-react"
-import { Button } from "@/components/ui/button"
+
 import type { ProductSubmissionData } from "@/types/product-submission"
 
+import { Alert, AlertDescription, Button } from "@/components/ui"
 export default function EditProductPage() {
   const router = useRouter()
   const params = useParams()

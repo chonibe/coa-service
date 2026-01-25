@@ -4,9 +4,9 @@ import { useEffect, useState } from "react"
 import { useParams } from "next/navigation"
 import Image from "next/image"
 import DOMPurify from "dompurify"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent } from "@/components/ui/card"
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
+
+
+
 import { Skeleton } from "@/components/ui/skeleton"
 import {
   AlertCircle,
@@ -20,6 +20,7 @@ import {
 } from "lucide-react"
 import { InkOGatchi } from "@/app/collector/dashboard/components/ink-o-gatchi"
 
+import { Button, Card, CardContent, Alert, AlertDescription, AlertTitle } from "@/components/ui"
 export default function CertificatePage() {
   const params = useParams()
   const lineItemId = params.lineItemId as string

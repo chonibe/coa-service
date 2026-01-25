@@ -3,9 +3,10 @@
 import Link from "next/link"
 import { useState } from "react"
 import { useRouter } from "next/navigation"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
+
+
 import { Logo } from "@/components/logo"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, Button } from "@/components/ui"
 import {
   Image as ImageIcon,
   Lock,

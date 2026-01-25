@@ -1,7 +1,8 @@
 import { Skeleton } from "@/components/ui/skeleton"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+
 import { Package, CheckCircle, DollarSign } from "lucide-react"
 
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui"
 export default function ProductsLoading() {
   return (
     <div className="space-y-6">

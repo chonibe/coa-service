@@ -2,10 +2,12 @@
 
 import { useEffect } from "react"
 import Link from "next/link"
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
-import { Button } from "@/components/ui/button"
-import { AlertCircle, Home, RefreshCw } from "lucide-react"
 
+
+import { AlertCircle, Home, RefreshCw } from "lucide-react"
+import { errorLogger } from "@/lib/error-logging"
+
+import { Alert, AlertDescription, AlertTitle, Button } from "@/components/ui"
 export default function RootError({
   error,
   reset,
@@ -14,7 +16,12 @@ export default function RootError({
   reset: () => void
 }) {
   useEffect(() => {
-    console.error("[error-boundary]", error)
+    // Log error with enhanced context
+    errorLogger.logRuntimeError(error, {
+      digest: error.digest,
+      pathname: typeof window !== 'undefined' ? window.location.pathname : undefined,
+      isRootError: true,
+    })
   }, [error])
 
   return (

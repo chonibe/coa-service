@@ -1,15 +1,16 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+
+
+
+
+
 import { Loader2, AlertCircle, Download, RefreshCw, BarChart, TrendingUp, DollarSign, ShoppingCart } from "lucide-react"
-import { Badge } from "@/components/ui/badge"
+
 import { format, subDays, startOfMonth, endOfMonth, startOfYear, endOfYear } from "date-fns"
 
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, Button, Alert, AlertDescription, AlertTitle, Tabs, TabsContent, TabsList, TabsTrigger, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Badge } from "@/components/ui"
 // Mock data for the sales report
 const generateMockData = () => {
   const today = new Date()

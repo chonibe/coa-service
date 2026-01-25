@@ -1,11 +1,12 @@
 "use client"
 
-import { Input } from "@/components/ui/input"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+
+
 import { Search, X } from "lucide-react"
-import { Button } from "@/components/ui/button"
+
 import type { UnlockType } from "@/types/artwork-series"
 
+import { Input, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Button } from "@/components/ui"
 interface SearchAndFilterProps {
   searchQuery: string
   onSearchChange: (query: string) => void

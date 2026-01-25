@@ -1,14 +1,15 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
+
+
 import { Skeleton } from '@/components/ui/skeleton'
-import { Alert, AlertDescription } from '@/components/ui/alert'
+
 import { TruckIcon, ClockIcon, CheckCircleIcon, ExclamationCircleIcon, ArrowPathIcon, MapPinIcon } from '@heroicons/react/24/outline'
 import { Icon } from '@/components/icon'
-import { Button } from '@/components/ui/button'
 
+
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, Badge, Alert, AlertDescription, Button } from "@/components/ui"
 interface TrackingTimelineProps {
   orderId: string
   trackingNumber?: string

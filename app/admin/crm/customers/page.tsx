@@ -1,14 +1,15 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Badge } from "@/components/ui/badge"
+
+
+
+
 import { Loader2, RefreshCw, Search, Mail, Instagram } from "lucide-react"
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
+
 import { AlertCircle } from "lucide-react"
 
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, Button, Input, Badge, Alert, AlertDescription, AlertTitle } from "@/components/ui"
 interface Customer {
   id: string
   shopify_customer_id: number | null

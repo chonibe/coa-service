@@ -1,9 +1,5 @@
 "use client"
 
-import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
-import { Checkbox } from "@/components/ui/checkbox"
-import { TableCell, TableRow } from "@/components/ui/table"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { Eye, AlertTriangle, Mail, CheckCircle2, Clock } from "lucide-react"
 import { format } from "date-fns"
@@ -11,6 +7,7 @@ import { formatUSD } from "@/lib/utils"
 import { cn } from "@/lib/utils"
 import type { PendingPayout } from "../types"
 
+import { Button, Badge, Checkbox, TableCell, TableRow } from "@/components/ui"
 interface VendorPayoutRowProps {
   payout: PendingPayout
   isSelected: boolean

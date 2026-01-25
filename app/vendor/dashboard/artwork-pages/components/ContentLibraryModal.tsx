@@ -1,20 +1,15 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+
+
+
+
 import { Loader2, Search, Image as ImageIcon, Video, Music, X } from "lucide-react"
 import Image from "next/image"
 import { useToast } from "@/components/ui/use-toast"
 
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Button, Input, Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui"
 interface MediaItem {
   url: string
   path: string

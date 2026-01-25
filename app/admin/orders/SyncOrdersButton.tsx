@@ -1,21 +1,15 @@
 "use client"
 
 import { useState } from "react"
-import { Button } from "@/components/ui/button"
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog"
-import { Badge } from "@/components/ui/badge"
-import { Alert, AlertDescription } from "@/components/ui/alert"
-import { Loader2, RefreshCw, CheckCircle2, XCircle, AlertCircle } from "lucide-react"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
 
+
+
+
+import { Loader2, RefreshCw, CheckCircle2, XCircle, AlertCircle } from "lucide-react"
+
+
+
+import { Button, Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, Badge, Alert, AlertDescription, Input, Label } from "@/components/ui"
 interface SyncResult {
   order_id: string
   order_number: string

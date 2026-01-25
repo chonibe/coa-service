@@ -2,13 +2,14 @@
 
 import { useState, useEffect } from "react"
 import { useParams, useRouter } from "next/navigation"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
+
+
+
+
+
 import { Loader2, ArrowLeft, Save } from "lucide-react"
 
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, Button, Input, Label, Textarea } from "@/components/ui"
 export default function EditPersonPage() {
   const params = useParams()
   const router = useRouter()

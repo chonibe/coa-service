@@ -1,44 +1,48 @@
 # Street Collector Design System
 
 ## Overview
-Our design system is built using Shadcn/UI with a unified glassmorphism and gradient design language. All components automatically inherit consistent styling, ensuring a cohesive experience throughout the application.
+Our design system is built using **Shopify Polaris Web Components** with React wrapper components. This provides a consistent, accessible, and professional UI that aligns with Shopify's design language while maintaining flexibility for our application needs.
 
 ## Core Principles
-- **Unified Design**: All components inherit design system styles automatically
-- **Glassmorphism**: Consistent backdrop blur and transparency effects
-- **Gradient Accents**: Blue-to-indigo gradients for primary actions
-- **Accessibility**: WCAG 2.1 AA compliant
-- **Performance**: Minimal CSS overhead with Tailwind utilities
+- **Polaris Design Language**: All components follow Shopify Polaris design guidelines
+- **Accessibility**: WCAG 2.1 AA compliant (built into Polaris)
+- **Performance**: Web components with efficient rendering
+- **Consistency**: Unified component API across the application
+- **Type Safety**: Full TypeScript support for all components
 
 ## Design Language
 
-### Glassmorphism
-All cards, alerts, and containers use glassmorphism by default:
-- **Cards**: `bg-white/95 dark:bg-slate-900/80 backdrop-blur-xl border border-slate-200/50 dark:border-slate-700/50 shadow-xl`
-- **Containers**: `bg-white/90 dark:bg-slate-900/80 backdrop-blur-sm`
-- **Hover States**: `hover:bg-slate-50/80 dark:hover:bg-slate-900/50 backdrop-blur-sm`
+### Polaris Components
+All UI components are built on Shopify Polaris Web Components:
+- **Web Components**: Native browser components for optimal performance
+- **React Wrappers**: Seamless React integration via wrapper components
+- **Design Tokens**: Consistent spacing, colors, and typography from Polaris
+- **Responsive**: Mobile-first design with breakpoint system
 
-### Gradients
-- **Primary Actions**: `bg-gradient-to-r from-blue-600 to-indigo-600`
-- **Text Headings**: `bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent`
-- **Success Actions**: `bg-gradient-to-r from-green-600 to-emerald-600`
+### Component Architecture
+- **Base Components**: Polaris web components (`p-button`, `p-card`, etc.)
+- **React Wrappers**: Located in `components/polaris/`
+- **Exports**: Backward-compatible exports in `components/ui/index.ts`
 
 ## Color Palette
+Polaris uses a semantic color system:
+
 ### Base Colors
-- Primary: `blue-600` to `indigo-600` (gradient)
-- Secondary: `slate-900` / `slate-50`
-- Accent: `purple-600` to `pink-600` (gradient)
+- **Primary**: Polaris primary blue
+- **Secondary**: Polaris secondary gray
+- **Surface**: Polaris surface colors
 
-### Semantic Colors
-- Success: `green-600` to `emerald-600` (gradient)
-- Warning: `yellow-500`
-- Error: `red-500`
-- Info: `blue-500`
+### Semantic Colors (Tones)
+- **Info**: Blue tones for informational content
+- **Success**: Green tones for success states
+- **Warning**: Yellow/orange tones for warnings
+- **Critical**: Red tones for errors and destructive actions
 
-### Chart Colors
-- Primary: `#3b82f6` (blue-500)
-- Secondary: `#6366f1` (indigo-500)
-- Accent: `#8b5cf6` (purple-500)
+### Design Tokens
+Import Polaris design tokens from `@shopify/polaris-tokens`:
+```typescript
+import { tokens } from '@shopify/polaris-tokens'
+```
 
 ## Typography
 ### Font Families
@@ -67,49 +71,50 @@ All cards, alerts, and containers use glassmorphism by default:
 
 ## Component Guidelines
 
-### Button (Unified)
-All buttons automatically use the design system:
-- **Default**: Gradient blue-to-indigo with shadow
-- **Outline**: Glassmorphism with backdrop blur
-- **Ghost**: Subtle hover with backdrop blur
-- **Sizes**: xs, sm, md, lg, icon
-- **States**: Automatic hover/active/disabled states
+### Using Polaris Components
 
-### Card (Unified)
-All cards automatically use glassmorphism:
-- Background: `bg-white/95 dark:bg-slate-900/80`
-- Backdrop: `backdrop-blur-xl`
-- Border: `border border-slate-200/50 dark:border-slate-700/50` (subtle border for light mode clarity)
-- Shadow: `shadow-xl`
+Import components from the unified export:
+```typescript
+import { Button, Card, Input, Dialog, Badge } from '@/components/ui'
+```
 
-### Alert (Unified)
-All alerts automatically use glassmorphism:
-- Same styling as cards
-- Destructive variant maintains red accent colors
+### Button
+- **Variants**: `primary`, `secondary`, `tertiary`, `plain`, `destructive`
+- **Sizes**: `slim`, `medium`, `large`
+- **Props**: `fullWidth`, `disabled`, `loading`, `url`, `external`
 
-### Input (Unified)
-All inputs automatically use glassmorphism:
-- Background: `bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm`
-- Consistent focus states
+### Card
+- **Sub-components**: `CardHeader`, `CardTitle`, `CardDescription`, `CardContent`, `CardFooter`
+- **Props**: `background`, `padding`, `roundedAbove`
 
-### Select/Dropdown (Unified)
-All selects automatically use glassmorphism:
-- Trigger: Glassmorphism background
-- Content: `bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl`
+### Input / TextField
+- **Props**: `label`, `helpText`, `error`, `requiredIndicator`, `disabled`, `placeholder`
+- **Types**: `text`, `email`, `number`, `password`, `search`, `tel`, `url`
+- **Multiline**: Support for textarea via `multiline` prop
 
-### Tabs (Unified)
-All tabs automatically use glassmorphism:
-- TabsList: Glassmorphism background
-- Active tab: Enhanced background with shadow
+### Dialog / Modal
+- **Props**: `open`, `title`, `size` (`small`, `medium`, `large`, `fullWidth`)
+- **Events**: `onClose` callback
 
-### Input
-- Variants: Default, Bordered, Underlined
-- States: Default, Focus, Error, Disabled
+### Badge
+- **Tones**: `info`, `success`, `attention`, `warning`, `critical`
+- **Sizes**: `small`, `medium`, `large`
 
-### Dialog
-- Animations: Smooth enter/exit
-- Backdrop: Blurred overlay
-- Positioning: Centered
+### Alert / Banner
+- **Tones**: `info`, `success`, `warning`, `critical`
+- **Props**: `title`, `onDismiss`
+
+### Select
+- **Props**: `label`, `options` (array of `{value, label}`), `placeholder`
+- **Events**: `onChange`
+
+### Table / DataTable
+- **Props**: `headings`, `rows`, `columnContentTypes`, `sortable`
+- **Events**: `onSort`
+
+### Tabs
+- **Props**: `tabs` (array), `selected` (index)
+- **Events**: `onSelect`
 
 ## Accessibility
 - WCAG 2.1 AA Compliance
@@ -148,29 +153,43 @@ import { ThemeToggle } from "@/components/theme-toggle"
 - Tree-shakeable components
 
 ## Implementation Notes
-- Use CSS variables for theming
-- Leverage Tailwind's utility classes
-- Prefer composition over inheritance
+- Web components loaded via CDN for optimal performance
+- React wrappers provide seamless integration
+- TypeScript definitions ensure type safety
+- Polaris design tokens available via `@shopify/polaris-tokens`
 
 ## Implementation
 
-### Automatic Application
-All UI components in `components/ui/` automatically inherit the unified design system. No manual class additions needed.
-
-### Manual Override
-If you need to override the default styles, you can still pass `className` props which will merge with the base styles.
-
-### Design Tokens
-Import design tokens from `lib/design-system.ts`:
+### Component Usage
+All Polaris components are available through backward-compatible exports:
 ```typescript
-import { getGlassmorphism, getGradient, getChartColor } from "@/lib/design-system"
+// Import from unified export
+import { Button, Card, Input } from '@/components/ui'
 
-// Use in custom components
-<div className={getGlassmorphism("card")}>
-<div className={getGradient("primary")}>
+// Or import directly from Polaris wrappers
+import { PolarisButton } from '@/components/polaris/polaris-button'
 ```
 
+### Styling
+- Polaris components use their own CSS (loaded via CDN)
+- Custom styling via `className` prop (may have limitations)
+- Use Polaris design tokens for consistent spacing/colors
+
+### Design Tokens
+Import Polaris design tokens:
+```typescript
+import { tokens } from '@shopify/polaris-tokens'
+
+// Access tokens
+const spacing = tokens.space
+const colors = tokens.color
+```
+
+## Migration from Shadcn UI
+
+See [Polaris Migration Guide](/docs/features/polaris-migration/MIGRATION_GUIDE.md) for detailed migration instructions.
+
 ## Version
-- Design System Version: 2.0.0 (Unified)
-- Last Updated: 2025-01-23
-- Breaking Changes: All components now use glassmorphism by default 
+- Design System Version: 3.0.0 (Polaris Web Components)
+- Last Updated: 2025-01-25
+- Breaking Changes: Migrated from Shadcn UI to Polaris Web Components 

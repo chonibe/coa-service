@@ -1,18 +1,19 @@
 "use client"
 
 import { useState, useEffect, useMemo } from "react"
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Badge } from "@/components/ui/badge"
-import { Checkbox } from "@/components/ui/checkbox"
+
+
+
+
+
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Skeleton } from "@/components/ui/skeleton"
-import { Alert, AlertDescription } from "@/components/ui/alert"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+
+
 import { Search, Image as ImageIcon, AlertCircle, Loader2, Package } from "lucide-react"
 import { cn } from "@/lib/utils"
 
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, Button, Input, Badge, Checkbox, Alert, AlertDescription, Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui"
 interface Artwork {
   id: string
   submission_id: string

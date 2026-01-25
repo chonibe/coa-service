@@ -1,9 +1,9 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+
 import { Progress } from "@/components/ui/progress"
-import { Badge } from "@/components/ui/badge"
+
 import { Skeleton } from "@/components/ui/skeleton"
 import { 
   Wallet, 
@@ -15,6 +15,7 @@ import {
 import { useToast } from "@/components/ui/use-toast"
 import { SubscriptionManager } from "./subscription-manager"
 
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, Badge } from "@/components/ui"
 interface BankingData {
   account: {
     id: string

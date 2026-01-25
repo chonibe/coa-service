@@ -2,18 +2,19 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { Alert, AlertDescription } from '@/components/ui/alert'
+
+
+
+
+
 import { Skeleton } from '@/components/ui/skeleton'
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
-import { Badge } from '@/components/ui/badge'
+
+
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { AlertCircle, Package, Truck, MapPin, Calendar, Mail, Phone, RefreshCw, Search } from 'lucide-react'
 import type { ChinaDivisionOrderInfo } from '@/lib/chinadivision/client'
 
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, Button, Input, Label, Alert, AlertDescription, Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Badge } from "@/components/ui"
 export default function CustomerWarehouseOrdersPage() {
   const router = useRouter()
   const [orders, setOrders] = useState<ChinaDivisionOrderInfo[]>([])

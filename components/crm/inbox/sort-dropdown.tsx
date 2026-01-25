@@ -1,14 +1,9 @@
 "use client"
 
 import { ArrowUpDown, Clock, Star, Mail, User } from "lucide-react"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
 
+
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui"
 export type SortOption =
   | "recent"
   | "oldest"

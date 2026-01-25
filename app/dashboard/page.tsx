@@ -2,12 +2,12 @@
 
 import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
-import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+
 import { Separator } from '@/components/ui/separator'
-import { Badge } from '@/components/ui/badge'
+
 import { formatCurrency, formatDate } from '@/lib/utils'
 
+import { Button, Card, CardContent, CardHeader, CardTitle, Badge } from "@/components/ui"
 interface DashboardData {
   orderId: string
   orderNumber: number

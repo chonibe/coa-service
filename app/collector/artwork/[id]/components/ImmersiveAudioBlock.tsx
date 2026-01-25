@@ -1,12 +1,13 @@
 "use client"
 
-import { Button } from "@/components/ui/button"
+
 import { Skeleton } from "@/components/ui/skeleton"
 import { useRef, useState, useEffect } from "react"
 import { Music, AlertCircle, RefreshCw, Play, Pause, Volume2 } from "lucide-react"
 import { motion } from "framer-motion"
 import { Slider } from "@/components/ui/slider"
 
+import { Button } from "@/components/ui"
 interface ImmersiveAudioBlockProps {
   title?: string | null
   contentUrl: string | null

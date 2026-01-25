@@ -1,10 +1,11 @@
 "use client"
 
-import { Card, CardContent } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
+
+
 import { Users, Building2, Inbox, Search, Plus } from "lucide-react"
 import { useRouter } from "next/navigation"
 
+import { Card, CardContent, Button } from "@/components/ui"
 interface EmptyStateProps {
   type: "people" | "companies" | "inbox" | "activities" | "search"
   title?: string

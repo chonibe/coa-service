@@ -1,9 +1,10 @@
 import { Skeleton } from "@/components/ui/skeleton"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { DollarSign, Calendar, ArrowUpRight, Download } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 
+import { DollarSign, Calendar, ArrowUpRight, Download } from "lucide-react"
+
+
+
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, Button, Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui"
 export default function PayoutsLoading() {
   return (
     <div className="space-y-6">

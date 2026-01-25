@@ -1,19 +1,14 @@
 "use client"
 
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card"
-import { Checkbox } from "@/components/ui/checkbox"
-import { Label } from "@/components/ui/label"
+
+
+
 import { Slider } from "@/components/ui/slider"
-import { Button } from "@/components/ui/button"
+
 import { useEffect, useState } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, Checkbox, Label, Button } from "@/components/ui"
 interface FilterSidebarProps {
   availableArtists: string[]
   availableSeries: string[]

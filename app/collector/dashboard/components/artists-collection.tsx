@@ -1,14 +1,15 @@
 "use client"
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
+
+
+
 import { Progress } from "@/components/ui/progress"
 import Image from "next/image"
 import { Calendar, DollarSign, TrendingUp, ExternalLink, Sparkles } from "lucide-react"
 import { format } from "date-fns"
 import type { ArtistCollectionStats } from "@/types/collector"
 
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, Badge, Button } from "@/components/ui"
 interface ArtistsCollectionProps {
   artists: ArtistCollectionStats[]
 }

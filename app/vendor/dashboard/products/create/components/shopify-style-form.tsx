@@ -1,15 +1,15 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Label } from "@/components/ui/label"
-import { Input } from "@/components/ui/input"
-import { Textarea } from "@/components/ui/textarea"
-import { Badge } from "@/components/ui/badge"
+
+
+
+
+
+
 import { Separator } from "@/components/ui/separator"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Alert, AlertDescription } from "@/components/ui/alert"
+
+
 import { Loader2, Save, X, Plus } from "lucide-react"
 import { useToast } from "@/components/ui/use-toast"
 import type { ProductSubmissionData, ProductCreationFields } from "@/types/product-submission"
@@ -19,6 +19,7 @@ import { VariantsStep } from "./variants-step"
 import { PrintFilesStep } from "./print-files-step"
 import { SeriesStep } from "./series-step"
 
+import { Card, CardContent, CardHeader, CardTitle, Button, Label, Input, Textarea, Badge, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Alert, AlertDescription } from "@/components/ui"
 interface ShopifyStyleFormProps {
   initialData?: ProductSubmissionData
   submissionId?: string

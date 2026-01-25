@@ -2,13 +2,14 @@
 
 import { useState, useEffect } from "react"
 import { useSearchParams, useRouter } from "next/navigation"
-import { Card, CardContent } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
+
+
+
+
 import { Loader2, Search, User, Building2, MessageSquare } from "lucide-react"
 import Link from "next/link"
 
+import { Card, CardContent, Input, Button, Badge } from "@/components/ui"
 interface SearchResult {
   type: string
   id: string

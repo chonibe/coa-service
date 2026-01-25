@@ -1,12 +1,13 @@
 "use client"
 
 import Image from "next/image"
-import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
+
+
 import { Separator } from "@/components/ui/separator"
 import { X, Copy, Trash2, Download, Image as ImageIcon, Video, Music, FileText } from "lucide-react"
 import type { MediaItem } from "../page"
 
+import { Button, Badge } from "@/components/ui"
 interface MediaDetailsProps {
   item: MediaItem
   onClose: () => void

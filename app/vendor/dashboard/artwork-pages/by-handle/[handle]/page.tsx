@@ -3,10 +3,11 @@
 import { useEffect, useState } from "react"
 import { useParams, useRouter } from "next/navigation"
 import Link from "next/link"
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
-import { Button } from "@/components/ui/button"
+
+
 import { AlertCircle, Loader2, ArrowLeft } from "lucide-react"
 
+import { Alert, AlertDescription, AlertTitle, Button } from "@/components/ui"
 export default function ArtworkPageByHandleRedirect() {
   const params = useParams()
   const router = useRouter()

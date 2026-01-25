@@ -2,7 +2,8 @@
 
 import React from "react"
 import { AlertCircle, Settings, Smartphone, MoveHorizontal } from "lucide-react"
-import { Button } from "@/components/ui/button"
+
+import { Button } from "@/components/ui"
 import {
   Collapsible,
   CollapsibleContent,

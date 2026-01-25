@@ -2,9 +2,9 @@
 
 import { useEffect, useState, useRef } from "react"
 import { useToast } from "@/components/ui/use-toast"
-import { Badge } from "@/components/ui/badge"
+
 import { Bell, X } from "lucide-react"
-import { Button } from "@/components/ui/button"
+
 import {
   Popover,
   PopoverContent,
@@ -13,6 +13,7 @@ import {
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { format } from "date-fns"
 
+import { Badge, Button } from "@/components/ui"
 interface Notification {
   id: string
   type: "payout_status" | "balance_update" | "new_payout" | "error"

@@ -2,10 +2,11 @@
 
 import Image from "next/image"
 import Link from "next/link"
-import { Card } from "@/components/ui/card"
+
 import { motion } from "framer-motion"
 import { User } from "lucide-react"
 
+import { Card } from "@/components/ui"
 interface ArtistProfileCardProps {
   name: string
   bio: string | null

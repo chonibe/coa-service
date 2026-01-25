@@ -1,11 +1,12 @@
 "use client"
 
-import { Card, CardContent } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
+
+
 import { Skeleton } from "@/components/ui/skeleton"
 import { useEffect, useState, useRef } from "react"
 import { Play, AlertCircle, RefreshCw } from "lucide-react"
 
+import { Card, CardContent, Button } from "@/components/ui"
 interface VideoBlockProps {
   title?: string | null
   contentUrl: string | null

@@ -2,16 +2,17 @@
 
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Badge } from "@/components/ui/badge"
+
+
+
+
 import { Loader2, Search, Plus, Building2, Users, DollarSign, Package } from "lucide-react"
 import Link from "next/link"
 import { EmptyState } from "@/components/crm/empty-state"
 import { PersonListSkeleton } from "@/components/crm/loading-skeleton"
 import { ExportDialog } from "@/components/crm/export-dialog"
 
+import { Card, CardContent, CardHeader, CardTitle, Button, Input, Badge } from "@/components/ui"
 interface Company {
   id: string
   name: string

@@ -1,13 +1,14 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+
 import { Skeleton } from "@/components/ui/skeleton"
-import { Alert, AlertDescription } from "@/components/ui/alert"
+
 import { AlertCircle } from "lucide-react"
 import { formatUSD } from "@/lib/utils"
-import { Badge } from "@/components/ui/badge"
 
+
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, Alert, AlertDescription, Badge } from "@/components/ui"
 interface ProductPerformance {
   productId: string
   productTitle: string

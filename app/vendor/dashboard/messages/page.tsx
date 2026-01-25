@@ -2,10 +2,10 @@
 
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Badge } from "@/components/ui/badge"
+
+
+
+
 import { MessageSquare, Search, Plus, Loader2 } from "lucide-react"
 import { SidebarLayout } from "../../components/sidebar-layout"
 import { MessageThread } from "@/components/vendor/message-thread"
@@ -15,6 +15,7 @@ import { format } from "date-fns"
 import { useToast } from "@/components/ui/use-toast"
 import { cn } from "@/lib/utils"
 
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, Button, Input, Badge } from "@/components/ui"
 interface MessageThread {
   threadId: string
   subject: string | null

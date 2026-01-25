@@ -3,13 +3,14 @@
 import { useState } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
+import { Button, Card, Badge } from "@/components/ui"
 import { 
   ChevronLeft, ChevronRight, Award, 
   ShieldCheck, Calendar, ChevronRight as ChevronRightIcon 
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+;
+;
+;
 
 interface PremiumArtworkStackProps {
   group: any[];

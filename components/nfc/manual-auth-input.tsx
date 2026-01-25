@@ -2,7 +2,7 @@
 
 import React, { useState, useRef, useEffect } from "react"
 import { motion } from "framer-motion"
-import { Button } from "@/components/ui/button"
+
 import { Loader2, HelpCircle, ChevronDown, ArrowLeft } from "lucide-react"
 import {
   Collapsible,
@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/collapsible"
 import Image from "next/image"
 
+import { Button } from "@/components/ui"
 interface ManualAuthInputProps {
   onSubmit: (code: string) => void
   onBack: () => void

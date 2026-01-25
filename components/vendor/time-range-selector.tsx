@@ -1,6 +1,5 @@
 "use client"
 
-import { Button } from "@/components/ui/button"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Calendar } from "@/components/ui/calendar"
 import { CalendarIcon } from "lucide-react"
@@ -8,6 +7,7 @@ import { format } from "date-fns"
 import { cn } from "@/lib/utils"
 import { useState } from "react"
 
+import { Button } from "@/components/ui"
 export type TimeRange = "7d" | "30d" | "90d" | "1y" | "all-time" | "custom"
 
 export interface DateRange {

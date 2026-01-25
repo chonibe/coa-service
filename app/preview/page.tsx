@@ -1,19 +1,20 @@
 "use client"
 
 import { useState, useEffect, useRef, ReactNode } from "react"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
-import { Dialog, DialogContent } from "@/components/ui/dialog"
+
+
+
+
+
 import { Skeleton } from "@/components/ui/skeleton"
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
+
 import { AlertCircle, CheckCircle, Clock, ShoppingBag, User, BadgeIcon as Certificate, Tag } from "lucide-react"
 import { toast } from "sonner"
 import { useRouter } from "next/navigation"
 import { CertificateModal } from "./certificate-modal"
 import { motion, useMotionValue, useSpring, useTransform } from "framer-motion"
 
+import { Card, CardContent, CardHeader, CardTitle, Input, Button, Badge, Dialog, DialogContent, Alert, AlertDescription, AlertTitle } from "@/components/ui"
 // Utility functions
 const getStatusColor = (status: string) => {
   switch (status.toLowerCase()) {

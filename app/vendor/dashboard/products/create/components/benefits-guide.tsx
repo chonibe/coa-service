@@ -1,11 +1,12 @@
 "use client"
 
 import { useState } from "react"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
+
+
 import { X, Gift, Users, TrendingUp, Sparkles, FileText, Key, Video, Eye } from "lucide-react"
 import { motion, AnimatePresence } from "framer-motion"
 
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, Button } from "@/components/ui"
 interface BenefitsGuideProps {
   onDismiss?: () => void
   showDismiss?: boolean

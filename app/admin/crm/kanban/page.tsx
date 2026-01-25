@@ -2,11 +2,12 @@
 
 import { useState, useEffect } from "react"
 import { KanbanBoard } from "@/components/crm/kanban-board"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+
+
 import { Loader2 } from "lucide-react"
 import { useRouter } from "next/navigation"
 
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui"
 export default function KanbanPage() {
   const router = useRouter()
   const [entityType, setEntityType] = useState<"person" | "company">("person")

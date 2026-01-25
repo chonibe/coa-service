@@ -2,11 +2,12 @@
 
 import { useState, useEffect } from "react"
 import { usePathname } from "next/navigation"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
+
+
 import { X, Home, Image as ImageIcon, Lock, BarChart3, Wallet, ShoppingBag, MessageSquare, UserCircle, HelpCircle } from "lucide-react"
 import { cn } from "@/lib/utils"
 
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, Button } from "@/components/ui"
 interface PageTip {
   title: string
   description: string

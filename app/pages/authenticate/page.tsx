@@ -1,18 +1,19 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Badge } from "@/components/ui/badge"
+
+
+
+
+
+
+
 import { AlertCircle, CheckCircle, Loader2, User, Package, Smartphone, ShieldCheck, Info } from "lucide-react"
 import Link from "next/link"
 import { mockResponseData } from "@/lib/mock-data"
 import { useRouter } from "next/navigation"
 
+import { Button, Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle, Alert, AlertDescription, AlertTitle, Input, Label, Tabs, TabsContent, TabsList, TabsTrigger, Badge } from "@/components/ui"
 export default function AuthenticatePage() {
   const [isLoggedIn, setIsLoggedIn] = useState<boolean | null>(null)
   const [customerId, setCustomerId] = useState<string | null>(null)

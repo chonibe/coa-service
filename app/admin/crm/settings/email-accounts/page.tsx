@@ -1,11 +1,12 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
+
+
+
 import { Loader2, Mail, Plus, CheckCircle, XCircle, RefreshCw } from "lucide-react"
 
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, Button, Badge } from "@/components/ui"
 interface EmailAccount {
   id: string
   account_name: string

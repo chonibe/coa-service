@@ -1,11 +1,11 @@
 "use client"
 
-import { Card, CardContent, CardHeader } from "@/components/ui/card"
-import { Label } from "@/components/ui/label"
-import { Switch } from "@/components/ui/switch"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+
+
+
+
+
+
 import { ChevronDown, ChevronUp } from "lucide-react"
 import { useState } from "react"
 import type { UnlockType } from "@/types/artwork-series"
@@ -14,6 +14,7 @@ import { TimeBasedUnlockConfig } from "./TimeBasedUnlockConfig"
 import { VIPUnlockConfig } from "./VIPUnlockConfig"
 import { CoverArtUpload } from "./CoverArtUpload"
 
+import { Card, CardContent, CardHeader, Label, Switch, Button, Input, Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui"
 interface BehaviorBlocksProps {
   unlockTypeEnabled: boolean
   onUnlockTypeEnabledChange: (enabled: boolean) => void

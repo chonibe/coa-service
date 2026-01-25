@@ -1,12 +1,12 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Alert, AlertDescription } from '@/components/ui/alert'
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
-import { Badge } from '@/components/ui/badge'
+
+
+
+
+
+
 import { 
   Link as LinkIcon, 
   Copy, 
@@ -33,17 +33,11 @@ import {
   Package,
   Tags
 } from 'lucide-react'
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog'
-import { useToast } from '@/hooks/use-toast'
-import { Label } from '@/components/ui/label'
 
+import { useToast } from '@/hooks/use-toast'
+
+
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, Button, Input, Alert, AlertDescription, Table, TableBody, TableCell, TableHead, TableHeader, TableRow, Badge, Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, Label } from "@/components/ui"
 interface TrackingLink {
   id: string
   token: string

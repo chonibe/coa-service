@@ -1,11 +1,12 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+
 import { Skeleton } from "@/components/ui/skeleton"
 import { Wallet } from "lucide-react"
 import { useToast } from "@/components/ui/use-toast"
 
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui"
 export function BalanceDisplay() {
   const [balance, setBalance] = useState<number | null>(null)
   const [isLoading, setIsLoading] = useState(true)

@@ -2,12 +2,13 @@
 
 import { useEffect, useState } from "react"
 import { motion, AnimatePresence } from "framer-motion"
-import { Dialog, DialogContent } from "@/components/ui/dialog"
-import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
+
+
+
 import { CheckCircle2, Sparkles, Share2, ArrowRight } from "lucide-react"
 import type { ArtworkSeries } from "@/types/artwork-series"
 
+import { Dialog, DialogContent, Button, Badge } from "@/components/ui"
 interface MilestoneCelebrationProps {
   series: ArtworkSeries | null
   open: boolean

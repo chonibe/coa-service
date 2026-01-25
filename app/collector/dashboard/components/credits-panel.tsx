@@ -1,9 +1,10 @@
 "use client"
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+
 import { BankingDashboard } from "@/app/dashboard/[customerId]/components/banking-dashboard"
 import { SubscriptionManager } from "@/app/dashboard/[customerId]/components/subscription-manager"
 
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui"
 interface CreditsPanelProps {
   collectorIdentifier: string | null
 }

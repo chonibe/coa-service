@@ -3,10 +3,10 @@
 import { useState, useEffect } from "react"
 import { useParams, useRouter } from "next/navigation"
 import { useCRMShortcuts } from "@/hooks/use-keyboard-shortcuts"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+
+
+
+
 import { Loader2, ArrowLeft, Mail, Phone, MapPin, Building2, Calendar, DollarSign, Package, MessageSquare, Sparkles } from "lucide-react"
 import Link from "next/link"
 import { PropertyPanel } from "@/components/crm/property-panel"
@@ -15,6 +15,7 @@ import { RecordActions } from "@/components/crm/record-actions"
 import { RecordWidgets } from "@/components/crm/record-widgets"
 import { ActivityCreatorDialog } from "@/components/crm/activity-creator-dialog"
 
+import { Card, CardContent, CardHeader, CardTitle, Button, Badge, Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui"
 interface Person {
   id: string
   email: string | null

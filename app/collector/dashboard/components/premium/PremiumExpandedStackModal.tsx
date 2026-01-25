@@ -3,9 +3,10 @@
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Award, Calendar, ShieldCheck } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import { Button, Card, Badge } from "@/components/ui"
+;
+;
+;
 
 interface PremiumExpandedStackModalProps {
   isOpen: boolean;

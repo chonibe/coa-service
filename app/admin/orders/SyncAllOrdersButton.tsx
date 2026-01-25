@@ -1,11 +1,12 @@
 "use client";
 
 import { useState } from 'react';
-import { Button } from '@/components/ui/button';
+;
 import { Loader2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 
+import { Button } from "@/components/ui"
 export default function SyncAllOrdersButton() {
   const [isSyncing, setIsSyncing] = useState(false);
   const router = useRouter();

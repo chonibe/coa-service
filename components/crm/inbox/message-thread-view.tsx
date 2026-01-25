@@ -2,12 +2,13 @@
 
 import { useState, useEffect, useRef } from "react"
 import { Send, Loader2 } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Textarea } from "@/components/ui/textarea"
+
+
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { MessageTree, ThreadedMessage } from "./message-tree"
 import { useToast } from "@/hooks/use-toast"
 
+import { Button, Textarea } from "@/components/ui"
 export interface MessageThreadViewProps {
   conversationId: string
   className?: string

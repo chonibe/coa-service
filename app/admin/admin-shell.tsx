@@ -31,32 +31,27 @@ import {
   MegaphoneIcon,
 } from "@heroicons/react/24/outline"
 import { Icon } from "@/components/icon"
-import { Button } from "@/components/ui/button"
+
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
-import { Input } from "@/components/ui/input"
+
 import { Toaster } from "@/components/ui/toaster"
 import { useToast } from "@/hooks/use-toast"
 import LogoutButton from "./logout-button"
 import { useMobile } from "@/hooks/use-mobile"
 import { BottomNav } from "./components/bottom-nav"
-import { Badge } from "@/components/ui/badge"
+
 import { SmartBackButton } from "@/components/smart-back-button"
 import { UnifiedSearch } from "@/components/unified-search"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+
+
 import { ThemeToggle } from "@/components/theme-toggle"
 import { Logo } from "@/components/logo"
 import { MagnifyingGlassIcon } from "@heroicons/react/24/solid"
 import { AdminCommandPalette } from "./components/command-palette"
 import { DashboardSwitcher } from "@/components/dashboard-switcher"
 
+import { Button, Input, Badge, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui"
 interface NavItem {
   title: string
   href: string

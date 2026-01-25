@@ -4,7 +4,7 @@ import { useState, useEffect } from "react"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import * as z from "zod"
-import { Button } from "@/components/ui/button"
+
 import {
   Form,
   FormControl,
@@ -14,11 +14,11 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form"
-import { Input } from "@/components/ui/input"
-import { Switch } from "@/components/ui/switch"
+
 import { toast } from "sonner"
 import { Loader2 } from "lucide-react"
 
+import { Button, Input, Switch } from "@/components/ui"
 const backupFormSchema = z.object({
   googleDriveEnabled: z.boolean(),
   googleDriveFolderId: z.string().optional(),

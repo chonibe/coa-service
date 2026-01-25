@@ -1,16 +1,17 @@
 "use client"
 
 import { useState } from "react"
-import { Label } from "@/components/ui/label"
-import { Input } from "@/components/ui/input"
-import { Textarea } from "@/components/ui/textarea"
-import { Button } from "@/components/ui/button"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Card, CardContent } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
+
+
+
+
+
+
+
 import { Key, Crown, Clock, Sparkles, ArrowRight } from "lucide-react"
 import { motion } from "framer-motion"
 
+import { Label, Input, Textarea, Button, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Card, CardContent, Badge } from "@/components/ui"
 interface ExclusiveAccessFormProps {
   formData: {
     title: string

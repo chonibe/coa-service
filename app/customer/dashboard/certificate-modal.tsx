@@ -1,13 +1,13 @@
 "use client"
 
 import { useState, useRef, useEffect } from "react"
-import { Dialog, DialogContent } from "@/components/ui/dialog"
+
 import { X, BadgeIcon as Certificate, User, Calendar, Hash, ExternalLink, Award, Sparkles, Signature, Wifi, WifiOff, Album, Scan, Loader2 } from "lucide-react"
 import { motion, useMotionValue, useTransform } from "framer-motion"
-import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
+
 import { toast } from "@/components/ui/use-toast"
 
+import { Dialog, DialogContent, Badge, Button } from "@/components/ui"
 // Add shimmer effect styles
 const shimmerStyles = `
 @keyframes shimmer {

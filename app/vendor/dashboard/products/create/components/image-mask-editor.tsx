@@ -1,11 +1,12 @@
 "use client"
 
 import { useState, useRef, useEffect, useCallback, useMemo } from "react"
-import { Button } from "@/components/ui/button"
+
 import { Slider } from "@/components/ui/slider"
 import { RotateCcw, ZoomIn, Move, Save, CheckCircle2, Loader2 } from "lucide-react"
 import type { ProductImage } from "@/types/product-submission"
 
+import { Button } from "@/components/ui"
 interface ImageMaskEditorProps {
   image: ProductImage
   onUpdate: (settings: ProductImage["maskSettings"]) => void

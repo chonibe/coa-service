@@ -2,9 +2,9 @@
 
 import { useEffect, useState } from "react"
 import Image from "next/image"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent } from "@/components/ui/card"
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
+
+
+
 import { Skeleton } from "@/components/ui/skeleton"
 import {
   AlertCircle,
@@ -20,6 +20,7 @@ import {
 import Link from "next/link"
 import { useSearchParams } from "next/navigation"
 
+import { Button, Card, CardContent, Alert, AlertDescription, AlertTitle } from "@/components/ui"
 // Sample data for preview
 const sampleCertificate = {
   lineItem: {

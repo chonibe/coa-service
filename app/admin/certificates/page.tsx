@@ -1,11 +1,11 @@
 "use client"
 
 import { useState } from "react"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-import { Label } from "@/components/ui/label"
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
+
+
+
+
+
 import {
   Clipboard,
   Check,
@@ -21,6 +21,7 @@ import {
 } from "lucide-react"
 import Link from "next/link"
 
+import { Button, Input, Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle, Label, Alert, AlertDescription, AlertTitle } from "@/components/ui"
 export default function CertificatesPage() {
   const [lineItemId, setLineItemId] = useState("")
   const [generatedUrl, setGeneratedUrl] = useState<string | null>(null)

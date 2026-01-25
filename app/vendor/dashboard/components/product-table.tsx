@@ -1,14 +1,15 @@
 "use client"
 
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
+
+
+
 import { useState } from "react"
 import { ChevronDown, ChevronUp, ExternalLink, Package, FileText } from "lucide-react"
 import Link from "next/link"
 import Image from "next/image"
 import { EditionBadge } from "./edition-badge"
 
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, Badge, Button } from "@/components/ui"
 interface Product {
   id: string
   title: string

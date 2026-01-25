@@ -1,14 +1,14 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Card, CardContent } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Label } from "@/components/ui/label"
-import { Input } from "@/components/ui/input"
-import { Textarea } from "@/components/ui/textarea"
-import { Badge } from "@/components/ui/badge"
-import { Switch } from "@/components/ui/switch"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+
+
+
+
+
+
+
+
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
 import { FileText, Key, Video, Package, Percent, Eye, Plus, Edit, Trash2, X, ChevronDown, ChevronUp, Lock, Loader2 } from "lucide-react"
 import { format } from "date-fns"
@@ -24,6 +24,7 @@ import { ArtistCommentaryForm } from "./benefits/artist-commentary-form"
 import { VIPUnlockForm } from "./benefits/vip-unlock-form"
 import { EarlyDropAccessForm } from "./benefits/early-drop-access-form"
 
+import { Card, CardContent, Button, Label, Input, Textarea, Badge, Switch, Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui"
 interface BenefitsManagementProps {
   benefits: ProductBenefit[]
   onBenefitsChange: (benefits: ProductBenefit[]) => void

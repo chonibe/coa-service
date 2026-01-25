@@ -1,14 +1,13 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+
 import { Skeleton } from "@/components/ui/skeleton"
-import { Alert, AlertDescription } from "@/components/ui/alert"
+
 import { AlertCircle, TrendingUp, TrendingDown, Clock, DollarSign, Users, Zap, AlertTriangle } from "lucide-react"
 import { formatUSD } from "@/lib/utils"
-import { Badge } from "@/components/ui/badge"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, Alert, AlertDescription, Badge, Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui"
 interface AdminMetrics {
   totalPending: number
   averageProcessingTime: number
@@ -259,7 +258,6 @@ export function PayoutMetricsCards({ vendorName, isAdmin = false }: PayoutMetric
             )}
           </CardContent>
         </Card>
-
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">

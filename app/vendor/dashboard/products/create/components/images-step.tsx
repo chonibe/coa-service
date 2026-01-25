@@ -1,16 +1,17 @@
 "use client"
 
 import { useState, useRef, useEffect, useCallback } from "react"
-import { Label } from "@/components/ui/label"
-import { Input } from "@/components/ui/input"
-import { Button } from "@/components/ui/button"
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
+
+
+
+
 import { Plus, Trash2, Image as ImageIcon, Upload, X, GripVertical, Video, Film } from "lucide-react"
-import { Alert, AlertDescription } from "@/components/ui/alert"
+
 import { ImageMaskEditor } from "./image-mask-editor"
 import type { ProductSubmissionData, ProductImage } from "@/types/product-submission"
 import { MediaLibraryModal, type MediaItem } from "@/components/vendor/MediaLibraryModal"
 
+import { Label, Input, Button, Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, Alert, AlertDescription } from "@/components/ui"
 interface ImagesStepProps {
   formData: ProductSubmissionData
   setFormData: (data: ProductSubmissionData) => void

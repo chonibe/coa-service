@@ -2,8 +2,8 @@
 
 import { useState, useRef, useEffect, useMemo } from "react"
 import { useRouter, useParams } from "next/navigation"
-import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
+
+
 import { 
   Loader2, 
   AlertCircle, 
@@ -29,16 +29,17 @@ import { Toaster } from "@/components/ui/toaster"
 import { CertificateModal } from '../../customer/dashboard/certificate-modal'
 import { useNFCScan } from '@/hooks/use-nfc-scan'
 import { motion, LayoutGroup, Variants, useScroll } from "framer-motion"
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
-import { Input } from "@/components/ui/input"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+
+
+
 import { Skeleton } from "@/components/ui/skeleton"
 import { AnimatePresence } from "framer-motion"
-import { Label } from "@/components/ui/label"
-import { Checkbox } from "@/components/ui/checkbox"
+
+
 import { ArtworkCard } from "@/components/ui/artwork-card"
 import { BankingDashboard } from "./components/banking-dashboard"
 
+import { Badge, Button, Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter, Input, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Label, Checkbox } from "@/components/ui"
 // Type Definitions
 interface LineItem {
   line_item_id: string

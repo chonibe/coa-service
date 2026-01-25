@@ -1,11 +1,12 @@
 "use client"
 
 import { useState } from "react"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent } from "@/components/ui/card"
+
+
 import { ArrowRight, X } from "lucide-react"
 import Link from "next/link"
 
+import { Button, Card, CardContent } from "@/components/ui"
 interface OnboardingBannerProps {
   vendorName: string
 }

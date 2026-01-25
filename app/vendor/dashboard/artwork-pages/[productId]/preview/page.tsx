@@ -2,13 +2,13 @@
 
 import { useState, useEffect } from "react"
 import { useParams, useRouter } from "next/navigation"
-import { Card, CardContent } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
+
+
+
 import { Skeleton } from "@/components/ui/skeleton"
-import { Alert, AlertDescription } from "@/components/ui/alert"
-import { Switch } from "@/components/ui/switch"
-import { Label } from "@/components/ui/label"
+
+
+
 import {
   Loader2,
   AlertCircle,
@@ -30,6 +30,7 @@ import { ArtistSignatureBlock } from "@/app/collector/artwork/[id]/components/Ar
 import { ArtistBioBlock } from "@/app/collector/artwork/[id]/components/ArtistBioBlock"
 import { MobileFrame } from "../../components/MobileFrame"
 
+import { Card, CardContent, Button, Badge, Alert, AlertDescription, Switch, Label } from "@/components/ui"
 interface ArtworkDetail {
   artwork: {
     id: string

@@ -1,24 +1,17 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Checkbox } from "@/components/ui/checkbox"
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog"
+
+
+
+
 import { Settings, GripVertical } from "lucide-react"
 import { PayoutTrendsChart } from "./payout-trends-chart"
 import { PayoutForecast } from "./payout-forecast"
 import { ProductPerformanceHeatmap } from "./product-performance-heatmap"
 import { PayoutMetricsCards } from "./payout-metrics-cards"
 
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, Button, Checkbox, Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui"
 interface WidgetConfig {
   id: string
   title: string

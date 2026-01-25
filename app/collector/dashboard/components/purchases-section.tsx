@@ -1,10 +1,10 @@
 "use client"
 
 import { useState, useMemo, useEffect } from "react"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+
+
+
+
 import { Separator } from "@/components/ui/separator"
 import Image from "next/image"
 import { ShieldCheck, Clock, FileText, ExternalLink, Scan, Award } from "lucide-react"
@@ -14,6 +14,7 @@ import { PremiumArtworkStack } from "./premium/PremiumArtworkStack"
 import { PremiumExpandedStackModal } from "./premium/PremiumExpandedStackModal"
 import type { CollectorLineItem } from "./artwork-grid"
 
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, Badge, Button, Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui"
 interface PurchasesSectionProps {
   items: CollectorLineItem[]
   purchasesByArtist?: Record<string, CollectorLineItem[]>

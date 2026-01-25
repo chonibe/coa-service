@@ -1,11 +1,12 @@
 "use client"
 
 import { useEffect, useRef } from "react"
-import { Dialog, DialogContent } from "@/components/ui/dialog"
+
 import { X } from "lucide-react"
-import { Button } from "@/components/ui/button"
+
 import { cn } from "@/lib/utils"
 
+import { Dialog, DialogContent, Button } from "@/components/ui"
 interface BottomSheetProps {
   open: boolean
   onOpenChange: (open: boolean) => void

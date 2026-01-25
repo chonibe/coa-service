@@ -2,10 +2,10 @@
 
 import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+;
+;
+;
+;
 import { 
   Loader2, ArrowLeft, Mail, Phone, ShoppingBag, 
   Award, Clock, MapPin, ExternalLink, ShieldCheck,
@@ -22,6 +22,7 @@ import { InkOGatchiWidget } from "@/app/collector/dashboard/components/inkogatch
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, Button, Badge, Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui"
 export default function CollectorDetailPage() {
   const { id } = useParams();
   const router = useRouter();

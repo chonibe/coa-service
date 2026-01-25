@@ -1,11 +1,12 @@
 "use client"
 
-import { Card, CardContent } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
+
+
 import { Image as ImageIcon, DollarSign, Video, Lock, LockOpen } from "lucide-react"
 import DOMPurify from "dompurify"
 import type { ProductSubmissionData, ProductCreationFields } from "@/types/product-submission"
 
+import { Card, CardContent, Badge } from "@/components/ui"
 interface ReviewStepProps {
   formData: ProductSubmissionData
   fieldsConfig: ProductCreationFields | null

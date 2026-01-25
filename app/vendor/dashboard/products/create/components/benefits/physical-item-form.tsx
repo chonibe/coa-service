@@ -1,14 +1,15 @@
 "use client"
 
 import { useState } from "react"
-import { Label } from "@/components/ui/label"
-import { Input } from "@/components/ui/input"
-import { Textarea } from "@/components/ui/textarea"
-import { Card, CardContent } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
+
+
+
+
+
 import { Package, Truck, Sparkles } from "lucide-react"
 import { motion } from "framer-motion"
 
+import { Label, Input, Textarea, Card, CardContent, Badge } from "@/components/ui"
 interface PhysicalItemFormProps {
   formData: {
     title: string

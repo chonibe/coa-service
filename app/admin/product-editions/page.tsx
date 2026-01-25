@@ -3,10 +3,11 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+;
+;
 import { toast } from "sonner";
 
+import { Card, CardContent, CardHeader, CardTitle, Badge } from "@/components/ui"
 interface Product {
   id: string;
   product_id: string;

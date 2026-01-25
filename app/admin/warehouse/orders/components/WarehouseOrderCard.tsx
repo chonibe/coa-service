@@ -1,11 +1,12 @@
 'use client'
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
+
+
+
 import { Package, Truck, MapPin, Calendar, Mail, Phone, ExternalLink } from 'lucide-react'
 import type { ChinaDivisionOrderInfo } from '@/lib/chinadivision/client'
 
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, Badge, Button } from "@/components/ui"
 interface WarehouseOrderCardProps {
   order: ChinaDivisionOrderInfo
   onViewDetails?: (orderId: string) => void

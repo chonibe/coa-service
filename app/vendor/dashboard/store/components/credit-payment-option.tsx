@@ -1,12 +1,13 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Label } from "@/components/ui/label"
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
-import { Card, CardContent } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
+
+
+
+
 import { Wallet } from "lucide-react"
 
+import { Label, RadioGroup, RadioGroupItem, Card, CardContent, Badge } from "@/components/ui"
 interface CreditPaymentOptionProps {
   collectorIdentifier: string
   price: number

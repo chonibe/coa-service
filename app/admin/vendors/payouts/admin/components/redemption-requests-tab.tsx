@@ -1,16 +1,12 @@
 "use client"
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Badge } from "@/components/ui/badge"
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Loader2, AlertCircle, RefreshCw, CheckCircle, X } from "lucide-react"
 import { format } from "date-fns"
 import { formatUSD } from "@/lib/utils"
 import { useToast } from "@/components/ui/use-toast"
 import type { RedemptionRequest } from "../types"
 
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, Button, Table, TableBody, TableCell, TableHead, TableHeader, TableRow, Badge, Alert, AlertDescription, AlertTitle } from "@/components/ui"
 interface RedemptionRequestsTabProps {
   requests: RedemptionRequest[]
   isLoading: boolean

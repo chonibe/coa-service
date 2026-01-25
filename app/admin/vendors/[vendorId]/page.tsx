@@ -2,12 +2,12 @@
 
 import { useState, useEffect, useCallback } from "react"
 import { useParams, useRouter } from "next/navigation"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
+
+
+
+
 import { Skeleton } from "@/components/ui/skeleton"
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
+
 import {
   ArrowLeft,
   AlertCircle,
@@ -23,6 +23,7 @@ import {
 import { VendorSalesChart } from "@/app/vendor/dashboard/components/vendor-sales-chart"
 import { BarChart, CartesianGrid, XAxis, YAxis, Tooltip, Legend, Bar, ResponsiveContainer } from "recharts"
 
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, Tabs, TabsContent, TabsList, TabsTrigger, Button, Badge, Alert, AlertDescription, AlertTitle } from "@/components/ui"
 interface VendorData {
   id: number
   vendor_name: string

@@ -1,13 +1,14 @@
 "use client"
 
 import { useState, useRef } from "react"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+
+
+
 import { Loader2, Upload, X, Image as ImageIcon, Sparkles, Wand2 } from "lucide-react"
 import { motion } from "framer-motion"
 import { CoverArtUpload } from "./CoverArtUpload"
 
+import { Button, Card, CardContent, CardDescription, CardHeader, CardTitle, Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui"
 interface CoverArtDesignerProps {
   value?: string | null
   onChange: (url: string | null) => void

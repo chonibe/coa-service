@@ -2,14 +2,15 @@
 
 import { useState } from "react"
 import { motion, AnimatePresence } from "framer-motion"
-import { Card, CardContent } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
+
+
+
 import { Eye, Copy, Trash2, Lock, ArrowRight, Crown, Clock, MoreVertical } from "lucide-react"
 import { UnlockTypeTooltip } from "./UnlockTypeTooltip"
 import type { ArtworkSeries } from "@/types/artwork-series"
 import { cn } from "@/lib/utils"
 
+import { Card, CardContent, Badge, Button } from "@/components/ui"
 interface SeriesCardProps {
   series: ArtworkSeries
   index: number

@@ -2,14 +2,15 @@
 
 import { useState, useEffect } from "react"
 import { useParams, useSearchParams } from "next/navigation"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+
 import { Skeleton } from "@/components/ui/skeleton"
-import { Alert, AlertDescription } from "@/components/ui/alert"
-import { Badge } from "@/components/ui/badge"
+
+
 import { CheckCircle2, Lock, TrendingUp } from "lucide-react"
 import type { ArtworkSeries, JourneyMapSettings } from "@/types/artwork-series"
 import { JourneyMapCanvas } from "@/app/vendor/dashboard/journey/components/JourneyMapCanvas"
 
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, Alert, AlertDescription, Badge } from "@/components/ui"
 export default function CollectorJourneyPage() {
   const params = useParams()
   const searchParams = useSearchParams()

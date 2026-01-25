@@ -1,12 +1,13 @@
 "use client"
 
 import { useState } from "react"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Button } from "@/components/ui/button"
+
+
+
 import { Mail, Facebook, MessageCircle, Instagram } from "lucide-react"
 import Link from "next/link"
 
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, Tabs, TabsContent, TabsList, TabsTrigger, Button } from "@/components/ui"
 export default function CRMSettingsPage() {
   return (
     <div className="p-6 max-w-7xl mx-auto">

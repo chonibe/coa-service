@@ -1,12 +1,13 @@
 "use client"
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
+
+
 import { TrendingUp, TrendingDown, Minus, Award, AlertTriangle } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { EmptyState } from "./empty-state"
 import { Package } from "lucide-react"
 
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, Badge } from "@/components/ui"
 interface ProductPerformance {
   productId: string
   title: string

@@ -1,17 +1,18 @@
 "use client"
 
 import { useState, useRef, useEffect } from "react"
-import { Label } from "@/components/ui/label"
-import { Input } from "@/components/ui/input"
-import { Textarea } from "@/components/ui/textarea"
-import { Button } from "@/components/ui/button"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Card, CardContent } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
+
+
+
+
+
+
+
 import { Upload, FileText, Video, Image as ImageIcon, Link as LinkIcon, Loader2, Sparkles, Folder } from "lucide-react"
 import { motion } from "framer-motion"
 import { MediaLibraryModal, type MediaItem } from "@/components/vendor/MediaLibraryModal"
 
+import { Label, Input, Textarea, Button, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Card, CardContent, Badge } from "@/components/ui"
 interface DigitalContentFormProps {
   formData: {
     title: string

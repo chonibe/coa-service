@@ -1,9 +1,10 @@
 import { Metadata } from "next"
 import { BackupSettingsForm } from "./backup-settings-form"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+
+
 import { RecentBackups } from "./recent-backups"
 
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui"
 export const metadata: Metadata = {
   title: "Backup Settings",
   description: "Manage database backups and Google Sheets exports",

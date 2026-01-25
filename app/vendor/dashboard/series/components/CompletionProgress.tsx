@@ -1,12 +1,13 @@
 "use client"
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+
 import { Progress } from "@/components/ui/progress"
-import { Badge } from "@/components/ui/badge"
+
 import { CheckCircle2, Circle, TrendingUp } from "lucide-react"
 import type { CompletionProgress, MilestoneConfig } from "@/types/artwork-series"
 import { cn } from "@/lib/utils"
 
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, Badge } from "@/components/ui"
 interface CompletionProgressProps {
   progress: CompletionProgress
   milestoneConfig?: MilestoneConfig | null

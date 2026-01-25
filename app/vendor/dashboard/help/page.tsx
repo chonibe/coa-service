@@ -1,15 +1,16 @@
 "use client"
 
 import { useState } from "react"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import { Button } from "@/components/ui/button"
+
+
+
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
 import { Search, HelpCircle, Mail, BookOpen, Video, Keyboard, MessageSquare } from "lucide-react"
 import { EmptyState } from "@/components/vendor/empty-state"
 import { SidebarLayout } from "../../components/sidebar-layout"
-import { Badge } from "@/components/ui/badge"
 
+
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, Input, Button, Badge } from "@/components/ui"
 interface HelpArticle {
   id: string
   title: string

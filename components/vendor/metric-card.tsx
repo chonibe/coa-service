@@ -1,10 +1,11 @@
 "use client"
 
-import { Card, CardContent, CardHeader } from "@/components/ui/card"
+
 import { cn } from "@/lib/utils"
 import { LucideIcon, TrendingUp, TrendingDown, Minus } from "lucide-react"
 import { ReactNode } from "react"
 
+import { Card, CardContent, CardHeader } from "@/components/ui"
 interface MetricCardProps {
   title: string
   value: string | number

@@ -1,19 +1,20 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { Label } from "@/components/ui/label"
-import { Input } from "@/components/ui/input"
-import { Button } from "@/components/ui/button"
+
+
+
 import { Slider } from "@/components/ui/slider"
-import { Badge } from "@/components/ui/badge"
+
 import { cn } from "@/lib/utils"
 import { Progress } from "@/components/ui/progress"
-import { Card, CardContent } from "@/components/ui/card"
+
 import { Lock, TrendingUp, Info, Clock, Check } from "lucide-react"
-import { Alert, AlertDescription } from "@/components/ui/alert"
+
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { PricePickerCards } from "./PricePickerCards"
 import type { ProductSubmissionData, ProductVariant } from "@/types/product-submission"
+import { Label, Input, Button, Badge, Card, CardContent, Alert, AlertDescription } from "@/components/ui"
 import {
   EDITION_SIZES,
   type EditionSize,

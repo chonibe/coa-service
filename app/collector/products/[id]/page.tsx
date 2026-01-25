@@ -4,12 +4,13 @@ import { notFound } from "next/navigation"
 import { useEffect, useState } from "react"
 import Image from "next/image"
 import Link from "next/link"
-import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+
+
+
 import { Skeleton } from "@/components/ui/skeleton"
 import { ProductApiResponse, ProductArtwork } from "@/types/collector"
 
+import { Badge, Button, Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui"
 export default function ProductDetailPage({ params }: { params: { id: string } }) {
   const { id } = params
   const [artwork, setArtwork] = useState<ProductArtwork | null>(null)

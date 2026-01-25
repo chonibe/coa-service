@@ -1,12 +1,13 @@
 import crypto from "crypto"
 import Link from "next/link"
 import { redirect } from "next/navigation"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
-import { Alert, AlertDescription } from "@/components/ui/alert"
+
+
+
+
 import { CheckCircle, Shield, ExternalLink } from "lucide-react"
 
+import { Card, CardContent, CardHeader, CardTitle, Badge, Button, Alert, AlertDescription } from "@/components/ui"
 const base64UrlDecode = (input: string) => {
   const padded = input.replace(/-/g, "+").replace(/_/g, "/") + "===".slice((input.length + 3) % 4)
   return Buffer.from(padded, "base64").toString()

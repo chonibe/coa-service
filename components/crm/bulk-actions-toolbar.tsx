@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { Button } from "@/components/ui/button"
+
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -10,13 +10,14 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Badge } from "@/components/ui/badge"
+
+
+
+
 import { MoreHorizontal, Tag, Trash2, ListPlus, ListMinus, Edit } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 
+import { Button, Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Input, Label, Badge } from "@/components/ui"
 interface BulkActionsToolbarProps {
   selectedIds: string[]
   entityType: "person" | "company"

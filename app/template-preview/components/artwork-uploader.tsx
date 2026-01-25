@@ -1,10 +1,11 @@
 "use client"
 
 import { useState, useRef } from "react"
-import { Button } from "@/components/ui/button"
-import { Upload, X, Image as ImageIcon, Loader2 } from "lucide-react"
-import { Alert, AlertDescription } from "@/components/ui/alert"
 
+import { Upload, X, Image as ImageIcon, Loader2 } from "lucide-react"
+
+
+import { Button, Alert, AlertDescription } from "@/components/ui"
 interface ArtworkUploaderProps {
   onImageUpload: (imageUrl: string) => void
   onImageRemove: () => void

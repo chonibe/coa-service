@@ -2,15 +2,16 @@
 
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
+
+
 import { Skeleton } from "@/components/ui/skeleton"
-import { Alert, AlertDescription } from "@/components/ui/alert"
+
 import { ArrowLeft } from "lucide-react"
 import { useToast } from "@/components/ui/use-toast"
 import type { ArtworkSeries } from "@/types/artwork-series"
 import { JourneyMapCanvas } from "./components/JourneyMapCanvas"
 
+import { Card, CardContent, CardHeader, CardTitle, Button, Alert, AlertDescription } from "@/components/ui"
 export default function JourneyMapPage() {
   const router = useRouter()
   const { toast } = useToast()

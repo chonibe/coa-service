@@ -1,12 +1,12 @@
 "use client"
 
 import { useState } from "react"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Textarea } from "@/components/ui/textarea"
-import { Label } from "@/components/ui/label"
-import { Alert, AlertDescription } from "@/components/ui/alert"
+
+
+
+
+
+
 import { Separator } from "@/components/ui/separator"
 import { ChevronLeft, ChevronRight, Save, X, Loader2, Trash2, Copy, Info } from "lucide-react"
 import { cn } from "@/lib/utils"
@@ -18,6 +18,7 @@ import { CoverArtUpload } from "./CoverArtUpload"
 import { DeleteSeriesDialog } from "./DeleteSeriesDialog"
 import { DuplicateSeriesDialog } from "./DuplicateSeriesDialog"
 
+import { Card, CardContent, CardHeader, CardTitle, Button, Input, Textarea, Label, Alert, AlertDescription } from "@/components/ui"
 interface SeriesSettingsSidebarProps {
   series: ArtworkSeries
   members: SeriesMember[]

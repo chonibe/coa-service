@@ -2,11 +2,11 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
+
+
+
 import { Separator } from '@/components/ui/separator'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Progress } from '@/components/ui/progress'
 import { useToast } from '@/hooks/use-toast'
@@ -15,6 +15,7 @@ import { InkOGatchiWidget } from '@/app/collector/dashboard/components/inkogatch
 import { InkOGatchi } from '@/app/collector/dashboard/components/ink-o-gatchi'
 import { NFCAuthSheet } from '@/components/nfc/nfc-auth-sheet'
 
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, Badge, Button, Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui"
 interface ComprehensiveProfile {
   user: {
     id: string

@@ -2,8 +2,8 @@
 
 import { format, formatDistanceToNow } from "date-fns"
 import { Mail, Reply, MoreVertical, Paperclip, User } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
+
+
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -14,6 +14,7 @@ import { PlatformBadge } from "@/components/crm/platform-badge"
 import { EmailBodyRenderer } from "./email-body-renderer"
 import { AttachmentsList } from "./attachments-list"
 
+import { Button, Badge } from "@/components/ui"
 export interface MessageCardProps {
   message: {
     id: string

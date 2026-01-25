@@ -1,12 +1,13 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
+
+
+
 import { Loader2, AlertCircle, CheckCircle2 } from "lucide-react"
 import { useToast } from "@/components/ui/use-toast"
 
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, Button, Alert, AlertDescription, AlertTitle } from "@/components/ui"
 export default function InitPayoutsPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [status, setStatus] = useState<Record<string, { success: boolean; message: string }>>({})

@@ -1,12 +1,12 @@
 "use client"
 
 import { useEffect, useRef, useState, useCallback } from "react"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
+
 import { Loader2, Eye, EyeOff } from "lucide-react"
 import { Application } from "@splinetool/runtime"
 import * as THREE from "three"
 
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, Button } from "@/components/ui"
 interface Spline3DPreviewProps {
   image1: string | null
   image2: string | null

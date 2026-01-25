@@ -1,9 +1,9 @@
 "use client"
 
 import { useState, useEffect, useRef } from "react"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Textarea } from "@/components/ui/textarea"
+
+
+
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Send, Loader2 } from "lucide-react"
 import { useToast } from "@/components/ui/use-toast"
@@ -12,6 +12,7 @@ import { cn } from "@/lib/utils"
 import { EmptyState } from "./empty-state"
 import { MessageSquare } from "lucide-react"
 
+import { Card, CardContent, CardHeader, CardTitle, Button, Textarea } from "@/components/ui"
 interface Message {
   id: string
   sender_type: string

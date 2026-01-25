@@ -13,7 +13,7 @@ import {
   ChevronLeft,
   Sparkles,
 } from "lucide-react"
-import { Button } from "@/components/ui/button"
+
 import { useNFCScan } from "@/hooks/use-nfc-scan"
 import { useToast } from "@/hooks/use-toast"
 import { cn } from "@/lib/utils"
@@ -21,6 +21,7 @@ import { WhyUnlockStep } from "./why-unlock-step"
 import { ManualAuthInput } from "./manual-auth-input"
 import { NFCTroubleshooting } from "./nfc-troubleshooting"
 
+import { Button } from "@/components/ui"
 interface NFCAuthSheetProps {
   isOpen: boolean
   onClose: () => void

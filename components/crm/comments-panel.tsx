@@ -1,14 +1,15 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Textarea } from "@/components/ui/textarea"
-import { Badge } from "@/components/ui/badge"
+
+
+
+
 import { Loader2, MessageSquare, Send, Reply, CheckCircle2, Circle } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import { formatDistanceToNow } from "date-fns"
 
+import { Card, CardContent, CardHeader, CardTitle, Button, Textarea, Badge } from "@/components/ui"
 interface Thread {
   id: string
   title: string | null

@@ -2,11 +2,12 @@
 
 import { formatDistanceToNow } from "date-fns"
 import { Star, Mail, MessageSquare, User, Building2, Tag } from "lucide-react"
-import { Badge } from "@/components/ui/badge"
+
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { PlatformBadge } from "@/components/crm/platform-badge"
 import { cn } from "@/lib/utils"
 
+import { Badge } from "@/components/ui"
 export interface ConversationTag {
   id: string
   name: string

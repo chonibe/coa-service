@@ -1,12 +1,13 @@
 "use client"
 
 import Image from "next/image"
-import { Checkbox } from "@/components/ui/checkbox"
-import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
+
+
+
 import { Image as ImageIcon, Video, Music, FileText, MoreVertical } from "lucide-react"
 import type { MediaItem } from "../page"
 
+import { Checkbox, Badge, Button } from "@/components/ui"
 interface MediaGridProps {
   media: MediaItem[]
   viewMode: "grid" | "list"

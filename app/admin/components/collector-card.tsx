@@ -1,7 +1,7 @@
 "use client";
 
-import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+;
+;
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Mail, Phone, ShoppingBag, Award, Clock, MapPin, ChevronRight, ShieldCheck, User } from "lucide-react";
 import Link from "next/link";
@@ -9,6 +9,7 @@ import { formatCurrency } from "@/lib/utils";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Separator } from "@/components/ui/separator";
 
+import { Card, CardContent, Badge } from "@/components/ui"
 interface CollectorCardProps {
   profile: any;
   className?: string;

@@ -1,9 +1,10 @@
 "use client"
 
-import { Card, CardContent } from "@/components/ui/card"
+
 import Image from "next/image"
 import { useState } from "react"
 
+import { Card, CardContent } from "@/components/ui"
 interface ImageBlockProps {
   title?: string | null
   contentUrl: string | null

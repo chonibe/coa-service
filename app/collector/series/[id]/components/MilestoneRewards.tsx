@@ -2,8 +2,9 @@
 
 import { cn } from "@/lib/utils"
 import { Check, Lock, Gift, Image as ImageIcon, FileText, Video, Music } from "lucide-react"
-import { Badge } from "@/components/ui/badge"
 
+
+import { Badge } from "@/components/ui"
 interface Milestone {
   threshold: number
   type: string

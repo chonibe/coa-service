@@ -21,8 +21,8 @@ const nextConfig = {
     // Build CSP directive
     const cspDirectives = [
       "default-src 'self'",
-      "script-src 'self' 'unsafe-eval' 'unsafe-inline'", // 'unsafe-eval' needed for Next.js, 'unsafe-inline' for some libraries
-      "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+      "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://cdn.shopify.com", // 'unsafe-eval' needed for Next.js, 'unsafe-inline' for some libraries, cdn.shopify.com for Polaris
+      "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.shopify.com", // cdn.shopify.com for Polaris CSS
       "img-src 'self' data: https: blob:",
       "font-src 'self' data: https://fonts.gstatic.com",
       "connect-src 'self' https://*.supabase.co https://*.shopify.com https://api.paypal.com https://api-m.paypal.com https://api-m.sandbox.paypal.com",
@@ -82,6 +82,17 @@ const nextConfig = {
   },
   // Add this to help with potential issues
   reactStrictMode: true,
+  // Webpack configuration for web components support
+  webpack: (config, { isServer }) => {
+    if (!isServer) {
+      // Enable web components in client-side bundle
+      config.resolve.fallback = {
+        ...config.resolve.fallback,
+        fs: false,
+      }
+    }
+    return config
+  },
   // This helps with potential CORS issues in development
   async rewrites() {
     return [

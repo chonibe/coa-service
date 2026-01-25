@@ -1,14 +1,14 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Button } from "@/components/ui/button"
+
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover"
 import { ScrollArea } from "@/components/ui/scroll-area"
-import { Badge } from "@/components/ui/badge"
+
 import { Bell, Check, CheckCheck, Loader2 } from "lucide-react"
 import { useToast } from "@/components/ui/use-toast"
 import { format } from "date-fns"
@@ -17,6 +17,7 @@ import { EmptyState } from "./empty-state"
 import { usePolling } from "@/hooks/use-polling"
 import Link from "next/link"
 
+import { Button, Badge } from "@/components/ui"
 interface Notification {
   id: string
   type: string

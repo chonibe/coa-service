@@ -2,10 +2,10 @@
 
 import { useState, useEffect } from "react"
 import { useParams, useRouter } from "next/navigation"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+
+
+
+
 import { Loader2, ArrowLeft, Building2, Users, DollarSign, Package, Mail, Phone, Globe } from "lucide-react"
 import Link from "next/link"
 import { Timeline } from "@/components/crm/timeline"
@@ -14,6 +14,7 @@ import { CommentsPanel } from "@/components/crm/comments-panel"
 import { RecordActions } from "@/components/crm/record-actions"
 import { RecordWidgets } from "@/components/crm/record-widgets"
 
+import { Card, CardContent, CardHeader, CardTitle, Button, Badge, Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui"
 interface Company {
   id: string
   name: string

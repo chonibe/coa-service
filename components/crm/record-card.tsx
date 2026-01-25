@@ -1,11 +1,12 @@
 "use client"
 
-import { Card, CardContent } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
+
+
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { PlatformBadge } from "@/components/crm/platform-badge"
 import { Mail, Phone, Building2 } from "lucide-react"
 
+import { Card, CardContent, Badge } from "@/components/ui"
 interface RecordCardProps {
   type: "person" | "company"
   id: string

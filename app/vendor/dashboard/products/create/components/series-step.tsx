@@ -1,13 +1,13 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Label } from "@/components/ui/label"
-import { Input } from "@/components/ui/input"
-import { Textarea } from "@/components/ui/textarea"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent } from "@/components/ui/card"
-import { Switch } from "@/components/ui/switch"
-import { Alert, AlertDescription } from "@/components/ui/alert"
+
+
+
+
+
+
+
 import { Loader2, Lock, Plus, Info, X, ArrowRight, ArrowLeft, Check, Crown, Clock, Radio } from "lucide-react"
 import { motion, AnimatePresence } from "framer-motion"
 import type { ProductSubmissionData } from "@/types/product-submission"
@@ -21,6 +21,7 @@ import { TimeBasedUnlockConfig } from "@/app/vendor/dashboard/series/components/
 import { VIPUnlockConfig } from "@/app/vendor/dashboard/series/components/VIPUnlockConfig"
 import { BenefitsManagement } from "./benefits-management"
 
+import { Label, Input, Textarea, Button, Card, CardContent, Switch, Alert, AlertDescription } from "@/components/ui"
 interface SeriesStepProps {
   formData: ProductSubmissionData
   setFormData: (data: ProductSubmissionData) => void

@@ -1,12 +1,13 @@
 "use client"
 
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
-import { Label } from "@/components/ui/label"
-import { Input } from "@/components/ui/input"
-import { Card, CardContent } from "@/components/ui/card"
-import { Alert, AlertDescription } from "@/components/ui/alert"
+
+
+
+
+
 import { Wallet, CreditCard, AlertCircle } from "lucide-react"
 
+import { RadioGroup, RadioGroupItem, Label, Input, Card, CardContent, Alert, AlertDescription } from "@/components/ui"
 interface PaymentMethodSelectorProps {
   paymentMethod: "payout_balance" | "external"
   onPaymentMethodChange: (method: "payout_balance" | "external") => void

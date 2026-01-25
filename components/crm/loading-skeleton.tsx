@@ -1,8 +1,9 @@
 "use client"
 
-import { Card, CardContent, CardHeader } from "@/components/ui/card"
+
 import { Skeleton } from "@/components/ui/skeleton"
 
+import { Card, CardContent, CardHeader } from "@/components/ui"
 export function PersonListSkeleton() {
   return (
     <div className="space-y-3">

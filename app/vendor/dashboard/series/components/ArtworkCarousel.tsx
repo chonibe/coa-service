@@ -3,7 +3,7 @@
 import { useState } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { Lock, Check, GripVertical } from "lucide-react"
-import { Badge } from "@/components/ui/badge"
+
 import { cn } from "@/lib/utils"
 import type { SeriesMember } from "@/types/artwork-series"
 import {
@@ -32,8 +32,9 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { MoreVertical, Sparkles, Lock as LockIcon, Crown, ArrowRight } from "lucide-react"
-import { Button } from "@/components/ui/button"
 
+
+import { Badge, Button } from "@/components/ui"
 interface ArtworkCarouselProps {
   members: SeriesMember[]
   onReorder?: (newOrder: string[]) => void

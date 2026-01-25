@@ -1,15 +1,16 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Label } from "@/components/ui/label"
-import { Input } from "@/components/ui/input"
-import { Textarea } from "@/components/ui/textarea"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Card, CardContent } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
+
+
+
+
+
+
 import { Loader2, Lock, ArrowRight, Sparkles } from "lucide-react"
 import { motion } from "framer-motion"
 
+import { Label, Input, Textarea, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Card, CardContent, Badge } from "@/components/ui"
 interface HiddenSeriesFormProps {
   formData: {
     title: string

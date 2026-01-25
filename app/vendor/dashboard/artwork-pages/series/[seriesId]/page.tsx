@@ -2,11 +2,11 @@
 
 import { useState, useEffect } from "react"
 import { useParams, useRouter } from "next/navigation"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
+
+
+
 import { Skeleton } from "@/components/ui/skeleton"
-import { Alert, AlertDescription } from "@/components/ui/alert"
+
 import { Separator } from "@/components/ui/separator"
 import {
   Loader2,
@@ -29,6 +29,7 @@ import Image from "next/image"
 import { useToast } from "@/components/ui/use-toast"
 import { MediaLibraryModal, type MediaItem } from "@/components/vendor/MediaLibraryModal"
 
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, Button, Badge, Alert, AlertDescription } from "@/components/ui"
 interface ContentBlock {
   id: number
   benefit_type_id: number

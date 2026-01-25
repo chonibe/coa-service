@@ -1,8 +1,9 @@
 "use client"
 
 import { cn } from "@/lib/utils"
-import { Badge } from "@/components/ui/badge"
 
+
+import { Badge } from "@/components/ui"
 interface ProgressBarProps {
   current: number
   total: number

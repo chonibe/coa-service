@@ -2,14 +2,15 @@
 
 import { useState, useEffect, Suspense } from "react"
 import { useSearchParams, useRouter } from "next/navigation"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Loader2, Facebook, MessageCircle, CheckCircle, XCircle, Instagram } from "lucide-react"
-import { Badge } from "@/components/ui/badge"
-import { Alert, AlertDescription } from "@/components/ui/alert"
 
+
+
+
+import { Loader2, Facebook, MessageCircle, CheckCircle, XCircle, Instagram } from "lucide-react"
+
+
+
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, Button, Input, Label, Badge, Alert, AlertDescription } from "@/components/ui"
 function IntegrationsContent() {
   const searchParams = useSearchParams()
   const router = useRouter()

@@ -1,12 +1,13 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Button } from "@/components/ui/button"
+
 import { Loader2 } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import { useRouter } from "next/navigation"
 import * as Icons from "lucide-react"
 
+import { Button } from "@/components/ui"
 interface RecordAction {
   id: string
   name: string

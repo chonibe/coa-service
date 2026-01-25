@@ -1,17 +1,18 @@
 "use client"
 
 import { useState } from "react"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-import { Label } from "@/components/ui/label"
-import { Switch } from "@/components/ui/switch"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+
+
+
+
+
 import { Separator } from "@/components/ui/separator"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+
 import { Save } from "lucide-react"
 import { SettingsLayout } from "@/components/settings-layout"
 import { CircleStackIcon, UsersIcon, BellIcon, ShieldCheckIcon, ServerIcon } from "@heroicons/react/24/outline"
 
+import { Button, Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle, Label, Switch, Tabs, TabsContent, TabsList, TabsTrigger, Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui"
 const settingsConfig = [
   {
     title: "General",

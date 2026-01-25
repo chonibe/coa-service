@@ -3,15 +3,9 @@
 import React, { useState } from 'react'
 import Image from 'next/image'
 import { motion } from 'framer-motion'
-import { 
-  Card, 
-  CardContent, 
-  CardFooter, 
-  CardHeader, 
-  CardTitle 
-} from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
+
+
+
 import { 
   Wifi, 
   WifiOff, 
@@ -21,14 +15,9 @@ import {
   Nfc 
 } from "lucide-react"
 import { cn } from "@/lib/utils"
-import { 
-  Dialog, 
-  DialogContent, 
-  DialogHeader, 
-  DialogTitle, 
-  DialogDescription 
-} from "@/components/ui/dialog"
 
+
+import { Card, CardContent, CardFooter, CardHeader, CardTitle, Badge, Button, Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui"
 export interface ArtworkCardProps {
   artwork: {
     id: string

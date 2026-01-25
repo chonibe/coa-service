@@ -1,16 +1,12 @@
 "use client"
 
 import { useMemo } from "react"
-import { Input } from "@/components/ui/input"
-import { Button } from "@/components/ui/button"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Checkbox } from "@/components/ui/checkbox"
-import { Label } from "@/components/ui/label"
-import { Badge } from "@/components/ui/badge"
+
 import { X, Calendar } from "lucide-react"
 import { cn } from "@/lib/utils"
 import type { PayoutFilters } from "../hooks/use-payout-filters"
 
+import { Input, Button, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Checkbox, Label, Badge } from "@/components/ui"
 interface PayoutFiltersProps {
   filters: PayoutFilters
   onFilterChange: (key: keyof PayoutFilters, value: any) => void

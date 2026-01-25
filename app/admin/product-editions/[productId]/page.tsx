@@ -2,11 +2,12 @@
 
 import { useEffect, useState } from 'react'
 import { AssignEditionNumbersButton, RevokeEditionButton } from './AssignEditionNumbersButton'
-import { Button } from '@/components/ui/button'
+
 import { toast } from 'sonner'
 import ProductDetails from './ProductDetails'
 import { LineItem } from '@/types'
 
+import { Button } from "@/components/ui"
 export default function ProductEditionsPage({ params }: { params: { productId: string } }) {
   const [lineItems, setLineItems] = useState<LineItem[]>([])
   const [isLoading, setIsLoading] = useState(true)

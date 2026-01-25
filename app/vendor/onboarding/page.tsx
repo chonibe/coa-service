@@ -2,11 +2,12 @@
 
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
-import { Card } from "@/components/ui/card"
+
 import { useToast } from "@/components/ui/use-toast"
 import { Loader2 } from "lucide-react"
 import { OnboardingWizard } from "../components/onboarding-wizard"
 
+import { Card } from "@/components/ui"
 export default function VendorOnboardingPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [profileData, setProfileData] = useState<any>(null)

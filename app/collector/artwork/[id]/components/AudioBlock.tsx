@@ -1,11 +1,12 @@
 "use client"
 
-import { Card, CardContent } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
+
+
 import { Skeleton } from "@/components/ui/skeleton"
 import { useRef, useState, useEffect } from "react"
 import { Music, AlertCircle, RefreshCw, Play, Pause } from "lucide-react"
 
+import { Card, CardContent, Button } from "@/components/ui"
 interface AudioBlockProps {
   title?: string | null
   contentUrl: string | null

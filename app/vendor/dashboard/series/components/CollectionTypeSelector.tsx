@@ -1,10 +1,11 @@
 "use client"
 
-import { Label } from "@/components/ui/label"
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
-import { Card } from "@/components/ui/card"
+
+
+
 import { Info } from "lucide-react"
 
+import { Label, RadioGroup, RadioGroupItem, Card } from "@/components/ui"
 interface CollectionTypeSelectorProps {
   value: "manual" | "smart"
   onChange: (value: "manual" | "smart") => void

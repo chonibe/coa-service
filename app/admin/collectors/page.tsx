@@ -1,15 +1,16 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
+;
+;
+;
+;
 import { Loader2, Search, Users, ShoppingBag, Award, ArrowRight } from "lucide-react";
 import Link from "next/link";
 import { formatCurrency } from "@/lib/utils";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, Input, Button, Badge } from "@/components/ui"
 interface Collector {
   user_email: string;
   user_id: string | null;

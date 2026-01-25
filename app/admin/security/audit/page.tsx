@@ -1,14 +1,15 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/label" // Using label as placeholder if Input is not available
+
+
+
+
+ // Using label as placeholder if Input is not available
 import { Search, Shield, ShieldAlert, ShieldCheck, Clock, User, Database } from "lucide-react"
 import { format } from "date-fns"
 
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, Table, TableBody, TableCell, TableHead, TableHeader, TableRow, Badge, Button, Input } from "@/components/ui"
 interface AuditLog {
   id: string
   executed_at: string

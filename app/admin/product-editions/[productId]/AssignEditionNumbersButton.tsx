@@ -1,9 +1,10 @@
 'use client'
 
 import { useState } from 'react'
-import { Button } from '@/components/ui/button'
+
 import { toast } from 'sonner'
 
+import { Button } from "@/components/ui"
 interface AssignEditionNumbersButtonProps {
   productId: string
   onSuccess?: () => void

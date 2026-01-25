@@ -1,11 +1,12 @@
 "use client"
 
 import Image from "next/image"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Progress } from "@/components/ui/progress"
-import { Button } from "@/components/ui/button"
 
+
+import { Progress } from "@/components/ui/progress"
+
+
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, Badge, Button } from "@/components/ui"
 export interface SeriesSummary {
   id: string
   name: string

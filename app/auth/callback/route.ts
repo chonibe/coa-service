@@ -768,11 +768,26 @@ export async function GET(request: NextRequest) {
     let sessionData, exchangeError
     
     try {
+      console.log("[auth/callback] Attempting to exchange code for session...")
       const result = await supabase.auth.exchangeCodeForSession(code)
       sessionData = result.data
       exchangeError = result.error
+      
+      console.log("[auth/callback] Exchange result:", {
+        hasSession: !!sessionData?.session,
+        hasUser: !!sessionData?.user,
+        errorCode: exchangeError?.code,
+        errorMessage: exchangeError?.message,
+        errorStatus: exchangeError?.status
+      })
     } catch (err: any) {
-      console.error("[auth/callback] Exception during exchangeCodeForSession:", err)
+      console.error("[auth/callback] Exception during exchangeCodeForSession:", {
+        message: err?.message,
+        code: err?.code,
+        error_code: err?.error_code,
+        status: err?.status,
+        stack: err?.stack
+      })
       return NextResponse.redirect(
         new URL(`/login?error=${encodeURIComponent('Authentication failed. Please try again.')}`, origin),
         { status: 307 }
@@ -780,7 +795,12 @@ export async function GET(request: NextRequest) {
     }
 
     if (exchangeError) {
-      console.error("Failed to exchange Supabase auth code:", exchangeError)
+      console.error("[auth/callback] Failed to exchange Supabase auth code:", {
+        code: exchangeError.code,
+        message: exchangeError.message,
+        status: exchangeError.status,
+        name: exchangeError.name
+      })
       deleteCookie(response, VENDOR_SESSION_COOKIE_NAME)
       response.cookies.set("auth_error", "exchange_failed", { path: "/", maxAge: 60 })
       await logFailedLoginAttempt({ method: "oauth", reason: exchangeError.message })

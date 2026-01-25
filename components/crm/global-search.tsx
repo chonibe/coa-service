@@ -4,8 +4,9 @@ import { useState, useEffect, useRef } from "react"
 import { useRouter } from "next/navigation"
 import { CommandDialog, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList, CommandSeparator } from "@/components/ui/command"
 import { Loader2, User, Building2, MessageSquare, Search, Clock, TrendingUp } from "lucide-react"
-import { Badge } from "@/components/ui/badge"
 
+
+import { Badge } from "@/components/ui"
 interface SearchResult {
   type: string
   id: string

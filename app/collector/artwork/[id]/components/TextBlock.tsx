@@ -1,6 +1,6 @@
 "use client"
 
-import { Card, CardContent } from "@/components/ui/card"
+
 
 interface TextBlockProps {
   title?: string | null

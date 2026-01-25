@@ -1,16 +1,14 @@
 "use client"
 
 import { useMemo } from "react"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
-import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
+
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { AlertCircle, DollarSign, Users, TrendingUp, AlertTriangle, Info, ArrowRight } from "lucide-react"
 import { formatUSD } from "@/lib/utils"
 import { cn } from "@/lib/utils"
 import type { PendingPayout, PayoutHistory } from "../types"
 
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, Alert, AlertDescription, AlertTitle, Badge, Button } from "@/components/ui"
 interface PayoutOverviewProps {
   pendingPayouts: PendingPayout[]
   payoutHistory: PayoutHistory[]

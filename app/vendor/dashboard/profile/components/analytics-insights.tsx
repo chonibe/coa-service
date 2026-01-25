@@ -1,10 +1,10 @@
 "use client"
 
 import { useState, useEffect, Suspense } from "react"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
+
+
 import { AlertCircle, Download, BarChart3 } from "lucide-react"
-import { Button } from "@/components/ui/button"
+
 import { Skeleton } from "@/components/ui/skeleton"
 import { useToast } from "@/components/ui/use-toast"
 import { TimeRangeSelector, type TimeRange, type DateRange } from "@/components/vendor/time-range-selector"
@@ -25,9 +25,9 @@ import {
   Pie,
   Cell,
 } from "recharts"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+
+
+
 import { ProductPerformance } from "@/components/vendor/product-performance"
 import { PayoutTrendsChart } from "@/components/payouts/payout-trends-chart"
 import { ProductPerformanceHeatmap } from "@/components/payouts/product-performance-heatmap"
@@ -35,6 +35,7 @@ import { PayoutMetricsCards } from "@/components/payouts/payout-metrics-cards"
 import { MetricCard } from "@/components/vendor/metric-card"
 import { ShoppingCart, DollarSign, TrendingUp } from "lucide-react"
 
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, Alert, AlertDescription, AlertTitle, Button, Table, TableBody, TableCell, TableHead, TableHeader, TableRow, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui"
 const COLORS = ["#3b82f6", "#6366f1", "#8b5cf6", "#a855f7", "#ec4899", "#f43f5e"]
 
 interface SaleItem {

@@ -1,12 +1,13 @@
 "use client"
 
-import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent } from "@/components/ui/card"
+
+
+
 import Image from "next/image"
 import Link from "next/link"
 import { Artwork } from "@/types/collector"
 
+import { Badge, Button, Card, CardContent } from "@/components/ui"
 interface ArtworkCardProps {
   artwork: Artwork
 }

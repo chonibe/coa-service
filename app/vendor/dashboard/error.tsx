@@ -2,11 +2,12 @@
 
 import { useEffect } from "react"
 import Link from "next/link"
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
-import { Button } from "@/components/ui/button"
+
+
 import { AlertCircle, LayoutDashboard, RefreshCw } from "lucide-react"
 import { errorLogger } from "@/lib/error-logging"
 
+import { Alert, AlertDescription, AlertTitle, Button } from "@/components/ui"
 export default function VendorDashboardError({
   error,
   reset,

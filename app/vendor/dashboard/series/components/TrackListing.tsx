@@ -3,7 +3,7 @@
 import { useState } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { Lock, Check, GripVertical, Play, Sparkles, Link2, Crown } from "lucide-react"
-import { Badge } from "@/components/ui/badge"
+
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -13,7 +13,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { MoreVertical, Sparkles, Lock as LockIcon, Crown, ArrowRight } from "lucide-react"
-import { Button } from "@/components/ui/button"
+
 import { cn } from "@/lib/utils"
 import type { SeriesMember } from "@/types/artwork-series"
 import {
@@ -34,6 +34,7 @@ import {
 } from "@dnd-kit/sortable"
 import { CSS } from "@dnd-kit/utilities"
 
+import { Badge, Button } from "@/components/ui"
 interface TrackListingProps {
   members: SeriesMember[]
   onReorder?: (newOrder: string[]) => void

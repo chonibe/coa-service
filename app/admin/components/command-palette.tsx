@@ -10,9 +10,10 @@ import {
   CommandList,
   CommandSeparator,
 } from "@/components/ui/command"
-import { Badge } from "@/components/ui/badge"
+
 import { ChevronRight } from "lucide-react"
 
+import { Badge } from "@/components/ui"
 type CommandNavItem = {
   title: string
   href: string

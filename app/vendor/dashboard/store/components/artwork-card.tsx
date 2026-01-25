@@ -1,12 +1,13 @@
 "use client"
 
 import { useState } from "react"
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
+
+
+
 import { PurchaseDialog } from "./purchase-dialog"
 import { useToast } from "@/components/ui/use-toast"
 
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle, Button, Badge } from "@/components/ui"
 interface Artwork {
   id: string
   title: string

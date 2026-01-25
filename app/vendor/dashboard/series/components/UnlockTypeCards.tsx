@@ -5,8 +5,9 @@ import { motion, AnimatePresence } from "framer-motion"
 import { Check, Lock, ArrowRight, Crown, Clock, Radio, FolderOpen, Book, Star, ChevronDown, ChevronUp } from "lucide-react"
 import type { UnlockType } from "@/types/artwork-series"
 import { cn } from "@/lib/utils"
-import { Button } from "@/components/ui/button"
 
+
+import { Button } from "@/components/ui"
 interface UnlockTypeCardsProps {
   value: UnlockType
   onChange: (value: UnlockType) => void

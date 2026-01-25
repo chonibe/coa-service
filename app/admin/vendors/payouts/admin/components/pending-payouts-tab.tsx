@@ -1,13 +1,9 @@
 "use client"
 
 import { useState } from "react"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Checkbox } from "@/components/ui/checkbox"
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
+
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
-import { Badge } from "@/components/ui/badge"
+
 import { Loader2, AlertCircle, Send, ChevronLeft, ChevronRight, ChevronDown, Filter, X, Keyboard } from "lucide-react"
 import { useToast } from "@/components/ui/use-toast"
 import { formatUSD } from "@/lib/utils"
@@ -17,6 +13,7 @@ import { PayoutFiltersComponent } from "./payout-filters"
 import type { PayoutFilters } from "../hooks/use-payout-filters"
 import { usePayoutSelection } from "../hooks/use-payout-selection"
 
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, Button, Table, TableBody, TableCell, TableHead, TableHeader, TableRow, Checkbox, Alert, AlertDescription, AlertTitle, Badge } from "@/components/ui"
 interface PendingPayoutsTabProps {
   pendingPayouts: PendingPayout[]
   isLoading: boolean

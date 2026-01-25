@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useMemo } from "react"
 import { useRouter } from "next/navigation"
+import { Badge } from "@/components/ui"
 import {
   CommandDialog,
   CommandEmpty,
@@ -11,7 +12,7 @@ import {
   CommandList,
   CommandSeparator,
 } from "@/components/ui/command"
-import { Badge } from "@/components/ui/badge"
+
 import { 
   Home, Package, Image, BarChart3, DollarSign, User, HelpCircle,
   ShoppingCart, Users, FileText, Settings, MessageSquare, Bell,

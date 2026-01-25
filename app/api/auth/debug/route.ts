@@ -1,40 +1,42 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from "next/server"
+import { cookies } from "next/headers"
 
+/**
+ * Debug endpoint to check auth configuration
+ * Access at: /api/auth/debug
+ */
 export async function GET(request: NextRequest) {
-  try {
-    // Collect all authentication-related cookies
-    const cookies = {
-      shopifyCustomerId: request.cookies.get('shopify_customer_id')?.value,
-      shopifyCustomerAccessToken: request.cookies.get('shopify_customer_access_token')?.value,
-      shopifyCustomerLogin: request.cookies.get('shopify_customer_login')?.value,
-      shopifyLoginRedirect: request.cookies.get('shopify_login_redirect')?.value
-    };
-
-    // Collect request details
-    const requestDetails = {
-      url: request.url,
-      method: request.method,
-      headers: Object.fromEntries(request.headers.entries()),
-      searchParams: Object.fromEntries(new URL(request.url).searchParams.entries())
-    };
-
-    // Comprehensive authentication debug response
-    return NextResponse.json({
-      success: true,
-      message: 'Authentication Debug Information',
-      cookies,
-      requestDetails,
-      environment: {
-        nodeEnv: process.env.NODE_ENV,
-        appUrl: process.env.NEXT_PUBLIC_APP_URL,
-        shopifyShop: process.env.SHOPIFY_SHOP
-      }
-    });
-  } catch (error) {
-    console.error('Authentication Debug Error:', error);
-    return NextResponse.json({ 
-      success: false, 
-      error: error instanceof Error ? error.message : 'Unknown error' 
-    }, { status: 500 });
+  const cookieStore = cookies()
+  const allCookies = cookieStore.getAll()
+  
+  const config = {
+    environment: process.env.NODE_ENV,
+    supabaseUrl: process.env.NEXT_PUBLIC_SUPABASE_URL,
+    hasAnonKey: !!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+    hasServiceKey: !!process.env.SUPABASE_SERVICE_ROLE_KEY,
+    appUrl: process.env.NEXT_PUBLIC_APP_URL,
+    vercelUrl: process.env.VERCEL_URL,
+    cookies: allCookies.map(c => ({
+      name: c.name,
+      hasValue: !!c.value,
+      valueLength: c.value?.length || 0
+    })),
+    requestUrl: request.url,
+    requestOrigin: request.nextUrl.origin,
+    headers: {
+      host: request.headers.get('host'),
+      referer: request.headers.get('referer'),
+      userAgent: request.headers.get('user-agent')
+    }
   }
-} 
+  
+  return NextResponse.json({
+    status: 'ok',
+    timestamp: new Date().toISOString(),
+    config
+  }, {
+    headers: {
+      'Cache-Control': 'no-store, no-cache, must-revalidate',
+    }
+  })
+}

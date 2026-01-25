@@ -1,14 +1,15 @@
 "use client"
 
 import { useState } from "react"
-import { Label } from "@/components/ui/label"
-import { Input } from "@/components/ui/input"
-import { Textarea } from "@/components/ui/textarea"
-import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
+
+
+
+
+
 import { X } from "lucide-react"
 import type { ProductSubmissionData, ProductCreationFields, ProductMetafield } from "@/types/product-submission"
 
+import { Label, Input, Textarea, Badge, Button } from "@/components/ui"
 interface MetafieldsStepProps {
   formData: ProductSubmissionData
   setFormData: (data: ProductSubmissionData) => void

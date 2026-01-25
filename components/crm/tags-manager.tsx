@@ -1,12 +1,13 @@
 "use client"
 
 import { useState } from "react"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Badge } from "@/components/ui/badge"
+
+
+
 import { X, Plus, Tag } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 
+import { Button, Input, Badge } from "@/components/ui"
 interface TagsManagerProps {
   tags: string[]
   onTagsChange: (tags: string[]) => void

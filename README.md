@@ -53,10 +53,11 @@ COA Service is a comprehensive digital art authentication and management platfor
 
 ## Technical Stack
 
-- Frontend: Next.js, React
+- Frontend: Next.js, React, Shopify Polaris Web Components
 - Backend: Supabase (Postgres + Edge Functions)
 - Authentication: Supabase Auth (Google OAuth) with signed vendor sessions
 - NFC Technology: Web NFC API
+- UI Components: Polaris Web Components with React wrappers
 
 ## Getting Started
 
@@ -93,6 +94,11 @@ npm run dev
 - [Template Preview](/app/template-preview/README.md) - Artist template preview landing page
 - [MCP Servers](/docs/mcp/README.md) - Model Context Protocol servers for Cursor agents
 - [ChinaDivision Auto-Fulfillment](/docs/features/chinadivision-auto-fulfillment/README.md)
+- [Polaris Migration Guide](/docs/features/polaris-migration/MIGRATION_GUIDE.md) - ✅ **COMPLETED** Migration from Shadcn UI to Polaris Web Components
+- [Design System](/docs/DESIGN_SYSTEM.md) - Polaris-based design system documentation
+- [UI Components Cleanup](/components/ui/CLEANUP_SUMMARY.md) - Details on removed and retained components
+- [UI Migration Strategy](/docs/UI_MIGRATION_STRATEGY.md) - ✨ **NEW** Future-proof architecture for easy UI library changes
+- [UI Quick Reference](/components/ui/QUICK_REFERENCE.md) - Developer guide for using UI components
 
 ## Contributing
 

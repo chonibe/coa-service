@@ -1,11 +1,12 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
+
+
 import { Loader2, MessageSquare, Users, Mail, Instagram, RefreshCw } from "lucide-react"
 import Link from "next/link"
 
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, Button } from "@/components/ui"
 interface CRMStats {
   totalCustomers: number
   totalConversations: number

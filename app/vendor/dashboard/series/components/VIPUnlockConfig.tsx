@@ -1,14 +1,15 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Label } from "@/components/ui/label"
-import { Input } from "@/components/ui/input"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+
+
+
+
 import { Crown, Check } from "lucide-react"
 import type { UnlockConfig } from "@/types/artwork-series"
 import type { SeriesMember } from "@/types/artwork-series"
 
+import { Label, Input, Button, Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui"
 interface VIPUnlockConfigProps {
   value: UnlockConfig
   onChange: (config: UnlockConfig) => void

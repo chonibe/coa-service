@@ -1,23 +1,17 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
+
+
+
+
 import { PaymentMethodSelector } from "./payment-method-selector"
 import { CreditPaymentOption } from "./credit-payment-option"
 import { useToast } from "@/components/ui/use-toast"
 import { Loader2, MapPin, CheckCircle2 } from "lucide-react"
 import Link from "next/link"
 
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, Button, Input, Label } from "@/components/ui"
 interface PurchaseDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void

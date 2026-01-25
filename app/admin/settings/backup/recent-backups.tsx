@@ -1,19 +1,11 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { Button } from "@/components/ui/button"
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table"
-import { Badge } from "@/components/ui/badge"
+
 import { ExternalLink, Download, Trash2 } from "lucide-react"
 import { toast } from "sonner"
 
+import { Button, Table, TableBody, TableCell, TableHead, TableHeader, TableRow, Badge } from "@/components/ui"
 interface Backup {
   id: string
   type: "database" | "sheets"

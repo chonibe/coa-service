@@ -1,27 +1,14 @@
 "use client"
 
 import { useState, useMemo } from "react"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Checkbox } from "@/components/ui/checkbox"
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
-import { Badge } from "@/components/ui/badge"
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog"
+
 import { Loader2, Send, AlertCircle, CheckCircle2, DollarSign, Users, AlertTriangle } from "lucide-react"
 import { useToast } from "@/components/ui/use-toast"
 import { formatUSD } from "@/lib/utils"
 import { cn } from "@/lib/utils"
 import type { PendingPayout } from "../types"
 
+import { Button, Input, Label, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Checkbox, Alert, AlertDescription, AlertTitle, Badge, Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui"
 interface PayoutProcessDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
@@ -382,5 +369,4 @@ export function PayoutProcessDialog({
     </Dialog>
   )
 }
-
 

@@ -1,9 +1,10 @@
 'use client'
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+
 import { Package } from 'lucide-react'
 import type { ChinaDivisionOrderInfo } from '@/lib/chinadivision/client'
 
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui"
 interface PackageTrackerProps {
   packages: ChinaDivisionOrderInfo['info']
   orderId: string

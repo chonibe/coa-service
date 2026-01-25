@@ -2,18 +2,10 @@
 
 import { useState, useEffect } from "react"
 import { Plus, Tag, Edit2, Trash2, X, Check } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Badge } from "@/components/ui/badge"
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog"
+
+
+
+
 import {
   AlertDialog,
   AlertDialogAction,
@@ -27,6 +19,7 @@ import {
 import { useToast } from "@/hooks/use-toast"
 import { ScrollArea } from "@/components/ui/scroll-area"
 
+import { Button, Input, Badge, Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui"
 export interface Tag {
   id: string
   name: string

@@ -3,14 +3,15 @@
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
-import { Label } from "@/components/ui/label"
+
+
+
+
+
 import { Mail, ArrowLeft, CheckCircle2, Loader2, AlertCircle } from "lucide-react"
 import { cn } from "@/lib/utils"
 
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle, Button, Input, Alert, AlertDescription, AlertTitle, Label } from "@/components/ui"
 export default function ForgotPasswordPage() {
   const router = useRouter()
   const [email, setEmail] = useState("")

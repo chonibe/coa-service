@@ -1,12 +1,13 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
-import { Button } from "@/components/ui/button"
+
+
 import { Progress } from "@/components/ui/progress"
 import { AlertCircle, ChevronRight } from "lucide-react"
 import Link from "next/link"
 
+import { Alert, AlertDescription, AlertTitle, Button } from "@/components/ui"
 interface VendorProfile {
   vendor_name: string
   paypal_email: string | null

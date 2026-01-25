@@ -1,15 +1,7 @@
 "use client"
 
 import React, { useState, useCallback, useEffect } from 'react'
-import { 
-  Dialog, 
-  DialogContent, 
-  DialogHeader, 
-  DialogTitle, 
-  DialogDescription,
-  DialogFooter
-} from "@/components/ui/dialog"
-import { Button } from "@/components/ui/button"
+
 import { Progress } from "@/components/ui/progress"
 import { 
   Nfc, 
@@ -20,6 +12,7 @@ import {
 } from "lucide-react"
 import { toast } from "@/components/ui/use-toast"
 
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, Button } from "@/components/ui"
 type PairingStep = 'intro' | 'scanning' | 'verifying' | 'success' | 'error'
 
 interface NFCPairingWizardProps {

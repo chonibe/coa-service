@@ -1,23 +1,14 @@
 'use client'
 
 import React, { useState, useEffect } from 'react'
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
+
 import { Progress } from '@/components/ui/progress'
-import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
+
 import { InkOGatchi } from './ink-o-gatchi'
 import { Loader2, Shirt, ShoppingBag, Sparkles } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-  DialogFooter
-} from '@/components/ui/dialog'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, Button, Badge, Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui"
 interface InkOGatchiWidgetProps {
   userId?: string
   email?: string

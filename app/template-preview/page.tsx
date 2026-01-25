@@ -1,16 +1,13 @@
 "use client"
 
 import { useState } from "react"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
+
 import { Download, FileText, Image as ImageIcon, Box } from "lucide-react"
 import { TemplatePreviewer } from "./components/template-previewer"
 import { ArtworkUploader } from "./components/artwork-uploader"
 import { Spline3DPreview } from "./components/spline-3d-preview"
-import { Alert, AlertDescription } from "@/components/ui/alert"
-import { Badge } from "@/components/ui/badge"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, Button, Alert, AlertDescription, Badge, Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui"
 export default function TemplatePreviewPage() {
   const [uploadedImage, setUploadedImage] = useState<string | null>(null)
   const [side1Image, setSide1Image] = useState<string | null>(null)

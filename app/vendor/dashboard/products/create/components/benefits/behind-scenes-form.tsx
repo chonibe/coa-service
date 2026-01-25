@@ -1,16 +1,17 @@
 "use client"
 
 import { useState, useRef, useEffect } from "react"
-import { Label } from "@/components/ui/label"
-import { Input } from "@/components/ui/input"
-import { Textarea } from "@/components/ui/textarea"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
+
+
+
+
+
+
 import { Upload, Video, Image as ImageIcon, FileText, X, Loader2, Eye, Sparkles, Folder } from "lucide-react"
 import { motion, AnimatePresence } from "framer-motion"
 import { MediaLibraryModal, type MediaItem } from "@/components/vendor/MediaLibraryModal"
 
+import { Label, Input, Textarea, Button, Card, CardContent, Badge } from "@/components/ui"
 interface BehindScenesFormProps {
   formData: {
     title: string

@@ -1,13 +1,12 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-import { Progress } from "@/components/ui/progress"
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
-import { Loader2, CheckCircle, AlertCircle, RefreshCw } from "lucide-react"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 
+import { Progress } from "@/components/ui/progress"
+
+import { Loader2, CheckCircle, AlertCircle, RefreshCw } from "lucide-react"
+
+import { Button, Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle, Alert, AlertDescription, AlertTitle, Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui"
 export default function SyncVendorNamesPage() {
   const [isRunning, setIsRunning] = useState(false)
   const [progress, setProgress] = useState(0)

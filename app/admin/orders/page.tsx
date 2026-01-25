@@ -8,8 +8,9 @@ import SyncAllOrdersButton from './SyncAllOrdersButton';
 import SyncOrderStatusesButton from './SyncOrderStatusesButton';
 import CompareOrdersButton from './CompareOrdersButton';
 import SyncOrdersButton from './SyncOrdersButton';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Badge } from '@/components/ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger, Badge } from "@/components/ui"
+;
+;
 
 interface Order {
   id: string;

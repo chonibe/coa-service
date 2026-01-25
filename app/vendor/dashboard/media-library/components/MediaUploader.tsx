@@ -1,11 +1,12 @@
 "use client"
 
 import { useState, useCallback } from "react"
-import { Button } from "@/components/ui/button"
+
 import { Progress } from "@/components/ui/progress"
 import { Upload, X, Loader2, CheckCircle, AlertCircle } from "lucide-react"
 import { useToast } from "@/components/ui/use-toast"
 
+import { Button } from "@/components/ui"
 interface MediaUploaderProps {
   onUploadComplete: () => void
 }

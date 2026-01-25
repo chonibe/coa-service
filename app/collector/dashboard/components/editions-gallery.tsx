@@ -1,16 +1,17 @@
 "use client"
 
 import { useState, useMemo } from "react"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+
+
+
+
 import Image from "next/image"
 import { CheckCircle2, FileText, ExternalLink, Award, ChevronRight, Calendar } from "lucide-react"
 import { motion } from "framer-motion"
 import { PremiumArtworkStack } from "./premium/PremiumArtworkStack"
 import type { CollectorEdition } from "@/types/collector"
 
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, Badge, Button, Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui"
 interface EditionsGalleryProps {
   editions: CollectorEdition[]
   onExpandStack: (group: any[], mode: 'product' | 'artist') => void

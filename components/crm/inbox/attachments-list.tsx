@@ -1,9 +1,10 @@
 "use client"
 
 import { Paperclip, File, Image as ImageIcon, FileText, Download } from "lucide-react"
-import { Button } from "@/components/ui/button"
+
 import { formatFileSize } from "@/lib/utils"
 
+import { Button } from "@/components/ui"
 export interface Attachment {
   filename: string
   url: string

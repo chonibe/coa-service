@@ -1,9 +1,10 @@
 "use client"
 
-import { Badge } from "@/components/ui/badge"
+
 import { Mail, Instagram, Facebook, MessageCircle, ShoppingBag } from "lucide-react"
 import { cn } from "@/lib/utils"
 
+import { Badge } from "@/components/ui"
 interface PlatformBadgeProps {
   platform: "email" | "instagram" | "facebook" | "whatsapp" | "shopify"
   variant?: "default" | "secondary" | "outline"

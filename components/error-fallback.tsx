@@ -1,9 +1,10 @@
 "use client"
 
 import { AlertCircle, RefreshCw } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 
+
+
+import { Button, Alert, AlertDescription, AlertTitle } from "@/components/ui"
 interface ErrorFallbackProps {
   error: string
   resetErrorBoundary: () => void

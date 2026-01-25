@@ -1,9 +1,10 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Card } from "@/components/ui/card";
+;
 import { Award, DollarSign, ShoppingBag, LayoutGrid } from "lucide-react";
 
+import { Card } from "@/components/ui"
 interface StatItem {
   label: string;
   value: string | number;

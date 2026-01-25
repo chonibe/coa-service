@@ -1,16 +1,10 @@
 "use client"
 
 import { useState, useEffect, useCallback, useRef } from "react"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+
+
+
+
 import { useToast } from "@/components/ui/use-toast"
 import {
   Upload,
@@ -29,8 +23,9 @@ import {
 import { MediaGrid } from "./components/MediaGrid"
 import { MediaUploader } from "./components/MediaUploader"
 import { MediaDetails } from "./components/MediaDetails"
-import { Alert, AlertDescription } from "@/components/ui/alert"
-import { Badge } from "@/components/ui/badge"
+
+
+import { Button, Input, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Tabs, TabsContent, TabsList, TabsTrigger, Alert, AlertDescription, Badge } from "@/components/ui"
 import {
   AlertDialog,
   AlertDialogAction,

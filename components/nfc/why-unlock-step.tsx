@@ -3,9 +3,10 @@
 import React from "react"
 import { motion } from "framer-motion"
 import { Sparkles, FileText, Image, Video, Music } from "lucide-react"
-import { Button } from "@/components/ui/button"
+
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar"
 
+import { Button } from "@/components/ui"
 interface WhyUnlockStepProps {
   artistName: string
   artistPhoto?: string | null

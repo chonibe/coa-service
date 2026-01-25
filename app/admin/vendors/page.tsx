@@ -1,11 +1,11 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import { Button } from "@/components/ui/button"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
+
+
+
+
+
 import {
   Loader2,
   Search,
@@ -17,9 +17,10 @@ import {
   Pencil,
   ExternalLink,
 } from "lucide-react"
-import { Badge } from "@/components/ui/badge"
+
 import { VendorDialog } from "./vendor-dialog"
 
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, Input, Button, Table, TableBody, TableCell, TableHead, TableHeader, TableRow, Alert, AlertDescription, AlertTitle, Badge } from "@/components/ui"
 export default function VendorsPage() {
   const [vendors, setVendors] = useState<any[]>([])
   const [isLoading, setIsLoading] = useState(true)

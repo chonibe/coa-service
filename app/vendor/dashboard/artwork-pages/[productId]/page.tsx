@@ -2,11 +2,11 @@
 
 import { useState, useEffect, useCallback } from "react"
 import { useParams, useRouter } from "next/navigation"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
+
+
+
 import { Skeleton } from "@/components/ui/skeleton"
-import { Alert, AlertDescription } from "@/components/ui/alert"
+
 import { Separator } from "@/components/ui/separator"
 import {
   Loader2,
@@ -36,6 +36,7 @@ import { VideoBlock } from "@/app/collector/artwork/[id]/components/VideoBlock"
 import { AudioBlock } from "@/app/collector/artwork/[id]/components/AudioBlock"
 import { ImageBlock } from "@/app/collector/artwork/[id]/components/ImageBlock"
 
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, Button, Badge, Alert, AlertDescription } from "@/components/ui"
 interface ContentBlock {
   id: number
   benefit_type_id: number

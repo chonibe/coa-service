@@ -2,11 +2,9 @@
 
 import { useState, useEffect } from "react"
 import { useParams, useRouter } from "next/navigation"
-import { Card, CardContent } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
+
 import { Skeleton } from "@/components/ui/skeleton"
-import { Alert, AlertDescription } from "@/components/ui/alert"
+
 import {
   Loader2,
   AlertCircle,
@@ -38,6 +36,7 @@ import { ImmersiveVideoBlock } from "./components/ImmersiveVideoBlock"
 import { ImmersiveAudioBlock } from "./components/ImmersiveAudioBlock"
 import { motion } from "framer-motion"
 
+import { Card, CardContent, Button, Badge, Alert, AlertDescription } from "@/components/ui"
 interface ArtworkDetail {
   artwork: {
     id: string

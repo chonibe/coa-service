@@ -1,9 +1,9 @@
 "use client"
 
 import { useState } from "react"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
+
+
+
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog"
 import { GripVertical, Trash2, Lock, Crown, Image as ImageIcon } from "lucide-react"
 import { cn } from "@/lib/utils"
@@ -27,6 +27,7 @@ import {
 import { CSS } from "@dnd-kit/utilities"
 import Link from "next/link"
 
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, Button, Badge } from "@/components/ui"
 interface ArtworkListViewProps {
   members: SeriesMember[]
   onReorder: (memberIds: string[]) => Promise<void>

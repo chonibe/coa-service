@@ -1,12 +1,13 @@
 "use client"
 
 import { Building2, Briefcase, MapPin, Link as LinkIcon, User, Mail, Phone, Calendar } from "lucide-react"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
+
+
 import { Separator } from "@/components/ui/separator"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { formatDate } from "@/lib/utils"
 
+import { Card, CardContent, CardHeader, CardTitle, Badge } from "@/components/ui"
 export interface EnrichmentData {
   company?: string
   job_title?: string

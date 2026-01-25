@@ -3,12 +3,13 @@
 import { useState, useEffect } from "react"
 import { useRouter, useParams } from "next/navigation"
 import { Skeleton } from "@/components/ui/skeleton"
-import { Alert, AlertDescription } from "@/components/ui/alert"
+
 import { AlertCircle, ArrowLeft } from "lucide-react"
-import { Button } from "@/components/ui/button"
+
 import type { ArtworkSeries } from "@/types/artwork-series"
 import { ShopifyStyleSeriesForm } from "../components/ShopifyStyleSeriesForm"
 
+import { Alert, AlertDescription, Button } from "@/components/ui"
 export default function SeriesDetailPage() {
   const router = useRouter()
   const params = useParams()

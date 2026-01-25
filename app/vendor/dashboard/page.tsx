@@ -2,8 +2,8 @@
 
 import { useState, useEffect, useRef, useMemo } from "react"
 import { useRouter } from "next/navigation"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui"
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui"
 import { Skeleton } from "@/components/ui/skeleton"
 import { AlertCircle, DollarSign, Package, TrendingUp, ShoppingCart } from "lucide-react"
 import { OnboardingAlert } from "./components/onboarding-alert"

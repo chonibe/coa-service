@@ -2,12 +2,13 @@
 
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Alert, AlertDescription } from "@/components/ui/alert"
+
+
+
 import { Shield, Package, Loader2, AlertCircle, Store } from "lucide-react"
 import { Logo } from "@/components/logo"
 
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, Button, Alert, AlertDescription } from "@/components/ui"
 export default function SelectRolePage() {
   const router = useRouter()
   const [isLoading, setIsLoading] = useState(false)

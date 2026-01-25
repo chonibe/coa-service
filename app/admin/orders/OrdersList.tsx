@@ -1,12 +1,12 @@
 "use client";
 
 import { useState } from 'react';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Checkbox } from '@/components/ui/checkbox';
+;
+;
+;
+;
 import { formatCurrency } from '@/lib/utils';
-import { Table, TableHeader, TableBody, TableCell, TableHead, TableRow } from '@/components/ui/table';
+;
 import { AlertCircle, MoreVertical, X, CheckCircle2, Archive, ArchiveRestore, RefreshCw } from "lucide-react";
 import {
   DropdownMenu,
@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useToast } from "@/hooks/use-toast";
 
+import { Button, Card, CardContent, Badge, Checkbox, Table, TableHeader, TableBody, TableCell, TableHead, TableRow } from "@/components/ui"
 interface Order {
   id: string;
   order_number: number | string;

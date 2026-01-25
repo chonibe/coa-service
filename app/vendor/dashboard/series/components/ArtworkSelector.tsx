@@ -1,16 +1,17 @@
 "use client"
 
 import { useState, useEffect, useMemo } from "react"
-import { Input } from "@/components/ui/input"
-import { Button } from "@/components/ui/button"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Card } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
+
+
+
+
+
 import { Skeleton } from "@/components/ui/skeleton"
-import { Alert, AlertDescription } from "@/components/ui/alert"
+
 import { Search, Plus, X, Image as ImageIcon, AlertCircle } from "lucide-react"
 import { cn } from "@/lib/utils"
 
+import { Input, Button, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Card, Badge, Alert, AlertDescription } from "@/components/ui"
 interface ArtworkSelectorProps {
   selectedArtworks: string[]
   onChange: (artworks: string[]) => void

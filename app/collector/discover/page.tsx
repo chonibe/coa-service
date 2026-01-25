@@ -2,19 +2,14 @@
 
 import { Suspense, useEffect, useState } from "react"
 import { useSearchParams } from "next/navigation"
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
+
+
 import { Skeleton } from "@/components/ui/skeleton"
 import { Artwork, MarketplaceApiResponse } from "@/types/collector"
 import { ArtworkCard } from "./components/artwork-card"
 import { FilterSidebar } from "./components/filter-sidebar"
 
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, Button } from "@/components/ui"
 function DiscoverContent() {
   const searchParams = useSearchParams()
   const [artworks, setArtworks] = useState<Artwork[]>([])

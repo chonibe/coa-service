@@ -1,14 +1,15 @@
 "use client"
 
 import { useState } from "react"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+
+
+
+
 import { PayoutAnalytics } from "@/components/payouts/payout-analytics"
 import { BarChart3, TrendingUp, Users, DollarSign, Download, RefreshCw } from "lucide-react"
 import { useToast } from "@/components/ui/use-toast"
 
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, Button, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui"
 export default function AdminPayoutAnalyticsPage() {
   const [selectedVendor, setSelectedVendor] = useState<string>("all")
   const [isRefreshing, setIsRefreshing] = useState(false)

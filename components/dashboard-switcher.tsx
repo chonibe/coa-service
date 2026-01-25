@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { useRouter, usePathname } from "next/navigation"
-import { Button } from "@/components/ui/button"
+
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -14,6 +14,7 @@ import {
 import { Shield, Store, Package, Loader2 } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 
+import { Button } from "@/components/ui"
 interface AuthStatus {
   isAdmin?: boolean
   hasAdminSession?: boolean

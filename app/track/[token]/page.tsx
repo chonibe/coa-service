@@ -3,19 +3,11 @@
 import { useState, useEffect, useMemo, useCallback } from 'react'
 import type { KeyboardEvent } from 'react'
 import { useParams, useRouter } from 'next/navigation'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Alert, AlertDescription } from '@/components/ui/alert'
+
 import { Skeleton } from '@/components/ui/skeleton'
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
-import { Badge } from '@/components/ui/badge'
+
 import { ScrollArea } from '@/components/ui/scroll-area'
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
-import { Switch } from '@/components/ui/switch'
-import { Label } from '@/components/ui/label'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+
 import {
   ExclamationCircleIcon,
   CubeIcon,
@@ -50,6 +42,7 @@ import type { ChinaDivisionOrderInfo } from '@/lib/chinadivision/client'
 import { TrackingTimeline } from '../../admin/warehouse/orders/components/TrackingTimeline'
 import { ThemeToggle } from '@/components/theme-toggle'
 
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, Button, Input, Alert, AlertDescription, Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Badge, Table, TableBody, TableCell, TableHead, TableHeader, TableRow, Switch, Label, Tabs, TabsContent, TabsList, TabsTrigger, Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui"
 export default function TrackOrdersPage() {
   const params = useParams()
   const router = useRouter()
@@ -422,7 +415,6 @@ export default function TrackOrdersPage() {
       return () => clearTimeout(timeoutId)
     }
   }, [labelOrder, token, saveLabelsToDatabase])
-
 
   const getOrderKey = (order: ChinaDivisionOrderInfo) => order.sys_order_id || order.order_id || ''
 
@@ -1617,7 +1609,6 @@ export default function TrackOrdersPage() {
                             ))}
                           </div>
                         )}
-
 
                         {order.order_id && (
                           <div>

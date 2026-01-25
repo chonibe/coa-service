@@ -9,8 +9,9 @@ import { EnrichmentPanel } from "./enrichment-panel"
 import { TagsPanel } from "./tags-panel"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Separator } from "@/components/ui/separator"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 
+
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui"
 export interface AttioInboxProps {
   initialPlatform?: string
   initialStatus?: string

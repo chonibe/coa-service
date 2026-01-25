@@ -6,12 +6,13 @@ import {
   ShoppingBag, ExternalLink, ChevronLeft, 
   ChevronRight, Award, ShieldCheck 
 } from "lucide-react";
-import { Card } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+;
+;
+;
 import Link from "next/link";
 import { formatCurrency } from "@/lib/utils";
 
+import { Card, Badge, Button } from "@/components/ui"
 interface PremiumOrderCardProps {
   order: any;
   onExpandStack: (group: any[]) => void;

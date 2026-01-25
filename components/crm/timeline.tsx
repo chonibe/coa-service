@@ -1,11 +1,12 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { Card, CardContent } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
+
+
 import { Loader2, Mail, Phone, Calendar, FileText, ShoppingBag, MessageSquare, Instagram, Facebook } from "lucide-react"
 import { formatDistanceToNow } from "date-fns"
 
+import { Card, CardContent, Badge } from "@/components/ui"
 interface Activity {
   id: string
   activity_type: string

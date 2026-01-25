@@ -1,9 +1,10 @@
 "use client"
 
-import { Badge } from "@/components/ui/badge"
+
 import { cn } from "@/lib/utils"
 import { CheckCircle2, Clock, XCircle, AlertCircle, MinusCircle } from "lucide-react"
 
+import { Badge } from "@/components/ui"
 type StatusType = "active" | "pending" | "completed" | "error" | "disabled" | "review"
 
 interface StatusBadgeProps {

@@ -1,10 +1,10 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+
+
 import { Skeleton } from "@/components/ui/skeleton"
-import { Alert, AlertDescription } from "@/components/ui/alert"
+
 import { AlertCircle, TrendingUp, TrendingDown } from "lucide-react"
 import {
   ResponsiveContainer,
@@ -22,6 +22,7 @@ import {
 import { format } from "date-fns"
 import { formatUSD } from "@/lib/utils"
 
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Alert, AlertDescription } from "@/components/ui"
 interface PayoutTrendData {
   date: string
   payoutAmount: number

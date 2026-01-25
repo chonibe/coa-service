@@ -1,10 +1,11 @@
 "use client"
 
 import Image from "next/image"
-import { Badge } from "@/components/ui/badge"
+
 import { motion } from "framer-motion"
 import { ImageIcon } from "lucide-react"
 
+import { Badge } from "@/components/ui"
 interface HeroSectionProps {
   imageUrl: string | null
   artworkName: string

@@ -2,10 +2,11 @@
 
 import { useEffect, useState } from "react"
 import Link from "next/link"
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
-import { Button } from "@/components/ui/button"
+
+
 import { AlertCircle, LogOut } from "lucide-react"
 
+import { Alert, AlertDescription, AlertTitle, Button } from "@/components/ui"
 interface AuthStatusResponse {
   isAdmin: boolean
   vendorSession: string | null

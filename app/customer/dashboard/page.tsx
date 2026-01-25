@@ -3,16 +3,17 @@ import { ArtworkCard } from "@/components/ui/artwork-card"
 
 import { useEffect, useState, useRef } from "react"
 import { useRouter } from "next/navigation"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
+
+
+
 import { Loader2, Link, AlertCircle, Wifi, WifiOff, Scan, Hash, User, Album } from "lucide-react"
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
+
 import { NfcTagScanner } from '@/src/components/NfcTagScanner'
 import { toast } from "@/components/ui/use-toast"
 import { Toaster } from "@/components/ui/toaster"
 import { CertificateModal } from './certificate-modal'
 
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter, Button, Badge, Alert, AlertDescription, AlertTitle } from "@/components/ui"
 interface LineItem {
   line_item_id: string
   name: string

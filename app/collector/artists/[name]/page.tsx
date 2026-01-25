@@ -4,13 +4,14 @@ import { notFound } from "next/navigation"
 import { useEffect, useState } from "react"
 import Image from "next/image"
 import Link from "next/link"
-import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
+
+
 import { Separator } from "@/components/ui/separator"
 import { Skeleton } from "@/components/ui/skeleton"
 import { ArtistApiResponse, ArtistArtwork, ArtistSeries } from "@/types/collector"
 import { ArtworkCard } from "@/app/collector/discover/components/artwork-card"
 
+import { Badge, Button } from "@/components/ui"
 export default function ArtistProfilePage({ params }: { params: { name: string } }) {
   const { name } = params
   const [data, setData] = useState<ArtistApiResponse | null>(null)

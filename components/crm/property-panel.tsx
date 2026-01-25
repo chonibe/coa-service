@@ -1,14 +1,15 @@
 "use client"
 
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
-import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
+
+
+
+
+
+
 import { Save, X } from "lucide-react"
 import { useState } from "react"
 
+import { Card, CardContent, CardHeader, CardTitle, Input, Label, Textarea, Button, Badge } from "@/components/ui"
 interface Property {
   label: string
   value: string | null

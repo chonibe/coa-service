@@ -1,11 +1,12 @@
 "use client"
 
 import { useState } from "react"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
+
+
 import { X, Gamepad2, Gift, Crown, Clock, Sparkles } from "lucide-react"
 import { motion, AnimatePresence } from "framer-motion"
 
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, Button } from "@/components/ui"
 interface UnlockGuideProps {
   onDismiss?: () => void
   showDismiss?: boolean

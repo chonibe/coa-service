@@ -2,10 +2,11 @@
 
 import { useState, useEffect } from "react"
 import { Skeleton } from "@/components/ui/skeleton"
-import { Badge } from "@/components/ui/badge"
+
 import { ArtworkCard } from "./artwork-card"
 import { useToast } from "@/components/ui/use-toast"
 
+import { Badge } from "@/components/ui"
 interface Artwork {
   id: string
   title: string

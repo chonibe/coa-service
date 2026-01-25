@@ -5,6 +5,9 @@
 /* Import mobile-first utilities */
 @import './globals-mobile.css';
 
+/* Polaris Web Components - Loaded via CDN in layout.tsx */
+/* Polaris design tokens will be integrated here */
+
 @layer utilities {
   .scrollbar-hide {
     -ms-overflow-style: none;
@@ -256,11 +259,5 @@ button[aria-label] svg {
   }
 }
 
-/* Gradient overlays */
-.gradient-overlay-bottom {
-  background: linear-gradient(to top, rgba(0, 0, 0, 0.7) 0%, transparent 100%);
-}
-
-.gradient-overlay-top {
-  background: linear-gradient(to bottom, rgba(0, 0, 0, 0.5) 0%, transparent 100%);
-}
+/* Gradient overlays removed - using Polaris design system */
+/* .gradient-overlay-bottom and .gradient-overlay-top classes removed for Polaris migration */

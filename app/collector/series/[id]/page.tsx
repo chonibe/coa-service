@@ -4,7 +4,7 @@ import { notFound } from "next/navigation"
 import { useEffect, useState } from "react"
 import { ChevronLeft, MoreVertical } from "lucide-react"
 import Link from "next/link"
-import { Button } from "@/components/ui/button"
+
 import { Skeleton } from "@/components/ui/skeleton"
 import { CollectorSeries, SeriesApiResponse } from "@/types/collector"
 import { ProgressBar } from "./components/ProgressBar"
@@ -12,6 +12,7 @@ import { CollectionGrid } from "./components/CollectionGrid"
 import { NextUnlock } from "./components/NextUnlock"
 import { MilestoneRewards } from "./components/MilestoneRewards"
 
+import { Button } from "@/components/ui"
 export default function SeriesDetailPage({ params }: { params: { id: string } }) {
   const { id } = params
   const [series, setSeries] = useState<CollectorSeries | null>(null)

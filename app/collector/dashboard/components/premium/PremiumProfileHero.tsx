@@ -6,12 +6,13 @@ import {
   TrendingUp, Package, Globe, Database, Info,
   Map as MapIcon, User
 } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+;
+;
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
 import { InkOGatchi } from "../ink-o-gatchi";
 
+import { Badge, Card, CardContent, CardHeader, CardTitle } from "@/components/ui"
 interface PremiumProfileHeroProps {
   profile: any;
   avatar?: any;

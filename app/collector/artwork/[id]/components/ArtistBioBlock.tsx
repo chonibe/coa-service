@@ -1,8 +1,9 @@
 "use client"
 
-import { Card, CardContent } from "@/components/ui/card"
+
 import Image from "next/image"
 
+import { Card, CardContent } from "@/components/ui"
 interface ArtistBioBlockProps {
   name: string
   bio: string | null
