@@ -3,12 +3,14 @@ import type { NextRequest } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { cookies } from 'next/headers';
 import { getVendorFromCookieStore } from '@/lib/vendor-session';
+import { verifyCollectorSessionToken } from '@/lib/collector-session';
 
 /**
  * GET /api/banking/collector-identifier
- * Get collector identifier for the current vendor or customer
- * For vendors: tries to find their customer_id/account_number from orders
- * For customers: uses customer_id from cookie
+ * Get collector identifier for the current vendor or customer.
+ * Auth sources (in order):
+ * - Vendor: vendor_session cookie → vendor auth_id or vendor_name
+ * - Customer: collector_session (shopifyCustomerId or email) or shopify_customer_id cookie
  */
 export async function GET(request: NextRequest) {
   const startTime = Date.now();
@@ -123,39 +125,42 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    // Check if customer
-    const shopifyCustomerId = request.cookies.get('shopify_customer_id')?.value;
+    // Check collector_session (collector dashboard auth) or shopify_customer_id cookie
+    const collectorSession = verifyCollectorSessionToken(
+      cookieStore.get('collector_session')?.value ?? request.cookies.get('collector_session')?.value,
+    );
+    const shopifyCustomerId =
+      (typeof collectorSession?.shopifyCustomerId === 'string' && collectorSession.shopifyCustomerId !== ''
+        ? collectorSession.shopifyCustomerId
+        : null) ?? request.cookies.get('shopify_customer_id')?.value ?? null;
+    const customerEmail = collectorSession?.email?.trim() || null;
+
     console.log(`[${requestId}] [collector-identifier] Customer check:`, {
+      hasCollectorSession: !!collectorSession,
       shopifyCustomerId: shopifyCustomerId || 'null',
+      customerEmail: customerEmail ? `${customerEmail.substring(0, 12)}...` : 'null',
     });
 
+    const resolveCustomerIdentifier = async (customerIdRaw: string): Promise<string | null> => {
+      const customerIdNumber = parseInt(customerIdRaw, 10);
+      if (isNaN(customerIdNumber)) return null;
+      const { data: customerOrder } = await supabase
+        .from('orders')
+        .select('account_number, customer_id')
+        .eq('customer_id', customerIdNumber)
+        .limit(1)
+        .maybeSingle();
+      return customerOrder?.account_number ?? customerIdNumber.toString();
+    };
+
     if (shopifyCustomerId) {
-      const customerIdNumber = parseInt(shopifyCustomerId);
-      if (!isNaN(customerIdNumber)) {
-        console.log(`[${requestId}] [collector-identifier] Fetching customer order:`, { customerIdNumber });
-        
-        // Try to get account_number from orders
-        const { data: customerOrder, error: orderError } = await supabase
-          .from('orders')
-          .select('account_number, customer_id')
-          .eq('customer_id', customerIdNumber)
-          .limit(1)
-          .maybeSingle();
-
-        console.log(`[${requestId}] [collector-identifier] Customer order query result:`, {
-          found: !!customerOrder,
-          error: orderError,
-          accountNumber: customerOrder?.account_number,
-        });
-
-        const collectorIdentifier = customerOrder?.account_number || customerIdNumber.toString();
-
-        console.log(`[${requestId}] [collector-identifier] Success - returning customer identifier:`, {
-          collectorIdentifier,
+      const collectorIdentifier = await resolveCustomerIdentifier(shopifyCustomerId);
+      if (collectorIdentifier) {
+        console.log(`[${requestId}] [collector-identifier] Success - returning customer identifier (Shopify):`, {
+          collectorIdentifier: collectorIdentifier.length > 24 ? collectorIdentifier.substring(0, 24) + '...' : collectorIdentifier,
           accountType: 'customer',
           duration: Date.now() - startTime,
         });
-
         return NextResponse.json({
           success: true,
           collectorIdentifier,
@@ -165,22 +170,41 @@ export async function GET(request: NextRequest) {
       }
     }
 
+    if (customerEmail) {
+      const collectorIdentifier = customerEmail.toLowerCase();
+      console.log(`[${requestId}] [collector-identifier] Success - returning customer identifier (email):`, {
+        collectorIdentifier: collectorIdentifier.length > 24 ? collectorIdentifier.substring(0, 24) + '...' : collectorIdentifier,
+        accountType: 'customer',
+        duration: Date.now() - startTime,
+      });
+      return NextResponse.json({
+        success: true,
+        collectorIdentifier,
+        accountType: 'customer',
+        requestId,
+      });
+    }
+
     console.warn(`[${requestId}] [collector-identifier] No authentication found:`, {
       hasVendorName: !!vendorName,
+      hasCollectorSession: !!collectorSession,
       hasShopifyCustomerId: !!shopifyCustomerId,
+      hasCustomerEmail: !!customerEmail,
       duration: Date.now() - startTime,
     });
 
     return NextResponse.json(
-      { 
+      {
         error: 'Not authenticated as vendor or customer',
         requestId,
         details: {
           hasVendorName: !!vendorName,
+          hasCollectorSession: !!collectorSession,
           hasShopifyCustomerId: !!shopifyCustomerId,
+          hasCustomerEmail: !!customerEmail,
         },
       },
-      { status: 401 }
+      { status: 401 },
     );
   } catch (error: any) {
     console.error(`[${requestId}] [collector-identifier] Unexpected error:`, {

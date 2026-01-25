@@ -3,7 +3,7 @@ import { cookies } from "next/headers"
 import { createClient as createRouteClient } from "@/lib/supabase-server"
 import { createClient as createServiceClient } from "@/lib/supabase/server"
 import { getVendorFromCookieStore } from "@/lib/vendor-session"
-import { isAdminEmail } from "@/lib/vendor-auth"
+import { isAdminEmail, REQUIRE_ACCOUNT_SELECTION_COOKIE } from "@/lib/vendor-auth"
 import { ADMIN_SESSION_COOKIE_NAME, verifyAdminSessionToken } from "@/lib/admin-session"
 import { verifyCollectorSessionToken } from "@/lib/collector-session"
 
@@ -48,6 +48,8 @@ export async function GET() {
   const adminSessionToken = cookieStore.get(ADMIN_SESSION_COOKIE_NAME)?.value
   const adminSessionPayload = verifyAdminSessionToken(adminSessionToken)
   const hasAdminSession = !!adminSessionPayload?.email && isAdminEmail(adminSessionPayload.email)
+
+  const requireAccountSelection = cookieStore.get(REQUIRE_ACCOUNT_SELECTION_COOKIE)?.value === "true"
 
   let vendor = null as null | { id: number; vendor_name: string; status: string | null }
 
@@ -106,6 +108,7 @@ export async function GET() {
     collectorEmail: collectorSession?.email || null,
     vendorSession: vendorSessionName,
     vendor,
+    requireAccountSelection,
   })
 }
 

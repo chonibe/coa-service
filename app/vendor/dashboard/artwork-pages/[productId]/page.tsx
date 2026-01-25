@@ -32,6 +32,9 @@ import Link from "next/link"
 import { useToast } from "@/components/ui/use-toast"
 import { CopyContentModal } from "../components/CopyContentModal"
 import { MediaLibraryModal, type MediaItem } from "@/components/vendor/MediaLibraryModal"
+import { VideoBlock } from "@/app/collector/artwork/[id]/components/VideoBlock"
+import { AudioBlock } from "@/app/collector/artwork/[id]/components/AudioBlock"
+import { ImageBlock } from "@/app/collector/artwork/[id]/components/ImageBlock"
 
 interface ContentBlock {
   id: number
@@ -873,28 +876,65 @@ export default function ArtworkPageEditor() {
               {/* Content Blocks */}
               {contentBlocks
                 .filter((b) => previewMode === "unlocked" ? b.is_published : true)
-                .map((block) => (
-                  <div key={block.id} className="border rounded-lg p-4">
-                    {block.title && <h3 className="font-semibold mb-2">{block.title}</h3>}
-                    {block.description && (
-                      <p className="text-sm text-muted-foreground whitespace-pre-line">
-                        {block.description}
-                      </p>
-                    )}
-                    {block.content_url && (
-                      <div className="mt-2">
-                        <a
-                          href={block.content_url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-primary hover:underline text-sm"
-                        >
-                          View Content →
-                        </a>
-                      </div>
-                    )}
-                  </div>
-                ))}
+                .map((block) => {
+                  const blockType = block.block_type || ""
+                  
+                  // Render actual components for better preview
+                  if (blockType === "video" && block.content_url) {
+                    return (
+                      <VideoBlock
+                        key={block.id}
+                        title={block.title}
+                        contentUrl={block.content_url}
+                      />
+                    )
+                  }
+                  
+                  if (blockType === "audio" && block.content_url) {
+                    return (
+                      <AudioBlock
+                        key={block.id}
+                        title={block.title}
+                        contentUrl={block.content_url}
+                      />
+                    )
+                  }
+                  
+                  if (blockType === "image" && block.content_url) {
+                    return (
+                      <ImageBlock
+                        key={block.id}
+                        title={block.title}
+                        contentUrl={block.content_url}
+                        blockConfig={block.block_config}
+                      />
+                    )
+                  }
+                  
+                  // Default preview for text and other blocks
+                  return (
+                    <div key={block.id} className="border rounded-lg p-4">
+                      {block.title && <h3 className="font-semibold mb-2">{block.title}</h3>}
+                      {block.description && (
+                        <p className="text-sm text-muted-foreground whitespace-pre-line">
+                          {block.description}
+                        </p>
+                      )}
+                      {block.content_url && !["video", "audio", "image"].includes(blockType) && (
+                        <div className="mt-2">
+                          <a
+                            href={block.content_url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-primary hover:underline text-sm"
+                          >
+                            View Content →
+                          </a>
+                        </div>
+                      )}
+                    </div>
+                  )
+                })}
             </div>
           </CardContent>
         </Card>

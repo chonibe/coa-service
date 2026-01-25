@@ -11,7 +11,7 @@ import {
   ShieldCheck, Timer, Wallet, Wand2, 
   Award, DollarSign, LayoutGrid, ArrowLeft,
   Share2, MoreHorizontal, History as HistoryIcon, Heart,
-  ExternalLink
+  ExternalLink, ShoppingBag
 } from "lucide-react"
 import Link from "next/link"
 import { formatCurrency } from "@/lib/utils"
@@ -128,10 +128,14 @@ export default function CollectorDashboardPage() {
           }
         }
 
-        // Check if user is admin
+        // If account selection is required (e.g. after logout), redirect to login
         if (authStatusRes.ok) {
           const authData = await authStatusRes.json()
           setIsAdmin(authData.isAdmin || false)
+          if (authData.requireAccountSelection === true) {
+            router.replace("/login")
+            return
+          }
         }
       } catch (err: any) {
         setError(err.message || "Failed to load collector dashboard")

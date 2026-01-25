@@ -105,9 +105,17 @@ export default function LoginClient() {
           throw new Error("Unable to check session")
         }
 
-        const data = (await response.json()) as AuthStatusResponse
+        const data = (await response.json()) as AuthStatusResponse & { requireAccountSelection?: boolean }
 
         if (hasRedirected.current) {
+          setCheckingSession(false)
+          return
+        }
+
+        // When account selection is required (e.g. after logout), never auto-redirect.
+        // User must explicitly choose Collector/Vendor and sign in again.
+        if (data.requireAccountSelection === true) {
+          console.log(`[login-client] requireAccountSelection=true — staying on login, no auto-redirect`)
           setCheckingSession(false)
           return
         }
