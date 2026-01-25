@@ -127,6 +127,12 @@ export async function POST(request: NextRequest) {
       unlock_config: seriesData.unlock_config || {},
       display_order: seriesData.display_order || 0,
       is_active: true,
+      // Smart collection fields
+      collection_type: (seriesData as any).collection_type || 'manual',
+      smart_conditions: (seriesData as any).smart_conditions || [],
+      smart_match: (seriesData as any).smart_match || 'all',
+      sort_order: (seriesData as any).sort_order || 'manual',
+      sync_to_shopify: (seriesData as any).sync_to_shopify !== undefined ? (seriesData as any).sync_to_shopify : true,
     }
 
     // Only include optional fields if they exist in the data

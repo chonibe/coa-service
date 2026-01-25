@@ -183,6 +183,12 @@ export async function PUT(
     if (seriesData.genre_tags !== undefined) updateData.genre_tags = seriesData.genre_tags || null
     if (seriesData.unlock_progress !== undefined) updateData.unlock_progress = seriesData.unlock_progress || {}
     if (seriesData.unlock_milestones !== undefined) updateData.unlock_milestones = seriesData.unlock_milestones || []
+    // Smart collection fields
+    if ((seriesData as any).collection_type !== undefined) updateData.collection_type = (seriesData as any).collection_type
+    if ((seriesData as any).smart_conditions !== undefined) updateData.smart_conditions = (seriesData as any).smart_conditions
+    if ((seriesData as any).smart_match !== undefined) updateData.smart_match = (seriesData as any).smart_match
+    if ((seriesData as any).sort_order !== undefined) updateData.sort_order = (seriesData as any).sort_order
+    if ((seriesData as any).sync_to_shopify !== undefined) updateData.sync_to_shopify = (seriesData as any).sync_to_shopify
 
     const { data: updatedSeries, error: updateError } = await supabase
       .from("artwork_series")

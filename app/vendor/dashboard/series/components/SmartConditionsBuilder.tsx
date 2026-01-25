@@ -68,6 +68,7 @@ export function SmartConditionsBuilder({
 }: SmartConditionsBuilderProps) {
   const [availableTags, setAvailableTags] = useState<string[]>([])
   const [loading, setLoading] = useState(true)
+  const [openPopovers, setOpenPopovers] = useState<Record<number, boolean>>({})
 
   // Fetch available tags from artworks
   useEffect(() => {
@@ -189,7 +190,10 @@ export function SmartConditionsBuilder({
                 </Select>
 
                 {condition.field === 'tag' && availableTags.length > 0 ? (
-                  <Popover>
+                  <Popover 
+                    open={openPopovers[index]} 
+                    onOpenChange={(open) => setOpenPopovers(prev => ({ ...prev, [index]: open }))}
+                  >
                     <PopoverTrigger asChild>
                       <Button
                         variant="outline"
@@ -203,7 +207,7 @@ export function SmartConditionsBuilder({
                         <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                       </Button>
                     </PopoverTrigger>
-                    <PopoverContent className="w-[300px] p-0">
+                    <PopoverContent className="w-[300px] p-0" align="start">
                       <Command>
                         <CommandInput placeholder="Search tags..." />
                         <CommandEmpty>No tag found.</CommandEmpty>
@@ -214,6 +218,7 @@ export function SmartConditionsBuilder({
                               value={tag}
                               onSelect={() => {
                                 handleUpdateCondition(index, { value: tag })
+                                setOpenPopovers(prev => ({ ...prev, [index]: false }))
                               }}
                             >
                               <Check
