@@ -1,195 +1,173 @@
-// app/vendor/dashboard/artwork-pages/components/InspirationBoardEditor.tsx
-import React, { useState, useCallback } from 'react';
-import { Input, Button } from '@/components/ui';
-import { ImageIcon, Plus, Trash2, Loader2, Upload } from 'lucide-react';
-import Image from 'next/image';
-import { useToast } from '@/components/ui/use-toast';
-import { type MediaItem, MediaLibraryModal } from '@/components/vendor/MediaLibraryModal';
+"use client"
+
+import React, { useState } from "react"
+import { Lightbulb, Upload, X, Plus } from "lucide-react"
+import { Input, Textarea, Label, Button } from "@/components/ui"
+import Image from "next/image"
 
 interface InspirationImage {
-  url: string;
-  caption?: string;
-  id?: string; // Optional ID for existing images
+  url: string
+  caption?: string
 }
 
 interface InspirationBoardEditorProps {
-  story?: string;
-  images: InspirationImage[];
-  onUpdate: (updates: { story?: string; images: InspirationImage[] }) => void;
-  onFileUpload: (file: File, blockType: string) => Promise<string>; // Should return the URL
+  blockId: number
+  config: {
+    story?: string
+    images?: InspirationImage[]
+  }
+  onChange: (config: { story?: string; images: InspirationImage[] }) => void
+  onImageUpload?: (blockId: number) => void
 }
 
+/**
+ * InspirationBoardEditor - Masonry image uploader for mood board
+ * 
+ * Features:
+ * - Add/remove images
+ * - Add captions to each image
+ * - Story text for context
+ */
 const InspirationBoardEditor: React.FC<InspirationBoardEditorProps> = ({
-  story: initialStory,
-  images: initialImages,
-  onUpdate,
-  onFileUpload,
+  blockId,
+  config,
+  onChange,
+  onImageUpload,
 }) => {
-  const [story, setStory] = useState(initialStory);
-  const [currentImages, setCurrentImages] = useState(initialImages);
-  const [uploadingImageIds, setUploadingImageIds] = useState<Set<string>>(new Set());
-  const [showMediaLibrary, setShowMediaLibrary] = useState(false);
-  const { toast } = useToast();
+  const [story, setStory] = useState(config.story || "")
+  const [images, setImages] = useState<InspirationImage[]>(config.images || [])
 
-  const handleStoryChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    const newStory = e.target.value;
-    setStory(newStory);
-    onUpdate({ story: newStory, images: currentImages });
-  };
+  const handleStoryChange = (value: string) => {
+    setStory(value)
+    onChange({ story: value, images })
+  }
 
-  const handleImageUpload = useCallback(async (file: File) => {
-    const tempId = `temp-${Date.now()}`;
-    setUploadingImageIds((prev) => new Set(prev).add(tempId));
-
-    try {
-      const imageUrl = await onFileUpload(file, 'image');
-      const newImage: InspirationImage = {
-        url: imageUrl,
-        caption: '',
-        id: `img-${Date.now()}`,
-      };
-      const updatedImages = [...currentImages, newImage];
-      setCurrentImages(updatedImages);
-      onUpdate({ story, images: updatedImages });
-      toast({ title: 'Image Uploaded', description: 'Image added to inspiration board.' });
-    } catch (error) {
-      console.error('Error uploading image:', error);
-      toast({ title: 'Upload Failed', description: 'Failed to upload image.', variant: 'destructive' });
-    } finally {
-      setUploadingImageIds((prev) => { const next = new Set(prev); next.delete(tempId); return next; });
+  const handleAddImage = () => {
+    if (onImageUpload) {
+      onImageUpload(blockId)
     }
-  }, [story, currentImages, onUpdate, onFileUpload, toast]);
+  }
 
-  const handleMediaLibrarySelect = useCallback(async (media: MediaItem | MediaItem[]) => {
-    const selectedMedia = Array.isArray(media) ? media[0] : media;
-    if (selectedMedia) {
-      const newImage: InspirationImage = {
-        url: selectedMedia.url,
-        caption: '',
-        id: `img-${Date.now()}`,
-      };
-      const updatedImages = [...currentImages, newImage];
-      setCurrentImages(updatedImages);
-      onUpdate({ story, images: updatedImages });
-      toast({ title: 'Media Selected', description: 'Image added from library.' });
-    }
-    setShowMediaLibrary(false);
-  }, [story, currentImages, onUpdate, toast]);
+  const handleRemoveImage = (index: number) => {
+    const newImages = images.filter((_, i) => i !== index)
+    setImages(newImages)
+    onChange({ story, images: newImages })
+  }
 
-  const handleImageRemove = useCallback((idToRemove: string) => {
-    const updatedImages = currentImages.filter((img) => img.id !== idToRemove);
-    setCurrentImages(updatedImages);
-    onUpdate({ story, images: updatedImages });
-  }, [story, currentImages, onUpdate]);
-
-  const handleImageCaptionChange = useCallback((idToUpdate: string, newCaption: string) => {
-    const updatedImages = currentImages.map((img) =>
-      img.id === idToUpdate ? { ...img, caption: newCaption } : img
-    );
-    setCurrentImages(updatedImages);
-    onUpdate({ story, images: updatedImages });
-  }, [story, currentImages, onUpdate]);
+  const handleCaptionChange = (index: number, caption: string) => {
+    const newImages = [...images]
+    newImages[index] = { ...newImages[index], caption }
+    setImages(newImages)
+    onChange({ story, images: newImages })
+  }
 
   return (
     <div className="space-y-6">
-      <div>
-        <label className="block text-sm font-medium text-gray-300 mb-2">Story (optional)</label>
-        <textarea
-          value={story || ''}
-          onChange={handleStoryChange}
-          placeholder="What inspired this work? Share references, mood images, or visual influences"
-          rows={3}
-          className="w-full p-3 bg-gray-700 rounded-md text-gray-200 border border-gray-600 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
-        />
-      </div>
-
-      <div className="space-y-4">
-        <label className="block text-sm font-medium text-gray-300">Images</label>
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-          {currentImages.map((image, index) => (
-            <div
-              key={image.id || image.url} // Use id if available, fallback to url
-              className="relative bg-gray-800 rounded-lg overflow-hidden shadow-md group"
-            >
-              <div className="relative w-full aspect-square">
-                <Image
-                  src={image.url}
-                  alt={image.caption || `Inspiration image ${index + 1}`}
-                  layout="fill"
-                  objectFit="cover"
-                />
-              </div>
-              <div className="p-3 space-y-2">
-                <Input
-                  type="text"
-                  placeholder="Caption (optional)"
-                  value={image.caption || ''}
-                  onChange={(e) => handleImageCaptionChange(image.id || image.url, e.target.value)}
-                  className="w-full bg-gray-700 border-gray-600 text-white text-sm"
-                />
-                <Button
-                  variant="destructive"
-                  size="sm"
-                  onClick={() => handleImageRemove(image.id || image.url)}
-                  className="w-full"
-                >
-                  <Trash2 className="h-4 w-4 mr-2" /> Remove
-                </Button>
-              </div>
-            </div>
-          ))}
-
-          {uploadingImageIds.size > 0 && Array.from(uploadingImageIds).map(tempId => (
-            <div key={tempId} className="relative bg-gray-800 rounded-lg p-4 flex flex-col items-center justify-center aspect-square border border-dashed border-gray-600">
-              <Loader2 className="h-8 w-8 text-gray-400 animate-spin mb-2" />
-              <p className="text-sm text-gray-400">Uploading...</p>
-            </div>
-          ))}
-
-          <div className="flex flex-col space-y-2">
-            <Button
-              variant="outline"
-              className="flex-1 h-24 border-dashed border-gray-600 text-gray-400 hover:border-solid hover:border-green-500 hover:text-green-400"
-              onClick={() => setShowMediaLibrary(true)}
-            >
-              <ImageIcon className="h-5 w-5 mr-2" /> Choose from Library
-            </Button>
-            <Input
-              id="inspiration-image-upload"
-              type="file"
-              accept="image/*"
-              multiple
-              onChange={(e) => {
-                if (e.target.files) {
-                  Array.from(e.target.files).forEach(file => handleImageUpload(file));
-                  e.target.value = ''; // Reset input
-                }
-              }}
-              className="hidden"
-            />
-            <Button
-              variant="outline"
-              className="flex-1 h-24 border-dashed border-gray-600 text-gray-400 hover:border-solid hover:border-green-500 hover:text-green-400"
-              onClick={() => document.getElementById('inspiration-image-upload')?.click()}
-            >
-              <Upload className="h-5 w-5 mr-2" /> Upload Images
-            </Button>
-          </div>
+      {/* Section Header */}
+      <div className="flex items-center gap-3">
+        <div className="w-12 h-12 rounded-full bg-yellow-500/10 flex items-center justify-center">
+          <Lightbulb className="h-6 w-6 text-yellow-500" />
+        </div>
+        <div>
+          <h3 className="text-lg font-semibold text-white">Inspiration Board</h3>
+          <p className="text-sm text-gray-400">Share what influenced this work</p>
         </div>
       </div>
 
-      <p className="text-xs text-gray-500 mt-1">💡 Tip: What influenced this work? Photos, screenshots, textures - help collectors see through your eyes.</p>
+      {/* Story */}
+      <div className="space-y-2">
+        <Label htmlFor={`story-${blockId}`} className="text-white">
+          Story <span className="text-gray-500">(optional)</span>
+        </Label>
+        <Textarea
+          id={`story-${blockId}`}
+          placeholder="These images and references capture the mood and energy that inspired this piece..."
+          value={story}
+          onChange={(e) => handleStoryChange(e.target.value)}
+          rows={3}
+          className="bg-gray-800 border-gray-700 text-white resize-none"
+        />
+      </div>
 
-      <MediaLibraryModal
-        open={showMediaLibrary}
-        onOpenChange={setShowMediaLibrary}
-        onSelect={handleMediaLibrarySelect}
-        mode="multiple"
-        allowedTypes={['image']}
-        title="Select Media for Inspiration Board"
-      />
+      {/* Images */}
+      <div className="space-y-3">
+        <Label className="text-white">Images</Label>
+
+        {images.length === 0 ? (
+          <div className="border-2 border-dashed border-gray-700 rounded-lg p-8 text-center">
+            <Lightbulb className="h-12 w-12 text-gray-600 mx-auto mb-3" />
+            <p className="text-gray-400 mb-4">No images added yet</p>
+            <Button
+              onClick={handleAddImage}
+              variant="outline"
+              className="bg-gray-800 text-white border-gray-700 hover:bg-gray-700"
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              Add Images
+            </Button>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {/* Masonry-style Grid */}
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+              {images.map((image, index) => (
+                <div
+                  key={index}
+                  className="bg-gray-800 rounded-lg overflow-hidden border border-gray-700 group"
+                >
+                  {/* Image */}
+                  <div className="relative aspect-square bg-gray-900">
+                    <Image
+                      src={image.url}
+                      alt={`Inspiration ${index + 1}`}
+                      fill
+                      className="object-cover"
+                    />
+                    {/* Remove Button */}
+                    <button
+                      onClick={() => handleRemoveImage(index)}
+                      className="absolute top-2 right-2 w-8 h-8 rounded-full bg-red-500 hover:bg-red-600 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-lg"
+                    >
+                      <X className="h-4 w-4 text-white" />
+                    </button>
+                  </div>
+
+                  {/* Caption */}
+                  <div className="p-3">
+                    <Input
+                      placeholder="Caption..."
+                      value={image.caption || ""}
+                      onChange={(e) => handleCaptionChange(index, e.target.value)}
+                      className="bg-gray-900 border-gray-700 text-white text-sm"
+                    />
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Add More Button */}
+            <Button
+              onClick={handleAddImage}
+              variant="outline"
+              className="w-full bg-gray-800 text-white border-gray-700 hover:bg-gray-700"
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              Add More Images
+            </Button>
+          </div>
+        )}
+      </div>
+
+      {/* Help Text */}
+      <div className="p-4 bg-gray-800/50 rounded-lg border border-gray-700">
+        <p className="text-sm text-gray-400 leading-relaxed">
+          <strong className="text-gray-300">Tip:</strong> Share photos, screenshots, 
+          textures, or anything that influenced your creative process. Help collectors 
+          see through your eyes.
+        </p>
+      </div>
     </div>
-  );
-};
+  )
+}
 
-export default InspirationBoardEditor;
+export default InspirationBoardEditor

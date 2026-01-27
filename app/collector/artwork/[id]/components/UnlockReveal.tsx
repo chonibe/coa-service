@@ -1,112 +1,140 @@
 "use client"
 
-import React, { useEffect } from "react"
-import { motion } from "framer-motion"
-// Removed Confetti import
-import { Sparkles, CheckCircle2 } from "lucide-react"
-// Removed useWindowSize import
+import React, { useEffect, useState } from "react"
+import { motion, AnimatePresence } from "framer-motion"
+import { Unlock, Sparkles } from "lucide-react"
 
 interface UnlockRevealProps {
   artworkName: string
-  onComplete?: () => void
+  onComplete: () => void
 }
 
-export function UnlockReveal({ artworkName, onComplete }: UnlockRevealProps) {
-  // Removed useWindowSize hook
+/**
+ * UnlockReveal - Smooth blur-dissolve unlock animation
+ * 
+ * Features:
+ * - Blur-to-clear transition (instead of confetti)
+ * - Elegant fade animation
+ * - Haptic feedback on mobile (if available)
+ * - Fast, premium feel (0.8s)
+ */
+const UnlockReveal: React.FC<UnlockRevealProps> = ({ artworkName, onComplete }) => {
+  const [isVisible, setIsVisible] = useState(true)
 
   useEffect(() => {
-    // Trigger haptic feedback if available
-    if (typeof window !== "undefined" && "vibrate" in navigator) {
-      navigator.vibrate([100, 50, 100, 50, 200])
+    // Trigger haptic feedback on mobile
+    if ("vibrate" in navigator) {
+      navigator.vibrate([50, 100, 50])
     }
 
-    // Auto-complete after animation (0.8s for blur-dissolve)
+    // Auto-dismiss after animation completes
     const timer = setTimeout(() => {
-      onComplete?.()
-    }, 800) // Faster, more elegant transition (0.8s)
+      setIsVisible(false)
+      setTimeout(onComplete, 500) // Wait for exit animation
+    }, 2500)
 
     return () => clearTimeout(timer)
   }, [onComplete])
 
   return (
-    <motion.div
-      initial={{ opacity: 1, backdropFilter: "blur(20px)" }}
-      animate={{ opacity: 0, backdropFilter: "blur(0px)" }}
-      transition={{ duration: 0.8, ease: "easeOut" }} // Smooth blur-dissolve animation
-      className="fixed inset-0 z-[100] flex items-center justify-center bg-background/95 backdrop-blur-md"
-      // The content itself will fade out/dissolve with the background blur
-    >
-      {/* Content for the reveal, e.g., Unlocked! message */}
-      <motion.div
-        initial={{ scale: 0.8, opacity: 0 }}
-        animate={{ scale: 1, opacity: 1 }}
-        transition={{ delay: 0.1, type: "spring", damping: 15 }}
-        className="text-center space-y-6 px-6 max-w-md"
-      >
-        {/* Success Icon */}
-        <div className="relative mx-auto w-24 h-24">
-          <motion.div
-            initial={{ scale: 0 }}
-            animate={{ scale: 1 }}
-            transition={{ delay: 0.2, type: "spring", damping: 12, stiffness: 200 }}
-            className="w-24 h-24 bg-primary rounded-full flex items-center justify-center shadow-lg shadow-primary/30"
-          >
-            <CheckCircle2 className="w-12 h-12 text-primary-foreground" />
-          </motion.div>
-          <motion.div
-            animate={{
-              scale: [1, 1.3, 1],
-              opacity: [0.5, 0.2, 0.5],
-            }}
-            transition={{ duration: 2, repeat: Infinity, delay: 0.3 }}
-            className="absolute -inset-4 bg-primary rounded-full -z-10"
-          />
-        </div>
-
-        {/* Message */}
-        <motion.div
-          initial={{ y: 20, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          transition={{ delay: 0.4 }}
-          className="space-y-3"
-        >
-          <div className="flex items-center justify-center gap-2">
-            <Sparkles className="w-6 h-6 text-primary" />
-            <h2 className="text-3xl font-bold">Unlocked!</h2>
-            <Sparkles className="w-6 h-6 text-primary" />
-          </div>
-          <p className="text-lg text-muted-foreground">
-            {artworkName} is now authenticated
-          </p>
-          <p className="text-sm text-muted-foreground">
-            Scroll down to explore exclusive content from the artist
-          </p>
-        </motion.div>
-
-        {/* Loading dots */}
+    <AnimatePresence>
+      {isVisible && (
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          transition={{ delay: 0.7 }}
-          className="flex items-center justify-center gap-2"
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.3 }}
+          className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-xl"
+          onClick={() => {
+            setIsVisible(false)
+            setTimeout(onComplete, 500)
+          }}
         >
-          {[0, 1, 2].map((i) => (
-            <motion.div
-              key={i}
-              animate={{
-                scale: [1, 1.2, 1],
-                opacity: [0.5, 1, 0.5],
-              }}
-              transition={{
-                duration: 1,
-                repeat: Infinity,
-                delay: i * 0.2,
-              }}
-              className="w-2 h-2 rounded-full bg-primary"
-            />
-          ))}
+          {/* Blur Dissolve Effect */}
+          <motion.div
+            initial={{ scale: 0.8, filter: "blur(20px)", opacity: 0 }}
+            animate={{
+              scale: 1,
+              filter: "blur(0px)",
+              opacity: 1,
+            }}
+            transition={{
+              duration: 0.8,
+              ease: [0.16, 1, 0.3, 1], // Custom easing for smooth feel
+            }}
+            className="relative"
+          >
+            {/* Main Content */}
+            <div className="relative bg-gradient-to-br from-green-500/20 via-emerald-500/20 to-green-500/20 backdrop-blur-xl rounded-3xl p-12 border-2 border-green-500/30 shadow-2xl max-w-md mx-4">
+              {/* Sparkle Effects */}
+              <motion.div
+                initial={{ opacity: 0, scale: 0 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ delay: 0.3, duration: 0.5 }}
+                className="absolute -top-6 -right-6"
+              >
+                <Sparkles className="h-12 w-12 text-green-400 drop-shadow-lg" />
+              </motion.div>
+              <motion.div
+                initial={{ opacity: 0, scale: 0 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ delay: 0.4, duration: 0.5 }}
+                className="absolute -bottom-6 -left-6"
+              >
+                <Sparkles className="h-10 w-10 text-emerald-400 drop-shadow-lg" />
+              </motion.div>
+
+              {/* Icon */}
+              <motion.div
+                initial={{ scale: 0, rotate: -180 }}
+                animate={{ scale: 1, rotate: 0 }}
+                transition={{ delay: 0.2, duration: 0.6, type: "spring", bounce: 0.5 }}
+                className="w-24 h-24 mx-auto mb-6 rounded-full bg-gradient-to-br from-green-400 to-emerald-500 flex items-center justify-center shadow-lg shadow-green-500/50"
+              >
+                <Unlock className="h-12 w-12 text-white" />
+              </motion.div>
+
+              {/* Text */}
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.4, duration: 0.5 }}
+                className="text-center"
+              >
+                <h2 className="text-3xl font-bold text-white mb-3">
+                  Unlocked!
+                </h2>
+                <p className="text-gray-300 text-lg">
+                  {artworkName}
+                </p>
+                <p className="text-gray-400 text-sm mt-4">
+                  Exclusive content now available
+                </p>
+              </motion.div>
+
+              {/* Tap to Continue Hint */}
+              <motion.p
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 1.5, duration: 0.5 }}
+                className="text-center text-gray-500 text-xs mt-6"
+              >
+                Tap anywhere to continue
+              </motion.p>
+            </div>
+          </motion.div>
+
+          {/* Background Glow Effect */}
+          <motion.div
+            initial={{ opacity: 0, scale: 0.5 }}
+            animate={{ opacity: 0.3, scale: 2 }}
+            transition={{ duration: 1.5 }}
+            className="absolute inset-0 bg-gradient-radial from-green-500/20 via-transparent to-transparent blur-3xl pointer-events-none"
+          />
         </motion.div>
-      </motion.div>
-    </motion.div>
+      )}
+    </AnimatePresence>
   )
 }
+
+export default UnlockReveal

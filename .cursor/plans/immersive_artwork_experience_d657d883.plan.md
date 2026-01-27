@@ -5,54 +5,54 @@ todos:
   - id: db-migration
     content: Create database migration to add new benefit types (Soundtrack, Voice Note, Process Gallery, Inspiration Board)
     status: completed
+  - id: lib-helpers
+    content: Create lib/spotify.ts and verify lib/countdown.ts helpers
+    status: completed
   - id: soundtrack-section
-    content: Build SoundtrackSection component with Spotify embed and artist note
+    content: Build SoundtrackSection component with Spotify embed and artist note (REBUILT)
     status: completed
   - id: voicenote-section
-    content: Build VoiceNoteSection component with custom audio player and waveform
+    content: Build VoiceNoteSection component with custom audio player and waveform (REBUILT)
     status: completed
   - id: process-gallery
-    content: Build ProcessGallerySection component with horizontal scroll and captions
+    content: Build ProcessGallerySection component with horizontal scroll and captions (REBUILT)
     status: completed
   - id: inspiration-board
-    content: Build InspirationBoardSection component with masonry grid layout
+    content: Build InspirationBoardSection component with masonry grid layout (REBUILT)
     status: completed
   - id: artist-note
-    content: Build ArtistNoteSection component with letter-style typography
+    content: Build ArtistNoteSection component with letter-style typography (REBUILT)
     status: completed
   - id: discovery-section
-    content: Build DiscoverySection showing next drops, series artworks, countdowns, and unlock rewards
+    content: Build DiscoverySection showing next drops, series artworks, countdowns, and unlock rewards (REBUILT)
     status: completed
   - id: special-chips
-    content: Build SpecialArtworkChip component for VIP unlocks, hidden series, and timed releases
-    status: completed
-  - id: builder-redesign
-    content: Redesign artist content builder with immersive layout, inline editing, and progress indicators
-    status: completed
-  - id: vendor-editors
-    content: Create vendor editor components for each new block type (Soundtrack, VoiceNote, ProcessGallery, InspirationBoard)
-    status: completed
-  - id: voice-recorder
-    content: Build VoiceNoteRecorder component with MediaRecorder API and waveform visualization
-    status: completed
-  - id: visual-redesign
-    content: "Update artwork page layout: remove card borders, add whitespace, dark mode default"
+    content: Build SpecialArtworkChip component for VIP unlocks, hidden series, and timed releases (REBUILT)
     status: completed
   - id: unlock-animation
-    content: Replace confetti unlock with smooth blur-dissolve animation
+    content: Replace confetti unlock with smooth blur-dissolve animation (REBUILT)
     status: completed
-  - id: api-updates
-    content: Update vendor and collector APIs to handle new block types and discovery data
+  - id: locked-preview
+    content: Update LockedContentPreview with teaser design (REBUILT)
+    status: completed
+  - id: api-discovery
+    content: Update collector API to return discovery data and special chips
+    status: completed
+  - id: soundtrack-editor
+    content: Build SoundtrackEditor with Spotify URL validation and live preview (REBUILT)
+    status: completed
+  - id: process-editor
+    content: Build ProcessGalleryEditor with drag-and-drop (REBUILT)
+    status: completed
+  - id: inspiration-editor
+    content: Build InspirationBoardEditor with masonry upload (REBUILT)
     status: completed
   - id: template-update
-    content: Update default template to include new block types
+    content: Verify template includes new block types
     status: completed
   - id: testing
     content: "Test all new features: vendor flow, collector view, mobile responsiveness"
-    status: pending
-  - id: countdown-helper
-    content: Create `lib/countdown.ts` - Helper for countdown calculations
-    status: completed
+    status: in_progress
 isProject: false
 ---
 

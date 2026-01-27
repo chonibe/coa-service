@@ -1,75 +1,118 @@
-// app/collector/artwork/[id]/components/InspirationBoardSection.tsx
-import React, { useState } from 'react';
-import Image from 'next/image';
+"use client"
 
-interface InspirationBoardSectionProps {
-  story?: string;
-  images: Array<{ url: string; caption?: string }>;
+import React, { useState } from "react"
+import { Lightbulb, X } from "lucide-react"
+import Image from "next/image"
+
+interface InspirationImage {
+  url: string
+  caption?: string
 }
 
-const InspirationBoardSection: React.FC<InspirationBoardSectionProps> = ({
-  story,
-  images,
-}) => {
-  const [expandedImage, setExpandedImage] = useState<{ url: string; caption?: string } | null>(null);
+interface InspirationBoardSectionProps {
+  story?: string
+  images: InspirationImage[]
+}
+
+/**
+ * InspirationBoardSection - Masonry grid layout showing artistic influences
+ * 
+ * Features:
+ * - Pinterest-style masonry grid
+ * - Tap to expand with caption
+ * - Story text introduction
+ * - Responsive column layout
+ */
+const InspirationBoardSection: React.FC<InspirationBoardSectionProps> = ({ story, images }) => {
+  const [expandedImage, setExpandedImage] = useState<number | null>(null)
 
   if (!images || images.length === 0) {
-    return null; // Or render an empty state
+    return null
+  }
+
+  const handleImageClick = (index: number) => {
+    setExpandedImage(expandedImage === index ? null : index)
   }
 
   return (
-    <section className="py-16">
-      <h2 className="text-3xl font-bold mb-8">Inspiration Board</h2>
-      {story && <p className="text-lg text-gray-300 mb-8">{story}</p>}
+    <section className="py-8 md:py-16">
+      {/* Section Header */}
+      <div className="flex items-center gap-3 mb-6">
+        <Lightbulb className="h-6 w-6 text-yellow-400" />
+        <h2 className="text-2xl md:text-3xl font-bold text-white">Inspiration Board</h2>
+      </div>
 
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+      {/* Story Text */}
+      {story && (
+        <p className="text-gray-300 text-base md:text-lg leading-relaxed mb-8">
+          {story}
+        </p>
+      )}
+
+      {/* Masonry Grid */}
+      <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
         {images.map((image, index) => (
           <div
             key={index}
-            className="relative w-full h-48 bg-gray-900 rounded-lg overflow-hidden cursor-pointer shadow-lg hover:ring-2 hover:ring-green-400 transition-all duration-200"
-            onClick={() => setExpandedImage(image)}
+            className={`relative rounded-lg overflow-hidden cursor-pointer transition-all hover:scale-105 hover:shadow-2xl ${
+              expandedImage === index ? "col-span-2 row-span-2" : ""
+            }`}
+            onClick={() => handleImageClick(index)}
           >
-            <Image
-              src={image.url}
-              alt={image.caption || 'Inspiration Image'}
-              layout="fill"
-              objectFit="cover"
-            />
+            {/* Image */}
+            <div className="relative w-full" style={{ paddingBottom: expandedImage === index ? "100%" : "133%" }}>
+              <Image
+                src={image.url}
+                alt={image.caption || `Inspiration ${index + 1}`}
+                fill
+                className="object-cover"
+              />
+
+              {/* Hover Overlay */}
+              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-0 hover:opacity-100 transition-opacity" />
+
+              {/* Caption Preview on Hover */}
+              {image.caption && !expandedImage && (
+                <div className="absolute bottom-0 left-0 right-0 p-3 bg-gradient-to-t from-black/90 to-transparent opacity-0 hover:opacity-100 transition-opacity">
+                  <p className="text-white text-xs md:text-sm line-clamp-2">
+                    {image.caption}
+                  </p>
+                </div>
+              )}
+            </div>
+
+            {/* Expanded Caption */}
+            {expandedImage === index && image.caption && (
+              <div className="absolute bottom-0 left-0 right-0 p-4 md:p-6 bg-gradient-to-t from-black via-black/80 to-transparent">
+                <p className="text-white text-sm md:text-base leading-relaxed">
+                  {image.caption}
+                </p>
+              </div>
+            )}
+
+            {/* Close Button for Expanded */}
+            {expandedImage === index && (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation()
+                  setExpandedImage(null)
+                }}
+                className="absolute top-4 right-4 w-10 h-10 rounded-full bg-gray-900/80 backdrop-blur-sm border border-gray-700 flex items-center justify-center hover:bg-gray-800 transition-all z-10"
+                aria-label="Close"
+              >
+                <X className="h-5 w-5 text-white" />
+              </button>
+            )}
           </div>
         ))}
       </div>
 
-      {expandedImage && (
-        <div
-          className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4"
-          onClick={() => setExpandedImage(null)}
-        >
-          <div
-            className="relative bg-gray-900 rounded-lg p-6 max-w-3xl max-h-[90vh] overflow-auto"
-            onClick={(e) => e.stopPropagation()} // Prevent click from closing modal
-          >
-            <button
-              onClick={() => setExpandedImage(null)}
-              className="absolute top-2 right-2 text-white text-3xl leading-none"
-            >
-              &times;
-            </button>
-            <Image
-              src={expandedImage.url}
-              alt={expandedImage.caption || 'Expanded Image'}
-              width={800}
-              height={600}
-              objectFit="contain"
-              className="rounded-lg"
-            />
-            {expandedImage.caption && (
-              <p className="mt-4 text-gray-300 text-center">{expandedImage.caption}</p>
-            )}
-          </div>
-        </div>
-      )}
+      {/* Tap Hint */}
+      <p className="text-center text-sm text-gray-500 mt-6">
+        Tap any image to expand
+      </p>
     </section>
-  );
-};
+  )
+}
 
-export default InspirationBoardSection;
+export default InspirationBoardSection

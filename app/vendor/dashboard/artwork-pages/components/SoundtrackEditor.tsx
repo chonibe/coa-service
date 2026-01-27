@@ -1,95 +1,167 @@
-// app/vendor/dashboard/artwork-pages/components/SoundtrackEditor.tsx
-import React, { useState, useEffect } from 'react';
-import { Input } from '@/components/ui';
+"use client"
+
+import React, { useState, useEffect } from "react"
+import { Music, ExternalLink, CheckCircle, AlertCircle } from "lucide-react"
+import { Input, Textarea, Label, Button } from "@/components/ui"
+import { isValidSpotifyUrl, getSpotifyEmbedUrl } from "@/lib/spotify"
 
 interface SoundtrackEditorProps {
-  spotifyUrl: string;
-  note?: string;
-  onUpdate: (updates: { spotify_url?: string; note?: string }) => void;
+  blockId: number
+  config: {
+    spotify_url?: string
+    note?: string
+  }
+  onChange: (config: { spotify_url?: string; note?: string }) => void
 }
 
+/**
+ * SoundtrackEditor - Editor for Spotify track with live preview
+ * 
+ * Features:
+ * - Spotify URL validation
+ * - Live embed preview
+ * - Optional artist note
+ * - Character count for note
+ */
 const SoundtrackEditor: React.FC<SoundtrackEditorProps> = ({
-  spotifyUrl: initialSpotifyUrl,
-  note: initialNote,
-  onUpdate,
+  blockId,
+  config,
+  onChange,
 }) => {
-  const [spotifyUrl, setSpotifyUrl] = useState(initialSpotifyUrl);
-  const [note, setNote] = useState(initialNote);
-  const [isValidUrl, setIsValidUrl] = useState(true);
-  const [trackId, setTrackId] = useState<string | null>(null);
-
-  // Function to extract track ID from Spotify URL
-  const getTrackId = (url: string) => {
-    const match = url.match(/track\/(.+?)(?:\?|$)/);
-    return match ? match[1] : null;
-  };
+  const [spotifyUrl, setSpotifyUrl] = useState(config.spotify_url || "")
+  const [note, setNote] = useState(config.note || "")
+  const [isValid, setIsValid] = useState(false)
+  const [embedUrl, setEmbedUrl] = useState<string | null>(null)
 
   useEffect(() => {
-    const id = getTrackId(spotifyUrl);
-    setTrackId(id);
-    setIsValidUrl(!!id || spotifyUrl === '');
-  }, [spotifyUrl]);
+    // Validate URL and get embed URL
+    if (spotifyUrl) {
+      const valid = isValidSpotifyUrl(spotifyUrl)
+      setIsValid(valid)
+      if (valid) {
+        setEmbedUrl(getSpotifyEmbedUrl(spotifyUrl))
+      } else {
+        setEmbedUrl(null)
+      }
+    } else {
+      setIsValid(false)
+      setEmbedUrl(null)
+    }
+  }, [spotifyUrl])
 
-  const handleUrlChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const newUrl = e.target.value;
-    setSpotifyUrl(newUrl);
-    onUpdate({ spotify_url: newUrl });
-  };
+  const handleSpotifyUrlChange = (value: string) => {
+    setSpotifyUrl(value)
+    onChange({ spotify_url: value, note })
+  }
 
-  const handleNoteChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    const newNote = e.target.value;
-    setNote(newNote);
-    onUpdate({ note: newNote });
-  };
-
-  const embedUrl = trackId
-    ? `https://open.spotify.com/embed/track/${trackId}?utm_source=generator`
-    : '';
+  const handleNoteChange = (value: string) => {
+    setNote(value)
+    onChange({ spotify_url: spotifyUrl, note: value })
+  }
 
   return (
-    <div className="space-y-4">
-      <div>
-        <label className="block text-sm font-medium text-gray-300 mb-2">Spotify Track URL</label>
+    <div className="space-y-6">
+      {/* Section Header */}
+      <div className="flex items-center gap-3">
+        <div className="w-12 h-12 rounded-full bg-green-500/10 flex items-center justify-center">
+          <Music className="h-6 w-6 text-green-500" />
+        </div>
+        <div>
+          <h3 className="text-lg font-semibold text-white">Soundtrack</h3>
+          <p className="text-sm text-gray-400">Set the mood with music</p>
+        </div>
+      </div>
+
+      {/* Spotify URL Input */}
+      <div className="space-y-2">
+        <Label htmlFor={`spotify-url-${blockId}`} className="text-white">
+          Spotify Track URL
+        </Label>
         <Input
+          id={`spotify-url-${blockId}`}
           type="url"
           placeholder="https://open.spotify.com/track/..."
           value={spotifyUrl}
-          onChange={handleUrlChange}
-          className={`w-full bg-gray-700 border ${isValidUrl ? 'border-gray-600' : 'border-red-500'} text-white`}
+          onChange={(e) => handleSpotifyUrlChange(e.target.value)}
+          className="bg-gray-800 border-gray-700 text-white"
         />
-        {!isValidUrl && spotifyUrl !== '' && (
-          <p className="text-red-400 text-xs mt-1">Please enter a valid Spotify track URL.</p>
+        
+        {/* Validation Status */}
+        {spotifyUrl && (
+          <div className="flex items-center gap-2 text-sm">
+            {isValid ? (
+              <>
+                <CheckCircle className="h-4 w-4 text-green-500" />
+                <span className="text-green-500">Valid Spotify URL</span>
+              </>
+            ) : (
+              <>
+                <AlertCircle className="h-4 w-4 text-red-500" />
+                <span className="text-red-500">
+                  Invalid URL. Use a Spotify track link.
+                </span>
+              </>
+            )}
+          </div>
         )}
+
+        <p className="text-xs text-gray-500">
+          Open Spotify, find a track, click Share → Copy Song Link
+        </p>
       </div>
 
-      {trackId && isValidUrl && (
-        <div className="bg-gray-900 rounded-lg overflow-hidden shadow-lg">
-          <iframe
-            src={embedUrl}
-            width="100%"
-            height="152"
-            allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
-            loading="lazy"
-            className="rounded-t-lg"
-          ></iframe>
+      {/* Live Preview */}
+      {embedUrl && (
+        <div className="space-y-2">
+          <Label className="text-white">Preview</Label>
+          <div className="bg-gray-900 rounded-lg overflow-hidden border border-gray-700">
+            <iframe
+              src={embedUrl}
+              width="100%"
+              height="152"
+              allow="encrypted-media"
+              loading="lazy"
+              className="w-full"
+              style={{ border: 0 }}
+            />
+          </div>
         </div>
       )}
 
-      <div>
-        <label className="block text-sm font-medium text-gray-300 mb-2">Why this track? (optional but recommended)</label>
-        <textarea
+      {/* Artist Note */}
+      <div className="space-y-2">
+        <Label htmlFor={`note-${blockId}`} className="text-white">
+          Why this track? <span className="text-gray-500">(optional but recommended)</span>
+        </Label>
+        <Textarea
+          id={`note-${blockId}`}
           placeholder="This song was on repeat while I worked on the final details. The rhythm mirrors the visual flow I was going for..."
-          value={note || ''}
-          onChange={handleNoteChange}
-          maxLength={500}
+          value={note}
+          onChange={(e) => handleNoteChange(e.target.value)}
           rows={4}
-          className="w-full p-3 bg-gray-700 rounded-md text-gray-200 border border-gray-600 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+          maxLength={500}
+          className="bg-gray-800 border-gray-700 text-white resize-none"
         />
-        <p className="text-xs text-gray-500 mt-1">{note?.length || 0}/500 characters</p>
-        <p className="text-xs text-gray-500 mt-1">💡 Tip: Collectors love knowing the creative context.</p>
+        <div className="flex justify-between items-center text-xs">
+          <span className="text-gray-500">
+            💡 Collectors love knowing the creative context
+          </span>
+          <span className="text-gray-500">
+            {note.length}/500 characters
+          </span>
+        </div>
+      </div>
+
+      {/* Help Text */}
+      <div className="p-4 bg-gray-800/50 rounded-lg border border-gray-700">
+        <p className="text-sm text-gray-400 leading-relaxed">
+          <strong className="text-gray-300">Tip:</strong> Choose a track that captures 
+          the mood or energy of your artwork. Music creates a powerful emotional connection 
+          with collectors.
+        </p>
       </div>
     </div>
-  );
-};
+  )
+}
 
-export default SoundtrackEditor;
+export default SoundtrackEditor
