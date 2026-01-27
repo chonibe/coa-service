@@ -81,22 +81,29 @@ export async function GET(request: NextRequest) {
       ? "email profile openid https://www.googleapis.com/auth/gmail.readonly https://www.googleapis.com/auth/gmail.send"
       : "email profile openid",
     flowType: "pkce",
+    queryParams: {
+      // Override the site_url to ensure correct redirect back to production
+      site_url: appUrl,
+    },
   }
 
   // Only use prompt=consent for Gmail scopes (sensitive permissions require consent)
   if (gmailParam) {
     if (requireAccountSelection) {
       oauthOptions.queryParams = {
+        ...oauthOptions.queryParams,
         prompt: "select_account consent",
       }
     } else {
       oauthOptions.queryParams = {
+        ...oauthOptions.queryParams,
         prompt: "consent",
       }
     }
   } else if (requireAccountSelection) {
     // For regular auth, only prompt for account selection if needed
     oauthOptions.queryParams = {
+      ...oauthOptions.queryParams,
       prompt: "select_account",
     }
   }

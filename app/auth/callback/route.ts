@@ -51,20 +51,263 @@ async function processUserLogin(user: any, email: string | null, origin: string,
     console.log(`[auth/callback] User roles from RBAC: ${roles.join(', ')}`)
 
     if (roles.length === 0) {
-      console.log(`[auth/callback] No roles found for user ${email}`)
+      // Handle collector signup for new users
+      if (loginIntent === 'collector') {
+        console.log(`[auth/callback] Creating new collector account for: ${email}`)
+
+        const serviceClient = createServiceClient()
+
+        // Check if user has existing collector orders or profiles
+        const { data: orderMatch, error: orderError } = await serviceClient
+          .from("orders")
+          .select("customer_id, shopify_id")
+          .eq("customer_email", email)
+          .order("processed_at", { ascending: false })
+          .limit(1)
+          .maybeSingle()
+
+        let profileMatch = null
+        const { data: profileByEmail, error: profileError } = await serviceClient
+          .from("collector_profiles")
+          .select("id, shopify_customer_id")
+          .eq("email", email)
+          .maybeSingle()
+
+        profileMatch = profileByEmail
+
+        const shopifyCustomerId = orderMatch?.customer_id || orderMatch?.shopify_id
+
+        // Check for profile by shopify_customer_id
+        if (!profileMatch && shopifyCustomerId) {
+          const { data: profileByShopifyId } = await serviceClient
+            .from("collector_profiles")
+            .select("id, email")
+            .eq("shopify_customer_id", shopifyCustomerId)
+            .maybeSingle()
+
+          if (profileByShopifyId) {
+            console.log(`[auth/callback] Found existing profile by Shopify ID: ${profileByShopifyId.email}`)
+            profileMatch = profileByShopifyId
+
+            // Update profile with new user_id if needed
+            await serviceClient
+              .from("collector_profiles")
+              .update({
+                email: email,
+                user_id: userId,
+                updated_at: new Date().toISOString()
+              })
+              .eq("id", profileByShopifyId.id)
+          }
+        }
+
+        // Ensure existing profiles have RBAC roles
+        if (profileMatch || orderMatch) {
+          console.log(`[auth/callback] Existing collector found, ensuring role exists for: ${email}`)
+          
+          // Create role if it doesn't exist (upsert pattern)
+          const { error: roleUpsertError } = await serviceClient
+            .from('user_roles')
+            .upsert({
+              user_id: userId,
+              role: 'collector',
+              is_active: true,
+              metadata: {
+                source: 'profile_migration',
+                migration_date: new Date().toISOString(),
+                email: email
+              }
+            }, { 
+              onConflict: 'user_id,role',
+              ignoreDuplicates: false 
+            })
+            
+          if (roleUpsertError) {
+            console.error('[auth/callback] Role upsert failed (non-critical)', roleUpsertError)
+          } else {
+            console.log('[auth/callback] Role ensured for existing collector')
+          }
+        }
+
+        // Create new collector account if no existing profile
+        if (!orderMatch && !profileMatch) {
+          console.log(`[auth/callback] Creating new collector profile for: ${email}`)
+
+          // 1. Create collector profile
+          const { data: newProfile, error: profileCreateError } = await serviceClient
+            .from('collector_profiles')
+            .insert({
+              user_id: userId,
+              email: email,
+              shopify_customer_id: shopifyCustomerId || null,
+              signup_source: 'oauth',
+              onboarding_step: 0
+            })
+            .select()
+            .single()
+
+          if (profileCreateError) {
+            console.error('[auth/callback] Profile creation failed', profileCreateError)
+            const errorResponse = NextResponse.redirect(new URL(`/login?error=signup_failed`, origin), { status: 307 })
+            deleteCookie(errorResponse, LOGIN_INTENT_COOKIE)
+            return errorResponse
+          }
+
+          // 2. Create collector role in RBAC system
+          // First check if role already exists
+          const { data: existingRole } = await serviceClient
+            .from('user_roles')
+            .select('id')
+            .eq('user_id', userId)
+            .eq('role', 'collector')
+            .maybeSingle()
+
+          if (!existingRole) {
+            const { error: roleError } = await serviceClient
+              .from('user_roles')
+              .insert({
+                user_id: userId,
+                role: 'collector',
+                is_active: true,
+                metadata: {
+                  source: 'oauth_signup',
+                  signup_date: new Date().toISOString(),
+                  email: email
+                }
+              })
+
+            if (roleError) {
+              // Check if it's a duplicate key error (role created in race condition)
+              if (roleError.message?.includes('duplicate') || roleError.code === '23505') {
+                console.log('[auth/callback] Role already exists (duplicate key), continuing')
+              } else {
+                console.error('[auth/callback] Role creation failed critically', roleError)
+                const errorResponse = NextResponse.redirect(new URL(`/login?error=role_creation_failed`, origin), { status: 307 })
+                deleteCookie(errorResponse, LOGIN_INTENT_COOKIE)
+                return errorResponse
+              }
+            } else {
+              console.log('[auth/callback] Collector role created successfully')
+            }
+          } else {
+            console.log('[auth/callback] Collector role already exists')
+          }
+
+          // 3. Initialize InkOGatchi avatar (non-critical)
+          await serviceClient
+            .from('collector_avatars')
+            .insert({
+              user_id: userId,
+              equipped_items: {}
+            })
+            .then(() => {}, (error) => {
+              console.warn('[auth/callback] Avatar creation failed (non-critical)', error)
+            })
+
+          // 4. Ensure collector account exists for banking system
+          try {
+            await serviceClient.rpc('get_or_create_collector_account', {
+              p_collector_identifier: email,
+              p_account_type: 'customer'
+            })
+          } catch (accountError) {
+            await serviceClient
+              .from('collector_accounts')
+              .insert({
+                collector_identifier: email,
+                account_type: 'customer',
+                account_status: 'active'
+              })
+              .select()
+              .maybeSingle()
+              .then(() => {}, (error) => {
+                console.warn('[auth/callback] Account creation failed (non-critical)', error)
+              })
+          }
+
+          // 5. Award welcome credits
+          await serviceClient
+            .from('collector_ledger_entries')
+            .insert({
+              collector_identifier: email,
+              transaction_type: 'signup_bonus',
+              amount: 100,
+              currency: 'CREDITS',
+              description: 'Welcome to Street Collector! 🎉',
+              created_by: 'system',
+              metadata: {
+                signup: true,
+                user_id: userId,
+                source: 'oauth_signup'
+              }
+            })
+            .then(() => {}, (error) => {
+              console.warn('[auth/callback] Credit award failed (non-critical)', error)
+            })
+
+          // 6. Create "New Collector" achievement
+          await serviceClient
+            .from('collector_achievements')
+            .insert({
+              collector_email: email,
+              user_id: userId,
+              achievement_type: 'new_collector',
+              achievement_title: 'Welcome Collector',
+              achievement_description: 'Joined the Street Collector community'
+            })
+            .then(() => {}, (error) => {
+              console.warn('[auth/callback] Achievement creation failed (non-critical)', error)
+            })
+
+          console.log(`[auth/callback] New collector created successfully: ${email}`)
+        }
+
+        // Refresh roles after creation
+        const updatedRoles = await getUserActiveRoles(userId)
+        const preferredDashboard = getPreferredDashboard(updatedRoles, loginIntent)
+
+        const signupResponse = NextResponse.redirect(new URL(preferredDashboard, origin), { status: 307 })
+        deleteCookie(signupResponse, LOGIN_INTENT_COOKIE)
+        deleteCookie(signupResponse, REQUIRE_ACCOUNT_SELECTION_COOKIE)
+
+        // Set collector session cookie
+        const collectorCookie = buildCollectorSessionCookie({
+          shopifyCustomerId: shopifyCustomerId ? shopifyCustomerId.toString() : null,
+          email,
+          collectorIdentifier: null,
+          impersonated: false,
+          issuedAt: Date.now(),
+        })
+        signupResponse.cookies.set(collectorCookie.name, collectorCookie.value, collectorCookie.options)
+
+        if (shopifyCustomerId) {
+          signupResponse.cookies.set("shopify_customer_id", shopifyCustomerId.toString(), {
+            path: "/",
+            httpOnly: true,
+            secure: process.env.NODE_ENV === "production",
+            sameSite: "lax",
+            maxAge: 60 * 60 * 24,
+          })
+        }
+
+        return signupResponse
+      }
+
+      // For non-collector intents, show "not registered" error
+      console.log(`[auth/callback] No roles found for user ${email} with intent ${loginIntent}`)
       const notRegisteredResponse = NextResponse.redirect(new URL(NOT_REGISTERED_REDIRECT, origin), { status: 307 })
       deleteCookie(notRegisteredResponse, VENDOR_SESSION_COOKIE_NAME)
       deleteCookie(notRegisteredResponse, LOGIN_INTENT_COOKIE)
-      
+
       const supabase = createRouteClient(cookieStore)
       await supabase.auth.signOut()
       notRegisteredResponse.cookies.set(ADMIN_SESSION_COOKIE_NAME, "", { ...clearAdminSessionCookie().options, maxAge: 0 })
       await logFailedLoginAttempt({
         email,
         method: "oauth",
-        reason: "No roles found in RBAC system",
+        reason: `No roles found in RBAC system (intent: ${loginIntent})`,
       })
-      
+
       return notRegisteredResponse
     }
 
@@ -627,13 +870,17 @@ async function storeInstagramAccount(
 
 export async function GET(request: NextRequest) {
   try {
-    const { searchParams, origin } = request.nextUrl
+    const { searchParams } = request.nextUrl
+    
+    // Use NEXT_PUBLIC_APP_URL as the origin for production redirects
+    const origin = process.env.NEXT_PUBLIC_APP_URL || request.nextUrl.origin
     
     // Log the incoming request for debugging
     console.log("[auth/callback] Incoming request:", {
       url: request.url,
       searchParams: Object.fromEntries(searchParams.entries()),
-      origin
+      origin,
+      configuredAppUrl: process.env.NEXT_PUBLIC_APP_URL
     })
     
     const cookieStore = cookies()

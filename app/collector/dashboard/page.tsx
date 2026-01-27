@@ -246,7 +246,7 @@ export default function CollectorDashboardPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#f8fafc]/50">
+    <div className="min-h-screen bg-[#f8fafc]/50 [&_[href='#main-content']]:hidden">
       {/* Top Navigation Bar */}
       <div className="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-slate-200 px-6 py-4">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
@@ -316,9 +316,10 @@ export default function CollectorDashboardPage() {
                         console.error("Failed to switch to vendor:", error)
                       }
                     }}
+                    className="cursor-pointer hover:bg-slate-100 transition-colors"
                   >
                     <Store className="h-4 w-4 mr-2" />
-                    Switch to Vendor Dashboard
+                    Switch to Artist Dashboard
                   </DropdownMenuItem>
                 )}
                 {authStatus && authStatus.isAdmin && authStatus.hasAdminSession && (
@@ -327,6 +328,7 @@ export default function CollectorDashboardPage() {
                       e.preventDefault()
                       router.push("/admin/dashboard")
                     }}
+                    className="cursor-pointer hover:bg-slate-100 transition-colors"
                   >
                     <Shield className="h-4 w-4 mr-2" />
                     Switch to Admin Dashboard
@@ -338,31 +340,26 @@ export default function CollectorDashboardPage() {
                     e.preventDefault()
                     router.push("/collector/profile")
                   }}
+                  className="cursor-pointer hover:bg-slate-100 transition-colors"
                 >
                   <User className="h-4 w-4 mr-2" />
                   Profile Settings
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  onSelect={(e) => {
-                    e.preventDefault()
-                    router.push("/collector/profile/comprehensive")
-                  }}
-                >
-                  <Settings className="h-4 w-4 mr-2" />
-                  Comprehensive Profile
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem
                   onSelect={async (e) => {
                     e.preventDefault()
                     try {
-                      await fetch("/api/auth/logout", { method: "POST", credentials: "include" })
-                      router.push("/login")
+                      await fetch("/api/collector/logout", { method: "POST", credentials: "include" })
+                      // Redirect to login with a flag to prevent auto-login
+                      window.location.href = "/login"
                     } catch (error) {
                       console.error("Logout error:", error)
+                      // Still redirect even if logout fails
+                      window.location.href = "/login"
                     }
                   }}
-                  className="text-destructive focus:text-destructive"
+                  className="cursor-pointer text-destructive focus:text-destructive hover:bg-red-50 transition-colors"
                 >
                   <LogOut className="h-4 w-4 mr-2" />
                   Logout
@@ -399,9 +396,7 @@ export default function CollectorDashboardPage() {
                 {{
                   overview: (
                     <div className="space-y-8">
-                      <SectionErrorBoundary title="InkOGatchi failed to load">
-                        <InkOGatchiWidget userId={avatar?.user_id} email={avatar?.user_email} />
-                      </SectionErrorBoundary>
+                      {/* Ink-o-gatchi widget hidden */}
                       
                       <section className="space-y-6">
                         <div className="flex items-center justify-between px-2">
@@ -429,7 +424,7 @@ export default function CollectorDashboardPage() {
                                   description={getEmptyStateDescription()}
                                   action={{
                                     label: "Discover Artwork",
-                                    onClick: () => router.push("/collector/discover")
+                                    onClick: () => window.open("https://www.thestreetcollector.com", "_blank")
                                   }}
                                 />
                               </CardContent>
@@ -440,46 +435,24 @@ export default function CollectorDashboardPage() {
 
                       <Separator className="bg-slate-200/60" />
 
-                      <section className="grid grid-cols-1 xl:grid-cols-3 gap-6">
-                        <div className="space-y-3 xl:col-span-2">
-                          <div className="flex items-center justify-between flex-wrap gap-2 px-2">
-                            <h2 className="text-xl font-black text-slate-900 tracking-tight">Artists</h2>
-                          </div>
-                          <SectionErrorBoundary title="Artists section failed to load">
-                            <ArtistList artists={data.artists} />
-                          </SectionErrorBoundary>
-                        </div>
-                        <div className="space-y-3">
-                          <h2 className="text-xl font-black text-slate-900 tracking-tight px-2">Authentication</h2>
-                          <SectionErrorBoundary title="Authentication queue failed to load">
-                            <AuthenticationQueue items={pendingAuth} />
-                          </SectionErrorBoundary>
-                        </div>
-                      </section>
-
                       <section className="space-y-3">
                         <div className="flex items-center justify-between flex-wrap gap-2 px-2">
-                          <h2 className="text-xl font-black text-slate-900 tracking-tight">Series binder</h2>
+                          <h2 className="text-xl font-black text-slate-900 tracking-tight">Artists</h2>
                         </div>
-                        <SectionErrorBoundary title="Series binder failed to load">
-                          <SeriesBinder series={data.series} />
+                        <SectionErrorBoundary title="Artists section failed to load">
+                          <ArtistList artists={data.artists} />
                         </SectionErrorBoundary>
                       </section>
+
+                      {/* Series binder hidden from overview */}
 
                       <Separator className="bg-slate-200/60" />
 
-                      <section className="space-y-3">
-                        <div className="flex items-center justify-between flex-wrap gap-2 px-2">
-                          <h2 className="text-xl font-black text-slate-900 tracking-tight">Credits & subscriptions</h2>
-                        </div>
-                        <SectionErrorBoundary title="Credits panel failed to load">
-                          <CreditsPanel collectorIdentifier={data.collectorIdentifier} />
-                        </SectionErrorBoundary>
-                      </section>
+                      {/* Credits & subscriptions hidden */}
                     </div>
                   ),
                   collection: (
-                    <div className="space-y-4">
+                    <div className="space-y-8">
                       <div className="flex items-center justify-between px-2">
                         <h2 className="text-xl font-black text-slate-900 tracking-tight">Your Collection</h2>
                         <div className="flex items-center gap-2">
@@ -510,6 +483,18 @@ export default function CollectorDashboardPage() {
                           onGroupingModeChange={setGroupingMode}
                         />
                       </SectionErrorBoundary>
+
+                      {/* Authentication section moved to collection tab */}
+                      {pendingAuth.length > 0 && (
+                        <section className="space-y-3">
+                          <div className="flex items-center justify-between flex-wrap gap-2 px-2">
+                            <h2 className="text-xl font-black text-slate-900 tracking-tight">Authentication</h2>
+                          </div>
+                          <SectionErrorBoundary title="Authentication queue failed to load">
+                            <AuthenticationQueue items={pendingAuth} />
+                          </SectionErrorBoundary>
+                        </section>
+                      )}
                     </div>
                   ),
                   editions: (

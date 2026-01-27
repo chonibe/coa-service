@@ -7,7 +7,7 @@ export async function GET(request: NextRequest) {
   const { origin, searchParams } = request.nextUrl
   const redirect = searchParams.get("redirect") || "/collector/dashboard"
 
-  // Use same base URL as callback (NEXT_PUBLIC_APP_URL || origin) so redirect_uri matches exactly
+  // Use main callback URL so Google OAuth redirect works properly
   let appUrl = process.env.NEXT_PUBLIC_APP_URL || origin
   appUrl = (appUrl || "").replace(/\/$/, "")
   if (!appUrl.startsWith("http://") && !appUrl.startsWith("https://") && origin?.startsWith("http")) {
@@ -15,7 +15,7 @@ export async function GET(request: NextRequest) {
   }
   const base = appUrl || origin
 
-  const redirectTo = `${base}/auth/collector/callback?redirect=${encodeURIComponent(redirect)}`
+  const redirectTo = `${base}/auth/callback?redirect=${encodeURIComponent(redirect)}`
 
   try {
     new URL(redirectTo)
@@ -33,6 +33,10 @@ export async function GET(request: NextRequest) {
       redirectTo,
       scopes: "email profile openid",
       flowType: "pkce",
+      queryParams: {
+        // Override the site_url to ensure correct redirect back to production
+        site_url: base,
+      },
     },
   })
 

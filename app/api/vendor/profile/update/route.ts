@@ -58,6 +58,16 @@ export async function POST(request: NextRequest) {
       updateData.artist_history = body.artist_history
     }
 
+    if (body.signature_url !== undefined) {
+      updateData.signature_url = body.signature_url
+      // Also update signature_uploaded_at when setting/removing signature
+      if (body.signature_url === null) {
+        updateData.signature_uploaded_at = null
+      } else {
+        updateData.signature_uploaded_at = new Date().toISOString()
+      }
+    }
+
     console.log("Updating vendor profile:", { vendorId: vendor.id, updateData })
 
     // Update vendor profile
@@ -107,6 +117,10 @@ export async function POST(request: NextRequest) {
       
       if (updateData.artist_history !== undefined && !missingColumns.includes("artist_history")) {
         safeUpdateData.artist_history = updateData.artist_history
+      }
+
+      if (updateData.signature_url !== undefined) {
+        safeUpdateData.signature_url = updateData.signature_url
       }
 
       // Retry with only safe fields

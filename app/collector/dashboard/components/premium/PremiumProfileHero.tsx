@@ -39,10 +39,11 @@ export function PremiumProfileHero({ profile, avatar }: PremiumProfileHeroProps)
             <div className="absolute -bottom-16 left-8">
               <div className="relative group">
                 <div className="absolute inset-0 bg-primary/20 rounded-full blur-xl group-hover:blur-2xl transition-all" />
+                {/* Avatar hidden */}
                 {avatar ? (
-                  <div className="h-32 w-32 border-[6px] border-white shadow-2xl shadow-slate-900/10 rounded-full bg-white relative z-10 flex items-center justify-center overflow-hidden">
-                    <InkOGatchi 
-                      stage={avatar.evolutionStage} 
+                  <div className="h-32 w-32 border-[6px] border-white shadow-2xl shadow-slate-900/10 rounded-full bg-white relative z-10 flex items-center justify-center overflow-hidden hidden">
+                    <InkOGatchi
+                      stage={avatar.evolutionStage}
                       equippedItems={{
                         hat: avatar.equippedItems?.hat?.asset_url,
                         eyes: avatar.equippedItems?.eyes?.asset_url,
@@ -125,7 +126,8 @@ export function PremiumProfileHero({ profile, avatar }: PremiumProfileHeroProps)
                 <div className="h-10 w-10 rounded-xl bg-white border border-slate-100 flex items-center justify-center shadow-sm">
                   <TrendingUp className="h-5 w-5 text-slate-400" />
                 </div>
-                <div>
+                {/* Acquisition Rate hidden */}
+                <div className="hidden">
                   <p className="text-[10px] uppercase font-black text-slate-400 tracking-wider">Acquisition Rate</p>
                   <p className="text-sm font-bold text-slate-700">High Tier</p>
                 </div>

@@ -44,6 +44,11 @@ export async function GET(
         orders:order_id (
           shopify_customer_id,
           created_at
+        ),
+        product_benefits:product_id (
+          hidden_series_id,
+          vip_artwork_id,
+          vip_series_id
         )
       `)
       .eq("line_item_id", lineItemId)
@@ -100,6 +105,11 @@ export async function GET(
         "Artwork Image Block",
         "Artwork Video Block",
         "Artwork Audio Block",
+        "Artwork Soundtrack Block", // New
+        "Artwork Voice Note Block", // New
+        "Artwork Process Gallery Block", // New
+        "Artwork Inspiration Block", // New
+        "Artwork Artist Note Block", // New
       ])
 
     const artworkBlockTypeIds = benefitTypes?.map((bt) => bt.id) || []

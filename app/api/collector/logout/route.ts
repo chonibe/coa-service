@@ -3,6 +3,8 @@ import type { NextRequest } from "next/server"
 import { cookies } from "next/headers"
 import { createClient as createRouteClient } from "@/lib/supabase-server"
 import { clearCollectorSessionCookie } from "@/lib/collector-session"
+import { clearVendorSessionCookie } from "@/lib/vendor-session"
+import { clearAdminSessionCookie } from "@/lib/admin-session"
 import { REQUIRE_ACCOUNT_SELECTION_COOKIE } from "@/lib/vendor-auth"
 
 export async function POST(request: NextRequest) {
@@ -10,15 +12,21 @@ export async function POST(request: NextRequest) {
     const cookieStore = cookies()
     const supabase = createRouteClient(cookieStore)
 
-    // Sign out from Supabase auth
-    await supabase.auth.signOut()
+    // Sign out from Supabase auth completely
+    await supabase.auth.signOut({ scope: 'global' })
 
     const response = NextResponse.json({ success: true })
 
-    // Clear collector session cookie
+    // Clear all session cookies to ensure complete logout
     const clearCollectorCookie = clearCollectorSessionCookie()
     response.cookies.set(clearCollectorCookie.name, "", clearCollectorCookie.options)
-    
+
+    const clearVendorCookie = clearVendorSessionCookie()
+    response.cookies.set(clearVendorCookie.name, "", clearVendorCookie.options)
+
+    const clearAdminCookie = clearAdminSessionCookie()
+    response.cookies.set(clearAdminCookie.name, "", clearAdminCookie.options)
+
     // Clear shopify_customer_id cookie
     response.cookies.set("shopify_customer_id", "", { path: "/", maxAge: 0 })
     

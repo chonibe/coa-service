@@ -217,26 +217,6 @@ export function ProfileSection() {
 
   return (
     <div className="space-y-6">
-      {/* Comprehensive Profile Link */}
-      <Card>
-        <CardContent className="pt-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <h3 className="text-lg font-semibold">Complete Collector Profile</h3>
-              <p className="text-sm text-gray-600">
-                View your comprehensive collector profile with all editions, orders, and activity history
-              </p>
-            </div>
-            <Link href="/collector/profile/comprehensive">
-              <Button variant="outline">
-                <ExternalLink className="h-4 w-4 mr-2" />
-                View Full Profile
-              </Button>
-            </Link>
-          </div>
-        </CardContent>
-      </Card>
-
       {/* Link Guest Purchases */}
       <Card>
         <CardHeader>

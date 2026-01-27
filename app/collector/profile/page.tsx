@@ -11,8 +11,7 @@ import { useRouter } from 'next/navigation'
 
 import { Separator } from "@/components/ui"
 import { useToast } from '@/hooks/use-toast'
-import { Loader2, History as HistoryIcon, Save, User, Eye, Sparkles, Share2, Check } from 'lucide-react'
-import { InkOGatchiWidget } from '@/app/collector/dashboard/components/inkogatchi-widget'
+import { Loader2, History as HistoryIcon, Save, User, Sparkles, Share2, Check } from 'lucide-react'
 import Link from 'next/link'
 
 import { Button, Input, Label, Textarea, Card, CardContent, CardDescription, CardHeader, CardTitle, Alert, AlertDescription, Badge } from "@/components/ui"
@@ -43,6 +42,7 @@ export default function CollectorProfilePage() {
   const [changes, setChanges] = useState<ProfileChange[]>([])
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
+  const [copied, setCopied] = useState(false)
   const [formData, setFormData] = useState({
     first_name: '',
     last_name: '',
@@ -185,18 +185,11 @@ export default function CollectorProfilePage() {
               Your name preferences will be used for future edition certificates.
             </p>
           </div>
-          <Link href="/collector/profile/comprehensive">
-            <Button variant="outline">
-              <Eye className="h-4 w-4 mr-2" />
-              View Complete Profile
-            </Button>
-          </Link>
+          {/* Removed View Complete Profile button */}
         </div>
       </div>
 
-      <div className="mb-8">
-        <InkOGatchiWidget />
-      </div>
+      {/* Ink-o-gatchi widget hidden */}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Profile Form */}

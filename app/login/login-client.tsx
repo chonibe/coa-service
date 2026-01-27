@@ -179,15 +179,19 @@ export default function LoginClient() {
     setGoogleLoading(true)
 
     const isAdminLogin = searchParams.get("admin") === "true"
-    let endpoint = `/api/auth/google/start`
+    let endpoint: string
 
-    // Use main OAuth flow for all roles so callback can do admin/vendor/collector detection
+    // Route to role-specific OAuth endpoints so scopes match the selected role.
     if (isAdminLogin) {
+      // Admin: main endpoint may request Gmail scopes for CRM
       endpoint = `/api/auth/google/start?redirect=/admin/dashboard`
     } else if (loginType === "vendor") {
+      // Vendor: main endpoint with vendor redirect (no Gmail scopes)
       endpoint = `/api/auth/google/start?redirect=/vendor/dashboard`
+    } else {
+      // Collector: dedicated endpoint that never requests Gmail scopes
+      endpoint = `/api/auth/collector/google/start?redirect=/collector/dashboard`
     }
-    // collector: no redirect param; callback sends to /collector/dashboard when collector detected
 
     window.location.href = endpoint
   }

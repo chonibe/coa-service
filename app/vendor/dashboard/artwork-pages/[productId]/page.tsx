@@ -420,28 +420,29 @@ export default function ArtworkPageEditor() {
   }
 
   return (
-    <div className="container mx-auto py-8 max-w-7xl space-y-6">
+    <div className="min-h-screen bg-gray-950 text-white p-8">
       {/* Header */}
-      <div className="flex items-center justify-between flex-wrap gap-4">
+      <div className="flex items-center justify-between flex-wrap gap-4 mb-12">
         <div className="flex items-center gap-4">
           <Button
             variant="ghost"
             size="sm"
             onClick={() => router.push("/vendor/dashboard/artwork-pages")}
+            className="text-gray-400 hover:text-white"
           >
             <ArrowLeft className="h-4 w-4 mr-2" />
-            Back
+            Back to Artworks
           </Button>
           <div>
-            <h1 className="text-3xl font-bold tracking-tight">{product.name}</h1>
-            <p className="text-muted-foreground text-sm mt-1">
-              {publishedCount} of {totalCount} blocks published
+            <h1 className="text-4xl font-extrabold tracking-tight">{product.name}</h1>
+            <p className="text-gray-400 text-sm mt-2">
+              Building the collector experience by Artist Name
             </p>
           </div>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-4">
           {lastSaved && (
-            <span className="text-xs text-muted-foreground">
+            <span className="text-xs text-gray-500">
               Draft saved {lastSaved.toLocaleTimeString()}
             </span>
           )}
@@ -449,22 +450,20 @@ export default function ArtworkPageEditor() {
             variant="outline"
             onClick={() => setShowCopyModal(true)}
             disabled={availableProducts.filter((p) => p.id !== productId && p.hasContent).length === 0}
+            className="bg-gray-800 text-white hover:bg-gray-700 border-gray-700"
           >
             <Copy className="h-4 w-4 mr-2" />
-            Copy from...
-          </Button>
-          <Button variant="outline" onClick={() => setPreviewMode(previewMode === "locked" ? "unlocked" : "locked")}>
-            <Eye className="h-4 w-4 mr-2" />
-            Preview {previewMode === "locked" ? "Unlocked" : "Locked"}
+            Copy Content
           </Button>
           <Button
             variant="outline"
-            onClick={() => window.open(`/vendor/dashboard/artwork-pages/${productId}/preview`, "_blank")}
+            onClick={() => window.open(`/collector/artwork/${productId}/preview`, "_blank")}
+            className="bg-gray-800 text-white hover:bg-gray-700 border-gray-700"
           >
-            <ExternalLink className="h-4 w-4 mr-2" />
-            View as Collector
+            <Eye className="h-4 w-4 mr-2" />
+            Preview
           </Button>
-          <Button onClick={publishChanges} disabled={isSaving}>
+          <Button onClick={publishChanges} disabled={isSaving} className="bg-green-600 hover:bg-green-700">
             {isSaving ? (
               <>
                 <Loader2 className="h-4 w-4 mr-2 animate-spin" />
@@ -480,465 +479,202 @@ export default function ArtworkPageEditor() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Left Panel: Editor */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Content Blocks</CardTitle>
-            <CardDescription>Add and edit content blocks for collectors</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {contentBlocks.length === 0 ? (
-              <div className="text-center py-12">
-                <Sparkles className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                <p className="text-muted-foreground mb-4">No content blocks yet</p>
-                <Button onClick={applyTemplate}>
-                  <Plus className="h-4 w-4 mr-2" />
-                  Apply Template
-                </Button>
-              </div>
-            ) : (
-              <>
-                {contentBlocks.map((block, index) => (
-                  <div
-                    key={block.id}
-                    className="border rounded-lg p-4 space-y-3 hover:bg-muted/50 transition-colors"
-                  >
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <GripVertical className="h-4 w-4 text-muted-foreground" />
-                        <Badge variant="outline">{block.block_type || "text"}</Badge>
-                        {block.is_published && (
-                          <Badge className="bg-green-100 text-green-800">
-                            <CheckCircle className="h-3 w-3 mr-1" />
-                            Published
-                          </Badge>
-                        )}
-                      </div>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => deleteBlock(block.id)}
-                      >
-                        <X className="h-4 w-4" />
-                      </Button>
-                    </div>
-                    <input
-                      type="text"
-                      placeholder="Block title (optional)"
-                      value={block.title || ""}
-                      onChange={(e) => updateBlock(block.id, { title: e.target.value })}
-                      className="w-full px-3 py-2 border rounded-md"
-                    />
-                    <textarea
-                      placeholder="Content..."
-                      value={block.description || ""}
-                      onChange={(e) => updateBlock(block.id, { description: e.target.value })}
-                      className="w-full px-3 py-2 border rounded-md min-h-[100px]"
-                      maxLength={2000}
-                    />
-                    {(block.block_type === "Artwork Image Block" || block.block_type === "image") && (
-                      <div className="space-y-3">
-                        <label className="text-sm font-medium block">Image Source</label>
-                        <div className="flex gap-2">
-                          <Button
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            onClick={() => {
-                              setContentLibraryBlockId(block.id)
-                              setContentLibraryType("image")
-                              setShowContentLibrary(true)
-                            }}
-                            className="flex-1"
-                          >
-                            <ImageIcon className="h-4 w-4 mr-2" />
-                            Choose from Library
-                          </Button>
-                          <Button
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            onClick={() => document.getElementById(`image-upload-${block.id}`)?.click()}
-                            disabled={uploadingBlocks.has(block.id)}
-                            className="flex-1"
-                          >
-                            {uploadingBlocks.has(block.id) ? (
-                              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                            ) : (
-                              <Upload className="h-4 w-4 mr-2" />
-                            )}
-                            {uploadingBlocks.has(block.id) ? "Uploading..." : "Upload Image"}
-                          </Button>
-                          <input
-                            id={`image-upload-${block.id}`}
-                            type="file"
-                            accept="image/*"
-                            onChange={(e) => {
-                              const file = e.target.files?.[0]
-                              if (file) {
-                                handleFileUpload(block.id, file, block.block_type || "image")
-                              }
-                              e.target.value = "" // Reset for re-upload
-                            }}
-                            disabled={uploadingBlocks.has(block.id)}
-                            className="hidden"
-                          />
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <div className="flex-1 h-px bg-border" />
-                          <span className="text-xs text-muted-foreground">OR enter URL</span>
-                          <div className="flex-1 h-px bg-border" />
-                        </div>
-                        <input
-                          type="url"
-                          placeholder="https://example.com/image.jpg"
-                          value={block.content_url || ""}
-                          onChange={(e) => updateBlock(block.id, { content_url: e.target.value })}
-                          className="w-full px-3 py-2 border rounded-md text-sm"
-                        />
-                        {block.content_url && (
-                          <div className="mt-2">
-                            <Image
-                              src={block.content_url}
-                              alt={block.title || "Preview"}
-                              width={200}
-                              height={150}
-                              className="rounded-md border object-cover"
-                            />
-                          </div>
-                        )}
-                      </div>
-                    )}
-                    {(block.block_type === "Artwork Video Block" || block.block_type === "video") && (
-                      <div className="space-y-3">
-                        <label className="text-sm font-medium block">Video Source</label>
-                        <div className="flex gap-2">
-                          <Button
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            onClick={() => {
-                              setContentLibraryBlockId(block.id)
-                              setContentLibraryType("video")
-                              setShowContentLibrary(true)
-                            }}
-                            className="flex-1"
-                          >
-                            <Video className="h-4 w-4 mr-2" />
-                            Choose from Library
-                          </Button>
-                          <Button
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            onClick={() => document.getElementById(`video-upload-${block.id}`)?.click()}
-                            disabled={uploadingBlocks.has(block.id)}
-                            className="flex-1"
-                          >
-                            {uploadingBlocks.has(block.id) ? (
-                              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                            ) : (
-                              <Upload className="h-4 w-4 mr-2" />
-                            )}
-                            {uploadingBlocks.has(block.id) ? "Uploading..." : "Upload Video"}
-                          </Button>
-                          <input
-                            id={`video-upload-${block.id}`}
-                            type="file"
-                            accept="video/*"
-                            onChange={(e) => {
-                              const file = e.target.files?.[0]
-                              if (file) {
-                                handleFileUpload(block.id, file, block.block_type || "video")
-                              }
-                              e.target.value = "" // Reset for re-upload
-                            }}
-                            disabled={uploadingBlocks.has(block.id)}
-                            className="hidden"
-                          />
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <div className="flex-1 h-px bg-border" />
-                          <span className="text-xs text-muted-foreground">OR enter URL</span>
-                          <div className="flex-1 h-px bg-border" />
-                        </div>
-                        <input
-                          type="url"
-                          placeholder="YouTube, Vimeo, or direct video URL"
-                          value={block.content_url || ""}
-                          onChange={(e) => updateBlock(block.id, { content_url: e.target.value })}
-                          className="w-full px-3 py-2 border rounded-md text-sm"
-                        />
-                      </div>
-                    )}
-                    {(block.block_type === "Artwork Audio Block" || block.block_type === "audio") && (
-                      <div className="space-y-3">
-                        <label className="text-sm font-medium block">Audio Source</label>
-                        <div className="flex gap-2">
-                          <Button
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            onClick={() => {
-                              setContentLibraryBlockId(block.id)
-                              setContentLibraryType("audio")
-                              setShowContentLibrary(true)
-                            }}
-                            className="flex-1"
-                          >
-                            <Music className="h-4 w-4 mr-2" />
-                            Choose from Library
-                          </Button>
-                          <Button
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            onClick={() => document.getElementById(`audio-upload-${block.id}`)?.click()}
-                            disabled={uploadingBlocks.has(block.id)}
-                            className="flex-1"
-                          >
-                            {uploadingBlocks.has(block.id) ? (
-                              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                            ) : (
-                              <Upload className="h-4 w-4 mr-2" />
-                            )}
-                            {uploadingBlocks.has(block.id) ? "Uploading..." : "Upload Audio"}
-                          </Button>
-                          <input
-                            id={`audio-upload-${block.id}`}
-                            type="file"
-                            accept="audio/*"
-                            onChange={(e) => {
-                              const file = e.target.files?.[0]
-                              if (file) {
-                                handleFileUpload(block.id, file, block.block_type || "audio")
-                              }
-                              e.target.value = "" // Reset for re-upload
-                            }}
-                            disabled={uploadingBlocks.has(block.id)}
-                            className="hidden"
-                          />
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <div className="flex-1 h-px bg-border" />
-                          <span className="text-xs text-muted-foreground">OR enter URL</span>
-                          <div className="flex-1 h-px bg-border" />
-                        </div>
-                        <input
-                          type="url"
-                          placeholder="Audio file URL or SoundCloud link"
-                          value={block.content_url || ""}
-                          onChange={(e) => updateBlock(block.id, { content_url: e.target.value })}
-                          className="w-full px-3 py-2 border rounded-md text-sm"
-                        />
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </>
-            )}
-
-            <Separator />
-
-            <div className="relative">
-              {showAddBlock ? (
-                <div className="space-y-2 p-4 border rounded-lg bg-muted/50">
-                  <p className="text-sm font-medium">Add Content Block</p>
-                  <div className="grid grid-cols-2 gap-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={(e) => {
-                        e.preventDefault()
-                        e.stopPropagation()
-                        addBlock("Artwork Text Block")
-                      }}
-                      disabled={isSaving}
-                      type="button"
-                    >
-                      <FileText className="h-4 w-4 mr-2" />
-                      Text
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={(e) => {
-                        e.preventDefault()
-                        e.stopPropagation()
-                        addBlock("Artwork Image Block")
-                      }}
-                      disabled={isSaving}
-                      type="button"
-                    >
-                      <ImageIcon className="h-4 w-4 mr-2" />
-                      Image
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={(e) => {
-                        e.preventDefault()
-                        e.stopPropagation()
-                        addBlock("Artwork Video Block")
-                      }}
-                      disabled={isSaving}
-                      type="button"
-                    >
-                      <Video className="h-4 w-4 mr-2" />
-                      Video
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={(e) => {
-                        e.preventDefault()
-                        e.stopPropagation()
-                        addBlock("Artwork Audio Block")
-                      }}
-                      disabled={isSaving}
-                      type="button"
-                    >
-                      <Music className="h-4 w-4 mr-2" />
-                      Audio
-                    </Button>
-                  </div>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setShowAddBlock(false)}
-                    className="w-full mt-2"
-                  >
-                    Cancel
-                  </Button>
-                </div>
-              ) : (
-                <Button
-                  variant="outline"
-                  className="w-full"
-                  onClick={() => setShowAddBlock(true)}
-                >
-                  <Plus className="h-4 w-4 mr-2" />
-                  Add Block
-                </Button>
-              )}
+      {/* Main Content Area */}
+      <div className="max-w-4xl mx-auto space-y-16">
+        {/* Hero Section Preview */}
+        {product.img_url && (
+          <div className="relative w-full aspect-video rounded-xl overflow-hidden shadow-2xl">
+            <Image
+              src={product.img_url}
+              alt={product.name}
+              fill
+              className="object-cover"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent flex items-end p-8">
+              <h2 className="text-4xl font-extrabold text-white leading-tight">{product.name}</h2>
+              {/* Edition display placeholder */}
+              <Badge className="ml-4 bg-white/20 text-white">Edition 12/50</Badge>
             </div>
-          </CardContent>
-        </Card>
+          </div>
+        )}
 
-        {/* Right Panel: Live Preview */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Live Preview</CardTitle>
-            <CardDescription>
-              {previewMode === "locked"
-                ? "How collectors see it before authentication"
-                : "How collectors see it after authentication"}
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className={`space-y-6 ${previewMode === "locked" ? "blur-sm" : ""}`}>
-              {/* Artwork Image */}
-              {product.img_url && (
-                <div className="relative aspect-square rounded-lg overflow-hidden">
-                  <Image
-                    src={product.img_url}
-                    alt={product.name}
-                    fill
-                    className="object-cover"
+        {/* Progress Indicator */}
+        {/* This will be replaced by BuilderProgress component */}
+        <div className="space-y-4">
+          <h2 className="text-2xl font-bold">Your Collector Experience</h2>
+          <div className="w-full bg-gray-700 rounded-full h-2.5">
+            <div
+              className="bg-green-500 h-2.5 rounded-full"
+              style={{ width: `${(publishedCount / totalCount) * 100}%` }}
+            ></div>
+          </div>
+          <p className="text-sm text-gray-400">
+            {publishedCount} of {totalCount} sections complete. Add more content for a richer experience.
+          </p>
+        </div>
+
+        {/* Content Blocks Editor */}
+        <div className="space-y-8">
+          {contentBlocks.length === 0 ? (
+            <div className="text-center py-24 bg-gray-800 rounded-lg">
+              <Sparkles className="h-16 w-16 mx-auto text-gray-500 mb-6" />
+              <p className="text-gray-300 text-lg mb-6">No content sections yet. Start building your story!</p>
+              <Button onClick={applyTemplate} className="bg-blue-600 hover:bg-blue-700">
+                <Plus className="h-4 w-4 mr-2" />
+                Apply Default Template
+              </Button>
+            </div>
+          ) : (
+            <>
+              {contentBlocks.map((block) => (
+                // This will be replaced by BuilderSection component
+                <div key={block.id} className="bg-gray-800 rounded-lg p-6 shadow-xl space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <GripVertical className="h-5 w-5 text-gray-500" />
+                      <span className="text-lg font-semibold text-white">{block.title || block.block_type || "Untitled Block"}</span>
+                      {block.is_published && (
+                        <Badge className="bg-green-500 text-white px-3 py-1 rounded-full">
+                          <CheckCircle className="h-3 w-3 mr-1" />
+                          Published
+                        </Badge>
+                      )}
+                    </div>
+                    <Button variant="ghost" size="sm" onClick={() => deleteBlock(block.id)} className="text-gray-400 hover:text-white">
+                      <X className="h-5 w-5" />
+                    </Button>
+                  </div>
+                  {/* Generic editor for demonstration, will be replaced by specific editors */}
+                  <textarea
+                    placeholder="Content..."
+                    value={block.description || ""}
+                    onChange={(e) => updateBlock(block.id, { description: e.target.value })}
+                    className="w-full p-4 bg-gray-700 rounded-md min-h-[120px] text-gray-200 border border-gray-600 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                    maxLength={2000}
                   />
                 </div>
-              )}
+              ))}
+            </>
+          )}
 
-              {/* Artist Signature */}
-              {vendor?.signature_url && (
-                <div className="border rounded-lg p-4">
-                  <h3 className="font-semibold mb-2">Artist Signature</h3>
-                  <div className="relative h-24 bg-white dark:bg-gray-900 rounded flex items-center justify-center">
-                    <Image
-                      src={vendor.signature_url}
-                      alt="Signature"
-                      width={192}
-                      height={96}
-                      className="object-contain max-w-full max-h-full"
-                    />
-                  </div>
+          <div className="text-center">
+            <Button
+              variant="outline"
+              className="w-full max-w-xs bg-gray-800 text-white hover:bg-gray-700 border-gray-700 py-3 text-lg"
+              onClick={() => setShowAddBlock(true)}
+            >
+              <Plus className="h-5 w-5 mr-3" />
+              Add New Section
+            </Button>
+          </div>
+
+          {showAddBlock && (
+            <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4">
+              <div className="bg-gray-900 rounded-lg p-8 shadow-2xl w-full max-w-md space-y-6">
+                <h3 className="text-2xl font-bold text-white text-center">Add Content Section</h3>
+                <div className="grid grid-cols-2 gap-4">
+                  <Button
+                    variant="outline"
+                    size="lg"
+                    onClick={(e) => { e.preventDefault(); e.stopPropagation(); addBlock("Artwork Text Block"); }}
+                    disabled={isSaving}
+                    type="button"
+                    className="flex flex-col items-center justify-center h-28 bg-gray-800 text-white hover:bg-gray-700 border-gray-700 text-base"
+                  >
+                    <FileText className="h-6 w-6 mb-2" />
+                    Text
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="lg"
+                    onClick={(e) => { e.preventDefault(); e.stopPropagation(); addBlock("Artwork Image Block"); }}
+                    disabled={isSaving}
+                    type="button"
+                    className="flex flex-col items-center justify-center h-28 bg-gray-800 text-white hover:bg-gray-700 border-gray-700 text-base"
+                  >
+                    <ImageIcon className="h-6 w-6 mb-2" />
+                    Image
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="lg"
+                    onClick={(e) => { e.preventDefault(); e.stopPropagation(); addBlock("Artwork Video Block"); }}
+                    disabled={isSaving}
+                    type="button"
+                    className="flex flex-col items-center justify-center h-28 bg-gray-800 text-white hover:bg-gray-700 border-gray-700 text-base"
+                  >
+                    <Video className="h-6 w-6 mb-2" />
+                    Video
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="lg"
+                    onClick={(e) => { e.preventDefault(); e.stopPropagation(); addBlock("Artwork Audio Block"); }}
+                    disabled={isSaving}
+                    type="button"
+                    className="flex flex-col items-center justify-center h-28 bg-gray-800 text-white hover:bg-gray-700 border-gray-700 text-base"
+                  >
+                    <Music className="h-6 w-6 mb-2" />
+                    Audio
+                  </Button>
+                  {/* New immersive blocks */}
+                  <Button
+                    variant="outline"
+                    size="lg"
+                    onClick={(e) => { e.preventDefault(); e.stopPropagation(); addBlock("Artwork Soundtrack Block"); }}
+                    disabled={isSaving}
+                    type="button"
+                    className="flex flex-col items-center justify-center h-28 bg-gray-800 text-white hover:bg-gray-700 border-gray-700 text-base"
+                  >
+                    <Music className="h-6 w-6 mb-2" />
+                    Soundtrack
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="lg"
+                    onClick={(e) => { e.preventDefault(); e.stopPropagation(); addBlock("Artwork Voice Note Block"); }}
+                    disabled={isSaving}
+                    type="button"
+                    className="flex flex-col items-center justify-center h-28 bg-gray-800 text-white hover:bg-gray-700 border-gray-700 text-base"
+                  >
+                    <Sparkles className="h-6 w-6 mb-2" />
+                    Voice Note
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="lg"
+                    onClick={(e) => { e.preventDefault(); e.stopPropagation(); addBlock("Artwork Process Gallery Block"); }}
+                    disabled={isSaving}
+                    type="button"
+                    className="flex flex-col items-center justify-center h-28 bg-gray-800 text-white hover:bg-gray-700 border-gray-700 text-base"
+                  >
+                    <ImageIcon className="h-6 w-6 mb-2" />
+                    Process Gallery
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="lg"
+                    onClick={(e) => { e.preventDefault(); e.stopPropagation(); addBlock("Artwork Inspiration Block"); }}
+                    disabled={isSaving}
+                    type="button"
+                    className="flex flex-col items-center justify-center h-28 bg-gray-800 text-white hover:bg-gray-700 border-gray-700 text-base"
+                  >
+                    <ImageIcon className="h-6 w-6 mb-2" />
+                    Inspiration Board
+                  </Button>
                 </div>
-              )}
-
-              {/* Artist Bio */}
-              {vendor?.bio && (
-                <div className="border rounded-lg p-4">
-                  <h3 className="font-semibold mb-2">About the Artist</h3>
-                  <p className="text-sm text-muted-foreground whitespace-pre-line">{vendor.bio}</p>
-                </div>
-              )}
-
-              {/* Content Blocks */}
-              {contentBlocks
-                .filter((b) => previewMode === "unlocked" ? b.is_published : true)
-                .map((block) => {
-                  const blockType = block.block_type || ""
-                  
-                  // Render actual components for better preview
-                  if (blockType === "video" && block.content_url) {
-                    return (
-                      <VideoBlock
-                        key={block.id}
-                        title={block.title}
-                        contentUrl={block.content_url}
-                      />
-                    )
-                  }
-                  
-                  if (blockType === "audio" && block.content_url) {
-                    return (
-                      <AudioBlock
-                        key={block.id}
-                        title={block.title}
-                        contentUrl={block.content_url}
-                      />
-                    )
-                  }
-                  
-                  if (blockType === "image" && block.content_url) {
-                    return (
-                      <ImageBlock
-                        key={block.id}
-                        title={block.title}
-                        contentUrl={block.content_url}
-                        blockConfig={block.block_config}
-                      />
-                    )
-                  }
-                  
-                  // Default preview for text and other blocks
-                  return (
-                    <div key={block.id} className="border rounded-lg p-4">
-                      {block.title && <h3 className="font-semibold mb-2">{block.title}</h3>}
-                      {block.description && (
-                        <p className="text-sm text-muted-foreground whitespace-pre-line">
-                          {block.description}
-                        </p>
-                      )}
-                      {block.content_url && !["video", "audio", "image"].includes(blockType) && (
-                        <div className="mt-2">
-                          <a
-                            href={block.content_url}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-primary hover:underline text-sm"
-                          >
-                            View Content →
-                          </a>
-                        </div>
-                      )}
-                    </div>
-                  )
-                })}
+                <Button
+                  variant="ghost"
+                  size="lg"
+                  onClick={() => setShowAddBlock(false)}
+                  className="w-full mt-4 text-gray-400 hover:text-white"
+                >
+                  Cancel
+                </Button>
+              </div>
             </div>
-          </CardContent>
-        </Card>
+          )}
+        </div>
       </div>
 
       {/* Copy Content Modal */}

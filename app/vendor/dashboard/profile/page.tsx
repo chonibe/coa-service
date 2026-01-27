@@ -106,10 +106,10 @@ export default function VendorProfilePage() {
   const [isLoading, setIsLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
   const [isUploadingImage, setIsUploadingImage] = useState(false)
-  const [isUploadingSignature, setIsUploadingSignature] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [isEditingProfile, setIsEditingProfile] = useState(false)
-  const [activeTab, setActiveTab] = useState("public-profile")
+  const [activeSettingsTab, setActiveSettingsTab] = useState("contact")
+  const [isEditingBio, setIsEditingBio] = useState(false)
+  const [isEditingSignature, setIsEditingSignature] = useState(false)
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false)
   const [isDragOver, setIsDragOver] = useState(false)
   const [lastSaved, setLastSaved] = useState<Date | null>(null)
@@ -126,7 +126,6 @@ export default function VendorProfilePage() {
   const { register } = useRefreshRegistry()
   const { toast } = useToast()
   const fileInputRef = useRef<HTMLInputElement>(null)
-  const signatureInputRef = useRef<HTMLInputElement>(null)
   const dropZoneRef = useRef<HTMLDivElement>(null)
   const autoSaveTimeoutRef = useRef<NodeJS.Timeout | null>(null)
 
@@ -227,9 +226,9 @@ export default function VendorProfilePage() {
       // Cmd/Ctrl + S to save
       if ((e.metaKey || e.ctrlKey) && e.key === "s") {
         e.preventDefault()
-        if (isEditingProfile && !isSaving) {
+        if (isEditingBio && !isSaving) {
           handleProfileSave()
-        } else if (activeTab.startsWith("settings-") && !isSaving) {
+        } else if (!!activeSettingsTab && !isSaving) {
           const form = document.querySelector("form")
           if (form) {
             form.requestSubmit()
@@ -237,18 +236,18 @@ export default function VendorProfilePage() {
         }
       }
       // Escape to cancel
-      if (e.key === "Escape" && isEditingProfile) {
+      if (e.key === "Escape" && isEditingBio) {
         handleProfileCancel()
       }
     }
 
     window.addEventListener("keydown", handleKeyDown)
     return () => window.removeEventListener("keydown", handleKeyDown)
-  }, [isEditingProfile, activeTab, isSaving])
+  }, [isEditingBio, activeSettingsTab, isSaving])
 
   // Auto-save for settings forms (debounced) - disabled for now, can be enabled later
   // useEffect(() => {
-  //   if (!isEditingProfile && activeTab.startsWith("settings-") && hasUnsavedChanges && !isSaving) {
+  //   if (!isEditingBio && !!activeSettingsTab && hasUnsavedChanges && !isSaving) {
   //     // Clear existing timeout
   //     if (autoSaveTimeoutRef.current) {
   //       clearTimeout(autoSaveTimeoutRef.current)
@@ -291,7 +290,7 @@ export default function VendorProfilePage() {
   //       }
   //     }
   //   }
-  // }, [settingsFormState, isEditingProfile, activeTab, hasUnsavedChanges, isSaving])
+  // }, [settingsFormState, isEditingBio, activeSettingsTab, hasUnsavedChanges, isSaving])
 
   // Real-time validation
   const validateEmail = (email: string): boolean => {
@@ -434,96 +433,10 @@ export default function VendorProfilePage() {
     }
   }, [toast, fetchProfile])
 
-  // Handle signature upload
-  const handleSignatureUpload = useCallback(async (file: File) => {
-    setIsUploadingSignature(true)
-    setError(null)
-
-    try {
-      if (!file.type.startsWith("image/")) {
-        throw new Error("Please upload an image file")
-      }
-
-      const MAX_SIZE = 5 * 1024 * 1024
-      if (file.size > MAX_SIZE) {
-        throw new Error(`Image is too large. Maximum size is ${MAX_SIZE / 1024 / 1024}MB`)
-      }
-
-      const formData = new FormData()
-      formData.append("file", file)
-
-      const uploadResponse = await fetch("/api/vendor/profile/upload-signature", {
-        method: "POST",
-        credentials: "include",
-        body: formData,
-      })
-
-      if (!uploadResponse.ok) {
-        const errorData = await uploadResponse.json().catch(() => ({ error: "Upload failed" }))
-        throw new Error(errorData.error || "Failed to upload signature")
-      }
-
-      await fetchProfile()
-
-      toast({
-        title: "Success",
-        description: "Signature uploaded successfully",
-      })
-    } catch (err: any) {
-      console.error("Error uploading signature:", err)
-      setError(err.message || "Failed to upload signature")
-      toast({
-        title: "Error",
-        description: err.message || "Failed to upload signature",
-        variant: "destructive",
-      })
-    } finally {
-      setIsUploadingSignature(false)
-    }
-  }, [toast, fetchProfile])
-
-  // Handle signature deletion
-  const handleSignatureDelete = useCallback(async () => {
-    if (!confirm("Are you sure you want to remove your signature? This will remove it from all artwork pages.")) {
-      return
-    }
-
-    setIsUploadingSignature(true)
-    setError(null)
-
-    try {
-      const deleteResponse = await fetch("/api/vendor/profile/upload-signature", {
-        method: "DELETE",
-        credentials: "include",
-      })
-
-      if (!deleteResponse.ok) {
-        const errorData = await deleteResponse.json().catch(() => ({ error: "Delete failed" }))
-        throw new Error(errorData.error || "Failed to delete signature")
-      }
-
-      await fetchProfile()
-
-      toast({
-        title: "Success",
-        description: "Signature removed successfully",
-      })
-    } catch (err: any) {
-      console.error("Error deleting signature:", err)
-      setError(err.message || "Failed to delete signature")
-      toast({
-        title: "Error",
-        description: err.message || "Failed to delete signature",
-        variant: "destructive",
-      })
-    } finally {
-      setIsUploadingSignature(false)
-    }
-  }, [toast, fetchProfile])
 
   const handleImageLibrarySelect = async (media: MediaItem | MediaItem[]) => {
     const selectedMedia = Array.isArray(media) ? media[0] : media
-    
+
     try {
       const updateResponse = await fetch("/api/vendor/profile/update", {
         method: "POST",
@@ -558,11 +471,53 @@ export default function VendorProfilePage() {
     }
   }
 
+  // Handle signature deletion
+  const handleSignatureDelete = useCallback(async () => {
+    if (!confirm("Are you sure you want to remove your signature? This will remove it from all artwork pages.")) {
+      return
+    }
+
+    setError(null)
+
+    try {
+      const updateResponse = await fetch("/api/vendor/profile/update", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "include",
+        body: JSON.stringify({
+          signature_url: null,
+          signature_uploaded_at: null,
+        }),
+      })
+
+      if (!updateResponse.ok) {
+        const errorData = await updateResponse.json().catch(() => ({ error: "Update failed" }))
+        throw new Error(errorData.message || errorData.error || "Failed to remove signature")
+      }
+
+      await fetchProfile()
+
+      toast({
+        title: "Success",
+        description: "Signature removed successfully",
+      })
+    } catch (err: any) {
+      console.error("Error removing signature:", err)
+      setError(err.message || "Failed to remove signature")
+      toast({
+        title: "Error",
+        description: err.message || "Failed to remove signature",
+        variant: "destructive",
+      })
+    }
+  }, [toast, fetchProfile])
+
   const handleSignatureLibrarySelect = async (media: MediaItem | MediaItem[]) => {
     const selectedMedia = Array.isArray(media) ? media[0] : media
-    
+
     try {
-      // We'll use the signature URL directly from library
       const updateResponse = await fetch("/api/vendor/profile/update", {
         method: "POST",
         headers: {
@@ -653,7 +608,7 @@ export default function VendorProfilePage() {
       }
 
       await fetchProfile()
-      setIsEditingProfile(false)
+      setIsEditingBio(false)
       setLastSaved(new Date())
       setHasUnsavedChanges(false)
       setDirty(false)
@@ -752,7 +707,7 @@ export default function VendorProfilePage() {
         instagram_url: profile.instagram_url || "",
       })
     }
-    setIsEditingProfile(false)
+    setIsEditingBio(false)
     setError(null)
     setHasUnsavedChanges(false)
     setDirty(false)
@@ -853,7 +808,7 @@ export default function VendorProfilePage() {
   }
 
   return (
-    <div className="container mx-auto py-8 max-w-6xl space-y-4">
+    <div className="container mx-auto py-8 max-w-7xl space-y-6">
       <div className="flex items-center justify-between flex-wrap gap-4">
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Profile & Settings</h1>
@@ -884,7 +839,7 @@ export default function VendorProfilePage() {
                   className="hidden sm:flex"
                 >
                   <Eye className="h-4 w-4 mr-2" />
-                  Preview
+                  Preview as Collector
                 </Button>
               </TooltipTrigger>
               <TooltipContent>Preview your public profile</TooltipContent>
@@ -900,809 +855,796 @@ export default function VendorProfilePage() {
         </Alert>
       )}
 
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-        <TabsList className="grid w-full max-w-xl grid-cols-4">
-          <TabsTrigger value="public-profile">Public Profile</TabsTrigger>
-          <TabsTrigger value="settings-profile" className="flex items-center gap-2">
-            <User className="h-4 w-4" />
-            <span>Contact</span>
-            {completionSteps.profile && <CheckCircle className="h-3 w-3 text-green-500" />}
-          </TabsTrigger>
-          <TabsTrigger value="settings-payment" className="flex items-center gap-2">
-            <DollarSign className="h-4 w-4" />
-            <span>Payment</span>
-            {completionSteps.payment && <CheckCircle className="h-3 w-3 text-green-500" />}
-          </TabsTrigger>
-          <TabsTrigger value="settings-tax" className="flex items-center gap-2">
-            <FileText className="h-4 w-4" />
-            <span>Tax</span>
-            {completionSteps.tax && <CheckCircle className="h-3 w-3 text-green-500" />}
-          </TabsTrigger>
-        </TabsList>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Main Content - Left Column (2/3 width) */}
+        <div className="lg:col-span-2 space-y-6">
+          <SectionErrorBoundary sectionName="Public Profile Preview">
+            <Card>
+              <CardContent className="pt-6 space-y-6">
+                <div className="flex flex-col md:flex-row items-start md:items-center gap-6">
+                  <div
+                    ref={dropZoneRef}
+                    className="relative group mx-auto md:mx-0"
+                    onDragOver={handleDragOver}
+                    onDragLeave={handleDragLeave}
+                    onDrop={handleDrop}
+                  >
+                    <div
+                      className={`relative w-32 h-32 rounded-full overflow-hidden border-4 shadow-lg transition-all ${
+                        isDragOver
+                          ? "border-primary ring-4 ring-primary/20 scale-105"
+                          : "border-primary"
+                      }`}
+                    >
+                      {profile.profile_image ? (
+                        <Image
+                          src={profile.profile_image}
+                          alt={profile.vendor_name}
+                          fill
+                          className="object-cover"
+                        />
+                      ) : (
+                        <div className="w-full h-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center">
+                          <User className="h-16 w-16 text-white" />
+                        </div>
+                      )}
+                      {isDragOver && (
+                        <div className="absolute inset-0 bg-primary/20 flex items-center justify-center z-10 rounded-full">
+                          <div className="text-center text-white">
+                            <Upload className="h-8 w-8 mx-auto mb-2" />
+                            <p className="text-xs font-medium">Drop image here</p>
+                          </div>
+                        </div>
+                      )}
+                    </div>
 
-        {/* Public Profile Tab */}
-        <TabsContent value="public-profile" className="space-y-4">
-          <SectionErrorBoundary sectionName="Public Profile">
+                    {isEditingBio && !isDragOver && (
+                      <button
+                        type="button"
+                        onClick={() => fileInputRef.current?.click()}
+                        disabled={isUploadingImage}
+                        className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity rounded-full flex items-center justify-center cursor-pointer disabled:cursor-not-allowed"
+                        aria-label="Upload profile image"
+                      >
+                        {isUploadingImage ? (
+                          <Loader2 className="h-8 w-8 text-white animate-spin" />
+                        ) : (
+                          <Camera className="h-8 w-8 text-white" />
+                        )}
+                      </button>
+                    )}
+
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0]
+                        if (file) {
+                          handleImageUpload(file)
+                        }
+                        e.target.value = ""
+                      }}
+                    />
+                  </div>
+
+                  <div className="flex-1 w-full space-y-4">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <h1 className="text-4xl font-bold leading-tight mb-2 break-words">
+                          {profile.vendor_name}
+                        </h1>
+                        <p className="text-lg text-muted-foreground whitespace-pre-line">
+                          {profile.bio || "No bio available."}
+                        </p>
+                      </div>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="icon"
+                        onClick={() => setIsEditingBio((v) => !v)}
+                        aria-label={isEditingBio ? "Stop editing profile" : "Edit profile"}
+                      >
+                        <PenTool className="h-4 w-4" />
+                      </Button>
+                    </div>
+
+                    {profile.instagram_url && !isEditingBio && (
+                      <div className="flex items-center gap-2">
+                        <Instagram className="h-4 w-4" />
+                        <a
+                          href={profile.instagram_url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-sm font-semibold text-primary hover:underline"
+                        >
+                          {extractInstagramHandle(profile.instagram_url)}
+                        </a>
+                      </div>
+                    )}
+
+                    {profile.artist_history && !isEditingBio && (
+                      <div className="pt-4 border-t">
+                        <h3 className="text-sm font-semibold mb-2 text-muted-foreground">
+                          Artist History
+                        </h3>
+                        <p className="text-sm leading-relaxed whitespace-pre-line">
+                          {profile.artist_history}
+                        </p>
+                      </div>
+                    )}
+
+                    {isEditingBio && (
+                      <div className="space-y-4 pt-4 border-t">
+                        <div className="flex gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setShowImageLibrary(true)}
+                            disabled={isUploadingImage}
+                            type="button"
+                          >
+                            <ImageIcon className="h-4 w-4 mr-2" />
+                            Select Profile Image
+                          </Button>
+                        </div>
+
+                        <div className="space-y-2">
+                          <Label htmlFor="instagram_url" className="flex items-center gap-2">
+                            <Instagram className="h-4 w-4" />
+                            Instagram URL
+                          </Label>
+                          <div className="relative">
+                            <Input
+                              id="instagram_url"
+                              placeholder="https://instagram.com/yourusername or @username"
+                              value={profileFormState.instagram_url}
+                              onChange={(e) => {
+                                const value = e.target.value
+                                handleProfileInputChange("instagram_url", value)
+                              }}
+                              onBlur={(e) => {
+                                const formatted = formatInstagramUrl(e.target.value)
+                                if (formatted !== e.target.value) {
+                                  handleProfileInputChange("instagram_url", formatted)
+                                }
+                                validateField("instagram_url", formatted)
+                              }}
+                              className={
+                                validationState.instagram_url === "invalid"
+                                  ? "border-red-500 focus:border-red-500"
+                                  : validationState.instagram_url === "valid"
+                                    ? "border-green-500 focus:border-green-500"
+                                    : ""
+                              }
+                            />
+                            {validationState.instagram_url === "valid" && (
+                              <CheckCircle className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-green-500" />
+                            )}
+                            {validationState.instagram_url === "invalid" && (
+                              <AlertCircle className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-red-500" />
+                            )}
+                          </div>
+                          {fieldErrors.instagram_url && (
+                            <p className="text-xs text-red-500 flex items-center gap-1">
+                              <AlertCircle className="h-3 w-3" />
+                              {fieldErrors.instagram_url}
+                            </p>
+                          )}
+                          <p className="text-xs text-muted-foreground">
+                            You can enter the full URL or just your username (e.g., @username)
+                          </p>
+                        </div>
+
+                        <div className="space-y-2">
+                          <Label htmlFor="bio">Bio / Description</Label>
+                          <Textarea
+                            id="bio"
+                            placeholder="Tell people about yourself and your work..."
+                            value={profileFormState.bio}
+                            onChange={(e) => setProfileFormState({ ...profileFormState, bio: e.target.value })}
+                            rows={6}
+                            maxLength={500}
+                          />
+                          <p className="text-xs text-muted-foreground text-right">
+                            {profileFormState.bio.length}/500 characters
+                          </p>
+                        </div>
+
+                        <div className="space-y-2">
+                          <Label htmlFor="artist_history">Artist History</Label>
+                          <Textarea
+                            id="artist_history"
+                            placeholder="Share your artistic journey, background, achievements..."
+                            value={profileFormState.artist_history}
+                            onChange={(e) =>
+                              setProfileFormState({ ...profileFormState, artist_history: e.target.value })
+                            }
+                            rows={8}
+                            maxLength={2000}
+                          />
+                          <p className="text-xs text-muted-foreground text-right">
+                            {profileFormState.artist_history.length}/2000 characters
+                          </p>
+                        </div>
+
+                        <div className="flex gap-3 pt-2">
+                          <Button onClick={handleProfileSave} disabled={isSaving}>
+                            {isSaving ? (
+                              <>
+                                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                                Saving...
+                              </>
+                            ) : (
+                              <>
+                                <Save className="h-4 w-4 mr-2" />
+                                Save Changes
+                              </>
+                            )}
+                          </Button>
+                          <Button
+                            variant="outline"
+                            onClick={handleProfileCancel}
+                            disabled={isSaving}
+                            type="button"
+                          >
+                            <X className="h-4 w-4 mr-2" />
+                            Cancel
+                          </Button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                <Separator />
+
+                <Card>
+                  <CardHeader className="pb-4">
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <CardTitle>Artist Signature</CardTitle>
+                        <CardDescription>
+                          Your signature will appear on artwork pages after collector authentication.
+                        </CardDescription>
+                      </div>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="icon"
+                        onClick={() => setIsEditingSignature((v) => !v)}
+                        aria-label={isEditingSignature ? "Stop editing signature" : "Edit signature"}
+                      >
+                        <PenTool className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="flex items-start gap-4 flex-wrap">
+                      {profile.signature_url ? (
+                        <div className="relative group">
+                          <div className="relative w-56 h-28 border-2 border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden bg-white dark:bg-gray-900 flex items-center justify-center">
+                            <Image
+                              src={profile.signature_url}
+                              alt="Artist signature"
+                              width={224}
+                              height={112}
+                              className="object-contain max-w-full max-h-full"
+                            />
+                          </div>
+                          {profile.signature_uploaded_at && (
+                            <p className="text-xs text-muted-foreground mt-1">
+                              Uploaded {new Date(profile.signature_uploaded_at).toLocaleDateString()}
+                            </p>
+                          )}
+                        </div>
+                      ) : (
+                        <div className="w-56 h-28 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg flex items-center justify-center bg-gray-50 dark:bg-gray-800">
+                          <div className="text-center">
+                            <Upload className="h-6 w-6 mx-auto text-muted-foreground mb-1" />
+                            <p className="text-xs text-muted-foreground">No signature</p>
+                          </div>
+                        </div>
+                      )}
+
+                      {isEditingSignature && (
+                        <div className="flex flex-col gap-2">
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setShowSignatureLibrary(true)}
+                          >
+                            <ImageIcon className="h-4 w-4 mr-2" />
+                            {profile.signature_url ? "Change" : "Select"} Signature
+                          </Button>
+                          {profile.signature_url && (
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={handleSignatureDelete}
+                            className="text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950"
+                          >
+                              <X className="h-4 w-4 mr-2" />
+                              Remove
+                            </Button>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+              </CardContent>
+            </Card>
+          </SectionErrorBoundary>
+        </div>
+
+        {/* Right Sidebar - Settings */}
+        <div className="space-y-6">
           <Card>
             <CardHeader>
-              <CardTitle>Your Artist Profile</CardTitle>
-              <CardDescription>
-                This is how collectors will see you - make it shine! Your profile appears on all your product pages.
-              </CardDescription>
+              <CardTitle>Account Settings</CardTitle>
+              <CardDescription>Manage your business information</CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
-              {/* Instagram-style Profile Header */}
-              <div className="flex flex-col sm:flex-row gap-8 sm:gap-12 items-start pb-6 border-b">
-                <div
-                  ref={dropZoneRef}
-                  className="relative group mx-auto sm:mx-0"
-                  onDragOver={handleDragOver}
-                  onDragLeave={handleDragLeave}
-                  onDrop={handleDrop}
-                >
-                  <div
-                    className={`relative w-32 h-32 sm:w-36 sm:h-36 rounded-full overflow-hidden border-2 transition-all ${
-                      isDragOver
-                        ? "border-primary ring-4 ring-primary/20 scale-105"
-                        : "border-gray-200 dark:border-gray-700"
-                    }`}
-                  >
-                    {profile.profile_image ? (
-                      <Image
-                        src={profile.profile_image}
-                        alt={profile.vendor_name}
-                        fill
-                        className="object-cover"
-                      />
-                    ) : (
-                      <div className="w-full h-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center">
-                        <User className="h-16 w-16 text-white" />
-                      </div>
+            <CardContent>
+              <Tabs
+                value={activeSettingsTab}
+                onValueChange={setActiveSettingsTab}
+                orientation="vertical"
+                className="space-y-4"
+              >
+                <TabsList className="flex flex-col h-auto space-y-1">
+                  <TabsTrigger value="contact" className="w-full justify-start">
+                    <User className="h-4 w-4 mr-2" />
+                    Contact Info
+                    {completionSteps.profile && (
+                      <CheckCircle className="h-3 w-3 ml-auto text-green-500" />
                     )}
-                    {isDragOver && (
-                      <div className="absolute inset-0 bg-primary/20 flex items-center justify-center z-10 rounded-full">
-                        <div className="text-center text-white">
-                          <Upload className="h-8 w-8 mx-auto mb-2" />
-                          <p className="text-xs font-medium">Drop image here</p>
-                        </div>
-                      </div>
+                  </TabsTrigger>
+                  <TabsTrigger value="payment" className="w-full justify-start">
+                    <DollarSign className="h-4 w-4 mr-2" />
+                    Payment
+                    {completionSteps.payment && (
+                      <CheckCircle className="h-3 w-3 ml-auto text-green-500" />
                     )}
-                  </div>
-                  {!isEditingProfile && !isDragOver && (
-                    <button
-                      type="button"
-                      onClick={() => fileInputRef.current?.click()}
-                      disabled={isUploadingImage}
-                      className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity rounded-full flex items-center justify-center cursor-pointer disabled:cursor-not-allowed"
-                      aria-label="Upload profile image"
-                    >
-                      {isUploadingImage ? (
-                        <Loader2 className="h-8 w-8 text-white animate-spin" />
-                      ) : (
-                        <Camera className="h-8 w-8 text-white" />
-                      )}
-                    </button>
-                  )}
-                  <input
-                    ref={fileInputRef}
-                    type="file"
-                    accept="image/*"
-                    className="hidden"
-                    onChange={(e) => {
-                      const file = e.target.files?.[0]
-                      if (file) {
-                        handleImageUpload(file)
-                      }
-                      // Reset input to allow selecting the same file again
-                      e.target.value = ""
-                    }}
-                  />
-                  <TooltipProvider>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <div className="absolute -bottom-2 -right-2 bg-background rounded-full p-1.5 shadow-lg border">
-                          <Info className="h-4 w-4 text-muted-foreground" />
-                        </div>
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        <p>Click or drag & drop an image to upload</p>
-                        <p className="text-xs mt-1">Max 5MB, recommended: square image</p>
-                      </TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
-                </div>
+                  </TabsTrigger>
+                  <TabsTrigger value="tax" className="w-full justify-start">
+                    <FileText className="h-4 w-4 mr-2" />
+                    Tax Info
+                    {completionSteps.tax && (
+                      <CheckCircle className="h-3 w-3 ml-auto text-green-500" />
+                    )}
+                  </TabsTrigger>
+                </TabsList>
 
-                <div className="flex-1 w-full space-y-4">
-                  <div className="flex gap-2 mb-4">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setShowImageLibrary(true)}
-                      disabled={isUploadingImage}
-                    >
-                      <ImageIcon className="h-4 w-4 mr-2" />
-                      Select from Library
-                    </Button>
-                  </div>
-                  <div className="space-y-3">
-                    <div className="flex items-center gap-4 flex-wrap">
-                      <h2 className="text-xl sm:text-2xl font-light">{profile.vendor_name}</h2>
-                      {!isEditingProfile && (
-                        <Button
-                          onClick={() => setIsEditingProfile(true)}
-                          variant="outline"
-                          size="sm"
-                          className="text-sm"
-                        >
-                          <Edit2 className="h-4 w-4 mr-2" />
-                          Edit Profile
-                        </Button>
-                      )}
-                    </div>
-
-                    {!isEditingProfile && (
-                      <div className="space-y-3">
-                        {profile.bio && (
-                          <p className="text-sm leading-relaxed whitespace-pre-line">
-                            {profile.bio}
-                          </p>
-                        )}
-                        {profile.instagram_url && (
-                          <div className="flex items-center gap-2">
-                            <Instagram className="h-4 w-4" />
-                            <a
-                              href={profile.instagram_url}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="text-sm font-semibold text-primary hover:underline"
-                            >
-                              {extractInstagramHandle(profile.instagram_url)}
-                            </a>
+                <TabsContent value="contact" className="mt-4">
+                  <SectionErrorBoundary sectionName="Contact Information">
+                    <form onSubmit={handleSettingsSave}>
+                      <Card>
+                        <CardHeader>
+                          <CardTitle>Contact Information</CardTitle>
+                          <CardDescription>
+                            Keep your contact details up to date so we can reach you when needed
+                          </CardDescription>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                          <div className="grid gap-4 md:grid-cols-2">
+                            <div className="space-y-2">
+                              <Label htmlFor="contact_name">Contact Name</Label>
+                              <Input
+                                id="contact_name"
+                                name="contact_name"
+                                placeholder="Full Name"
+                                value={settingsFormState.contact_name}
+                                onChange={handleInputChange}
+                              />
+                            </div>
+                            <div className="space-y-2">
+                              <Label htmlFor="contact_email">Contact Email *</Label>
+                              <div className="relative">
+                                <Input
+                                  id="contact_email"
+                                  name="contact_email"
+                                  type="email"
+                                  placeholder="email@example.com"
+                                  value={settingsFormState.contact_email}
+                                  onChange={handleInputChange}
+                                  onBlur={(e) => validateField("contact_email", e.target.value)}
+                                  className={
+                                    validationState.contact_email === "invalid"
+                                      ? "border-red-500 focus:border-red-500 pr-10"
+                                      : validationState.contact_email === "valid"
+                                        ? "border-green-500 focus:border-green-500 pr-10"
+                                        : ""
+                                  }
+                                  required
+                                />
+                                {validationState.contact_email === "valid" && (
+                                  <CheckCircle className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-green-500" />
+                                )}
+                                {validationState.contact_email === "invalid" && (
+                                  <AlertCircle className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-red-500" />
+                                )}
+                              </div>
+                              {fieldErrors.contact_email && (
+                                <p className="text-xs text-red-500 flex items-center gap-1">
+                                  <AlertCircle className="h-3 w-3" />
+                                  {fieldErrors.contact_email}
+                                </p>
+                              )}
+                            </div>
                           </div>
-                        )}
-                        {profile.artist_history && (
-                          <div className="mt-4 pt-4 border-t">
-                            <h3 className="text-sm font-semibold mb-2 text-muted-foreground">
-                              Artist History
-                            </h3>
-                            <p className="text-sm leading-relaxed whitespace-pre-line">
-                              {profile.artist_history}
+                          <div className="space-y-2">
+                            <Label htmlFor="phone">Phone Number</Label>
+                            <div className="relative">
+                              <Input
+                                id="phone"
+                                name="phone"
+                                placeholder="+1 (555) 123-4567"
+                                value={settingsFormState.phone}
+                                onChange={handleInputChange}
+                                onBlur={(e) => validateField("phone", e.target.value)}
+                                className={
+                                  validationState.phone === "invalid"
+                                    ? "border-red-500 focus:border-red-500 pr-10"
+                                    : validationState.phone === "valid"
+                                      ? "border-green-500 focus:border-green-500 pr-10"
+                                      : ""
+                                }
+                              />
+                              {validationState.phone === "valid" && (
+                                <CheckCircle className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-green-500" />
+                              )}
+                              {validationState.phone === "invalid" && (
+                                <AlertCircle className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-red-500" />
+                              )}
+                            </div>
+                            {fieldErrors.phone && (
+                              <p className="text-xs text-red-500 flex items-center gap-1">
+                                <AlertCircle className="h-3 w-3" />
+                                {fieldErrors.phone}
+                              </p>
+                            )}
+                          </div>
+                          <div className="space-y-2">
+                            <Label htmlFor="address">Business Address</Label>
+                            <Textarea
+                              id="address"
+                              name="address"
+                              placeholder="Enter your full business address"
+                              value={settingsFormState.address}
+                              onChange={handleInputChange}
+                              rows={3}
+                            />
+                          </div>
+                        </CardContent>
+                        <CardFooter>
+                          <Button type="submit" disabled={isSaving} className="ml-auto">
+                            {isSaving ? (
+                              <>
+                                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                                Saving...
+                              </>
+                            ) : (
+                              <>
+                                <Save className="h-4 w-4 mr-2" />
+                                Save Changes
+                              </>
+                            )}
+                          </Button>
+                        </CardFooter>
+                      </Card>
+                    </form>
+                  </SectionErrorBoundary>
+                </TabsContent>
+
+                <TabsContent value="payment" className="mt-4">
+                  <SectionErrorBoundary sectionName="Payment Information">
+                    <form onSubmit={handleSettingsSave}>
+                      <Card>
+                        <CardHeader>
+                          <CardTitle>Payment Information</CardTitle>
+                          <CardDescription>
+                            Tell us how you'd like to get paid - we'll make sure your earnings reach you
+                          </CardDescription>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                          <div className="space-y-2">
+                            <Label htmlFor="paypal_email" className="flex items-center gap-2">
+                              PayPal Email *
+                              <TooltipProvider>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <HelpCircle className="h-4 w-4 text-muted-foreground cursor-help" />
+                                  </TooltipTrigger>
+                                  <TooltipContent>
+                                    <p>
+                                      Your PayPal email address for receiving payments. This is required for all payouts.
+                                    </p>
+                                  </TooltipContent>
+                                </Tooltip>
+                              </TooltipProvider>
+                            </Label>
+                            <div className="relative">
+                              <Input
+                                id="paypal_email"
+                                name="paypal_email"
+                                type="email"
+                                placeholder="paypal@example.com"
+                                value={settingsFormState.paypal_email}
+                                onChange={handleInputChange}
+                                onBlur={(e) => validateField("paypal_email", e.target.value)}
+                                className={
+                                  validationState.paypal_email === "invalid"
+                                    ? "border-red-500 focus:border-red-500 pr-10"
+                                    : validationState.paypal_email === "valid"
+                                      ? "border-green-500 focus:border-green-500 pr-10"
+                                      : ""
+                                }
+                                required
+                              />
+                              {validationState.paypal_email === "valid" && (
+                                <CheckCircle className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-green-500" />
+                              )}
+                              {validationState.paypal_email === "invalid" && (
+                                <AlertCircle className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-red-500" />
+                              )}
+                            </div>
+                            {fieldErrors.paypal_email && (
+                              <p className="text-xs text-red-500 flex items-center gap-1">
+                                <AlertCircle className="h-3 w-3" />
+                                {fieldErrors.paypal_email}
+                              </p>
+                            )}
+                            <p className="text-sm text-muted-foreground">
+                              All vendor payouts are processed via PayPal. Please ensure this is the correct email address for your PayPal account.
                             </p>
                           </div>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
+                        </CardContent>
+                        <CardFooter>
+                          <Button type="submit" disabled={isSaving} className="ml-auto">
+                            {isSaving ? (
+                              <>
+                                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                                Saving...
+                              </>
+                            ) : (
+                              <>
+                                <Save className="h-4 w-4 mr-2" />
+                                Save Changes
+                              </>
+                            )}
+                          </Button>
+                        </CardFooter>
+                      </Card>
+                    </form>
+                  </SectionErrorBoundary>
+                </TabsContent>
 
-              {/* Signature Upload Section */}
-              <div className="space-y-4 pt-6 border-t">
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <Label className="text-base font-semibold">Artist Signature</Label>
-                      <p className="text-sm text-muted-foreground mt-1">
-                        Your signature will appear on all artwork pages after collectors authenticate with NFC.
-                        PNG with transparency is recommended.
-                      </p>
-                    </div>
-                  </div>
-                  
-                  <div className="flex items-start gap-4">
-                    {profile.signature_url ? (
-                      <div className="relative group">
-                        <div className="relative w-48 h-24 border-2 border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden bg-white dark:bg-gray-900 flex items-center justify-center">
-                          <Image
-                            src={profile.signature_url}
-                            alt="Artist signature"
-                            width={192}
-                            height={96}
-                            className="object-contain max-w-full max-h-full"
-                          />
-                        </div>
-                        {profile.signature_uploaded_at && (
-                          <p className="text-xs text-muted-foreground mt-1">
-                            Uploaded {new Date(profile.signature_uploaded_at).toLocaleDateString()}
-                          </p>
-                        )}
-                      </div>
-                    ) : (
-                      <div className="w-48 h-24 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg flex items-center justify-center bg-gray-50 dark:bg-gray-800">
-                        <div className="text-center">
-                          <Upload className="h-6 w-6 mx-auto text-muted-foreground mb-1" />
-                          <p className="text-xs text-muted-foreground">No signature</p>
-                        </div>
-                      </div>
-                    )}
-                    
-                    <div className="flex flex-col gap-2">
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        onClick={() => signatureInputRef.current?.click()}
-                        disabled={isUploadingSignature}
-                      >
-                        {isUploadingSignature ? (
-                          <>
-                            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                            Uploading...
-                          </>
-                        ) : (
-                          <>
-                            <Upload className="h-4 w-4 mr-2" />
-                            {profile.signature_url ? "Replace" : "Upload"} Signature
-                          </>
-                        )}
-                      </Button>
-                      {profile.signature_url && (
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          onClick={handleSignatureDelete}
-                          disabled={isUploadingSignature}
-                          className="text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950"
-                        >
-                          <X className="h-4 w-4 mr-2" />
-                          Remove
-                        </Button>
-                      )}
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setShowSignatureLibrary(true)}
-                        disabled={isUploadingSignature}
-                      >
-                        <ImageIcon className="h-4 w-4 mr-2" />
-                        Select from Library
-                      </Button>
-                      <input
-                        ref={signatureInputRef}
-                        type="file"
-                        accept="image/png,image/jpeg,image/jpg,image/webp"
-                        className="hidden"
-                        onChange={(e) => {
-                          const file = e.target.files?.[0]
-                          if (file) {
-                            handleSignatureUpload(file)
-                          }
-                          e.target.value = ""
-                        }}
-                      />
-                    </div>
-                  </div>
-                </div>
-              </div>
+                <TabsContent value="tax" className="mt-4">
+                  <SectionErrorBoundary sectionName="Tax Information">
+                    <form onSubmit={handleSettingsSave}>
+                      <Card>
+                        <CardHeader>
+                          <CardTitle>Tax Information</CardTitle>
+                          <CardDescription>
+                            Help us keep everything compliant by sharing your tax details
+                          </CardDescription>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                          <div className="flex items-center space-x-2 mb-4">
+                            <Checkbox
+                              id="is_company"
+                              checked={settingsFormState.is_company}
+                              onCheckedChange={handleCheckboxChange}
+                            />
+                            <label
+                              htmlFor="is_company"
+                              className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                            >
+                              I am registering as a business/company (not an individual)
+                            </label>
+                          </div>
 
-              {/* Edit Form */}
-              {isEditingProfile && (
-                <div className="space-y-4 pt-6 border-t">
-                  <div className="space-y-2">
-                    <Label htmlFor="instagram_url" className="flex items-center gap-2">
-                      <Instagram className="h-4 w-4" />
-                      Instagram URL
-                    </Label>
-                    <div className="relative">
-                      <Input
-                        id="instagram_url"
-                        placeholder="https://instagram.com/yourusername or @username"
-                        value={profileFormState.instagram_url}
-                        onChange={(e) => {
-                          const value = e.target.value
-                          handleProfileInputChange("instagram_url", value)
-                        }}
-                        onBlur={(e) => {
-                          // Auto-format on blur
-                          const formatted = formatInstagramUrl(e.target.value)
-                          if (formatted !== e.target.value) {
-                            handleProfileInputChange("instagram_url", formatted)
-                          }
-                          validateField("instagram_url", formatted)
-                        }}
-                        className={
-                          validationState.instagram_url === "invalid"
-                            ? "border-red-500 focus:border-red-500"
-                            : validationState.instagram_url === "valid"
-                            ? "border-green-500 focus:border-green-500"
-                            : ""
-                        }
-                      />
-                      {validationState.instagram_url === "valid" && (
-                        <CheckCircle className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-green-500" />
-                      )}
-                      {validationState.instagram_url === "invalid" && (
-                        <AlertCircle className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-red-500" />
-                      )}
-                    </div>
-                    {fieldErrors.instagram_url && (
-                      <p className="text-xs text-red-500 flex items-center gap-1">
-                        <AlertCircle className="h-3 w-3" />
-                        {fieldErrors.instagram_url}
-                      </p>
-                    )}
-                    <p className="text-xs text-muted-foreground">
-                      You can enter the full URL or just your username (e.g., @username)
-                    </p>
-                  </div>
+                          <div className="space-y-2">
+                            <Label htmlFor="tax_id">
+                              {settingsFormState.is_company
+                                ? "Business Tax ID / VAT Number"
+                                : "Tax ID / SSN / National Insurance Number"}
+                            </Label>
+                            <Input
+                              id="tax_id"
+                              name="tax_id"
+                              placeholder={settingsFormState.is_company ? "e.g. 123456789" : "e.g. XXX-XX-XXXX"}
+                              value={settingsFormState.tax_id}
+                              onChange={handleInputChange}
+                            />
+                          </div>
 
-                  <div className="space-y-2">
-                    <Label htmlFor="bio">Bio / Description</Label>
-                    <Textarea
-                      id="bio"
-                      placeholder="Tell people about yourself and your work..."
-                      value={profileFormState.bio}
-                      onChange={(e) => setProfileFormState({ ...profileFormState, bio: e.target.value })}
-                      rows={6}
-                      maxLength={500}
-                    />
-                    <p className="text-xs text-muted-foreground text-right">
-                      {profileFormState.bio.length}/500 characters
-                    </p>
-                  </div>
+                          <div className="space-y-2">
+                            <Label htmlFor="tax_country">Tax Residence Country</Label>
+                            <Select value={settingsFormState.tax_country} onValueChange={handleSelectChange}>
+                              <SelectTrigger id="tax_country">
+                                <SelectValue placeholder="Select country" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {COUNTRIES.map((country) => (
+                                  <SelectItem key={country} value={country}>
+                                    {country}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
 
-                  <div className="space-y-2">
-                    <Label htmlFor="artist_history">Artist History</Label>
-                    <Textarea
-                      id="artist_history"
-                      placeholder="Share your artistic journey, background, achievements..."
-                      value={profileFormState.artist_history}
-                      onChange={(e) =>
-                        setProfileFormState({ ...profileFormState, artist_history: e.target.value })
-                      }
-                      rows={8}
-                      maxLength={2000}
-                    />
-                    <p className="text-xs text-muted-foreground text-right">
-                      {profileFormState.artist_history.length}/2000 characters
-                    </p>
-                  </div>
-
-                  <div className="flex gap-3 pt-4">
-                    <Button onClick={handleProfileSave} disabled={isSaving}>
-                      {isSaving ? (
-                        <>
-                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                          Saving...
-                        </>
-                      ) : (
-                        <>
-                          <Save className="h-4 w-4 mr-2" />
-                          Save Changes
-                        </>
-                      )}
-                    </Button>
-                    <Button variant="outline" onClick={handleProfileCancel} disabled={isSaving}>
-                      <X className="h-4 w-4 mr-2" />
-                      Cancel
-                    </Button>
-                  </div>
-                </div>
-              )}
+                          <Alert className="mt-4">
+                            <AlertCircle className="h-4 w-4" />
+                            <AlertTitle>Important Tax Information</AlertTitle>
+                            <AlertDescription>
+                              <p className="text-sm mt-2">
+                                We are required to collect tax information for all vendors. This information will be used for
+                                tax reporting purposes and may be shared with tax authorities.
+                              </p>
+                              <p className="text-sm mt-2">
+                                For US vendors: We will issue a 1099 form if your earnings exceed $600 in a calendar year.
+                              </p>
+                              <p className="text-sm mt-2">
+                                For non-US vendors: We may be required to withhold taxes based on tax treaties between your
+                                country and the United States.
+                              </p>
+                            </AlertDescription>
+                          </Alert>
+                        </CardContent>
+                        <CardFooter>
+                          <Button type="submit" disabled={isSaving} className="ml-auto">
+                            {isSaving ? (
+                              <>
+                                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                                Saving...
+                              </>
+                            ) : (
+                              <>
+                                <Save className="h-4 w-4 mr-2" />
+                                Save Changes
+                              </>
+                            )}
+                          </Button>
+                        </CardFooter>
+                      </Card>
+                    </form>
+                  </SectionErrorBoundary>
+                </TabsContent>
+              </Tabs>
             </CardContent>
           </Card>
-          </SectionErrorBoundary>
-        </TabsContent>
 
-        {/* Settings - Profile Information Tab */}
-        <TabsContent value="settings-profile" className="space-y-4">
-          <SectionErrorBoundary sectionName="Contact Information">
-          <form onSubmit={handleSettingsSave}>
-            <Card>
-              <CardHeader>
-                <CardTitle>Contact Information</CardTitle>
-                <CardDescription>Keep your contact details up to date so we can reach you when needed</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid gap-4 md:grid-cols-2">
-                  <div className="space-y-2">
-                    <Label htmlFor="contact_name">Contact Name</Label>
-                    <Input
-                      id="contact_name"
-                      name="contact_name"
-                      placeholder="Full Name"
-                      value={settingsFormState.contact_name}
-                      onChange={handleInputChange}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="contact_email">Contact Email *</Label>
-                    <div className="relative">
-                      <Input
-                        id="contact_email"
-                        name="contact_email"
-                        type="email"
-                        placeholder="email@example.com"
-                        value={settingsFormState.contact_email}
-                        onChange={handleInputChange}
-                        onBlur={(e) => validateField("contact_email", e.target.value)}
-                        className={
-                          validationState.contact_email === "invalid"
-                            ? "border-red-500 focus:border-red-500 pr-10"
-                            : validationState.contact_email === "valid"
-                            ? "border-green-500 focus:border-green-500 pr-10"
-                            : ""
-                        }
-                        required
-                      />
-                      {validationState.contact_email === "valid" && (
-                        <CheckCircle className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-green-500" />
-                      )}
-                      {validationState.contact_email === "invalid" && (
-                        <AlertCircle className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-red-500" />
-                      )}
+          {/* Profile Completion Card - Only show if not 100% complete */}
+          <ComponentErrorBoundary componentName="ProfileCompletion" fallbackMode="silent">
+            {getCompletionPercentage() < 100 && (
+              <Card>
+                <CardHeader>
+                  <CardTitle>Profile Completion</CardTitle>
+                  <CardDescription>Complete your profile to get paid faster and unlock all features</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    <div>
+                      <div className="flex justify-between mb-1 text-sm">
+                        <span>Overall completion</span>
+                        <span>{getCompletionPercentage()}%</span>
+                      </div>
+                      <div className="h-2 w-full bg-gray-200 rounded-full overflow-hidden">
+                        <div
+                          className="h-full bg-green-500 rounded-full"
+                          style={{ width: `${getCompletionPercentage()}%` }}
+                        ></div>
+                      </div>
                     </div>
-                    {fieldErrors.contact_email && (
-                      <p className="text-xs text-red-500 flex items-center gap-1">
-                        <AlertCircle className="h-3 w-3" />
-                        {fieldErrors.contact_email}
-                      </p>
-                    )}
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="phone">Phone Number</Label>
-                  <div className="relative">
-                    <Input
-                      id="phone"
-                      name="phone"
-                      placeholder="+1 (555) 123-4567"
-                      value={settingsFormState.phone}
-                      onChange={handleInputChange}
-                      onBlur={(e) => validateField("phone", e.target.value)}
-                      className={
-                        validationState.phone === "invalid"
-                          ? "border-red-500 focus:border-red-500 pr-10"
-                          : validationState.phone === "valid"
-                          ? "border-green-500 focus:border-green-500 pr-10"
-                          : ""
-                      }
-                    />
-                    {validationState.phone === "valid" && (
-                      <CheckCircle className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-green-500" />
-                    )}
-                    {validationState.phone === "invalid" && (
-                      <AlertCircle className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-red-500" />
-                    )}
-                  </div>
-                  {fieldErrors.phone && (
-                    <p className="text-xs text-red-500 flex items-center gap-1">
-                      <AlertCircle className="h-3 w-3" />
-                      {fieldErrors.phone}
-                    </p>
-                  )}
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="address">Business Address</Label>
-                  <Textarea
-                    id="address"
-                    name="address"
-                    placeholder="Enter your full business address"
-                    value={settingsFormState.address}
-                    onChange={handleInputChange}
-                    rows={3}
-                  />
-                </div>
-              </CardContent>
-              <CardFooter>
-                <Button type="submit" disabled={isSaving} className="ml-auto">
-                  {isSaving ? (
-                    <>
-                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                      Saving...
-                    </>
-                  ) : (
-                    <>
-                      <Save className="h-4 w-4 mr-2" />
-                      Save Changes
-                    </>
-                  )}
-                </Button>
-              </CardFooter>
-            </Card>
-          </form>
-          </SectionErrorBoundary>
-        </TabsContent>
 
-        {/* Settings - Payment Tab */}
-        <TabsContent value="settings-payment" className="space-y-4">
-          <SectionErrorBoundary sectionName="Payment Information">
-          <form onSubmit={handleSettingsSave}>
+                    <div className="space-y-3 mt-4">
+                      <button
+                        onClick={() => {
+                          setActiveSettingsTab("contact")
+                          window.scrollTo({ top: 0, behavior: "smooth" })
+                        }}
+                        className={`flex items-center w-full text-left transition-colors hover:bg-muted/50 p-2 rounded-md -ml-2 ${
+                          completionSteps.profile ? "text-green-700 dark:text-green-400" : "text-gray-600 dark:text-gray-400"
+                        }`}
+                      >
+                        {completionSteps.profile ? (
+                          <CheckCircle className="h-5 w-5 text-green-500 mr-2 flex-shrink-0" />
+                        ) : (
+                          <div className="h-5 w-5 rounded-full border-2 border-gray-300 mr-2 flex-shrink-0"></div>
+                        )}
+                        <span className="font-medium">Contact Information</span>
+                        {!completionSteps.profile && (
+                          <ExternalLink className="h-4 w-4 ml-auto text-muted-foreground" />
+                        )}
+                      </button>
+
+                      <button
+                        onClick={() => {
+                          setActiveSettingsTab("payment")
+                          window.scrollTo({ top: 0, behavior: "smooth" })
+                        }}
+                        className={`flex items-center w-full text-left transition-colors hover:bg-muted/50 p-2 rounded-md -ml-2 ${
+                          completionSteps.payment ? "text-green-700 dark:text-green-400" : "text-gray-600 dark:text-gray-400"
+                        }`}
+                      >
+                        {completionSteps.payment ? (
+                          <CheckCircle className="h-5 w-5 text-green-500 mr-2 flex-shrink-0" />
+                        ) : (
+                          <div className="h-5 w-5 rounded-full border-2 border-gray-300 mr-2 flex-shrink-0"></div>
+                        )}
+                        <span className="font-medium">Payment Details</span>
+                        {!completionSteps.payment && (
+                          <ExternalLink className="h-4 w-4 ml-auto text-muted-foreground" />
+                        )}
+                      </button>
+
+                      <button
+                        onClick={() => {
+                          setActiveSettingsTab("tax")
+                          window.scrollTo({ top: 0, behavior: "smooth" })
+                        }}
+                        className={`flex items-center w-full text-left transition-colors hover:bg-muted/50 p-2 rounded-md -ml-2 ${
+                          completionSteps.tax ? "text-green-700 dark:text-green-400" : "text-gray-600 dark:text-gray-400"
+                        }`}
+                      >
+                        {completionSteps.tax ? (
+                          <CheckCircle className="h-5 w-5 text-green-500 mr-2 flex-shrink-0" />
+                        ) : (
+                          <div className="h-5 w-5 rounded-full border-2 border-gray-300 mr-2 flex-shrink-0"></div>
+                        )}
+                        <span className="font-medium">Tax Information</span>
+                        {!completionSteps.tax && (
+                          <ExternalLink className="h-4 w-4 ml-auto text-muted-foreground" />
+                        )}
+                      </button>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+          </ComponentErrorBoundary>
+
+          {/* Settings Section - Theme & Logout */}
+          <ComponentErrorBoundary componentName="PreferencesCard" fallbackMode="minimal">
             <Card>
               <CardHeader>
-                <CardTitle>Payment Information</CardTitle>
-                <CardDescription>Tell us how you'd like to get paid - we'll make sure your earnings reach you</CardDescription>
+                <CardTitle>Preferences</CardTitle>
+                <CardDescription>Manage your account preferences and settings</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="paypal_email" className="flex items-center gap-2">
-                    PayPal Email *
-                    <TooltipProvider>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <HelpCircle className="h-4 w-4 text-muted-foreground cursor-help" />
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p>Your PayPal email address for receiving payments. This is required for all payouts.</p>
-                        </TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
-                  </Label>
-                  <div className="relative">
-                    <Input
-                      id="paypal_email"
-                      name="paypal_email"
-                      type="email"
-                      placeholder="paypal@example.com"
-                      value={settingsFormState.paypal_email}
-                      onChange={handleInputChange}
-                      onBlur={(e) => validateField("paypal_email", e.target.value)}
-                      className={
-                        validationState.paypal_email === "invalid"
-                          ? "border-red-500 focus:border-red-500 pr-10"
-                          : validationState.paypal_email === "valid"
-                          ? "border-green-500 focus:border-green-500 pr-10"
-                          : ""
-                      }
-                      required
-                    />
-                    {validationState.paypal_email === "valid" && (
-                      <CheckCircle className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-green-500" />
-                    )}
-                    {validationState.paypal_email === "invalid" && (
-                      <AlertCircle className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-red-500" />
-                    )}
+                <div className="flex items-center justify-between">
+                  <div className="space-y-0.5">
+                    <Label className="text-base">Theme</Label>
+                    <p className="text-sm text-muted-foreground">Choose your preferred color scheme</p>
                   </div>
-                  {fieldErrors.paypal_email && (
-                    <p className="text-xs text-red-500 flex items-center gap-1">
-                      <AlertCircle className="h-3 w-3" />
-                      {fieldErrors.paypal_email}
-                    </p>
-                  )}
-                  <p className="text-sm text-muted-foreground">
-                    All vendor payouts are processed via PayPal. Please ensure this is the correct email address for your PayPal account.
-                  </p>
+                  <ThemeToggle />
                 </div>
-              </CardContent>
-              <CardFooter>
-                <Button type="submit" disabled={isSaving} className="ml-auto">
-                  {isSaving ? (
-                    <>
-                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                      Saving...
-                    </>
-                  ) : (
-                    <>
-                      <Save className="h-4 w-4 mr-2" />
-                      Save Changes
-                    </>
-                  )}
-                </Button>
-              </CardFooter>
-            </Card>
-          </form>
-          </SectionErrorBoundary>
-        </TabsContent>
-
-        {/* Settings - Tax Tab */}
-        <TabsContent value="settings-tax" className="space-y-4">
-          <SectionErrorBoundary sectionName="Tax Information">
-          <form onSubmit={handleSettingsSave}>
-            <Card>
-              <CardHeader>
-                <CardTitle>Tax Information</CardTitle>
-                <CardDescription>Help us keep everything compliant by sharing your tax details</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex items-center space-x-2 mb-4">
-                  <Checkbox
-                    id="is_company"
-                    checked={settingsFormState.is_company}
-                    onCheckedChange={handleCheckboxChange}
-                  />
-                  <label
-                    htmlFor="is_company"
-                    className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                <Separator />
+                <div className="flex items-center justify-between">
+                  <div className="space-y-0.5">
+                    <Label className="text-base">Sign Out</Label>
+                    <p className="text-sm text-muted-foreground">Sign out of your account</p>
+                  </div>
+                  <Button
+                    variant="destructive"
+                    onClick={handleLogout}
+                    className="flex items-center gap-2"
                   >
-                    I am registering as a business/company (not an individual)
-                  </label>
+                    <LogOut className="h-4 w-4" />
+                    Sign Out
+                  </Button>
                 </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="tax_id">
-                    {settingsFormState.is_company
-                      ? "Business Tax ID / VAT Number"
-                      : "Tax ID / SSN / National Insurance Number"}
-                  </Label>
-                  <Input
-                    id="tax_id"
-                    name="tax_id"
-                    placeholder={settingsFormState.is_company ? "e.g. 123456789" : "e.g. XXX-XX-XXXX"}
-                    value={settingsFormState.tax_id}
-                    onChange={handleInputChange}
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="tax_country">Tax Residence Country</Label>
-                  <Select value={settingsFormState.tax_country} onValueChange={handleSelectChange}>
-                    <SelectTrigger id="tax_country">
-                      <SelectValue placeholder="Select country" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {COUNTRIES.map((country) => (
-                        <SelectItem key={country} value={country}>
-                          {country}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <Alert className="mt-4">
-                  <AlertCircle className="h-4 w-4" />
-                  <AlertTitle>Important Tax Information</AlertTitle>
-                  <AlertDescription>
-                    <p className="text-sm mt-2">
-                      We are required to collect tax information for all vendors. This information will be used for
-                      tax reporting purposes and may be shared with tax authorities.
-                    </p>
-                    <p className="text-sm mt-2">
-                      For US vendors: We will issue a 1099 form if your earnings exceed $600 in a calendar year.
-                    </p>
-                    <p className="text-sm mt-2">
-                      For non-US vendors: We may be required to withhold taxes based on tax treaties between your
-                      country and the United States.
-                    </p>
-                  </AlertDescription>
-                </Alert>
               </CardContent>
-              <CardFooter>
-                <Button type="submit" disabled={isSaving} className="ml-auto">
-                  {isSaving ? (
-                    <>
-                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                      Saving...
-                    </>
-                  ) : (
-                    <>
-                      <Save className="h-4 w-4 mr-2" />
-                      Save Changes
-                    </>
-                  )}
-                </Button>
-              </CardFooter>
             </Card>
-          </form>
-          </SectionErrorBoundary>
-        </TabsContent>
-      </Tabs>
-
-      {/* Profile Completion Card - Only show if not 100% complete */}
-      <ComponentErrorBoundary componentName="ProfileCompletion" fallbackMode="silent">
-      {getCompletionPercentage() < 100 && (
-        <Card className="max-w-2xl">
-        <CardHeader>
-          <CardTitle>Profile Completion</CardTitle>
-          <CardDescription>Complete your profile to get paid faster and unlock all features</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            <div>
-              <div className="flex justify-between mb-1 text-sm">
-                <span>Overall completion</span>
-                <span>{getCompletionPercentage()}%</span>
-              </div>
-              <div className="h-2 w-full bg-gray-200 rounded-full overflow-hidden">
-                <div
-                  className="h-full bg-green-500 rounded-full"
-                  style={{ width: `${getCompletionPercentage()}%` }}
-                ></div>
-              </div>
-            </div>
-
-            <div className="space-y-3 mt-4">
-              <button
-                onClick={() => {
-                  setActiveTab("settings-profile")
-                  window.scrollTo({ top: 0, behavior: "smooth" })
-                }}
-                className={`flex items-center w-full text-left transition-colors hover:bg-muted/50 p-2 rounded-md -ml-2 ${
-                  completionSteps.profile ? "text-green-700 dark:text-green-400" : "text-gray-600 dark:text-gray-400"
-                }`}
-              >
-                {completionSteps.profile ? (
-                  <CheckCircle className="h-5 w-5 text-green-500 mr-2 flex-shrink-0" />
-                ) : (
-                  <div className="h-5 w-5 rounded-full border-2 border-gray-300 mr-2 flex-shrink-0"></div>
-                )}
-                <span className="font-medium">Contact Information</span>
-                {!completionSteps.profile && (
-                  <ExternalLink className="h-4 w-4 ml-auto text-muted-foreground" />
-                )}
-              </button>
-
-              <button
-                onClick={() => {
-                  setActiveTab("settings-payment")
-                  window.scrollTo({ top: 0, behavior: "smooth" })
-                }}
-                className={`flex items-center w-full text-left transition-colors hover:bg-muted/50 p-2 rounded-md -ml-2 ${
-                  completionSteps.payment ? "text-green-700 dark:text-green-400" : "text-gray-600 dark:text-gray-400"
-                }`}
-              >
-                {completionSteps.payment ? (
-                  <CheckCircle className="h-5 w-5 text-green-500 mr-2 flex-shrink-0" />
-                ) : (
-                  <div className="h-5 w-5 rounded-full border-2 border-gray-300 mr-2 flex-shrink-0"></div>
-                )}
-                <span className="font-medium">Payment Details</span>
-                {!completionSteps.payment && (
-                  <ExternalLink className="h-4 w-4 ml-auto text-muted-foreground" />
-                )}
-              </button>
-
-              <button
-                onClick={() => {
-                  setActiveTab("settings-tax")
-                  window.scrollTo({ top: 0, behavior: "smooth" })
-                }}
-                className={`flex items-center w-full text-left transition-colors hover:bg-muted/50 p-2 rounded-md -ml-2 ${
-                  completionSteps.tax ? "text-green-700 dark:text-green-400" : "text-gray-600 dark:text-gray-400"
-                }`}
-              >
-                {completionSteps.tax ? (
-                  <CheckCircle className="h-5 w-5 text-green-500 mr-2 flex-shrink-0" />
-                ) : (
-                  <div className="h-5 w-5 rounded-full border-2 border-gray-300 mr-2 flex-shrink-0"></div>
-                )}
-                <span className="font-medium">Tax Information</span>
-                {!completionSteps.tax && (
-                  <ExternalLink className="h-4 w-4 ml-auto text-muted-foreground" />
-                )}
-              </button>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-      )}
-      </ComponentErrorBoundary>
-
-      {/* Settings Section - Theme & Logout */}
-      <ComponentErrorBoundary componentName="PreferencesCard" fallbackMode="minimal">
-      <Card className="mt-6">
-        <CardHeader>
-          <CardTitle>Preferences</CardTitle>
-          <CardDescription>Manage your account preferences and settings</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="flex items-center justify-between">
-            <div className="space-y-0.5">
-              <Label className="text-base">Theme</Label>
-              <p className="text-sm text-muted-foreground">Choose your preferred color scheme</p>
-            </div>
-            <ThemeToggle />
-          </div>
-          <Separator />
-          <div className="flex items-center justify-between">
-            <div className="space-y-0.5">
-              <Label className="text-base">Sign Out</Label>
-              <p className="text-sm text-muted-foreground">Sign out of your account</p>
-            </div>
-            <Button
-              variant="destructive"
-              onClick={handleLogout}
-              className="flex items-center gap-2"
-            >
-              <LogOut className="h-4 w-4" />
-              Sign Out
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
-      </ComponentErrorBoundary>
+          </ComponentErrorBoundary>
+        </div>
+      </div>
 
       {/* Media Library Modals */}
       <ComponentErrorBoundary componentName="MediaLibraryModals" fallbackMode="silent">

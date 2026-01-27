@@ -22,7 +22,7 @@ export function ArtistList({ artists }: ArtistListProps) {
       <Card>
         <CardHeader>
           <CardTitle>Artists you follow</CardTitle>
-          <CardDescription>Buy an artwork to start your collection.</CardDescription>
+          {/* Removed description text */}
         </CardHeader>
       </Card>
     )

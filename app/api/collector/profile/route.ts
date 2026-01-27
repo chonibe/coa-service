@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
 import { createClient } from "@/lib/supabase/server"
+import { verifyCollectorSessionToken } from "@/lib/collector-session"
 import { z } from "zod"
 
 // Profile schema for validation
@@ -21,20 +22,28 @@ export async function GET(request: NextRequest) {
   try {
     const supabase = createClient()
 
-    // Get authenticated user
-    const { data: { user }, error: authError } = await supabase.auth.getUser()
-    if (authError || !user) {
+    // Verify collector session
+    const collectorSession = verifyCollectorSessionToken(request.cookies.get("collector_session")?.value)
+    if (!collectorSession) {
       return NextResponse.json(
         { success: false, message: 'Unauthorized' },
         { status: 401 }
       )
     }
 
-    // Get collector profile
+    const sessionEmail = collectorSession.email
+    if (!sessionEmail) {
+      return NextResponse.json(
+        { success: false, message: 'Invalid session' },
+        { status: 401 }
+      )
+    }
+
+    // Get collector profile by email
     const { data: profile, error: profileError } = await supabase
       .from('collector_profiles')
       .select('*')
-      .eq('user_id', user.id)
+      .eq('email', sessionEmail)
       .single()
 
     if (profileError && profileError.code !== 'PGRST116') { // PGRST116 = no rows
@@ -45,36 +54,12 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    // If no profile exists, create one with basic info from user
+    // If no profile exists, return error (profile should be created during OAuth)
     if (!profile) {
-      const newProfile = {
-        user_id: user.id,
-        email: user.email || '',
-        first_name: null,
-        last_name: null,
-        phone: null,
-        bio: null,
-        avatar_url: null,
-      }
-
-      const { data: createdProfile, error: createError } = await supabase
-        .from('collector_profiles')
-        .insert(newProfile)
-        .select()
-        .single()
-
-      if (createError) {
-        console.error('Profile creation error:', createError)
-        return NextResponse.json(
-          { success: false, message: 'Failed to create profile' },
-          { status: 500 }
-        )
-      }
-
-      return NextResponse.json({
-        success: true,
-        profile: createdProfile
-      })
+      return NextResponse.json(
+        { success: false, message: 'Profile not found' },
+        { status: 404 }
+      )
     }
 
     return NextResponse.json({
@@ -98,11 +83,19 @@ export async function PUT(request: NextRequest) {
   try {
     const supabase = createClient()
 
-    // Get authenticated user
-    const { data: { user }, error: authError } = await supabase.auth.getUser()
-    if (authError || !user) {
+    // Verify collector session
+    const collectorSession = verifyCollectorSessionToken(request.cookies.get("collector_session")?.value)
+    if (!collectorSession) {
       return NextResponse.json(
         { success: false, message: 'Unauthorized' },
+        { status: 401 }
+      )
+    }
+
+    const sessionEmail = collectorSession.email
+    if (!sessionEmail) {
+      return NextResponse.json(
+        { success: false, message: 'Invalid session' },
         { status: 401 }
       )
     }
@@ -121,11 +114,11 @@ export async function PUT(request: NextRequest) {
 
     const updates = validationResult.data
 
-    // Ensure user owns the profile they're updating
+    // Ensure profile exists for this email
     const { data: existingProfile } = await supabase
       .from('collector_profiles')
       .select('id')
-      .eq('user_id', user.id)
+      .eq('email', sessionEmail)
       .single()
 
     if (!existingProfile) {
@@ -139,7 +132,7 @@ export async function PUT(request: NextRequest) {
     const { data: updatedProfile, error: updateError } = await supabase
       .from('collector_profiles')
       .update(updates)
-      .eq('user_id', user.id)
+      .eq('email', sessionEmail)
       .select()
       .single()
 

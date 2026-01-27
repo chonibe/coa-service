@@ -2,9 +2,9 @@
 
 import React, { useEffect } from "react"
 import { motion } from "framer-motion"
-import Confetti from "react-confetti"
+// Removed Confetti import
 import { Sparkles, CheckCircle2 } from "lucide-react"
-import { useWindowSize } from "@/hooks/use-window-size"
+// Removed useWindowSize import
 
 interface UnlockRevealProps {
   artworkName: string
@@ -12,7 +12,7 @@ interface UnlockRevealProps {
 }
 
 export function UnlockReveal({ artworkName, onComplete }: UnlockRevealProps) {
-  const { width, height } = useWindowSize()
+  // Removed useWindowSize hook
 
   useEffect(() => {
     // Trigger haptic feedback if available
@@ -20,33 +20,27 @@ export function UnlockReveal({ artworkName, onComplete }: UnlockRevealProps) {
       navigator.vibrate([100, 50, 100, 50, 200])
     }
 
-    // Auto-complete after animation
+    // Auto-complete after animation (0.8s for blur-dissolve)
     const timer = setTimeout(() => {
       onComplete?.()
-    }, 4000)
+    }, 800) // Faster, more elegant transition (0.8s)
 
     return () => clearTimeout(timer)
   }, [onComplete])
 
   return (
     <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
+      initial={{ opacity: 1, backdropFilter: "blur(20px)" }}
+      animate={{ opacity: 0, backdropFilter: "blur(0px)" }}
+      transition={{ duration: 0.8, ease: "easeOut" }} // Smooth blur-dissolve animation
       className="fixed inset-0 z-[100] flex items-center justify-center bg-background/95 backdrop-blur-md"
+      // The content itself will fade out/dissolve with the background blur
     >
-      <Confetti
-        width={width}
-        height={height}
-        recycle={false}
-        numberOfPieces={200}
-        gravity={0.3}
-      />
-
+      {/* Content for the reveal, e.g., Unlocked! message */}
       <motion.div
         initial={{ scale: 0.8, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
-        transition={{ delay: 0.2, type: "spring", damping: 15 }}
+        transition={{ delay: 0.1, type: "spring", damping: 15 }}
         className="text-center space-y-6 px-6 max-w-md"
       >
         {/* Success Icon */}
@@ -54,7 +48,7 @@ export function UnlockReveal({ artworkName, onComplete }: UnlockRevealProps) {
           <motion.div
             initial={{ scale: 0 }}
             animate={{ scale: 1 }}
-            transition={{ delay: 0.3, type: "spring", damping: 12, stiffness: 200 }}
+            transition={{ delay: 0.2, type: "spring", damping: 12, stiffness: 200 }}
             className="w-24 h-24 bg-primary rounded-full flex items-center justify-center shadow-lg shadow-primary/30"
           >
             <CheckCircle2 className="w-12 h-12 text-primary-foreground" />
@@ -64,7 +58,7 @@ export function UnlockReveal({ artworkName, onComplete }: UnlockRevealProps) {
               scale: [1, 1.3, 1],
               opacity: [0.5, 0.2, 0.5],
             }}
-            transition={{ duration: 2, repeat: Infinity, delay: 0.5 }}
+            transition={{ duration: 2, repeat: Infinity, delay: 0.3 }}
             className="absolute -inset-4 bg-primary rounded-full -z-10"
           />
         </div>
@@ -73,7 +67,7 @@ export function UnlockReveal({ artworkName, onComplete }: UnlockRevealProps) {
         <motion.div
           initial={{ y: 20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
-          transition={{ delay: 0.5 }}
+          transition={{ delay: 0.4 }}
           className="space-y-3"
         >
           <div className="flex items-center justify-center gap-2">
@@ -93,7 +87,7 @@ export function UnlockReveal({ artworkName, onComplete }: UnlockRevealProps) {
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          transition={{ delay: 1 }}
+          transition={{ delay: 0.7 }}
           className="flex items-center justify-center gap-2"
         >
           {[0, 1, 2].map((i) => (
