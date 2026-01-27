@@ -55,6 +55,11 @@ export function VariantsStep({ formData, setFormData }: VariantsStepProps) {
   const [currentStep, setCurrentStep] = useState<WizardStep>(1)
   const [selectedDropType, setSelectedDropType] = useState<DropType>(null)
   const [selectedEditionSize, setSelectedEditionSize] = useState<EditionSize | null>(null)
+  
+  // Timed Edition Configuration
+  const [timedStartDate, setTimedStartDate] = useState<string>("")
+  const [timedEndDate, setTimedEndDate] = useState<string>("")
+  const [timedDuration, setTimedDuration] = useState<string | null>(null)
 
   // Initialize wizard state from form data (only once on mount)
   useEffect(() => {
@@ -71,7 +76,12 @@ export function VariantsStep({ formData, setFormData }: VariantsStepProps) {
     
     if (isTimed) {
       setSelectedDropType("timed")
-      setCurrentStep(3) // Skip to price step
+      // Load existing timed dates if available
+      const startDateMeta = formData.metafields?.find(m => m.namespace === "custom" && m.key === "timed_start")
+      const endDateMeta = formData.metafields?.find(m => m.namespace === "custom" && m.key === "timed_end")
+      if (startDateMeta?.value) setTimedStartDate(startDateMeta.value)
+      if (endDateMeta?.value) setTimedEndDate(endDateMeta.value)
+      setCurrentStep(2) // Go to time config step
     } else if (editionSizeMetafield) {
       const size = Number.parseInt(editionSizeMetafield.value, 10) as EditionSize
       if (GUIDED_EDITION_SIZES.includes(size)) {
@@ -147,7 +157,7 @@ export function VariantsStep({ formData, setFormData }: VariantsStepProps) {
     setSelectedDropType(type)
     
     if (type === "timed") {
-      // Set Timed Edition immediately
+      // Set Timed Edition metafield
       const recommendedPrice = 50
       setFormData((prev) => {
         const variants = [...prev.variants]
@@ -178,10 +188,10 @@ export function VariantsStep({ formData, setFormData }: VariantsStepProps) {
 
         return { ...prev, variants, metafields }
       })
-      // Skip to price step for timed editions
-      setCurrentStep(3)
+      // Go to time configuration step
+      setCurrentStep(2)
     } else {
-      // Fixed edition - go to step 2
+      // Fixed edition - go to step 2 (edition size)
       setCurrentStep(2)
     }
   }
@@ -300,6 +310,100 @@ export function VariantsStep({ formData, setFormData }: VariantsStepProps) {
   const currentEditionSize = selectedEditionSize || getCurrentEditionSize()
   const totalSales = unlockStatus?.totalSales ?? 0
   const nextUnlock = getNextUnlock()
+
+  // Helper function to handle duration preset selection
+  const handleDurationSelect = (duration: string) => {
+    setTimedDuration(duration)
+    
+    if (duration !== "custom") {
+      const now = new Date()
+      const endDate = new Date()
+      
+      switch (duration) {
+        case "24h":
+          endDate.setHours(endDate.getHours() + 24)
+          break
+        case "7d":
+          endDate.setDate(endDate.getDate() + 7)
+          break
+        case "30d":
+          endDate.setDate(endDate.getDate() + 30)
+          break
+      }
+      
+      // Set start date to now (optional for vendor)
+      setTimedStartDate("")
+      // Set end date based on duration
+      const endDateString = endDate.toISOString().slice(0, 16)
+      setTimedEndDate(endDateString)
+    }
+  }
+
+  // Validate timed configuration
+  const isTimedConfigValid = () => {
+    if (!timedEndDate) return false
+    
+    const endDate = new Date(timedEndDate)
+    const now = new Date()
+    
+    // End date must be in the future
+    if (endDate <= now) return false
+    
+    // If start date is set, validate it
+    if (timedStartDate) {
+      const startDate = new Date(timedStartDate)
+      // Start date must be before end date
+      if (startDate >= endDate) return false
+      // Minimum 24 hour duration
+      const duration = (endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60)
+      if (duration < 24) return false
+    } else {
+      // If no start date, ensure end date is at least 24 hours from now
+      const duration = (endDate.getTime() - now.getTime()) / (1000 * 60 * 60)
+      if (duration < 24) return false
+    }
+    
+    return true
+  }
+
+  // Save timed configuration to metafields
+  const saveTimedConfig = () => {
+    setFormData((prev) => {
+      const metafields = [...(prev.metafields || [])]
+      
+      // Add/update start date (if provided)
+      if (timedStartDate) {
+        const startIdx = metafields.findIndex(m => m.namespace === "custom" && m.key === "timed_start")
+        const startMetafield = {
+          namespace: "custom",
+          key: "timed_start",
+          value: new Date(timedStartDate).toISOString(),
+          type: "date_time",
+        }
+        if (startIdx >= 0) {
+          metafields[startIdx] = startMetafield
+        } else {
+          metafields.push(startMetafield)
+        }
+      }
+      
+      // Add/update end date (required)
+      const endIdx = metafields.findIndex(m => m.namespace === "custom" && m.key === "timed_end")
+      const endMetafield = {
+        namespace: "custom",
+        key: "timed_end",
+        value: new Date(timedEndDate).toISOString(),
+        type: "date_time",
+      }
+      if (endIdx >= 0) {
+        metafields[endIdx] = endMetafield
+      } else {
+        metafields.push(endMetafield)
+      }
+      
+      return { ...prev, metafields }
+    })
+  }
 
   // Step 1: Choose Drop Type
   const renderStep1 = () => (
@@ -491,6 +595,118 @@ export function VariantsStep({ formData, setFormData }: VariantsStepProps) {
     )
   }
 
+  // Step 2 (Timed Edition): Configure Timeframe
+  const renderTimedConfigStep = () => {
+    return (
+      <div className="space-y-6">
+        <div>
+          <div className="flex items-center gap-2 mb-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => {
+                setCurrentStep(1)
+                setSelectedDropType(null)
+              }}
+            >
+              ← Back
+            </Button>
+            <h3 className="text-lg font-semibold">Configure Sale Timeframe</h3>
+          </div>
+          <p className="text-sm text-muted-foreground">
+            Define when collectors can purchase this timed edition
+          </p>
+        </div>
+
+        {/* Quick Duration Presets */}
+        <div className="space-y-2">
+          <Label>Quick Duration</Label>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+            {[
+              { label: "24 Hours", value: "24h" },
+              { label: "7 Days", value: "7d" },
+              { label: "30 Days", value: "30d" },
+              { label: "Custom", value: "custom" },
+            ].map((option) => (
+              <Button
+                key={option.value}
+                variant={timedDuration === option.value ? "default" : "outline"}
+                onClick={() => handleDurationSelect(option.value)}
+                type="button"
+              >
+                {option.label}
+              </Button>
+            ))}
+          </div>
+        </div>
+
+        {/* Custom Date/Time Pickers */}
+        <div className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="timed-start">Start Date & Time (Optional)</Label>
+            <Input
+              id="timed-start"
+              type="datetime-local"
+              value={timedStartDate}
+              onChange={(e) => setTimedStartDate(e.target.value)}
+            />
+            <p className="text-xs text-muted-foreground">
+              Leave empty to start immediately upon submission
+            </p>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="timed-end">
+              End Date & Time <span className="text-red-500">*</span>
+            </Label>
+            <Input
+              id="timed-end"
+              type="datetime-local"
+              value={timedEndDate}
+              onChange={(e) => setTimedEndDate(e.target.value)}
+              required
+            />
+            <p className="text-xs text-muted-foreground">
+              When the timed edition sale will end (minimum 24 hours duration)
+            </p>
+          </div>
+        </div>
+
+        <Alert>
+          <Info className="h-4 w-4" />
+          <AlertDescription>
+            After this timeframe, no more purchases will be accepted. The final edition size
+            will be determined by total sales during this period. Minimum duration is 24 hours.
+          </AlertDescription>
+        </Alert>
+
+        {!isTimedConfigValid() && timedEndDate && (
+          <Alert variant="destructive">
+            <AlertDescription>
+              {new Date(timedEndDate) <= new Date() 
+                ? "End date must be in the future"
+                : timedStartDate && new Date(timedStartDate) >= new Date(timedEndDate)
+                ? "Start date must be before end date"
+                : "Minimum duration is 24 hours"}
+            </AlertDescription>
+          </Alert>
+        )}
+
+        <Button
+          onClick={() => {
+            saveTimedConfig()
+            setCurrentStep(3)
+          }}
+          disabled={!isTimedConfigValid()}
+          className="w-full"
+          type="button"
+        >
+          Continue to Pricing →
+        </Button>
+      </div>
+    )
+  }
+
   // Step 3: Choose Price
   const renderStep3 = () => {
     const variant = formData.variants[0] || {
@@ -529,10 +745,9 @@ export function VariantsStep({ formData, setFormData }: VariantsStepProps) {
               size="sm"
               onClick={() => {
                 if (isTimed) {
-                  setCurrentStep(1)
-                  setSelectedDropType(null)
+                  setCurrentStep(2) // Go back to time config for timed editions
                 } else {
-                  setCurrentStep(2)
+                  setCurrentStep(2) // Go back to edition size for fixed editions
                 }
               }}
             >
@@ -699,17 +914,15 @@ export function VariantsStep({ formData, setFormData }: VariantsStepProps) {
         <div className="h-px w-8 bg-muted" />
         <div className={cn(
           "flex items-center gap-2",
-          currentStep >= 2 && "text-foreground font-medium",
-          selectedDropType === "timed" && "opacity-50"
+          currentStep >= 2 && "text-foreground font-medium"
         )}>
           <div className={cn(
             "h-8 w-8 rounded-full flex items-center justify-center",
-            currentStep >= 2 ? "bg-primary text-primary-foreground" : "bg-muted",
-            selectedDropType === "timed" && "opacity-50"
+            currentStep >= 2 ? "bg-primary text-primary-foreground" : "bg-muted"
           )}>
             {currentStep > 2 ? <Check className="h-4 w-4" /> : "2"}
           </div>
-          <span>Edition Size</span>
+          <span>{selectedDropType === "timed" ? "Timeframe" : "Edition Size"}</span>
         </div>
         <div className="h-px w-8 bg-muted" />
         <div className={cn(
@@ -728,7 +941,8 @@ export function VariantsStep({ formData, setFormData }: VariantsStepProps) {
 
       {/* Render Current Step */}
       {currentStep === 1 && renderStep1()}
-      {currentStep === 2 && renderStep2()}
+      {currentStep === 2 && selectedDropType === "timed" && renderTimedConfigStep()}
+      {currentStep === 2 && selectedDropType === "fixed" && renderStep2()}
       {currentStep === 3 && renderStep3()}
     </div>
   )
