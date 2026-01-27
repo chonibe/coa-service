@@ -1,173 +1,162 @@
 "use client"
 
-import React, { useState } from "react"
-import { Lightbulb, Upload, X, Plus } from "lucide-react"
-import { Input, Textarea, Label, Button } from "@/components/ui"
+import { useState } from "react"
+import { Lightbulb, Upload, Trash2, X } from "lucide-react"
+import { Button, Textarea, Input } from "@/components/ui"
 import Image from "next/image"
-
-interface InspirationImage {
-  url: string
-  caption?: string
-}
 
 interface InspirationBoardEditorProps {
   blockId: number
   config: {
     story?: string
-    images?: InspirationImage[]
+    images: Array<{
+      url: string
+      caption?: string
+    }>
   }
-  onChange: (config: { story?: string; images: InspirationImage[] }) => void
-  onImageUpload?: (blockId: number) => void
+  onChange: (config: any) => void
+  onImageUpload: () => void
 }
 
-/**
- * InspirationBoardEditor - Masonry image uploader for mood board
- * 
- * Features:
- * - Add/remove images
- * - Add captions to each image
- * - Story text for context
- */
-const InspirationBoardEditor: React.FC<InspirationBoardEditorProps> = ({
+export default function InspirationBoardEditor({
   blockId,
   config,
   onChange,
-  onImageUpload,
-}) => {
+  onImageUpload
+}: InspirationBoardEditorProps) {
   const [story, setStory] = useState(config.story || "")
-  const [images, setImages] = useState<InspirationImage[]>(config.images || [])
+  const [images, setImages] = useState(config.images || [])
 
-  const handleStoryChange = (value: string) => {
-    setStory(value)
-    onChange({ story: value, images })
+  const handleStoryChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const newStory = e.target.value
+    setStory(newStory)
+    setTimeout(() => onChange({ ...config, story: newStory }), 500)
   }
 
-  const handleAddImage = () => {
-    if (onImageUpload) {
-      onImageUpload(blockId)
+  const addImage = (url: string) => {
+    const newImage = {
+      url,
+      caption: ""
     }
+    const newImages = [...images, newImage]
+    setImages(newImages)
+    onChange({ ...config, images: newImages })
   }
 
-  const handleRemoveImage = (index: number) => {
+  const updateImageCaption = (index: number, caption: string) => {
+    const newImages = images.map((img, i) =>
+      i === index ? { ...img, caption } : img
+    )
+    setImages(newImages)
+    onChange({ ...config, images: newImages })
+  }
+
+  const removeImage = (index: number) => {
     const newImages = images.filter((_, i) => i !== index)
     setImages(newImages)
-    onChange({ story, images: newImages })
-  }
-
-  const handleCaptionChange = (index: number, caption: string) => {
-    const newImages = [...images]
-    newImages[index] = { ...newImages[index], caption }
-    setImages(newImages)
-    onChange({ story, images: newImages })
+    onChange({ ...config, images: newImages })
   }
 
   return (
     <div className="space-y-6">
-      {/* Section Header */}
-      <div className="flex items-center gap-3">
-        <div className="w-12 h-12 rounded-full bg-yellow-500/10 flex items-center justify-center">
-          <Lightbulb className="h-6 w-6 text-yellow-500" />
-        </div>
-        <div>
-          <h3 className="text-lg font-semibold text-white">Inspiration Board</h3>
-          <p className="text-sm text-gray-400">Share what influenced this work</p>
+      <div className="flex items-start gap-3">
+        <Lightbulb className="h-6 w-6 text-yellow-400 flex-shrink-0 mt-1" />
+        <div className="flex-1">
+          <h3 className="text-lg font-semibold text-white mb-1">Inspiration Board</h3>
+          <p className="text-sm text-gray-400">Share your influences and references</p>
         </div>
       </div>
 
       {/* Story */}
       <div className="space-y-2">
-        <Label htmlFor={`story-${blockId}`} className="text-white">
+        <label className="text-sm font-medium text-gray-300">
           Story <span className="text-gray-500">(optional)</span>
-        </Label>
+        </label>
         <Textarea
-          id={`story-${blockId}`}
-          placeholder="These images and references capture the mood and energy that inspired this piece..."
+          placeholder="These textures and colors guided my palette. The urban architecture inspired the geometric forms..."
           value={story}
-          onChange={(e) => handleStoryChange(e.target.value)}
+          onChange={handleStoryChange}
           rows={3}
-          className="bg-gray-800 border-gray-700 text-white resize-none"
+          className="bg-gray-700 border-gray-600 text-white resize-none"
         />
       </div>
 
-      {/* Images */}
+      {/* Images Grid */}
       <div className="space-y-3">
-        <Label className="text-white">Images</Label>
-
-        {images.length === 0 ? (
-          <div className="border-2 border-dashed border-gray-700 rounded-lg p-8 text-center">
-            <Lightbulb className="h-12 w-12 text-gray-600 mx-auto mb-3" />
-            <p className="text-gray-400 mb-4">No images added yet</p>
-            <Button
-              onClick={handleAddImage}
-              variant="outline"
-              className="bg-gray-800 text-white border-gray-700 hover:bg-gray-700"
-            >
-              <Plus className="h-4 w-4 mr-2" />
-              Add Images
-            </Button>
-          </div>
-        ) : (
-          <div className="space-y-3">
-            {/* Masonry-style Grid */}
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-              {images.map((image, index) => (
-                <div
-                  key={index}
-                  className="bg-gray-800 rounded-lg overflow-hidden border border-gray-700 group"
-                >
-                  {/* Image */}
-                  <div className="relative aspect-square bg-gray-900">
-                    <Image
-                      src={image.url}
-                      alt={`Inspiration ${index + 1}`}
-                      fill
-                      className="object-cover"
-                    />
-                    {/* Remove Button */}
-                    <button
-                      onClick={() => handleRemoveImage(index)}
-                      className="absolute top-2 right-2 w-8 h-8 rounded-full bg-red-500 hover:bg-red-600 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-lg"
-                    >
-                      <X className="h-4 w-4 text-white" />
-                    </button>
-                  </div>
-
-                  {/* Caption */}
-                  <div className="p-3">
-                    <Input
-                      placeholder="Caption..."
-                      value={image.caption || ""}
-                      onChange={(e) => handleCaptionChange(index, e.target.value)}
-                      className="bg-gray-900 border-gray-700 text-white text-sm"
-                    />
-                  </div>
+        <label className="text-sm font-medium text-gray-300">Images</label>
+        
+        {images.length > 0 && (
+          <div className="grid grid-cols-3 gap-3">
+            {images.map((image, index) => (
+              <div
+                key={index}
+                className="relative aspect-square rounded-lg overflow-hidden bg-gray-900 border border-gray-700 group"
+              >
+                <Image
+                  src={image.url}
+                  alt={`Inspiration ${index + 1}`}
+                  fill
+                  className="object-cover"
+                />
+                
+                {/* Hover Overlay */}
+                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/60 transition-all flex flex-col items-center justify-center opacity-0 group-hover:opacity-100">
+                  <Button
+                    onClick={() => removeImage(index)}
+                    variant="ghost"
+                    size="sm"
+                    className="text-white hover:bg-red-600"
+                  >
+                    <Trash2 className="h-4 w-4 mr-1" />
+                    Remove
+                  </Button>
                 </div>
-              ))}
-            </div>
 
-            {/* Add More Button */}
-            <Button
-              onClick={handleAddImage}
-              variant="outline"
-              className="w-full bg-gray-800 text-white border-gray-700 hover:bg-gray-700"
-            >
-              <Plus className="h-4 w-4 mr-2" />
-              Add More Images
-            </Button>
+                {/* Caption Badge */}
+                {image.caption && (
+                  <div className="absolute bottom-0 left-0 right-0 bg-black/80 p-2">
+                    <p className="text-xs text-white truncate">{image.caption}</p>
+                  </div>
+                )}
+              </div>
+            ))}
           </div>
         )}
+
+        {/* Caption Inputs */}
+        {images.length > 0 && (
+          <div className="space-y-2 mt-4">
+            <label className="text-xs font-medium text-gray-400">Captions (optional)</label>
+            {images.map((image, index) => (
+              <Input
+                key={index}
+                type="text"
+                placeholder={`Caption for image #${index + 1}...`}
+                value={image.caption || ""}
+                onChange={(e) => updateImageCaption(index, e.target.value)}
+                className="bg-gray-700 border-gray-600 text-white text-sm"
+              />
+            ))}
+          </div>
+        )}
+
+        {/* Add Images Button */}
+        <Button
+          onClick={onImageUpload}
+          variant="outline"
+          className="w-full bg-gray-800 border-dashed border-2 border-gray-600 hover:border-yellow-500 hover:bg-gray-700 py-8"
+        >
+          <Upload className="h-5 w-5 mr-2" />
+          {images.length > 0 ? "Add More Images" : "Add Images"}
+        </Button>
       </div>
 
-      {/* Help Text */}
-      <div className="p-4 bg-gray-800/50 rounded-lg border border-gray-700">
-        <p className="text-sm text-gray-400 leading-relaxed">
-          <strong className="text-gray-300">Tip:</strong> Share photos, screenshots, 
-          textures, or anything that influenced your creative process. Help collectors 
-          see through your eyes.
+      {/* Tip */}
+      <div className="bg-blue-900/20 border border-blue-500/30 rounded-lg p-4">
+        <p className="text-sm text-blue-300">
+          💡 <strong>Tip:</strong> Share photos, screenshots, textures, or color palettes that inspired your work. Help collectors see through your creative lens!
         </p>
       </div>
     </div>
   )
 }
-
-export default InspirationBoardEditor

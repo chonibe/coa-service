@@ -1,77 +1,82 @@
 "use client"
 
-import React from "react"
+import { useEffect, useState } from "react"
 import { Music, ExternalLink } from "lucide-react"
-import { getSpotifyEmbedUrl, isValidSpotifyUrl } from "@/lib/spotify"
 
 interface SoundtrackSectionProps {
-  spotifyUrl: string
-  note?: string
+  title?: string
+  config: {
+    spotify_url?: string
+    note?: string
+  }
 }
 
-/**
- * SoundtrackSection - Displays a Spotify track embed with optional artist note
- * 
- * Features:
- * - Spotify iframe embed (no auth required)
- * - Optional artist note about the track
- * - "Open in Spotify" link
- * - Modern, immersive design
- */
-const SoundtrackSection: React.FC<SoundtrackSectionProps> = ({ spotifyUrl, note }) => {
-  if (!spotifyUrl || !isValidSpotifyUrl(spotifyUrl)) {
-    return null
-  }
+export default function SoundtrackSection({ title, config }: SoundtrackSectionProps) {
+  const [embedUrl, setEmbedUrl] = useState<string | null>(null)
+  const { spotify_url, note } = config || {}
 
-  const embedUrl = getSpotifyEmbedUrl(spotifyUrl)
+  useEffect(() => {
+    if (spotify_url) {
+      // Extract track ID and create embed URL
+      try {
+        const url = new URL(spotify_url)
+        if (url.hostname === "open.spotify.com" && url.pathname.includes("/track/")) {
+          const pathParts = url.pathname.split("/")
+          const trackIndex = pathParts.indexOf("track")
+          if (trackIndex !== -1 && pathParts[trackIndex + 1]) {
+            const trackId = pathParts[trackIndex + 1].split("?")[0]
+            setEmbedUrl(`https://open.spotify.com/embed/track/${trackId}`)
+          }
+        }
+      } catch (error) {
+        console.error("Invalid Spotify URL:", error)
+      }
+    }
+  }, [spotify_url])
 
-  if (!embedUrl) {
+  if (!spotify_url || !embedUrl) {
     return null
   }
 
   return (
-    <section className="py-8 md:py-16">
-      {/* Section Header */}
-      <div className="flex items-center gap-3 mb-6">
-        <Music className="h-6 w-6 text-green-400" />
-        <h2 className="text-2xl md:text-3xl font-bold text-white">Soundtrack</h2>
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <h2 className="text-2xl font-bold flex items-center gap-3">
+          <Music className="h-6 w-6 text-green-500" />
+          {title || "Soundtrack"}
+        </h2>
+        <a
+          href={spotify_url}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-sm text-green-500 hover:text-green-400 flex items-center gap-1 transition-colors"
+        >
+          Open in Spotify
+          <ExternalLink className="h-4 w-4" />
+        </a>
       </div>
 
       {/* Spotify Embed */}
-      <div className="bg-gray-900/50 rounded-2xl overflow-hidden shadow-2xl border border-gray-800/50 backdrop-blur-sm">
+      <div className="relative w-full rounded-lg overflow-hidden bg-gray-900 shadow-xl">
         <iframe
           src={embedUrl}
           width="100%"
           height="152"
+          frameBorder="0"
           allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
           loading="lazy"
           className="w-full"
-          style={{ border: 0 }}
         />
-
-        {/* Artist Note */}
-        {note && (
-          <div className="p-6 md:p-8 bg-gradient-to-b from-gray-900/50 to-transparent">
-            <blockquote className="text-gray-300 text-base md:text-lg leading-relaxed italic border-l-4 border-green-500 pl-6">
-              "{note}"
-            </blockquote>
-            <p className="text-sm text-gray-500 mt-3 pl-6">— Artist's Note</p>
-          </div>
-        )}
       </div>
 
-      {/* Open in Spotify Link */}
-      <a
-        href={spotifyUrl}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="inline-flex items-center gap-2 mt-6 text-green-400 hover:text-green-300 transition-colors font-medium group"
-      >
-        <span>Open in Spotify</span>
-        <ExternalLink className="h-4 w-4 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
-      </a>
-    </section>
+      {/* Artist Note */}
+      {note && (
+        <div className="bg-gray-900/50 rounded-lg p-6 border border-gray-800">
+          <p className="text-gray-300 leading-relaxed italic">
+            "{note}"
+          </p>
+        </div>
+      )}
+    </div>
   )
 }
-
-export default SoundtrackSection

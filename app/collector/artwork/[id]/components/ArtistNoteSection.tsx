@@ -1,71 +1,49 @@
 "use client"
 
-import React from "react"
-import { PenTool } from "lucide-react"
 import Image from "next/image"
+import { PenTool } from "lucide-react"
 
 interface ArtistNoteSectionProps {
   content: string
-  signatureUrl?: string | null
+  signatureUrl?: string
+  artistName: string
 }
 
-/**
- * ArtistNoteSection - Letter-style typography for personal artist notes
- * 
- * Features:
- * - Large, elegant typography
- * - Artist signature at bottom
- * - Clean, editorial presentation
- * - Letter-style aesthetic
- */
-const ArtistNoteSection: React.FC<ArtistNoteSectionProps> = ({ content, signatureUrl }) => {
-  if (!content) {
-    return null
-  }
+export default function ArtistNoteSection({ content, signatureUrl, artistName }: ArtistNoteSectionProps) {
+  if (!content) return null
 
   return (
-    <section className="py-8 md:py-16">
-      {/* Section Header */}
-      <div className="flex items-center gap-3 mb-8">
-        <PenTool className="h-6 w-6 text-amber-400" />
-        <h2 className="text-2xl md:text-3xl font-bold text-white">A Note from the Artist</h2>
+    <div className="max-w-3xl mx-auto space-y-8 py-8">
+      <div className="flex items-center justify-center gap-3 mb-8">
+        <PenTool className="h-6 w-6 text-amber-500" />
+        <h2 className="text-2xl font-bold">A Note from the Artist</h2>
       </div>
 
-      {/* Letter Content */}
-      <div className="bg-gray-900/30 rounded-2xl p-8 md:p-12 shadow-2xl border border-gray-800/50 backdrop-blur-sm">
-        {/* Opening Quote Mark */}
-        <div className="text-6xl md:text-8xl font-serif text-amber-400/20 leading-none mb-4">
-          "
-        </div>
-
-        {/* Content */}
+      {/* Letter-style content */}
+      <div className="bg-gradient-to-br from-amber-900/10 to-gray-900/50 rounded-lg p-12 border border-amber-500/20 shadow-xl">
         <div className="prose prose-lg prose-invert max-w-none">
-          <p className="text-gray-200 text-lg md:text-xl leading-relaxed font-serif whitespace-pre-wrap">
+          <p className="text-gray-300 leading-relaxed whitespace-pre-line text-lg font-serif">
             {content}
           </p>
         </div>
 
-        {/* Closing Quote Mark */}
-        <div className="text-6xl md:text-8xl font-serif text-amber-400/20 leading-none text-right mt-4">
-          "
-        </div>
-
         {/* Signature */}
-        {signatureUrl && (
-          <div className="mt-8 pt-8 border-t border-gray-800 flex justify-end">
-            <div className="relative w-48 h-16 md:w-64 md:h-20">
+        <div className="mt-12 flex flex-col items-end">
+          {signatureUrl && (
+            <div className="relative h-16 w-48 mb-2">
               <Image
                 src={signatureUrl}
-                alt="Artist signature"
+                alt={`${artistName}'s signature`}
                 fill
-                className="object-contain object-right opacity-80"
+                className="object-contain object-right"
               />
             </div>
-          </div>
-        )}
+          )}
+          <p className="text-gray-400 text-sm font-serif italic">
+            — {artistName}
+          </p>
+        </div>
       </div>
-    </section>
+    </div>
   )
 }
-
-export default ArtistNoteSection

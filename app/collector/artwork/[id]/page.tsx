@@ -10,6 +10,7 @@ import {
   AlertCircle,
   CheckCircle,
   Lock,
+  Unlock,
   ArrowLeft,
   ExternalLink,
   Image as ImageIcon,
@@ -35,17 +36,7 @@ import { ImmersiveVideoBlock } from "./components/ImmersiveVideoBlock"
 import { ImmersiveAudioBlock } from "./components/ImmersiveAudioBlock"
 import { motion } from "framer-motion"
 
-// New immersive sections
-import SoundtrackSection from "./components/SoundtrackSection"
-import VoiceNoteSection from "./components/VoiceNoteSection"
-import ProcessGallerySection from "./components/ProcessGallerySection"
-import InspirationBoardSection from "./components/InspirationBoardSection"
-import ArtistNoteSection from "./components/ArtistNoteSection"
-import DiscoverySection from "./components/DiscoverySection"
-import SpecialArtworkChip from "./components/SpecialArtworkChip"
-
-import { Button, Badge, Alert, AlertDescription, Input } from "@/components/ui"
-
+import { Card, CardContent, Button, Badge, Alert, AlertDescription } from "@/components/ui"
 interface ArtworkDetail {
   artwork: {
     id: string
@@ -71,8 +62,6 @@ interface ArtworkDetail {
   lockedContentPreview: { type: string; label: string }[]
   series: { id: string; name: string } | null
   isAuthenticated: boolean
-  discoveryData?: any // New field
-  specialChips?: Array<{ type: string; label: string; sublabel?: string; icon?: string }>; // New field
 }
 
 interface ContentBlock {
@@ -83,7 +72,6 @@ interface ContentBlock {
   content_url: string | null
   block_config: any
   display_order: number
-  block_type?: string // Added block_type for clarity
 }
 
 export default function CollectorArtworkPage() {
@@ -183,22 +171,11 @@ export default function CollectorArtworkPage() {
   }
 
   // Helper to determine block type from benefit_type_id
-  const getBlockType = (block: ContentBlock): string => {
-    if (block.block_type) return block.block_type;
-    // Fallback or more complex mapping can be added here if benefit_type_id needs to be used
-    switch (block.benefit_type_id) {
-        case 1: return "Artwork Text Block";
-        case 2: return "Artwork Image Block";
-        case 3: return "Artwork Video Block";
-        case 4: return "Artwork Audio Block";
-        // New immersive types - assuming these IDs are mapped in the DB
-        case 5: return "Artwork Soundtrack Block";
-        case 6: return "Artwork Voice Note Block";
-        case 7: return "Artwork Process Gallery Block";
-        case 8: return "Artwork Inspiration Block";
-        case 9: return "Artwork Artist Note Block"; // Assuming a new block type for Artist Note
-        default: return "Artwork Text Block";
-    }
+  // This would ideally come from the API, but we'll infer it
+  const getBlockTypeFromBenefitId = (benefitTypeId: number): string => {
+    // This is a placeholder - the API should return block type names
+    // For now, we'll rely on block.block_type if available
+    return "text"
   }
 
   const handleManualAuth = async () => {
@@ -220,9 +197,6 @@ export default function CollectorArtworkPage() {
         throw new Error(error.message || "Authentication failed")
       }
 
-      // Show unlock celebration
-      setShowUnlockReveal(true)
-
       // Refresh artwork data
       const artworkResponse = await fetch(`/api/collector/artwork/${artworkId}`, {
         credentials: "include",
@@ -242,17 +216,17 @@ export default function CollectorArtworkPage() {
 
   if (isLoading) {
     return (
-      <div className="container mx-auto py-8 max-w-4xl space-y-6 bg-gray-950 text-white">
-        <Skeleton className="h-10 w-64 bg-gray-800" />
-        <Skeleton className="h-96 w-full bg-gray-800" />
-        <Skeleton className="h-64 w-full bg-gray-800" />
+      <div className="container mx-auto py-8 max-w-4xl space-y-6">
+        <Skeleton className="h-10 w-64" />
+        <Skeleton className="h-96 w-full" />
+        <Skeleton className="h-64 w-full" />
       </div>
     )
   }
 
   if (error || !artwork) {
     return (
-      <div className="container mx-auto py-8 max-w-4xl bg-gray-950 text-white">
+      <div className="container mx-auto py-8 max-w-4xl">
         <Alert variant="destructive">
           <AlertCircle className="h-4 w-4" />
           <AlertDescription>
@@ -265,14 +239,13 @@ export default function CollectorArtworkPage() {
           </AlertDescription>
         </Alert>
         <div className="flex gap-2 mt-4">
-          <Button onClick={() => router.push("/collector/dashboard")} variant="default" className="bg-green-600 hover:bg-green-700 text-white">
+          <Button onClick={() => router.push("/collector/dashboard")} variant="default">
             <ArrowLeft className="h-4 w-4 mr-2" />
             Back to Dashboard
           </Button>
           <Button 
             onClick={() => window.location.reload()} 
             variant="outline"
-            className="bg-gray-800 text-white hover:bg-gray-700 border-gray-700"
           >
             Retry
           </Button>
@@ -284,7 +257,7 @@ export default function CollectorArtworkPage() {
   const isAuthenticated = artwork.isAuthenticated
 
   return (
-    <div className="min-h-screen bg-gray-950 text-white">
+    <div>
       {/* Unlock Reveal Animation */}
       {showUnlockReveal && (
         <UnlockReveal
@@ -293,14 +266,14 @@ export default function CollectorArtworkPage() {
         />
       )}
 
-      <div className="pb-safe-4">
+      <div className="min-h-screen bg-background pb-safe-4">
         {/* Mobile-first header - compact */}
-        <div className="sticky top-0 z-40 bg-gray-950/90 backdrop-blur-md border-b border-gray-800 px-4 py-3">
+        <div className="sticky top-0 z-40 bg-background/95 backdrop-blur-md border-b px-4 py-3">
           <div className="flex items-center gap-3">
           <Button
             variant="ghost"
             size="icon"
-            className="h-10 w-10 text-gray-300 hover:text-white"
+            className="h-10 w-10"
             onClick={() => router.push("/collector/dashboard")}
           >
             <ArrowLeft className="h-5 w-5" />
@@ -308,11 +281,11 @@ export default function CollectorArtworkPage() {
           <div className="flex-1 min-w-0">
             <h1 className="text-lg font-bold tracking-tight truncate">{artwork.artwork.name}</h1>
             {artwork.artist.name && (
-              <p className="text-xs text-gray-400 truncate">
+              <p className="text-xs text-muted-foreground truncate">
                 by{" "}
                 <Link
                   href={`/artist/${encodeURIComponent(artwork.artist.name)}`}
-                  className="hover:underline hover:text-white"
+                  className="hover:underline"
                 >
                   {artwork.artist.name}
                 </Link>
@@ -334,8 +307,8 @@ export default function CollectorArtworkPage() {
               priority
             />
           ) : (
-            <div className="w-full h-full flex items-center justify-center bg-gray-800">
-              <ImageIcon className="h-24 w-24 text-gray-600" />
+            <div className="w-full h-full flex items-center justify-center bg-muted">
+              <ImageIcon className="h-24 w-24 text-muted-foreground" />
             </div>
           )}
         </div>
@@ -351,24 +324,15 @@ export default function CollectorArtworkPage() {
         orderNumber={artwork.artwork.orderNumber}
       />
 
-      {/* Special Artwork Chips */}
-      {artwork.specialChips && artwork.specialChips.length > 0 && (
-        <div className="px-4 py-4 md:px-8 max-w-5xl mx-auto flex flex-wrap gap-2">
-          {artwork.specialChips.map((chip, index) => (
-            <SpecialArtworkChip key={index} type={chip.type} label={chip.label} sublabel={chip.sublabel} icon={chip.icon} />
-          ))}
-        </div>
-      )}
-
       {/* Content area with max-width for readability */}
-      <div className="px-4 py-8 md:py-16 space-y-12 md:space-y-24 max-w-5xl mx-auto">
+      <div className="px-4 py-8 md:py-12 space-y-8 md:space-y-12 max-w-5xl mx-auto">
         
         {/* Authenticated Status or Lock Preview */}
         {!isAuthenticated ? (
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
-            className="text-center py-8 bg-gray-900 rounded-lg shadow-xl"
+            className="text-center py-8"
           >
             <LockedContentPreview contentBlocks={artwork.lockedContentPreview || []} />
           </motion.div>
@@ -378,10 +342,10 @@ export default function CollectorArtworkPage() {
             animate={{ opacity: 1, y: 0 }}
             className="flex items-center justify-center gap-3 p-6 bg-gradient-to-r from-green-500/10 via-emerald-500/10 to-green-500/10 rounded-2xl border-2 border-green-500/20 shadow-lg"
           >
-            <CheckCircle className="h-6 w-6 text-green-400 flex-shrink-0" />
+            <CheckCircle className="h-6 w-6 text-green-600 dark:text-green-400 flex-shrink-0" />
             <div>
-              <p className="font-bold text-green-100">Authenticated</p>
-              <p className="text-sm text-green-300">
+              <p className="font-bold text-green-900 dark:text-green-100">Authenticated</p>
+              <p className="text-sm text-green-700 dark:text-green-300">
                 {new Date(artwork.artwork.nfcClaimedAt!).toLocaleDateString()}
               </p>
             </div>
@@ -398,11 +362,11 @@ export default function CollectorArtworkPage() {
         />
 
         {/* Content Blocks with Lock Overlay */}
-        <div className={`space-y-16 ${!isAuthenticated ? "relative" : ""}`}>
+        <div className={`space-y-8 ${!isAuthenticated ? "relative" : ""}`}>
           {!isAuthenticated && <LockedOverlay />}
           
           {artwork.contentBlocks.map((block, index) => {
-            const blockType = getBlockType(block)
+            const blockType = block.block_type || getBlockTypeFromBenefitId(block.benefit_type_id)
 
             const animationDelay = index * 0.1
 
@@ -459,78 +423,6 @@ export default function CollectorArtworkPage() {
                     artworkImageUrl={artwork.artwork.imgUrl}
                   />
                 )
-              case "Artwork Soundtrack Block":
-                return (
-                  <motion.div
-                    key={block.id}
-                    initial={{ opacity: 0, y: 30 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: animationDelay, duration: 0.6 }}
-                  >
-                    <SoundtrackSection
-                      spotifyUrl={block.block_config?.spotify_url}
-                      note={block.block_config?.note}
-                    />
-                  </motion.div>
-                )
-              case "Artwork Voice Note Block":
-                return (
-                  <motion.div
-                    key={block.id}
-                    initial={{ opacity: 0, y: 30 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: animationDelay, duration: 0.6 }}
-                  >
-                    <VoiceNoteSection
-                      title={block.title}
-                      contentUrl={block.content_url || ''}
-                      transcript={block.block_config?.transcript}
-                      artistPhoto={artwork.artist.profileImageUrl || ''}
-                    />
-                  </motion.div>
-                )
-              case "Artwork Process Gallery Block":
-                return (
-                  <motion.div
-                    key={block.id}
-                    initial={{ opacity: 0, y: 30 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: animationDelay, duration: 0.6 }}
-                  >
-                    <ProcessGallerySection
-                      intro={block.block_config?.intro}
-                      images={block.block_config?.images || []}
-                    />
-                  </motion.div>
-                )
-              case "Artwork Inspiration Block":
-                return (
-                  <motion.div
-                    key={block.id}
-                    initial={{ opacity: 0, y: 30 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: animationDelay, duration: 0.6 }}
-                  >
-                    <InspirationBoardSection
-                      story={block.block_config?.story}
-                      images={block.block_config?.images || []}
-                    />
-                  </motion.div>
-                )
-              case "Artwork Artist Note Block":
-                return (
-                  <motion.div
-                    key={block.id}
-                    initial={{ opacity: 0, y: 30 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: animationDelay, duration: 0.6 }}
-                  >
-                    <ArtistNoteSection
-                      content={block.description || ''}
-                      signatureUrl={artwork.artist.signatureUrl}
-                    />
-                  </motion.div>
-                )
               default:
                 return (
                   <motion.div
@@ -539,52 +431,36 @@ export default function CollectorArtworkPage() {
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: animationDelay, duration: 0.6 }}
                   >
-                    <div className="rounded-lg p-6 bg-gray-900 shadow-xl">
+                    <Card>
+                      <CardContent className="p-6">
                         {block.title && <h2 className="text-xl font-semibold mb-4">{block.title}</h2>}
                         {block.description && (
-                          <p className="text-gray-300 whitespace-pre-line">{block.description}</p>
+                          <p className="text-muted-foreground whitespace-pre-line">{block.description}</p>
                         )}
-                        {block.content_url && !["video", "audio", "image"].includes(blockType) && (
+                        {block.content_url && (
                           <a
                             href={block.content_url}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="text-green-400 hover:underline inline-flex items-center gap-2 mt-4"
+                            className="text-primary hover:underline inline-flex items-center gap-2 mt-4"
                           >
                             View Content <ExternalLink className="h-4 w-4" />
                           </a>
                         )}
-                    </div>
+                      </CardContent>
+                    </Card>
                   </motion.div>
                 )
             }
           })}
         </div>
 
-        {/* Discovery Section */}
-        {artwork.discoveryData && (
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: artwork.contentBlocks.length * 0.1 + 0.1, duration: 0.6 }}
-          >
-            <DiscoverySection
-              artworkId={artwork.artwork.id}
-              artistName={artwork.artist.name}
-              unlockedContent={artwork.discoveryData.unlockedContent}
-              seriesInfo={artwork.discoveryData.seriesInfo}
-              countdown={artwork.discoveryData.countdown}
-              moreFromArtist={artwork.discoveryData.moreFromArtist}
-            />
-          </motion.div>
-        )}
-
         {/* NFC URL Section (only when authenticated) */}
         {isAuthenticated && (
           <motion.div
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: (artwork.contentBlocks.length * 0.1) + 0.3, duration: 0.6 }}
+            transition={{ delay: 0.3, duration: 0.6 }}
           >
             <NFCUrlSection artworkId={artworkId} />
           </motion.div>
@@ -594,42 +470,20 @@ export default function CollectorArtworkPage() {
       {/* Sticky Bottom CTA - Mobile First */}
       {!isAuthenticated && (
         <div className="fixed bottom-0 left-0 right-0 z-50 
-                        bg-gray-900/90 backdrop-blur-xl border-t border-gray-800
+                        bg-white/90 dark:bg-black/90 backdrop-blur-xl border-t
                         p-4 pb-safe-4 md:hidden">
           <Button
             onClick={() => setIsNfcSheetOpen(true)}
-            className="w-full h-14 text-lg font-semibold rounded-xl bg-green-600 hover:bg-green-700 text-white"
+            className="w-full h-14 text-lg font-semibold rounded-xl"
           >
             Pair NFC
           </Button>
           <button
-            onClick={() => setShowManualAuth(true)}
-            className="w-full text-center text-sm text-gray-400 mt-2 py-2 min-h-[44px]"
+            onClick={() => setIsNfcSheetOpen(true)}
+            className="w-full text-center text-sm text-muted-foreground mt-2 py-2 min-h-[44px]"
           >
             or enter code manually
           </button>
-          {showManualAuth && (
-            <div className="mt-4 flex flex-col gap-2">
-              <Input
-                type="text"
-                placeholder="Enter authentication code"
-                value={authCode}
-                onChange={(e) => setAuthCode(e.target.value)}
-                className="bg-gray-800 border-gray-700 text-white"
-              />
-              <Button onClick={handleManualAuth} disabled={isAuthenticating} className="bg-blue-600 hover:bg-blue-700 text-white">
-                {isAuthenticating ? (
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                ) : (
-                  <Lock className="h-4 w-4 mr-2" />
-                )}
-                Authenticate Manually
-              </Button>
-              <Button variant="ghost" onClick={() => setShowManualAuth(false)} className="text-gray-400 hover:text-white">
-                Cancel
-              </Button>
-            </div>
-          )}
         </div>
       )}
 

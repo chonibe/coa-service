@@ -44,11 +44,6 @@ export async function GET(
         orders:order_id (
           shopify_customer_id,
           created_at
-        ),
-        product_benefits:product_id (
-          hidden_series_id,
-          vip_artwork_id,
-          vip_series_id
         )
       `)
       .eq("line_item_id", lineItemId)
@@ -105,11 +100,6 @@ export async function GET(
         "Artwork Image Block",
         "Artwork Video Block",
         "Artwork Audio Block",
-        "Artwork Soundtrack Block", // New
-        "Artwork Voice Note Block", // New
-        "Artwork Process Gallery Block", // New
-        "Artwork Inspiration Block", // New
-        "Artwork Artist Note Block", // New
       ])
 
     const artworkBlockTypeIds = benefitTypes?.map((bt) => bt.id) || []
@@ -182,193 +172,6 @@ export async function GET(
 
     const series = seriesMember?.artwork_series as any
 
-    // === DISCOVERY DATA ===
-    // Gather data for the Discovery Section
-    const discoveryData: any = {}
-    const specialChips: any[] = []
-
-    // Check for unlocked content (hidden series, VIP artwork, VIP series)
-    const productBenefits = lineItem.product_benefits as any
-    if (productBenefits) {
-      if (productBenefits.hidden_series_id) {
-        const { data: hiddenSeries } = await supabase
-          .from("artwork_series")
-          .select("id, name, thumbnail_url")
-          .eq("id", productBenefits.hidden_series_id)
-          .single()
-
-        if (hiddenSeries) {
-          discoveryData.unlockedContent = {
-            type: "hidden_series",
-            id: hiddenSeries.id,
-            name: hiddenSeries.name,
-            thumbnailUrl: hiddenSeries.thumbnail_url,
-          }
-          specialChips.push({
-            type: "unlocks_hidden",
-            label: "Unlocks Hidden Series",
-            sublabel: hiddenSeries.name,
-          })
-        }
-      } else if (productBenefits.vip_artwork_id) {
-        const { data: vipArtwork } = await supabase
-          .from("products")
-          .select("id, name, img_url")
-          .eq("id", productBenefits.vip_artwork_id)
-          .single()
-
-        if (vipArtwork) {
-          discoveryData.unlockedContent = {
-            type: "vip_artwork",
-            id: vipArtwork.id,
-            name: vipArtwork.name,
-            thumbnailUrl: vipArtwork.img_url,
-          }
-          specialChips.push({
-            type: "unlocks_hidden",
-            label: "Unlocks VIP Artwork",
-            sublabel: vipArtwork.name,
-          })
-        }
-      } else if (productBenefits.vip_series_id) {
-        const { data: vipSeries } = await supabase
-          .from("artwork_series")
-          .select("id, name, thumbnail_url")
-          .eq("id", productBenefits.vip_series_id)
-          .single()
-
-        if (vipSeries) {
-          discoveryData.unlockedContent = {
-            type: "vip_series",
-            id: vipSeries.id,
-            name: vipSeries.name,
-            thumbnailUrl: vipSeries.thumbnail_url,
-          }
-          specialChips.push({
-            type: "vip_access",
-            label: "VIP Series Access",
-            sublabel: vipSeries.name,
-          })
-        }
-      }
-    }
-
-    // Check for series info
-    if (seriesMember?.series_id && !discoveryData.unlockedContent) {
-      const { data: seriesDetails } = await supabase
-        .from("artwork_series")
-        .select("id, name, unlock_type, unlock_config")
-        .eq("id", seriesMember.series_id)
-        .single()
-
-      if (seriesDetails) {
-        // Get all artworks in series
-        const { data: seriesArtworks } = await supabase
-          .from("artwork_series_members")
-          .select("shopify_product_id, products:shopify_product_id (id, name, img_url)")
-          .eq("series_id", seriesDetails.id)
-          .order("position", { ascending: true })
-
-        if (seriesArtworks && seriesArtworks.length > 0) {
-          // Check which artworks customer owns
-          const { data: customerArtworks } = await supabase
-            .from("order_line_items_v2")
-            .select("product_id")
-            .eq("orders.shopify_customer_id", shopifyCustomerId)
-            .in("product_id", seriesArtworks.map((a: any) => a.shopify_product_id))
-
-          const ownedProductIds = new Set(customerArtworks?.map((a: any) => a.product_id) || [])
-
-          const artworksWithStatus = seriesArtworks.map((artwork: any) => ({
-            id: artwork.products?.id,
-            name: artwork.products?.name,
-            imgUrl: artwork.products?.img_url,
-            isOwned: ownedProductIds.has(artwork.shopify_product_id),
-            isLocked: false, // Can add logic for locked artworks
-          }))
-
-          const ownedCount = artworksWithStatus.filter((a) => a.isOwned).length
-          const nextArtwork = artworksWithStatus.find((a) => !a.isOwned)
-
-          discoveryData.seriesInfo = {
-            name: seriesDetails.name,
-            totalCount: seriesArtworks.length,
-            ownedCount,
-            artworks: artworksWithStatus,
-            nextArtwork: nextArtwork
-              ? {
-                  id: nextArtwork.id,
-                  name: nextArtwork.name,
-                  imgUrl: nextArtwork.imgUrl,
-                }
-              : undefined,
-            unlockType: seriesDetails.unlock_type || "any_purchase",
-          }
-
-          // Add series chip
-          specialChips.push({
-            type: "series",
-            label: seriesDetails.name,
-            sublabel: `${ownedCount}/${seriesArtworks.length}`,
-          })
-
-          // Check for time-based unlock
-          if (seriesDetails.unlock_type === "time_based" && seriesDetails.unlock_config) {
-            specialChips.push({
-              type: "timed_release",
-              label: "Timed Release",
-            })
-
-            // Add countdown if there's a next unlock time
-            const unlockConfig = seriesDetails.unlock_config as any
-            if (unlockConfig?.unlock_at) {
-              discoveryData.countdown = {
-                unlockAt: unlockConfig.unlock_at,
-                artworkName: nextArtwork?.name || "Next Artwork",
-                artworkImgUrl: nextArtwork?.imgUrl,
-              }
-            }
-          }
-        }
-      }
-    }
-
-    // Get more artworks from the same artist (if no series or unlocked content)
-    if (!discoveryData.unlockedContent && !discoveryData.seriesInfo && !discoveryData.countdown) {
-      const { data: moreArtworks } = await supabase
-        .from("products")
-        .select("id, name, img_url")
-        .eq("vendor_name", vendor.vendor_name)
-        .neq("id", product.id)
-        .limit(6)
-
-      if (moreArtworks && moreArtworks.length > 0) {
-        discoveryData.moreFromArtist = moreArtworks.map((artwork: any) => ({
-          id: artwork.id,
-          name: artwork.name,
-          imgUrl: artwork.img_url,
-        }))
-      }
-    }
-
-    // === SPECIAL CHIPS ===
-    // Add limited edition chip
-    if (lineItem.edition_number && lineItem.edition_total) {
-      specialChips.push({
-        type: "limited_edition",
-        label: `#${lineItem.edition_number} of ${lineItem.edition_total}`,
-      })
-    }
-
-    // Add authenticated chip
-    if (lineItem.nfc_claimed_at) {
-      specialChips.push({
-        type: "authenticated",
-        label: "Verified",
-        sublabel: new Date(lineItem.nfc_claimed_at).toLocaleDateString(),
-      })
-    }
-
     return NextResponse.json({
       success: true,
       artwork: {
@@ -396,8 +199,6 @@ export async function GET(
       lockedContentPreview: !isAuthenticated ? lockedContentPreview : [],
       series: series ? { id: series.id, name: series.name } : null,
       isAuthenticated,
-      discoveryData: Object.keys(discoveryData).length > 0 ? discoveryData : null,
-      specialChips: specialChips.length > 0 ? specialChips : null,
     })
   } catch (error: any) {
     console.error("Error in collector artwork API:", error)

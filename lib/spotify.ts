@@ -1,63 +1,61 @@
-/**
- * Spotify Integration Helpers
- * 
- * Utilities for working with Spotify URLs and embeds.
- * No authentication required for basic embed playback.
- */
+// Spotify URL validation and embed utilities
+// No authentication required - uses public oEmbed API
 
-/**
- * Validates if a URL is a valid Spotify track URL
- * @param url - The URL to validate
- * @returns true if valid Spotify track URL, false otherwise
- */
 export function isValidSpotifyUrl(url: string): boolean {
   if (!url) return false
-  
   try {
     const urlObj = new URL(url)
-    return (
-      urlObj.hostname === "open.spotify.com" &&
-      urlObj.pathname.includes("/track/")
-    )
+    return urlObj.hostname === "open.spotify.com" && urlObj.pathname.includes("/track/")
   } catch {
     return false
   }
 }
 
-/**
- * Extracts the track ID from a Spotify URL
- * @param url - Spotify track URL
- * @returns Track ID or null if invalid
- */
 export function extractSpotifyTrackId(url: string): string | null {
   if (!isValidSpotifyUrl(url)) return null
   
   try {
     const urlObj = new URL(url)
-    const match = urlObj.pathname.match(/\/track\/([a-zA-Z0-9]+)/)
-    return match ? match[1] : null
+    const pathParts = urlObj.pathname.split("/")
+    const trackIndex = pathParts.indexOf("track")
+    
+    if (trackIndex !== -1 && pathParts[trackIndex + 1]) {
+      return pathParts[trackIndex + 1].split("?")[0]
+    }
+    
+    return null
   } catch {
     return null
   }
 }
 
-/**
- * Generates a Spotify embed iframe URL from a track URL
- * @param trackUrl - Full Spotify track URL
- * @returns Embed URL or null if invalid
- */
 export function getSpotifyEmbedUrl(trackUrl: string): string | null {
   const trackId = extractSpotifyTrackId(trackUrl)
   if (!trackId) return null
   
-  return `https://open.spotify.com/embed/track/${trackId}?utm_source=generator`
+  return `https://open.spotify.com/embed/track/${trackId}`
 }
 
-/**
- * Validates and prepares a Spotify URL for use
- * @param url - The URL to process
- * @returns Object with validation status and embed URL
- */
+export async function fetchSpotifyOEmbed(trackUrl: string): Promise<{ html: string; title: string; artist: string } | null> {
+  if (!isValidSpotifyUrl(trackUrl)) return null
+  
+  try {
+    const response = await fetch(`https://open.spotify.com/oembed?url=${encodeURIComponent(trackUrl)}`)
+    
+    if (!response.ok) return null
+    
+    const data = await response.json()
+    return {
+      html: data.html,
+      title: data.title,
+      artist: data.provider_name
+    }
+  } catch (error) {
+    console.error("Failed to fetch Spotify oEmbed:", error)
+    return null
+  }
+}
+
 export function processSpotifyUrl(url: string): {
   isValid: boolean
   trackId: string | null
@@ -78,7 +76,7 @@ export function processSpotifyUrl(url: string): {
       isValid: false,
       trackId: null,
       embedUrl: null,
-      error: "Invalid Spotify track URL. Please use a URL like: https://open.spotify.com/track/..."
+      error: "Invalid Spotify URL. Must be a track URL like: https://open.spotify.com/track/..."
     }
   }
   

@@ -4,55 +4,52 @@ overview: Transform the artwork page into an immersive "Artist's Studio" experie
 todos:
   - id: db-migration
     content: Create database migration to add new benefit types (Soundtrack, Voice Note, Process Gallery, Inspiration Board)
-    status: completed
-  - id: lib-helpers
-    content: Create lib/spotify.ts and verify lib/countdown.ts helpers
-    status: completed
+    status: in_progress
   - id: soundtrack-section
-    content: Build SoundtrackSection component with Spotify embed and artist note (REBUILT)
-    status: completed
+    content: Build SoundtrackSection component with Spotify embed and artist note
+    status: pending
   - id: voicenote-section
-    content: Build VoiceNoteSection component with custom audio player and waveform (REBUILT)
-    status: completed
+    content: Build VoiceNoteSection component with custom audio player and waveform
+    status: pending
   - id: process-gallery
-    content: Build ProcessGallerySection component with horizontal scroll and captions (REBUILT)
-    status: completed
+    content: Build ProcessGallerySection component with horizontal scroll and captions
+    status: pending
   - id: inspiration-board
-    content: Build InspirationBoardSection component with masonry grid layout (REBUILT)
-    status: completed
+    content: Build InspirationBoardSection component with masonry grid layout
+    status: pending
   - id: artist-note
-    content: Build ArtistNoteSection component with letter-style typography (REBUILT)
-    status: completed
+    content: Build ArtistNoteSection component with letter-style typography
+    status: pending
   - id: discovery-section
-    content: Build DiscoverySection showing next drops, series artworks, countdowns, and unlock rewards (REBUILT)
-    status: completed
+    content: Build DiscoverySection showing next drops, series artworks, countdowns, and unlock rewards
+    status: pending
   - id: special-chips
-    content: Build SpecialArtworkChip component for VIP unlocks, hidden series, and timed releases (REBUILT)
-    status: completed
+    content: Build SpecialArtworkChip component for VIP unlocks, hidden series, and timed releases
+    status: pending
+  - id: builder-redesign
+    content: Redesign artist content builder with immersive layout, inline editing, and progress indicators
+    status: pending
+  - id: vendor-editors
+    content: Create vendor editor components for each new block type (Soundtrack, VoiceNote, ProcessGallery, InspirationBoard)
+    status: pending
+  - id: voice-recorder
+    content: Build VoiceNoteRecorder component with MediaRecorder API and waveform visualization
+    status: pending
+  - id: visual-redesign
+    content: "Update artwork page layout: remove card borders, add whitespace, dark mode default"
+    status: pending
   - id: unlock-animation
-    content: Replace confetti unlock with smooth blur-dissolve animation (REBUILT)
-    status: completed
-  - id: locked-preview
-    content: Update LockedContentPreview with teaser design (REBUILT)
-    status: completed
-  - id: api-discovery
-    content: Update collector API to return discovery data and special chips
-    status: completed
-  - id: soundtrack-editor
-    content: Build SoundtrackEditor with Spotify URL validation and live preview (REBUILT)
-    status: completed
-  - id: process-editor
-    content: Build ProcessGalleryEditor with drag-and-drop (REBUILT)
-    status: completed
-  - id: inspiration-editor
-    content: Build InspirationBoardEditor with masonry upload (REBUILT)
-    status: completed
+    content: Replace confetti unlock with smooth blur-dissolve animation
+    status: pending
+  - id: api-updates
+    content: Update vendor and collector APIs to handle new block types and discovery data
+    status: pending
   - id: template-update
-    content: Verify template includes new block types
-    status: completed
+    content: Update default template to include new block types
+    status: pending
   - id: testing
     content: "Test all new features: vendor flow, collector view, mobile responsiveness"
-    status: in_progress
+    status: pending
 isProject: false
 ---
 
@@ -418,7 +415,7 @@ Replace the current two-column Card-based layout with a more immersive builder:
 │  │      └──────────────────────────────────────────┘  │   │
 │  │                                                     │   │
 │  │      "This track captures the energy I was         │   │
-│  │       going for..."                                │  │
+│  │       going for..."                                │   │
 │  │                                                     │   │
 │  └─────────────────────────────────────────────────────┘   │
 │                                                             │

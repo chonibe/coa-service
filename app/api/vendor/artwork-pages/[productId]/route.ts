@@ -79,11 +79,6 @@ export async function GET(
         "Artwork Image Block",
         "Artwork Video Block",
         "Artwork Audio Block",
-        "Artwork Soundtrack Block", // New
-        "Artwork Voice Note Block", // New
-        "Artwork Process Gallery Block", // New
-        "Artwork Inspiration Block", // New
-        "Artwork Artist Note Block", // New
       ])
 
     const artworkBlockTypeIds = benefitTypes?.map((bt) => bt.id) || []
@@ -97,9 +92,7 @@ export async function GET(
       const productData = submission.product_data as any
       const productDataBenefits = productData?.benefits || []
       const artworkBlocks = productDataBenefits.filter((b: any) => 
-        ["Artwork Text Block", "Artwork Image Block", "Artwork Video Block", "Artwork Audio Block",
-         "Artwork Soundtrack Block", "Artwork Voice Note Block", "Artwork Process Gallery Block",
-         "Artwork Inspiration Block", "Artwork Artist Note Block"].includes(b.type)
+        ["Artwork Text Block", "Artwork Image Block", "Artwork Video Block", "Artwork Audio Block"].includes(b.type)
       )
       
       // Map to content block format
@@ -320,17 +313,6 @@ export async function POST(
     const { data: benefitType, error: typeError } = await supabase
       .from("benefit_types")
       .select("id")
-      .in("name", [
-        "Artwork Text Block",
-        "Artwork Image Block",
-        "Artwork Video Block",
-        "Artwork Audio Block",
-        "Artwork Soundtrack Block",
-        "Artwork Voice Note Block",
-        "Artwork Process Gallery Block",
-        "Artwork Inspiration Block",
-        "Artwork Artist Note Block",
-      ])
       .eq("name", body.blockType)
       .single()
 
@@ -483,7 +465,6 @@ export async function PUT(
       if (body.content_url !== undefined) updatedBlock.content_url = body.content_url
       if (body.block_config !== undefined) updatedBlock.config = body.block_config
       if (body.display_order !== undefined) updatedBlock.display_order = body.display_order
-      if (body.images !== undefined) updatedBlock.images = body.images // New for gallery blocks
       
       benefits[blockIndex] = updatedBlock
       
@@ -527,7 +508,6 @@ export async function PUT(
     if (body.content_url !== undefined) updateData.content_url = body.content_url
     if (body.block_config !== undefined) updateData.block_config = body.block_config
     if (body.display_order !== undefined) updateData.display_order = body.display_order
-    if (body.images !== undefined) updateData.images = body.images // New for gallery blocks
     if (body.is_published !== undefined) updateData.is_published = body.is_published
 
     const { data: updatedBlock, error: updateError } = await supabase
