@@ -367,7 +367,7 @@ export default function SubmissionDetailPage() {
             )}
           </CardContent>
         </Card>
-      )}
+      
 
       {submission.status === "approved" && !submission.shopify_product_id && (
         <Card>

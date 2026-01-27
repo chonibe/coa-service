@@ -98,12 +98,15 @@ export default function CollectorArtworkPage() {
 
         if (!response.ok) {
           if (response.status === 404) {
-            throw new Error("Artwork not found")
+            throw new Error("Artwork not found. Please check the artwork ID or contact support if you believe this is an error.")
           }
           if (response.status === 403) {
-            throw new Error("You don't have access to this artwork")
+            throw new Error("You don't have access to this artwork. Please make sure you're logged in with the correct account.")
           }
-          throw new Error("Failed to load artwork")
+          if (response.status === 401) {
+            throw new Error("Authentication required. Please log in to view this artwork.")
+          }
+          throw new Error(`Failed to load artwork (${response.status}). Please try again or contact support.`)
         }
 
         const data = await response.json()
@@ -226,12 +229,27 @@ export default function CollectorArtworkPage() {
       <div className="container mx-auto py-8 max-w-4xl">
         <Alert variant="destructive">
           <AlertCircle className="h-4 w-4" />
-          <AlertDescription>{error || "Failed to load artwork"}</AlertDescription>
+          <AlertDescription>
+            <div className="space-y-2">
+              <p className="font-semibold">{error || "Failed to load artwork"}</p>
+              <p className="text-sm">
+                If this issue persists, please contact support with the artwork ID: {artworkId}
+              </p>
+            </div>
+          </AlertDescription>
         </Alert>
-        <Button onClick={() => router.push("/collector/dashboard")} className="mt-4">
-          <ArrowLeft className="h-4 w-4 mr-2" />
-          Back to Dashboard
-        </Button>
+        <div className="flex gap-2 mt-4">
+          <Button onClick={() => router.push("/collector/dashboard")} variant="default">
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Back to Dashboard
+          </Button>
+          <Button 
+            onClick={() => window.location.reload()} 
+            variant="outline"
+          >
+            Retry
+          </Button>
+        </div>
       </div>
     )
   }

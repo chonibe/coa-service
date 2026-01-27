@@ -53,9 +53,10 @@ export async function GET(request: NextRequest) {
     return NextResponse.redirect(new URL(`/login?error=lookup_failed`, finalRedirectBase || undefined))
   }
 
-  const { data: profileMatch, error: profileError } = await serviceClient
+  let profileMatch = null
+  const { data: profileByEmail, error: profileError } = await serviceClient
     .from("collector_profiles")
-    .select("id")
+    .select("id, shopify_customer_id")
     .eq("email", email)
     .maybeSingle()
 
@@ -63,7 +64,34 @@ export async function GET(request: NextRequest) {
     console.error("[collector-google-callback] profile lookup failed", profileError)
   }
 
+  profileMatch = profileByEmail
+
   const shopifyCustomerId = orderMatch?.customer_id || orderMatch?.shopify_id
+
+  // Also check for profile by shopify_customer_id to prevent duplicates
+  if (!profileMatch && shopifyCustomerId) {
+    const { data: profileByShopifyId } = await serviceClient
+      .from("collector_profiles")
+      .select("id, email")
+      .eq("shopify_customer_id", shopifyCustomerId)
+      .maybeSingle()
+
+    if (profileByShopifyId) {
+      console.log(`[collector-google-callback] Found existing profile by Shopify ID: ${profileByShopifyId.email}`)
+      profileMatch = profileByShopifyId
+      
+      // Update the profile with the new email/user_id if needed
+      const userId = data.session!.user!.id
+      await serviceClient
+        .from("collector_profiles")
+        .update({
+          email: email,
+          user_id: userId,
+          updated_at: new Date().toISOString()
+        })
+        .eq("id", profileByShopifyId.id)
+    }
+  }
 
   // If no existing order or profile, create new collector account
   if (!orderMatch && !profileMatch) {
@@ -71,12 +99,13 @@ export async function GET(request: NextRequest) {
     
     console.log(`[collector-google-callback] Creating new collector account for: ${email}`)
     
-    // 1. Create collector profile
+    // 1. Create collector profile (with shopify_customer_id if available)
     const { data: newProfile, error: profileCreateError } = await serviceClient
       .from('collector_profiles')
       .insert({
         user_id: userId,
         email: email,
+        shopify_customer_id: shopifyCustomerId || null,
         signup_source: 'oauth',
         onboarding_step: 0
       })

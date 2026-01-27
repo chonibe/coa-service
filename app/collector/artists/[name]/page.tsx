@@ -11,7 +11,7 @@ import { Skeleton } from "@/components/ui"
 import { ArtistApiResponse, ArtistArtwork, ArtistSeries } from "@/types/collector"
 import { ArtworkCard } from "@/app/collector/discover/components/artwork-card"
 
-import { Badge, Button } from "@/components/ui"
+import { Badge, Button, Card, CardContent } from "@/components/ui"
 export default function ArtistProfilePage({ params }: { params: { name: string } }) {
   const { name } = params
   const [data, setData] = useState<ArtistApiResponse | null>(null)

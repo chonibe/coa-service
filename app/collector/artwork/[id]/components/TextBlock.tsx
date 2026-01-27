@@ -1,5 +1,7 @@
 "use client"
 
+import { Card, CardContent } from "@/components/ui"
+
 
 
 interface TextBlockProps {

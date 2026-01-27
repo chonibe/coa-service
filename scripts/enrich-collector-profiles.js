@@ -70,16 +70,32 @@ async function enrichCollectorProfiles() {
 
   console.log(`Found ${customers.size} unique customers in CSV.`);
 
-  // 3. Fetch existing profiles
+  // 3. Fetch existing profiles (by both email and shopify_customer_id)
   const { data: profiles } = await supabase.from('collector_profiles').select('*');
   const profileMap = new Map();
-  profiles?.forEach(p => profileMap.set(p.email?.toLowerCase(), p));
+  const profileByShopifyId = new Map();
+  
+  profiles?.forEach(p => {
+    if (p.email) profileMap.set(p.email?.toLowerCase(), p);
+    if (p.shopify_customer_id) profileByShopifyId.set(p.shopify_customer_id, p);
+  });
 
   let updates = 0;
   let creations = 0;
+  let duplicatesPrevented = 0;
 
   for (const [email, csvData] of customers) {
-    const existingProfile = profileMap.get(email);
+    let existingProfile = profileMap.get(email);
+    
+    // Also check by Shopify customer ID to prevent duplicates
+    if (!existingProfile && csvData.shopify_customer_id) {
+      const profileByShopify = profileByShopifyId.get(csvData.shopify_customer_id);
+      if (profileByShopify) {
+        console.log(`⚠️  Found existing profile by Shopify ID for ${email}: ${profileByShopify.email}`);
+        existingProfile = profileByShopify;
+        duplicatesPrevented++;
+      }
+    }
     
     const profileData = {
       email: email,
@@ -108,14 +124,23 @@ async function enrichCollectorProfiles() {
           created_at: new Date().toISOString()
         });
       
-      if (crError) console.error(`Error creating profile for ${email}:`, crError);
-      else creations++;
+      if (crError) {
+        console.error(`Error creating profile for ${email}:`, crError);
+        // Check if it's a unique constraint violation
+        if (crError.code === '23505') {
+          console.log(`   Duplicate prevented by database constraint`);
+          duplicatesPrevented++;
+        }
+      } else {
+        creations++;
+      }
     }
   }
 
   console.log(`Enrichment complete.`);
   console.log(`Profiles updated: ${updates}`);
   console.log(`New profiles created: ${creations}`);
+  console.log(`Duplicate profiles prevented: ${duplicatesPrevented}`);
 }
 
 enrichCollectorProfiles();

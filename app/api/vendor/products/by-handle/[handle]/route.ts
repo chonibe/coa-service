@@ -29,7 +29,14 @@ export async function GET(
       .single()
 
     if (productError || !product) {
-      return NextResponse.json({ error: "Product not found" }, { status: 404 })
+      console.error(`[Products API] Product not found by handle: ${handle} for vendor: ${vendorName}`, productError)
+      return NextResponse.json({ 
+        error: "Product not found",
+        message: `No product found with handle "${handle}". This product may need to be synced from Shopify.`,
+        suggestion: "Try syncing products from Shopify or check the product handle.",
+        handle,
+        vendorName
+      }, { status: 404 })
     }
 
     return NextResponse.json({

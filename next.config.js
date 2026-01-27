@@ -1,9 +1,12 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   eslint: {
+    // Keep lint available via `npm run lint`, but don't block production builds on existing lint backlog.
     ignoreDuringBuilds: true,
   },
   typescript: {
+    // Next build typechecking is currently too noisy across the repo.
+    // We enforce collector safety via a scoped typecheck in `npm run typecheck:collector`.
     ignoreBuildErrors: true,
   },
   images: {

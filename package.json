@@ -4,6 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
+    "typecheck:collector": "tsc -p tsconfig.collector.json --noEmit",
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
@@ -31,7 +32,12 @@
     "ui:find-usage": "node scripts/find-component-usage.js",
     "ui:migration-status": "node scripts/ui-migration-status.js",
     "polaris:check-updates": "npm outdated @shopify/polaris @shopify/polaris-icons @shopify/polaris-tokens",
-    "polaris:health": "npm list @shopify/polaris @shopify/polaris-icons @shopify/polaris-tokens"
+    "polaris:health": "npm list @shopify/polaris @shopify/polaris-icons @shopify/polaris-tokens",
+    "clear-cache": "node scripts/clear-build-cache.js",
+    "fix:duplicates": "tsx scripts/merge-duplicate-collector-profiles.ts",
+    "fix:duplicates:execute": "tsx scripts/merge-duplicate-collector-profiles.ts --execute",
+    "verify:products": "tsx scripts/verify-product-handles.ts",
+    "sync:shopify": "tsx scripts/sync-product-handles-from-shopify.ts"
   },
   "lint-staged": {
     "*.{ts,tsx,js,jsx}": [
@@ -144,7 +150,7 @@
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "eslint": "^9.39.2",
-    "eslint-config-next": "^16.1.1",
+    "eslint-config-next": "^15.2.6",
     "eslint-plugin-security": "^3.0.1",
     "eslint-plugin-sonarjs": "^3.0.5",
     "graphql-tag": "^2.12.6",

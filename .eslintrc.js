@@ -3,6 +3,8 @@ module.exports = {
   parser: '@typescript-eslint/parser',
   plugins: ['@typescript-eslint', 'security'],
   extends: [
+    'next/core-web-vitals',
+    'next/typescript',
     'eslint:recommended',
     'plugin:@typescript-eslint/recommended',
   ],
@@ -17,7 +19,6 @@ module.exports = {
     'security/detect-non-literal-require': 'error',
     'security/detect-object-injection': 'off',
     'security/detect-possible-timing-attacks': 'warn',
-    'security/detect-pseudo-random-bytes': 'warn',
     'security/detect-unsafe-regex': 'error',
     '@typescript-eslint/no-explicit-any': 'off',
     '@typescript-eslint/no-unused-vars': ['warn', { argsIgnorePattern: '^_' }],

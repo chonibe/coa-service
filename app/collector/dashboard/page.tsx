@@ -50,6 +50,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, Badge, Butto
 import { EmptyState } from "@/components/vendor/empty-state"
 import { Package, Sparkles } from "lucide-react"
 import { ContextualHints } from "./components/contextual-hints"
+import { SectionErrorBoundary } from "@/app/collector/components/SectionErrorBoundary"
 type ApiResponse = {
   success: boolean
   orders: Array<{
@@ -398,7 +399,9 @@ export default function CollectorDashboardPage() {
                 {{
                   overview: (
                     <div className="space-y-8">
-                      <InkOGatchiWidget userId={avatar?.user_id} email={avatar?.user_email} />
+                      <SectionErrorBoundary title="InkOGatchi failed to load">
+                        <InkOGatchiWidget userId={avatar?.user_id} email={avatar?.user_email} />
+                      </SectionErrorBoundary>
                       
                       <section className="space-y-6">
                         <div className="flex items-center justify-between px-2">
@@ -442,11 +445,15 @@ export default function CollectorDashboardPage() {
                           <div className="flex items-center justify-between flex-wrap gap-2 px-2">
                             <h2 className="text-xl font-black text-slate-900 tracking-tight">Artists</h2>
                           </div>
-                          <ArtistList artists={data.artists} />
+                          <SectionErrorBoundary title="Artists section failed to load">
+                            <ArtistList artists={data.artists} />
+                          </SectionErrorBoundary>
                         </div>
                         <div className="space-y-3">
                           <h2 className="text-xl font-black text-slate-900 tracking-tight px-2">Authentication</h2>
-                          <AuthenticationQueue items={pendingAuth} />
+                          <SectionErrorBoundary title="Authentication queue failed to load">
+                            <AuthenticationQueue items={pendingAuth} />
+                          </SectionErrorBoundary>
                         </div>
                       </section>
 
@@ -454,7 +461,9 @@ export default function CollectorDashboardPage() {
                         <div className="flex items-center justify-between flex-wrap gap-2 px-2">
                           <h2 className="text-xl font-black text-slate-900 tracking-tight">Series binder</h2>
                         </div>
-                        <SeriesBinder series={data.series} />
+                        <SectionErrorBoundary title="Series binder failed to load">
+                          <SeriesBinder series={data.series} />
+                        </SectionErrorBoundary>
                       </section>
 
                       <Separator className="bg-slate-200/60" />
@@ -463,7 +472,9 @@ export default function CollectorDashboardPage() {
                         <div className="flex items-center justify-between flex-wrap gap-2 px-2">
                           <h2 className="text-xl font-black text-slate-900 tracking-tight">Credits & subscriptions</h2>
                         </div>
-                        <CreditsPanel collectorIdentifier={data.collectorIdentifier} />
+                        <SectionErrorBoundary title="Credits panel failed to load">
+                          <CreditsPanel collectorIdentifier={data.collectorIdentifier} />
+                        </SectionErrorBoundary>
                       </section>
                     </div>
                   ),
@@ -490,33 +501,49 @@ export default function CollectorDashboardPage() {
                           </Button>
                         </div>
                       </div>
-                      <PurchasesSection
-                        items={lineItems}
-                        purchasesByArtist={data.purchasesByArtist}
-                        purchasesBySeries={data.purchasesBySeries}
-                        groupingMode={groupingMode}
-                        onGroupingModeChange={setGroupingMode}
-                      />
+                      <SectionErrorBoundary title="Collection section failed to load">
+                        <PurchasesSection
+                          items={lineItems}
+                          purchasesByArtist={data.purchasesByArtist}
+                          purchasesBySeries={data.purchasesBySeries}
+                          groupingMode={groupingMode}
+                          onGroupingModeChange={setGroupingMode}
+                        />
+                      </SectionErrorBoundary>
                     </div>
                   ),
                   editions: (
-                    <EditionsGallery 
-                      editions={editions} 
-                      onExpandStack={(group, mode) => {
-                        setGroupingMode(mode)
-                        setExpandedGroup(group)
-                      }}
-                    />
+                    <SectionErrorBoundary title="Editions failed to load">
+                      <EditionsGallery 
+                        editions={editions} 
+                        onExpandStack={(group, mode) => {
+                          setGroupingMode(mode)
+                          setExpandedGroup(group)
+                        }}
+                      />
+                    </SectionErrorBoundary>
                   ),
                   artists: (
-                    <ArtistsCollection artists={data.artistStats || []} />
+                    <SectionErrorBoundary title="Artists collection failed to load">
+                      <ArtistsCollection artists={data.artistStats || []} />
+                    </SectionErrorBoundary>
                   ),
-                  certifications: <CertificationsHub certifications={certifications.length > 0 ? certifications : (data.certifications || [])} />,
-                  profile: <ProfileSection />,
+                  certifications: (
+                    <SectionErrorBoundary title="Certifications failed to load">
+                      <CertificationsHub certifications={certifications.length > 0 ? certifications : (data.certifications || [])} />
+                    </SectionErrorBoundary>
+                  ),
+                  profile: (
+                    <SectionErrorBoundary title="Profile section failed to load">
+                      <ProfileSection />
+                    </SectionErrorBoundary>
+                  ),
                   hiddenContent: (
-                    <HiddenContentComponent
-                      hiddenContent={hiddenContent || data.hiddenContent || { hiddenSeries: [], bonusContent: [] }}
-                    />
+                    <SectionErrorBoundary title="Hidden content failed to load">
+                      <HiddenContentComponent
+                        hiddenContent={hiddenContent || data.hiddenContent || { hiddenSeries: [], bonusContent: [] }}
+                      />
+                    </SectionErrorBoundary>
                   ),
                 }}
               </DashboardTabs>

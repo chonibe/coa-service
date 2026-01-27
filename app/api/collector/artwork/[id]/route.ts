@@ -50,7 +50,12 @@ export async function GET(
       .single()
 
     if (lineItemError || !lineItem) {
-      return NextResponse.json({ error: "Artwork not found" }, { status: 404 })
+      console.error(`[Artwork API] Line item not found: ${lineItemId}`, lineItemError)
+      return NextResponse.json({ 
+        error: "Artwork not found",
+        message: `No artwork found with ID: ${lineItemId}. Please check your order history or contact support.`,
+        lineItemId 
+      }, { status: 404 })
     }
 
     // Verify ownership - check if order belongs to this customer

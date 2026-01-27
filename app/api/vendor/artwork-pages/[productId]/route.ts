@@ -36,17 +36,20 @@ export async function GET(
         .single()
 
       if (submissionError || !submissionData) {
-        return NextResponse.json({ error: "Submission not found" }, { status: 404 })
+        console.error(`[Artwork Pages API] Submission not found: ${productId}`, submissionError)
+        // Don't return 404 yet, will try products table next
+      } else {
+        submission = submissionData
+        const productData = submissionData.product_data as any
+        product = {
+          id: submissionData.id,
+          name: productData?.title || "Untitled Artwork",
+          vendor_name: submissionData.vendor_name,
+        }
       }
-
-      submission = submissionData
-      const productData = submissionData.product_data as any
-      product = {
-        id: submissionData.id,
-        name: productData?.title || "Untitled Artwork",
-        vendor_name: submissionData.vendor_name,
-      }
-    } else {
+    }
+    
+    if (!product) {
       // It's a product ID - fetch from products table
       const { data: productData, error: productError } = await supabase
         .from("products")
@@ -56,7 +59,12 @@ export async function GET(
         .single()
 
       if (productError || !productData) {
-        return NextResponse.json({ error: "Product not found" }, { status: 404 })
+        console.error(`[Artwork Pages API] Product not found: ${productId}`, productError)
+        return NextResponse.json({ 
+          error: "Product not found",
+          message: `No product found with ID: ${productId}. This product may have been deleted or the ID is incorrect.`,
+          productId
+        }, { status: 404 })
       }
 
       product = productData
@@ -200,19 +208,107 @@ export async function POST(
     const { productId } = params
     const body = await request.json()
 
-    // Verify product belongs to vendor
-    // Note: Allows editing for products with any submission status (pending, approved, rejected, published)
-    const { data: product, error: productError } = await supabase
-      .from("products")
-      .select("id, vendor_name")
-      .eq("id", productId)
-      .eq("vendor_name", vendorName)
-      .single()
+    // Check if productId is a UUID (submission ID) or a product ID
+    const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(productId)
+    
+    let product: { id: string; vendor_name: string } | null = null
+    let submission: { id: string; product_data: any; vendor_name: string } | null = null
 
-    if (productError || !product) {
-      return NextResponse.json({ error: "Product not found" }, { status: 404 })
+    if (isUUID) {
+      // It's a submission ID - fetch from vendor_product_submissions
+      const { data: submissionData, error: submissionError } = await supabase
+        .from("vendor_product_submissions")
+        .select("id, product_data, vendor_name")
+        .eq("id", productId)
+        .eq("vendor_name", vendorName)
+        .single()
+
+      if (submissionError || !submissionData) {
+        console.error(`[Artwork Pages API POST] Submission not found: ${productId}`, submissionError)
+      } else {
+        submission = submissionData
+        product = {
+          id: submissionData.id,
+          vendor_name: submissionData.vendor_name,
+        }
+      }
+    }
+    
+    if (!product) {
+      // It's a product ID - fetch from products table
+      const { data: productData, error: productError } = await supabase
+        .from("products")
+        .select("id, vendor_name")
+        .eq("id", productId)
+        .eq("vendor_name", vendorName)
+        .single()
+
+      if (productError || !productData) {
+        console.error(`[Artwork Pages API POST] Product not found: ${productId}`, productError)
+        return NextResponse.json({ error: "Product not found" }, { status: 404 })
+      }
+
+      product = productData
     }
 
+    // Handle submission-based content blocks
+    if (submission) {
+      // For submissions, store blocks in product_data.benefits array
+      const productData = submission.product_data as any
+      const benefits = productData?.benefits || []
+      
+      // Generate next temp ID
+      const tempIds = benefits
+        .filter((b: any) => b.id && b.id.startsWith('temp-'))
+        .map((b: any) => parseInt(b.id.replace('temp-', '')))
+      const nextTempId = tempIds.length > 0 ? Math.max(...tempIds) + 1 : 0
+      
+      // Get max display_order
+      const displayOrders = benefits.map((b: any) => b.display_order || 0)
+      const nextOrder = displayOrders.length > 0 ? Math.max(...displayOrders) + 1 : 0
+      
+      // Create new block
+      const newBlock = {
+        id: `temp-${nextTempId}`,
+        type: body.blockType,
+        title: body.title || "",
+        description: body.description || "",
+        content_url: body.content_url || null,
+        config: body.block_config || {},
+        display_order: nextOrder,
+      }
+      
+      // Update submission with new block
+      const updatedBenefits = [...benefits, newBlock]
+      const { error: updateError } = await supabase
+        .from("vendor_product_submissions")
+        .update({
+          product_data: {
+            ...productData,
+            benefits: updatedBenefits,
+          },
+        })
+        .eq("id", productId)
+      
+      if (updateError) {
+        console.error("Error adding block to submission:", updateError)
+        return NextResponse.json(
+          { error: "Failed to add content block", message: updateError.message },
+          { status: 500 },
+        )
+      }
+      
+      return NextResponse.json({
+        success: true,
+        contentBlock: {
+          ...newBlock,
+          block_type: body.blockType,
+          is_published: true, // Submissions don't have draft state
+        },
+      })
+    }
+
+    // Handle product-based content blocks (existing logic)
     // Get benefit type ID
     const { data: benefitType, error: typeError } = await supabase
       .from("benefit_types")
@@ -308,19 +404,100 @@ export async function PUT(
     const { productId } = params
     const body = await request.json()
 
-    // Verify product belongs to vendor
-    // Note: Allows editing for products with any submission status (pending, approved, rejected, published)
-    const { data: product, error: productError } = await supabase
-      .from("products")
-      .select("id, vendor_name")
-      .eq("id", productId)
-      .eq("vendor_name", vendorName)
-      .single()
+    // Check if productId is a UUID (submission ID) or a product ID
+    const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(productId)
+    
+    let product: { id: string; vendor_name: string } | null = null
+    let submission: { id: string; product_data: any; vendor_name: string } | null = null
 
-    if (productError || !product) {
-      return NextResponse.json({ error: "Product not found" }, { status: 404 })
+    if (isUUID) {
+      // It's a submission ID - fetch from vendor_product_submissions
+      const { data: submissionData, error: submissionError } = await supabase
+        .from("vendor_product_submissions")
+        .select("id, product_data, vendor_name")
+        .eq("id", productId)
+        .eq("vendor_name", vendorName)
+        .single()
+
+      if (submissionError || !submissionData) {
+        console.error(`[Artwork Pages API PUT] Submission not found: ${productId}`, submissionError)
+      } else {
+        submission = submissionData
+        product = {
+          id: submissionData.id,
+          vendor_name: submissionData.vendor_name,
+        }
+      }
+    }
+    
+    if (!product) {
+      // It's a product ID - fetch from products table
+      const { data: productData, error: productError } = await supabase
+        .from("products")
+        .select("id, vendor_name")
+        .eq("id", productId)
+        .eq("vendor_name", vendorName)
+        .single()
+
+      if (productError || !productData) {
+        console.error(`[Artwork Pages API PUT] Product not found: ${productId}`, productError)
+        return NextResponse.json({ error: "Product not found" }, { status: 404 })
+      }
+
+      product = productData
     }
 
+    // Handle submission-based content blocks
+    if (submission) {
+      // For submissions, update block in product_data.benefits array
+      const productData = submission.product_data as any
+      const benefits = productData?.benefits || []
+      
+      // Find and update the block
+      const blockIndex = benefits.findIndex((b: any) => b.id === body.blockId)
+      if (blockIndex === -1) {
+        return NextResponse.json({ error: "Block not found" }, { status: 404 })
+      }
+      
+      const updatedBlock = { ...benefits[blockIndex] }
+      if (body.title !== undefined) updatedBlock.title = body.title
+      if (body.description !== undefined) updatedBlock.description = body.description
+      if (body.content_url !== undefined) updatedBlock.content_url = body.content_url
+      if (body.block_config !== undefined) updatedBlock.config = body.block_config
+      if (body.display_order !== undefined) updatedBlock.display_order = body.display_order
+      
+      benefits[blockIndex] = updatedBlock
+      
+      // Update submission
+      const { error: updateError } = await supabase
+        .from("vendor_product_submissions")
+        .update({
+          product_data: {
+            ...productData,
+            benefits,
+          },
+        })
+        .eq("id", productId)
+      
+      if (updateError) {
+        console.error("Error updating block in submission:", updateError)
+        return NextResponse.json(
+          { error: "Failed to update content block", message: updateError.message },
+          { status: 500 },
+        )
+      }
+      
+      return NextResponse.json({
+        success: true,
+        contentBlock: {
+          ...updatedBlock,
+          block_type: updatedBlock.type,
+          is_published: true, // Submissions don't have draft state
+        },
+      })
+    }
+
+    // Handle product-based content blocks (existing logic)
     // Update content block
     const updateData: any = {
       updated_at: new Date().toISOString(),
@@ -392,19 +569,87 @@ export async function DELETE(
       return NextResponse.json({ error: "Block ID required" }, { status: 400 })
     }
 
-    // Verify product belongs to vendor
-    // Note: Allows editing for products with any submission status (pending, approved, rejected, published)
-    const { data: product, error: productError } = await supabase
-      .from("products")
-      .select("id, vendor_name")
-      .eq("id", productId)
-      .eq("vendor_name", vendorName)
-      .single()
+    // Check if productId is a UUID (submission ID) or a product ID
+    const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(productId)
+    
+    let product: { id: string; vendor_name: string } | null = null
+    let submission: { id: string; product_data: any; vendor_name: string } | null = null
 
-    if (productError || !product) {
-      return NextResponse.json({ error: "Product not found" }, { status: 404 })
+    if (isUUID) {
+      // It's a submission ID - fetch from vendor_product_submissions
+      const { data: submissionData, error: submissionError } = await supabase
+        .from("vendor_product_submissions")
+        .select("id, product_data, vendor_name")
+        .eq("id", productId)
+        .eq("vendor_name", vendorName)
+        .single()
+
+      if (submissionError || !submissionData) {
+        console.error(`[Artwork Pages API DELETE] Submission not found: ${productId}`, submissionError)
+      } else {
+        submission = submissionData
+        product = {
+          id: submissionData.id,
+          vendor_name: submissionData.vendor_name,
+        }
+      }
+    }
+    
+    if (!product) {
+      // It's a product ID - fetch from products table
+      const { data: productData, error: productError } = await supabase
+        .from("products")
+        .select("id, vendor_name")
+        .eq("id", productId)
+        .eq("vendor_name", vendorName)
+        .single()
+
+      if (productError || !productData) {
+        console.error(`[Artwork Pages API DELETE] Product not found: ${productId}`, productError)
+        return NextResponse.json({ error: "Product not found" }, { status: 404 })
+      }
+
+      product = productData
     }
 
+    // Handle submission-based content blocks
+    if (submission) {
+      // For submissions, remove block from product_data.benefits array
+      const productData = submission.product_data as any
+      const benefits = productData?.benefits || []
+      
+      // Filter out the block
+      const updatedBenefits = benefits.filter((b: any) => b.id !== blockId)
+      
+      if (updatedBenefits.length === benefits.length) {
+        return NextResponse.json({ error: "Block not found" }, { status: 404 })
+      }
+      
+      // Update submission
+      const { error: updateError } = await supabase
+        .from("vendor_product_submissions")
+        .update({
+          product_data: {
+            ...productData,
+            benefits: updatedBenefits,
+          },
+        })
+        .eq("id", productId)
+      
+      if (updateError) {
+        console.error("Error deleting block from submission:", updateError)
+        return NextResponse.json(
+          { error: "Failed to delete content block", message: updateError.message },
+          { status: 500 },
+        )
+      }
+      
+      return NextResponse.json({
+        success: true,
+      })
+    }
+
+    // Handle product-based content blocks (existing logic)
     // Delete content block
     const { error: deleteError } = await supabase
       .from("product_benefits")

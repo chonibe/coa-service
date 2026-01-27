@@ -119,11 +119,42 @@ async function enrichPIIByOrderId() {
 
         // 5. Ensure Collector Profile exists for this email
         if (email && email !== '' && email !== 'null') {
-          const { data: existingProfile } = await supabase
+          // Check for existing profile by email OR shopify_customer_id
+          let existingProfile = null;
+          
+          const { data: profileByEmail } = await supabase
             .from('collector_profiles')
-            .select('id')
+            .select('id, shopify_customer_id')
             .eq('email', email)
             .maybeSingle();
+
+          existingProfile = profileByEmail;
+
+          // Also check by Shopify customer ID if we have one
+          if (!existingProfile && order.customer_id) {
+            const { data: profileByShopifyId } = await supabase
+              .from('collector_profiles')
+              .select('id, email')
+              .eq('shopify_customer_id', order.customer_id)
+              .maybeSingle();
+
+            if (profileByShopifyId) {
+              console.log(`   🔗 Found existing profile by Shopify ID: ${profileByShopifyId.email}`);
+              existingProfile = profileByShopifyId;
+              
+              // Update the profile with the new email if different
+              if (profileByShopifyId.email !== email) {
+                console.log(`   📝 Updating profile email from ${profileByShopifyId.email} to ${email}`);
+                await supabase
+                  .from('collector_profiles')
+                  .update({ 
+                    email,
+                    updated_at: new Date().toISOString()
+                  })
+                  .eq('id', profileByShopifyId.id);
+              }
+            }
+          }
 
           if (!existingProfile) {
             console.log(`   ✨ Creating profile for ${email}`);
@@ -143,6 +174,16 @@ async function enrichPIIByOrderId() {
                 updated_at: new Date().toISOString()
               });
             profilesCreated++;
+          } else if (existingProfile && !existingProfile.shopify_customer_id && order.customer_id) {
+            // Update existing profile with Shopify ID if it doesn't have one
+            console.log(`   🔗 Adding Shopify ID to existing profile: ${email}`);
+            await supabase
+              .from('collector_profiles')
+              .update({ 
+                shopify_customer_id: order.customer_id,
+                updated_at: new Date().toISOString()
+              })
+              .eq('id', existingProfile.id);
           }
         }
       }

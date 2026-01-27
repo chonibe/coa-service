@@ -19,18 +19,133 @@ export async function POST(
     const supabase = createClient()
     const { productId } = params
 
-    // Verify product belongs to vendor
-    const { data: product, error: productError } = await supabase
-      .from("products")
-      .select("id, vendor_name")
-      .eq("id", productId)
-      .eq("vendor_name", vendorName)
-      .single()
+    // Check if productId is a UUID (submission ID) or a product ID
+    const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(productId)
+    
+    let product: { id: string; vendor_name: string } | null = null
+    let submission: { id: string; product_data: any; vendor_name: string } | null = null
 
-    if (productError || !product) {
-      return NextResponse.json({ error: "Product not found" }, { status: 404 })
+    if (isUUID) {
+      // It's a submission ID - fetch from vendor_product_submissions
+      const { data: submissionData, error: submissionError } = await supabase
+        .from("vendor_product_submissions")
+        .select("id, product_data, vendor_name")
+        .eq("id", productId)
+        .eq("vendor_name", vendorName)
+        .single()
+
+      if (submissionError || !submissionData) {
+        console.error(`[Apply Template API] Submission not found: ${productId}`, submissionError)
+      } else {
+        submission = submissionData
+        product = {
+          id: submissionData.id,
+          vendor_name: submissionData.vendor_name,
+        }
+      }
+    }
+    
+    if (!product) {
+      // It's a product ID - fetch from products table
+      const { data: productData, error: productError } = await supabase
+        .from("products")
+        .select("id, vendor_name")
+        .eq("id", productId)
+        .eq("vendor_name", vendorName)
+        .single()
+
+      if (productError || !productData) {
+        console.error(`[Apply Template API] Product not found: ${productId}`, productError)
+        return NextResponse.json({ error: "Product not found" }, { status: 404 })
+      }
+
+      product = productData
     }
 
+    // Handle submission-based template application
+    if (submission) {
+      const productData = submission.product_data as any
+      const benefits = productData?.benefits || []
+      
+      // Check if template already exists
+      const artworkBlocks = benefits.filter((b: any) => 
+        ["Artwork Text Block", "Artwork Image Block", "Artwork Video Block", "Artwork Audio Block"].includes(b.type)
+      )
+      
+      if (artworkBlocks.length > 0) {
+        return NextResponse.json(
+          { error: "Template already applied. Delete existing blocks first." },
+          { status: 400 },
+        )
+      }
+      
+      // Create default template blocks for submission
+      const templateBlocks = [
+        {
+          id: "temp-0",
+          type: "Artwork Text Block",
+          title: "About This Piece",
+          description: "Share the inspiration, process, or meaning behind this piece...",
+          content_url: null,
+          config: {},
+          display_order: 0,
+        },
+        {
+          id: "temp-1",
+          type: "Artwork Image Block",
+          title: "Behind the Scenes",
+          description: "Add a behind-the-scenes photo",
+          content_url: null,
+          config: { caption: "" },
+          display_order: 1,
+        },
+        {
+          id: "temp-2",
+          type: "Artwork Video Block",
+          title: "Artist Message",
+          description: "Add a video message (optional)",
+          content_url: null,
+          config: {},
+          display_order: 2,
+        },
+        {
+          id: "temp-3",
+          type: "Artwork Audio Block",
+          title: "Personal Message",
+          description: "Record or upload an audio message (optional)",
+          content_url: null,
+          config: {},
+          display_order: 3,
+        },
+      ]
+      
+      // Update submission with template blocks
+      const { error: updateError } = await supabase
+        .from("vendor_product_submissions")
+        .update({
+          product_data: {
+            ...productData,
+            benefits: [...benefits, ...templateBlocks],
+          },
+        })
+        .eq("id", productId)
+      
+      if (updateError) {
+        console.error("Error applying template to submission:", updateError)
+        return NextResponse.json(
+          { error: "Failed to apply template", message: updateError.message },
+          { status: 500 },
+        )
+      }
+      
+      return NextResponse.json({
+        success: true,
+        blocks: templateBlocks,
+        message: "Template applied successfully",
+      })
+    }
+
+    // Handle product-based template application (existing logic)
     // Get benefit type IDs for artwork content blocks
     const { data: benefitTypes, error: typesError } = await supabase
       .from("benefit_types")

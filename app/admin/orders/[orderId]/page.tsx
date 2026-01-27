@@ -326,9 +326,9 @@ async function getOrderData(orderId: string) {
 export default async function OrderDetailsPage({
   params,
 }: {
-  params: { orderId: string }
+  params: Promise<{ orderId: string }>
 }) {
-  const { orderId } = await Promise.resolve(params);
+  const { orderId } = await params
   console.log('OrderDetailsPage params:', { orderId });
   
   const order = await getOrderData(orderId);

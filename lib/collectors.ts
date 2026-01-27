@@ -56,14 +56,32 @@ export async function getCollectorProfile(identifier: string): Promise<Collector
     query.eq('user_id', identifier);
   }
 
-  const { data, error } = await query.maybeSingle();
+  // Use limit(1) to get first result if duplicates exist (temporary fix)
+  const { data, error } = await query.limit(1);
   
   if (error) {
     console.error(`[Collectors Lib] Error fetching profile for ${identifier}:`, error);
     return null;
   }
 
-  return data as CollectorProfile;
+  // Check if we got results
+  if (!data || data.length === 0) {
+    return null;
+  }
+
+  // If multiple results were possible, log a warning
+  if (isShopifyId || isEmail) {
+    const { count } = await supabase
+      .from('collector_profile_comprehensive')
+      .select('*', { count: 'exact', head: true })
+      .eq(isShopifyId ? 'shopify_customer_id' : 'user_email', identifier);
+
+    if (count && count > 1) {
+      console.warn(`[Collectors Lib] WARNING: Found ${count} profiles for ${identifier}. Returning first result. Run merge script to fix duplicates.`);
+    }
+  }
+
+  return data[0] as CollectorProfile;
 }
 
 /**
