@@ -23,7 +23,7 @@ export async function GET(
     // Find product by handle (try exact match first)
     let { data: product, error: productError } = await supabase
       .from("products")
-      .select("id, name, shopify_product_id, handle")
+      .select("id, name, product_id, handle")
       .eq("handle", handle)
       .eq("vendor_name", vendorName)
       .single()
@@ -33,7 +33,7 @@ export async function GET(
       console.log(`[Products API] Exact handle not found, trying case-insensitive search: ${handle}`)
       const { data: products } = await supabase
         .from("products")
-        .select("id, name, shopify_product_id, handle")
+        .select("id, name, product_id, handle")
         .eq("vendor_name", vendorName)
         .ilike("handle", handle)
       
@@ -55,7 +55,7 @@ export async function GET(
       
       const { data: products } = await supabase
         .from("products")
-        .select("id, name, shopify_product_id, handle")
+        .select("id, name, product_id, handle")
         .eq("vendor_name", vendorName)
         .ilike("name", `%${searchName}%`)
       
@@ -91,7 +91,7 @@ export async function GET(
       product: {
         id: product.id,
         name: product.name,
-        shopify_product_id: product.shopify_product_id,
+        shopify_product_id: product.product_id, // Note: column is named product_id but contains Shopify product ID
         handle: product.handle,
       },
       matchedBy: product.handle === handle ? "exact_handle" : "name_similarity",
