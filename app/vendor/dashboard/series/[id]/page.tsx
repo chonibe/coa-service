@@ -261,4 +261,5 @@ export default function SeriesDetailPage() {
         </Card>
       )}
     </div>
+  )
 }
