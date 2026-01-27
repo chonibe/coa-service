@@ -1,22 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
-import { createClient } from "@supabase/supabase-js"
 import { cookies } from "next/headers"
-import { REQUIRE_ACCOUNT_SELECTION_COOKIE } from "@/lib/vendor-auth"
+import { REQUIRE_ACCOUNT_SELECTION_COOKIE, LOGIN_INTENT_COOKIE } from "@/lib/vendor-auth"
 import { createClient as createRouteClient } from "@/lib/supabase-server"
-
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-
-if (!supabaseUrl || !supabaseAnonKey) {
-  throw new Error("Supabase environment variables are required for Google sign-in")
-}
-
-const supabase = createClient(supabaseUrl, supabaseAnonKey, {
-  auth: {
-    autoRefreshToken: false,
-    persistSession: false,
-  },
-})
 
 const POST_LOGIN_COOKIE = "vendor_post_login_redirect"
 
@@ -25,9 +10,14 @@ export async function GET(request: NextRequest) {
   const redirectParam = searchParams.get("redirect")
   const gmailParam = searchParams.get("gmail") === "true" // Check if Gmail scopes requested
   const cookieStore = cookies()
+  const supabase = createRouteClient(cookieStore)
 
-  // Note: We can't check if user is admin before OAuth (they haven't authenticated yet)
-  // Instead, we'll handle admin detection in the callback and redirect appropriately
+  if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
+    return NextResponse.json(
+      { error: "Supabase environment variables are required for Google sign-in" },
+      { status: 500 }
+    )
+  }
 
   // Check if account selection is required (user logged out previously)
   const requireAccountSelection = cookieStore.get(REQUIRE_ACCOUNT_SELECTION_COOKIE)?.value === "true"
@@ -153,7 +143,17 @@ export async function GET(request: NextRequest) {
 
   const response = NextResponse.redirect(data.url)
 
+  // Set login intent based on redirect parameter
+  let loginIntent = 'collector' // default to collector
   if (redirectParam) {
+    if (redirectParam.includes('/admin/')) {
+      loginIntent = 'admin'
+    } else if (redirectParam.includes('/vendor/')) {
+      loginIntent = 'vendor'
+    } else if (redirectParam.includes('/collector/')) {
+      loginIntent = 'collector'
+    }
+    
     response.cookies.set(POST_LOGIN_COOKIE, redirectParam, {
       path: "/",
       httpOnly: true,
@@ -167,6 +167,15 @@ export async function GET(request: NextRequest) {
       maxAge: 0,
     })
   }
+
+  // Set login intent cookie to track which role the user wants to use
+  response.cookies.set(LOGIN_INTENT_COOKIE, loginIntent, {
+    path: "/",
+    httpOnly: true,
+    sameSite: "lax",
+    secure: process.env.NODE_ENV === "production",
+    maxAge: 60 * 5, // 5 minutes (same as POST_LOGIN_COOKIE)
+  })
 
   return response
 }

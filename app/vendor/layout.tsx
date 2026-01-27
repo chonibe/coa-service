@@ -42,27 +42,34 @@ export default async function VendorLayout({ children }: VendorLayoutProps) {
       if (session?.user) {
         const email = session.user.email?.toLowerCase()
         
-        // Only redirect admin to admin dashboard if they DON'T have a vendor session
-        // This allows admins who switched to vendor role to stay
-        // If admin has vendor session cookie (set via role switching), allow access
-        if (email && isAdminEmail(email)) {
-          console.log("[vendor/layout] Admin without vendor session, redirecting to admin dashboard")
+        // Check if user has admin or vendor role via RBAC
+        const { getUserContext, hasRole } = await import("@/lib/rbac")
+        const userContext = await getUserContext(supabase)
+        
+        // Allow admins to access vendor dashboard using their admin privileges
+        if (userContext && hasRole(userContext, 'admin')) {
+          console.log("[vendor/layout] Admin user accessing vendor dashboard with admin privileges")
+          // Set a placeholder vendor name for admin users
+          // They'll be able to access all vendor data via admin permissions
+          vendorName = "admin-access"
+        } else if (email && isAdminEmail(email)) {
+          console.log("[vendor/layout] Admin email but no admin role, redirecting to admin dashboard")
           redirect("/admin/dashboard")
-        }
-        
-        // Try to link vendor from Supabase user
-        const vendor = await linkSupabaseUserToVendor(session.user, { allowCreate: false })
-        
-        if (vendor) {
-          console.log(`[vendor/layout] Linked vendor from Supabase session: ${vendor.vendor_name}`)
-          vendorName = vendor.vendor_name
-          
-          // Create vendor session cookie for future requests
-          // Note: We can't set cookies in a layout, so we'll need to handle this differently
-          // For now, we'll allow the request to proceed and the cookie will be set on next interaction
         } else {
-          console.log("[vendor/layout] No vendor linked for Supabase user, redirecting to login")
-          redirect("/login")
+          // Try to link vendor from Supabase user for non-admin users
+          const vendor = await linkSupabaseUserToVendor(session.user, { allowCreate: false })
+          
+          if (vendor) {
+            console.log(`[vendor/layout] Linked vendor from Supabase session: ${vendor.vendor_name}`)
+            vendorName = vendor.vendor_name
+            
+            // Create vendor session cookie for future requests
+            // Note: We can't set cookies in a layout, so we'll need to handle this differently
+            // For now, we'll allow the request to proceed and the cookie will be set on next interaction
+          } else {
+            console.log("[vendor/layout] No vendor linked for Supabase user, redirecting to login")
+            redirect("/login")
+          }
         }
       } else {
         console.log("[vendor/layout] No Supabase session found, redirecting to login")
@@ -86,6 +93,12 @@ export default async function VendorLayout({ children }: VendorLayoutProps) {
   }
 
   console.log(`[vendor/layout] Vendor session found: ${vendorName}`)
+
+  // Skip vendor database checks for admin users - they have full access
+  if (vendorName === "admin-access") {
+    console.log("[vendor/layout] Admin user with full access, skipping vendor checks")
+    return <SidebarLayout>{children}</SidebarLayout>
+  }
 
   // Use service role client to bypass RLS and ensure we can read vendors
   const supabase = createServiceClient()

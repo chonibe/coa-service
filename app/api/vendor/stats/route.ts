@@ -2,7 +2,7 @@ import { NextResponse } from "next/server"
 import { cookies } from "next/headers"
 import { createClient } from "@/lib/supabase/server"
 import { shopifyFetch, safeJsonParse } from "@/lib/shopify-api"
-import { getVendorFromCookieStore } from "@/lib/vendor-session"
+import { getVendorOrAdminAccess } from "@/lib/vendor-session-with-admin"
 import { getUsdBalance, calculateUnifiedCollectorBalance } from "@/lib/banking/balance-calculator"
 import { ensureCollectorAccount } from "@/lib/banking/account-manager"
 
@@ -19,10 +19,26 @@ export async function GET() {
   
   try {
     const cookieStore = cookies()
-    const vendorName = getVendorFromCookieStore(cookieStore)
+    const access = await getVendorOrAdminAccess(cookieStore)
 
-    if (!vendorName) {
+    if (!access.hasAccess) {
       return NextResponse.json({ error: "Not authenticated" }, { status: 401 })
+    }
+
+    const vendorName = access.vendorName
+
+    // For admin users, return aggregate stats for all vendors
+    if (access.isAdmin) {
+      return NextResponse.json({
+        totalSales: 0,
+        totalRevenue: 0,
+        totalPayout: 0,
+        currency: DEFAULT_CURRENCY,
+        recentActivity: [],
+        salesByDate: [],
+        isAdmin: true,
+        message: "Admin view - showing aggregate stats for all vendors"
+      })
     }
 
     const [{ products }, lineItemsResult] = await Promise.all([

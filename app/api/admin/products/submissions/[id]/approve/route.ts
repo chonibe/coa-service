@@ -4,6 +4,7 @@ import { guardAdminRequest } from "@/lib/auth-guards"
 import { getAdminEmailFromCookieStore } from "@/lib/admin-session"
 import { createClient } from "@/lib/supabase/server"
 import type { ProductSubmissionData } from "@/types/product-submission"
+import { reserveFirstEdition } from "@/lib/first-edition-reserve"
 
 export async function POST(
   request: NextRequest,
@@ -71,10 +72,55 @@ export async function POST(
       )
     }
 
+    // Reserve first edition if feature is enabled
+    const enableFirstEditionReserve = process.env.ENABLE_FIRST_EDITION_RESERVE !== "false"
+    let reserveResult = null
+
+    if (enableFirstEditionReserve) {
+      try {
+        const productData = updatedProductData as any
+        const price = parseFloat(productData.price || productData.variants?.[0]?.price || "0")
+        const productName = productData.title || productData.name || "Artwork"
+        const productId = submission.shopify_product_id || `submission-${submission.id}`
+
+        // Only reserve if price is valid and greater than 0
+        if (price > 0) {
+          reserveResult = await reserveFirstEdition(
+            productId,
+            submission.vendor_name,
+            price,
+            {
+              name: productName,
+              description: productData.description || productData.body_html || null,
+              img_url: productData.images?.[0]?.src || productData.image_url || null,
+              image_url: productData.images?.[0]?.src || productData.image_url || null,
+            },
+            supabase
+          )
+
+          if (reserveResult.success) {
+            console.log("First edition reserved:", reserveResult.message)
+          } else {
+            console.warn("First edition reserve failed:", reserveResult.message)
+          }
+        } else {
+          console.warn("Skipping first edition reserve: invalid price", price)
+        }
+      } catch (error: any) {
+        console.error("Error reserving first edition:", error)
+        // Don't fail approval if reserve fails
+        reserveResult = {
+          success: false,
+          message: error.message || "Failed to reserve first edition",
+        }
+      }
+    }
+
     return NextResponse.json({
       success: true,
       submission: updatedSubmission,
       message: "Submission approved successfully",
+      firstEditionReserve: reserveResult,
     })
   } catch (error: any) {
     console.error("Error approving submission:", error)

@@ -1,44 +1,44 @@
 import { NextRequest, NextResponse } from "next/server"
-import { createClient } from "@supabase/supabase-js"
+import { cookies } from "next/headers"
+import { createClient as createRouteClient } from "@/lib/supabase-server"
 import { createClient as createServiceClient } from "@/lib/supabase/server"
 import { buildCollectorSessionCookie } from "@/lib/collector-session"
 import { REQUIRE_ACCOUNT_SELECTION_COOKIE } from "@/lib/vendor-auth"
-
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-
-if (!supabaseUrl || !supabaseAnonKey) {
-  throw new Error("Supabase environment variables are required for collector Google callback")
-}
-
-const supabase = createClient(supabaseUrl, supabaseAnonKey, {
-  auth: { autoRefreshToken: false, persistSession: false },
-})
+// import { sendCollectorWelcomeEmail } from "@/lib/notifications/collector-welcome" // Disabled for now
 
 export async function GET(request: NextRequest) {
   const { searchParams, origin } = request.nextUrl
   const appUrl = process.env.NEXT_PUBLIC_APP_URL || origin
-  const finalRedirectBase = appUrl.replace(/\/$/, "")
+  const finalRedirectBase = (appUrl || "").replace(/\/$/, "")
   const code = searchParams.get("code")
   const redirectParam = searchParams.get("redirect") || "/collector/dashboard"
 
   if (!code) {
-    return NextResponse.redirect(new URL(`/login?error=missing_code`, finalRedirectBase))
+    return NextResponse.redirect(new URL(`/login?error=missing_code`, finalRedirectBase || undefined))
   }
 
-  const { data, error } = await supabase.auth.exchangeCodeForSession({
-    code,
-    redirectTo: `${finalRedirectBase}/auth/collector/callback`,
-  })
+  const cookieStore = cookies()
+  const supabase = createRouteClient(cookieStore)
 
-  if (error || !data.session?.user?.email) {
-    console.error("[collector-google-callback] exchange failed", error)
-    return NextResponse.redirect(new URL(`/login?error=oauth_failed`, finalRedirectBase))
+  let data: { session?: { user?: { email?: string } } } | null = null
+  let exchangeError: unknown = null
+
+  try {
+    const result = await supabase.auth.exchangeCodeForSession(code)
+    data = result.data
+    exchangeError = result.error
+  } catch (err) {
+    exchangeError = err
+    console.error("[collector-google-callback] exchange threw", err)
   }
 
-  const email = data.session.user.email.toLowerCase()
+  if (exchangeError || !data?.session?.user?.email) {
+    console.error("[collector-google-callback] exchange failed", exchangeError)
+    return NextResponse.redirect(new URL(`/login?error=oauth_failed`, finalRedirectBase || undefined))
+  }
 
-  // Find a matching Shopify customer via orders email or collector profile
+  const email = data.session!.user!.email!.toLowerCase()
+
   const serviceClient = createServiceClient()
   const { data: orderMatch, error: orderError } = await serviceClient
     .from("orders")
@@ -50,10 +50,9 @@ export async function GET(request: NextRequest) {
 
   if (orderError) {
     console.error("[collector-google-callback] order lookup failed", orderError)
-    return NextResponse.redirect(new URL(`/login?error=lookup_failed`, finalRedirectBase))
+    return NextResponse.redirect(new URL(`/login?error=lookup_failed`, finalRedirectBase || undefined))
   }
 
-  // Also check collector_profiles table
   const { data: profileMatch, error: profileError } = await serviceClient
     .from("collector_profiles")
     .select("id")
@@ -65,13 +64,144 @@ export async function GET(request: NextRequest) {
   }
 
   const shopifyCustomerId = orderMatch?.customer_id || orderMatch?.shopify_id
-  
-  // If no order or profile match found, they can't log in as a collector
+
+  // If no existing order or profile, create new collector account
   if (!orderMatch && !profileMatch) {
-    console.log(`[collector-google-callback] No collector access for email: ${email}`)
-    return NextResponse.redirect(new URL(`/login?error=no_collector_profile`, finalRedirectBase))
+    const userId = data.session!.user!.id
+    
+    console.log(`[collector-google-callback] Creating new collector account for: ${email}`)
+    
+    // 1. Create collector profile
+    const { data: newProfile, error: profileCreateError } = await serviceClient
+      .from('collector_profiles')
+      .insert({
+        user_id: userId,
+        email: email,
+        signup_source: 'oauth',
+        onboarding_step: 0
+      })
+      .select()
+      .single()
+    
+    if (profileCreateError) {
+      console.error('[collector-google-callback] Profile creation failed', profileCreateError)
+      return NextResponse.redirect(new URL(`/login?error=signup_failed`, finalRedirectBase || undefined))
+    }
+    
+    // 2. Create collector role in RBAC system
+    const { error: roleError } = await serviceClient
+      .from('user_roles')
+      .insert({
+        user_id: userId,
+        role: 'collector',
+        is_active: true,
+        metadata: {
+          source: 'oauth_signup',
+          signup_date: new Date().toISOString(),
+          email: email
+        }
+      })
+    
+    if (roleError) {
+      console.error('[collector-google-callback] Role creation failed', roleError)
+      // Continue anyway - role might already exist
+    }
+    
+    // 3. Initialize InkOGatchi avatar (non-critical, continue on error)
+    const { error: avatarError } = await serviceClient
+      .from('collector_avatars')
+      .insert({
+        user_id: userId,
+        equipped_items: {} // Empty, will use defaults
+      })
+    
+    if (avatarError) {
+      console.warn('[collector-google-callback] Avatar creation failed (non-critical)', avatarError)
+    }
+    
+    // 4. Ensure collector account exists for banking system
+    try {
+      await serviceClient.rpc('get_or_create_collector_account', {
+        p_collector_identifier: email,
+        p_account_type: 'customer'
+      })
+    } catch (accountError) {
+      // Try direct insert if RPC doesn't exist
+      await serviceClient
+        .from('collector_accounts')
+        .insert({
+          collector_identifier: email,
+          account_type: 'customer',
+          account_status: 'active'
+        })
+        .select()
+        .maybeSingle()
+    }
+    
+    // 5. Award welcome credits (100 bonus)
+    const { error: creditError } = await serviceClient
+      .from('collector_ledger_entries')
+      .insert({
+        collector_identifier: email,
+        transaction_type: 'signup_bonus',
+        amount: 100,
+        currency: 'CREDITS',
+        description: 'Welcome to Street Collector! 🎉',
+        created_by: 'system',
+        metadata: { 
+          signup: true, 
+          user_id: userId,
+          source: 'oauth_signup'
+        }
+      })
+    
+    if (creditError) {
+      console.warn('[collector-google-callback] Credit award failed (non-critical)', creditError)
+    }
+    
+    // 6. Create "New Collector" achievement
+    const { error: achievementError } = await serviceClient
+      .from('collector_achievements')
+      .insert({
+        collector_email: email,
+        user_id: userId,
+        achievement_type: 'new_collector',
+        achievement_title: 'Welcome Collector',
+        achievement_description: 'Joined the Street Collector community'
+      })
+    
+    if (achievementError) {
+      console.warn('[collector-google-callback] Achievement creation failed (non-critical)', achievementError)
+    }
+    
+    // 7. Send welcome email (DISABLED for now)
+    // sendCollectorWelcomeEmail({
+    //   email,
+    //   name: data.session!.user!.user_metadata?.full_name || data.session!.user!.user_metadata?.name,
+    //   creditsAmount: 100,
+    // }).catch((emailError) => {
+    //   console.warn('[collector-google-callback] Welcome email failed (non-critical)', emailError)
+    // })
+    
+    console.log(`[collector-google-callback] New collector created successfully: ${email}`)
+    
+    // Redirect to onboarding wizard for new collectors
+    const collectorCookie = buildCollectorSessionCookie({
+      shopifyCustomerId: null,
+      email,
+      collectorIdentifier: null,
+      impersonated: false,
+      issuedAt: Date.now(),
+    })
+    
+    const response = NextResponse.redirect(new URL('/collector/welcome', finalRedirectBase || undefined))
+    response.cookies.set(collectorCookie.name, collectorCookie.value, collectorCookie.options)
+    response.cookies.set(REQUIRE_ACCOUNT_SELECTION_COOKIE, "", { path: "/", maxAge: 0 })
+    
+    return response
   }
 
+  // Existing collector flow
   const collectorCookie = buildCollectorSessionCookie({
     shopifyCustomerId: shopifyCustomerId ? shopifyCustomerId.toString() : null,
     email,
@@ -80,28 +210,21 @@ export async function GET(request: NextRequest) {
     issuedAt: Date.now(),
   })
 
-  const response = NextResponse.redirect(new URL(redirectParam, finalRedirectBase))
+  const response = NextResponse.redirect(new URL(redirectParam, finalRedirectBase || undefined))
   response.cookies.set(collectorCookie.name, collectorCookie.value, collectorCookie.options)
-  
+
   if (shopifyCustomerId) {
-    const shopifyCookie = {
-      name: "shopify_customer_id",
-      value: shopifyCustomerId.toString(),
-      options: {
-        path: "/",
-        httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
-        sameSite: "lax" as const,
-        maxAge: 60 * 60 * 24,
-      },
-    }
-    response.cookies.set(shopifyCookie.name, shopifyCookie.value, shopifyCookie.options)
+    response.cookies.set("shopify_customer_id", shopifyCustomerId.toString(), {
+      path: "/",
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      maxAge: 60 * 60 * 24,
+    })
   }
-  
-  // Clear account selection requirement after successful login
+
   response.cookies.set(REQUIRE_ACCOUNT_SELECTION_COOKIE, "", { path: "/", maxAge: 0 })
 
   console.log(`[collector-google-callback] Collector login successful for ${email}`)
   return response
 }
-

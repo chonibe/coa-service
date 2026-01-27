@@ -6,6 +6,7 @@ import { getVendorFromCookieStore } from "@/lib/vendor-session"
 import { isAdminEmail, REQUIRE_ACCOUNT_SELECTION_COOKIE } from "@/lib/vendor-auth"
 import { ADMIN_SESSION_COOKIE_NAME, verifyAdminSessionToken } from "@/lib/admin-session"
 import { verifyCollectorSessionToken } from "@/lib/collector-session"
+import { getUserActiveRoles, getUserVendorId } from "@/lib/rbac/role-helpers"
 
 export async function GET() {
   const cookieStore = cookies()
@@ -37,48 +38,43 @@ export async function GET() {
   const hasAdminSession = !!adminSessionEmail && isAdminEmail(adminSessionEmail)
   
   // Use admin session email as fallback when Supabase session is missing
-  // This prevents login loops when the Supabase session expires but admin cookie is still valid
   const email = supabaseEmail ?? adminSessionEmail
   
-  // isAdmin should be true if EITHER:
-  // 1. The Supabase session user has an admin email, OR
-  // 2. There's a valid admin session cookie with an admin email
-  const isAdmin = isAdminEmail(supabaseEmail) || hasAdminSession
+  // Get user roles from RBAC system
+  let userRoles: string[] = []
+  let isAdmin = false
+  let hasVendorRole = false
+  let hasCollectorRole = false
+  let vendorId: number | null = null
   
-  // Check if admin also has collector orders (for role selection)
-  let adminHasCollectorAccess = false
-  let adminHasVendorAccess = false
-  
-  // Use the effective email (from Supabase or admin session) for access checks
-  const effectiveAdminEmail = isAdmin ? (supabaseEmail ?? adminSessionEmail) : null
-  
-  if (isAdmin && effectiveAdminEmail) {
-    const { data: adminOrderMatch } = await serviceClient
-      .from("orders")
-      .select("customer_id")
-      .eq("customer_email", effectiveAdminEmail)
-      .limit(1)
-      .maybeSingle()
+  if (user?.id) {
+    userRoles = await getUserActiveRoles(user.id)
+    isAdmin = userRoles.includes('admin')
+    hasVendorRole = userRoles.includes('vendor')
+    hasCollectorRole = userRoles.includes('collector')
     
-    adminHasCollectorAccess = !!adminOrderMatch
+    if (hasVendorRole) {
+      vendorId = await getUserVendorId(user.id)
+    }
     
-    // Check if admin has vendor access via vendor_users table
-    // Note: This requires Supabase session for user.id - if not available, we skip this check
-    if (user?.id) {
-      const { data: adminVendorUser } = await serviceClient
-        .from("vendor_users")
-        .select("vendor_id")
-        .eq("auth_id", user.id)
-        .maybeSingle()
-      
-      adminHasVendorAccess = !!adminVendorUser
+    console.log(`[auth/status] User ${email} has roles: ${userRoles.join(', ')}`)
+  } else if (hasAdminSession) {
+    // Fallback for admin session cookie without Supabase session
+    isAdmin = true
+    userRoles = ['admin']
+  }
+  
+  // For backwards compatibility, also check admin email
+  if (!isAdmin && isAdminEmail(supabaseEmail)) {
+    isAdmin = true
+    if (!userRoles.includes('admin')) {
+      userRoles.push('admin')
     }
   }
 
   const requireAccountSelection = cookieStore.get(REQUIRE_ACCOUNT_SELECTION_COOKIE)?.value === "true"
 
   let vendor = null as null | { id: number; vendor_name: string; status: string | null }
-  let vendorHasCollectorAccess = false
 
   // Check if admin is impersonating via vendor session cookie
   if (vendorSessionName) {
@@ -93,50 +89,25 @@ export async function GET() {
     } else if (vendorRecord) {
       vendor = vendorRecord
     }
-  } else if (user?.id) {
-    const { data: vendorUser, error: vendorUserError } = await serviceClient
-      .from("vendor_users")
-      .select("vendor_id")
-      .eq("auth_id", user.id)
+  } else if (vendorId) {
+    // Use vendor ID from RBAC roles
+    const { data: vendorRecord, error: vendorError } = await serviceClient
+      .from("vendors")
+      .select("id,vendor_name,status")
+      .eq("id", vendorId)
       .maybeSingle()
 
-    if (vendorUserError) {
-      console.error("Failed to look up vendor user", vendorUserError)
-    }
-
-    if (vendorUser?.vendor_id) {
-      const { data: vendorRecord, error: vendorError } = await serviceClient
-        .from("vendors")
-        .select("id,vendor_name,status")
-        .eq("id", vendorUser.vendor_id)
-        .maybeSingle()
-
-      if (vendorError) {
-        console.error("Failed to load vendor for status endpoint", vendorError)
-      } else if (vendorRecord) {
-        vendor = vendorRecord
-      }
+    if (vendorError) {
+      console.error("Failed to load vendor for status endpoint", vendorError)
+    } else if (vendorRecord) {
+      vendor = vendorRecord
     }
   }
 
-  // Check if vendor has collector access (has orders or collector profile)
-  if (vendor && email) {
-    const { data: vendorOrderMatch } = await serviceClient
-      .from("orders")
-      .select("customer_id")
-      .eq("customer_email", email)
-      .limit(1)
-      .maybeSingle()
-
-    const { data: vendorProfileMatch } = await serviceClient
-      .from("collector_profiles")
-      .select("id")
-      .eq("email", email)
-      .limit(1)
-      .maybeSingle()
-
-    vendorHasCollectorAccess = !!(vendorOrderMatch || vendorProfileMatch)
-  }
+  // Determine multi-role access
+  const adminHasCollectorAccess = isAdmin && hasCollectorRole
+  const adminHasVendorAccess = isAdmin && hasVendorRole
+  const vendorHasCollectorAccess = hasVendorRole && hasCollectorRole
 
   return NextResponse.json({
     authenticated: !!user,
@@ -147,15 +118,18 @@ export async function GET() {
           app_metadata: user.app_metadata,
         }
       : null,
+    roles: userRoles,
     isAdmin,
     hasAdminSession,
     adminHasCollectorAccess,
     adminHasVendorAccess,
     hasCollectorSession,
+    hasCollectorRole,
+    hasVendorRole,
     collectorEmail: collectorSession?.email || null,
     vendorSession: vendorSessionName,
     vendor,
-    hasVendorAccess: !!vendor,
+    hasVendorAccess: !!vendor || hasVendorRole,
     vendorHasCollectorAccess,
     requireAccountSelection,
   })

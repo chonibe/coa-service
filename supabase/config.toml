@@ -110,12 +110,17 @@ site_url = "http://127.0.0.1:3000"
 additional_redirect_urls = [
   "http://localhost:3000/auth/callback",
   "http://127.0.0.1:3000/auth/callback",
+  "http://localhost:3000/auth/collector/callback",
+  "http://127.0.0.1:3000/auth/collector/callback",
   "https://app.thestreetcollector.com/auth/callback",
   "https://app.thestreetcollector.com/auth/admin/callback",
+  "https://app.thestreetcollector.com/auth/collector/callback",
   "https://street-collector.vercel.app/auth/callback",
   "https://street-collector.vercel.app/auth/admin/callback",
+  "https://street-collector.vercel.app/auth/collector/callback",
   "https://streetcollector.vercel.app/auth/callback",
-  "https://streetcollector.vercel.app/auth/admin/callback"
+  "https://streetcollector.vercel.app/auth/admin/callback",
+  "https://streetcollector.vercel.app/auth/collector/callback"
 ]
 # How long tokens are valid for, in seconds. Defaults to 3600 (1 hour), maximum 604,800 (1 week).
 jwt_expiry = 3600
@@ -210,9 +215,9 @@ max_frequency = "5s"
 # inactivity_timeout = "8h"
 
 # This hook runs before a token is issued and allows you to add additional claims based on the authentication method used.
-# [auth.hook.custom_access_token]
-# enabled = true
-# uri = "pg-functions://<database>/<schema>/<hook_name>"
+[auth.hook.custom_access_token]
+enabled = true
+uri = "pg-functions://postgres/public/custom_access_token"
 
 # Configure one of the supported SMS providers: `twilio`, `twilio_verify`, `messagebird`, `textlocal`, `vonage`.
 [auth.sms.twilio]

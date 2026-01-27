@@ -11,7 +11,7 @@ import { useRouter } from 'next/navigation'
 
 import { Separator } from "@/components/ui"
 import { useToast } from '@/hooks/use-toast'
-import { Loader2, History as HistoryIcon, Save, User, Eye, Sparkles } from 'lucide-react'
+import { Loader2, History as HistoryIcon, Save, User, Eye, Sparkles, Share2, Check } from 'lucide-react'
 import { InkOGatchiWidget } from '@/app/collector/dashboard/components/inkogatchi-widget'
 import Link from 'next/link'
 
@@ -289,6 +289,66 @@ export default function CollectorProfilePage() {
                   </>
                 )}
               </Button>
+            </CardContent>
+          </Card>
+
+          {/* Share Collection */}
+          <Card className="mt-6">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Share2 className="h-5 w-5" />
+                Share Your Collection
+              </CardTitle>
+              <CardDescription>
+                Invite friends to join Street Collector
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex gap-2">
+                <Input
+                  readOnly
+                  value={profile ? `${typeof window !== 'undefined' ? window.location.origin : ''}/join/${profile.email}` : ''}
+                  className="font-mono text-sm"
+                />
+                <Button
+                  onClick={async () => {
+                    if (profile && typeof window !== 'undefined') {
+                      const referralUrl = `${window.location.origin}/join/${profile.email}`
+                      try {
+                        await navigator.clipboard.writeText(referralUrl)
+                        setCopied(true)
+                        toast({
+                          title: 'Copied!',
+                          description: 'Referral link copied to clipboard'
+                        })
+                        setTimeout(() => setCopied(false), 2000)
+                      } catch (err) {
+                        toast({
+                          title: 'Error',
+                          description: 'Failed to copy link',
+                          variant: 'destructive'
+                        })
+                      }
+                    }
+                  }}
+                  disabled={!profile || copied}
+                >
+                  {copied ? (
+                    <>
+                      <Check className="h-4 w-4 mr-2" />
+                      Copied
+                    </>
+                  ) : (
+                    <>
+                      <Share2 className="h-4 w-4 mr-2" />
+                      Copy Link
+                    </>
+                  )}
+                </Button>
+              </div>
+              <p className="text-sm text-muted-foreground">
+                When friends sign up with your link, you both get 500 bonus credits!
+              </p>
             </CardContent>
           </Card>
         </div>

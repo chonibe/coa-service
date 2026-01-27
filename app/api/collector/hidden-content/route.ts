@@ -36,11 +36,14 @@ export async function GET(request: NextRequest) {
       .order("processed_at", { ascending: false })
 
     const allLineItems = (orders || []).flatMap((order) => order.order_line_items_v2 || [])
-    const productIds = allLineItems
-      .map((li: any) => li.product_id)
-      .filter(Boolean)
-      .map((id: string) => parseInt(id))
-      .filter((id: number) => !isNaN(id) && id > 0)
+    // product_benefits.product_id is a TEXT column; keep IDs as strings for filtering.
+    const productIds = Array.from(
+      new Set(
+        allLineItems
+          .map((li: any) => li.product_id)
+          .filter((id: any) => typeof id === "string" && id.trim().length > 0),
+      ),
+    )
 
     if (productIds.length === 0) {
       return NextResponse.json({
@@ -52,12 +55,16 @@ export async function GET(request: NextRequest) {
       })
     }
 
-    // Query product benefits for hidden series and bonus content
+    // Query product benefits for hidden series and bonus content.
+    // NOTE: Do NOT embed vendor_product_submissions here; PostgREST requires an FK relationship
+    // and the schema does not define product_benefits -> vendor_product_submissions.
     const { data: benefits, error: benefitsError } = await supabase
       .from("product_benefits")
       .select(
         `
         id,
+        product_id,
+        vendor_name,
         benefit_type_id,
         title,
         description,
@@ -68,18 +75,10 @@ export async function GET(request: NextRequest) {
         hidden_series_id,
         benefit_types!inner (
           name
-        ),
-        vendor_product_submissions!inner (
-          id,
-          product_data,
-          vendor_id,
-          vendors (
-            vendor_name
-          )
         )
       `,
       )
-      .in("vendor_product_submissions.id", productIds)
+      .in("product_id", productIds)
 
     if (benefitsError) {
       console.error("collector hidden content error", benefitsError)
@@ -97,14 +96,14 @@ export async function GET(request: NextRequest) {
           const key = benefit.hidden_series_id
           const lineItem = allLineItems.find(
             (li: any) =>
-              li.product_id === benefit.vendor_product_submissions?.id?.toString(),
+              li.product_id === benefit.product_id,
           )
           if (!hiddenSeriesMap.has(key)) {
             hiddenSeriesMap.set(key, {
               id: benefit.hidden_series_id,
               unlockedVia: {
-                artworkId: benefit.vendor_product_submissions?.id?.toString(),
-                artworkName: benefit.vendor_product_submissions?.product_data?.title || "Unknown Artwork",
+                artworkId: benefit.product_id,
+                artworkName: lineItem?.name || "Unknown Artwork",
                 purchaseDate: lineItem?.created_at || orders?.[0]?.processed_at || new Date().toISOString(),
               },
             })
@@ -147,7 +146,7 @@ export async function GET(request: NextRequest) {
         ) {
           const lineItem = allLineItems.find(
             (li: any) =>
-              li.product_id === benefit.vendor_product_submissions?.id?.toString(),
+              li.product_id === benefit.product_id,
           )
           bonusContent.push({
             id: benefit.id,
@@ -158,9 +157,9 @@ export async function GET(request: NextRequest) {
             accessCode: benefit.access_code,
             unlockedAt: lineItem?.created_at || orders?.[0]?.processed_at || new Date().toISOString(),
             unlockedVia: {
-              artworkId: benefit.vendor_product_submissions?.id?.toString(),
-              artworkName: benefit.vendor_product_submissions?.product_data?.title || "Unknown Artwork",
-              vendorName: benefit.vendor_product_submissions?.vendors?.vendor_name || "Unknown Artist",
+              artworkId: benefit.product_id,
+              artworkName: lineItem?.name || "Unknown Artwork",
+              vendorName: benefit.vendor_name || "Unknown Artist",
               purchaseDate: lineItem?.created_at || orders?.[0]?.processed_at || new Date().toISOString(),
             },
             expiresAt: benefit.expires_at,

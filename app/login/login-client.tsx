@@ -57,6 +57,10 @@ export default function LoginClient() {
     const errorParam = searchParams.get("error")
     if (errorParam === "not_registered") {
       setFormError(NOT_REGISTERED_ERROR)
+    } else if (errorParam === "signup_failed") {
+      setFormError("Unable to create your account. Please try again or contact support@thestreetcollector.com.")
+    } else if (errorParam === "no_collector_profile") {
+      setFormError("Access denied. Please sign up first or contact support@thestreetcollector.com.")
     } else if (errorParam) {
       setFormError(`Authentication error: ${errorParam}`)
     }
@@ -119,11 +123,24 @@ export default function LoginClient() {
           return
         }
 
-        // Check for collector session first
-        if ((data as any).hasCollectorSession) {
-          console.log(`[login-client] Redirecting to collector dashboard: hasCollectorSession=true`)
+        // Priority: admin > vendor > collector (multi-role users go to the correct dashboard)
+        if (data.isAdmin && data.hasAdminSession) {
+          const hasMultipleRoles = (data as any).adminHasCollectorAccess || (data as any).adminHasVendorAccess
+          if (hasMultipleRoles) {
+            console.log(`[login-client] Admin with multiple roles - redirecting to role selection`)
+            hasRedirected.current = true
+            window.location.replace("/auth/select-role")
+            return
+          }
+          console.log(`[login-client] Redirecting to admin dashboard: isAdmin=true, hasAdminSession=true`)
           hasRedirected.current = true
-          window.location.replace("/collector/dashboard")
+          window.location.replace("/admin/dashboard")
+          return
+        }
+
+        if (data.isAdmin && !data.hasAdminSession) {
+          console.log(`[login-client] Admin user but no admin session cookie - staying on login page`)
+          setCheckingSession(false)
           return
         }
 
@@ -134,26 +151,10 @@ export default function LoginClient() {
           return
         }
 
-        if (data.isAdmin && data.hasAdminSession) {
-          // Check if admin has multiple role options (collector or vendor access)
-          const hasMultipleRoles = (data as any).adminHasCollectorAccess || (data as any).adminHasVendorAccess
-          
-          if (hasMultipleRoles) {
-            console.log(`[login-client] Admin with multiple roles - redirecting to role selection`)
-            hasRedirected.current = true
-            window.location.replace("/auth/select-role")
-            return
-          }
-          
-          console.log(`[login-client] Redirecting to admin dashboard: isAdmin=true, hasAdminSession=true`)
+        if ((data as any).hasCollectorSession) {
+          console.log(`[login-client] Redirecting to collector dashboard: hasCollectorSession=true`)
           hasRedirected.current = true
-          window.location.replace("/admin/dashboard")
-          return
-        }
-
-        if (data.isAdmin && !data.hasAdminSession) {
-          console.log(`[login-client] Admin user but no admin session cookie - staying on login page`)
-          setCheckingSession(false)
+          window.location.replace("/collector/dashboard")
           return
         }
       } catch (error) {
@@ -177,16 +178,16 @@ export default function LoginClient() {
     setSuccessMessage(null)
     setGoogleLoading(true)
 
-    // Check if this is an admin login attempt
     const isAdminLogin = searchParams.get("admin") === "true"
-    
     let endpoint = `/api/auth/google/start`
-    
-    if (loginType === "collector") {
-      endpoint = `/api/auth/collector/google/start`
-    } else if (isAdminLogin) {
+
+    // Use main OAuth flow for all roles so callback can do admin/vendor/collector detection
+    if (isAdminLogin) {
       endpoint = `/api/auth/google/start?redirect=/admin/dashboard`
+    } else if (loginType === "vendor") {
+      endpoint = `/api/auth/google/start?redirect=/vendor/dashboard`
     }
+    // collector: no redirect param; callback sends to /collector/dashboard when collector detected
 
     window.location.href = endpoint
   }

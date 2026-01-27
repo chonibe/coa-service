@@ -28,6 +28,7 @@ const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY
 const requiredRedirects = [
   "https://app.thestreetcollector.com/auth/admin/callback",
   "https://app.thestreetcollector.com/auth/callback",
+  "https://app.thestreetcollector.com/auth/collector/callback",
 ]
 
 async function addRedirectUrls() {

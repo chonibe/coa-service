@@ -46,3 +46,6 @@ postgresql-installer.exe
 
 # mobile NFC writer (separate app with own node_modules)
 /mobile-nfc-writer/
+
+.vercel
+.env*.local

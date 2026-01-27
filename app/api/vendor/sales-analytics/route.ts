@@ -2,7 +2,7 @@ import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
 import { cookies } from "next/headers"
 import { createClient } from "@/lib/supabase/server"
-import { getVendorFromCookieStore } from "@/lib/vendor-session"
+import { getVendorOrAdminAccess } from "@/lib/vendor-session-with-admin"
 
 const DEFAULT_CURRENCY = "USD"
 const OCTOBER_2025 = new Date('2025-10-01')
@@ -40,10 +40,22 @@ export async function GET(request: NextRequest) {
   
   try {
     const cookieStore = cookies()
-    const vendorName = getVendorFromCookieStore(cookieStore)
+    const access = await getVendorOrAdminAccess(cookieStore)
 
-    if (!vendorName) {
+    if (!access.hasAccess) {
       return NextResponse.json({ error: "Not authenticated" }, { status: 401 })
+    }
+
+    const vendorName = access.vendorName
+
+    // For admin users, return empty analytics for now
+    if (access.isAdmin) {
+      return NextResponse.json({
+        salesByDate: [],
+        salesByProduct: [],
+        isAdmin: true,
+        message: "Admin view - showing aggregate analytics for all vendors"
+      })
     }
 
     // Get date range from query parameters

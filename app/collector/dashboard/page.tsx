@@ -47,6 +47,9 @@ import { PremiumExpandedStackModal } from "./components/premium/PremiumExpandedS
 import type { CollectorEdition, CollectorCertification, HiddenContent, ArtistCollectionStats } from "@/types/collector"
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, Badge, Button, Alert, AlertDescription, AlertTitle } from "@/components/ui"
+import { EmptyState } from "@/components/vendor/empty-state"
+import { Package, Sparkles } from "lucide-react"
+import { ContextualHints } from "./components/contextual-hints"
 type ApiResponse = {
   success: boolean
   orders: Array<{
@@ -197,6 +200,16 @@ export default function CollectorDashboardPage() {
     ]
   }, [data, lineItems])
 
+  // Helper functions for progressive empty state messaging
+  const getEmptyStateTitle = () => {
+    // For now, use a simple message. Can be enhanced with profile.created_at later
+    return "Your Journey Begins Here"
+  }
+
+  const getEmptyStateDescription = () => {
+    return "Start collecting street art and watch your collection grow. Each piece tells a story."
+  }
+
   if (isLoading) {
     return (
       <div className="mx-auto max-w-7xl px-4 py-8 space-y-6">
@@ -223,8 +236,8 @@ export default function CollectorDashboardPage() {
           <a href="/api/auth/shopify?redirect=/collector/dashboard" className="inline-flex">
             <Badge variant="outline" className="px-3 py-2">Sign in with Shopify</Badge>
           </a>
-          <a href="/api/auth/shopify/google/start" className="inline-flex">
-            <Badge variant="secondary" className="px-3 py-2">Continue with Google</Badge>
+          <a href="/api/auth/google/start" className="inline-flex">
+            <Badge variant="secondary" className="px-3 py-2">Sign in with Google</Badge>
           </a>
         </div>
       </div>
@@ -393,16 +406,32 @@ export default function CollectorDashboardPage() {
                           <HistoryIcon className="h-5 w-5 text-slate-300" />
                         </div>
                         <div className="space-y-4">
-                          {data.orders.slice(0, 5).map((order) => (
-                            <PremiumOrderCard 
-                              key={order.id} 
-                              order={order} 
-                              onExpandStack={(group) => {
-                                setGroupingMode('product')
-                                setExpandedGroup(group)
-                              }}
-                            />
-                          ))}
+                          {data.orders.length > 0 ? (
+                            data.orders.slice(0, 5).map((order) => (
+                              <PremiumOrderCard 
+                                key={order.id} 
+                                order={order} 
+                                onExpandStack={(group) => {
+                                  setGroupingMode('product')
+                                  setExpandedGroup(group)
+                                }}
+                              />
+                            ))
+                          ) : (
+                            <Card>
+                              <CardContent className="py-12">
+                                <EmptyState
+                                  icon={Package}
+                                  title={getEmptyStateTitle()}
+                                  description={getEmptyStateDescription()}
+                                  action={{
+                                    label: "Discover Artwork",
+                                    onClick: () => router.push("/collector/discover")
+                                  }}
+                                />
+                              </CardContent>
+                            </Card>
+                          )}
                         </div>
                       </section>
 
@@ -508,6 +537,12 @@ export default function CollectorDashboardPage() {
         dashboard="collector" 
         open={searchOpen} 
         onOpenChange={setSearchOpen} 
+      />
+
+      {/* Contextual Hints */}
+      <ContextualHints
+        totalPurchases={data.stats.totalOrders}
+        profile={data.profile}
       />
     </div>
   )

@@ -26,6 +26,7 @@ import {
   ArrowRight,
   Circle,
   CheckCircle2,
+  FileText,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 
@@ -88,6 +89,7 @@ export function OnboardingWizard({ initialData, onComplete }: OnboardingWizardPr
     notify_on_sale: true,
     notify_on_payout: true,
     notify_on_message: true,
+    terms_accepted: false,
   })
 
   // Field validation state (for real-time validation)
@@ -131,6 +133,12 @@ export function OnboardingWizard({ initialData, onComplete }: OnboardingWizardPr
       description: "Choose how you want to be notified",
       fields: ["notify_on_sale", "notify_on_payout", "notify_on_message"],
       icon: <Circle className="h-5 w-5" />,
+    },
+    {
+      title: "Terms & Conditions",
+      description: "Review and accept our vendor terms",
+      fields: ["terms_accepted"],
+      icon: <FileText className="h-5 w-5" />,
     },
     {
       title: "Complete",
@@ -289,6 +297,9 @@ export function OnboardingWizard({ initialData, onComplete }: OnboardingWizardPr
         return { isValid: true }
       case "tax_country":
         if (!value) return { isValid: false, error: "Tax country is required" }
+        return { isValid: true }
+      case "terms_accepted":
+        if (!value) return { isValid: false, error: "You must accept the Vendor Terms of Service to continue" }
         return { isValid: true }
       case "website":
         if (value?.trim() && !/^https?:\/\/.+/.test(value)) {
@@ -1060,7 +1071,71 @@ export function OnboardingWizard({ initialData, onComplete }: OnboardingWizardPr
           </div>
         )
 
-      case 6: // Complete
+      case 6: // Terms & Conditions
+        return (
+          <div className="space-y-6">
+            <Alert>
+              <Info className="h-4 w-4" />
+              <AlertTitle>Vendor Terms of Service</AlertTitle>
+              <AlertDescription className="mt-2">
+                <p className="text-sm mb-4">
+                  Please review our Vendor Terms of Service, including the First Edition Reserve Policy, before completing your profile setup.
+                </p>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  asChild
+                  className="mb-4"
+                >
+                  <a 
+                    href="/docs/features/vendor-terms/VENDOR_TERMS_OF_SERVICE.md" 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                  >
+                    <FileText className="h-4 w-4 mr-2" />
+                    View Full Terms of Service
+                  </a>
+                </Button>
+                <div className="mt-4 p-4 bg-muted rounded-lg">
+                  <h4 className="font-semibold mb-2 text-sm">Key Points:</h4>
+                  <ul className="text-sm space-y-1 list-disc list-inside text-muted-foreground">
+                    <li>Standard commission rate: 25% of product price</li>
+                    <li>First edition (#1) of approved artworks is reserved for Street Collector collection</li>
+                    <li>You receive 25% commission on the reserved first edition</li>
+                    <li>Public sales start from edition #2 onwards</li>
+                    <li>Your intellectual property rights are fully protected</li>
+                  </ul>
+                </div>
+              </AlertDescription>
+            </Alert>
+
+            <div className="flex items-start space-x-3 p-4 border rounded-lg">
+              <Checkbox
+                id="terms_accepted"
+                checked={formData.terms_accepted}
+                onCheckedChange={(checked) => handleCheckboxChange("terms_accepted", checked === true)}
+                className="mt-1"
+              />
+              <label
+                htmlFor="terms_accepted"
+                className="text-sm font-medium leading-none cursor-pointer flex-1"
+              >
+                I have read and agree to the Vendor Terms of Service, including the First Edition Reserve Policy
+              </label>
+            </div>
+
+            {!formData.terms_accepted && (
+              <Alert variant="destructive">
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription>
+                  You must accept the Vendor Terms of Service to continue.
+                </AlertDescription>
+              </Alert>
+            )}
+          </div>
+        )
+
+      case 7: // Complete
         return (
           <div className="space-y-6 text-center">
             <div className="flex justify-center mb-6">
@@ -1164,6 +1239,7 @@ export function OnboardingWizard({ initialData, onComplete }: OnboardingWizardPr
               <Button 
                 onClick={handleNext} 
                 size="lg"
+                disabled={currentStep === 6 && !formData.terms_accepted}
                 className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-lg"
               >
                 Next <ChevronRight className="ml-2 h-4 w-4" />

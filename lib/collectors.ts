@@ -8,6 +8,7 @@ import { createClient } from "@/lib/supabase/server";
 
 export interface CollectorProfile {
   user_email: string;
+  public_id: string; // SHA-256 hash for secure URLs
   user_id: string | null;
   shopify_customer_id: string | null;
   display_name: string;
@@ -28,23 +29,30 @@ export interface CollectorProfile {
 }
 
 /**
- * Fetch a single collector by email, ID, or Shopify ID
+ * Fetch a single collector by email, public_id, user_id, or Shopify ID
  */
 export async function getCollectorProfile(identifier: string): Promise<CollectorProfile | null> {
   const supabase = createClient();
   
   const isEmail = identifier.includes('@');
+  const isPublicId = /^[0-9a-f]{64}$/.test(identifier); // SHA-256 hash (64 hex chars)
+  const isShopifyId = /^[0-9]+$/.test(identifier);
+  
   const query = supabase
     .from('collector_profile_comprehensive')
     .select('*');
 
-  if (isEmail) {
+  if (isPublicId) {
+    // Security fix: Use public_id (hash) for URLs
+    query.eq('public_id', identifier);
+  } else if (isEmail) {
+    // Email lookup (for backward compatibility and internal use)
     query.eq('user_email', identifier.toLowerCase().trim());
-  } else if (identifier.match(/^[0-9]+$/)) {
-    // Likely a Shopify Customer ID
+  } else if (isShopifyId) {
+    // Shopify Customer ID
     query.eq('shopify_customer_id', identifier);
   } else {
-    // Likely a Supabase User ID (UUID)
+    // Supabase User ID (UUID)
     query.eq('user_id', identifier);
   }
 

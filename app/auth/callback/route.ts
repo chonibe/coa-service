@@ -9,6 +9,7 @@ import {
   POST_LOGIN_REDIRECT_COOKIE,
   PENDING_VENDOR_EMAIL_COOKIE,
   REQUIRE_ACCOUNT_SELECTION_COOKIE,
+  LOGIN_INTENT_COOKIE,
 } from "@/lib/vendor-auth"
 import {
   buildAdminSessionCookie,
@@ -20,6 +21,8 @@ import { logFailedLoginAttempt } from "@/lib/audit-logger"
 import { createClient as createServiceClient } from "@/lib/supabase/server"
 import { syncInstagramHistory } from "@/lib/crm/instagram-helper"
 import { syncGmailForUser } from "@/lib/crm/sync-gmail-helper"
+import { getUserActiveRoles, getUserVendorId, getPreferredDashboard } from "@/lib/rbac/role-helpers"
+import type { Role } from "@/lib/rbac/index"
 
 const DEFAULT_VENDOR_REDIRECT = "/vendor/dashboard"
 const NOT_REGISTERED_REDIRECT = "/login?error=not_registered"
@@ -32,162 +35,130 @@ const deleteCookie = (response: NextResponse, name: string) => {
 }
 
 /**
- * Process user login after authentication - handles vendor/collector/admin routing
+ * Process user login after authentication - handles vendor/collector/admin routing using RBAC
  */
 async function processUserLogin(user: any, email: string | null, origin: string, cookieStore: ReturnType<typeof cookies>) {
   try {
-    const isAdmin = isAdminEmail(email)
+    const userId = user.id
+    console.log(`[auth/callback] Processing login for user: ${userId}, email: ${email}`)
 
-    console.log(`[auth/callback] Processing login for email: ${email}, isAdmin: ${isAdmin}`)
+    // Get login intent from cookie (set during OAuth start)
+    const loginIntent = cookieStore.get(LOGIN_INTENT_COOKIE)?.value as 'admin' | 'vendor' | 'collector' | undefined
+    console.log(`[auth/callback] Login intent: ${loginIntent || 'none'}`)
 
-    // Handle admin users - check if they also have collector access
-    if (isAdmin && email) {
-      console.log(`[auth/callback] Admin user detected - checking for collector access`)
+    // Get all active roles from RBAC system
+    const roles = await getUserActiveRoles(userId)
+    console.log(`[auth/callback] User roles from RBAC: ${roles.join(', ')}`)
 
-      // Check if admin also has collector orders
+    if (roles.length === 0) {
+      console.log(`[auth/callback] No roles found for user ${email}`)
+      const notRegisteredResponse = NextResponse.redirect(new URL(NOT_REGISTERED_REDIRECT, origin), { status: 307 })
+      deleteCookie(notRegisteredResponse, VENDOR_SESSION_COOKIE_NAME)
+      deleteCookie(notRegisteredResponse, LOGIN_INTENT_COOKIE)
+      
+      const supabase = createRouteClient(cookieStore)
+      await supabase.auth.signOut()
+      notRegisteredResponse.cookies.set(ADMIN_SESSION_COOKIE_NAME, "", { ...clearAdminSessionCookie().options, maxAge: 0 })
+      await logFailedLoginAttempt({
+        email,
+        method: "oauth",
+        reason: "No roles found in RBAC system",
+      })
+      
+      return notRegisteredResponse
+    }
+
+    // Determine the preferred dashboard based on roles and login intent
+    const preferredDashboard = getPreferredDashboard(roles, loginIntent)
+    console.log(`[auth/callback] Preferred dashboard: ${preferredDashboard}`)
+
+    // Set appropriate session cookies based on the target dashboard
+    const redirectResponse = NextResponse.redirect(new URL(preferredDashboard, origin), { status: 307 })
+
+    // Clean up login intent cookie
+    deleteCookie(redirectResponse, LOGIN_INTENT_COOKIE)
+    deleteCookie(redirectResponse, PENDING_VENDOR_EMAIL_COOKIE)
+    deleteCookie(redirectResponse, REQUIRE_ACCOUNT_SELECTION_COOKIE)
+
+    // Set role-specific session cookies
+    if (preferredDashboard.startsWith('/admin/')) {
+      // Admin dashboard - set admin session cookie
+      if (email) {
+        const adminCookie = buildAdminSessionCookie(email)
+        redirectResponse.cookies.set(ADMIN_SESSION_COOKIE_NAME, adminCookie.value, adminCookie.options)
+      }
+      redirectResponse.cookies.set(VENDOR_SESSION_COOKIE_NAME, "", { ...clearVendorSessionCookie().options, maxAge: 0 })
+      console.log(`[auth/callback] Admin login successful for ${email}`)
+    } else if (preferredDashboard.startsWith('/vendor/')) {
+      // Vendor dashboard - set vendor session cookie
+      const vendorId = await getUserVendorId(userId)
+      if (vendorId) {
+        // Get vendor details
+        const serviceClient = createServiceClient()
+        const { data: vendor } = await serviceClient
+          .from("vendors")
+          .select("vendor_name, status")
+          .eq("id", vendorId)
+          .maybeSingle()
+
+        if (vendor) {
+          const sessionCookie = buildVendorSessionCookie(vendor.vendor_name)
+          redirectResponse.cookies.set(sessionCookie.name, sessionCookie.value, sessionCookie.options)
+          
+          // Check vendor status and adjust redirect if needed
+          if (vendor.status && vendor.status !== "active") {
+            if (vendor.status === "pending" || vendor.status === "review") {
+              redirectResponse.headers.set("Location", new URL(PENDING_VENDOR_REDIRECT, origin).toString())
+            } else if (vendor.status === "disabled" || vendor.status === "suspended") {
+              redirectResponse.headers.set("Location", new URL(DENIED_VENDOR_REDIRECT, origin).toString())
+            }
+          }
+          
+          console.log(`[auth/callback] Vendor login successful for ${email}, vendor: ${vendor.vendor_name}`)
+        }
+      }
+      redirectResponse.cookies.set(ADMIN_SESSION_COOKIE_NAME, "", { ...clearAdminSessionCookie().options, maxAge: 0 })
+    } else if (preferredDashboard.startsWith('/collector/')) {
+      // Collector dashboard - set collector session cookie
       const serviceClient = createServiceClient()
-      const { data: adminOrderMatch, error: orderError } = await serviceClient
+      const { data: orderMatch } = await serviceClient
         .from("orders")
         .select("customer_id, shopify_id")
         .eq("customer_email", email)
-        .order("processed_at", { ascending: false })
         .limit(1)
         .maybeSingle()
 
-      if (orderError) {
-        console.error(`[auth/callback] Error checking admin collector access:`, orderError)
-        // Continue with admin-only flow
+      const shopifyCustomerId = orderMatch?.customer_id || orderMatch?.shopify_id
+
+      const collectorCookie = buildCollectorSessionCookie({
+        shopifyCustomerId: shopifyCustomerId ? shopifyCustomerId.toString() : null,
+        email,
+        issuedAt: Date.now(),
+      })
+
+      redirectResponse.cookies.set(collectorCookie.name, collectorCookie.value, collectorCookie.options)
+
+      if (shopifyCustomerId) {
+        redirectResponse.cookies.set("shopify_customer_id", shopifyCustomerId.toString(), {
+          path: "/",
+          httpOnly: true,
+          secure: process.env.NODE_ENV === "production",
+          sameSite: "lax",
+          maxAge: 60 * 60 * 24,
+        })
       }
-
-      // If admin has collector access, redirect to role selection page
-      if (adminOrderMatch) {
-        console.log(`[auth/callback] Admin also has collector access - redirecting to role selection`)
-        const adminCookie = buildAdminSessionCookie(email)
-        const roleSelectionRedirect = NextResponse.redirect(new URL("/auth/select-role", origin), { status: 307 })
-        
-        roleSelectionRedirect.cookies.set(ADMIN_SESSION_COOKIE_NAME, adminCookie.value, adminCookie.options)
-        deleteCookie(roleSelectionRedirect, PENDING_VENDOR_EMAIL_COOKIE)
-        deleteCookie(roleSelectionRedirect, REQUIRE_ACCOUNT_SELECTION_COOKIE)
-        
-        return roleSelectionRedirect
-      }
-
-      // Admin without collector access - go straight to admin dashboard
-      const adminCookie = buildAdminSessionCookie(email)
-      const adminRedirect = NextResponse.redirect(new URL("/admin/dashboard", origin), { status: 307 })
-
-      adminRedirect.cookies.set(ADMIN_SESSION_COOKIE_NAME, adminCookie.value, adminCookie.options)
-      adminRedirect.cookies.set(VENDOR_SESSION_COOKIE_NAME, "", { ...clearVendorSessionCookie().options, maxAge: 0 })
-      deleteCookie(adminRedirect, PENDING_VENDOR_EMAIL_COOKIE)
-      deleteCookie(adminRedirect, REQUIRE_ACCOUNT_SELECTION_COOKIE)
-
-      console.log(`[auth/callback] Admin login successful for ${email}, redirecting to admin dashboard`)
-      return adminRedirect
+      
+      console.log(`[auth/callback] Collector login successful for ${email}`)
     }
+
+    return redirectResponse
   } catch (error: any) {
     console.error('[auth/callback] Error in processUserLogin:', error)
-    // Return error response instead of throwing
     return NextResponse.redirect(
       new URL(`/login?error=${encodeURIComponent('Login processing failed. Please try again.')}`, origin),
       { status: 307 }
     )
   }
-
-  // For non-admins, try to link vendor
-  const vendor = await linkSupabaseUserToVendor(user)
-
-  console.log(`[auth/callback] Vendor linking result: ${vendor ? `${vendor.vendor_name} (status: ${vendor.status})` : "null"}`)
-
-  // If vendor is linked, set vendor session and redirect to vendor dashboard
-  if (vendor) {
-    console.log(`[auth/callback] Vendor linked: ${vendor.vendor_name}, status: ${vendor.status}, email: ${email}`)
-    const sessionCookie = buildVendorSessionCookie(vendor.vendor_name)
-
-    let destination = DEFAULT_VENDOR_REDIRECT
-    if (vendor.status && vendor.status !== "active") {
-      if (vendor.status === "pending" || vendor.status === "review") {
-        destination = PENDING_VENDOR_REDIRECT
-      } else if (vendor.status === "disabled" || vendor.status === "suspended") {
-        destination = DENIED_VENDOR_REDIRECT
-      }
-    }
-
-    const redirectUrl = new URL(destination, origin)
-    const redirectResponse = NextResponse.redirect(redirectUrl, { status: 307 })
-
-    redirectResponse.cookies.set(sessionCookie.name, sessionCookie.value, {
-      ...sessionCookie.options,
-    })
-
-    redirectResponse.cookies.set(ADMIN_SESSION_COOKIE_NAME, "", {
-      ...clearAdminSessionCookie().options,
-      maxAge: 0,
-    })
-
-    deleteCookie(redirectResponse, PENDING_VENDOR_EMAIL_COOKIE)
-    deleteCookie(redirectResponse, REQUIRE_ACCOUNT_SELECTION_COOKIE)
-
-    console.log(`[auth/callback] Redirecting vendor to: ${destination}`)
-    return redirectResponse
-  }
-
-  // Check if the user is a collector (has orders or a profile)
-  const serviceClient = createServiceClient()
-  const { data: orderMatch } = await serviceClient
-    .from("orders")
-    .select("customer_id, shopify_id")
-    .eq("customer_email", email)
-    .limit(1)
-    .maybeSingle()
-
-  const { data: profileMatch } = await serviceClient
-    .from("collector_profiles")
-    .select("id")
-    .eq("email", email)
-    .maybeSingle()
-
-  if (orderMatch || profileMatch) {
-    console.log(`[auth/callback] Collector detected for email: ${email}`)
-    const shopifyCustomerId = orderMatch?.customer_id || orderMatch?.shopify_id
-
-    const collectorCookie = buildCollectorSessionCookie({
-      shopifyCustomerId: shopifyCustomerId ? shopifyCustomerId.toString() : null,
-      email,
-      issuedAt: Date.now(),
-    })
-
-    const collectorRedirect = NextResponse.redirect(new URL("/collector/dashboard", origin), { status: 307 })
-    collectorRedirect.cookies.set(collectorCookie.name, collectorCookie.value, collectorCookie.options)
-
-    if (shopifyCustomerId) {
-      collectorRedirect.cookies.set("shopify_customer_id", shopifyCustomerId.toString(), {
-        path: "/",
-        httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
-        sameSite: "lax",
-        maxAge: 60 * 60 * 24,
-      })
-    }
-
-    deleteCookie(collectorRedirect, REQUIRE_ACCOUNT_SELECTION_COOKIE)
-    return collectorRedirect
-  }
-
-  // No vendor linked and not admin – block unregistered users
-  console.log(`[auth/callback] No vendor or collector linked for email: ${email}`)
-  const notRegisteredResponse = NextResponse.redirect(new URL(NOT_REGISTERED_REDIRECT, origin), { status: 307 })
-  deleteCookie(notRegisteredResponse, VENDOR_SESSION_COOKIE_NAME)
-
-  const supabase = createRouteClient(cookieStore)
-  await supabase.auth.signOut()
-  notRegisteredResponse.cookies.set(ADMIN_SESSION_COOKIE_NAME, "", { ...clearAdminSessionCookie().options, maxAge: 0 })
-  await logFailedLoginAttempt({
-    email,
-    method: "oauth",
-    reason: "No vendor or collector linked for non-admin user",
-  })
-
-  return notRegisteredResponse
 }
 
 /**
@@ -893,9 +864,8 @@ export async function GET(request: NextRequest) {
   // Get user from session (already exchanged above if code was present)
   const user = session.user
   const email = user.email?.toLowerCase() ?? null
-  const isAdmin = isAdminEmail(email)
   
-  console.log(`[auth/callback] Processing login for email: ${email}, isAdmin: ${isAdmin}`)
+  console.log(`[auth/callback] Processing login with RBAC for email: ${email}`)
 
   // Determine redirect destination
   // Validate and construct the base URL properly
@@ -931,126 +901,8 @@ export async function GET(request: NextRequest) {
     return errorResponse
   }
 
-  // Handle admin users - set admin session and redirect to admin dashboard
-  if (isAdmin && email) {
-    console.log(`[auth/callback] Admin user detected - setting admin session and redirecting to dashboard`)
-    
-    // ... (rest of admin logic) ...
-
-    // Build admin session cookie
-    const adminCookie = buildAdminSessionCookie(email)
-    const adminRedirect = NextResponse.redirect(new URL("/admin/dashboard", finalRedirectBase), { status: 307 })
-
-    // Set admin session cookie
-    adminRedirect.cookies.set(ADMIN_SESSION_COOKIE_NAME, adminCookie.value, adminCookie.options)
-
-    // Clear vendor session cookie (admin shouldn't have vendor access)
-    adminRedirect.cookies.set(VENDOR_SESSION_COOKIE_NAME, "", { ...clearVendorSessionCookie().options, maxAge: 0 })
-
-    // Clear pending vendor email cookie
-    deleteCookie(adminRedirect, PENDING_VENDOR_EMAIL_COOKIE)
-
-    // Clear account selection requirement after successful login
-    deleteCookie(adminRedirect, REQUIRE_ACCOUNT_SELECTION_COOKIE)
-
-    console.log(`[auth/callback] Admin login successful for ${email}, redirecting to admin dashboard`)
-    return adminRedirect
-  }
-
-  // For non-admins, try to link vendor
-  const vendor = await linkSupabaseUserToVendor(user)
-  
-  console.log(`[auth/callback] Vendor linking result: ${vendor ? `${vendor.vendor_name} (status: ${vendor.status})` : "null"}`)
-
-  // If vendor is linked, set vendor session and redirect to vendor dashboard
-  if (vendor) {
-    // ... existing vendor logic ...
-    console.log(`[auth/callback] Vendor linked: ${vendor.vendor_name}, status: ${vendor.status}, email: ${email}`)
-    const sessionCookie = buildVendorSessionCookie(vendor.vendor_name)
-    
-    let destination = DEFAULT_VENDOR_REDIRECT
-    if (vendor.status && vendor.status !== "active") {
-      if (vendor.status === "pending" || vendor.status === "review") {
-        destination = PENDING_VENDOR_REDIRECT
-      } else if (vendor.status === "disabled" || vendor.status === "suspended") {
-        destination = DENIED_VENDOR_REDIRECT
-      }
-    }
-
-    const redirectUrl = new URL(destination, finalRedirectBase)
-    const redirectResponse = NextResponse.redirect(redirectUrl, { status: 307 })
-    
-    redirectResponse.cookies.set(sessionCookie.name, sessionCookie.value, {
-      ...sessionCookie.options,
-    })
-    
-    redirectResponse.cookies.set(ADMIN_SESSION_COOKIE_NAME, "", {
-      ...clearAdminSessionCookie().options,
-      maxAge: 0,
-    })
-    
-    deleteCookie(redirectResponse, PENDING_VENDOR_EMAIL_COOKIE)
-    deleteCookie(redirectResponse, REQUIRE_ACCOUNT_SELECTION_COOKIE)
-    
-    return redirectResponse
-  }
-
-  // NEW: Check if the user is a collector (has orders or a profile)
-  const serviceClient = createServiceClient()
-  const { data: orderMatch } = await serviceClient
-    .from("orders")
-    .select("customer_id, shopify_id")
-    .eq("customer_email", email)
-    .limit(1)
-    .maybeSingle()
-
-  const { data: profileMatch } = await serviceClient
-    .from("collector_profiles")
-    .select("id")
-    .eq("email", email)
-    .maybeSingle()
-
-  if (orderMatch || profileMatch) {
-    console.log(`[auth/callback] Collector detected for email: ${email}`)
-    const shopifyCustomerId = orderMatch?.customer_id || orderMatch?.shopify_id
-    
-    const collectorCookie = buildCollectorSessionCookie({
-      shopifyCustomerId: shopifyCustomerId ? shopifyCustomerId.toString() : null,
-      email,
-      issuedAt: Date.now(),
-    })
-
-    const collectorRedirect = NextResponse.redirect(new URL("/collector/dashboard", finalRedirectBase), { status: 307 })
-    collectorRedirect.cookies.set(collectorCookie.name, collectorCookie.value, collectorCookie.options)
-    
-    if (shopifyCustomerId) {
-      collectorRedirect.cookies.set("shopify_customer_id", shopifyCustomerId.toString(), {
-        path: "/",
-        httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
-        sameSite: "lax",
-        maxAge: 60 * 60 * 24,
-      })
-    }
-
-    deleteCookie(collectorRedirect, REQUIRE_ACCOUNT_SELECTION_COOKIE)
-    return collectorRedirect
-  }
-
-  // No vendor linked and not admin – block unregistered vendors
-  console.log(`[auth/callback] No vendor or collector linked for email: ${email}`)
-  const notRegisteredResponse = NextResponse.redirect(new URL(NOT_REGISTERED_REDIRECT, finalRedirectBase), { status: 307 })
-  deleteCookie(notRegisteredResponse, VENDOR_SESSION_COOKIE_NAME)
-
-  await supabase.auth.signOut()
-  notRegisteredResponse.cookies.set(ADMIN_SESSION_COOKIE_NAME, "", { ...clearAdminSessionCookie().options, maxAge: 0 })
-  await logFailedLoginAttempt({
-    email,
-    method: "oauth",
-    reason: "No vendor linked for non-admin user",
-  })
-
-  return notRegisteredResponse
+  // Use RBAC-based login processing
+  return await processUserLogin(user, email, finalRedirectBase, cookieStore)
   } catch (error: any) {
     // Catch all errors and redirect to login with error message
     console.error('[auth/callback] Unexpected error in auth callback:', {

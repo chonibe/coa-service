@@ -10,7 +10,7 @@ import { useState, useEffect } from "react"
 import { Separator } from "@/components/ui"
 
 
-import { Loader2, Save, X, Plus } from "lucide-react"
+import { Loader2, Save, X, Plus, Info } from "lucide-react"
 import { useToast } from "@/components/ui/use-toast"
 import type { ProductSubmissionData, ProductCreationFields } from "@/types/product-submission"
 import { BasicInfoStep } from "./basic-info-step"
@@ -19,7 +19,7 @@ import { VariantsStep } from "./variants-step"
 import { PrintFilesStep } from "./print-files-step"
 import { SeriesStep } from "./series-step"
 
-import { Card, CardContent, CardHeader, CardTitle, Button, Label, Input, Textarea, Badge, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Alert, AlertDescription } from "@/components/ui"
+import { Card, CardContent, CardHeader, CardTitle, Button, Label, Input, Textarea, Badge, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Alert, AlertDescription, AlertTitle } from "@/components/ui"
 interface ShopifyStyleFormProps {
   initialData?: ProductSubmissionData
   submissionId?: string

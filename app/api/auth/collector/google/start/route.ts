@@ -1,22 +1,31 @@
 import { NextRequest, NextResponse } from "next/server"
-import { createClient } from "@supabase/supabase-js"
-
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-
-if (!supabaseUrl || !supabaseAnonKey) {
-  throw new Error("Supabase environment variables are required for collector Google sign-in")
-}
-
-const supabase = createClient(supabaseUrl, supabaseAnonKey, {
-  auth: { autoRefreshToken: false, persistSession: false },
-})
+import { cookies } from "next/headers"
+import { createClient as createRouteClient } from "@/lib/supabase-server"
+import { LOGIN_INTENT_COOKIE } from "@/lib/vendor-auth"
 
 export async function GET(request: NextRequest) {
   const { origin, searchParams } = request.nextUrl
   const redirect = searchParams.get("redirect") || "/collector/dashboard"
 
-  const redirectTo = `${origin}/auth/collector/callback?redirect=${encodeURIComponent(redirect)}`
+  // Use same base URL as callback (NEXT_PUBLIC_APP_URL || origin) so redirect_uri matches exactly
+  let appUrl = process.env.NEXT_PUBLIC_APP_URL || origin
+  appUrl = (appUrl || "").replace(/\/$/, "")
+  if (!appUrl.startsWith("http://") && !appUrl.startsWith("https://") && origin?.startsWith("http")) {
+    appUrl = origin
+  }
+  const base = appUrl || origin
+
+  const redirectTo = `${base}/auth/collector/callback?redirect=${encodeURIComponent(redirect)}`
+
+  try {
+    new URL(redirectTo)
+  } catch {
+    console.error("[collector-google-start] Invalid redirectTo", redirectTo)
+    return NextResponse.json({ error: "Invalid redirect URL configuration" }, { status: 500 })
+  }
+
+  const cookieStore = cookies()
+  const supabase = createRouteClient(cookieStore)
 
   const { data, error } = await supabase.auth.signInWithOAuth({
     provider: "google",
@@ -32,6 +41,16 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: error?.message || "Unable to start Google sign-in" }, { status: 400 })
   }
 
-  return NextResponse.redirect(data.url)
-}
+  const response = NextResponse.redirect(data.url)
+  
+  // Set login intent to collector since this is the collector-specific OAuth endpoint
+  response.cookies.set(LOGIN_INTENT_COOKIE, 'collector', {
+    path: "/",
+    httpOnly: true,
+    sameSite: "lax",
+    secure: process.env.NODE_ENV === "production",
+    maxAge: 60 * 5, // 5 minutes
+  })
 
+  return response
+}

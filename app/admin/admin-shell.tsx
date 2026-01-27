@@ -30,6 +30,7 @@ import {
   BuildingOffice2Icon,
   MegaphoneIcon,
 } from "@heroicons/react/24/outline"
+import { Package } from "lucide-react"
 import { Icon } from "@/components/icon"
 
 import { ScrollArea } from "@/components/ui/scroll-area"
@@ -121,6 +122,11 @@ export function AdminShell({ children }: AdminShellProps) {
           title: "Product Editions",
           href: "/admin/product-editions",
           icon: <Icon size="sm"><AcademicCapIcon className="h-4 w-4" /></Icon>,
+        },
+        {
+          title: "First Edition Reserves",
+          href: "/admin/first-edition-reserves",
+          icon: <Icon size="sm"><Package className="h-4 w-4" /></Icon>,
         },
         {
           title: "Sync Vendor Names",

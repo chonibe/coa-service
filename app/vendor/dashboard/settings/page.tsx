@@ -15,7 +15,7 @@ import { useState, useEffect } from "react"
 import { Separator } from "@/components/ui"
 
 import { useToast } from "@/components/ui/use-toast"
-import { Loader2, AlertCircle, CheckCircle, Save, DollarSign, FileText, User, Sparkles, Clock, Zap } from "lucide-react"
+import { Loader2, AlertCircle, CheckCircle, Save, DollarSign, FileText, User, Sparkles, Clock, Zap, Info } from "lucide-react"
 
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle, Button, Input, Label, Tabs, TabsContent, TabsList, TabsTrigger, Checkbox, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Textarea, Alert, AlertDescription, AlertTitle, Switch } from "@/components/ui"
 interface VendorProfile {
@@ -495,6 +495,45 @@ export default function VendorSettingsPage() {
             View collector dashboard
           </Button>
         </CardHeader>
+      </Card>
+
+      <Card className="border shadow-sm">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <FileText className="h-4 w-4" />
+            Vendor Terms of Service
+          </CardTitle>
+          <CardDescription>
+            Review the terms and conditions for selling on Street Collector, including the First Edition Reserve Policy.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Alert>
+            <Info className="h-4 w-4" />
+            <AlertTitle>First Edition Reserve Policy</AlertTitle>
+            <AlertDescription className="mt-2">
+              <p className="text-sm mb-2">
+                When your artwork is approved, edition #1 will be automatically reserved for the Street Collector collection. 
+                You'll receive your standard 25% commission on the reserved edition, and public sales will start from edition #2.
+              </p>
+              <Button
+                variant="outline"
+                size="sm"
+                asChild
+                className="mt-2"
+              >
+                <a 
+                  href="/docs/features/vendor-terms/VENDOR_TERMS_OF_SERVICE.md" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                >
+                  <FileText className="h-4 w-4 mr-2" />
+                  View Full Terms of Service
+                </a>
+              </Button>
+            </AlertDescription>
+          </Alert>
+        </CardContent>
       </Card>
 
       <div className="grid gap-6 md:grid-cols-7">

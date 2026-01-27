@@ -101,7 +101,7 @@ export default function CollectorsDirectoryPage() {
           {collectors.map((collector) => (
             <Link 
               key={collector.user_email} 
-              href={`/admin/collectors/${collector.shopify_customer_id || collector.user_id || collector.user_email}`}
+              href={`/admin/collectors/${collector.public_id}`}
               className="block group"
             >
               <Card className="h-full hover:shadow-md transition-all duration-200 border-slate-200/60 group-hover:border-primary/40">
