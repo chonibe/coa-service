@@ -1,8 +1,7 @@
 // app/vendor/dashboard/artwork-pages/components/VoiceNoteRecorder.tsx
 import React, { useState, useRef } from 'react';
-import { Button, Progress } from '@/components/ui';
+import { Button, Progress, Input } from '@/components/ui';
 import { Mic, Square, Play, Pause, Upload, Trash2, Loader2 } from 'lucide-react';
-import { Input } from '@/components/ui/input';
 import { useToast } from '@/components/ui/use-toast';
 
 interface VoiceNoteRecorderProps {

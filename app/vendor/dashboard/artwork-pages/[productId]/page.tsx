@@ -26,6 +26,10 @@ import {
   Copy,
   ExternalLink,
   Upload,
+  Mic,
+  Camera,
+  Lightbulb,
+  PenTool,
 } from "lucide-react"
 import Image from "next/image"
 import Link from "next/link"
@@ -35,6 +39,13 @@ import { MediaLibraryModal, type MediaItem } from "@/components/vendor/MediaLibr
 import { VideoBlock } from "@/app/collector/artwork/[id]/components/VideoBlock"
 import { AudioBlock } from "@/app/collector/artwork/[id]/components/AudioBlock"
 import { ImageBlock } from "@/app/collector/artwork/[id]/components/ImageBlock"
+
+// Import new immersive editor components
+import SoundtrackEditor from "../components/SoundtrackEditor"
+import VoiceNoteRecorder from "../components/VoiceNoteRecorder"
+import ProcessGalleryEditor from "../components/ProcessGalleryEditor"
+import InspirationBoardEditor from "../components/InspirationBoardEditor"
+import ArtistNoteEditor from "../components/ArtistNoteEditor"
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, Button, Badge, Alert, AlertDescription } from "@/components/ui"
 interface ContentBlock {
@@ -526,34 +537,116 @@ export default function ArtworkPageEditor() {
             </div>
           ) : (
             <>
-              {contentBlocks.map((block) => (
-                // This will be replaced by BuilderSection component
-                <div key={block.id} className="bg-gray-800 rounded-lg p-6 shadow-xl space-y-4">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <GripVertical className="h-5 w-5 text-gray-500" />
-                      <span className="text-lg font-semibold text-white">{block.title || block.block_type || "Untitled Block"}</span>
-                      {block.is_published && (
-                        <Badge className="bg-green-500 text-white px-3 py-1 rounded-full">
-                          <CheckCircle className="h-3 w-3 mr-1" />
-                          Published
-                        </Badge>
-                      )}
+              {contentBlocks.map((block) => {
+                const blockType = block.block_type || ""
+                
+                return (
+                  <div key={block.id} className="bg-gray-800 rounded-lg p-6 shadow-xl space-y-4">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <GripVertical className="h-5 w-5 text-gray-500" />
+                        <span className="text-lg font-semibold text-white">{block.title || blockType || "Untitled Block"}</span>
+                        {block.is_published && (
+                          <Badge className="bg-green-500 text-white px-3 py-1 rounded-full">
+                            <CheckCircle className="h-3 w-3 mr-1" />
+                            Published
+                          </Badge>
+                        )}
+                      </div>
+                      <Button variant="ghost" size="sm" onClick={() => deleteBlock(block.id)} className="text-gray-400 hover:text-white">
+                        <X className="h-5 w-5" />
+                      </Button>
                     </div>
-                    <Button variant="ghost" size="sm" onClick={() => deleteBlock(block.id)} className="text-gray-400 hover:text-white">
-                      <X className="h-5 w-5" />
-                    </Button>
+                    
+                    {/* Render appropriate editor based on block type */}
+                    {(() => {
+                      switch (blockType) {
+                        case "Artwork Soundtrack Block":
+                          return (
+                            <SoundtrackEditor
+                              blockId={block.id}
+                              config={block.block_config || {}}
+                              onChange={(config) => updateBlock(block.id, { block_config: config })}
+                            />
+                          )
+                        
+                        case "Artwork Voice Note Block":
+                          return (
+                            <VoiceNoteRecorder
+                              title={block.title}
+                              contentUrl={block.content_url}
+                              transcript={block.block_config?.transcript}
+                              onUpdate={(updates) => updateBlock(block.id, updates)}
+                              onFileUpload={(file, type) => handleFileUpload(block.id, file, type)}
+                            />
+                          )
+                        
+                        case "Artwork Process Gallery Block":
+                          return (
+                            <ProcessGalleryEditor
+                              blockId={block.id}
+                              config={block.block_config || {}}
+                              onChange={(config) => updateBlock(block.id, { block_config: config })}
+                              onImageUpload={() => {
+                                setContentLibraryBlockId(block.id)
+                                setContentLibraryType("image")
+                                setShowContentLibrary(true)
+                              }}
+                            />
+                          )
+                        
+                        case "Artwork Inspiration Block":
+                          return (
+                            <InspirationBoardEditor
+                              blockId={block.id}
+                              config={block.block_config || {}}
+                              onChange={(config) => updateBlock(block.id, { block_config: config })}
+                              onImageUpload={() => {
+                                setContentLibraryBlockId(block.id)
+                                setContentLibraryType("image")
+                                setShowContentLibrary(true)
+                              }}
+                            />
+                          )
+                        
+                        case "Artwork Artist Note Block":
+                          return (
+                            <ArtistNoteEditor
+                              content={block.description || ""}
+                              signatureUrl={block.block_config?.signature_url}
+                              onUpdate={(updates) => {
+                                if (updates.content !== undefined) {
+                                  updateBlock(block.id, { description: updates.content })
+                                }
+                                if (updates.signature_url !== undefined) {
+                                  updateBlock(block.id, { 
+                                    block_config: { 
+                                      ...block.block_config, 
+                                      signature_url: updates.signature_url 
+                                    } 
+                                  })
+                                }
+                              }}
+                              onFileUpload={(file, type) => handleFileUpload(block.id, file, type)}
+                            />
+                          )
+                        
+                        default:
+                          // Generic editor for other block types
+                          return (
+                            <textarea
+                              placeholder="Content..."
+                              value={block.description || ""}
+                              onChange={(e) => updateBlock(block.id, { description: e.target.value })}
+                              className="w-full p-4 bg-gray-700 rounded-md min-h-[120px] text-gray-200 border border-gray-600 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                              maxLength={2000}
+                            />
+                          )
+                      }
+                    })()}
                   </div>
-                  {/* Generic editor for demonstration, will be replaced by specific editors */}
-                  <textarea
-                    placeholder="Content..."
-                    value={block.description || ""}
-                    onChange={(e) => updateBlock(block.id, { description: e.target.value })}
-                    className="w-full p-4 bg-gray-700 rounded-md min-h-[120px] text-gray-200 border border-gray-600 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
-                    maxLength={2000}
-                  />
-                </div>
-              ))}
+                )
+              })}
             </>
           )}
 
@@ -624,9 +717,9 @@ export default function ArtworkPageEditor() {
                     onClick={(e) => { e.preventDefault(); e.stopPropagation(); addBlock("Artwork Soundtrack Block"); }}
                     disabled={isSaving}
                     type="button"
-                    className="flex flex-col items-center justify-center h-28 bg-gray-800 text-white hover:bg-gray-700 border-gray-700 text-base"
+                    className="flex flex-col items-center justify-center h-28 bg-gradient-to-br from-green-900/20 to-gray-800 text-white hover:from-green-800/30 hover:to-gray-700 border-green-700/30 text-base"
                   >
-                    <Music className="h-6 w-6 mb-2" />
+                    <Music className="h-6 w-6 mb-2 text-green-400" />
                     Soundtrack
                   </Button>
                   <Button
@@ -635,9 +728,9 @@ export default function ArtworkPageEditor() {
                     onClick={(e) => { e.preventDefault(); e.stopPropagation(); addBlock("Artwork Voice Note Block"); }}
                     disabled={isSaving}
                     type="button"
-                    className="flex flex-col items-center justify-center h-28 bg-gray-800 text-white hover:bg-gray-700 border-gray-700 text-base"
+                    className="flex flex-col items-center justify-center h-28 bg-gradient-to-br from-purple-900/20 to-gray-800 text-white hover:from-purple-800/30 hover:to-gray-700 border-purple-700/30 text-base"
                   >
-                    <Sparkles className="h-6 w-6 mb-2" />
+                    <Mic className="h-6 w-6 mb-2 text-purple-400" />
                     Voice Note
                   </Button>
                   <Button
@@ -646,9 +739,9 @@ export default function ArtworkPageEditor() {
                     onClick={(e) => { e.preventDefault(); e.stopPropagation(); addBlock("Artwork Process Gallery Block"); }}
                     disabled={isSaving}
                     type="button"
-                    className="flex flex-col items-center justify-center h-28 bg-gray-800 text-white hover:bg-gray-700 border-gray-700 text-base"
+                    className="flex flex-col items-center justify-center h-28 bg-gradient-to-br from-blue-900/20 to-gray-800 text-white hover:from-blue-800/30 hover:to-gray-700 border-blue-700/30 text-base"
                   >
-                    <ImageIcon className="h-6 w-6 mb-2" />
+                    <Camera className="h-6 w-6 mb-2 text-blue-400" />
                     Process Gallery
                   </Button>
                   <Button
@@ -657,10 +750,21 @@ export default function ArtworkPageEditor() {
                     onClick={(e) => { e.preventDefault(); e.stopPropagation(); addBlock("Artwork Inspiration Block"); }}
                     disabled={isSaving}
                     type="button"
-                    className="flex flex-col items-center justify-center h-28 bg-gray-800 text-white hover:bg-gray-700 border-gray-700 text-base"
+                    className="flex flex-col items-center justify-center h-28 bg-gradient-to-br from-yellow-900/20 to-gray-800 text-white hover:from-yellow-800/30 hover:to-gray-700 border-yellow-700/30 text-base"
                   >
-                    <ImageIcon className="h-6 w-6 mb-2" />
+                    <Lightbulb className="h-6 w-6 mb-2 text-yellow-400" />
                     Inspiration Board
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="lg"
+                    onClick={(e) => { e.preventDefault(); e.stopPropagation(); addBlock("Artwork Artist Note Block"); }}
+                    disabled={isSaving}
+                    type="button"
+                    className="flex flex-col items-center justify-center h-28 bg-gradient-to-br from-amber-900/20 to-gray-800 text-white hover:from-amber-800/30 hover:to-gray-700 border-amber-700/30 text-base"
+                  >
+                    <PenTool className="h-6 w-6 mb-2 text-amber-400" />
+                    Artist Note
                   </Button>
                 </div>
                 <Button

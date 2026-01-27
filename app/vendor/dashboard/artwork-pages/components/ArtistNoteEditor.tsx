@@ -1,5 +1,5 @@
 // app/vendor/dashboard/artwork-pages/components/ArtistNoteEditor.tsx
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { Input, Button } from '@/components/ui';
 import { Upload, ImageIcon, Loader2 } from 'lucide-react';
 import Image from 'next/image';
