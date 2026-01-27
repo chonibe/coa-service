@@ -73,7 +73,8 @@ export function BasicInfoStep({ formData, setFormData, fieldsConfig }: BasicInfo
         </p>
       </div>
 
-      <div className="space-y-2">
+      {/* Hidden: URL Handle and Vendor fields */}
+      {/* <div className="space-y-2">
         <Label htmlFor="handle">URL Handle</Label>
         <Input
           id="handle"
@@ -84,9 +85,10 @@ export function BasicInfoStep({ formData, setFormData, fieldsConfig }: BasicInfo
         <p className="text-xs text-muted-foreground">
           The URL-friendly version of your artwork name. Auto-generated from title if left empty.
         </p>
-      </div>
+      </div> */}
 
-      {formData.vendor && (
+      {/* Hidden: Vendor name field */}
+      {/* {formData.vendor && (
         <div className="space-y-2">
           <Label htmlFor="vendor">Vendor</Label>
           <Input
@@ -99,7 +101,7 @@ export function BasicInfoStep({ formData, setFormData, fieldsConfig }: BasicInfo
             Your vendor name (automatically assigned)
           </p>
         </div>
-      )}
+      )} */}
     </div>
   )
 }

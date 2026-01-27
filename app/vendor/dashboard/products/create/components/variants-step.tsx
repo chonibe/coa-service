@@ -605,8 +605,8 @@ export function VariantsStep({ formData, setFormData }: VariantsStepProps) {
               variant="ghost"
               size="sm"
               onClick={() => {
-                setCurrentStep(1)
-                setSelectedDropType(null)
+                // Go back to step 2 (edition size) but keep timed edition selected
+                setCurrentStep(2)
               }}
             >
               ← Back
@@ -616,6 +616,17 @@ export function VariantsStep({ formData, setFormData }: VariantsStepProps) {
           <p className="text-sm text-muted-foreground">
             Define when collectors can purchase this timed edition
           </p>
+
+          {/* Highlight if artwork belongs to time-based series */}
+          {formData.series_id && formData.series_name && (
+            <Alert className="mt-4 border-blue-200 bg-blue-50 dark:bg-blue-900/20">
+              <Info className="h-4 w-4" />
+              <AlertDescription>
+                This artwork belongs to the <strong>"{formData.series_name}"</strong> series.
+                The series unlock mechanics will still apply alongside this timed sale.
+              </AlertDescription>
+            </Alert>
+          )}
         </div>
 
         {/* Quick Duration Presets */}

@@ -4,7 +4,8 @@ import { useState, useEffect } from "react"
 import Link from "next/link"
 import { Loader2, Info, X, Crown, Clock, Radio, Lock, ArrowRight } from "lucide-react"
 import type { ProductSubmissionData } from "@/types/product-submission"
-import { BenefitsManagement } from "./benefits-management"
+// Removed: BenefitsManagement import - Hidden Treasures removed from flow
+// import { BenefitsManagement } from "./benefits-management"
 import { Label, Button, Card, CardContent, Alert, AlertDescription } from "@/components/ui"
 
 interface SeriesStepProps {
@@ -176,8 +177,8 @@ export function SeriesStep({ formData, setFormData }: SeriesStepProps) {
           </CardContent>
         </Card>
 
-        {/* Benefits Management */}
-        <Card>
+        {/* Removed: Benefits Management / Hidden Treasures */}
+        {/* <Card>
           <CardContent className="pt-6">
             <BenefitsManagement
               benefits={formData.benefits || []}
@@ -185,7 +186,7 @@ export function SeriesStep({ formData, setFormData }: SeriesStepProps) {
               seriesId={formData.series_id}
             />
           </CardContent>
-        </Card>
+        </Card> */}
       </div>
     )
   }

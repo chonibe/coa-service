@@ -220,8 +220,9 @@ export function ShopifyStyleArtworkForm({
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Main Content - Left Column (2/3 width) */}
-        <div className="lg:col-span-2 space-y-6">
+        {/* On mobile: Series first (after title), then main content */}
+        {/* On desktop: Main content first (2/3 width) */}
+        <div className="lg:col-span-2 lg:order-1 order-2 space-y-6">
           {/* Title & Description */}
           <Card>
             <CardContent className="pt-6">
@@ -267,19 +268,11 @@ export function ShopifyStyleArtworkForm({
             </CardContent>
           </Card>
 
-          {/* Series */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Series (Collection)</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <SeriesStep formData={formData} setFormData={setFormData} />
-            </CardContent>
-          </Card>
+          {/* Removed: Series step moved to right sidebar */}
         </div>
 
         {/* Right Sidebar - Organization */}
-        <div className="space-y-6">
+        <div className="lg:order-2 order-1 space-y-6">
           <Card>
             <CardHeader>
               <CardTitle>Status</CardTitle>
@@ -290,6 +283,18 @@ export function ShopifyStyleArtworkForm({
               </Badge>
             </CardContent>
           </Card>
+
+          {/* Series Selection - Desktop: in sidebar, Mobile: after title */}
+          <div className="hidden lg:block">
+            <Card>
+              <CardHeader>
+                <CardTitle>Series (Collection)</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <SeriesStep formData={formData} setFormData={setFormData} />
+              </CardContent>
+            </Card>
+          </div>
 
           <Card>
             <CardHeader>
