@@ -116,7 +116,7 @@ export default function ArtworkPageEditor() {
       }
 
       const data = await response.json()
-      console.log("[Editor] Loaded data:", data)
+      console.log("[Editor v2] Loaded data:", data)
       
       setProduct(data.product)
       setVendor(data.vendor)
