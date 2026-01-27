@@ -736,8 +736,8 @@ export default function ArtworkPageEditor() {
     )
   }
 
-  const publishedCount = contentBlocks.filter(b => b.is_published).length
-  const totalCount = contentBlocks.length
+  const publishedCount = (contentBlocks || []).filter(b => b.is_published).length
+  const totalCount = (contentBlocks || []).length
 
   return (
     <DndContext
@@ -759,7 +759,7 @@ export default function ArtworkPageEditor() {
               Back
             </Button>
             <div>
-              <h1 className="text-2xl font-bold">{product.name}</h1>
+              <h1 className="text-2xl font-bold">{product?.name || 'Loading...'}</h1>
               <p className="text-sm text-gray-400">
                 {publishedCount} of {totalCount} blocks published
               </p>
@@ -775,7 +775,7 @@ export default function ArtworkPageEditor() {
             <Button
               variant="outline"
               onClick={() => setShowCopyModal(true)}
-              disabled={availableProducts.filter((p) => p.id !== productId && p.hasContent).length === 0}
+              disabled={(availableProducts || []).filter((p) => p.id !== productId && p.hasContent).length === 0}
               className="bg-gray-800 border-gray-700"
             >
               <Copy className="h-4 w-4 mr-2" />
