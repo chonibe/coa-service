@@ -27,18 +27,17 @@ export async function GET(
     let submission: { id: string; product_data: any; vendor_name: string } | null = null
 
     if (isUUID) {
-      // It's a submission ID - fetch from vendor_product_submissions
+      // It's a UUID - could be a submission ID OR a product ID (products table also uses UUIDs)
+      // Try vendor_product_submissions first
       const { data: submissionData, error: submissionError } = await supabase
         .from("vendor_product_submissions")
         .select("id, product_data, vendor_name")
         .eq("id", productId)
         .eq("vendor_name", vendorName)
-        .single()
+        .maybeSingle() // Use maybeSingle to avoid PGRST116 error
 
-      if (submissionError || !submissionData) {
-        console.error(`[Artwork Pages API] Submission not found: ${productId}`, submissionError)
-        // Don't return 404 yet, will try products table next
-      } else {
+      if (submissionData) {
+        // Found as a submission
         submission = submissionData
         const productData = submissionData.product_data as any
         product = {
@@ -46,23 +45,38 @@ export async function GET(
           name: productData?.title || "Untitled Artwork",
           vendor_name: submissionData.vendor_name,
         }
+        console.log(`[Artwork Pages API] Found submission: ${productId}`)
+      } else if (submissionError && submissionError.code !== 'PGRST116') {
+        // Real database error (not just "not found")
+        console.error(`[Artwork Pages API] Database error looking up submission: ${productId}`, submissionError)
+      } else {
+        // Not found in submissions - will fall through to try products table
+        console.log(`[Artwork Pages API] UUID ${productId} not found in submissions, will try products table`)
       }
     }
     
     if (!product) {
-      // It's a product ID - fetch from products table
+      // Try products table (works for both UUIDs and non-UUIDs)
       const { data: productData, error: productError } = await supabase
         .from("products")
         .select("id, name, vendor_name")
         .eq("id", productId)
         .eq("vendor_name", vendorName)
-        .single()
+        .maybeSingle()
 
-      if (productError || !productData) {
-        console.error(`[Artwork Pages API] Product not found: ${productId}`, productError)
+      if (productError) {
+        console.error(`[Artwork Pages API] Database error looking up product: ${productId}`, productError)
+        return NextResponse.json({ 
+          error: "Database error",
+          message: productError.message
+        }, { status: 500 })
+      }
+
+      if (!productData) {
+        console.error(`[Artwork Pages API] Neither submission nor product found: ${productId}`)
         return NextResponse.json({ 
           error: "Product not found",
-          message: `No product found with ID: ${productId}. This product may have been deleted or the ID is incorrect.`,
+          message: `No product or submission found with ID: ${productId}. This may have been deleted or the ID is incorrect.`,
           productId
         }, { status: 404 })
       }
@@ -97,7 +111,7 @@ export async function GET(
       
       // Map to content block format
       contentBlocks = artworkBlocks.map((block: any, index: number) => ({
-        id: `temp-${index}`,
+        id: -index - 1, // Negative IDs for submission blocks (-1, -2, -3, etc.)
         benefit_type_id: 0, // Will be resolved by block_type
         title: block.title || "",
         description: block.description || null,
@@ -175,7 +189,7 @@ export async function GET(
         signature_url: vendor?.signature_url || null,
         bio: vendor?.bio || null,
       },
-      contentBlocks: contentBlocks.map((block: any) => ({
+      contentBlocks: contentBlocks.filter((block: any) => block && typeof block === 'object' && block.id !== undefined).map((block: any) => ({
         ...block,
         block_type: block.block_type || block.benefit_types?.name || null,
       })),
@@ -215,36 +229,45 @@ export async function POST(
     let submission: { id: string; product_data: any; vendor_name: string } | null = null
 
     if (isUUID) {
-      // It's a submission ID - fetch from vendor_product_submissions
+      // It's a UUID - could be a submission ID OR a product ID
+      // Try vendor_product_submissions first
       const { data: submissionData, error: submissionError } = await supabase
         .from("vendor_product_submissions")
         .select("id, product_data, vendor_name")
         .eq("id", productId)
         .eq("vendor_name", vendorName)
-        .single()
+        .maybeSingle()
 
-      if (submissionError || !submissionData) {
-        console.error(`[Artwork Pages API POST] Submission not found: ${productId}`, submissionError)
-      } else {
+      if (submissionData) {
         submission = submissionData
         product = {
           id: submissionData.id,
           vendor_name: submissionData.vendor_name,
         }
+        console.log(`[Artwork Pages API POST] Found submission: ${productId}`)
+      } else if (submissionError && submissionError.code !== 'PGRST116') {
+        console.error(`[Artwork Pages API POST] Database error looking up submission: ${productId}`, submissionError)
+      } else {
+        console.log(`[Artwork Pages API POST] UUID ${productId} not found in submissions, will try products table`)
       }
     }
     
     if (!product) {
-      // It's a product ID - fetch from products table
+      // Try products table (works for both UUIDs and non-UUIDs)
       const { data: productData, error: productError } = await supabase
         .from("products")
         .select("id, vendor_name")
         .eq("id", productId)
         .eq("vendor_name", vendorName)
-        .single()
+        .maybeSingle()
 
-      if (productError || !productData) {
-        console.error(`[Artwork Pages API POST] Product not found: ${productId}`, productError)
+      if (productError) {
+        console.error(`[Artwork Pages API POST] Database error looking up product: ${productId}`, productError)
+        return NextResponse.json({ error: "Database error" }, { status: 500 })
+      }
+
+      if (!productData) {
+        console.error(`[Artwork Pages API POST] Neither submission nor product found: ${productId}`)
         return NextResponse.json({ error: "Product not found" }, { status: 404 })
       }
 
@@ -257,19 +280,19 @@ export async function POST(
       const productData = submission.product_data as any
       const benefits = productData?.benefits || []
       
-      // Generate next temp ID
-      const tempIds = benefits
-        .filter((b: any) => b.id && b.id.startsWith('temp-'))
-        .map((b: any) => parseInt(b.id.replace('temp-', '')))
-      const nextTempId = tempIds.length > 0 ? Math.max(...tempIds) + 1 : 0
-      
+      // Generate next negative ID (for submission blocks)
+      const existingIds = benefits
+        .filter((b: any) => b.id && typeof b.id === 'number' && b.id < 0)
+        .map((b: any) => Math.abs(b.id))
+      const nextId = existingIds.length > 0 ? Math.max(...existingIds) + 1 : 1
+
       // Get max display_order
       const displayOrders = benefits.map((b: any) => b.display_order || 0)
       const nextOrder = displayOrders.length > 0 ? Math.max(...displayOrders) + 1 : 0
-      
+
       // Create new block
       const newBlock = {
-        id: `temp-${nextTempId}`,
+        id: -nextId, // Negative ID for submission blocks
         type: body.blockType,
         title: body.title || "",
         description: body.description || "",
@@ -411,36 +434,45 @@ export async function PUT(
     let submission: { id: string; product_data: any; vendor_name: string } | null = null
 
     if (isUUID) {
-      // It's a submission ID - fetch from vendor_product_submissions
+      // It's a UUID - could be a submission ID OR a product ID
+      // Try vendor_product_submissions first
       const { data: submissionData, error: submissionError } = await supabase
         .from("vendor_product_submissions")
         .select("id, product_data, vendor_name")
         .eq("id", productId)
         .eq("vendor_name", vendorName)
-        .single()
+        .maybeSingle()
 
-      if (submissionError || !submissionData) {
-        console.error(`[Artwork Pages API PUT] Submission not found: ${productId}`, submissionError)
-      } else {
+      if (submissionData) {
         submission = submissionData
         product = {
           id: submissionData.id,
           vendor_name: submissionData.vendor_name,
         }
+        console.log(`[Artwork Pages API PUT] Found submission: ${productId}`)
+      } else if (submissionError && submissionError.code !== 'PGRST116') {
+        console.error(`[Artwork Pages API PUT] Database error looking up submission: ${productId}`, submissionError)
+      } else {
+        console.log(`[Artwork Pages API PUT] UUID ${productId} not found in submissions, will try products table`)
       }
     }
     
     if (!product) {
-      // It's a product ID - fetch from products table
+      // Try products table (works for both UUIDs and non-UUIDs)
       const { data: productData, error: productError } = await supabase
         .from("products")
         .select("id, vendor_name")
         .eq("id", productId)
         .eq("vendor_name", vendorName)
-        .single()
+        .maybeSingle()
 
-      if (productError || !productData) {
-        console.error(`[Artwork Pages API PUT] Product not found: ${productId}`, productError)
+      if (productError) {
+        console.error(`[Artwork Pages API PUT] Database error looking up product: ${productId}`, productError)
+        return NextResponse.json({ error: "Database error" }, { status: 500 })
+      }
+
+      if (!productData) {
+        console.error(`[Artwork Pages API PUT] Neither submission nor product found: ${productId}`)
         return NextResponse.json({ error: "Product not found" }, { status: 404 })
       }
 
@@ -576,36 +608,45 @@ export async function DELETE(
     let submission: { id: string; product_data: any; vendor_name: string } | null = null
 
     if (isUUID) {
-      // It's a submission ID - fetch from vendor_product_submissions
+      // It's a UUID - could be a submission ID OR a product ID
+      // Try vendor_product_submissions first
       const { data: submissionData, error: submissionError } = await supabase
         .from("vendor_product_submissions")
         .select("id, product_data, vendor_name")
         .eq("id", productId)
         .eq("vendor_name", vendorName)
-        .single()
+        .maybeSingle()
 
-      if (submissionError || !submissionData) {
-        console.error(`[Artwork Pages API DELETE] Submission not found: ${productId}`, submissionError)
-      } else {
+      if (submissionData) {
         submission = submissionData
         product = {
           id: submissionData.id,
           vendor_name: submissionData.vendor_name,
         }
+        console.log(`[Artwork Pages API DELETE] Found submission: ${productId}`)
+      } else if (submissionError && submissionError.code !== 'PGRST116') {
+        console.error(`[Artwork Pages API DELETE] Database error looking up submission: ${productId}`, submissionError)
+      } else {
+        console.log(`[Artwork Pages API DELETE] UUID ${productId} not found in submissions, will try products table`)
       }
     }
     
     if (!product) {
-      // It's a product ID - fetch from products table
+      // Try products table (works for both UUIDs and non-UUIDs)
       const { data: productData, error: productError } = await supabase
         .from("products")
         .select("id, vendor_name")
         .eq("id", productId)
         .eq("vendor_name", vendorName)
-        .single()
+        .maybeSingle()
 
-      if (productError || !productData) {
-        console.error(`[Artwork Pages API DELETE] Product not found: ${productId}`, productError)
+      if (productError) {
+        console.error(`[Artwork Pages API DELETE] Database error looking up product: ${productId}`, productError)
+        return NextResponse.json({ error: "Database error" }, { status: 500 })
+      }
+
+      if (!productData) {
+        console.error(`[Artwork Pages API DELETE] Neither submission nor product found: ${productId}`)
         return NextResponse.json({ error: "Product not found" }, { status: 404 })
       }
 

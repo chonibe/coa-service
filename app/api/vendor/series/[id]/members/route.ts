@@ -109,12 +109,15 @@ export async function GET(
     }
 
     // Enrich with artwork details and benefits
-    const enrichedMembers = await Promise.all(
+    // Also track orphaned members to filter out
+    const enrichedMembersRaw = await Promise.all(
       (members || []).map(async (member) => {
         let artworkTitle = ""
         let artworkImage = ""
         let hasBenefits = false
         let benefitCount = 0
+        let isOrphaned = false
+        let submissionShopifyProductId: string | null = null
         let connections: {
           hidden_series?: { id: string; name: string } | null
           vip_artwork?: { id: string; title: string } | null
@@ -122,13 +125,23 @@ export async function GET(
         } = {}
 
         if (member.submission_id) {
-          const { data: submission } = await supabase
+          const { data: submission, error: submissionError } = await supabase
             .from("vendor_product_submissions")
             .select("product_data, shopify_product_id")
             .eq("id", member.submission_id)
-            .single()
+            .maybeSingle()
+          
+          // Check if submission is orphaned (doesn't exist)
+          if (!submission || submissionError) {
+            console.warn(`[Series Members API] Orphaned member detected: member ${member.id} references missing submission ${member.submission_id}`)
+            isOrphaned = true
+            // Don't return early - we'll filter these out at the end
+          } else {
+            // Store shopify_product_id for later use
+            submissionShopifyProductId = submission.shopify_product_id
+          }
 
-          if (submission?.product_data) {
+          if (submission?.product_data && !isOrphaned) {
             artworkTitle = (submission.product_data as any).title || ""
             const images = (submission.product_data as any).images || []
             artworkImage = images[0]?.src || ""
@@ -264,11 +277,11 @@ export async function GET(
 
         // Get product ID if shopify_product_id exists
         let productId: string | null = null
-        if (submission?.shopify_product_id) {
+        if (submissionShopifyProductId && !isOrphaned) {
           const { data: product } = await supabase
             .from("products")
             .select("id")
-            .eq("product_id", submission.shopify_product_id)
+            .eq("product_id", submissionShopifyProductId)
             .eq("vendor_name", vendorName)
             .maybeSingle()
           
@@ -283,9 +296,19 @@ export async function GET(
           benefit_count: benefitCount,
           connections: Object.keys(connections).length > 0 ? connections : undefined,
           product_id: productId, // Add product_id for linking
+          is_orphaned: isOrphaned, // Flag for orphaned submissions
         }
       })
     )
+
+    // Filter out orphaned members (submissions that no longer exist)
+    const enrichedMembers = enrichedMembersRaw.filter(member => !member.is_orphaned)
+    
+    // Log if any orphaned members were filtered out
+    const orphanedCount = enrichedMembersRaw.length - enrichedMembers.length
+    if (orphanedCount > 0) {
+      console.warn(`[Series Members API] Filtered out ${orphanedCount} orphaned member(s) from series ${seriesId}. Run cleanup_orphaned_series_members() to remove them permanently.`)
+    }
 
     return NextResponse.json({ members: enrichedMembers })
   } catch (error: any) {
