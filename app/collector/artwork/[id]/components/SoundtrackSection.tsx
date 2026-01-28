@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react"
 import { Music, ExternalLink } from "lucide-react"
+import { Card, CardContent } from "@/components/ui"
 
 interface SoundtrackSectionProps {
   title?: string
@@ -39,44 +40,48 @@ export default function SoundtrackSection({ title, config }: SoundtrackSectionPr
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-bold flex items-center gap-3">
-          <Music className="h-6 w-6 text-green-500" />
-          {title || "Soundtrack"}
-        </h2>
-        <a
-          href={spotify_url}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="text-sm text-green-500 hover:text-green-400 flex items-center gap-1 transition-colors"
-        >
-          Open in Spotify
-          <ExternalLink className="h-4 w-4" />
-        </a>
-      </div>
-
-      {/* Spotify Embed */}
-      <div className="relative w-full rounded-lg overflow-hidden bg-gray-900 shadow-xl">
-        <iframe
-          src={embedUrl}
-          width="100%"
-          height="152"
-          frameBorder="0"
-          allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
-          loading="lazy"
-          className="w-full"
-        />
-      </div>
-
-      {/* Artist Note */}
-      {note && (
-        <div className="bg-gray-900/50 rounded-lg p-6 border border-gray-800">
-          <p className="text-gray-300 leading-relaxed italic">
-            "{note}"
-          </p>
+    <Card className="border-green-500/20 bg-gradient-to-br from-green-500/5 to-emerald-500/5">
+      <CardContent className="p-6 space-y-6">
+        <div className="flex items-center justify-between">
+          <h2 className="text-2xl font-bold flex items-center gap-3">
+            <div className="p-2 rounded-full bg-green-500/10">
+              <Music className="h-6 w-6 text-green-500" />
+            </div>
+            {title || "Soundtrack"}
+          </h2>
+          <a
+            href={spotify_url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-sm text-green-500 hover:text-green-400 flex items-center gap-1 transition-colors"
+          >
+            Open in Spotify
+            <ExternalLink className="h-4 w-4" />
+          </a>
         </div>
-      )}
-    </div>
+
+        {/* Spotify Embed */}
+        <div className="relative w-full rounded-xl overflow-hidden shadow-lg bg-secondary">
+          <iframe
+            src={embedUrl}
+            width="100%"
+            height="152"
+            frameBorder="0"
+            allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
+            loading="lazy"
+            className="w-full"
+          />
+        </div>
+
+        {/* Artist Note */}
+        {note && (
+          <div className="bg-secondary/50 rounded-xl p-6 border border-border/50">
+            <p className="text-muted-foreground leading-relaxed italic text-lg">
+              "{note}"
+            </p>
+          </div>
+        )}
+      </CardContent>
+    </Card>
   )
 }

@@ -153,6 +153,15 @@ export async function POST(
           config: { images: [] },
           display_order: 7,
         },
+        {
+          id: "temp-8",
+          type: "Artwork Artist Note Block",
+          title: "Artist's Note",
+          description: "Write from the heart. What does this piece mean to you? What should collectors know?",
+          content_url: null,
+          config: {},
+          display_order: 8,
+        },
       ]
       
       // Update submission with template blocks
@@ -195,10 +204,7 @@ export async function POST(
         "Artwork Voice Note Block",
         "Artwork Process Gallery Block",
         "Artwork Inspiration Block",
-        "Artwork Soundtrack Block",
-        "Artwork Voice Note Block",
-        "Artwork Process Gallery Block",
-        "Artwork Inspiration Block",
+        "Artwork Artist Note Block",
       ])
 
     if (typesError || !benefitTypes || benefitTypes.length === 0) {
@@ -320,6 +326,18 @@ export async function POST(
         content_url: null,
         block_config: { images: [] },
         display_order: 7,
+        is_published: false,
+        is_active: true,
+      },
+      {
+        product_id: productId,
+        vendor_name: vendorName,
+        benefit_type_id: typeMap["Artwork Artist Note Block"],
+        title: "Artist's Note",
+        description: "Write from the heart. What does this piece mean to you? What should collectors know?",
+        content_url: null,
+        block_config: {},
+        display_order: 8,
         is_published: false,
         is_active: true,
       },

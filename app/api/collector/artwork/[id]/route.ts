@@ -91,7 +91,7 @@ export async function GET(
     let lockedContentPreview: any[] = []
     const isAuthenticated = !!lineItem.nfc_claimed_at
 
-    // Get benefit type IDs for artwork content blocks
+    // Get benefit type IDs for artwork content blocks (including new immersive types)
     const { data: benefitTypes } = await supabase
       .from("benefit_types")
       .select("id, name")
@@ -100,6 +100,11 @@ export async function GET(
         "Artwork Image Block",
         "Artwork Video Block",
         "Artwork Audio Block",
+        "Artwork Soundtrack Block",
+        "Artwork Voice Note Block",
+        "Artwork Process Gallery Block",
+        "Artwork Inspiration Block",
+        "Artwork Artist Note Block",
       ])
 
     const artworkBlockTypeIds = benefitTypes?.map((bt) => bt.id) || []
@@ -166,11 +171,162 @@ export async function GET(
     // Get series info if applicable
     const { data: seriesMember } = await supabase
       .from("artwork_series_members")
-      .select("series_id, artwork_series:series_id (id, name)")
+      .select(`
+        series_id,
+        position,
+        artwork_series:series_id (
+          id, 
+          name,
+          unlock_type,
+          unlock_config
+        )
+      `)
       .eq("shopify_product_id", product.id)
       .single()
 
     const series = seriesMember?.artwork_series as any
+    
+    // Build special chips
+    const specialChips: Array<{ type: string; label: string; sublabel?: string }> = []
+    
+    // Edition chip
+    if (lineItem.edition_number && lineItem.edition_total) {
+      specialChips.push({
+        type: "limited_edition",
+        label: `#${lineItem.edition_number} of ${lineItem.edition_total}`,
+      })
+    }
+    
+    // Authenticated chip
+    if (lineItem.nfc_claimed_at) {
+      specialChips.push({
+        type: "authenticated",
+        label: "Verified",
+        sublabel: new Date(lineItem.nfc_claimed_at).toLocaleDateString(),
+      })
+    }
+    
+    // Series chip
+    if (seriesMember && series) {
+      // Get series total count
+      const { count: seriesTotal } = await supabase
+        .from("artwork_series_members")
+        .select("*", { count: "exact", head: true })
+        .eq("series_id", seriesMember.series_id)
+      
+      specialChips.push({
+        type: "series",
+        label: `${series.name} ${seriesMember.position || 1}/${seriesTotal || "?"}`,
+      })
+      
+      // Timed release chip
+      if (series.unlock_type === "time_based") {
+        specialChips.push({
+          type: "timed_release",
+          label: "Timed Release",
+        })
+      }
+    }
+    
+    // Check for unlock relationships
+    const { data: unlockBenefits } = await supabase
+      .from("product_benefits")
+      .select("hidden_series_id, vip_artwork_id, vip_series_id")
+      .eq("product_id", product.id)
+      .not("hidden_series_id", "is", null)
+      .limit(1)
+      .single()
+    
+    if (unlockBenefits?.hidden_series_id) {
+      specialChips.push({
+        type: "unlocks_hidden",
+        label: "Unlocks Hidden Series",
+      })
+    } else if (unlockBenefits?.vip_artwork_id) {
+      specialChips.push({
+        type: "unlocks_hidden",
+        label: "Unlocks VIP Artwork",
+      })
+    }
+    
+    if (unlockBenefits?.vip_series_id) {
+      specialChips.push({
+        type: "vip_access",
+        label: "VIP Access",
+      })
+    }
+    
+    // Build discovery data
+    let discoveryData: any = {}
+    
+    // Series info for discovery
+    if (seriesMember && series) {
+      // Get all artworks in series with ownership status
+      const { data: seriesArtworks } = await supabase
+        .from("artwork_series_members")
+        .select(`
+          shopify_product_id,
+          position,
+          products:shopify_product_id (
+            id,
+            name,
+            img_url
+          )
+        `)
+        .eq("series_id", seriesMember.series_id)
+        .order("position", { ascending: true })
+      
+      // Check which artworks the collector owns
+      const { data: ownedLineItems } = await supabase
+        .from("order_line_items_v2")
+        .select("product_id")
+        .in("product_id", seriesArtworks?.map((a: any) => a.shopify_product_id) || [])
+        .eq("orders.shopify_customer_id", shopifyCustomerId)
+      
+      const ownedProductIds = new Set(ownedLineItems?.map((li: any) => li.product_id) || [])
+      
+      const formattedArtworks = seriesArtworks?.map((a: any) => ({
+        id: a.shopify_product_id,
+        name: a.products?.name || "Unknown",
+        imgUrl: a.products?.img_url || "",
+        isOwned: ownedProductIds.has(a.shopify_product_id),
+        position: a.position,
+      })) || []
+      
+      const ownedCount = formattedArtworks.filter(a => a.isOwned).length
+      
+      // Find next artwork in series
+      const nextArtwork = formattedArtworks.find(a => !a.isOwned)
+      
+      discoveryData.seriesInfo = {
+        name: series.name,
+        totalCount: formattedArtworks.length,
+        ownedCount,
+        artworks: formattedArtworks,
+        nextArtwork: nextArtwork ? {
+          id: nextArtwork.id,
+          name: nextArtwork.name,
+          imgUrl: nextArtwork.imgUrl,
+        } : undefined,
+        unlockType: series.unlock_type || "any_order",
+      }
+    }
+    
+    // More from artist
+    const { data: moreArtworks } = await supabase
+      .from("products")
+      .select("id, name, img_url")
+      .eq("vendor_name", product.vendor_name)
+      .neq("id", product.id)
+      .limit(4)
+    
+    if (moreArtworks && moreArtworks.length > 0) {
+      discoveryData.moreFromArtist = moreArtworks.map((a: any) => ({
+        id: a.id,
+        name: a.name,
+        imgUrl: a.img_url,
+      }))
+    }
 
     return NextResponse.json({
       success: true,
@@ -199,6 +355,8 @@ export async function GET(
       lockedContentPreview: !isAuthenticated ? lockedContentPreview : [],
       series: series ? { id: series.id, name: series.name } : null,
       isAuthenticated,
+      specialChips,
+      discoveryData,
     })
   } catch (error: any) {
     console.error("Error in collector artwork API:", error)

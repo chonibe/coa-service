@@ -36,6 +36,15 @@ import { ImmersiveVideoBlock } from "./components/ImmersiveVideoBlock"
 import { ImmersiveAudioBlock } from "./components/ImmersiveAudioBlock"
 import { motion } from "framer-motion"
 
+// New immersive block components
+import SoundtrackSection from "./components/SoundtrackSection"
+import VoiceNoteSection from "./components/VoiceNoteSection"
+import ProcessGallerySection from "./components/ProcessGallerySection"
+import InspirationBoardSection from "./components/InspirationBoardSection"
+import ArtistNoteSection from "./components/ArtistNoteSection"
+import { SpecialArtworkChip, type SpecialChip } from "./components/SpecialArtworkChip"
+import { DiscoverySection } from "./components/DiscoverySection"
+
 import { Card, CardContent, Button, Badge, Alert, AlertDescription } from "@/components/ui"
 interface ArtworkDetail {
   artwork: {
@@ -62,6 +71,44 @@ interface ArtworkDetail {
   lockedContentPreview: { type: string; label: string }[]
   series: { id: string; name: string } | null
   isAuthenticated: boolean
+  specialChips?: SpecialChip[]
+  discoveryData?: {
+    unlockedContent?: {
+      type: "series" | "artwork" | "vip_series"
+      id: string
+      name: string
+      thumbnailUrl?: string
+    }
+    seriesInfo?: {
+      name: string
+      totalCount: number
+      ownedCount: number
+      artworks: Array<{
+        id: string
+        name: string
+        imgUrl: string
+        isOwned: boolean
+        position: number
+      }>
+      nextArtwork?: {
+        id: string
+        name: string
+        imgUrl: string
+      }
+      unlockType?: "sequential" | "any_order" | "time_based"
+    }
+    countdown?: {
+      unlockAt: string
+      artworkName: string
+      artworkImgUrl?: string
+    }
+    moreFromArtist?: Array<{
+      id: string
+      name: string
+      imgUrl: string
+      price?: number
+    }>
+  }
 }
 
 interface ContentBlock {
@@ -72,6 +119,7 @@ interface ContentBlock {
   content_url: string | null
   block_config: any
   display_order: number
+  block_type?: string
 }
 
 export default function CollectorArtworkPage() {
@@ -324,6 +372,26 @@ export default function CollectorArtworkPage() {
         orderNumber={artwork.artwork.orderNumber}
       />
 
+      {/* Special Artwork Chips */}
+      {artwork.specialChips && artwork.specialChips.length > 0 && (
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2, duration: 0.5 }}
+          className="px-4 py-4 overflow-x-auto"
+        >
+          <div className="flex flex-wrap gap-2 justify-center">
+            {artwork.specialChips.map((chip, index) => (
+              <SpecialArtworkChip
+                key={`${chip.type}-${index}`}
+                chip={chip}
+                size="md"
+              />
+            ))}
+          </div>
+        </motion.div>
+      )}
+
       {/* Content area with max-width for readability */}
       <div className="px-4 py-8 md:py-12 space-y-8 md:space-y-12 max-w-5xl mx-auto">
         
@@ -423,6 +491,81 @@ export default function CollectorArtworkPage() {
                     artworkImageUrl={artwork.artwork.imgUrl}
                   />
                 )
+              case "Artwork Soundtrack Block":
+                return (
+                  <motion.div
+                    key={block.id}
+                    initial={{ opacity: 0, y: 30 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: animationDelay, duration: 0.6 }}
+                  >
+                    <SoundtrackSection
+                      title={block.title}
+                      config={block.block_config || {}}
+                    />
+                  </motion.div>
+                )
+              case "Artwork Voice Note Block":
+                return (
+                  <motion.div
+                    key={block.id}
+                    initial={{ opacity: 0, y: 30 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: animationDelay, duration: 0.6 }}
+                  >
+                    <VoiceNoteSection
+                      title={block.title}
+                      contentUrl={block.content_url || ""}
+                      config={{
+                        transcript: block.block_config?.transcript,
+                        artistPhoto: artwork.artist.profileImageUrl || undefined,
+                      }}
+                    />
+                  </motion.div>
+                )
+              case "Artwork Process Gallery Block":
+                return (
+                  <motion.div
+                    key={block.id}
+                    initial={{ opacity: 0, y: 30 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: animationDelay, duration: 0.6 }}
+                  >
+                    <ProcessGallerySection
+                      title={block.title}
+                      config={block.block_config || { images: [] }}
+                    />
+                  </motion.div>
+                )
+              case "Artwork Inspiration Block":
+                return (
+                  <motion.div
+                    key={block.id}
+                    initial={{ opacity: 0, y: 30 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: animationDelay, duration: 0.6 }}
+                  >
+                    <InspirationBoardSection
+                      title={block.title}
+                      config={block.block_config || { images: [] }}
+                    />
+                  </motion.div>
+                )
+              case "Artwork Artist Note Block":
+                return (
+                  <motion.div
+                    key={block.id}
+                    initial={{ opacity: 0, y: 30 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: animationDelay, duration: 0.6 }}
+                  >
+                    <ArtistNoteSection
+                      content={block.description || ""}
+                      signatureUrl={block.block_config?.signature_url}
+                      artistName={artwork.artist.name}
+                    />
+                  </motion.div>
+                )
               default:
                 return (
                   <motion.div
@@ -466,6 +609,15 @@ export default function CollectorArtworkPage() {
           </motion.div>
         )}
       </div>
+
+      {/* Discovery Section - at the end of page */}
+      {artwork.discoveryData && (
+        <DiscoverySection
+          discoveryData={artwork.discoveryData}
+          isAuthenticated={isAuthenticated}
+          artistName={artwork.artist.name}
+        />
+      )}
 
       {/* Sticky Bottom CTA - Mobile First */}
       {!isAuthenticated && (

@@ -2,7 +2,8 @@
 
 import { useState } from "react"
 import Image from "next/image"
-import { Lightbulb, X } from "lucide-react"
+import { Lightbulb, X, ZoomIn } from "lucide-react"
+import { Card, CardContent, Button } from "@/components/ui"
 
 interface InspirationBoardSectionProps {
   title?: string
@@ -22,78 +23,85 @@ export default function InspirationBoardSection({ title, config }: InspirationBo
   if (!images || images.length === 0) return null
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h2 className="text-2xl font-bold flex items-center gap-3 mb-3">
-          <Lightbulb className="h-6 w-6 text-yellow-500" />
-          {title || "Inspiration"}
-        </h2>
-        {story && (
-          <p className="text-gray-400 leading-relaxed">{story}</p>
-        )}
-      </div>
-
-      {/* Masonry Grid */}
-      <div className="columns-2 md:columns-3 gap-4 space-y-4">
-        {images.map((image, index) => (
-          <div
-            key={index}
-            className="break-inside-avoid cursor-pointer group relative overflow-hidden rounded-lg transition-transform hover:scale-105"
-            onClick={() => setExpandedImage(image)}
-          >
-            <div className="relative aspect-square">
-              <Image
-                src={image.url}
-                alt={image.caption || `Inspiration ${index + 1}`}
-                fill
-                className="object-cover"
-              />
-              {/* Hover Overlay */}
-              <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-colors flex items-center justify-center">
-                <span className="text-white opacity-0 group-hover:opacity-100 transition-opacity text-sm">
-                  Click to expand
-                </span>
-              </div>
+    <Card className="border-amber-500/20 bg-gradient-to-br from-amber-500/5 to-yellow-500/5">
+      <CardContent className="p-6 space-y-6">
+        <div>
+          <h2 className="text-2xl font-bold flex items-center gap-3 mb-3">
+            <div className="p-2 rounded-full bg-amber-500/10">
+              <Lightbulb className="h-6 w-6 text-amber-500" />
             </div>
-            {image.caption && (
-              <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-3 opacity-0 group-hover:opacity-100 transition-opacity">
-                <p className="text-white text-xs">{image.caption}</p>
-              </div>
-            )}
-          </div>
-        ))}
-      </div>
-
-      {/* Lightbox Modal */}
-      {expandedImage && (
-        <div
-          className="fixed inset-0 z-50 bg-black/90 backdrop-blur-sm flex items-center justify-center p-4"
-          onClick={() => setExpandedImage(null)}
-        >
-          <button
-            onClick={() => setExpandedImage(null)}
-            className="absolute top-4 right-4 w-12 h-12 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-colors"
-          >
-            <X className="h-6 w-6 text-white" />
-          </button>
-          
-          <div className="relative max-w-4xl max-h-[90vh] w-full" onClick={(e) => e.stopPropagation()}>
-            <div className="relative aspect-square">
-              <Image
-                src={expandedImage.url}
-                alt={expandedImage.caption || "Expanded view"}
-                fill
-                className="object-contain"
-              />
-            </div>
-            {expandedImage.caption && (
-              <p className="text-white text-center mt-4 text-lg">
-                {expandedImage.caption}
-              </p>
-            )}
-          </div>
+            {title || "Inspiration"}
+          </h2>
+          {story && (
+            <p className="text-muted-foreground leading-relaxed">{story}</p>
+          )}
         </div>
-      )}
-    </div>
+
+        {/* Masonry Grid */}
+        <div className="columns-2 md:columns-3 gap-3 sm:gap-4 space-y-3 sm:space-y-4">
+          {images.map((image, index) => (
+            <div
+              key={index}
+              className="break-inside-avoid cursor-pointer group relative overflow-hidden rounded-xl transition-all hover:scale-[1.02] hover:shadow-lg"
+              onClick={() => setExpandedImage(image)}
+            >
+              <div className="relative aspect-square">
+                <Image
+                  src={image.url}
+                  alt={image.caption || `Inspiration ${index + 1}`}
+                  fill
+                  className="object-cover"
+                />
+                {/* Hover Overlay */}
+                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-colors flex items-center justify-center">
+                  <div className="flex items-center gap-2 text-white opacity-0 group-hover:opacity-100 transition-opacity">
+                    <ZoomIn className="h-5 w-5" />
+                    <span className="text-sm font-medium">Expand</span>
+                  </div>
+                </div>
+              </div>
+              {image.caption && (
+                <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-3 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <p className="text-white text-xs font-medium">{image.caption}</p>
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+
+        {/* Lightbox Modal */}
+        {expandedImage && (
+          <div
+            className="fixed inset-0 z-50 bg-background/95 backdrop-blur-md flex items-center justify-center p-4"
+            onClick={() => setExpandedImage(null)}
+          >
+            <Button
+              onClick={() => setExpandedImage(null)}
+              variant="ghost"
+              size="icon"
+              className="absolute top-4 right-4 w-12 h-12 rounded-full bg-secondary hover:bg-secondary/80"
+            >
+              <X className="h-6 w-6" />
+            </Button>
+            
+            <div className="relative max-w-4xl max-h-[90vh] w-full" onClick={(e) => e.stopPropagation()}>
+              <div className="relative aspect-square">
+                <Image
+                  src={expandedImage.url}
+                  alt={expandedImage.caption || "Expanded view"}
+                  fill
+                  className="object-contain rounded-xl"
+                />
+              </div>
+              {expandedImage.caption && (
+                <p className="text-foreground text-center mt-4 text-lg font-medium">
+                  {expandedImage.caption}
+                </p>
+              )}
+            </div>
+          </div>
+        )}
+      </CardContent>
+    </Card>
   )
 }
