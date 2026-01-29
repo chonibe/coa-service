@@ -5,16 +5,16 @@ import { useParams, useRouter } from "next/navigation"
 import { ArrowLeft, Save, Eye, Loader2, AlertCircle, Menu, X, ChevronLeft, ChevronRight } from "lucide-react"
 import { Button, Alert, AlertDescription } from "@/components/ui"
 import { useToast } from "@/components/ui/use-toast"
-import { BlockSelectorPills } from "./components/BlockSelectorPills"
+import { BlockSelectorPills } from "@/app/artwork-editor/[productId]/components/BlockSelectorPills"
 
 // Import desktop editor components (reuse for editing)
-import SoundtrackEditor from "../../vendor/dashboard/artwork-pages/components/SoundtrackEditor"
-import VoiceNoteRecorder from "../../vendor/dashboard/artwork-pages/components/VoiceNoteRecorder"
-import ProcessGalleryEditor from "../../vendor/dashboard/artwork-pages/components/ProcessGalleryEditor"
-import InspirationBoardEditor from "../../vendor/dashboard/artwork-pages/components/InspirationBoardEditor"
-import ArtistNoteEditor from "../../vendor/dashboard/artwork-pages/components/ArtistNoteEditor"
-import SectionGroupEditor from "../../vendor/dashboard/artwork-pages/components/SectionGroupEditor"
-import BlockLibrarySidebar from "../../vendor/dashboard/artwork-pages/components/BlockLibrarySidebar"
+import SoundtrackEditor from "@/app/vendor/dashboard/artwork-pages/components/SoundtrackEditor"
+import VoiceNoteRecorder from "@/app/vendor/dashboard/artwork-pages/components/VoiceNoteRecorder"
+import ProcessGalleryEditor from "@/app/vendor/dashboard/artwork-pages/components/ProcessGalleryEditor"
+import InspirationBoardEditor from "@/app/vendor/dashboard/artwork-pages/components/InspirationBoardEditor"
+import ArtistNoteEditor from "@/app/vendor/dashboard/artwork-pages/components/ArtistNoteEditor"
+import SectionGroupEditor from "@/app/vendor/dashboard/artwork-pages/components/SectionGroupEditor"
+import BlockLibrarySidebar from "@/app/vendor/dashboard/artwork-pages/components/BlockLibrarySidebar"
 
 interface ContentBlock {
   id: number
