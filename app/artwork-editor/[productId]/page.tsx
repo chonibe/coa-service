@@ -158,15 +158,15 @@ export default function StandaloneArtworkEditor() {
 
   if (isLoading) {
     return (
-      <div className="fixed inset-0 bg-black flex items-center justify-center">
-        <Loader2 className="w-8 h-8 text-white animate-spin" />
+      <div className="fixed inset-0 bg-background flex items-center justify-center">
+        <Loader2 className="w-8 h-8 text-muted-foreground animate-spin" />
       </div>
     )
   }
 
   if (error || !product) {
     return (
-      <div className="fixed inset-0 bg-black flex flex-col items-center justify-center p-4">
+      <div className="fixed inset-0 bg-background flex flex-col items-center justify-center p-4">
         <Alert variant="destructive" className="max-w-md">
           <AlertCircle className="h-4 w-4" />
           <AlertDescription>{error || "Failed to load editor"}</AlertDescription>
@@ -180,15 +180,14 @@ export default function StandaloneArtworkEditor() {
   }
 
   return (
-    <div className="fixed inset-0 bg-black flex flex-col overflow-hidden">
+    <div className="fixed inset-0 bg-background flex flex-col overflow-hidden">
       {/* Top Toolbar - Minimal, flat */}
-      <header className="flex-shrink-0 flex items-center justify-between px-4 py-3 bg-gray-950 border-b border-gray-800">
+      <header className="flex-shrink-0 flex items-center justify-between px-4 py-3 bg-card border-b border-border">
         <div className="flex items-center gap-3">
           <Button
             variant="ghost"
             size="icon"
             onClick={() => router.push("/vendor/dashboard/artwork-pages")}
-            className="text-white hover:bg-gray-800"
           >
             <ArrowLeft className="w-5 h-5" />
           </Button>
@@ -197,17 +196,16 @@ export default function StandaloneArtworkEditor() {
               variant="ghost"
               size="icon"
               onClick={() => setSidebarOpen(!sidebarOpen)}
-              className="text-white hover:bg-gray-800"
             >
               <Menu className="w-5 h-5" />
             </Button>
           )}
           <div>
-            <h1 className="text-white font-bold text-base truncate max-w-[200px]">
+            <h1 className="text-foreground font-bold text-base truncate max-w-[200px]">
               {product.name}
             </h1>
             {lastSaved && (
-              <p className="text-xs text-gray-400">
+              <p className="text-xs text-muted-foreground">
                 Saved {lastSaved.toLocaleTimeString()}
               </p>
             )}
@@ -219,7 +217,6 @@ export default function StandaloneArtworkEditor() {
             variant="ghost"
             size="icon"
             onClick={handlePreview}
-            className="text-white hover:bg-gray-800"
             title="Preview"
           >
             <Eye className="w-5 h-5" />
@@ -249,20 +246,19 @@ export default function StandaloneArtworkEditor() {
           <div
             className={`
               ${isMobile ? 'fixed inset-y-0 left-0 z-50 w-72' : 'relative w-80'}
-              bg-gray-950 border-r border-gray-800 flex flex-col
+              bg-card border-r border-border flex flex-col
               transition-transform duration-300
               ${isMobile && !sidebarOpen ? '-translate-x-full' : 'translate-x-0'}
             `}
           >
             {/* Sidebar Header */}
-            <div className="flex items-center justify-between px-4 py-3 border-b border-gray-800">
-              <h2 className="text-white font-semibold text-sm">Content Blocks</h2>
+            <div className="flex items-center justify-between px-4 py-3 border-b border-border">
+              <h2 className="text-foreground font-semibold text-sm">Content Blocks</h2>
               {isMobile && (
                 <Button
                   variant="ghost"
                   size="icon"
                   onClick={() => setSidebarOpen(false)}
-                  className="text-white hover:bg-gray-800"
                 >
                   <X className="w-4 h-4" />
                 </Button>
@@ -281,12 +277,12 @@ export default function StandaloneArtworkEditor() {
             {!isMobile && (
               <button
                 onClick={() => setSidebarOpen(!sidebarOpen)}
-                className="absolute -right-3 top-1/2 -translate-y-1/2 bg-gray-800 rounded-full p-1 hover:bg-gray-700 transition-colors"
+                className="absolute -right-3 top-1/2 -translate-y-1/2 bg-muted rounded-full p-1 hover:bg-accent transition-colors"
               >
                 {sidebarOpen ? (
-                  <ChevronLeft className="w-4 h-4 text-white" />
+                  <ChevronLeft className="w-4 h-4 text-foreground" />
                 ) : (
-                  <ChevronRight className="w-4 h-4 text-white" />
+                  <ChevronRight className="w-4 h-4 text-foreground" />
                 )}
               </button>
             )}
@@ -397,13 +393,13 @@ function BlockEditor({
             placeholder="Block Title"
             value={block.title}
             onChange={(e) => onUpdate({ title: e.target.value })}
-            className="w-full bg-gray-800 text-white px-4 py-2 rounded border border-gray-700 focus:border-blue-500 focus:outline-none"
+            className="w-full bg-muted text-foreground px-4 py-2 rounded-md border border-input focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
           />
           <textarea
             placeholder="Block Description"
             value={block.description || ""}
             onChange={(e) => onUpdate({ description: e.target.value })}
-            className="w-full bg-gray-800 text-white px-4 py-2 rounded border border-gray-700 focus:border-blue-500 focus:outline-none h-32"
+            className="w-full bg-muted text-foreground px-4 py-2 rounded-md border border-input focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 h-32"
           />
         </div>
       )

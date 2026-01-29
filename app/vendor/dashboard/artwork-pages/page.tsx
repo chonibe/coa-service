@@ -254,9 +254,7 @@ export default function ArtworkPagesPage() {
                       variant="default"
                       className="flex-1"
                     >
-                      <Link href={product.is_pending 
-                        ? `/vendor/dashboard/artwork-pages/${product.id}` 
-                        : `/vendor/dashboard/artwork-pages/${product.id}`}>
+                      <Link href={`/artwork-editor/${product.id}`}>
                         <Edit className="h-4 w-4 mr-2" />
                         {product.status === "not_started" ? "Set Up" : "Edit"}
                       </Link>
