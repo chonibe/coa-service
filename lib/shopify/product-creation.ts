@@ -1,5 +1,6 @@
 import { SHOPIFY_SHOP, SHOPIFY_ACCESS_TOKEN } from "@/lib/env"
 import { safeJsonParse } from "@/lib/shopify-api"
+import { generateBarcodesForProductVariants } from "@/lib/barcode-utils"
 import type { ProductSubmissionData, ProductImage, ProductMetafield, ProductVariant } from "@/types/product-submission"
 
 const API_VERSION = "2024-01"
@@ -516,10 +517,23 @@ export async function createShopifyProduct(
 
     // Prepare variants
     if (productData.variants && productData.variants.length > 0) {
-      productPayload.variants = productData.variants.map((variant) => {
+      // Generate unique barcodes for all variants
+      const barcodes = generateBarcodesForProductVariants(
+        productData.handle || `temp-${Date.now()}`,
+        productData.variants.length
+      )
+
+      productPayload.variants = productData.variants.map((variant, index) => {
         const variantData: any = {
           price: variant.price,
           sku: variant.sku || "",
+        }
+
+        // Assign barcode - use provided barcode or generated one
+        if (variant.barcode) {
+          variantData.barcode = variant.barcode
+        } else {
+          variantData.barcode = barcodes[index]
         }
 
         if (variant.compare_at_price) {
@@ -551,11 +565,17 @@ export async function createShopifyProduct(
         return variantData
       })
     } else {
-      // Default variant if none provided
+      // Default variant if none provided - still assign a barcode
+      const barcodes = generateBarcodesForProductVariants(
+        productData.handle || `temp-${Date.now()}`,
+        1
+      )
+
       productPayload.variants = [
         {
           price: "0.00",
           sku: "",
+          barcode: barcodes[0],
           requires_shipping: true,
         },
       ]

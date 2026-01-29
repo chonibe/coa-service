@@ -5,6 +5,7 @@ export type ProductSubmissionStatus = 'pending' | 'approved' | 'rejected' | 'pub
 export interface ProductVariant {
   price: string
   sku: string
+  barcode?: string | null
   compare_at_price?: string | null
   inventory_quantity?: number
   inventory_management?: 'shopify' | null
