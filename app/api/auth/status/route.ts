@@ -2,7 +2,7 @@ import { NextResponse } from "next/server"
 import { cookies } from "next/headers"
 import { createClient as createRouteClient } from "@/lib/supabase-server"
 import { createClient as createServiceClient } from "@/lib/supabase/server"
-import { getVendorFromCookieStore } from "@/lib/vendor-session"
+import { getVendorFromCookieStore, buildVendorSessionCookie } from "@/lib/vendor-session"
 import { isAdminEmail, REQUIRE_ACCOUNT_SELECTION_COOKIE } from "@/lib/vendor-auth"
 import { ADMIN_SESSION_COOKIE_NAME, verifyAdminSessionToken } from "@/lib/admin-session"
 import { verifyCollectorSessionToken } from "@/lib/collector-session"
@@ -109,7 +109,14 @@ export async function GET() {
   const adminHasVendorAccess = isAdmin && hasVendorRole
   const vendorHasCollectorAccess = hasVendorRole && hasCollectorRole
 
-  return NextResponse.json({
+  // When user has vendor from RBAC but no vendor_session cookie, set the cookie
+  // so the vendor layout accepts them and we don't bounce between login and dashboard
+  const shouldSetVendorCookie = vendor && !vendorSessionName && !requireAccountSelection
+  if (shouldSetVendorCookie) {
+    console.log(`[auth/status] Setting vendor_session cookie for ${vendor.vendor_name} (had vendor role but no cookie)`)
+  }
+
+  const body = {
     authenticated: !!user,
     user: user
       ? {
@@ -127,12 +134,21 @@ export async function GET() {
     hasCollectorRole,
     hasVendorRole,
     collectorEmail: collectorSession?.email || null,
-    vendorSession: vendorSessionName,
+    vendorSession: shouldSetVendorCookie ? vendor.vendor_name : vendorSessionName,
     vendor,
     hasVendorAccess: !!vendor || hasVendorRole,
     vendorHasCollectorAccess,
     requireAccountSelection,
-  })
+  }
+
+  const response = NextResponse.json(body)
+
+  if (shouldSetVendorCookie && vendor) {
+    const cookie = buildVendorSessionCookie(vendor.vendor_name)
+    response.cookies.set(cookie.name, cookie.value, cookie.options)
+  }
+
+  return response
 }
 
 
