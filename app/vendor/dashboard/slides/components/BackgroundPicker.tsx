@@ -2,14 +2,13 @@
 
 import { useState } from "react"
 import { X, Image as ImageIcon, Video, Palette } from "lucide-react"
-import { Button } from "@/components/ui/button"
+import { Button, Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui"
 import {
   Sheet,
   SheetContent,
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import type { SlideBackground, GradientPreset } from "@/lib/slides/types"
 import { GRADIENT_PRESETS, DEFAULT_BACKGROUND } from "@/lib/slides/types"
 

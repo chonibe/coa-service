@@ -2,15 +2,13 @@
 
 import { useState } from "react"
 import { Music, Upload, Mic, Search, X, Loader2 } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
+import { Button, Input, Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui"
 import {
   Sheet,
   SheetContent,
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import type { SlideAudio, AudioType } from "@/lib/slides/types"
 
 interface AudioPickerProps {

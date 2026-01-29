@@ -1,7 +1,7 @@
 "use client"
 
 import { AlignLeft, AlignCenter, AlignRight, Bold, Italic } from "lucide-react"
-import { Button } from "@/components/ui/button"
+import { Button } from "@/components/ui"
 import {
   Sheet,
   SheetContent,

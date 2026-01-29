@@ -3,8 +3,7 @@
 import { useEffect, useState } from "react"
 import { QRCodeSVG } from "qrcode.react"
 import { Smartphone, Monitor } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Button, Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui"
 
 interface DesktopGateProps {
   /** Current URL to encode in QR code */

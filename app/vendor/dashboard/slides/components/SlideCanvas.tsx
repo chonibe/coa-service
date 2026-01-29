@@ -2,7 +2,7 @@
 
 import { useRef, useState, useCallback, useEffect } from "react"
 import { Trash2 } from "lucide-react"
-import { Button } from "@/components/ui/button"
+import { Button } from "@/components/ui"
 import type { Slide, CanvasElement } from "@/lib/slides/types"
 import { GRADIENT_PRESETS } from "@/lib/slides/types"
 
