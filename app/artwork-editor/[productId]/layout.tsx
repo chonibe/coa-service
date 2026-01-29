@@ -22,6 +22,19 @@ export default async function ArtworkEditorLayout({ children }: ArtworkEditorLay
     redirect("/login")
   }
 
-  // Pure passthrough - no wrapper UI at all
-  return <>{children}</>
+  // Force light mode by wrapping in a light class
+  return (
+    <div className="light bg-white">
+      <style jsx global>{`
+        html, body {
+          background: white !important;
+          color: rgb(17, 24, 39) !important;
+        }
+        * {
+          color-scheme: light !important;
+        }
+      `}</style>
+      {children}
+    </div>
+  )
 }

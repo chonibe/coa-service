@@ -87,14 +87,14 @@ export function BlockSelectorPills({
   }
 
   return (
-    <div className="relative w-full bg-card/95 backdrop-blur-sm border-t border-border">
+    <div className="relative w-full bg-white/95 backdrop-blur-sm border-t border-gray-200">
       {/* Left scroll indicator */}
       {canScrollLeft && (
         <button
           onClick={() => scroll("left")}
-          className="absolute left-0 top-0 bottom-0 z-10 w-12 bg-gradient-to-r from-card to-transparent flex items-center justify-start pl-2"
+          className="absolute left-0 top-0 bottom-0 z-10 w-12 bg-gradient-to-r from-white to-transparent flex items-center justify-start pl-2"
         >
-          <ChevronLeft className="w-5 h-5 text-foreground" />
+          <ChevronLeft className="w-5 h-5 text-gray-600" />
         </button>
       )}
 
@@ -122,8 +122,8 @@ export function BlockSelectorPills({
                 "flex-shrink-0 flex items-center gap-2 px-4 py-2.5 rounded-full",
                 "transition-all duration-200 min-h-[44px]",
                 isSelected
-                  ? "bg-blue-600 text-white"
-                  : "bg-gray-100 text-gray-900 hover:bg-gray-200"
+                  ? "bg-primary text-primary-foreground"
+                  : "bg-muted text-foreground hover:bg-accent"
               )}
             >
               <IconComponent className="w-4 h-4" />
@@ -152,9 +152,9 @@ export function BlockSelectorPills({
       {canScrollRight && (
         <button
           onClick={() => scroll("right")}
-          className="absolute right-0 top-0 bottom-0 z-10 w-12 bg-gradient-to-l from-card to-transparent flex items-center justify-end pr-2"
+          className="absolute right-0 top-0 bottom-0 z-10 w-12 bg-gradient-to-l from-white to-transparent flex items-center justify-end pr-2"
         >
-          <ChevronRight className="w-5 h-5 text-foreground" />
+          <ChevronRight className="w-5 h-5 text-gray-600" />
         </button>
       )}
     </div>
