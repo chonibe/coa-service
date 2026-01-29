@@ -196,10 +196,7 @@ export default function SlidesPage() {
 
       const data = await response.json()
       
-      // Refresh slides list
-      fetchSlides()
-      
-      // Navigate to the new slide editor
+      // Navigate to the new slide editor immediately
       router.push(`/slides/${productId}/${data.slide.id}`)
     } catch (err: any) {
       console.error("Failed to create slide:", err)
