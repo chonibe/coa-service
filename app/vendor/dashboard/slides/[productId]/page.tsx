@@ -3,9 +3,7 @@
 import { useState, useEffect } from "react"
 import { useParams, useRouter } from "next/navigation"
 import { Plus, ArrowLeft, GripVertical, Trash2, Eye, Lock, Unlock } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent } from "@/components/ui/card"
-import { Skeleton } from "@/components/ui/skeleton"
+import { Button, Card, CardContent, Skeleton } from "@/components/ui"
 import {
   DndContext,
   closestCenter,
