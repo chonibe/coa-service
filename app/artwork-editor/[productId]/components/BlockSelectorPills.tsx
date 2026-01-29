@@ -122,8 +122,8 @@ export function BlockSelectorPills({
                 "flex-shrink-0 flex items-center gap-2 px-4 py-2.5 rounded-full",
                 "transition-all duration-200 min-h-[44px]",
                 isSelected
-                  ? "bg-primary text-primary-foreground"
-                  : "bg-muted text-foreground hover:bg-accent"
+                  ? "bg-blue-600 text-white"
+                  : "bg-gray-100 text-gray-900 hover:bg-gray-200"
               )}
             >
               <IconComponent className="w-4 h-4" />

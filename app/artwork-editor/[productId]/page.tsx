@@ -206,11 +206,11 @@ export default function StandaloneArtworkEditor() {
             </Button>
           )}
           <div>
-            <h1 className="text-foreground font-bold text-base truncate max-w-[200px]">
+            <h1 className="text-gray-900 font-bold text-base truncate max-w-[200px]">
               {product.name}
             </h1>
             {lastSaved && (
-              <p className="text-xs text-muted-foreground">
+              <p className="text-xs text-gray-500">
                 Saved {lastSaved.toLocaleTimeString()}
               </p>
             )}
@@ -282,12 +282,12 @@ export default function StandaloneArtworkEditor() {
             {!isMobile && (
               <button
                 onClick={() => setSidebarOpen(!sidebarOpen)}
-                className="absolute -right-3 top-1/2 -translate-y-1/2 bg-muted rounded-full p-1 hover:bg-accent transition-colors"
+                className="absolute -right-3 top-1/2 -translate-y-1/2 bg-white border border-gray-200 rounded-full p-1 hover:bg-gray-100 transition-colors shadow-sm"
               >
                 {sidebarOpen ? (
-                  <ChevronLeft className="w-4 h-4 text-foreground" />
+                  <ChevronLeft className="w-4 h-4 text-gray-600" />
                 ) : (
-                  <ChevronRight className="w-4 h-4 text-foreground" />
+                  <ChevronRight className="w-4 h-4 text-gray-600" />
                 )}
               </button>
             )}
@@ -364,7 +364,7 @@ export default function StandaloneArtworkEditor() {
   )
 }
 
-// Block Editor Component
+// Block Editor Component - Adapts block data to component props
 function BlockEditor({
   block,
   productId,
@@ -374,19 +374,72 @@ function BlockEditor({
   productId: string
   onUpdate: (updates: Partial<ContentBlock>) => void
 }) {
+  const handleConfigChange = (newConfig: any) => {
+    onUpdate({ block_config: newConfig })
+  }
+
+  const blockConfig = block.block_config || {}
+
   switch (block.block_type) {
     case "Soundtrack":
-      return <SoundtrackEditor block={block} productId={productId} onUpdate={onUpdate} />
+    case "Artwork Soundtrack Block":
+      return (
+        <SoundtrackEditor 
+          blockId={block.id} 
+          config={blockConfig}
+          onChange={handleConfigChange}
+        />
+      )
+    
     case "Voice Note":
-      return <VoiceNoteRecorder block={block} productId={productId} onUpdate={onUpdate} />
+    case "Artwork Voice Note Block":
+      return (
+        <VoiceNoteRecorder 
+          blockId={block.id} 
+          config={blockConfig}
+          onChange={handleConfigChange}
+        />
+      )
+    
     case "Process Gallery":
-      return <ProcessGalleryEditor block={block} productId={productId} onUpdate={onUpdate} />
+    case "Artwork Process Gallery Block":
+      return (
+        <ProcessGalleryEditor 
+          blockId={block.id} 
+          config={blockConfig}
+          onChange={handleConfigChange}
+        />
+      )
+    
     case "Inspiration Board":
-      return <InspirationBoardEditor block={block} productId={productId} onUpdate={onUpdate} />
+    case "Artwork Inspiration Block":
+      return (
+        <InspirationBoardEditor 
+          blockId={block.id} 
+          config={blockConfig}
+          onChange={handleConfigChange}
+        />
+      )
+    
     case "Artist Note":
-      return <ArtistNoteEditor block={block} productId={productId} onUpdate={onUpdate} />
+    case "Artwork Artist Note Block":
+      return (
+        <ArtistNoteEditor 
+          blockId={block.id} 
+          config={blockConfig}
+          onChange={handleConfigChange}
+        />
+      )
+    
     case "Section Group":
-      return <SectionGroupEditor block={block} productId={productId} onUpdate={onUpdate} />
+    case "Artwork Section Group Block":
+      return (
+        <SectionGroupEditor 
+          blockId={block.id} 
+          config={blockConfig}
+          onChange={handleConfigChange}
+        />
+      )
     
     // Simple text block fallback
     case "Artwork Text Block":
@@ -396,15 +449,15 @@ function BlockEditor({
           <input
             type="text"
             placeholder="Block Title"
-            value={block.title}
+            value={block.title || ""}
             onChange={(e) => onUpdate({ title: e.target.value })}
-            className="w-full bg-muted text-foreground px-4 py-2 rounded-md border border-input focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+            className="w-full bg-gray-50 text-gray-900 px-4 py-2 rounded-md border border-gray-300 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
           />
           <textarea
             placeholder="Block Description"
             value={block.description || ""}
             onChange={(e) => onUpdate({ description: e.target.value })}
-            className="w-full bg-muted text-foreground px-4 py-2 rounded-md border border-input focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 h-32"
+            className="w-full bg-gray-50 text-gray-900 px-4 py-2 rounded-md border border-gray-300 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 h-32"
           />
         </div>
       )
