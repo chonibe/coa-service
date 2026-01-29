@@ -280,7 +280,7 @@ export default function ArtworkPagesPage() {
                       variant="outline"
                       className="w-full"
                     >
-                      <Link href={`/vendor/dashboard/slides/${product.id}`}>
+                      <Link href={`/slides/${product.id}`}>
                         <Film className="h-4 w-4 mr-2" />
                         Manage Slides
                       </Link>

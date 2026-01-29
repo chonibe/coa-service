@@ -1,11 +1,13 @@
+"use client"
+
 import type { ReactNode } from "react"
 
 /**
- * Full-screen layout for slides editor
+ * Full-screen layout for slides - NO dashboard UI elements at all
  *
  * This layout provides a complete full-page experience for the slides feature,
- * removing all vendor dashboard elements (sidebar, header, etc.) for an immersive
- * canvas editing experience.
+ * completely isolated from the vendor dashboard with no sidebar, header, or any
+ * other UI elements. Pure, immersive editing experience.
  */
 export default function SlidesFullScreenLayout({
   children
@@ -14,7 +16,7 @@ export default function SlidesFullScreenLayout({
 }) {
   return (
     <div className="fixed inset-0 bg-black overflow-hidden">
-      {/* Full-screen container with no padding or margins */}
+      {/* Absolutely no dashboard UI - just the slides interface */}
       <div className="w-full h-full relative">
         {children}
       </div>
