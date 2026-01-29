@@ -62,31 +62,27 @@ export default function MobileArtworkEditorPage() {
         setIsLoading(true)
         setError(null)
 
-        // Fetch product data
-        const productResponse = await fetch(`/api/vendor/products/${productId}`, {
-          credentials: "include",
-        })
-
-        if (!productResponse.ok) {
-          throw new Error("Failed to fetch product")
-        }
-
-        const productData = await productResponse.json()
-        setProduct(productData.product)
-
-        // Fetch content blocks
+        // Fetch content blocks and product data together
         const blocksResponse = await fetch(`/api/vendor/artwork-pages/${productId}`, {
           credentials: "include",
         })
 
-        if (blocksResponse.ok) {
-          const blocksData = await blocksResponse.json()
-          setContentBlocks(blocksData.blocks || [])
-          
-          // Auto-select first block
-          if (blocksData.blocks && blocksData.blocks.length > 0) {
-            setSelectedBlockId(blocksData.blocks[0].id)
-          }
+        if (!blocksResponse.ok) {
+          throw new Error("Failed to fetch artwork page data")
+        }
+
+        const blocksData = await blocksResponse.json()
+        
+        // The artwork-pages API returns both blocks and product info
+        if (blocksData.product) {
+          setProduct(blocksData.product)
+        }
+        
+        setContentBlocks(blocksData.blocks || [])
+        
+        // Auto-select first block
+        if (blocksData.blocks && blocksData.blocks.length > 0) {
+          setSelectedBlockId(blocksData.blocks[0].id)
         }
       } catch (err: any) {
         console.error("Error fetching data:", err)
