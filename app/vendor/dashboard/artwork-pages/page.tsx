@@ -267,9 +267,9 @@ export default function ArtworkPagesPage() {
                           asChild
                           variant="outline"
                           size="icon"
-                          title="Mobile Editor"
+                          title="Full-Screen Editor"
                         >
-                          <Link href={`/artwork-pages/${product.id}/mobile`}>
+                          <Link href={`/artwork-editor/${product.id}`}>
                             📱
                           </Link>
                         </Button>
