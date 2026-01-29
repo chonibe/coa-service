@@ -58,6 +58,10 @@
     {
       "path": "/api/cron/check-polaris-updates",
       "schedule": "0 9 * * 1"
+    },
+    {
+      "path": "/api/cron/process-product-barcodes",
+      "schedule": "0 */4 * * *"
     }
   ]
 }

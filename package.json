@@ -39,7 +39,8 @@
     "verify:products": "tsx scripts/verify-product-handles.ts",
     "sync:shopify": "tsx scripts/sync-product-handles-from-shopify.ts",
     "update:barcodes": "tsx scripts/update-shopify-barcodes.js",
-    "register:webhooks": "tsx scripts/register-shopify-product-webhook.js"
+    "register:webhooks": "tsx scripts/register-shopify-product-webhook.js",
+    "process:barcodes": "curl -X POST http://localhost:3000/api/admin/process-all-barcodes -H \"Content-Type: application/json\" -d '{\"limit\": 100}'"
   },
   "lint-staged": {
     "*.{ts,tsx,js,jsx}": [

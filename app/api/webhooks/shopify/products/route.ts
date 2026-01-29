@@ -40,57 +40,45 @@ export async function POST(request: NextRequest) {
 
     console.log(`Received Shopify product webhook: ${eventType} for product ${productId}`)
 
-    // Only process product creation events
-    if (eventType === "products/create") {
-      console.log(`Processing new product creation: ${productId}`)
+    // Process any product-related webhook event to ensure barcodes
+    console.log(`Processing ${eventType} for product ${productId}`)
 
-      try {
-        // Automatically assign barcodes to the new product
-        await updateProductVariantsWithBarcodes(productId)
+    try {
+      // Always check and update barcodes for any product event
+      // This ensures barcodes are added to new products, existing products without barcodes, and updated products
+      await updateProductVariantsWithBarcodes(productId)
 
-        console.log(`✅ Successfully assigned barcodes to new product ${productId}`)
+      console.log(`✅ Barcodes processed for product ${productId} (${eventType})`)
 
-        // Log successful barcode assignment
-        await supabase.from("webhook_logs").insert({
-          type: "shopify_product_barcode",
-          created_at: new Date().toISOString(),
-          details: {
-            productId: productId,
-            event: "products/create",
-            action: "barcode_assigned",
-            success: true
-          }
-        })
+      // Log successful barcode processing
+      await supabase.from("webhook_logs").insert({
+        type: "shopify_product_barcode",
+        created_at: new Date().toISOString(),
+        details: {
+          productId: productId,
+          event: eventType,
+          action: "barcodes_processed",
+          success: true
+        }
+      })
 
-      } catch (barcodeError: any) {
-        console.error(`❌ Failed to assign barcodes to product ${productId}:`, barcodeError.message)
+    } catch (barcodeError: any) {
+      console.error(`❌ Failed to process barcodes for product ${productId}:`, barcodeError.message)
 
-        // Log failed barcode assignment
-        await supabase.from("webhook_logs").insert({
-          type: "shopify_product_barcode",
-          created_at: new Date().toISOString(),
-          details: {
-            productId: productId,
-            event: "products/create",
-            action: "barcode_assignment_failed",
-            error: barcodeError.message,
-            success: false
-          }
-        })
+      // Log failed barcode processing
+      await supabase.from("webhook_logs").insert({
+        type: "shopify_product_barcode",
+        created_at: new Date().toISOString(),
+        details: {
+          productId: productId,
+          event: eventType,
+          action: "barcode_processing_failed",
+          error: barcodeError.message,
+          success: false
+        }
+      })
 
-        // Don't fail the webhook - product was created successfully, just barcode assignment failed
-      }
-    } else if (eventType === "products/update") {
-      // For updates, check if any variants are missing barcodes and add them
-      console.log(`Processing product update: ${productId}`)
-
-      try {
-        await updateProductVariantsWithBarcodes(productId)
-        console.log(`✅ Updated barcodes for product ${productId}`)
-      } catch (error: any) {
-        console.error(`Failed to update barcodes for product ${productId}:`, error.message)
-        // Don't fail the webhook for updates
-      }
+      // Don't fail the webhook - the product event was successful, barcode processing is secondary
     }
 
     // Log the webhook event
