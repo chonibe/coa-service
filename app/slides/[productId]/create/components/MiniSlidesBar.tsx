@@ -100,13 +100,13 @@ function SortableSlide({ slide, index, isActive, activeRef, onSelect, onDelete }
             )}
           </div>
 
-          {/* Delete button */}
+          {/* Delete button - always visible */}
           <button
             onClick={(e) => {
               e.stopPropagation()
               onDelete()
             }}
-            className="absolute top-0.5 right-0.5 bg-red-500/80 hover:bg-red-500 rounded-full p-0.5 backdrop-blur-sm opacity-0 group-hover:opacity-100 transition-opacity z-10"
+            className="absolute top-0.5 right-0.5 bg-red-500/90 hover:bg-red-500 rounded-full p-0.5 backdrop-blur-sm transition-colors z-10"
           >
             <X className="w-2.5 h-2.5 text-white" />
           </button>

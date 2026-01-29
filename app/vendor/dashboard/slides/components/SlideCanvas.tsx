@@ -224,9 +224,10 @@ function CanvasElementView({
     }
   }, [isDragging, handleMouseMove, handleMouseUp, handleTouchMove, handleTouchEnd])
 
-  // Handle double-tap to edit text
-  const handleDoubleClick = () => {
-    if (element.type === "text") {
+  // Handle tap/click to edit text (single click now, not double)
+  const handleClick = (e: React.MouseEvent | React.TouchEvent) => {
+    e.stopPropagation()
+    if (element.type === "text" && !isDragging) {
       onStartEdit()
     }
   }
@@ -269,10 +270,10 @@ function CanvasElementView({
           maxWidth: "90%",
           textShadow: textStyle.backgroundColor ? "none" : "0 2px 4px rgba(0,0,0,0.5)",
         }}
-        className={`${isSelected ? "ring-2 ring-primary ring-offset-2 ring-offset-black" : ""}`}
+        className={`${isSelected ? "ring-2 ring-primary ring-offset-2 ring-offset-black" : ""} ${isEditing ? "ring-4 ring-blue-500" : ""}`}
         onMouseDown={handleMouseDown}
         onTouchStart={handleTouchStart}
-        onDoubleClick={handleDoubleClick}
+        onClick={handleClick}
       >
         {isEditing ? (
           <input
