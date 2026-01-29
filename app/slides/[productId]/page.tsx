@@ -176,9 +176,35 @@ export default function SlidesPage() {
     fetchData()
   }, [productId])
 
-  // Start wizard to create new slides
-  const createSlide = () => {
-    router.push(`/slides/${productId}/create/step1`)
+  // Create new slide with media picker
+  const createSlide = async () => {
+    try {
+      setError(null)
+      const response = await fetch(`/api/vendor/slides/${productId}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({
+          product_id: productId,
+          display_order: slides.length,
+        }),
+      })
+
+      if (!response.ok) {
+        throw new Error("Failed to create slide")
+      }
+
+      const data = await response.json()
+      
+      // Refresh slides list
+      fetchSlides()
+      
+      // Navigate to the new slide editor
+      router.push(`/slides/${productId}/${data.slide.id}`)
+    } catch (err: any) {
+      console.error("Failed to create slide:", err)
+      setError("Failed to create slide")
+    }
   }
 
   // Edit slide

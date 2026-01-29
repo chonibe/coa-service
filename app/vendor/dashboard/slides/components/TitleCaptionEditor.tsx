@@ -24,19 +24,19 @@ export function TitleCaptionEditor({
       {/* Title field */}
       <input
         type="text"
-        value={title}
+        value={title || ""}
         onChange={(e) => onTitleChange(e.target.value)}
         placeholder="Add a title..."
-        className="w-full bg-transparent border-none outline-none text-white font-semibold text-lg placeholder:text-white/40"
+        className="w-full bg-transparent border-none outline-none text-white font-semibold text-lg placeholder:text-white/40 focus:outline-none focus:ring-0"
       />
 
       {/* Caption field */}
       <textarea
-        value={caption}
+        value={caption || ""}
         onChange={(e) => onCaptionChange(e.target.value)}
         placeholder="Write a caption..."
         rows={2}
-        className="w-full bg-transparent border-none outline-none text-white/80 text-sm placeholder:text-white/40 resize-none"
+        className="w-full bg-transparent border-none outline-none text-white/80 text-sm placeholder:text-white/40 resize-none focus:outline-none focus:ring-0"
       />
     </div>
   )

@@ -14,6 +14,9 @@ import { TitleCaptionEditor } from "@/app/vendor/dashboard/slides/components/Tit
 import { BackgroundPicker } from "@/app/vendor/dashboard/slides/components/BackgroundPicker"
 import { TextStylePicker } from "@/app/vendor/dashboard/slides/components/TextStylePicker"
 import { AudioPicker } from "@/app/vendor/dashboard/slides/components/AudioPicker"
+import { MediaLibraryModal, type MediaItem } from "@/components/vendor/MediaLibraryModal"
+import { MiniSlidesBar } from "../create/components/MiniSlidesBar"
+import { createTextElement } from "@/lib/slides/types"
 import type { Slide, CanvasElement, SlideBackground, SlideAudio } from "@/lib/slides/types"
 
 type ActiveSheet = "none" | "background" | "text-style" | "audio"
@@ -28,6 +31,7 @@ export default function SlideEditorPage() {
 
   // Slide state
   const [slide, setSlide] = useState<Slide | null>(null)
+  const [allSlides, setAllSlides] = useState<Slide[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -36,30 +40,43 @@ export default function SlideEditorPage() {
   // Editor state
   const [selectedElementId, setSelectedElementId] = useState<string | null>(null)
   const [activeSheet, setActiveSheet] = useState<ActiveSheet>("none")
+  const [showMediaLibrary, setShowMediaLibrary] = useState(false)
 
-  // Fetch slide
+  // Fetch all slides and current slide
   useEffect(() => {
-    async function fetchSlide() {
+    async function fetchData() {
       try {
         setIsLoading(true)
-        const response = await fetch(`/api/vendor/slides/${productId}/${slideId}`)
-        const data = await response.json()
+        
+        // Fetch all slides for mini-slides bar
+        const slidesResponse = await fetch(`/api/vendor/slides/${productId}`)
+        const slidesData = await slidesResponse.json()
+        
+        if (!slidesResponse.ok) {
+          throw new Error(slidesData.error || "Failed to fetch slides")
+        }
+        
+        setAllSlides(slidesData.slides)
+        
+        // Fetch current slide
+        const slideResponse = await fetch(`/api/vendor/slides/${productId}/${slideId}`)
+        const slideData = await slideResponse.json()
 
-        if (!response.ok) {
-          throw new Error(data.error || "Failed to fetch slide")
+        if (!slideResponse.ok) {
+          throw new Error(slideData.error || "Failed to fetch slide")
         }
 
-        setSlide(data.slide)
+        setSlide(slideData.slide)
         setError(null)
       } catch (err: any) {
-        console.error("Error fetching slide:", err)
+        console.error("Error fetching data:", err)
         setError(err.message || "Failed to load slide")
       } finally {
         setIsLoading(false)
       }
     }
 
-    fetchSlide()
+    fetchData()
   }, [productId, slideId])
 
   // Auto-save functionality
@@ -149,6 +166,43 @@ export default function SlideEditorPage() {
   const updateAudio = useCallback((audio: SlideAudio | undefined) => {
     updateSlide({ audio })
   }, [updateSlide])
+
+  // Add text element
+  const addTextElement = useCallback(() => {
+    const newElement = createTextElement("Double tap to edit")
+    addElement(newElement)
+    setSelectedElementId(newElement.id)
+  }, [addElement])
+
+  // Add image element
+  const handleImageSelect = useCallback((media: MediaItem | MediaItem[]) => {
+    const selected = Array.isArray(media) ? media[0] : media
+    
+    // Add as canvas element or background?
+    // For now, add as background
+    updateBackground({
+      type: 'image',
+      url: selected.url,
+      scale: 1,
+      offsetX: 0,
+      offsetY: 0,
+    })
+    
+    setShowMediaLibrary(false)
+  }, [updateBackground])
+
+  // Navigate to different slide
+  const handleSlideSelect = useCallback(async (newSlideId: string) => {
+    if (newSlideId === slideId) return
+    
+    // Save current changes first
+    if (hasChanges && slide) {
+      await saveSlide()
+    }
+    
+    // Navigate to new slide
+    router.push(`/slides/${productId}/${newSlideId}`)
+  }, [slideId, hasChanges, slide, saveSlide, router, productId])
 
   // Delete slide
   const deleteSlide = async () => {
@@ -282,15 +336,27 @@ export default function SlideEditorPage() {
         {/* Toolbar */}
         <div className="flex-shrink-0">
           <ToolBar
-            onBackgroundClick={() => setActiveSheet("background")}
-            onTextClick={() => setActiveSheet("text-style")}
-            onAudioClick={() => setActiveSheet("audio")}
-            onDeleteClick={() => selectedElementId && deleteElement(selectedElementId)}
-            hasSelectedElement={!!selectedElementId}
-            selectedElement={slide.elements.find((el) => el.id === selectedElementId)}
+            hasAudio={!!slide.audio}
+            onAddText={addTextElement}
+            onAddImage={() => setShowMediaLibrary(true)}
+            onOpenAudio={() => setActiveSheet("audio")}
+            onOpenBackground={() => setActiveSheet("background")}
+            onOpenTextStyle={() => setActiveSheet("text-style")}
           />
         </div>
       </div>
+
+      {/* Mini-Slides Navigation Bar */}
+      {allSlides.length > 0 && (
+        <div className="flex-shrink-0">
+          <MiniSlidesBar
+            slides={allSlides}
+            activeSlideId={slideId}
+            onSlideSelect={handleSlideSelect}
+            productId={productId}
+          />
+        </div>
+      )}
 
       {/* Bottom sheets */}
       <BackgroundPicker
@@ -316,6 +382,16 @@ export default function SlideEditorPage() {
         onClose={() => setActiveSheet("none")}
         currentAudio={slide.audio}
         onSelect={updateAudio}
+      />
+
+      {/* Media Library Modal for adding images */}
+      <MediaLibraryModal
+        open={showMediaLibrary}
+        onOpenChange={setShowMediaLibrary}
+        onSelect={handleImageSelect}
+        mode="single"
+        allowedTypes={["image", "video"]}
+        title="Add Media"
       />
     </div>
   )
