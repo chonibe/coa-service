@@ -17,6 +17,7 @@ import {
   Eye,
   Edit,
   BarChart3,
+  Film,
 } from "lucide-react"
 import Image from "next/image"
 import Link from "next/link"
@@ -246,28 +247,42 @@ export default function ArtworkPagesPage() {
                   )}
                 </div>
 
-                <div className="flex gap-2">
-                  <Button
-                    asChild
-                    variant="default"
-                    className="flex-1"
-                  >
-                    <Link href={product.is_pending 
-                      ? `/vendor/dashboard/artwork-pages/${product.id}` 
-                      : `/vendor/dashboard/artwork-pages/${product.id}`}>
-                      <Edit className="h-4 w-4 mr-2" />
-                      {product.status === "not_started" ? "Set Up" : "Edit"}
-                    </Link>
-                  </Button>
+                <div className="space-y-2">
+                  <div className="flex gap-2">
+                    <Button
+                      asChild
+                      variant="default"
+                      className="flex-1"
+                    >
+                      <Link href={product.is_pending 
+                        ? `/vendor/dashboard/artwork-pages/${product.id}` 
+                        : `/vendor/dashboard/artwork-pages/${product.id}`}>
+                        <Edit className="h-4 w-4 mr-2" />
+                        {product.status === "not_started" ? "Set Up" : "Edit"}
+                      </Link>
+                    </Button>
+                    {!product.is_pending && (
+                      <Button
+                        asChild
+                        variant="outline"
+                        size="icon"
+                        title="View as Collector"
+                      >
+                        <Link href={`/vendor/dashboard/artwork-pages/${product.id}/preview`} target="_blank">
+                          <Eye className="h-4 w-4" />
+                        </Link>
+                      </Button>
+                    )}
+                  </div>
                   {!product.is_pending && (
                     <Button
                       asChild
                       variant="outline"
-                      size="icon"
-                      title="View as Collector"
+                      className="w-full"
                     >
-                      <Link href={`/vendor/dashboard/artwork-pages/${product.id}/preview`} target="_blank">
-                        <Eye className="h-4 w-4" />
+                      <Link href={`/vendor/dashboard/slides/${product.id}`}>
+                        <Film className="h-4 w-4 mr-2" />
+                        Manage Slides
                       </Link>
                     </Button>
                   )}
