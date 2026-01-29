@@ -1252,100 +1252,109 @@ const EditorErrorBoundary = ({ children }) => {
 ## Implementation Checklist
 
 ### Phase 0: Technical Spike
-- [ ] 1. Create `app/spike/editor/page.tsx` with minimal iframe setup
-- [ ] 2. Create `app/spike/preview/page.tsx` with mock sections
-- [ ] 3. Implement postMessage click handler in preview
-- [ ] 4. Implement hover detection with getBoundingClientRect
-- [ ] 5. Test cross-browser (Chrome, Firefox, Safari)
-- [ ] 6. Document findings and go/no-go decision
+
+- 1. Create `app/spike/editor/page.tsx` with minimal iframe setup
+- 1. Create `app/spike/preview/page.tsx` with mock sections
+- 1. Implement postMessage click handler in preview
+- 1. Implement hover detection with getBoundingClientRect
+- 1. Test cross-browser (Chrome, Firefox, Safari)
+- 1. Document findings and go/no-go decision
 
 ### Phase 1: Foundation
-- [ ] 7. Create `lib/theme-editor/section-schema.ts` with core interfaces
-- [ ] 8. Create `lib/theme-editor/setting-types.ts` with all input type definitions
-- [ ] 9. Create `lib/theme-editor/artwork-sections.ts` with 8 section schemas
-- [ ] 10. Create `supabase/migrations/xxx_create_theme_editor_tables.sql`
-- [ ] 11. Run migration on local Supabase and verify
-- [ ] 12. Create `lib/theme-editor/preview-messages.ts` with postMessage types
-- [ ] 13. Create `app/vendor/dashboard/theme-editor/context/EditorContext.tsx`
+
+- 1. Create `lib/theme-editor/section-schema.ts` with core interfaces
+- 1. Create `lib/theme-editor/setting-types.ts` with all input type definitions
+- 1. Create `lib/theme-editor/artwork-sections.ts` with 8 section schemas
+- 1. Create `supabase/migrations/xxx_create_theme_editor_tables.sql`
+- 1. Run migration on local Supabase and verify
+- 1. Create `lib/theme-editor/preview-messages.ts` with postMessage types
+- 1. Create `app/vendor/dashboard/theme-editor/context/EditorContext.tsx`
 
 ### Phase 2: API Layer
-- [ ] 14. Create `app/api/vendor/theme-editor/[productId]/route.ts` (GET page structure)
-- [ ] 15. Create `app/api/vendor/theme-editor/[productId]/sections/route.ts` (POST)
-- [ ] 16. Create `app/api/vendor/theme-editor/[productId]/sections/[sectionId]/route.ts` (PUT, DELETE)
-- [ ] 17. Create `app/api/vendor/theme-editor/[productId]/sections/[sectionId]/blocks/route.ts`
-- [ ] 18. Create `app/api/vendor/theme-editor/[productId]/reorder/route.ts`
-- [ ] 19. Add optimistic locking logic to PUT endpoints
-- [ ] 20. Write API integration tests
+
+- 1. Create `app/api/vendor/theme-editor/[productId]/route.ts` (GET page structure)
+- 1. Create `app/api/vendor/theme-editor/[productId]/sections/route.ts` (POST)
+- 1. Create `app/api/vendor/theme-editor/[productId]/sections/[sectionId]/route.ts` (PUT, DELETE)
+- 1. Create `app/api/vendor/theme-editor/[productId]/sections/[sectionId]/blocks/route.ts`
+- 1. Create `app/api/vendor/theme-editor/[productId]/reorder/route.ts`
+- 1. Add optimistic locking logic to PUT endpoints
+- 1. Write API integration tests
 
 ### Phase 3: UI - Layout Tree
-- [ ] 21. Create `app/vendor/dashboard/theme-editor/[productId]/page.tsx` (main editor)
-- [ ] 22. Create `LayoutTree/LayoutTree.tsx` component
-- [ ] 23. Create `LayoutTree/SectionItem.tsx` with expand/collapse
-- [ ] 24. Create `LayoutTree/BlockItem.tsx` (nested)
-- [ ] 25. Add drag-and-drop with @dnd-kit
-- [ ] 26. Create `LayoutTree/SectionPicker.tsx` modal
-- [ ] 27. Create `LayoutTree/AddBlockButton.tsx`
+
+- 1. Create `app/vendor/dashboard/theme-editor/[productId]/page.tsx` (main editor)
+- 1. Create `LayoutTree/LayoutTree.tsx` component
+- 1. Create `LayoutTree/SectionItem.tsx` with expand/collapse
+- 1. Create `LayoutTree/BlockItem.tsx` (nested)
+- 1. Add drag-and-drop with @dnd-kit
+- 1. Create `LayoutTree/SectionPicker.tsx` modal
+- 1. Create `LayoutTree/AddBlockButton.tsx`
 
 ### Phase 4: UI - Settings Panel
-- [ ] 28. Create `SettingsPanel/SettingsPanel.tsx` container
-- [ ] 29. Create `SettingsPanel/SettingRenderer.tsx` router
-- [ ] 30. Create `inputs/CheckboxInput.tsx`
-- [ ] 31. Create `inputs/NumberInput.tsx`
-- [ ] 32. Create `inputs/RadioInput.tsx`
-- [ ] 33. Create `inputs/RangeInput.tsx`
-- [ ] 34. Create `inputs/SelectInput.tsx`
-- [ ] 35. Create `inputs/TextInput.tsx`
-- [ ] 36. Create `inputs/TextareaInput.tsx`
-- [ ] 37. Create `inputs/ImagePickerInput.tsx` (integrate MediaLibraryModal)
-- [ ] 38. Create `inputs/VideoUrlInput.tsx`
-- [ ] 39. Create `inputs/RichtextInput.tsx` (TipTap or similar)
-- [ ] 40. Create `inputs/ColorInput.tsx`
-- [ ] 41. Create `inputs/UrlInput.tsx`
-- [ ] 42. Create `inputs/HeaderSetting.tsx` (non-input)
-- [ ] 43. Create `inputs/ParagraphSetting.tsx` (non-input)
+
+- 1. Create `SettingsPanel/SettingsPanel.tsx` container
+- 1. Create `SettingsPanel/SettingRenderer.tsx` router
+- 1. Create `inputs/CheckboxInput.tsx`
+- 1. Create `inputs/NumberInput.tsx`
+- 1. Create `inputs/RadioInput.tsx`
+- 1. Create `inputs/RangeInput.tsx`
+- 1. Create `inputs/SelectInput.tsx`
+- 1. Create `inputs/TextInput.tsx`
+- 1. Create `inputs/TextareaInput.tsx`
+- 1. Create `inputs/ImagePickerInput.tsx` (integrate MediaLibraryModal)
+- 1. Create `inputs/VideoUrlInput.tsx`
+- 1. Create `inputs/RichtextInput.tsx` (TipTap or similar)
+- 1. Create `inputs/ColorInput.tsx`
+- 1. Create `inputs/UrlInput.tsx`
+- 1. Create `inputs/HeaderSetting.tsx` (non-input)
+- 1. Create `inputs/ParagraphSetting.tsx` (non-input)
 
 ### Phase 5: UI - Preview
-- [ ] 44. Create `Preview/PreviewFrame.tsx` with device frames
-- [ ] 45. Create `Preview/DeviceSwitcher.tsx`
-- [ ] 46. Create `app/vendor/dashboard/theme-editor/[productId]/preview/page.tsx`
-- [ ] 47. Implement postMessage listeners in preview
-- [ ] 48. Add data-section-id and data-block-id attributes to rendered elements
-- [ ] 49. Implement click-to-select in preview
-- [ ] 50. Implement hover highlight overlay
-- [ ] 51. Implement scroll-to-element functionality
+
+- 1. Create `Preview/PreviewFrame.tsx` with device frames
+- 1. Create `Preview/DeviceSwitcher.tsx`
+- 1. Create `app/vendor/dashboard/theme-editor/[productId]/preview/page.tsx`
+- 1. Implement postMessage listeners in preview
+- 1. Add data-section-id and data-block-id attributes to rendered elements
+- 1. Implement click-to-select in preview
+- 1. Implement hover highlight overlay
+- 1. Implement scroll-to-element functionality
 
 ### Phase 6: Integration
-- [ ] 52. Wire LayoutTree selection to SettingsPanel
-- [ ] 53. Wire SettingsPanel changes to API (debounced auto-save)
-- [ ] 54. Wire API responses to Preview (postMessage updates)
-- [ ] 55. Implement undo/redo with state history
-- [ ] 56. Create `Toolbar/EditorToolbar.tsx`
-- [ ] 57. Create `Toolbar/PublishButton.tsx`
-- [ ] 58. Add loading states and optimistic updates
-- [ ] 59. Add error handling and toast notifications
+
+- 1. Wire LayoutTree selection to SettingsPanel
+- 1. Wire SettingsPanel changes to API (debounced auto-save)
+- 1. Wire API responses to Preview (postMessage updates)
+- 1. Implement undo/redo with state history
+- 1. Create `Toolbar/EditorToolbar.tsx`
+- 1. Create `Toolbar/PublishButton.tsx`
+- 1. Add loading states and optimistic updates
+- 1. Add error handling and toast notifications
 
 ### Phase 7: Migration
-- [ ] 60. Create `scripts/migrate-artwork-pages-to-sections.ts`
-- [ ] 61. Create block-type-to-section-type mapping
-- [ ] 62. Create settings transformation functions
-- [ ] 63. Test migration on staging with 10 sample products
-- [ ] 64. Create `scripts/rollback-sections-to-blocks.ts`
-- [ ] 65. Update `app/collector/artwork/[id]/page.tsx` for dual-format support
-- [ ] 66. Create `SectionRenderer.tsx` for new format
-- [ ] 67. Keep `LegacyBlockRenderer.tsx` for fallback
+
+- 1. Create `scripts/migrate-artwork-pages-to-sections.ts`
+- 1. Create block-type-to-section-type mapping
+- 1. Create settings transformation functions
+- 1. Test migration on staging with 10 sample products
+- 1. Create `scripts/rollback-sections-to-blocks.ts`
+- 1. Update `app/collector/artwork/[id]/page.tsx` for dual-format support
+- 1. Create `SectionRenderer.tsx` for new format
+- 1. Keep `LegacyBlockRenderer.tsx` for fallback
 
 ### Phase 8: Rollout
-- [ ] 68. Create `lib/feature-flags.ts`
-- [ ] 69. Create `vendor_feature_flags` table
-- [ ] 70. Gate new editor behind feature flag
-- [ ] 71. Enable for internal testing (5 vendors)
-- [ ] 72. Enable opt-in beta (banner in old editor)
-- [ ] 73. Run migration for beta users
-- [ ] 74. Monitor for 7 days
-- [ ] 75. Enable 50% rollout
-- [ ] 76. Enable 100% rollout
-- [ ] 77. Deprecate old editor (keep accessible via URL for 30 days)
-- [ ] 78. Remove old editor code and legacy tables
+
+- 1. Create `lib/feature-flags.ts`
+- 1. Create `vendor_feature_flags` table
+- 1. Gate new editor behind feature flag
+- 1. Enable for internal testing (5 vendors)
+- 1. Enable opt-in beta (banner in old editor)
+- 1. Run migration for beta users
+- 1. Monitor for 7 days
+- 1. Enable 50% rollout
+- 1. Enable 100% rollout
+- 1. Deprecate old editor (keep accessible via URL for 30 days)
+- 1. Remove old editor code and legacy tables
 
 ---
 

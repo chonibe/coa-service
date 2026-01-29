@@ -262,16 +262,28 @@ export default function ArtworkPagesPage() {
                       </Link>
                     </Button>
                     {!product.is_pending && (
-                      <Button
-                        asChild
-                        variant="outline"
-                        size="icon"
-                        title="View as Collector"
-                      >
-                        <Link href={`/vendor/dashboard/artwork-pages/${product.id}/preview`} target="_blank">
-                          <Eye className="h-4 w-4" />
-                        </Link>
-                      </Button>
+                      <>
+                        <Button
+                          asChild
+                          variant="outline"
+                          size="icon"
+                          title="Mobile Editor"
+                        >
+                          <Link href={`/artwork-pages/${product.id}/mobile`}>
+                            📱
+                          </Link>
+                        </Button>
+                        <Button
+                          asChild
+                          variant="outline"
+                          size="icon"
+                          title="View as Collector"
+                        >
+                          <Link href={`/vendor/dashboard/artwork-pages/${product.id}/preview`} target="_blank">
+                            <Eye className="h-4 w-4" />
+                          </Link>
+                        </Button>
+                      </>
                     )}
                   </div>
                   {!product.is_pending && (

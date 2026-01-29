@@ -46,7 +46,13 @@ import { SectionGroupBlock } from "./components/SectionGroupBlock"
 import { SpecialArtworkChip, type SpecialChip } from "./components/SpecialArtworkChip"
 import { DiscoverySection } from "./components/DiscoverySection"
 
+// Reels and Story components
+import { ReelsViewer } from "./components/ReelsViewer"
+import { SharedStoryTimeline } from "./components/story/SharedStoryTimeline"
+
 import { Card, CardContent, Button, Badge, Alert, AlertDescription } from "@/components/ui"
+import type { Slide } from "@/lib/slides/types"
+import type { StoryPost } from "@/lib/story/types"
 interface ArtworkDetail {
   artwork: {
     id: string
@@ -139,6 +145,11 @@ export default function CollectorArtworkPage() {
   const [authCode, setAuthCode] = useState("")
   const [isAuthenticating, setIsAuthenticating] = useState(false)
   const [showUnlockReveal, setShowUnlockReveal] = useState(false)
+  
+  // Reels and Story state
+  const [slides, setSlides] = useState<Slide[]>([])
+  const [slidesLoading, setSlidesLoading] = useState(true)
+  const [showReels, setShowReels] = useState(false)
 
   useEffect(() => {
     const fetchArtwork = async () => {
@@ -203,6 +214,33 @@ export default function CollectorArtworkPage() {
       fetchArtwork()
     }
   }, [artworkId])
+
+  // Fetch slides for Reels viewer
+  useEffect(() => {
+    const fetchSlides = async () => {
+      if (!artwork?.artwork?.id) return
+      
+      try {
+        setSlidesLoading(true)
+        const response = await fetch(`/api/collector/slides/${artwork.artwork.id}`, {
+          credentials: "include",
+        })
+
+        if (response.ok) {
+          const data = await response.json()
+          if (data.success && data.slides) {
+            setSlides(data.slides)
+          }
+        }
+      } catch (err) {
+        console.error("Error fetching slides:", err)
+      } finally {
+        setSlidesLoading(false)
+      }
+    }
+
+    fetchSlides()
+  }, [artwork?.artwork?.id])
 
   const handleNfcSuccess = () => {
     // Show unlock celebration
@@ -318,6 +356,17 @@ export default function CollectorArtworkPage() {
         />
       )}
 
+      {/* Reels Full-Screen Viewer (when active) */}
+      {showReels && slides.length > 0 && (
+        <ReelsViewer
+          productId={artwork.artwork.id}
+          productName={artwork.artwork.name}
+          vendorName={artwork.artist.name}
+          slides={slides}
+          onExitReels={() => setShowReels(false)}
+        />
+      )}
+
       <div className="min-h-screen bg-background pb-safe-4">
         {/* Mobile-first header - compact */}
         <div className="sticky top-0 z-40 bg-background/95 backdrop-blur-md border-b px-4 py-3">
@@ -346,6 +395,20 @@ export default function CollectorArtworkPage() {
           </div>
         </div>
       </div>
+
+      {/* Reels Experience Button (if slides exist) */}
+      {!slidesLoading && slides.length > 0 && (
+        <div className="px-4 pt-4">
+          <Button
+            onClick={() => setShowReels(true)}
+            className="w-full h-14 text-lg font-semibold bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700"
+          >
+            <span className="mr-2">✨</span>
+            Experience the Story
+            <span className="ml-2">{slides.length} Slides</span>
+          </Button>
+        </div>
+      )}
 
       {/* Artwork Image - Full bleed on mobile - ALWAYS VISIBLE */}
       <div className="relative">
@@ -432,6 +495,34 @@ export default function CollectorArtworkPage() {
           signatureUrl={artwork.artist.signatureUrl}
           isLocked={!isAuthenticated}
         />
+
+        {/* Shared Story Timeline */}
+        <div className="mt-8">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-2xl font-bold">The Story</h2>
+            <Badge variant="outline" className="text-xs">
+              Shared Experience
+            </Badge>
+          </div>
+          <SharedStoryTimeline
+            productId={artwork.artwork.id}
+            productName={artwork.artwork.name}
+            isOwner={isAuthenticated}
+            isArtist={false}
+          />
+        </div>
+
+        {/* Section Divider */}
+        <div className="my-12 relative">
+          <div className="absolute inset-0 flex items-center">
+            <div className="w-full border-t border-border/50"></div>
+          </div>
+          <div className="relative flex justify-center">
+            <span className="bg-background px-4 text-sm text-muted-foreground">
+              Details & Content
+            </span>
+          </div>
+        </div>
 
         {/* Content Blocks with Lock Overlay */}
         <div className={`divide-y divide-border/30 ${!isAuthenticated ? "relative" : ""}`}>

@@ -1242,6 +1242,24 @@ export default function ArtworkPageEditor() {
                 </div>
               </div>
 
+              {/* Mobile Editor Banner - Only show on small screens */}
+              <div className="md:hidden">
+                <Alert className="bg-blue-900/30 border-blue-700">
+                  <AlertDescription className="flex items-center justify-between">
+                    <div>
+                      <strong>Mobile Tip:</strong> Try our mobile-optimized editor for a better experience on small screens
+                    </div>
+                    <Button
+                      onClick={() => router.push(`/artwork-pages/${productId}/mobile`)}
+                      size="sm"
+                      className="ml-2 bg-blue-600 hover:bg-blue-700"
+                    >
+                      📱 Switch
+                    </Button>
+                  </AlertDescription>
+                </Alert>
+              </div>
+
               {/* Reorder Mode Banner */}
               {isReorderMode && (
                 <Alert className="bg-blue-900/30 border-blue-700">
