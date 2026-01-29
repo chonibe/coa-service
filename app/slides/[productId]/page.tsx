@@ -310,17 +310,19 @@ export default function SlidesPage() {
             <ArrowLeft className="w-4 h-4 mr-1" />
             Back
           </Button>
-          <h1 className="font-semibold truncate max-w-[200px]">
+          <h1 className="font-semibold truncate max-w-[150px]">
             {product?.name || "Slides"}
           </h1>
-          <Button
-            onClick={() => router.push(`/collector/artwork/${productId}`)}
-            variant="ghost"
-            size="sm"
-            className="-mr-2"
-          >
-            <Eye className="w-4 h-4" />
-          </Button>
+          <div className="flex gap-1">
+            <Button
+              onClick={() => router.push(`/slides/${productId}/view`)}
+              variant="ghost"
+              size="sm"
+            >
+              <Eye className="w-4 h-4 mr-1" />
+              View
+            </Button>
+          </div>
         </div>
       </header>
 

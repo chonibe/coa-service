@@ -275,16 +275,28 @@ export default function ArtworkPagesPage() {
                     )}
                   </div>
                   {!product.is_pending && (
-                    <Button
-                      asChild
-                      variant="outline"
-                      className="w-full"
-                    >
-                      <Link href={`/slides/${product.id}`}>
-                        <Film className="h-4 w-4 mr-2" />
-                        Manage Slides
-                      </Link>
-                    </Button>
+                    <div className="flex gap-2">
+                      <Button
+                        asChild
+                        variant="outline"
+                        className="flex-1"
+                      >
+                        <Link href={`/slides/${product.id}`}>
+                          <Film className="h-4 w-4 mr-2" />
+                          Manage
+                        </Link>
+                      </Button>
+                      <Button
+                        asChild
+                        variant="outline"
+                        className="flex-1"
+                      >
+                        <Link href={`/slides/${product.id}/view`}>
+                          <Eye className="h-4 w-4 mr-2" />
+                          View
+                        </Link>
+                      </Button>
+                    </div>
                   )}
                 </div>
                 {product.is_pending && product.submission_status && (
