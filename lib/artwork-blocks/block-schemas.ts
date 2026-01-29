@@ -222,6 +222,38 @@ export const BLOCK_SCHEMAS: BlockSchema[] = [
       { id: "show_signature", type: "checkbox", label: "Show Signature", default: true }
     ]
   },
+  {
+    id: "map",
+    name: "Artwork Map Block",
+    label: "Location",
+    description: "Share a meaningful location with photos",
+    category: "immersive",
+    icon: "MapPin",
+    ui: {
+      iconColor: "text-rose-400",
+      headerGradient: "bg-gradient-to-r from-rose-900/30 to-gray-800",
+      sidebarGradient: "from-rose-900/30 to-rose-800/30"
+    },
+    settings: [
+      { id: "title", type: "text", label: "Title", placeholder: "e.g., Where I painted this" },
+      { id: "location_name", type: "text", label: "Location Name", placeholder: "e.g., Montmartre, Paris" },
+      { id: "latitude", type: "text", label: "Latitude", placeholder: "e.g., 48.8867" },
+      { id: "longitude", type: "text", label: "Longitude", placeholder: "e.g., 2.3431" },
+      { id: "description", type: "textarea", label: "Description", placeholder: "Tell the story of this place..." },
+      { 
+        id: "map_style", 
+        type: "select", 
+        label: "Map Style", 
+        default: "street",
+        options: [
+          { value: "street", label: "Street" },
+          { value: "satellite", label: "Satellite" },
+          { value: "artistic", label: "Artistic" }
+        ]
+      },
+      { id: "images", type: "image_picker", label: "Location Photos" }
+    ]
+  },
 
   // ============ STRUCTURE BLOCKS ============
   {

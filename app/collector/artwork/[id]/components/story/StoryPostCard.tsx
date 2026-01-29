@@ -57,7 +57,7 @@ export function StoryPostCard({
   return (
     <div className={`relative ${!post.is_visible ? 'opacity-50' : ''}`}>
       {/* Main post card */}
-      <div className="bg-white dark:bg-zinc-900 rounded-xl p-4 shadow-sm border border-zinc-100 dark:border-zinc-800">
+      <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
         {/* Header: Avatar, name, time, location */}
         <div className="flex items-start gap-3 mb-3">
           {/* Avatar */}
@@ -85,11 +85,11 @@ export function StoryPostCard({
           {/* Name, badges, meta */}
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
-              <span className="font-semibold text-zinc-900 dark:text-white">
+              <span className="font-semibold text-gray-900">
                 {post.author_name}
               </span>
               {isAuthorArtist && (
-                <span className="px-2 py-0.5 bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 text-xs font-medium rounded-full">
+                <span className="px-2 py-0.5 bg-indigo-100 text-indigo-600 text-xs font-medium rounded-full">
                   Artist
                 </span>
               )}
@@ -99,7 +99,7 @@ export function StoryPostCard({
             </div>
             
             {/* Time and location - responsive wrap */}
-            <div className="flex items-center gap-2 text-sm text-zinc-500 dark:text-zinc-400 mt-0.5 flex-wrap">
+            <div className="flex items-center gap-2 text-sm text-gray-500 mt-0.5 flex-wrap">
               <span className="flex items-center gap-1">
                 <Clock className="w-3.5 h-3.5" />
                 {formatRelativeTime(post.created_at)}
@@ -128,18 +128,18 @@ export function StoryPostCard({
             <div className="relative">
               <button
                 onClick={() => setShowMenu(!showMenu)}
-                className="p-2 -m-2 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300"
+                className="p-2 -m-2 text-gray-400 hover:text-gray-600"
               >
                 <MoreHorizontal className="w-5 h-5" />
               </button>
               {showMenu && (
-                <div className="absolute right-0 top-full mt-1 bg-white dark:bg-zinc-800 rounded-lg shadow-lg border border-zinc-200 dark:border-zinc-700 py-1 z-10 min-w-[120px]">
+                <div className="absolute right-0 top-full mt-1 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-10 min-w-[120px]">
                   <button
                     onClick={() => {
                       onModerate?.(post.id, post.is_pinned ? 'pin' : 'pin')
                       setShowMenu(false)
                     }}
-                    className="w-full px-3 py-2 text-left text-sm hover:bg-zinc-100 dark:hover:bg-zinc-700"
+                    className="w-full px-3 py-2 text-left text-sm hover:bg-gray-100"
                   >
                     {post.is_pinned ? 'Unpin' : 'Pin post'}
                   </button>
@@ -148,7 +148,7 @@ export function StoryPostCard({
                       onModerate?.(post.id, 'hide')
                       setShowMenu(false)
                     }}
-                    className="w-full px-3 py-2 text-left text-sm hover:bg-zinc-100 dark:hover:bg-zinc-700 text-red-600"
+                    className="w-full px-3 py-2 text-left text-sm hover:bg-gray-100 text-red-600"
                   >
                     {post.is_visible ? 'Hide post' : 'Show post'}
                   </button>
@@ -162,7 +162,7 @@ export function StoryPostCard({
         <div className="mt-3">
           {/* Text content */}
           {post.text_content && (
-            <p className="text-zinc-800 dark:text-zinc-200 whitespace-pre-wrap break-words">
+            <p className="text-gray-800 whitespace-pre-wrap break-words">
               {post.text_content}
             </p>
           )}
@@ -182,10 +182,10 @@ export function StoryPostCard({
 
           {/* Voice note */}
           {post.content_type === 'voice_note' && post.media_url && (
-            <div className="mt-3 bg-zinc-100 dark:bg-zinc-800 rounded-xl p-4 flex items-center gap-4">
+            <div className="mt-3 bg-gray-100 rounded-xl p-4 flex items-center gap-4">
               <button
                 onClick={() => setIsPlaying(!isPlaying)}
-                className="w-12 h-12 rounded-full bg-blue-500 text-white flex items-center justify-center flex-shrink-0"
+                className="w-12 h-12 rounded-full bg-indigo-500 text-white flex items-center justify-center flex-shrink-0"
               >
                 {isPlaying ? (
                   <Pause className="w-5 h-5" />
@@ -195,12 +195,12 @@ export function StoryPostCard({
               </button>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2">
-                  <Volume2 className="w-4 h-4 text-zinc-400" />
-                  <span className="text-sm text-zinc-600 dark:text-zinc-300">
+                  <Volume2 className="w-4 h-4 text-gray-400" />
+                  <span className="text-sm text-gray-600">
                     Voice note
                   </span>
                 </div>
-                <div className="text-xs text-zinc-500 mt-0.5">
+                <div className="text-xs text-gray-500 mt-0.5">
                   {formatDuration(post.voice_duration_seconds)}
                 </div>
               </div>
@@ -210,10 +210,10 @@ export function StoryPostCard({
 
         {/* Actions */}
         {isArtist && !isAuthorArtist && (
-          <div className="mt-3 pt-3 border-t border-zinc-100 dark:border-zinc-800">
+          <div className="mt-3 pt-3 border-t border-gray-100">
             <button
               onClick={() => onReply?.(post.id)}
-              className="flex items-center gap-2 text-sm text-zinc-500 hover:text-blue-500 transition-colors"
+              className="flex items-center gap-2 text-sm text-gray-500 hover:text-indigo-500 transition-colors"
             >
               <MessageCircle className="w-4 h-4" />
               Reply

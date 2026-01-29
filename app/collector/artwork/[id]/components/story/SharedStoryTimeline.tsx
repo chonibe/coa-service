@@ -1,10 +1,41 @@
 "use client"
 
-import { useState, useEffect, useCallback, useRef } from "react"
-import { RefreshCw, Plus, ChevronDown } from "lucide-react"
-import { StoryPostCard } from "./StoryPostCard"
+import { useState, useEffect, useCallback, useMemo } from "react"
+import { RefreshCw } from "lucide-react"
+import { StoryCircles } from "./StoryCircles"
 import { AddToStorySheet } from "./AddToStorySheet"
-import type { StoryPost } from "@/lib/story/types"
+import type { StoryPost, StoryUser } from "@/lib/story/types"
+
+// ============================================
+// localStorage helpers for tracking seen stories
+// ============================================
+
+const getSeenStoriesKey = (productId: string) => `seen-stories-${productId}`
+
+const getSeenStories = (productId: string): Set<string> => {
+  if (typeof window === 'undefined') return new Set()
+  try {
+    const key = getSeenStoriesKey(productId)
+    const stored = localStorage.getItem(key)
+    return stored ? new Set(JSON.parse(stored)) : new Set()
+  } catch {
+    return new Set()
+  }
+}
+
+const markStorySeen = (productId: string, storyId: string): void => {
+  if (typeof window === 'undefined') return
+  try {
+    const key = getSeenStoriesKey(productId)
+    const seen = getSeenStories(productId)
+    seen.add(storyId)
+    localStorage.setItem(key, JSON.stringify([...seen]))
+  } catch {
+    // Ignore localStorage errors
+  }
+}
+
+// ============================================
 
 interface SharedStoryTimelineProps {
   productId: string
@@ -12,16 +43,17 @@ interface SharedStoryTimelineProps {
   isOwner: boolean // Does the current user own this artwork?
   isArtist?: boolean // Is the current user the artist?
   onReply?: (postId: string) => void
+  isPreview?: boolean // Is this being shown in preview mode?
 }
 
 /**
- * SharedStoryTimeline - The main story feed component
+ * SharedStoryTimeline - Instagram-style story circles with full-screen viewer
  * 
  * Features:
- * - Pull-to-refresh on mobile
- * - Infinite scroll (if needed)
- * - Floating "Add to Story" button
- * - Empty state
+ * - Horizontal story circles row
+ * - Full-screen tap-through story viewer
+ * - "Add to Story" button for owners/artists
+ * - Auto-grouping of posts by author
  */
 export function SharedStoryTimeline({
   productId,
@@ -29,30 +61,32 @@ export function SharedStoryTimeline({
   isOwner,
   isArtist = false,
   onReply,
+  isPreview = false,
 }: SharedStoryTimelineProps) {
   const [posts, setPosts] = useState<StoryPost[]>([])
   const [isLoading, setIsLoading] = useState(true)
-  const [isRefreshing, setIsRefreshing] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [showAddSheet, setShowAddSheet] = useState(false)
-  
-  // Pull-to-refresh state
-  const containerRef = useRef<HTMLDivElement>(null)
-  const [pullDistance, setPullDistance] = useState(0)
-  const [isPulling, setIsPulling] = useState(false)
-  const startY = useRef(0)
+  const [seenStoryIds, setSeenStoryIds] = useState<Set<string>>(new Set())
+
+  // Load seen stories from localStorage on mount
+  useEffect(() => {
+    setSeenStoryIds(getSeenStories(productId))
+  }, [productId])
 
   const apiBase = isArtist 
     ? `/api/vendor/story/${productId}`
     : `/api/collector/story/${productId}`
 
-  const fetchPosts = useCallback(async (isRefresh = false) => {
+  const fetchPosts = useCallback(async () => {
+    // Skip API call in preview mode
+    if (isPreview) {
+      setIsLoading(false)
+      return
+    }
+
     try {
-      if (isRefresh) {
-        setIsRefreshing(true)
-      } else {
-        setIsLoading(true)
-      }
+      setIsLoading(true)
       setError(null)
 
       const response = await fetch(apiBase, {
@@ -69,66 +103,59 @@ export function SharedStoryTimeline({
       setError(err.message)
     } finally {
       setIsLoading(false)
-      setIsRefreshing(false)
     }
-  }, [apiBase])
+  }, [apiBase, isPreview])
 
   useEffect(() => {
     fetchPosts()
   }, [fetchPosts])
 
-  // Pull-to-refresh handlers
-  const handleTouchStart = (e: React.TouchEvent) => {
-    if (containerRef.current?.scrollTop === 0) {
-      startY.current = e.touches[0].clientY
-      setIsPulling(true)
-    }
-  }
+  // Group posts by author into StoryUser objects
+  const storyUsers = useMemo((): StoryUser[] => {
+    const userMap = new Map<string, StoryUser>()
 
-  const handleTouchMove = (e: React.TouchEvent) => {
-    if (!isPulling) return
-    const currentY = e.touches[0].clientY
-    const diff = currentY - startY.current
-    if (diff > 0 && diff < 150) {
-      setPullDistance(diff)
-    }
-  }
+    // Sort posts by created_at (newest first for each user)
+    const sortedPosts = [...posts].sort(
+      (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+    )
 
-  const handleTouchEnd = () => {
-    if (pullDistance > 80) {
-      fetchPosts(true)
-    }
-    setPullDistance(0)
-    setIsPulling(false)
-  }
-
-  // Moderation handler
-  const handleModerate = async (postId: string, action: 'hide' | 'pin') => {
-    if (!isArtist) return
-
-    const post = posts.find(p => p.id === postId)
-    if (!post) return
-
-    const updateData = action === 'hide' 
-      ? { is_visible: !post.is_visible }
-      : { is_pinned: !post.is_pinned }
-
-    try {
-      const response = await fetch(`/api/vendor/story/${productId}/${postId}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify(updateData),
-      })
-
-      if (response.ok) {
-        const data = await response.json()
-        setPosts(prev => prev.map(p => p.id === postId ? { ...p, ...data.post } : p))
+    for (const post of sortedPosts) {
+      const existingUser = userMap.get(post.author_id)
+      
+      if (existingUser) {
+        existingUser.stories.push(post)
+        // Update hasUnseenStories if this story is unseen
+        if (!seenStoryIds.has(post.id)) {
+          existingUser.hasUnseenStories = true
+        }
+      } else {
+        userMap.set(post.author_id, {
+          id: post.author_id,
+          name: post.author_name,
+          avatarUrl: post.author_avatar_url,
+          isArtist: post.author_type === 'artist',
+          stories: [post],
+          hasUnseenStories: !seenStoryIds.has(post.id),
+        })
       }
-    } catch (err) {
-      console.error('Failed to moderate post:', err)
     }
-  }
+
+    // Sort users: artist first, then by most recent story
+    return Array.from(userMap.values()).sort((a, b) => {
+      if (a.isArtist && !b.isArtist) return -1
+      if (!a.isArtist && b.isArtist) return 1
+      
+      const aLatest = new Date(a.stories[0]?.created_at || 0).getTime()
+      const bLatest = new Date(b.stories[0]?.created_at || 0).getTime()
+      return bLatest - aLatest
+    })
+  }, [posts, seenStoryIds])
+
+  // Handler to mark a story as seen
+  const handleStorySeen = useCallback((storyId: string) => {
+    markStorySeen(productId, storyId)
+    setSeenStoryIds(prev => new Set([...prev, storyId]))
+  }, [productId])
 
   // Handle new post created
   const handlePostCreated = (newPost: StoryPost) => {
@@ -137,23 +164,23 @@ export function SharedStoryTimeline({
   }
 
   // Loading state
-  if (isLoading) {
+  if (isLoading && !isPreview) {
     return (
       <div className="py-8 text-center">
-        <RefreshCw className="w-6 h-6 text-zinc-400 animate-spin mx-auto" />
-        <p className="text-sm text-zinc-500 mt-2">Loading story...</p>
+        <RefreshCw className="w-6 h-6 text-gray-400 animate-spin mx-auto" />
+        <p className="text-sm text-gray-500 mt-2">Loading stories...</p>
       </div>
     )
   }
 
-  // Error state
-  if (error) {
+  // Error state (don't show in preview mode)
+  if (error && !isPreview) {
     return (
       <div className="py-8 text-center">
         <p className="text-sm text-red-500">{error}</p>
         <button
           onClick={() => fetchPosts()}
-          className="mt-2 text-sm text-blue-500 hover:underline"
+          className="mt-2 text-sm text-indigo-600 hover:underline"
         >
           Try again
         </button>
@@ -163,92 +190,17 @@ export function SharedStoryTimeline({
 
   return (
     <div className="relative">
-      {/* Pull-to-refresh indicator */}
-      {pullDistance > 0 && (
-        <div 
-          className="absolute top-0 left-0 right-0 flex items-center justify-center z-10"
-          style={{ height: pullDistance, transform: 'translateY(-100%)' }}
-        >
-          <RefreshCw 
-            className={`w-5 h-5 text-zinc-400 ${pullDistance > 80 ? 'text-blue-500' : ''}`}
-            style={{ transform: `rotate(${pullDistance * 2}deg)` }}
-          />
-        </div>
-      )}
-
-      {/* Refreshing indicator */}
-      {isRefreshing && (
-        <div className="py-3 flex items-center justify-center">
-          <RefreshCw className="w-5 h-5 text-blue-500 animate-spin" />
-        </div>
-      )}
-
-      {/* Story timeline */}
-      <div
-        ref={containerRef}
-        className="space-y-4"
-        onTouchStart={handleTouchStart}
-        onTouchMove={handleTouchMove}
-        onTouchEnd={handleTouchEnd}
-        style={{ transform: `translateY(${pullDistance / 3}px)` }}
-      >
-        {/* Header */}
-        <div className="flex items-center justify-between px-4 py-2">
-          <h2 className="text-lg font-semibold text-zinc-900 dark:text-white">
-            Story
-          </h2>
-          <span className="text-sm text-zinc-500">
-            {posts.length} {posts.length === 1 ? 'post' : 'posts'}
-          </span>
-        </div>
-
-        {/* Empty state */}
-        {posts.length === 0 && (
-          <div className="py-12 px-4 text-center">
-            <div className="w-16 h-16 rounded-full bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center mx-auto mb-4">
-              <ChevronDown className="w-8 h-8 text-zinc-400" />
-            </div>
-            <h3 className="text-lg font-medium text-zinc-900 dark:text-white mb-2">
-              No story yet
-            </h3>
-            <p className="text-sm text-zinc-500 max-w-xs mx-auto">
-              {isOwner 
-                ? "Be the first to share a moment with this artwork!"
-                : "The story of this artwork is waiting to be written."}
-            </p>
-            {isOwner && (
-              <button
-                onClick={() => setShowAddSheet(true)}
-                className="mt-4 px-4 py-2 bg-blue-500 text-white text-sm font-medium rounded-full hover:bg-blue-600 transition-colors"
-              >
-                Add to Story
-              </button>
-            )}
-          </div>
-        )}
-
-        {/* Posts */}
-        {posts.map((post) => (
-          <StoryPostCard
-            key={post.id}
-            post={post}
-            isArtist={isArtist}
-            onReply={onReply}
-            onModerate={handleModerate}
-          />
-        ))}
-      </div>
-
-      {/* Floating "Add to Story" button */}
-      {(isOwner || isArtist) && posts.length > 0 && (
-        <button
-          onClick={() => setShowAddSheet(true)}
-          className="fixed bottom-24 right-4 w-14 h-14 bg-blue-500 text-white rounded-full shadow-lg flex items-center justify-center z-40 hover:bg-blue-600 active:scale-95 transition-all"
-          style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
-        >
-          <Plus className="w-7 h-7" />
-        </button>
-      )}
+      {/* Story Circles Row */}
+      <StoryCircles
+        productId={productId}
+        productName={productName}
+        isOwner={isOwner}
+        isArtist={isArtist}
+        onAddStory={() => setShowAddSheet(true)}
+        users={storyUsers}
+        isPreview={isPreview}
+        onStorySeen={handleStorySeen}
+      />
 
       {/* Add to Story sheet */}
       <AddToStorySheet

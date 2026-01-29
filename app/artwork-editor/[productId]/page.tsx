@@ -2,7 +2,8 @@
 
 import { useState, useEffect, useRef } from "react"
 import { useParams, useRouter } from "next/navigation"
-import { ArrowLeft, Save, Eye, Loader2, AlertCircle, Menu, X, ChevronLeft, ChevronRight } from "lucide-react"
+import Image from "next/image"
+import { ArrowLeft, Save, Eye, Loader2, AlertCircle, Menu, X, ChevronLeft, ChevronRight, Trash2, GripVertical, ChevronUp, ChevronDown, Sparkles, Plus, Camera } from "lucide-react"
 import { Button, Alert, AlertDescription } from "@/components/ui"
 import { useToast } from "@/components/ui/use-toast"
 import { BlockSelectorPills } from "@/app/artwork-editor/[productId]/components/BlockSelectorPills"
@@ -105,32 +106,172 @@ export default function StandaloneArtworkEditor() {
   }, [productId])
 
   const selectedBlock = contentBlocks.find(b => b.id === selectedBlockId)
+  
+  // Debug logging for mobile
+  useEffect(() => {
+    if (isMobile) {
+      console.log('[Mobile] Selected block ID:', selectedBlockId)
+      console.log('[Mobile] Selected block:', selectedBlock)
+      console.log('[Mobile] Total blocks:', contentBlocks.length)
+    }
+  }, [selectedBlockId, selectedBlock, contentBlocks, isMobile])
 
-  const handleBlockUpdate = (blockId: number, updates: Partial<ContentBlock>) => {
+  const handleBlockUpdate = async (blockId: number, updates: Partial<ContentBlock>) => {
+    // Optimistically update UI
     setContentBlocks(prev =>
       prev.map(b => b.id === blockId ? { ...b, ...updates } : b)
     )
+
+    // Auto-save to backend
+    try {
+      const block = contentBlocks.find(b => b.id === blockId)
+      if (!block) return
+
+      const response = await fetch(`/api/vendor/artwork-pages/${productId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({
+          blockId,
+          ...block,
+          ...updates,
+        }),
+      })
+
+      if (!response.ok) {
+        throw new Error("Failed to save changes")
+      }
+
+      setLastSaved(new Date())
+    } catch (err: any) {
+      console.error("Auto-save error:", err)
+      toast({ title: "Auto-save failed", description: err.message, variant: "destructive" })
+    }
   }
 
-  const handleAddBlock = (blockData: Partial<ContentBlock>) => {
-    fetch(`/api/vendor/artwork-pages/${productId}/blocks`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      credentials: "include",
-      body: JSON.stringify(blockData),
-    })
-      .then(res => res.json())
-      .then(data => {
-        if (data.block) {
-          setContentBlocks(prev => [...prev, data.block])
-          setSelectedBlockId(data.block.id)
-          setSidebarOpen(false)
-          toast({ title: "Block added", description: "Your new block has been created" })
-        }
+  const handleDeleteBlock = async (blockId: number) => {
+    if (!confirm("Are you sure you want to delete this block?")) {
+      return
+    }
+
+    try {
+      const response = await fetch(`/api/vendor/artwork-pages/${productId}?blockId=${blockId}`, {
+        method: "DELETE",
+        credentials: "include",
       })
-      .catch(err => {
-        toast({ title: "Error", description: err.message, variant: "destructive" })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.message || "Failed to delete block")
+      }
+
+      setContentBlocks(prev => prev.filter(b => b.id !== blockId))
+      if (selectedBlockId === blockId) {
+        setSelectedBlockId(null)
+      }
+      toast({ title: "Block deleted", description: "The block has been removed" })
+    } catch (err: any) {
+      toast({ title: "Error", description: err.message, variant: "destructive" })
+    }
+  }
+
+  const handleMoveBlock = async (blockId: number, direction: "up" | "down") => {
+    const currentIndex = contentBlocks.findIndex(b => b.id === blockId)
+    if (currentIndex === -1) return
+
+    const newIndex = direction === "up" ? currentIndex - 1 : currentIndex + 1
+    if (newIndex < 0 || newIndex >= contentBlocks.length) return
+
+    const newBlocks = [...contentBlocks]
+    const [movedBlock] = newBlocks.splice(currentIndex, 1)
+    newBlocks.splice(newIndex, 0, movedBlock)
+
+    // Update display_order for all blocks
+    const reorderedBlocks = newBlocks.map((block, index) => ({
+      ...block,
+      display_order: index
+    }))
+
+    setContentBlocks(reorderedBlocks)
+
+    // Save the new order to the backend
+    try {
+      const response = await fetch(`/api/vendor/artwork-pages/${productId}/reorder`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({
+          blockOrders: reorderedBlocks.map(b => ({ id: b.id, display_order: b.display_order }))
+        }),
       })
+
+      if (!response.ok) {
+        throw new Error("Failed to save block order")
+      }
+
+      toast({ title: "Block moved", description: "Block order updated" })
+    } catch (err: any) {
+      toast({ title: "Error", description: err.message, variant: "destructive" })
+      // Revert the change on error
+      const fetchData = async () => {
+        const blocksResponse = await fetch(`/api/vendor/artwork-pages/${productId}`, {
+          credentials: "include",
+        })
+        const blocksData = await blocksResponse.json()
+        setContentBlocks(blocksData.contentBlocks || [])
+      }
+      fetchData()
+    }
+  }
+
+  const handleApplyTemplate = async (templateName: string) => {
+    try {
+      const response = await fetch(`/api/vendor/artwork-pages/${productId}/apply-template`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ templateName }),
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.message || "Failed to apply template")
+      }
+
+      const data = await response.json()
+      if (data.contentBlocks) {
+        setContentBlocks(data.contentBlocks)
+        toast({ title: "Template applied", description: `The ${templateName} template has been applied` })
+      }
+    } catch (err: any) {
+      toast({ title: "Error", description: err.message, variant: "destructive" })
+    }
+  }
+
+  const handleAddBlock = async (blockType: string) => {
+    try {
+      const response = await fetch(`/api/vendor/artwork-pages/${productId}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ blockType }),
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.message || "Failed to add block")
+      }
+
+      const data = await response.json()
+      if (data.contentBlock) {
+        setContentBlocks(prev => [...prev, data.contentBlock])
+        setSelectedBlockId(data.contentBlock.id)
+        setSidebarOpen(false)
+        toast({ title: "Block added", description: "Your new block has been created" })
+      }
+    } catch (err: any) {
+      toast({ title: "Error", description: err.message, variant: "destructive" })
+    }
   }
 
   const handleSave = async () => {
@@ -139,11 +280,19 @@ export default function StandaloneArtworkEditor() {
       // Save all blocks
       await Promise.all(
         contentBlocks.map(block =>
-          fetch(`/api/vendor/artwork-pages/${productId}/blocks/${block.id}`, {
+          fetch(`/api/vendor/artwork-pages/${productId}`, {
             method: "PUT",
             headers: { "Content-Type": "application/json" },
             credentials: "include",
-            body: JSON.stringify(block),
+            body: JSON.stringify({
+              blockId: block.id,
+              title: block.title,
+              description: block.description,
+              content_url: block.content_url,
+              block_config: block.block_config,
+              display_order: block.display_order,
+              is_published: block.is_published,
+            }),
           })
         )
       )
@@ -158,7 +307,7 @@ export default function StandaloneArtworkEditor() {
   }
 
   const handlePreview = () => {
-    window.open(`/vendor/dashboard/artwork-pages/${productId}/preview`, "_blank")
+    window.open(`/preview/artwork/${productId}`, "_blank")
   }
 
   if (isLoading) {
@@ -273,8 +422,7 @@ export default function StandaloneArtworkEditor() {
             {/* Block Library */}
             <div className="flex-1 overflow-y-auto">
               <BlockLibrarySidebar
-                productId={productId}
-                onBlockAdded={handleAddBlock}
+                onAddBlock={handleAddBlock}
               />
             </div>
 
@@ -303,20 +451,51 @@ export default function StandaloneArtworkEditor() {
         )}
 
         {/* Editor Content - Responsive */}
-        <div className="flex-1 overflow-y-auto bg-gray-950">
+        <div className="flex-1 overflow-y-auto bg-gray-50">
           {isMobile ? (
             // Mobile: Pills at bottom
             <>
-              <div className="h-[calc(100vh-120px)] overflow-y-auto p-4">
-                {!selectedBlock ? (
+              {/* Mobile content area - height accounts for header (56px) + pills bar (68px) + safe area */}
+              <div 
+                data-mobile-content
+                className="flex-1 overflow-y-auto overflow-x-hidden p-4"
+                style={{ 
+                  height: 'calc(100dvh - 56px - 68px - env(safe-area-inset-bottom, 0px))',
+                  paddingBottom: 'calc(1rem + env(safe-area-inset-bottom, 0px))',
+                  WebkitOverflowScrolling: 'touch'
+                }}
+              >
+                {!selectedBlock && contentBlocks.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center h-full text-center space-y-4">
+                    <div className="w-16 h-16 rounded-full bg-blue-50 flex items-center justify-center">
+                      <Sparkles className="w-8 h-8 text-blue-500" />
+                    </div>
+                    <div>
+                      <h3 className="font-semibold text-gray-900 mb-1">Create Your Story</h3>
+                      <p className="text-sm text-gray-600 mb-4">Add content that collectors will love</p>
+                      <Button
+                        onClick={() => setSidebarOpen(true)}
+                        className="bg-blue-600 hover:bg-blue-700 text-white"
+                      >
+                        <Plus className="w-4 h-4 mr-2" />
+                        Add Your First Block
+                      </Button>
+                    </div>
+                  </div>
+                ) : !selectedBlock ? (
                   <div className="flex flex-col items-center justify-center h-full text-center">
-                    <p className="text-gray-400 mb-4">Select a block or add a new one</p>
+                    <p className="text-gray-600 mb-4">Select a block from below to edit</p>
                   </div>
                 ) : (
                   <BlockEditor
+                    key={`mobile-block-${selectedBlock.id}`}
                     block={selectedBlock}
+                    blockIndex={contentBlocks.findIndex(b => b.id === selectedBlock.id)}
+                    totalBlocks={contentBlocks.length}
                     productId={productId}
                     onUpdate={(updates) => handleBlockUpdate(selectedBlock.id, updates)}
+                    onDelete={() => handleDeleteBlock(selectedBlock.id)}
+                    onMove={(direction) => handleMoveBlock(selectedBlock.id, direction)}
                   />
                 )}
               </div>
@@ -324,7 +503,18 @@ export default function StandaloneArtworkEditor() {
               <BlockSelectorPills
                 selectedBlockId={selectedBlockId}
                 blocks={contentBlocks}
-                onSelectBlock={setSelectedBlockId}
+                onSelectBlock={(blockId) => {
+                  console.log('[Mobile Pills] User tapped block ID:', blockId)
+                  console.log('[Mobile Pills] Current selected ID:', selectedBlockId)
+                  console.log('[Mobile Pills] Will update to:', blockId)
+                  setSelectedBlockId(blockId)
+                  
+                  // Force scroll to top of editor content
+                  const contentArea = document.querySelector('[data-mobile-content]')
+                  if (contentArea) {
+                    contentArea.scrollTop = 0
+                  }
+                }}
                 onAddBlock={() => setSidebarOpen(true)}
               />
             </>
@@ -332,24 +522,57 @@ export default function StandaloneArtworkEditor() {
             // Desktop: Traditional layout
             <div className="p-6 max-w-5xl mx-auto">
               {contentBlocks.length === 0 ? (
-                <div className="flex flex-col items-center justify-center py-20 text-center">
-                  <p className="text-gray-400 mb-4">No blocks yet. Add your first block from the sidebar.</p>
+                <div className="flex flex-col items-center justify-center py-20 text-center space-y-6">
+                  <div>
+                    <Sparkles className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                    <h2 className="text-xl font-semibold text-gray-900 mb-2">Start Your Artwork Page</h2>
+                    <p className="text-gray-600 mb-6">Choose a template to get started quickly, or add blocks manually from the sidebar.</p>
+                  </div>
+
+                  {/* Template Cards */}
+                  <div className="grid grid-cols-3 gap-4 max-w-2xl">
+                    <button
+                      onClick={() => handleApplyTemplate("minimal")}
+                      className="p-4 border-2 border-gray-200 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition-all text-left"
+                    >
+                      <h3 className="font-semibold text-gray-900 mb-1">Minimal</h3>
+                      <p className="text-xs text-gray-600">Simple text and image blocks</p>
+                    </button>
+                    <button
+                      onClick={() => handleApplyTemplate("story")}
+                      className="p-4 border-2 border-gray-200 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition-all text-left"
+                    >
+                      <h3 className="font-semibold text-gray-900 mb-1">Story</h3>
+                      <p className="text-xs text-gray-600">Tell your creative journey</p>
+                    </button>
+                    <button
+                      onClick={() => handleApplyTemplate("gallery")}
+                      className="p-4 border-2 border-gray-200 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition-all text-left"
+                    >
+                      <h3 className="font-semibold text-gray-900 mb-1">Gallery</h3>
+                      <p className="text-xs text-gray-600">Showcase your process</p>
+                    </button>
+                  </div>
                 </div>
               ) : (
                 <div className="space-y-4">
-                  {contentBlocks.map(block => (
+                  {contentBlocks.map((block, index) => (
                     <div
                       key={block.id}
-                      className={`bg-gray-900 rounded-lg border ${
-                        selectedBlockId === block.id ? 'border-blue-500' : 'border-gray-800'
-                      }`}
+                      className={`bg-white rounded-lg border-2 ${
+                        selectedBlockId === block.id ? 'border-blue-500 shadow-lg' : 'border-gray-200'
+                      } cursor-pointer hover:border-gray-300 transition-all`}
                       onClick={() => setSelectedBlockId(block.id)}
                     >
-                      <div className="p-4">
+                      <div className="p-6">
                         <BlockEditor
                           block={block}
+                          blockIndex={index}
+                          totalBlocks={contentBlocks.length}
                           productId={productId}
                           onUpdate={(updates) => handleBlockUpdate(block.id, updates)}
+                          onDelete={() => handleDeleteBlock(block.id)}
+                          onMove={(direction) => handleMoveBlock(block.id, direction)}
                         />
                       </div>
                     </div>
@@ -367,12 +590,20 @@ export default function StandaloneArtworkEditor() {
 // Block Editor Component - Adapts block data to component props
 function BlockEditor({
   block,
+  blockIndex,
+  totalBlocks,
   productId,
   onUpdate,
+  onDelete,
+  onMove,
 }: {
   block: ContentBlock
+  blockIndex?: number
+  totalBlocks?: number
   productId: string
   onUpdate: (updates: Partial<ContentBlock>) => void
+  onDelete?: () => void
+  onMove?: (direction: "up" | "down") => void
 }) {
   const handleConfigChange = (newConfig: any) => {
     onUpdate({ block_config: newConfig })
@@ -380,7 +611,53 @@ function BlockEditor({
 
   const blockConfig = block.block_config || {}
 
-  switch (block.block_type) {
+  const renderBlockContent = () => {
+    switch (block.block_type) {
+    // BASIC BLOCKS
+    case "Artwork Text Block":
+    case "text":
+      return (
+        <div className="space-y-4">
+          <div className="flex items-center gap-2 mb-3">
+            <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center">
+              <svg className="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
+            </div>
+            <div>
+              <h4 className="font-semibold text-gray-900">Text Block</h4>
+              <p className="text-sm text-gray-500">Add paragraphs and descriptions</p>
+            </div>
+          </div>
+          <input
+            type="text"
+            placeholder="Title (optional)"
+            value={block.title || ""}
+            onChange={(e) => onUpdate({ title: e.target.value })}
+            className="w-full bg-white text-gray-900 px-4 py-3 rounded-lg border border-gray-200 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+          <textarea
+            placeholder="Write your content here..."
+            value={block.description || ""}
+            onChange={(e) => onUpdate({ description: e.target.value })}
+            className="w-full bg-white text-gray-900 px-4 py-3 rounded-lg border border-gray-200 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 min-h-[200px] resize-none"
+          />
+        </div>
+      )
+
+    case "Artwork Image Block":
+    case "image":
+      return <ImageBlockEditor block={block} onUpdate={onUpdate} />
+
+    case "Artwork Video Block":
+    case "video":
+      return <VideoBlockEditor block={block} onUpdate={onUpdate} />
+
+    case "Artwork Audio Block":
+    case "audio":
+      return <AudioBlockEditor block={block} onUpdate={onUpdate} />
+
+    // IMMERSIVE BLOCKS
     case "Soundtrack":
     case "Artwork Soundtrack Block":
       return (
@@ -440,26 +717,837 @@ function BlockEditor({
           onChange={handleConfigChange}
         />
       )
+
+    case "Location":
+    case "Artwork Map Block":
+      return (
+        <MapBlockEditor 
+          block={block}
+          onUpdate={onUpdate}
+        />
+      )
     
-    // Simple text block fallback
-    case "Artwork Text Block":
+    // Fallback
     default:
       return (
-        <div className="space-y-3">
-          <input
-            type="text"
-            placeholder="Block Title"
-            value={block.title || ""}
-            onChange={(e) => onUpdate({ title: e.target.value })}
-            className="w-full bg-gray-50 text-gray-900 px-4 py-2 rounded-md border border-gray-300 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-          />
-          <textarea
-            placeholder="Block Description"
-            value={block.description || ""}
-            onChange={(e) => onUpdate({ description: e.target.value })}
-            className="w-full bg-gray-50 text-gray-900 px-4 py-2 rounded-md border border-gray-300 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 h-32"
-          />
+        <div className="space-y-3 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+          <p className="text-sm text-yellow-800">
+            Unknown block type: <code className="font-mono bg-yellow-100 px-2 py-1 rounded">{block.block_type}</code>
+          </p>
+          <p className="text-xs text-yellow-600">
+            This block type is not yet supported in the editor.
+          </p>
         </div>
       )
+    }
   }
+
+  return (
+    <div className="space-y-4">
+      {/* Block Header with Actions */}
+      <div className="flex items-center justify-between pb-3 border-b border-gray-200">
+        <div className="flex items-center gap-2">
+          <GripVertical className="w-4 h-4 text-gray-400 cursor-move" />
+          <span className="text-sm font-medium text-gray-700">
+            {block.block_type?.replace("Artwork ", "").replace(" Block", "") || "Block"}
+          </span>
+        </div>
+        <div className="flex items-center gap-1">
+          {/* Reorder Buttons */}
+          {onMove && typeof blockIndex === 'number' && typeof totalBlocks === 'number' && (
+            <>
+              {blockIndex > 0 && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    onMove("up")
+                  }}
+                  className="text-gray-600 hover:text-gray-900 hover:bg-gray-100"
+                  title="Move up"
+                >
+                  <ChevronUp className="w-4 h-4" />
+                </Button>
+              )}
+              {blockIndex < totalBlocks - 1 && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    onMove("down")
+                  }}
+                  className="text-gray-600 hover:text-gray-900 hover:bg-gray-100"
+                  title="Move down"
+                >
+                  <ChevronDown className="w-4 h-4" />
+                </Button>
+              )}
+            </>
+          )}
+          {/* Delete Button */}
+          {onDelete && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={(e) => {
+                e.stopPropagation()
+                onDelete()
+              }}
+              className="text-red-600 hover:text-red-700 hover:bg-red-50"
+            >
+              <Trash2 className="w-4 h-4" />
+            </Button>
+          )}
+        </div>
+      </div>
+      
+      {/* Block Content */}
+      {renderBlockContent()}
+    </div>
+  )
+}
+
+// Video Block Editor with Upload and Proper Embed Preview
+function VideoBlockEditor({ block, onUpdate }: { block: ContentBlock; onUpdate: (updates: Partial<ContentBlock>) => void }) {
+  const [isUploading, setIsUploading] = useState(false)
+  const [uploadProgress, setUploadProgress] = useState(0)
+  const [videoType, setVideoType] = useState<"youtube" | "vimeo" | "direct" | null>(null)
+  const [embedUrl, setEmbedUrl] = useState<string | null>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
+
+  // Detect video type and generate embed URL
+  useEffect(() => {
+    if (!block.content_url) {
+      setVideoType(null)
+      setEmbedUrl(null)
+      return
+    }
+
+    const url = block.content_url
+
+    // Check for YouTube
+    const youtubeMatch = url.match(
+      /(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/
+    )
+    if (youtubeMatch) {
+      setVideoType("youtube")
+      setEmbedUrl(`https://www.youtube.com/embed/${youtubeMatch[1]}?enablejsapi=1&rel=0`)
+      return
+    }
+
+    // Check for Vimeo
+    const vimeoMatch = url.match(/vimeo\.com\/(?:video\/)?(\d+)/)
+    if (vimeoMatch) {
+      setVideoType("vimeo")
+      setEmbedUrl(`https://player.vimeo.com/video/${vimeoMatch[1]}?dnt=1`)
+      return
+    }
+
+    // Direct video file
+    setVideoType("direct")
+    setEmbedUrl(url)
+  }, [block.content_url])
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    if (!file.type.startsWith('video/')) {
+      alert('Please select a video file')
+      return
+    }
+
+    try {
+      setIsUploading(true)
+      const formData = new FormData()
+      formData.append('file', file)
+      formData.append('fileType', 'video')
+
+      const xhr = new XMLHttpRequest()
+
+      xhr.upload.addEventListener('progress', (e) => {
+        if (e.lengthComputable) {
+          const progress = Math.round((e.loaded / e.total) * 100)
+          setUploadProgress(progress)
+        }
+      })
+
+      xhr.addEventListener('load', () => {
+        if (xhr.status === 200) {
+          const response = JSON.parse(xhr.responseText)
+          onUpdate({ content_url: response.url })
+          setIsUploading(false)
+          setUploadProgress(0)
+        } else {
+          throw new Error('Upload failed')
+        }
+      })
+
+      xhr.addEventListener('error', () => {
+        alert('Upload failed. Please try again.')
+        setIsUploading(false)
+        setUploadProgress(0)
+      })
+
+      xhr.open('POST', '/api/vendor/media-library/upload')
+      xhr.send(formData)
+    } catch (error) {
+      console.error('Video upload error:', error)
+      alert('Failed to upload video')
+      setIsUploading(false)
+      setUploadProgress(0)
+    }
+  }
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center gap-2 mb-3">
+        <div className="w-8 h-8 rounded-full bg-purple-100 flex items-center justify-center">
+          <svg className="w-4 h-4 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+          </svg>
+        </div>
+        <div>
+          <h4 className="font-semibold text-gray-900">Video Block</h4>
+          <p className="text-sm text-gray-500">Upload video or paste YouTube/Vimeo URL</p>
+        </div>
+      </div>
+
+      <input
+        type="text"
+        placeholder="Title (optional)"
+        value={block.title || ""}
+        onChange={(e) => onUpdate({ title: e.target.value })}
+        className="w-full bg-white text-gray-900 px-4 py-3 rounded-lg border border-gray-200 focus:border-purple-500 focus:outline-none focus:ring-2 focus:ring-purple-500"
+      />
+
+      {block.content_url && embedUrl ? (
+        <div className="space-y-3">
+          {/* Video Preview - Matches collector view */}
+          <div className="relative w-full aspect-video bg-gray-900 rounded-lg overflow-hidden">
+            {videoType === "youtube" || videoType === "vimeo" ? (
+              <iframe
+                src={embedUrl}
+                className="w-full h-full"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowFullScreen
+              />
+            ) : (
+              <video
+                src={embedUrl}
+                controls
+                className="w-full h-full"
+                preload="metadata"
+              />
+            )}
+          </div>
+          <div className="flex gap-2">
+            <input
+              type="text"
+              placeholder="Change URL"
+              value={block.content_url}
+              onChange={(e) => onUpdate({ content_url: e.target.value })}
+              className="flex-1 bg-white text-gray-900 px-4 py-2 rounded-lg border border-gray-200 focus:border-purple-500 focus:outline-none focus:ring-2 focus:ring-purple-500 text-sm"
+            />
+            <Button
+              onClick={() => fileInputRef.current?.click()}
+              variant="outline"
+              size="sm"
+            >
+              Replace
+            </Button>
+          </div>
+        </div>
+      ) : (
+        <>
+          <input
+            type="text"
+            placeholder="Paste YouTube or Vimeo URL"
+            value={block.content_url || ""}
+            onChange={(e) => onUpdate({ content_url: e.target.value })}
+            className="w-full bg-white text-gray-900 px-4 py-3 rounded-lg border border-gray-200 focus:border-purple-500 focus:outline-none focus:ring-2 focus:ring-purple-500"
+          />
+
+          <div className="relative">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-gray-200"></div>
+            </div>
+            <div className="relative flex justify-center text-sm">
+              <span className="px-2 bg-gray-50 text-gray-500">or</span>
+            </div>
+          </div>
+
+          <button
+            onClick={() => fileInputRef.current?.click()}
+            disabled={isUploading}
+            className="w-full border-2 border-dashed border-gray-300 rounded-lg p-8 hover:border-purple-500 hover:bg-purple-50 transition-colors text-center"
+          >
+            {isUploading ? (
+              <div>
+                <Loader2 className="w-8 h-8 text-purple-600 mx-auto mb-2 animate-spin" />
+                <p className="text-sm text-gray-600">Uploading... {uploadProgress}%</p>
+              </div>
+            ) : (
+              <div>
+                <svg className="w-8 h-8 text-gray-400 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                </svg>
+                <p className="text-sm text-gray-600">Click to upload video</p>
+                <p className="text-xs text-gray-500 mt-1">MP4, MOV, WebM up to 100MB</p>
+              </div>
+            )}
+          </button>
+        </>
+      )}
+
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="video/*"
+        onChange={handleFileUpload}
+        className="hidden"
+      />
+    </div>
+  )
+}
+
+// Audio Block Editor with Upload and Preview
+function AudioBlockEditor({ block, onUpdate }: { block: ContentBlock; onUpdate: (updates: Partial<ContentBlock>) => void }) {
+  const [isUploading, setIsUploading] = useState(false)
+  const [uploadProgress, setUploadProgress] = useState(0)
+  const fileInputRef = useRef<HTMLInputElement>(null)
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    if (!file.type.startsWith('audio/')) {
+      alert('Please select an audio file')
+      return
+    }
+
+    try {
+      setIsUploading(true)
+      const formData = new FormData()
+      formData.append('file', file)
+      formData.append('fileType', 'audio')
+
+      const xhr = new XMLHttpRequest()
+
+      xhr.upload.addEventListener('progress', (e) => {
+        if (e.lengthComputable) {
+          const progress = Math.round((e.loaded / e.total) * 100)
+          setUploadProgress(progress)
+        }
+      })
+
+      xhr.addEventListener('load', () => {
+        if (xhr.status === 200) {
+          const response = JSON.parse(xhr.responseText)
+          onUpdate({ content_url: response.url })
+          setIsUploading(false)
+          setUploadProgress(0)
+        } else {
+          throw new Error('Upload failed')
+        }
+      })
+
+      xhr.addEventListener('error', () => {
+        alert('Upload failed. Please try again.')
+        setIsUploading(false)
+        setUploadProgress(0)
+      })
+
+      xhr.open('POST', '/api/vendor/media-library/upload')
+      xhr.send(formData)
+    } catch (error) {
+      console.error('Audio upload error:', error)
+      alert('Failed to upload audio')
+      setIsUploading(false)
+      setUploadProgress(0)
+    }
+  }
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center gap-2 mb-3">
+        <div className="w-8 h-8 rounded-full bg-pink-100 flex items-center justify-center">
+          <svg className="w-4 h-4 text-pink-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3" />
+          </svg>
+        </div>
+        <div>
+          <h4 className="font-semibold text-gray-900">Audio Block</h4>
+          <p className="text-sm text-gray-500">Upload audio file</p>
+        </div>
+      </div>
+
+      <input
+        type="text"
+        placeholder="Title (optional)"
+        value={block.title || ""}
+        onChange={(e) => onUpdate({ title: e.target.value })}
+        className="w-full bg-white text-gray-900 px-4 py-3 rounded-lg border border-gray-200 focus:border-pink-500 focus:outline-none focus:ring-2 focus:ring-pink-500"
+      />
+
+      {block.content_url ? (
+        <div className="space-y-3">
+          {/* Audio Preview */}
+          <div className="bg-gradient-to-br from-pink-50 to-purple-50 rounded-lg p-6">
+            <audio
+              src={block.content_url}
+              controls
+              className="w-full"
+              preload="metadata"
+            />
+          </div>
+          <Button
+            onClick={() => fileInputRef.current?.click()}
+            variant="outline"
+            className="w-full"
+          >
+            Replace Audio
+          </Button>
+        </div>
+      ) : (
+        <button
+          onClick={() => fileInputRef.current?.click()}
+          disabled={isUploading}
+          className="w-full border-2 border-dashed border-gray-300 rounded-lg p-8 hover:border-pink-500 hover:bg-pink-50 transition-colors text-center"
+        >
+          {isUploading ? (
+            <div>
+              <Loader2 className="w-8 h-8 text-pink-600 mx-auto mb-2 animate-spin" />
+              <p className="text-sm text-gray-600">Uploading... {uploadProgress}%</p>
+            </div>
+          ) : (
+            <div>
+              <svg className="w-8 h-8 text-gray-400 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+              </svg>
+              <p className="text-sm text-gray-600">Click to upload audio</p>
+              <p className="text-xs text-gray-500 mt-1">MP3, WAV, M4A up to 50MB</p>
+            </div>
+          )}
+        </button>
+      )}
+
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="audio/*"
+        onChange={handleFileUpload}
+        className="hidden"
+      />
+    </div>
+  )
+}
+
+// Image Block Editor with Upload and Preview (supports multiple images)
+function ImageBlockEditor({ block, onUpdate }: { block: ContentBlock; onUpdate: (updates: Partial<ContentBlock>) => void }) {
+  const [isUploading, setIsUploading] = useState(false)
+  const [uploadProgress, setUploadProgress] = useState(0)
+  const fileInputRef = useRef<HTMLInputElement>(null)
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || [])
+    if (files.length === 0) return
+
+    // Check if all files are images
+    const nonImageFiles = files.filter(f => !f.type.startsWith('image/'))
+    if (nonImageFiles.length > 0) {
+      alert('Please select only image files')
+      return
+    }
+
+    // If single image, upload normally
+    if (files.length === 1) {
+      try {
+        setIsUploading(true)
+        const formData = new FormData()
+        formData.append('file', files[0])
+        formData.append('fileType', 'image')
+
+        const xhr = new XMLHttpRequest()
+
+        xhr.upload.addEventListener('progress', (e) => {
+          if (e.lengthComputable) {
+            const progress = Math.round((e.loaded / e.total) * 100)
+            setUploadProgress(progress)
+          }
+        })
+
+        xhr.addEventListener('load', () => {
+          if (xhr.status === 200) {
+            const response = JSON.parse(xhr.responseText)
+            onUpdate({ content_url: response.url })
+            setIsUploading(false)
+            setUploadProgress(0)
+          } else {
+            throw new Error('Upload failed')
+          }
+        })
+
+        xhr.addEventListener('error', () => {
+          alert('Upload failed. Please try again.')
+          setIsUploading(false)
+          setUploadProgress(0)
+        })
+
+        xhr.open('POST', '/api/vendor/media-library/upload')
+        xhr.send(formData)
+      } catch (error) {
+        console.error('Image upload error:', error)
+        alert('Failed to upload image')
+        setIsUploading(false)
+        setUploadProgress(0)
+      }
+    } else {
+      // Multiple images - store in block_config.images array
+      try {
+        setIsUploading(true)
+        const uploadedUrls: string[] = []
+
+        for (let i = 0; i < files.length; i++) {
+          const formData = new FormData()
+          formData.append('file', files[i])
+          formData.append('fileType', 'image')
+
+          const response = await fetch('/api/vendor/media-library/upload', {
+            method: 'POST',
+            body: formData,
+          })
+
+          if (!response.ok) {
+            throw new Error(`Failed to upload ${files[i].name}`)
+          }
+
+          const data = await response.json()
+          uploadedUrls.push(data.url)
+          setUploadProgress(Math.round(((i + 1) / files.length) * 100))
+        }
+
+        // Store first image as content_url, rest in config
+        const existingImages = block.block_config?.images || []
+        onUpdate({
+          content_url: uploadedUrls[0],
+          block_config: {
+            ...block.block_config,
+            images: [...existingImages, ...uploadedUrls],
+          }
+        })
+
+        setIsUploading(false)
+        setUploadProgress(0)
+      } catch (error) {
+        console.error('Multiple image upload error:', error)
+        alert('Failed to upload images')
+        setIsUploading(false)
+        setUploadProgress(0)
+      }
+    }
+  }
+
+  const images = block.block_config?.images || (block.content_url ? [block.content_url] : [])
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center gap-2 mb-3">
+        <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center">
+          <svg className="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+          </svg>
+        </div>
+        <div>
+          <h4 className="font-semibold text-gray-900">Image Block</h4>
+          <p className="text-sm text-gray-500">Upload one or multiple images</p>
+        </div>
+      </div>
+
+      <input
+        type="text"
+        placeholder="Title (optional)"
+        value={block.title || ""}
+        onChange={(e) => onUpdate({ title: e.target.value })}
+        className="w-full bg-white text-gray-900 px-4 py-3 rounded-lg border border-gray-200 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+      />
+
+      {images.length > 0 ? (
+        <div className="space-y-3">
+          {/* Image Grid Preview */}
+          <div className={`grid gap-2 ${images.length === 1 ? 'grid-cols-1' : 'grid-cols-2'}`}>
+            {images.map((imgUrl, idx) => (
+              <div key={idx} className="relative aspect-square bg-gray-100 rounded-lg overflow-hidden">
+                <Image
+                  src={imgUrl}
+                  alt={`Image ${idx + 1}`}
+                  fill
+                  className="object-cover"
+                />
+              </div>
+            ))}
+          </div>
+          <textarea
+            placeholder="Caption (optional)"
+            value={block.block_config?.caption || ""}
+            onChange={(e) => onUpdate({ block_config: { ...block.block_config, caption: e.target.value } })}
+            className="w-full bg-white text-gray-900 px-4 py-3 rounded-lg border border-gray-200 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+            rows={2}
+          />
+          <div className="flex gap-2">
+            <Button
+              onClick={() => fileInputRef.current?.click()}
+              variant="outline"
+              className="flex-1"
+            >
+              Add More Images
+            </Button>
+            <Button
+              onClick={() => onUpdate({ content_url: null, block_config: { ...block.block_config, images: [] } })}
+              variant="outline"
+              className="text-red-600 hover:text-red-700"
+            >
+              Clear All
+            </Button>
+          </div>
+        </div>
+      ) : (
+        <button
+          onClick={() => fileInputRef.current?.click()}
+          disabled={isUploading}
+          className="w-full border-2 border-dashed border-gray-300 rounded-lg p-8 hover:border-blue-500 hover:bg-blue-50 transition-colors text-center"
+        >
+          {isUploading ? (
+            <div>
+              <Loader2 className="w-8 h-8 text-blue-600 mx-auto mb-2 animate-spin" />
+              <p className="text-sm text-gray-600">Uploading... {uploadProgress}%</p>
+            </div>
+          ) : (
+            <div>
+              <svg className="w-8 h-8 text-gray-400 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+              </svg>
+              <p className="text-sm text-gray-600">Click to upload image(s)</p>
+              <p className="text-xs text-gray-500 mt-1">Select multiple files for a gallery</p>
+              <p className="text-xs text-gray-500">JPG, PNG, WebP up to 10MB each</p>
+            </div>
+          )}
+        </button>
+      )}
+
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/*"
+        multiple
+        onChange={handleFileUpload}
+        className="hidden"
+      />
+    </div>
+  )
+}
+
+// Map Block Editor with Location and Image Carousel
+function MapBlockEditor({ block, onUpdate }: { block: ContentBlock; onUpdate: (updates: Partial<ContentBlock>) => void }) {
+  const [isUploading, setIsUploading] = useState(false)
+  const [uploadProgress, setUploadProgress] = useState(0)
+  const fileInputRef = useRef<HTMLInputElement>(null)
+
+  const config = block.block_config || {}
+  const images: string[] = config.images || []
+
+  const handleConfigUpdate = (field: string, value: any) => {
+    onUpdate({
+      block_config: {
+        ...config,
+        [field]: value,
+      }
+    })
+  }
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || [])
+    if (files.length === 0) return
+
+    try {
+      setIsUploading(true)
+      const uploadedUrls: string[] = []
+
+      for (let i = 0; i < files.length; i++) {
+        const formData = new FormData()
+        formData.append('file', files[i])
+        formData.append('fileType', 'image')
+
+        const response = await fetch('/api/vendor/media-library/upload', {
+          method: 'POST',
+          body: formData,
+        })
+
+        if (!response.ok) {
+          throw new Error(`Failed to upload ${files[i].name}`)
+        }
+
+        const data = await response.json()
+        uploadedUrls.push(data.url)
+        setUploadProgress(Math.round(((i + 1) / files.length) * 100))
+      }
+
+      handleConfigUpdate('images', [...images, ...uploadedUrls])
+      setIsUploading(false)
+      setUploadProgress(0)
+    } catch (error) {
+      console.error('Image upload error:', error)
+      alert('Failed to upload images')
+      setIsUploading(false)
+      setUploadProgress(0)
+    }
+  }
+
+  const removeImage = (index: number) => {
+    const newImages = images.filter((_, i) => i !== index)
+    handleConfigUpdate('images', newImages)
+  }
+
+  return (
+    <div className="space-y-4">
+      {/* Title */}
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-1">Title</label>
+        <input
+          type="text"
+          value={config.title || ''}
+          onChange={(e) => handleConfigUpdate('title', e.target.value)}
+          placeholder="e.g., Where I painted this"
+          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+        />
+      </div>
+
+      {/* Location Name */}
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-1">Location Name</label>
+        <input
+          type="text"
+          value={config.location_name || ''}
+          onChange={(e) => handleConfigUpdate('location_name', e.target.value)}
+          placeholder="e.g., Montmartre, Paris"
+          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+        />
+      </div>
+
+      {/* Coordinates */}
+      <div className="grid grid-cols-2 gap-3">
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Latitude</label>
+          <input
+            type="text"
+            value={config.latitude || ''}
+            onChange={(e) => handleConfigUpdate('latitude', e.target.value)}
+            placeholder="e.g., 48.8867"
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Longitude</label>
+          <input
+            type="text"
+            value={config.longitude || ''}
+            onChange={(e) => handleConfigUpdate('longitude', e.target.value)}
+            placeholder="e.g., 2.3431"
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+          />
+        </div>
+      </div>
+
+      {/* Map Style */}
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-1">Map Style</label>
+        <select
+          value={config.map_style || 'street'}
+          onChange={(e) => handleConfigUpdate('map_style', e.target.value)}
+          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+        >
+          <option value="street">Street</option>
+          <option value="satellite">Satellite</option>
+          <option value="artistic">Artistic</option>
+        </select>
+      </div>
+
+      {/* Description */}
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+        <textarea
+          value={config.description || ''}
+          onChange={(e) => handleConfigUpdate('description', e.target.value)}
+          placeholder="Tell the story of this place..."
+          rows={3}
+          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent resize-none"
+        />
+      </div>
+
+      {/* Location Photos */}
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-2">Location Photos</label>
+        
+        {/* Existing images */}
+        {images.length > 0 && (
+          <div className="grid grid-cols-3 gap-2 mb-3">
+            {images.map((url, index) => (
+              <div key={index} className="relative aspect-square rounded-lg overflow-hidden group">
+                <Image
+                  src={url}
+                  alt={`Location photo ${index + 1}`}
+                  fill
+                  className="object-cover"
+                />
+                <button
+                  onClick={() => removeImage(index)}
+                  className="absolute top-1 right-1 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Upload button */}
+        <button
+          type="button"
+          onClick={() => fileInputRef.current?.click()}
+          disabled={isUploading}
+          className="w-full border-2 border-dashed border-gray-300 rounded-lg p-4 hover:border-indigo-500 hover:bg-indigo-50 transition-colors text-center"
+        >
+          {isUploading ? (
+            <div>
+              <Loader2 className="w-6 h-6 text-indigo-600 mx-auto mb-1 animate-spin" />
+              <p className="text-sm text-gray-600">Uploading... {uploadProgress}%</p>
+            </div>
+          ) : (
+            <div>
+              <Camera className="w-6 h-6 text-gray-400 mx-auto mb-1" />
+              <p className="text-sm text-gray-600">Add location photos</p>
+            </div>
+          )}
+        </button>
+
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/*"
+          multiple
+          onChange={handleImageUpload}
+          className="hidden"
+        />
+      </div>
+
+      {/* Preview hint */}
+      {config.location_name && (
+        <div className="bg-gray-50 rounded-lg p-3 text-sm text-gray-600">
+          <span className="font-medium">Preview:</span> Collectors will see a map with {images.length > 0 ? `${images.length} photo${images.length > 1 ? 's' : ''}` : 'no photos'} of {config.location_name}
+        </div>
+      )}
+    </div>
+  )
 }

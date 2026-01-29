@@ -7,7 +7,7 @@
  */
 
 export type AuthorType = 'artist' | 'collector'
-export type ContentType = 'text' | 'photo' | 'voice_note'
+export type ContentType = 'text' | 'photo' | 'video' | 'voice_note'
 
 export interface StoryPost {
   id: string
@@ -145,4 +145,73 @@ export function getCountryFlag(countryCode?: string): string {
     .split('')
     .map(char => 127397 + char.charCodeAt(0))
   return String.fromCodePoint(...codePoints)
+}
+
+// ============================================
+// Instagram-Style Story Viewer Types
+// ============================================
+
+/**
+ * Represents a user who has posted stories
+ * Used to group stories by author for the story viewer
+ */
+export interface StoryUser {
+  id: string
+  name: string
+  avatarUrl?: string
+  isArtist: boolean
+  stories: StoryPost[]
+  hasUnseenStories: boolean
+}
+
+/**
+ * State for the full-screen story viewer modal
+ */
+export interface StoryViewerState {
+  isOpen: boolean
+  currentUserIndex: number
+  currentStoryIndex: number
+}
+
+/**
+ * Props for the StoryCircles component
+ */
+export interface StoryCirclesProps {
+  productId: string
+  productName: string
+  isOwner: boolean
+  isArtist?: boolean
+  onAddStory?: () => void
+  users?: StoryUser[]
+  isPreview?: boolean
+  onStorySeen?: (storyId: string) => void
+}
+
+/**
+ * Props for the StoryViewer component
+ */
+export interface StoryViewerProps {
+  users: StoryUser[]
+  initialUserIndex: number
+  isOpen: boolean
+  onClose: () => void
+  onStorySeen?: (storyId: string) => void
+}
+
+/**
+ * Props for the StorySlide component
+ */
+export interface StorySlideProps {
+  story: StoryPost
+  isPaused: boolean
+}
+
+/**
+ * Props for the StoryProgress component
+ */
+export interface StoryProgressProps {
+  totalCount: number
+  currentIndex: number
+  isPaused: boolean
+  duration?: number // in milliseconds, default 5000
 }
