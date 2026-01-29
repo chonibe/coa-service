@@ -134,7 +134,6 @@ export default function SlidesPage() {
   const [slides, setSlides] = useState<Slide[]>([])
   const [product, setProduct] = useState<{ id: string; name: string } | null>(null)
   const [isLoading, setIsLoading] = useState(true)
-  const [isCreating, setIsCreating] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
   const sensors = useSensors(
@@ -177,28 +176,9 @@ export default function SlidesPage() {
     fetchData()
   }, [productId])
 
-  // Create new slide
-  const createSlide = async () => {
-    try {
-      setIsCreating(true)
-      const response = await fetch(`/api/vendor/slides/${productId}`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-      })
-
-      if (!response.ok) {
-        throw new Error("Failed to create slide")
-      }
-
-      const data = await response.json()
-      router.push(`/slides/${productId}/${data.slide.id}`)
-    } catch (err: any) {
-      console.error("Failed to create slide:", err)
-      setError("Failed to create slide")
-    } finally {
-      setIsCreating(false)
-    }
+  // Start wizard to create new slides
+  const createSlide = () => {
+    router.push(`/slides/${productId}/create/step1`)
   }
 
   // Edit slide
@@ -342,11 +322,7 @@ export default function SlidesPage() {
                         className="aspect-[9/16] rounded-lg flex items-center justify-center cursor-pointer hover:bg-primary/5 transition-colors"
                         onClick={createSlide}
                       >
-                        {isCreating ? (
-                          <div className="animate-spin rounded-full h-6 w-6 border-2 border-primary border-t-transparent" />
-                        ) : (
-                          <Plus className="h-8 w-8 text-muted-foreground" />
-                        )}
+                        <Plus className="h-8 w-8 text-muted-foreground" />
                       </div>
                     </CardContent>
                   </Card>
@@ -381,18 +357,9 @@ export default function SlidesPage() {
                   Build an immersive story for your collectors with interactive slides.
                   Each slide can contain images, text, audio, and more.
                 </p>
-                <Button onClick={createSlide} disabled={isCreating}>
-                  {isCreating ? (
-                    <>
-                      <div className="animate-spin rounded-full h-4 w-4 border-2 border-current border-t-transparent mr-2" />
-                      Creating...
-                    </>
-                  ) : (
-                    <>
-                      <Plus className="h-4 w-4 mr-2" />
-                      Create First Slide
-                    </>
-                  )}
+                <Button onClick={createSlide}>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Create First Slide
                 </Button>
                 <ul className="text-sm text-muted-foreground mt-6 space-y-1">
                   <li>• The story behind the piece</li>

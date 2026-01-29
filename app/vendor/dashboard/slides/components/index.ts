@@ -1,0 +1,8 @@
+export { DesktopGate } from "./DesktopGate"
+export { SlideCanvas } from "./SlideCanvas"
+export { ToolBar } from "./ToolBar"
+export { TitlePillBar } from "./TitlePillBar"
+export { TitleCaptionEditor } from "./TitleCaptionEditor"
+export { BackgroundPicker } from "./BackgroundPicker"
+export { TextStylePicker } from "./TextStylePicker"
+export { AudioPicker } from "./AudioPicker"
