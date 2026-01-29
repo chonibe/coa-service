@@ -43,7 +43,7 @@ export async function GET(
       return NextResponse.json({ error: "Artist not found" }, { status: 404 })
     }
 
-    // Get benefit type IDs for artwork content blocks
+    // Get benefit type IDs for artwork content blocks (all 9 types)
     const { data: benefitTypes } = await supabase
       .from("benefit_types")
       .select("id, name")
@@ -52,6 +52,11 @@ export async function GET(
         "Artwork Image Block",
         "Artwork Video Block",
         "Artwork Audio Block",
+        "Artwork Soundtrack Block",
+        "Artwork Voice Note Block",
+        "Artwork Process Gallery Block",
+        "Artwork Inspiration Block",
+        "Artwork Artist Note Block",
       ])
 
     const artworkBlockTypeIds = benefitTypes?.map((bt) => bt.id) || []

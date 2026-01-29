@@ -4,7 +4,7 @@
 
 CREATE TABLE IF NOT EXISTS artwork_story_posts (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  product_id TEXT NOT NULL REFERENCES products(id) ON DELETE CASCADE,
+  product_id UUID NOT NULL REFERENCES products(id) ON DELETE CASCADE,
   
   -- Author info
   author_type TEXT NOT NULL CHECK (author_type IN ('artist', 'collector')),
@@ -60,9 +60,8 @@ CREATE POLICY "Artists can create story posts"
     author_type = 'artist' AND
     EXISTS (
       SELECT 1 FROM products p
-      JOIN vendors v ON p.vendor_name = v.vendor_name
       WHERE p.id = product_id
-      AND v.id::text = author_id
+      AND p.vendor_name = (auth.jwt() ->> 'email')
     )
   );
 
@@ -77,8 +76,8 @@ CREATE POLICY "Authors can update own posts"
   ON artwork_story_posts
   FOR UPDATE
   USING (
-    (author_type = 'artist' AND author_id = auth.uid()::text) OR
-    (author_type = 'collector' AND author_id = auth.jwt() ->> 'email')
+    (author_type = 'artist' AND author_id = (auth.jwt() ->> 'email')) OR
+    (author_type = 'collector' AND author_id = (auth.jwt() ->> 'email'))
   );
 
 -- Authors can delete their own posts
@@ -86,8 +85,8 @@ CREATE POLICY "Authors can delete own posts"
   ON artwork_story_posts
   FOR DELETE
   USING (
-    (author_type = 'artist' AND author_id = auth.uid()::text) OR
-    (author_type = 'collector' AND author_id = auth.jwt() ->> 'email')
+    (author_type = 'artist' AND author_id = (auth.jwt() ->> 'email')) OR
+    (author_type = 'collector' AND author_id = (auth.jwt() ->> 'email'))
   );
 
 -- Artists can moderate (hide) any posts on their products
@@ -97,9 +96,8 @@ CREATE POLICY "Artists can moderate story posts"
   USING (
     EXISTS (
       SELECT 1 FROM products p
-      JOIN vendors v ON p.vendor_name = v.vendor_name
       WHERE p.id = product_id
-      AND v.id::text = auth.uid()::text
+      AND p.vendor_name = (auth.jwt() ->> 'email')
     )
   );
 

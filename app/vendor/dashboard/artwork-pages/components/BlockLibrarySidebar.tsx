@@ -1,7 +1,6 @@
 "use client"
 
 import { useState } from "react"
-import { useDraggable } from "@dnd-kit/core"
 import { 
   FileText, 
   Image as ImageIcon, 
@@ -11,145 +10,73 @@ import {
   Camera, 
   Lightbulb, 
   PenTool,
-  Search
+  Search,
+  Layers
 } from "lucide-react"
 import { Input } from "@/components/ui"
+import { BLOCK_SCHEMAS, getBlocksByCategory, type BlockSchema } from "@/lib/artwork-blocks/block-schemas"
 
-interface BlockTemplate {
-  id: string
-  type: string
-  icon: any
-  label: string
-  description: string
-  category: "basic" | "immersive"
-  gradient?: string
+// Map icon names to Lucide components
+const ICON_MAP: Record<string, any> = {
+  FileText,
+  Image: ImageIcon,
+  Video,
+  Music,
+  Mic,
+  Camera,
+  Lightbulb,
+  PenTool,
+  Layers
 }
 
-const BLOCK_TEMPLATES: BlockTemplate[] = [
-  // Basic
-  {
-    id: "text",
-    type: "Artwork Text Block",
-    icon: FileText,
-    label: "Text",
-    description: "Add paragraphs or descriptions",
-    category: "basic"
-  },
-  {
-    id: "image",
-    type: "Artwork Image Block",
-    icon: ImageIcon,
-    label: "Image",
-    description: "Add a single image",
-    category: "basic"
-  },
-  {
-    id: "video",
-    type: "Artwork Video Block",
-    icon: Video,
-    label: "Video",
-    description: "Embed or upload video",
-    category: "basic"
-  },
-  {
-    id: "audio",
-    type: "Artwork Audio Block",
-    icon: Music,
-    label: "Audio",
-    description: "Upload audio file",
-    category: "basic"
-  },
-  // Immersive
-  {
-    id: "soundtrack",
-    type: "Artwork Soundtrack Block",
-    icon: Music,
-    label: "Soundtrack",
-    description: "Spotify track with note",
-    category: "immersive",
-    gradient: "from-green-900/30 to-emerald-800/30"
-  },
-  {
-    id: "voice",
-    type: "Artwork Voice Note Block",
-    icon: Mic,
-    label: "Voice Note",
-    description: "Record audio message",
-    category: "immersive",
-    gradient: "from-purple-900/30 to-purple-800/30"
-  },
-  {
-    id: "gallery",
-    type: "Artwork Process Gallery Block",
-    icon: Camera,
-    label: "Process Gallery",
-    description: "Behind-the-scenes photos",
-    category: "immersive",
-    gradient: "from-blue-900/30 to-blue-800/30"
-  },
-  {
-    id: "inspiration",
-    type: "Artwork Inspiration Block",
-    icon: Lightbulb,
-    label: "Inspiration",
-    description: "Mood board images",
-    category: "immersive",
-    gradient: "from-yellow-900/30 to-yellow-800/30"
-  },
-  {
-    id: "note",
-    type: "Artwork Artist Note Block",
-    icon: PenTool,
-    label: "Artist Note",
-    description: "Personal letter with signature",
-    category: "immersive",
-    gradient: "from-amber-900/30 to-amber-800/30"
-  }
-]
+interface BlockLibrarySidebarProps {
+  onAddBlock: (blockType: string) => void
+}
 
-function DraggableTemplate({ template }: { template: BlockTemplate }) {
-  const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
-    id: template.id,
-    data: { isTemplate: true, blockType: template.type }
-  })
-
-  const IconComponent = template.icon
+function ClickableTemplate({ 
+  schema, 
+  onAdd 
+}: { 
+  schema: BlockSchema
+  onAdd: (blockType: string) => void 
+}) {
+  const IconComponent = ICON_MAP[schema.icon] || FileText
+  const gradient = schema.ui.sidebarGradient
 
   return (
-    <div
-      ref={setNodeRef}
-      {...listeners}
-      {...attributes}
+    <button
+      onClick={() => onAdd(schema.name)}
       className={`
-        p-3 rounded-lg border cursor-grab active:cursor-grabbing
+        w-full p-3 rounded-lg border cursor-pointer
         transition-all hover:scale-105 hover:shadow-lg
-        ${template.gradient 
-          ? `bg-gradient-to-br ${template.gradient} border-white/10` 
+        ${gradient 
+          ? `bg-gradient-to-br ${gradient} border-white/10` 
           : 'bg-gray-800 border-gray-700'
         }
-        ${isDragging ? 'opacity-50 scale-95' : ''}
+        hover:brightness-110
       `}
     >
       <div className="flex items-center gap-3 mb-1">
-        <IconComponent className={`h-5 w-5 ${template.gradient ? 'text-white' : 'text-gray-400'}`} />
-        <span className="font-semibold text-sm text-white">{template.label}</span>
+        <IconComponent className={`h-5 w-5 ${gradient ? 'text-white' : schema.ui.iconColor}`} />
+        <span className="font-semibold text-sm text-white text-left">{schema.label}</span>
       </div>
-      <p className="text-xs text-gray-400">{template.description}</p>
-    </div>
+      <p className="text-xs text-gray-400 text-left">{schema.description}</p>
+    </button>
   )
 }
 
-export default function BlockLibrarySidebar() {
+export default function BlockLibrarySidebar({ onAddBlock }: BlockLibrarySidebarProps) {
   const [searchQuery, setSearchQuery] = useState("")
 
-  const filtered = BLOCK_TEMPLATES.filter(t =>
+  const filtered = BLOCK_SCHEMAS.filter(s =>
     !searchQuery || 
-    t.label.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    t.description.toLowerCase().includes(searchQuery.toLowerCase())
+    s.label.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    s.description.toLowerCase().includes(searchQuery.toLowerCase())
   )
 
-  const basicBlocks = filtered.filter(t => t.category === "basic")
-  const immersiveBlocks = filtered.filter(t => t.category === "immersive")
+  const basicBlocks = filtered.filter(s => s.category === "basic")
+  const immersiveBlocks = filtered.filter(s => s.category === "immersive")
+  const structureBlocks = filtered.filter(s => s.category === "structure")
 
   return (
     <div className="w-[280px] bg-gray-900 border-r border-gray-800 flex flex-col h-full overflow-hidden">
@@ -175,8 +102,8 @@ export default function BlockLibrarySidebar() {
             <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wider">
               Basic
             </h3>
-            {basicBlocks.map(template => (
-              <DraggableTemplate key={template.id} template={template} />
+            {basicBlocks.map(schema => (
+              <ClickableTemplate key={schema.id} schema={schema} onAdd={onAddBlock} />
             ))}
           </div>
         )}
@@ -187,8 +114,20 @@ export default function BlockLibrarySidebar() {
             <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wider">
               Immersive
             </h3>
-            {immersiveBlocks.map(template => (
-              <DraggableTemplate key={template.id} template={template} />
+            {immersiveBlocks.map(schema => (
+              <ClickableTemplate key={schema.id} schema={schema} onAdd={onAddBlock} />
+            ))}
+          </div>
+        )}
+
+        {/* Structure Category */}
+        {structureBlocks.length > 0 && (
+          <div className="space-y-2">
+            <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wider">
+              Structure
+            </h3>
+            {structureBlocks.map(schema => (
+              <ClickableTemplate key={schema.id} schema={schema} onAdd={onAddBlock} />
             ))}
           </div>
         )}
@@ -204,7 +143,7 @@ export default function BlockLibrarySidebar() {
       {/* Footer Tip */}
       <div className="p-4 border-t border-gray-800 bg-gray-950">
         <p className="text-xs text-gray-500">
-          💡 Drag blocks to the canvas to add content
+          💡 Click blocks to add them to your page
         </p>
       </div>
     </div>

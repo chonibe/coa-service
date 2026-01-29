@@ -15,6 +15,10 @@ import {
   Copy,
   ExternalLink,
   Image as ImageIcon,
+  GripVertical,
+  Check,
+  X,
+  Grid3x3,
 } from "lucide-react"
 import Image from "next/image"
 import { useToast } from "@/components/ui/use-toast"
@@ -30,6 +34,7 @@ import VoiceNoteRecorder from "../components/VoiceNoteRecorder"
 import ProcessGalleryEditor from "../components/ProcessGalleryEditor"
 import InspirationBoardEditor from "../components/InspirationBoardEditor"
 import ArtistNoteEditor from "../components/ArtistNoteEditor"
+import SectionGroupEditor from "../components/SectionGroupEditor"
 
 // Import collector preview components for preview
 import { VideoBlock } from "@/app/collector/artwork/[id]/components/VideoBlock"
@@ -39,6 +44,10 @@ import { ImageBlock } from "@/app/collector/artwork/[id]/components/ImageBlock"
 // Import utilities
 import { MediaLibraryModal, type MediaItem } from "@/components/vendor/MediaLibraryModal"
 import { CopyContentModal } from "../components/CopyContentModal"
+import { UnlockRelationshipVisualizer } from "../components/UnlockRelationshipVisualizer"
+import { uploadWithProgress } from "@/lib/artwork-blocks/upload-with-progress"
+import { PAGE_TEMPLATES, type PageTemplate } from "@/lib/artwork-blocks/page-templates"
+import TemplatePickerCard from "../components/TemplatePickerCard"
 
 interface ContentBlock {
   id: number
@@ -72,6 +81,8 @@ export default function ArtworkPageEditor() {
   // State
   const [product, setProduct] = useState<ProductData | null>(null)
   const [vendor, setVendor] = useState<VendorData | null>(null)
+  const [seriesInfo, setSeriesInfo] = useState<{ id: string; name: string; slug: string; position: number; totalCount: number } | null>(null)
+  const [unlockRelationships, setUnlockRelationships] = useState<{ unlocks: Array<{ type: string; id: string; name: string }> } | null>(null)
   const [contentBlocks, setContentBlocks] = useState<ContentBlock[]>([])
   const [expandedBlocks, setExpandedBlocks] = useState<Set<number>>(new Set())
   const [isLoading, setIsLoading] = useState(true)
@@ -79,13 +90,24 @@ export default function ArtworkPageEditor() {
   const [lastSaved, setLastSaved] = useState<Date | null>(null)
   const [error, setError] = useState<string | null>(null)
   
+  // Reorder mode state
+  const [isReorderMode, setIsReorderMode] = useState(false)
+  const [tempBlockOrder, setTempBlockOrder] = useState<ContentBlock[]>([])
+  
   // Modals
   const [showCopyModal, setShowCopyModal] = useState(false)
   const [showContentLibrary, setShowContentLibrary] = useState(false)
   const [contentLibraryBlockId, setContentLibraryBlockId] = useState<number | null>(null)
   const [contentLibraryType, setContentLibraryType] = useState<"image" | "video" | "audio" | undefined>()
+  const [contentLibraryMode, setContentLibraryMode] = useState<"single" | "gallery">("single")
   const [availableProducts, setAvailableProducts] = useState<Array<{ id: string; name: string; hasContent: boolean }>>([])
   const [uploadingBlocks, setUploadingBlocks] = useState<Set<number>>(new Set())
+  const [uploadProgress, setUploadProgress] = useState<Record<number, number>>({})
+  const [contentLibraryRefreshKey, setContentLibraryRefreshKey] = useState(0)
+  const [showTemplatePicker, setShowTemplatePicker] = useState(true)
+
+  // Debug availableProducts
+  console.log("[Editor v2] availableProducts:", availableProducts, "length:", availableProducts?.length)
 
   // Drag and drop sensors
   const sensors = useSensors(
@@ -117,13 +139,28 @@ export default function ArtworkPageEditor() {
 
       const data = await response.json()
       console.log("[Editor v2] Loaded data:", data)
-      
+
+      // Validate contentBlocks structure
+      const rawBlocks = data.contentBlocks || []
+      console.log("[Editor v2] Raw contentBlocks:", rawBlocks, "length:", rawBlocks.length)
+
+      // Check for undefined elements
+      const undefinedIndices = rawBlocks.map((b: any, i: number) => b === undefined ? i : -1).filter((i: number) => i >= 0)
+      if (undefinedIndices.length > 0) {
+        console.error("[Editor v2] Found undefined elements at indices:", undefinedIndices)
+      }
+
       setProduct(data.product)
       setVendor(data.vendor)
-      setContentBlocks(data.contentBlocks || [])
-      
+      setSeriesInfo(data.seriesInfo || null)
+      setUnlockRelationships(data.unlockRelationships || null)
+      const blocks = rawBlocks.filter((b: any) => b && typeof b === 'object' && b.id !== undefined)
+      console.log("[Editor v2] Filtered blocks:", blocks, "filtered from", rawBlocks.length, "to", blocks.length)
+      setContentBlocks(blocks)
+
       // Auto-expand all blocks initially
-      const allBlockIds = new Set((data.contentBlocks || []).map((b: ContentBlock) => b.id))
+      const allBlockIds = new Set(blocks.map((b: ContentBlock) => b.id))
+      console.log("[Editor v2] Block IDs:", Array.from(allBlockIds))
       setExpandedBlocks(allBlockIds)
       
       // Fetch available products for copy modal
@@ -138,37 +175,30 @@ export default function ArtworkPageEditor() {
     }
   }
 
-  // Drag and drop handler
-  const handleDragEnd = async (event: DragEndEvent) => {
+  // Click handler to add block
+  const handleAddBlock = async (blockType: string) => {
+    console.log("[Click] Adding new block:", blockType)
+    await addBlock(blockType, contentBlocks.length) // Always add to end
+  }
+
+  // Drag and drop handler (only for reordering when in reorder mode)
+  const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event
 
     if (!over) return
+    if (!isReorderMode) return // Only allow drag in reorder mode
 
     console.log("[DnD] Drag ended:", { active: active.id, over: over.id })
 
-    // Case 1: Dragging from sidebar (new block)
-    if (active.data.current?.isTemplate) {
-      const blockType = active.data.current.blockType as string
-      const overIndex = contentBlocks.findIndex(b => b.id === over.id)
-      const insertIndex = overIndex >= 0 ? overIndex : contentBlocks.length
-
-      console.log("[DnD] Adding new block:", { blockType, insertIndex })
-      await addBlock(blockType, insertIndex)
-      return
-    }
-
-    // Case 2: Reordering existing blocks
+    // Reordering existing blocks (in memory only until approved)
     if (active.id !== over.id) {
-      const oldIndex = contentBlocks.findIndex(b => b.id === active.id)
-      const newIndex = contentBlocks.findIndex(b => b.id === over.id)
+      const oldIndex = tempBlockOrder.findIndex(b => b.id === active.id)
+      const newIndex = tempBlockOrder.findIndex(b => b.id === over.id)
 
       console.log("[DnD] Reordering:", { oldIndex, newIndex })
 
-      const reordered = arrayMove(contentBlocks, oldIndex, newIndex)
-      setContentBlocks(reordered)
-
-      // Persist to database
-      await updateBlockOrder(reordered)
+      const reordered = arrayMove(tempBlockOrder, oldIndex, newIndex)
+      setTempBlockOrder(reordered)
     }
   }
 
@@ -280,6 +310,32 @@ export default function ArtworkPageEditor() {
     }
   }
 
+  // Enter reorder mode
+  const enterReorderMode = () => {
+    setIsReorderMode(true)
+    setTempBlockOrder([...contentBlocks])
+    toast({
+      title: "Reorder mode",
+      description: "Drag blocks to reorder, then approve changes",
+    })
+  }
+
+  // Cancel reorder mode
+  const cancelReorderMode = () => {
+    setIsReorderMode(false)
+    setTempBlockOrder([])
+  }
+
+  // Approve reorder
+  const approveReorder = async () => {
+    setIsSaving(true)
+    await updateBlockOrder(tempBlockOrder)
+    setContentBlocks(tempBlockOrder)
+    setIsReorderMode(false)
+    setTempBlockOrder([])
+    setIsSaving(false)
+  }
+
   // Update block content
   const updateBlock = async (blockId: number, updates: Partial<ContentBlock>) => {
     try {
@@ -363,8 +419,8 @@ export default function ArtworkPageEditor() {
     }
   }
 
-  // Apply template
-  const applyTemplate = async () => {
+  // Apply template (legacy - uses default template)
+  const applyDefaultTemplate = async () => {
     try {
       setIsSaving(true)
 
@@ -382,6 +438,7 @@ export default function ArtworkPageEditor() {
       }
 
       await fetchData() // Reload all data
+      setShowTemplatePicker(false)
 
       toast({
         title: "Template applied",
@@ -398,23 +455,63 @@ export default function ArtworkPageEditor() {
     }
   }
 
-  // Handle file upload
+  // Apply a specific page template
+  const applyPageTemplate = async (template: PageTemplate) => {
+    try {
+      setIsSaving(true)
+      setShowTemplatePicker(false)
+
+      // Add each block from the template
+      for (const templateBlock of template.blocks) {
+        await fetch(`/api/vendor/artwork-pages/${productId}`, {
+          method: "POST",
+          credentials: "include",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            blockType: templateBlock.type,
+            title: templateBlock.title || "",
+          }),
+        })
+      }
+
+      await fetchData() // Reload all data
+
+      toast({
+        title: `${template.name} template applied`,
+        description: `Added ${template.blocks.length} content blocks`,
+      })
+    } catch (err: any) {
+      toast({
+        title: "Error",
+        description: err.message || "Failed to apply template",
+        variant: "destructive",
+      })
+    } finally {
+      setIsSaving(false)
+    }
+  }
+
+  // Handle file upload with progress tracking
   const handleFileUpload = async (blockId: number, file: File, blockType: string) => {
     console.log("[handleFileUpload]:", { blockId, fileName: file.name, blockType })
 
     try {
       setUploadingBlocks(prev => new Set([...prev, blockId]))
+      setUploadProgress(prev => ({ ...prev, [blockId]: 0 }))
 
       const formData = new FormData()
       formData.append("file", file)
       formData.append("blockId", blockId.toString())
       formData.append("blockType", blockType)
 
-      const response = await fetch(`/api/vendor/artwork-pages/${productId}/upload`, {
-        method: "POST",
-        credentials: "include",
-        body: formData,
-      })
+      // Use uploadWithProgress for real-time progress tracking
+      const response = await uploadWithProgress(
+        `/api/vendor/artwork-pages/${productId}/upload`,
+        formData,
+        (percent) => {
+          setUploadProgress(prev => ({ ...prev, [blockId]: percent }))
+        }
+      )
 
       if (!response.ok) {
         throw new Error("Upload failed")
@@ -439,6 +536,9 @@ export default function ArtworkPageEditor() {
           title: "Upload successful",
           description: `${blockType} uploaded`,
         })
+        
+        // Trigger Content Library refresh
+        setContentLibraryRefreshKey(prev => prev + 1)
       }
     } catch (err: any) {
       console.error("[handleFileUpload] Error:", err)
@@ -453,6 +553,11 @@ export default function ArtworkPageEditor() {
         next.delete(blockId)
         return next
       })
+      setUploadProgress(prev => {
+        const next = { ...prev }
+        delete next[blockId]
+        return next
+      })
     }
   }
 
@@ -461,14 +566,42 @@ export default function ArtworkPageEditor() {
     if (!contentLibraryBlockId) return
 
     try {
-      await updateBlock(contentLibraryBlockId, { content_url: media.url })
+      // Find the block to update
+      const block = contentBlocks.find(b => b.id === contentLibraryBlockId)
+      
+      if (contentLibraryMode === "gallery" && block) {
+        // For gallery blocks, add image to the images array in block_config
+        const currentConfig = block.block_config || { images: [] }
+        const currentImages = currentConfig.images || []
+        const newImage = {
+          url: media.url,
+          caption: "",
+          order: currentImages.length
+        }
+        await updateBlock(contentLibraryBlockId, { 
+          block_config: { 
+            ...currentConfig, 
+            images: [...currentImages, newImage] 
+          } 
+        })
+        
+        toast({
+          title: "Image added",
+          description: "Image added to gallery",
+        })
+      } else {
+        // For single content blocks, set the content_url directly
+        await updateBlock(contentLibraryBlockId, { content_url: media.url })
+        
+        toast({
+          title: "Media added",
+          description: "Content updated successfully",
+        })
+      }
+      
       setShowContentLibrary(false)
       setContentLibraryBlockId(null)
-
-      toast({
-        title: "Media added",
-        description: "Content updated successfully",
-      })
+      setContentLibraryMode("single")
     } catch (err: any) {
       toast({
         title: "Error",
@@ -512,6 +645,7 @@ export default function ArtworkPageEditor() {
             onImageUpload={() => {
               setContentLibraryBlockId(block.id)
               setContentLibraryType("image")
+              setContentLibraryMode("gallery")
               setShowContentLibrary(true)
             }}
           />
@@ -526,6 +660,7 @@ export default function ArtworkPageEditor() {
             onImageUpload={() => {
               setContentLibraryBlockId(block.id)
               setContentLibraryType("image")
+              setContentLibraryMode("gallery")
               setShowContentLibrary(true)
             }}
           />
@@ -553,6 +688,68 @@ export default function ArtworkPageEditor() {
           />
         )
 
+      case "Artwork Section Group Block":
+        // Get child blocks for this section
+        const childBlocks = contentBlocks.filter(
+          (b) => b.block_config?.parent_block_id === block.id
+        )
+        return (
+          <SectionGroupEditor
+            blockId={block.id}
+            config={block.block_config || {}}
+            childBlocks={childBlocks.map((b) => ({
+              id: b.id,
+              block_type: b.block_type || "",
+              title: b.title,
+              display_order_in_parent: b.block_config?.display_order_in_parent || 0,
+            }))}
+            onChange={(config) => updateBlock(block.id, { block_config: config })}
+            onAddChildBlock={async (blockType) => {
+              // Add a new block as a child of this section
+              await addBlock(blockType)
+              // Note: Parent assignment would need to be handled in the addBlock response
+              toast({
+                title: "Block added",
+                description: "New block added to section",
+              })
+            }}
+            onRemoveChildBlock={(childBlockId) => {
+              // Remove child from section (unset parent_block_id)
+              const childBlock = contentBlocks.find((b) => b.id === childBlockId)
+              if (childBlock) {
+                updateBlock(childBlockId, {
+                  block_config: {
+                    ...childBlock.block_config,
+                    parent_block_id: null,
+                  },
+                })
+              }
+            }}
+            onReorderChild={(childBlockId, direction) => {
+              const child = childBlocks.find((b) => b.id === childBlockId)
+              if (!child) return
+              const currentOrder = child.block_config?.display_order_in_parent || 0
+              const newOrder = direction === "up" ? currentOrder - 1 : currentOrder + 1
+              updateBlock(childBlockId, {
+                block_config: {
+                  ...child.block_config,
+                  display_order_in_parent: newOrder,
+                },
+              })
+            }}
+            onSelectChildBlock={(childBlockId) => {
+              // Scroll to and expand child block
+              setExpandedBlocks((prev) => new Set([...prev, childBlockId]))
+              setTimeout(() => {
+                document.getElementById(`block-${childBlockId}`)?.scrollIntoView({
+                  behavior: "smooth",
+                  block: "center",
+                })
+              }, 100)
+            }}
+          />
+        )
+
       // Old block types - keep basic editors
       case "Artwork Text Block":
       case "text":
@@ -571,8 +768,9 @@ export default function ArtworkPageEditor() {
 
       case "Artwork Image Block":
       case "image":
+        const imageConfig = block.block_config || {}
         return (
-          <div className="space-y-3">
+          <div className="space-y-4">
             <label className="text-sm font-medium text-gray-300">Image Source</label>
             <div className="flex gap-2">
               <Button
@@ -602,7 +800,7 @@ export default function ArtworkPageEditor() {
                 ) : (
                   <Copy className="h-4 w-4 mr-2" />
                 )}
-                Upload New
+                {uploadingBlocks.has(block.id) ? `${uploadProgress[block.id] || 0}%` : "Upload New"}
               </Button>
               <input
                 id={`image-upload-${block.id}`}
@@ -619,14 +817,113 @@ export default function ArtworkPageEditor() {
                 className="hidden"
               />
             </div>
+
+            {/* Image Preview */}
             {block.content_url && (
-              <div className="relative w-full aspect-video rounded overflow-hidden mt-3">
+              <div className="relative w-full aspect-video rounded-lg overflow-hidden border border-gray-600">
                 <Image
                   src={block.content_url}
                   alt="Preview"
                   fill
-                  className="object-cover"
+                  className={`${imageConfig.fitMode === "cover" ? "object-cover" : imageConfig.fitMode === "fill" ? "object-fill" : "object-contain"} ${imageConfig.position === "top" ? "object-top" : imageConfig.position === "bottom" ? "object-bottom" : "object-center"}`}
                 />
+              </div>
+            )}
+
+            {/* Display Options */}
+            {block.content_url && (
+              <div className="space-y-3 pt-2 border-t border-gray-700">
+                <label className="text-sm font-medium text-gray-400">Display Options</label>
+                
+                {/* Fit Mode */}
+                <div className="grid grid-cols-3 gap-2">
+                  <label className="text-xs text-gray-400 col-span-3">Fit Mode</label>
+                  {[
+                    { value: "contain", label: "Contain" },
+                    { value: "cover", label: "Cover" },
+                    { value: "fill", label: "Fill" },
+                  ].map((opt) => (
+                    <button
+                      key={opt.value}
+                      type="button"
+                      onClick={() => updateBlock(block.id, { 
+                        block_config: { ...imageConfig, fitMode: opt.value }
+                      })}
+                      className={`px-3 py-2 text-xs rounded-md transition-all ${
+                        (imageConfig.fitMode || "contain") === opt.value
+                          ? "bg-blue-600 text-white"
+                          : "bg-gray-700 text-gray-300 hover:bg-gray-600"
+                      }`}
+                    >
+                      {opt.label}
+                    </button>
+                  ))}
+                </div>
+
+                {/* Position */}
+                <div className="grid grid-cols-3 gap-2">
+                  <label className="text-xs text-gray-400 col-span-3">Position</label>
+                  {[
+                    { value: "top", label: "Top" },
+                    { value: "center", label: "Center" },
+                    { value: "bottom", label: "Bottom" },
+                  ].map((opt) => (
+                    <button
+                      key={opt.value}
+                      type="button"
+                      onClick={() => updateBlock(block.id, { 
+                        block_config: { ...imageConfig, position: opt.value }
+                      })}
+                      className={`px-3 py-2 text-xs rounded-md transition-all ${
+                        (imageConfig.position || "center") === opt.value
+                          ? "bg-blue-600 text-white"
+                          : "bg-gray-700 text-gray-300 hover:bg-gray-600"
+                      }`}
+                    >
+                      {opt.label}
+                    </button>
+                  ))}
+                </div>
+
+                {/* Aspect Ratio */}
+                <div className="grid grid-cols-4 gap-2">
+                  <label className="text-xs text-gray-400 col-span-4">Aspect Ratio</label>
+                  {[
+                    { value: "video", label: "16:9" },
+                    { value: "square", label: "1:1" },
+                    { value: "portrait", label: "3:4" },
+                    { value: "original", label: "Auto" },
+                  ].map((opt) => (
+                    <button
+                      key={opt.value}
+                      type="button"
+                      onClick={() => updateBlock(block.id, { 
+                        block_config: { ...imageConfig, aspectRatio: opt.value }
+                      })}
+                      className={`px-3 py-2 text-xs rounded-md transition-all ${
+                        (imageConfig.aspectRatio || "video") === opt.value
+                          ? "bg-blue-600 text-white"
+                          : "bg-gray-700 text-gray-300 hover:bg-gray-600"
+                      }`}
+                    >
+                      {opt.label}
+                    </button>
+                  ))}
+                </div>
+
+                {/* Caption */}
+                <div>
+                  <label className="text-xs text-gray-400">Caption (optional)</label>
+                  <input
+                    type="text"
+                    placeholder="Add a caption..."
+                    value={imageConfig.caption || ""}
+                    onChange={(e) => updateBlock(block.id, { 
+                      block_config: { ...imageConfig, caption: e.target.value }
+                    })}
+                    className="w-full mt-1 px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-white text-sm"
+                  />
+                </div>
               </div>
             )}
           </div>
@@ -635,20 +932,75 @@ export default function ArtworkPageEditor() {
       case "Artwork Video Block":
       case "video":
         return (
-          <div className="space-y-3">
-            <label className="text-sm font-medium text-gray-300">Video URL</label>
+          <div className="space-y-4">
+            <label className="text-sm font-medium text-gray-300">Video Source</label>
+            
+            {/* Upload or URL options */}
+            <div className="flex gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => document.getElementById(`video-upload-${block.id}`)?.click()}
+                disabled={uploadingBlocks.has(block.id)}
+                className="flex-1 bg-gray-700 border-gray-600"
+              >
+                {uploadingBlocks.has(block.id) ? (
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                ) : (
+                  <Copy className="h-4 w-4 mr-2" />
+                )}
+                {uploadingBlocks.has(block.id) ? `Uploading ${uploadProgress[block.id] || 0}%` : "Upload Video"}
+              </Button>
+              <input
+                id={`video-upload-${block.id}`}
+                type="file"
+                accept="video/*"
+                onChange={(e) => {
+                  const file = e.target.files?.[0]
+                  if (file) {
+                    handleFileUpload(block.id, file, "video")
+                  }
+                  e.target.value = ""
+                }}
+                disabled={uploadingBlocks.has(block.id)}
+                className="hidden"
+              />
+            </div>
+
+            {/* Or enter URL */}
+            <div className="relative">
+              <div className="absolute inset-0 flex items-center">
+                <span className="w-full border-t border-gray-600" />
+              </div>
+              <div className="relative flex justify-center text-xs uppercase">
+                <span className="bg-gray-800 px-2 text-gray-400">Or enter URL</span>
+              </div>
+            </div>
+
             <input
               type="url"
-              placeholder="YouTube, Vimeo, or direct URL"
+              placeholder="YouTube, Vimeo, or direct video URL"
               value={block.content_url || ""}
               onChange={(e) => updateBlock(block.id, { content_url: e.target.value })}
-              className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-white"
+              className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-white placeholder:text-gray-500"
             />
+
+            {/* Video Preview */}
             {block.content_url && (
-              <div className="mt-3">
-                <VideoBlock title={block.title} contentUrl={block.content_url} />
+              <div className="mt-4 rounded-lg overflow-hidden border border-gray-600">
+                <div className="bg-gray-900 px-3 py-2 text-xs text-gray-400 flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-full bg-green-500" />
+                  Preview
+                </div>
+                <VideoBlock title={null} contentUrl={block.content_url} />
               </div>
             )}
+
+            {/* Help text */}
+            <p className="text-xs text-gray-500">
+              Supports YouTube, Vimeo, or direct video files (MP4, WebM, MOV). Max 50MB for uploads.
+            </p>
           </div>
         )
 
@@ -668,7 +1020,7 @@ export default function ArtworkPageEditor() {
               ) : (
                 <Copy className="h-4 w-4 mr-2" />
               )}
-              {uploadingBlocks.has(block.id) ? "Uploading..." : "Upload Audio"}
+              {uploadingBlocks.has(block.id) ? `Uploading ${uploadProgress[block.id] || 0}%` : "Upload Audio"}
             </Button>
             <input
               id={`audio-upload-${block.id}`}
@@ -736,8 +1088,11 @@ export default function ArtworkPageEditor() {
     )
   }
 
-  const publishedCount = (contentBlocks || []).filter(b => b.is_published).length
+  const publishedCount = (contentBlocks || []).filter(b => b && typeof b === 'object' && b.is_published).length
   const totalCount = (contentBlocks || []).length
+
+  // Debug contentBlocks
+  console.log("[Editor v2] Render - contentBlocks:", contentBlocks, "publishedCount:", publishedCount, "totalCount:", totalCount)
 
   return (
     <DndContext
@@ -772,43 +1127,82 @@ export default function ArtworkPageEditor() {
                 Saved {lastSaved.toLocaleTimeString()}
               </span>
             )}
-            <Button
-              variant="outline"
-              onClick={() => setShowCopyModal(true)}
-              disabled={(availableProducts || []).filter((p) => p.id !== productId && p.hasContent).length === 0}
-              className="bg-gray-800 border-gray-700"
-            >
-              <Copy className="h-4 w-4 mr-2" />
-              Copy from...
-            </Button>
-            <Button
-              variant="outline"
-              onClick={() => window.open(`/vendor/dashboard/artwork-pages/${productId}/preview`, "_blank")}
-              className="bg-gray-800 border-gray-700"
-            >
-              <Eye className="h-4 w-4 mr-2" />
-              Preview
-            </Button>
-            <Button onClick={publishChanges} disabled={isSaving} className="bg-green-600 hover:bg-green-500">
-              {isSaving ? (
-                <>
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  Publishing...
-                </>
-              ) : (
-                <>
-                  <Save className="h-4 w-4 mr-2" />
-                  Publish Changes
-                </>
-              )}
-            </Button>
+            {!isReorderMode && (
+              <>
+                <Button
+                  variant="outline"
+                  onClick={() => setShowCopyModal(true)}
+                  disabled={(availableProducts || []).filter((p) => p && p.id !== productId && p.hasContent).length === 0}
+                  className="bg-gray-800 border-gray-700"
+                >
+                  <Copy className="h-4 w-4 mr-2" />
+                  Copy from...
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => window.open(`/vendor/dashboard/artwork-pages/${productId}/preview`, "_blank")}
+                  className="bg-gray-800 border-gray-700"
+                >
+                  <Eye className="h-4 w-4 mr-2" />
+                  Preview
+                </Button>
+                {contentBlocks.length > 0 && (
+                  <Button
+                    variant="outline"
+                    onClick={enterReorderMode}
+                    className="bg-gray-800 border-gray-700"
+                  >
+                    <GripVertical className="h-4 w-4 mr-2" />
+                    Reorder
+                  </Button>
+                )}
+                <Button onClick={publishChanges} disabled={isSaving} className="bg-green-600 hover:bg-green-500">
+                  {isSaving ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      Publishing...
+                    </>
+                  ) : (
+                    <>
+                      <Save className="h-4 w-4 mr-2" />
+                      Publish Changes
+                    </>
+                  )}
+                </Button>
+              </>
+            )}
+            {isReorderMode && (
+              <>
+                <Button
+                  variant="outline"
+                  onClick={cancelReorderMode}
+                  className="bg-gray-800 border-gray-700"
+                >
+                  <X className="h-4 w-4 mr-2" />
+                  Cancel
+                </Button>
+                <Button onClick={approveReorder} disabled={isSaving} className="bg-green-600 hover:bg-green-500">
+                  {isSaving ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      Saving...
+                    </>
+                  ) : (
+                    <>
+                      <Check className="h-4 w-4 mr-2" />
+                      Approve Order
+                    </>
+                  )}
+                </Button>
+              </>
+            )}
           </div>
         </header>
 
         {/* Main: Sidebar + Canvas */}
         <div className="flex-1 flex overflow-hidden">
-          {/* Sidebar */}
-          <BlockLibrarySidebar />
+          {/* Sidebar - hide in reorder mode */}
+          {!isReorderMode && <BlockLibrarySidebar onAddBlock={handleAddBlock} />}
 
           {/* Canvas */}
           <main className="flex-1 overflow-y-auto p-8">
@@ -823,6 +1217,11 @@ export default function ArtworkPageEditor() {
                     className="object-cover"
                   />
                 </div>
+              )}
+
+              {/* Unlock Relationships Visualizer */}
+              {unlockRelationships && (
+                <UnlockRelationshipVisualizer unlockRelationships={unlockRelationships} />
               )}
 
               {/* Progress */}
@@ -843,32 +1242,54 @@ export default function ArtworkPageEditor() {
                 </div>
               </div>
 
+              {/* Reorder Mode Banner */}
+              {isReorderMode && (
+                <Alert className="bg-blue-900/30 border-blue-700">
+                  <GripVertical className="h-4 w-4" />
+                  <AlertDescription>
+                    <strong>Reorder Mode Active:</strong> Drag blocks to reorder them, then click "Approve Order" to save.
+                  </AlertDescription>
+                </Alert>
+              )}
+
               {/* Content Blocks */}
               {contentBlocks.length === 0 ? (
-                <div className="text-center py-32 bg-gray-900/30 rounded-xl border-2 border-dashed border-gray-700">
-                  <Sparkles className="h-20 w-20 mx-auto text-gray-600 mb-6" />
-                  <h3 className="text-2xl font-bold mb-3">Start Building Your Story</h3>
-                  <p className="text-gray-400 mb-8 max-w-md mx-auto">
-                    Drag content blocks from the sidebar to create an immersive experience for your collectors
-                  </p>
-                  <Button onClick={applyTemplate} size="lg" className="bg-blue-600 hover:bg-blue-500">
-                    <Plus className="h-5 w-5 mr-2" />
-                    Apply Default Template
-                  </Button>
-                </div>
+                showTemplatePicker ? (
+                  <TemplatePickerCard 
+                    onSelectTemplate={applyPageTemplate}
+                    onDismiss={() => setShowTemplatePicker(false)}
+                  />
+                ) : (
+                  <div className="text-center py-32 bg-gray-900/30 rounded-xl border-2 border-dashed border-gray-700">
+                    <Sparkles className="h-20 w-20 mx-auto text-gray-600 mb-6" />
+                    <h3 className="text-2xl font-bold mb-3">Start Building Your Story</h3>
+                    <p className="text-gray-400 mb-8 max-w-md mx-auto">
+                      Click content blocks from the sidebar to create an immersive experience for your collectors
+                    </p>
+                    <div className="flex gap-3 justify-center">
+                      <Button onClick={() => setShowTemplatePicker(true)} variant="outline">
+                        <Sparkles className="h-4 w-4 mr-2" />
+                        Use a Template
+                      </Button>
+                    </div>
+                  </div>
+                )
               ) : (
                 <SortableContext
-                  items={contentBlocks.map(b => b.id)}
+                  items={(isReorderMode ? tempBlockOrder : contentBlocks).map(b => b.id)}
                   strategy={verticalListSortingStrategy}
+                  disabled={!isReorderMode}
                 >
                   <div className="space-y-6">
-                    {contentBlocks.map((block, index) => (
+                    {(isReorderMode ? tempBlockOrder : contentBlocks).map((block, index) => (
                       <DraggableBlockCard
                         key={block.id}
                         block={block}
                         index={index}
-                        isExpanded={expandedBlocks.has(block.id)}
+                        isExpanded={!isReorderMode && expandedBlocks.has(block.id)}
+                        isReorderMode={isReorderMode}
                         onToggle={() => {
+                          if (isReorderMode) return
                           setExpandedBlocks(prev => {
                             const next = new Set(prev)
                             if (next.has(block.id)) {
@@ -881,21 +1302,21 @@ export default function ArtworkPageEditor() {
                         }}
                         onDelete={() => deleteBlock(block.id)}
                       >
-                        {renderEditor(block)}
+                        {!isReorderMode && renderEditor(block)}
                       </DraggableBlockCard>
                     ))}
                   </div>
                 </SortableContext>
               )}
 
-              {/* Inline Add Button */}
-              {contentBlocks.length > 0 && (
+              {/* Inline Add Button - hidden in reorder mode */}
+              {contentBlocks.length > 0 && !isReorderMode && (
                 <div className="text-center pt-8">
                   <p className="text-gray-500 text-sm">
-                    💡 Drag more blocks from the sidebar or click below
+                    💡 Click more blocks from the sidebar or use quick add below
                   </p>
                   <Button
-                    onClick={() => addBlock("Artwork Text Block")}
+                    onClick={() => handleAddBlock("Artwork Text Block")}
                     variant="outline"
                     className="mt-4 bg-gray-800 border-dashed border-2 border-gray-700 hover:border-blue-500"
                   >
@@ -945,14 +1366,17 @@ export default function ArtworkPageEditor() {
         />
 
         <MediaLibraryModal
-          isOpen={showContentLibrary}
-          onClose={() => {
-            setShowContentLibrary(false)
-            setContentLibraryBlockId(null)
-            setContentLibraryType(undefined)
+          open={showContentLibrary}
+          onOpenChange={(open) => {
+            if (!open) {
+              setShowContentLibrary(false)
+              setContentLibraryBlockId(null)
+              setContentLibraryType(undefined)
+            }
           }}
           onSelect={handleMediaLibrarySelect}
-          type={contentLibraryType}
+          allowedTypes={contentLibraryType ? [contentLibraryType] : undefined}
+          refreshKey={contentLibraryRefreshKey}
         />
       </div>
     </DndContext>

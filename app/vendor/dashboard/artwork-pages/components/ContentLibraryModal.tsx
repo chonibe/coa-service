@@ -24,6 +24,7 @@ interface ContentLibraryModalProps {
   onOpenChange: (open: boolean) => void
   onSelect: (url: string) => void
   mediaType?: "image" | "video" | "audio"
+  refreshKey?: number  // Increment to force refresh after uploads
 }
 
 export function ContentLibraryModal({
@@ -31,6 +32,7 @@ export function ContentLibraryModal({
   onOpenChange,
   onSelect,
   mediaType,
+  refreshKey = 0,
 }: ContentLibraryModalProps) {
   const [media, setMedia] = useState<MediaItem[]>([])
   const [filteredMedia, setFilteredMedia] = useState<MediaItem[]>([])
@@ -45,7 +47,7 @@ export function ContentLibraryModal({
     if (open) {
       fetchMedia()
     }
-  }, [open, activeTab])
+  }, [open, activeTab, refreshKey])
 
   useEffect(() => {
     // Filter media by search query

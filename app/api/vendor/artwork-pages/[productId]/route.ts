@@ -84,7 +84,7 @@ export async function GET(
       product = productData
     }
 
-    // Get benefit type IDs for artwork content blocks
+    // Get benefit type IDs for artwork content blocks (including immersive types and section groups)
     const { data: benefitTypes } = await supabase
       .from("benefit_types")
       .select("id, name")
@@ -93,6 +93,12 @@ export async function GET(
         "Artwork Image Block",
         "Artwork Video Block",
         "Artwork Audio Block",
+        "Artwork Soundtrack Block",
+        "Artwork Voice Note Block",
+        "Artwork Process Gallery Block",
+        "Artwork Inspiration Block",
+        "Artwork Artist Note Block",
+        "Artwork Section Group Block",
       ])
 
     const artworkBlockTypeIds = benefitTypes?.map((bt) => bt.id) || []
@@ -106,7 +112,18 @@ export async function GET(
       const productData = submission.product_data as any
       const productDataBenefits = productData?.benefits || []
       const artworkBlocks = productDataBenefits.filter((b: any) => 
-        ["Artwork Text Block", "Artwork Image Block", "Artwork Video Block", "Artwork Audio Block"].includes(b.type)
+        [
+          "Artwork Text Block", 
+          "Artwork Image Block", 
+          "Artwork Video Block", 
+          "Artwork Audio Block",
+          "Artwork Soundtrack Block",
+          "Artwork Voice Note Block",
+          "Artwork Process Gallery Block",
+          "Artwork Inspiration Block",
+          "Artwork Artist Note Block",
+          "Artwork Section Group Block",
+        ].includes(b.type)
       )
       
       // Map to content block format
@@ -118,6 +135,8 @@ export async function GET(
         content_url: block.content_url || null,
         block_config: block.config || {},
         display_order: block.display_order || index,
+        parent_block_id: block.parent_block_id || null,
+        display_order_in_parent: block.display_order_in_parent || 0,
         is_published: true,
         block_type: block.type,
       }))
@@ -179,6 +198,95 @@ export async function GET(
       .eq("vendor_name", vendorName)
       .single()
 
+    // Get series information and unlock relationships if this artwork is part of a series
+    let seriesInfo = null
+    let unlockRelationships = null
+    if (!submission) {
+      const { data: productRecord } = await supabase
+        .from("products")
+        .select("product_id")
+        .eq("id", product.id)
+        .single()
+      
+      if (productRecord?.product_id) {
+        const { data: seriesMember } = await supabase
+          .from("artwork_series_members")
+          .select(`
+            series_id,
+            display_order,
+            artwork_series:series_id (
+              id,
+              name,
+              slug
+            )
+          `)
+          .eq("shopify_product_id", productRecord.product_id)
+          .single()
+        
+        if (seriesMember && seriesMember.artwork_series) {
+          const series = seriesMember.artwork_series as any
+          
+          // Get total count in series
+          const { count } = await supabase
+            .from("artwork_series_members")
+            .select("id", { count: "exact", head: true })
+            .eq("series_id", seriesMember.series_id)
+          
+          seriesInfo = {
+            id: series.id,
+            name: series.name,
+            slug: series.slug,
+            position: seriesMember.display_order,
+            totalCount: count || 0,
+          }
+        }
+        
+        // Get unlock relationships for this product
+        const { data: benefitRelationships } = await supabase
+          .from("product_benefits")
+          .select(`
+            id,
+            hidden_series_id,
+            vip_artwork_id,
+            vip_series_id,
+            artwork_series!hidden_series_id (id, name),
+            products!vip_artwork_id (id, name),
+            vip_series:artwork_series!vip_series_id (id, name)
+          `)
+          .eq("product_id", product.id)
+          .or("hidden_series_id.not.is.null,vip_artwork_id.not.is.null,vip_series_id.not.is.null")
+        
+        if (benefitRelationships && benefitRelationships.length > 0) {
+          unlockRelationships = {
+            unlocks: benefitRelationships.map((rel: any) => {
+              if (rel.hidden_series_id && rel.artwork_series) {
+                return {
+                  type: "hidden_series" as const,
+                  id: rel.artwork_series.id,
+                  name: rel.artwork_series.name,
+                }
+              }
+              if (rel.vip_artwork_id && rel.products) {
+                return {
+                  type: "vip_artwork" as const,
+                  id: rel.products.id,
+                  name: rel.products.name,
+                }
+              }
+              if (rel.vip_series_id && rel.vip_series) {
+                return {
+                  type: "vip_series" as const,
+                  id: rel.vip_series.id,
+                  name: rel.vip_series.name,
+                }
+              }
+              return null
+            }).filter(Boolean),
+          }
+        }
+      }
+    }
+
     return NextResponse.json({
       success: true,
       product: {
@@ -193,6 +301,8 @@ export async function GET(
         ...block,
         block_type: block.block_type || block.benefit_types?.name || null,
       })),
+      seriesInfo,
+      unlockRelationships,
       hasTemplate: contentBlocks.length > 0,
       isPendingSubmission: !!submission,
     })
@@ -340,7 +450,31 @@ export async function POST(
       .single()
 
     if (typeError || !benefitType) {
-      return NextResponse.json({ error: "Invalid block type" }, { status: 400 })
+      console.error(`[Artwork Pages API POST] Benefit type not found: ${body.blockType}`, typeError)
+      
+      // Check if this is a new immersive block type that hasn't been migrated
+      const immersiveTypes = [
+        "Artwork Soundtrack Block",
+        "Artwork Voice Note Block",
+        "Artwork Process Gallery Block",
+        "Artwork Inspiration Block",
+        "Artwork Artist Note Block",
+        "Artwork Section Group Block",
+      ]
+      
+      if (immersiveTypes.includes(body.blockType)) {
+        return NextResponse.json({ 
+          error: "Block type not found in database",
+          message: `The immersive block type "${body.blockType}" has not been added to the database yet. Please run the migration: supabase/migrations/20260128100000_add_section_group_block.sql`,
+          blockType: body.blockType,
+        }, { status: 400 })
+      }
+      
+      return NextResponse.json({ 
+        error: "Invalid block type",
+        message: `Block type "${body.blockType}" not found`,
+        blockType: body.blockType,
+      }, { status: 400 })
     }
 
     // Get max display_order for this product

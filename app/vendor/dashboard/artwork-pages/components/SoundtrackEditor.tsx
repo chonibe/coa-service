@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react"
 import { Music, CheckCircle, AlertCircle, Loader2 } from "lucide-react"
 import { Input, Textarea, Button } from "@/components/ui"
-import { processSpotifyUrl } from "@/lib/spotify"
+import { processSpotifyUrl, getSpotifyContentTypeLabel } from "@/lib/spotify"
 
 interface SoundtrackEditorProps {
   blockId: number
@@ -17,7 +17,7 @@ interface SoundtrackEditorProps {
 export default function SoundtrackEditor({ blockId, config, onChange }: SoundtrackEditorProps) {
   const [spotifyUrl, setSpotifyUrl] = useState(config.spotify_url || "")
   const [note, setNote] = useState(config.note || "")
-  const [validation, setValidation] = useState<{ isValid: boolean; error?: string; embedUrl?: string | null }>({ isValid: false })
+  const [validation, setValidation] = useState<{ isValid: boolean; error?: string; embedUrl?: string | null; contentType?: string | null }>({ isValid: false })
   const [isValidating, setIsValidating] = useState(false)
 
   useEffect(() => {
@@ -29,7 +29,12 @@ export default function SoundtrackEditor({ blockId, config, onChange }: Soundtra
     setIsValidating(true)
     const timer = setTimeout(() => {
       const result = processSpotifyUrl(spotifyUrl)
-      setValidation(result)
+      setValidation({
+        isValid: result.isValid,
+        error: result.error,
+        embedUrl: result.embedUrl,
+        contentType: result.contentType,
+      })
       setIsValidating(false)
       
       if (result.isValid) {
@@ -62,11 +67,11 @@ export default function SoundtrackEditor({ blockId, config, onChange }: Soundtra
       {/* Spotify URL Input */}
       <div className="space-y-2">
         <label className="text-sm font-medium text-gray-300">
-          Spotify Track URL <span className="text-red-400">*</span>
+          Spotify URL <span className="text-red-400">*</span>
         </label>
         <Input
           type="url"
-          placeholder="https://open.spotify.com/track/..."
+          placeholder="https://open.spotify.com/track/... (or album, playlist, etc.)"
           value={spotifyUrl}
           onChange={(e) => setSpotifyUrl(e.target.value)}
           className="bg-gray-700 border-gray-600 text-white"
@@ -82,7 +87,9 @@ export default function SoundtrackEditor({ blockId, config, onChange }: Soundtra
           ) : validation.isValid ? (
             <>
               <CheckCircle className="h-4 w-4 text-green-500" />
-              <span className="text-green-500">Valid Spotify URL</span>
+              <span className="text-green-500">
+                Valid Spotify {validation.contentType ? getSpotifyContentTypeLabel(validation.contentType as any) : "URL"}
+              </span>
             </>
           ) : spotifyUrl && validation.error ? (
             <>
@@ -91,20 +98,24 @@ export default function SoundtrackEditor({ blockId, config, onChange }: Soundtra
             </>
           ) : null}
         </div>
+        <p className="text-xs text-gray-500">
+          Supports tracks, albums, playlists, episodes, shows, and artists
+        </p>
       </div>
 
       {/* Live Spotify Preview */}
       {validation.isValid && validation.embedUrl && (
         <div className="bg-gray-800 rounded-lg p-4 border border-green-500/20">
-          <p className="text-sm text-gray-400 mb-3">Preview:</p>
+          <p className="text-sm text-gray-400 mb-3">Preview (collector will see full player):</p>
           <iframe
             src={validation.embedUrl}
             width="100%"
-            height="152"
+            height="352"
             frameBorder="0"
             allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
             loading="lazy"
-            className="w-full rounded"
+            className="w-full rounded-lg"
+            style={{ borderRadius: "12px" }}
           />
         </div>
       )}

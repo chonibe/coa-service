@@ -105,6 +105,7 @@ export async function GET(
         "Artwork Process Gallery Block",
         "Artwork Inspiration Block",
         "Artwork Artist Note Block",
+        "Artwork Section Group Block",
       ])
 
     const artworkBlockTypeIds = benefitTypes?.map((bt) => bt.id) || []
@@ -162,10 +163,35 @@ export async function GET(
 
     // Full content blocks only if authenticated
     if (isAuthenticated) {
-      contentBlocks = availableBlocks.map((block: any) => ({
-        ...block,
-        block_type: block.benefit_types?.name || null,
-      }))
+      // First, get top-level blocks (those without parent_block_id)
+      const topLevelBlocks = availableBlocks.filter((b: any) => !b.parent_block_id)
+      
+      // Map blocks and attach child blocks for Section Groups
+      contentBlocks = topLevelBlocks.map((block: any) => {
+        const blockType = block.benefit_types?.name || null
+        
+        // If this is a Section Group, find its child blocks
+        if (blockType === "Artwork Section Group Block") {
+          const childBlocks = availableBlocks
+            .filter((b: any) => b.parent_block_id === block.id)
+            .map((child: any) => ({
+              ...child,
+              block_type: child.benefit_types?.name || null,
+            }))
+            .sort((a: any, b: any) => (a.display_order_in_parent || 0) - (b.display_order_in_parent || 0))
+          
+          return {
+            ...block,
+            block_type: blockType,
+            childBlocks,
+          }
+        }
+        
+        return {
+          ...block,
+          block_type: blockType,
+        }
+      })
     }
 
     // Get series info if applicable

@@ -17,7 +17,7 @@ CREATE TABLE IF NOT EXISTS collector_notifications (
   )),
   
   -- Reference
-  product_id TEXT REFERENCES products(id) ON DELETE CASCADE,
+  product_id UUID REFERENCES products(id) ON DELETE CASCADE,
   story_post_id UUID REFERENCES artwork_story_posts(id) ON DELETE CASCADE,
   
   -- Content

@@ -1,27 +1,57 @@
 "use client"
 
-
-
-import { Skeleton } from "@/components/ui"
+import { Skeleton, Button } from "@/components/ui"
 import { useEffect, useState, useRef } from "react"
-import { Play, AlertCircle, RefreshCw } from "lucide-react"
+import { Play, AlertCircle, RefreshCw, Video } from "lucide-react"
 
-import { Card, CardContent, Button } from "@/components/ui"
 interface VideoBlockProps {
   title?: string | null
   contentUrl: string | null
   artworkId?: string
+  blockConfig?: {
+    aspectRatio?: "video" | "square" | "portrait" | "auto"
+  }
 }
 
-export function VideoBlock({ title, contentUrl, artworkId }: VideoBlockProps) {
+// Helper to detect if URL is a direct video file
+function isDirectVideoUrl(url: string): boolean {
+  // Check file extension
+  if (url.match(/\.(mp4|webm|ogg|mov|avi|m4v|mkv)(\?.*)?$/i)) {
+    return true
+  }
+  
+  // Check for Supabase storage URLs (multiple patterns)
+  if (url.includes('supabase.co/storage')) return true
+  if (url.includes('/storage/v1/object/public/')) return true
+  if (url.includes('/storage/v1/object/sign/')) return true
+  
+  // Check for common CDN/storage patterns with video content
+  if (url.includes('product-images') && !url.match(/\.(jpg|jpeg|png|gif|webp|svg)(\?.*)?$/i)) {
+    // Likely a video in the product-images bucket
+    return true
+  }
+  
+  return false
+}
+
+export function VideoBlock({ title, contentUrl, artworkId, blockConfig }: VideoBlockProps) {
   const [embedUrl, setEmbedUrl] = useState<string | null>(null)
   const [videoType, setVideoType] = useState<"youtube" | "vimeo" | "direct" | null>(null)
   const [hasTrackedPlay, setHasTrackedPlay] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
   const [hasError, setHasError] = useState(false)
   const [isPlaying, setIsPlaying] = useState(false)
+  const [showPlayButton, setShowPlayButton] = useState(true)
   const iframeRef = useRef<HTMLIFrameElement>(null)
   const videoRef = useRef<HTMLVideoElement>(null)
+
+  // Determine aspect ratio class
+  const aspectClass = {
+    video: "aspect-video",
+    square: "aspect-square",
+    portrait: "aspect-[3/4]",
+    auto: "aspect-video", // default
+  }[blockConfig?.aspectRatio || "video"]
 
   useEffect(() => {
     if (!contentUrl) {
@@ -31,13 +61,10 @@ export function VideoBlock({ title, contentUrl, artworkId }: VideoBlockProps) {
 
     setIsLoading(true)
     setHasError(false)
+    setShowPlayButton(true)
 
-    // Check if it's a direct video file (including Supabase storage URLs)
-    const isDirectVideo = contentUrl.match(/\.(mp4|webm|ogg|mov|avi)(\?.*)?$/i) ||
-                         contentUrl.includes('supabase.co/storage') ||
-                         contentUrl.includes('/storage/v1/object/public/')
-    
-    if (isDirectVideo) {
+    // Check if it's a direct video file
+    if (isDirectVideoUrl(contentUrl)) {
       setVideoType("direct")
       setEmbedUrl(contentUrl)
       setIsLoading(false)
@@ -48,19 +75,19 @@ export function VideoBlock({ title, contentUrl, artworkId }: VideoBlockProps) {
     let embed = contentUrl
     let type: "youtube" | "vimeo" | "direct" = "direct"
 
-    // YouTube
+    // YouTube - enhanced pattern matching
     const youtubeMatch = contentUrl.match(
       /(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/
     )
     if (youtubeMatch) {
-      embed = `https://www.youtube.com/embed/${youtubeMatch[1]}?enablejsapi=1`
+      embed = `https://www.youtube.com/embed/${youtubeMatch[1]}?enablejsapi=1&rel=0`
       type = "youtube"
     }
 
-    // Vimeo
-    const vimeoMatch = contentUrl.match(/vimeo\.com\/(\d+)/)
+    // Vimeo - enhanced pattern matching
+    const vimeoMatch = contentUrl.match(/vimeo\.com\/(?:video\/)?(\d+)/)
     if (vimeoMatch) {
-      embed = `https://player.vimeo.com/video/${vimeoMatch[1]}`
+      embed = `https://player.vimeo.com/video/${vimeoMatch[1]}?dnt=1`
       type = "vimeo"
     }
 
@@ -133,40 +160,52 @@ export function VideoBlock({ title, contentUrl, artworkId }: VideoBlockProps) {
 
   if (!contentUrl) return null
 
-  return (
-    <Card>
-      <CardContent className="p-6">
-        {title && <h3 className="font-semibold mb-4">{title}</h3>}
-        <div className="relative aspect-video rounded-lg overflow-hidden bg-gray-100 dark:bg-gray-800">
-          {isLoading && (
-            <div className="absolute inset-0 flex items-center justify-center">
-              <Skeleton className="w-full h-full" />
-            </div>
-          )}
-          
-          {hasError && (
-            <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 p-6">
-              <AlertCircle className="h-12 w-12 text-destructive" />
-              <p className="text-sm text-center text-muted-foreground">
-                Failed to load video
-              </p>
-              <div className="flex gap-2">
-                <Button variant="outline" size="sm" onClick={handleRetry}>
-                  <RefreshCw className="h-4 w-4 mr-2" />
-                  Retry
-                </Button>
-                <Button variant="outline" size="sm" asChild>
-                  <a href={contentUrl} target="_blank" rel="noopener noreferrer">
-                    Open in new tab
-                  </a>
-                </Button>
-              </div>
-            </div>
-          )}
+  const handlePlayClick = () => {
+    if (videoRef.current) {
+      videoRef.current.play()
+      setShowPlayButton(false)
+    }
+  }
 
-          {!isLoading && !hasError && embedUrl && (
-            <>
-              {videoType === "direct" ? (
+  return (
+    <div className="py-8 md:py-12">
+      {title && (
+        <h3 className="text-xl md:text-2xl font-bold mb-4 flex items-center gap-3">
+          <Video className="h-5 w-5 text-purple-500" />
+          {title}
+        </h3>
+      )}
+      <div className={`relative ${aspectClass} rounded-2xl overflow-hidden bg-black shadow-xl`}>
+        {isLoading && (
+          <div className="absolute inset-0 flex items-center justify-center bg-muted">
+            <Skeleton className="w-full h-full" />
+          </div>
+        )}
+        
+        {hasError && (
+          <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 p-6 bg-muted">
+            <AlertCircle className="h-12 w-12 text-destructive" />
+            <p className="text-sm text-center text-muted-foreground">
+              Failed to load video
+            </p>
+            <div className="flex gap-2">
+              <Button variant="outline" size="sm" onClick={handleRetry}>
+                <RefreshCw className="h-4 w-4 mr-2" />
+                Retry
+              </Button>
+              <Button variant="outline" size="sm" asChild>
+                <a href={contentUrl} target="_blank" rel="noopener noreferrer">
+                  Open in new tab
+                </a>
+              </Button>
+            </div>
+          </div>
+        )}
+
+        {!isLoading && !hasError && embedUrl && (
+          <>
+            {videoType === "direct" ? (
+              <>
                 <video
                   ref={videoRef}
                   src={embedUrl}
@@ -174,28 +213,40 @@ export function VideoBlock({ title, contentUrl, artworkId }: VideoBlockProps) {
                   controlsList="nodownload"
                   playsInline
                   preload="metadata"
-                  className="w-full h-full"
+                  className="w-full h-full object-contain"
                   onPlay={handleDirectVideoPlay}
                   onError={handleVideoError}
                   onLoadedData={() => setIsLoading(false)}
+                  poster=""
                 >
                   Your browser does not support the video tag.
                 </video>
-              ) : (
-                <iframe
-                  ref={iframeRef}
-                  src={embedUrl}
-                  className="w-full h-full"
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                  allowFullScreen
-                  onLoad={() => setIsLoading(false)}
-                  onError={handleVideoError}
-                />
-              )}
-            </>
-          )}
-        </div>
-      </CardContent>
-    </Card>
+                {/* Play button overlay for direct videos */}
+                {showPlayButton && !isPlaying && (
+                  <div 
+                    className="absolute inset-0 flex items-center justify-center bg-black/30 cursor-pointer transition-opacity hover:bg-black/20"
+                    onClick={handlePlayClick}
+                  >
+                    <div className="w-20 h-20 rounded-full bg-white/90 dark:bg-black/80 flex items-center justify-center shadow-2xl hover:scale-110 transition-transform">
+                      <Play className="h-10 w-10 text-black dark:text-white fill-current ml-1" />
+                    </div>
+                  </div>
+                )}
+              </>
+            ) : (
+              <iframe
+                ref={iframeRef}
+                src={embedUrl}
+                className="w-full h-full"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
+                allowFullScreen
+                onLoad={() => setIsLoading(false)}
+                onError={handleVideoError}
+              />
+            )}
+          </>
+        )}
+      </div>
+    </div>
   )
 }

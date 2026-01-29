@@ -3,7 +3,7 @@
 
 CREATE TABLE IF NOT EXISTS artwork_slides (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  product_id TEXT NOT NULL REFERENCES products(id) ON DELETE CASCADE,
+  product_id UUID NOT NULL REFERENCES products(id) ON DELETE CASCADE,
   display_order INTEGER DEFAULT 0,
   
   -- Background layer (JSONB)
@@ -43,7 +43,7 @@ CREATE POLICY "Vendors can manage their product slides"
   USING (
     EXISTS (
       SELECT 1 FROM products p
-      WHERE p.id = product_id AND p.vendor_id = auth.uid()::text
+      WHERE p.id = product_id AND p.vendor_name = (auth.jwt() ->> 'email')
     )
   );
 

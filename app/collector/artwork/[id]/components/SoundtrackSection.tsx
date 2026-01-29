@@ -1,8 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { Music, ExternalLink } from "lucide-react"
-import { Card, CardContent } from "@/components/ui"
+import { Music, ExternalLink, AlertCircle } from "lucide-react"
 
 interface SoundtrackSectionProps {
   title?: string
@@ -12,76 +11,141 @@ interface SoundtrackSectionProps {
   }
 }
 
+// Helper function to extract Spotify embed URL from various Spotify URL formats
+function getSpotifyEmbedUrl(url: string): { embedUrl: string | null; error: string | null } {
+  try {
+    const urlObj = new URL(url)
+    
+    // Must be a Spotify URL
+    if (!urlObj.hostname.includes("spotify.com")) {
+      return { embedUrl: null, error: "Not a valid Spotify URL" }
+    }
+
+    const pathParts = urlObj.pathname.split("/").filter(Boolean)
+    
+    // Support multiple Spotify content types
+    // Tracks: open.spotify.com/track/{id}
+    // Albums: open.spotify.com/album/{id}
+    // Playlists: open.spotify.com/playlist/{id}
+    // Episodes: open.spotify.com/episode/{id}
+    // Shows: open.spotify.com/show/{id}
+    // Artists: open.spotify.com/artist/{id}
+    
+    const supportedTypes = ["track", "album", "playlist", "episode", "show", "artist"]
+    
+    for (const type of supportedTypes) {
+      const typeIndex = pathParts.indexOf(type)
+      if (typeIndex !== -1 && pathParts[typeIndex + 1]) {
+        const contentId = pathParts[typeIndex + 1].split("?")[0]
+        // Use the new Spotify embed format with theme=0 for dark mode compatibility
+        return { 
+          embedUrl: `https://open.spotify.com/embed/${type}/${contentId}?utm_source=generator&theme=0`,
+          error: null 
+        }
+      }
+    }
+
+    // Handle intl URLs like open.spotify.com/intl-de/track/...
+    if (pathParts[0] && pathParts[0].startsWith("intl-")) {
+      const remainingParts = pathParts.slice(1)
+      for (const type of supportedTypes) {
+        const typeIndex = remainingParts.indexOf(type)
+        if (typeIndex !== -1 && remainingParts[typeIndex + 1]) {
+          const contentId = remainingParts[typeIndex + 1].split("?")[0]
+          return { 
+            embedUrl: `https://open.spotify.com/embed/${type}/${contentId}?utm_source=generator&theme=0`,
+            error: null 
+          }
+        }
+      }
+    }
+
+    return { embedUrl: null, error: "Unsupported Spotify URL format" }
+  } catch (error) {
+    return { embedUrl: null, error: "Invalid URL" }
+  }
+}
+
 export default function SoundtrackSection({ title, config }: SoundtrackSectionProps) {
   const [embedUrl, setEmbedUrl] = useState<string | null>(null)
+  const [error, setError] = useState<string | null>(null)
   const { spotify_url, note } = config || {}
 
   useEffect(() => {
     if (spotify_url) {
-      // Extract track ID and create embed URL
-      try {
-        const url = new URL(spotify_url)
-        if (url.hostname === "open.spotify.com" && url.pathname.includes("/track/")) {
-          const pathParts = url.pathname.split("/")
-          const trackIndex = pathParts.indexOf("track")
-          if (trackIndex !== -1 && pathParts[trackIndex + 1]) {
-            const trackId = pathParts[trackIndex + 1].split("?")[0]
-            setEmbedUrl(`https://open.spotify.com/embed/track/${trackId}`)
-          }
-        }
-      } catch (error) {
-        console.error("Invalid Spotify URL:", error)
-      }
+      const result = getSpotifyEmbedUrl(spotify_url)
+      setEmbedUrl(result.embedUrl)
+      setError(result.error)
+    } else {
+      setEmbedUrl(null)
+      setError(null)
     }
   }, [spotify_url])
 
-  if (!spotify_url || !embedUrl) {
+  if (!spotify_url) {
     return null
   }
 
   return (
-    <Card className="border-green-500/20 bg-gradient-to-br from-green-500/5 to-emerald-500/5">
-      <CardContent className="p-6 space-y-6">
-        <div className="flex items-center justify-between">
-          <h2 className="text-2xl font-bold flex items-center gap-3">
-            <div className="p-2 rounded-full bg-green-500/10">
-              <Music className="h-6 w-6 text-green-500" />
-            </div>
-            {title || "Soundtrack"}
-          </h2>
-          <a
-            href={spotify_url}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-sm text-green-500 hover:text-green-400 flex items-center gap-1 transition-colors"
-          >
-            Open in Spotify
-            <ExternalLink className="h-4 w-4" />
-          </a>
-        </div>
+    <div className="py-8 md:py-12">
+      <div className="flex items-center justify-between mb-6">
+        <h2 className="text-xl md:text-2xl font-bold flex items-center gap-3">
+          <div className="p-2 rounded-full bg-green-500/10">
+            <Music className="h-5 w-5 text-green-500" />
+          </div>
+          {title || "Soundtrack"}
+        </h2>
+        <a
+          href={spotify_url}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-sm text-green-500 hover:text-green-400 flex items-center gap-1 transition-colors"
+        >
+          Open in Spotify
+          <ExternalLink className="h-4 w-4" />
+        </a>
+      </div>
 
-        {/* Spotify Embed */}
-        <div className="relative w-full rounded-xl overflow-hidden shadow-lg bg-secondary">
+      {/* Spotify Embed */}
+      {embedUrl ? (
+        <div className="relative w-full rounded-2xl overflow-hidden shadow-xl bg-black">
           <iframe
             src={embedUrl}
             width="100%"
-            height="152"
+            height="352"
             frameBorder="0"
             allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
             loading="lazy"
             className="w-full"
+            style={{ borderRadius: "12px" }}
           />
         </div>
-
-        {/* Artist Note */}
-        {note && (
-          <div className="bg-secondary/50 rounded-xl p-6 border border-border/50">
-            <p className="text-muted-foreground leading-relaxed italic text-lg">
-              "{note}"
-            </p>
+      ) : error ? (
+        <div className="p-6 bg-muted/30 rounded-2xl flex items-center gap-3 text-muted-foreground">
+          <AlertCircle className="h-5 w-5 text-yellow-500" />
+          <div>
+            <p className="font-medium">Could not embed Spotify player</p>
+            <p className="text-sm">{error}</p>
+            <a 
+              href={spotify_url} 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="text-sm text-green-500 hover:underline"
+            >
+              Click here to open in Spotify
+            </a>
           </div>
-        )}
-      </CardContent>
-    </Card>
+        </div>
+      ) : null}
+
+      {/* Artist Note */}
+      {note && (
+        <div className="mt-6 bg-green-500/5 rounded-2xl p-6 border border-green-500/10">
+          <p className="text-muted-foreground leading-relaxed italic text-lg">
+            "{note}"
+          </p>
+        </div>
+      )}
+    </div>
   )
 }

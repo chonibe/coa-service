@@ -42,6 +42,7 @@ interface MediaLibraryModalProps {
   maxSelection?: number
   showUpload?: boolean
   title?: string
+  refreshKey?: number  // Increment to force refresh after uploads
 }
 
 export function MediaLibraryModal({
@@ -53,6 +54,7 @@ export function MediaLibraryModal({
   maxSelection,
   showUpload = true,
   title = "Select Media",
+  refreshKey = 0,
 }: MediaLibraryModalProps) {
   const [media, setMedia] = useState<MediaItem[]>([])
   const [filteredMedia, setFilteredMedia] = useState<MediaItem[]>([])
@@ -106,7 +108,7 @@ export function MediaLibraryModal({
     if (open) {
       fetchMedia()
     }
-  }, [open, fetchMedia])
+  }, [open, fetchMedia, refreshKey])
 
   const toggleSelection = (item: MediaItem) => {
     if (mode === "single") {

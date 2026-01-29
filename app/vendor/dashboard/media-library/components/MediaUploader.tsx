@@ -5,6 +5,7 @@ import { useState, useCallback } from "react"
 import { Progress } from "@/components/ui"
 import { Upload, X, Loader2, CheckCircle, AlertCircle } from "lucide-react"
 import { useToast } from "@/components/ui/use-toast"
+import { uploadWithProgress } from "@/lib/artwork-blocks/upload-with-progress"
 
 import { Button } from "@/components/ui"
 interface MediaUploaderProps {
@@ -51,28 +52,33 @@ export function MediaUploader({ onUploadComplete }: MediaUploaderProps) {
     uploadFiles.forEach(uploadFile)
   }
 
-  const uploadFile = async (uploadFile: UploadFile) => {
+  const uploadFile = async (fileToUpload: UploadFile) => {
     setFiles(prev => prev.map(f => 
-      f.id === uploadFile.id ? { ...f, status: "uploading" } : f
+      f.id === fileToUpload.id ? { ...f, status: "uploading", progress: 0 } : f
     ))
 
     try {
       const formData = new FormData()
-      formData.append("file", uploadFile.file)
+      formData.append("file", fileToUpload.file)
       
       // Determine type
       let type = "image"
-      if (uploadFile.file.type.startsWith("video/")) type = "video"
-      else if (uploadFile.file.type.startsWith("audio/")) type = "audio"
-      else if (uploadFile.file.type === "application/pdf") type = "pdf"
+      if (fileToUpload.file.type.startsWith("video/")) type = "video"
+      else if (fileToUpload.file.type.startsWith("audio/")) type = "audio"
+      else if (fileToUpload.file.type === "application/pdf") type = "pdf"
       
       formData.append("type", type)
 
-      const response = await fetch("/api/vendor/media-library/upload", {
-        method: "POST",
-        credentials: "include",
-        body: formData,
-      })
+      // Use uploadWithProgress for real-time progress tracking
+      const response = await uploadWithProgress(
+        "/api/vendor/media-library/upload",
+        formData,
+        (percent) => {
+          setFiles(prev => prev.map(f =>
+            f.id === fileToUpload.id ? { ...f, progress: percent } : f
+          ))
+        }
+      )
 
       if (!response.ok) {
         const error = await response.json()
@@ -80,12 +86,15 @@ export function MediaUploader({ onUploadComplete }: MediaUploaderProps) {
       }
 
       setFiles(prev => prev.map(f =>
-        f.id === uploadFile.id ? { ...f, status: "complete", progress: 100 } : f
+        f.id === fileToUpload.id ? { ...f, status: "complete", progress: 100 } : f
       ))
+      
+      // Notify parent that upload completed
+      onUploadComplete()
     } catch (error: any) {
       console.error("Upload error:", error)
       setFiles(prev => prev.map(f =>
-        f.id === uploadFile.id ? { ...f, status: "error", error: error.message } : f
+        f.id === fileToUpload.id ? { ...f, status: "error", error: error.message } : f
       ))
     }
   }
@@ -182,7 +191,10 @@ export function MediaUploader({ onUploadComplete }: MediaUploaderProps) {
                 </div>
               </div>
               {uploadFile.status === "uploading" && (
-                <Progress value={uploadFile.progress} className="h-1" />
+                <div className="space-y-1">
+                  <Progress value={uploadFile.progress} className="h-2" />
+                  <p className="text-xs text-muted-foreground text-right">{uploadFile.progress}%</p>
+                </div>
               )}
               {uploadFile.status === "error" && (
                 <p className="text-xs text-destructive mt-1">{uploadFile.error}</p>

@@ -26,8 +26,8 @@ export function CopyContentModal({
   const [isCopying, setIsCopying] = useState(false)
 
   // Filter out current product and products without content
-  const availableProducts = vendorProducts.filter(
-    (p) => p.id !== currentProductId && p.hasContent
+  const availableProducts = (vendorProducts || []).filter(
+    (p) => p && p.id !== currentProductId && p.hasContent
   )
 
   const handleCopy = async () => {

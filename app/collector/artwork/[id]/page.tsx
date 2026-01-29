@@ -42,6 +42,7 @@ import VoiceNoteSection from "./components/VoiceNoteSection"
 import ProcessGallerySection from "./components/ProcessGallerySection"
 import InspirationBoardSection from "./components/InspirationBoardSection"
 import ArtistNoteSection from "./components/ArtistNoteSection"
+import { SectionGroupBlock } from "./components/SectionGroupBlock"
 import { SpecialArtworkChip, type SpecialChip } from "./components/SpecialArtworkChip"
 import { DiscoverySection } from "./components/DiscoverySection"
 
@@ -120,6 +121,9 @@ interface ContentBlock {
   block_config: any
   display_order: number
   block_type?: string
+  parent_block_id?: number | null
+  display_order_in_parent?: number
+  childBlocks?: ContentBlock[]
 }
 
 export default function CollectorArtworkPage() {
@@ -430,7 +434,7 @@ export default function CollectorArtworkPage() {
         />
 
         {/* Content Blocks with Lock Overlay */}
-        <div className={`space-y-8 ${!isAuthenticated ? "relative" : ""}`}>
+        <div className={`divide-y divide-border/30 ${!isAuthenticated ? "relative" : ""}`}>
           {!isAuthenticated && <LockedOverlay />}
           
           {artwork.contentBlocks.map((block, index) => {
@@ -562,6 +566,33 @@ export default function CollectorArtworkPage() {
                     <ArtistNoteSection
                       content={block.description || ""}
                       signatureUrl={block.block_config?.signature_url}
+                      artistName={artwork.artist.name}
+                    />
+                  </motion.div>
+                )
+              case "Artwork Section Group Block":
+                return (
+                  <motion.div
+                    key={block.id}
+                    initial={{ opacity: 0, y: 30 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: animationDelay, duration: 0.6 }}
+                  >
+                    <SectionGroupBlock
+                      title={block.title}
+                      description={block.description || undefined}
+                      config={block.block_config}
+                      childBlocks={(block.childBlocks || []).map(child => ({
+                        id: child.id,
+                        block_type: child.block_type || "",
+                        title: child.title,
+                        description: child.description,
+                        content_url: child.content_url,
+                        block_config: child.block_config,
+                        display_order_in_parent: child.display_order_in_parent || 0,
+                      }))}
+                      artworkId={artwork.artwork.id}
+                      artistPhoto={artwork.artist.profileImageUrl || undefined}
                       artistName={artwork.artist.name}
                     />
                   </motion.div>

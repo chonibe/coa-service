@@ -83,6 +83,14 @@ export default function NotificationsPage() {
         return <DollarSign className="h-5 w-5 text-yellow-600" />
       case "refund_deduction":
         return <AlertCircle className="h-5 w-5 text-purple-600" />
+      case "new_collector":
+        return <CheckCircle className="h-5 w-5 text-blue-600" />
+      case "collector_engagement":
+        return <AlertCircle className="h-5 w-5 text-indigo-600" />
+      case "series_milestone":
+        return <CheckCircle className="h-5 w-5 text-purple-600" />
+      case "message_received":
+        return <Bell className="h-5 w-5 text-cyan-600" />
       default:
         return <Bell className="h-5 w-5 text-gray-600" />
     }
@@ -98,6 +106,14 @@ export default function NotificationsPage() {
         return <Badge className="bg-yellow-100 text-yellow-800">Pending</Badge>
       case "refund_deduction":
         return <Badge className="bg-purple-100 text-purple-800">Refund</Badge>
+      case "new_collector":
+        return <Badge className="bg-blue-100 text-blue-800">New Collector</Badge>
+      case "collector_engagement":
+        return <Badge className="bg-indigo-100 text-indigo-800">Engagement</Badge>
+      case "series_milestone":
+        return <Badge className="bg-purple-100 text-purple-800">Milestone</Badge>
+      case "message_received":
+        return <Badge className="bg-cyan-100 text-cyan-800">Message</Badge>
       default:
         return <Badge variant="outline">System</Badge>
     }

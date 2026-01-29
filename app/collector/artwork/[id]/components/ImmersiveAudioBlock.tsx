@@ -164,10 +164,13 @@ export function ImmersiveAudioBlock({
       initial={{ opacity: 0, y: 30 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.6 }}
-      className="my-8"
+      className="py-8 md:py-12"
     >
       {title && (
-        <h3 className="text-2xl font-bold mb-4 text-center md:text-left">{title}</h3>
+        <h3 className="text-xl md:text-2xl font-bold mb-6 flex items-center gap-3">
+          <Music className="h-5 w-5 text-primary" />
+          {title}
+        </h3>
       )}
       
       <div className="relative rounded-2xl overflow-hidden shadow-2xl bg-gradient-to-br from-primary/5 via-purple-500/5 to-primary/5">

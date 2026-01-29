@@ -5,7 +5,7 @@ import { useState } from "react"
 
 
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog"
-import { GripVertical, Trash2, Lock, Crown, Image as ImageIcon } from "lucide-react"
+import { GripVertical, Trash2, Lock, Crown, Image as ImageIcon, AlertCircle } from "lucide-react"
 import { cn } from "@/lib/utils"
 import type { SeriesMember } from "@/types/artwork-series"
 import {
@@ -53,9 +53,11 @@ function SortableRow({ member, onRemove }: { member: SeriesMember; onRemove: (id
   const [removeDialogOpen, setRemoveDialogOpen] = useState(false)
 
   // Determine the artwork page URL
-  const artworkPageUrl = member.submission_id 
+  // Only create URL if we have artwork data (indicating submission exists)
+  const hasArtworkData = member.artwork_title || member.artwork_image
+  const artworkPageUrl = hasArtworkData && member.submission_id
     ? `/vendor/dashboard/artwork-pages/${member.submission_id}`
-    : (member as any).product_id
+    : hasArtworkData && (member as any).product_id
       ? `/vendor/dashboard/artwork-pages/${(member as any).product_id}`
       : null
 
@@ -102,7 +104,14 @@ function SortableRow({ member, onRemove }: { member: SeriesMember; onRemove: (id
               {member.artwork_title || "Untitled Artwork"}
             </Link>
           ) : (
-            <span>{member.artwork_title || "Untitled Artwork"}</span>
+            <div className="flex items-center gap-2">
+              <span className="text-muted-foreground">
+                {member.artwork_title || "Artwork Not Available"}
+              </span>
+              {!hasArtworkData && member.submission_id && (
+                <AlertCircle className="h-4 w-4 text-amber-500" title="Artwork submission not found" />
+              )}
+            </div>
           )}
         </TableCell>
 

@@ -15,9 +15,24 @@ import {
   Mic, 
   Camera, 
   Lightbulb, 
-  PenTool
+  PenTool,
+  Layers
 } from "lucide-react"
 import { Button, Badge } from "@/components/ui"
+import { getBlockSchema } from "@/lib/artwork-blocks/block-schemas"
+
+// Map icon names to Lucide components
+const ICON_MAP: Record<string, any> = {
+  FileText,
+  Image: ImageIcon,
+  Video,
+  Music,
+  Mic,
+  Camera,
+  Lightbulb,
+  PenTool,
+  Layers
+}
 
 interface ContentBlock {
   id: number
@@ -30,65 +45,29 @@ interface DraggableBlockCardProps {
   block: ContentBlock
   index: number
   isExpanded: boolean
+  isReorderMode?: boolean
   onToggle: () => void
   onDelete: () => void
   children: React.ReactNode
 }
 
-const BLOCK_TYPE_CONFIG: Record<string, { icon: any; label: string; iconColor: string; headerGradient: string }> = {
-  "Artwork Text Block": {
+// Helper to get block UI config from schema
+function getBlockUIConfig(blockType: string) {
+  const schema = getBlockSchema(blockType)
+  if (schema) {
+    return {
+      icon: ICON_MAP[schema.icon] || FileText,
+      label: schema.label,
+      iconColor: schema.ui.iconColor,
+      headerGradient: schema.ui.headerGradient
+    }
+  }
+  // Fallback for unknown block types
+  return {
     icon: FileText,
-    label: "Text",
+    label: "Content Block",
     iconColor: "text-gray-400",
     headerGradient: "bg-gray-800"
-  },
-  "Artwork Image Block": {
-    icon: ImageIcon,
-    label: "Image",
-    iconColor: "text-blue-400",
-    headerGradient: "bg-gray-800"
-  },
-  "Artwork Video Block": {
-    icon: Video,
-    label: "Video",
-    iconColor: "text-purple-400",
-    headerGradient: "bg-gray-800"
-  },
-  "Artwork Audio Block": {
-    icon: Music,
-    label: "Audio",
-    iconColor: "text-teal-400",
-    headerGradient: "bg-gray-800"
-  },
-  "Artwork Soundtrack Block": {
-    icon: Music,
-    label: "Soundtrack",
-    iconColor: "text-green-400",
-    headerGradient: "bg-gradient-to-r from-green-900/30 to-gray-800"
-  },
-  "Artwork Voice Note Block": {
-    icon: Mic,
-    label: "Voice Note",
-    iconColor: "text-purple-400",
-    headerGradient: "bg-gradient-to-r from-purple-900/30 to-gray-800"
-  },
-  "Artwork Process Gallery Block": {
-    icon: Camera,
-    label: "Process Gallery",
-    iconColor: "text-blue-400",
-    headerGradient: "bg-gradient-to-r from-blue-900/30 to-gray-800"
-  },
-  "Artwork Inspiration Block": {
-    icon: Lightbulb,
-    label: "Inspiration",
-    iconColor: "text-yellow-400",
-    headerGradient: "bg-gradient-to-r from-yellow-900/30 to-gray-800"
-  },
-  "Artwork Artist Note Block": {
-    icon: PenTool,
-    label: "Artist Note",
-    iconColor: "text-amber-400",
-    headerGradient: "bg-gradient-to-r from-amber-900/30 to-gray-800"
   }
 }
 
@@ -96,6 +75,7 @@ export default function DraggableBlockCard({
   block,
   index,
   isExpanded,
+  isReorderMode = false,
   onToggle,
   onDelete,
   children
@@ -107,7 +87,7 @@ export default function DraggableBlockCard({
     transform,
     transition,
     isDragging
-  } = useSortable({ id: block.id })
+  } = useSortable({ id: block.id, disabled: !isReorderMode })
 
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -115,13 +95,7 @@ export default function DraggableBlockCard({
     opacity: isDragging ? 0.5 : 1
   }
 
-  const blockTypeConfig = BLOCK_TYPE_CONFIG[block.block_type || ""] || {
-    icon: FileText,
-    label: "Content Block",
-    iconColor: "text-gray-400",
-    headerGradient: "bg-gray-800"
-  }
-
+  const blockTypeConfig = getBlockUIConfig(block.block_type || "")
   const IconComponent = blockTypeConfig.icon
 
   return (
@@ -129,18 +103,26 @@ export default function DraggableBlockCard({
       ref={setNodeRef}
       style={style}
       id={`block-${block.id}`}
-      className="bg-gray-800 rounded-lg border border-gray-700 overflow-hidden shadow-lg transition-shadow hover:shadow-xl"
+      className={`bg-gray-800 rounded-lg border overflow-hidden shadow-lg transition-all ${
+        isReorderMode 
+          ? 'border-blue-500 hover:shadow-2xl cursor-move' 
+          : 'border-gray-700 hover:shadow-xl'
+      }`}
     >
       {/* Header */}
       <div className={`flex items-center justify-between p-4 ${blockTypeConfig.headerGradient} border-b border-gray-700`}>
         <div className="flex items-center gap-3 flex-1">
-          {/* Drag Handle */}
+          {/* Drag Handle - only active in reorder mode */}
           <div
-            {...attributes}
-            {...listeners}
-            className="cursor-grab active:cursor-grabbing hover:bg-gray-700/50 p-1 rounded transition-colors"
+            {...(isReorderMode ? attributes : {})}
+            {...(isReorderMode ? listeners : {})}
+            className={`p-1 rounded transition-colors ${
+              isReorderMode 
+                ? 'cursor-grab active:cursor-grabbing hover:bg-blue-700/50 bg-blue-900/30' 
+                : 'cursor-default opacity-30'
+            }`}
           >
-            <GripVertical className="h-5 w-5 text-gray-500" />
+            <GripVertical className={`h-5 w-5 ${isReorderMode ? 'text-blue-400' : 'text-gray-500'}`} />
           </div>
 
           {/* Block Type Icon */}
@@ -156,37 +138,48 @@ export default function DraggableBlockCard({
         </div>
 
         <div className="flex items-center gap-2">
+          {/* Reorder Mode Indicator */}
+          {isReorderMode && (
+            <Badge className="bg-blue-600 text-white text-xs">
+              Position {index + 1}
+            </Badge>
+          )}
+
           {/* Published Badge */}
-          {block.is_published && (
+          {!isReorderMode && block.is_published && (
             <Badge className="bg-green-600 text-white text-xs">
               <CheckCircle className="h-3 w-3 mr-1" />
               Published
             </Badge>
           )}
 
-          {/* Collapse Toggle */}
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={onToggle}
-            className="text-gray-400 hover:text-white"
-          >
-            {isExpanded ? (
-              <ChevronUp className="h-4 w-4" />
-            ) : (
-              <ChevronDown className="h-4 w-4" />
-            )}
-          </Button>
+          {/* Collapse Toggle - hidden in reorder mode */}
+          {!isReorderMode && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={onToggle}
+              className="text-gray-400 hover:text-white"
+            >
+              {isExpanded ? (
+                <ChevronUp className="h-4 w-4" />
+              ) : (
+                <ChevronDown className="h-4 w-4" />
+              )}
+            </Button>
+          )}
 
-          {/* Delete */}
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={onDelete}
-            className="text-gray-400 hover:text-red-400 hover:bg-red-900/20"
-          >
-            <X className="h-4 w-4" />
-          </Button>
+          {/* Delete - hidden in reorder mode */}
+          {!isReorderMode && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={onDelete}
+              className="text-gray-400 hover:text-red-400 hover:bg-red-900/20"
+            >
+              <X className="h-4 w-4" />
+            </Button>
+          )}
         </div>
       </div>
 

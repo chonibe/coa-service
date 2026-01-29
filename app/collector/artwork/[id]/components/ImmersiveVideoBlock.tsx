@@ -1,16 +1,34 @@
 "use client"
 
-
-import { Skeleton } from "@/components/ui"
+import { Skeleton, Button } from "@/components/ui"
 import { useEffect, useState, useRef } from "react"
-import { Play, AlertCircle, RefreshCw, Maximize } from "lucide-react"
+import { Play, AlertCircle, RefreshCw, Video } from "lucide-react"
 import { motion } from "framer-motion"
 
-import { Button } from "@/components/ui"
 interface ImmersiveVideoBlockProps {
   title?: string | null
   contentUrl: string | null
   artworkId?: string
+}
+
+// Helper to detect if URL is a direct video file
+function isDirectVideoUrl(url: string): boolean {
+  // Check file extension
+  if (url.match(/\.(mp4|webm|ogg|mov|avi|m4v|mkv)(\?.*)?$/i)) {
+    return true
+  }
+  
+  // Check for Supabase storage URLs (multiple patterns)
+  if (url.includes('supabase.co/storage')) return true
+  if (url.includes('/storage/v1/object/public/')) return true
+  if (url.includes('/storage/v1/object/sign/')) return true
+  
+  // Check for common CDN/storage patterns with video content
+  if (url.includes('product-images') && !url.match(/\.(jpg|jpeg|png|gif|webp|svg)(\?.*)?$/i)) {
+    return true
+  }
+  
+  return false
 }
 
 export function ImmersiveVideoBlock({ title, contentUrl, artworkId }: ImmersiveVideoBlockProps) {
@@ -31,13 +49,10 @@ export function ImmersiveVideoBlock({ title, contentUrl, artworkId }: ImmersiveV
 
     setIsLoading(true)
     setHasError(false)
+    setShowPlayOverlay(true)
 
-    // Check if it's a direct video file (including Supabase storage URLs)
-    const isDirectVideo = contentUrl.match(/\.(mp4|webm|ogg|mov|avi)(\?.*)?$/i) ||
-                         contentUrl.includes('supabase.co/storage') ||
-                         contentUrl.includes('/storage/v1/object/public/')
-    
-    if (isDirectVideo) {
+    // Check if it's a direct video file
+    if (isDirectVideoUrl(contentUrl)) {
       setVideoType("direct")
       setEmbedUrl(contentUrl)
       setIsLoading(false)
@@ -48,19 +63,19 @@ export function ImmersiveVideoBlock({ title, contentUrl, artworkId }: ImmersiveV
     let embed = contentUrl
     let type: "youtube" | "vimeo" | "direct" = "direct"
 
-    // YouTube
+    // YouTube - enhanced pattern matching
     const youtubeMatch = contentUrl.match(
       /(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/
     )
     if (youtubeMatch) {
-      embed = `https://www.youtube.com/embed/${youtubeMatch[1]}?enablejsapi=1`
+      embed = `https://www.youtube.com/embed/${youtubeMatch[1]}?enablejsapi=1&rel=0`
       type = "youtube"
     }
 
-    // Vimeo
-    const vimeoMatch = contentUrl.match(/vimeo\.com\/(\d+)/)
+    // Vimeo - enhanced pattern matching
+    const vimeoMatch = contentUrl.match(/vimeo\.com\/(?:video\/)?(\d+)/)
     if (vimeoMatch) {
-      embed = `https://player.vimeo.com/video/${vimeoMatch[1]}`
+      embed = `https://player.vimeo.com/video/${vimeoMatch[1]}?dnt=1`
       type = "vimeo"
     }
 
@@ -115,10 +130,13 @@ export function ImmersiveVideoBlock({ title, contentUrl, artworkId }: ImmersiveV
       initial={{ opacity: 0, y: 30 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.6 }}
-      className="my-8"
+      className="py-8 md:py-12"
     >
       {title && (
-        <h3 className="text-2xl font-bold mb-4 text-center md:text-left">{title}</h3>
+        <h3 className="text-xl md:text-2xl font-bold mb-4 flex items-center gap-3">
+          <Video className="h-5 w-5 text-purple-500" />
+          {title}
+        </h3>
       )}
       
       <div className="relative aspect-video rounded-2xl overflow-hidden bg-black shadow-2xl">
