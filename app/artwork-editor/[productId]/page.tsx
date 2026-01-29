@@ -76,15 +76,20 @@ export default function StandaloneArtworkEditor() {
 
         const blocksData = await blocksResponse.json()
         
+        console.log("[Standalone Editor] Fetched data:", blocksData)
+        
         if (blocksData.product) {
           setProduct(blocksData.product)
         }
         
-        setContentBlocks(blocksData.blocks || [])
+        // The API returns contentBlocks, not blocks
+        const blocks = blocksData.contentBlocks || blocksData.blocks || []
+        console.log("[Standalone Editor] Content blocks:", blocks)
+        setContentBlocks(blocks)
         
         // Auto-select first block
-        if (blocksData.blocks && blocksData.blocks.length > 0) {
-          setSelectedBlockId(blocksData.blocks[0].id)
+        if (blocks.length > 0) {
+          setSelectedBlockId(blocks[0].id)
         }
       } catch (err: any) {
         console.error("Error fetching data:", err)
