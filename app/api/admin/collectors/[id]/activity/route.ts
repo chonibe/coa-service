@@ -31,6 +31,7 @@ export async function GET(
     const associatedOrderNames = profile.associated_order_names || [];
 
     // 2. Fetch orders and line items from v2 tables with deduplication
+    // CRITICAL: Filter out canceled/voided orders
     let query = supabase
       .from("orders")
       .select(`
@@ -60,7 +61,9 @@ export async function GET(
           nfc_claimed_at,
           certificate_url
         )
-      `);
+      `)
+      .not("fulfillment_status", "in", "(canceled,restocked)")
+      .not("financial_status", "in", "(voided,refunded)");
 
     const filters = [];
     if (shopifyCustomerId) filters.push(`customer_id.eq.${shopifyCustomerId}`);
@@ -91,7 +94,13 @@ export async function GET(
     }
 
     // 2.5 Fetch missing images from products table
-    const allLineItems = (orders || []).flatMap(o => o.order_line_items_v2 || []);
+    // Filter line items by active status
+    const allLineItems = (orders || []).flatMap(o => 
+      (o.order_line_items_v2 || []).filter((li: any) => 
+        li.status === 'active' && 
+        li.restocked !== true
+      )
+    );
     const itemsMissingImages = allLineItems.filter(li => !li.img_url && li.product_id);
     
     if (itemsMissingImages.length > 0) {
@@ -133,6 +142,12 @@ export async function GET(
     const deduplicatedOrders = Array.from(orderMap.values()).sort((a, b) => 
       new Date(b.processed_at).getTime() - new Date(a.processed_at).getTime()
     );
+    
+    console.log(`📊 [Activity API] Stats for ${email || shopifyCustomerId}:`)
+    console.log(`   - Orders fetched: ${orders?.length || 0}`)
+    console.log(`   - Orders after deduplication: ${deduplicatedOrders.length}`)
+    console.log(`   - Active line items: ${deduplicatedOrders.flatMap(o => (o.order_line_items_v2 || []).filter((li: any) => li.status === 'active')).length}`)
+    console.log(`   - Unique products: ${new Set(deduplicatedOrders.flatMap(o => (o.order_line_items_v2 || []).filter((li: any) => li.status === 'active').map((li: any) => li.product_id))).size}`)
     
     return NextResponse.json({
       orders: deduplicatedOrders,

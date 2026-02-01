@@ -43,6 +43,7 @@ export async function GET(request: NextRequest) {
     }
 
     // 2. Fetch orders and line items
+    // CRITICAL: Filter out canceled/voided orders
     let query = supabase
       .from("orders")
       .select(
@@ -59,7 +60,9 @@ export async function GET(request: NextRequest) {
           *
         )
       `,
-      );
+      )
+      .not("fulfillment_status", "in", "(canceled,restocked)")
+      .not("financial_status", "in", "(voided,refunded)");
 
     const filters = [];
     if (shopifyCustomerId) filters.push(`customer_id.eq.${shopifyCustomerId}`);
@@ -119,14 +122,37 @@ export async function GET(request: NextRequest) {
 
     const deduplicatedOrders = Array.from(orderMap.values());
 
-    const allLineItems = deduplicatedOrders.flatMap((order) => 
-      (order.order_line_items_v2 || []).map((li: any) => ({ 
-        ...li, 
-        order_processed_at: order.processed_at,
-        order_fulfillment_status: order.fulfillment_status,
-        order_financial_status: order.financial_status
-      }))
+    // Deduplicate line items by line_item_id across all orders
+    const lineItemMap = new Map<string, any>();
+    
+    deduplicatedOrders.forEach((order) => 
+      (order.order_line_items_v2 || []).forEach((li: any) => {
+        const lineItemWithOrder = { 
+          ...li, 
+          order_processed_at: order.processed_at,
+          order_fulfillment_status: order.fulfillment_status,
+          order_financial_status: order.financial_status
+        };
+        
+        // Keep only the most recent line item by line_item_id
+        if (!lineItemMap.has(li.line_item_id)) {
+          lineItemMap.set(li.line_item_id, lineItemWithOrder);
+        } else {
+          const existing = lineItemMap.get(li.line_item_id);
+          if (new Date(order.processed_at) > new Date(existing.order_processed_at)) {
+            lineItemMap.set(li.line_item_id, lineItemWithOrder);
+          }
+        }
+      })
     );
+
+    const allLineItems = Array.from(lineItemMap.values());
+    
+    console.log(`📊 [Editions API] Deduplication Stats for ${email || shopifyCustomerId}:`)
+    console.log(`   - Orders fetched: ${orders?.length || 0}`)
+    console.log(`   - Orders after deduplication: ${deduplicatedOrders.length}`)
+    console.log(`   - Total line items before dedup: ${deduplicatedOrders.flatMap(o => o.order_line_items_v2 || []).length}`)
+    console.log(`   - Unique line items after dedup: ${allLineItems.length}`)
 
     // 4. Batch fetch missing images
     const itemsMissingImages = allLineItems.filter(li => !li.img_url && li.product_id);
@@ -201,8 +227,7 @@ export async function GET(request: NextRequest) {
                            !['refunded', 'voided'].includes(li.order_financial_status);
         
         // Robust check for active status
-        const isActuallyActive = li.status !== 'inactive' && 
-                               li.status !== 'removed' &&
+        const isActuallyActive = li.status === 'active' && 
                                li.restocked !== true && 
                                (li.refund_status === 'none' || li.refund_status === null);
 
@@ -258,6 +283,9 @@ export async function GET(request: NextRequest) {
           certificateUrl: li.certificate_url,
         }
       })
+
+    console.log(`   - Line items after active filtering: ${editions.length}`)
+    console.log(`   - Unique products: ${new Set(editions.map(e => e.productId)).size}`)
 
     return NextResponse.json({
       success: true,
