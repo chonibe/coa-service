@@ -16,7 +16,7 @@ import { useToast } from "@/components/ui/use-toast"
 import { PayoutMetricsCards } from "@/components/payouts/payout-metrics-cards"
 import { ContextualOnboarding } from "../../components/contextual-onboarding"
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle, Badge, Table, TableBody, TableCell, TableHead, TableHeader, TableRow, Button, Alert, AlertDescription, AlertTitle, Input, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, Badge, Table, TableBody, TableCell, TableHead, TableHeader, TableRow, Button, Alert, AlertDescription, AlertTitle, Input, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Tabs, TabsContent, TabsList, TabsTrigger, AnnouncementBar } from "@/components/ui"
 interface PayoutItem {
   item_name: string
   date: string
@@ -525,85 +525,49 @@ export default function PayoutsPage() {
 
   return (
     <>
-      {/* Single dynamic announcement bar - FULL WIDTH, pinned to top */}
-      {pendingAmount > 0 && pendingLineItems.length > 0 && (
-        <div className="w-screen relative left-1/2 right-1/2 -ml-[50vw] -mr-[50vw] mb-6">
-          {(() => {
-            // Determine which state to show - only ONE at a time
-            const isReady = payoutReadiness?.isReady || false;
-            const hasSufficientBalance = pendingAmount >= 25;
-            
-            // Priority: Missing prerequisites > Below minimum > Ready to request
-            if (!isReady) {
-              // State 1: Missing prerequisites (Amber/Orange)
-              return (
-                <div className="bg-gradient-to-r from-amber-500 to-orange-500 text-white">
-                  <div className="max-w-7xl mx-auto px-6 py-3">
-                    <div className="flex items-center justify-between gap-4">
-                      <div className="flex items-center gap-3 min-w-0">
-                        <AlertCircle className="h-5 w-5 flex-shrink-0" />
-                        <span className="font-medium truncate">
-                          Complete your payout details to request payments • Missing: {payoutReadiness?.missingItems.join(", ") || "profile information"}
-                        </span>
-                      </div>
-                      <Button
-                        variant="secondary"
-                        size="sm"
-                        onClick={() => {
-                          window.location.href = "/vendor/dashboard/settings"
-                        }}
-                        className="shrink-0 bg-white text-amber-600 hover:bg-gray-100"
-                      >
-                        Go to Settings
-                      </Button>
-                    </div>
-                  </div>
-                </div>
-              );
-            } else if (!hasSufficientBalance) {
-              // State 2: Below minimum threshold (Blue)
-              return (
-                <div className="bg-gradient-to-r from-blue-500 to-indigo-600 text-white">
-                  <div className="max-w-7xl mx-auto px-6 py-3">
-                    <div className="flex items-center gap-3">
-                      <Clock className="h-5 w-5 flex-shrink-0" />
-                      <span className="font-medium truncate">
-                        You have {formatCurrency(pendingAmount)} pending • Minimum payout is $25 • You need {formatCurrency(25 - pendingAmount)} more
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              );
-            } else {
-              // State 3: Ready to request payment (Green)
-              return (
-                <div className="bg-gradient-to-r from-green-500 to-emerald-600 text-white">
-                  <div className="max-w-7xl mx-auto px-6 py-3">
-                    <div className="flex items-center justify-between gap-4">
-                      <div className="flex items-center gap-3 min-w-0">
-                        <Wallet className="h-5 w-5 flex-shrink-0" />
-                        <span className="font-medium truncate">
-                          You have {formatCurrency(pendingAmount)} ready to withdraw from {pendingLineItems.length} order{pendingLineItems.length !== 1 ? 's' : ''}
-                        </span>
-                      </div>
-                      <Button
-                        variant="secondary"
-                        size="sm"
-                        onClick={handleRedeem}
-                        disabled={isRedeeming || isLoading}
-                        className="shrink-0 bg-white text-emerald-600 hover:bg-gray-100 font-semibold"
-                      >
-                        <Wallet className={`h-4 w-4 mr-2 ${isRedeeming ? "animate-pulse" : ""}`} />
-                        {isRedeeming ? "Processing..." : "Request Payment"}
-                      </Button>
-                    </div>
-                  </div>
-                </div>
-              );
-            }
-          })()}
-        </div>
-      )}
+      {/* Dynamic announcement bar using reusable component */}
+      {pendingAmount > 0 && pendingLineItems.length > 0 && (() => {
+        const isReady = payoutReadiness?.isReady || false;
+        const hasSufficientBalance = pendingAmount >= 25;
+        
+        // Priority: Missing prerequisites > Below minimum > Ready to request
+        if (!isReady) {
+          // State 1: Missing prerequisites
+          return (
+            <AnnouncementBar
+              variant="warning"
+              message={`Complete your payout details to request payments • Missing: ${payoutReadiness?.missingItems.join(", ") || "profile information"}`}
+              action={{
+                label: "Go to Settings",
+                onClick: () => window.location.href = "/vendor/dashboard/settings"
+              }}
+            />
+          );
+        } else if (!hasSufficientBalance) {
+          // State 2: Below minimum threshold
+          return (
+            <AnnouncementBar
+              variant="pending"
+              message={`You have ${formatCurrency(pendingAmount)} pending • Minimum payout is $25 • You need ${formatCurrency(25 - pendingAmount)} more`}
+            />
+          );
+        } else {
+          // State 3: Ready to request payment
+          return (
+            <AnnouncementBar
+              variant="success"
+              icon={<Wallet className="h-5 w-5" />}
+              message={`You have ${formatCurrency(pendingAmount)} ready to withdraw from ${pendingLineItems.length} order${pendingLineItems.length !== 1 ? 's' : ''}`}
+              action={{
+                label: isRedeeming ? "Processing..." : "Request Payment",
+                onClick: handleRedeem,
+                disabled: isRedeeming || isLoading,
+                loading: isRedeeming
+              }}
+            />
+          );
+        }
+      })()}
 
       <div className="w-full space-y-4">
 

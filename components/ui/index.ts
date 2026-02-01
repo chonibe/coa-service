@@ -166,6 +166,9 @@ export {
 
 export {
   PolarisSheet as Sheet,
+  PolarisSheetContent as SheetContent,
+  PolarisSheetHeader as SheetHeader,
+  PolarisSheetTitle as SheetTitle,
   type PolarisSheetProps as SheetProps,
 } from '@/components/polaris/polaris-sheet'
 
@@ -209,3 +212,13 @@ export {
   Slider,
   type SliderProps,
 } from '@/components/polaris/polaris-slider'
+
+// Custom components
+export {
+  AnnouncementBar,
+  useAnnouncementBar,
+  type AnnouncementBarProps,
+  type AnnouncementBarAction,
+  type AnnouncementVariant,
+} from '@/components/ui/announcement-bar'
+
