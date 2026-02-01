@@ -185,7 +185,7 @@ export function AnnouncementBar({
         <button
           onClick={handleReopen}
           className={cn(
-            "fixed bottom-6 right-6 z-50 shadow-lg rounded-full p-3",
+            "fixed bottom-6 right-6 z-[100] shadow-lg rounded-full p-3",
             config.markerColor,
             "text-white transition-all hover:scale-110",
             "flex items-center gap-2"
@@ -198,32 +198,28 @@ export function AnnouncementBar({
       )
     }
 
-    // Top or bottom marker
+    // Top or bottom marker - also fixed positioning
     const positionClass = markerPosition === "bottom" 
-      ? "bottom-0 border-t" 
-      : "top-0 border-b"
+      ? "bottom-0" 
+      : "top-0"
 
     return (
-      <div className={cn(
-        "w-screen relative left-1/2 right-1/2 -ml-[50vw] -mr-[50vw]",
-        markerPosition === "top" ? "mb-6" : "mt-6"
-      )}>
-        <button
-          onClick={handleReopen}
-          className={cn(
-            "w-full transition-all hover:opacity-90",
-            config.markerColor,
-            "text-white py-2 px-6",
-            "flex items-center justify-center gap-2",
-            "border-white/20"
-          )}
-          title="Click to expand announcement"
-        >
-          <Bell className="h-4 w-4" />
-          <span className="text-sm font-medium">{getMarkerLabel()}</span>
-          <ChevronDown className="h-4 w-4 animate-bounce" />
-        </button>
-      </div>
+      <button
+        onClick={handleReopen}
+        className={cn(
+          "fixed left-0 right-0 z-[100] w-full transition-all hover:opacity-90",
+          positionClass,
+          config.markerColor,
+          "text-white py-2 px-6",
+          "flex items-center justify-center gap-2",
+          "border-b border-white/20"
+        )}
+        title="Click to expand announcement"
+      >
+        <Bell className="h-4 w-4" />
+        <span className="text-sm font-medium">{getMarkerLabel()}</span>
+        <ChevronDown className="h-4 w-4 animate-bounce" />
+      </button>
     )
   }
 
@@ -231,7 +227,7 @@ export function AnnouncementBar({
   return (
     <div
       className={cn(
-        "w-screen relative left-1/2 right-1/2 -ml-[50vw] -mr-[50vw] mb-6",
+        "fixed top-0 left-0 right-0 z-[100] w-full",
         className
       )}
     >

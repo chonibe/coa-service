@@ -524,8 +524,8 @@ export default function PayoutsPage() {
   }
 
   return (
-    <>
-      {/* Dynamic announcement bar using reusable component */}
+    <div className="w-full space-y-4">
+      {/* Dynamic announcement bar - now positioned at very top above header */}
       {pendingAmount > 0 && pendingLineItems.length > 0 && (() => {
         const isReady = payoutReadiness?.isReady || false;
         const hasSufficientBalance = pendingAmount >= 25;
@@ -580,8 +580,6 @@ export default function PayoutsPage() {
           );
         }
       })()}
-
-      <div className="w-full space-y-4">
 
         {/* Contextual Onboarding for Payouts - floating */}
         <ContextualOnboarding context="payouts" onComplete={() => {
@@ -1226,6 +1224,5 @@ export default function PayoutsPage() {
         </TabsContent>
       </Tabs>
     </div>
-    </>
   )
 }
