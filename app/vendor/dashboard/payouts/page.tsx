@@ -83,6 +83,8 @@ export default function PayoutsPage() {
   const [isLoadingBalance, setIsLoadingBalance] = useState(false)
   const [showSuccessBanner, setShowSuccessBanner] = useState(false)
   const [lastRequestedPayout, setLastRequestedPayout] = useState<Payout | null>(null)
+  const [payoutReadiness, setPayoutReadiness] = useState<any>(null)
+  const [isLoadingReadiness, setIsLoadingReadiness] = useState(false)
   const { toast } = useToast()
 
   // Fetch balance data
@@ -103,6 +105,25 @@ export default function PayoutsPage() {
     }
   }
 
+  // Fetch payout readiness
+  const fetchPayoutReadiness = async () => {
+    if (!vendorName) return
+
+    try {
+      setIsLoadingReadiness(true)
+      const response = await fetch("/api/vendor/payout-readiness", {
+        credentials: "include",
+      })
+      if (!response.ok) throw new Error("Failed to fetch readiness")
+      const data = await response.json()
+      setPayoutReadiness(data.readiness)
+    } catch (error: any) {
+      console.error("Error fetching payout readiness:", error)
+    } finally {
+      setIsLoadingReadiness(false)
+    }
+  }
+
   const formatCurrency = (amount: number) =>
     new Intl.NumberFormat("en-US", {
       style: "currency",
@@ -112,7 +133,7 @@ export default function PayoutsPage() {
 
   useEffect(() => {
     const initialLoad = async () => {
-      await Promise.all([fetchVendorName(), fetchPayouts(), fetchPendingItems(), fetchBalance()])
+      await Promise.all([fetchVendorName(), fetchPayouts(), fetchPendingItems(), fetchBalance(), fetchPayoutReadiness()])
       setLastUpdated(new Date())
     }
     void initialLoad()
@@ -504,6 +525,80 @@ export default function PayoutsPage() {
 
   return (
     <div className="w-full space-y-4">
+        {/* Single dynamic announcement bar - full width, one line, pinned style */}
+        {pendingAmount > 0 && pendingLineItems.length > 0 && (
+          <div className="w-full -mx-6 px-6 py-3 shadow-sm">
+            {(() => {
+              // Determine which state to show - only ONE at a time
+              const isReady = payoutReadiness?.isReady || false;
+              const hasSufficientBalance = pendingAmount >= 25;
+              
+              // Priority: Missing prerequisites > Below minimum > Ready to request
+              if (!isReady) {
+                // State 1: Missing prerequisites (Amber/Orange)
+                return (
+                  <div className="bg-gradient-to-r from-amber-500 to-orange-500 text-white rounded-lg">
+                    <div className="flex items-center justify-between gap-4 py-3 px-4">
+                      <div className="flex items-center gap-3 min-w-0">
+                        <AlertCircle className="h-5 w-5 flex-shrink-0" />
+                        <span className="font-medium truncate">
+                          Complete your payout details to request payments • Missing: {payoutReadiness?.missingItems.join(", ") || "profile information"}
+                        </span>
+                      </div>
+                      <Button
+                        variant="secondary"
+                        size="sm"
+                        onClick={() => {
+                          window.location.href = "/vendor/dashboard/settings"
+                        }}
+                        className="shrink-0 bg-white text-amber-600 hover:bg-gray-100"
+                      >
+                        Go to Settings
+                      </Button>
+                    </div>
+                  </div>
+                );
+              } else if (!hasSufficientBalance) {
+                // State 2: Below minimum threshold (Blue)
+                return (
+                  <div className="bg-gradient-to-r from-blue-500 to-indigo-600 text-white rounded-lg">
+                    <div className="flex items-center gap-3 py-3 px-4">
+                      <Clock className="h-5 w-5 flex-shrink-0" />
+                      <span className="font-medium truncate">
+                        You have {formatCurrency(pendingAmount)} pending • Minimum payout is $25 • You need {formatCurrency(25 - pendingAmount)} more
+                      </span>
+                    </div>
+                  </div>
+                );
+              } else {
+                // State 3: Ready to request payment (Green)
+                return (
+                  <div className="bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-lg">
+                    <div className="flex items-center justify-between gap-4 py-3 px-4">
+                      <div className="flex items-center gap-3 min-w-0">
+                        <Wallet className="h-5 w-5 flex-shrink-0" />
+                        <span className="font-medium truncate">
+                          You have {formatCurrency(pendingAmount)} ready to withdraw from {pendingLineItems.length} order{pendingLineItems.length !== 1 ? 's' : ''}
+                        </span>
+                      </div>
+                      <Button
+                        variant="secondary"
+                        size="sm"
+                        onClick={handleRedeem}
+                        disabled={isRedeeming || isLoading}
+                        className="shrink-0 bg-white text-emerald-600 hover:bg-gray-100 font-semibold"
+                      >
+                        <Wallet className={`h-4 w-4 mr-2 ${isRedeeming ? "animate-pulse" : ""}`} />
+                        {isRedeeming ? "Processing..." : "Request Payment"}
+                      </Button>
+                    </div>
+                  </div>
+                );
+              }
+            })()}
+          </div>
+        )}
+
         {/* Show error alert if PayPal email is not configured */}
         {error && (error.includes("PayPal email") || error.includes("paypal")) && (
           <Alert variant="destructive" className="border-red-500 bg-red-50 dark:bg-red-950/20">
@@ -538,21 +633,6 @@ export default function PayoutsPage() {
             )}
           </div>
         <div className="flex gap-2 flex-wrap">
-          {pendingAmount > 0 && pendingLineItems.length > 0 && (
-            <Button 
-              onClick={(e) => {
-                e.preventDefault()
-                e.stopPropagation()
-                console.log("[Button] Request Payment clicked", { pendingAmount, pendingLineItems: pendingLineItems.length, isRedeeming, isLoading })
-                handleRedeem()
-              }} 
-              disabled={isRedeeming || isLoading || pendingLineItems.length === 0 || isPayPalEmailMissing} 
-              className="flex items-center gap-1 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-lg"
-            >
-              <Wallet className={`h-4 w-4 ${isRedeeming ? "animate-pulse" : ""}`} />
-              {isRedeeming ? "Processing..." : "Request Payment"}
-            </Button>
-          )}
           <Button 
             variant="outline" 
             onClick={handleRefresh} 
@@ -754,89 +834,6 @@ export default function PayoutsPage() {
           {/* Enhanced Metrics Cards */}
           {vendorName && <PayoutMetricsCards vendorName={vendorName} isAdmin={false} />}
 
-          {/* Quick Stats */}
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-            <Card className="border shadow-sm">
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Total Earned</CardTitle>
-                <DollarSign className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                {isLoading ? (
-                  <Skeleton className="h-7 w-20" />
-                ) : (
-                  <div className="text-2xl font-bold">{formatCurrency(totalPaid)}</div>
-                )}
-                <p className="text-xs text-muted-foreground mt-1">All-time total you've earned</p>
-              </CardContent>
-            </Card>
-
-            <Card className="border shadow-sm">
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Ready to Request</CardTitle>
-                <Clock className="h-4 w-4 text-amber-500" />
-              </CardHeader>
-              <CardContent>
-                {isLoading ? (
-                  <Skeleton className="h-7 w-20" />
-                ) : (
-                  <div className="text-2xl font-bold text-amber-600">{formatCurrency(pendingAmount)}</div>
-                )}
-                <p className="text-xs text-muted-foreground mt-1">
-                  {pendingLineItems.length > 0 
-                    ? `${pendingLineItems.length} orders ready for payment`
-                    : "No pending payments"}
-                </p>
-              </CardContent>
-            </Card>
-
-            <Card className="border shadow-sm">
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Payments Received</CardTitle>
-                <Wallet className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                {isLoading ? (
-                  <Skeleton className="h-7 w-20" />
-                ) : (
-                  <div className="text-2xl font-bold">
-                    {payouts.filter((p) => p.status === "completed" || p.status === "paid").length}
-                  </div>
-                )}
-                <p className="text-xs text-muted-foreground mt-1">Payments you've received</p>
-              </CardContent>
-            </Card>
-
-            <Card className="border shadow-sm">
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">This Month</CardTitle>
-                <Calendar className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                {isLoading ? (
-                  <Skeleton className="h-7 w-20" />
-                ) : (
-                  <div className="text-2xl font-bold">
-                    {formatCurrency(
-                      payouts
-                        .filter((p) => {
-                          const payoutDate = new Date(p.date)
-                          const now = new Date()
-                          return (
-                            payoutDate.getMonth() === now.getMonth() &&
-                            payoutDate.getFullYear() === now.getFullYear() &&
-                            (p.status === "completed" || p.status === "paid")
-                          )
-                        })
-                        .reduce((sum, p) => sum + p.amount, 0)
-                    )}
-                  </div>
-                )}
-                <p className="text-xs text-muted-foreground mt-1">What you've earned this month</p>
-              </CardContent>
-            </Card>
-          </div>
-
           {/* Orders in Process (Awaiting Platform Fulfillment) */}
           {unfulfilledGroupedByMonth.length > 0 && (
             <Card className="border shadow-sm border-blue-200 dark:border-blue-900/30 opacity-75">
@@ -847,6 +844,12 @@ export default function PayoutsPage() {
                 </CardTitle>
                 <CardDescription>
                   These orders have been placed and are being fulfilled by our team. Once fulfillment is complete, they'll appear in "Ready to Request Payment" and you can request your payout via PayPal.
+                  <div className="mt-2 text-xs">
+                    <a href="/vendor/dashboard/settings" className="text-blue-600 hover:underline">
+                      How is my payout calculated?
+                    </a>
+                    {" • You earn 25% commission on each sale"}
+                  </div>
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -883,10 +886,7 @@ export default function PayoutsPage() {
                                 </div>
                               </div>
                               <div className="text-right ml-4">
-                                <div className="text-sm text-muted-foreground">Order Value</div>
-                                <div className="font-medium">{formatCurrency(item.price)}</div>
-                                <div className="text-sm text-muted-foreground mt-1">Payout</div>
-                                <div className="font-bold text-blue-600 dark:text-blue-400">{formatCurrency(item.payout_amount)}</div>
+                                <div className="font-bold text-lg text-blue-600 dark:text-blue-400">{formatCurrency(item.payout_amount)}</div>
                               </div>
                             </div>
                           ))}
@@ -914,6 +914,12 @@ export default function PayoutsPage() {
               </CardTitle>
               <CardDescription>
                 Great news! These orders have been fulfilled by our team and are ready for payment. Click "Request Payment" above to get paid to your PayPal account.
+                <div className="mt-2 text-xs">
+                  <a href="/vendor/dashboard/settings" className="text-blue-600 hover:underline">
+                    How is my payout calculated?
+                  </a>
+                  {" • You earn 25% commission on each sale"}
+                </div>
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -964,7 +970,7 @@ export default function PayoutsPage() {
                       {expandedMonths.has(monthData.monthKey) && (
                         <div className="space-y-2 pt-2 border-t">
                           {monthData.items.map((item: any) => (
-                            <div key={item.line_item_id} className="flex items-center justify-between p-2 rounded bg-white/50 dark:bg-slate-900/50 backdrop-blur-sm border border-white/20 dark:border-slate-700/20">
+                            <div key={item.line_item_id} className="flex items-center justify-between p-3 rounded bg-white/50 dark:bg-slate-900/50 backdrop-blur-sm border border-white/20 dark:border-slate-700/20">
                               <div className="flex-1 min-w-0">
                                 <div className="font-medium truncate">{item.product_title}</div>
                                 <div className="text-sm text-muted-foreground">
@@ -972,10 +978,7 @@ export default function PayoutsPage() {
                                 </div>
                               </div>
                               <div className="text-right ml-4">
-                                <div className="text-sm text-muted-foreground">Order Value</div>
-                                <div className="font-medium">{formatCurrency(item.price)}</div>
-                                <div className="text-sm text-muted-foreground mt-1">Payout</div>
-                                <div className="font-bold text-green-600">{formatCurrency(item.payout_amount)}</div>
+                                <div className="font-bold text-lg text-green-600">{formatCurrency(item.payout_amount)}</div>
                               </div>
                             </div>
                           ))}
@@ -1228,10 +1231,10 @@ export default function PayoutsPage() {
                                 <div className="mt-3 space-y-1 pl-4 border-l-2">
                                   {payout.items.map((item, idx) => (
                                     <div key={idx} className="flex items-center justify-between text-sm">
-                                      <div className="flex items-center gap-2">
-                                        <span className="text-muted-foreground">{item.item_name}</span>
+                                      <div className="flex items-center gap-2 flex-1 min-w-0">
+                                        <span className="text-muted-foreground truncate">{item.item_name}</span>
                                         {item.is_paid && (
-                                          <Badge variant="outline" className="bg-green-50 text-green-700 border-green-300 text-xs">
+                                          <Badge variant="outline" className="bg-green-50 text-green-700 border-green-300 text-xs shrink-0">
                                             Paid
                                           </Badge>
                                         )}
@@ -1245,15 +1248,15 @@ export default function PayoutsPage() {
                                                 description: `Reference: ${item.payout_reference}${item.marked_at ? `\nPaid: ${format(new Date(item.marked_at), "MMM d, yyyy")}` : ""}`,
                                               })
                                             }}
-                                            className="h-5 px-1 text-xs"
+                                            className="h-5 px-1 text-xs shrink-0"
                                           >
                                             <ExternalLink className="h-3 w-3" />
                                           </Button>
                                         )}
                                       </div>
-                                      <div className="flex items-center gap-3">
-                                        <span className="text-muted-foreground">
-                                          {format(new Date(item.date), "MMM d, yyyy")}
+                                      <div className="flex items-center gap-3 ml-4 shrink-0">
+                                        <span className="text-muted-foreground text-xs">
+                                          {format(new Date(item.date), "MMM d")}
                                         </span>
                                         <span className="font-medium">{formatCurrency(item.amount)}</span>
                                       </div>

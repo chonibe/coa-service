@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server"
 import { getVendorFromCookieStore } from "@/lib/vendor-session"
 import { createPayPalPayout, isValidPayPalEmail } from "@/lib/paypal/payouts"
 import { notifyPayoutProcessed, notifyPayoutFailed } from "@/lib/notifications/payout-notifications"
+import { MINIMUM_PAYOUT_AMOUNT } from "@/lib/payout-calculator"
 import crypto from "crypto"
 
 export async function POST(request: NextRequest) {
@@ -89,6 +90,13 @@ export async function POST(request: NextRequest) {
         created_at: new Date().toISOString(),
       }
     })
+
+    // Validate minimum payout threshold
+    if (totalAmount < MINIMUM_PAYOUT_AMOUNT) {
+      return NextResponse.json({
+        error: `Minimum payout amount is $${MINIMUM_PAYOUT_AMOUNT}. Your current balance is $${totalAmount.toFixed(2)}. Please wait until you have enough earnings.`
+      }, { status: 400 })
+    }
 
     // Generate a unique reference number
     const reference = `REDEEM-${Date.now()}-${crypto.randomBytes(4).toString("hex").toUpperCase()}`

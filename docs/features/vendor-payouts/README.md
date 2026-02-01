@@ -8,6 +8,8 @@ The Vendor Payout System is a comprehensive solution for calculating and process
 
 - ✅ **Fulfillment-Based Calculations**: Only fulfilled line items are eligible for payout
 - ✅ **Per-Product Configuration**: Set custom payout percentages (default 25%) per product
+- ✅ **Minimum Payout Threshold**: $25 USD minimum to reduce transaction fees
+- ✅ **Payout Readiness Checks**: Validates vendor prerequisites before allowing payouts
 - ✅ **Order Grouping**: Payouts calculated per order, then summed for vendor totals
 - ✅ **Manual Payout Management**: Mark line items as paid manually with audit trail
 - ✅ **Comprehensive Validation**: Prevents duplicate payments and validates fulfillment status
@@ -20,6 +22,7 @@ The Vendor Payout System is a comprehensive solution for calculating and process
 - ✅ **Refund Processing UI**: Admin interface for processing refunds from order details
 - ✅ **Negative Balance Warnings**: Alerts for vendors who owe money from refunds
 - ✅ **PayPal Status Checking**: Manual status check for PayPal batch payouts
+- ✅ **Production Validation Script**: Automated environment validation for production deployment
 
 ## Technical Implementation
 
@@ -50,6 +53,8 @@ The Vendor Payout System is a comprehensive solution for calculating and process
 
 - `GET /api/vendors/payouts/pending`: Get pending payouts for vendors
 - `GET /api/vendors/payouts/pending-items`: Get pending line items for a vendor
+- `POST /api/vendors/payouts/redeem`: Request payout (vendor-initiated, enforces $25 minimum)
+- `GET /api/vendor/payout-readiness`: Check if vendor meets all prerequisites for requesting payouts
 - `POST /api/vendors/payouts/process`: Process payouts (admin only)
 
 #### Admin Endpoints
@@ -69,11 +74,67 @@ The Vendor Payout System is a comprehensive solution for calculating and process
 
 ### Libraries
 
-- **`lib/payout-calculator.ts`**: Core calculation logic
+- **`lib/payout-calculator.ts`**: Core calculation logic with minimum threshold constant
 - **`lib/payout-validator.ts`**: Validation and integrity checks
+- **`lib/vendor-payout-readiness.ts`**: Payout readiness prerequisite checks
 - **`lib/paypal/client.ts`**: PayPal OAuth authentication
 - **`lib/paypal/payouts.ts`**: PayPal Payouts API integration
 - **`lib/invoices/generator.ts`**: PDF invoice generation
+
+## Production Readiness
+
+### Minimum Payout Threshold
+
+- **Minimum**: $25 USD
+- **Purpose**: Reduces transaction fees, maximizes vendor earnings
+- **Enforcement**: Validated at API level before creating payout requests
+- **Configuration**: Defined in `lib/payout-calculator.ts` as `MINIMUM_PAYOUT_AMOUNT`
+
+### Payout Prerequisites
+
+Vendors must complete the following before requesting payouts:
+
+1. **PayPal Email**: Valid email address linked to PayPal account
+2. **Tax Information**: Tax ID and tax residence country
+3. **Vendor Terms**: Accept Vendor Terms of Service
+4. **Minimum Balance**: At least $25 in pending fulfilled orders
+
+### Readiness Validation
+
+The system validates prerequisites via:
+- `checkVendorPayoutReadiness()` function in `lib/vendor-payout-readiness.ts`
+- `GET /api/vendor/payout-readiness` endpoint
+- UI displays missing items with link to Settings
+- "Request Payment" button is disabled until prerequisites are met
+
+### Production Validation Script
+
+Before deploying to production, run the validation script:
+
+```bash
+node scripts/validate-payout-production.js
+```
+
+The script validates:
+- Required environment variables are set
+- PayPal API credentials are valid
+- PayPal environment is correctly configured
+- Database connections and RPC functions
+- Security settings (HTTPS, session secrets)
+
+See [Production Checklist](./PRODUCTION_CHECKLIST.md) for complete deployment guide.
+
+## Vendor User Guide
+
+For detailed vendor-facing documentation, see [Vendor Payout Guide](./VENDOR_PAYOUT_GUIDE.md).
+
+Key topics covered:
+- Setting up PayPal email and profile
+- Understanding the $25 minimum threshold
+- Requesting payouts
+- Tracking payout status
+- Reading payout history
+- Troubleshooting common issues
 
 ## Admin User Guide
 
@@ -225,6 +286,9 @@ Fulfillment status is synced from Shopify via:
 
 ## Related Documentation
 
+- [Vendor Payout Guide](./VENDOR_PAYOUT_GUIDE.md): User guide for vendors
+- [Production Checklist](./PRODUCTION_CHECKLIST.md): Complete deployment checklist
+- [Deployment Status](./DEPLOYMENT_STATUS.md): Current implementation status
 - [Payout Protocol](./PAYOUT_PROTOCOL.md): Detailed protocol documentation
 - [API Documentation](../../API_DOCUMENTATION.md): API endpoint details
 - [Admin Portal](../admin-portal/README.md): Admin portal overview
@@ -258,11 +322,15 @@ Fulfillment status is synced from Shopify via:
 - `app/vendor/dashboard/payouts/page.tsx` - Vendor payout history with invoice downloads
 
 ### Libraries
-- `lib/payout-calculator.ts`
+- `lib/payout-calculator.ts` - Updated with MINIMUM_PAYOUT_AMOUNT constant
 - `lib/payout-validator.ts`
+- `lib/vendor-payout-readiness.ts` - NEW: Payout prerequisite checks
 - `lib/paypal/client.ts` - PayPal authentication
 - `lib/paypal/payouts.ts` - PayPal Payouts API
 - `lib/invoices/generator.ts` - PDF invoice generation
+
+### Scripts
+- `scripts/validate-payout-production.js` - NEW: Production validation script
 
 ## PayPal Integration
 
@@ -353,6 +421,18 @@ This adjustment ensures that historical data matches the current USD-only payout
 
 ## Version History
 
+- **v2.2.0** (2026-02-01): Production Readiness Release
+  - Added $25 minimum payout threshold
+  - Implemented payout readiness prerequisites system
+  - Fixed PayPal email validation bug in onboarding wizard
+  - Added production validation script
+  - Enhanced vendor dashboard UX with prominent balance hero
+  - Simplified line item and payout history displays
+  - Added informational commission links
+  - Created comprehensive vendor payout guide
+  - Added production deployment checklist
+  - Updated all documentation for production deployment
+
 - **v2.1.0** (2025-12-28): Historical Data Alignment & Payout Reset
   - Implemented historical price correction ($40 revenue / $10 payout) for pre-Oct 2025 data.
   - Reverted "Paid" status for all line items to enable fresh payout processing.
@@ -376,6 +456,9 @@ This adjustment ensures that historical data matches the current USD-only payout
   - Order grouping
   - Complete audit trail
 
+## Related Documentation
 
-
-
+- [Vendor Payout Guide](./VENDOR_PAYOUT_GUIDE.md) - User-friendly guide for vendors
+- [Production Checklist](./PRODUCTION_CHECKLIST.md) - Pre-deployment checklist for production
+- [Payout Protocol](./PAYOUT_PROTOCOL.md) - Detailed protocol documentation
+- [PayPal Testing Guide](../../testing/PAYOUT_TESTING.md) - PayPal sandbox testing instructions

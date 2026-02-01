@@ -4,6 +4,7 @@ import type { Database } from "@/types/supabase"
 import { convertToUSD } from "@/lib/currency-converter"
 
 const DEFAULT_PAYOUT_PERCENTAGE = 25
+export const MINIMUM_PAYOUT_AMOUNT = 25 // USD
 
 // Vendors excluded from payout calculations (e.g., internal/company vendors)
 const EXCLUDED_VENDORS = ["Street Collector", "street collector", "street-collector"]

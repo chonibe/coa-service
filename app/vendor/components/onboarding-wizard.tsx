@@ -285,6 +285,7 @@ export function OnboardingWizard({ initialData, onComplete }: OnboardingWizardPr
       case "address":
         if (!value?.trim()) return { isValid: false, error: "Business address is required" }
         return { isValid: true }
+      case "paypal_email":
         if (!value?.trim()) {
           return { isValid: false, error: "PayPal email is required for payouts" }
         }
