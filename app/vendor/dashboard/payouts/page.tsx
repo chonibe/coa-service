@@ -535,26 +535,35 @@ export default function PayoutsPage() {
           // State 1: Missing prerequisites
           return (
             <AnnouncementBar
+              id="payouts-prerequisites"
               variant="warning"
               message={`Complete your payout details to request payments • Missing: ${payoutReadiness?.missingItems.join(", ") || "profile information"}`}
               action={{
                 label: "Go to Settings",
                 onClick: () => window.location.href = "/vendor/dashboard/settings"
               }}
+              dismissible
+              markerLabel="Setup Required"
+              markerPosition="top"
             />
           );
         } else if (!hasSufficientBalance) {
           // State 2: Below minimum threshold
           return (
             <AnnouncementBar
+              id="payouts-minimum"
               variant="pending"
               message={`You have ${formatCurrency(pendingAmount)} pending • Minimum payout is $25 • You need ${formatCurrency(25 - pendingAmount)} more`}
+              dismissible
+              markerLabel="Pending Balance"
+              markerPosition="top"
             />
           );
         } else {
           // State 3: Ready to request payment
           return (
             <AnnouncementBar
+              id="payouts-ready"
               variant="success"
               icon={<Wallet className="h-5 w-5" />}
               message={`You have ${formatCurrency(pendingAmount)} ready to withdraw from ${pendingLineItems.length} order${pendingLineItems.length !== 1 ? 's' : ''}`}
@@ -564,6 +573,9 @@ export default function PayoutsPage() {
                 disabled: isRedeeming || isLoading,
                 loading: isRedeeming
               }}
+              dismissible
+              markerLabel="Payment Ready"
+              markerPosition="top"
             />
           );
         }
