@@ -2,7 +2,7 @@
 
 import { ReactNode, useState, useEffect } from "react"
 import { AlertCircle, CheckCircle, Clock, Info, Wallet, X, ChevronDown, Bell } from "lucide-react"
-import { Button } from "@/components/ui/button"
+import { Button } from "@/components/ui"
 import { cn } from "@/lib/utils"
 
 export type AnnouncementVariant = "info" | "warning" | "success" | "error" | "pending"
