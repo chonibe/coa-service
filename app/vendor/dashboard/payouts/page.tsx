@@ -524,21 +524,22 @@ export default function PayoutsPage() {
   }
 
   return (
-    <div className="w-full space-y-4">
-        {/* Single dynamic announcement bar - full width, one line, pinned style */}
-        {pendingAmount > 0 && pendingLineItems.length > 0 && (
-          <div className="w-full -mx-6 px-6 py-3 shadow-sm">
-            {(() => {
-              // Determine which state to show - only ONE at a time
-              const isReady = payoutReadiness?.isReady || false;
-              const hasSufficientBalance = pendingAmount >= 25;
-              
-              // Priority: Missing prerequisites > Below minimum > Ready to request
-              if (!isReady) {
-                // State 1: Missing prerequisites (Amber/Orange)
-                return (
-                  <div className="bg-gradient-to-r from-amber-500 to-orange-500 text-white rounded-lg">
-                    <div className="flex items-center justify-between gap-4 py-3 px-4">
+    <>
+      {/* Single dynamic announcement bar - FULL WIDTH, pinned to top */}
+      {pendingAmount > 0 && pendingLineItems.length > 0 && (
+        <div className="w-screen relative left-1/2 right-1/2 -ml-[50vw] -mr-[50vw] mb-6">
+          {(() => {
+            // Determine which state to show - only ONE at a time
+            const isReady = payoutReadiness?.isReady || false;
+            const hasSufficientBalance = pendingAmount >= 25;
+            
+            // Priority: Missing prerequisites > Below minimum > Ready to request
+            if (!isReady) {
+              // State 1: Missing prerequisites (Amber/Orange)
+              return (
+                <div className="bg-gradient-to-r from-amber-500 to-orange-500 text-white">
+                  <div className="max-w-7xl mx-auto px-6 py-3">
+                    <div className="flex items-center justify-between gap-4">
                       <div className="flex items-center gap-3 min-w-0">
                         <AlertCircle className="h-5 w-5 flex-shrink-0" />
                         <span className="font-medium truncate">
@@ -557,24 +558,28 @@ export default function PayoutsPage() {
                       </Button>
                     </div>
                   </div>
-                );
-              } else if (!hasSufficientBalance) {
-                // State 2: Below minimum threshold (Blue)
-                return (
-                  <div className="bg-gradient-to-r from-blue-500 to-indigo-600 text-white rounded-lg">
-                    <div className="flex items-center gap-3 py-3 px-4">
+                </div>
+              );
+            } else if (!hasSufficientBalance) {
+              // State 2: Below minimum threshold (Blue)
+              return (
+                <div className="bg-gradient-to-r from-blue-500 to-indigo-600 text-white">
+                  <div className="max-w-7xl mx-auto px-6 py-3">
+                    <div className="flex items-center gap-3">
                       <Clock className="h-5 w-5 flex-shrink-0" />
                       <span className="font-medium truncate">
                         You have {formatCurrency(pendingAmount)} pending • Minimum payout is $25 • You need {formatCurrency(25 - pendingAmount)} more
                       </span>
                     </div>
                   </div>
-                );
-              } else {
-                // State 3: Ready to request payment (Green)
-                return (
-                  <div className="bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-lg">
-                    <div className="flex items-center justify-between gap-4 py-3 px-4">
+                </div>
+              );
+            } else {
+              // State 3: Ready to request payment (Green)
+              return (
+                <div className="bg-gradient-to-r from-green-500 to-emerald-600 text-white">
+                  <div className="max-w-7xl mx-auto px-6 py-3">
+                    <div className="flex items-center justify-between gap-4">
                       <div className="flex items-center gap-3 min-w-0">
                         <Wallet className="h-5 w-5 flex-shrink-0" />
                         <span className="font-medium truncate">
@@ -593,11 +598,14 @@ export default function PayoutsPage() {
                       </Button>
                     </div>
                   </div>
-                );
-              }
-            })()}
-          </div>
-        )}
+                </div>
+              );
+            }
+          })()}
+        </div>
+      )}
+
+      <div className="w-full space-y-4">
 
         {/* Contextual Onboarding for Payouts - floating */}
         <ContextualOnboarding context="payouts" onComplete={() => {
@@ -1242,5 +1250,6 @@ export default function PayoutsPage() {
         </TabsContent>
       </Tabs>
     </div>
+    </>
   )
 }
