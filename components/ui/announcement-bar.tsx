@@ -132,7 +132,7 @@ export function AnnouncementBar({
 }: AnnouncementBarProps) {
   const [isCollapsed, setIsCollapsed] = useState(initiallyCollapsed)
   const config = variantConfig[variant]
-  const Icon = icon || config.icon
+  const DefaultIcon = config.icon
   const actions = action ? (Array.isArray(action) ? action : [action]) : []
 
   // Load collapsed state from localStorage if id is provided
@@ -235,12 +235,10 @@ export function AnnouncementBar({
         <div className={cn("max-w-7xl mx-auto px-6", compact ? "py-2" : "py-3")}>
           <div className="flex items-center justify-between gap-4">
             <div className="flex items-center gap-3 min-w-0 flex-1">
-              {Icon && (
-                typeof Icon === "function" ? (
-                  <Icon className="h-5 w-5 flex-shrink-0" />
-                ) : (
-                  Icon
-                )
+              {icon ? (
+                icon
+              ) : (
+                <DefaultIcon className="h-5 w-5 flex-shrink-0" />
               )}
               <div className="font-medium truncate flex-1">
                 {typeof message === "string" ? <span>{message}</span> : message}
