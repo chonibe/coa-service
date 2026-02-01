@@ -599,26 +599,6 @@ export default function PayoutsPage() {
           </div>
         )}
 
-        {/* Show error alert if PayPal email is not configured */}
-        {error && (error.includes("PayPal email") || error.includes("paypal")) && (
-          <Alert variant="destructive" className="border-red-500 bg-red-50 dark:bg-red-950/20">
-            <AlertCircle className="h-4 w-4" />
-            <AlertTitle>PayPal Email Required</AlertTitle>
-            <AlertDescription className="flex items-center justify-between gap-4">
-              <span>{error}</span>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => {
-                  window.location.href = "/vendor/dashboard/settings"
-                }}
-                className="shrink-0"
-              >
-                Go to Settings
-              </Button>
-            </AlertDescription>
-          </Alert>
-        )}
         {/* Contextual Onboarding for Payouts - floating */}
         <ContextualOnboarding context="payouts" onComplete={() => {
           fetchPayouts()
@@ -649,26 +629,6 @@ export default function PayoutsPage() {
         {dateFilter !== "all" && <Badge variant="outline">Date: {dateFilter}</Badge>}
         {searchQuery && <Badge variant="outline">Search: “{searchQuery}”</Badge>}
       </div>
-
-      {error && (
-        <Alert variant="destructive">
-          <AlertCircle className="h-4 w-4" />
-          <AlertTitle>Error</AlertTitle>
-          <AlertDescription>
-            {error}
-            <div className="mt-2">
-              <Button 
-                variant="outline" 
-                size="sm" 
-                onClick={handleRefresh}
-                className="border shadow-sm"
-              >
-                Try Again
-              </Button>
-            </div>
-          </AlertDescription>
-        </Alert>
-      )}
 
       {/* Success Banner */}
       {showSuccessBanner && (
