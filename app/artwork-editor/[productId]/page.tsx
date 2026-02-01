@@ -16,6 +16,8 @@ import InspirationBoardEditor from "@/app/vendor/dashboard/artwork-pages/compone
 import ArtistNoteEditor from "@/app/vendor/dashboard/artwork-pages/components/ArtistNoteEditor"
 import SectionGroupEditor from "@/app/vendor/dashboard/artwork-pages/components/SectionGroupEditor"
 import BlockLibrarySidebar from "@/app/vendor/dashboard/artwork-pages/components/BlockLibrarySidebar"
+// TEMPORARILY DISABLED: Map block causing build issues
+// import MapBlockEditor from "@/app/artwork-editor/[productId]/components/MapBlockEditor"
 
 interface ContentBlock {
   id: number
@@ -721,10 +723,14 @@ function BlockEditor({
     case "Location":
     case "Artwork Map Block":
       return (
-        <MapBlockEditor 
-          block={block}
-          onUpdate={onUpdate}
-        />
+        <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+          <p className="text-sm text-yellow-800">Map block temporarily disabled during build fixes</p>
+        </div>
+        // TEMPORARILY DISABLED
+        // <MapBlockEditor 
+        //   block={block}
+        //   onUpdate={onUpdate}
+        // />
       )
     
     // Fallback
@@ -1345,209 +1351,6 @@ function ImageBlockEditor({ block, onUpdate }: { block: ContentBlock; onUpdate: 
         onChange={handleFileUpload}
         className="hidden"
       />
-    </div>
-  )
-}
-
-// Map Block Editor with Location and Image Carousel
-function MapBlockEditor({ block, onUpdate }: { block: ContentBlock; onUpdate: (updates: Partial<ContentBlock>) => void }) {
-  const [isUploading, setIsUploading] = useState(false)
-  const [uploadProgress, setUploadProgress] = useState(0)
-  const fileInputRef = useRef<HTMLInputElement>(null)
-
-  const config = block.block_config || {}
-  const images: string[] = config.images || []
-
-  const handleConfigUpdate = (field: string, value: any) => {
-    onUpdate({
-      block_config: {
-        ...config,
-        [field]: value,
-      }
-    })
-  }
-
-  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(e.target.files || [])
-    if (files.length === 0) return
-
-    try {
-      setIsUploading(true)
-      const uploadedUrls: string[] = []
-
-      for (let i = 0; i < files.length; i++) {
-        const formData = new FormData()
-        formData.append('file', files[i])
-        formData.append('fileType', 'image')
-
-        const response = await fetch('/api/vendor/media-library/upload', {
-          method: 'POST',
-          body: formData,
-        })
-
-        if (!response.ok) {
-          throw new Error(`Failed to upload ${files[i].name}`)
-        }
-
-        const data = await response.json()
-        uploadedUrls.push(data.url)
-        setUploadProgress(Math.round(((i + 1) / files.length) * 100))
-      }
-
-      handleConfigUpdate('images', [...images, ...uploadedUrls])
-      setIsUploading(false)
-      setUploadProgress(0)
-    } catch (error) {
-      console.error('Image upload error:', error)
-      alert('Failed to upload images')
-      setIsUploading(false)
-      setUploadProgress(0)
-    }
-  }
-
-  const removeImage = (index: number) => {
-    const newImages = images.filter((_, i) => i !== index)
-    handleConfigUpdate('images', newImages)
-  }
-
-  return (
-    <div className="space-y-4">
-      {/* Title */}
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">Title</label>
-        <input
-          type="text"
-          value={config.title || ''}
-          onChange={(e) => handleConfigUpdate('title', e.target.value)}
-          placeholder="e.g., Where I painted this"
-          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-        />
-      </div>
-
-      {/* Location Name */}
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">Location Name</label>
-        <input
-          type="text"
-          value={config.location_name || ''}
-          onChange={(e) => handleConfigUpdate('location_name', e.target.value)}
-          placeholder="e.g., Montmartre, Paris"
-          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-        />
-      </div>
-
-      {/* Coordinates */}
-      <div className="grid grid-cols-2 gap-3">
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Latitude</label>
-          <input
-            type="text"
-            value={config.latitude || ''}
-            onChange={(e) => handleConfigUpdate('latitude', e.target.value)}
-            placeholder="e.g., 48.8867"
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-          />
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Longitude</label>
-          <input
-            type="text"
-            value={config.longitude || ''}
-            onChange={(e) => handleConfigUpdate('longitude', e.target.value)}
-            placeholder="e.g., 2.3431"
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-          />
-        </div>
-      </div>
-
-      {/* Map Style */}
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">Map Style</label>
-        <select
-          value={config.map_style || 'street'}
-          onChange={(e) => handleConfigUpdate('map_style', e.target.value)}
-          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-        >
-          <option value="street">Street</option>
-          <option value="satellite">Satellite</option>
-          <option value="artistic">Artistic</option>
-        </select>
-      </div>
-
-      {/* Description */}
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
-        <textarea
-          value={config.description || ''}
-          onChange={(e) => handleConfigUpdate('description', e.target.value)}
-          placeholder="Tell the story of this place..."
-          rows={3}
-          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent resize-none"
-        />
-      </div>
-
-      {/* Location Photos */}
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">Location Photos</label>
-        
-        {/* Existing images */}
-        {images.length > 0 && (
-          <div className="grid grid-cols-3 gap-2 mb-3">
-            {images.map((url, index) => (
-              <div key={index} className="relative aspect-square rounded-lg overflow-hidden group">
-                <Image
-                  src={url}
-                  alt={`Location photo ${index + 1}`}
-                  fill
-                  className="object-cover"
-                />
-                <button
-                  onClick={() => removeImage(index)}
-                  className="absolute top-1 right-1 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
-                >
-                  <X className="w-4 h-4" />
-                </button>
-              </div>
-            ))}
-          </div>
-        )}
-
-        {/* Upload button */}
-        <button
-          type="button"
-          onClick={() => fileInputRef.current?.click()}
-          disabled={isUploading}
-          className="w-full border-2 border-dashed border-gray-300 rounded-lg p-4 hover:border-indigo-500 hover:bg-indigo-50 transition-colors text-center"
-        >
-          {isUploading ? (
-            <div>
-              <Loader2 className="w-6 h-6 text-indigo-600 mx-auto mb-1 animate-spin" />
-              <p className="text-sm text-gray-600">Uploading... {uploadProgress}%</p>
-            </div>
-          ) : (
-            <div>
-              <Camera className="w-6 h-6 text-gray-400 mx-auto mb-1" />
-              <p className="text-sm text-gray-600">Add location photos</p>
-            </div>
-          )}
-        </button>
-
-        <input
-          ref={fileInputRef}
-          type="file"
-          accept="image/*"
-          multiple
-          onChange={handleImageUpload}
-          className="hidden"
-        />
-      </div>
-
-      {/* Preview hint */}
-      {config.location_name && (
-        <div className="bg-gray-50 rounded-lg p-3 text-sm text-gray-600">
-          <span className="font-medium">Preview:</span> Collectors will see a map with {images.length > 0 ? `${images.length} photo${images.length > 1 ? 's' : ''}` : 'no photos'} of {config.location_name}
-        </div>
-      )}
     </div>
   )
 }
