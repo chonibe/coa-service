@@ -2,7 +2,7 @@
 
 import { useState, useRef, useCallback } from "react"
 import Image from "next/image"
-import Map, { Marker, NavigationControl } from 'react-map-gl'
+import Map, { Marker, NavigationControl } from 'react-map-gl/maplibre'
 import 'mapbox-gl/dist/mapbox-gl.css'
 import { 
   X, 
