@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect, useRef, useCallback, useMemo } from "react"
-import { useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 
 
 
@@ -35,6 +35,7 @@ import {
   LogOut,
   PenTool,
   Image as ImageIcon,
+  Bell,
 } from "lucide-react"
 import Image from "next/image"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
@@ -44,7 +45,7 @@ import { useDirtyFormGuard, useRefreshRegistry } from "../../components/sidebar-
 import { MediaLibraryModal, type MediaItem } from "@/components/vendor/MediaLibraryModal"
 import { SectionErrorBoundary, ComponentErrorBoundary } from "@/components/error-boundaries"
 
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle, Button, Input, Label, Tabs, TabsContent, TabsList, TabsTrigger, Checkbox, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Textarea, Alert, AlertDescription, AlertTitle, Badge } from "@/components/ui"
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle, Button, Input, Label, Tabs, TabsContent, TabsList, TabsTrigger, Checkbox, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Textarea, Alert, AlertDescription, AlertTitle, Badge, AnnouncementBar } from "@/components/ui"
 interface VendorProfile {
   id: number | string
   vendor_name: string
@@ -102,6 +103,7 @@ const COUNTRIES = [
 
 export default function VendorProfilePage() {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const [profile, setProfile] = useState<VendorProfile | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
@@ -120,8 +122,20 @@ export default function VendorProfilePage() {
     payment: false,
     tax: false,
   })
+
+  // Check for tab query parameter and set active tab
+  useEffect(() => {
+    const tab = searchParams.get("tab")
+    if (tab && ["contact", "payment", "tax", "notifications"].includes(tab)) {
+      setActiveSettingsTab(tab)
+    }
+  }, [searchParams])
   const [showImageLibrary, setShowImageLibrary] = useState(false)
   const [showSignatureLibrary, setShowSignatureLibrary] = useState(false)
+  const [notificationPrefs, setNotificationPrefs] = useState({
+    notify_on_collector_auth: false,
+    weekly_auth_digest: false,
+  })
   const { isDirty, setDirty } = useDirtyFormGuard()
   const { register } = useRefreshRegistry()
   const { toast } = useToast()
@@ -809,6 +823,36 @@ export default function VendorProfilePage() {
 
   return (
     <div className="container mx-auto py-8 max-w-7xl space-y-6">
+      {/* Profile Completion Announcement Bar */}
+      {getCompletionPercentage() < 100 && (() => {
+        const missingSteps = [];
+        if (!completionSteps.profile) missingSteps.push("Contact Info");
+        if (!completionSteps.payment) missingSteps.push("Payment Details");
+        if (!completionSteps.tax) missingSteps.push("Tax Info");
+
+        const nextStep = !completionSteps.profile ? "contact" 
+          : !completionSteps.payment ? "payment" 
+          : "tax";
+
+        return (
+          <AnnouncementBar
+            id="profile-completion"
+            variant="warning"
+            message={`Complete your profile (${getCompletionPercentage()}%) • Missing: ${missingSteps.join(", ")}`}
+            action={{
+              label: "Complete Now",
+              onClick: () => {
+                setActiveSettingsTab(nextStep);
+                window.scrollTo({ top: 0, behavior: "smooth" });
+              }
+            }}
+            dismissible
+            markerLabel={`${getCompletionPercentage()}% Complete`}
+            markerPosition="top"
+          />
+        );
+      })()}
+
       <div className="flex items-center justify-between flex-wrap gap-4">
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Profile & Settings</h1>
@@ -1217,6 +1261,10 @@ export default function VendorProfilePage() {
                       <CheckCircle className="h-3 w-3 ml-auto text-green-500" />
                     )}
                   </TabsTrigger>
+                  <TabsTrigger value="notifications" className="w-full justify-start">
+                    <Bell className="h-4 w-4 mr-2" />
+                    Notifications
+                  </TabsTrigger>
                 </TabsList>
 
                 <TabsContent value="contact" className="mt-4">
@@ -1514,6 +1562,89 @@ export default function VendorProfilePage() {
                         </CardFooter>
                       </Card>
                     </form>
+                  </SectionErrorBoundary>
+                </TabsContent>
+
+                <TabsContent value="notifications" className="mt-4">
+                  <SectionErrorBoundary sectionName="Notification Preferences">
+                    <Card>
+                      <CardHeader>
+                        <CardTitle>Notification Preferences</CardTitle>
+                        <CardDescription>
+                          Choose how you want to be notified about collector activity
+                        </CardDescription>
+                      </CardHeader>
+                      <CardContent className="space-y-4">
+                        <div className="flex items-center justify-between">
+                          <div className="space-y-1">
+                            <Label>Notify me when collectors authenticate</Label>
+                            <p className="text-sm text-muted-foreground">
+                              Get real-time notifications when collectors authenticate your artworks
+                            </p>
+                          </div>
+                          <Checkbox
+                            checked={notificationPrefs.notify_on_collector_auth}
+                            onCheckedChange={(checked) =>
+                              setNotificationPrefs((prev) => ({
+                                ...prev,
+                                notify_on_collector_auth: checked === true,
+                              }))
+                            }
+                          />
+                        </div>
+                        <Separator />
+                        <div className="flex items-center justify-between">
+                          <div className="space-y-1">
+                            <Label>Weekly authentication digest</Label>
+                            <p className="text-sm text-muted-foreground">
+                              Receive a weekly email summary of all collector authentications
+                            </p>
+                          </div>
+                          <Checkbox
+                            checked={notificationPrefs.weekly_auth_digest}
+                            onCheckedChange={(checked) =>
+                              setNotificationPrefs((prev) => ({
+                                ...prev,
+                                weekly_auth_digest: checked === true,
+                              }))
+                            }
+                          />
+                        </div>
+                      </CardContent>
+                      <CardFooter>
+                        <Button
+                          onClick={async () => {
+                            try {
+                              const response = await fetch("/api/vendor/notification-preferences", {
+                                method: "POST",
+                                headers: { "Content-Type": "application/json" },
+                                credentials: "include",
+                                body: JSON.stringify(notificationPrefs),
+                              })
+                              if (response.ok) {
+                                toast({
+                                  title: "Preferences saved",
+                                  description: "Your notification preferences have been updated.",
+                                })
+                              } else {
+                                throw new Error("Failed to save preferences")
+                              }
+                            } catch (err) {
+                              console.error("Error saving notification preferences:", err)
+                              toast({
+                                variant: "destructive",
+                                title: "Error",
+                                description: "Failed to save notification preferences",
+                              })
+                            }
+                          }}
+                          className="ml-auto"
+                        >
+                          <Save className="h-4 w-4 mr-2" />
+                          Save Preferences
+                        </Button>
+                      </CardFooter>
+                    </Card>
                   </SectionErrorBoundary>
                 </TabsContent>
               </Tabs>

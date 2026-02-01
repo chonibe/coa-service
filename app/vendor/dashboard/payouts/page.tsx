@@ -540,7 +540,7 @@ export default function PayoutsPage() {
               message={`Complete your payout details to request payments • Missing: ${payoutReadiness?.missingItems.join(", ") || "profile information"}`}
               action={{
                 label: "Go to Settings",
-                onClick: () => window.location.href = "/vendor/dashboard/settings"
+                onClick: () => router.push("/vendor/dashboard/profile?tab=payment")
               }}
               dismissible
               markerLabel="Setup Required"
