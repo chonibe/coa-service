@@ -16,8 +16,7 @@ import InspirationBoardEditor from "@/app/vendor/dashboard/artwork-pages/compone
 import ArtistNoteEditor from "@/app/vendor/dashboard/artwork-pages/components/ArtistNoteEditor"
 import SectionGroupEditor from "@/app/vendor/dashboard/artwork-pages/components/SectionGroupEditor"
 import BlockLibrarySidebar from "@/app/vendor/dashboard/artwork-pages/components/BlockLibrarySidebar"
-// TEMPORARILY DISABLED: Map block causing build issues
-// import MapBlockEditor from "@/app/artwork-editor/[productId]/components/MapBlockEditor"
+import MapBlockEditor from "@/app/artwork-editor/[productId]/components/MapBlockEditor"
 
 interface ContentBlock {
   id: number
@@ -723,14 +722,10 @@ function BlockEditor({
     case "Location":
     case "Artwork Map Block":
       return (
-        <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
-          <p className="text-sm text-yellow-800">Map block temporarily disabled during build fixes</p>
-        </div>
-        // TEMPORARILY DISABLED
-        // <MapBlockEditor 
-        //   block={block}
-        //   onUpdate={onUpdate}
-        // />
+        <MapBlockEditor 
+          block={block}
+          onUpdate={onUpdate}
+        />
       )
     
     // Fallback

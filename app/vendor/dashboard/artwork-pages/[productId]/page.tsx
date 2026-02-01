@@ -35,8 +35,7 @@ import ProcessGalleryEditor from "../components/ProcessGalleryEditor"
 import InspirationBoardEditor from "../components/InspirationBoardEditor"
 import ArtistNoteEditor from "../components/ArtistNoteEditor"
 import SectionGroupEditor from "../components/SectionGroupEditor"
-// TEMPORARILY DISABLED: Map block causing build issues
-// import MapBlockEditor from "@/app/artwork-editor/[productId]/components/MapBlockEditor"
+import MapBlockEditor from "@/app/artwork-editor/[productId]/components/MapBlockEditor"
 
 // Import collector preview components for preview
 import { VideoBlock } from "@/app/collector/artwork/[id]/components/VideoBlock"
@@ -692,14 +691,10 @@ export default function ArtworkPageEditor() {
 
       case "Artwork Map Block":
         return (
-          <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
-            <p className="text-sm text-yellow-800">Map block temporarily disabled during build fixes</p>
-          </div>
-          // TEMPORARILY DISABLED
-          // <MapBlockEditor
-          //   block={block}
-          //   onUpdate={(updates) => updateBlock(block.id, updates)}
-          // />
+          <MapBlockEditor
+            block={block}
+            onUpdate={(updates) => updateBlock(block.id, updates)}
+          />
         )
 
       case "Artwork Section Group Block":

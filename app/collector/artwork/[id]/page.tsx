@@ -19,6 +19,7 @@ import Image from "next/image"
 import Link from "next/link"
 import { NFCAuthSheet } from "@/components/nfc/nfc-auth-sheet"
 import { formatCurrency } from "@/lib/utils"
+import { useShopifyAnalytics } from "@/hooks/use-analytics"
 import { TextBlock } from "./components/TextBlock"
 import { ImageBlock } from "./components/ImageBlock"
 import { VideoBlock } from "./components/VideoBlock"
@@ -43,6 +44,7 @@ import ProcessGallerySection from "./components/ProcessGallerySection"
 import InspirationBoardSection from "./components/InspirationBoardSection"
 import ArtistNoteSection from "./components/ArtistNoteSection"
 import { SectionGroupBlock } from "./components/SectionGroupBlock"
+import { MapBlock } from "./components/MapBlock"
 import { SpecialArtworkChip, type SpecialChip } from "./components/SpecialArtworkChip"
 import { DiscoverySection } from "./components/DiscoverySection"
 
@@ -136,6 +138,7 @@ export default function CollectorArtworkPage() {
   const params = useParams()
   const router = useRouter()
   const artworkId = params.id as string
+  const { trackProductView } = useShopifyAnalytics()
 
   const [artwork, setArtwork] = useState<ArtworkDetail | null>(null)
   const [isLoading, setIsLoading] = useState(true)
@@ -186,6 +189,20 @@ export default function CollectorArtworkPage() {
               eventData: {},
             }),
           }).catch((err) => console.error("Failed to track page view:", err))
+
+          // Track Google Analytics product view
+          if (data.product) {
+            const shopifyProduct = {
+              id: data.product.id || artworkId,
+              title: data.product.name || data.name || '',
+              vendor: data.product.vendor || data.vendor || '',
+              product_type: data.product.product_type || data.product_type || '',
+              tags: data.product.tags || [],
+              variants: data.product.variants || [],
+              collections: data.product.collections || []
+            }
+            trackProductView(shopifyProduct)
+          }
 
           // Track time spent (send after 30 seconds)
           const timeSpentTimer = setTimeout(() => {
@@ -345,6 +362,8 @@ export default function CollectorArtworkPage() {
   }
 
   const isAuthenticated = artwork.isAuthenticated
+  const canInteract = artwork.canInteract ?? isAuthenticated // Permission to post stories and interact
+  const hasUnlockableContent = (artwork.lockedContentPreview?.length || 0) > 0
 
   return (
     <div>
@@ -367,9 +386,9 @@ export default function CollectorArtworkPage() {
         />
       )}
 
-      <div className="min-h-screen bg-background pb-safe-4">
+      <div className="min-h-screen bg-white text-gray-900 pb-safe-4">
         {/* Mobile-first header - compact */}
-        <div className="sticky top-0 z-40 bg-background/95 backdrop-blur-md border-b px-4 py-3">
+        <div className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-gray-200 px-4 py-3">
           <div className="flex items-center gap-3">
           <Button
             variant="ghost"
@@ -382,7 +401,7 @@ export default function CollectorArtworkPage() {
           <div className="flex-1 min-w-0">
             <h1 className="text-lg font-bold tracking-tight truncate">{artwork.artwork.name}</h1>
             {artwork.artist.name && (
-              <p className="text-xs text-muted-foreground truncate">
+              <p className="text-xs text-gray-500 truncate">
                 by{" "}
                 <Link
                   href={`/artist/${encodeURIComponent(artwork.artist.name)}`}
@@ -422,8 +441,8 @@ export default function CollectorArtworkPage() {
               priority
             />
           ) : (
-            <div className="w-full h-full flex items-center justify-center bg-muted">
-              <ImageIcon className="h-24 w-24 text-muted-foreground" />
+            <div className="w-full h-full flex items-center justify-center bg-gray-100">
+              <ImageIcon className="h-24 w-24 text-gray-400" />
             </div>
           )}
         </div>
@@ -462,16 +481,8 @@ export default function CollectorArtworkPage() {
       {/* Content area with max-width for readability */}
       <div className="px-4 py-8 md:py-12 space-y-8 md:space-y-12 max-w-5xl mx-auto">
         
-        {/* Authenticated Status or Lock Preview */}
-        {!isAuthenticated ? (
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className="text-center py-8"
-          >
-            <LockedContentPreview contentBlocks={artwork.lockedContentPreview || []} />
-          </motion.div>
-        ) : (
+        {/* Authentication Status Badge */}
+        {isAuthenticated && (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -487,13 +498,24 @@ export default function CollectorArtworkPage() {
           </motion.div>
         )}
 
+        {/* Locked Content Preview - only show if not authenticated AND has unlockable content */}
+        {!isAuthenticated && hasUnlockableContent && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="text-center py-8"
+          >
+            <LockedContentPreview contentBlocks={artwork.lockedContentPreview || []} />
+          </motion.div>
+        )}
+
         {/* Artist Profile Card */}
         <ArtistProfileCard
           name={artwork.artist.name}
           bio={artwork.artist.bio}
           profileImageUrl={artwork.artist.profileImageUrl}
           signatureUrl={artwork.artist.signatureUrl}
-          isLocked={!isAuthenticated}
+          isLocked={false}
         />
 
         {/* Shared Story Timeline */}
@@ -507,8 +529,9 @@ export default function CollectorArtworkPage() {
           <SharedStoryTimeline
             productId={artwork.artwork.id}
             productName={artwork.artwork.name}
-            isOwner={isAuthenticated}
+            isOwner={canInteract}
             isArtist={false}
+            onAuthRequired={() => setIsNfcSheetOpen(true)}
           />
         </div>
 
@@ -524,9 +547,8 @@ export default function CollectorArtworkPage() {
           </div>
         </div>
 
-        {/* Content Blocks with Lock Overlay */}
-        <div className={`divide-y divide-border/30 ${!isAuthenticated ? "relative" : ""}`}>
-          {!isAuthenticated && <LockedOverlay />}
+        {/* Content Blocks */}
+        <div className="divide-y divide-border/30">
           
           {artwork.contentBlocks.map((block, index) => {
             const blockType = block.block_type || getBlockTypeFromBenefitId(block.benefit_type_id)
@@ -661,6 +683,22 @@ export default function CollectorArtworkPage() {
                     />
                   </motion.div>
                 )
+              
+              case "Artwork Map Block":
+                return (
+                  <motion.div
+                    key={block.id}
+                    initial={{ opacity: 0, y: 30 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: animationDelay, duration: 0.6 }}
+                  >
+                    <MapBlock
+                      title={block.title}
+                      contentBlock={block}
+                    />
+                  </motion.div>
+                )
+
               case "Artwork Section Group Block":
                 return (
                   <motion.div
@@ -700,7 +738,7 @@ export default function CollectorArtworkPage() {
                       <CardContent className="p-6">
                         {block.title && <h2 className="text-xl font-semibold mb-4">{block.title}</h2>}
                         {block.description && (
-                          <p className="text-muted-foreground whitespace-pre-line">{block.description}</p>
+                          <p className="text-gray-600 whitespace-pre-line">{block.description}</p>
                         )}
                         {block.content_url && (
                           <a
@@ -741,8 +779,8 @@ export default function CollectorArtworkPage() {
         />
       )}
 
-      {/* Sticky Bottom CTA - Mobile First */}
-      {!isAuthenticated && (
+      {/* Sticky Bottom CTA - Mobile First - Only show if not authenticated AND has unlockable content */}
+      {!isAuthenticated && hasUnlockableContent && (
         <div className="fixed bottom-0 left-0 right-0 z-50 
                         bg-white/90 dark:bg-black/90 backdrop-blur-xl border-t
                         p-4 pb-safe-4 md:hidden">
@@ -750,13 +788,13 @@ export default function CollectorArtworkPage() {
             onClick={() => setIsNfcSheetOpen(true)}
             className="w-full h-14 text-lg font-semibold rounded-xl"
           >
-            Pair NFC
+            Unlock Exclusive Content
           </Button>
           <button
             onClick={() => setIsNfcSheetOpen(true)}
-            className="w-full text-center text-sm text-muted-foreground mt-2 py-2 min-h-[44px]"
+            className="w-full text-center text-sm text-gray-500 mt-2 py-2 min-h-[44px]"
           >
-            or enter code manually
+            Scan NFC or enter code manually
           </button>
         </div>
       )}
