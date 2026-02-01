@@ -200,6 +200,22 @@ Use the MCP server `edition-verification` with tool `get_edition_history`:
 7. **Uniqueness**: Database constraint prevents duplicate edition numbers for the same product
 8. **Immutability**: Once an edition is authenticated (NFC claimed), its edition number cannot be changed
 9. **Complete Audit Trail**: All events are logged to `edition_events` table (immutable)
+10. **Duplicate Prevention**: Line items are deduplicated by `line_item_id`. If the same line item appears in multiple orders (e.g., after refund/repurchase), only the most recent order is displayed in collector dashboards
+11. **Active Status Required**: Only line items with `status = 'active'` are displayed and counted. Canceled, refunded, or restocked items are automatically filtered out
+
+## Data Integrity Protocol
+
+**CRITICAL:** When displaying collector-owned editions or syncing orders, you MUST follow the [Collector Dashboard Data Integrity Protocol](./COLLECTOR_DASHBOARD_DATA_INTEGRITY.md).
+
+This protocol ensures:
+- No duplicate artworks appear in collector dashboards
+- Canceled/refunded orders are properly filtered out
+- Line items are deduplicated by both `line_item_id` AND `product_id + edition_number`
+- Only `status = 'active'` items are displayed
+
+**See Also:**
+- [Collector Dashboard Data Integrity Protocol](./COLLECTOR_DASHBOARD_DATA_INTEGRITY.md) - Complete filtering rules
+- [Collector Data Integrity Skill](./.cursor/skills/collector-data-integrity.md) - Agent implementation guide
 
 ## Troubleshooting
 

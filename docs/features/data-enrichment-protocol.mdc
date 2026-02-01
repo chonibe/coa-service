@@ -34,6 +34,26 @@ When displaying collector information, the system follows this priority:
 *   **Always query the `collector_profile_comprehensive` view**: This view implements the `DISTINCT ON (order_name)` logic to ensure no duplicates are counted in stats.
 *   **Activity API**: Use `/api/admin/collectors/[id]/activity` for order history, as it handles the Shopify-first deduplication logic in memory.
 *   **Case-Insensitivity**: All email-based lookups MUST use `LOWER(email)` or `.ilike()`.
+*   **Line Item Status Filter**: Always filter line items by `status = 'active'` to exclude canceled, refunded, or restocked items.
+*   **Line Item Deduplication**: Use `line_item_id` as the unique identifier. If the same `line_item_id` appears across multiple orders, keep only the most recent one (by `processed_at` date).
+*   **Edition Numbers as Source of Truth**: Only line items with `edition_number` assigned should be counted as "owned" artworks. Items without edition numbers are not yet active/paid.
+
+## Critical: Data Integrity Protocol
+
+**MANDATORY:** When working with collector dashboards or order syncing, you MUST follow the [Collector Dashboard Data Integrity Protocol](../COLLECTOR_DASHBOARD_DATA_INTEGRITY.md).
+
+This protocol enforces:
+- **Database-level filtering** of canceled/refunded orders
+- **Application-level filtering** of inactive/removed line items
+- **Two-stage deduplication**: by `line_item_id` AND `product_id + edition_number`
+- **Frontend filtering** before rendering
+
+**Implementation Guide:** [Collector Data Integrity Skill](../../.cursor/skills/collector-data-integrity.md)
+
+**Key Files:**
+- Editions API: `app/api/collector/editions/route.ts`
+- Activity API: `app/api/admin/collectors/[id]/activity/route.ts`
+- Frontend: `app/admin/collectors/[id]/page.tsx`
 
 ## Maintenance
 If you notice "Guest Customer" entries in the admin panel for orders that should be fulfilled, run the PII Bridge enrichment script:
