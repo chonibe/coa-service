@@ -94,12 +94,25 @@ export async function GET(
     }
 
     // 2.5 Fetch missing images from products table
-    // Filter line items by active status
+    // CRITICAL: Filter line items by active status and exclude restocked/removed items
     const allLineItems = (orders || []).flatMap(o => 
-      (o.order_line_items_v2 || []).filter((li: any) => 
-        li.status === 'active' && 
-        li.restocked !== true
-      )
+      (o.order_line_items_v2 || []).filter((li: any) => {
+        // Must be explicitly active
+        const isActive = li.status === 'active';
+        // Must not be restocked or removed
+        const isNotRestocked = li.restocked !== true && li.status !== 'removed';
+        // Must not be from a problematic order (double-check)
+        const orderIsValid = !['restocked', 'canceled'].includes(o.fulfillment_status) && 
+                             !['refunded', 'voided'].includes(o.financial_status);
+        
+        const shouldInclude = isActive && isNotRestocked && orderIsValid;
+        
+        if (!shouldInclude && li.product_id) {
+          console.log(`[Activity API] Filtering out line item ${li.line_item_id}: status=${li.status}, restocked=${li.restocked}, order_fulfillment=${o.fulfillment_status}, order_financial=${o.financial_status}`);
+        }
+        
+        return shouldInclude;
+      })
     );
     const itemsMissingImages = allLineItems.filter(li => !li.img_url && li.product_id);
     
@@ -143,10 +156,17 @@ export async function GET(
       new Date(b.processed_at).getTime() - new Date(a.processed_at).getTime()
     );
     
+    // Count total line items including inactive ones for debugging
+    const totalLineItemsInOrders = deduplicatedOrders.reduce((sum, o) => sum + (o.order_line_items_v2?.length || 0), 0);
+    const activeLineItemsCount = deduplicatedOrders.flatMap(o => (o.order_line_items_v2 || []).filter((li: any) => li.status === 'active')).length;
+    const inactiveLineItemsCount = totalLineItemsInOrders - activeLineItemsCount;
+    
     console.log(`📊 [Activity API] Stats for ${email || shopifyCustomerId}:`)
     console.log(`   - Orders fetched: ${orders?.length || 0}`)
     console.log(`   - Orders after deduplication: ${deduplicatedOrders.length}`)
-    console.log(`   - Active line items: ${deduplicatedOrders.flatMap(o => (o.order_line_items_v2 || []).filter((li: any) => li.status === 'active')).length}`)
+    console.log(`   - Total line items in orders: ${totalLineItemsInOrders}`)
+    console.log(`   - Inactive/removed line items: ${inactiveLineItemsCount}`)
+    console.log(`   - Active line items: ${activeLineItemsCount}`)
     console.log(`   - Unique products: ${new Set(deduplicatedOrders.flatMap(o => (o.order_line_items_v2 || []).filter((li: any) => li.status === 'active').map((li: any) => li.product_id))).size}`)
     
     return NextResponse.json({

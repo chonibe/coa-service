@@ -579,8 +579,14 @@ export default function CollectorDetailPage() {
                           <div className="flex-1 p-8">
                             <div className="space-y-4">
                               {(() => {
+                                // CRITICAL: Filter out inactive/removed line items first
+                                const activeLineItems = (order.order_line_items_v2 || []).filter((item: any) => 
+                                  item.status === 'active' && 
+                                  item.restocked !== true
+                                );
+                                
                                 // Group items by product_id within the order
-                                const groupedOrderItems = (order.order_line_items_v2 || []).reduce((acc: any, item: any) => {
+                                const groupedOrderItems = activeLineItems.reduce((acc: any, item: any) => {
                                   const key = item.product_id || item.name;
                                   if (!acc[key]) acc[key] = [];
                                   acc[key].push(item);
