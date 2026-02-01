@@ -122,8 +122,9 @@ export async function GET(request: NextRequest) {
 
     const deduplicatedOrders = Array.from(orderMap.values());
 
-    // Deduplicate line items by line_item_id across all orders
+    // Deduplicate line items by BOTH line_item_id AND product_id+edition_number
     const lineItemMap = new Map<string, any>();
+    const productEditionMap = new Map<string, any>(); // Track product_id + edition_number combos
     
     deduplicatedOrders.forEach((order) => 
       (order.order_line_items_v2 || []).forEach((li: any) => {
@@ -134,13 +135,33 @@ export async function GET(request: NextRequest) {
           order_financial_status: order.financial_status
         };
         
-        // Keep only the most recent line item by line_item_id
+        // Primary deduplication by line_item_id
         if (!lineItemMap.has(li.line_item_id)) {
           lineItemMap.set(li.line_item_id, lineItemWithOrder);
         } else {
           const existing = lineItemMap.get(li.line_item_id);
           if (new Date(order.processed_at) > new Date(existing.order_processed_at)) {
             lineItemMap.set(li.line_item_id, lineItemWithOrder);
+          }
+        }
+        
+        // Secondary deduplication by product_id + edition_number (for cases where line_item_id differs but it's the same artwork)
+        if (li.product_id && li.edition_number) {
+          const productEditionKey = `${li.product_id}-${li.edition_number}`;
+          
+          if (!productEditionMap.has(productEditionKey)) {
+            productEditionMap.set(productEditionKey, lineItemWithOrder);
+          } else {
+            const existing = productEditionMap.get(productEditionKey);
+            // Keep the most recent one
+            if (new Date(order.processed_at) > new Date(existing.order_processed_at)) {
+              // Remove old line_item_id from lineItemMap
+              lineItemMap.delete(existing.line_item_id);
+              productEditionMap.set(productEditionKey, lineItemWithOrder);
+            } else {
+              // Remove current line_item_id from lineItemMap (it's a duplicate)
+              lineItemMap.delete(li.line_item_id);
+            }
           }
         }
       })
@@ -152,7 +173,25 @@ export async function GET(request: NextRequest) {
     console.log(`   - Orders fetched: ${orders?.length || 0}`)
     console.log(`   - Orders after deduplication: ${deduplicatedOrders.length}`)
     console.log(`   - Total line items before dedup: ${deduplicatedOrders.flatMap(o => o.order_line_items_v2 || []).length}`)
-    console.log(`   - Unique line items after dedup: ${allLineItems.length}`)
+    console.log(`   - Line items after line_item_id dedup: ${lineItemMap.size}`)
+    console.log(`   - Unique product+edition combinations: ${productEditionMap.size}`)
+    console.log(`   - Final unique line items: ${allLineItems.length}`)
+    
+    // Log any product+edition duplicates found
+    const editionCounts = new Map<string, number>();
+    allLineItems.forEach(li => {
+      if (li.product_id && li.edition_number) {
+        const key = `${li.product_id}-${li.edition_number}`;
+        editionCounts.set(key, (editionCounts.get(key) || 0) + 1);
+      }
+    });
+    const duplicates = Array.from(editionCounts.entries()).filter(([_, count]) => count > 1);
+    if (duplicates.length > 0) {
+      console.log(`   ⚠️  WARNING: Still found ${duplicates.length} duplicate product+edition combinations:`)
+      duplicates.forEach(([key, count]) => {
+        console.log(`      - ${key}: ${count} times`)
+      });
+    }
 
     // 4. Batch fetch missing images
     const itemsMissingImages = allLineItems.filter(li => !li.img_url && li.product_id);
