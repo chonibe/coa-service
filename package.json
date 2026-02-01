@@ -147,7 +147,7 @@
     "zod": "^3.25.67"
   },
   "devDependencies": {
-    "@graphql-tools/schema": "^10.0.23",
+    "@graphql-tools/schema": "^10.0.31",
     "@radix-ui/react-slot": "^1.2.3",
     "@testing-library/jest-dom": "^6.6.3",
     "@testing-library/react": "^16.3.0",
