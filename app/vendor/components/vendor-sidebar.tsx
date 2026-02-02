@@ -390,13 +390,6 @@ export function VendorSidebar() {
 
         <ScrollArea className="h-full">
           <div className="px-2 py-4">
-            {!isCollapsed && (
-              <div className="mb-4 px-4">
-                <h3 className="font-semibold">
-                  Hey {vendorName.split(' ')[0] || vendorName}
-                </h3>
-              </div>
-            )}
             <nav className="flex flex-col gap-2" aria-label="Navigation menu">
               {navItems.filter(item => item && item.href).map((item) => (
                 <Link
