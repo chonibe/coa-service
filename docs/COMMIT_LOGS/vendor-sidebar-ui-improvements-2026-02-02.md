@@ -177,3 +177,69 @@ className={cn(
 - Mobile experience unchanged (overlay behavior preserved)
 - Desktop experience significantly improved
 - No breaking changes to existing functionality
+
+---
+
+## Update Log
+
+### Version 1.1.0 - February 2, 2026
+**Commit:** `44222b78a` - "refactor: move chevron toggle to header and remove hamburger menu on desktop"
+
+#### Additional Changes:
+1. **Removed Hamburger Menu from Desktop**
+   - Hamburger menu (Bars3Icon) no longer displays on desktop screens
+   - Only shows on mobile devices for overlay menu access
+   - Reduces visual clutter in desktop header
+
+2. **Moved Chevron Toggle to Header**
+   - Chevron toggle relocated from sidebar edge to header
+   - Positioned next to back button in top-left area
+   - Shows chevron-right when collapsed, chevron-left when expanded
+   
+3. **Plain Chevron Icon (No Button Wrapper)**
+   - Removed button wrapper and styling from chevron
+   - Displays as plain icon with hover opacity effect
+   - Maintains accessibility with proper aria labels
+   - Cleaner, more minimal appearance
+
+4. **Responsive Behavior**
+   - Desktop: Only chevron toggle visible (md:flex)
+   - Mobile: Only hamburger menu visible (md:hidden)
+   - Appropriate control for each screen size
+
+#### Technical Implementation:
+```typescript
+{/* Desktop Chevron Toggle */}
+<button
+  onClick={toggleCollapsed}
+  className="hidden md:flex items-center justify-center cursor-pointer hover:opacity-70 transition-opacity min-h-[44px] min-w-[44px]"
+  aria-label={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+>
+  {isCollapsed ? (
+    <ChevronRightIcon className="h-6 w-6 text-foreground" />
+  ) : (
+    <ChevronLeftIcon className="h-6 w-6 text-foreground" />
+  )}
+</button>
+
+{/* Mobile Hamburger Menu */}
+<Button
+  variant="outline"
+  size="icon"
+  className="md:hidden flex items-center..."
+  onClick={toggleSidebar}
+>
+  <Bars3Icon className="h-6 w-6" />
+</Button>
+```
+
+#### Benefits:
+- ✅ Single, intuitive toggle location in header
+- ✅ No redundant buttons or controls
+- ✅ Cleaner visual hierarchy
+- ✅ Maintains mobile usability with hamburger menu
+- ✅ More professional, minimal design
+
+## Version History
+- v1.0.0 (2026-02-02): Initial sidebar UI improvements
+- v1.1.0 (2026-02-02): Moved chevron to header, removed desktop hamburger
