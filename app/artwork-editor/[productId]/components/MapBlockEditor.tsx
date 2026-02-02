@@ -56,6 +56,10 @@ interface SearchResult {
  * - Description field
  */
 export function MapBlockEditor({ block, onUpdate }: MapBlockEditorProps) {
+  // Initialize config first before using it
+  const config = block.block_config || {}
+  const images: string[] = config.images || []
+
   const [isUploading, setIsUploading] = useState(false)
   const [uploadProgress, setUploadProgress] = useState(0)
   const [isDetectingLocation, setIsDetectingLocation] = useState(false)
@@ -71,9 +75,6 @@ export function MapBlockEditor({ block, onUpdate }: MapBlockEditorProps) {
     latitude: parseFloat(config.latitude) || 37.7749,
     zoom: 13
   })
-
-  const config = block.block_config || {}
-  const images: string[] = config.images || []
 
   const MAPBOX_TOKEN = process.env.NEXT_PUBLIC_MAPBOX_TOKEN || 'pk.eyJ1IjoiY2hvbmliZSIsImEiOiJjbTMwZjEwbW8wbGtuMmlzOGtiOGRtMTg1In0.Ith0JUK28Im6cJ2R65FoUw'
 
