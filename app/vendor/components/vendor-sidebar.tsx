@@ -268,9 +268,8 @@ export function VendorSidebar() {
     <>
       {/* Fixed header */}
       <header className="fixed top-0 left-0 right-0 z-40 flex h-16 items-center gap-4 border-b bg-background px-4 sm:px-6" role="banner">
-        {/* Left: Back Button, Chevron Toggle */}
+        {/* Left: Chevron Toggle, Back Button */}
         <div className="flex items-center gap-2">
-          <SmartBackButton dashboardBase="/vendor/dashboard" />
           {/* Chevron Toggle - Desktop only */}
           <button
             onClick={toggleCollapsed}
@@ -283,6 +282,7 @@ export function VendorSidebar() {
               <ChevronLeftIcon className="h-6 w-6 text-foreground" aria-hidden="true" />
             )}
           </button>
+          <SmartBackButton dashboardBase="/vendor/dashboard" />
           {/* Mobile Menu Button */}
           <Button
             variant="outline"
