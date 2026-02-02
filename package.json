@@ -118,6 +118,7 @@
     "konva": "^10.2.0",
     "lucide-react": "^0.454.0",
     "mapbox-gl": "^3.18.1",
+    "maplibre-gl": "^4.7.1",
     "next": "^15.2.6",
     "next-themes": "latest",
     "node-cron": "^3.0.3",
