@@ -19,6 +19,8 @@ import {
   Check,
   X,
   Grid3x3,
+  ChevronsDown,
+  ChevronsUp,
 } from "lucide-react"
 import Image from "next/image"
 import { useToast } from "@/components/ui/use-toast"
@@ -418,6 +420,25 @@ export default function ArtworkPageEditor() {
     } finally {
       setIsSaving(false)
     }
+  }
+
+  // Collapse all blocks
+  const collapseAll = () => {
+    setExpandedBlocks(new Set())
+    toast({
+      title: "Collapsed all blocks",
+      description: "All content blocks have been collapsed",
+    })
+  }
+
+  // Expand all blocks
+  const expandAll = () => {
+    const allBlockIds = new Set(contentBlocks.map(b => b.id))
+    setExpandedBlocks(allBlockIds)
+    toast({
+      title: "Expanded all blocks",
+      description: "All content blocks have been expanded",
+    })
   }
 
   // Apply template (legacy - uses default template)
@@ -1156,14 +1177,34 @@ export default function ArtworkPageEditor() {
                   Preview
                 </Button>
                 {contentBlocks.length > 0 && (
-                  <Button
-                    variant="outline"
-                    onClick={enterReorderMode}
-                    className="bg-gray-800 border-gray-700"
-                  >
-                    <GripVertical className="h-4 w-4 mr-2" />
-                    Reorder
-                  </Button>
+                  <>
+                    <Button
+                      variant="outline"
+                      onClick={collapseAll}
+                      className="bg-gray-800 border-gray-700 hover:bg-gray-700"
+                      title="Collapse all blocks"
+                    >
+                      <ChevronsUp className="h-4 w-4 mr-2" />
+                      Collapse All
+                    </Button>
+                    <Button
+                      variant="outline"
+                      onClick={expandAll}
+                      className="bg-gray-800 border-gray-700 hover:bg-gray-700"
+                      title="Expand all blocks"
+                    >
+                      <ChevronsDown className="h-4 w-4 mr-2" />
+                      Expand All
+                    </Button>
+                    <Button
+                      variant="outline"
+                      onClick={enterReorderMode}
+                      className="bg-gray-800 border-gray-700"
+                    >
+                      <GripVertical className="h-4 w-4 mr-2" />
+                      Reorder
+                    </Button>
+                  </>
                 )}
                 <Button onClick={publishChanges} disabled={isSaving} className="bg-green-600 hover:bg-green-500">
                   {isSaving ? (
