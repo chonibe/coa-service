@@ -268,13 +268,26 @@ export function VendorSidebar() {
     <>
       {/* Fixed header */}
       <header className="fixed top-0 left-0 right-0 z-40 flex h-16 items-center gap-4 border-b bg-background px-4 sm:px-6" role="banner">
-        {/* Left: Back Button, Menu Button */}
+        {/* Left: Back Button, Chevron Toggle */}
         <div className="flex items-center gap-2">
           <SmartBackButton dashboardBase="/vendor/dashboard" />
+          {/* Chevron Toggle - Desktop only */}
+          <button
+            onClick={toggleCollapsed}
+            className="hidden md:flex items-center justify-center cursor-pointer hover:opacity-70 transition-opacity min-h-[44px] min-w-[44px]"
+            aria-label={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+          >
+            {isCollapsed ? (
+              <ChevronRightIcon className="h-6 w-6 text-foreground" aria-hidden="true" />
+            ) : (
+              <ChevronLeftIcon className="h-6 w-6 text-foreground" aria-hidden="true" />
+            )}
+          </button>
+          {/* Mobile Menu Button */}
           <Button
             variant="outline"
             size="icon"
-            className="flex items-center justify-center transition-all hover:bg-primary/10 min-h-[44px] min-w-[44px] focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+            className="md:hidden flex items-center justify-center transition-all hover:bg-primary/10 min-h-[44px] min-w-[44px] focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
             onClick={toggleSidebar}
             aria-label="Toggle navigation menu"
             aria-expanded={sidebarOpen}
@@ -374,22 +387,6 @@ export function VendorSidebar() {
               isCollapsed && "md:w-[72px]"
             )}
           >
-        {/* Collapse/Expand Toggle - Desktop only, positioned on the right edge */}
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={toggleCollapsed}
-          className="hidden md:flex absolute -right-3 top-4 z-50 h-6 w-6 rounded-full border bg-background shadow-sm hover:bg-accent transition-all focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
-          aria-label={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
-        >
-          <Icon size="sm">
-            {isCollapsed ? (
-              <ChevronRightIcon className="h-4 w-4" aria-hidden="true" />
-            ) : (
-              <ChevronLeftIcon className="h-4 w-4" aria-hidden="true" />
-            )}
-          </Icon>
-        </Button>
 
         <ScrollArea className="h-full">
           <div className="px-2 py-4">
