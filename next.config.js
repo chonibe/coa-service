@@ -28,7 +28,7 @@ const nextConfig = {
       "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.shopify.com",
       "img-src 'self' data: https: blob:",
       "font-src 'self' data: https://fonts.gstatic.com",
-      "connect-src 'self' https://*.supabase.co https://*.shopify.com https://api.paypal.com https://api-m.paypal.com https://api-m.sandbox.paypal.com https://www.google-analytics.com https://analytics.google.com https://www.googletagmanager.com https://*.google.com https://*.doubleclick.net https://api.mapbox.com https://*.tiles.mapbox.com", // Added Mapbox domains
+      "connect-src 'self' https://*.supabase.co https://*.shopify.com https://api.paypal.com https://api-m.paypal.com https://api-m.sandbox.paypal.com https://www.google-analytics.com https://analytics.google.com https://www.googletagmanager.com https://*.google.com https://*.doubleclick.net https://api.mapbox.com https://*.tiles.mapbox.com mapbox:", // Added Mapbox domains + mapbox: protocol
       "worker-src 'self' blob:", // Allow Mapbox web workers
       "child-src 'self' blob:", // Allow Mapbox child contexts
       "frame-src 'self' https://*.supabase.co https://open.spotify.com https://*.spotify.com https://www.youtube.com https://player.vimeo.com https://www.googletagmanager.com", // Added GTM for iframes
