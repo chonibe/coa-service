@@ -29,6 +29,9 @@ export const metadata: Metadata = {
   description: 'Browse our collection of limited edition artworks for the Street Lamp.',
 }
 
+// Force dynamic rendering to avoid build-time API calls
+export const dynamic = 'force-dynamic'
+
 // =============================================================================
 // TYPES
 // =============================================================================

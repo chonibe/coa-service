@@ -12,16 +12,21 @@ import {
   PressCarousel,
   ScrollingText,
   FAQSection,
+  FeaturedArtistsSection,
+  FeaturedProductSection,
 } from '@/components/sections'
-import { Spline3DViewer, URLParamModal } from '@/components/blocks'
+import { Spline3DViewer, URLParamModal, URLParamBanner } from '@/components/blocks'
 import { homepageContent } from '@/content/homepage'
-import { getCollection, formatPrice, isOnSale, getDiscountPercentage } from '@/lib/shopify/storefront-client'
+import { getCollection, getProduct, formatPrice, isOnSale, getDiscountPercentage } from '@/lib/shopify/storefront-client'
 import Link from 'next/link'
 
 export const metadata: Metadata = {
   title: 'Street Collector - One Lamp, Endless Inspiration',
   description: 'Discover limited edition artworks for the Street Lamp. Collect, swap, and inspire with illuminated art from artists worldwide.',
 }
+
+// Force dynamic rendering to avoid build-time API calls
+export const dynamic = 'force-dynamic'
 
 export default async function ShopHomePage() {
   // Fetch featured collections
@@ -33,8 +38,18 @@ export default async function ShopHomePage() {
     first: 6,
   })
 
+  // Fetch featured product (Street Lamp)
+  const featuredProduct = await getProduct(homepageContent.featuredProduct.productHandle).catch(() => null)
+
   const newReleases = newReleasesCollection?.products.edges.map(e => e.node) || []
   const bestSellers = bestSellersCollection?.products.edges.map(e => e.node) || []
+  
+  // Prepare featured artists data (first 6 for display)
+  const featuredArtists = homepageContent.featuredArtists.collections.slice(0, 6).map(artist => ({
+    handle: artist.handle,
+    name: artist.handle.split('-').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' '),
+    location: artist.location,
+  }))
 
   // Note: Header and Footer are provided by app/shop/layout.tsx
   return (
@@ -101,6 +116,52 @@ export default async function ShopHomePage() {
           removeHorizontalSpacing={homepageContent.spline3D.removeHorizontalSpacing}
         />
 
+        {/* Featured Product Section (Street Lamp) */}
+        {featuredProduct && (
+          <FeaturedProductSection
+            title={featuredProduct.title}
+            handle={featuredProduct.handle}
+            price={formatPrice(featuredProduct.priceRange.minVariantPrice)}
+            compareAtPrice={
+              featuredProduct.compareAtPriceRange?.minVariantPrice?.amount
+                ? formatPrice(featuredProduct.compareAtPriceRange.minVariantPrice)
+                : undefined
+            }
+            description={featuredProduct.description?.substring(0, 200)}
+            media={featuredProduct.images.edges.slice(0, 4).map((edge: any) => ({
+              type: 'image' as const,
+              url: edge.node.url,
+              alt: edge.node.altText || featuredProduct.title,
+            }))}
+            fullWidth={homepageContent.featuredProduct.fullWidth}
+            desktopMediaWidth={homepageContent.featuredProduct.desktopMediaWidth}
+            desktopMediaLayout={homepageContent.featuredProduct.desktopMediaLayout as any}
+            mobileMediaSize={homepageContent.featuredProduct.mobileMediaSize as any}
+            enableVideoAutoplay={homepageContent.featuredProduct.enableVideoAutoplay}
+            enableVideoLooping={homepageContent.featuredProduct.enableVideoLooping}
+            backgroundColor={homepageContent.featuredProduct.background}
+            textColor={homepageContent.featuredProduct.textColor}
+          />
+        )}
+
+        {/* Secondary Video Section */}
+        <VideoPlayer
+          video={{
+            url: homepageContent.secondaryVideo.video.url,
+            autoplay: homepageContent.secondaryVideo.video.autoplay,
+            loop: true,
+            muted: true,
+            poster: homepageContent.secondaryVideo.video.poster,
+          }}
+          overlay={{
+            textColor: homepageContent.secondaryVideo.settings.textColor,
+            overlayColor: homepageContent.secondaryVideo.settings.overlayColor,
+            overlayOpacity: homepageContent.secondaryVideo.settings.overlayOpacity,
+          }}
+          size="lg"
+          fullWidth={homepageContent.secondaryVideo.settings.fullWidth}
+        />
+
         {/* Press Quotes Section 1 */}
         <PressCarousel
           quotes={homepageContent.pressQuotes1.quotes.map((q, i) => ({
@@ -138,6 +199,17 @@ export default async function ShopHomePage() {
           </Container>
         </SectionWrapper>
 
+        {/* Featured Artists Section */}
+        <FeaturedArtistsSection
+          title={homepageContent.featuredArtists.title}
+          artists={featuredArtists}
+          collectionsPerRow={homepageContent.featuredArtists.collectionsPerRow}
+          showProgressBar={homepageContent.featuredArtists.showProgressBar}
+          fullWidth={homepageContent.featuredArtists.fullWidth}
+          linkText="View all artists"
+          linkHref="/shop?collection=artists"
+        />
+
         {/* Scrolling Text */}
         <ScrollingText
           text={homepageContent.scrollingText.text}
@@ -174,6 +246,28 @@ export default async function ShopHomePage() {
           textPosition="start"
           fullWidth={homepageContent.faq.fullWidth}
         />
+
+        {/* URL Parameter Banner (Simply Gift) */}
+        <Suspense fallback={null}>
+          <URLParamBanner
+            urlParameter={homepageContent.simplyGiftBanner.urlParameter}
+            message={homepageContent.simplyGiftBanner.message}
+            showCta={homepageContent.simplyGiftBanner.showCta}
+            ctaText={homepageContent.simplyGiftBanner.ctaText}
+            ctaLink={homepageContent.simplyGiftBanner.ctaLink}
+            dismissible={homepageContent.simplyGiftBanner.dismissible}
+            alignment={homepageContent.simplyGiftBanner.alignment as any}
+            paddingVertical={homepageContent.simplyGiftBanner.paddingVertical}
+            paddingHorizontal={homepageContent.simplyGiftBanner.paddingHorizontal}
+            fontSize={homepageContent.simplyGiftBanner.fontSize}
+            backgroundColor={homepageContent.simplyGiftBanner.backgroundColor}
+            textColor={homepageContent.simplyGiftBanner.textColor}
+            ctaBackgroundColor={homepageContent.simplyGiftBanner.ctaBackgroundColor}
+            ctaTextColor={homepageContent.simplyGiftBanner.ctaTextColor}
+            ctaHoverBackgroundColor={homepageContent.simplyGiftBanner.ctaHoverBackgroundColor}
+            ctaHoverTextColor={homepageContent.simplyGiftBanner.ctaHoverTextColor}
+          />
+        </Suspense>
 
         {/* URL Parameter Modal (Simply Gift) */}
         <Suspense fallback={null}>
