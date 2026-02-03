@@ -1,6 +1,7 @@
 "use client"
 
 import { Badge, Button, Card, CardDescription, CardHeader, CardTitle } from "@/components/ui"
+import { ScrollReveal } from "@/components/blocks"
 
 
 
@@ -30,8 +31,9 @@ export function ArtistList({ artists }: ArtistListProps) {
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-      {artists.map((artist) => (
-        <Card key={artist.vendorName} className="flex items-center justify-between p-4">
+      {artists.map((artist, index) => (
+        <ScrollReveal key={artist.vendorName} animation="fadeUp" delay={index * 0.05} duration={0.5}>
+        <Card className="flex items-center justify-between p-4">
           <div className="space-y-1">
             <CardTitle className="text-base">{artist.vendorName}</CardTitle>
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
@@ -48,6 +50,7 @@ export function ArtistList({ artists }: ArtistListProps) {
             View journey
           </Button>
         </Card>
+        </ScrollReveal>
       ))}
     </div>
   )

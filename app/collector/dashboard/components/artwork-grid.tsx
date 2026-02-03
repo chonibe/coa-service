@@ -9,6 +9,7 @@ import Link from "next/link"
 import { cn } from "@/lib/utils"
 import { ShieldCheck, Clock, FileText, ExternalLink } from "lucide-react"
 import { NFCAuthSheet } from "@/components/nfc/nfc-auth-sheet"
+import { ScrollReveal } from "@/components/blocks"
 
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle, Badge, Button } from "@/components/ui"
 export interface CollectorLineItem {
@@ -66,12 +67,13 @@ export function ArtworkGrid({ items }: ArtworkGridProps) {
   return (
     <>
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-        {items.map((item) => {
+        {items.map((item, index) => {
           const isAuthenticated = !!(item.nfcTagId && item.nfcClaimedAt)
           const needsAuth = item.nfcTagId && !item.nfcClaimedAt
 
           return (
-            <Card key={item.id} className="h-full flex flex-col group hover:shadow-lg transition-shadow">
+            <ScrollReveal key={item.id} animation="fadeUp" delay={index * 0.05} duration={0.5}>
+            <Card className="h-full flex flex-col group hover:shadow-lg transition-shadow">
               <CardHeader className="space-y-3">
                 <div className="flex items-center justify-between">
                   <Link href={`/collector/artwork/${item.lineItemId}`} className="flex-1">
@@ -171,6 +173,7 @@ export function ArtworkGrid({ items }: ArtworkGridProps) {
                 )}
               </CardFooter>
             </Card>
+            </ScrollReveal>
           )
         })}
       </div>
