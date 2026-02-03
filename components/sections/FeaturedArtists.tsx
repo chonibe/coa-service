@@ -143,9 +143,6 @@ export function FeaturedArtistsSection({
  * Artist Card Component
  */
 function ArtistCard({ artist }: { artist: FeaturedArtist }) {
-  // Generate placeholder image if not provided
-  const imageUrl = artist.imageUrl || `https://placehold.co/400x500/f5f5f5/1a1a1a?text=${encodeURIComponent(artist.name)}`
-  
   return (
     <Link
       href={`/shop?collection=${artist.handle}`}
@@ -155,14 +152,31 @@ function ArtistCard({ artist }: { artist: FeaturedArtist }) {
       )}
     >
       {/* Image */}
-      <div className="relative aspect-[4/5] bg-[#f5f5f5] rounded-[16px] overflow-hidden mb-4">
-        <img
-          src={imageUrl}
-          alt={artist.name}
-          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-        />
-        {/* Overlay on hover */}
-        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors duration-300" />
+      <div className="relative aspect-[4/5] bg-gradient-to-br from-[#f5f5f5] to-[#e5e5e5] rounded-[16px] overflow-hidden mb-4">
+        {artist.imageUrl ? (
+          <>
+            <img
+              src={artist.imageUrl}
+              alt={artist.name}
+              className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+              loading="lazy"
+            />
+            {/* Overlay on hover */}
+            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors duration-300" />
+          </>
+        ) : (
+          // Fallback for missing images
+          <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-[#390000] to-[#5a1a1a]">
+            <div className="text-center">
+              <span className="text-6xl font-heading font-bold text-[#ffba94] block mb-2">
+                {artist.name.charAt(0).toUpperCase()}
+              </span>
+              <span className="text-xs text-[#ffba94]/60 uppercase tracking-wider">
+                {artist.location}
+              </span>
+            </div>
+          </div>
+        )}
       </div>
       
       {/* Info */}

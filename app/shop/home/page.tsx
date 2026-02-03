@@ -67,12 +67,28 @@ export default async function ShopHomePage() {
     apiError = 'Shopify Storefront API not configured. Please set the required environment variables.'
   }
   
-  // Prepare featured artists data (first 6 for display)
-  const featuredArtists = homepageContent.featuredArtists.collections.slice(0, 6).map(artist => ({
-    handle: artist.handle,
-    name: artist.handle.split('-').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' '),
-    location: artist.location,
-  }))
+  // Fetch artist images from Shopify collections
+  const artistsWithImages = await Promise.all(
+    homepageContent.featuredArtists.collections.slice(0, 6).map(async (artist) => {
+      try {
+        const collection = await getCollection(artist.handle, { first: 1 }).catch(() => null)
+        return {
+          handle: artist.handle,
+          name: artist.handle.split('-').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' '),
+          location: artist.location,
+          imageUrl: collection?.image?.url || collection?.products.edges[0]?.node.featuredImage?.url,
+        }
+      } catch {
+        return {
+          handle: artist.handle,
+          name: artist.handle.split('-').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' '),
+          location: artist.location,
+        }
+      }
+    })
+  )
+  
+  const featuredArtists = artistsWithImages
 
   // Note: Header and Footer are provided by app/shop/layout.tsx
   return (
