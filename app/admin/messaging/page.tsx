@@ -60,11 +60,25 @@ export default function MessagingPage() {
   const [searchQuery, setSearchQuery] = useState("")
   const [categoryFilter, setCategoryFilter] = useState<string>("all")
   const [hasGmailPermission, setHasGmailPermission] = useState<boolean | null>(null)
+  const [senderConfigured, setSenderConfigured] = useState<boolean | null>(null)
 
   useEffect(() => {
     fetchTemplates()
     checkGmailPermissions()
+    checkSenderConfiguration()
   }, [])
+
+  const checkSenderConfiguration = async () => {
+    try {
+      const res = await fetch("/api/admin/messaging/settings")
+      if (res.ok) {
+        const data = await res.json()
+        setSenderConfigured(!!data.settings?.sender_email)
+      }
+    } catch (error) {
+      console.error("Error checking sender configuration:", error)
+    }
+  }
 
   const checkGmailPermissions = async () => {
     try {
@@ -149,20 +163,44 @@ export default function MessagingPage() {
         </p>
       </div>
 
-      {/* Gmail Permission Alert */}
-      {hasGmailPermission === false && (
+      {/* Email Sender Configuration Alert */}
+      {senderConfigured === false && (
+        <Alert className="mb-6 border-red-200 bg-red-50 dark:bg-red-950/20 dark:border-red-900">
+          <ShieldExclamationIcon className="h-4 w-4 text-red-600 dark:text-red-400" />
+          <AlertDescription className="text-red-800 dark:text-red-200">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <strong className="font-semibold">Email sender not configured</strong>
+                <p className="text-sm mt-1">
+                  Please configure which admin account will be used to send automated emails and test messages. 
+                  This is required for email functionality to work.
+                </p>
+              </div>
+              <Link href="/admin/messaging/settings">
+                <Button size="sm" variant="default" className="whitespace-nowrap">
+                  Configure Sender
+                </Button>
+              </Link>
+            </div>
+          </AlertDescription>
+        </Alert>
+      )}
+
+      {/* Gmail Permission Alert (for current user) */}
+      {senderConfigured !== false && hasGmailPermission === false && (
         <Alert className="mb-6 border-amber-200 bg-amber-50 dark:bg-amber-950/20 dark:border-amber-900">
           <ShieldExclamationIcon className="h-4 w-4 text-amber-600 dark:text-amber-400" />
           <AlertDescription className="text-amber-800 dark:text-amber-200">
             <div className="flex items-start justify-between gap-4">
               <div>
-                <strong className="font-semibold">Gmail permissions required</strong>
+                <strong className="font-semibold">Optional: Authorize your Gmail</strong>
                 <p className="text-sm mt-1">
-                  To send test emails, you need to authorize Gmail access. This allows you to verify email formatting before templates go live.
+                  You can authorize your Gmail account to be available as an email sender option. 
+                  This is optional if another admin has already configured their account.
                 </p>
               </div>
               <Link href="/admin/messaging/authorize-gmail">
-                <Button size="sm" variant="default" className="whitespace-nowrap">
+                <Button size="sm" variant="outline" className="whitespace-nowrap">
                   Authorize Gmail
                 </Button>
               </Link>

@@ -98,6 +98,12 @@ export function AdminShell({ children }: AdminShellProps) {
     },
     {
       group: "Overview",
+      title: "Analytics",
+      href: "/admin/analytics",
+      icon: <Icon size="md"><ChartBarIcon className="h-5 w-5" /></Icon>,
+    },
+    {
+      group: "Overview",
       title: "Release Notes",
       href: "/admin/release-notes",
       icon: <Icon size="md"><MegaphoneIcon className="h-5 w-5" /></Icon>,
@@ -335,6 +341,30 @@ export function AdminShell({ children }: AdminShellProps) {
           icon: <Icon size="sm"><UserIcon className="h-4 w-4" /></Icon>,
         },
       ],
+    },
+    {
+      group: "Settings",
+      title: "Messaging",
+      href: "/admin/messaging",
+      icon: <Icon size="md"><EnvelopeIcon className="h-5 w-5" /></Icon>,
+      submenu: [
+        {
+          title: "Email Templates",
+          href: "/admin/messaging",
+          icon: <Icon size="sm"><EnvelopeIcon className="h-4 w-4" /></Icon>,
+        },
+        {
+          title: "Test Email",
+          href: "/admin/messaging/test",
+          icon: <Icon size="sm"><PencilIcon className="h-4 w-4" /></Icon>,
+        },
+        {
+          title: "Email Sender Settings",
+          href: "/admin/messaging/settings",
+          icon: <Icon size="sm"><Cog6ToothIcon className="h-4 w-4" /></Icon>,
+        },
+      ],
+      expanded: pathname?.startsWith('/admin/messaging') || false,
     },
     {
       group: "Settings",
