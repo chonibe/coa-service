@@ -35,8 +35,8 @@ import {
  * Run scripts/sync-shopify-content.ts to update the navigation from Shopify
  */
 
-// Use synced navigation from Shopify, with fallback to default
-const shopNavigation = syncedMainNavigation.length > 0 ? syncedMainNavigation : [
+// Default navigation menu with proper structure
+const defaultNavigation = [
   { 
     label: 'Shop', 
     href: '/shop',
@@ -58,6 +58,10 @@ const shopNavigation = syncedMainNavigation.length > 0 ? syncedMainNavigation : 
   { label: 'About', href: '/about' },
   { label: 'Contact', href: '/contact' },
 ]
+
+// Use default navigation (synced navigation from Shopify is incomplete)
+// TODO: Update main-menu in Shopify to match this structure, then re-run sync script
+const shopNavigation = defaultNavigation
 
 // Use synced footer sections from Shopify, with fallback to default
 const footerSections = syncedFooterSections.length > 0 ? syncedFooterSections : [
