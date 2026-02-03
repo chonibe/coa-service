@@ -1,6 +1,7 @@
 'use client'
 
 import { ProductCard, ProductBadge, Badge } from '@/components/impact'
+import { VinylArtworkCard } from '@/components/vinyl'
 import { useCart } from '@/lib/shop/CartContext'
 import { 
   formatPrice, 
@@ -13,11 +14,24 @@ import { useState } from 'react'
 /**
  * Product Card Item - Client Component
  * 
- * Wrapper around ProductCard with quick-add functionality
- * connected to CartContext
+ * Enhanced product card with vinyl record-inspired interactions:
+ * - 3D tilt effect on hover
+ * - Flip to reveal B-side (artist notes)
+ * - Buttery smooth GSAP animations
+ * 
+ * Falls back to standard ProductCard if vinyl features are disabled
  */
 
-export function ProductCardItem({ product }: { product: ShopifyProduct }) {
+interface ProductCardItemProps {
+  product: ShopifyProduct
+  /** Enable vinyl-style interactions (default: true) */
+  enableVinylEffects?: boolean
+}
+
+export function ProductCardItem({ 
+  product, 
+  enableVinylEffects = true 
+}: ProductCardItemProps) {
   const cart = useCart()
   const [isAdding, setIsAdding] = useState(false)
   
@@ -40,6 +54,11 @@ export function ProductCardItem({ product }: { product: ShopifyProduct }) {
   const firstVariant = product.variants.edges[0]?.node
   const inventoryQuantity = (firstVariant as any)?.inventoryQuantity ?? null
   const isLowStock = inventoryQuantity !== null && inventoryQuantity > 0 && inventoryQuantity <= 5
+
+  // Get artist notes from product description or metafields
+  const artistNotes = (product as any).metafields?.find(
+    (m: any) => m?.key === 'artist_notes' || m?.key === 'artist_statement'
+  )?.value || null
   
   // Build badges
   const badges = (
@@ -91,11 +110,36 @@ export function ProductCardItem({ product }: { product: ShopifyProduct }) {
         setIsAdding(false)
       }, 500)
     } catch (error) {
-      console.error('Quick add error:', error)
       setIsAdding(false)
     }
   }
 
+  // Use VinylArtworkCard for enhanced interactions
+  if (enableVinylEffects) {
+    return (
+      <VinylArtworkCard
+        title={product.title}
+        price={price}
+        compareAtPrice={onSale ? compareAtPrice : undefined}
+        image={product.featuredImage?.url || ''}
+        secondImage={secondImage}
+        imageAlt={product.featuredImage?.altText || product.title}
+        href={`/shop/${product.handle}`}
+        artistName={product.vendor}
+        artistNotes={artistNotes}
+        badges={badges}
+        available={product.availableForSale}
+        showQuickAdd={product.availableForSale}
+        onQuickAdd={handleQuickAdd}
+        quickAddLoading={isAdding}
+        disableFlip={!artistNotes} // Only enable flip if there are artist notes
+        disableTilt={false}
+        variant="shop"
+      />
+    )
+  }
+
+  // Fallback to standard ProductCard
   return (
     <ProductCard
       title={product.title}

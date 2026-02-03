@@ -1,0 +1,282 @@
+# Shopify Content Vinyl Integration
+
+Integration of synced Shopify content with the vinyl record-inspired design system.
+
+## Overview
+
+This feature enhances all Shopify-sourced content (artist pages, blog articles, static pages) with vinyl record-inspired interactions and GSAP scroll animations.
+
+## Content Types
+
+### 1. Artist Profile Pages
+
+**Route:** `/shop/artists/[slug]`
+
+**Features:**
+- Artist bio from synced Shopify page content
+- Product grid with `VinylProductCard` (3D tilt + flip)
+- `ScrollReveal` stagger animation for artwork grid
+- Enhanced profile section with animations
+
+**Data Sources:**
+- Artist bio: `content/shopify-content.ts` (synced pages)
+- Artist products: Shopify Storefront API via `getProductsByVendor()`
+
+**Available Artists:**
+- `nia-stai` - Nia Shtai (Ukrainian artist)
+- `or-bar-el` - Or Bar El (Tel Aviv illustrator)
+- `seller-profile` - Hen Macabi (Graphic designer)
+
+**Example:**
+```tsx
+// Navigate to /shop/artists/nia-stai
+// 1. Fetches products by vendor "Nia.Shtai"
+// 2. Gets bio from synced page content
+// 3. Displays with vinyl cards and scroll animations
+```
+
+### 2. Blog Articles
+
+**Routes:**
+- `/shop/blog` - Article listing
+- `/shop/blog/[handle]` - Article detail
+
+**Listing Features:**
+- Article cards with `VinylTiltEffect` (8° max tilt)
+- `ScrollReveal` stagger animation
+- Enhanced shadows and rounded corners (24px)
+- Tag filtering
+
+**Detail Features:**
+- `ScrollProgress` bar for reading progress
+- Hero image with `ParallaxLayer` effect
+- Content sections with `ScrollReveal`
+- Related articles with tilt effect
+
+**Available Articles:**
+1. `israeli-street-artists-a-look-at-some-of-the-countrys-talents`
+2. `discover-the-best-tel-aviv-gifts-and-home-decor-from-modern-jewish-artists`
+3. `exploring-the-vibrant-art-scene-in-tel-aviv`
+
+### 3. Static Pages
+
+**Route:** `/shop/pages/[handle]`
+
+**Features:**
+- Title with `ScrollReveal` fade-up
+- Content with delayed scroll reveal
+- Prose styling for rich HTML content
+
+**Key Pages:**
+- `delivery-methods` - Shipping information
+- `contact-us` - Contact details
+- `about-us` - About page
+- `artist-submissions` - Artist submission info
+- `faq` - Frequently asked questions
+
+### 4. Navigation & Footer
+
+**Features:**
+- Footer sections with `ScrollReveal` stagger (0.1s)
+- Existing GSAP drawer animations maintained
+- Dynamic navigation from synced content
+
+## API Integration
+
+### New Functions
+
+**`getProductsByVendor(vendorName, options)`**
+
+Fetches products for a specific artist/vendor:
+
+```ts
+import { getProductsByVendor } from '@/lib/shopify/storefront-client'
+
+const { products, pageInfo } = await getProductsByVendor('Nia.Shtai', {
+  first: 20,
+  sortKey: 'CREATED_AT',
+  reverse: true,
+})
+```
+
+**Parameters:**
+- `vendorName` (string) - Artist/vendor name to filter by
+- `options.first` (number) - Number of products to fetch (default: 20)
+- `options.after` (string) - Cursor for pagination
+- `options.sortKey` - Sort key (TITLE, PRICE, BEST_SELLING, CREATED_AT)
+- `options.reverse` (boolean) - Reverse sort order
+
+**Returns:**
+```ts
+{
+  products: ShopifyProduct[]
+  pageInfo: {
+    hasNextPage: boolean
+    endCursor: string | null
+  }
+}
+```
+
+## Animation Patterns
+
+### Artist Page
+
+```tsx
+// Hero section
+<ScrollReveal animation="fadeUp" duration={0.8}>
+  <div className="flex items-center gap-8">
+    {/* Profile + Bio */}
+  </div>
+</ScrollReveal>
+
+// Artwork grid
+<ScrollReveal animation="stagger" staggerAmount={0.15} delay={0.2}>
+  <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
+    {products.map(product => (
+      <VinylProductCard 
+        product={product}
+        enableTilt={true}
+        enableFlip={true}
+      />
+    ))}
+  </div>
+</ScrollReveal>
+```
+
+### Blog Listing
+
+```tsx
+// Header
+<ScrollReveal animation="fadeUp" duration={0.8}>
+  <div className="text-center">
+    <h1>Blog</h1>
+  </div>
+</ScrollReveal>
+
+// Article grid
+<ScrollReveal animation="stagger" staggerAmount={0.15}>
+  <div className="grid md:grid-cols-3 gap-8">
+    {articles.map(article => (
+      <VinylTiltEffect maxTilt={8} scale={1.01}>
+        <ArticleCard {...article} />
+      </VinylTiltEffect>
+    ))}
+  </div>
+</ScrollReveal>
+```
+
+### Article Detail
+
+```tsx
+// Reading progress
+<ScrollProgress position="top" color="#f0c417" height={3} />
+
+// Hero parallax
+<ParallaxLayer speed={0.5}>
+  <Image src={heroImage} />
+</ParallaxLayer>
+
+// Content
+<ScrollReveal animation="fadeUp" delay={0.2}>
+  <article dangerouslySetInnerHTML={{ __html: content }} />
+</ScrollReveal>
+
+// Related articles
+<ScrollReveal animation="stagger" staggerAmount={0.1}>
+  <div className="grid md:grid-cols-3">
+    {related.map(article => (
+      <VinylTiltEffect maxTilt={8}>
+        <ArticleCard {...article} />
+      </VinylTiltEffect>
+    ))}
+  </div>
+</ScrollReveal>
+```
+
+## Content Sync Integration
+
+Content is sourced from `content/shopify-content.ts`, which is generated by:
+
+```bash
+npx tsx scripts/sync-shopify-content.ts
+```
+
+**Artist Bio Extraction:**
+
+```ts
+// In artist page
+if (hasPage(artistSlug)) {
+  const page = getPage(artistSlug)
+  if (page) {
+    // Extract plain text from HTML
+    bio = page.body.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim()
+  }
+}
+```
+
+## Visual Enhancements
+
+### Artist Cards
+- 3D tilt: 15° max rotation
+- Scale: 1.02x on hover
+- Flip: 0.6s duration
+- Stagger: 0.15s between cards
+
+### Blog Cards
+- 3D tilt: 8° max rotation (more subtle)
+- Scale: 1.01x on hover
+- Border radius: 24px (vinyl aesthetic)
+- Shadow: Enhanced on hover
+
+### Scroll Animations
+- Fade-up: 40px Y distance
+- Duration: 0.6-0.8s
+- Stagger: 0.1-0.15s between items
+- Start trigger: `top 85%` of viewport
+
+## Performance
+
+- All animations use GSAP (RAF-based)
+- No layout thrashing (transform-only animations)
+- Lazy loading for images
+- Reduced motion respected globally
+- `will-change-transform` on animated elements
+
+## Testing Guide
+
+### Artist Pages
+
+1. Navigate to `/shop/artists/nia-stai`
+2. Verify bio appears (from synced content)
+3. Hover over artwork cards → 3D tilt
+4. Click card → Flip to B-side (if artist notes available)
+5. Scroll down → Cards stagger in
+
+### Blog Pages
+
+1. Navigate to `/shop/blog`
+2. Scroll down → Article cards stagger in
+3. Hover cards → Subtle 3D tilt
+4. Click article → Navigate to detail
+5. On detail page:
+   - Yellow progress bar at top
+   - Hero image parallaxes on scroll
+   - Related articles tilt on hover
+
+### Static Pages
+
+1. Navigate to `/shop/pages/delivery-methods`
+2. Scroll down → Title fades in
+3. Continue scroll → Content reveals
+
+### Footer
+
+1. Scroll to any page footer
+2. Sections stagger in (Newsletter → Nav → About)
+
+## Related Documentation
+
+- [Vinyl Components](../../../components/vinyl/README.md)
+- [Animation Library](../../../lib/animations/README.md)
+- [Shopify Content Sync](../../COMMIT_LOGS/shopify-content-sync-2026-02-03.md)
+- [Shop Vinyl Animations](../../COMMIT_LOGS/shop-vinyl-animations-2026-02-03.md)

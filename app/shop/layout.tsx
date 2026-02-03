@@ -14,6 +14,10 @@ import {
 } from '@/components/impact'
 import { CartProvider, useCart } from '@/lib/shop/CartContext'
 import { formatPrice, type ShopifyProduct } from '@/lib/shopify/storefront-client'
+import { 
+  mainNavigation as syncedMainNavigation, 
+  footerSections as syncedFooterSections 
+} from '@/content/shopify-content'
 
 /**
  * Shop Layout
@@ -26,10 +30,13 @@ import { formatPrice, type ShopifyProduct } from '@/lib/shopify/storefront-clien
  * - Search drawer
  * - Page content
  * - Site footer with newsletter and links
+ * 
+ * Navigation is now dynamically loaded from Shopify via content/shopify-content.ts
+ * Run scripts/sync-shopify-content.ts to update the navigation from Shopify
  */
 
-// Navigation items for the header menu
-const shopNavigation = [
+// Use synced navigation from Shopify, with fallback to default
+const shopNavigation = syncedMainNavigation.length > 0 ? syncedMainNavigation : [
   { 
     label: 'Shop', 
     href: '/shop',
@@ -52,8 +59,8 @@ const shopNavigation = [
   { label: 'Contact', href: '/contact' },
 ]
 
-// Footer sections
-const footerSections = [
+// Use synced footer sections from Shopify, with fallback to default
+const footerSections = syncedFooterSections.length > 0 ? syncedFooterSections : [
   {
     title: 'Street Collector',
     links: [

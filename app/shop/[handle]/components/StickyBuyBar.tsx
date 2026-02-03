@@ -62,10 +62,15 @@ export function StickyBuyBar({
     <div
       className={cn(
         'fixed bottom-0 left-0 right-0 z-40',
-        'bg-white border-t border-[#1a1a1a]/10 shadow-xl',
+        'bg-white/95 backdrop-blur-xl border-t border-[#1a1a1a]/10',
+        'shadow-[0_-4px_24px_rgba(0,0,0,0.12)]',
         'transition-transform duration-300 ease-out',
         isVisible ? 'translate-y-0' : 'translate-y-full'
       )}
+      style={{
+        backdropFilter: 'blur(20px) saturate(180%)',
+        WebkitBackdropFilter: 'blur(20px) saturate(180%)',
+      }}
     >
       <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-12 py-3 sm:py-4">
         <div className="flex items-center gap-3 sm:gap-4">

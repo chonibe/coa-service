@@ -120,7 +120,10 @@ function AccordionItemComponent({ item, isOpen, onToggle }: AccordionItemCompone
       </button>
       
       <div
-        className="overflow-hidden transition-all duration-300 ease-out"
+        className={cn(
+          'overflow-hidden transition-all duration-300 ease-out',
+          isOpen && 'animate-in fade-in-50'
+        )}
         style={{ height }}
       >
         <div ref={contentRef} className="pb-4">

@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { cn } from '@/lib/utils'
 import { Button } from './Button'
 import { Container } from './Container'
+import { useScrollHeader, useCartBadgeAnimation } from '@/lib/animations/useScrollHeader'
 
 /**
  * Impact Theme Header
@@ -14,6 +15,12 @@ import { Container } from './Container'
  * - Text color: #ffba94 (peach/salmon accent)
  * - Layout: Menu (left), Logo (center), Search/Login/Cart (right)
  * - Height: 64px mobile, 80px desktop
+ * 
+ * Enhanced with GSAP scroll effects:
+ * - Progressive backdrop blur on scroll
+ * - Logo scale animation (1 → 0.85)
+ * - Hide/show on scroll direction
+ * - Cart badge pop animation
  */
 
 // Default logo URLs from Shopify CDN
@@ -36,6 +43,10 @@ export interface HeaderProps {
   onLoginClick?: () => void
   onMenuClick?: () => void
   className?: string
+  /** Enable scroll-based effects (blur, logo scale, hide/show) */
+  enableScrollEffects?: boolean
+  /** Hide header when scrolling down */
+  hideOnScroll?: boolean
 }
 
 const Header = React.forwardRef<HTMLElement, HeaderProps>(
@@ -51,20 +62,75 @@ const Header = React.forwardRef<HTMLElement, HeaderProps>(
       onLoginClick,
       onMenuClick,
       className,
+      enableScrollEffects = true,
+      hideOnScroll = false,
     },
     ref
   ) => {
     const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false)
+    const prevCartCount = React.useRef(cartCount)
+    
+    // Scroll effects hook
+    const { 
+      headerRef, 
+      logoRef, 
+      isScrolled, 
+      isHidden,
+      scrollProgress 
+    } = useScrollHeader({
+      threshold: 80,
+      hideOnScroll,
+      progressiveBlur: enableScrollEffects,
+      logoScale: enableScrollEffects,
+      minLogoScale: 0.85,
+    })
+    
+    // Cart badge animation hook
+    const { badgeRef, triggerPop, triggerPulse } = useCartBadgeAnimation()
+    
+    // Trigger badge animation when cart count changes
+    React.useEffect(() => {
+      if (cartCount > prevCartCount.current) {
+        triggerPop()
+      } else if (cartCount !== prevCartCount.current && cartCount > 0) {
+        triggerPulse()
+      }
+      prevCartCount.current = cartCount
+    }, [cartCount, triggerPop, triggerPulse])
+    
+    // Merge refs
+    const mergedRef = React.useMemo(() => {
+      return (node: HTMLElement | null) => {
+        // Set external ref
+        if (typeof ref === 'function') {
+          ref(node)
+        } else if (ref) {
+          ref.current = node
+        }
+        // Set internal ref for scroll effects
+        ;(headerRef as React.MutableRefObject<HTMLElement | null>).current = node
+      }
+    }, [ref, headerRef])
     
     return (
       <header
-        ref={ref}
+        ref={mergedRef}
         className={cn(
           'sticky top-0 z-50',
           'bg-[#390000]', // Impact theme header background
           'border-b border-[#ffba94]/10',
+          // Scroll-based hide/show transition
+          hideOnScroll && 'transition-transform duration-300',
+          isHidden && hideOnScroll && '-translate-y-full',
+          // Add subtle shadow when scrolled
+          isScrolled && 'shadow-lg shadow-black/20',
           className
         )}
+        style={enableScrollEffects ? {
+          // Initial backdrop filter (will be animated by GSAP)
+          backdropFilter: `blur(${scrollProgress * 20}px) saturate(${100 + scrollProgress * 80}%)`,
+          WebkitBackdropFilter: `blur(${scrollProgress * 20}px) saturate(${100 + scrollProgress * 80}%)`,
+        } : undefined}
       >
         <Container maxWidth="default" paddingX="gutter">
           <div className="flex items-center justify-between h-16 sm:h-20">
@@ -116,19 +182,24 @@ const Header = React.forwardRef<HTMLElement, HeaderProps>(
               className="absolute left-1/2 transform -translate-x-1/2 hover:opacity-80 transition-opacity"
               aria-label="Street Collector - Home"
             >
-              {logo ? (
-                logo
-              ) : logoSrc ? (
-                <img 
-                  src={logoSrc} 
-                  alt="Street Collector" 
-                  className="h-6 sm:h-8 lg:h-10 w-auto"
-                />
-              ) : (
-                <span className="font-heading text-xl sm:text-2xl font-semibold tracking-[-0.02em] whitespace-nowrap text-[#ffba94]">
-                  Street Collector
-                </span>
-              )}
+              <span 
+                ref={logoRef as React.RefObject<HTMLSpanElement>}
+                className="inline-block origin-center"
+              >
+                {logo ? (
+                  logo
+                ) : logoSrc ? (
+                  <img 
+                    src={logoSrc} 
+                    alt="Street Collector" 
+                    className="h-6 sm:h-8 lg:h-10 w-auto"
+                  />
+                ) : (
+                  <span className="font-heading text-xl sm:text-2xl font-semibold tracking-[-0.02em] whitespace-nowrap text-[#ffba94]">
+                    Street Collector
+                  </span>
+                )}
+              </span>
             </Link>
             
             {/* Right: Icons (Search, Login, Cart) */}
@@ -226,9 +297,12 @@ const Header = React.forwardRef<HTMLElement, HeaderProps>(
                   />
                 </svg>
                 
-                {/* Cart count badge - yellow accent */}
+                {/* Cart count badge - yellow accent with pop animation */}
                 {cartCount > 0 && (
-                  <span className="absolute top-0.5 right-0.5 flex items-center justify-center min-w-[18px] h-[18px] px-1 text-[10px] font-bold bg-[#f0c417] text-[#1a1a1a] rounded-full">
+                  <span 
+                    ref={badgeRef as React.RefObject<HTMLSpanElement>}
+                    className="absolute top-0.5 right-0.5 flex items-center justify-center min-w-[18px] h-[18px] px-1 text-[10px] font-bold bg-[#f0c417] text-[#1a1a1a] rounded-full"
+                  >
                     {cartCount > 99 ? '99+' : cartCount}
                   </span>
                 )}

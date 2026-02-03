@@ -4,8 +4,8 @@
  * Reusable components for the product detail page.
  */
 
-export { ProductGallery } from './ProductGallery'
-export type { ProductGalleryProps, ProductImage } from './ProductGallery'
+export { ProductGallery, convertShopifyMedia } from './ProductGallery'
+export type { ProductGalleryProps, ProductImage, ProductMedia } from './ProductGallery'
 
 export { ProductInfo } from './ProductInfo'
 export type { ProductInfoProps } from './ProductInfo'
@@ -14,3 +14,7 @@ export { ProductAccordion, streetLampAccordionItems, artworkAccordionItems } fro
 export type { ProductAccordionProps, AccordionItem } from './ProductAccordion'
 
 export { StickyBuyBar } from './StickyBuyBar'
+
+export { ProductSeriesInfo } from './ProductSeriesInfo'
+
+export { EditionInfo } from './EditionInfo'
