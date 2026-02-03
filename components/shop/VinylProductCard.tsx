@@ -59,8 +59,8 @@ export function VinylProductCard({
   const createdDate = new Date(product.createdAt || '')
   const isNew = (Date.now() - createdDate.getTime()) < 30 * 24 * 60 * 60 * 1000
   
-  // Check stock level
-  const firstVariant = product.variants.edges[0]?.node
+  // Check stock level - safely handle missing variants
+  const firstVariant = product.variants?.edges?.[0]?.node
   const inventoryQuantity = (firstVariant as any)?.inventoryQuantity ?? null
   const isLowStock = inventoryQuantity !== null && inventoryQuantity > 0 && inventoryQuantity <= 5
 

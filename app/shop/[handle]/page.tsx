@@ -273,7 +273,7 @@ export default function ProductPage() {
     notFound()
   }
 
-  const images = product.images.edges.map(({ node }) => node)
+  const images = product.images?.edges?.map(({ node }) => node) || []
   const onSale = isOnSale(product)
   
   // Determine if this is the Street Lamp product
@@ -576,7 +576,7 @@ export default function ProductPage() {
                       <VinylProductCard
                         product={relatedProduct}
                         onQuickAdd={() => {
-                          const variant = relatedProduct.variants.edges[0]?.node
+                          const variant = relatedProduct.variants?.edges?.[0]?.node
                           if (variant) {
                             cart.addItem({
                               productId: relatedProduct.id,
