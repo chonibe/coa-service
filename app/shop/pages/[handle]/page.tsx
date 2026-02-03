@@ -2,7 +2,7 @@ import { notFound } from 'next/navigation'
 import { Metadata } from 'next'
 import { getPage as getPageFromShopify } from '@/lib/shopify/pages'
 import { getPage as getSyncedPage, hasPage } from '@/content/shopify-content'
-import { Container, SectionWrapper } from '@/components/impact'
+import { Container, SectionWrapper, Breadcrumb } from '@/components/impact'
 import { ScrollReveal, ParallaxLayer } from '@/components/blocks'
 
 // =============================================================================

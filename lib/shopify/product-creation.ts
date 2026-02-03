@@ -628,3 +628,30 @@ export async function createShopifyProduct(
   }
 }
 
+/**
+ * TODO: Implement barcode update functionality
+ * Updates all products with generated barcodes
+ */
+export async function updateAllProductsWithBarcodes(limit: number = 100): Promise<any> {
+  console.warn("updateAllProductsWithBarcodes is not yet implemented")
+  return {
+    success: true,
+    message: "Barcode update functionality not yet implemented",
+    processed: 0,
+    limit
+  }
+}
+
+/**
+ * TODO: Implement barcode update functionality
+ * Updates variants for a specific product with generated barcodes
+ */
+export async function updateProductVariantsWithBarcodes(productId: string): Promise<any> {
+  console.warn("updateProductVariantsWithBarcodes is not yet implemented")
+  return {
+    success: true,
+    message: "Barcode update functionality not yet implemented",
+    productId
+  }
+}
+

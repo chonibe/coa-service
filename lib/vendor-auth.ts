@@ -340,6 +340,40 @@ export const __test__ = {
   EMAIL_VENDOR_OVERRIDES,
 }
 
+/**
+ * Gets the authenticated vendor from the current request
+ * Returns vendor data including id, vendor_name, display_name, and profile_image_url
+ */
+export async function getVendorFromRequest(): Promise<VendorRow | null> {
+  try {
+    const supabase = serviceClient()
+    
+    // Get the current authenticated user
+    const { data: { user }, error: authError } = await supabase.auth.getUser()
+    
+    if (authError || !user) {
+      return null
+    }
+    
+    // Find vendor user by auth_id
+    const vendorUser = await findVendorUserByAuthId(user.id)
+    
+    if (!vendorUser) {
+      return null
+    }
+    
+    // Get full vendor data
+    const { data: vendor } = await selectVendors()
+      .eq("id", vendorUser.vendor_id)
+      .maybeSingle<VendorRow>()
+    
+    return vendor ?? null
+  } catch (error) {
+    console.error("Error getting vendor from request:", error)
+    return null
+  }
+}
+
 export const sanitizeRedirectTarget = (
   candidate: string | null | undefined,
   origin: string,
