@@ -239,19 +239,38 @@ const SearchDrawer = React.forwardRef<HTMLDivElement, SearchDrawerProps>(
           <div className="max-h-[60vh] overflow-y-auto">
             {hasSearched && !hasResults && !loading && (
               <div className="p-8 text-center">
-                <p className="text-[#1a1a1a]/60">
-                  No results found for "{query}"
+                <div className="inline-flex items-center justify-center w-16 h-16 bg-[#1a1a1a]/5 rounded-full mb-4">
+                  <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#1a1a1a" strokeWidth="1.5">
+                    <circle cx="11" cy="11" r="8" />
+                    <path d="M21 21l-4.35-4.35" />
+                  </svg>
+                </div>
+                <h3 className="font-heading text-lg font-semibold text-[#1a1a1a] mb-2">
+                  No results found
+                </h3>
+                <p className="text-sm text-[#1a1a1a]/60">
+                  No results for "{query}"
+                </p>
+                <p className="text-sm text-[#1a1a1a]/50 mt-1">
+                  Try different keywords or check your spelling
                 </p>
               </div>
             )}
 
             {hasResults && (
               <div className="p-4">
+                {/* Results count */}
+                <div className="mb-4 text-sm text-[#1a1a1a]/60">
+                  {results.products.length + results.collections.length === 1
+                    ? `1 result for "${query}"`
+                    : `${results.products.length + results.collections.length} results for "${query}"`}
+                </div>
+                
                 {/* Collections */}
                 {results.collections.length > 0 && (
                   <div className="mb-6">
                     <h3 className="text-xs font-medium uppercase tracking-wider text-[#1a1a1a]/50 mb-3">
-                      Collections
+                      Collections ({results.collections.length})
                     </h3>
                     <div className="space-y-2">
                       {results.collections.map((collection) => (
@@ -283,7 +302,7 @@ const SearchDrawer = React.forwardRef<HTMLDivElement, SearchDrawerProps>(
                 {results.products.length > 0 && (
                   <div>
                     <h3 className="text-xs font-medium uppercase tracking-wider text-[#1a1a1a]/50 mb-3">
-                      Artworks
+                      Artworks ({results.products.length})
                     </h3>
                     <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
                       {results.products.map((product) => (

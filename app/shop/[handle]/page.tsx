@@ -315,6 +315,40 @@ export default function ProductPage() {
                 </div>
               </div>
 
+              {/* Stock Status & Shipping Info */}
+              <div className="space-y-2 text-sm">
+                {/* Stock status */}
+                {product.availableForSale && selectedVariant?.availableForSale && (
+                  <div className="flex items-center gap-2 text-[#0a8754]">
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                      <path d="M13.3337 4L6.00033 11.3333L2.66699 8" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>
+                    <span>In stock</span>
+                  </div>
+                )}
+                {!product.availableForSale && (
+                  <div className="flex items-center gap-2 text-[#f83a3a]">
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                      <circle cx="8" cy="8" r="7" stroke="currentColor" strokeWidth="2"/>
+                      <path d="M8 4V8M8 11H8.01" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+                    </svg>
+                    <span>Out of stock</span>
+                  </div>
+                )}
+                
+                {/* Shipping info */}
+                <p className="text-[#1a1a1a]/60">
+                  Free shipping on orders over $75
+                </p>
+                
+                {/* SKU */}
+                {selectedVariant?.sku && (
+                  <p className="text-[#1a1a1a]/50">
+                    SKU: {selectedVariant.sku}
+                  </p>
+                )}
+              </div>
+
               {/* Variant Options - Pill Style Selector */}
               {product.options.map((option) => {
                 if (option.values.length <= 1 && option.values[0] === 'Default Title') {
@@ -401,6 +435,11 @@ export default function ProductPage() {
                     'Add to cart'
                   )}
                 </button>
+                
+                {/* Tax & Shipping Notice */}
+                <p className="text-xs text-center text-[#1a1a1a]/60">
+                  Taxes and shipping calculated at checkout
+                </p>
               </div>
 
               {/* Product Accordions */}

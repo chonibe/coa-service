@@ -216,14 +216,32 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
       <SectionWrapper spacing="md" background="default">
         <Container maxWidth="default">
           {products.length === 0 ? (
-            <div className="text-center py-12">
-              <p className="text-lg text-[#1a1a1a]/60">No artworks found.</p>
-              <Link href="/shop" className="mt-4 inline-block">
-                <Button variant="outline">View All Artworks</Button>
+            <div className="text-center py-16">
+              <div className="inline-flex items-center justify-center w-16 h-16 bg-[#1a1a1a]/5 rounded-full mb-6">
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#1a1a1a" strokeWidth="1.5">
+                  <rect x="3" y="3" width="7" height="7" rx="1" />
+                  <rect x="14" y="3" width="7" height="7" rx="1" />
+                  <rect x="14" y="14" width="7" height="7" rx="1" />
+                  <rect x="3" y="14" width="7" height="7" rx="1" />
+                </svg>
+              </div>
+              <h2 className="font-heading text-2xl font-semibold text-[#1a1a1a] mb-2">
+                No products found
+              </h2>
+              <p className="text-[#1a1a1a]/60 mb-6 max-w-md mx-auto">
+                Try adjusting your filters or search terms
+              </p>
+              <Link href="/shop">
+                <Button variant="primary">View All Artworks</Button>
               </Link>
             </div>
           ) : (
             <>
+              {/* Product count */}
+              <div className="mb-6 text-sm text-[#1a1a1a]/60">
+                Showing {products.length} {products.length === 1 ? 'product' : 'products'}
+              </div>
+              
               {/* Product grid: 2 cols on mobile, 3 on desktop (matching live site) */}
               <div className="grid grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 lg:gap-8">
                 {products.map((product, index) => (
