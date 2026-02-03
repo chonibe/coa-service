@@ -36,9 +36,6 @@ export interface SearchDrawerProps {
 const RECENT_SEARCHES_KEY = 'street-collector-recent-searches'
 const MAX_RECENT_SEARCHES = 5
 
-const RECENT_SEARCHES_KEY = 'street-collector-recent-searches'
-const MAX_RECENT_SEARCHES = 5
-
 const SearchDrawer = React.forwardRef<HTMLDivElement, SearchDrawerProps>(
   (
     {
