@@ -39,11 +39,11 @@ import {
 const defaultNavigation = [
   { 
     label: 'Shop', 
-    href: '/shop',
+    href: '/shop/products',
     children: [
-      { label: 'All Artworks', href: '/shop' },
-      { label: 'New Releases', href: '/shop?collection=new-releases' },
-      { label: 'Best Sellers', href: '/shop?collection=best-sellers' },
+      { label: 'All Artworks', href: '/shop/products' },
+      { label: 'New Releases', href: '/shop/products?collection=new-releases' },
+      { label: 'Best Sellers', href: '/shop/products?collection=best-sellers' },
       { label: 'Street Lamp', href: '/shop/street_lamp' },
     ]
   },
