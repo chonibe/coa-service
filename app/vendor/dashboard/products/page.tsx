@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, Button, Badg
 import { Skeleton } from "@/components/ui"
 import { ProductTable } from "../components/product-table"
 import { useVendorData } from "@/hooks/use-vendor-data"
-import { Plus, Package, Clock, XCircle, Trash2, Loader2, Sparkles, AlertCircle, Lock, ArrowRight, Crown, Image as ImageIcon, GripVertical } from "lucide-react"
+import { Plus, Package, Clock, XCircle, Trash2, Loader2, Sparkles, AlertCircle, Lock, ArrowRight, Crown, Image as ImageIcon, GripVertical, FileText } from "lucide-react"
 import {
   DndContext,
   closestCenter,
@@ -1429,6 +1429,19 @@ export default function ProductsPage() {
                                 <div>Published to Shopify</div>
                               )}
                             </div>
+                            {/* Edit Artwork Page button - show for all submissions */}
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                router.push(`/artwork-editor/${submission.id}`)
+                              }}
+                              title="Edit Artwork Page"
+                            >
+                              <FileText className="h-4 w-4 mr-1" />
+                              Edit Page
+                            </Button>
                             {canEdit && (
                               <Button
                                 variant="outline"

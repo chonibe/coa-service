@@ -193,7 +193,7 @@ export function ImmersiveVideoBlock({ title, contentUrl, artworkId }: ImmersiveV
                     <motion.div
                       whileHover={{ scale: 1.1 }}
                       whileTap={{ scale: 0.95 }}
-                      className="bg-white/90 dark:bg-black/90 rounded-full p-6 shadow-2xl group-hover:bg-primary group-hover:text-primary-foreground transition-colors"
+                      className="bg-white/90 rounded-full p-6 shadow-2xl group-hover:bg-blue-600 group-hover:text-white transition-colors"
                     >
                       <Play className="h-12 w-12 fill-current" />
                     </motion.div>

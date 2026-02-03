@@ -148,7 +148,7 @@ export function ProductTable({ products }: ProductTableProps) {
                       asChild
                       title="Edit Artwork Page"
                     >
-                      <Link href={`/vendor/dashboard/artwork-pages/by-handle/${product.handle}`}>
+                      <Link href={`/artwork-editor/${product.id}`}>
                         <FileText className="h-4 w-4" />
                         <span className="sr-only">Edit Artwork Page</span>
                       </Link>

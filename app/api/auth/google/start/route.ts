@@ -64,9 +64,15 @@ export async function GET(request: NextRequest) {
     )
   }
 
-  // Automatically request Gmail scopes for admin redirects or when explicitly requested
+  // Only request Gmail scopes for explicit admin login or when gmail=true is set
+  // This ensures collectors/vendors never get Gmail permission prompts
+  const isAdminLogin = searchParams.get("admin") === "true"
   const isAdminRedirect = redirectParam?.startsWith("/admin/")
-  const requestGmailScopes = gmailParam || isAdminRedirect
+  
+  // Gmail scopes are ONLY requested when:
+  // 1. Explicitly requested via gmail=true param, OR
+  // 2. This is an admin login (admin=true param) AND redirecting to admin portal
+  const requestGmailScopes = gmailParam || (isAdminLogin && isAdminRedirect)
 
   // Build OAuth options
   const oauthOptions: {

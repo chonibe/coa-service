@@ -1,136 +1,188 @@
 "use client"
 
-import { useState, useCallback } from "react"
-import { PenTool, Upload, X } from "lucide-react"
+import { useState, useCallback, useEffect } from "react"
+import { PenTool, Upload, X, Loader2 } from "lucide-react"
 import { Button, Textarea } from "@/components/ui"
 import Image from "next/image"
 
 interface ArtistNoteEditorProps {
-  content: string
-  signatureUrl?: string
-  onUpdate: (updates: { content?: string; signature_url?: string }) => void
-  onFileUpload: (file: File, type: string) => void
+  blockId: number
+  config: {
+    content?: string
+    show_signature?: boolean
+    signature_url?: string
+  }
+  onChange: (config: any) => void
 }
 
 export default function ArtistNoteEditor({
-  content: initialContent,
-  signatureUrl,
-  onUpdate,
-  onFileUpload
+  blockId,
+  config,
+  onChange
 }: ArtistNoteEditorProps) {
-  const [content, setContent] = useState(initialContent || "")
+  const [content, setContent] = useState(config.content || "")
+  const [isUploadingSignature, setIsUploadingSignature] = useState(false)
+  const signatureUrl = config.signature_url
 
-  const handleContentChange = useCallback((e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    const newContent = e.target.value
-    setContent(newContent)
-    setTimeout(() => onUpdate({ content: newContent }), 500)
-  }, [onUpdate])
+  // Debounced content update
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (content !== config.content) {
+        onChange({ ...config, content })
+      }
+    }, 300)
+    return () => clearTimeout(timer)
+  }, [content])
 
-  const handleSignatureUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleSignatureUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (file) {
-      onFileUpload(file, "signature")
+      setIsUploadingSignature(true)
+      try {
+        const formData = new FormData()
+        formData.append("file", file)
+        formData.append("type", "image")
+
+        const response = await fetch("/api/vendor/media-library/upload", {
+          method: "POST",
+          credentials: "include",
+          body: formData,
+        })
+
+        if (!response.ok) {
+          throw new Error("Upload failed")
+        }
+
+        const data = await response.json()
+        onChange({ ...config, signature_url: data.file.url })
+      } catch (error) {
+        console.error("Failed to upload signature:", error)
+      } finally {
+        setIsUploadingSignature(false)
+      }
     }
     e.target.value = ""
   }
 
   const removeSignature = () => {
-    onUpdate({ signature_url: "" })
+    onChange({ ...config, signature_url: "" })
   }
 
-  return (
-    <div className="space-y-6">
-      <div className="flex items-start gap-3">
-        <PenTool className="h-6 w-6 text-amber-400 flex-shrink-0 mt-1" />
-        <div className="flex-1">
-          <h3 className="text-lg font-semibold text-white mb-1">Artist Note</h3>
-          <p className="text-sm text-gray-400">A personal letter to your collectors</p>
-        </div>
-      </div>
+  // Has content - show letter-style preview
+  if (content || signatureUrl) {
+    return (
+      <div className="space-y-4">
+        {/* Collector-style Letter Preview */}
+        <div className="bg-gradient-to-br from-rose-50 to-amber-50 rounded-2xl p-6 md:p-8 border border-rose-100 shadow-sm">
+          {/* Letter Content - Editable but styled like the collector view */}
+          <div className="max-w-2xl mx-auto">
+            <Textarea
+              value={content}
+              onChange={(e) => setContent(e.target.value)}
+              placeholder="Dear Collector,
 
-      {/* Note Content */}
-      <div className="space-y-2">
-        <label className="text-sm font-medium text-gray-300">Note</label>
-        <Textarea
-          placeholder="Dear Collector,&#10;&#10;When I set out to create this piece, I wanted to capture the feeling of...&#10;&#10;[Write from the heart - share your inspiration, process, or message]"
-          value={content}
-          onChange={handleContentChange}
-          rows={12}
-          maxLength={2000}
-          className="bg-gray-700 border-gray-600 text-white resize-none font-serif text-base"
-        />
-        <p className="text-xs text-gray-500 text-right">
+When I set out to create this piece, I wanted to capture...
+
+Write from the heart - this is your personal letter to those who collect your work."
+              maxLength={2000}
+              className="w-full min-h-[200px] bg-transparent border-0 focus:ring-0 resize-none font-serif text-lg text-gray-800 leading-relaxed placeholder:text-gray-400"
+              style={{ fontFamily: 'Georgia, serif' }}
+            />
+            
+            {/* Signature Section */}
+            <div className="mt-6 flex justify-end">
+              {signatureUrl ? (
+                <div className="group relative">
+                  <div className="relative h-16 w-40">
+                    <Image
+                      src={signatureUrl}
+                      alt="Artist signature"
+                      fill
+                      className="object-contain object-right"
+                    />
+                  </div>
+                  <button
+                    onClick={removeSignature}
+                    className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-red-500 text-white opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center"
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                </div>
+              ) : (
+                <button
+                  onClick={() => document.getElementById(`signature-upload-${blockId}`)?.click()}
+                  disabled={isUploadingSignature}
+                  className="text-rose-600 hover:text-rose-700 text-sm font-medium flex items-center gap-1 py-2 px-4 rounded-lg hover:bg-rose-50 transition-colors"
+                >
+                  {isUploadingSignature ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      Uploading...
+                    </>
+                  ) : (
+                    <>
+                      <Upload className="w-4 h-4" />
+                      Add Signature
+                    </>
+                  )}
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Character count */}
+        <p className="text-xs text-gray-400 text-right">
           {content.length}/2000 characters
         </p>
-      </div>
-
-      {/* Signature */}
-      <div className="space-y-3">
-        <label className="text-sm font-medium text-gray-300">Signature</label>
-        
-        {signatureUrl ? (
-          <div className="bg-gray-800 rounded-lg p-4 border border-gray-700">
-            <div className="flex items-center justify-between mb-3">
-              <p className="text-sm text-gray-400">Current signature:</p>
-              <Button
-                onClick={removeSignature}
-                variant="ghost"
-                size="sm"
-                className="text-red-400 hover:text-red-300"
-              >
-                <X className="h-4 w-4 mr-1" />
-                Remove
-              </Button>
-            </div>
-            <div className="relative h-24 bg-white dark:bg-gray-900 rounded flex items-center justify-center">
-              <Image
-                src={signatureUrl}
-                alt="Signature"
-                width={192}
-                height={96}
-                className="object-contain max-w-full max-h-full"
-              />
-            </div>
-            <Button
-              onClick={() => document.getElementById("signature-upload")?.click()}
-              variant="outline"
-              size="sm"
-              className="w-full mt-3 bg-gray-700 border-gray-600"
-            >
-              <Upload className="h-4 w-4 mr-2" />
-              Replace Signature
-            </Button>
-          </div>
-        ) : (
-          <Button
-            onClick={() => document.getElementById("signature-upload")?.click()}
-            variant="outline"
-            className="w-full bg-gray-800 border-dashed border-2 border-gray-600 hover:border-amber-500 hover:bg-gray-700 py-6"
-          >
-            <Upload className="h-5 w-5 mr-2" />
-            Upload Signature Image
-          </Button>
-        )}
 
         <input
-          id="signature-upload"
+          id={`signature-upload-${blockId}`}
           type="file"
           accept="image/*"
           onChange={handleSignatureUpload}
           className="hidden"
         />
+      </div>
+    )
+  }
+
+  // Empty state
+  return (
+    <div className="space-y-4">
+      <div className="bg-gradient-to-br from-rose-50 to-amber-50 rounded-2xl p-8 border-2 border-dashed border-rose-200 text-center">
+        <div className="w-16 h-16 rounded-full bg-rose-100 flex items-center justify-center mx-auto mb-4">
+          <PenTool className="w-8 h-8 text-rose-600" />
+        </div>
         
-        <p className="text-xs text-gray-500">
-          PNG or JPG image of your signature (transparent background recommended)
+        <h4 className="text-lg font-semibold text-gray-900 mb-1">Personal Note</h4>
+        <p className="text-sm text-gray-600 mb-6">
+          Write a letter to your collectors
+        </p>
+        
+        {/* Quick-start textarea */}
+        <Textarea
+          value={content}
+          onChange={(e) => setContent(e.target.value)}
+          placeholder="Dear Collector, 
+
+I created this piece to..."
+          className="w-full min-h-[120px] bg-white border-rose-200 focus:border-rose-400 resize-none font-serif text-base"
+          style={{ fontFamily: 'Georgia, serif' }}
+        />
+        
+        <p className="text-xs text-gray-400 mt-4">
+          Share your inspiration, process, or a heartfelt message
         </p>
       </div>
 
-      {/* Tip */}
-      <div className="bg-blue-900/20 border border-blue-500/30 rounded-lg p-4">
-        <p className="text-sm text-blue-300">
-          💡 <strong>Tip:</strong> Write authentically. Collectors appreciate hearing the story behind the work in your own voice. Think of it as a letter you'd write to someone you're sharing your art with.
-        </p>
-      </div>
+      <input
+        id={`signature-upload-${blockId}`}
+        type="file"
+        accept="image/*"
+        onChange={handleSignatureUpload}
+        className="hidden"
+      />
     </div>
   )
 }

@@ -9,6 +9,9 @@ import {
 import { createClient } from "@supabase/supabase-js";
 import * as dotenv from "dotenv";
 import * as path from "path";
+import { determineLineItemStatus, getRefundedLineItemIds, isOrderCancelled } from "./lib/status-logic.js";
+import { getFilteredCollectorEditions, deduplicateOrders, filterActiveEditions } from "./lib/collector-editions.js";
+import type { ShopifyOrder, DatabaseLineItem, DataIntegrityIssue } from "./lib/types.js";
 
 // Load environment variables from .env.local in project root
 const currentFile = new URL(import.meta.url).pathname;
@@ -30,7 +33,7 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
 const server = new Server(
   {
-    name: "edition-verification-server",
+    name: "edition-ledger-server",
     version: "1.0.0",
   },
   {
@@ -120,6 +123,93 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
           },
         },
         required: ["product_id"],
+      },
+    },
+    {
+      name: "sync_order_line_items",
+      description: "Syncs line items from a Shopify order with proper status determination using centralized business logic",
+      inputSchema: {
+        type: "object",
+        properties: {
+          order: {
+            type: "object",
+            description: "The complete Shopify order object (including refunds)",
+          },
+          skip_editions: {
+            type: "boolean",
+            description: "Skip edition number assignment (default: false)",
+            default: false,
+          },
+        },
+        required: ["order"],
+      },
+    },
+    {
+      name: "mark_line_item_inactive",
+      description: "Explicitly marks a line item as inactive with audit trail in edition_events",
+      inputSchema: {
+        type: "object",
+        properties: {
+          line_item_id: {
+            type: "string",
+            description: "The line item ID to mark as inactive",
+          },
+          reason: {
+            type: "string",
+            description: "Reason for marking inactive",
+            enum: ["refunded", "restocked", "removed", "manual"],
+          },
+          notes: {
+            type: "string",
+            description: "Optional additional notes",
+          },
+        },
+        required: ["line_item_id", "reason"],
+      },
+    },
+    {
+      name: "get_collector_editions",
+      description: "Returns properly filtered editions for a collector with deduplication and status checks",
+      inputSchema: {
+        type: "object",
+        properties: {
+          collector_id: {
+            type: "string",
+            description: "Collector identifier (email, shopify_id, or public_id)",
+          },
+        },
+        required: ["collector_id"],
+      },
+    },
+    {
+      name: "reassign_editions",
+      description: "Triggers edition number reassignment for a product using the assign_edition_numbers RPC",
+      inputSchema: {
+        type: "object",
+        properties: {
+          product_id: {
+            type: "string",
+            description: "The product ID to reassign edition numbers for",
+          },
+        },
+        required: ["product_id"],
+      },
+    },
+    {
+      name: "validate_data_integrity",
+      description: "Audits data for inconsistencies like refunded-but-active items, duplicates, etc.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          product_id: {
+            type: "string",
+            description: "Optional product ID to limit validation scope",
+          },
+          collector_id: {
+            type: "string",
+            description: "Optional collector ID to limit validation scope",
+          },
+        },
       },
     },
   ],
@@ -381,6 +471,423 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
             {
               type: "text",
               text: JSON.stringify(result, null, 2),
+            },
+          ],
+        };
+      }
+
+      case "sync_order_line_items": {
+        const { order, skip_editions = false } = args as { order: ShopifyOrder; skip_editions?: boolean };
+        
+        const orderId = order.id.toString();
+        const orderName = order.name;
+        
+        // Get refunded line item IDs using centralized logic
+        const refundedIds = getRefundedLineItemIds(order);
+        
+        // Process each line item with centralized status logic
+        const dbLineItems: DatabaseLineItem[] = order.line_items.map((li) => {
+          const statusResult = determineLineItemStatus(order, li);
+          
+          return {
+            order_id: orderId,
+            order_name: orderName,
+            line_item_id: li.id.toString(),
+            product_id: li.product_id?.toString() || '',
+            variant_id: li.variant_id?.toString() || null,
+            name: li.title,
+            description: li.title,
+            quantity: li.quantity,
+            price: parseFloat(li.price.toString()),
+            sku: li.sku || null,
+            vendor_name: li.vendor || null,
+            fulfillment_status: li.fulfillment_status || null,
+            status: statusResult.status,
+            owner_email: order.email?.toLowerCase()?.trim() || null,
+            owner_name: order.customer?.first_name || order.customer?.last_name 
+              ? `${order.customer.first_name || ''} ${order.customer.last_name || ''}`.trim()
+              : null,
+            img_url: null,
+            created_at: order.created_at,
+            updated_at: new Date().toISOString(),
+            restocked: statusResult.isRestocked,
+            refund_status: statusResult.isRefunded ? 'refunded' : 'none',
+          };
+        });
+        
+        // Upsert line items to database
+        const { error: liError } = await supabase
+          .from('order_line_items_v2')
+          .upsert(dbLineItems, { onConflict: 'line_item_id' });
+        
+        if (liError) {
+          return {
+            content: [
+              {
+                type: "text",
+                text: `Error syncing line items: ${liError.message}`,
+              },
+            ],
+            isError: true,
+          };
+        }
+        
+        // Assign edition numbers if not skipped
+        if (!skip_editions) {
+          const productIds = Array.from(new Set(dbLineItems.map(li => li.product_id).filter(Boolean)));
+          
+          for (const pid of productIds) {
+            await supabase.rpc('assign_edition_numbers', { p_product_id: pid });
+          }
+        }
+        
+        return {
+          content: [
+            {
+              type: "text",
+              text: JSON.stringify({
+                success: true,
+                order_id: orderId,
+                order_name: orderName,
+                line_items_synced: dbLineItems.length,
+                line_items: dbLineItems.map(li => ({
+                  line_item_id: li.line_item_id,
+                  status: li.status,
+                  restocked: li.restocked,
+                  refund_status: li.refund_status,
+                })),
+              }, null, 2),
+            },
+          ],
+        };
+      }
+
+      case "mark_line_item_inactive": {
+        const { line_item_id, reason, notes } = args as { 
+          line_item_id: string; 
+          reason: 'refunded' | 'restocked' | 'removed' | 'manual';
+          notes?: string;
+        };
+        
+        // Get current state
+        const { data: beforeState, error: fetchError } = await supabase
+          .from('order_line_items_v2')
+          .select('*')
+          .eq('line_item_id', line_item_id)
+          .single();
+        
+        if (fetchError || !beforeState) {
+          return {
+            content: [
+              {
+                type: "text",
+                text: `Error: Line item not found - ${fetchError?.message || 'Not found'}`,
+              },
+            ],
+            isError: true,
+          };
+        }
+        
+        // Update to inactive
+        const { error: updateError } = await supabase
+          .from('order_line_items_v2')
+          .update({ 
+            status: 'inactive',
+            updated_at: new Date().toISOString(),
+          })
+          .eq('line_item_id', line_item_id);
+        
+        if (updateError) {
+          return {
+            content: [
+              {
+                type: "text",
+                text: `Error updating line item: ${updateError.message}`,
+              },
+            ],
+            isError: true,
+          };
+        }
+        
+        // Log to edition_events for audit trail (if edition exists)
+        if (beforeState.product_id && beforeState.edition_number) {
+          const { error: eventError } = await supabase
+            .from('edition_events')
+            .insert({
+              line_item_id,
+              product_id: beforeState.product_id,
+              edition_number: beforeState.edition_number,
+              event_type: 'status_changed',
+              event_data: {
+                reason,
+                notes,
+                before_status: beforeState.status,
+                after_status: 'inactive',
+                changed_by: 'mcp_server',
+              },
+              owner_name: beforeState.owner_name,
+              owner_email: beforeState.owner_email,
+              owner_id: beforeState.owner_id,
+              status: 'inactive',
+              created_at: new Date().toISOString(),
+              created_by: 'mcp_server',
+            });
+          
+          if (eventError) {
+            console.error('Failed to log edition event:', eventError);
+          }
+        }
+        
+        return {
+          content: [
+            {
+              type: "text",
+              text: JSON.stringify({
+                success: true,
+                line_item_id,
+                before_status: beforeState.status,
+                after_status: 'inactive',
+                reason,
+                notes,
+              }, null, 2),
+            },
+          ],
+        };
+      }
+
+      case "get_collector_editions": {
+        const { collector_id } = args as { collector_id: string };
+        
+        // Determine if it's email or ID
+        const isEmail = collector_id.includes('@');
+        
+        // Fetch orders with line items
+        let query = supabase
+          .from("orders")
+          .select(`
+            id,
+            processed_at,
+            customer_email,
+            customer_id,
+            order_name,
+            order_number,
+            fulfillment_status,
+            financial_status,
+            order_line_items_v2 (*)
+          `)
+          .not("fulfillment_status", "in", "(canceled,restocked)")
+          .not("financial_status", "in", "(voided,refunded)");
+        
+        if (isEmail) {
+          query = query.ilike('customer_email', collector_id);
+        } else {
+          query = query.eq('customer_id', collector_id);
+        }
+        
+        const { data: orders, error: ordersError } = await query.order("processed_at", { ascending: false });
+        
+        if (ordersError) {
+          return {
+            content: [
+              {
+                type: "text",
+                text: `Error fetching orders: ${ordersError.message}`,
+              },
+            ],
+            isError: true,
+          };
+        }
+        
+        // Use centralized filtering logic
+        const filteredEditions = getFilteredCollectorEditions(orders || []);
+        
+        return {
+          content: [
+            {
+              type: "text",
+              text: JSON.stringify({
+                success: true,
+                collector_id,
+                total_orders: orders?.length || 0,
+                total_editions: filteredEditions.length,
+                editions: filteredEditions.map(li => ({
+                  line_item_id: li.line_item_id,
+                  product_id: li.product_id,
+                  name: li.name,
+                  edition_number: li.edition_number,
+                  edition_total: li.edition_total,
+                  status: li.status,
+                  owner_email: li.owner_email,
+                  owner_name: li.owner_name,
+                })),
+              }, null, 2),
+            },
+          ],
+        };
+      }
+
+      case "reassign_editions": {
+        const { product_id } = args as { product_id: string };
+        
+        // Call the assign_edition_numbers RPC
+        const { data, error } = await supabase.rpc('assign_edition_numbers', { 
+          p_product_id: product_id 
+        });
+        
+        if (error) {
+          return {
+            content: [
+              {
+                type: "text",
+                text: `Error reassigning editions: ${error.message}`,
+              },
+            ],
+            isError: true,
+          };
+        }
+        
+        // Get count of editions assigned
+        const { data: editions, error: countError } = await supabase
+          .from('order_line_items_v2')
+          .select('line_item_id', { count: 'exact', head: true })
+          .eq('product_id', product_id)
+          .eq('status', 'active')
+          .not('edition_number', 'is', null);
+        
+        return {
+          content: [
+            {
+              type: "text",
+              text: JSON.stringify({
+                success: true,
+                product_id,
+                editions_assigned: editions || 0,
+              }, null, 2),
+            },
+          ],
+        };
+      }
+
+      case "validate_data_integrity": {
+        const { product_id, collector_id } = args as { product_id?: string; collector_id?: string };
+        
+        const issues: DataIntegrityIssue[] = [];
+        
+        // Build query for line items
+        let query = supabase
+          .from('order_line_items_v2')
+          .select(`
+            *,
+            orders!inner (
+              fulfillment_status,
+              financial_status
+            )
+          `);
+        
+        if (product_id) {
+          query = query.eq('product_id', product_id);
+        }
+        
+        if (collector_id) {
+          const isEmail = collector_id.includes('@');
+          if (isEmail) {
+            query = query.ilike('owner_email', collector_id);
+          } else {
+            query = query.eq('owner_id', collector_id);
+          }
+        }
+        
+        const { data: lineItems, error: fetchError } = await query;
+        
+        if (fetchError) {
+          return {
+            content: [
+              {
+                type: "text",
+                text: `Error: ${fetchError.message}`,
+              },
+            ],
+            isError: true,
+          };
+        }
+        
+        // Check for refunded but active items
+        (lineItems || []).forEach((li: any) => {
+          if (li.status === 'active' && li.refund_status === 'refunded') {
+            issues.push({
+              type: 'refunded_but_active',
+              line_item_id: li.line_item_id,
+              product_id: li.product_id,
+              description: `Line item ${li.line_item_id} is marked active but has refund_status='refunded'`,
+              severity: 'critical',
+            });
+          }
+          
+          if (li.status === 'active' && li.restocked === true) {
+            issues.push({
+              type: 'status_mismatch',
+              line_item_id: li.line_item_id,
+              product_id: li.product_id,
+              description: `Line item ${li.line_item_id} is marked active but restocked=true`,
+              severity: 'critical',
+            });
+          }
+          
+          const order = (li.orders as any);
+          if (li.status === 'active' && order) {
+            if (['refunded', 'voided'].includes(order.financial_status)) {
+              issues.push({
+                type: 'status_mismatch',
+                line_item_id: li.line_item_id,
+                product_id: li.product_id,
+                description: `Line item ${li.line_item_id} is active but order is ${order.financial_status}`,
+                severity: 'critical',
+              });
+            }
+          }
+        });
+        
+        // Check for duplicate edition numbers
+        if (product_id) {
+          const activeItems = (lineItems || []).filter((li: any) => 
+            li.status === 'active' && li.edition_number !== null
+          );
+          
+          const editionMap = new Map<number, string[]>();
+          activeItems.forEach((li: any) => {
+            const num = li.edition_number;
+            if (!editionMap.has(num)) {
+              editionMap.set(num, []);
+            }
+            editionMap.get(num)!.push(li.line_item_id);
+          });
+          
+          editionMap.forEach((lineItemIds, editionNum) => {
+            if (lineItemIds.length > 1) {
+              issues.push({
+                type: 'duplicate_edition',
+                product_id,
+                edition_number: editionNum,
+                description: `Edition #${editionNum} assigned to ${lineItemIds.length} line items: ${lineItemIds.join(', ')}`,
+                severity: 'critical',
+              });
+            }
+          });
+        }
+        
+        return {
+          content: [
+            {
+              type: "text",
+              text: JSON.stringify({
+                success: true,
+                issues_found: issues.length,
+                issues,
+                scope: {
+                  product_id: product_id || 'all',
+                  collector_id: collector_id || 'all',
+                },
+              }, null, 2),
             },
           ],
         };

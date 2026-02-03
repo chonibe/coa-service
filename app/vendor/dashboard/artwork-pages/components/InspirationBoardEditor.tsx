@@ -1,7 +1,7 @@
 "use client"
 
-import { useState } from "react"
-import { Lightbulb, Upload, Trash2, X } from "lucide-react"
+import { useState, useRef } from "react"
+import { Lightbulb, Upload, Trash2, Plus, X, Loader2, Maximize2 } from "lucide-react"
 import { Button, Textarea, Input } from "@/components/ui"
 import Image from "next/image"
 
@@ -9,13 +9,13 @@ interface InspirationBoardEditorProps {
   blockId: number
   config: {
     story?: string
-    images: Array<{
+    images?: Array<{
       url: string
       caption?: string
     }>
   }
   onChange: (config: any) => void
-  onImageUpload: () => void
+  onImageUpload?: () => void
 }
 
 export default function InspirationBoardEditor({
@@ -26,21 +26,67 @@ export default function InspirationBoardEditor({
 }: InspirationBoardEditorProps) {
   const [story, setStory] = useState(config.story || "")
   const [images, setImages] = useState(config.images || [])
+  const [isUploading, setIsUploading] = useState(false)
+  const [editingCaption, setEditingCaption] = useState<number | null>(null)
+  const [lightboxImage, setLightboxImage] = useState<number | null>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
-  const handleStoryChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    const newStory = e.target.value
-    setStory(newStory)
-    setTimeout(() => onChange({ ...config, story: newStory }), 500)
+  const handleImageUpload = () => {
+    if (onImageUpload) {
+      onImageUpload()
+    } else {
+      fileInputRef.current?.click()
+    }
   }
 
-  const addImage = (url: string) => {
-    const newImage = {
-      url,
-      caption: ""
+  const uploadImages = async (files: FileList) => {
+    setIsUploading(true)
+    try {
+      const uploadPromises = Array.from(files).map(async (file) => {
+        const formData = new FormData()
+        formData.append("file", file)
+        formData.append("type", "image")
+
+        const response = await fetch("/api/vendor/media-library/upload", {
+          method: "POST",
+          credentials: "include",
+          body: formData,
+        })
+
+        if (!response.ok) {
+          throw new Error("Upload failed")
+        }
+
+        const data = await response.json()
+        return {
+          url: data.file.url,
+          caption: ""
+        }
+      })
+
+      const newImages = await Promise.all(uploadPromises)
+      const updatedImages = [...images, ...newImages]
+      
+      setImages(updatedImages)
+      onChange({ ...config, images: updatedImages })
+    } catch (error) {
+      console.error("Failed to upload images:", error)
+    } finally {
+      setIsUploading(false)
     }
-    const newImages = [...images, newImage]
-    setImages(newImages)
-    onChange({ ...config, images: newImages })
+  }
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files
+    if (files && files.length > 0) {
+      uploadImages(files)
+    }
+    e.target.value = ""
+  }
+
+  const handleStoryChange = (newStory: string) => {
+    setStory(newStory)
+    onChange({ ...config, story: newStory })
   }
 
   const updateImageCaption = (index: number, caption: string) => {
@@ -55,108 +101,226 @@ export default function InspirationBoardEditor({
     const newImages = images.filter((_, i) => i !== index)
     setImages(newImages)
     onChange({ ...config, images: newImages })
+    setEditingCaption(null)
   }
 
-  return (
-    <div className="space-y-6">
-      <div className="flex items-start gap-3">
-        <Lightbulb className="h-6 w-6 text-yellow-400 flex-shrink-0 mt-1" />
-        <div className="flex-1">
-          <h3 className="text-lg font-semibold text-white mb-1">Inspiration Board</h3>
-          <p className="text-sm text-gray-400">Share your influences and references</p>
+  // Has images - show masonry-style preview
+  if (images.length > 0) {
+    return (
+      <div className="space-y-4">
+        {/* Collector-style Masonry Preview */}
+        <div className="bg-gradient-to-br from-amber-50 to-yellow-50 rounded-2xl p-4 border border-amber-100">
+          {/* Story at top */}
+          {story ? (
+            <p className="text-gray-700 mb-4 italic">"{story}"</p>
+          ) : (
+            <button
+              onClick={() => document.getElementById(`story-input-${blockId}`)?.focus()}
+              className="text-amber-600 hover:text-amber-700 text-sm mb-4 block"
+            >
+              + Add a story about your inspirations
+            </button>
+          )}
+
+          {/* Masonry Grid */}
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-2 auto-rows-auto">
+            {images.map((image, index) => {
+              // Alternate between different aspect ratios for visual interest
+              const aspectClass = index % 3 === 0 ? 'aspect-[4/5]' : index % 3 === 1 ? 'aspect-square' : 'aspect-[5/4]'
+              
+              return (
+                <div
+                  key={index}
+                  className={`relative ${aspectClass} rounded-xl overflow-hidden bg-gray-100 group cursor-pointer`}
+                  onClick={() => setEditingCaption(editingCaption === index ? null : index)}
+                >
+                  <Image
+                    src={image.url}
+                    alt={image.caption || `Inspiration ${index + 1}`}
+                    fill
+                    className="object-cover transition-transform group-hover:scale-105"
+                  />
+                  
+                  {/* Hover Overlay */}
+                  <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-all flex items-center justify-center">
+                    <div className="opacity-0 group-hover:opacity-100 transition-all flex gap-2">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          setLightboxImage(index)
+                        }}
+                        className="w-8 h-8 rounded-full bg-white/90 flex items-center justify-center hover:bg-white"
+                      >
+                        <Maximize2 className="w-4 h-4 text-gray-700" />
+                      </button>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          removeImage(index)
+                        }}
+                        className="w-8 h-8 rounded-full bg-red-500/90 flex items-center justify-center hover:bg-red-500"
+                      >
+                        <Trash2 className="w-4 h-4 text-white" />
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Caption Badge */}
+                  {image.caption && (
+                    <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-3 pt-6">
+                      <p className="text-xs text-white line-clamp-2">{image.caption}</p>
+                    </div>
+                  )}
+                </div>
+              )
+            })}
+
+            {/* Add More Button */}
+            <button
+              onClick={handleImageUpload}
+              disabled={isUploading}
+              className="aspect-square rounded-xl border-2 border-dashed border-amber-300 hover:border-amber-500 hover:bg-amber-50 flex flex-col items-center justify-center transition-all"
+            >
+              {isUploading ? (
+                <Loader2 className="w-6 h-6 text-amber-500 animate-spin" />
+              ) : (
+                <>
+                  <Plus className="w-6 h-6 text-amber-500 mb-1" />
+                  <span className="text-xs text-amber-600">Add</span>
+                </>
+              )}
+            </button>
+          </div>
         </div>
-      </div>
 
-      {/* Story */}
-      <div className="space-y-2">
-        <label className="text-sm font-medium text-gray-300">
-          Story <span className="text-gray-500">(optional)</span>
-        </label>
-        <Textarea
-          placeholder="These textures and colors guided my palette. The urban architecture inspired the geometric forms..."
-          value={story}
-          onChange={handleStoryChange}
-          rows={3}
-          className="bg-gray-700 border-gray-600 text-white resize-none"
-        />
-      </div>
-
-      {/* Images Grid */}
-      <div className="space-y-3">
-        <label className="text-sm font-medium text-gray-300">Images</label>
-        
-        {images.length > 0 && (
-          <div className="grid grid-cols-3 gap-3">
-            {images.map((image, index) => (
-              <div
-                key={index}
-                className="relative aspect-square rounded-lg overflow-hidden bg-gray-900 border border-gray-700 group"
-              >
+        {/* Inline Caption Editor */}
+        {editingCaption !== null && (
+          <div className="bg-white rounded-lg p-3 border border-gray-200 shadow-sm">
+            <div className="flex items-center gap-2 mb-2">
+              <div className="relative w-12 h-12 rounded overflow-hidden flex-shrink-0">
                 <Image
-                  src={image.url}
-                  alt={`Inspiration ${index + 1}`}
+                  src={images[editingCaption].url}
+                  alt=""
                   fill
                   className="object-cover"
                 />
-                
-                {/* Hover Overlay */}
-                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/60 transition-all flex flex-col items-center justify-center opacity-0 group-hover:opacity-100">
-                  <Button
-                    onClick={() => removeImage(index)}
-                    variant="ghost"
-                    size="sm"
-                    className="text-white hover:bg-red-600"
-                  >
-                    <Trash2 className="h-4 w-4 mr-1" />
-                    Remove
-                  </Button>
-                </div>
-
-                {/* Caption Badge */}
-                {image.caption && (
-                  <div className="absolute bottom-0 left-0 right-0 bg-black/80 p-2">
-                    <p className="text-xs text-white truncate">{image.caption}</p>
-                  </div>
-                )}
               </div>
-            ))}
+              <span className="text-sm text-gray-500">Image {editingCaption + 1}</span>
+              <button
+                onClick={() => setEditingCaption(null)}
+                className="ml-auto text-gray-400 hover:text-gray-600"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+            <Input
+              type="text"
+              placeholder="What inspired you about this?"
+              value={images[editingCaption].caption || ""}
+              onChange={(e) => updateImageCaption(editingCaption, e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && setEditingCaption(null)}
+              autoFocus
+              className="bg-gray-50"
+            />
           </div>
         )}
 
-        {/* Caption Inputs */}
-        {images.length > 0 && (
-          <div className="space-y-2 mt-4">
-            <label className="text-xs font-medium text-gray-400">Captions (optional)</label>
-            {images.map((image, index) => (
-              <Input
-                key={index}
-                type="text"
-                placeholder={`Caption for image #${index + 1}...`}
-                value={image.caption || ""}
-                onChange={(e) => updateImageCaption(index, e.target.value)}
-                className="bg-gray-700 border-gray-600 text-white text-sm"
+        {/* Story Input */}
+        <Textarea
+          id={`story-input-${blockId}`}
+          placeholder="Tell the story behind your inspirations..."
+          value={story}
+          onChange={(e) => handleStoryChange(e.target.value)}
+          rows={2}
+          className="bg-white border-gray-200 resize-none"
+        />
+
+        {/* Lightbox Modal */}
+        {lightboxImage !== null && (
+          <div 
+            className="fixed inset-0 z-50 bg-black/90 flex items-center justify-center p-4"
+            onClick={() => setLightboxImage(null)}
+          >
+            <button
+              onClick={() => setLightboxImage(null)}
+              className="absolute top-4 right-4 w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center"
+            >
+              <X className="w-6 h-6 text-white" />
+            </button>
+            <div className="relative max-w-4xl max-h-[80vh] w-full h-full">
+              <Image
+                src={images[lightboxImage].url}
+                alt={images[lightboxImage].caption || ''}
+                fill
+                className="object-contain"
               />
-            ))}
+            </div>
+            {images[lightboxImage].caption && (
+              <div className="absolute bottom-8 left-1/2 -translate-x-1/2 bg-black/60 px-4 py-2 rounded-full">
+                <p className="text-white text-sm">{images[lightboxImage].caption}</p>
+              </div>
+            )}
           </div>
         )}
 
-        {/* Add Images Button */}
-        <Button
-          onClick={onImageUpload}
-          variant="outline"
-          className="w-full bg-gray-800 border-dashed border-2 border-gray-600 hover:border-yellow-500 hover:bg-gray-700 py-8"
-        >
-          <Upload className="h-5 w-5 mr-2" />
-          {images.length > 0 ? "Add More Images" : "Add Images"}
-        </Button>
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/*"
+          multiple
+          onChange={handleFileSelect}
+          className="hidden"
+        />
       </div>
+    )
+  }
 
-      {/* Tip */}
-      <div className="bg-blue-900/20 border border-blue-500/30 rounded-lg p-4">
-        <p className="text-sm text-blue-300">
-          💡 <strong>Tip:</strong> Share photos, screenshots, textures, or color palettes that inspired your work. Help collectors see through your creative lens!
+  // Empty state
+  return (
+    <div className="space-y-4">
+      <div 
+        className="bg-gradient-to-br from-amber-50 to-yellow-50 rounded-2xl p-8 border-2 border-dashed border-amber-200 text-center cursor-pointer hover:border-amber-400 transition-colors"
+        onClick={handleImageUpload}
+      >
+        <div className="w-16 h-16 rounded-full bg-amber-100 flex items-center justify-center mx-auto mb-4">
+          <Lightbulb className="w-8 h-8 text-amber-600" />
+        </div>
+        
+        <h4 className="text-lg font-semibold text-gray-900 mb-1">Inspiration Board</h4>
+        <p className="text-sm text-gray-600 mb-6">
+          Share what influenced this artwork
+        </p>
+        
+        <Button 
+          className="bg-amber-600 hover:bg-amber-700 text-white"
+          disabled={isUploading}
+        >
+          {isUploading ? (
+            <>
+              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              Uploading...
+            </>
+          ) : (
+            <>
+              <Upload className="w-4 h-4 mr-2" />
+              Add Inspirations
+            </>
+          )}
+        </Button>
+        
+        <p className="text-xs text-gray-400 mt-4">
+          Photos, textures, colors, references - anything that inspired you
         </p>
       </div>
+
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/*"
+        multiple
+        onChange={handleFileSelect}
+        className="hidden"
+      />
     </div>
   )
 }

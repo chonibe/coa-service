@@ -161,38 +161,39 @@ export async function GET(
       label: block.title || "Content",
     }))
 
-    // Full content blocks only if authenticated
-    if (isAuthenticated) {
-      // First, get top-level blocks (those without parent_block_id)
-      const topLevelBlocks = availableBlocks.filter((b: any) => !b.parent_block_id)
+    // Check if there are blocks to lock
+    const hasBlocksToLock = availableBlocks.length > 0
+
+    // Build content blocks - always return them for viewing, authentication controls interactions
+    // First, get top-level blocks (those without parent_block_id)
+    const topLevelBlocks = availableBlocks.filter((b: any) => !b.parent_block_id)
+    
+    // Map blocks and attach child blocks for Section Groups
+    contentBlocks = topLevelBlocks.map((block: any) => {
+      const blockType = block.benefit_types?.name || null
       
-      // Map blocks and attach child blocks for Section Groups
-      contentBlocks = topLevelBlocks.map((block: any) => {
-        const blockType = block.benefit_types?.name || null
-        
-        // If this is a Section Group, find its child blocks
-        if (blockType === "Artwork Section Group Block") {
-          const childBlocks = availableBlocks
-            .filter((b: any) => b.parent_block_id === block.id)
-            .map((child: any) => ({
-              ...child,
-              block_type: child.benefit_types?.name || null,
-            }))
-            .sort((a: any, b: any) => (a.display_order_in_parent || 0) - (b.display_order_in_parent || 0))
-          
-          return {
-            ...block,
-            block_type: blockType,
-            childBlocks,
-          }
-        }
+      // If this is a Section Group, find its child blocks
+      if (blockType === "Artwork Section Group Block") {
+        const childBlocks = availableBlocks
+          .filter((b: any) => b.parent_block_id === block.id)
+          .map((child: any) => ({
+            ...child,
+            block_type: child.benefit_types?.name || null,
+          }))
+          .sort((a: any, b: any) => (a.display_order_in_parent || 0) - (b.display_order_in_parent || 0))
         
         return {
           ...block,
           block_type: blockType,
+          childBlocks,
         }
-      })
-    }
+      }
+      
+      return {
+        ...block,
+        block_type: blockType,
+      }
+    })
 
     // Get series info if applicable
     const { data: seriesMember } = await supabase
@@ -377,10 +378,11 @@ export async function GET(
         signatureUrl: vendor.signature_url,
         profileImageUrl: vendor.profile_image,
       },
-      contentBlocks: isAuthenticated ? contentBlocks : [],
-      lockedContentPreview: !isAuthenticated ? lockedContentPreview : [],
+      contentBlocks: contentBlocks,
+      lockedContentPreview: !isAuthenticated && hasBlocksToLock ? lockedContentPreview : [],
       series: series ? { id: series.id, name: series.name } : null,
       isAuthenticated,
+      canInteract: isAuthenticated, // Permission to post stories, interact with content
       specialChips,
       discoveryData,
     })

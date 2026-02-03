@@ -60,36 +60,36 @@ const LockedContentPreview: React.FC<LockedContentPreviewProps> = ({ contentBloc
   )
 
   return (
-    <div className="py-12 px-6 md:px-8">
+    <div className="py-8 px-5">
       {/* Lock Icon */}
-      <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-gradient-to-br from-gray-800 to-gray-900 flex items-center justify-center border-2 border-gray-700 shadow-xl">
-        <Lock className="h-10 w-10 text-gray-400" />
+      <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-gray-100 flex items-center justify-center border-2 border-gray-200 shadow-sm">
+        <Lock className="h-8 w-8 text-gray-400" />
       </div>
 
       {/* Heading */}
-      <h3 className="text-2xl md:text-3xl font-bold text-white text-center mb-4">
+      <h3 className="text-xl font-bold text-gray-900 text-center mb-2">
         Exclusive Content Awaits
       </h3>
 
       {/* Count */}
-      <p className="text-gray-400 text-center mb-8">
-        <span className="text-green-400 font-bold text-xl">
+      <p className="text-gray-500 text-center mb-6 text-sm">
+        <span className="text-indigo-600 font-bold text-lg">
           {contentBlocks.length}
         </span>{" "}
-        {contentBlocks.length === 1 ? "piece" : "pieces"} of exclusive content unlocked when you authenticate this artwork
+        {contentBlocks.length === 1 ? "piece" : "pieces"} of exclusive content
       </p>
 
       {/* Content Type Icons */}
-      <div className="flex flex-wrap items-center justify-center gap-4 mb-8">
+      <div className="flex flex-wrap items-center justify-center gap-3 mb-6">
         {uniqueTypes.slice(0, 6).map((type, index) => (
           <div
             key={index}
-            className="flex flex-col items-center gap-2 p-4 rounded-xl bg-gray-800/50 border border-gray-700 backdrop-blur-sm min-w-[80px]"
+            className="flex flex-col items-center gap-1.5 p-3 rounded-xl bg-gray-50 border border-gray-200 min-w-[70px]"
           >
-            <div className="text-green-400">
+            <div className="text-indigo-500">
               {getIconForType(type)}
             </div>
-            <span className="text-xs text-gray-400 text-center line-clamp-2">
+            <span className="text-xs text-gray-600 text-center line-clamp-2 font-medium">
               {type.replace(/^Artwork\s+/i, "").replace(/\s+Block$/i, "")}
             </span>
           </div>
@@ -97,28 +97,23 @@ const LockedContentPreview: React.FC<LockedContentPreviewProps> = ({ contentBloc
       </div>
 
       {/* Blurred Preview Hint */}
-      <div className="relative max-w-md mx-auto">
-        <div className="grid grid-cols-3 gap-3 blur-sm opacity-40">
+      <div className="relative max-w-sm mx-auto">
+        <div className="grid grid-cols-3 gap-2 blur-sm opacity-30">
           {[1, 2, 3, 4, 5, 6].map((i) => (
             <div
               key={i}
-              className="aspect-square rounded-lg bg-gradient-to-br from-gray-700 to-gray-800"
+              className="aspect-square rounded-lg bg-gray-200"
             />
           ))}
         </div>
         <div className="absolute inset-0 flex items-center justify-center">
-          <div className="bg-gray-900/90 backdrop-blur-sm px-6 py-3 rounded-full border border-gray-700 shadow-xl">
-            <p className="text-white font-semibold text-sm">
+          <div className="bg-white/95 backdrop-blur-sm px-5 py-2.5 rounded-full border border-gray-200 shadow-md">
+            <p className="text-gray-700 font-medium text-sm">
               Authenticate to unlock
             </p>
           </div>
         </div>
       </div>
-
-      {/* CTA Hint */}
-      <p className="text-center text-gray-500 text-sm mt-8">
-        Use the button below to authenticate your artwork
-      </p>
     </div>
   )
 }

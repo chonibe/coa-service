@@ -685,6 +685,11 @@ export default function CollectorArtworkPage() {
                 )
               
               case "Artwork Map Block":
+                // Add defensive check for block data
+                if (!block || !block.block_config) {
+                  console.warn(`MapBlock ${block?.id}: Missing block_config data`)
+                  return null
+                }
                 return (
                   <motion.div
                     key={block.id}

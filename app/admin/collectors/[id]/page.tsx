@@ -12,7 +12,7 @@ import {
   User, Database, Globe, Calendar, DollarSign,
   Package, LayoutGrid, Heart, TrendingUp, Info,
   Map as MapIcon, Share2, MoreHorizontal, History as HistoryIcon,
-  ChevronRight, ChevronLeft, X
+  ChevronRight, ChevronLeft, X, Eye
 } from "lucide-react";
 import { formatCurrency } from "@/lib/utils";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -438,7 +438,11 @@ export default function CollectorDetailPage() {
                         <div className="flex-1 overflow-y-auto p-8 bg-slate-50/50">
                           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                             {expandedGroup.map((edition: any) => (
-                              <Card key={edition.id} className="rounded-3xl border-none shadow-xl bg-white overflow-hidden hover:scale-[1.02] transition-transform">
+                              <Card 
+                                key={edition.id} 
+                                className="rounded-3xl border-none shadow-xl bg-white overflow-hidden hover:scale-[1.02] transition-transform cursor-pointer group"
+                                onClick={() => window.open(`/admin/artwork-preview/${edition.lineItemId}`, '_blank')}
+                              >
                                 <div className="aspect-[4/5] bg-slate-100 relative">
                                   {edition.imgUrl ? (
                                     <img src={edition.imgUrl} alt={edition.name} className="h-full w-full object-cover" />
@@ -451,6 +455,12 @@ export default function CollectorDetailPage() {
                                     <Badge className="bg-white/90 backdrop-blur-md text-slate-900 border-none font-black text-[10px] px-3 py-1.5 shadow-xl">
                                       #{edition.editionNumber}{edition.editionTotal ? `/${edition.editionTotal}` : ''}
                                     </Badge>
+                                  </div>
+                                  {/* Preview Icon Overlay */}
+                                  <div className="absolute inset-0 bg-slate-900/0 group-hover:bg-slate-900/20 transition-colors flex items-center justify-center">
+                                    <div className="opacity-0 group-hover:opacity-100 transition-opacity bg-white rounded-full p-3 shadow-xl">
+                                      <Eye className="h-6 w-6 text-slate-900" />
+                                    </div>
                                   </div>
                                 </div>
                                 <div className="p-5">
@@ -785,7 +795,15 @@ export default function CollectorDetailPage() {
                             className="relative group h-[220px]"
                             whileHover="hover"
                             initial="initial"
-                            onClick={() => hasMultiple && setExpandedGroup(displayGroup)}
+                            onClick={(e) => {
+                              if (hasMultiple) {
+                                setExpandedGroup(displayGroup)
+                              } else {
+                                // Single artwork - open preview in new tab
+                                e.preventDefault()
+                                window.open(`/admin/artwork-preview/${leadItem.lineItemId}`, '_blank')
+                              }
+                            }}
                           >
                           {/* Visual Stack Layers with Animation */}
                           {hasMultiple && (
@@ -908,8 +926,15 @@ export default function CollectorDetailPage() {
                                           {hasMultiple ? `Last: ${new Date(leadItem.purchaseDate).toLocaleDateString()}` : new Date(leadItem.purchaseDate).toLocaleDateString()}
                                         </span>
                                       </div>
-                                      <div className="h-7 w-7 rounded-full bg-slate-50 flex items-center justify-center">
-                                        <ChevronRight className="h-4 w-4 text-slate-400" />
+                                      <div className="flex items-center gap-2">
+                                        <div className="h-7 w-7 rounded-full bg-slate-50 flex items-center justify-center group-hover:bg-primary group-hover:text-white transition-colors">
+                                          <Eye className="h-4 w-4 text-slate-400 group-hover:text-white" />
+                                        </div>
+                                        {hasMultiple && (
+                                          <div className="h-7 w-7 rounded-full bg-slate-50 flex items-center justify-center">
+                                            <ChevronRight className="h-4 w-4 text-slate-400" />
+                                          </div>
+                                        )}
                                       </div>
                                     </div>
                                   </div>

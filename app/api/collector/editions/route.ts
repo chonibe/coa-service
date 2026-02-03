@@ -4,6 +4,21 @@ import { verifyCollectorSessionToken } from "@/lib/collector-session"
 import type { CollectorEdition } from "@/types/collector"
 import { getCollectorProfile } from "@/lib/collectors"
 
+/**
+ * ============================================================================
+ * CRITICAL API - Collector Editions
+ * ============================================================================
+ * 
+ * This API returns artworks owned by a collector. MUST filter out:
+ * - Refunded items (status !== 'active')
+ * - Restocked items (restocked === true)
+ * - Items from canceled/voided orders
+ * 
+ * If collectors see "duplicate" artworks, the filtering logic here is broken.
+ * See: .cursor/rules/order-line-items-critical.mdc
+ * ============================================================================
+ */
+
 export async function GET(request: NextRequest) {
   const supabase = createClient()
 
@@ -270,7 +285,14 @@ export async function GET(request: NextRequest) {
                                li.restocked !== true && 
                                (li.refund_status === 'none' || li.refund_status === null);
 
-        return isActuallyActive && isValidOrder;
+        // SAFETY: Prefer fulfilled items, but allow null fulfillment_status for digital/accessory items
+        // The key protection is the `status === 'active'` check above, which is set correctly during sync
+        // (Refunded items with null fulfillment should have status='inactive' after sync fix)
+        const isFulfillmentValid = li.fulfillment_status === 'fulfilled' || 
+                                   li.fulfillment_status === 'partial' ||
+                                   li.fulfillment_status === null;
+
+        return isActuallyActive && isValidOrder && isFulfillmentValid;
       })
       .map((li: any) => {
         const series = li.product_id

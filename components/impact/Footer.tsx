@@ -6,16 +6,14 @@ import { cn } from '@/lib/utils'
 import { Container } from './Container'
 import { Input } from './Input'
 import { Button } from './Button'
+import { ScrollReveal } from '@/components/blocks'
 
 /**
  * Impact Theme Footer
  * 
- * Matches the exact styling from the Shopify Impact theme:
- * - Background: #390000 (dark maroon)
- * - Text color: #ffba94 (peach/salmon accent)
- * - Layout: Newsletter (left), Nav sections (center), About (right)
- * - Social links: Facebook, Instagram
- * - Payment icons: All major payment methods
+ * Enhanced with GSAP scroll animations:
+ * - Sections stagger in on scroll
+ * - Subtle parallax on newsletter section
  */
 
 export interface FooterLink {
@@ -105,15 +103,16 @@ const Footer = React.forwardRef<HTMLElement, FooterProps>(
         )}
       >
         <Container maxWidth="default" paddingX="gutter">
-          {/* Main footer content - 4 column layout */}
-          <div className="grid gap-10 sm:gap-8 lg:grid-cols-12 lg:gap-12">
-            
-            {/* Newsletter Section */}
-            {newsletterEnabled && (
-              <div className="lg:col-span-4">
-                <h3 className="font-heading text-base font-semibold mb-4">
-                  {newsletterTitle}
-                </h3>
+          {/* Main footer content - 4 column layout with stagger animation */}
+          <ScrollReveal animation="stagger" staggerAmount={0.1} start="top 90%">
+            <div className="grid gap-10 sm:gap-8 lg:grid-cols-12 lg:gap-12">
+              
+              {/* Newsletter Section */}
+              {newsletterEnabled && (
+                <div className="lg:col-span-4">
+                  <h3 className="font-heading text-base font-semibold mb-4">
+                    {newsletterTitle}
+                  </h3>
                 {newsletterDescription && (
                   <p className="text-sm text-[#ffba94]/70 mb-4">
                     {newsletterDescription}
@@ -165,16 +164,16 @@ const Footer = React.forwardRef<HTMLElement, FooterProps>(
                     </button>
                   </form>
                 )}
-              </div>
-            )}
-            
-            {/* Navigation sections - centered columns */}
-            <div className="lg:col-span-4">
-              <div className="grid grid-cols-2 gap-8">
-                {sections.map((section) => (
-                  <div key={section.title}>
-                    <h3 className="font-heading text-sm font-semibold uppercase tracking-wider mb-4">
-                      {section.title}
+                </div>
+              )}
+              
+              {/* Navigation sections - centered columns */}
+              <div className="lg:col-span-4">
+                <div className="grid grid-cols-2 gap-8">
+                  {sections.map((section) => (
+                    <div key={section.title}>
+                      <h3 className="font-heading text-sm font-semibold uppercase tracking-wider mb-4">
+                        {section.title}
                     </h3>
                     <ul className="space-y-2.5">
                       {section.links.map((link) => (
@@ -193,25 +192,26 @@ const Footer = React.forwardRef<HTMLElement, FooterProps>(
               </div>
             </div>
             
-            {/* About Section - right column */}
-            <div className="lg:col-span-4">
-              <h3 className="font-heading text-sm font-semibold uppercase tracking-wider mb-4">
-                {aboutTitle}
-              </h3>
-              <p className="text-sm text-[#ffba94]/70 leading-relaxed mb-6">
-                {aboutText || tagline || 'In a world where art is often consumed on screens, The Street Lamp bridges the gap between the digital and the real, bringing art back into the physical world to be truly felt and experienced.'}
-              </p>
-              
-              {/* Social links */}
-              {socialLinks.length > 0 && (
-                <div className="flex gap-3">
-                  {socialLinks.map((social) => (
-                    <SocialIcon key={social.platform} {...social} />
-                  ))}
-                </div>
-              )}
+              {/* About Section - right column */}
+              <div className="lg:col-span-4">
+                <h3 className="font-heading text-sm font-semibold uppercase tracking-wider mb-4">
+                  {aboutTitle}
+                </h3>
+                <p className="text-sm text-[#ffba94]/70 leading-relaxed mb-6">
+                  {aboutText || tagline || 'In a world where art is often consumed on screens, The Street Lamp bridges the gap between the digital and the real, bringing art back into the physical world to be truly felt and experienced.'}
+                </p>
+                
+                {/* Social links */}
+                {socialLinks.length > 0 && (
+                  <div className="flex gap-3">
+                    {socialLinks.map((social) => (
+                      <SocialIcon key={social.platform} {...social} />
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
-          </div>
+          </ScrollReveal>
           
           {/* Payment Icons */}
           {showPaymentIcons && (

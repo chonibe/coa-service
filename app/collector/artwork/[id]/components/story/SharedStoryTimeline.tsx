@@ -44,6 +44,7 @@ interface SharedStoryTimelineProps {
   isArtist?: boolean // Is the current user the artist?
   onReply?: (postId: string) => void
   isPreview?: boolean // Is this being shown in preview mode?
+  onAuthRequired?: () => void // Callback when non-authenticated user tries to interact
 }
 
 /**
@@ -62,6 +63,7 @@ export function SharedStoryTimeline({
   isArtist = false,
   onReply,
   isPreview = false,
+  onAuthRequired,
 }: SharedStoryTimelineProps) {
   const [posts, setPosts] = useState<StoryPost[]>([])
   const [isLoading, setIsLoading] = useState(true)
@@ -200,6 +202,7 @@ export function SharedStoryTimeline({
         users={storyUsers}
         isPreview={isPreview}
         onStorySeen={handleStorySeen}
+        onAuthRequired={onAuthRequired}
       />
 
       {/* Add to Story sheet */}

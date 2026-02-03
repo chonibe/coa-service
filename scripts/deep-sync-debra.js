@@ -39,7 +39,12 @@ async function deepSyncDebra() {
                                        .find((ri) => ri.line_item_id.toString() === liIdStr);
       
       const isRefunded = removedLineItemIds.has(li.id) || li.refund_status === 'refunded' || refundEntry !== undefined || (li.refunded_quantity && li.refunded_quantity > 0);
-      const isRestocked = li.restocked === true || li.restock_type != null || li.fulfillment_status === 'restocked' || refundEntry?.restock_type != null;
+      const isRestocked = Boolean(
+        li.restocked === true || 
+        li.restock_type != null || 
+        li.fulfillment_status === 'restocked' || 
+        refundEntry?.restock_type != null
+      );
       
       const removedProperty = li.properties?.find((p) => 
         (p.name === 'removed' || p.key === 'removed') && 

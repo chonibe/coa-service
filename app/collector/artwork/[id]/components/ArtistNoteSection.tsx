@@ -22,9 +22,9 @@ export default function ArtistNoteSection({ content, signatureUrl, artistName }:
       </div>
 
       {/* Letter-style content */}
-      <div className="bg-muted/20 rounded-3xl p-8 md:p-12 shadow-inner">
-        <div className="prose prose-lg dark:prose-invert max-w-none">
-          <p className="text-foreground/90 leading-relaxed whitespace-pre-line text-lg md:text-xl font-serif">
+      <div className="bg-rose-50/50 rounded-3xl p-8 md:p-12 shadow-inner">
+        <div className="prose prose-lg max-w-none">
+          <p className="text-gray-800 leading-relaxed whitespace-pre-line text-lg md:text-xl font-serif">
             {content}
           </p>
         </div>
@@ -37,7 +37,7 @@ export default function ArtistNoteSection({ content, signatureUrl, artistName }:
                 src={signatureUrl}
                 alt={`${artistName}'s signature`}
                 fill
-                className="object-contain object-right dark:invert dark:brightness-200"
+                className="object-contain object-right"
               />
             </div>
           )}

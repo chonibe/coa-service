@@ -45,6 +45,11 @@ next-env.d.ts
 postgresql-installer.exe
 .env.production
 
+# sensitive credentials
+ga-service-account.json
+ga4-*.json
+bfg.jar
+
 # mobile NFC writer (separate app with own node_modules)
 /mobile-nfc-writer/
 

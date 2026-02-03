@@ -140,7 +140,7 @@ async function syncOrderToDatabase(order: any, supabase: any) {
 
       // Insert new line items
       const lineItems = order.line_items.map((item: any) => {
-        const isRestocked = restockedLineItemIds.has(item.id)
+        const isRestocked = Boolean(restockedLineItemIds.has(item.id))
         const isCancelled = order.financial_status === 'voided'
         const isFulfilled = item.fulfillment_status === 'fulfilled'
         const isOrderPaid = ['paid', 'authorized', 'pending', 'partially_paid'].includes(order.financial_status)

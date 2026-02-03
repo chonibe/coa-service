@@ -1,7 +1,7 @@
 "use client"
 
-import { useState } from "react"
-import { Camera, Upload, Trash2, GripVertical, X } from "lucide-react"
+import { useState, useRef } from "react"
+import { Camera, Upload, Trash2, Plus, ChevronLeft, ChevronRight, Pencil, X, Loader2 } from "lucide-react"
 import { Button, Textarea, Input } from "@/components/ui"
 import Image from "next/image"
 
@@ -9,14 +9,14 @@ interface ProcessGalleryEditorProps {
   blockId: number
   config: {
     intro?: string
-    images: Array<{
+    images?: Array<{
       url: string
       caption?: string
       order: number
     }>
   }
   onChange: (config: any) => void
-  onImageUpload: () => void
+  onImageUpload?: () => void
 }
 
 export default function ProcessGalleryEditor({
@@ -27,22 +27,75 @@ export default function ProcessGalleryEditor({
 }: ProcessGalleryEditorProps) {
   const [intro, setIntro] = useState(config.intro || "")
   const [images, setImages] = useState(config.images || [])
+  const [isUploading, setIsUploading] = useState(false)
+  const [selectedImageIndex, setSelectedImageIndex] = useState(0)
+  const [editingCaption, setEditingCaption] = useState<number | null>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
-  const handleIntroChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    const newIntro = e.target.value
-    setIntro(newIntro)
-    setTimeout(() => onChange({ ...config, intro: newIntro }), 500)
+  const handleImageUpload = () => {
+    if (onImageUpload) {
+      onImageUpload()
+    } else {
+      fileInputRef.current?.click()
+    }
   }
 
-  const addImage = (url: string) => {
-    const newImage = {
-      url,
-      caption: "",
-      order: images.length
+  const uploadImages = async (files: FileList) => {
+    setIsUploading(true)
+    try {
+      const uploadPromises = Array.from(files).map(async (file) => {
+        const formData = new FormData()
+        formData.append("file", file)
+        formData.append("type", "image")
+
+        const response = await fetch("/api/vendor/media-library/upload", {
+          method: "POST",
+          credentials: "include",
+          body: formData,
+        })
+
+        if (!response.ok) {
+          throw new Error("Upload failed")
+        }
+
+        const data = await response.json()
+        return {
+          url: data.file.url,
+          caption: "",
+          order: images.length
+        }
+      })
+
+      const newImages = await Promise.all(uploadPromises)
+      const updatedImages = [...images, ...newImages].map((img, index) => ({
+        ...img,
+        order: index
+      }))
+      
+      setImages(updatedImages)
+      onChange({ ...config, images: updatedImages })
+      // Select the first new image
+      if (images.length === 0) {
+        setSelectedImageIndex(0)
+      }
+    } catch (error) {
+      console.error("Failed to upload images:", error)
+    } finally {
+      setIsUploading(false)
     }
-    const newImages = [...images, newImage]
-    setImages(newImages)
-    onChange({ ...config, images: newImages })
+  }
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files
+    if (files && files.length > 0) {
+      uploadImages(files)
+    }
+    e.target.value = ""
+  }
+
+  const handleIntroChange = (newIntro: string) => {
+    setIntro(newIntro)
+    onChange({ ...config, intro: newIntro })
   }
 
   const updateImageCaption = (index: number, caption: string) => {
@@ -60,132 +113,239 @@ export default function ProcessGalleryEditor({
     }))
     setImages(newImages)
     onChange({ ...config, images: newImages })
+    // Adjust selected index if needed
+    if (selectedImageIndex >= newImages.length) {
+      setSelectedImageIndex(Math.max(0, newImages.length - 1))
+    }
   }
 
   const moveImage = (fromIndex: number, toIndex: number) => {
+    if (toIndex < 0 || toIndex >= images.length) return
     const newImages = [...images]
     const [movedImage] = newImages.splice(fromIndex, 1)
     newImages.splice(toIndex, 0, movedImage)
     const reordered = newImages.map((img, i) => ({ ...img, order: i }))
     setImages(reordered)
     onChange({ ...config, images: reordered })
+    setSelectedImageIndex(toIndex)
   }
 
-  return (
-    <div className="space-y-6">
-      <div className="flex items-start gap-3">
-        <Camera className="h-6 w-6 text-blue-400 flex-shrink-0 mt-1" />
-        <div className="flex-1">
-          <h3 className="text-lg font-semibold text-white mb-1">Process Gallery</h3>
-          <p className="text-sm text-gray-400">Show how this piece came to life</p>
-        </div>
-      </div>
+  const navigateImage = (direction: 'prev' | 'next') => {
+    if (direction === 'prev' && selectedImageIndex > 0) {
+      setSelectedImageIndex(selectedImageIndex - 1)
+    } else if (direction === 'next' && selectedImageIndex < images.length - 1) {
+      setSelectedImageIndex(selectedImageIndex + 1)
+    }
+  }
 
-      {/* Introduction */}
-      <div className="space-y-2">
-        <label className="text-sm font-medium text-gray-300">
-          Introduction <span className="text-gray-500">(optional)</span>
-        </label>
-        <Textarea
-          placeholder="This piece started as a quick sketch and evolved over several weeks..."
-          value={intro}
-          onChange={handleIntroChange}
-          rows={3}
-          className="bg-gray-700 border-gray-600 text-white resize-none"
+  // Has images - show visual gallery preview
+  if (images.length > 0) {
+    const currentImage = images[selectedImageIndex]
+
+    return (
+      <div className="space-y-4">
+        {/* Collector-style Gallery Preview */}
+        <div className="bg-gradient-to-br from-blue-50 to-cyan-50 rounded-2xl overflow-hidden border border-blue-100">
+          {/* Main Image Display */}
+          <div className="relative aspect-[4/3] bg-gray-900">
+            <Image
+              src={currentImage.url}
+              alt={currentImage.caption || `Process image ${selectedImageIndex + 1}`}
+              fill
+              className="object-contain"
+            />
+            
+            {/* Navigation Arrows */}
+            {images.length > 1 && (
+              <>
+                <button
+                  onClick={() => navigateImage('prev')}
+                  disabled={selectedImageIndex === 0}
+                  className="absolute left-2 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white/80 hover:bg-white flex items-center justify-center shadow-lg disabled:opacity-30 transition-all"
+                >
+                  <ChevronLeft className="w-6 h-6 text-gray-800" />
+                </button>
+                <button
+                  onClick={() => navigateImage('next')}
+                  disabled={selectedImageIndex === images.length - 1}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white/80 hover:bg-white flex items-center justify-center shadow-lg disabled:opacity-30 transition-all"
+                >
+                  <ChevronRight className="w-6 h-6 text-gray-800" />
+                </button>
+              </>
+            )}
+
+            {/* Image Counter */}
+            <div className="absolute top-3 right-3 bg-black/60 text-white text-sm px-3 py-1 rounded-full">
+              {selectedImageIndex + 1} / {images.length}
+            </div>
+
+            {/* Delete button */}
+            <button
+              onClick={() => removeImage(selectedImageIndex)}
+              className="absolute top-3 left-3 w-8 h-8 rounded-full bg-red-500/80 hover:bg-red-500 flex items-center justify-center text-white transition-all"
+            >
+              <Trash2 className="w-4 h-4" />
+            </button>
+          </div>
+
+          {/* Caption Editing Area */}
+          <div className="p-4 bg-white/80">
+            {editingCaption === selectedImageIndex ? (
+              <div className="flex gap-2">
+                <Input
+                  type="text"
+                  placeholder="Add a caption..."
+                  value={currentImage.caption || ""}
+                  onChange={(e) => updateImageCaption(selectedImageIndex, e.target.value)}
+                  onBlur={() => setEditingCaption(null)}
+                  onKeyDown={(e) => e.key === 'Enter' && setEditingCaption(null)}
+                  autoFocus
+                  className="flex-1 bg-white"
+                />
+              </div>
+            ) : (
+              <button
+                onClick={() => setEditingCaption(selectedImageIndex)}
+                className="w-full text-left py-2 px-3 rounded-lg hover:bg-gray-100 transition-colors text-gray-600"
+              >
+                {currentImage.caption || (
+                  <span className="italic text-gray-400">+ Add caption</span>
+                )}
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* Thumbnail Strip */}
+        <div className="flex gap-2 overflow-x-auto pb-2 px-1">
+          {images.map((image, index) => (
+            <button
+              key={index}
+              onClick={() => setSelectedImageIndex(index)}
+              className={`relative flex-shrink-0 w-16 h-16 rounded-lg overflow-hidden transition-all ${
+                index === selectedImageIndex 
+                  ? 'ring-2 ring-blue-500 ring-offset-2' 
+                  : 'opacity-70 hover:opacity-100'
+              }`}
+            >
+              <Image
+                src={image.url}
+                alt={`Thumbnail ${index + 1}`}
+                fill
+                className="object-cover"
+              />
+              <span className="absolute bottom-0 left-0 right-0 bg-black/60 text-white text-xs text-center py-0.5">
+                {index + 1}
+              </span>
+            </button>
+          ))}
+          
+          {/* Add More Button */}
+          <button
+            onClick={handleImageUpload}
+            disabled={isUploading}
+            className="flex-shrink-0 w-16 h-16 rounded-lg border-2 border-dashed border-gray-300 hover:border-blue-500 hover:bg-blue-50 flex items-center justify-center transition-all"
+          >
+            {isUploading ? (
+              <Loader2 className="w-5 h-5 text-blue-500 animate-spin" />
+            ) : (
+              <Plus className="w-6 h-6 text-gray-400" />
+            )}
+          </button>
+        </div>
+
+        {/* Reorder Controls */}
+        {images.length > 1 && (
+          <div className="flex justify-center gap-2">
+            <Button
+              onClick={() => moveImage(selectedImageIndex, selectedImageIndex - 1)}
+              disabled={selectedImageIndex === 0}
+              variant="outline"
+              size="sm"
+            >
+              ← Move Earlier
+            </Button>
+            <Button
+              onClick={() => moveImage(selectedImageIndex, selectedImageIndex + 1)}
+              disabled={selectedImageIndex === images.length - 1}
+              variant="outline"
+              size="sm"
+            >
+              Move Later →
+            </Button>
+          </div>
+        )}
+
+        {/* Introduction (Collapsible) */}
+        <div className="space-y-2">
+          <Textarea
+            placeholder="Tell the story behind these images..."
+            value={intro}
+            onChange={(e) => handleIntroChange(e.target.value)}
+            rows={2}
+            className="bg-white border-gray-200 resize-none"
+          />
+        </div>
+
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/*"
+          multiple
+          onChange={handleFileSelect}
+          className="hidden"
         />
       </div>
+    )
+  }
 
-      {/* Images */}
-      <div className="space-y-3">
-        <label className="text-sm font-medium text-gray-300">Images (drag to reorder)</label>
-        
-        <div className="space-y-3">
-          {images.map((image, index) => (
-            <div
-              key={index}
-              className="bg-gray-800 rounded-lg p-4 border border-gray-700"
-            >
-              <div className="flex gap-4">
-                {/* Drag Handle */}
-                <div className="flex flex-col gap-2 items-center pt-2">
-                  <GripVertical className="h-5 w-5 text-gray-500 cursor-move" />
-                  <span className="text-xs text-gray-500">#{index + 1}</span>
-                </div>
-
-                {/* Image Preview */}
-                <div className="relative w-24 h-24 flex-shrink-0 rounded overflow-hidden bg-gray-900">
-                  <Image
-                    src={image.url}
-                    alt={`Process ${index + 1}`}
-                    fill
-                    className="object-cover"
-                  />
-                </div>
-
-                {/* Caption Input */}
-                <div className="flex-1 space-y-2">
-                  <Input
-                    type="text"
-                    placeholder="Caption for this image..."
-                    value={image.caption || ""}
-                    onChange={(e) => updateImageCaption(index, e.target.value)}
-                    className="bg-gray-700 border-gray-600 text-white"
-                  />
-                  <div className="flex gap-2">
-                    {index > 0 && (
-                      <Button
-                        onClick={() => moveImage(index, index - 1)}
-                        variant="outline"
-                        size="sm"
-                        className="bg-gray-700 border-gray-600 text-xs"
-                      >
-                        ← Move Left
-                      </Button>
-                    )}
-                    {index < images.length - 1 && (
-                      <Button
-                        onClick={() => moveImage(index, index + 1)}
-                        variant="outline"
-                        size="sm"
-                        className="bg-gray-700 border-gray-600 text-xs"
-                      >
-                        Move Right →
-                      </Button>
-                    )}
-                  </div>
-                </div>
-
-                {/* Remove Button */}
-                <Button
-                  onClick={() => removeImage(index)}
-                  variant="ghost"
-                  size="sm"
-                  className="text-red-400 hover:text-red-300 hover:bg-red-900/20"
-                >
-                  <X className="h-5 w-5" />
-                </Button>
-              </div>
-            </div>
-          ))}
+  // Empty state - show upload prompt
+  return (
+    <div className="space-y-4">
+      <div 
+        className="bg-gradient-to-br from-blue-50 to-cyan-50 rounded-2xl p-8 border-2 border-dashed border-blue-200 text-center cursor-pointer hover:border-blue-400 transition-colors"
+        onClick={handleImageUpload}
+      >
+        <div className="w-16 h-16 rounded-full bg-blue-100 flex items-center justify-center mx-auto mb-4">
+          <Camera className="w-8 h-8 text-blue-600" />
         </div>
-
-        {/* Add Images Button */}
-        <Button
-          onClick={onImageUpload}
-          variant="outline"
-          className="w-full bg-gray-800 border-dashed border-2 border-gray-600 hover:border-blue-500 hover:bg-gray-700 py-8"
+        
+        <h4 className="text-lg font-semibold text-gray-900 mb-1">Behind the Scenes</h4>
+        <p className="text-sm text-gray-600 mb-6">
+          Show collectors how this piece came to life
+        </p>
+        
+        <Button 
+          className="bg-blue-600 hover:bg-blue-700 text-white"
+          disabled={isUploading}
         >
-          <Upload className="h-5 w-5 mr-2" />
-          Add Images
+          {isUploading ? (
+            <>
+              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              Uploading...
+            </>
+          ) : (
+            <>
+              <Upload className="w-4 h-4 mr-2" />
+              Add Process Images
+            </>
+          )}
         </Button>
-      </div>
-
-      {/* Tip */}
-      <div className="bg-blue-900/20 border border-blue-500/30 rounded-lg p-4">
-        <p className="text-sm text-blue-300">
-          💡 <strong>Tip:</strong> Show your creative journey - sketches, works in progress, tools, references. Collectors love seeing behind the scenes!
+        
+        <p className="text-xs text-gray-400 mt-4">
+          Sketches, works in progress, tools, references - anything that shows your process
         </p>
       </div>
+
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/*"
+        multiple
+        onChange={handleFileSelect}
+        className="hidden"
+      />
     </div>
   )
 }

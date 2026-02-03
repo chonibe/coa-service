@@ -13,8 +13,16 @@ const config: Config = {
       center: true,
       padding: "2rem",
       screens: {
-        "2xl": "1400px",
+        "2xl": "1600px", // Impact theme page width
       },
+    },
+    // Impact theme breakpoints
+    screens: {
+      'sm': '700px',   // Impact theme tablet
+      'md': '1000px',  // Impact theme medium desktop
+      'lg': '1150px',  // Impact theme large desktop
+      'xl': '1400px',  // Impact theme extra large
+      '2xl': '1600px', // Impact theme max width
     },
     extend: {
       fontFamily: {
@@ -57,11 +65,78 @@ const config: Config = {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
         },
+        // Impact Theme Colors
+        'impact': {
+          'bg': '#ffffff',
+          'text': '#1a1a1a',
+          'header-bg': '#390000',
+          'header-text': '#ffba94',
+          'footer-bg': '#390000',
+          'footer-text': '#ffba94',
+          'primary': '#2c4bce',
+          'primary-text': '#ffffff',
+          'secondary': '#f0c417',
+          'secondary-text': '#1a1a1a',
+          'success': '#00a341',
+          'warning': '#ffb74a',
+          'error': '#f83a3a',
+          'on-sale': '#f83a3a',
+          'sold-out': '#000000',
+          'badge': '#803cee',
+          'checkout-accent': '#f0c417',
+        },
       },
       borderRadius: {
         lg: "var(--radius)",
         md: "calc(var(--radius) - 2px)",
         sm: "calc(var(--radius) - 4px)",
+        // Impact theme border radius
+        'impact-button': '60px',
+        'impact-input': '8px',
+        'impact-block': '24px',
+        'impact-block-sm': '12px',
+        'impact-block-xs': '6px',
+      },
+      // Impact theme font sizes (for 'large' heading setting)
+      fontSize: {
+        // Mobile sizes
+        'impact-h0': ['3rem', { lineHeight: '1.1', letterSpacing: '-0.02em' }],
+        'impact-h1': ['2.5rem', { lineHeight: '1.1', letterSpacing: '-0.02em' }],
+        'impact-h2': ['2rem', { lineHeight: '1.2', letterSpacing: '-0.02em' }],
+        'impact-h3': ['1.5rem', { lineHeight: '1.2', letterSpacing: '-0.02em' }],
+        'impact-h4': ['1.375rem', { lineHeight: '1.3', letterSpacing: '-0.02em' }],
+        'impact-h5': ['1.125rem', { lineHeight: '1.4', letterSpacing: '-0.02em' }],
+        'impact-h6': ['1rem', { lineHeight: '1.5', letterSpacing: '-0.02em' }],
+        // Desktop overrides (apply with responsive prefix)
+        'impact-h0-lg': ['5rem', { lineHeight: '1.1', letterSpacing: '-0.02em' }],
+        'impact-h1-lg': ['3.75rem', { lineHeight: '1.1', letterSpacing: '-0.02em' }],
+        'impact-h2-lg': ['3rem', { lineHeight: '1.2', letterSpacing: '-0.02em' }],
+        'impact-h3-lg': ['2.25rem', { lineHeight: '1.2', letterSpacing: '-0.02em' }],
+        'impact-h4-lg': ['2rem', { lineHeight: '1.3', letterSpacing: '-0.02em' }],
+        'impact-h5-lg': ['1.5rem', { lineHeight: '1.4', letterSpacing: '-0.02em' }],
+        'impact-h6-lg': ['1.25rem', { lineHeight: '1.5', letterSpacing: '-0.02em' }],
+      },
+      // Impact theme shadows
+      boxShadow: {
+        'impact-block': '0 18px 30px rgba(26, 26, 26, 0.1)',
+        'impact-sm': '0 2px 8px rgba(26, 26, 26, 0.1)',
+        'impact-md': '0 5px 15px rgba(26, 26, 26, 0.1)',
+        'impact-lg': '0 5px 30px rgba(26, 26, 26, 0.1)',
+      },
+      // Impact theme max widths
+      maxWidth: {
+        'impact': '1600px',
+        'impact-narrow': '1350px',
+      },
+      // Impact theme spacing (section spacing for 'medium' setting)
+      spacing: {
+        'impact-section': '3rem',      // Mobile
+        'impact-section-md': '4rem',   // Tablet
+        'impact-section-lg': '4.5rem', // Desktop
+        'impact-section-xl': '6rem',   // Large desktop
+        'impact-gutter': '1.25rem',    // Mobile gutter (20px)
+        'impact-gutter-md': '2rem',    // Tablet gutter (32px)
+        'impact-gutter-lg': '3rem',    // Desktop gutter (48px)
       },
       keyframes: {
         "accordion-down": {

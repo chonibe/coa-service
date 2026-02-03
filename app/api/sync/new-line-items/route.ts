@@ -120,7 +120,7 @@ export async function POST() {
         const orderFinancialStatus = order.raw_shopify_order_data?.financial_status || 'pending';
         const lineItems = order.raw_shopify_order_data.line_items.map((item: ShopifyLineItem) => {
           console.log(`Mapping line item ${item.id} for order ${order.id}`);
-          const isRestocked = restockedLineItemIds.has(item.id);
+          const isRestocked = Boolean(restockedLineItemIds.has(item.id));
           const isCancelled = orderFinancialStatus === 'voided';
           const isFulfilled = item.fulfillment_status === 'fulfilled';
           const isOrderPaid = ['paid', 'authorized', 'pending', 'partially_paid'].includes(orderFinancialStatus);

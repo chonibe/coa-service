@@ -183,8 +183,8 @@ export default function LoginClient() {
 
     // Route to role-specific OAuth endpoints so scopes match the selected role.
     if (isAdminLogin) {
-      // Admin: main endpoint may request Gmail scopes for CRM
-      endpoint = `/api/auth/google/start?redirect=/admin/dashboard`
+      // Admin: main endpoint with admin=true to request Gmail scopes for CRM/email sending
+      endpoint = `/api/auth/google/start?admin=true&redirect=/admin/dashboard`
     } else if (loginType === "vendor") {
       // Vendor: main endpoint with vendor redirect (no Gmail scopes)
       endpoint = `/api/auth/google/start?redirect=/vendor/dashboard`

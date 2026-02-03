@@ -185,6 +185,7 @@ export interface StoryCirclesProps {
   users?: StoryUser[]
   isPreview?: boolean
   onStorySeen?: (storyId: string) => void
+  onAuthRequired?: () => void // Callback when non-authenticated user tries to interact
 }
 
 /**

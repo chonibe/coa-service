@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from "react"
 import { useParams, useRouter } from "next/navigation"
 import Image from "next/image"
-import { ArrowLeft, Save, Eye, Loader2, AlertCircle, Menu, X, ChevronLeft, ChevronRight, Trash2, GripVertical, ChevronUp, ChevronDown, Sparkles, Plus, Camera } from "lucide-react"
+import { ArrowLeft, Save, Eye, Loader2, AlertCircle, Menu, X, ChevronLeft, ChevronRight, Trash2, GripVertical, ChevronUp, ChevronDown, Sparkles, Plus, Camera, ChevronsUp, ChevronsDown } from "lucide-react"
 import { Button, Alert, AlertDescription } from "@/components/ui"
 import { useToast } from "@/components/ui/use-toast"
 import { BlockSelectorPills } from "@/app/artwork-editor/[productId]/components/BlockSelectorPills"
@@ -52,6 +52,8 @@ export default function StandaloneArtworkEditor() {
   const [error, setError] = useState<string | null>(null)
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [isMobile, setIsMobile] = useState(false)
+  const [collapsedBlocks, setCollapsedBlocks] = useState<Set<number>>(new Set())
+  const [isReorderMode, setIsReorderMode] = useState(false)
 
   // Mobile detection
   useEffect(() => {
@@ -311,6 +313,36 @@ export default function StandaloneArtworkEditor() {
     window.open(`/preview/artwork/${productId}`, "_blank")
   }
 
+  const collapseAll = () => {
+    setCollapsedBlocks(new Set(contentBlocks.map(b => b.id)))
+  }
+
+  const expandAll = () => {
+    setCollapsedBlocks(new Set())
+  }
+
+  const toggleBlockCollapse = (blockId: number) => {
+    setCollapsedBlocks(prev => {
+      const next = new Set(prev)
+      if (next.has(blockId)) {
+        next.delete(blockId)
+      } else {
+        next.add(blockId)
+      }
+      return next
+    })
+  }
+
+  const enterReorderMode = () => {
+    setIsReorderMode(true)
+    // Collapse all blocks in reorder mode for cleaner UI
+    setCollapsedBlocks(new Set(contentBlocks.map(b => b.id)))
+  }
+
+  const exitReorderMode = () => {
+    setIsReorderMode(false)
+  }
+
   if (isLoading) {
     return (
       <div className="fixed inset-0 bg-background flex items-center justify-center">
@@ -326,9 +358,9 @@ export default function StandaloneArtworkEditor() {
           <AlertCircle className="h-4 w-4" />
           <AlertDescription>{error || "Failed to load editor"}</AlertDescription>
         </Alert>
-        <Button onClick={() => router.push("/vendor/dashboard/artwork-pages")} className="mt-4">
+        <Button onClick={() => router.push("/vendor/dashboard/products")} className="mt-4">
           <ArrowLeft className="w-4 h-4 mr-2" />
-          Back to Artwork List
+          Back to Artworks
         </Button>
       </div>
     )
@@ -342,7 +374,7 @@ export default function StandaloneArtworkEditor() {
           <Button
             variant="ghost"
             size="icon"
-            onClick={() => router.push("/vendor/dashboard/artwork-pages")}
+            onClick={() => router.push("/vendor/dashboard/products")}
           >
             <ArrowLeft className="w-5 h-5" />
           </Button>
@@ -368,6 +400,44 @@ export default function StandaloneArtworkEditor() {
         </div>
 
         <div className="flex items-center gap-2">
+          {!isReorderMode && contentBlocks.length > 0 && (
+            <>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={collapseAll}
+                title="Collapse all blocks"
+              >
+                <ChevronsUp className="w-5 h-5" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={expandAll}
+                title="Expand all blocks"
+              >
+                <ChevronsDown className="w-5 h-5" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={enterReorderMode}
+                title="Reorder blocks"
+              >
+                <GripVertical className="w-5 h-5" />
+              </Button>
+            </>
+          )}
+          {isReorderMode && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={exitReorderMode}
+            >
+              <X className="w-4 h-4 mr-1" />
+              Exit Reorder
+            </Button>
+          )}
           <Button
             variant="ghost"
             size="icon"
@@ -557,27 +627,99 @@ export default function StandaloneArtworkEditor() {
                 </div>
               ) : (
                 <div className="space-y-4">
-                  {contentBlocks.map((block, index) => (
-                    <div
-                      key={block.id}
-                      className={`bg-white rounded-lg border-2 ${
-                        selectedBlockId === block.id ? 'border-blue-500 shadow-lg' : 'border-gray-200'
-                      } cursor-pointer hover:border-gray-300 transition-all`}
-                      onClick={() => setSelectedBlockId(block.id)}
-                    >
-                      <div className="p-6">
-                        <BlockEditor
-                          block={block}
-                          blockIndex={index}
-                          totalBlocks={contentBlocks.length}
-                          productId={productId}
-                          onUpdate={(updates) => handleBlockUpdate(block.id, updates)}
-                          onDelete={() => handleDeleteBlock(block.id)}
-                          onMove={(direction) => handleMoveBlock(block.id, direction)}
-                        />
+                  {contentBlocks.map((block, index) => {
+                    const isCollapsed = collapsedBlocks.has(block.id)
+                    return (
+                      <div
+                        key={block.id}
+                        className={`bg-white rounded-lg border-2 ${
+                          selectedBlockId === block.id ? 'border-blue-500 shadow-lg' : 'border-gray-200'
+                        } hover:border-gray-300 transition-all`}
+                      >
+                        {/* Block Header - Always visible */}
+                        <div 
+                          className="flex items-center justify-between p-4 cursor-pointer border-b border-gray-200"
+                          onClick={() => toggleBlockCollapse(block.id)}
+                        >
+                          <div className="flex items-center gap-3">
+                            <GripVertical className="w-5 h-5 text-gray-400" />
+                            <div>
+                              <h4 className="font-semibold text-gray-900">
+                                {block.block_type?.replace("Artwork ", "").replace(" Block", "") || "Block"}
+                              </h4>
+                              <p className="text-sm text-gray-500 truncate max-w-[300px]">
+                                {block.title || "No title"}
+                              </p>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            {!isReorderMode && (
+                              <>
+                                {/* Move buttons */}
+                                {index > 0 && (
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={(e) => {
+                                      e.stopPropagation()
+                                      handleMoveBlock(block.id, "up")
+                                    }}
+                                    title="Move up"
+                                  >
+                                    <ChevronUp className="w-4 h-4" />
+                                  </Button>
+                                )}
+                                {index < contentBlocks.length - 1 && (
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={(e) => {
+                                      e.stopPropagation()
+                                      handleMoveBlock(block.id, "down")
+                                    }}
+                                    title="Move down"
+                                  >
+                                    <ChevronDown className="w-4 h-4" />
+                                  </Button>
+                                )}
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={(e) => {
+                                    e.stopPropagation()
+                                    handleDeleteBlock(block.id)
+                                  }}
+                                  className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                </Button>
+                              </>
+                            )}
+                            {isCollapsed ? (
+                              <ChevronDown className="w-5 h-5 text-gray-400" />
+                            ) : (
+                              <ChevronUp className="w-5 h-5 text-gray-400" />
+                            )}
+                          </div>
+                        </div>
+                        
+                        {/* Block Content - Collapsible */}
+                        {!isCollapsed && !isReorderMode && (
+                          <div className="p-6">
+                            <BlockEditor
+                              block={block}
+                              blockIndex={index}
+                              totalBlocks={contentBlocks.length}
+                              productId={productId}
+                              onUpdate={(updates) => handleBlockUpdate(block.id, updates)}
+                              onDelete={() => handleDeleteBlock(block.id)}
+                              onMove={(direction) => handleMoveBlock(block.id, direction)}
+                            />
+                          </div>
+                        )}
                       </div>
-                    </div>
-                  ))}
+                    )
+                  })}
                 </div>
               )}
             </div>
@@ -745,65 +887,6 @@ function BlockEditor({
 
   return (
     <div className="space-y-4">
-      {/* Block Header with Actions */}
-      <div className="flex items-center justify-between pb-3 border-b border-gray-200">
-        <div className="flex items-center gap-2">
-          <GripVertical className="w-4 h-4 text-gray-400 cursor-move" />
-          <span className="text-sm font-medium text-gray-700">
-            {block.block_type?.replace("Artwork ", "").replace(" Block", "") || "Block"}
-          </span>
-        </div>
-        <div className="flex items-center gap-1">
-          {/* Reorder Buttons */}
-          {onMove && typeof blockIndex === 'number' && typeof totalBlocks === 'number' && (
-            <>
-              {blockIndex > 0 && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    onMove("up")
-                  }}
-                  className="text-gray-600 hover:text-gray-900 hover:bg-gray-100"
-                  title="Move up"
-                >
-                  <ChevronUp className="w-4 h-4" />
-                </Button>
-              )}
-              {blockIndex < totalBlocks - 1 && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    onMove("down")
-                  }}
-                  className="text-gray-600 hover:text-gray-900 hover:bg-gray-100"
-                  title="Move down"
-                >
-                  <ChevronDown className="w-4 h-4" />
-                </Button>
-              )}
-            </>
-          )}
-          {/* Delete Button */}
-          {onDelete && (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={(e) => {
-                e.stopPropagation()
-                onDelete()
-              }}
-              className="text-red-600 hover:text-red-700 hover:bg-red-50"
-            >
-              <Trash2 className="w-4 h-4" />
-            </Button>
-          )}
-        </div>
-      </div>
-      
       {/* Block Content */}
       {renderBlockContent()}
     </div>

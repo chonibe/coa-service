@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useRef, useEffect } from "react"
-import { Plus, CheckCircle2 } from "lucide-react"
+import { Plus, CheckCircle2, Lock } from "lucide-react"
 import Image from "next/image"
 import { StoryViewer } from "./StoryViewer"
 import type { StoryCirclesProps, StoryUser } from "@/lib/story/types"
@@ -15,6 +15,7 @@ import type { StoryCirclesProps, StoryUser } from "@/lib/story/types"
  * - Artist badge for artist stories
  * - Tap to open StoryViewer at that user's stories
  * - Horizontal scroll with touch support
+ * - Lock indicator for non-authenticated users
  */
 export function StoryCircles({
   productId,
@@ -25,10 +26,21 @@ export function StoryCircles({
   users = [],
   isPreview = false,
   onStorySeen,
+  onAuthRequired, // New prop for showing authentication prompt
 }: StoryCirclesProps) {
   const [viewerOpen, setViewerOpen] = useState(false)
   const [viewerInitialIndex, setViewerInitialIndex] = useState(0)
   const scrollRef = useRef<HTMLDivElement>(null)
+
+  // Handle add story button click
+  const handleAddStory = () => {
+    if (isOwner || isArtist) {
+      onAddStory()
+    } else if (onAuthRequired) {
+      // Show authentication prompt
+      onAuthRequired()
+    }
+  }
 
   // Open story viewer at specific user
   const openViewer = (userIndex: number) => {
@@ -61,17 +73,28 @@ export function StoryCircles({
           className="flex gap-3 overflow-x-auto px-4 pb-2 scrollbar-hide"
           style={{ WebkitOverflowScrolling: 'touch' }}
         >
-          {/* Add Story button - only for owners */}
-          {(isOwner || isArtist) && (
+          {/* Add Story button - show for owners, or with lock for non-owners */}
+          {(isOwner || isArtist || (!isOwner && !isArtist)) && (
             <button
-              onClick={onAddStory}
-              className="flex flex-col items-center gap-1.5 flex-shrink-0"
+              onClick={handleAddStory}
+              className="flex flex-col items-center gap-1.5 flex-shrink-0 relative group"
+              title={!isOwner && !isArtist ? "Authenticate your artwork to add stories" : "Add your story"}
             >
-              <div className="relative w-[68px] h-[68px] rounded-full border-2 border-dashed border-gray-300 flex items-center justify-center bg-gray-50 hover:bg-gray-100 hover:border-gray-400 transition-colors">
-                <Plus className="w-7 h-7 text-gray-400" />
+              <div className={`relative w-[68px] h-[68px] rounded-full border-2 ${
+                isOwner || isArtist 
+                  ? 'border-dashed border-gray-300 bg-gray-50 hover:bg-gray-100 hover:border-gray-400' 
+                  : 'border-dashed border-amber-300 bg-amber-50/50 hover:bg-amber-100/50 hover:border-amber-400'
+              } flex items-center justify-center transition-colors`}>
+                {isOwner || isArtist ? (
+                  <Plus className="w-7 h-7 text-gray-400" />
+                ) : (
+                  <Lock className="w-6 h-6 text-amber-500" />
+                )}
               </div>
-              <span className="text-xs text-gray-600 font-medium max-w-[70px] truncate">
-                Add Story
+              <span className={`text-xs font-medium max-w-[70px] truncate ${
+                isOwner || isArtist ? 'text-gray-600' : 'text-amber-600'
+              }`}>
+                {isOwner || isArtist ? 'Add Story' : 'Locked'}
               </span>
             </button>
           )}
@@ -162,6 +185,7 @@ function StoryCircle({ user, onClick }: StoryCircleProps) {
                 fill
                 className="object-cover group-hover:scale-110 transition-transform duration-200"
                 sizes="60px"
+                unoptimized={user.avatarUrl.toLowerCase().endsWith('.gif')}
               />
             ) : (
               // Fallback gradient with initial

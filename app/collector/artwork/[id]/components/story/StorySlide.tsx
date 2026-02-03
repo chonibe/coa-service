@@ -157,23 +157,19 @@ export function StorySlide({ story, isPaused }: StorySlideProps) {
     }
   }
 
-  // Format location string
-  const locationString = story.city && story.country 
-    ? `${story.city}, ${story.country}`
-    : story.city || story.country || null
-
   return (
     <div className="relative w-full h-full bg-black">
       {/* Main content */}
       {renderContent()}
 
-      {/* Location tag overlay - for photo and video content */}
-      {(story.content_type === 'photo' || story.content_type === 'video') && locationString && (
+      {/* Location tag overlay - top left, below header area */}
+      {(story.content_type === 'photo' || story.content_type === 'video') && 
+       (story.city || story.country) && (
         <div className="absolute top-20 left-4 z-10">
           <div className="flex items-center gap-1.5 px-3 py-1.5 bg-black/40 backdrop-blur-sm rounded-full">
             <MapPin className="w-3.5 h-3.5 text-white" />
             <span className="text-white text-sm font-medium">
-              {locationString}
+              {story.city ? `${story.city}, ${story.country}` : story.country}
             </span>
           </div>
         </div>

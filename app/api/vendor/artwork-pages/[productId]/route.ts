@@ -99,6 +99,7 @@ export async function GET(
         "Artwork Inspiration Block",
         "Artwork Artist Note Block",
         "Artwork Section Group Block",
+        "Artwork Map Block",
       ])
 
     const artworkBlockTypeIds = benefitTypes?.map((bt) => bt.id) || []
@@ -123,6 +124,7 @@ export async function GET(
           "Artwork Inspiration Block",
           "Artwork Artist Note Block",
           "Artwork Section Group Block",
+          "Artwork Map Block",
         ].includes(b.type)
       )
       
@@ -460,6 +462,7 @@ export async function POST(
         "Artwork Inspiration Block",
         "Artwork Artist Note Block",
         "Artwork Section Group Block",
+        "Artwork Map Block",
       ]
       
       if (immersiveTypes.includes(body.blockType)) {

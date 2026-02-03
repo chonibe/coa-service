@@ -13,7 +13,7 @@ import { formatCurrency } from '@/lib/utils';
 import { useState, useEffect } from 'react';
 import DuplicateItemsBox from '../DuplicateItemsBox';
 import { CollectorCard } from "@/app/admin/components/collector-card";
-;
+import OrderStatusHistory from './OrderStatusHistory';
 import { toast } from "sonner";
 import { useRouter } from 'next/navigation';
 
@@ -828,6 +828,9 @@ export default function OrderDetails({ order }: OrderDetailsProps) {
       </div>
         </CardContent>
       </Card>
+
+      {/* Shipping Status History */}
+      <OrderStatusHistory orderId={order.id} orderName={`#${order.order_number}`} />
 
       {/* Refund Dialog */}
       <Dialog open={refundDialogOpen} onOpenChange={setRefundDialogOpen}>

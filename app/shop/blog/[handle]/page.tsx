@@ -181,16 +181,6 @@ function ArticleContent({
       
       <SectionWrapper spacing="md" background="default">
         <Container maxWidth="narrow">
-          {/* Breadcrumb */}
-          <Breadcrumb 
-            items={[
-              { label: 'Home', href: '/shop' },
-              { label: 'Blog', href: '/shop/blog' },
-              { label: title }
-            ]}
-            className="mb-6"
-          />
-          
           <ScrollReveal animation="fadeUp" duration={0.6}>
             {/* Tags */}
             {tags.length > 0 && (

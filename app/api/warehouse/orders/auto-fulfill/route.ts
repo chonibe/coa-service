@@ -3,13 +3,74 @@ import type { NextRequest } from 'next/server'
 import crypto from 'crypto'
 import { createClient } from '@/lib/supabase/server'
 import { createChinaDivisionClient } from '@/lib/chinadivision/client'
-import { sendTrackingUpdateEmail, type TrackingEmailOrder } from '@/lib/notifications/tracking-link'
+import { 
+  sendTrackingUpdateEmail, 
+  type TrackingEmailOrder,
+  TRACK_STATUS_STAGES,
+  WAREHOUSE_STATUS,
+  STAGE_MESSAGES,
+  getStageForNotification,
+  getStatusLabel,
+  getTrackStatusLabel,
+} from '@/lib/notifications/tracking-link'
 import { createFulfillmentWithTracking } from '@/lib/shopify/fulfillment'
 
 const CRON_SECRET = process.env.CRON_SECRET
 
 const APPROVING_STATUS = 0
 const IN_TRANSIT_TRACK_STATUS = 101
+
+// Meaningful stages that should trigger notifications
+const NOTIFICATION_STAGES = new Set([
+  WAREHOUSE_STATUS.SHIPPED,        // 3 - Shipped
+  TRACK_STATUS_STAGES.IN_TRANSIT,  // 101 - In Transit
+  TRACK_STATUS_STAGES.OUT_FOR_DELIVERY, // 112 - Out for Delivery
+  TRACK_STATUS_STAGES.DELIVERED,   // 121 - Delivered
+  TRACK_STATUS_STAGES.ALERT,       // 131 - Alert
+])
+
+/**
+ * Check if status has changed to a meaningful stage that warrants notification
+ */
+function shouldNotifyForStatusChange(
+  currentStatus: number | undefined,
+  currentTrackStatus: number | undefined,
+  lastNotified: { status?: number; track_status?: number } | undefined
+): { shouldNotify: boolean; stage: number | null; reason: string } {
+  // Get the effective stage for the current status
+  const currentStage = getStageForNotification(currentTrackStatus, currentStatus)
+  
+  if (!currentStage || !NOTIFICATION_STAGES.has(currentStage)) {
+    return { shouldNotify: false, stage: null, reason: 'not_meaningful_stage' }
+  }
+  
+  // If no previous notification, should notify
+  if (!lastNotified) {
+    return { shouldNotify: true, stage: currentStage, reason: 'first_notification' }
+  }
+  
+  // Get the last notified stage
+  const lastStage = getStageForNotification(lastNotified.track_status, lastNotified.status)
+  
+  // If the stage is the same, don't notify again
+  if (currentStage === lastStage) {
+    return { shouldNotify: false, stage: currentStage, reason: 'same_stage' }
+  }
+  
+  // Stage has changed to a new meaningful stage
+  return { shouldNotify: true, stage: currentStage, reason: 'stage_changed' }
+}
+
+/**
+ * Generate a human-readable note for a status change
+ */
+function generateStatusNote(stage: number, trackingNumber?: string): string {
+  const stageMessage = STAGE_MESSAGES[stage]
+  if (!stageMessage) {
+    return `Status updated${trackingNumber ? `. Tracking: ${trackingNumber}` : ''}`
+  }
+  return `${stageMessage.headline}${trackingNumber ? ` Tracking: ${trackingNumber}` : ''}`
+}
 
 export async function POST(request: NextRequest) {
   try {
@@ -44,6 +105,7 @@ export async function POST(request: NextRequest) {
     let linksCreated = 0
     let emailsSent = 0
     let fulfillmentsCreated = 0
+    let notesCreated = 0
     let skipped = 0
 
     for (const order of eligible) {
@@ -143,7 +205,25 @@ export async function POST(request: NextRequest) {
           },
         ]
 
-        if (!dryRun && order.ship_email) {
+        // Check if we should send a notification for this status change
+        const orderKey = order.order_id || order.sys_order_id
+        const { data: prefs } = await supabase
+          .from('tracking_link_notification_preferences')
+          .select('last_notified_status')
+          .eq('token', trackingLink.token)
+          .maybeSingle()
+
+        const lastNotifiedStatus = (prefs?.last_notified_status as Record<string, any>) || {}
+        const lastNotifiedForOrder = orderKey ? lastNotifiedStatus[orderKey] : undefined
+
+        const { shouldNotify, stage, reason } = shouldNotifyForStatusChange(
+          order.status,
+          order.track_status,
+          lastNotifiedForOrder
+        )
+
+        if (!dryRun && order.ship_email && shouldNotify && stage) {
+          // Send stage-specific email notification
           const emailResult = await sendTrackingUpdateEmail({
             token: trackingLink.token,
             title: trackingLink.title || 'Order Tracking',
@@ -151,23 +231,19 @@ export async function POST(request: NextRequest) {
             primaryColor: trackingLink.primary_color || '#8217ff',
             email: order.ship_email,
             baseUrl: process.env.NEXT_PUBLIC_APP_URL,
+            stage, // Pass the stage for stage-specific messaging
           })
+          
           if (!emailResult.success) {
-            throw new Error(emailResult.error || 'Failed to send email')
+            console.error(`[auto-fulfill] Failed to send email for ${orderId}: ${emailResult.error}`)
+          } else {
+            emailsSent++
+            console.log(`[auto-fulfill] Sent ${STAGE_MESSAGES[stage]?.headline || 'status update'} email for ${orderId}`)
           }
-          emailsSent++
 
           // Update last_notified_status
-          const orderKey = order.order_id || order.sys_order_id
-          const { data: prefs } = await supabase
-            .from('tracking_link_notification_preferences')
-            .select('last_notified_status')
-            .eq('token', trackingLink.token)
-            .maybeSingle()
-
-          const lastNotified = (prefs?.last_notified_status as Record<string, any>) || {}
           if (orderKey) {
-            lastNotified[orderKey] = {
+            lastNotifiedStatus[orderKey] = {
               status: order.status,
               track_status: order.track_status,
             }
@@ -176,10 +252,30 @@ export async function POST(request: NextRequest) {
           await supabase
             .from('tracking_link_notification_preferences')
             .update({
-              last_notified_status: lastNotified,
+              last_notified_status: lastNotifiedStatus,
               updated_at: new Date().toISOString(),
             })
             .eq('token', trackingLink.token)
+
+          // Insert order status note for this stage change
+          const targetOrderId = order.order_id?.toString().replace('#', '').trim()
+          const { error: noteError } = await supabase.from('order_status_notes').insert({
+            order_id: targetOrderId || orderId,
+            order_name: order.order_id,
+            status_code: order.status,
+            status_name: getStatusLabel(order.status, order.status_name),
+            track_status_code: order.track_status,
+            track_status_name: getTrackStatusLabel(order.track_status, order.track_status_name),
+            tracking_number: order.tracking_number,
+            note: generateStatusNote(stage, order.tracking_number),
+            source: 'auto',
+          })
+          if (!noteError) {
+            notesCreated++
+          }
+        } else if (!dryRun && !shouldNotify) {
+          // Log why we're not sending
+          console.log(`[auto-fulfill] Skipping notification for ${orderId}: ${reason}`)
         }
 
         // Create Shopify fulfillment
@@ -372,6 +468,7 @@ export async function POST(request: NextRequest) {
       eligible: eligible.length,
       linksCreated,
       emailsSent,
+      notesCreated,
       fulfillmentsCreated,
       skipped,
       results,

@@ -22,11 +22,19 @@ export async function GET(
       .select("*")
       .eq("id", params.id)
       .eq("vendor_name", vendorName)
-      .single()
+      .maybeSingle()
 
-    if (error || !submission) {
+    if (error) {
+      console.error(`[Submission API] Database error for ID ${params.id}:`, error)
       return NextResponse.json(
-        { error: "Submission not found" },
+        { error: "Database error", message: error.message },
+        { status: 500 },
+      )
+    }
+
+    if (!submission) {
+      return NextResponse.json(
+        { error: "Submission not found", message: `No submission found with ID: ${params.id}` },
         { status: 404 },
       )
     }
@@ -146,9 +154,10 @@ export async function PUT(
       .from("vendors")
       .select("id, vendor_name")
       .eq("vendor_name", vendorName)
-      .single()
+      .maybeSingle()
 
     if (vendorError || !vendor) {
+      console.error(`[Submission PUT] Vendor not found: ${vendorName}`, vendorError)
       return NextResponse.json({ error: "Vendor not found" }, { status: 404 })
     }
 
@@ -158,9 +167,17 @@ export async function PUT(
       .select("*")
       .eq("id", params.id)
       .eq("vendor_id", vendor.id)
-      .single()
+      .maybeSingle()
 
-    if (fetchError || !existingSubmission) {
+    if (fetchError) {
+      console.error(`[Submission PUT] Database error for ID ${params.id}:`, fetchError)
+      return NextResponse.json(
+        { error: "Database error", message: fetchError.message },
+        { status: 500 },
+      )
+    }
+
+    if (!existingSubmission) {
       return NextResponse.json(
         { error: "Submission not found or you don't have permission to update it" },
         { status: 404 },
@@ -203,9 +220,17 @@ export async function PUT(
         .select("id, name")
         .eq("id", seriesId)
         .eq("vendor_id", vendor.id)
-        .single()
+        .maybeSingle()
 
-      if (seriesError || !series) {
+      if (seriesError) {
+        console.error(`[Submission PUT] Error checking series ${seriesId}:`, seriesError)
+        return NextResponse.json(
+          { error: "Database error checking series", message: seriesError.message },
+          { status: 500 },
+        )
+      }
+
+      if (!series) {
         return NextResponse.json(
           { error: "Series not found or does not belong to vendor" },
           { status: 400 },
@@ -230,7 +255,7 @@ export async function PUT(
       .eq("id", params.id)
       .eq("vendor_id", vendor.id)
       .select()
-      .single()
+      .maybeSingle()
 
     if (updateError) {
       console.error("Error updating submission:", updateError)
@@ -401,9 +426,17 @@ export async function DELETE(
       .select("*")
       .eq("id", params.id)
       .eq("vendor_name", vendorName)
-      .single()
+      .maybeSingle()
 
-    if (fetchError || !submission) {
+    if (fetchError) {
+      console.error(`[Submission DELETE] Database error for ID ${params.id}:`, fetchError)
+      return NextResponse.json(
+        { error: "Database error", message: fetchError.message },
+        { status: 500 },
+      )
+    }
+
+    if (!submission) {
       return NextResponse.json(
         { error: "Submission not found or you don't have permission to delete it" },
         { status: 404 },

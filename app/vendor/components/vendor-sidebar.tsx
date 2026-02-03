@@ -96,11 +96,7 @@ export function VendorSidebar() {
       href: "/vendor/dashboard/products",
       icon: <Icon size="md"><ImageIcon className="h-5 w-5" /></Icon>,
     },
-    {
-      title: "Artwork Pages",
-      href: "/vendor/dashboard/artwork-pages",
-      icon: <Icon size="md"><FileText className="h-5 w-5" /></Icon>,
-    },
+    // Artwork Pages removed - edit buttons now appear next to each artwork
     // Slides page hidden per user request
     // {
     //   title: "Slides",
@@ -249,7 +245,7 @@ export function VendorSidebar() {
   const handleSwitchToCollector = async () => {
     try {
       setIsSwitching(true)
-      const res = await fetch("/api/auth/collector/switch", { method: "POST", credentials: "include" })
+      const res = await fetch("/api/auth/vendor/switch-to-collector", { method: "POST", credentials: "include" })
       const payload = await res.json().catch(() => ({}))
       if (!res.ok || !payload.success) {
         throw new Error(payload.error || "Unable to switch to collector view")

@@ -168,6 +168,56 @@ export interface ShopifyProductVariant {
   image: ShopifyImage | null
 }
 
+// =============================================================================
+// MEDIA TYPE DEFINITIONS
+// =============================================================================
+
+export type MediaContentType = 'IMAGE' | 'VIDEO' | 'EXTERNAL_VIDEO' | 'MODEL_3D'
+
+export interface ShopifyVideoSource {
+  url: string
+  mimeType: string
+  format: string
+  height: number
+  width: number
+}
+
+export interface ShopifyVideo {
+  id: string
+  mediaContentType: 'VIDEO'
+  sources: ShopifyVideoSource[]
+  previewImage: ShopifyImage | null
+}
+
+export interface ShopifyExternalVideo {
+  id: string
+  mediaContentType: 'EXTERNAL_VIDEO'
+  host: 'YOUTUBE' | 'VIMEO'
+  embeddedUrl: string
+  previewImage: ShopifyImage | null
+}
+
+export interface ShopifyMediaImage {
+  id: string
+  mediaContentType: 'IMAGE'
+  image: ShopifyImage
+}
+
+export interface ShopifyModel3dSource {
+  url: string
+  mimeType: string
+  format: string
+}
+
+export interface ShopifyModel3d {
+  id: string
+  mediaContentType: 'MODEL_3D'
+  sources: ShopifyModel3dSource[]
+  previewImage: ShopifyImage | null
+}
+
+export type ShopifyMedia = ShopifyVideo | ShopifyExternalVideo | ShopifyMediaImage | ShopifyModel3d
+
 export interface ShopifyProduct {
   id: string
   handle: string
@@ -189,6 +239,9 @@ export interface ShopifyProduct {
   featuredImage: ShopifyImage | null
   images: {
     edges: Array<{ node: ShopifyImage }>
+  }
+  media?: {
+    edges: Array<{ node: ShopifyMedia }>
   }
   variants: {
     edges: Array<{ node: ShopifyProductVariant }>
@@ -269,6 +322,63 @@ const PRODUCT_FRAGMENT = `
           altText
           width
           height
+        }
+      }
+    }
+    media(first: 20) {
+      edges {
+        node {
+          mediaContentType
+          ... on Video {
+            id
+            sources {
+              url
+              mimeType
+              format
+              height
+              width
+            }
+            previewImage {
+              url
+              altText
+              width
+              height
+            }
+          }
+          ... on ExternalVideo {
+            id
+            host
+            embeddedUrl
+            previewImage {
+              url
+              altText
+              width
+              height
+            }
+          }
+          ... on MediaImage {
+            id
+            image {
+              url
+              altText
+              width
+              height
+            }
+          }
+          ... on Model3d {
+            id
+            sources {
+              url
+              mimeType
+              format
+            }
+            previewImage {
+              url
+              altText
+              width
+              height
+            }
+          }
         }
       }
     }
@@ -445,6 +555,32 @@ export async function getProducts(options: {
     products: data.products.edges.map(edge => edge.node),
     pageInfo: data.products.pageInfo,
   }
+}
+
+/**
+ * Get products by vendor/artist name
+ */
+export async function getProductsByVendor(vendorName: string, options: {
+  first?: number
+  after?: string
+  sortKey?: 'TITLE' | 'PRICE' | 'BEST_SELLING' | 'CREATED_AT' | 'UPDATED_AT'
+  reverse?: boolean
+} = {}): Promise<{
+  products: ShopifyProduct[]
+  pageInfo: { hasNextPage: boolean; endCursor: string | null }
+}> {
+  const { first = 20, after, sortKey = 'CREATED_AT', reverse = true } = options
+
+  // Use Shopify's query syntax to filter by vendor
+  const searchQuery = `vendor:${vendorName}`
+
+  return getProducts({
+    first,
+    after,
+    sortKey,
+    reverse,
+    query: searchQuery,
+  })
 }
 
 // =============================================================================

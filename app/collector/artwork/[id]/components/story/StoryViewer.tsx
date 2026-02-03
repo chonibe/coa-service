@@ -260,6 +260,7 @@ export function StoryViewer({
                         alt={currentUser.name}
                         fill
                         className="object-cover"
+                        unoptimized={currentUser.avatarUrl.toLowerCase().endsWith('.gif')}
                       />
                     ) : (
                       <div className="w-full h-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center">
@@ -308,6 +309,14 @@ export function StoryViewer({
                 </button>
               </div>
             </div>
+
+            {/* Edge swipe hints - show subtle gradients when more users exist */}
+            {currentUserIndex > 0 && (
+              <div className="absolute left-0 top-0 bottom-0 w-12 z-[5] pointer-events-none bg-gradient-to-r from-black/20 to-transparent" />
+            )}
+            {currentUserIndex < users.length - 1 && (
+              <div className="absolute right-0 top-0 bottom-0 w-12 z-[5] pointer-events-none bg-gradient-to-l from-black/20 to-transparent" />
+            )}
 
             {/* User indicator dots (optional - shows which user you're viewing) */}
             {users.length > 1 && (

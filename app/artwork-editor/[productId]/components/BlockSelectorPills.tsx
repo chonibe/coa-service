@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useRef, useEffect } from "react"
+import { useState, useRef, useEffect, useCallback } from "react"
 import { 
   FileText, 
   Image as ImageIcon, 
@@ -51,17 +51,26 @@ export function BlockSelectorPills({
   onAddBlock,
 }: BlockSelectorPillsProps) {
   const scrollRef = useRef<HTMLDivElement>(null)
+  const pillRefs = useRef<Map<number, HTMLButtonElement>>(new Map())
   const [canScrollLeft, setCanScrollLeft] = useState(false)
   const [canScrollRight, setCanScrollRight] = useState(false)
 
   // Check scroll position
-  const checkScroll = () => {
+  const checkScroll = useCallback(() => {
     if (scrollRef.current) {
       const { scrollLeft, scrollWidth, clientWidth } = scrollRef.current
       setCanScrollLeft(scrollLeft > 0)
       setCanScrollRight(scrollLeft < scrollWidth - clientWidth - 10)
     }
-  }
+  }, [])
+
+  // Auto-scroll selected pill into view
+  useEffect(() => {
+    if (selectedBlockId && pillRefs.current.has(selectedBlockId)) {
+      const pill = pillRefs.current.get(selectedBlockId)
+      pill?.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' })
+    }
+  }, [selectedBlockId])
 
   useEffect(() => {
     checkScroll()
@@ -70,7 +79,7 @@ export function BlockSelectorPills({
       scrollEl.addEventListener("scroll", checkScroll)
       return () => scrollEl.removeEventListener("scroll", checkScroll)
     }
-  }, [blocks])
+  }, [blocks, checkScroll])
 
   const scroll = (direction: "left" | "right") => {
     if (scrollRef.current) {
@@ -101,13 +110,19 @@ export function BlockSelectorPills({
       {/* Pills container */}
       <div
         ref={scrollRef}
-        className="flex gap-2 overflow-x-auto scrollbar-hide px-4 py-3"
+        className="flex gap-2 overflow-x-auto scrollbar-hide px-4 py-3 min-h-[68px]"
         style={{ 
           scrollbarWidth: "none",
-          paddingBottom: "calc(0.75rem + env(safe-area-inset-bottom))"
+          paddingBottom: "calc(0.75rem + env(safe-area-inset-bottom))",
+          WebkitOverflowScrolling: "touch"
         }}
       >
-        {blocks.map((block) => {
+        {blocks.length === 0 ? (
+          <div className="flex items-center justify-center w-full text-center py-2">
+            <p className="text-sm text-gray-600">No blocks yet</p>
+          </div>
+        ) : (
+          blocks.map((block, index) => {
           const schema = getBlockSchema(block.block_type)
           if (!schema) return null
 
@@ -117,33 +132,45 @@ export function BlockSelectorPills({
           return (
             <button
               key={block.id}
+              ref={(el) => {
+                if (el) pillRefs.current.set(block.id, el)
+                else pillRefs.current.delete(block.id)
+              }}
               onClick={() => onSelectBlock(block.id)}
               className={cn(
                 "flex-shrink-0 flex items-center gap-2 px-4 py-2.5 rounded-full",
                 "transition-all duration-200 min-h-[44px]",
+                "active:scale-95", // Tactile feedback on tap
                 isSelected
-                  ? "bg-primary text-primary-foreground"
+                  ? "bg-primary text-primary-foreground shadow-md"
                   : "bg-muted text-foreground hover:bg-accent"
               )}
             >
+              {/* Block number indicator */}
+              <span className={cn(
+                "w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold",
+                isSelected ? "bg-white/20" : "bg-gray-200"
+              )}>
+                {index + 1}
+              </span>
               <IconComponent className="w-4 h-4" />
               <span className="text-sm font-medium whitespace-nowrap">
                 {schema.label}
               </span>
             </button>
           )
-        })}
+        }))}
 
-        {/* Add Block Button */}
+        {/* Add Block Button - Always visible */}
         <button
           onClick={onAddBlock}
           className="flex-shrink-0 flex items-center gap-2 px-4 py-2.5 rounded-full
-                     bg-green-600 text-white hover:bg-green-700
-                     transition-all duration-200 min-h-[44px]"
+                     bg-blue-600 text-white hover:bg-blue-700
+                     transition-all duration-200 min-h-[44px] shadow-md"
         >
           <Plus className="w-4 h-4" />
           <span className="text-sm font-medium whitespace-nowrap">
-            Add Block
+            {blocks.length === 0 ? "Add First Block" : "Add Block"}
           </span>
         </button>
       </div>

@@ -91,6 +91,8 @@ export async function GET(request: NextRequest) {
         )
       `,
       )
+      .neq("fulfillment_status", "canceled")
+      .neq("financial_status", "voided")
       .order("processed_at", { ascending: false })
       .limit(100)
 
@@ -162,6 +164,94 @@ export async function GET(request: NextRequest) {
       }
     }
 
+    // Deduplicate line items by line_item_id, keeping the most recent order
+    const lineItemsMap = new Map<string, any>()
+    const productEditionMap = new Map<string, Set<number>>() // Track product_id -> edition_numbers
+    let totalLineItemsFetched = 0
+    let duplicatesFiltered = 0
+    let inactiveFiltered = 0
+
+    orders?.forEach((order) => {
+      (order.order_line_items_v2 || []).forEach((li) => {
+        totalLineItemsFetched++
+        
+        // Filter: Only process active line items
+        if (li.status !== 'active') {
+          inactiveFiltered++
+          return
+        }
+
+        const series = li.product_id ? seriesMap.get(li.product_id) : null
+        const lineItem = {
+          id: li.id,
+          lineItemId: li.line_item_id,
+          orderId: order.id,
+          productId: li.product_id,
+          name: li.name,
+          description: li.description,
+          price: li.price,
+          quantity: li.quantity,
+          imgUrl: li.img_url,
+          vendorName: li.vendor_name,
+          nfcTagId: li.nfc_tag_id,
+          nfcClaimedAt: li.nfc_claimed_at,
+          certificateUrl: li.certificate_url,
+          certificateToken: li.certificate_token,
+          editionNumber: li.edition_number,
+          editionTotal: li.edition_total,
+          status: li.status,
+          purchaseDate: order.processed_at,
+          orderProcessedAt: order.processed_at,
+          series: series
+            ? {
+                id: series.id,
+                name: series.name,
+                vendorName: series.vendor_name,
+                thumbnailUrl: series.thumbnail_url,
+                completionProgress: series.completion_progress,
+              }
+            : null,
+          productUrl: li.product_id ? `/products/${li.product_id}` : null,
+        }
+
+        // Deduplicate by line_item_id: keep only the most recent order for each line_item_id
+        if (!lineItemsMap.has(li.line_item_id)) {
+          lineItemsMap.set(li.line_item_id, lineItem)
+          
+          // Track product/edition combinations for debugging
+          if (li.product_id && li.edition_number) {
+            if (!productEditionMap.has(li.product_id)) {
+              productEditionMap.set(li.product_id, new Set())
+            }
+            productEditionMap.get(li.product_id)!.add(li.edition_number)
+          }
+        } else {
+          const existing = lineItemsMap.get(li.line_item_id)
+          if (new Date(order.processed_at) > new Date(existing.orderProcessedAt)) {
+            lineItemsMap.set(li.line_item_id, lineItem)
+          }
+          duplicatesFiltered++
+        }
+      })
+    })
+
+    console.log(`📊 Collector Dashboard Deduplication Stats:`)
+    console.log(`   - Total line items fetched: ${totalLineItemsFetched}`)
+    console.log(`   - Inactive items filtered: ${inactiveFiltered}`)
+    console.log(`   - Duplicate line_item_ids filtered: ${duplicatesFiltered}`)
+    console.log(`   - Unique active line items: ${lineItemsMap.size}`)
+    console.log(`   - Unique products with editions: ${productEditionMap.size}`)
+    
+    // Log products with multiple editions
+    productEditionMap.forEach((editions, productId) => {
+      if (editions.size > 1) {
+        console.log(`   - Product ${productId}: ${editions.size} editions (${Array.from(editions).sort((a, b) => a - b).join(', ')})`)
+      }
+    })
+
+    const allLineItems = Array.from(lineItemsMap.values())
+
+    // Group line items back into orders for display
     const enrichedOrders =
       orders?.map((order) => ({
         id: order.id,
@@ -170,42 +260,8 @@ export async function GET(request: NextRequest) {
         totalPrice: order.total_price,
         financialStatus: order.financial_status,
         fulfillmentStatus: order.fulfillment_status,
-        lineItems: (order.order_line_items_v2 || []).map((li) => {
-          const series = li.product_id ? seriesMap.get(li.product_id) : null
-          return {
-            id: li.id,
-            lineItemId: li.line_item_id,
-            orderId: order.id,
-            productId: li.product_id,
-            name: li.name,
-            description: li.description,
-            price: li.price,
-            quantity: li.quantity,
-            imgUrl: li.img_url,
-            vendorName: li.vendor_name,
-            nfcTagId: li.nfc_tag_id,
-            nfcClaimedAt: li.nfc_claimed_at,
-            certificateUrl: li.certificate_url,
-            certificateToken: li.certificate_token,
-            editionNumber: li.edition_number,
-            editionTotal: li.edition_total,
-            status: li.status,
-            purchaseDate: order.processed_at,
-            series: series
-              ? {
-                  id: series.id,
-                  name: series.name,
-                  vendorName: series.vendor_name,
-                  thumbnailUrl: series.thumbnail_url,
-                  completionProgress: series.completion_progress,
-                }
-              : null,
-            productUrl: li.product_id ? `/products/${li.product_id}` : null,
-          }
-        }),
-      })) || []
-
-    const allLineItems = enrichedOrders.flatMap((o) => o.lineItems)
+        lineItems: allLineItems.filter((li) => li.orderId === order.id),
+      })).filter(order => order.lineItems.length > 0) || []
     
     // Use comprehensive profile stats if available, otherwise calculate from fetched orders
     const authenticatedCount = profile?.authenticated_editions ?? allLineItems.filter(

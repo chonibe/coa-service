@@ -5,7 +5,7 @@ import { useState } from "react"
 
 
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog"
-import { GripVertical, Trash2, Lock, Crown, Image as ImageIcon, AlertCircle } from "lucide-react"
+import { GripVertical, Trash2, Lock, Crown, Image as ImageIcon, AlertCircle, FileText } from "lucide-react"
 import { cn } from "@/lib/utils"
 import type { SeriesMember } from "@/types/artwork-series"
 import {
@@ -52,13 +52,13 @@ function SortableRow({ member, onRemove }: { member: SeriesMember; onRemove: (id
 
   const [removeDialogOpen, setRemoveDialogOpen] = useState(false)
 
-  // Determine the artwork page URL
+  // Determine the artwork page URL - now uses the light mode editor
   // Only create URL if we have artwork data (indicating submission exists)
   const hasArtworkData = member.artwork_title || member.artwork_image
   const artworkPageUrl = hasArtworkData && member.submission_id
-    ? `/vendor/dashboard/artwork-pages/${member.submission_id}`
+    ? `/artwork-editor/${member.submission_id}`
     : hasArtworkData && (member as any).product_id
-      ? `/vendor/dashboard/artwork-pages/${(member as any).product_id}`
+      ? `/artwork-editor/${(member as any).product_id}`
       : null
 
   return (
@@ -139,14 +139,27 @@ function SortableRow({ member, onRemove }: { member: SeriesMember; onRemove: (id
 
         {/* Actions */}
         <TableCell className="text-right">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setRemoveDialogOpen(true)}
-            className="text-destructive hover:text-destructive hover:bg-destructive/10"
-          >
-            <Trash2 className="h-4 w-4" />
-          </Button>
+          <div className="flex items-center justify-end gap-1">
+            {artworkPageUrl && (
+              <Button
+                variant="ghost"
+                size="sm"
+                asChild
+              >
+                <Link href={artworkPageUrl}>
+                  <FileText className="h-4 w-4" />
+                </Link>
+              </Button>
+            )}
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setRemoveDialogOpen(true)}
+              className="text-destructive hover:text-destructive hover:bg-destructive/10"
+            >
+              <Trash2 className="h-4 w-4" />
+            </Button>
+          </div>
         </TableCell>
       </TableRow>
 

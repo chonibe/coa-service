@@ -227,8 +227,8 @@ export function VideoBlock({ title, contentUrl, artworkId, blockConfig }: VideoB
                     className="absolute inset-0 flex items-center justify-center bg-black/30 cursor-pointer transition-opacity hover:bg-black/20"
                     onClick={handlePlayClick}
                   >
-                    <div className="w-20 h-20 rounded-full bg-white/90 dark:bg-black/80 flex items-center justify-center shadow-2xl hover:scale-110 transition-transform">
-                      <Play className="h-10 w-10 text-black dark:text-white fill-current ml-1" />
+                    <div className="w-20 h-20 rounded-full bg-white/90 flex items-center justify-center shadow-2xl hover:scale-110 transition-transform">
+                      <Play className="h-10 w-10 text-gray-900 fill-current ml-1" />
                     </div>
                   </div>
                 )}

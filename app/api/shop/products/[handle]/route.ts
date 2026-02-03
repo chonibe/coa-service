@@ -1,5 +1,11 @@
 import { NextResponse } from 'next/server'
 import { getProduct } from '@/lib/shopify/storefront-client'
+import { 
+  getProductSeriesInfo, 
+  getProductEditionInfo,
+  getCollectorSeriesProgress 
+} from '@/lib/shop/series'
+import { createClient } from '@/lib/supabase/server'
 
 export async function GET(
   request: Request,
@@ -17,7 +23,37 @@ export async function GET(
       )
     }
     
-    return NextResponse.json({ product })
+    // Fetch series info (non-blocking)
+    const seriesInfo = await getProductSeriesInfo(product.id).catch(() => null)
+    
+    // Fetch edition info (non-blocking)
+    const editionInfo = await getProductEditionInfo(product.id).catch(() => null)
+    
+    // Fetch collector progress if authenticated
+    let collectorProgress = null
+    if (seriesInfo) {
+      try {
+        const supabase = await createClient()
+        const { data: { user } } = await supabase.auth.getUser()
+        
+        if (user?.email) {
+          collectorProgress = await getCollectorSeriesProgress(
+            seriesInfo.id,
+            user.email
+          )
+        }
+      } catch (error) {
+        // Non-critical error, continue without progress
+        console.debug('Could not fetch collector progress:', error)
+      }
+    }
+    
+    return NextResponse.json({ 
+      product,
+      seriesInfo,
+      editionInfo,
+      collectorProgress
+    })
   } catch (error: any) {
     console.error('Error fetching product:', error)
     return NextResponse.json(

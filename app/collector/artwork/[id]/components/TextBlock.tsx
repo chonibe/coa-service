@@ -18,8 +18,8 @@ export function TextBlock({ title, description }: TextBlockProps) {
           {title}
         </h3>
       )}
-      <div className="prose prose-lg dark:prose-invert max-w-none">
-        <p className="whitespace-pre-line text-muted-foreground leading-relaxed text-lg">
+      <div className="prose prose-lg max-w-none">
+        <p className="whitespace-pre-line text-gray-700 leading-relaxed text-lg">
           {description}
         </p>
       </div>

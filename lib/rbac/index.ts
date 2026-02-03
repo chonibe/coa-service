@@ -55,6 +55,18 @@ export type Permission =
   | 'profile:manage'
   | 'benefits:access'
   | 'avatar:manage'
+  
+  // Membership permissions (Collector)
+  | 'membership:view'
+  | 'membership:subscribe'
+  | 'membership:manage'
+  | 'credits:view'
+  | 'credits:redeem'
+  | 'checkout:member'
+  
+  // Membership permissions (Admin)
+  | 'membership:admin'
+  | 'credits:admin'
 
 /**
  * User context with roles and permissions

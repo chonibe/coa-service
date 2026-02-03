@@ -3,6 +3,7 @@
 import { useState, useEffect, useMemo, useCallback } from 'react'
 import type { KeyboardEvent } from 'react'
 import { useParams, useRouter } from 'next/navigation'
+import { usePurchaseTracking } from '@/hooks/use-analytics'
 
 import { Skeleton } from "@/components/ui"
 
@@ -47,6 +48,7 @@ export default function TrackOrdersPage() {
   const params = useParams()
   const router = useRouter()
   const token = params?.token as string
+  const { trackPurchaseFromOrder } = usePurchaseTracking()
   
   const [title, setTitle] = useState<string>('')
   const [orders, setOrders] = useState<ChinaDivisionOrderInfo[]>([])
@@ -265,6 +267,19 @@ export default function TrackOrdersPage() {
       }
     }
   }, [token])
+
+  // Track purchases for GA4 when orders are loaded
+  useEffect(() => {
+    if (orders.length > 0) {
+      orders.forEach(order => {
+        // Extract order ID from the order object (adjust field name as needed)
+        const orderId = order.orderNumber || order.id?.toString()
+        if (orderId) {
+          trackPurchaseFromOrder(orderId)
+        }
+      })
+    }
+  }, [orders, trackPurchaseFromOrder])
 
   const fetchNotificationPreferences = async () => {
     if (!token) return

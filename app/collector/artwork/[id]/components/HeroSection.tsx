@@ -54,7 +54,7 @@ export function HeroSection({
         {editionNumber && editionTotal && (
           <Badge 
             variant="secondary" 
-            className="text-lg px-4 py-2 rounded-full bg-white/90 dark:bg-black/90 backdrop-blur-md border-white/20 shadow-lg"
+            className="text-lg px-4 py-2 rounded-full bg-white/90 backdrop-blur-md border-white/20 shadow-lg"
           >
             #{editionNumber}/{editionTotal}
           </Badge>

@@ -155,7 +155,7 @@ export default function MobileArtworkEditorPage() {
   }
 
   const handlePreview = () => {
-    window.open(`/vendor/dashboard/artwork-pages/${productId}/preview`, "_blank")
+    window.open(`/preview/artwork/${productId}`, "_blank")
   }
 
   if (isLoading) {

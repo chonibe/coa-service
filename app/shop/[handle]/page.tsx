@@ -27,6 +27,8 @@ import {
   streetLampAccordionItems,
   artworkAccordionItems,
   StickyBuyBar,
+  ProductSeriesInfo,
+  EditionInfo,
 } from './components'
 
 // =============================================================================
@@ -42,8 +44,12 @@ export default function ProductPage() {
   const [quantity, setQuantity] = useState(1)
   const [loading, setLoading] = useState(true)
   const [addingToCart, setAddingToCart] = useState(false)
+  const [cartButtonState, setCartButtonState] = useState<'idle' | 'loading' | 'success'>('idle')
   const [relatedProducts, setRelatedProducts] = useState<ShopifyProduct[]>([])
   const [apiError, setApiError] = useState<string | null>(null)
+  const [seriesInfo, setSeriesInfo] = useState<any>(null)
+  const [editionInfo, setEditionInfo] = useState<any>(null)
+  const [collectorProgress, setCollectorProgress] = useState<any>(null)
   
     // For sticky buy bar
   const buyButtonRef = useRef<HTMLButtonElement>(null)
@@ -70,6 +76,18 @@ export default function ProductPage() {
         }
         const data = await response.json()
         setProduct(data.product)
+        setSeriesInfo(data.seriesInfo || null)
+        setEditionInfo(data.editionInfo || null)
+        setCollectorProgress(data.collectorProgress || null)
+        
+        // Debug logging
+        console.log('Product data loaded:', {
+          hasSeriesInfo: !!data.seriesInfo,
+          seriesInfo: data.seriesInfo,
+          hasEditionInfo: !!data.editionInfo,
+          editionInfo: data.editionInfo,
+          hasCollectorProgress: !!data.collectorProgress
+        })
         
         // Set default variant
         if (data.product.variants.edges.length > 0) {
@@ -123,10 +141,11 @@ export default function ProductPage() {
     }))
   }
 
-  // Handle add to cart
+  // Handle add to cart with enhanced states
   const handleAddToCart = () => {
     if (!selectedVariant || !product) return
     
+    setCartButtonState('loading')
     setAddingToCart(true)
     
     // Add to cart using context
@@ -142,8 +161,16 @@ export default function ProductPage() {
       artistName: product.vendor,
     })
     
-    // Brief delay for feedback
-    setTimeout(() => setAddingToCart(false), 500)
+    // Show success state
+    setTimeout(() => {
+      setCartButtonState('success')
+      setAddingToCart(false)
+    }, 400)
+    
+    // Return to idle after showing success
+    setTimeout(() => {
+      setCartButtonState('idle')
+    }, 2000)
   }
 
   // Carousel scroll handlers
@@ -300,6 +327,22 @@ export default function ProductPage() {
                 {product.title}
               </h1>
 
+              {/* Series Info */}
+              {seriesInfo && (
+                <ProductSeriesInfo 
+                  series={seriesInfo}
+                  collectorProgress={collectorProgress}
+                />
+              )}
+
+              {/* Edition Info */}
+              {editionInfo && (editionInfo.edition_size || editionInfo.total_editions) && (
+                <EditionInfo
+                  editionSize={editionInfo.edition_size}
+                  totalEditions={editionInfo.total_editions}
+                />
+              )}
+
               {/* Price */}
               <div className="space-y-1">
                 <p className="text-sm text-[#1a1a1a]/60">Sale price</p>
@@ -413,15 +456,24 @@ export default function ProductPage() {
 
               {/* Action Buttons */}
               <div className="space-y-3 pt-2">
-                {/* Add to Cart - uses cart context */}
+                {/* Add to Cart - Enhanced with state transitions */}
                 <button
                   ref={buyButtonRef}
                   id="main-add-to-cart"
                   onClick={handleAddToCart}
-                  disabled={!product.availableForSale || !selectedVariant?.availableForSale || addingToCart}
-                  className="w-full py-4 px-6 bg-[#f0c417] text-[#1a1a1a] font-semibold text-base rounded-full hover:bg-[#e0b415] transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 min-h-[44px]"
+                  disabled={!product.availableForSale || !selectedVariant?.availableForSale || cartButtonState !== 'idle'}
+                  className={`
+                    w-full py-4 px-6 font-semibold text-base rounded-full 
+                    flex items-center justify-center gap-2 min-h-[44px]
+                    transition-all duration-300 ease-out
+                    disabled:cursor-not-allowed
+                    ${cartButtonState === 'idle' && 'bg-[#f0c417] text-[#1a1a1a] hover:bg-[#e0b415] active:scale-[0.98]'}
+                    ${cartButtonState === 'loading' && 'bg-[#f0c417] text-[#1a1a1a] scale-[0.98]'}
+                    ${cartButtonState === 'success' && 'bg-[#0a8754] text-white scale-105'}
+                    ${(!product.availableForSale || !selectedVariant?.availableForSale) && 'opacity-50'}
+                  `}
                 >
-                  {addingToCart ? (
+                  {cartButtonState === 'loading' && (
                     <>
                       <svg className="animate-spin h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                         <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
@@ -429,10 +481,25 @@ export default function ProductPage() {
                       </svg>
                       Adding...
                     </>
-                  ) : !product.availableForSale || !selectedVariant?.availableForSale ? (
-                    'Sold Out'
-                  ) : (
-                    'Add to cart'
+                  )}
+                  
+                  {cartButtonState === 'success' && (
+                    <>
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" className="animate-in zoom-in duration-200">
+                        <path d="M20 6L9 17l-5-5" strokeLinecap="round" strokeLinejoin="round" />
+                      </svg>
+                      Added to cart!
+                    </>
+                  )}
+                  
+                  {cartButtonState === 'idle' && (
+                    <>
+                      {!product.availableForSale || !selectedVariant?.availableForSale ? (
+                        'Sold Out'
+                      ) : (
+                        'Add to cart'
+                      )}
+                    </>
                   )}
                 </button>
                 

@@ -76,6 +76,7 @@ export default function ArtistProfilePage({ params }: { params: { name: string }
             width={128}
             height={128}
             className="rounded-full object-cover aspect-square border-4 border-primary shadow-lg"
+            unoptimized={artist.profileImageUrl.toLowerCase().endsWith('.gif')}
           />
         ) : (
           <Skeleton className="w-32 h-32 rounded-full" />

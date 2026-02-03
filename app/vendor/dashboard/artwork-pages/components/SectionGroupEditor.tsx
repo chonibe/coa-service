@@ -18,12 +18,12 @@ interface SectionGroupEditorProps {
     description?: string
     style?: "default" | "highlighted" | "minimal"
   }
-  childBlocks: ChildBlock[]
+  childBlocks?: ChildBlock[]
   onChange: (config: any) => void
-  onAddChildBlock: (blockType: string) => void
-  onRemoveChildBlock: (childBlockId: number) => void
-  onReorderChild: (childBlockId: number, direction: "up" | "down") => void
-  onSelectChildBlock: (childBlockId: number) => void
+  onAddChildBlock?: (blockType: string) => void
+  onRemoveChildBlock?: (childBlockId: number) => void
+  onReorderChild?: (childBlockId: number, direction: "up" | "down") => void
+  onSelectChildBlock?: (childBlockId: number) => void
 }
 
 const AVAILABLE_CHILD_BLOCKS = [
@@ -63,7 +63,7 @@ export default function SectionGroupEditor({
     onChange({ ...config, style })
   }
 
-  const sortedChildBlocks = [...childBlocks].sort(
+  const sortedChildBlocks = [...(childBlocks || [])].sort(
     (a, b) => a.display_order_in_parent - b.display_order_in_parent
   )
 
@@ -71,10 +71,10 @@ export default function SectionGroupEditor({
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-start gap-3">
-        <Layers className="h-6 w-6 text-indigo-400 flex-shrink-0 mt-1" />
+        <Layers className="h-6 w-6 text-indigo-600 flex-shrink-0 mt-1" />
         <div className="flex-1">
-          <h3 className="text-lg font-semibold text-white mb-1">Section Group</h3>
-          <p className="text-sm text-gray-400">
+          <h3 className="text-lg font-semibold text-gray-900 mb-1">Section Group</h3>
+          <p className="text-sm text-gray-600">
             A container for organizing related content blocks together
           </p>
         </div>
@@ -82,18 +82,18 @@ export default function SectionGroupEditor({
 
       {/* Section Title */}
       <div className="space-y-2">
-        <label className="text-sm font-medium text-gray-300">Section Title</label>
+        <label className="text-sm font-medium text-gray-700">Section Title</label>
         <Input
           placeholder="e.g., Behind the Scenes, The Creative Process..."
           value={title}
           onChange={(e) => handleTitleChange(e.target.value)}
-          className="bg-gray-700 border-gray-600 text-white"
+          className="bg-white border-gray-300 text-gray-900"
         />
       </div>
 
       {/* Section Description */}
       <div className="space-y-2">
-        <label className="text-sm font-medium text-gray-300">
+        <label className="text-sm font-medium text-gray-700">
           Section Description <span className="text-gray-500">(optional)</span>
         </label>
         <Textarea
@@ -101,13 +101,13 @@ export default function SectionGroupEditor({
           value={description}
           onChange={(e) => handleDescriptionChange(e.target.value)}
           rows={2}
-          className="bg-gray-700 border-gray-600 text-white resize-none"
+          className="bg-white border-gray-300 text-gray-900 resize-none"
         />
       </div>
 
       {/* Section Style */}
       <div className="space-y-2">
-        <label className="text-sm font-medium text-gray-300">Section Style</label>
+        <label className="text-sm font-medium text-gray-700">Section Style</label>
         <div className="grid grid-cols-3 gap-2">
           {[
             { value: "default", label: "Default", desc: "Standard appearance" },
@@ -120,12 +120,12 @@ export default function SectionGroupEditor({
               onClick={() => handleStyleChange(opt.value as any)}
               className={`p-3 rounded-lg text-left transition-all ${
                 (config.style || "default") === opt.value
-                  ? "bg-indigo-600/30 border-2 border-indigo-500"
-                  : "bg-gray-700 border-2 border-gray-600 hover:border-gray-500"
+                  ? "bg-indigo-50 border-2 border-indigo-500"
+                  : "bg-white border-2 border-gray-300 hover:border-gray-400"
               }`}
             >
-              <p className="text-sm font-medium text-white">{opt.label}</p>
-              <p className="text-xs text-gray-400">{opt.desc}</p>
+              <p className="text-sm font-medium text-gray-900">{opt.label}</p>
+              <p className="text-xs text-gray-600">{opt.desc}</p>
             </button>
           ))}
         </div>
@@ -134,8 +134,8 @@ export default function SectionGroupEditor({
       {/* Child Blocks */}
       <div className="space-y-3">
         <div className="flex items-center justify-between">
-          <label className="text-sm font-medium text-gray-300">
-            Blocks in this Section ({childBlocks.length})
+          <label className="text-sm font-medium text-gray-700">
+            Blocks in this Section ({childBlocks?.length || 0})
           </label>
           <button
             onClick={() => setIsExpanded(!isExpanded)}
@@ -150,30 +150,30 @@ export default function SectionGroupEditor({
         </div>
 
         {isExpanded && (
-          <div className="space-y-2 pl-2 border-l-2 border-indigo-500/30">
+          <div className="space-y-2 pl-2 border-l-2 border-indigo-200">
             {sortedChildBlocks.length === 0 ? (
-              <div className="text-center py-6 text-gray-500 text-sm">
+              <div className="text-center py-6 text-gray-600 text-sm">
                 No blocks in this section yet. Add some below!
               </div>
             ) : (
               sortedChildBlocks.map((child, index) => (
                 <div
                   key={child.id}
-                  className="flex items-center gap-2 bg-gray-800/50 rounded-lg p-3 group"
+                  className="flex items-center gap-2 bg-white rounded-lg p-3 group border border-gray-200"
                 >
-                  <GripVertical className="h-4 w-4 text-gray-500" />
+                  <GripVertical className="h-4 w-4 text-gray-400" />
                   <span className="text-xs text-gray-500 w-5">{index + 1}</span>
                   <button
-                    onClick={() => onSelectChildBlock(child.id)}
-                    className="flex-1 text-left text-sm text-white hover:text-indigo-400 transition-colors truncate"
+                    onClick={() => onSelectChildBlock?.(child.id)}
+                    className="flex-1 text-left text-sm text-gray-900 hover:text-indigo-600 transition-colors truncate"
                   >
                     {child.title || child.block_type.replace("Artwork ", "").replace(" Block", "")}
                   </button>
                   <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                     {index > 0 && (
                       <button
-                        onClick={() => onReorderChild(child.id, "up")}
-                        className="p-1 text-gray-400 hover:text-white hover:bg-gray-700 rounded"
+                        onClick={() => onReorderChild?.(child.id, "up")}
+                        className="p-1 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded"
                         title="Move up"
                       >
                         ↑
@@ -181,16 +181,16 @@ export default function SectionGroupEditor({
                     )}
                     {index < sortedChildBlocks.length - 1 && (
                       <button
-                        onClick={() => onReorderChild(child.id, "down")}
-                        className="p-1 text-gray-400 hover:text-white hover:bg-gray-700 rounded"
+                        onClick={() => onReorderChild?.(child.id, "down")}
+                        className="p-1 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded"
                         title="Move down"
                       >
                         ↓
                       </button>
                     )}
                     <button
-                      onClick={() => onRemoveChildBlock(child.id)}
-                      className="p-1 text-gray-400 hover:text-red-400 hover:bg-red-900/20 rounded"
+                      onClick={() => onRemoveChildBlock?.(child.id)}
+                      className="p-1 text-gray-600 hover:text-red-600 hover:bg-red-50 rounded"
                       title="Remove from section"
                     >
                       <X className="h-3 w-3" />
@@ -206,22 +206,22 @@ export default function SectionGroupEditor({
                 onClick={() => setShowAddMenu(!showAddMenu)}
                 variant="outline"
                 size="sm"
-                className="w-full bg-gray-800 border-dashed border-gray-600 hover:border-indigo-500 text-gray-400 hover:text-white"
+                className="w-full bg-white border-dashed border-gray-300 hover:border-indigo-500 text-gray-700 hover:text-gray-900"
               >
                 <Plus className="h-4 w-4 mr-2" />
                 Add Block to Section
               </Button>
 
               {showAddMenu && (
-                <div className="absolute top-full left-0 right-0 mt-2 bg-gray-800 border border-gray-600 rounded-lg shadow-xl z-10 overflow-hidden">
+                <div className="absolute top-full left-0 right-0 mt-2 bg-white border border-gray-200 rounded-lg shadow-xl z-10 overflow-hidden">
                   {AVAILABLE_CHILD_BLOCKS.map((block) => (
                     <button
                       key={block.type}
                       onClick={() => {
-                        onAddChildBlock(block.type)
+                        onAddChildBlock?.(block.type)
                         setShowAddMenu(false)
                       }}
-                      className="w-full px-4 py-3 text-left text-sm text-white hover:bg-gray-700 flex items-center gap-3 transition-colors"
+                      className="w-full px-4 py-3 text-left text-sm text-gray-900 hover:bg-gray-50 flex items-center gap-3 transition-colors"
                     >
                       <span>{block.icon}</span>
                       <span>{block.label}</span>
@@ -235,8 +235,8 @@ export default function SectionGroupEditor({
       </div>
 
       {/* Tip */}
-      <div className="bg-indigo-900/20 border border-indigo-500/30 rounded-lg p-4">
-        <p className="text-sm text-indigo-300">
+      <div className="bg-indigo-50 border border-indigo-200 rounded-lg p-4">
+        <p className="text-sm text-indigo-900">
           💡 <strong>Tip:</strong> Use sections to group related content together.
           For example, create a "Making Of" section with process images and a voice note.
         </p>

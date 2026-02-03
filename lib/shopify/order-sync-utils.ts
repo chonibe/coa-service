@@ -2,8 +2,56 @@ import { SupabaseClient } from '@supabase/supabase-js'
 import { createChinaDivisionClient } from '../chinadivision/client'
 
 /**
- * Shared utility to sync a Shopify order to the database, including warehouse enrichment,
- * PII recovery, and edition assignment.
+ * ============================================================================
+ * ⚠️  DEPRECATED FILE - DO NOT USE DIRECTLY ⚠️
+ * ============================================================================
+ * 
+ * This file contains DEPRECATED logic that has been centralized in the
+ * Edition Ledger MCP Server to prevent recurring bugs.
+ * 
+ * ❌ DO NOT call syncShopifyOrder() directly
+ * ❌ DO NOT duplicate status determination logic from this file
+ * ❌ DO NOT use this as a reference for new implementations
+ * 
+ * ✅ INSTEAD: Use Edition Ledger MCP Server tools:
+ *    - sync_order_line_items
+ *    - mark_line_item_inactive
+ *    - get_collector_editions
+ *    - validate_data_integrity
+ * 
+ * See: .cursor/rules/edition-ledger-mcp.mdc
+ * See: mcp-servers/edition-verification/README.md
+ * 
+ * This file is kept for backward compatibility with existing scripts only.
+ * All new code MUST use the MCP server.
+ * ============================================================================
+ */
+
+/**
+ * @deprecated Use Edition Ledger MCP Server instead
+ * 
+ * This function is DEPRECATED and should NOT be used directly by AI agents
+ * or new application code.
+ * 
+ * **Why deprecated:**
+ * - Status logic has been centralized in MCP server to prevent bugs
+ * - Direct usage bypasses data integrity validation
+ * - Duplicating this logic causes inconsistencies
+ * 
+ * **Use instead:**
+ * ```typescript
+ * await mcpClient.callTool('edition-ledger', 'sync_order_line_items', {
+ *   order: shopifyOrderObject,
+ *   skip_editions: false
+ * });
+ * ```
+ * 
+ * **For existing scripts only:**
+ * This function remains for backward compatibility with existing sync scripts
+ * that haven't been migrated yet. Do not create new usages.
+ * 
+ * @see .cursor/rules/edition-ledger-mcp.mdc
+ * @see mcp-servers/edition-verification/README.md
  */
 export async function syncShopifyOrder(
   supabase: SupabaseClient,
@@ -13,6 +61,12 @@ export async function syncShopifyOrder(
     skipEditions?: boolean;
   } = {}
 ) {
+  // ⚠️  DEPRECATION WARNING
+  console.warn('⚠️  DEPRECATED: syncShopifyOrder() is deprecated.');
+  console.warn('   Use Edition Ledger MCP Server instead:');
+  console.warn('   await mcpClient.callTool("edition-ledger", "sync_order_line_items", {...})');
+  console.warn('   See: .cursor/rules/edition-ledger-mcp.mdc');
+  
   const { forceWarehouseSync = false, skipEditions = false } = options
   const results: string[] = []
   
@@ -121,12 +175,13 @@ export async function syncShopifyOrder(
     if (orderError) throw orderError
 
     // 3. Line Items Sync
-    const removedLineItemIds = new Set<number>()
+    // IMPORTANT: Use string Set for consistent comparison (line_item_id can be number or string)
+    const removedLineItemIds = new Set<string>()
     if (order.refunds && Array.isArray(order.refunds)) {
       order.refunds.forEach((refund: any) => {
         refund.refund_line_items?.forEach((ri: any) => {
           // Protocol: Any refunded item is considered removed from the active order
-          removedLineItemIds.add(ri.line_item_id)
+          removedLineItemIds.add(ri.line_item_id.toString())
         })
       })
     }
@@ -181,8 +236,14 @@ export async function syncShopifyOrder(
       const refundEntry = order.refunds?.flatMap((r: any) => r.refund_line_items || [])
                                        .find((ri: any) => ri.line_item_id.toString() === liIdStr);
       
-      const isRefunded = removedLineItemIds.has(li.id) || li.refund_status === 'refunded' || refundEntry !== undefined || (li.refunded_quantity && li.refunded_quantity > 0);
-      const isRestocked = li.restocked === true || (li.restock_type && li.restock_type !== null) || li.fulfillment_status === 'restocked' || (refundEntry?.restock_type && refundEntry?.restock_type !== undefined);
+      // FIXED: Use string comparison for removedLineItemIds (now a Set<string>)
+      const isRefunded = removedLineItemIds.has(liIdStr) || li.refund_status === 'refunded' || refundEntry !== undefined || (li.refunded_quantity && li.refunded_quantity > 0);
+      const isRestocked = Boolean(
+        li.restocked === true || 
+        (li.restock_type && li.restock_type !== null) || 
+        li.fulfillment_status === 'restocked' || 
+        (refundEntry?.restock_type && refundEntry?.restock_type !== undefined)
+      );
       
       const removedProperty = li.properties?.find((p: any) => 
         (p.name === 'removed' || p.key === 'removed') && 

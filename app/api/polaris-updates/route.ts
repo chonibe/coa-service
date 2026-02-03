@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { checkForPolarisUpdates, getPendingUpdates } from '@/lib/polaris-update-checker'
 import { createClient } from '@/lib/supabase/server'
+import { getAdminEmailFromCookieStore } from '@/lib/admin-session'
 
 /**
  * GET /api/polaris-updates
@@ -8,23 +9,13 @@ import { createClient } from '@/lib/supabase/server'
  */
 export async function GET(request: NextRequest) {
   try {
+    // Verify admin access using admin session cookie
+    const adminEmail = getAdminEmailFromCookieStore(request.cookies)
+    if (!adminEmail) {
+      return NextResponse.json({ error: 'Unauthorized - Admin login required' }, { status: 401 })
+    }
+
     const supabase = createClient()
-    
-    // Verify admin role
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-
-    const { data: userRole } = await supabase
-      .from('user_roles')
-      .select('role')
-      .eq('user_id', user.id)
-      .single()
-
-    if (userRole?.role !== 'admin') {
-      return NextResponse.json({ error: 'Forbidden - Admin access required' }, { status: 403 })
-    }
 
     // Check for updates
     const updates = await checkForPolarisUpdates()

@@ -926,6 +926,7 @@ export default function VendorProfilePage() {
                           alt={profile.vendor_name}
                           fill
                           className="object-cover"
+                          unoptimized={profile.profile_image.toLowerCase().endsWith('.gif')}
                         />
                       ) : (
                         <div className="w-full h-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center">
@@ -961,7 +962,7 @@ export default function VendorProfilePage() {
                     <input
                       ref={fileInputRef}
                       type="file"
-                      accept="image/*"
+                      accept="image/*,image/gif"
                       className="hidden"
                       onChange={(e) => {
                         const file = e.target.files?.[0]
@@ -1150,7 +1151,7 @@ export default function VendorProfilePage() {
                       <div>
                         <CardTitle>Artist Signature</CardTitle>
                         <CardDescription>
-                          Your signature will appear on artwork pages after collector authentication.
+                          Your signature will appear on artwork pages after collector authentication with a drawing animation.
                         </CardDescription>
                       </div>
                       <Button
@@ -1175,6 +1176,7 @@ export default function VendorProfilePage() {
                               width={224}
                               height={112}
                               className="object-contain max-w-full max-h-full"
+                              unoptimized={profile.signature_url.toLowerCase().endsWith('.gif')}
                             />
                           </div>
                           {profile.signature_uploaded_at && (
