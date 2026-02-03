@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
-import { Container, SectionWrapper, Button, Breadcrumb } from '@/components/impact'
+import { Container, SectionWrapper, Button } from '@/components/impact'
 import { ScrollReveal } from '@/components/blocks'
 import { VinylTiltEffect } from '@/components/vinyl'
 import { articles as syncedArticles, type SyncedArticle } from '@/content/shopify-content'
@@ -82,15 +82,6 @@ export default function BlogPage() {
     <main className="min-h-screen bg-white">
       <SectionWrapper spacing="md" background="default">
         <Container maxWidth="default">
-          {/* Breadcrumb */}
-          <Breadcrumb 
-            items={[
-              { label: 'Home', href: '/shop' },
-              { label: 'Blog' }
-            ]}
-            className="mb-8"
-          />
-          
           {/* Header with Scroll Animation */}
           <ScrollReveal animation="fadeUp" duration={0.8}>
             <div className="text-center mb-12">
