@@ -48,10 +48,10 @@ interface ShopPageProps {
 }
 
 // =============================================================================
-// SHOP PRODUCTS PAGE
+// SHOP PAGE
 // =============================================================================
 
-export default async function ShopProductsPage({ searchParams }: ShopPageProps) {
+export default async function ShopPage({ searchParams }: ShopPageProps) {
   // In Next.js 15+, searchParams is a Promise that must be awaited
   const params = await searchParams
   const { collection: collectionHandle, sort = 'best-selling', page = '1' } = params
@@ -153,37 +153,33 @@ export default async function ShopProductsPage({ searchParams }: ShopPageProps) 
     <main className="min-h-screen bg-white">
       {/* Collection Header with Image (for collection pages) */}
       {collectionHandle && collectionImage && (
-        <ScrollReveal animation="fadeUp" duration={0.8}>
-          <div className="relative h-48 sm:h-64 lg:h-80 overflow-hidden bg-[#f5f5f5]">
-            <img
-              src={collectionImage}
-              alt={title}
-              className="w-full h-full object-cover"
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
-            <div className="absolute inset-0 flex items-end justify-center pb-8">
-              <h1 className="font-heading text-3xl sm:text-4xl lg:text-5xl font-semibold text-white tracking-[-0.02em] text-center">
-                {title}
-              </h1>
-            </div>
+        <div className="relative h-48 sm:h-64 lg:h-80 overflow-hidden bg-[#f5f5f5]">
+          <img
+            src={collectionImage}
+            alt={title}
+            className="w-full h-full object-cover"
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
+          <div className="absolute inset-0 flex items-end justify-center pb-8">
+            <h1 className="font-heading text-3xl sm:text-4xl lg:text-5xl font-semibold text-white tracking-[-0.02em] text-center">
+              {title}
+            </h1>
           </div>
-        </ScrollReveal>
+        </div>
       )}
 
       {/* Page Header (for non-collection pages or collections without images) */}
       {(!collectionHandle || !collectionImage) && (
         <SectionWrapper spacing="sm" background="default">
           <Container maxWidth="default">
-            <ScrollReveal animation="fadeUp" duration={0.8}>
-              <div className="text-center py-4 sm:py-8">
-                <p className="text-sm uppercase tracking-wider text-[#1a1a1a]/50 mb-2">
-                  Products
-                </p>
-                <h1 className="font-heading text-3xl sm:text-4xl lg:text-5xl font-semibold text-[#1a1a1a] tracking-[-0.02em]">
-                  {title}
-                </h1>
-              </div>
-            </ScrollReveal>
+            <div className="text-center py-4 sm:py-8">
+              <p className="text-sm uppercase tracking-wider text-[#1a1a1a]/50 mb-2">
+                Products
+              </p>
+              <h1 className="font-heading text-3xl sm:text-4xl lg:text-5xl font-semibold text-[#1a1a1a] tracking-[-0.02em]">
+                {title}
+              </h1>
+            </div>
           </Container>
         </SectionWrapper>
       )}
@@ -217,31 +213,29 @@ export default async function ShopProductsPage({ searchParams }: ShopPageProps) 
         </Container>
       </SectionWrapper>
 
-      {/* Product Grid - 2 cols mobile, 3 cols desktop with ScrollReveal */}
+      {/* Product Grid - 2 cols mobile, 3 cols desktop */}
       <SectionWrapper spacing="md" background="default">
         <Container maxWidth="default">
           {products.length === 0 ? (
-            <ScrollReveal animation="fadeUp" duration={0.8}>
-              <div className="text-center py-16">
-                <div className="inline-flex items-center justify-center w-16 h-16 bg-[#1a1a1a]/5 rounded-full mb-6">
-                  <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#1a1a1a" strokeWidth="1.5">
-                    <rect x="3" y="3" width="7" height="7" rx="1" />
-                    <rect x="14" y="3" width="7" height="7" rx="1" />
-                    <rect x="14" y="14" width="7" height="7" rx="1" />
-                    <rect x="3" y="14" width="7" height="7" rx="1" />
-                  </svg>
-                </div>
-                <h2 className="font-heading text-2xl font-semibold text-[#1a1a1a] mb-2">
-                  No products found
-                </h2>
-                <p className="text-[#1a1a1a]/60 mb-6 max-w-md mx-auto">
-                  Try adjusting your filters or search terms
-                </p>
-                <Link href="/shop/products">
-                  <Button variant="primary">View All Artworks</Button>
-                </Link>
+            <div className="text-center py-16">
+              <div className="inline-flex items-center justify-center w-16 h-16 bg-[#1a1a1a]/5 rounded-full mb-6">
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#1a1a1a" strokeWidth="1.5">
+                  <rect x="3" y="3" width="7" height="7" rx="1" />
+                  <rect x="14" y="3" width="7" height="7" rx="1" />
+                  <rect x="14" y="14" width="7" height="7" rx="1" />
+                  <rect x="3" y="14" width="7" height="7" rx="1" />
+                </svg>
               </div>
-            </ScrollReveal>
+              <h2 className="font-heading text-2xl font-semibold text-[#1a1a1a] mb-2">
+                No products found
+              </h2>
+              <p className="text-[#1a1a1a]/60 mb-6 max-w-md mx-auto">
+                Try adjusting your filters or search terms
+              </p>
+              <Link href="/shop/products">
+                <Button variant="primary">View All Artworks</Button>
+              </Link>
+            </div>
           ) : (
             <>
               {/* Product count */}
@@ -286,7 +280,7 @@ export default async function ShopProductsPage({ searchParams }: ShopPageProps) 
                         <path d="M10 12L6 8L10 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
                       </svg>
                       <span className="hidden sm:inline">Previous</span>
-                    </Link>
+                    </span>
                   )}
                   
                   <span className="text-sm text-[#1a1a1a]/60 px-2">
@@ -324,3 +318,5 @@ export default async function ShopProductsPage({ searchParams }: ShopPageProps) 
     </main>
   )
 }
+
+// ProductCardItem is now a client component in ./components/ProductCardItem.tsx
