@@ -7,6 +7,7 @@ import {
   SectionWrapper,
   SectionHeader,
 } from '@/components/impact'
+import { MediaGrid, type MediaGridItem } from '@/components/sections'
 
 /**
  * Artists Listing Page

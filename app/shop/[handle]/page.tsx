@@ -15,6 +15,9 @@ import {
   SectionWrapper,
   Button,
   ProductCard,
+  Stack,
+  Inline,
+  FlexContainer,
 } from '@/components/impact'
 import { ScrollingText } from '@/components/sections'
 import { useCart } from '@/lib/shop/CartContext'

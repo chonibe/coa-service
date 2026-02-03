@@ -14,6 +14,8 @@ import {
   FAQSection,
   FeaturedArtistsSection,
   FeaturedProductSection,
+  Slideshow,
+  MediaGrid,
 } from '@/components/sections'
 import { Spline3DViewer, URLParamModal, URLParamBanner } from '@/components/blocks'
 import { homepageContent } from '@/content/homepage'
@@ -138,8 +140,13 @@ export default async function ShopHomePage() {
                 }
               />
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
-                {newReleases.map((product) => (
-                  <ProductCardItem key={product.id} product={product} />
+                {newReleases.map((product, index) => (
+                  <div
+                    key={product.id}
+                    className={`animate-fade-in-up ${index % 3 === 1 ? 'animate-fade-in-up-delay-1' : ''} ${index % 3 === 2 ? 'animate-fade-in-up-delay-2' : ''}`}
+                  >
+                    <ProductCardItem product={product} />
+                  </div>
                 ))}
               </div>
             </Container>
@@ -238,8 +245,13 @@ export default async function ShopHomePage() {
                 }
               />
               <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 sm:gap-6">
-                {bestSellers.map((product) => (
-                  <ProductCardItem key={product.id} product={product} compact />
+                {bestSellers.map((product, index) => (
+                  <div
+                    key={product.id}
+                    className={`animate-fade-in-up ${index % 3 === 1 ? 'animate-fade-in-up-delay-1' : ''} ${index % 3 === 2 ? 'animate-fade-in-up-delay-2' : ''}`}
+                  >
+                    <ProductCardItem product={product} compact />
+                  </div>
                 ))}
               </div>
             </Container>

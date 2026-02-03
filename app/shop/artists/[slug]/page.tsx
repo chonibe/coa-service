@@ -9,6 +9,7 @@ import {
   ProductCard,
   Button,
 } from '@/components/impact'
+import { ImageWithTextOverlay } from '@/components/sections'
 import { useCart } from '@/lib/shop/CartContext'
 import { formatPrice, type ShopifyProduct } from '@/lib/shopify/storefront-client'
 

@@ -1,6 +1,6 @@
 'use client'
 
-import { ProductCard, ProductBadge } from '@/components/impact'
+import { ProductCard, ProductBadge, Badge } from '@/components/impact'
 import { useCart } from '@/lib/shop/CartContext'
 import { 
   formatPrice, 
@@ -32,6 +32,15 @@ export function ProductCardItem({ product }: { product: ShopifyProduct }) {
   const images = product.images?.edges?.map(e => e.node) || []
   const secondImage = images[1]?.url
 
+  // Check if product is new (created in last 30 days)
+  const createdDate = new Date(product.createdAt || '')
+  const isNew = (Date.now() - createdDate.getTime()) < 30 * 24 * 60 * 60 * 1000
+  
+  // Check stock level (if variant inventory available)
+  const firstVariant = product.variants.edges[0]?.node
+  const inventoryQuantity = (firstVariant as any)?.inventoryQuantity ?? null
+  const isLowStock = inventoryQuantity !== null && inventoryQuantity > 0 && inventoryQuantity <= 5
+  
   // Build badges
   const badges = (
     <>
@@ -40,6 +49,12 @@ export function ProductCardItem({ product }: { product: ShopifyProduct }) {
       )}
       {product.availableForSale && onSale && (
         <ProductBadge type="sale" discount={discount} />
+      )}
+      {product.availableForSale && !onSale && isNew && (
+        <Badge variant="new">New</Badge>
+      )}
+      {product.availableForSale && isLowStock && (
+        <Badge variant="warning">Only {inventoryQuantity} left</Badge>
       )}
     </>
   )

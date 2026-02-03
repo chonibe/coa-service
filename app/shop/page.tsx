@@ -24,6 +24,7 @@ import {
 } from '@/components/impact'
 import { ShopFilters } from './components/ShopFilters'
 import { ProductCardItem } from './components/ProductCardItem'
+import { cn } from '@/lib/utils'
 
 export const metadata: Metadata = {
   title: 'Shop | Street Collector',
@@ -225,8 +226,17 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
             <>
               {/* Product grid: 2 cols on mobile, 3 on desktop (matching live site) */}
               <div className="grid grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 lg:gap-8">
-                {products.map((product) => (
-                  <ProductCardItem key={product.id} product={product} />
+                {products.map((product, index) => (
+                  <div
+                    key={product.id}
+                    className={cn(
+                      'animate-fade-in-up',
+                      index % 3 === 1 && 'animate-fade-in-up-delay-1',
+                      index % 3 === 2 && 'animate-fade-in-up-delay-2'
+                    )}
+                  >
+                    <ProductCardItem product={product} />
+                  </div>
                 ))}
               </div>
 
