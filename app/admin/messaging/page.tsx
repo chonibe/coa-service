@@ -16,6 +16,8 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
+  Alert,
+  AlertDescription,
 } from "@/components/ui"
 import { 
   EnvelopeIcon, 
@@ -23,6 +25,7 @@ import {
   MagnifyingGlassIcon,
   CheckCircleIcon,
   XCircleIcon,
+  ShieldExclamationIcon,
 } from "@heroicons/react/24/outline"
 import { toast } from "sonner"
 
@@ -56,10 +59,24 @@ export default function MessagingPage() {
   const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState("")
   const [categoryFilter, setCategoryFilter] = useState<string>("all")
+  const [hasGmailPermission, setHasGmailPermission] = useState<boolean | null>(null)
 
   useEffect(() => {
     fetchTemplates()
+    checkGmailPermissions()
   }, [])
+
+  const checkGmailPermissions = async () => {
+    try {
+      const res = await fetch("/api/admin/messaging/check-gmail-permissions")
+      if (res.ok) {
+        const data = await res.json()
+        setHasGmailPermission(data.hasPermission)
+      }
+    } catch (error) {
+      console.error("Error checking Gmail permissions:", error)
+    }
+  }
 
   const fetchTemplates = async () => {
     try {
@@ -131,6 +148,28 @@ export default function MessagingPage() {
           Manage and customize automated email templates sent to customers and vendors.
         </p>
       </div>
+
+      {/* Gmail Permission Alert */}
+      {hasGmailPermission === false && (
+        <Alert className="mb-6 border-amber-200 bg-amber-50 dark:bg-amber-950/20 dark:border-amber-900">
+          <ShieldExclamationIcon className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+          <AlertDescription className="text-amber-800 dark:text-amber-200">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <strong className="font-semibold">Gmail permissions required</strong>
+                <p className="text-sm mt-1">
+                  To send test emails, you need to authorize Gmail access. This allows you to verify email formatting before templates go live.
+                </p>
+              </div>
+              <Link href="/admin/messaging/authorize-gmail">
+                <Button size="sm" variant="default" className="whitespace-nowrap">
+                  Authorize Gmail
+                </Button>
+              </Link>
+            </div>
+          </AlertDescription>
+        </Alert>
+      )}
 
       {/* Filters */}
       <div className="flex flex-col sm:flex-row gap-4 mb-6">
