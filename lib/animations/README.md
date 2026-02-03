@@ -1,295 +1,475 @@
 # Animation Library
 
-A comprehensive animation system built on GSAP and Framer Motion.
+Comprehensive GSAP-based animation infrastructure for building performant, smooth interactions.
 
 ## Overview
 
 This library provides:
+- GSAP plugin registration and configuration
+- React hooks for common animation patterns
+- Animation factory functions
+- Framer Motion variants for component animations
+- Scroll-aware header effects
 
-- **GSAP Configuration**: Plugin registration, custom eases, defaults
-- **React Hooks**: Declarative animation hooks for common patterns
-- **Animation Utilities**: Factory functions for reusable animations
-- **Framer Motion Variants**: Standardized variants for React components
+## Core Modules
 
-## Architecture
+### gsap-config.ts
 
+GSAP configuration with all plugins registered globally.
+
+**Plugins Included:**
+- ScrollTrigger - Scroll-based animations
+- Flip - State-to-state animations
+- Draggable - Drag interactions with momentum
+- Observer - Unified input handling
+- quickTo() - High-performance mouse-follow
+
+**Usage:**
+```tsx
+import { gsap, ScrollTrigger, Flip } from '@/lib/animations'
+
+// All plugins pre-registered
+gsap.to('.element', { duration: 1, y: 100 })
+ScrollTrigger.create({...})
+Flip.getState('.card')
 ```
-lib/animations/
-├── gsap-config.ts      # GSAP setup and configuration
-├── gsap-hooks.ts       # React hooks for GSAP
-├── gsap-utils.ts       # Animation factory functions
-├── framer-variants.ts  # Framer Motion variants
-├── useScrollHeader.ts  # Scroll-aware header effects
-└── index.ts            # Central exports
-```
 
-## GSAP vs Framer Motion
+### gsap-hooks.ts
 
-### Use GSAP For
+React hooks for GSAP animations with proper cleanup.
 
-| Animation Type | Why GSAP |
-|---------------|----------|
-| Mouse-follow 3D tilt | `quickTo()` batches RAF updates, guaranteed 60fps |
-| Scroll-triggered | ScrollTrigger has scrubbing, pinning, parallax |
-| Drag with momentum | Draggable has inertia, bounds, snap-to-grid |
-| Complex orchestration | Timeline with labels, callbacks, pause/resume |
-| Stagger animations | Grid stagger, from-center, random, custom |
-| Layout transitions | Flip plugin for state-to-state FLIP |
-
-### Use Framer Motion For
-
-| Animation Type | Why Framer |
-|---------------|------------|
-| `AnimatePresence` | React lifecycle hooks |
-| `layoutId` shared elements | Automatic FLIP on layout change |
-| Simple `whileHover`/`whileTap` | Less boilerplate for basics |
-| Route transitions | Next.js App Router compatibility |
-
-## Usage
-
-### GSAP Hooks
+#### useGSAP
+Core hook for GSAP animations in React.
 
 ```tsx
-import { 
-  use3DTilt, 
-  useFlip, 
-  useDraggable, 
-  useScrollTrigger 
-} from '@/lib/animations'
+import { useGSAP } from '@/lib/animations'
 
-// 3D Tilt Effect
-function TiltCard() {
-  const ref = use3DTilt({ maxTilt: 15, scale: 1.02 })
-  return <div ref={ref}>Tilts on hover!</div>
-}
-
-// GSAP Flip Animation
-function FlipLayout() {
-  const { captureState, animateFlip } = useFlip()
+export function MyComponent() {
+  const containerRef = useRef(null)
   
-  const handleToggle = () => {
-    captureState('.items')
-    setLayout(prev => !prev)
-    animateFlip('.items')
+  useGSAP(() => {
+    gsap.from('.item', { 
+      duration: 1, 
+      y: 50, 
+      opacity: 0,
+      stagger: 0.1 
+    })
+  }, { scope: containerRef })
+  
+  return <div ref={containerRef}>...</div>
+}
+```
+
+#### use3DTilt
+3D tilt effect following mouse.
+
+```tsx
+import { use3DTilt } from '@/lib/animations'
+
+export function TiltCard() {
+  const { ref, isHovering } = use3DTilt({
+    maxTilt: 15,
+    scale: 1.02,
+    perspective: 1000,
+  })
+  
+  return <div ref={ref}>Card with tilt</div>
+}
+```
+
+#### useFlip
+FLIP animation for layout changes.
+
+```tsx
+import { useFlip } from '@/lib/animations'
+
+export function CardGrid() {
+  const { ref, animate } = useFlip()
+  
+  const handleSort = async () => {
+    // Record initial state
+    Flip.getState(ref.current)
+    
+    // Change DOM
+    setItems(sortedItems)
+    
+    // Animate to new position
+    animate()
   }
   
-  return <div onClick={handleToggle}>...</div>
+  return (
+    <div ref={ref} className="grid">
+      {/* Cards */}
+    </div>
+  )
 }
+```
 
-// Draggable
-function DraggableCard() {
-  const { ref, enable, disable } = useDraggable({
-    type: 'x',
-    bounds: '.container',
-    inertia: true,
+#### useDraggable
+Drag interactions with momentum and bounds.
+
+```tsx
+import { useDraggable } from '@/lib/animations'
+
+export function DragSlider() {
+  const { ref, x, isDragging } = useDraggable({
+    bounds: { minX: -500, maxX: 0 },
+    momentum: true,
     snap: 100,
   })
   
   return <div ref={ref}>Drag me!</div>
 }
+```
 
-// Scroll Trigger
-function ScrollReveal() {
-  const ref = useScrollTrigger(
-    () => gsap.from(ref.current, { y: 50, opacity: 0 }),
-    { start: 'top 80%', once: true }
-  )
+#### useScrollTrigger
+Scroll-based animation triggers.
+
+```tsx
+import { useScrollTrigger } from '@/lib/animations'
+
+export function ScrollRevealSection() {
+  const { ref, progress } = useScrollTrigger({
+    trigger: ref,
+    start: 'top center',
+    end: 'bottom center',
+    scrub: true,
+  })
   
-  return <div ref={ref}>Appears on scroll</div>
+  return (
+    <div ref={ref}>
+      <motion.div style={{ opacity: progress }}>
+        Content fades in on scroll
+      </motion.div>
+    </div>
+  )
 }
 ```
 
-### Animation Utilities
+#### useStagger
+Staggered animations for multiple elements.
 
 ```tsx
-import { 
-  fadeInUp, 
-  staggerChildren, 
-  createParallax,
-  createDrawerTimeline 
-} from '@/lib/animations'
+import { useStagger } from '@/lib/animations'
 
-// Fade in from below
-fadeInUp('.elements', { y: 30, stagger: 0.1 })
-
-// Stagger children
-staggerChildren('.container', '> *', {
-  y: 20,
-  staggerAmount: 0.3,
-  staggerFrom: 'center',
-})
-
-// Parallax effect
-createParallax('.hero-image', {
-  y: '-20%',
-  speed: 0.5,
-  scrub: true,
-})
-
-// Drawer animation timeline
-const tl = createDrawerTimeline(
-  '.drawer',
-  '.backdrop',
-  '.drawer-items',
-  { direction: 'right' }
-)
-tl.play() // Open
-tl.reverse() // Close
-```
-
-### Framer Motion Variants
-
-```tsx
-import { 
-  fadeUp, 
-  scaleFade, 
-  drawerRight,
-  createStaggerContainer,
-  staggerItem 
-} from '@/lib/animations'
-
-// Page transition
-<motion.div
-  initial="initial"
-  animate="animate"
-  exit="exit"
-  variants={fadeUp}
->
-  Content
-</motion.div>
-
-// Stagger container
-<motion.ul variants={createStaggerContainer(0.05)}>
-  {items.map(item => (
-    <motion.li key={item.id} variants={staggerItem}>
-      {item.name}
-    </motion.li>
-  ))}
-</motion.ul>
-
-// Drawer
-<AnimatePresence>
-  {isOpen && (
-    <motion.div variants={drawerRight}>
-      Drawer content
-    </motion.div>
-  )}
-</AnimatePresence>
-```
-
-### Scroll-Aware Header
-
-```tsx
-import { useScrollHeader, useCartBadgeAnimation } from '@/lib/animations'
-
-function Header() {
-  const { headerRef, logoRef, isScrolled, isHidden } = useScrollHeader({
-    threshold: 50,
-    hideOnScroll: true,
-    progressiveBlur: true,
-    logoScale: true,
+export function StaggerList() {
+  const { containerRef, animate } = useStagger({
+    stagger: 0.1,
+    duration: 0.5,
   })
   
-  const { badgeRef, triggerPop } = useCartBadgeAnimation()
+  useEffect(() => {
+    animate([
+      { selector: '.item', from: { y: 50, opacity: 0 }, to: { y: 0, opacity: 1 } },
+    ])
+  }, [])
   
   return (
-    <header 
+    <div ref={containerRef}>
+      {items.map((item) => <div className="item">{item}</div>)}
+    </div>
+  )
+}
+```
+
+### gsap-utils.ts
+
+Animation factory functions for common patterns.
+
+#### fadeInUp
+Fade and translate up animation.
+
+```tsx
+import { fadeInUp } from '@/lib/animations'
+
+gsap.from('.element', fadeInUp({
+  duration: 0.6,
+  delay: 0.2,
+  y: 50,
+}))
+```
+
+#### staggerChildren
+Stagger animation for multiple elements.
+
+```tsx
+import { staggerChildren } from '@/lib/animations'
+
+gsap.from('.item', staggerChildren({
+  stagger: 0.05,
+  duration: 0.5,
+  y: 20,
+  opacity: 0,
+}))
+```
+
+#### createParallax
+Parallax scroll effect.
+
+```tsx
+import { createParallax } from '@/lib/animations'
+
+const parallax = createParallax('.bg', {
+  speed: 0.5,
+  start: 'top center',
+})
+```
+
+#### createDrawerTimeline
+Orchestrated drawer open/close animation.
+
+```tsx
+import { createDrawerTimeline } from '@/lib/animations'
+
+const timeline = createDrawerTimeline({
+  duration: 0.3,
+  ease: 'power2.out',
+})
+
+// Open
+timeline.play()
+
+// Close
+timeline.reverse()
+```
+
+#### badgePop
+Elastic pop animation for badges.
+
+```tsx
+import { badgePop } from '@/lib/animations'
+
+gsap.from('.badge', badgePop({
+  scale: 0,
+  transformOrigin: 'center center',
+}))
+```
+
+### framer-variants.ts
+
+Pre-configured Framer Motion variants for common animations.
+
+#### Basic Variants
+```tsx
+import { fade, fadeUp, scaleFade } from '@/lib/animations'
+import { motion } from 'framer-motion'
+
+<motion.div variants={fade} initial="initial" animate="animate">
+  Fades in
+</motion.div>
+
+<motion.div variants={fadeUp} initial="initial" animate="animate">
+  Fades and slides up
+</motion.div>
+
+<motion.div variants={scaleFade} initial="initial" animate="animate">
+  Fades and scales
+</motion.div>
+```
+
+#### Drawer Variants
+```tsx
+import { drawerRight, backdrop } from '@/lib/animations'
+
+<motion.div
+  variants={backdrop}
+  initial="hidden"
+  animate="visible"
+  exit="exit"
+/>
+
+<motion.nav
+  variants={drawerRight}
+  initial="hidden"
+  animate="visible"
+  exit="exit"
+/>
+```
+
+#### Stagger Container
+```tsx
+import { createStaggerContainer, staggerItem } from '@/lib/animations'
+
+<motion.div
+  variants={createStaggerContainer()}
+  initial="hidden"
+  animate="visible"
+>
+  {items.map((item) => (
+    <motion.div key={item.id} variants={staggerItem}>
+      {item.name}
+    </motion.div>
+  ))}
+</motion.div>
+```
+
+#### Interactive Variants
+```tsx
+import { cardHover, buttonHover } from '@/lib/animations'
+
+<motion.div variants={cardHover} whileHover="hover" whileTap="tap">
+  Interactive card
+</motion.div>
+
+<motion.button variants={buttonHover} whileHover="hover" whileTap="tap">
+  Click me
+</motion.button>
+```
+
+### useScrollHeader.ts
+
+Scroll-aware header effects.
+
+```tsx
+import { useScrollHeader } from '@/lib/animations'
+
+export function Header() {
+  const { headerRef, isScrolling, scrollDirection } = useScrollHeader()
+  
+  return (
+    <header
       ref={headerRef}
-      className={cn(
-        'fixed top-0 transition-transform',
-        isHidden && '-translate-y-full'
-      )}
+      className={`transition-all ${isScrolling ? 'shadow-lg' : ''}`}
     >
-      <img ref={logoRef} src="/logo.svg" />
-      <span ref={badgeRef}>{cartCount}</span>
+      {/* Header content */}
     </header>
   )
 }
 ```
 
-## Configuration
+## Common Patterns
 
-### Custom Eases
+### Scroll Reveal
+```tsx
+import { ScrollReveal } from '@/components/blocks'
 
-```ts
-export const customEases = {
-  vinylLift: 'power2.out',
-  vinylFlip: 'power1.inOut',
-  crateMomentum: 'power3.out',
-  tiltReturn: 'elastic.out(1, 0.5)',
-  badgePop: 'elastic.out(1.2, 0.4)',
-  drawerSlide: 'power2.out',
+<ScrollReveal animation="fadeUp" delay={0.2} duration={0.6}>
+  <YourComponent />
+</ScrollReveal>
+```
+
+### 3D Tilt Card
+```tsx
+import { use3DTilt } from '@/lib/animations'
+
+function Card() {
+  const { ref } = use3DTilt({ maxTilt: 15 })
+  return <div ref={ref}>Card</div>
 }
 ```
 
-### Duration Constants
-
-```ts
-export const durations = {
-  instant: 0.1,
-  fast: 0.2,
-  normal: 0.35,
-  slow: 0.5,
-  flip: 0.6,
-  drawerOpen: 0.4,
-  stagger: 0.05,
+### Staggered Grid
+```tsx
+function ProductGrid({ products }) {
+  return (
+    <div className="grid grid-cols-4 gap-4">
+      {products.map((product, i) => (
+        <ScrollReveal key={product.id} delay={i * 0.05}>
+          <ProductCard {...product} />
+        </ScrollReveal>
+      ))}
+    </div>
+  )
 }
 ```
 
-## Reduced Motion Support
+### Drawer Animation
+```tsx
+import { createDrawerTimeline } from '@/lib/animations'
 
-All animations respect `prefers-reduced-motion`:
-
-```ts
-const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)')
-
-if (prefersReducedMotion.matches) {
-  gsap.globalTimeline.timeScale(0)
-  ScrollTrigger.defaults({ animation: false })
+function Drawer() {
+  const timelineRef = useRef(null)
+  
+  useEffect(() => {
+    timelineRef.current = createDrawerTimeline()
+  }, [])
+  
+  const open = () => timelineRef.current?.play()
+  const close = () => timelineRef.current?.reverse()
 }
 ```
 
-## Plugins (All Free!)
+## Performance Tips
 
-As of 2024, all GSAP plugins are free:
+### Do's
+- ✅ Use `gsap.quickTo()` for mouse-follow effects
+- ✅ Batch animations with `stagger`
+- ✅ Use `will-change` CSS on animated elements
+- ✅ Cleanup animations in useEffect
+- ✅ Test on actual devices
+- ✅ Use `prefers-reduced-motion`
 
-- **ScrollTrigger**: Scroll-based animations, parallax, pinning
-- **Flip**: State-to-state FLIP animations
-- **Draggable**: Drag interactions with momentum, bounds, snap
-- **Observer**: Unified input handling (touch, mouse, scroll)
+### Don'ts
+- ❌ Animate too many elements simultaneously (limit to 10-15)
+- ❌ Use `left/top` for animations (use `transform` instead)
+- ❌ Animate on every pixel of scroll (use `ScrollTrigger`)
+- ❌ Leave animations running after unmount
+- ❌ Ignore performance on mobile devices
 
-## Best Practices
+## Browser Compatibility
 
-1. **Use `gsap.context()`** for React cleanup:
-   ```ts
-   useGSAP(() => {
-     // animations
-   }, { dependencies: [] })
-   ```
+| Feature | Chrome | Firefox | Safari | Edge |
+|---------|--------|---------|--------|------|
+| GSAP Core | ✅ | ✅ | ✅ | ✅ |
+| ScrollTrigger | ✅ | ✅ | ✅ | ✅ |
+| Flip | ✅ | ✅ | ✅ | ✅ |
+| Draggable | ✅ | ✅ | ✅ | ✅ |
+| 3D Transforms | ✅ | ✅ | ✅ | ✅ |
+| Touch Events | ✅ | ✅ | ✅ | ✅ |
 
-2. **Batch mouse-move animations** with `quickTo()`:
-   ```ts
-   const quickX = gsap.quickTo(el, 'x', { duration: 0.5 })
-   element.onmousemove = (e) => quickX(e.clientX)
-   ```
+## Troubleshooting
 
-3. **Avoid layout thrashing** - animate transforms only:
-   ```ts
-   // Good
-   gsap.to(el, { x: 100, scale: 1.1 })
-   
-   // Avoid
-   gsap.to(el, { width: 200, height: 150 })
-   ```
+### Animations Not Running
+- Check `useGSAP` scope ref
+- Verify selectors match DOM elements
+- Check for CSS `pointer-events: none`
 
-4. **Use will-change sparingly**:
-   ```css
-   .animated { will-change: transform; }
-   ```
+### Performance Issues
+- Profile with DevTools
+- Reduce animated element count
+- Enable GPU acceleration
+- Use `will-change` CSS
 
-5. **Clean up ScrollTriggers**:
-   ```ts
-   return () => {
-     ScrollTrigger.getAll().forEach(st => st.kill())
-   }
-   ```
+### Mobile Doesn't Work
+- Test touch events
+- Check viewport scaling
+- Verify touch event handlers
+- Test on actual device
+
+## API Reference
+
+### gsap-config.ts
+- `initializeGSAP()` - Initialize GSAP
+- `prefersReducedMotion()` - Check reduced motion preference
+- `createResponsiveAnimation()` - Responsive animation creation
+- `cleanupGSAP()` - Cleanup animations
+- `killScrollTriggers()` - Cleanup scroll triggers
+
+### gsap-hooks.ts
+- `useGSAP()` - Core GSAP hook
+- `use3DTilt()` - 3D tilt effect
+- `useFlip()` - FLIP animations
+- `useDraggable()` - Drag interactions
+- `useScrollTrigger()` - Scroll triggers
+- `useObserver()` - Input observer
+- `useStagger()` - Stagger animations
+- `useCardFlip()` - Card flip interaction
+
+### gsap-utils.ts
+- `fadeInUp()` - Fade and slide up
+- `fadeInScale()` - Fade and scale
+- `staggerChildren()` - Stagger multiple elements
+- `createParallax()` - Parallax effect
+- `createDrawerTimeline()` - Drawer animation
+- `badgePop()` - Elastic pop
+- `animateCounter()` - Number counter
+- `shake()` - Shake effect
+- `pulse()` - Pulse effect
+- `glowPulse()` - Glow pulse effect
+
+## Version
+
+- **Current**: 1.0.0
+- **Last Updated**: February 2026
+- **GSAP Version**: ^3.14.0
+- **Framer Motion Version**: ^11.0.0
