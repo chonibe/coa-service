@@ -20,6 +20,8 @@ import {
   FlexContainer,
 } from '@/components/impact'
 import { ScrollingText } from '@/components/sections'
+import { ScrollReveal } from '@/components/blocks'
+import { VinylProductCard } from '@/components/shop'
 import { useCart } from '@/lib/shop/CartContext'
 import {
   ProductGallery,
@@ -311,6 +313,7 @@ export default function ProductPage() {
             />
 
             {/* Product Info */}
+            <ScrollReveal animation="fadeUp" duration={0.6}>
             <div className="space-y-6">
               {/* Vendor/Artist link */}
               {product.vendor && (
@@ -514,6 +517,7 @@ export default function ProductPage() {
                 <ProductAccordion items={accordionItems} />
               </div>
             </div>
+            </ScrollReveal>
           </div>
         </Container>
       </SectionWrapper>
@@ -565,39 +569,31 @@ export default function ProductPage() {
               onTouchMove={onTouchMove}
               onTouchEnd={onTouchEnd}
             >
-              {relatedProducts.map((relatedProduct) => {
-                const relatedImages = relatedProduct.images?.edges?.map(e => e.node) || []
-                const secondImage = relatedImages[1]?.url
-                
+              {relatedProducts.map((relatedProduct, index) => {
                 return (
                   <div key={relatedProduct.id} className="flex-shrink-0 w-[calc(50%-12px)] lg:w-[calc(25%-18px)] snap-start">
-                    <ProductCard
-                      title={relatedProduct.title}
-                      price={formatPrice(relatedProduct.priceRange.minVariantPrice)}
-                      image={relatedProduct.featuredImage?.url || ''}
-                      secondImage={secondImage}
-                      imageAlt={relatedProduct.featuredImage?.altText || relatedProduct.title}
-                      href={`/shop/${relatedProduct.handle}`}
-                      vendor={relatedProduct.vendor}
-                      vendorHref={relatedProduct.vendor ? `/shop/artists/${encodeURIComponent(relatedProduct.vendor.toLowerCase().replace(/\s+/g, '-'))}` : undefined}
-                      transparentBackground={true}
-                      showQuickAdd={true}
-                      onQuickAdd={() => {
-                        const variant = relatedProduct.variants.edges[0]?.node
-                        if (variant) {
-                          cart.addItem({
-                            productId: relatedProduct.id,
-                            variantId: variant.id,
-                            handle: relatedProduct.handle,
-                            title: relatedProduct.title,
-                            price: parseFloat(variant.price.amount),
-                            quantity: 1,
-                            image: relatedProduct.featuredImage?.url,
-                            artistName: relatedProduct.vendor,
-                          })
-                        }
-                      }}
-                    />
+                    <ScrollReveal animation="fadeUp" delay={index * 0.05} duration={0.5}>
+                      <VinylProductCard
+                        product={relatedProduct}
+                        onQuickAdd={() => {
+                          const variant = relatedProduct.variants.edges[0]?.node
+                          if (variant) {
+                            cart.addItem({
+                              productId: relatedProduct.id,
+                              variantId: variant.id,
+                              handle: relatedProduct.handle,
+                              title: relatedProduct.title,
+                              price: parseFloat(variant.price.amount),
+                              quantity: 1,
+                              image: relatedProduct.featuredImage?.url,
+                              artistName: relatedProduct.vendor,
+                            })
+                          }
+                        }}
+                        enableTilt={true}
+                        enableFlip={false}
+                      />
+                    </ScrollReveal>
                   </div>
                 )
               })}
