@@ -19,6 +19,31 @@ const sideClasses = {
   left: 'inset-y-0 left-0 h-full w-full max-w-sm rounded-r-[var(--p-border-radius-300)] border-r',
 } as const
 
+// Sub-components for compatibility with shadcn-style imports
+export function PolarisSheetContent({ children, className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
+  return (
+    <div className={cn("flex-1 p-6", className)} {...props}>
+      {children}
+    </div>
+  )
+}
+
+export function PolarisSheetHeader({ children, className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
+  return (
+    <div className={cn("flex items-center justify-between p-6 pb-0", className)} {...props}>
+      {children}
+    </div>
+  )
+}
+
+export function PolarisSheetTitle({ children, className, ...props }: React.HTMLAttributes<HTMLHeadingElement>) {
+  return (
+    <h3 className={cn("text-lg font-semibold", className)} {...props}>
+      {children}
+    </h3>
+  )
+}
+
 export function PolarisSheet({
   open,
   title,
@@ -96,3 +121,6 @@ export function PolarisSheet({
   }
   return overlay
 }
+
+// Ensure all exports are visible
+export { PolarisSheetContent, PolarisSheetHeader, PolarisSheetTitle, PolarisSheet }
