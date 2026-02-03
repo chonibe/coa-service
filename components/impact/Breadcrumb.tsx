@@ -100,5 +100,3 @@ export function generateBreadcrumbs(pathname: string, customLabels?: Record<stri
   
   return breadcrumbs
 }
-
-export default Breadcrumb

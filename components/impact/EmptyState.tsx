@@ -139,5 +139,3 @@ export function PageNotFound() {
     />
   )
 }
-
-export default EmptyState
