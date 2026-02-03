@@ -12,3 +12,5 @@ export type { ProductInfoProps } from './ProductInfo'
 
 export { ProductAccordion, streetLampAccordionItems, artworkAccordionItems } from './ProductAccordion'
 export type { ProductAccordionProps, AccordionItem } from './ProductAccordion'
+
+export { StickyBuyBar } from './StickyBuyBar'

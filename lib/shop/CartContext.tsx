@@ -33,6 +33,7 @@ export interface CartState {
   items: CartItem[]
   creditsToUse: number // Credits to apply at checkout
   isOpen: boolean // Cart drawer state
+  orderNotes: string // Customer notes for the order
 }
 
 type CartAction =
@@ -40,6 +41,7 @@ type CartAction =
   | { type: 'REMOVE_ITEM'; payload: { id: string } }
   | { type: 'UPDATE_QUANTITY'; payload: { id: string; quantity: number } }
   | { type: 'SET_CREDITS_TO_USE'; payload: number }
+  | { type: 'SET_ORDER_NOTES'; payload: string }
   | { type: 'CLEAR_CART' }
   | { type: 'TOGGLE_CART'; payload?: boolean }
   | { type: 'LOAD_CART'; payload: CartState }
@@ -50,6 +52,7 @@ interface CartContextValue extends CartState {
   removeItem: (id: string) => void
   updateQuantity: (id: string, quantity: number) => void
   setCreditsToUse: (credits: number) => void
+  setOrderNotes: (notes: string) => void
   clearCart: () => void
   toggleCart: (isOpen?: boolean) => void
   
@@ -71,6 +74,7 @@ const initialState: CartState = {
   items: [],
   creditsToUse: 0,
   isOpen: false,
+  orderNotes: '',
 }
 
 // ============================================
@@ -150,6 +154,13 @@ function cartReducer(state: CartState, action: CartAction): CartState {
       }
     }
     
+    case 'SET_ORDER_NOTES': {
+      return {
+        ...state,
+        orderNotes: action.payload,
+      }
+    }
+    
     case 'CLEAR_CART': {
       return {
         ...initialState,
@@ -209,13 +220,14 @@ export function CartProvider({ children }: CartProviderProps) {
       const toStore = {
         items: state.items,
         creditsToUse: state.creditsToUse,
+        orderNotes: state.orderNotes,
         isOpen: false,
       }
       localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(toStore))
     } catch (error) {
       console.warn('[CartContext] Failed to save cart to storage:', error)
     }
-  }, [state.items, state.creditsToUse])
+  }, [state.items, state.creditsToUse, state.orderNotes])
   
   // Actions
   const addItem = useCallback((item: Omit<CartItem, 'id'>) => {
@@ -232,6 +244,10 @@ export function CartProvider({ children }: CartProviderProps) {
   
   const setCreditsToUse = useCallback((credits: number) => {
     dispatch({ type: 'SET_CREDITS_TO_USE', payload: credits })
+  }, [])
+  
+  const setOrderNotes = useCallback((notes: string) => {
+    dispatch({ type: 'SET_ORDER_NOTES', payload: notes })
   }, [])
   
   const clearCart = useCallback(() => {
@@ -266,6 +282,7 @@ export function CartProvider({ children }: CartProviderProps) {
     removeItem,
     updateQuantity,
     setCreditsToUse,
+    setOrderNotes,
     clearCart,
     toggleCart,
     itemCount,

@@ -37,8 +37,38 @@ export function ProductGallery({
 }: ProductGalleryProps) {
   const [selectedIndex, setSelectedIndex] = React.useState(0)
   const [isZoomed, setIsZoomed] = React.useState(false)
+  const [touchStart, setTouchStart] = React.useState<number | null>(null)
+  const [touchEnd, setTouchEnd] = React.useState<number | null>(null)
   
   const selectedImage = images[selectedIndex] || images[0]
+  
+  // Swipe handlers for mobile
+  const minSwipeDistance = 50
+  
+  const onTouchStart = (e: React.TouchEvent) => {
+    setTouchEnd(null)
+    setTouchStart(e.targetTouches[0].clientX)
+  }
+  
+  const onTouchMove = (e: React.TouchEvent) => {
+    setTouchEnd(e.targetTouches[0].clientX)
+  }
+  
+  const onTouchEnd = () => {
+    if (!touchStart || !touchEnd) return
+    
+    const distance = touchStart - touchEnd
+    const isLeftSwipe = distance > minSwipeDistance
+    const isRightSwipe = distance < -minSwipeDistance
+    
+    if (isLeftSwipe) {
+      // Swipe left - next image
+      setSelectedIndex((prev) => Math.min(prev + 1, images.length - 1))
+    } else if (isRightSwipe) {
+      // Swipe right - previous image
+      setSelectedIndex((prev) => Math.max(prev - 1, 0))
+    }
+  }
   
   if (!images || images.length === 0) {
     return (
@@ -53,7 +83,12 @@ export function ProductGallery({
     return (
       <div className={cn('space-y-4', className)}>
         {/* Main Image */}
-        <div className="relative aspect-square rounded-[16px] overflow-hidden bg-[#f5f5f5]">
+        <div 
+          className="relative aspect-square rounded-[16px] overflow-hidden bg-transparent touch-pan-x"
+          onTouchStart={onTouchStart}
+          onTouchMove={onTouchMove}
+          onTouchEnd={onTouchEnd}
+        >
           <img
             src={selectedImage.src}
             alt={selectedImage.alt || productTitle}
@@ -139,7 +174,12 @@ export function ProductGallery({
       
       {/* Main Image */}
       <div className="flex-1 relative">
-        <div className="relative aspect-square rounded-[16px] overflow-hidden bg-[#f5f5f5]">
+        <div 
+          className="relative aspect-square rounded-[16px] overflow-hidden bg-transparent touch-pan-x"
+          onTouchStart={onTouchStart}
+          onTouchMove={onTouchMove}
+          onTouchEnd={onTouchEnd}
+        >
           <img
             src={selectedImage.src}
             alt={selectedImage.alt || productTitle}

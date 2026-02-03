@@ -23,6 +23,7 @@ import {
   Select,
 } from '@/components/impact'
 import { ShopFilters } from './components/ShopFilters'
+import { ProductCardItem } from './components/ProductCardItem'
 
 export const metadata: Metadata = {
   title: 'Shop | Street Collector',
@@ -291,53 +292,4 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
   )
 }
 
-// =============================================================================
-// PRODUCT CARD ITEM COMPONENT
-// =============================================================================
-
-function ProductCardItem({ product }: { product: ShopifyProduct }) {
-  const price = formatPrice(product.priceRange.minVariantPrice)
-  const compareAtPrice = product.compareAtPriceRange?.minVariantPrice?.amount
-    ? formatPrice(product.compareAtPriceRange.minVariantPrice)
-    : undefined
-  const onSale = isOnSale(product)
-  const discount = onSale ? getDiscountPercentage(product) : 0
-  
-  // Get images for hover effect
-  const images = product.images?.edges?.map(e => e.node) || []
-  const secondImage = images[1]?.url
-
-  // Build badges
-  const badges = (
-    <>
-      {!product.availableForSale && (
-        <ProductBadge type="sold-out" />
-      )}
-      {product.availableForSale && onSale && (
-        <ProductBadge type="sale" discount={discount} />
-      )}
-    </>
-  )
-
-  return (
-    <ProductCard
-      title={product.title}
-      price={price}
-      compareAtPrice={onSale ? compareAtPrice : undefined}
-      image={product.featuredImage?.url || ''}
-      secondImage={secondImage}
-      imageAlt={product.featuredImage?.altText || product.title}
-      href={`/shop/${product.handle}`}
-      vendor={product.vendor}
-      vendorHref={product.vendor ? `/shop?collection=${product.vendor.toLowerCase().replace(/\s+/g, '-')}` : undefined}
-      badges={badges}
-      transparentBackground={true}
-      showQuickAdd={true}
-      onQuickAdd={() => {
-        // Quick add to cart functionality
-        // This could be implemented with cart context/state
-        console.log('Quick add:', product.handle)
-      }}
-    />
-  )
-}
+// ProductCardItem is now a client component in ./components/ProductCardItem.tsx

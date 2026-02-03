@@ -1,12 +1,10 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
+import StickyBuyBar from './components/StickyBuyBar'
 import { useParams, notFound } from 'next/navigation'
 import Link from 'next/link'
-import Image from 'next/image'
 import {
-  getProduct,
-  getCollection,
   formatPrice,
   isOnSale,
   getDiscountPercentage,
@@ -17,18 +15,16 @@ import {
   Container,
   SectionWrapper,
   Button,
-  Badge,
-  ProductBadge,
-  Card,
   ProductCard,
 } from '@/components/impact'
 import { ScrollingText } from '@/components/sections'
+import { useCart } from '@/lib/shop/CartContext'
 import {
   ProductGallery,
-  ProductInfo,
   ProductAccordion,
   streetLampAccordionItems,
   artworkAccordionItems,
+  StickyBuyBar,
 } from './components'
 
 // =============================================================================
@@ -36,17 +32,24 @@ import {
 // =============================================================================
 
 export default function ProductPage() {
-  // In Next.js 15+, use useParams hook for client components
   const params = useParams<{ handle: string }>()
+  const cart = useCart()
   const [product, setProduct] = useState<ShopifyProduct | null>(null)
   const [selectedVariant, setSelectedVariant] = useState<ShopifyProductVariant | null>(null)
   const [selectedOptions, setSelectedOptions] = useState<Record<string, string>>({})
   const [quantity, setQuantity] = useState(1)
   const [loading, setLoading] = useState(true)
-  const [checkoutLoading, setCheckoutLoading] = useState(false)
-  const [currentImageIndex, setCurrentImageIndex] = useState(0)
+  const [addingToCart, setAddingToCart] = useState(false)
   const [relatedProducts, setRelatedProducts] = useState<ShopifyProduct[]>([])
   const [apiError, setApiError] = useState<string | null>(null)
+  
+    // For sticky buy bar
+  const buyButtonRef = useRef<HTMLButtonElement>(null)
+
+  // For carousel scrolling
+  const carouselRef = useRef<HTMLDivElement>(null)
+  const [touchStart, setTouchStart] = useState<number | null>(null)
+  const [touchEnd, setTouchEnd] = useState<number | null>(null)
 
   // Fetch product data
   useEffect(() => {
@@ -79,13 +82,11 @@ export default function ProductPage() {
           setSelectedOptions(options)
         }
         
-        // Fetch related products
-        if (data.product.productType) {
-          const relatedResponse = await fetch(`/api/shop/products?type=${encodeURIComponent(data.product.productType)}&limit=4&exclude=${params.handle}`)
-          if (relatedResponse.ok) {
-            const relatedData = await relatedResponse.json()
-            setRelatedProducts(relatedData.products || [])
-          }
+        // Fetch related products from the same collection/vendor
+        const relatedResponse = await fetch(`/api/shop/products?limit=8&exclude=${params?.handle}`)
+        if (relatedResponse.ok) {
+          const relatedData = await relatedResponse.json()
+          setRelatedProducts(relatedData.products || [])
         }
       } catch (error) {
         console.error('Error fetching product:', error)
@@ -95,7 +96,7 @@ export default function ProductPage() {
     }
     
     fetchProduct()
-  }, [params.handle])
+  }, [params?.handle])
 
   // Update selected variant when options change
   useEffect(() => {
@@ -120,48 +121,62 @@ export default function ProductPage() {
     }))
   }
 
-  // Handle checkout
-  const handleCheckout = async () => {
+  // Handle add to cart
+  const handleAddToCart = () => {
     if (!selectedVariant || !product) return
     
-    setCheckoutLoading(true)
-    try {
-      const response = await fetch('/api/checkout/stripe', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          lineItems: [
-            {
-              variantId: selectedVariant.id,
-              quantity,
-              productHandle: product.handle,
-              productTitle: product.title,
-              variantTitle: selectedVariant.title !== 'Default Title' ? selectedVariant.title : undefined,
-              price: Math.round(parseFloat(selectedVariant.price.amount) * 100),
-              compareAtPrice: selectedVariant.compareAtPrice
-                ? Math.round(parseFloat(selectedVariant.compareAtPrice.amount) * 100)
-                : undefined,
-              imageUrl: selectedVariant.image?.url || product.featuredImage?.url,
-            },
-          ],
-        }),
-      })
+    setAddingToCart(true)
+    
+    // Add to cart using context
+    cart.addItem({
+      productId: product.id,
+      variantId: selectedVariant.id,
+      handle: product.handle,
+      title: product.title,
+      variantTitle: selectedVariant.title !== 'Default Title' ? selectedVariant.title : undefined,
+      price: parseFloat(selectedVariant.price.amount),
+      quantity,
+      image: selectedVariant.image?.url || product.featuredImage?.url,
+      artistName: product.vendor,
+    })
+    
+    // Brief delay for feedback
+    setTimeout(() => setAddingToCart(false), 500)
+  }
 
-      const { url, error } = await response.json()
-      
-      if (error) {
-        alert(error)
-        return
-      }
+  // Carousel scroll handlers
+  const scrollCarousel = (direction: 'left' | 'right') => {
+    if (!carouselRef.current) return
+    const scrollAmount = carouselRef.current.clientWidth * 0.8
+    carouselRef.current.scrollBy({
+      left: direction === 'left' ? -scrollAmount : scrollAmount,
+      behavior: 'smooth'
+    })
+  }
 
-      if (url) {
-        window.location.href = url
-      }
-    } catch (error) {
-      console.error('Checkout error:', error)
-      alert('Failed to start checkout. Please try again.')
-    } finally {
-      setCheckoutLoading(false)
+  // Touch swipe handlers for carousel
+  const minSwipeDistance = 50
+
+  const onTouchStart = (e: React.TouchEvent) => {
+    setTouchEnd(null)
+    setTouchStart(e.targetTouches[0].clientX)
+  }
+
+  const onTouchMove = (e: React.TouchEvent) => {
+    setTouchEnd(e.targetTouches[0].clientX)
+  }
+
+  const onTouchEnd = () => {
+    if (!touchStart || !touchEnd) return
+    
+    const distance = touchStart - touchEnd
+    const isLeftSwipe = distance > minSwipeDistance
+    const isRightSwipe = distance < -minSwipeDistance
+
+    if (isLeftSwipe) {
+      scrollCarousel('right')
+    } else if (isRightSwipe) {
+      scrollCarousel('left')
     }
   }
 
@@ -201,7 +216,7 @@ export default function ProductPage() {
                   <line x1="12" y1="16" x2="12.01" y2="16" />
                 </svg>
               </div>
-              <h1 className="font-heading text-impact-h2 xl:text-impact-h2-lg font-semibold text-[#1a1a1a] tracking-[-0.02em] mb-4">
+              <h1 className="font-heading text-2xl sm:text-3xl font-semibold text-[#1a1a1a] tracking-[-0.02em] mb-4">
                 Product Unavailable
               </h1>
               <p className="text-[#1a1a1a]/60 mb-6 max-w-md mx-auto">
@@ -229,8 +244,6 @@ export default function ProductPage() {
 
   const images = product.images.edges.map(({ node }) => node)
   const onSale = isOnSale(product)
-  const discount = onSale ? getDiscountPercentage(product) : 0
-  const currentImage = images[currentImageIndex] || product.featuredImage
   
   // Determine if this is the Street Lamp product
   const isStreetLamp = params?.handle === 'street_lamp'
@@ -240,24 +253,25 @@ export default function ProductPage() {
 
   return (
     <main className="min-h-screen bg-white">
-      {/* Breadcrumb */}
-      <SectionWrapper spacing="none" paddingX="gutter" background="default">
-        <Container maxWidth="default">
-          <nav className="flex items-center gap-2 py-4 text-sm">
-            <Link href="/shop" className="text-[#1a1a1a]/60 hover:text-[#1a1a1a]">
-              Shop
-            </Link>
-            <span className="text-[#1a1a1a]/30">/</span>
-            <span className="text-[#1a1a1a]">{product.title}</span>
-          </nav>
-        </Container>
-      </SectionWrapper>
-
+      {/* Sticky Buy Bar */}
+      <StickyBuyBar
+        productTitle={product.title}
+        price={selectedVariant ? formatPrice(selectedVariant.price) : formatPrice(product.priceRange.minVariantPrice)}
+        compareAtPrice={selectedVariant?.compareAtPrice ? formatPrice(selectedVariant.compareAtPrice) : undefined}
+        image={selectedVariant?.image?.url || product.featuredImage?.url}
+        quantity={quantity}
+        onQuantityChange={setQuantity}
+        onAddToCart={handleAddToCart}
+        disabled={!product.availableForSale || !selectedVariant?.availableForSale}
+        loading={addingToCart}
+        targetElementId="main-add-to-cart"
+      />
+      
       {/* Product Details */}
       <SectionWrapper spacing="md" background="default">
         <Container maxWidth="default">
           <div className="grid lg:grid-cols-2 gap-8 lg:gap-12">
-            {/* Product Gallery - Using new component */}
+            {/* Product Gallery */}
             <ProductGallery
               images={images.map((img, idx) => ({
                 id: `img-${idx}`,
@@ -269,11 +283,11 @@ export default function ProductPage() {
 
             {/* Product Info */}
             <div className="space-y-6">
-              {/* Vendor */}
+              {/* Vendor/Artist link */}
               {product.vendor && (
                 <Link 
-                  href={`/shop?collection=${product.vendor.toLowerCase().replace(/\s+/g, '-')}`}
-                  className="text-sm text-[#1a1a1a]/60 hover:text-[#1a1a1a] transition-colors"
+                  href={`/shop/artists/${encodeURIComponent(product.vendor.toLowerCase().replace(/\s+/g, '-'))}`}
+                  className="text-sm text-[#1a1a1a]/60 hover:text-[#2c4bce] transition-colors uppercase tracking-wider"
                 >
                   {product.vendor}
                 </Link>
@@ -363,28 +377,27 @@ export default function ProductPage() {
 
               {/* Action Buttons */}
               <div className="space-y-3 pt-2">
-                {/* Add to Cart */}
+                {/* Add to Cart - uses cart context */}
                 <button
-                  onClick={handleCheckout}
-                  disabled={!product.availableForSale || !selectedVariant?.availableForSale || checkoutLoading}
-                  className="w-full py-4 px-6 bg-[#f0c417] text-[#1a1a1a] font-semibold text-base rounded-full hover:bg-[#e0b415] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  ref={buyButtonRef}
+                  id="main-add-to-cart"
+                  onClick={handleAddToCart}
+                  disabled={!product.availableForSale || !selectedVariant?.availableForSale || addingToCart}
+                  className="w-full py-4 px-6 bg-[#f0c417] text-[#1a1a1a] font-semibold text-base rounded-full hover:bg-[#e0b415] transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 min-h-[44px]"
                 >
-                  {checkoutLoading 
-                    ? 'Processing...' 
-                    : !product.availableForSale || !selectedVariant?.availableForSale
-                      ? 'Sold Out'
-                      : 'Add to cart'
-                  }
-                </button>
-                
-                {/* Buy with Shop Pay */}
-                <button className="w-full py-4 px-6 bg-[#5a31f4] text-white font-semibold text-base rounded-full hover:bg-[#4a21e4] transition-colors flex items-center justify-center gap-2">
-                  Buy with <span className="font-bold italic">Shop</span><span className="text-xs align-super">Pay</span>
-                </button>
-                
-                {/* More payment options */}
-                <button className="w-full text-center text-sm text-[#1a1a1a]/60 underline hover:text-[#1a1a1a] transition-colors">
-                  More payment options
+                  {addingToCart ? (
+                    <>
+                      <svg className="animate-spin h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      Adding...
+                    </>
+                  ) : !product.availableForSale || !selectedVariant?.availableForSale ? (
+                    'Sold Out'
+                  ) : (
+                    'Add to cart'
+                  )}
                 </button>
               </div>
 
@@ -405,7 +418,7 @@ export default function ProductPage() {
         textColor="#1a1a1a"
       />
 
-      {/* Related Products */}
+      {/* You May Also Like - Scrollable Carousel */}
       {relatedProducts.length > 0 && (
         <SectionWrapper spacing="md" background="muted">
           <Container maxWidth="default">
@@ -414,39 +427,79 @@ export default function ProductPage() {
                 You May Also Like
               </h2>
               <div className="flex gap-2">
-                <button className="w-10 h-10 rounded-full border border-[#1a1a1a]/20 flex items-center justify-center hover:border-[#1a1a1a]/40 transition-colors">
+                <button 
+                  onClick={() => scrollCarousel('left')}
+                  className="w-10 h-10 rounded-full border border-[#1a1a1a]/20 flex items-center justify-center hover:border-[#1a1a1a]/40 hover:bg-[#1a1a1a]/5 transition-colors"
+                  aria-label="Scroll left"
+                >
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                     <path d="M15 18l-6-6 6-6" />
                   </svg>
                 </button>
-                <button className="w-10 h-10 rounded-full border border-[#1a1a1a]/20 flex items-center justify-center hover:border-[#1a1a1a]/40 transition-colors">
+                <button 
+                  onClick={() => scrollCarousel('right')}
+                  className="w-10 h-10 rounded-full border border-[#1a1a1a]/20 flex items-center justify-center hover:border-[#1a1a1a]/40 hover:bg-[#1a1a1a]/5 transition-colors"
+                  aria-label="Scroll right"
+                >
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                     <path d="M9 18l6-6-6-6" />
                   </svg>
                 </button>
               </div>
             </div>
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
+            
+            {/* Scrollable carousel */}
+            <div 
+              ref={carouselRef}
+              className="flex gap-6 overflow-x-auto scrollbar-hide pb-4 -mx-4 px-4 snap-x snap-mandatory touch-pan-x"
+              style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+              onTouchStart={onTouchStart}
+              onTouchMove={onTouchMove}
+              onTouchEnd={onTouchEnd}
+            >
               {relatedProducts.map((relatedProduct) => {
                 const relatedImages = relatedProduct.images?.edges?.map(e => e.node) || []
                 const secondImage = relatedImages[1]?.url
                 
                 return (
-                  <ProductCard
-                    key={relatedProduct.id}
-                    title={relatedProduct.title}
-                    price={formatPrice(relatedProduct.priceRange.minVariantPrice)}
-                    image={relatedProduct.featuredImage?.url || ''}
-                    secondImage={secondImage}
-                    imageAlt={relatedProduct.featuredImage?.altText || relatedProduct.title}
-                    href={`/shop/${relatedProduct.handle}`}
-                    vendor={relatedProduct.vendor}
-                    vendorHref={relatedProduct.vendor ? `/shop?collection=${relatedProduct.vendor.toLowerCase().replace(/\s+/g, '-')}` : undefined}
-                    transparentBackground={true}
-                    showQuickAdd={false}
-                  />
+                  <div key={relatedProduct.id} className="flex-shrink-0 w-[calc(50%-12px)] lg:w-[calc(25%-18px)] snap-start">
+                    <ProductCard
+                      title={relatedProduct.title}
+                      price={formatPrice(relatedProduct.priceRange.minVariantPrice)}
+                      image={relatedProduct.featuredImage?.url || ''}
+                      secondImage={secondImage}
+                      imageAlt={relatedProduct.featuredImage?.altText || relatedProduct.title}
+                      href={`/shop/${relatedProduct.handle}`}
+                      vendor={relatedProduct.vendor}
+                      vendorHref={relatedProduct.vendor ? `/shop/artists/${encodeURIComponent(relatedProduct.vendor.toLowerCase().replace(/\s+/g, '-'))}` : undefined}
+                      transparentBackground={true}
+                      showQuickAdd={true}
+                      onQuickAdd={() => {
+                        const variant = relatedProduct.variants.edges[0]?.node
+                        if (variant) {
+                          cart.addItem({
+                            productId: relatedProduct.id,
+                            variantId: variant.id,
+                            handle: relatedProduct.handle,
+                            title: relatedProduct.title,
+                            price: parseFloat(variant.price.amount),
+                            quantity: 1,
+                            image: relatedProduct.featuredImage?.url,
+                            artistName: relatedProduct.vendor,
+                          })
+                        }
+                      }}
+                    />
+                  </div>
                 )
               })}
+            </div>
+            
+            {/* View all link */}
+            <div className="mt-8 text-center">
+              <Link href="/shop">
+                <Button variant="outline">View All Artworks</Button>
+              </Link>
             </div>
           </Container>
         </SectionWrapper>

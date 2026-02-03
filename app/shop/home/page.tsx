@@ -17,7 +17,7 @@ import {
 } from '@/components/sections'
 import { Spline3DViewer, URLParamModal, URLParamBanner } from '@/components/blocks'
 import { homepageContent } from '@/content/homepage'
-import { getCollection, getProduct, formatPrice, isOnSale, getDiscountPercentage } from '@/lib/shopify/storefront-client'
+import { getCollection, getProduct, formatPrice, isOnSale, getDiscountPercentage, isStorefrontConfigured, getStorefrontConfigStatus } from '@/lib/shopify/storefront-client'
 import Link from 'next/link'
 
 export const metadata: Metadata = {
@@ -29,20 +29,41 @@ export const metadata: Metadata = {
 export const dynamic = 'force-dynamic'
 
 export default async function ShopHomePage() {
-  // Fetch featured collections
-  const newReleasesCollection = await getCollection(homepageContent.newReleases.collectionHandle, {
-    first: homepageContent.newReleases.productsCount,
-  })
+  // Check if Storefront API is configured
+  const apiConfigured = isStorefrontConfigured()
+  let apiError: string | null = null
   
-  const bestSellersCollection = await getCollection(homepageContent.bestSellers.collectionHandle, {
-    first: 6,
-  })
+  // Initialize empty arrays for products
+  let newReleases: any[] = []
+  let bestSellers: any[] = []
+  let featuredProduct: any = null
+  
+  // Only fetch from Shopify if API is configured
+  if (apiConfigured) {
+    try {
+      // Fetch featured collections
+      const [newReleasesCollection, bestSellersCollection, product] = await Promise.all([
+        getCollection(homepageContent.newReleases.collectionHandle, {
+          first: homepageContent.newReleases.productsCount,
+        }).catch(() => null),
+        getCollection(homepageContent.bestSellers.collectionHandle, {
+          first: 6,
+        }).catch(() => null),
+        getProduct(homepageContent.featuredProduct.productHandle).catch(() => null),
+      ])
 
-  // Fetch featured product (Street Lamp)
-  const featuredProduct = await getProduct(homepageContent.featuredProduct.productHandle).catch(() => null)
-
-  const newReleases = newReleasesCollection?.products.edges.map(e => e.node) || []
-  const bestSellers = bestSellersCollection?.products.edges.map(e => e.node) || []
+      newReleases = newReleasesCollection?.products.edges.map(e => e.node) || []
+      bestSellers = bestSellersCollection?.products.edges.map(e => e.node) || []
+      featuredProduct = product
+    } catch (error: any) {
+      console.error('Shop homepage API error:', error.message)
+      apiError = error.message
+    }
+  } else {
+    const configStatus = getStorefrontConfigStatus()
+    console.warn('Shopify Storefront API not configured:', configStatus)
+    apiError = 'Shopify Storefront API not configured. Please set the required environment variables.'
+  }
   
   // Prepare featured artists data (first 6 for display)
   const featuredArtists = homepageContent.featuredArtists.collections.slice(0, 6).map(artist => ({
@@ -54,6 +75,28 @@ export default async function ShopHomePage() {
   // Note: Header and Footer are provided by app/shop/layout.tsx
   return (
     <main>
+        {/* API Configuration Warning Banner (dev only) */}
+        {apiError && process.env.NODE_ENV === 'development' && (
+          <div className="bg-amber-50 border-b border-amber-200 px-4 py-3">
+            <Container maxWidth="default" paddingX="gutter">
+              <div className="flex items-start gap-3">
+                <svg className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                </svg>
+                <div className="flex-1">
+                  <p className="text-sm font-medium text-amber-800">Shopify Storefront API Not Configured</p>
+                  <p className="text-sm text-amber-700 mt-1">
+                    Product data is unavailable. Please set <code className="bg-amber-100 px-1 rounded">NEXT_PUBLIC_SHOPIFY_STOREFRONT_TOKEN</code> and <code className="bg-amber-100 px-1 rounded">SHOPIFY_SHOP</code> environment variables.
+                  </p>
+                  <p className="text-xs text-amber-600 mt-2">
+                    To create a Storefront API token: Shopify Admin → Apps → Develop apps → Create an app → Configure Storefront API scopes → Install app
+                  </p>
+                </div>
+              </div>
+            </Container>
+          </div>
+        )}
+
         {/* Hero Video Section */}
         <VideoPlayer
           video={{
@@ -80,26 +123,28 @@ export default async function ShopHomePage() {
         />
 
         {/* New Releases Section */}
-        <SectionWrapper spacing="md" background="default">
-          <Container maxWidth="default" paddingX="gutter">
-            <SectionHeader
-              title={homepageContent.newReleases.title}
-              alignment="center"
-              action={
-                <Link href={`/shop?collection=${homepageContent.newReleases.collectionHandle}`}>
-                  <Button variant="outline" size="sm">
-                    {homepageContent.newReleases.linkText}
-                  </Button>
-                </Link>
-              }
-            />
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
-              {newReleases.map((product) => (
-                <ProductCardItem key={product.id} product={product} />
-              ))}
-            </div>
-          </Container>
-        </SectionWrapper>
+        {newReleases.length > 0 && (
+          <SectionWrapper spacing="md" background="default">
+            <Container maxWidth="default" paddingX="gutter">
+              <SectionHeader
+                title={homepageContent.newReleases.title}
+                alignment="center"
+                action={
+                  <Link href={`/shop?collection=${homepageContent.newReleases.collectionHandle}`}>
+                    <Button variant="outline" size="sm">
+                      {homepageContent.newReleases.linkText}
+                    </Button>
+                  </Link>
+                }
+              />
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
+                {newReleases.map((product) => (
+                  <ProductCardItem key={product.id} product={product} />
+                ))}
+              </div>
+            </Container>
+          </SectionWrapper>
+        )}
 
         {/* Spline 3D Viewer Section */}
         <Spline3DViewer
@@ -178,26 +223,28 @@ export default async function ShopHomePage() {
         />
 
         {/* Best Sellers Section */}
-        <SectionWrapper spacing="md" background="muted">
-          <Container maxWidth="default" paddingX="gutter">
-            <SectionHeader
-              title={homepageContent.bestSellers.title}
-              alignment="center"
-              action={
-                <Link href={`/shop?collection=${homepageContent.bestSellers.collectionHandle}`}>
-                  <Button variant="outline" size="sm">
-                    {homepageContent.bestSellers.linkText}
-                  </Button>
-                </Link>
-              }
-            />
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 sm:gap-6">
-              {bestSellers.map((product) => (
-                <ProductCardItem key={product.id} product={product} compact />
-              ))}
-            </div>
-          </Container>
-        </SectionWrapper>
+        {bestSellers.length > 0 && (
+          <SectionWrapper spacing="md" background="muted">
+            <Container maxWidth="default" paddingX="gutter">
+              <SectionHeader
+                title={homepageContent.bestSellers.title}
+                alignment="center"
+                action={
+                  <Link href={`/shop?collection=${homepageContent.bestSellers.collectionHandle}`}>
+                    <Button variant="outline" size="sm">
+                      {homepageContent.bestSellers.linkText}
+                    </Button>
+                  </Link>
+                }
+              />
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 sm:gap-6">
+                {bestSellers.map((product) => (
+                  <ProductCardItem key={product.id} product={product} compact />
+                ))}
+              </div>
+            </Container>
+          </SectionWrapper>
+        )}
 
         {/* Featured Artists Section */}
         <FeaturedArtistsSection
