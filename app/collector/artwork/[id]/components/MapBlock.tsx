@@ -1,15 +1,15 @@
 "use client"
 
 import { useState } from "react"
-import Map, { Marker, NavigationControl } from 'react-map-gl/maplibre'
-import 'mapbox-gl/dist/mapbox-gl.css'
+import { Map, Marker, NavigationControl } from 'react-map-gl/maplibre'
+import 'maplibre-gl/dist/maplibre-gl.css'
 import Image from "next/image"
 import { MapPin, X } from "lucide-react"
 
 interface MapBlockProps {
   title?: string | null
-  contentBlock: {
-    block_config: {
+  contentBlock?: {
+    block_config?: {
       title?: string
       location_name?: string
       latitude?: string
@@ -23,6 +23,12 @@ interface MapBlockProps {
 }
 
 export function MapBlock({ title, contentBlock }: MapBlockProps) {
+  // Add defensive checks for undefined contentBlock or block_config
+  if (!contentBlock?.block_config) {
+    console.warn('MapBlock: contentBlock or block_config is undefined')
+    return null
+  }
+  
   const config = contentBlock.block_config || {}
   const [selectedImageIndex, setSelectedImageIndex] = useState<number | null>(null)
   const [viewState, setViewState] = useState({

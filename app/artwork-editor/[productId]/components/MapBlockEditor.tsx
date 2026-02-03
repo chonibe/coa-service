@@ -2,8 +2,8 @@
 
 import { useState, useRef, useCallback } from "react"
 import Image from "next/image"
-import Map, { Marker, NavigationControl } from 'react-map-gl/maplibre'
-import 'mapbox-gl/dist/mapbox-gl.css'
+import { Map, Marker, NavigationControl } from 'react-map-gl/maplibre'
+import 'maplibre-gl/dist/maplibre-gl.css'
 import { 
   X, 
   Camera, 
@@ -77,6 +77,18 @@ export function MapBlockEditor({ block, onUpdate }: MapBlockEditorProps) {
   })
 
   const MAPBOX_TOKEN = process.env.NEXT_PUBLIC_MAPBOX_TOKEN || 'pk.eyJ1IjoiY2hvbmliZSIsImEiOiJjbTMwZjEwbW8wbGtuMmlzOGtiOGRtMTg1In0.Ith0JUK28Im6cJ2R65FoUw'
+
+  // Get map style based on config selection
+  const getMapStyle = () => {
+    switch (config.map_style) {
+      case 'satellite':
+        return 'mapbox://styles/mapbox/satellite-streets-v12'
+      case 'artistic':
+        return 'mapbox://styles/chonibe/cmfitpdfo003y01qr74fwdycq'
+      default:
+        return 'mapbox://styles/mapbox/streets-v12'
+    }
+  }
 
   // Get icon for place type
   const getPlaceIcon = (placeType: string, category?: string) => {
@@ -491,7 +503,7 @@ export function MapBlockEditor({ block, onUpdate }: MapBlockEditorProps) {
               {...viewState}
               onMove={(evt) => setViewState(evt.viewState)}
               onClick={handleMapClick}
-              mapStyle="mapbox://styles/mapbox/streets-v12"
+              mapStyle={getMapStyle()}
               mapboxAccessToken={MAPBOX_TOKEN}
               style={{ width: '100%', height: '100%' }}
             >

@@ -225,15 +225,15 @@ export function ProductWizard({ onComplete, onCancel, initialData, submissionId 
 
       // If collector experience step was shown and user chose to set up now
       // Note: product_id is only available after publication, so we'll use submission.id
-      // and navigate to artwork pages list where they can set up content after approval
+      // and navigate to products page where they can set up content after approval
       if (showCollectorExperience && !skipCollectorExperience) {
         toast({
           title: "Artwork Submitted",
-          description: "After admin approval, you can set up the collector experience in the Artwork Pages section.",
+          description: "After admin approval, you can edit your artwork page from the Submissions tab.",
         })
-        // Navigate to artwork pages list
+        // Navigate back to products page (submissions tab)
         setTimeout(() => {
-          window.location.href = `/vendor/dashboard/artwork-pages`
+          window.location.href = `/vendor/dashboard/products`
         }, 1500)
         return
       }

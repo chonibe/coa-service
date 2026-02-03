@@ -36,7 +36,7 @@ export default function ArtworkPageByHandleRedirect() {
 
         const data = await response.json()
         if (data.product?.id) {
-          router.replace(`/vendor/dashboard/artwork-pages/${data.product.id}`)
+          router.replace(`/artwork-editor/${data.product.id}`)
           return
         }
         setError("Product ID not found")
@@ -62,13 +62,13 @@ export default function ArtworkPageByHandleRedirect() {
           </Alert>
           <div className="flex gap-3">
             <Button variant="outline" asChild>
-              <Link href="/vendor/dashboard/artwork-pages">
+              <Link href="/vendor/dashboard/products">
                 <ArrowLeft className="h-4 w-4 mr-2" />
-                Back to Artwork Pages
+                Back to Artworks
               </Link>
             </Button>
-            <Button variant="default" onClick={() => router.push("/vendor/dashboard/artwork-pages")}>
-              Go to Artwork Pages
+            <Button variant="default" onClick={() => router.push("/vendor/dashboard/products")}>
+              Go to Artworks
             </Button>
           </div>
         </div>
