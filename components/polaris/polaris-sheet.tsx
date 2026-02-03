@@ -121,6 +121,3 @@ export function PolarisSheet({
   }
   return overlay
 }
-
-// Ensure all exports are visible
-export { PolarisSheetContent, PolarisSheetHeader, PolarisSheetTitle, PolarisSheet }
