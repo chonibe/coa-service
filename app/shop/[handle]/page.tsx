@@ -1,7 +1,6 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
-import StickyBuyBar from './components/StickyBuyBar'
 import { useParams, notFound } from 'next/navigation'
 import Link from 'next/link'
 import {
