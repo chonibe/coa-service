@@ -5,10 +5,13 @@
 
 import { createClient } from '@/lib/supabase/server'
 import { sendEmail } from '@/lib/email/client'
-import { generatePayoutProcessedEmail, type PayoutProcessedEmailData } from '@/lib/email/templates/payout-processed'
-import { generatePayoutFailedEmail, type PayoutFailedEmailData } from '@/lib/email/templates/payout-failed'
-import { generatePayoutPendingReminderEmail, type PayoutPendingReminderData } from '@/lib/email/templates/payout-pending-reminder'
-import { generateRefundDeductionEmail, type RefundDeductionEmailData } from '@/lib/email/templates/refund-deduction'
+import { renderTemplate } from '@/lib/email/template-service'
+
+// Legacy type imports for backward compatibility
+import type { PayoutProcessedEmailData } from '@/lib/email/templates/payout-processed'
+import type { PayoutFailedEmailData } from '@/lib/email/templates/payout-failed'
+import type { PayoutPendingReminderData } from '@/lib/email/templates/payout-pending-reminder'
+import type { RefundDeductionEmailData } from '@/lib/email/templates/refund-deduction'
 
 /**
  * Check if vendor has email notifications enabled for a specific type
@@ -95,11 +98,16 @@ export async function notifyPayoutProcessed(
 
   // Send email if enabled
   if (vendorEmail && (await shouldSendEmail(vendorName, 'payout_processed'))) {
-    const html = generatePayoutProcessedEmail(data)
+    const template = await renderTemplate('payout_processed', {
+      vendorName: data.vendorName || vendorName,
+      amount: new Intl.NumberFormat('en-US', { style: 'currency', currency: data.currency || 'USD' }).format(data.amount),
+      reference: data.reference,
+    })
+    
     await sendEmail({
       to: vendorEmail,
-      subject: `Payout Processed - ${data.reference}`,
-      html,
+      subject: template.subject,
+      html: template.html,
     })
   }
 }
@@ -138,11 +146,17 @@ export async function notifyPayoutFailed(
 
   // Send email if enabled
   if (vendorEmail && (await shouldSendEmail(vendorName, 'payout_failed'))) {
-    const html = generatePayoutFailedEmail(data)
+    const template = await renderTemplate('payout_failed', {
+      vendorName: data.vendorName || vendorName,
+      amount: new Intl.NumberFormat('en-US', { style: 'currency', currency: data.currency || 'USD' }).format(data.amount),
+      reference: data.reference,
+      reason: data.errorMessage || 'Unknown error',
+    })
+    
     await sendEmail({
       to: vendorEmail,
-      subject: `Payout Failed - ${data.reference}`,
-      html,
+      subject: template.subject,
+      html: template.html,
     })
   }
 }
@@ -180,11 +194,18 @@ export async function notifyPayoutPending(
 
   // Send email if enabled
   if (vendorEmail && (await shouldSendEmail(vendorName, 'payout_pending'))) {
-    const html = generatePayoutPendingReminderEmail(data)
+    const template = await renderTemplate('payout_pending', {
+      vendorName: data.vendorName || vendorName,
+      amount: new Intl.NumberFormat('en-US', { style: 'currency', currency: data.currency || 'USD' }).format(data.pendingAmount),
+      pendingItems: data.pendingItems.toString(),
+      minimumThreshold: new Intl.NumberFormat('en-US', { style: 'currency', currency: data.currency || 'USD' }).format(data.minimumThreshold || 100),
+      payoutsUrl: 'https://app.thestreetcollector.com/vendor/dashboard/payouts',
+    })
+    
     await sendEmail({
       to: vendorEmail,
-      subject: `Pending Payout Reminder - ${new Intl.NumberFormat('en-US', { style: 'currency', currency: data.currency || 'USD' }).format(data.pendingAmount)}`,
-      html,
+      subject: template.subject,
+      html: template.html,
     })
   }
 }
@@ -224,11 +245,19 @@ export async function notifyRefundDeduction(
 
   // Send email if enabled
   if (vendorEmail && (await shouldSendEmail(vendorName, 'refund_deduction'))) {
-    const html = generateRefundDeductionEmail(data)
+    const template = await renderTemplate('refund_deduction', {
+      vendorName: data.vendorName || vendorName,
+      orderName: data.orderName || data.orderId,
+      refundType: data.refundType || 'full',
+      deductionAmount: new Intl.NumberFormat('en-US', { style: 'currency', currency: data.currency || 'USD' }).format(data.deductionAmount),
+      newBalance: new Intl.NumberFormat('en-US', { style: 'currency', currency: data.currency || 'USD' }).format(data.newBalance),
+      payoutsUrl: 'https://app.thestreetcollector.com/vendor/dashboard/payouts',
+    })
+    
     await sendEmail({
       to: vendorEmail,
-      subject: `Refund Deduction Notice - Order ${data.orderName || data.orderId}`,
-      html,
+      subject: template.subject,
+      html: template.html,
     })
   }
 }
