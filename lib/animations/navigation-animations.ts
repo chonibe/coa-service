@@ -28,6 +28,11 @@ export function useSmoothDrawer(
   useEffect(() => {
     if (!drawerRef.current || !backdropRef.current) return
 
+    // Kill existing timeline if any
+    if (timelineRef.current) {
+      timelineRef.current.kill()
+    }
+
     // Create reusable timeline
     timelineRef.current = gsap.timeline({ paused: true })
 
@@ -48,19 +53,22 @@ export function useSmoothDrawer(
     )
 
     return () => {
-      timelineRef.current?.kill()
+      if (timelineRef.current) {
+        timelineRef.current.kill()
+        timelineRef.current = null
+      }
     }
   }, [drawerRef, backdropRef])
 
   const openDrawer = useCallback(() => {
-    if (timelineRef.current) {
-      timelineRef.current.play()
+    if (timelineRef.current && !timelineRef.current.isActive()) {
+      timelineRef.current.timeScale(1).play()
     }
   }, [])
 
   const closeDrawer = useCallback(() => {
-    if (timelineRef.current) {
-      timelineRef.current.reverse()
+    if (timelineRef.current && !timelineRef.current.isActive()) {
+      timelineRef.current.timeScale(1).reverse()
     }
   }, [])
 
@@ -191,6 +199,11 @@ export function useSmoothMenuDrawer(
   useEffect(() => {
     if (!menuRef.current || !backdropRef.current) return
 
+    // Kill existing timeline if any
+    if (timelineRef.current) {
+      timelineRef.current.kill()
+    }
+
     // Create reusable timeline
     timelineRef.current = gsap.timeline({ paused: true })
 
@@ -211,19 +224,22 @@ export function useSmoothMenuDrawer(
     )
 
     return () => {
-      timelineRef.current?.kill()
+      if (timelineRef.current) {
+        timelineRef.current.kill()
+        timelineRef.current = null
+      }
     }
   }, [menuRef, backdropRef])
 
   const openMenu = useCallback(() => {
-    if (timelineRef.current) {
-      timelineRef.current.play()
+    if (timelineRef.current && !timelineRef.current.isActive()) {
+      timelineRef.current.timeScale(1).play()
     }
   }, [])
 
   const closeMenu = useCallback(() => {
-    if (timelineRef.current) {
-      timelineRef.current.reverse()
+    if (timelineRef.current && !timelineRef.current.isActive()) {
+      timelineRef.current.timeScale(1).reverse()
     }
   }, [])
 
