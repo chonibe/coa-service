@@ -122,11 +122,10 @@ export function useExpandableHeight(contentRef: React.RefObject<HTMLDivElement>)
  * Usage: const { scrollProgress } = useSmoothHeaderScroll(headerRef, threshold)
  */
 export function useSmoothHeaderScroll(
-  headerRef: React.RefObject<HTMLElement>,
+  headerRef: React.RefObject<HTMLElement | null>,
   threshold: number = 80
 ) {
   const scrollProgressRef = useRef(0)
-  const triggerRef = useRef<ScrollTrigger | null>(null)
 
   useEffect(() => {
     if (!headerRef.current) return
@@ -141,17 +140,7 @@ export function useSmoothHeaderScroll(
       // Interpolate background opacity: transparent → white
       const bgOpacity = progress * 0.95 // Max opacity 0.95 for white background
 
-      // Interpolate text color: white → black (via opacity)
-      const isDark = progress > 0.5
-
-      // Update header styles with smooth interpolation
-      gsap.to(headerRef.current, {
-        backgroundColor: `rgba(255, 255, 255, ${bgOpacity})`,
-        duration: 0,
-        clearProps: 'none',
-      })
-
-      // Update icon/text colors smoothly
+      // Interpolate text color: white → black (via CSS variable)
       const color = gsap.utils.interpolate(
         [255, 255, 255], // white
         [0, 0, 0], // black
@@ -159,10 +148,20 @@ export function useSmoothHeaderScroll(
       )
       const [r, g, b] = color as [number, number, number]
 
-      // Apply color to text and icons via CSS variable
+      // Update header styles
       headerRef.current.style.setProperty(
         '--nav-color',
         `rgb(${Math.round(r)}, ${Math.round(g)}, ${Math.round(b)})`
+      )
+
+      // Update background opacity
+      headerRef.current.style.backgroundColor = `rgba(255, 255, 255, ${bgOpacity})`
+
+      // Update logo invert filter
+      const logoInvert = progress > 0.5 ? 0 : 1
+      headerRef.current.style.setProperty(
+        '--logo-invert',
+        logoInvert.toString()
       )
     }
 
@@ -171,9 +170,6 @@ export function useSmoothHeaderScroll(
 
     return () => {
       window.removeEventListener('scroll', handleScroll)
-      if (triggerRef.current) {
-        triggerRef.current.kill()
-      }
     }
   }, [headerRef, threshold])
 

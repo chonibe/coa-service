@@ -24,56 +24,60 @@ export function TransparentHeader({
   useSmoothHeaderScroll(headerRef, 80)
 
   return (
-    <div
-      ref={headerRef}
-      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300`}
-      style={{
-        '--nav-color': 'white',
-      } as React.CSSProperties}
-    >
+    <>
       <Header
         ref={headerRef}
         navigation={navigation}
         logoHref={logoHref}
         cartCount={cartCount}
         onCartClick={onCartClick}
-        className={`transition-colors duration-300`}
+        className="transparent-header-overlay transition-all duration-300"
         style={{
-          '--icon-color': 'var(--nav-color)',
+          '--nav-color': 'white',
         } as React.CSSProperties}
       />
       
       <style jsx global>{`
+        /* Transparent header overlay styling */
+        header.transparent-header-overlay {
+          position: fixed;
+          top: 0;
+          left: 0;
+          right: 0;
+          z-index: 50;
+          background-color: transparent;
+          transition: background-color 0.3s ease;
+        }
+        
         /* Smooth header background and text color transitions */
-        .fixed.top-0[style*="--nav-color"] {
-          background-color: rgba(255, 255, 255, var(--bg-opacity, 0));
+        header.transparent-header-overlay[style*="--nav-color"] {
           color: var(--nav-color);
         }
         
         /* Override header icon colors with smooth transition */
-        .fixed.top-0 svg {
+        header.transparent-header-overlay svg {
           color: var(--nav-color);
           stroke: var(--nav-color);
           transition: color 0.3s ease, stroke 0.3s ease;
         }
         
         /* Smooth logo color transition */
-        .fixed.top-0 img {
-          filter: brightness(0) invert(var(--logo-invert, 1));
+        header.transparent-header-overlay img {
+          filter: brightness(0) invert(1);
           transition: filter 0.3s ease;
         }
         
         /* Smooth navigation link transitions */
-        .fixed.top-0 a {
+        header.transparent-header-overlay a {
           color: var(--nav-color);
           transition: color 0.3s ease;
         }
         
         /* Smooth cart badge transitions */
-        .fixed.top-0 [class*="badge"] {
+        header.transparent-header-overlay [class*="badge"] {
           transition: background-color 0.3s ease, color 0.3s ease;
         }
       `}</style>
-    </div>
+    </>
   )
 }
