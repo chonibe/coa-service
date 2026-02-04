@@ -4,16 +4,16 @@ import * as React from 'react'
 import { useEffect } from 'react'
 import Link from 'next/link'
 import { cn } from '@/lib/utils'
-import { useTwoStepScalingMenu, useExpandableHeight } from '@/lib/animations/navigation-animations'
+import { useSmoothMenuDrawer, useExpandableHeight } from '@/lib/animations/navigation-animations'
 import type { NavItem } from './Header'
 
 /**
  * Mobile Menu Drawer
  * 
- * Full-screen mobile navigation with premium two-step scaling animation (OSMO-style):
- * - Step 1: Menu scales up from 0.8 and slides in (320ms)
- * - Step 2: Content fades in (200ms)
+ * Full-screen mobile navigation drawer with GSAP animations:
+ * - Smooth slide-in from left with GSAP
  * - Smooth expandable menu sections with height animation
+ * - Calm, refined transitions (300ms drawer, 250ms expandable items)
  */
 
 export interface MobileMenuDrawerProps {
@@ -41,11 +41,10 @@ const MobileMenuDrawer = React.forwardRef<HTMLDivElement, MobileMenuDrawerProps>
   ) => {
     const [expandedItems, setExpandedItems] = React.useState<Set<string>>(new Set())
     const menuRef = React.useRef<HTMLDivElement>(null)
-    const contentRef = React.useRef<HTMLDivElement>(null)
     const backdropRef = React.useRef<HTMLDivElement>(null)
     
-    // GSAP two-step scaling menu animation (OSMO-style)
-    const { openMenu, closeMenu } = useTwoStepScalingMenu(menuRef, contentRef, backdropRef)
+    // GSAP smooth menu animations
+    const { openMenu, closeMenu } = useSmoothMenuDrawer(menuRef, backdropRef)
 
     // Close on escape key
     React.useEffect(() => {
@@ -106,7 +105,7 @@ const MobileMenuDrawer = React.forwardRef<HTMLDivElement, MobileMenuDrawerProps>
           }}
         />
 
-        {/* Drawer */}
+        {/* Drawer - Card Style */}
         <div
           ref={(node) => {
             menuRef.current = node
@@ -117,15 +116,15 @@ const MobileMenuDrawer = React.forwardRef<HTMLDivElement, MobileMenuDrawerProps>
           aria-modal="true"
           aria-label="Mobile menu"
           className={cn(
-            'fixed top-0 left-0 z-50 h-full w-full max-w-sm',
-            'bg-[#390000]',
+            'fixed top-4 left-4 z-50 h-[calc(100%-2rem)] w-[calc(100%-2rem)] max-w-sm',
+            'bg-[#390000] rounded-2xl shadow-2xl',
             className
           )}
           style={{
-            transform: isOpen ? 'translateX(0)' : 'translateX(-100%)',
+            transform: isOpen ? 'translateX(0)' : 'translateX(-120%)',
           }}
         >
-          <div ref={contentRef} className="flex flex-col h-full">
+          <div className="flex flex-col h-full">
             {/* Header */}
             <div className="flex items-center justify-between px-6 py-4 border-b border-[#ffba94]/10">
               {logoSrc && (

@@ -167,7 +167,7 @@ const CartDrawer = React.forwardRef<HTMLDivElement, CartDrawerProps>(
           }}
         />
 
-        {/* Drawer - GSAP-powered animations */}
+        {/* Drawer - GSAP-powered card animations */}
         <div
           ref={(node) => {
             drawerRef.current = node
@@ -178,14 +178,14 @@ const CartDrawer = React.forwardRef<HTMLDivElement, CartDrawerProps>(
           aria-modal="true"
           aria-label="Shopping cart"
           className={cn(
-            'fixed top-0 right-0 z-50 h-full w-full max-w-md',
-            'bg-white/95 backdrop-blur-xl shadow-2xl',
-            'border-l border-[#1a1a1a]/10'
+            'fixed bottom-4 right-4 z-50 h-[calc(100%-2rem)] w-full max-w-md',
+            'bg-white/95 backdrop-blur-xl shadow-2xl rounded-2xl',
+            'border border-[#1a1a1a]/10'
           )}
           style={{
             backdropFilter: 'blur(20px) saturate(180%)',
             WebkitBackdropFilter: 'blur(20px) saturate(180%)',
-            transform: isOpen ? 'translateX(0)' : 'translateX(100%)',
+            transform: isOpen ? 'translateX(0)' : 'translateX(120%)',
           }}
         >
           <div className="flex flex-col h-full">

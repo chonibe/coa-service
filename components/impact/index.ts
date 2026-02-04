@@ -32,6 +32,12 @@ export type { EmptyStateProps, LoadingStateProps } from './EmptyState'
 export { Header, AnnouncementBar } from './Header'
 export type { HeaderProps, NavItem, AnnouncementBarProps } from './Header'
 
+export { HeaderEnhanced } from './HeaderEnhanced'
+export type { HeaderEnhancedProps } from './HeaderEnhanced'
+
+export { ButtonRotate } from './ButtonRotate'
+export type { ButtonRotateProps } from './ButtonRotate'
+
 export { ScrollingAnnouncementBar, defaultAnnouncementMessages } from './ScrollingAnnouncementBar'
 export type { ScrollingAnnouncementBarProps } from './ScrollingAnnouncementBar'
 
@@ -46,6 +52,9 @@ export type { SearchDrawerProps, SearchResult } from './SearchDrawer'
 
 export { MobileMenuDrawer } from './MobileMenuDrawer'
 export type { MobileMenuDrawerProps } from './MobileMenuDrawer'
+
+export { AddToCartFloating } from './AddToCartFloating'
+export type { AddToCartFloatingProps } from './AddToCartFloating'
 
 export { Toast, ToastContainer, useToast } from './Toast'
 export type { ToastProps, ToastContainerProps } from './Toast'
