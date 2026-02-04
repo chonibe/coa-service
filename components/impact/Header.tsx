@@ -134,11 +134,11 @@ const Header = React.forwardRef<HTMLElement, HeaderProps>(
       >
         <Container maxWidth="default" paddingX="gutter">
           <div className="flex items-center justify-between h-16 sm:h-20">
-            {/* Left: Menu button with label */}
-            <div className="flex items-center gap-2 min-w-[100px] sm:min-w-[120px]">
+            {/* Left: Menu button */}
+            <div className="flex items-center gap-2 min-w-fit">
               <button
                 type="button"
-                className="flex items-center gap-2 p-2 -ml-2 text-[#ffba94] hover:text-white transition-colors"
+                className="p-2 -ml-2 text-[#ffba94] hover:text-white transition-colors"
                 onClick={() => {
                   setMobileMenuOpen(!mobileMenuOpen)
                   onMenuClick?.()
@@ -170,9 +170,6 @@ const Header = React.forwardRef<HTMLElement, HeaderProps>(
                     />
                   )}
                 </svg>
-                <span className="hidden sm:inline text-sm font-medium">
-                  Menu
-                </span>
               </button>
             </div>
             

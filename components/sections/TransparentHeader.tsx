@@ -1,8 +1,10 @@
 'use client'
 
-import { useRef } from 'react'
+import { useState, useRef, useCallback } from 'react'
 import { Header } from '@/components/impact'
 import { useSmoothHeaderScroll } from '@/lib/animations/navigation-animations'
+import { SearchDrawer } from '@/components/impact'
+import { MobileMenuDrawer } from '@/components/impact'
 import type { NavigationLink } from '@/components/impact'
 
 interface TransparentHeaderProps {
@@ -19,9 +21,19 @@ export function TransparentHeader({
   onCartClick,
 }: TransparentHeaderProps) {
   const headerRef = useRef<HTMLElement>(null)
+  const [isSearchOpen, setIsSearchOpen] = useState(false)
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
 
   // Use smooth header scroll hook for smooth color transitions
   useSmoothHeaderScroll(headerRef, 80)
+
+  const handleSearchClick = useCallback(() => {
+    setIsSearchOpen(true)
+  }, [])
+
+  const handleMenuClick = useCallback(() => {
+    setIsMobileMenuOpen(true)
+  }, [])
 
   return (
     <>
@@ -31,10 +43,25 @@ export function TransparentHeader({
         logoHref={logoHref}
         cartCount={cartCount}
         onCartClick={onCartClick}
+        onSearchClick={handleSearchClick}
+        onMenuClick={handleMenuClick}
         className="transparent-header-overlay transition-all duration-300"
         style={{
           '--nav-color': 'white',
         } as React.CSSProperties}
+      />
+
+      {/* Search Drawer */}
+      <SearchDrawer
+        isOpen={isSearchOpen}
+        onClose={() => setIsSearchOpen(false)}
+      />
+
+      {/* Mobile Menu Drawer */}
+      <MobileMenuDrawer
+        isOpen={isMobileMenuOpen}
+        onClose={() => setIsMobileMenuOpen(false)}
+        navigation={navigation}
       />
       
       <style jsx global>{`
