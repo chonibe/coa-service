@@ -47,6 +47,9 @@ export type { FooterProps, FooterLink, FooterSection, SocialLink, SimpleFooterPr
 export { CartDrawer, MiniCart } from './CartDrawer'
 export type { CartDrawerProps, MiniCartProps } from './CartDrawer'
 
+export { LocalCartDrawer } from './LocalCartDrawer'
+export type { LocalCartDrawerProps } from './LocalCartDrawer'
+
 export { SearchDrawer } from './SearchDrawer'
 export type { SearchDrawerProps, SearchResult } from './SearchDrawer'
 

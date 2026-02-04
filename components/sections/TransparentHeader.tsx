@@ -1,28 +1,24 @@
 'use client'
 
 import { useState, useRef, useCallback } from 'react'
-import { Header } from '@/components/impact'
+import { Header, SearchDrawer, MobileMenuDrawer, LocalCartDrawer } from '@/components/impact'
 import { useSmoothHeaderScroll } from '@/lib/animations/navigation-animations'
-import { SearchDrawer } from '@/components/impact'
-import { MobileMenuDrawer } from '@/components/impact'
+import { useCart } from '@/lib/shop/CartContext'
 import type { NavigationLink } from '@/components/impact'
 
 interface TransparentHeaderProps {
   navigation: NavigationLink[]
   logoHref?: string
-  cartCount?: number
-  onCartClick?: () => void
 }
 
 export function TransparentHeader({
   navigation,
   logoHref = '/shop/home',
-  cartCount = 0,
-  onCartClick,
 }: TransparentHeaderProps) {
   const headerRef = useRef<HTMLElement>(null)
   const [isSearchOpen, setIsSearchOpen] = useState(false)
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
+  const cart = useCart()
 
   // Use smooth header scroll hook for smooth color transitions
   useSmoothHeaderScroll(headerRef, 80)
@@ -35,14 +31,18 @@ export function TransparentHeader({
     setIsMobileMenuOpen(true)
   }, [])
 
+  const handleCartClick = useCallback(() => {
+    cart.setIsOpen(true)
+  }, [cart])
+
   return (
     <>
       <Header
         ref={headerRef}
         navigation={navigation}
         logoHref={logoHref}
-        cartCount={cartCount}
-        onCartClick={onCartClick}
+        cartCount={cart.itemCount}
+        onCartClick={handleCartClick}
         onSearchClick={handleSearchClick}
         onMenuClick={handleMenuClick}
         className="transparent-header-overlay transition-all duration-300"
@@ -51,10 +51,29 @@ export function TransparentHeader({
         } as React.CSSProperties}
       />
 
+      {/* Cart Drawer */}
+      <LocalCartDrawer
+        isOpen={cart.isOpen}
+        onClose={() => cart.setIsOpen(false)}
+        items={cart.items}
+        onUpdateQuantity={cart.updateQuantity}
+        onRemoveItem={cart.removeItem}
+        onCheckout={() => {
+          // Navigate to checkout or cart page
+          window.location.href = '/shop/cart'
+        }}
+        subtotal={cart.subtotal}
+        total={cart.total}
+      />
+
       {/* Search Drawer */}
       <SearchDrawer
         isOpen={isSearchOpen}
         onClose={() => setIsSearchOpen(false)}
+        onSearch={async (query) => {
+          // TODO: Implement search
+          return { products: [], collections: [] }
+        }}
       />
 
       {/* Mobile Menu Drawer */}
