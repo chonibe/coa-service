@@ -1,6 +1,7 @@
 'use client'
 
 import * as React from 'react'
+import { useEffect } from 'react'
 import Link from 'next/link'
 import { cn } from '@/lib/utils'
 import { useTwoStepScalingMenu, useExpandableHeight } from '@/lib/animations/navigation-animations'
