@@ -380,6 +380,7 @@ button[aria-label] svg {
   }
   html {
     font-family: var(--font-barlow), system-ui, sans-serif;
+    overflow-x: hidden;
   }
   body {
     @apply bg-background text-foreground;

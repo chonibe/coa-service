@@ -28,6 +28,18 @@ export function useSmoothDrawer(
   useEffect(() => {
     if (!drawerRef.current || !backdropRef.current) return
 
+    // Set initial closed state immediately
+    gsap.set(backdropRef.current, { 
+      opacity: 0,
+      pointerEvents: 'none',
+      visibility: 'hidden'
+    })
+    gsap.set(drawerRef.current, { 
+      x: 'calc(100% + 1rem)',
+      pointerEvents: 'none',
+      visibility: 'hidden'
+    })
+
     // Kill existing timeline if any
     if (timelineRef.current) {
       timelineRef.current.kill()
@@ -39,16 +51,16 @@ export function useSmoothDrawer(
     // Backdrop fade (150ms)
     timelineRef.current.fromTo(
       backdropRef.current,
-      { opacity: 0 },
-      { opacity: 1, duration: 0.15, ease: 'power2.out' },
+      { opacity: 0, pointerEvents: 'none', visibility: 'hidden' },
+      { opacity: 1, pointerEvents: 'auto', visibility: 'visible', duration: 0.15, ease: 'power2.out' },
       0
     )
 
     // Drawer slide from right (300ms)
     timelineRef.current.fromTo(
       drawerRef.current,
-      { x: 'calc(100% + 1rem)' },
-      { x: '0%', duration: 0.3, ease: 'power2.out' },
+      { x: 'calc(100% + 1rem)', pointerEvents: 'none', visibility: 'hidden' },
+      { x: '0%', pointerEvents: 'auto', visibility: 'visible', duration: 0.3, ease: 'power2.out' },
       0
     )
 
@@ -145,13 +157,13 @@ export function useSmoothHeaderScroll(
 
       if (!headerRef.current) return
 
-      // Interpolate background opacity: transparent → white
-      const bgOpacity = progress * 0.95 // Max opacity 0.95 for white background
+      // Interpolate background: transparent → brand red (#390000)
+      const bgOpacity = progress * 0.95 // Max opacity 0.95 for background
 
-      // Interpolate text color: white → black (via CSS variable)
+      // Interpolate text color: white → brand orange (#ffba94) (via CSS variable)
       const color = gsap.utils.interpolate(
         [255, 255, 255], // white
-        [0, 0, 0], // black
+        [255, 186, 148], // #ffba94 (brand orange)
         progress
       )
       const [r, g, b] = color as [number, number, number]
@@ -162,11 +174,11 @@ export function useSmoothHeaderScroll(
         `rgb(${Math.round(r)}, ${Math.round(g)}, ${Math.round(b)})`
       )
 
-      // Update background opacity
-      headerRef.current.style.backgroundColor = `rgba(255, 255, 255, ${bgOpacity})`
+      // Update background to brand red with opacity
+      headerRef.current.style.backgroundColor = `rgba(57, 0, 0, ${bgOpacity})`
 
-      // Update logo invert filter
-      const logoInvert = progress > 0.5 ? 0 : 1
+      // Update logo invert filter (keep white logo on red background)
+      const logoInvert = 1 // Always keep logo white
       headerRef.current.style.setProperty(
         '--logo-invert',
         logoInvert.toString()
@@ -199,6 +211,18 @@ export function useSmoothMenuDrawer(
   useEffect(() => {
     if (!menuRef.current || !backdropRef.current) return
 
+    // Set initial closed state immediately
+    gsap.set(backdropRef.current, { 
+      opacity: 0,
+      pointerEvents: 'none',
+      visibility: 'hidden'
+    })
+    gsap.set(menuRef.current, { 
+      x: 'calc(-100% - 1rem)',
+      pointerEvents: 'none',
+      visibility: 'hidden'
+    })
+
     // Kill existing timeline if any
     if (timelineRef.current) {
       timelineRef.current.kill()
@@ -210,16 +234,16 @@ export function useSmoothMenuDrawer(
     // Backdrop fade (150ms)
     timelineRef.current.fromTo(
       backdropRef.current,
-      { opacity: 0 },
-      { opacity: 1, duration: 0.15, ease: 'power2.out' },
+      { opacity: 0, pointerEvents: 'none', visibility: 'hidden' },
+      { opacity: 1, pointerEvents: 'auto', visibility: 'visible', duration: 0.15, ease: 'power2.out' },
       0
     )
 
     // Menu slide from left (300ms)
     timelineRef.current.fromTo(
       menuRef.current,
-      { x: 'calc(-100% - 1rem)' },
-      { x: '0%', duration: 0.3, ease: 'power2.out' },
+      { x: 'calc(-100% - 1rem)', pointerEvents: 'none', visibility: 'hidden' },
+      { x: '0%', pointerEvents: 'auto', visibility: 'visible', duration: 0.3, ease: 'power2.out' },
       0
     )
 

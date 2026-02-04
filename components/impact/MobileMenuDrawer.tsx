@@ -46,6 +46,15 @@ const MobileMenuDrawer = React.forwardRef<HTMLDivElement, MobileMenuDrawerProps>
     // GSAP smooth menu animations
     const { openMenu, closeMenu } = useSmoothMenuDrawer(menuRef, backdropRef)
 
+    // Trigger GSAP animation when open state changes
+    React.useEffect(() => {
+      if (isOpen) {
+        openMenu()
+      } else {
+        closeMenu()
+      }
+    }, [isOpen, openMenu, closeMenu])
+
     // Close on escape key
     React.useEffect(() => {
       const handleEscape = (e: KeyboardEvent) => {
@@ -69,15 +78,6 @@ const MobileMenuDrawer = React.forwardRef<HTMLDivElement, MobileMenuDrawerProps>
       }
     }, [isOpen])
 
-    // Trigger GSAP animation when open state changes
-    React.useEffect(() => {
-      if (isOpen) {
-        openMenu()
-      } else {
-        closeMenu()
-      }
-    }, [isOpen, openMenu, closeMenu])
-
     const toggleExpanded = (href: string) => {
       const newExpanded = new Set(expandedItems)
       if (newExpanded.has(href)) {
@@ -93,7 +93,7 @@ const MobileMenuDrawer = React.forwardRef<HTMLDivElement, MobileMenuDrawerProps>
         {/* Backdrop */}
         <div
           ref={backdropRef}
-          className="fixed inset-0 z-40 bg-black/50"
+          className="fixed inset-0 z-40 bg-black/50 opacity-0 invisible pointer-events-none"
           onClick={onClose}
           aria-hidden="true"
         />
@@ -111,8 +111,12 @@ const MobileMenuDrawer = React.forwardRef<HTMLDivElement, MobileMenuDrawerProps>
           className={cn(
             'fixed top-4 left-4 z-50 h-[calc(100%-2rem)] w-[calc(100%-2rem)] max-w-sm',
             'bg-[#390000] rounded-2xl shadow-2xl',
+            'invisible pointer-events-none -translate-x-full',
             className
           )}
+          style={{
+            willChange: 'transform, opacity'
+          }}
         >
           <div className="flex flex-col h-full">
             {/* Header */}

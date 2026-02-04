@@ -10,8 +10,6 @@ const shopNavigation = [
 ]
 
 export function TransparentHeaderWrapper() {
-  const cart = useCart()
-
   return (
     <>
       <style jsx global>{`
@@ -37,8 +35,6 @@ export function TransparentHeaderWrapper() {
       <TransparentHeader
         navigation={shopNavigation}
         logoHref="/shop/home"
-        cartCount={cart.itemCount}
-        onCartClick={() => cart.setIsOpen(true)}
       />
     </>
   )

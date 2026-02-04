@@ -52,28 +52,20 @@ const CartDrawer = React.forwardRef<HTMLDivElement, CartDrawerProps>(
     ref
   ) => {
     const [updatingItems, setUpdatingItems] = React.useState<Set<string>>(new Set())
-    const [isClient, setIsClient] = React.useState(false)
     const drawerRef = React.useRef<HTMLDivElement>(null)
     const backdropRef = React.useRef<HTMLDivElement>(null)
     
     // GSAP smooth drawer animations
     const { openDrawer, closeDrawer } = useSmoothDrawer(drawerRef, backdropRef)
-    
-    // Client-side only flag to prevent SSR/hydration issues
-    React.useEffect(() => {
-      setIsClient(true)
-    }, [])
 
     // Trigger GSAP animation when open state changes
     React.useEffect(() => {
-      if (!isClient) return
-      
       if (isOpen) {
         openDrawer()
       } else {
         closeDrawer()
       }
-    }, [isOpen, isClient, openDrawer, closeDrawer])
+    }, [isOpen, openDrawer, closeDrawer])
 
     // Handle quantity update
     const handleUpdateQuantity = async (lineId: string, quantity: number) => {
@@ -105,8 +97,6 @@ const CartDrawer = React.forwardRef<HTMLDivElement, CartDrawerProps>(
 
     // Close on escape key
     React.useEffect(() => {
-      if (!isClient) return
-      
       const handleEscape = (e: KeyboardEvent) => {
         if (e.key === 'Escape' && isOpen) {
           onClose()
@@ -114,12 +104,10 @@ const CartDrawer = React.forwardRef<HTMLDivElement, CartDrawerProps>(
       }
       document.addEventListener('keydown', handleEscape)
       return () => document.removeEventListener('keydown', handleEscape)
-    }, [isClient, isOpen, onClose])
+    }, [isOpen, onClose])
 
     // Prevent scroll when open
     React.useEffect(() => {
-      if (!isClient) return
-      
       if (isOpen) {
         document.body.style.overflow = 'hidden'
       } else {
@@ -128,22 +116,17 @@ const CartDrawer = React.forwardRef<HTMLDivElement, CartDrawerProps>(
       return () => {
         document.body.style.overflow = ''
       }
-    }, [isClient, isOpen])
+    }, [isOpen])
 
     const lines = cart?.lines.edges.map((edge) => edge.node) || []
     const isEmpty = lines.length === 0
-    
-    // Don't render anything until client-side
-    if (!isClient) {
-      return null
-    }
 
     return (
       <>
         {/* Backdrop */}
         <div
           ref={backdropRef}
-          className="fixed inset-0 z-40 bg-black/50"
+          className="fixed inset-0 z-40 bg-black/50 opacity-0 invisible pointer-events-none"
           onClick={onClose}
           aria-hidden="true"
         />
@@ -161,11 +144,13 @@ const CartDrawer = React.forwardRef<HTMLDivElement, CartDrawerProps>(
           className={cn(
             'fixed bottom-4 right-4 z-50 h-[calc(100%-2rem)] w-full max-w-md',
             'bg-white/95 backdrop-blur-xl shadow-2xl rounded-2xl',
-            'border border-[#1a1a1a]/10'
+            'border border-[#1a1a1a]/10',
+            'invisible pointer-events-none translate-x-full'
           )}
           style={{
             backdropFilter: 'blur(20px) saturate(180%)',
             WebkitBackdropFilter: 'blur(20px) saturate(180%)',
+            willChange: 'transform, opacity'
           }}
         >
           <div className="flex flex-col h-full">

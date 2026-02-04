@@ -5,11 +5,13 @@ import { cn } from '@/lib/utils'
 import { Button } from './Button'
 import { Input } from './Input'
 import Link from 'next/link'
+import { useSmoothDrawer } from '@/lib/animations/navigation-animations'
 
 /**
  * Impact Theme Search Drawer
  * 
  * Predictive search drawer with real-time results from Shopify Storefront API.
+ * Smooth GSAP animations with card-style layout.
  */
 
 export interface SearchResult {
@@ -48,6 +50,8 @@ const SearchDrawer = React.forwardRef<HTMLDivElement, SearchDrawerProps>(
     ref
   ) => {
     const inputRef = React.useRef<HTMLInputElement>(null)
+    const drawerRef = React.useRef<HTMLDivElement>(null)
+    const backdropRef = React.useRef<HTMLDivElement>(null)
     const [query, setQuery] = React.useState('')
     const [results, setResults] = React.useState<{
       products: SearchResult[]
@@ -56,6 +60,18 @@ const SearchDrawer = React.forwardRef<HTMLDivElement, SearchDrawerProps>(
     const [loading, setLoading] = React.useState(false)
     const [hasSearched, setHasSearched] = React.useState(false)
     const [recentSearches, setRecentSearches] = React.useState<string[]>([])
+
+    // GSAP smooth drawer animations
+    const { openDrawer, closeDrawer } = useSmoothDrawer(drawerRef, backdropRef)
+
+    // Trigger GSAP animation when open state changes
+    React.useEffect(() => {
+      if (isOpen) {
+        openDrawer()
+      } else {
+        closeDrawer()
+      }
+    }, [isOpen, openDrawer, closeDrawer])
 
     // Load recent searches on mount
     React.useEffect(() => {
@@ -165,14 +181,19 @@ const SearchDrawer = React.forwardRef<HTMLDivElement, SearchDrawerProps>(
       <>
         {/* Backdrop */}
         <div
-          className="fixed inset-0 z-40 bg-black/50"
+          ref={backdropRef}
+          className="fixed inset-0 z-40 bg-black/50 opacity-0 invisible pointer-events-none"
           onClick={onClose}
           aria-hidden="true"
         />
 
         {/* Drawer - Card Style */}
         <div
-          ref={ref}
+          ref={(node) => {
+            drawerRef.current = node
+            if (typeof ref === 'function') ref(node)
+            else if (ref) ref.current = node
+          }}
           role="dialog"
           aria-modal="true"
           aria-label="Search"
@@ -180,8 +201,12 @@ const SearchDrawer = React.forwardRef<HTMLDivElement, SearchDrawerProps>(
             'fixed top-4 left-4 right-4 z-50 max-h-[calc(100%-2rem)] w-[calc(100%-2rem)]',
             'bg-white shadow-2xl rounded-2xl',
             'overflow-hidden flex flex-col',
+            'invisible pointer-events-none translate-x-full',
             className
           )}
+          style={{
+            willChange: 'transform, opacity'
+          }}
         >
           {/* Search input */}
           <div className="flex items-center gap-4 p-4 border-b border-[#1a1a1a]/10">

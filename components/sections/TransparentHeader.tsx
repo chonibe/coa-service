@@ -32,7 +32,7 @@ export function TransparentHeader({
   }, [])
 
   const handleCartClick = useCallback(() => {
-    cart.setIsOpen(true)
+    cart.toggleCart(true)
   }, [cart])
 
   return (
@@ -54,7 +54,7 @@ export function TransparentHeader({
       {/* Cart Drawer */}
       <LocalCartDrawer
         isOpen={cart.isOpen}
-        onClose={() => cart.setIsOpen(false)}
+        onClose={() => cart.toggleCart(false)}
         items={cart.items}
         onUpdateQuantity={cart.updateQuantity}
         onRemoveItem={cart.removeItem}
@@ -91,7 +91,7 @@ export function TransparentHeader({
           left: 0;
           right: 0;
           z-index: 50;
-          background-color: transparent;
+          background-color: transparent !important;
           transition: background-color 0.3s ease;
         }
         
