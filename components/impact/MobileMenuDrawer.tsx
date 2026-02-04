@@ -1,15 +1,19 @@
 'use client'
 
 import * as React from 'react'
+import { useEffect } from 'react'
 import Link from 'next/link'
 import { cn } from '@/lib/utils'
+import { useSmoothMenuDrawer, useExpandableHeight } from '@/lib/animations/navigation-animations'
 import type { NavItem } from './Header'
 
 /**
  * Mobile Menu Drawer
  * 
- * Full-screen mobile navigation drawer that slides in from the left.
- * Features expandable navigation sections and account links.
+ * Full-screen mobile navigation drawer with GSAP animations:
+ * - Smooth slide-in from left with GSAP
+ * - Smooth expandable menu sections with height animation
+ * - Calm, refined transitions (300ms drawer, 250ms expandable items)
  */
 
 export interface MobileMenuDrawerProps {
@@ -36,6 +40,11 @@ const MobileMenuDrawer = React.forwardRef<HTMLDivElement, MobileMenuDrawerProps>
     ref
   ) => {
     const [expandedItems, setExpandedItems] = React.useState<Set<string>>(new Set())
+    const menuRef = React.useRef<HTMLDivElement>(null)
+    const backdropRef = React.useRef<HTMLDivElement>(null)
+    
+    // GSAP smooth menu animations
+    const { openMenu, closeMenu } = useSmoothMenuDrawer(menuRef, backdropRef)
 
     // Close on escape key
     React.useEffect(() => {
@@ -60,6 +69,15 @@ const MobileMenuDrawer = React.forwardRef<HTMLDivElement, MobileMenuDrawerProps>
       }
     }, [isOpen])
 
+    // Trigger GSAP animation when open state changes
+    React.useEffect(() => {
+      if (isOpen) {
+        openMenu()
+      } else {
+        closeMenu()
+      }
+    }, [isOpen, openMenu, closeMenu])
+
     const toggleExpanded = (href: string) => {
       const newExpanded = new Set(expandedItems)
       if (newExpanded.has(href)) {
@@ -74,27 +92,37 @@ const MobileMenuDrawer = React.forwardRef<HTMLDivElement, MobileMenuDrawerProps>
       <>
         {/* Backdrop */}
         <div
+          ref={backdropRef}
           className={cn(
-            'fixed inset-0 z-40 bg-black/50 transition-opacity duration-300',
+            'fixed inset-0 z-40 bg-black/50',
             isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'
           )}
           onClick={onClose}
           aria-hidden="true"
+          style={{
+            opacity: isOpen ? 1 : 0,
+            pointerEvents: isOpen ? 'auto' : 'none',
+          }}
         />
 
         {/* Drawer */}
         <div
-          ref={ref}
+          ref={(node) => {
+            menuRef.current = node
+            if (typeof ref === 'function') ref(node)
+            else if (ref) ref.current = node
+          }}
           role="dialog"
           aria-modal="true"
           aria-label="Mobile menu"
           className={cn(
             'fixed top-0 left-0 z-50 h-full w-full max-w-sm',
             'bg-[#390000]',
-            'transform transition-transform duration-300 ease-out',
-            isOpen ? 'translate-x-0' : '-translate-x-full',
             className
           )}
+          style={{
+            transform: isOpen ? 'translateX(0)' : 'translateX(-100%)',
+          }}
         >
           <div className="flex flex-col h-full">
             {/* Header */}
@@ -197,6 +225,13 @@ interface MobileNavItemProps {
 
 function MobileNavItem({ item, isExpanded, onToggle, onNavigate }: MobileNavItemProps) {
   const hasChildren = item.children && item.children.length > 0
+  const contentRef = React.useRef<HTMLDivElement>(null)
+  const { toggleHeight } = useExpandableHeight(contentRef)
+
+  // Trigger height animation when expanded state changes
+  useEffect(() => {
+    toggleHeight(isExpanded)
+  }, [isExpanded, toggleHeight])
 
   if (hasChildren) {
     return (
@@ -234,8 +269,13 @@ function MobileNavItem({ item, isExpanded, onToggle, onNavigate }: MobileNavItem
           </svg>
         </button>
 
-        {isExpanded && (
-          <div className="pl-4 pb-2 space-y-1">
+        {/* Expandable content with GSAP height animation */}
+        <div
+          ref={contentRef}
+          className="pl-4 overflow-hidden"
+          style={{ height: 0 }}
+        >
+          <div className="pb-2 space-y-1">
             {item.children!.map((child) => (
               <Link
                 key={child.href}
@@ -247,7 +287,7 @@ function MobileNavItem({ item, isExpanded, onToggle, onNavigate }: MobileNavItem
               </Link>
             ))}
           </div>
-        )}
+        </div>
       </div>
     )
   }

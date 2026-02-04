@@ -123,3 +123,11 @@ export {
 // Scroll-aware header hooks
 export { useScrollHeader, useCartBadgeAnimation } from './useScrollHeader'
 export type { UseScrollHeaderOptions, UseScrollHeaderReturn } from './useScrollHeader'
+
+// Navigation animation utilities
+export {
+  useSmoothDrawer,
+  useExpandableHeight,
+  useSmoothHeaderScroll,
+  useSmoothMenuDrawer,
+} from './navigation-animations'

@@ -4,16 +4,16 @@ import * as React from 'react'
 import { cn } from '@/lib/utils'
 import { Button } from './Button'
 import { formatPrice, type Cart, type CartLine } from '@/lib/shopify/storefront-client'
-import { gsap, durations, customEases } from '@/lib/animations'
-import { useGSAP } from '@gsap/react'
+import { useSmoothDrawer } from '@/lib/animations/navigation-animations'
 
 /**
  * Impact Theme Cart Drawer
  * 
- * Slide-out cart drawer with GSAP-powered animations:
- * - Orchestrated timeline: backdrop fade → drawer slide → items stagger
- * - Smooth spring physics for natural feel
- * - 60fps performance
+ * Smooth cart drawer with GSAP animations:
+ * - GSAP-powered drawer slide for smooth motion
+ * - Subtle backdrop fade (150ms)
+ * - Calm, refined feel (300ms drawer animation)
+ * - Proper state management and hydration handling
  */
 
 export interface CartDrawerProps {
@@ -52,68 +52,40 @@ const CartDrawer = React.forwardRef<HTMLDivElement, CartDrawerProps>(
     ref
   ) => {
     const [updatingItems, setUpdatingItems] = React.useState<Set<string>>(new Set())
+    const [isClient, setIsClient] = React.useState(false)
+    const [shouldRender, setShouldRender] = React.useState(false)
     const drawerRef = React.useRef<HTMLDivElement>(null)
     const backdropRef = React.useRef<HTMLDivElement>(null)
-    const itemsRef = React.useRef<HTMLDivElement>(null)
-    const timelineRef = React.useRef<gsap.core.Timeline | null>(null)
-
-    // GSAP animation timeline
-    useGSAP(() => {
-      if (!drawerRef.current || !backdropRef.current) return
-
-      const drawer = drawerRef.current
-      const backdrop = backdropRef.current
-
-      // Create the animation timeline
-      timelineRef.current = gsap.timeline({ paused: true })
-        // Backdrop fade in
-        .fromTo(
-          backdrop,
-          { opacity: 0 },
-          { opacity: 1, duration: 0.2, ease: 'power2.out' },
-          0
-        )
-        // Drawer slide in
-        .fromTo(
-          drawer,
-          { x: '100%' },
-          { x: '0%', duration: durations.drawerOpen, ease: customEases.drawerSlide },
-          0
-        )
-
-      // Set initial state
-      gsap.set(drawer, { x: '100%' })
-      gsap.set(backdrop, { opacity: 0 })
-
-    }, { dependencies: [] })
-
-    // Play/reverse timeline based on isOpen
+    
+    // GSAP smooth drawer animations
+    const { openDrawer, closeDrawer } = useSmoothDrawer(drawerRef, backdropRef)
+    
+    // Client-side only flag to prevent SSR/hydration issues
     React.useEffect(() => {
-      if (!timelineRef.current) return
-
+      setIsClient(true)
+    }, [])
+    
+    // Control rendering: only render when open or animating out
+    React.useEffect(() => {
       if (isOpen) {
-        timelineRef.current.play()
-        
-        // Stagger animate cart items after drawer opens
-        if (itemsRef.current) {
-          const items = itemsRef.current.children
-          gsap.fromTo(
-            items,
-            { opacity: 0, x: 20 },
-            {
-              opacity: 1,
-              x: 0,
-              duration: 0.3,
-              ease: customEases.staggerReveal,
-              stagger: durations.stagger,
-              delay: durations.drawerOpen * 0.5,
-            }
-          )
-        }
+        setShouldRender(true)
       } else {
-        timelineRef.current.reverse()
+        // Delay unmounting to allow close animation
+        const timer = setTimeout(() => setShouldRender(false), 300)
+        return () => clearTimeout(timer)
       }
     }, [isOpen])
+
+    // Trigger GSAP animation when open state changes
+    React.useEffect(() => {
+      if (!isClient) return
+      
+      if (isOpen) {
+        openDrawer()
+      } else {
+        closeDrawer()
+      }
+    }, [isOpen, isClient, openDrawer, closeDrawer])
 
     // Handle quantity update
     const handleUpdateQuantity = async (lineId: string, quantity: number) => {
@@ -145,6 +117,8 @@ const CartDrawer = React.forwardRef<HTMLDivElement, CartDrawerProps>(
 
     // Close on escape key
     React.useEffect(() => {
+      if (!isClient) return
+      
       const handleEscape = (e: KeyboardEvent) => {
         if (e.key === 'Escape' && isOpen) {
           onClose()
@@ -152,10 +126,12 @@ const CartDrawer = React.forwardRef<HTMLDivElement, CartDrawerProps>(
       }
       document.addEventListener('keydown', handleEscape)
       return () => document.removeEventListener('keydown', handleEscape)
-    }, [isOpen, onClose])
+    }, [isClient, isOpen, onClose])
 
     // Prevent scroll when open
     React.useEffect(() => {
+      if (!isClient) return
+      
       if (isOpen) {
         document.body.style.overflow = 'hidden'
       } else {
@@ -164,10 +140,15 @@ const CartDrawer = React.forwardRef<HTMLDivElement, CartDrawerProps>(
       return () => {
         document.body.style.overflow = ''
       }
-    }, [isOpen])
+    }, [isClient, isOpen])
 
     const lines = cart?.lines.edges.map((edge) => edge.node) || []
     const isEmpty = lines.length === 0
+    
+    // Don't render anything until client-side
+    if (!isClient || !shouldRender) {
+      return null
+    }
 
     return (
       <>
@@ -176,13 +157,17 @@ const CartDrawer = React.forwardRef<HTMLDivElement, CartDrawerProps>(
           ref={backdropRef}
           className={cn(
             'fixed inset-0 z-40 bg-black/50',
-            !isOpen && 'pointer-events-none'
+            isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'
           )}
           onClick={onClose}
           aria-hidden="true"
+          style={{
+            opacity: isOpen ? 1 : 0,
+            pointerEvents: isOpen ? 'auto' : 'none',
+          }}
         />
 
-        {/* Drawer - Enhanced with GSAP animations and frosted glass */}
+        {/* Drawer - GSAP-powered animations */}
         <div
           ref={(node) => {
             drawerRef.current = node
@@ -195,13 +180,12 @@ const CartDrawer = React.forwardRef<HTMLDivElement, CartDrawerProps>(
           className={cn(
             'fixed top-0 right-0 z-50 h-full w-full max-w-md',
             'bg-white/95 backdrop-blur-xl shadow-2xl',
-            'border-l border-[#1a1a1a]/10',
-            'will-change-transform',
-            !isOpen && 'pointer-events-none'
+            'border-l border-[#1a1a1a]/10'
           )}
           style={{
             backdropFilter: 'blur(20px) saturate(180%)',
             WebkitBackdropFilter: 'blur(20px) saturate(180%)',
+            transform: isOpen ? 'translateX(0)' : 'translateX(100%)',
           }}
         >
           <div className="flex flex-col h-full">
@@ -284,9 +268,15 @@ const CartDrawer = React.forwardRef<HTMLDivElement, CartDrawerProps>(
                   </Button>
                 </div>
               ) : (
-                <div ref={itemsRef} className="space-y-4">
-                  {lines.map((line) => (
-                    <div key={line.id}>
+                <div className="space-y-4">
+                  {lines.map((line, index) => (
+                    <div 
+                      key={line.id}
+                      style={{
+                        opacity: isOpen ? 1 : 0,
+                        transition: isOpen ? `opacity 200ms ease-out ${index * 30}ms` : 'opacity 150ms ease-out',
+                      }}
+                    >
                       <CartLineItem
                         line={line}
                         onUpdateQuantity={handleUpdateQuantity}
