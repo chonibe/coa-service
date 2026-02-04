@@ -116,12 +116,12 @@ const MobileMenuDrawer = React.forwardRef<HTMLDivElement, MobileMenuDrawerProps>
           aria-modal="true"
           aria-label="Mobile menu"
           className={cn(
-            'fixed top-0 left-0 z-50 h-full w-full max-w-sm',
-            'bg-[#390000] rounded-r-2xl shadow-2xl',
+            'fixed top-4 left-4 z-50 h-[calc(100%-2rem)] w-[calc(100%-2rem)] max-w-sm',
+            'bg-[#390000] rounded-2xl shadow-2xl',
             className
           )}
           style={{
-            transform: isOpen ? 'translateX(0)' : 'translateX(-100%)',
+            transform: isOpen ? 'translateX(0)' : 'translateX(calc(-100% - 1rem))',
           }}
         >
           <div className="flex flex-col h-full">

@@ -173,17 +173,18 @@ const SearchDrawer = React.forwardRef<HTMLDivElement, SearchDrawerProps>(
           aria-hidden="true"
         />
 
-        {/* Drawer */}
+        {/* Drawer - Card Style */}
         <div
           ref={ref}
           role="dialog"
           aria-modal="true"
           aria-label="Search"
           className={cn(
-            'fixed top-0 left-0 right-0 z-50',
-            'bg-white shadow-2xl',
+            'fixed top-4 left-4 right-4 z-50 max-h-[calc(100%-2rem)] w-[calc(100%-2rem)]',
+            'bg-white shadow-2xl rounded-2xl',
+            'overflow-hidden flex flex-col',
             'transform transition-transform duration-300 ease-out',
-            isOpen ? 'translate-y-0' : '-translate-y-full',
+            isOpen ? 'translate-y-0' : 'translate-y-[calc(-100% - 1rem)]',
             className
           )}
         >
