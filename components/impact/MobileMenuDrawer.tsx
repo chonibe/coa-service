@@ -93,16 +93,9 @@ const MobileMenuDrawer = React.forwardRef<HTMLDivElement, MobileMenuDrawerProps>
         {/* Backdrop */}
         <div
           ref={backdropRef}
-          className={cn(
-            'fixed inset-0 z-40 bg-black/50',
-            isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'
-          )}
+          className="fixed inset-0 z-40 bg-black/50"
           onClick={onClose}
           aria-hidden="true"
-          style={{
-            opacity: isOpen ? 1 : 0,
-            pointerEvents: isOpen ? 'auto' : 'none',
-          }}
         />
 
         {/* Drawer - Card Style */}

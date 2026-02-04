@@ -53,7 +53,6 @@ const CartDrawer = React.forwardRef<HTMLDivElement, CartDrawerProps>(
   ) => {
     const [updatingItems, setUpdatingItems] = React.useState<Set<string>>(new Set())
     const [isClient, setIsClient] = React.useState(false)
-    const [shouldRender, setShouldRender] = React.useState(false)
     const drawerRef = React.useRef<HTMLDivElement>(null)
     const backdropRef = React.useRef<HTMLDivElement>(null)
     
@@ -64,17 +63,6 @@ const CartDrawer = React.forwardRef<HTMLDivElement, CartDrawerProps>(
     React.useEffect(() => {
       setIsClient(true)
     }, [])
-    
-    // Control rendering: only render when open or animating out
-    React.useEffect(() => {
-      if (isOpen) {
-        setShouldRender(true)
-      } else {
-        // Delay unmounting to allow close animation
-        const timer = setTimeout(() => setShouldRender(false), 300)
-        return () => clearTimeout(timer)
-      }
-    }, [isOpen])
 
     // Trigger GSAP animation when open state changes
     React.useEffect(() => {
@@ -146,7 +134,7 @@ const CartDrawer = React.forwardRef<HTMLDivElement, CartDrawerProps>(
     const isEmpty = lines.length === 0
     
     // Don't render anything until client-side
-    if (!isClient || !shouldRender) {
+    if (!isClient) {
       return null
     }
 
@@ -155,16 +143,9 @@ const CartDrawer = React.forwardRef<HTMLDivElement, CartDrawerProps>(
         {/* Backdrop */}
         <div
           ref={backdropRef}
-          className={cn(
-            'fixed inset-0 z-40 bg-black/50',
-            isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'
-          )}
+          className="fixed inset-0 z-40 bg-black/50"
           onClick={onClose}
           aria-hidden="true"
-          style={{
-            opacity: isOpen ? 1 : 0,
-            pointerEvents: isOpen ? 'auto' : 'none',
-          }}
         />
 
         {/* Drawer - GSAP-powered card animations */}

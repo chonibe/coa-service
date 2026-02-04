@@ -41,7 +41,6 @@ const LocalCartDrawer = React.forwardRef<HTMLDivElement, LocalCartDrawerProps>(
     ref
   ) => {
     const [isClient, setIsClient] = React.useState(false)
-    const [shouldRender, setShouldRender] = React.useState(false)
     const drawerRef = React.useRef<HTMLDivElement>(null)
     const backdropRef = React.useRef<HTMLDivElement>(null)
 
@@ -52,16 +51,6 @@ const LocalCartDrawer = React.forwardRef<HTMLDivElement, LocalCartDrawerProps>(
     React.useEffect(() => {
       setIsClient(true)
     }, [])
-
-    // Control rendering
-    React.useEffect(() => {
-      if (isOpen) {
-        setShouldRender(true)
-      } else {
-        const timer = setTimeout(() => setShouldRender(false), 300)
-        return () => clearTimeout(timer)
-      }
-    }, [isOpen])
 
     // Trigger GSAP animation
     React.useEffect(() => {
@@ -100,7 +89,7 @@ const LocalCartDrawer = React.forwardRef<HTMLDivElement, LocalCartDrawerProps>(
 
     const isEmpty = items.length === 0
 
-    if (!isClient || !shouldRender) {
+    if (!isClient) {
       return null
     }
 
@@ -109,16 +98,9 @@ const LocalCartDrawer = React.forwardRef<HTMLDivElement, LocalCartDrawerProps>(
         {/* Backdrop */}
         <div
           ref={backdropRef}
-          className={cn(
-            'fixed inset-0 z-40 bg-black/50',
-            isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'
-          )}
+          className="fixed inset-0 z-40 bg-black/50"
           onClick={onClose}
           aria-hidden="true"
-          style={{
-            opacity: isOpen ? 1 : 0,
-            pointerEvents: isOpen ? 'auto' : 'none',
-          }}
         />
 
         {/* Drawer - GSAP-powered card animations */}
