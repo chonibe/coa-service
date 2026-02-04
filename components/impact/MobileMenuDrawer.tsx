@@ -120,9 +120,6 @@ const MobileMenuDrawer = React.forwardRef<HTMLDivElement, MobileMenuDrawerProps>
             'bg-[#390000] rounded-2xl shadow-2xl',
             className
           )}
-          style={{
-            transform: isOpen ? 'translateX(0)' : 'translateX(calc(-100% - 1rem))',
-          }}
         >
           <div className="flex flex-col h-full">
             {/* Header */}

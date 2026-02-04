@@ -183,8 +183,6 @@ const SearchDrawer = React.forwardRef<HTMLDivElement, SearchDrawerProps>(
             'fixed top-4 left-4 right-4 z-50 max-h-[calc(100%-2rem)] w-[calc(100%-2rem)]',
             'bg-white shadow-2xl rounded-2xl',
             'overflow-hidden flex flex-col',
-            'transform transition-transform duration-300 ease-out',
-            isOpen ? 'translate-y-0' : 'translate-y-[calc(-100% - 1rem)]',
             className
           )}
         >

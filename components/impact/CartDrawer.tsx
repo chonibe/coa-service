@@ -185,7 +185,6 @@ const CartDrawer = React.forwardRef<HTMLDivElement, CartDrawerProps>(
           style={{
             backdropFilter: 'blur(20px) saturate(180%)',
             WebkitBackdropFilter: 'blur(20px) saturate(180%)',
-            transform: isOpen ? 'translateX(0)' : 'translateX(calc(100% + 1rem))',
           }}
         >
           <div className="flex flex-col h-full">

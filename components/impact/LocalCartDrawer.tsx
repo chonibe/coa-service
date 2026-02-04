@@ -134,13 +134,11 @@ const LocalCartDrawer = React.forwardRef<HTMLDivElement, LocalCartDrawerProps>(
           className={cn(
             'fixed bottom-4 right-4 z-50 h-[calc(100%-2rem)] w-full max-w-md',
             'bg-white/95 backdrop-blur-xl shadow-2xl rounded-2xl',
-            'border border-[#1a1a1a]/10',
-            className
+            'border border-[#1a1a1a]/10'
           )}
           style={{
             backdropFilter: 'blur(20px) saturate(180%)',
             WebkitBackdropFilter: 'blur(20px) saturate(180%)',
-            transform: isOpen ? 'translateX(0)' : 'translateX(calc(100% + 1rem))',
           }}
         >
           <div className="flex flex-col h-full">
