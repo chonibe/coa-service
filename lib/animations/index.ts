@@ -130,4 +130,5 @@ export {
   useExpandableHeight,
   useSmoothHeaderScroll,
   useSmoothMenuDrawer,
+  useTwoStepScalingMenu,
 } from './navigation-animations'

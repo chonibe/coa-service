@@ -376,7 +376,7 @@ function NavLink({ item }: NavLinkProps) {
         
         {/* Dropdown */}
         {open && (
-          <div className="absolute top-full left-0 pt-2">
+          <div className="absolute top-full left-0 pt-2 animate-in fade-in zoom-in-95 duration-200">
             <div className="bg-[#390000] border border-[#ffba94]/10 rounded-lg shadow-lg py-2 min-w-[200px]">
               {item.children!.map((child) => (
                 <Link

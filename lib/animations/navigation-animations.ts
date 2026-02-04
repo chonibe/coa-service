@@ -229,3 +229,85 @@ export function useSmoothMenuDrawer(
 
   return { openMenu, closeMenu }
 }
+
+/**
+ * useTwoStepScalingMenu
+ * 
+ * Premium two-step scaling animation for mobile menu (OSMO-style):
+ * - Step 1: Menu scales up from 0.8 and slides in (320ms)
+ * - Step 2: Content fades in with subtle stagger (200ms)
+ * Usage: const { openMenu, closeMenu } = useTwoStepScalingMenu(menuRef, contentRef, backdropRef)
+ */
+export function useTwoStepScalingMenu(
+  menuRef: React.RefObject<HTMLDivElement>,
+  contentRef: React.RefObject<HTMLDivElement>,
+  backdropRef: React.RefObject<HTMLDivElement>
+) {
+  const timelineRef = useRef<gsap.core.Timeline | null>(null)
+
+  useEffect(() => {
+    if (!menuRef.current || !contentRef.current || !backdropRef.current) return
+
+    // Create reusable timeline for two-step animation
+    timelineRef.current = gsap.timeline({ paused: true })
+
+    // STEP 1: Backdrop fade in (150ms)
+    timelineRef.current.fromTo(
+      backdropRef.current,
+      { opacity: 0 },
+      { opacity: 1, duration: 0.15, ease: 'power2.out' },
+      0
+    )
+
+    // STEP 1: Menu scales up and slides in (320ms)
+    // From: scaled down 0.8, positioned to left, opacity low
+    // To: full scale 1, positioned center, full opacity
+    timelineRef.current.fromTo(
+      menuRef.current,
+      { 
+        x: '-40%',
+        scale: 0.8,
+        opacity: 0,
+      },
+      { 
+        x: '0%',
+        scale: 1,
+        opacity: 1,
+        duration: 0.32,
+        ease: 'power2.out'
+      },
+      0
+    )
+
+    // STEP 2: Content fade in (200ms) - starts at 80% of step 1
+    timelineRef.current.fromTo(
+      contentRef.current,
+      { opacity: 0, y: 10 },
+      { 
+        opacity: 1, 
+        y: 0,
+        duration: 0.2,
+        ease: 'power2.out'
+      },
+      0.256 // 80% of 320ms
+    )
+
+    return () => {
+      timelineRef.current?.kill()
+    }
+  }, [menuRef, contentRef, backdropRef])
+
+  const openMenu = useCallback(() => {
+    if (timelineRef.current) {
+      timelineRef.current.play()
+    }
+  }, [])
+
+  const closeMenu = useCallback(() => {
+    if (timelineRef.current) {
+      timelineRef.current.reverse()
+    }
+  }, [])
+
+  return { openMenu, closeMenu }
+}

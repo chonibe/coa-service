@@ -1,19 +1,18 @@
 'use client'
 
 import * as React from 'react'
-import { useEffect } from 'react'
 import Link from 'next/link'
 import { cn } from '@/lib/utils'
-import { useSmoothMenuDrawer, useExpandableHeight } from '@/lib/animations/navigation-animations'
+import { useTwoStepScalingMenu, useExpandableHeight } from '@/lib/animations/navigation-animations'
 import type { NavItem } from './Header'
 
 /**
  * Mobile Menu Drawer
  * 
- * Full-screen mobile navigation drawer with GSAP animations:
- * - Smooth slide-in from left with GSAP
+ * Full-screen mobile navigation with premium two-step scaling animation (OSMO-style):
+ * - Step 1: Menu scales up from 0.8 and slides in (320ms)
+ * - Step 2: Content fades in (200ms)
  * - Smooth expandable menu sections with height animation
- * - Calm, refined transitions (300ms drawer, 250ms expandable items)
  */
 
 export interface MobileMenuDrawerProps {
@@ -41,10 +40,11 @@ const MobileMenuDrawer = React.forwardRef<HTMLDivElement, MobileMenuDrawerProps>
   ) => {
     const [expandedItems, setExpandedItems] = React.useState<Set<string>>(new Set())
     const menuRef = React.useRef<HTMLDivElement>(null)
+    const contentRef = React.useRef<HTMLDivElement>(null)
     const backdropRef = React.useRef<HTMLDivElement>(null)
     
-    // GSAP smooth menu animations
-    const { openMenu, closeMenu } = useSmoothMenuDrawer(menuRef, backdropRef)
+    // GSAP two-step scaling menu animation (OSMO-style)
+    const { openMenu, closeMenu } = useTwoStepScalingMenu(menuRef, contentRef, backdropRef)
 
     // Close on escape key
     React.useEffect(() => {
@@ -124,7 +124,7 @@ const MobileMenuDrawer = React.forwardRef<HTMLDivElement, MobileMenuDrawerProps>
             transform: isOpen ? 'translateX(0)' : 'translateX(-100%)',
           }}
         >
-          <div className="flex flex-col h-full">
+          <div ref={contentRef} className="flex flex-col h-full">
             {/* Header */}
             <div className="flex items-center justify-between px-6 py-4 border-b border-[#ffba94]/10">
               {logoSrc && (
