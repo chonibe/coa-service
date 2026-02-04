@@ -39,10 +39,10 @@ export function useSmoothDrawer(
       0
     )
 
-    // Drawer slide from right (300ms) - now slides from right edge to visible position
+    // Drawer slide from right (300ms) - slides from right edge to visible position
     timelineRef.current.fromTo(
       drawerRef.current,
-      { x: '120%' },
+      { x: '100%' },
       { x: '0%', duration: 0.3, ease: 'power2.out' },
       0
     )
@@ -202,10 +202,10 @@ export function useSmoothMenuDrawer(
       0
     )
 
-    // Menu slide from left (300ms) - now slides from left edge to visible position
+    // Menu slide from left (300ms) - slides from left edge to visible position
     timelineRef.current.fromTo(
       menuRef.current,
-      { x: '-120%' },
+      { x: '-100%' },
       { x: '0%', duration: 0.3, ease: 'power2.out' },
       0
     )
