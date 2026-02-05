@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import { motion, AnimatePresence } from "framer-motion"
-import { Check, Lock, ArrowRight, Crown, Clock, Radio, FolderOpen, Book, Star, ChevronDown, ChevronUp } from "lucide-react"
+import { Check, Lock, ArrowRight, Crown, Radio, FolderOpen, Book, ChevronDown, ChevronUp } from "lucide-react"
 import type { UnlockType } from "@/types/artwork-series"
 import { cn } from "@/lib/utils"
 
@@ -35,16 +35,6 @@ const journeyTypes = [
     color: "from-purple-500 to-pink-500",
     bgColor: "bg-purple-50 dark:bg-purple-950/20",
     borderColor: "border-purple-200 dark:border-purple-800",
-  },
-  {
-    value: "vip" as UnlockType,
-    label: "VIP Exclusive",
-    description: "Reward loyal fans",
-    bestFor: "Limited edition, rewards",
-    icon: Star,
-    color: "from-amber-500 to-orange-500",
-    bgColor: "bg-amber-50 dark:bg-amber-950/20",
-    borderColor: "border-amber-200 dark:border-amber-800",
   },
 ]
 
@@ -180,7 +170,7 @@ export function UnlockTypeCards({ value, onChange }: UnlockTypeCardsProps) {
             <div className="h-1 w-1 rounded-full bg-muted-foreground" />
             <p className="text-sm font-semibold text-muted-foreground">Advanced Options</p>
             <span className="text-xs text-muted-foreground/60">
-              (Threshold, Time-Based, NFC-only)
+              (Threshold, NFC-only)
             </span>
           </div>
           {showAdvanced ? (

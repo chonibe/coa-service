@@ -12,8 +12,6 @@ import { ChevronLeft, ChevronRight, Save, X, Loader2, Trash2, Copy, Info } from 
 import { cn } from "@/lib/utils"
 import type { ArtworkSeries, SeriesMember, UnlockType } from "@/types/artwork-series"
 import { UnlockTypeCards } from "./UnlockTypeCards"
-import { TimeBasedUnlockConfig } from "./TimeBasedUnlockConfig"
-import { VIPUnlockConfig } from "./VIPUnlockConfig"
 import { CoverArtUpload } from "./CoverArtUpload"
 import { DeleteSeriesDialog } from "./DeleteSeriesDialog"
 import { DuplicateSeriesDialog } from "./DuplicateSeriesDialog"
@@ -181,25 +179,6 @@ export function SeriesSettingsSidebar({
                   />
                 </div>
 
-                {editUnlockType === "time_based" && (
-                  <div className="pt-4">
-                    <TimeBasedUnlockConfig
-                      value={editUnlockConfig}
-                      onChange={setEditUnlockConfig}
-                    />
-                  </div>
-                )}
-
-                {editUnlockType === "vip" && (
-                  <div className="pt-4">
-                    <VIPUnlockConfig
-                      value={editUnlockConfig}
-                      onChange={setEditUnlockConfig}
-                      seriesMembers={members}
-                    />
-                  </div>
-                )}
-
                 {editUnlockType === "threshold" && (
                   <div className="space-y-2 pt-4">
                     <Label htmlFor="required-count">Required Purchases</Label>
@@ -238,8 +217,6 @@ export function SeriesSettingsSidebar({
                     {series.unlock_type === "any_purchase" && "Open Collection"}
                     {series.unlock_type === "sequential" && "Finish the Set"}
                     {series.unlock_type === "threshold" && `VIP (${series.unlock_config?.required_count || 0} required)`}
-                    {series.unlock_type === "time_based" && "Time-Based"}
-                    {series.unlock_type === "vip" && "VIP"}
                   </span>
                 </div>
                 {series.unlock_type === "threshold" && (

@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import Link from "next/link"
-import { Loader2, Info, X, Crown, Clock, Radio, Lock, ArrowRight } from "lucide-react"
+import { Loader2, Info, X, Crown, Radio, Lock, ArrowRight } from "lucide-react"
 import type { ProductSubmissionData } from "@/types/product-submission"
 import { BenefitsManagement } from "./benefits-management"
 import { Label, Button, Card, CardContent, Alert, AlertDescription } from "@/components/ui"
@@ -86,10 +86,6 @@ export function SeriesStep({ formData, setFormData }: SeriesStepProps) {
         return "Finish the Set"
       case "threshold":
         return "VIP Unlocks"
-      case "time_based":
-        return "Time-Based"
-      case "vip":
-        return "VIP"
       case "nfc":
         return "NFC Unlock"
       default:
@@ -104,10 +100,7 @@ export function SeriesStep({ formData, setFormData }: SeriesStepProps) {
       case "sequential":
         return <ArrowRight className="h-3 w-3" />
       case "threshold":
-      case "vip":
         return <Crown className="h-3 w-3" />
-      case "time_based":
-        return <Clock className="h-3 w-3" />
       case "nfc":
         return <Radio className="h-3 w-3" />
       default:
@@ -122,10 +115,7 @@ export function SeriesStep({ formData, setFormData }: SeriesStepProps) {
       case "sequential":
         return "border-purple-400 bg-purple-50 dark:bg-purple-900/20 text-purple-700 dark:text-purple-300"
       case "threshold":
-      case "vip":
         return "border-orange-400 bg-orange-50 dark:bg-orange-900/20 text-orange-700 dark:text-orange-300"
-      case "time_based":
-        return "border-green-400 bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-300"
       case "nfc":
         return "border-indigo-400 bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-200"
       default:
