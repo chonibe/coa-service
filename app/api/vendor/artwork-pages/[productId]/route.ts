@@ -380,13 +380,24 @@ export async function POST(
     }
     
     if (!product) {
-      // Try products table (works for both UUIDs and non-UUIDs)
-      const { data: productData, error: productError } = await supabase
+      // Try products table - handle both UUIDs and numeric Shopify IDs
+      const isNumericId = /^\d+$/.test(productId)
+      
+      let query = supabase
         .from("products")
-        .select("id, vendor_name")
-        .eq("id", productId)
+        .select("id, vendor_name, product_id")
         .eq("vendor_name", vendorName)
-        .maybeSingle()
+      
+      // Use appropriate field based on ID format
+      if (isNumericId) {
+        query = query.eq("product_id", productId)
+        console.log(`[Artwork Pages API POST] Looking up by numeric product_id: ${productId}`)
+      } else {
+        query = query.eq("id", productId)
+        console.log(`[Artwork Pages API POST] Looking up by UUID id: ${productId}`)
+      }
+      
+      const { data: productData, error: productError } = await query.maybeSingle()
 
       if (productError) {
         console.error(`[Artwork Pages API POST] Database error looking up product: ${productId}`, productError)
@@ -398,7 +409,10 @@ export async function POST(
         return NextResponse.json({ error: "Product not found" }, { status: 404 })
       }
 
-      product = productData
+      product = {
+        id: productData.id,
+        vendor_name: productData.vendor_name
+      }
     }
 
     // Handle submission-based content blocks
@@ -610,13 +624,24 @@ export async function PUT(
     }
     
     if (!product) {
-      // Try products table (works for both UUIDs and non-UUIDs)
-      const { data: productData, error: productError } = await supabase
+      // Try products table - handle both UUIDs and numeric Shopify IDs
+      const isNumericId = /^\d+$/.test(productId)
+      
+      let query = supabase
         .from("products")
-        .select("id, vendor_name")
-        .eq("id", productId)
+        .select("id, vendor_name, product_id")
         .eq("vendor_name", vendorName)
-        .maybeSingle()
+      
+      // Use appropriate field based on ID format
+      if (isNumericId) {
+        query = query.eq("product_id", productId)
+        console.log(`[Artwork Pages API PUT] Looking up by numeric product_id: ${productId}`)
+      } else {
+        query = query.eq("id", productId)
+        console.log(`[Artwork Pages API PUT] Looking up by UUID id: ${productId}`)
+      }
+      
+      const { data: productData, error: productError } = await query.maybeSingle()
 
       if (productError) {
         console.error(`[Artwork Pages API PUT] Database error looking up product: ${productId}`, productError)
@@ -628,7 +653,10 @@ export async function PUT(
         return NextResponse.json({ error: "Product not found" }, { status: 404 })
       }
 
-      product = productData
+      product = {
+        id: productData.id,
+        vendor_name: productData.vendor_name
+      }
     }
 
     // Handle submission-based content blocks
@@ -784,13 +812,24 @@ export async function DELETE(
     }
     
     if (!product) {
-      // Try products table (works for both UUIDs and non-UUIDs)
-      const { data: productData, error: productError } = await supabase
+      // Try products table - handle both UUIDs and numeric Shopify IDs
+      const isNumericId = /^\d+$/.test(productId)
+      
+      let query = supabase
         .from("products")
-        .select("id, vendor_name")
-        .eq("id", productId)
+        .select("id, vendor_name, product_id")
         .eq("vendor_name", vendorName)
-        .maybeSingle()
+      
+      // Use appropriate field based on ID format
+      if (isNumericId) {
+        query = query.eq("product_id", productId)
+        console.log(`[Artwork Pages API DELETE] Looking up by numeric product_id: ${productId}`)
+      } else {
+        query = query.eq("id", productId)
+        console.log(`[Artwork Pages API DELETE] Looking up by UUID id: ${productId}`)
+      }
+      
+      const { data: productData, error: productError } = await query.maybeSingle()
 
       if (productError) {
         console.error(`[Artwork Pages API DELETE] Database error looking up product: ${productId}`, productError)
@@ -802,7 +841,10 @@ export async function DELETE(
         return NextResponse.json({ error: "Product not found" }, { status: 404 })
       }
 
-      product = productData
+      product = {
+        id: productData.id,
+        vendor_name: productData.vendor_name
+      }
     }
 
     // Handle submission-based content blocks
