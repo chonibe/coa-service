@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import { motion, AnimatePresence } from "framer-motion"
-import { Check, Lock, ArrowRight, Crown, Radio, FolderOpen, Book, ChevronDown, ChevronUp } from "lucide-react"
+import { Check, Lock, ArrowRight, Crown, Radio, FolderOpen, Book, ChevronDown, ChevronUp, Clock } from "lucide-react"
 import type { UnlockType } from "@/types/artwork-series"
 import { cn } from "@/lib/utils"
 
@@ -48,16 +48,6 @@ const advancedTypes = [
     color: "from-orange-500 to-red-500",
     bgColor: "bg-orange-50 dark:bg-orange-950/20",
     borderColor: "border-orange-200 dark:border-orange-800",
-  },
-  {
-    value: "time_based" as UnlockType,
-    label: "Time-Based",
-    description: "Scheduled releases",
-    bestFor: "Episodic content, timed drops",
-    icon: Clock,
-    color: "from-green-500 to-emerald-500",
-    bgColor: "bg-green-50 dark:bg-green-950/20",
-    borderColor: "border-green-200 dark:border-green-800",
   },
   {
     value: "nfc" as UnlockType,
