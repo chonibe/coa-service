@@ -24,12 +24,24 @@ export async function GET(
     let product: { id: string; name: string; img_url: string | null; product_id: string | null; vendor_name: string } | null = null
     let isSubmission = false
 
-    const { data: publishedProduct, error: productError } = await supabase
+    // Check if productId is numeric (Shopify ID) or UUID
+    const isNumericId = /^\d+$/.test(productId)
+    
+    let productQuery = supabase
       .from("products")
       .select("id, name, img_url, product_id, vendor_name")
-      .eq("id", productId)
       .eq("vendor_name", vendorName)
-      .maybeSingle()
+    
+    // Use appropriate field based on ID format
+    if (isNumericId) {
+      productQuery = productQuery.eq("product_id", productId)
+      console.log(`[Preview API] Looking up by numeric product_id: ${productId}`)
+    } else {
+      productQuery = productQuery.eq("id", productId)
+      console.log(`[Preview API] Looking up by UUID id: ${productId}`)
+    }
+    
+    const { data: publishedProduct, error: productError } = await productQuery.maybeSingle()
 
     if (publishedProduct) {
       product = publishedProduct

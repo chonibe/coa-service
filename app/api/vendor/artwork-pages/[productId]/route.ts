@@ -56,13 +56,24 @@ export async function GET(
     }
     
     if (!product) {
-      // Try products table (works for both UUIDs and non-UUIDs)
-      const { data: productData, error: productError } = await supabase
+      // Try products table - handle both UUIDs and numeric Shopify IDs
+      const isNumericId = /^\d+$/.test(productId)
+      
+      let query = supabase
         .from("products")
-        .select("id, name, vendor_name")
-        .eq("id", productId)
+        .select("id, name, vendor_name, product_id")
         .eq("vendor_name", vendorName)
-        .maybeSingle()
+      
+      // Use appropriate field based on ID format
+      if (isNumericId) {
+        query = query.eq("product_id", productId)
+        console.log(`[Artwork Pages API] Looking up by numeric product_id: ${productId}`)
+      } else {
+        query = query.eq("id", productId)
+        console.log(`[Artwork Pages API] Looking up by UUID id: ${productId}`)
+      }
+      
+      const { data: productData, error: productError } = await query.maybeSingle()
 
       if (productError) {
         console.error(`[Artwork Pages API] Database error looking up product: ${productId}`, productError)
@@ -81,7 +92,11 @@ export async function GET(
         }, { status: 404 })
       }
 
-      product = productData
+      product = {
+        id: productData.id,
+        name: productData.name,
+        vendor_name: productData.vendor_name
+      }
     }
 
     // Get benefit type IDs for artwork content blocks (including immersive types and section groups)

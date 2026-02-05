@@ -3,6 +3,7 @@ import type { NextRequest } from "next/server"
 import { cookies } from "next/headers"
 import { getVendorFromCookieStore } from "@/lib/vendor-session"
 import { createClient } from "@/lib/supabase/server"
+import { initializeSubmissionExperience } from "@/lib/artwork-pages/initialize-default-experience"
 
 export async function GET(
   request: NextRequest,
@@ -390,6 +391,15 @@ export async function PUT(
     } else if (seriesId) {
       // If no benefits provided but series exists, check if we should clear series-level benefits
       // For now, we'll leave existing benefits intact unless explicitly removed
+    }
+
+    // Initialize default experience blocks if they don't exist
+    const experienceResult = await initializeSubmissionExperience(params.id, vendor.vendor_name)
+    if (!experienceResult.success) {
+      console.error(`[Submission PUT] Failed to initialize default experience for submission ${params.id}:`, experienceResult.error)
+      // Don't fail the update if experience initialization fails
+    } else if (experienceResult.success) {
+      console.log(`[Submission PUT] Successfully ensured default experience exists for submission ${params.id}`)
     }
 
     return NextResponse.json({

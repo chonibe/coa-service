@@ -4,6 +4,7 @@ import { cookies } from "next/headers"
 import { getVendorFromCookieStore } from "@/lib/vendor-session"
 import { createClient } from "@/lib/supabase/server"
 import type { ProductSubmissionData } from "@/types/product-submission"
+import { initializeSubmissionExperience } from "@/lib/artwork-pages/initialize-default-experience"
 
 /**
  * Generates a handle from title
@@ -332,6 +333,15 @@ export async function POST(request: NextRequest) {
 
       // Artwork-level benefits are stored in product_data and will be created when product is published
       // (They need product_id which is only available after publication)
+    }
+
+    // Initialize default experience blocks for the submission
+    const experienceResult = await initializeSubmissionExperience(submission.id, vendor.vendor_name)
+    if (!experienceResult.success) {
+      console.error(`[Submit API] Failed to initialize default experience for submission ${submission.id}:`, experienceResult.error)
+      // Don't fail the submission if experience initialization fails
+    } else {
+      console.log(`[Submit API] Successfully initialized default experience for submission ${submission.id}`)
     }
 
     return NextResponse.json({

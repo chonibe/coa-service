@@ -136,21 +136,15 @@ export function ProductTable({ products }: ProductTableProps) {
                 <TableCell>{getStatusBadge(product.status)}</TableCell>
                 <TableCell>
                   <div className="flex items-center gap-1">
-                    <Button variant="ghost" size="sm" asChild>
-                      <Link href={`/vendor/dashboard/products/${product.handle}`}>
-                        <ExternalLink className="h-4 w-4" />
-                        <span className="sr-only">View</span>
-                      </Link>
-                    </Button>
                     <Button 
                       variant="ghost" 
                       size="sm" 
                       asChild
-                      title="Edit Artwork Page"
+                      title="Edit Artwork Experience"
                     >
                       <Link href={`/artwork-editor/${product.id}`}>
                         <FileText className="h-4 w-4" />
-                        <span className="sr-only">Edit Artwork Page</span>
+                        <span className="sr-only">Edit Artwork Experience</span>
                       </Link>
                     </Button>
                   </div>
