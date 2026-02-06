@@ -163,6 +163,18 @@ export function WishlistProvider({ children }: { children: React.ReactNode }) {
 export function useWishlist() {
   const context = React.useContext(WishlistContext)
   if (!context) {
+    // During SSR or if provider is missing, return a safe default
+    // This prevents build errors during static generation
+    if (typeof window === 'undefined') {
+      return {
+        items: [],
+        itemCount: 0,
+        addItem: () => {},
+        removeItem: () => {},
+        isInWishlist: () => false,
+        clearWishlist: () => {},
+      }
+    }
     throw new Error('useWishlist must be used within a WishlistProvider')
   }
   return context
