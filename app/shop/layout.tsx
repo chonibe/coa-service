@@ -174,7 +174,7 @@ function ShopLayoutInner({ children }: { children: React.ReactNode }) {
   // Handle adding recommended products to cart
   const onAddRecommendedToCart = useCallback(async (productId: string) => {
     const product = recommendedProducts.find(p => p.id === productId) || 
-                    wishlist.items.find(item => item.id === productId)
+                    wishlist.items?.find(item => item.id === productId)
     
     if (!product) {
       console.error('[Cart Recommendations] Product not found:', productId)
