@@ -1,23 +1,22 @@
 'use client'
 
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { 
   ScrollingAnnouncementBar, 
   defaultAnnouncementMessages,
-  Header,
   Footer,
-  CartDrawer,
-  SearchDrawer,
-  MobileMenuDrawer,
-  type SearchResult,
 } from '@/components/impact'
 import { CartProvider, useCart } from '@/lib/shop/CartContext'
+import { WishlistProvider, useWishlist } from '@/lib/shop/WishlistContext'
 import { formatPrice, type ShopifyProduct } from '@/lib/shopify/storefront-client'
 import { 
   mainNavigation as syncedMainNavigation, 
   footerSections as syncedFooterSections 
 } from '@/content/shopify-content'
+import { ShopNavigation } from '@/components/shop/navigation'
+import { LocalCartDrawer } from '@/components/impact/LocalCartDrawer'
+import { WishlistDrawer } from '@/components/shop/navigation'
 
 /**
  * Shop Layout
@@ -104,43 +103,100 @@ const legalLinks = [
 function ShopLayoutInner({ children }: { children: React.ReactNode }) {
   const router = useRouter()
   const cart = useCart()
-  const [searchOpen, setSearchOpen] = useState(false)
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const wishlist = useWishlist()
   const [cartLoading, setCartLoading] = useState(false)
+  const [navModalOpen, setNavModalOpen] = useState(false)
+  const [wishlistDrawerOpen, setWishlistDrawerOpen] = useState(false)
+  const [recommendedProducts, setRecommendedProducts] = useState<Array<{
+    id: string
+    title: string
+    handle: string
+    price: string
+    compareAtPrice?: string
+    image: string
+    vendor: string
+  }>>([])
   
-  // Handle search
-  const handleSearch = useCallback(async (query: string): Promise<{ products: SearchResult[]; collections: SearchResult[] }> => {
-    try {
-      const response = await fetch(`/api/shop/search?q=${encodeURIComponent(query)}`)
-      if (!response.ok) throw new Error('Search failed')
-      const data = await response.json()
-      
-      // Transform products to SearchResult format
-      const products: SearchResult[] = (data.products || []).map((p: ShopifyProduct) => ({
-        id: p.id,
-        handle: p.handle,
-        title: p.title,
-        type: 'product' as const,
-        image: p.featuredImage ? { url: p.featuredImage.url, altText: p.featuredImage.altText || undefined } : undefined,
-        price: formatPrice(p.priceRange.minVariantPrice),
-        vendor: p.vendor,
-      }))
-      
-      // Transform collections
-      const collections: SearchResult[] = (data.collections || []).map((c: any) => ({
-        id: c.id,
-        handle: c.handle,
-        title: c.title,
-        type: 'collection' as const,
-        image: c.image ? { url: c.image.url, altText: c.image.altText || undefined } : undefined,
-      }))
-      
-      return { products, collections }
-    } catch (error) {
-      console.error('Search error:', error)
-      return { products: [], collections: [] }
+  // Fetch recommendations for cart drawer
+  useEffect(() => {
+    const fetchRecommendations = async () => {
+      try {
+        const response = await fetch('/api/shop/collections/new-releases')
+        if (response.ok) {
+          const data = await response.json()
+          setRecommendedProducts(data.products || [])
+        } else {
+          // Fallback products
+          setRecommendedProducts([
+            {
+              id: 'fallback-1',
+              title: 'New Release Vinyl',
+              handle: 'new-release',
+              price: '$29.99',
+              image: '/placeholder.jpg',
+              vendor: 'Various Artists'
+            }
+          ])
+        }
+      } catch (error) {
+        console.error('[Shop Layout] Failed to fetch recommendations:', error)
+        setRecommendedProducts([])
+      }
     }
+    fetchRecommendations()
   }, [])
+  
+  // Handle wishlist drawer toggle
+  const handleWishlistClick = useCallback(() => {
+    setWishlistDrawerOpen((prev) => !prev)
+    if (!wishlistDrawerOpen) {
+      setNavModalOpen(false)
+      cart.toggleCart(false)
+    }
+  }, [wishlistDrawerOpen, cart])
+  
+  // Handle cart drawer toggle
+  const handleViewCart = useCallback(() => {
+    cart.toggleCart(true)
+    setNavModalOpen(false)
+    setWishlistDrawerOpen(false)
+  }, [cart])
+  
+  // Handle navigation modal toggle
+  const handleNavModalToggle = useCallback(() => {
+    setNavModalOpen((prev) => !prev)
+    if (!navModalOpen) {
+      cart.toggleCart(false)
+      setWishlistDrawerOpen(false)
+    }
+  }, [navModalOpen, cart])
+  
+  // Handle adding recommended products to cart
+  const onAddRecommendedToCart = useCallback(async (productId: string) => {
+    const product = recommendedProducts.find(p => p.id === productId) || 
+                    wishlist.items.find(item => item.id === productId)
+    
+    if (!product) {
+      console.error('[Cart Recommendations] Product not found:', productId)
+      return
+    }
+    
+    await cart.addItem({
+      variantId: productId,
+      quantity: 1,
+      productTitle: product.title,
+      productHandle: product.handle,
+      price: product.price,
+      compareAtPrice: product.compareAtPrice,
+      image: product.image,
+      vendor: product.vendor || 'Unknown'
+    })
+  }, [recommendedProducts, wishlist.items, cart])
+  
+  // Handle adding wishlist items to cart
+  const onAddToCart = useCallback(async (productId: string) => {
+    await onAddRecommendedToCart(productId)
+  }, [onAddRecommendedToCart])
   
   // Handle cart checkout
   const handleCheckout = useCallback(async () => {
@@ -191,11 +247,6 @@ function ShopLayoutInner({ children }: { children: React.ReactNode }) {
     cart.removeItem(lineId)
   }, [cart])
   
-  // Handle account click
-  const handleAccountClick = useCallback(() => {
-    router.push('/shop/account')
-  }, [router])
-  
   // Build cart object for CartDrawer (convert from our format to Shopify format)
   const cartForDrawer = {
     id: 'local-cart',
@@ -241,19 +292,16 @@ function ShopLayoutInner({ children }: { children: React.ReactNode }) {
         speed={25}
       />
       
-      {/* Header */}
-      <Header 
-        navigation={shopNavigation}
-        logoHref="/shop/home"
-        cartCount={cart.itemCount}
-        onCartClick={() => cart.toggleCart(true)}
-        onSearchClick={() => setSearchOpen(true)}
-        onLoginClick={handleAccountClick}
-        onMenuClick={() => setMobileMenuOpen(true)}
+      {/* Shop Navigation */}
+      <ShopNavigation
+        isModalOpen={navModalOpen}
+        onModalToggle={handleNavModalToggle}
+        onViewCart={handleViewCart}
+        onWishlistClick={handleWishlistClick}
       />
       
-      {/* Cart Drawer */}
-      <CartDrawer
+      {/* Cart Drawer with Recommendations */}
+      <LocalCartDrawer
         isOpen={cart.isOpen}
         onClose={() => cart.toggleCart(false)}
         cart={cartForDrawer as any}
@@ -263,27 +311,15 @@ function ShopLayoutInner({ children }: { children: React.ReactNode }) {
         loading={cartLoading}
         orderNotes={cart.orderNotes}
         onOrderNotesChange={cart.setOrderNotes}
+        recommendedProducts={recommendedProducts}
+        onAddRecommendedToCart={onAddRecommendedToCart}
       />
       
-      {/* Search Drawer */}
-      <SearchDrawer
-        isOpen={searchOpen}
-        onClose={() => setSearchOpen(false)}
-        onSearch={handleSearch}
-        placeholder="Search artworks, artists..."
-      />
-      
-      {/* Mobile Menu Drawer */}
-      <MobileMenuDrawer
-        isOpen={mobileMenuOpen}
-        onClose={() => setMobileMenuOpen(false)}
-        navigation={shopNavigation}
-        logoSrc="https://cdn.shopify.com/s/files/1/0659/7925/2963/files/Logo_a395ed7f-3980-4407-80d0-70c343848544.png?v=1764246238"
-        onSearchClick={() => {
-          setMobileMenuOpen(false)
-          setSearchOpen(true)
-        }}
-        onAccountClick={handleAccountClick}
+      {/* Wishlist Drawer */}
+      <WishlistDrawer
+        isOpen={wishlistDrawerOpen}
+        onClose={() => setWishlistDrawerOpen(false)}
+        onAddToCart={onAddToCart}
       />
       
       {/* Main Content */}
@@ -308,7 +344,7 @@ function ShopLayoutInner({ children }: { children: React.ReactNode }) {
   )
 }
 
-// Main layout with CartProvider wrapper
+// Main layout with CartProvider and WishlistProvider wrappers
 export default function ShopLayout({
   children,
 }: {
@@ -316,9 +352,11 @@ export default function ShopLayout({
 }) {
   return (
     <CartProvider>
-      <ShopLayoutInner>
-        {children}
-      </ShopLayoutInner>
+      <WishlistProvider>
+        <ShopLayoutInner>
+          {children}
+        </ShopLayoutInner>
+      </WishlistProvider>
     </CartProvider>
   )
 }
