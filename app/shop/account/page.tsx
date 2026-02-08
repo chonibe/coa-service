@@ -301,7 +301,7 @@ export default function AccountPage() {
 
                     {/* Line Items */}
                     <div className="py-4 space-y-3">
-                      {order.lineItems.map((item) => (
+                      {order.lineItems?.map((item) => (
                         <div key={item.id} className="flex items-center gap-4">
                           <div className="w-16 h-16 rounded-[12px] overflow-hidden bg-[#f5f5f5] flex-shrink-0">
                             {item.imageUrl ? (
