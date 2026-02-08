@@ -1,0 +1,206 @@
+# Edition Ledger MCP - MANDATORY Usage Rules
+
+## ⚠️  CRITICAL NOTICE FOR AI AGENTS ⚠️
+
+**READ THIS FIRST BEFORE ANY EDITION/LINE-ITEM WORK:**
+
+1. ❌ **NEVER** use `syncShopifyOrder()` from `lib/shopify/order-sync-utils.ts` - IT IS DEPRECATED
+2. ❌ **NEVER** directly query or update `order_line_items_v2` table
+3. ❌ **NEVER** duplicate status determination logic in your code
+4. ✅ **ALWAYS** use Edition Ledger MCP Server tools for ALL edition operations
+5. ✅ **ALWAYS** run `validate_data_integrity` after making changes
+
+**If you find yourself:**
+- Importing from `lib/shopify/order-sync-utils.ts` → STOP, use MCP instead
+- Writing `supabase.from('order_line_items_v2')` → STOP, use MCP instead
+- Implementing refund detection logic → STOP, use MCP instead
+
+**This rule exists because:** The status logic has been broken multiple times by
+agents bypassing the MCP server. ALL edition operations MUST go through MCP.
+
+---
+
+## Rule Types
+- always: Rules that are always enforced
+- agent: Rules that are enforced by the AI agent
+
+## CRITICAL: Single Source of Truth
+
+The **Edition Ledger MCP Server** (`mcp-servers/edition-verification/index.ts`) is the SINGLE SOURCE OF TRUTH for all edition and line item operations.
+
+## MANDATORY Rules for AI Agents
+
+### 1. ALWAYS Use MCP Tools for Edition Operations [always]
+
+When working with editions or line items, you MUST use these MCP tools:
+
+- `sync_order_line_items` - For syncing Shopify orders to database
+- `mark_line_item_inactive` - For marking items as inactive
+- `get_collector_editions` - For fetching collector editions
+- `reassign_editions` - For triggering edition reassignment
+- `validate_data_integrity` - For checking data integrity
+
+**Pattern**: "*.{ts,tsx,js,jsx}"
+**Auto-attach**: true
+
+### 1a. NEVER Use Deprecated Functions [always]
+
+The following functions are DEPRECATED and MUST NOT be used:
+
+❌ **FORBIDDEN:** `syncShopifyOrder()` from `lib/shopify/order-sync-utils.ts`
+   - This function bypasses the MCP server
+   - Status logic is outdated and duplicated
+   - Use: `sync_order_line_items` MCP tool instead
+
+❌ **FORBIDDEN:** Direct imports from `lib/shopify/order-sync-utils.ts`
+   - File exists only for backward compatibility with old scripts
+   - New code must use MCP server exclusively
+
+**Example of FORBIDDEN usage:**
+```typescript
+// ❌ WRONG - Do NOT do this
+import { syncShopifyOrder } from '@/lib/shopify/order-sync-utils';
+await syncShopifyOrder(supabase, order);
+```
+
+**Example of CORRECT usage:**
+```typescript
+// ✅ CORRECT - Use MCP tool
+await mcpClient.callTool('edition-ledger', 'sync_order_line_items', {
+  order: shopifyOrder
+});
+```
+
+**Pattern**: "lib/shopify/order-sync-utils.ts"
+**Auto-attach**: true
+
+### 2. NEVER Directly Modify order_line_items_v2 Status [always]
+
+You MUST NOT:
+- Write direct SQL/Supabase queries to update `order_line_items_v2.status`
+- Modify status determination logic outside of MCP server
+- Duplicate status logic in application code
+- Call deprecated functions like `syncShopifyOrder()`
+
+**Forbidden Patterns**:
+```typescript
+// ❌ FORBIDDEN - Direct database update
+await supabase.from('order_line_items_v2').update({ status: 'inactive' })
+
+// ❌ FORBIDDEN - Duplicate status logic
+const isInactive = li.refunded || li.restocked // Wrong!
+
+// ❌ FORBIDDEN - Using deprecated function
+import { syncShopifyOrder } from '@/lib/shopify/order-sync-utils';
+await syncShopifyOrder(supabase, order); // DEPRECATED!
+
+// ❌ FORBIDDEN - Direct query to read line items for filtering
+const { data } = await supabase
+  .from('order_line_items_v2')
+  .select('*')
+  .eq('status', 'active'); // Use get_collector_editions instead!
+
+// ✅ CORRECT - Use MCP tools
+await mcpClient.callTool('edition-ledger', 'mark_line_item_inactive', { 
+  line_item_id, 
+  reason: 'refunded' 
+});
+
+await mcpClient.callTool('edition-ledger', 'sync_order_line_items', {
+  order: shopifyOrder
+});
+
+await mcpClient.callTool('edition-ledger', 'get_collector_editions', {
+  collector_id: email
+});
+```
+
+**Pattern**: "*.{ts,tsx,js,jsx}"
+**Auto-attach**: true
+
+### 3. NEVER Modify Status Logic Without Updating MCP [always]
+
+If status determination rules must change:
+
+1. STOP and update `mcp-servers/edition-verification/lib/status-logic.ts`
+2. Update tests
+3. Run `validate_data_integrity` tool
+4. Document changes in commit log
+
+**Pattern**: "lib/status-logic.ts"
+**Auto-attach**: true
+
+### 4. ALWAYS Run validate_data_integrity After Changes [agent]
+
+After ANY changes to:
+- Order sync logic
+- Line item status updates
+- Edition assignment
+- Refund handling
+
+You MUST run:
+```typescript
+await mcpClient.call('validate_data_integrity')
+```
+
+Expected result: `issues_found: 0`
+
+If issues are found, FIX THEM before completing the task.
+
+**Pattern**: "*.{ts,tsx,js,jsx}"
+**Auto-attach**: true
+
+### 5. Use Centralized Filtering for Collector Editions [always]
+
+When displaying editions to collectors:
+
+```typescript
+// ❌ FORBIDDEN - Do NOT implement filtering in app code
+const editions = lineItems.filter(li => li.status === 'active')
+
+// ✅ CORRECT - Use MCP tool with centralized filtering
+const result = await mcpClient.call('get_collector_editions', { 
+  collector_id: email 
+})
+```
+
+**Pattern**: "app/api/collector/**/*.ts"
+**Auto-attach**: true
+
+### 6. Reference Files for Business Logic [always]
+
+The authoritative business logic is located in:
+
+- **Status Logic**: `mcp-servers/edition-verification/lib/status-logic.ts`
+- **Filtering Logic**: `mcp-servers/edition-verification/lib/collector-editions.ts`
+- **Type Definitions**: `mcp-servers/edition-verification/lib/types.ts`
+
+ALWAYS reference these files, NEVER duplicate logic.
+
+**Pattern**: "mcp-servers/edition-verification/lib/*.ts"
+**Auto-attach**: true
+
+## Why These Rules Exist
+
+The line item status logic has been broken MULTIPLE times by well-intentioned changes to scattered code files. Each time:
+
+1. Status determination logic was duplicated
+2. Edge cases were missed (string vs number comparison)
+3. Refunded items appeared in collector dashboards
+4. Manual fixes were required
+
+This MCP server PREVENTS these bugs by centralizing ALL business logic.
+
+## Testing Checklist
+
+Before completing ANY edition-related task:
+
+- [ ] Run `validate_data_integrity` - must show 0 issues
+- [ ] Test `get_collector_editions` with test collector
+- [ ] Verify no direct database updates to status
+- [ ] Check edition_events audit trail is created
+
+## Version
+- Last Updated: 2026-02-02
+- Version: 1.0.0
+- Enforcement: MANDATORY

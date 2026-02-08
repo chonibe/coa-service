@@ -1,0 +1,89 @@
+---
+description: CRITICAL rules for order and line item handling - prevents data integrity bugs
+globs: "**/order*.ts,**/line-item*.ts,**/*sync*.ts,**/editions/*.ts,**/collector/*.ts"
+alwaysApply: false
+---
+
+# Order Line Items - Critical Data Integrity Rules
+
+## NEVER Override These Rules
+
+When working with `order_line_items_v2` or order sync logic, you MUST follow these rules. Violations have caused production bugs multiple times.
+
+## Rule 1: Line Item Status Determination
+
+A line item should be `status: 'inactive'` if ANY of these conditions are true:
+
+```typescript
+// ❌ NEVER mark as 'active' if any of these are true:
+const isInactive = 
+  isRefunded ||                    // Item was refunded
+  isRestocked ||                   // Item was restocked to inventory
+  isRemovedByProperty ||           // Has removed=true property
+  isRemovedByQty ||                // fulfillable_quantity=0 AND not fulfilled
+  isCancelled ||                   // Order is voided/cancelled
+  fulfillment_status === null;     // Never fulfilled (with exceptions for digital goods)
+```
+
+## Rule 2: Refund Detection - Use String Comparison
+
+When checking if a line item is in a refund list, ALWAYS use string comparison:
+
+```typescript
+// ❌ BAD - Type mismatch causes silent failures
+const removedLineItemIds = new Set<number>()
+removedLineItemIds.add(ri.line_item_id)  // number
+const isRefunded = removedLineItemIds.has(li.id)  // might be string!
+
+// ✅ GOOD - Consistent string comparison
+const removedLineItemIds = new Set<string>()
+removedLineItemIds.add(ri.line_item_id.toString())
+const isRefunded = removedLineItemIds.has(li.id.toString())
+```
+
+## Rule 3: Filtering for Display
+
+When fetching line items for collector dashboards or editions APIs, ALWAYS filter:
+
+```typescript
+// ✅ REQUIRED filters for displaying line items
+const activeItems = lineItems.filter(li => 
+  li.status === 'active' &&
+  li.restocked !== true &&
+  (li.refund_status === 'none' || li.refund_status === null)
+);
+```
+
+## Rule 4: Order Deduplication Priority
+
+When deduplicating orders (e.g., `#1106` vs `1106`), prioritize by status:
+
+1. Non-canceled/non-voided orders FIRST
+2. Then prefer Shopify orders over manual (WH-) orders
+3. Then prefer most recent
+
+```typescript
+// ✅ Check cancellation status during deduplication
+const isCanceled = ['restocked', 'canceled'].includes(order.fulfillment_status) || 
+                   ['refunded', 'voided'].includes(order.financial_status);
+if (!isCanceled && existingIsCanceled) {
+  orderMap.set(cleanName, order);  // Replace canceled with non-canceled
+}
+```
+
+## Key Files
+
+These files contain the critical logic - be extra careful when modifying:
+
+- `lib/shopify/order-sync-utils.ts` - Main sync logic
+- `app/api/collector/editions/route.ts` - Collector editions API
+- `app/api/admin/collectors/[id]/activity/route.ts` - Admin activity API
+- `app/api/collector/dashboard/route.ts` - Collector dashboard API
+
+## Testing After Changes
+
+After modifying any order/line-item logic, verify:
+
+1. Run: `node scripts/fix-refunded-line-items.js --dry-run`
+2. Should show "0 items need fixing"
+3. If not, you've introduced a regression
