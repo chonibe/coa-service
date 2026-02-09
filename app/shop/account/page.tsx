@@ -30,7 +30,7 @@ interface Order {
   status: 'pending' | 'processing' | 'shipped' | 'delivered' | 'cancelled' | 'refunded'
   totalAmount: number
   currency: string
-  lineItems: Array<{
+  lineItems?: Array<{
     id: string
     title: string
     variantTitle?: string
