@@ -148,7 +148,7 @@
     "three": "^0.182.0",
     "ts-node": "^10.9.2",
     "uuid": "latest",
-    "vaul": "^0.9.6",
+    "vaul": "^1.1.2",
     "zod": "^3.25.67"
   },
   "devDependencies": {
