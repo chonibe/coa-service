@@ -12,9 +12,6 @@ const nextConfig = {
   images: {
     unoptimized: true,
   },
-  experimental: {
-    missingSuspenseWithCSRBailout: false,
-  },
   async headers() {
     // Get allowed origins from environment variable
     // Format: comma-separated list of origins, e.g., "https://example.com,https://app.example.com"
