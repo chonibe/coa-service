@@ -63,7 +63,7 @@ const defaultNavigation = [
 const shopNavigation = defaultNavigation
 
 // Use synced footer sections from Shopify, with fallback to default
-const footerSections = (syncedFooterSections || []).length > 0 ? syncedFooterSections : [
+const footerSections = (Array.isArray(syncedFooterSections) && syncedFooterSections.length > 0) ? syncedFooterSections : [
   {
     title: 'Street Collector',
     links: [
