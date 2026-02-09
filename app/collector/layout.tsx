@@ -5,6 +5,8 @@ import { getCollectorSession } from "@/lib/collector-session"
 import { ADMIN_SESSION_COOKIE_NAME, verifyAdminSessionToken } from "@/lib/admin-session"
 import { handleAuthError, isAuthError } from "@/lib/auth-error-handler"
 
+export const dynamic = 'force-dynamic'
+
 interface CollectorLayoutProps {
   children: ReactNode
 }
