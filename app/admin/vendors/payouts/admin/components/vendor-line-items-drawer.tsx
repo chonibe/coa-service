@@ -14,7 +14,7 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet"
-import { Loader2, ExternalLink, CheckCircle, Search, Download, Info } from "lucide-react"
+import { Loader2, ExternalLink, CheckCircle, Search, Download, Info, DollarSign, AlertTriangle } from "lucide-react"
 import { format } from "date-fns"
 import { formatUSD } from "@/lib/utils"
 import { useToast } from "@/components/ui/use-toast"
@@ -44,17 +44,33 @@ export function VendorLineItemsDrawer({
   const [isProcessing, setIsProcessing] = useState(false)
   const [searchQuery, setSearchQuery] = useState("")
   const [selectedItems, setSelectedItems] = useState<Set<string>>(new Set())
+  const [ledgerBalance, setLedgerBalance] = useState<number | null>(null)
   const { toast } = useToast()
 
   useEffect(() => {
     if (open && vendorName && vendorName.trim() !== "") {
       fetchLineItems()
+      fetchLedgerBalance()
     } else if (!open) {
       // Clear line items when drawer closes
       setLineItems([])
+      setLedgerBalance(null)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, vendorName, dateRange.start, dateRange.end, includePaid])
+
+  const fetchLedgerBalance = async () => {
+    if (!vendorName || vendorName.trim() === "") return
+    try {
+      const response = await fetch(`/api/vendors/balance?vendorName=${encodeURIComponent(vendorName)}`)
+      if (response.ok) {
+        const data = await response.json()
+        setLedgerBalance(data.balance?.available_balance ?? null)
+      }
+    } catch (err) {
+      console.error("Error fetching ledger balance:", err)
+    }
+  }
 
   const fetchLineItems = async () => {
     if (!vendorName || vendorName.trim() === "") {
@@ -513,6 +529,27 @@ export function VendorLineItemsDrawer({
 
     content = (
       <div className="space-y-4 mt-6">
+        {/* Ledger Balance Banner */}
+        {ledgerBalance !== null && (
+          <div className="p-4 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-950/30 rounded-lg border border-blue-200 dark:border-blue-800">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <DollarSign className="h-5 w-5 text-blue-600" />
+                <div>
+                  <div className="text-sm font-medium text-blue-800 dark:text-blue-200">Ledger Balance (Authoritative)</div>
+                  <div className="text-2xl font-bold text-blue-900 dark:text-blue-100">{formatUSD(ledgerBalance)}</div>
+                </div>
+              </div>
+              {Math.abs(ledgerBalance - pendingAmount) > 0.01 && pendingAmount > 0 && (
+                <div className="flex items-center gap-1.5 text-sm text-amber-600">
+                  <AlertTriangle className="h-4 w-4" />
+                  <span>Line items total differs: {formatUSD(pendingAmount)}</span>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
         {/* Sticky Summary */}
         <div className="sticky top-0 z-10 bg-background pb-2 border-b">
           <div className="grid grid-cols-3 gap-4 p-4 bg-muted rounded-lg border" role="region" aria-label="Line items summary">

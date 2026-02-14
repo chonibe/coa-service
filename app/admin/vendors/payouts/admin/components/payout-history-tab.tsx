@@ -1,8 +1,10 @@
 "use client"
 
-import { Loader2, AlertCircle, RefreshCw, FileText } from "lucide-react"
+import { useState } from "react"
+import { Loader2, AlertCircle, RefreshCw, FileText, PlayCircle } from "lucide-react"
 import { format } from "date-fns"
 import { formatUSD } from "@/lib/utils"
+import { useToast } from "@/components/ui/use-toast"
 import type { PayoutHistory } from "../types"
 import { PayoutFiltersComponent } from "./payout-filters"
 import type { PayoutFilters } from "../hooks/use-payout-filters"
@@ -25,6 +27,8 @@ export function PayoutHistoryTab({
   onClearFilters,
   onCheckPayPalStatus,
 }: PayoutHistoryTabProps) {
+  const { toast } = useToast()
+  const [isBulkChecking, setIsBulkChecking] = useState(false)
   const formatDate = (dateString: string) => {
     try {
       return format(new Date(dateString), "dd MMM yyyy")
@@ -75,11 +79,66 @@ export function PayoutHistoryTab({
     )
   }
 
+  // Get all processing/pending PayPal payouts that can be bulk-checked
+  const processingPayouts = history.filter(
+    (p) =>
+      p.payment_method === "paypal" &&
+      p.payout_batch_id &&
+      (p.status === "processing" || p.status === "pending")
+  )
+
+  const handleBulkCheckStatus = async () => {
+    if (processingPayouts.length === 0) return
+    setIsBulkChecking(true)
+    let successCount = 0
+    let errorCount = 0
+
+    for (const payout of processingPayouts) {
+      try {
+        await onCheckPayPalStatus(payout.payout_batch_id!, payout.id)
+        successCount++
+      } catch (err) {
+        console.error(`Error checking status for payout ${payout.id}:`, err)
+        errorCount++
+      }
+    }
+
+    setIsBulkChecking(false)
+    toast({
+      title: "Bulk Status Check Complete",
+      description: `Checked ${successCount + errorCount} payouts. ${successCount} updated, ${errorCount} errors.`,
+    })
+  }
+
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Payout History</CardTitle>
-        <CardDescription>View all processed payouts</CardDescription>
+        <div className="flex items-center justify-between">
+          <div>
+            <CardTitle>Payout History</CardTitle>
+            <CardDescription>View all processed payouts</CardDescription>
+          </div>
+          {processingPayouts.length > 0 && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleBulkCheckStatus}
+              disabled={isBulkChecking}
+            >
+              {isBulkChecking ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Checking {processingPayouts.length}...
+                </>
+              ) : (
+                <>
+                  <PlayCircle className="h-4 w-4 mr-2" />
+                  Check All Pending ({processingPayouts.length})
+                </>
+              )}
+            </Button>
+          )}
+        </div>
       </CardHeader>
       <CardContent>
         <div className="space-y-4">

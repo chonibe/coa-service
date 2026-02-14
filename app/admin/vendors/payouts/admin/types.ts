@@ -67,6 +67,7 @@ export interface RedemptionRequest {
   paypalEmail: string | null
   contactName: string | null
   contactEmail: string | null
+  ledgerBalance: number
 }
 
 export interface PayoutPagination {

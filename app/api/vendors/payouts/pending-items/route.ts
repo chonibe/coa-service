@@ -1,8 +1,6 @@
 import { NextResponse } from "next/server"
-import { createClient } from "@/lib/supabase-server"
-
-// Vendors excluded from payout calculations (e.g., internal/company vendors)
-const EXCLUDED_VENDORS = ["Street Collector", "street collector", "street-collector"]
+import { createClient } from "@/lib/supabase/server"
+import { DEFAULT_PAYOUT_PERCENTAGE, EXCLUDED_VENDORS } from "@/lib/payout-calculator"
 
 export async function POST(request: Request) {
   try {
@@ -255,7 +253,7 @@ export async function POST(request: Request) {
         
         // Get payout settings for this specific product
         const setting = payoutMap.get(item.product_id)
-        const payoutAmount = setting ? Number(setting.payout_amount) : 25
+        const payoutAmount = setting ? Number(setting.payout_amount) : DEFAULT_PAYOUT_PERCENTAGE
         const isPercentage = setting ? Boolean(setting.is_percentage) : true
         
         const orderDate = new Date(item.created_at)

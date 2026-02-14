@@ -1,12 +1,17 @@
 import { NextResponse } from "next/server"
+import type { NextRequest } from "next/server"
+import { guardAdminRequest } from "@/lib/auth-guards"
 import { createClient } from "@/lib/supabase/server"
 
-export async function GET() {
+export async function GET(request: NextRequest) {
+  const auth = guardAdminRequest(request)
+  if (auth.kind !== "ok") {
+    return auth.response
+  }
+
   const supabase = createClient()
   
   try {
-    // Check for admin authentication
-    // This would normally check for admin authentication, but we're skipping it for brevity
 
     // Get all payout history
     const { data: payouts, error } = await supabase

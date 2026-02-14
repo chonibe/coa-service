@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { guardAdminRequest } from "@/lib/auth-guards"
 import { createClient } from "@/lib/supabase/server"
+import { calculateMultipleVendorBalances } from "@/lib/vendor-balance-calculator"
 
 export async function GET(request: NextRequest) {
   const auth = guardAdminRequest(request)
@@ -41,22 +42,30 @@ export async function GET(request: NextRequest) {
       )
     }
 
+    // Get ledger balances for all requesting vendors
+    const vendorNames = [...new Set((requests || []).map((req: any) => req.vendor_name))]
+    const balances = await calculateMultipleVendorBalances(vendorNames, supabase)
+
     // Format the response
-    const formattedRequests = (requests || []).map((req: any) => ({
-      id: req.id,
-      vendorName: req.vendor_name,
-      amount: req.amount,
-      currency: req.currency || "USD",
-      reference: req.reference,
-      productCount: req.product_count || 0,
-      invoiceNumber: req.invoice_number,
-      notes: req.notes,
-      createdAt: req.created_at,
-      updatedAt: req.updated_at,
-      paypalEmail: req.vendors?.paypal_email || null,
-      contactName: req.vendors?.contact_name || null,
-      contactEmail: req.vendors?.contact_email || null,
-    }))
+    const formattedRequests = (requests || []).map((req: any) => {
+      const balance = balances.get(req.vendor_name)
+      return {
+        id: req.id,
+        vendorName: req.vendor_name,
+        amount: req.amount,
+        currency: req.currency || "USD",
+        reference: req.reference,
+        productCount: req.product_count || 0,
+        invoiceNumber: req.invoice_number,
+        notes: req.notes,
+        createdAt: req.created_at,
+        updatedAt: req.updated_at,
+        paypalEmail: req.vendors?.paypal_email || null,
+        contactName: req.vendors?.contact_name || null,
+        contactEmail: req.vendors?.contact_email || null,
+        ledgerBalance: balance?.available_balance || 0,
+      }
+    })
 
     return NextResponse.json({
       requests: formattedRequests,

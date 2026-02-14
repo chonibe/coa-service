@@ -4,6 +4,8 @@ import { getAdminEmailFromCookieStore } from "@/lib/admin-session"
 import { createClient } from "@/lib/supabase/server"
 import { createPayPalPayout, isValidPayPalEmail } from "@/lib/paypal/payouts"
 import { notifyPayoutProcessed, notifyPayoutFailed } from "@/lib/notifications/payout-notifications"
+import { reversePayoutWithdrawal } from "@/lib/banking/payout-reversal"
+import { invalidateVendorBalanceCache } from "@/lib/vendor-balance-calculator"
 
 export async function POST(request: NextRequest) {
   const auth = guardAdminRequest(request)
@@ -82,6 +84,20 @@ export async function POST(request: NextRequest) {
         .from("vendor_payout_items")
         .delete()
         .eq("payout_id", payoutId)
+
+      // Reverse the withdrawal in the ledger (restores vendor balance)
+      const reversalResult = await reversePayoutWithdrawal(
+        payout.vendor_name,
+        payoutId,
+        parseFloat(payout.amount.toString()),
+        supabase
+      )
+      if (!reversalResult.success) {
+        console.error(`Failed to reverse payout withdrawal for ${payout.vendor_name}:`, reversalResult.error)
+      }
+
+      // Invalidate balance cache
+      invalidateVendorBalanceCache(payout.vendor_name)
 
       return NextResponse.json({
         success: true,
@@ -173,6 +189,9 @@ export async function POST(request: NextRequest) {
         })
       }
 
+      // Invalidate balance cache after successful approval
+      invalidateVendorBalanceCache(payout.vendor_name)
+
       return NextResponse.json({
         success: true,
         message: "Payout approved and processed successfully",
@@ -203,6 +222,9 @@ export async function POST(request: NextRequest) {
         reference: payout.reference || `PAY-${payoutId}`,
         errorMessage: paypalError.message || "PayPal payout failed",
       })
+
+      // Invalidate balance cache on failure
+      invalidateVendorBalanceCache(payout.vendor_name)
 
       return NextResponse.json(
         {
