@@ -22,6 +22,7 @@ import {
 import { ScrollingText } from '@/components/sections'
 import { ScrollReveal } from '@/components/blocks'
 import { VinylProductCard } from '@/components/shop'
+import { WishlistButton } from '@/components/shop/WishlistButton'
 import { useCart } from '@/lib/shop/CartContext'
 import { ProductCreditsCallout } from '@/components/shop/ProductCreditsCallout'
 import {
@@ -466,14 +467,15 @@ export default function ProductPage() {
 
               {/* Action Buttons */}
               <div className="space-y-3 pt-2">
-                {/* Add to Cart - Enhanced with state transitions */}
+                {/* Add to Cart + Wishlist row */}
+                <div className="flex items-center gap-3">
                 <button
                   ref={buyButtonRef}
                   id="main-add-to-cart"
                   onClick={handleAddToCart}
                   disabled={!product.availableForSale || !selectedVariant?.availableForSale || cartButtonState !== 'idle'}
                   className={`
-                    w-full py-4 px-6 font-semibold text-base rounded-full 
+                    flex-1 py-4 px-6 font-semibold text-base rounded-full 
                     flex items-center justify-center gap-2 min-h-[44px]
                     transition-all duration-300 ease-out
                     disabled:cursor-not-allowed
@@ -512,6 +514,22 @@ export default function ProductPage() {
                     </>
                   )}
                 </button>
+                
+                {/* Wishlist Button */}
+                {selectedVariant && (
+                  <WishlistButton
+                    productId={product.id}
+                    variantId={selectedVariant.id}
+                    handle={product.handle}
+                    title={product.title}
+                    price={parseFloat(selectedVariant.price.amount)}
+                    image={selectedVariant.image?.url || product.featuredImage?.url}
+                    artistName={product.vendor}
+                    size="lg"
+                    variant="default"
+                  />
+                )}
+                </div>
                 
                 {/* Tax & Shipping Notice */}
                 <p className="text-xs text-center text-[#1a1a1a]/60">

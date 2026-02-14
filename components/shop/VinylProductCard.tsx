@@ -21,6 +21,7 @@ import Link from 'next/link'
 import { cn } from '@/lib/utils'
 import { VinylArtworkCard } from '@/components/vinyl'
 import { Badge, ProductBadge } from '@/components/impact'
+import { WishlistButton } from '@/components/shop/WishlistButton'
 import { 
   formatPrice, 
   isOnSale, 
@@ -134,7 +135,24 @@ export function VinylProductCard({
   }
 
   return (
-    <div className={cn('relative', className)}>
+    <div className={cn('relative group/card', className)}>
+      {/* Wishlist button overlay (top-left) */}
+      <div
+        data-no-flip
+        className="absolute top-2 left-2 z-20 opacity-0 group-hover/card:opacity-100 transition-opacity duration-200"
+      >
+        <WishlistButton
+          productId={product.id}
+          variantId={firstVariant?.id || product.id}
+          handle={product.handle}
+          title={product.title}
+          price={parseFloat(product.priceRange.minVariantPrice.amount)}
+          image={product.featuredImage?.url}
+          artistName={product.vendor}
+          size="sm"
+        />
+      </div>
+
       {/* Artist avatar overlay (top-right, small circular) */}
       {artistAvatarUrl && (
         <div className="absolute top-2 right-2 z-20">

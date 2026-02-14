@@ -9,7 +9,7 @@ import {
 } from '@/components/impact'
 import { CartProvider, useCart } from '@/lib/shop/CartContext'
 import { WishlistProvider, useWishlist } from '@/lib/shop/WishlistContext'
-import { formatPrice, type ShopifyProduct } from '@/lib/shopify/storefront-client'
+import { formatPrice, predictiveSearch, type ShopifyProduct } from '@/lib/shopify/storefront-client'
 import { 
   mainNavigation as syncedMainNavigation, 
   footerSections as syncedFooterSections 
@@ -253,6 +253,34 @@ function ShopLayoutInner({ children }: { children: React.ReactNode }) {
     cart.removeItem(lineId)
   }, [cart])
   
+  // Handle shop search via Shopify predictive search
+  const handleShopSearch = useCallback(async (query: string) => {
+    try {
+      const results = await predictiveSearch(query, { limit: 6 })
+      return {
+        products: (results.products || []).map((p) => ({
+          id: p.id,
+          handle: p.handle,
+          title: p.title,
+          type: 'product' as const,
+          image: p.featuredImage ? { url: p.featuredImage.url, altText: p.featuredImage.altText || undefined } : undefined,
+          price: formatPrice(p.priceRange.minVariantPrice),
+          vendor: p.vendor,
+        })),
+        collections: (results.collections || []).map((c) => ({
+          id: c.id,
+          handle: c.handle,
+          title: c.title,
+          type: 'collection' as const,
+          image: c.image ? { url: c.image.url, altText: c.image.altText || undefined } : undefined,
+        })),
+      }
+    } catch (error) {
+      console.error('[Shop Search] Error:', error)
+      return { products: [], collections: [] }
+    }
+  }, [])
+  
   // Build cart object for CartDrawer (convert from our format to Shopify format)
   const cartForDrawer = {
     id: 'local-cart',
@@ -300,10 +328,21 @@ function ShopLayoutInner({ children }: { children: React.ReactNode }) {
       
       {/* Shop Navigation */}
       <ShopNavigation
+        navigation={shopNavigation}
         isModalOpen={navModalOpen}
         onModalToggle={handleNavModalToggle}
         onViewCart={handleViewCart}
         onWishlistClick={handleWishlistClick}
+        cartItems={cart.items}
+        cartSubtotal={cart.subtotal}
+        cartTotal={cart.total}
+        cartItemCount={cart.itemCount}
+        onUpdateQuantity={handleUpdateQuantity}
+        onRemoveItem={handleRemoveItem}
+        onCheckout={handleCheckout}
+        cartLoading={cartLoading}
+        wishlistCount={wishlist.items.length}
+        onSearch={handleShopSearch}
       />
       
       {/* Cart Drawer with Recommendations */}
