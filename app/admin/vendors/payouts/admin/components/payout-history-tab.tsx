@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useMemo } from "react"
 import { Loader2, AlertCircle, RefreshCw, FileText, PlayCircle } from "lucide-react"
 import { format } from "date-fns"
 import { formatUSD } from "@/lib/utils"
@@ -29,6 +29,13 @@ export function PayoutHistoryTab({
 }: PayoutHistoryTabProps) {
   const { toast } = useToast()
   const [isBulkChecking, setIsBulkChecking] = useState(false)
+
+  // Extract unique vendor names from history for the vendor filter dropdown
+  const vendorNames = useMemo(() => {
+    const names = [...new Set(history.map((p) => p.vendor_name))].sort()
+    return names
+  }, [history])
+
   const formatDate = (dateString: string) => {
     try {
       return format(new Date(dateString), "dd MMM yyyy")
@@ -149,6 +156,8 @@ export function PayoutHistoryTab({
             showPaymentMethod={true}
             showDateRange={true}
             showAmountRange={true}
+            showVendorFilter={true}
+            vendorNames={vendorNames}
           />
 
           {isLoading ? (

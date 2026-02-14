@@ -15,6 +15,8 @@ interface PayoutFiltersProps {
   showDateRange?: boolean
   showAmountRange?: boolean
   showIncludePaid?: boolean
+  showVendorFilter?: boolean
+  vendorNames?: string[]
 }
 
 export function PayoutFiltersComponent({
@@ -25,11 +27,14 @@ export function PayoutFiltersComponent({
   showDateRange = false,
   showAmountRange = false,
   showIncludePaid = false,
+  showVendorFilter = false,
+  vendorNames = [],
 }: PayoutFiltersProps) {
   const hasActiveFilters =
     filters.searchQuery ||
     filters.statusFilter !== "all" ||
     filters.paymentMethodFilter !== "all" ||
+    filters.vendorFilter !== "all" ||
     filters.dateRange.start ||
     filters.dateRange.end ||
     filters.amountRange.min ||
@@ -64,6 +69,15 @@ export function PayoutFiltersComponent({
         label: "Payment Method",
         value: filters.paymentMethodFilter,
         onRemove: () => onFilterChange("paymentMethodFilter", "all"),
+      })
+    }
+
+    if (filters.vendorFilter !== "all") {
+      chips.push({
+        key: "vendor",
+        label: "Vendor",
+        value: filters.vendorFilter,
+        onRemove: () => onFilterChange("vendorFilter", "all"),
       })
     }
 
@@ -213,6 +227,31 @@ export function PayoutFiltersComponent({
                 <SelectItem value="stripe">Stripe</SelectItem>
                 <SelectItem value="bank_transfer">Bank Transfer</SelectItem>
                 <SelectItem value="manual">Manual (Other)</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        )}
+
+        {/* Vendor Filter */}
+        {showVendorFilter && vendorNames.length > 0 && (
+          <div className="space-y-2">
+            <Label>Vendor</Label>
+            <Select
+              value={filters.vendorFilter}
+              onValueChange={(value) => onFilterChange("vendorFilter", value)}
+            >
+              <SelectTrigger
+                className={cn(filters.vendorFilter !== "all" && "border-primary bg-primary/5")}
+              >
+                <SelectValue placeholder="All vendors" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Vendors</SelectItem>
+                {vendorNames.map((name) => (
+                  <SelectItem key={name} value={name}>
+                    {name}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>

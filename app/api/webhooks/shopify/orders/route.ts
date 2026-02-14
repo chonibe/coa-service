@@ -5,6 +5,7 @@ import crypto from "crypto"
 import { createClient } from "@/lib/supabase/server"
 import { syncShopifyOrder } from "@/lib/shopify/order-sync-utils"
 import { sendOrderConfirmationWithTracking } from "@/lib/notifications/order-confirmation"
+import { createRefundDeductionByVendor } from "@/lib/banking/refund-deduction"
 
 /**
  * Shopify Order Webhook Handler
@@ -133,6 +134,16 @@ async function syncOrderToDatabase(order: any, supabase: any) {
       } catch (creditError) {
         console.error(`[webhook] Error processing fulfillment credits for order ${order.name}:`, creditError)
       }
+
+      // Process refund deductions for voided/refunded orders
+      // This handles cases where financial_status changes after initial sync
+      if (order.financial_status === 'voided' || order.financial_status === 'refunded') {
+        try {
+          await processRefundDeductions(order, supabase)
+        } catch (refundError) {
+          console.error(`[webhook] Error processing refund deductions for order ${order.name}:`, refundError)
+        }
+      }
       
       // Recalculate series completion
       if (order.fulfillment_status === 'fulfilled' || order.financial_status === 'paid') {
@@ -164,6 +175,61 @@ async function syncOrderToDatabase(order: any, supabase: any) {
     }
   } catch (error) {
     console.error(`[webhook] Error syncing order ${order.name} to database:`, error)
+  }
+}
+
+/**
+ * Process refund deductions for all line items of a voided/refunded order.
+ * For each line item that has a `payout_earned` ledger entry, creates an
+ * offsetting `refund_deduction` entry.
+ */
+async function processRefundDeductions(order: any, supabase: any) {
+  const orderId = order.id.toString()
+  console.log(`[webhook] Processing refund deductions for order ${order.name} (${order.financial_status})`)
+
+  // Get all line items for this order that belong to a vendor
+  const { data: lineItems, error } = await supabase
+    .from('order_line_items_v2')
+    .select('line_item_id, vendor_name, price')
+    .eq('order_id', orderId)
+    .not('vendor_name', 'is', null)
+
+  if (error || !lineItems || lineItems.length === 0) {
+    return
+  }
+
+  // For each line item, check if there's a payout_earned entry and create deduction
+  for (const item of lineItems) {
+    try {
+      const { data: earnedEntry } = await supabase
+        .from('collector_ledger_entries')
+        .select('id, amount')
+        .eq('line_item_id', item.line_item_id)
+        .eq('transaction_type', 'payout_earned')
+        .eq('currency', 'USD')
+        .maybeSingle()
+
+      if (earnedEntry) {
+        const result = await createRefundDeductionByVendor(
+          item.vendor_name,
+          item.line_item_id,
+          Math.abs(Number(earnedEntry.amount)),
+          supabase,
+          {
+            order_id: orderId,
+            order_name: order.name,
+            order_financial_status: order.financial_status,
+            source: 'webhook',
+          }
+        )
+
+        if (result.success && result.amountDeducted > 0) {
+          console.log(`[webhook] Refund deduction: -$${result.amountDeducted} for line item ${item.line_item_id} (${item.vendor_name})`)
+        }
+      }
+    } catch (itemError) {
+      console.error(`[webhook] Error creating refund deduction for ${item.line_item_id}:`, itemError)
+    }
   }
 }
 

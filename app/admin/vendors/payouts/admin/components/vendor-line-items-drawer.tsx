@@ -14,12 +14,12 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet"
-import { Loader2, ExternalLink, CheckCircle, Search, Download, Info, DollarSign, AlertTriangle } from "lucide-react"
+import { Loader2, ExternalLink, CheckCircle, Search, Download, Info, DollarSign, AlertTriangle, History, ChevronDown, ChevronUp } from "lucide-react"
 import { format } from "date-fns"
 import { formatUSD } from "@/lib/utils"
 import { useToast } from "@/components/ui/use-toast"
 import { cn } from "@/lib/utils"
-import type { PendingLineItem } from "../types"
+import type { PendingLineItem, PayoutHistory } from "../types"
 
 import { Button, Input, Checkbox, Badge, Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui"
 interface VendorLineItemsDrawerProps {
@@ -45,16 +45,22 @@ export function VendorLineItemsDrawer({
   const [searchQuery, setSearchQuery] = useState("")
   const [selectedItems, setSelectedItems] = useState<Set<string>>(new Set())
   const [ledgerBalance, setLedgerBalance] = useState<number | null>(null)
+  const [payoutHistory, setPayoutHistory] = useState<PayoutHistory[]>([])
+  const [isLoadingHistory, setIsLoadingHistory] = useState(false)
+  const [showHistory, setShowHistory] = useState(false)
   const { toast } = useToast()
 
   useEffect(() => {
     if (open && vendorName && vendorName.trim() !== "") {
       fetchLineItems()
       fetchLedgerBalance()
+      fetchPayoutHistory()
     } else if (!open) {
-      // Clear line items when drawer closes
+      // Clear state when drawer closes
       setLineItems([])
       setLedgerBalance(null)
+      setPayoutHistory([])
+      setShowHistory(false)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, vendorName, dateRange.start, dateRange.end, includePaid])
@@ -69,6 +75,22 @@ export function VendorLineItemsDrawer({
       }
     } catch (err) {
       console.error("Error fetching ledger balance:", err)
+    }
+  }
+
+  const fetchPayoutHistory = async () => {
+    if (!vendorName || vendorName.trim() === "") return
+    setIsLoadingHistory(true)
+    try {
+      const response = await fetch(`/api/vendors/payouts/history?vendorName=${encodeURIComponent(vendorName)}&limit=20`)
+      if (response.ok) {
+        const data = await response.json()
+        setPayoutHistory(data.payouts || [])
+      }
+    } catch (err) {
+      console.error("Error fetching payout history:", err)
+    } finally {
+      setIsLoadingHistory(false)
     }
   }
 
@@ -141,15 +163,13 @@ export function VendorLineItemsDrawer({
   }
 
   const handleMarkPaid = async (lineItemId: string) => {
-    console.log("handleMarkPaid called with lineItemId:", lineItemId, "vendorName:", vendorName)
     try {
       setIsProcessing(true)
       const requestBody = {
         lineItemIds: [lineItemId],
         vendorName,
-        createPayoutRecord: false,
+        createPayoutRecord: true,
       }
-      console.log("Sending request:", requestBody)
 
       const response = await fetch("/api/admin/payouts/mark-paid", {
         method: "POST",
@@ -159,9 +179,7 @@ export function VendorLineItemsDrawer({
         body: JSON.stringify(requestBody),
       })
 
-      console.log("Response status:", response.status)
       const responseData = await response.json()
-      console.log("Response data:", responseData)
 
       if (!response.ok) {
         throw new Error(responseData.error || `HTTP ${response.status}: ${response.statusText}`)
@@ -258,7 +276,7 @@ export function VendorLineItemsDrawer({
         body: JSON.stringify({
           lineItemIds: Array.from(selectedItems),
           vendorName,
-          createPayoutRecord: false,
+          createPayoutRecord: true,
         }),
       })
 
@@ -547,6 +565,81 @@ export function VendorLineItemsDrawer({
                 </div>
               )}
             </div>
+          </div>
+        )}
+
+        {/* Payout History Section (collapsible) */}
+        {payoutHistory.length > 0 && (
+          <div className="border rounded-lg overflow-hidden">
+            <button
+              onClick={() => setShowHistory(!showHistory)}
+              className="w-full flex items-center justify-between p-3 bg-muted/30 hover:bg-muted/50 transition-colors text-left"
+            >
+              <div className="flex items-center gap-2">
+                <History className="h-4 w-4 text-muted-foreground" />
+                <span className="text-sm font-medium">Payout History ({payoutHistory.length})</span>
+              </div>
+              {showHistory ? (
+                <ChevronUp className="h-4 w-4 text-muted-foreground" />
+              ) : (
+                <ChevronDown className="h-4 w-4 text-muted-foreground" />
+              )}
+            </button>
+            {showHistory && (
+              <div className="border-t">
+                {isLoadingHistory ? (
+                  <div className="flex justify-center py-4">
+                    <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+                  </div>
+                ) : (
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Date</TableHead>
+                        <TableHead className="text-right">Amount</TableHead>
+                        <TableHead>Method</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead>Reference</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {payoutHistory.map((payout) => (
+                        <TableRow key={payout.id}>
+                          <TableCell className="text-sm">
+                            {formatDate(payout.payout_date || payout.created_at)}
+                          </TableCell>
+                          <TableCell className="text-right font-medium text-sm">
+                            {formatUSD(payout.amount)}
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant="outline" className="text-xs">
+                              {(payout.payment_method || "manual").replace("_", " ").toUpperCase()}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                            <Badge
+                              variant={payout.status === "completed" ? "default" : "outline"}
+                              className={cn(
+                                "text-xs",
+                                payout.status === "completed" && "bg-green-600",
+                                payout.status === "failed" && "bg-red-500 text-white"
+                              )}
+                            >
+                              {payout.status}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                            <code className="text-xs bg-muted px-1.5 py-0.5 rounded">
+                              {payout.reference || "-"}
+                            </code>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                )}
+              </div>
+            )}
           </div>
         )}
 
