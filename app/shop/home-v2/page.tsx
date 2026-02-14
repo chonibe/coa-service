@@ -87,8 +87,8 @@ export default async function ShopHomeV2Page() {
         getProduct(homepageContent.featuredProduct.productHandle).catch(() => null),
       ])
 
-      newReleases = newReleasesCollection?.products.edges.map(e => e.node) || []
-      bestSellers = bestSellersCollection?.products.edges.map(e => e.node) || []
+      newReleases = newReleasesCollection?.products?.edges?.map(e => e.node) || []
+      bestSellers = bestSellersCollection?.products?.edges?.map(e => e.node) || []
       featuredProduct = product
     } catch (error: any) {
       console.error('Shop homepage API error:', error.message)

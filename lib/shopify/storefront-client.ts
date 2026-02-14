@@ -552,8 +552,8 @@ export async function getProducts(options: {
   }>(query, { first, after, sortKey, reverse, query: searchQuery })
 
   return {
-    products: data.products.edges.map(edge => edge.node),
-    pageInfo: data.products.pageInfo,
+    products: data.products?.edges?.map(edge => edge.node) || [],
+    pageInfo: data.products?.pageInfo || { hasNextPage: false, endCursor: null },
   }
 }
 

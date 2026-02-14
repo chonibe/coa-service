@@ -81,7 +81,7 @@ async function fetchShopifyArtistData(slug: string, artistName: string) {
   })
   
   if (collection) {
-    const products = collection.products.edges.map(edge => edge.node)
+    const products = collection.products?.edges?.map(edge => edge.node) || []
     return {
       name: collection.title,
       bio: collection.description || collection.descriptionHtml?.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim(),

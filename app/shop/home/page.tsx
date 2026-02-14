@@ -54,8 +54,8 @@ export default async function ShopHomePage() {
         getProduct(homepageContent.featuredProduct.productHandle).catch(() => null),
       ])
 
-      newReleases = newReleasesCollection?.products.edges.map(e => e.node) || []
-      bestSellers = bestSellersCollection?.products.edges.map(e => e.node) || []
+      newReleases = newReleasesCollection?.products?.edges?.map(e => e.node) || []
+      bestSellers = bestSellersCollection?.products?.edges?.map(e => e.node) || []
       featuredProduct = product
     } catch (error: any) {
       console.error('Shop homepage API error:', error.message)
@@ -76,7 +76,7 @@ export default async function ShopHomePage() {
           handle: artist.handle,
           name: artist.handle.split('-').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' '),
           location: artist.location,
-          imageUrl: collection?.image?.url || collection?.products.edges[0]?.node.featuredImage?.url,
+          imageUrl: collection?.image?.url || collection?.products?.edges?.[0]?.node?.featuredImage?.url,
         }
       } catch {
         return {
@@ -196,7 +196,7 @@ export default async function ShopHomePage() {
                 : undefined
             }
             description={featuredProduct.description?.substring(0, 200)}
-            media={featuredProduct.images.edges.slice(0, 4).map((edge: any) => ({
+            media={(featuredProduct.images?.edges || []).slice(0, 4).map((edge: any) => ({
               type: 'image' as const,
               url: edge.node.url,
               alt: edge.node.altText || featuredProduct.title,

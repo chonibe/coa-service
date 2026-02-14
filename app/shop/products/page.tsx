@@ -86,8 +86,8 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
         reverse: sortConfig.reverse,
       })
       if (collection) {
-        products = collection.products.edges.map(edge => edge.node)
-        hasNextPage = collection.products.pageInfo.hasNextPage
+        products = collection.products?.edges?.map(edge => edge.node) || []
+        hasNextPage = collection.products?.pageInfo?.hasNextPage || false
         title = collection.title
         // Get collection image if available
         collectionImage = collection.image?.url || null
